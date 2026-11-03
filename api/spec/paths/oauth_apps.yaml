@@ -25,7 +25,7 @@ post:
   summary: Register an OAuth app
   description: |
     Registers a public or confidential app of the user for a bot, a script, or a client of
-    their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+    their own. A confidential app's `client_secret` is in this response only.
     Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
     may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
     stops working while the user cannot use the server (suspended or deleted).
@@ -33,7 +33,8 @@ post:
     A setting that breaks a rule is a 422 naming it, a user with 25 apps a 409
     `/api/v1/problems/too-many-oauth-apps`, and a server that does not let users register
     apps (the instance setting `user_app_registration`) a 403
-    `/api/v1/problems/oauth-app-registration-disabled`.
+    `/api/v1/problems/oauth-app-registration-disabled`. A user registers at most 5 apps an
+    hour; past that the answer is 429.
   tags: [oauth-apps]
   security:
     - oauth2: ["write:accounts"]

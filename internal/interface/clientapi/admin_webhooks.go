@@ -54,7 +54,7 @@ func newAdminWebhook(e webhook.Endpoint) AdminWebhook {
 	out := AdminWebhook{
 		Id: e.ID, Url: e.Settings.URL, Events: make([]WebhookEventType, 0, len(e.Settings.Events)),
 		State: AdminWebhookState(e.State), StateReason: AdminWebhookStateReason(e.StateReason),
-		StateChangedAt: e.StateChangedAt.UTC(), CreatedAt: e.CreatedAt.UTC(), UpdatedAt: e.RevisedAt.UTC(),
+		StateChangedAt: e.StateChangedAt.UTC(), CreatedAt: e.CreatedAt.UTC(), RevisedAt: e.RevisedAt.UTC(),
 	}
 	if e.Settings.Description != "" {
 		out.Description = &e.Settings.Description
@@ -185,9 +185,9 @@ func (s *Server) CreateWebhook(ctx context.Context, req CreateWebhookRequestObje
 		return nil, fmt.Errorf("clientapi: create webhook: %w", err)
 	}
 	cache := cacheNoStore
-	return CreateWebhook200JSONResponse{
+	return CreateWebhook201JSONResponse{
 		Body:    AdminWebhookCreated{Webhook: newAdminWebhook(c.Endpoint), Secret: c.Secret},
-		Headers: CreateWebhook200ResponseHeaders{CacheControl: &cache},
+		Headers: CreateWebhook201ResponseHeaders{CacheControl: &cache},
 	}, nil
 }
 

@@ -103,7 +103,7 @@ CREATE TABLE webhook_delivery_attempts (
   outcome text NOT NULL CHECK (outcome IN (
     'succeeded', 'http_error', 'timeout', 'connection_error', 'forbidden_destination'
   )),
-  status_code bigint CHECK (status_code IS NULL OR status_code BETWEEN 100 AND 599),
+  status_code integer CHECK (status_code IS NULL OR status_code BETWEEN 100 AND 599),
   duration_ms bigint NOT NULL CHECK (duration_ms >= 0),
   attempted_at timestamptz NOT NULL,
   CHECK ((outcome IN ('succeeded', 'http_error')) = (status_code IS NOT NULL))

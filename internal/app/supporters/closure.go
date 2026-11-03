@@ -32,7 +32,7 @@ type ServiceClosure interface {
 
 // JobClosureNotice is the job that cancels every live subscription at the end of its period when
 // the notice period of the service closure starts.
-const JobClosureNotice = "supporters.closure_notice"
+const JobClosureNotice = "supporters.cancel_for_closure"
 
 // closureNoticeBatch is how many subscriptions one transaction of JobClosureNotice handles.
 const closureNoticeBatch = 100

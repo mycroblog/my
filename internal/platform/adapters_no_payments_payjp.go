@@ -17,5 +17,5 @@ func init() { paymentProviderAdapters["payjp"] = newPayjpPaymentProvider }
 // newPayjpPaymentProvider reports that the build tag no_payments_payjp left the PAY.JP adapter
 // out.
 func newPayjpPaymentProvider(context.Context, *config.Config, *slog.Logger) (supporters.PaymentProvider, error) {
-	return nil, config.ExcludedError("payments_provider", "payjp", "no_payments_payjp")
+	return nil, config.ExcludedError("payments", "payjp", "no_payments_payjp")
 }

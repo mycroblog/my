@@ -5,15 +5,15 @@ INSERT INTO instance_brand_revisions (id, kind, action, background_color, revise
 VALUES ($1, $2, $3, $4, $5, $6);
 
 -- name: InsertInstanceBrandFile :exec
-INSERT INTO instance_brand_files (brand_revision_id, rendition, blob_key, content_type, width, height, byte_size, sha256)
+INSERT INTO instance_brand_files (revision_id, rendition, blob_key, content_type, width, height, file_size, sha256)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- name: GetInstanceBrandRevision :one
 SELECT id, kind, action, background_color, revised_by_user_id, revised_at FROM instance_brand_revisions WHERE id = $1;
 
 -- name: ListInstanceBrandFiles :many
-SELECT rendition, blob_key, content_type, width, height, byte_size, sha256
-FROM instance_brand_files WHERE brand_revision_id = $1 ORDER BY rendition;
+SELECT rendition, blob_key, content_type, width, height, file_size, sha256
+FROM instance_brand_files WHERE revision_id = $1 ORDER BY rendition;
 
 -- name: ListInstanceBrandRevisionHeads :many
 SELECT id, kind, action FROM instance_brand_revisions ORDER BY id;

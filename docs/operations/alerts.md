@@ -393,6 +393,7 @@ Fix:
 
 - Out of memory: set `GOMEMLIMIT` to about 90% of the container's memory limit, or give the container more memory ([MyMemoryNearLimit](#mymemorynearlimit)).
 - A panic: report it with the log lines around it.
+- The log says the database belongs to another `host` or `account_domain`: set the recorded values in the configuration, or point `database_url` at the right database. These values cannot change ([Settings you cannot change later](production-checklist.md#settings-you-cannot-change-later)).
 
 ### MyMemoryNearLimit
 

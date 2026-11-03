@@ -19,7 +19,7 @@ function announcementFixture(id: string, overrides: Partial<Schemas["Announcemen
     title: "Maintenance on Sunday",
     content: "<p>Maintenance on Sunday.</p>",
     published_at: "2026-10-21T00:00:00Z",
-    updated_at: "2026-10-21T00:00:00Z",
+    revised_at: "2026-10-21T00:00:00Z",
     read: false,
     ended: false,
     ...overrides,
@@ -109,7 +109,7 @@ describe("while signed out", () => {
 
   test("leaves out a timeline kept for signed-in users, and asks to sign in at its address", async () => {
     server.use(
-      instanceWith({ local: "logged_in", federated: "everyone" }),
+      instanceWith({ local: "signed_in", federated: "everyone" }),
       http.get(`${apiBase}/timelines/local`, () => problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated")),
     );
     await renderApp({ path: "/local" });
@@ -245,7 +245,7 @@ describe("the timelines' items", () => {
   });
 
   test("offer the timelines kept for signed-in users", async () => {
-    server.use(instanceWith({ local: "logged_in", federated: "logged_in" }));
+    server.use(instanceWith({ local: "signed_in", federated: "signed_in" }));
     await renderApp({ path: "/home" });
     await screen.findByRole("heading", { level: 1, name: "Home" });
 

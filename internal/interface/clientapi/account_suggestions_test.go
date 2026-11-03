@@ -50,10 +50,11 @@ func TestListAccountSuggestions(t *testing.T) {
 	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("suggestions = %d (Cache-Control %q)", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
-	var got []clientapi.AccountSuggestion
-	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+	var list clientapi.AccountSuggestionList
+	if err := json.NewDecoder(res.Body).Decode(&list); err != nil {
 		t.Fatal(err)
 	}
+	got := list.Items
 	// The unknown account is left out.
 	if len(got) != 1 || got[0].Account.Id != aliceAccountID || got[0].Source != clientapi.AccountSuggestionSourceRecentlyActive {
 		t.Errorf("suggestions = %+v, want alice, recently active", got)

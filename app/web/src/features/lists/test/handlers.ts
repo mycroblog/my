@@ -33,7 +33,7 @@ export const handlers = [
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
   http.get(`${apiBase}/lists/:id/accounts`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json({ accounts: [otherAccountFixture] } satisfies Schemas["AccountPage"])),
+    withViewer(request, () => HttpResponse.json({ items: [otherAccountFixture] } satisfies Schemas["AccountPage"])),
   ),
   http.post(`${apiBase}/lists/:id/accounts/:accountId`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),

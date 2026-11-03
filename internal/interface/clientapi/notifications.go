@@ -23,7 +23,7 @@ import (
 type Notifications interface {
 	List(ctx context.Context, accountID string, q appnotification.Query) ([]notification.Notification, error)
 	ReadMarker(ctx context.Context, accountID string) (notification.ReadMarker, error)
-	UnreadCount(ctx context.Context, accountID string) (int64, error)
+	UnreadCount(ctx context.Context, accountID string, withoutModerator bool) (int64, error)
 	MarkRead(ctx context.Context, accountID, lastReadID string) (notification.ReadMarker, error)
 	Dismiss(ctx context.Context, accountID, notificationID string) error
 	// ErrorGroupOthers returns how many error groups an admin_error_group of the others folds.
@@ -78,7 +78,9 @@ func (s *Server) ListNotifications(ctx context.Context, req ListNotificationsReq
 		body, headers := s.invalidParameter(ctx, "cursor")
 		return ListNotificationsdefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusBadRequest}, nil
 	}
-	q := appnotification.Query{Limit: limit + 1} // one more tells whether a next page exists
+	// One more tells whether a next page exists. The moderator notifications stay with the
+	// first-party clients, as administration does, whatever the user's roles.
+	q := appnotification.Query{Limit: limit + 1, WithoutModerator: !v.FirstParty}
 	if req.Params.Cursor != nil {
 		q.Before = *req.Params.Cursor
 	}
@@ -379,7 +381,7 @@ func (s *Server) notifiedReports(ctx context.Context, accountID string, ns []not
 		}
 		recs = append(recs, rec)
 	}
-	items, err := s.newReports(ctx, recs)
+	items, err := s.newReports(ctx, Viewer{AccountID: accountID}, recs)
 	if err != nil {
 		return nil, err
 	}
@@ -529,7 +531,7 @@ func (s *Server) GetNotificationMarker(ctx context.Context, _ GetNotificationMar
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: the notification marker of %s: %w", v.AccountID, err)
 	}
-	body, err := s.newNotificationMarker(ctx, v.AccountID, m)
+	body, err := s.newNotificationMarker(ctx, v, m)
 	if err != nil {
 		return nil, err
 	}
@@ -556,7 +558,7 @@ func (s *Server) UpdateNotificationMarker(ctx context.Context, req UpdateNotific
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: mark the notifications of %s read: %w", v.AccountID, err)
 	}
-	body, err := s.newNotificationMarker(ctx, v.AccountID, m)
+	body, err := s.newNotificationMarker(ctx, v, m)
 	if err != nil {
 		return nil, err
 	}
@@ -564,12 +566,12 @@ func (s *Server) UpdateNotificationMarker(ctx context.Context, req UpdateNotific
 	return UpdateNotificationMarker200JSONResponse{Body: body, Headers: UpdateNotificationMarker200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
-// newNotificationMarker presents accountID's marker m, with its unread count, as the
+// newNotificationMarker presents the viewer's marker m, with its unread count, as the
 // NotificationMarker schema.
-func (s *Server) newNotificationMarker(ctx context.Context, accountID string, m notification.ReadMarker) (NotificationMarker, error) {
-	n, err := s.o.Notifications.UnreadCount(ctx, accountID)
+func (s *Server) newNotificationMarker(ctx context.Context, v Viewer, m notification.ReadMarker) (NotificationMarker, error) {
+	n, err := s.o.Notifications.UnreadCount(ctx, v.AccountID, !v.FirstParty)
 	if err != nil {
-		return NotificationMarker{}, fmt.Errorf("clientapi: the unread notifications of %s: %w", accountID, err)
+		return NotificationMarker{}, fmt.Errorf("clientapi: the unread notifications of %s: %w", v.AccountID, err)
 	}
 	out := NotificationMarker{UnreadCount: n}
 	if m.LastReadID != "" {

@@ -3,7 +3,7 @@ get:
   operationId: listOAuthClientHostDenials
   summary: List the denied hosts of client metadata documents
   description: |
-    The hosts whose Client ID Metadata Documents are denied (ADR-0090 §1), newest denial
+    The hosts whose Client ID Metadata Documents are denied, newest denial
     first. Needs the `manage_oauth_apps` permission.
   tags: [admin-server]
   security:

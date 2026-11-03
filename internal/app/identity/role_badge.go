@@ -218,12 +218,8 @@ func (s *Service) revokeReplaced(ctx context.Context, tx uow.Tx, c roleChange, r
 		return false, false, err
 	}
 	if role.Key == identity.RoleAdmin {
-		n, err := s.d.Repository.CountRoleHolders(ctx, tx, role.ID)
-		if err != nil {
+		if err := s.refuseLastAdministratorTx(ctx, tx, c.in.UserID); err != nil {
 			return false, false, err
-		}
-		if n <= 1 {
-			return false, false, ErrLastAdmin
 		}
 	}
 	displayed, err = s.d.Repository.RoleBadgeDisplayed(ctx, tx, c.in.UserID, role.ID)

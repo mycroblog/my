@@ -137,7 +137,7 @@ password=upgrade-test-password
 run() {
 	local dialect="$1"
 	echo "upgrade-test: $dialect: $previous -> $candidate" >&2
-	export MY_DB="$dialect"
+	export MY_DATABASE="$dialect"
 	if [[ "$dialect" == sqlite ]]; then
 		export MY_DATABASE_URL=/data/my.db
 		# SCHEMA_URL and SCHEMA_DEV_URL: the Atlas URLs of the previous-schema service, for a release with a schema image.

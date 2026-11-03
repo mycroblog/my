@@ -5,8 +5,7 @@ post:
   summary: Sign out every browser but the one that asks
   description: |
     Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
-    succeeds when there is no other browser. Only the server's own clients may call it
-    (ADR-0090 §4).
+    succeeds when there is no other browser. Only the server's own clients may call it.
   tags: [sessions]
   security:
     - oauth2: ["write:accounts"]

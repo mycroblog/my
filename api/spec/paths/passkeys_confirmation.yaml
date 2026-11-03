@@ -7,8 +7,8 @@ post:
     Returns the options of a WebAuthn authentication (with user verification) for the
     browser's `navigator.credentials.get()`, with a `confirmation_token` that carries them
     for 5 minutes, once, in the `passkey` of an operation that a passkey of the user confirms
-    in place of the current password: deleting the account, changing or removing the
-    password, and registering a passkey. Nothing is stored.
+    in place of the current password: deleting the account, moving it, changing or removing
+    the password, registering a passkey, and linking an identity. Nothing is stored.
   tags: [passkeys]
   security:
     - oauth2: ["write:accounts"]

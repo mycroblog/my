@@ -195,7 +195,7 @@ spike の確認事項への決定者の回答（#912、原文）:
   - **一部の返金**ではロールを外さず、状態を変えない。
   - **dispute に勝っても**ロールを自動では戻さない。`revoked` は終端で、利用者は再加入する。
   - 返金とチャージバックの事実は、事業者の通知から `supporter_subscription_reversals`（§15）に、事業者の ID で一意に記録する。お金の額の記録（収入から引く）は ADR-0073 が決める。
-- 定期の照合: ADR-0074 の定期ジョブ `supporters.payment_reconcile` が、前回の時刻から変わったサブスクリプションを `ListSubscriptions` で列挙し、それぞれを `supporters.sync` に渡す。webhook を取りこぼしても追いつく。周期は ADR-0074 が事業者のイベントの保持期間より短く決める。
+- 定期の照合: ADR-0074 の定期ジョブ `supporters.reconcile_payments` が、前回の時刻から変わったサブスクリプションを `ListSubscriptions` で列挙し、それぞれを `supporters.sync` に渡す。webhook を取りこぼしても追いつく。周期は ADR-0074 が事業者のイベントの保持期間より短く決める。
 
 ### 8. プランの変更と解約
 

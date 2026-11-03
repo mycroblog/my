@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -64,12 +65,12 @@ func (f *fakeStatuses) SetQuotePolicy(_ context.Context, accountID, id string, p
 	return content.StatusQuotePolicy{StatusID: id, Policy: p}, f.do("quote_policy:"+string(p), accountID, id)
 }
 
-func (f *fakeStatuses) Quotes(_ context.Context, accountID, id, _ string, _ int) (appcontent.QuotesPage, error) {
-	view, err := f.View(context.Background(), appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: accountID}, sampleStatusID)
+func (f *fakeStatuses) Quotes(_ context.Context, v appcontent.Viewer, id, _ string, _ int) (appcontent.QuotesPage, error) {
+	view, err := f.View(context.Background(), v, sampleStatusID)
 	if err != nil {
 		return appcontent.QuotesPage{}, err
 	}
-	return appcontent.QuotesPage{Statuses: []appcontent.StatusView{view}}, f.do("quotes", accountID, id)
+	return appcontent.QuotesPage{Statuses: []appcontent.StatusView{view}}, f.do("quotes", v.AccountID, id)
 }
 
 func (f *fakeStatuses) RevokeQuote(_ context.Context, accountID, quoted, quoting string) error {
@@ -90,6 +91,16 @@ func (f *fakeStatuses) View(_ context.Context, v appcontent.Viewer, id string) (
 	return f.view(v, id)
 }
 
+func (f *fakeStatuses) Visible(ctx context.Context, v appcontent.Viewer, id string) (content.Status, error) {
+	view, err := f.View(ctx, v, id)
+	return view.Status, err
+}
+
+func (f *fakeStatuses) Live(ctx context.Context, id string) error {
+	_, err := f.View(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal}, id)
+	return err
+}
+
 func (f *fakeStatuses) Thread(_ context.Context, v appcontent.Viewer, id string) (appcontent.Thread, error) {
 	view, err := f.View(context.Background(), v, id)
 	if err != nil {
@@ -106,16 +117,16 @@ func (f *fakeStatuses) History(_ context.Context, v appcontent.Viewer, id string
 	return []appcontent.RevisionView{{Revision: view.Revision, Attachments: view.Attachments}}, nil
 }
 
-func (f *fakeStatuses) Source(_ context.Context, accountID, id string) (content.Revision, error) {
-	view, err := f.View(context.Background(), appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: accountID}, id)
+func (f *fakeStatuses) Source(_ context.Context, v appcontent.Viewer, id string) (content.Revision, error) {
+	view, err := f.View(context.Background(), v, id)
 	if err != nil {
 		return content.Revision{}, err
 	}
 	return view.Revision, nil
 }
 
-func (f *fakeStatuses) Bookmarks(_ context.Context, accountID, _ string, limit int) (appcontent.BookmarkPage, error) {
-	view, err := f.View(context.Background(), appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: accountID}, sampleStatusID)
+func (f *fakeStatuses) Bookmarks(_ context.Context, v appcontent.Viewer, _ string, limit int) (appcontent.BookmarkPage, error) {
+	view, err := f.View(context.Background(), v, sampleStatusID)
 	if errors.Is(err, appcontent.ErrNotFound) {
 		return appcontent.BookmarkPage{}, nil
 	}
@@ -364,7 +375,7 @@ func TestCreateStatus(t *testing.T) {
 	e := newStatusEnv(t, f)
 	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"hi","visibility":"local","spoiler_text":"cw","sensitive":true,
 		"language":"en","in_reply_to_id":"`+sampleStatusID+`","media":[{"id":"`+sampleMediaID+`","description":"a cat"},{"id":"`+otherMediaID+`"}]}`)
-	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
+	if res.StatusCode != http.StatusCreated || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("POST = %d", res.StatusCode)
 	}
 	want := appcontent.CreateInput{
@@ -381,7 +392,7 @@ func TestCreateStatus(t *testing.T) {
 	// A poll ends expires_in seconds after the post (FR-112).
 	res = e.send(t, http.MethodPost, "/statuses", "write", `{"text":"which?","visibility":"public",
 		"poll":{"options":["a","b"],"expires_in":3600,"multiple":true,"hide_totals":true}}`)
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST with a poll = %d", res.StatusCode)
 	}
 	wantPoll := content.PollInput{Options: []string{"a", "b"}, Duration: time.Hour, Multiple: true, HideTotals: true}
@@ -393,7 +404,7 @@ func TestCreateStatus(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer write")
 	req.Header.Set("Idempotency-Key", "key-1")
-	if res := e.spec.Serve(t, e.h, req); res.StatusCode != http.StatusOK || got.IdempotencyKey != "key-1" {
+	if res := e.spec.Serve(t, e.h, req); res.StatusCode != http.StatusCreated || got.IdempotencyKey != "key-1" {
 		t.Errorf("POST with Idempotency-Key = %d, key %q", res.StatusCode, got.IdempotencyKey)
 	}
 }
@@ -450,7 +461,7 @@ func TestStatusProblems(t *testing.T) {
 		{http.MethodPost, "/boost", appcontent.ErrPostingRestricted, "現在、あなたのアカウントは投稿できません。"},
 	}
 	for _, tc := range interactions {
-		e := newStatusEnv(t, &fakeStatuses{interact: func(string, string, string) error { return tc.err }})
+		e := newStatusEnv(t, &fakeStatuses{view: func(v appcontent.Viewer, _ string) (appcontent.StatusView, error) { return sampleView(v), nil }, interact: func(string, string, string) error { return tc.err }})
 		res := e.send(t, tc.method, "/statuses/"+sampleStatusID+tc.path, "write", "")
 		p := decodeProblem(t, res)
 		want := http.StatusUnprocessableEntity
@@ -553,7 +564,7 @@ func TestQuoteOperations(t *testing.T) {
 	e := newStatusEnv(t, f)
 
 	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"look","visibility":"public","quoted_status_id":"`+sampleStatusID+`","quote_policy":"nobody"}`)
-	if res.StatusCode != http.StatusOK || created.QuotedStatusID != sampleStatusID || created.QuotePolicy != content.QuotePolicyNobody {
+	if res.StatusCode != http.StatusCreated || created.QuotedStatusID != sampleStatusID || created.QuotePolicy != content.QuotePolicyNobody {
 		t.Errorf("create = %d with %+v, want the quote and its policy", res.StatusCode, created)
 	}
 	if s := decodeStatus(t, res); s.Quotable == nil || !*s.Quotable || s.QuotePolicy == nil || *s.QuotePolicy != clientapi.QuotePolicyFollowers {
@@ -592,7 +603,7 @@ func TestPostLimit(t *testing.T) {
 		o.AccountLimit = kernel.Limit{Name: "api.account", Max: 1000, Window: time.Minute}
 	})
 	for i := range clientapi.PostLimit.Max {
-		if res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"hi","visibility":"public"}`); res.StatusCode != http.StatusOK {
+		if res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"hi","visibility":"public"}`); res.StatusCode != http.StatusCreated {
 			t.Fatalf("post %d = %d", i, res.StatusCode)
 		}
 	}
@@ -633,12 +644,12 @@ func TestCreateStatusReplaysBeforeTheLimit(t *testing.T) {
 		return e.spec.Serve(t, e.h, req)
 	}
 	for i := range clientapi.PostLimit.Max {
-		if res := post(fmt.Sprintf("key-%d", i)); res.StatusCode != http.StatusOK {
+		if res := post(fmt.Sprintf("key-%d", i)); res.StatusCode != http.StatusCreated {
 			t.Fatalf("post %d = %d", i, res.StatusCode)
 		}
 	}
-	if res := post("key-0"); res.StatusCode != http.StatusOK || decodeStatus(t, res).Id != sampleStatusID {
-		t.Errorf("retry over the limit = %d, want 200 with the status", res.StatusCode)
+	if res := post("key-0"); res.StatusCode != http.StatusCreated || decodeStatus(t, res).Id != sampleStatusID {
+		t.Errorf("retry over the limit = %d, want 201 with the status", res.StatusCode)
 	}
 	if created != clientapi.PostLimit.Max {
 		t.Errorf("created %d statuses, want %d", created, clientapi.PostLimit.Max)
@@ -690,3 +701,19 @@ const (
 	sampleMediaID = "01890a5d-ac96-774b-bcce-b302099a9501"
 	otherMediaID  = "01890a5d-ac96-774b-bcce-b302099a9502"
 )
+
+// A quote that the visibility of the new status refuses says why (ADR-0144 §4).
+func TestCreateStatusQuoteRemoteAudience(t *testing.T) {
+	e := newStatusEnv(t, &fakeStatuses{create: func(appcontent.CreateInput) (appcontent.Post, error) {
+		return appcontent.Post{}, fmt.Errorf("status: %w", appcontent.ErrQuoteRemoteAudience)
+	}})
+	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"look","visibility":"private","quoted_status_id":"`+sampleStatusID+`"}`)
+	defer func() { _ = res.Body.Close() }()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(string(body), "ほかのサーバーの投稿を引用できません") {
+		t.Errorf("create = %d %s, want 422 with the reason", res.StatusCode, body)
+	}
+}

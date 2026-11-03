@@ -9,6 +9,7 @@ import (
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -23,13 +24,13 @@ func (a *App) setUpFederation(cfg *config.Config, repo federation.Repository) qu
 	}
 	federation.RegisterOutboundProjectors(a.Projectors, federation.RecorderDeps{
 		Repository: repo, Outbox: outbox, IDs: a.IDs, Host: cfg.Host, Accounts: a.Accounts,
-		Modes: federationModes{a},
+		Modes: federationModes{a}, Hidden: actorHiding{a},
 	})
 	federation.RegisterBlockProjectors(a.Projectors, federation.RecorderDeps{
 		Repository: repo, Outbox: outbox, IDs: a.IDs, Host: cfg.Host, Accounts: a.Accounts,
 	})
 	federation.RegisterSuspensionProjectors(a.Projectors, federation.RecorderDeps{
-		Repository: repo, Outbox: outbox, IDs: a.IDs, Host: cfg.Host, Accounts: a.Accounts,
+		Repository: repo, Outbox: outbox, IDs: a.IDs, Host: cfg.Host, Accounts: a.Accounts, Hidden: actorHiding{a},
 	})
 	// Forwarded reports (FR-709) are Flags of the instance actor.
 	federation.RegisterReportProjectors(a.Projectors, federation.RecorderDeps{
@@ -100,10 +101,25 @@ func (a *App) newObjects(cfg *config.Config) *federation.Objects {
 		Statuses: a.Content, Accounts: a.Accounts, Graph: a.Graph, Timeline: a.Timeline, Reader: a.Statuses, Images: a.Media.Images,
 		Aliases:    a.Accounts,
 		Quotes:     federation.ContentQuotes{Service: a.Content, Interactions: a.Interactions},
+		Boosts:     a.Interactions,
 		Signatures: federation.NewSignatureVerifier(httpsig.New(), a.RemoteActors, a.KV, a.Clock),
 		Domains:    a.ModerationPolicy,
 		// Authorized fetch (FR-408) is the instance setting, read per request.
 		Settings: a.Instance,
 		Host:     cfg.Host, AccountDomain: cfg.AccountDomain, Logger: a.Logger,
 	})
+}
+
+// actorHiding reads why a local actor is hidden from the remote servers, for the projectors of the
+// federation module. The moderation and account modules know one reason each.
+type actorHiding struct{ a *App }
+
+// SuspendedTx implements federation.ActorHiding.
+func (h actorHiding) SuspendedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
+	return h.a.AccountPolicy.SuspendedTx(ctx, tx, accountID)
+}
+
+// DeactivatedTx implements federation.ActorHiding.
+func (h actorHiding) DeactivatedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
+	return h.a.Accounts.DeactivatedTx(ctx, tx, accountID)
 }

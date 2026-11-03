@@ -41,23 +41,53 @@ func (s *Server) requireOAuthClients(ctx context.Context) (Viewer, *problem, err
 	return v, nil, err
 }
 
+// knowsUsers reports whether the server can tell the accounts of users; without them, what a user
+// did stays unattributed rather than attributed to a deleted account.
+func (s *Server) knowsUsers() bool { return s.o.UserAccounts != nil && s.o.Accounts != nil }
+
+// newAdminOAuthClients presents clients with the accounts of their owners, each looked up once.
+func (s *Server) newAdminOAuthClients(ctx context.Context, list []identity.OAuthClientListing) ([]AdminOAuthClient, error) {
+	ids := make([]string, len(list))
+	for i, l := range list {
+		ids[i] = l.OwnerUserID
+	}
+	accounts, err := s.userAccounts(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]AdminOAuthClient, len(list))
+	for i, l := range list {
+		out[i] = newAdminOAuthClient(l)
+		if l.OwnerUserID == "" {
+			continue
+		}
+		if a, ok := accounts[l.OwnerUserID]; ok {
+			out[i].Owner = &a
+		} else if s.knowsUsers() {
+			out[i].OwnerDeleted = true
+		}
+	}
+	return out, nil
+}
+
 func newAdminOAuthClient(l identity.OAuthClientListing) AdminOAuthClient {
 	out := AdminOAuthClient{
 		Id: l.ID, ClientId: l.ClientID, Name: l.Name, Registration: OAuthClientRegistration(l.Registration),
-		Confidential: !l.Public(), Scope: string(l.Scope), Disabled: l.Disabled, CreatedAt: l.CreatedAt.UTC(),
+		Confidential: !l.Public(), Scopes: l.Scope.Tokens(), Disabled: l.Disabled, CreatedAt: l.CreatedAt.UTC(),
 	}
 	if l.Website != "" {
 		out.Website = &l.Website
 	}
-	if l.OwnerUserID != "" {
-		out.OwnerId = &l.OwnerUserID
-	}
 	return out
 }
 
-func adminOAuthClientResponse(l identity.OAuthClientListing) AdminOAuthClientJSONResponse {
+func (s *Server) adminOAuthClientResponse(ctx context.Context, l identity.OAuthClientListing) (AdminOAuthClientJSONResponse, error) {
+	presented, err := s.newAdminOAuthClients(ctx, []identity.OAuthClientListing{l})
+	if err != nil {
+		return AdminOAuthClientJSONResponse{}, err
+	}
 	cache := cacheNoStore
-	return AdminOAuthClientJSONResponse{Body: newAdminOAuthClient(l), Headers: AdminOAuthClientResponseHeaders{CacheControl: &cache}}
+	return AdminOAuthClientJSONResponse{Body: presented[0], Headers: AdminOAuthClientResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // unprocessableValue is the 422 of a value that the request names and the server refuses.
@@ -95,10 +125,11 @@ func (s *Server) ListAdminOAuthClients(ctx context.Context, req ListAdminOAuthCl
 		return nil, fmt.Errorf("clientapi: list oauth clients: %w", err)
 	}
 	list, last := trim(list, q.limit)
-	page := AdminOAuthClientPage{Items: make([]AdminOAuthClient, 0, len(list))}
-	for _, l := range list {
-		page.Items = append(page.Items, newAdminOAuthClient(l))
+	items, err := s.newAdminOAuthClients(ctx, list)
+	if err != nil {
+		return nil, err
 	}
+	page := AdminOAuthClientPage{Items: items}
 	if last >= 0 {
 		page.NextCursor = encodeCursor(list[last].ID)
 	}
@@ -128,7 +159,11 @@ func (s *Server) DisableOAuthClient(ctx context.Context, req DisableOAuthClientR
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: find oauth client %s: %w", req.Id, err)
 	}
-	return DisableOAuthClient200JSONResponse{adminOAuthClientResponse(l)}, nil
+	res, err := s.adminOAuthClientResponse(ctx, l)
+	if err != nil {
+		return nil, err
+	}
+	return DisableOAuthClient200JSONResponse{res}, nil
 }
 
 // EnableOAuthClient serves POST /api/v1/admin/oauth_clients/{id}/enable.
@@ -153,7 +188,11 @@ func (s *Server) EnableOAuthClient(ctx context.Context, req EnableOAuthClientReq
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: find oauth client %s: %w", req.Id, err)
 	}
-	return EnableOAuthClient200JSONResponse{adminOAuthClientResponse(l)}, nil
+	res, err := s.adminOAuthClientResponse(ctx, l)
+	if err != nil {
+		return nil, err
+	}
+	return EnableOAuthClient200JSONResponse{res}, nil
 }
 
 // ListOAuthClientHostDenials serves GET /api/v1/admin/oauth_client_host_denials, newest first.
@@ -175,11 +214,23 @@ func (s *Server) ListOAuthClientHostDenials(ctx context.Context, req ListOAuthCl
 		return nil, fmt.Errorf("clientapi: list oauth client host denials: %w", err)
 	}
 	list, last := trim(list, q.limit)
+	ids := make([]string, len(list))
+	for i, d := range list {
+		ids[i] = d.DeniedByUserID
+	}
+	accounts, err := s.userAccounts(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	page := AdminOAuthClientHostDenialPage{Items: make([]AdminOAuthClientHostDenial, 0, len(list))}
 	for _, d := range list {
 		item := AdminOAuthClientHostDenial{Id: d.ID, Host: d.Host, DeniedAt: d.DeniedAt.UTC()}
 		if d.DeniedByUserID != "" {
-			item.DeniedBy = &d.DeniedByUserID
+			if a, ok := accounts[d.DeniedByUserID]; ok {
+				item.DeniedBy = &a
+			} else if s.knowsUsers() {
+				item.DeniedByDeleted = true
+			}
 		}
 		page.Items = append(page.Items, item)
 	}
@@ -222,10 +273,8 @@ func (s *Server) AllowOAuthClientHost(ctx context.Context, req AllowOAuthClientH
 		return AllowOAuthClientHostdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
 	err = s.o.OAuthClients.AllowOAuthClientHost(ctx, req.Host, v.UserID)
-	switch {
-	case errors.Is(err, identity.ErrInvalidClientIDURL):
-		return AllowOAuthClientHostdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "host")), nil
-	case err != nil:
+	// A host that cannot be denied is not denied, which is what the lift asks for.
+	if err != nil && !errors.Is(err, identity.ErrInvalidClientIDURL) {
 		return nil, fmt.Errorf("clientapi: allow oauth client host: %w", err)
 	}
 	return AllowOAuthClientHost204Response{}, nil

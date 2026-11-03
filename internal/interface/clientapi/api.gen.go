@@ -91,18 +91,12 @@ func (e AccountSuggestionSource) Valid() bool {
 // Defines values for AdminAccountActionIssuer.
 const (
 	AdminAccountActionIssuerModerator AdminAccountActionIssuer = "moderator"
-	AdminAccountActionIssuerRemote    AdminAccountActionIssuer = "remote"
-	AdminAccountActionIssuerSystem    AdminAccountActionIssuer = "system"
 )
 
 // Valid indicates whether the value is a known member of the AdminAccountActionIssuer enum.
 func (e AdminAccountActionIssuer) Valid() bool {
 	switch e {
 	case AdminAccountActionIssuerModerator:
-		return true
-	case AdminAccountActionIssuerRemote:
-		return true
-	case AdminAccountActionIssuerSystem:
 		return true
 	default:
 		return false
@@ -175,48 +169,6 @@ func (e AdminAccountActionKind) Valid() bool {
 	}
 }
 
-// Defines values for AdminAccountActionState.
-const (
-	AdminAccountActionStateActive  AdminAccountActionState = "active"
-	AdminAccountActionStateExpired AdminAccountActionState = "expired"
-	AdminAccountActionStateLifted  AdminAccountActionState = "lifted"
-)
-
-// Valid indicates whether the value is a known member of the AdminAccountActionState enum.
-func (e AdminAccountActionState) Valid() bool {
-	switch e {
-	case AdminAccountActionStateActive:
-		return true
-	case AdminAccountActionStateExpired:
-		return true
-	case AdminAccountActionStateLifted:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for AdminAccountRegistrationState.
-const (
-	AdminAccountRegistrationStateApproved AdminAccountRegistrationState = "approved"
-	AdminAccountRegistrationStatePending  AdminAccountRegistrationState = "pending"
-	AdminAccountRegistrationStateRejected AdminAccountRegistrationState = "rejected"
-)
-
-// Valid indicates whether the value is a known member of the AdminAccountRegistrationState enum.
-func (e AdminAccountRegistrationState) Valid() bool {
-	switch e {
-	case AdminAccountRegistrationStateApproved:
-		return true
-	case AdminAccountRegistrationStatePending:
-		return true
-	case AdminAccountRegistrationStateRejected:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for AdminAccountRestriction.
 const (
 	AdminAccountRestrictionFederation               AdminAccountRestriction = "federation"
@@ -258,19 +210,22 @@ func (e AdminAccountRestriction) Valid() bool {
 
 // Defines values for AdminAccountState.
 const (
-	AdminAccountStateActive    AdminAccountState = "active"
-	AdminAccountStateDeleted   AdminAccountState = "deleted"
-	AdminAccountStateDisabled  AdminAccountState = "disabled"
-	AdminAccountStateLimited   AdminAccountState = "limited"
-	AdminAccountStatePending   AdminAccountState = "pending"
-	AdminAccountStateRejected  AdminAccountState = "rejected"
-	AdminAccountStateSuspended AdminAccountState = "suspended"
+	AdminAccountStateActive      AdminAccountState = "active"
+	AdminAccountStateDeactivated AdminAccountState = "deactivated"
+	AdminAccountStateDeleted     AdminAccountState = "deleted"
+	AdminAccountStateDisabled    AdminAccountState = "disabled"
+	AdminAccountStateLimited     AdminAccountState = "limited"
+	AdminAccountStatePending     AdminAccountState = "pending"
+	AdminAccountStateRejected    AdminAccountState = "rejected"
+	AdminAccountStateSuspended   AdminAccountState = "suspended"
 )
 
 // Valid indicates whether the value is a known member of the AdminAccountState enum.
 func (e AdminAccountState) Valid() bool {
 	switch e {
 	case AdminAccountStateActive:
+		return true
+	case AdminAccountStateDeactivated:
 		return true
 	case AdminAccountStateDeleted:
 		return true
@@ -314,7 +269,7 @@ func (e AdminAnnouncementState) Valid() bool {
 const (
 	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
 	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
-	AdminAuditActionAccountDeletionCancelled        AdminAuditAction = "account_deletion_cancelled"
+	AdminAuditActionAccountDeletionCanceled         AdminAuditAction = "account_deletion_canceled"
 	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
@@ -344,6 +299,7 @@ const (
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionInstanceMarkedAvailable         AdminAuditAction = "instance_marked_available"
 	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
 	AdminAuditActionLinkCardDomainFetchStopped      AdminAuditAction = "link_card_domain_fetch_stopped"
@@ -416,7 +372,7 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionAccountActionLifted:
 		return true
-	case AdminAuditActionAccountDeletionCancelled:
+	case AdminAuditActionAccountDeletionCanceled:
 		return true
 	case AdminAuditActionAccountMoved:
 		return true
@@ -475,6 +431,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
+		return true
+	case AdminAuditActionInstanceMarkedAvailable:
 		return true
 	case AdminAuditActionInviteCreated:
 		return true
@@ -799,27 +757,6 @@ func (e AdminDomainActionKind) Valid() bool {
 	}
 }
 
-// Defines values for AdminDomainActionState.
-const (
-	AdminDomainActionStateActive  AdminDomainActionState = "active"
-	AdminDomainActionStateExpired AdminDomainActionState = "expired"
-	AdminDomainActionStateLifted  AdminDomainActionState = "lifted"
-)
-
-// Valid indicates whether the value is a known member of the AdminDomainActionState enum.
-func (e AdminDomainActionState) Valid() bool {
-	switch e {
-	case AdminDomainActionStateActive:
-		return true
-	case AdminDomainActionStateExpired:
-		return true
-	case AdminDomainActionStateLifted:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for AdminInstanceState.
 const (
 	AdminInstanceStateAvailable   AdminInstanceState = "available"
@@ -925,54 +862,6 @@ func (e AdminLoginProviderState) Valid() bool {
 	}
 }
 
-// Defines values for AdminReportCategory.
-const (
-	AdminReportCategoryLegal     AdminReportCategory = "legal"
-	AdminReportCategoryOther     AdminReportCategory = "other"
-	AdminReportCategorySpam      AdminReportCategory = "spam"
-	AdminReportCategoryViolation AdminReportCategory = "violation"
-)
-
-// Valid indicates whether the value is a known member of the AdminReportCategory enum.
-func (e AdminReportCategory) Valid() bool {
-	switch e {
-	case AdminReportCategoryLegal:
-		return true
-	case AdminReportCategoryOther:
-		return true
-	case AdminReportCategorySpam:
-		return true
-	case AdminReportCategoryViolation:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for AdminReportDetailCategory.
-const (
-	AdminReportDetailCategoryLegal     AdminReportDetailCategory = "legal"
-	AdminReportDetailCategoryOther     AdminReportDetailCategory = "other"
-	AdminReportDetailCategorySpam      AdminReportDetailCategory = "spam"
-	AdminReportDetailCategoryViolation AdminReportDetailCategory = "violation"
-)
-
-// Valid indicates whether the value is a known member of the AdminReportDetailCategory enum.
-func (e AdminReportDetailCategory) Valid() bool {
-	switch e {
-	case AdminReportDetailCategoryLegal:
-		return true
-	case AdminReportDetailCategoryOther:
-		return true
-	case AdminReportDetailCategorySpam:
-		return true
-	case AdminReportDetailCategoryViolation:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for AdminReportOutcome.
 const (
 	AdminReportOutcomeActioned  AdminReportOutcome = "actioned"
@@ -1048,21 +937,33 @@ func (e AdminSignupBlockSeverity) Valid() bool {
 	}
 }
 
-// Defines values for AdminSignupBlockState.
+// Defines values for AdminVoiceRoomParticipationLeaveReason.
 const (
-	AdminSignupBlockStateActive  AdminSignupBlockState = "active"
-	AdminSignupBlockStateExpired AdminSignupBlockState = "expired"
-	AdminSignupBlockStateLifted  AdminSignupBlockState = "lifted"
+	AdminVoiceRoomParticipationLeaveReasonBlocked      AdminVoiceRoomParticipationLeaveReason = "blocked"
+	AdminVoiceRoomParticipationLeaveReasonDisconnected AdminVoiceRoomParticipationLeaveReason = "disconnected"
+	AdminVoiceRoomParticipationLeaveReasonLeft         AdminVoiceRoomParticipationLeaveReason = "left"
+	AdminVoiceRoomParticipationLeaveReasonMoved        AdminVoiceRoomParticipationLeaveReason = "moved"
+	AdminVoiceRoomParticipationLeaveReasonRemoved      AdminVoiceRoomParticipationLeaveReason = "removed"
+	AdminVoiceRoomParticipationLeaveReasonRoomEnded    AdminVoiceRoomParticipationLeaveReason = "room_ended"
+	AdminVoiceRoomParticipationLeaveReasonSuspended    AdminVoiceRoomParticipationLeaveReason = "suspended"
 )
 
-// Valid indicates whether the value is a known member of the AdminSignupBlockState enum.
-func (e AdminSignupBlockState) Valid() bool {
+// Valid indicates whether the value is a known member of the AdminVoiceRoomParticipationLeaveReason enum.
+func (e AdminVoiceRoomParticipationLeaveReason) Valid() bool {
 	switch e {
-	case AdminSignupBlockStateActive:
+	case AdminVoiceRoomParticipationLeaveReasonBlocked:
 		return true
-	case AdminSignupBlockStateExpired:
+	case AdminVoiceRoomParticipationLeaveReasonDisconnected:
 		return true
-	case AdminSignupBlockStateLifted:
+	case AdminVoiceRoomParticipationLeaveReasonLeft:
+		return true
+	case AdminVoiceRoomParticipationLeaveReasonMoved:
+		return true
+	case AdminVoiceRoomParticipationLeaveReasonRemoved:
+		return true
+	case AdminVoiceRoomParticipationLeaveReasonRoomEnded:
+		return true
+	case AdminVoiceRoomParticipationLeaveReasonSuspended:
 		return true
 	default:
 		return false
@@ -1503,6 +1404,7 @@ func (e ClientErrorReportKind) Valid() bool {
 
 // Defines values for ConfirmedOperation.
 const (
+	ConfirmedOperationAccountDeactivation ConfirmedOperation = "account_deactivation"
 	ConfirmedOperationAccountDeletion     ConfirmedOperation = "account_deletion"
 	ConfirmedOperationAccountMove         ConfirmedOperation = "account_move"
 	ConfirmedOperationLink                ConfirmedOperation = "link"
@@ -1514,6 +1416,8 @@ const (
 // Valid indicates whether the value is a known member of the ConfirmedOperation enum.
 func (e ConfirmedOperation) Valid() bool {
 	switch e {
+	case ConfirmedOperationAccountDeactivation:
+		return true
 	case ConfirmedOperationAccountDeletion:
 		return true
 	case ConfirmedOperationAccountMove:
@@ -1870,6 +1774,42 @@ func (e DataImportSkippedReason) Valid() bool {
 	}
 }
 
+// Defines values for DeactivationPreviewRefusal.
+const (
+	DeactivationPreviewRefusalAlreadyDeactivated  DeactivationPreviewRefusal = "already_deactivated"
+	DeactivationPreviewRefusalDeletionScheduled   DeactivationPreviewRefusal = "deletion_scheduled"
+	DeactivationPreviewRefusalLastAdministrator   DeactivationPreviewRefusal = "last_administrator"
+	DeactivationPreviewRefusalLoginRestricted     DeactivationPreviewRefusal = "login_restricted"
+	DeactivationPreviewRefusalMoved               DeactivationPreviewRefusal = "moved"
+	DeactivationPreviewRefusalPaidSubscription    DeactivationPreviewRefusal = "paid_subscription"
+	DeactivationPreviewRefusalRecentlyReactivated DeactivationPreviewRefusal = "recently_reactivated"
+	DeactivationPreviewRefusalRegistrationPending DeactivationPreviewRefusal = "registration_pending"
+)
+
+// Valid indicates whether the value is a known member of the DeactivationPreviewRefusal enum.
+func (e DeactivationPreviewRefusal) Valid() bool {
+	switch e {
+	case DeactivationPreviewRefusalAlreadyDeactivated:
+		return true
+	case DeactivationPreviewRefusalDeletionScheduled:
+		return true
+	case DeactivationPreviewRefusalLastAdministrator:
+		return true
+	case DeactivationPreviewRefusalLoginRestricted:
+		return true
+	case DeactivationPreviewRefusalMoved:
+		return true
+	case DeactivationPreviewRefusalPaidSubscription:
+		return true
+	case DeactivationPreviewRefusalRecentlyReactivated:
+		return true
+	case DeactivationPreviewRefusalRegistrationPending:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DomainBlockImportStatus.
 const (
 	DomainBlockImportStatusAlreadyApplied DomainBlockImportStatus = "already_applied"
@@ -1877,6 +1817,7 @@ const (
 	DomainBlockImportStatusImportable     DomainBlockImportStatus = "importable"
 	DomainBlockImportStatusInvalid        DomainBlockImportStatus = "invalid"
 	DomainBlockImportStatusNoAction       DomainBlockImportStatus = "no_action"
+	DomainBlockImportStatusOwnDomain      DomainBlockImportStatus = "own_domain"
 )
 
 // Valid indicates whether the value is a known member of the DomainBlockImportStatus enum.
@@ -1891,6 +1832,8 @@ func (e DomainBlockImportStatus) Valid() bool {
 	case DomainBlockImportStatusInvalid:
 		return true
 	case DomainBlockImportStatusNoAction:
+		return true
+	case DomainBlockImportStatusOwnDomain:
 		return true
 	default:
 		return false
@@ -1993,6 +1936,27 @@ func (e ErrorGroupKind) Valid() bool {
 	case ErrorGroupKindError:
 		return true
 	case ErrorGroupKindPanic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ErrorGroupSampleRole.
+const (
+	ErrorGroupSampleRoleAll    ErrorGroupSampleRole = "all"
+	ErrorGroupSampleRoleWeb    ErrorGroupSampleRole = "web"
+	ErrorGroupSampleRoleWorker ErrorGroupSampleRole = "worker"
+)
+
+// Valid indicates whether the value is a known member of the ErrorGroupSampleRole enum.
+func (e ErrorGroupSampleRole) Valid() bool {
+	switch e {
+	case ErrorGroupSampleRoleAll:
+		return true
+	case ErrorGroupSampleRoleWeb:
+		return true
+	case ErrorGroupSampleRoleWorker:
 		return true
 	default:
 		return false
@@ -2158,6 +2122,27 @@ func (e InstanceVoiceRoomStarters) Valid() bool {
 	}
 }
 
+// Defines values for InstanceAudience.
+const (
+	InstanceAudienceEveryone InstanceAudience = "everyone"
+	InstanceAudienceOff      InstanceAudience = "off"
+	InstanceAudienceSignedIn InstanceAudience = "signed_in"
+)
+
+// Valid indicates whether the value is a known member of the InstanceAudience enum.
+func (e InstanceAudience) Valid() bool {
+	switch e {
+	case InstanceAudienceEveryone:
+		return true
+	case InstanceAudienceOff:
+		return true
+	case InstanceAudienceSignedIn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceDocumentKind.
 const (
 	InstanceDocumentKindCommerceDisclosure InstanceDocumentKind = "commerce_disclosure"
@@ -2248,7 +2233,8 @@ func (e InstanceRegistrationsMode) Valid() bool {
 // Defines values for InstanceSettingKey.
 const (
 	InstanceSettingKeyAiUsage                          InstanceSettingKey = "ai_usage"
-	InstanceSettingKeyAppealWindow                     InstanceSettingKey = "appeal_window"
+	InstanceSettingKeyAppealWindowDays                 InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyAuditLogRetentionDays            InstanceSettingKey = "audit_log_retention_days"
 	InstanceSettingKeyAuthorizedFetch                  InstanceSettingKey = "authorized_fetch"
 	InstanceSettingKeyContactAccount                   InstanceSettingKey = "contact_account"
 	InstanceSettingKeyContactEmail                     InstanceSettingKey = "contact_email"
@@ -2257,7 +2243,7 @@ const (
 	InstanceSettingKeyDomainActionsVisibility          InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration        InstanceSettingKey = "dynamic_client_registration"
 	InstanceSettingKeyFeaturedAccounts                 InstanceSettingKey = "featured_accounts"
-	InstanceSettingKeyFederatedTimelineAccess          InstanceSettingKey = "federated_timeline_access"
+	InstanceSettingKeyFederatedTimelineVisibility      InstanceSettingKey = "federated_timeline_visibility"
 	InstanceSettingKeyFederationMode                   InstanceSettingKey = "federation_mode"
 	InstanceSettingKeyFinanceViewerIncome              InstanceSettingKey = "finance_viewer_income"
 	InstanceSettingKeyFinanceViewerItemMemos           InstanceSettingKey = "finance_viewer_item_memos"
@@ -2266,32 +2252,31 @@ const (
 	InstanceSettingKeyIncomeVisibility                 InstanceSettingKey = "income_visibility"
 	InstanceSettingKeyIndexableDefault                 InstanceSettingKey = "indexable_default"
 	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
-	InstanceSettingKeyLinkCardsEnabled                 InstanceSettingKey = "link_cards_enabled"
+	InstanceSettingKeyLinkCards                        InstanceSettingKey = "link_cards"
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt         InstanceSettingKey = "link_cards_ignore_robots_txt"
-	InstanceSettingKeyLocalTimelineAccess              InstanceSettingKey = "local_timeline_access"
+	InstanceSettingKeyLocalTimelineVisibility          InstanceSettingKey = "local_timeline_visibility"
 	InstanceSettingKeyLoginProvidersOnly               InstanceSettingKey = "login_providers_only"
 	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
 	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
-	InstanceSettingKeyMemberInviteMaxExpiresIn         InstanceSettingKey = "member_invite_max_expires_in"
+	InstanceSettingKeyMemberInviteMaxLifetimeSeconds   InstanceSettingKey = "member_invite_max_lifetime_seconds"
 	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
+	InstanceSettingKeyModerationActionsRetentionDays   InstanceSettingKey = "moderation_actions_retention_days"
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
 	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
-	InstanceSettingKeyRemoteMediaCacheTtl              InstanceSettingKey = "remote_media_cache_ttl"
+	InstanceSettingKeyRegistrationOriginsRetentionDays InstanceSettingKey = "registration_origins_retention_days"
+	InstanceSettingKeyRemoteMediaCacheTtlSeconds       InstanceSettingKey = "remote_media_cache_ttl_seconds"
 	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
+	InstanceSettingKeyReportsRetentionDays             InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription          InstanceSettingKey = "require_media_description"
-	InstanceSettingKeyRetentionAuditLog                InstanceSettingKey = "retention_audit_log"
-	InstanceSettingKeyRetentionModerationActions       InstanceSettingKey = "retention_moderation_actions"
-	InstanceSettingKeyRetentionRegistrationOrigins     InstanceSettingKey = "retention_registration_origins"
-	InstanceSettingKeyRetentionReports                 InstanceSettingKey = "retention_reports"
-	InstanceSettingKeyRetentionSessionOrigins          InstanceSettingKey = "retention_session_origins"
-	InstanceSettingKeyRetentionVoiceParticipants       InstanceSettingKey = "retention_voice_participants"
 	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySecurityContact                  InstanceSettingKey = "security_contact"
+	InstanceSettingKeySessionOriginsRetentionDays      InstanceSettingKey = "session_origins_retention_days"
 	InstanceSettingKeySupporterListVisibility          InstanceSettingKey = "supporter_list_visibility"
 	InstanceSettingKeyThumbnail                        InstanceSettingKey = "thumbnail"
 	InstanceSettingKeyUserAppRegistration              InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyVoiceParticipantsRetentionDays   InstanceSettingKey = "voice_participants_retention_days"
 	InstanceSettingKeyVoicePublicSummary               InstanceSettingKey = "voice_public_summary"
 	InstanceSettingKeyVoiceRoomStarters                InstanceSettingKey = "voice_room_starters"
 )
@@ -2301,7 +2286,9 @@ func (e InstanceSettingKey) Valid() bool {
 	switch e {
 	case InstanceSettingKeyAiUsage:
 		return true
-	case InstanceSettingKeyAppealWindow:
+	case InstanceSettingKeyAppealWindowDays:
+		return true
+	case InstanceSettingKeyAuditLogRetentionDays:
 		return true
 	case InstanceSettingKeyAuthorizedFetch:
 		return true
@@ -2319,7 +2306,7 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyFeaturedAccounts:
 		return true
-	case InstanceSettingKeyFederatedTimelineAccess:
+	case InstanceSettingKeyFederatedTimelineVisibility:
 		return true
 	case InstanceSettingKeyFederationMode:
 		return true
@@ -2337,11 +2324,11 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyInviteCreators:
 		return true
-	case InstanceSettingKeyLinkCardsEnabled:
+	case InstanceSettingKeyLinkCards:
 		return true
 	case InstanceSettingKeyLinkCardsIgnoreRobotsTxt:
 		return true
-	case InstanceSettingKeyLocalTimelineAccess:
+	case InstanceSettingKeyLocalTimelineVisibility:
 		return true
 	case InstanceSettingKeyLoginProvidersOnly:
 		return true
@@ -2349,9 +2336,11 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyMemberInviteMaxActive:
 		return true
-	case InstanceSettingKeyMemberInviteMaxExpiresIn:
+	case InstanceSettingKeyMemberInviteMaxLifetimeSeconds:
 		return true
 	case InstanceSettingKeyMemberInviteMaxUses:
+		return true
+	case InstanceSettingKeyModerationActionsRetentionDays:
 		return true
 	case InstanceSettingKeyOauthMetadataDocumentClients:
 		return true
@@ -2361,33 +2350,29 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyRegistrationMode:
 		return true
-	case InstanceSettingKeyRemoteMediaCacheTtl:
+	case InstanceSettingKeyRegistrationOriginsRetentionDays:
+		return true
+	case InstanceSettingKeyRemoteMediaCacheTtlSeconds:
 		return true
 	case InstanceSettingKeyRemoteMediaPolicy:
 		return true
+	case InstanceSettingKeyReportsRetentionDays:
+		return true
 	case InstanceSettingKeyRequireMediaDescription:
-		return true
-	case InstanceSettingKeyRetentionAuditLog:
-		return true
-	case InstanceSettingKeyRetentionModerationActions:
-		return true
-	case InstanceSettingKeyRetentionRegistrationOrigins:
-		return true
-	case InstanceSettingKeyRetentionReports:
-		return true
-	case InstanceSettingKeyRetentionSessionOrigins:
-		return true
-	case InstanceSettingKeyRetentionVoiceParticipants:
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
 	case InstanceSettingKeySecurityContact:
+		return true
+	case InstanceSettingKeySessionOriginsRetentionDays:
 		return true
 	case InstanceSettingKeySupporterListVisibility:
 		return true
 	case InstanceSettingKeyThumbnail:
 		return true
 	case InstanceSettingKeyUserAppRegistration:
+		return true
+	case InstanceSettingKeyVoiceParticipantsRetentionDays:
 		return true
 	case InstanceSettingKeyVoicePublicSummary:
 		return true
@@ -2650,6 +2635,27 @@ func (e MediaUploadPurpose) Valid() bool {
 	case MediaUploadPurposeEmoji:
 		return true
 	case MediaUploadPurposeHeader:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ModerationActionState.
+const (
+	ModerationActionStateActive  ModerationActionState = "active"
+	ModerationActionStateExpired ModerationActionState = "expired"
+	ModerationActionStateLifted  ModerationActionState = "lifted"
+)
+
+// Valid indicates whether the value is a known member of the ModerationActionState enum.
+func (e ModerationActionState) Valid() bool {
+	switch e {
+	case ModerationActionStateActive:
+		return true
+	case ModerationActionStateExpired:
+		return true
+	case ModerationActionStateLifted:
 		return true
 	default:
 		return false
@@ -3598,27 +3604,6 @@ func (e SupporterInterval) Valid() bool {
 	}
 }
 
-// Defines values for SupporterListVisibility.
-const (
-	SupporterListVisibilityOff      SupporterListVisibility = "off"
-	SupporterListVisibilityPublic   SupporterListVisibility = "public"
-	SupporterListVisibilitySignedIn SupporterListVisibility = "signed_in"
-)
-
-// Valid indicates whether the value is a known member of the SupporterListVisibility enum.
-func (e SupporterListVisibility) Valid() bool {
-	switch e {
-	case SupporterListVisibilityOff:
-		return true
-	case SupporterListVisibilityPublic:
-		return true
-	case SupporterListVisibilitySignedIn:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for SupporterPlanProblemReason.
 const (
 	SupporterPlanProblemReasonAnnualDiscountPercent SupporterPlanProblemReason = "annual_discount_percent"
@@ -3811,27 +3796,6 @@ func (e ThemeErrorScheme) Valid() bool {
 	}
 }
 
-// Defines values for TimelineAccess.
-const (
-	TimelineAccessEveryone TimelineAccess = "everyone"
-	TimelineAccessLoggedIn TimelineAccess = "logged_in"
-	TimelineAccessOff      TimelineAccess = "off"
-)
-
-// Valid indicates whether the value is a known member of the TimelineAccess enum.
-func (e TimelineAccess) Valid() bool {
-	switch e {
-	case TimelineAccessEveryone:
-		return true
-	case TimelineAccessLoggedIn:
-		return true
-	case TimelineAccessOff:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for Visibility.
 const (
 	VisibilityDirect   Visibility = "direct"
@@ -3853,6 +3817,60 @@ func (e Visibility) Valid() bool {
 	case VisibilityPublic:
 		return true
 	case VisibilityUnlisted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceEndReason.
+const (
+	VoiceEndReasonDisabled         VoiceEndReason = "disabled"
+	VoiceEndReasonEmpty            VoiceEndReason = "empty"
+	VoiceEndReasonHost             VoiceEndReason = "host"
+	VoiceEndReasonHostDisconnected VoiceEndReason = "host_disconnected"
+	VoiceEndReasonHostIneligible   VoiceEndReason = "host_ineligible"
+	VoiceEndReasonModerator        VoiceEndReason = "moderator"
+	VoiceEndReasonTimeLimit        VoiceEndReason = "time_limit"
+)
+
+// Valid indicates whether the value is a known member of the VoiceEndReason enum.
+func (e VoiceEndReason) Valid() bool {
+	switch e {
+	case VoiceEndReasonDisabled:
+		return true
+	case VoiceEndReasonEmpty:
+		return true
+	case VoiceEndReasonHost:
+		return true
+	case VoiceEndReasonHostDisconnected:
+		return true
+	case VoiceEndReasonHostIneligible:
+		return true
+	case VoiceEndReasonModerator:
+		return true
+	case VoiceEndReasonTimeLimit:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceGrantKind.
+const (
+	VoiceGrantKindLivekit VoiceGrantKind = "livekit"
+	VoiceGrantKindP2p     VoiceGrantKind = "p2p"
+	VoiceGrantKindSora    VoiceGrantKind = "sora"
+)
+
+// Valid indicates whether the value is a known member of the VoiceGrantKind enum.
+func (e VoiceGrantKind) Valid() bool {
+	switch e {
+	case VoiceGrantKindLivekit:
+		return true
+	case VoiceGrantKindP2p:
+		return true
+	case VoiceGrantKindSora:
 		return true
 	default:
 		return false
@@ -3979,6 +3997,63 @@ func (e VoiceSignalKind) Valid() bool {
 	case VoiceSignalKindOffer:
 		return true
 	case VoiceSignalKindRestart:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceStreamEndReason.
+const (
+	VoiceStreamEndReasonBlocked          VoiceStreamEndReason = "blocked"
+	VoiceStreamEndReasonDisabled         VoiceStreamEndReason = "disabled"
+	VoiceStreamEndReasonDisconnected     VoiceStreamEndReason = "disconnected"
+	VoiceStreamEndReasonEmpty            VoiceStreamEndReason = "empty"
+	VoiceStreamEndReasonHost             VoiceStreamEndReason = "host"
+	VoiceStreamEndReasonHostDisconnected VoiceStreamEndReason = "host_disconnected"
+	VoiceStreamEndReasonHostIneligible   VoiceStreamEndReason = "host_ineligible"
+	VoiceStreamEndReasonLeft             VoiceStreamEndReason = "left"
+	VoiceStreamEndReasonModerator        VoiceStreamEndReason = "moderator"
+	VoiceStreamEndReasonMoved            VoiceStreamEndReason = "moved"
+	VoiceStreamEndReasonRemoved          VoiceStreamEndReason = "removed"
+	VoiceStreamEndReasonReplaced         VoiceStreamEndReason = "replaced"
+	VoiceStreamEndReasonRoomEnded        VoiceStreamEndReason = "room_ended"
+	VoiceStreamEndReasonSuspended        VoiceStreamEndReason = "suspended"
+	VoiceStreamEndReasonTimeLimit        VoiceStreamEndReason = "time_limit"
+)
+
+// Valid indicates whether the value is a known member of the VoiceStreamEndReason enum.
+func (e VoiceStreamEndReason) Valid() bool {
+	switch e {
+	case VoiceStreamEndReasonBlocked:
+		return true
+	case VoiceStreamEndReasonDisabled:
+		return true
+	case VoiceStreamEndReasonDisconnected:
+		return true
+	case VoiceStreamEndReasonEmpty:
+		return true
+	case VoiceStreamEndReasonHost:
+		return true
+	case VoiceStreamEndReasonHostDisconnected:
+		return true
+	case VoiceStreamEndReasonHostIneligible:
+		return true
+	case VoiceStreamEndReasonLeft:
+		return true
+	case VoiceStreamEndReasonModerator:
+		return true
+	case VoiceStreamEndReasonMoved:
+		return true
+	case VoiceStreamEndReasonRemoved:
+		return true
+	case VoiceStreamEndReasonReplaced:
+		return true
+	case VoiceStreamEndReasonRoomEnded:
+		return true
+	case VoiceStreamEndReasonSuspended:
+		return true
+	case VoiceStreamEndReasonTimeLimit:
 		return true
 	default:
 		return false
@@ -4174,15 +4249,16 @@ func (e ListReportsParamsOrder) Valid() bool {
 	}
 }
 
-// AIUsage What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
+// AIUsage What the instance states to AI crawlers (the instance setting `ai_usage`).
 // `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
 // and no use by AI search, assistants, and agents. An account can opt out of what the
 // instance allows (`ai_opt_out`), never the reverse.
 type AIUsage string
 
-// Account An account, as clients show it (FR-006).
+// Account An account, as clients show it.
 type Account struct {
-	// Acct The username for local accounts, `username@domain` for remote ones.
+	// Acct The username for local accounts, `username@domain` for remote ones; empty for a remote
+	// account without a confirmed handle.
 	Acct string `json:"acct"`
 
 	// Avatar The avatar image, square; omitted when the account has none, or its image is not
@@ -4190,7 +4266,7 @@ type Account struct {
 	// remote account, every size is its media proxy URL.
 	Avatar *MediaVariants `json:"avatar,omitempty"`
 
-	// Badges The role badges that the account shows on its profile, highest role first (ADR-0071).
+	// Badges The role badges that the account shows on its profile, highest role first.
 	// Filled on the account's own endpoints (`getAccount`, `lookupAccount`,
 	// `verifyAccountCredentials`) only, and empty where accounts are listed or embedded (posts,
 	// notifications, lists of accounts) and for remote accounts. Badges are never federated.
@@ -4210,8 +4286,7 @@ type Account struct {
 	// confirmed handle.
 	Domain string `json:"domain"`
 
-	// Emojis The custom emoji of the display name, the note, and the fields' names and values
-	// (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+	// Emojis The custom emoji of the display name, the note, and the fields' names and values. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text.
 	Emojis []CustomEmoji `json:"emojis"`
 
@@ -4237,7 +4312,7 @@ type Account struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
-	// Moved The account that the account moved to (ADR-0089), when it moved: clients show that it
+	// Moved The account that the account moved to, when it moved: clients show that it
 	// moved, with a link to this one. Present on the account's own endpoints, where
 	// `followers_count` is, and without a `moved` of its own (moves are not followed in
 	// chains).
@@ -4253,7 +4328,7 @@ type Account struct {
 	// one the page its actor declares (`url`), or its `uri` when it declares none.
 	Url string `json:"url"`
 
-	// Username The username, without the domain.
+	// Username The username, without the domain; empty for a remote account without a confirmed handle.
 	Username string `json:"username"`
 
 	// VoiceRoom The open voice chat room where the account is the host or a speaker, when the user sees
@@ -4261,7 +4336,7 @@ type Account struct {
 	VoiceRoom *VoiceRoomEntry `json:"voice_room,omitempty"`
 }
 
-// AccountAlias An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
+// AccountAlias An account that the user moves from: the user's actor names it in
 // `alsoKnownAs`, which lets it move its followers to the user. An alias alone changes nothing.
 type AccountAlias struct {
 	// Acct The handle of the alias, `username` for a local account and `username@domain` for a
@@ -4277,14 +4352,14 @@ type AccountAlias struct {
 
 // AccountAliasList The aliases of the user, oldest first; at most 5.
 type AccountAliasList struct {
-	Aliases []AccountAlias `json:"aliases"`
+	Items []AccountAlias `json:"items"`
 }
 
-// AccountBadge A badge that the account shows on its profile (ADR-0071): the badge of a role that the
+// AccountBadge A badge that the account shows on its profile: the badge of a role that the
 // account's user holds and chose to show. Clients show `label` as user content (`dir="auto"`),
 // never translated.
 type AccountBadge struct {
-	// Color The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+	// Color The color of a role badge: the name of a pair of the web client's design tokens
 	// for its background and its text, which keep their contrast in the light and the dark theme.
 	// Server themes do not change them. The color is decoration; the badge's `label` carries its
 	// meaning.
@@ -4308,8 +4383,13 @@ type AccountFieldSource struct {
 	Value string `json:"value"`
 }
 
+// AccountList The accounts, best match first.
+type AccountList struct {
+	Items []Account `json:"items"`
+}
+
 // AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
-// `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+// `account` moved to `target`. Only the user's follows of the moved account move;
 // its posts stay where they are.
 type AccountMove struct {
 	// Outcome What became of the user's follow of the moved account, for an `account_moved` only:
@@ -4332,7 +4412,7 @@ type AccountMoveOutcome string
 
 // AccountPage A page of accounts.
 type AccountPage struct {
-	Accounts []Account `json:"accounts"`
+	Items []Account `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -4341,13 +4421,13 @@ type AccountPage struct {
 // AccountSource The profile as the user typed it, for editing.
 type AccountSource struct {
 	// AvatarMediaId The media file of the avatar; omitted when there is none.
-	AvatarMediaId *string `json:"avatar_media_id,omitempty"`
+	AvatarMediaId *Id `json:"avatar_media_id,omitempty"`
 
 	// Fields The metadata fields as typed, in the order of the account's `fields`.
 	Fields []AccountFieldSource `json:"fields"`
 
 	// HeaderMediaId The media file of the header image; omitted when there is none.
-	HeaderMediaId *string `json:"header_media_id,omitempty"`
+	HeaderMediaId *Id `json:"header_media_id,omitempty"`
 
 	// Note The profile text as plain text; empty when there is none.
 	Note string `json:"note"`
@@ -4362,7 +4442,7 @@ type AccountStatusPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 
 	// RemoteFetchStarted `true` when this request started fetching the remote account's recent public
-	// posts from its server (ADR-0044). The fetch runs in the background; read the
+	// posts from its server. The fetch runs in the background; read the
 	// first page again a few seconds later to see what it stored. Absent otherwise,
 	// including when a fetch started in the last day.
 	RemoteFetchStarted *bool `json:"remote_fetch_started,omitempty"`
@@ -4370,7 +4450,7 @@ type AccountStatusPage struct {
 
 // AccountSuggestion An account suggested to follow, with why it is suggested.
 type AccountSuggestion struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Source Why the account is suggested: `featured` when the administrators feature it,
@@ -4382,6 +4462,11 @@ type AccountSuggestion struct {
 // `recently_active` when it posted recently.
 type AccountSuggestionSource string
 
+// AccountSuggestionList The suggested accounts.
+type AccountSuggestionList struct {
+	Items []AccountSuggestion `json:"items"`
+}
+
 // AddAccountAliasRequest The account to add as an alias.
 type AddAccountAliasRequest struct {
 	// Acct The handle, `username` or `username@domain` (a leading `@` is ignored), or the `https`
@@ -4389,9 +4474,9 @@ type AddAccountAliasRequest struct {
 	Acct string `json:"acct"`
 }
 
-// AdminAccount An account as the moderators see it (FR-714). It never includes an email or IP address.
+// AdminAccount An account as the moderators see it. It never includes an email or IP address.
 type AdminAccount struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -4404,20 +4489,20 @@ type AdminAccount struct {
 
 	// RegistrationState Where the registration of a local account stands; a user made with the command line is
 	// `approved`. Omitted for a remote account.
-	RegistrationState *AdminAccountRegistrationState `json:"registration_state,omitempty"`
+	RegistrationState *RegistrationState `json:"registration_state,omitempty"`
 
-	// Restrictions What the account's own actions take away now (data-model §5.2), in a fixed order.
+	// Restrictions What the account's own actions take away now, in a fixed order.
 	// The domain actions on its domain are listed apart.
 	Restrictions []AdminAccountRestriction `json:"restrictions"`
 
 	// State The state of an account, the first that applies: `deleted` (deleted here or on its
-	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-	// and `pending` (the registration of a local account), `limited` (a `limit`), and
+	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+	// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 	// `active`.
 	State AdminAccountState `json:"state"`
 }
 
-// AdminAccountAction A moderation action on an account (FR-703).
+// AdminAccountAction A moderation action on an account.
 type AdminAccountAction struct {
 	// AccountId The account the action is on.
 	AccountId Id `json:"account_id"`
@@ -4435,8 +4520,7 @@ type AdminAccountAction struct {
 	// system.
 	IssuedByAccountId *Id `json:"issued_by_account_id,omitempty"`
 
-	// Issuer `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-	// account's own server.
+	// Issuer `moderator`: a moderator or the CLI.
 	Issuer AdminAccountActionIssuer `json:"issuer"`
 
 	// Kind `warn`: a notice only. `mark_statuses_sensitive` and `delete_statuses`: actions on
@@ -4470,15 +4554,14 @@ type AdminAccountAction struct {
 
 	// State `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
 	// lifted it.
-	State AdminAccountActionState `json:"state"`
+	State ModerationActionState `json:"state"`
 
 	// StatusIds The posts of the account that `delete_statuses` or `mark_statuses_sensitive` acts
 	// on, in ID order; omitted for the other kinds.
 	StatusIds *[]Id `json:"status_ids,omitempty"`
 }
 
-// AdminAccountActionIssuer `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-// account's own server.
+// AdminAccountActionIssuer `moderator`: a moderator or the CLI.
 type AdminAccountActionIssuer string
 
 // AdminAccountActionCategory The kind of reason for an action.
@@ -4500,13 +4583,9 @@ type AdminAccountActionPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminAccountActionState `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-// lifted it.
-type AdminAccountActionState string
-
-// AdminAccountDetail The details of an account (FR-714).
+// AdminAccountDetail The details of an account.
 type AdminAccountDetail struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Actions The newest 20 actions on the account, newest first.
@@ -4534,12 +4613,13 @@ type AdminAccountDetail struct {
 
 	// RegistrationState Where the registration of a local account stands; a user made with the command line is
 	// `approved`. Omitted for a remote account.
-	RegistrationState *AdminAccountRegistrationState `json:"registration_state,omitempty"`
+	RegistrationState *RegistrationState `json:"registration_state,omitempty"`
 
-	// Reports The newest 20 reports of the account, newest first.
-	Reports []AdminReport `json:"reports"`
+	// Reports The newest 20 reports of the account, newest first; omitted unless the viewer also has
+	// the `manage_reports` permission.
+	Reports *[]AdminReport `json:"reports,omitempty"`
 
-	// Restrictions What the account's own actions take away now (data-model §5.2), in a fixed order.
+	// Restrictions What the account's own actions take away now, in a fixed order.
 	// The domain actions on its domain are listed apart.
 	Restrictions []AdminAccountRestriction `json:"restrictions"`
 
@@ -4547,8 +4627,8 @@ type AdminAccountDetail struct {
 	Roles []string `json:"roles"`
 
 	// State The state of an account, the first that applies: `deleted` (deleted here or on its
-	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-	// and `pending` (the registration of a local account), `limited` (a `limit`), and
+	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+	// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 	// `active`.
 	State AdminAccountState `json:"state"`
 
@@ -4585,7 +4665,7 @@ type AdminAccountPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminAccountPrivateData The email address and the IP addresses of a local account (FR-714). Showing them is
+// AdminAccountPrivateData The email address and the IP addresses of a local account. Showing them is
 // recorded in the audit log.
 type AdminAccountPrivateData struct {
 	// Email The primary email address; omitted when there is none.
@@ -4611,6 +4691,10 @@ type AdminAccountPrivateData struct {
 
 // AdminAccountRegistration The registration application of a local account.
 type AdminAccountRegistration struct {
+	// DecisionNote The moderators' note on the decision, as plain text; omitted while the registration is
+	// pending and when the decision has no note.
+	DecisionNote *string `json:"decision_note,omitempty"`
+
 	// Invite The invite that a local account signed up with, and who created it, which invited the user.
 	Invite *AdminAccountInvite `json:"invite,omitempty"`
 
@@ -4627,12 +4711,8 @@ type AdminAccountRegistration struct {
 	SubmittedAt    time.Time `json:"submitted_at"`
 }
 
-// AdminAccountRegistrationState Where the registration of a local account stands; a user made with the command line is
-// `approved`. Omitted for a remote account.
-type AdminAccountRegistrationState string
-
-// AdminAccountRestriction A capability that an action takes away (data-model §5.2). `login`: logging in and the
-// API. `post`: posting, replying, boosting, editing. `interact`: following, favouriting,
+// AdminAccountRestriction A capability that an action takes away. `login`: logging in and the
+// API. `post`: posting, replying, boosting, quoting, editing. `interact`: following, favouriting,
 // boosting, voting. `visibility_ceiling_private`: posts are followers-only.
 // `public_discovery`: posts stay off the public timelines and search.
 // `unsolicited_reach`: notifications reach followers only. `media_sensitive`: media shows
@@ -4651,8 +4731,8 @@ type AdminAccountSignIn struct {
 }
 
 // AdminAccountState The state of an account, the first that applies: `deleted` (deleted here or on its
-// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-// and `pending` (the registration of a local account), `limited` (a `limit`), and
+// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 // `active`.
 type AdminAccountState string
 
@@ -4673,6 +4753,9 @@ type AdminAnnouncement struct {
 	// PublishedAt When it was last published; omitted for a draft.
 	PublishedAt *time.Time `json:"published_at,omitempty"`
 
+	// RevisedAt When its text or window last changed.
+	RevisedAt time.Time `json:"revised_at"`
+
 	// StartsAt When it starts to show once published; omitted to show it from its publication.
 	StartsAt *time.Time `json:"starts_at,omitempty"`
 
@@ -4683,11 +4766,8 @@ type AdminAnnouncement struct {
 	// Text The text, in Markdown.
 	Text string `json:"text"`
 
-	// Title The heading, in plain text; empty for an announcement without one.
+	// Title The heading, in plain text.
 	Title string `json:"title"`
-
-	// UpdatedAt When its text or window last changed.
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // AdminAnnouncementCreateRequest A new announcement, with its title, its text, and its window.
@@ -4740,7 +4820,7 @@ type AdminAppeal struct {
 	// AccountId The account that appealed, which the action is on.
 	AccountId Id `json:"account_id"`
 
-	// Action A moderation action on an account (FR-703).
+	// Action A moderation action on an account.
 	Action AdminAccountAction `json:"action"`
 
 	// DecidedAt When a moderator decided the appeal; omitted while pending.
@@ -4776,14 +4856,15 @@ type AdminAppealPage struct {
 }
 
 // AdminAuditAction The kind of an audited operation, each on one kind of target. On an `account`:
-// `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 // `revealed_private_data` (a moderator was shown the account's email address and IP
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 // suppression of the primary email address of the account's user), `account_moved` (a limited
 // local account moved to another local account, which does not inherit the limit). On a `domain`:
-// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+// cleared the failures of the server). On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 // `user` (a registration):
 // `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -4795,7 +4876,7 @@ type AdminAppealPage struct {
 // `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 // an `appeal`:
 // `appeal_upheld`, `appeal_overturned` (which also records the action's
-// `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -4836,7 +4917,7 @@ type AdminAppealPage struct {
 // the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
 // `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
 // the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-// `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+// `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
 // (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
 // and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
 // name.
@@ -4847,17 +4928,18 @@ type AdminAuditAction string
 // `remote`: another server.
 type AdminAuditActorKind string
 
-// AdminAuditEntry One operation of a moderator or an administrator (FR-704).
+// AdminAuditEntry One operation of a moderator or an administrator.
 type AdminAuditEntry struct {
 	// Action The kind of an audited operation, each on one kind of target. On an `account`:
-	// `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+	// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 	// `revealed_private_data` (a moderator was shown the account's email address and IP
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 	// suppression of the primary email address of the account's user), `account_moved` (a limited
 	// local account moved to another local account, which does not inherit the limit). On a `domain`:
-	// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+	// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+	// cleared the failures of the server). On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 	// `user` (a registration):
 	// `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -4869,7 +4951,7 @@ type AdminAuditEntry struct {
 	// `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 	// an `appeal`:
 	// `appeal_upheld`, `appeal_overturned` (which also records the action's
-	// `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+	// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -4910,7 +4992,7 @@ type AdminAuditEntry struct {
 	// the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
 	// `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
 	// the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-	// `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+	// `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
 	// (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
 	// and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
 	// name.
@@ -4934,20 +5016,22 @@ type AdminAuditEntry struct {
 	Id         Id        `json:"id"`
 	OccurredAt time.Time `json:"occurred_at"`
 
-	// SourceEventId The ID of the record of the operation (the domain action, the assignment, the
-	// resolution, the reopening, the note, the decision, the revision), which holds its
-	// reasons and notes; omitted when the operation has none.
+	// SourceEventId An opaque ID that relates the entries of one operation; omitted when the operation has
+	// no record of its own.
 	SourceEventId *string `json:"source_event_id,omitempty"`
 
 	// TargetExists Whether the target is still there to look at. It is `false` for an account, a report,
-	// an appeal, or a sign-up block that is gone (erased past its retention), and for a
-	// role, a custom emoji, a webhook, or a relay that was deleted, which only `target_label`
+	// an appeal, or a sign-up block that is gone (erased past its retention), for a role, a
+	// login provider, a custom emoji, a custom emoji request, a webhook, or a relay that was
+	// deleted, and for a link card domain whose rule was removed, which only `target_label`
 	// names now. It is `true` for the other kinds of targets, which are never removed.
 	TargetExists bool `json:"target_exists"`
 
-	// TargetId The target: the ID of an account, a report, an appeal, a user, a role, a rule, a
-	// sign-up block, a custom emoji, a webhook, or an invite, the domain of a domain action,
-	// or the key of a setting or a text.
+	// TargetId The target: the ID of an account, a status, a report, an appeal, a user, a role, a rule,
+	// a sign-up block, a custom emoji or a request for one, a webhook, an announcement, an
+	// invite, a relay, a cost item, a supporter plan or subscription, an OAuth client, a voice
+	// room, or a login provider; the domain of a domain action or a link card rule; the host of
+	// a denied OAuth client; the source of a billing import; or the key of a setting or a text.
 	TargetId string `json:"target_id"`
 
 	// TargetKind The kind of what an audited operation acted on.
@@ -5054,7 +5138,7 @@ type AdminCounts struct {
 	PendingRegistrations *int64 `json:"pending_registrations,omitempty"`
 }
 
-// AdminCustomEmoji A custom emoji as the administrators manage it (ADR-0051 §4): a local one, or a remote
+// AdminCustomEmoji A custom emoji as the administrators manage it: a local one, or a remote
 // one recorded from the posts and profiles of another server.
 type AdminCustomEmoji struct {
 	// Aliases The other names of a local emoji that the picker finds it by.
@@ -5066,7 +5150,7 @@ type AdminCustomEmoji struct {
 	// CreatedAt When the emoji was registered or first seen.
 	CreatedAt time.Time `json:"created_at"`
 
-	// CreatedBy The account of the user who made a local emoji (ADR-0070 §7): the requester of an
+	// CreatedBy The account of the user who made a local emoji: the requester of an
 	// approved request, or the administrator who registered or copied it. Absent for an emoji
 	// made with the CLI, a remote one, and one whose creator's account is deleted
 	// (`created_by_deleted`).
@@ -5136,7 +5220,7 @@ type AdminCustomEmojiRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Kind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+	// Kind What a custom emoji request asks for: `create` a new local custom emoji,
 	// or `image` a new image of a local emoji that the requester made.
 	Kind CustomEmojiRequestKind `json:"kind"`
 
@@ -5171,7 +5255,7 @@ type AdminCustomEmojiRequestPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminDomainAction A moderation action on a remote domain and its subdomains (FR-702).
+// AdminDomainAction A moderation action on a remote domain and its subdomains.
 type AdminDomainAction struct {
 	// Domain The domain, in IDNA A-labels.
 	Domain string `json:"domain"`
@@ -5205,7 +5289,7 @@ type AdminDomainAction struct {
 
 	// State `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
 	// lifted it.
-	State AdminDomainActionState `json:"state"`
+	State ModerationActionState `json:"state"`
 }
 
 // AdminDomainActionKind `suspend`: no federation with the domain at all. `limit`: its posts stay off the public
@@ -5222,17 +5306,13 @@ type AdminDomainActionPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminDomainActionState `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-// lifted it.
-type AdminDomainActionState string
-
 // AdminIncomePeriodTotal A week, month, or year of the income totals as the administrators see it: the `gross`, the
 // provider's `fee`, and the `net` (gross less fee) of each currency, sorted by currency code,
 // and the `balance`, the net less the costs of each currency under the same basis.
 type AdminIncomePeriodTotal struct {
 	Balance []Money `json:"balance"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn CalendarDate `json:"ends_on"`
 	Fee    []Money      `json:"fee"`
@@ -5240,16 +5320,16 @@ type AdminIncomePeriodTotal struct {
 	Label  string       `json:"label"`
 	Net    []Money      `json:"net"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
 
 // AdminIncomeTotals The income totals as the administrators see them over the periods from the one that holds
 // `from` to the one that holds `to`, oldest first, with the number of members of each
-// supporter plan now (ADR-0073 §6).
+// supporter plan now.
 type AdminIncomeTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -5257,12 +5337,12 @@ type AdminIncomeTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity          `json:"granularity"`
 	Periods     []AdminIncomePeriodTotal `json:"periods"`
 	Plans       []IncomePlanCount        `json:"plans"`
 
-	// Rules How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+	// Rules How the income totals cut the periods and place the payments, to show
 	// next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
 	// each money movement on its date in its payment provider's reporting time zone
 	// (`providers`), and under the `amortized` basis a payment that covers more than
@@ -5272,7 +5352,7 @@ type AdminIncomeTotals struct {
 	Rules IncomeTotalsRules `json:"rules"`
 }
 
-// AdminInstanceHealth Whether deliveries go to a remote server (federation.md §7.3).
+// AdminInstanceHealth Whether deliveries go to a remote server.
 type AdminInstanceHealth struct {
 	Domain string `json:"domain"`
 
@@ -5282,12 +5362,12 @@ type AdminInstanceHealth struct {
 	// LastFailureDay The latest of those days; omitted without failures.
 	LastFailureDay *openapi_types.Date `json:"last_failure_day,omitempty"`
 
-	// Since When the server entered its state; omitted for a server without failures.
-	Since *time.Time `json:"since,omitempty"`
-
 	// State `available` servers get every delivery; `unavailable` ones only `Follow`, `Accept`, and
 	// `Reject`.
 	State AdminInstanceState `json:"state"`
+
+	// StateChangedAt When the server entered its state; omitted for a server without failures.
+	StateChangedAt *time.Time `json:"state_changed_at,omitempty"`
 }
 
 // AdminInstanceHealthPage A page of server health, in domain order.
@@ -5530,6 +5610,9 @@ type AdminLoginProvider struct {
 	// provider must belong to; empty lets every GitHub user in.
 	Organizations []string `json:"organizations"`
 
+	// RevisedAt When the settings last changed.
+	RevisedAt time.Time `json:"revised_at"`
+
 	// Scopes The scopes asked for besides the ones the kind needs, sorted.
 	Scopes []string `json:"scopes"`
 
@@ -5537,9 +5620,6 @@ type AdminLoginProvider struct {
 	// screen shows only the enabled providers.
 	State          AdminLoginProviderState `json:"state"`
 	StateChangedAt time.Time               `json:"state_changed_at"`
-
-	// UpdatedAt When the settings last changed.
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // AdminLoginProviderList The login providers, newest first.
@@ -5572,17 +5652,21 @@ type AdminOAuthClient struct {
 	// document declares; every other name is a claim of whoever registered the client.
 	Name string `json:"name"`
 
-	// OwnerId The ID of the user who registered the client; omitted for the other routes.
-	OwnerId *Id `json:"owner_id,omitempty"`
+	// Owner The account of the user who registered the client; omitted for the other routes and
+	// when that account is deleted (`owner_deleted`).
+	Owner *Account `json:"owner,omitempty"`
 
-	// Registration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+	// OwnerDeleted Whether a user registered the client whose account no longer exists.
+	OwnerDeleted bool `json:"owner_deleted"`
+
+	// Registration The route by which an OAuth client was registered: `first_party` is one of the
 	// server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
 	// client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
 	// that registered itself (RFC 7591).
 	Registration OAuthClientRegistration `json:"registration"`
 
-	// Scope The most that the client may be granted, as space-separated scopes.
-	Scope string `json:"scope"`
+	// Scopes The most that the client may be granted.
+	Scopes []string `json:"scopes"`
 
 	// Website The client's home page; omitted when it has none.
 	Website *string `json:"website,omitempty"`
@@ -5592,8 +5676,12 @@ type AdminOAuthClient struct {
 type AdminOAuthClientHostDenial struct {
 	DeniedAt time.Time `json:"denied_at"`
 
-	// DeniedBy The ID of the administrator's user; omitted for a denial from the command line.
-	DeniedBy *Id `json:"denied_by,omitempty"`
+	// DeniedBy The account of the administrator; omitted for a denial from the command line and when
+	// that account is deleted (`denied_by_deleted`).
+	DeniedBy *Account `json:"denied_by,omitempty"`
+
+	// DeniedByDeleted Whether an administrator denied the host whose account no longer exists.
+	DeniedByDeleted bool `json:"denied_by_deleted"`
 
 	// Host The host name in lowercase, without a port.
 	Host string `json:"host"`
@@ -5620,7 +5708,7 @@ type AdminOAuthClientPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminPasswordResetLink A password reset link that an administrator issued for a local account (FR-002). It is
+// AdminPasswordResetLink A password reset link that an administrator issued for a local account. It is
 // shown once.
 type AdminPasswordResetLink struct {
 	// ExpiresAt When the link stops working.
@@ -5634,7 +5722,7 @@ type AdminPasswordResetLink struct {
 	Url string `json:"url"`
 }
 
-// AdminQueue The state of the job queue (ADR-0064).
+// AdminQueue The state of the job queue.
 type AdminQueue struct {
 	// Adapter The queue the server runs, the `queue` setting (`db`, `inline`, `sqs`, `cloudtasks`).
 	Adapter string `json:"adapter"`
@@ -5655,16 +5743,21 @@ type AdminQueue struct {
 	Waits []AdminJobWait `json:"waits"`
 }
 
-// AdminRegistration A user's registration as the moderators review it (FR-721).
+// AdminRegistration A user's registration as the moderators review it.
 type AdminRegistration struct {
 	// AccountId The user's local account; omitted when it is gone.
 	AccountId *Id `json:"account_id,omitempty"`
 
-	// Email The user's primary email address; empty when there is none.
-	Email string `json:"email"`
+	// DecisionNote The moderators' note on the decision, as plain text; omitted while the registration is
+	// pending and when the decision has no note.
+	DecisionNote *string `json:"decision_note,omitempty"`
 
-	// EmailVerified Whether the user confirmed the email address.
-	EmailVerified bool `json:"email_verified"`
+	// Email The user's primary email address, shown only while the registration is pending, for its
+	// review; omitted when the user has none and once the registration is decided.
+	Email *string `json:"email,omitempty"`
+
+	// EmailVerified Whether the user confirmed the email address; present together with `email`.
+	EmailVerified *bool `json:"email_verified,omitempty"`
 
 	// InviteId The invite the user signed up with; omitted for none.
 	InviteId *Id `json:"invite_id,omitempty"`
@@ -5672,12 +5765,12 @@ type AdminRegistration struct {
 	// Reason Why the user wants to join, as plain text; omitted when they gave none.
 	Reason *string `json:"reason,omitempty"`
 
-	// Since When the registration entered its state.
-	Since time.Time `json:"since"`
-
 	// State Where a registration stands: `pending` waits for a moderator, `approved` lets the user
 	// sign in, and `rejected` keeps them out.
 	State RegistrationState `json:"state"`
+
+	// StateChangedAt When the registration entered its state.
+	StateChangedAt time.Time `json:"state_changed_at"`
 
 	// SubmittedAt When the user signed up.
 	SubmittedAt time.Time `json:"submitted_at"`
@@ -5699,7 +5792,7 @@ type AdminRegistrationPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminRelay A relay that the instance joins or joined (ADR-0061).
+// AdminRelay A relay that the instance joins or joined.
 type AdminRelay struct {
 	// ActorUri The relay's actor, which accepted the `Follow`; omitted unless `accepted`.
 	ActorUri  *string   `json:"actor_uri,omitempty"`
@@ -5710,7 +5803,7 @@ type AdminRelay struct {
 	DomainSuspended bool `json:"domain_suspended"`
 
 	// DroppedLastDay The activities it brought in during the last 24 hours that were dropped over the
-	// hourly limit (`relay_ingest_hourly_limit`).
+	// hourly limit (`relay_max_activities_per_hour`).
 	DroppedLastDay int `json:"dropped_last_day"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -5721,7 +5814,7 @@ type AdminRelay struct {
 	// InboxUrl Where the public posts are delivered.
 	InboxUrl string `json:"inbox_url"`
 
-	// Protocol How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
+	// Protocol How a relay is joined. `mastodon`: at its inbox, by a `Follow` of the Public
 	// collection. `litepub`: at its actor, by a `Follow` of the actor.
 	Protocol RelayProtocol `json:"protocol"`
 
@@ -5747,11 +5840,15 @@ type AdminRelayList struct {
 	Items []AdminRelay `json:"items"`
 }
 
-// AdminReport A report of an account to the moderators (FR-701).
+// AdminReport A report of an account to the moderators.
 type AdminReport struct {
 	// AssigneeAccountId The account of the moderator who handles the report; omitted when nobody does.
-	AssigneeAccountId *Id                 `json:"assignee_account_id,omitempty"`
-	Category          AdminReportCategory `json:"category"`
+	AssigneeAccountId *Id `json:"assignee_account_id,omitempty"`
+
+	// Category Why the account is reported. `spam`: spam or unwanted promotion. `legal`: content that
+	// is illegal. `violation`: it breaks the instance rules that `rule_ids` cite. `other`:
+	// anything else.
+	Category ReportCategory `json:"category"`
 
 	// Comment The reporter's comment as plain text, up to 5,000 characters.
 	Comment string    `json:"comment"`
@@ -5790,7 +5887,8 @@ type AdminReport struct {
 	// StatusIds The IDs of the target's posts that the report points at.
 	StatusIds []Id `json:"status_ids"`
 
-	// TargetAccount The account reported; omitted when the account is gone.
+	// TargetAccount The account reported, even when it is suspended or blocks the reporter; omitted when the
+	// account is gone.
 	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -5807,15 +5905,16 @@ type AdminReport struct {
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
 }
 
-// AdminReportCategory defines model for AdminReport.Category.
-type AdminReportCategory string
-
 // AdminReportDetail A report as a moderator opens it: the report with its internal notes, the posts it
 // points at, and what the moderators had about its target.
 type AdminReportDetail struct {
 	// AssigneeAccountId The account of the moderator who handles the report; omitted when nobody does.
-	AssigneeAccountId *Id                       `json:"assignee_account_id,omitempty"`
-	Category          AdminReportDetailCategory `json:"category"`
+	AssigneeAccountId *Id `json:"assignee_account_id,omitempty"`
+
+	// Category Why the account is reported. `spam`: spam or unwanted promotion. `legal`: content that
+	// is illegal. `violation`: it breaks the instance rules that `rule_ids` cite. `other`:
+	// anything else.
+	Category ReportCategory `json:"category"`
 
 	// Comment The reporter's comment as plain text, up to 5,000 characters.
 	Comment string    `json:"comment"`
@@ -5862,7 +5961,8 @@ type AdminReportDetail struct {
 	// review. A post that the server no longer has is left out.
 	Statuses []AdminReportStatus `json:"statuses"`
 
-	// TargetAccount The account reported; omitted when the account is gone.
+	// TargetAccount The account reported, even when it is suspended or blocks the reporter; omitted when the
+	// account is gone.
 	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -5879,7 +5979,7 @@ type AdminReportDetail struct {
 
 	// VoiceRoom The voice chat room that a report points at, as the moderators review it: every revision
 	// of its settings, and the records of its participants while the server keeps them (90 days
-	// after the room ends by default, `retention_voice_participants`, and as long as a report
+	// after the room ends by default, `voice_participants_retention_days`, and as long as a report
 	// points at the room).
 	VoiceRoom *AdminReportVoiceRoom `json:"voice_room,omitempty"`
 
@@ -5887,9 +5987,6 @@ type AdminReportDetail struct {
 	// none.
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
 }
-
-// AdminReportDetailCategory defines model for AdminReportDetail.Category.
-type AdminReportDetailCategory string
 
 // AdminReportNote A moderator's internal note on a report; never shown to the target or the reporter.
 type AdminReportNote struct {
@@ -5952,7 +6049,7 @@ type AdminReportTargetHistory struct {
 
 // AdminReportVoiceRoom The voice chat room that a report points at, as the moderators review it: every revision
 // of its settings, and the records of its participants while the server keeps them (90 days
-// after the room ends by default, `retention_voice_participants`, and as long as a report
+// after the room ends by default, `voice_participants_retention_days`, and as long as a report
 // points at the room).
 type AdminReportVoiceRoom struct {
 	// Bans The accounts removed from the room, who may not join it again.
@@ -5961,9 +6058,8 @@ type AdminReportVoiceRoom struct {
 	// EndNote The reason that a moderator gave for ending the room; omitted for none.
 	EndNote *string `json:"end_note,omitempty"`
 
-	// EndReason Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
-	// `moderator`, `time_limit`, `disabled`); omitted while it is open.
-	EndReason *string `json:"end_reason,omitempty"`
+	// EndReason Why the room ended; omitted while it is open.
+	EndReason *VoiceEndReason `json:"end_reason,omitempty"`
 
 	// EndedAt When the room ended; omitted while it is open.
 	EndedAt *time.Time `json:"ended_at,omitempty"`
@@ -5987,7 +6083,7 @@ type AdminReportVoiceRoom struct {
 	Revisions []AdminVoiceRoomRevision `json:"revisions"`
 }
 
-// AdminRole A role (FR-720): a named set of permissions. A higher position outranks a lower one;
+// AdminRole A role: a named set of permissions. A higher position outranks a lower one;
 // a user may grant, revoke, create, change, and delete only the roles at or below their
 // highest one, and give or take only the permissions they hold.
 type AdminRole struct {
@@ -6004,7 +6100,9 @@ type AdminRole struct {
 
 	// Permissions The permissions that the role grants, in the order of `Permission`.
 	Permissions []Permission `json:"permissions"`
-	Position    int          `json:"position"`
+
+	// Position The rank of the role, from 0 to 999, and 1000 for `admin`.
+	Position int `json:"position"`
 }
 
 // AdminRoleList Roles, highest position first.
@@ -6012,7 +6110,7 @@ type AdminRoleList struct {
 	Items []AdminRole `json:"items"`
 }
 
-// AdminRule A rule of the instance (FR-705). Its ID stays the same across revisions, so reports keep
+// AdminRule A rule of the instance. Its ID stays the same across revisions, so reports keep
 // citing it.
 type AdminRule struct {
 	CreatedAt time.Time `json:"created_at"`
@@ -6050,7 +6148,7 @@ type AdminSameIpAccounts struct {
 	Ip       string         `json:"ip"`
 }
 
-// AdminServiceClosure The service closure as its administrators see it (ADR-0088 §1).
+// AdminServiceClosure The service closure as its administrators see it.
 type AdminServiceClosure struct {
 	// AnnouncedAt When the announcement in effect, or its latest change of the dates, was made; omitted for `none`.
 	AnnouncedAt *time.Time `json:"announced_at,omitempty"`
@@ -6067,7 +6165,7 @@ type AdminServiceClosure struct {
 	// Message The operator's message to the users; omitted when there is none.
 	Message *string `json:"message,omitempty"`
 
-	// Progress How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+	// Progress How far the closure's `Delete` of every local actor has gone, in `GET
 	// /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
 	// `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
 	Progress *AdminServiceClosureProgress `json:"progress,omitempty"`
@@ -6077,7 +6175,7 @@ type AdminServiceClosure struct {
 	// time to export their data and move their accounts. A short notice is allowed.
 	ShortNotice bool `json:"short_notice"`
 
-	// State Where the server is in its closure (ADR-0088 §1):
+	// State Where the server is in its closure:
 	//
 	// - `none`: no closure is announced.
 	// - `announced`: the closure is announced; the server runs as before until it closes.
@@ -6087,7 +6185,7 @@ type AdminServiceClosure struct {
 	State ServiceClosureState `json:"state"`
 }
 
-// AdminServiceClosureCheck What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
+// AdminServiceClosureCheck What the administrator reviews before closing the server. The admin
 // screen and the CLI show it with the confirmation of the closure.
 type AdminServiceClosureCheck struct {
 	// DeliveryInboxes The shared inboxes known to the server, which each `Delete` goes to.
@@ -6102,12 +6200,11 @@ type AdminServiceClosureCheck struct {
 	// LocalAccounts The local accounts of users that are not deleted, each of which the closure sends a `Delete` of.
 	LocalAccounts int `json:"local_accounts"`
 
-	// PendingMigrations The account migrations (the sending of a `Move` and the jobs that move the followers,
-	// ADR-0089) that have not ended. They should end before the closure delivers its `Delete`;
+	// PendingMigrations The account migrations (the sending of a `Move` and the jobs that move the followers) that have not ended. They should end before the closure delivers its `Delete`;
 	// the admin screen and the CLI warn while it is not 0.
 	PendingMigrations int `json:"pending_migrations"`
 
-	// RetentionHolds The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
+	// RetentionHolds The accounts under a retention hold. While it is not 0, the operator exports
 	// their records with the CLI before discarding the data of the closed server.
 	RetentionHolds int `json:"retention_holds"`
 }
@@ -6130,7 +6227,7 @@ type AdminServiceClosureDeliveries struct {
 	Succeeded int `json:"succeeded"`
 }
 
-// AdminServiceClosureProgress How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+// AdminServiceClosureProgress How far the closure's `Delete` of every local actor has gone, in `GET
 // /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
 // `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
 type AdminServiceClosureProgress struct {
@@ -6153,7 +6250,7 @@ type AdminSetting struct {
 	// Default The value of the setting while it has never been set.
 	Default string `json:"default"`
 
-	// Key The key of an instance setting (docs/operations/instance-settings.md). New keys may be
+	// Key The key of an instance setting. New keys may be
 	// added; clients show the ones they know.
 	Key InstanceSettingKey `json:"key"`
 
@@ -6184,7 +6281,7 @@ type AdminSettingList struct {
 	Items []AdminSetting `json:"items"`
 }
 
-// AdminSignupBlock A block on sign-ups from the registration page (FR-719).
+// AdminSignupBlock A block on sign-ups from the registration page.
 type AdminSignupBlock struct {
 	// Comment The moderators' comment; omitted when there is none.
 	Comment   *string   `json:"comment,omitempty"`
@@ -6215,7 +6312,7 @@ type AdminSignupBlock struct {
 
 	// State `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
 	// lifted it.
-	State AdminSignupBlockState `json:"state"`
+	State ModerationActionState `json:"state"`
 
 	// Value What the block matches, in canonical form: a domain in IDNA A-labels
 	// (`email_domain`), the hex SHA-256 of a canonical email address (`email_hash`), or a
@@ -6240,11 +6337,7 @@ type AdminSignupBlockPage struct {
 // for a moderator, whatever the registration mode.
 type AdminSignupBlockSeverity string
 
-// AdminSignupBlockState `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-// lifted it.
-type AdminSignupBlockState string
-
-// AdminSupporterPlan A supporter plan as the administrators see it (ADR-0072 §3). The yearly price is the
+// AdminSupporterPlan A supporter plan as the administrators see it. The yearly price is the
 // monthly one × 12, discounted by `annual_discount_percent`, rounded down. A plan takes
 // subscriptions while it is public, not retired, and `prices_ready` (the provider has the
 // prices of its current terms).
@@ -6264,7 +6357,7 @@ type AdminSupporterPlan struct {
 	// Members The subscriptions that hold the role (active, canceling, or past due).
 	Members int `json:"members"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice Money  `json:"monthly_price"`
 	Name         string `json:"name"`
@@ -6283,7 +6376,7 @@ type AdminSupporterPlan struct {
 	// its subscriptions go on.
 	Visibility SupporterPlanVisibility `json:"visibility"`
 
-	// YearlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// YearlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	YearlyPrice Money `json:"yearly_price"`
 }
@@ -6300,7 +6393,7 @@ type AdminSupporterPlanCreateRequest struct {
 	// EmojiLimit How many custom emoji the members may create each month (UTC), 0 to 10,000.
 	EmojiLimit int `json:"emoji_limit"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice Money `json:"monthly_price"`
 
@@ -6344,7 +6437,7 @@ type AdminSupporterPlanUpdateRequest struct {
 	Description           *string `json:"description,omitempty"`
 	EmojiLimit            *int    `json:"emoji_limit,omitempty"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice    *Money        `json:"monthly_price,omitempty"`
 	Name            *string       `json:"name,omitempty"`
@@ -6357,7 +6450,7 @@ type AdminSupporterPlanUpdateRequest struct {
 	Visibility *SupporterPlanVisibility `json:"visibility,omitempty"`
 }
 
-// AdminSupporterProgram The supporter program (ADR-0072 §2). It is disabled by default; enabling it needs a
+// AdminSupporterProgram The supporter program. It is disabled by default; enabling it needs a
 // payment provider in the deployment's configuration (`configured_provider`) and a server
 // that sends email (`sends_email`). `warnings` lists what an administrator should look at.
 type AdminSupporterProgram struct {
@@ -6415,7 +6508,7 @@ type AdminSupporterSubscription struct {
 	PlanId   Id     `json:"plan_id"`
 	PlanName string `json:"plan_name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 
@@ -6428,7 +6521,7 @@ type AdminSupporterSubscription struct {
 	ScheduledPlanId *Id       `json:"scheduled_plan_id,omitempty"`
 	StartedAt       time.Time `json:"started_at"`
 
-	// State The state of a subscription (ADR-0072 §7). `pending`: started, not paid yet. `active`:
+	// State The state of a subscription. `pending`: started, not paid yet. `active`:
 	// paid. `canceling`: canceled at the end of the period. `past_due`: a payment failed less
 	// than 7 days ago. `lapsed`: a payment failed more than 7 days ago, or the subscription is
 	// paused. `expired`: ended. `revoked`: a full refund or a chargeback. `abandoned`: ended
@@ -6496,11 +6589,15 @@ type AdminVoiceRoomParticipation struct {
 
 	// LeaveReason Why the account left (`left`, `moved`, `disconnected`, `removed`, `blocked`,
 	// `suspended`, `room_ended`); omitted while it takes part.
-	LeaveReason *string `json:"leave_reason,omitempty"`
+	LeaveReason *AdminVoiceRoomParticipationLeaveReason `json:"leave_reason,omitempty"`
 
 	// LeftAt When the account left; omitted while it takes part.
 	LeftAt *time.Time `json:"left_at,omitempty"`
 }
+
+// AdminVoiceRoomParticipationLeaveReason Why the account left (`left`, `moved`, `disconnected`, `removed`, `blocked`,
+// `suspended`, `room_ended`); omitted while it takes part.
+type AdminVoiceRoomParticipationLeaveReason string
 
 // AdminVoiceRoomRevision A revision of the settings of a voice chat room. The name and the description are empty
 // once the account that wrote them is erased.
@@ -6533,7 +6630,7 @@ type AdminVoiceRoomRevision struct {
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
 
-// AdminWebhook A webhook endpoint (ADR-0060). Its secret is never shown again after it is made.
+// AdminWebhook A webhook endpoint. Its secret is never shown again after it is made.
 type AdminWebhook struct {
 	CreatedAt time.Time `json:"created_at"`
 
@@ -6552,6 +6649,9 @@ type AdminWebhook struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
+	// RevisedAt When the URL, the description, or the events last changed.
+	RevisedAt time.Time `json:"revised_at"`
+
 	// State Whether the webhook receives the messages of its events.
 	State          AdminWebhookState `json:"state"`
 	StateChangedAt time.Time         `json:"state_changed_at"`
@@ -6560,9 +6660,6 @@ type AdminWebhook struct {
 	// server disabled it after the endpoint answered 410 Gone. `failing`: the server disabled
 	// it after the deliveries kept failing, without a success, for 72 hours and 20 attempts.
 	StateReason AdminWebhookStateReason `json:"state_reason"`
-
-	// UpdatedAt When the URL, the description, or the events last changed.
-	UpdatedAt time.Time `json:"updated_at"`
 
 	// Url Where the messages are posted.
 	Url string `json:"url"`
@@ -6595,7 +6692,7 @@ type AdminWebhookCreated struct {
 	// Standard Webhooks libraries take it. It is shown only now.
 	Secret string `json:"secret"`
 
-	// Webhook A webhook endpoint (ADR-0060). Its secret is never shown again after it is made.
+	// Webhook A webhook endpoint. Its secret is never shown again after it is made.
 	Webhook AdminWebhook `json:"webhook"`
 }
 
@@ -6678,7 +6775,7 @@ type AnnounceServiceClosureRequest struct {
 	Message *string `json:"message,omitempty"`
 }
 
-// Announcement An announcement of the server to every local user (FR-726), as the user sees it.
+// Announcement An announcement of the server to every local user, as the user sees it.
 type Announcement struct {
 	// Content The text as an HTML fragment, sanitized (paragraphs, emphasis, lists, quotes, code,
 	// headings from `h2`, and `http`, `https`, and `mailto` links).
@@ -6702,12 +6799,12 @@ type Announcement struct {
 	// Read Whether the user has marked it read.
 	Read bool `json:"read"`
 
+	// RevisedAt When its text or window last changed.
+	RevisedAt time.Time `json:"revised_at"`
+
 	// Title The heading, in plain text, as the administrators wrote it; render it with `dir="auto"`.
 	// Empty for an announcement without one.
 	Title string `json:"title"`
-
-	// UpdatedAt When its text or window last changed.
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // AnnouncementList The announcements.
@@ -6730,8 +6827,8 @@ type AppealModerationActionRequest struct {
 }
 
 // AuthorizedApp An app the authenticated user authorized: the user's grants of one OAuth client that still
-// work. The name, the website and the logo are what the app says about itself; `registration`,
-// `client_id` and `registered_by` are what the server knows (ADR-0090 §3).
+// work. The name and the website are what the app says about itself; `registration`,
+// `client_id` and `registered_by` are what the server knows.
 type AuthorizedApp struct {
 	// AuthorizedAt When the user first authorized the app (the oldest of its working grants).
 	AuthorizedAt time.Time `json:"authorized_at"`
@@ -6780,7 +6877,7 @@ type AuthorizedAppList struct {
 	Items []AuthorizedApp `json:"items"`
 }
 
-// AutoDeletePolicy The authenticated user's automatic deletion of their own old posts (FR-118). A post is
+// AutoDeletePolicy The authenticated user's automatic deletion of their own old posts. A post is
 // deleted once it was published more than `min_age_days` days ago, unless one of the
 // exceptions (the `keep_` properties) keeps it.
 type AutoDeletePolicy struct {
@@ -6829,10 +6926,10 @@ type AutoDeletePreview struct {
 }
 
 // BadgeChoice A role that the authenticated user holds and that has a badge, with whether the user shows
-// the badge on their profile (ADR-0071). A badge is hidden until the user shows it; losing the
+// the badge on their profile. A badge is hidden until the user shows it; losing the
 // role or its badge hides it again.
 type BadgeChoice struct {
-	// Color The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+	// Color The color of a role badge: the name of a pair of the web client's design tokens
 	// for its background and its text, which keep their contrast in the light and the dark theme.
 	// Server themes do not change them. The color is decoration; the badge's `label` carries its
 	// meaning.
@@ -6855,13 +6952,13 @@ type BadgeChoiceList struct {
 	Items []BadgeChoice `json:"items"`
 }
 
-// BadgeColor The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+// BadgeColor The color of a role badge: the name of a pair of the web client's design tokens
 // for its background and its text, which keep their contrast in the light and the dark theme.
 // Server themes do not change them. The color is decoration; the badge's `label` carries its
 // meaning.
 type BadgeColor string
 
-// BillingImport The state of the imports of a billing source (ADR-0068 §9).
+// BillingImport The state of the imports of a billing source.
 type BillingImport struct {
 	// BytesBilledThisMonth The BigQuery bytes billed this UTC month; 0 for the other sources.
 	BytesBilledThisMonth int64 `json:"bytes_billed_this_month"`
@@ -6880,7 +6977,7 @@ type BillingImport struct {
 	// omitted for a source without caps.
 	MaxRequestsPerMonth *int `json:"max_requests_per_month,omitempty"`
 
-	// Method How the source reads the provider's data (ADR-0068 §1, §7): `cost_explorer` (AWS Cost
+	// Method How the source reads the provider's data: `cost_explorer` (AWS Cost
 	// Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 	// bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 	// `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
@@ -6907,7 +7004,7 @@ type BillingImport struct {
 	TimeZone string `json:"time_zone"`
 }
 
-// BillingImportMethod How the source reads the provider's data (ADR-0068 §1, §7): `cost_explorer` (AWS Cost
+// BillingImportMethod How the source reads the provider's data: `cost_explorer` (AWS Cost
 // Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 // bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 // `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
@@ -7120,7 +7217,7 @@ type BrowserSessionList struct {
 	Items []BrowserSession `json:"items"`
 }
 
-// CalendarDate A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+// CalendarDate A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 // of a payment on a card statement or an invoice.
 type CalendarDate = string
 
@@ -7178,7 +7275,7 @@ type CloseServiceRequest struct {
 
 // ConfirmedOperation An operation that the user confirms: registering a passkey (`passkey_registration`),
 // changing or setting the password (`password_change`), removing it (`password_removal`),
-// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+// deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
 // account at a login provider (`link`).
 type ConfirmedOperation string
 
@@ -7189,7 +7286,7 @@ type CopyCustomEmojiRequest struct {
 	Shortcode *string `json:"shortcode,omitempty"`
 }
 
-// CostBasis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+// CostBasis How the totals place a payment. `amortized` (the default) spreads each
 // payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 // more weeks) by day over the days up to the next payment, with the cumulative rounding;
 // the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -7199,35 +7296,35 @@ type CostBasis string
 // CostBreakdownLine The amount of a provider, category, and currency in a period. The costs group by the provider
 // in NFKC and lower case, so `ConoHa`, `conoha`, and `ＣｏｎｏＨａ` share a line.
 type CostBreakdownLine struct {
-	// Amount An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Amount An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Amount Money `json:"amount"`
 
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category CostCategory `json:"category"`
 
-	// Provider The provider as entered (ADR-0098), one spelling for every line of the same grouped provider
+	// Provider The provider as entered, one spelling for every line of the same grouped provider
 	// in the period: the provider of the cost item whose current label was revised last among the
 	// items with payments in the period (the larger revision ID on a tie), or, for a provider of
 	// imported costs only, the import's provider name (`AWS`, `Google Cloud`).
 	Provider string `json:"provider"`
 }
 
-// CostCategory The fixed category of a cost (ADR-0067 §2); clients translate its name.
+// CostCategory The fixed category of a cost; clients translate its name.
 type CostCategory string
 
 // CostGranularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-// years, cut by date (ADR-0067 §5).
+// years, cut by date.
 type CostGranularity string
 
-// CostItem A cost of the instance that is not canceled (ADR-0067 §2), with its current label and end
+// CostItem A cost of the instance that is not canceled, with its current label and end
 // and every price revision. Never published: the public totals carry no item.
 type CostItem struct {
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category  CostCategory `json:"category"`
 	CreatedAt time.Time    `json:"created_at"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn *CalendarDate `json:"ends_on,omitempty"`
 
@@ -7251,12 +7348,12 @@ type CostItem struct {
 	// Provider Who is paid, as written; the breakdown groups it in NFKC and lower case.
 	Provider string `json:"provider"`
 
-	// Schedule The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+	// Schedule The unit of a cost item's payment schedule: `once` (one payment on the start
 	// date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
 	// monthly payment on a day that a month does not have falls on the month's last day.
 	Schedule CostSchedule `json:"schedule"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
@@ -7265,10 +7362,10 @@ type CostItem struct {
 // item and record a new one. `ends_on` is the last date a payment can fall on, omitted for
 // no end; `price` is the price of every payment from the start date, 0 or more.
 type CostItemCreateRequest struct {
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category CostCategory `json:"category"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn *CalendarDate `json:"ends_on,omitempty"`
 
@@ -7281,19 +7378,19 @@ type CostItemCreateRequest struct {
 	// Name 1 to 100 characters without control characters.
 	Name string `json:"name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 
 	// Provider 1 to 100 characters without control characters.
 	Provider string `json:"provider"`
 
-	// Schedule The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+	// Schedule The unit of a cost item's payment schedule: `once` (one payment on the start
 	// date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
 	// monthly payment on a day that a month does not have falls on the month's last day.
 	Schedule CostSchedule `json:"schedule"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
@@ -7302,14 +7399,14 @@ type CostItemCreateRequest struct {
 // after the start date, and omitted for no end. The last payment before it still covers the
 // days up to the next payment date.
 type CostItemEndRequest struct {
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn *CalendarDate `json:"ends_on,omitempty"`
 }
 
 // CostItemLabelRequest A change of a cost item's label; an omitted property keeps its value.
 type CostItemLabelRequest struct {
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category *CostCategory `json:"category,omitempty"`
 
 	// Memo The note; empty removes it.
@@ -7327,21 +7424,21 @@ type CostItemPage struct {
 }
 
 // CostPeriodTotal A week, month, or year of the totals (`label`: `2026-W17`, `2026-04`, or `2026`): the total
-// of each currency, never converted (ADR-0067 §6), sorted by currency code, and the breakdown
+// of each currency, never converted, sorted by currency code, and the breakdown
 // by provider, category, and currency. A currency appears when a cost meets the period, even
 // with a zero amount. `estimated` reports that an imported usage charge of a billing month
-// that its provider has not closed meets the period (ADR-0068 §3): its amount may still
+// that its provider has not closed meets the period: its amount may still
 // change.
 type CostPeriodTotal struct {
 	Breakdown []CostBreakdownLine `json:"breakdown"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn    CalendarDate `json:"ends_on"`
 	Estimated bool         `json:"estimated"`
 	Label     string       `json:"label"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 	Totals   []Money      `json:"totals"`
@@ -7350,11 +7447,11 @@ type CostPeriodTotal struct {
 // CostPriceRevision A price of a cost item for its payments on or after `effective_on`, until a later
 // revision; of revisions with the same date, the last recorded wins.
 type CostPriceRevision struct {
-	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EffectiveOn CalendarDate `json:"effective_on"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price     Money     `json:"price"`
 	RevisedAt time.Time `json:"revised_at"`
@@ -7364,16 +7461,16 @@ type CostPriceRevision struct {
 // a cut, or the correction of a mistake (`effective_on` = the start date corrects every
 // payment).
 type CostPriceRevisionRequest struct {
-	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EffectiveOn CalendarDate `json:"effective_on"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 }
 
-// CostSchedule The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+// CostSchedule The unit of a cost item's payment schedule: `once` (one payment on the start
 // date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
 // monthly payment on a day that a month does not have falls on the month's last day.
 type CostSchedule string
@@ -7391,7 +7488,7 @@ type CostSourceRule struct {
 // CostTotals The totals of the instance's costs over the periods from the one that holds `from` to the
 // one that holds `to`, oldest first.
 type CostTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -7399,17 +7496,17 @@ type CostTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity   `json:"granularity"`
 	Periods     []CostPeriodTotal `json:"periods"`
 
-	// Rules How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
+	// Rules How the totals cut the periods, to show next to them: by calendar date
 	// without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's
 	// billing months in its own time zone (`billing_sources`, in its order).
 	Rules CostTotalsRules `json:"rules"`
 }
 
-// CostTotalsRules How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
+// CostTotalsRules How the totals cut the periods, to show next to them: by calendar date
 // without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's
 // billing months in its own time zone (`billing_sources`, in its order).
 type CostTotalsRules struct {
@@ -7423,7 +7520,7 @@ type CostTotalsRulesWeekStart string
 // CreateAccountActionRequest A moderation action to take on an account.
 type CreateAccountActionRequest struct {
 	// BlockEmail Whether a `ban` also blocks sign-ups with the email address of the account's user (a
-	// `reject` sign-up block of kind `email_hash`, FR-719); only a `ban` of a local
+	// `reject` sign-up block of kind `email_hash`); only a `ban` of a local
 	// account takes it, and a user without an email address is a 422. Omitted, nothing is
 	// blocked.
 	BlockEmail *bool `json:"block_email,omitempty"`
@@ -7579,7 +7676,7 @@ type CreateOAuthAppRequest struct {
 
 // CreateOwnInviteRequest A new invite of the user's own, within the caps of the instance settings.
 type CreateOwnInviteRequest struct {
-	// ExpiresIn How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted.
+	// ExpiresIn How many seconds the invite works, up to `member_invite_max_lifetime_seconds`; 7 days (or the cap when it is shorter) when omitted.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// MaxUses How many sign-ups the invite allows, up to `member_invite_max_uses`; 1 (or the cap when it is lower) when omitted.
@@ -7598,7 +7695,7 @@ type CreatePasskeyRequest struct {
 
 // CreateRelayRequest A relay to register and join.
 type CreateRelayRequest struct {
-	// Protocol How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
+	// Protocol How a relay is joined. `mastodon`: at its inbox, by a `Follow` of the Public
 	// collection. `litepub`: at its actor, by a `Follow` of the actor.
 	Protocol *RelayProtocol `json:"protocol,omitempty"`
 
@@ -7692,15 +7789,17 @@ type CreateStatusRequest struct {
 	// Media The media to attach, in order.
 	Media *StatusMediaInput `json:"media,omitempty"`
 
-	// Poll A poll of a new status (FR-112). It ends `expires_in` seconds after the status is
+	// Poll A poll of a new status. It ends `expires_in` seconds after the status is
 	// posted; the author and the users who voted are notified then.
 	Poll *PollInput `json:"poll,omitempty"`
 
 	// QuotePolicy Who may quote the new status; the user's `default_quote_policy` when left out.
 	QuotePolicy *QuotePolicy `json:"quote_policy,omitempty"`
 
-	// QuotedStatusId The status to quote (FR-114, ADR-0069). It must be one the user may see and may quote
-	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. Quoting a
+	// QuotedStatusId The status to quote. It must be one the user may see and may quote
+	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
+	// `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
+	// is created. Quoting a
 	// remote status while the instance does not send posts out (`Instance.federation.mode`
 	// `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
 	QuotedStatusId *Id `json:"quoted_status_id,omitempty"`
@@ -7714,7 +7813,7 @@ type CreateStatusRequest struct {
 	// Text The plain text; the server links mentions, hashtags, and URLs.
 	Text StatusText `json:"text"`
 
-	// Visibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// Visibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -7737,11 +7836,11 @@ type CreateWebhookRequest struct {
 
 // CredentialAccount The authenticated user's own account, with what only its owner sees.
 type CredentialAccount struct {
-	// Acct The username for local accounts, `username@domain` for remote ones.
+	// Acct The username for local accounts, `username@domain` for remote ones; empty for a remote
+	// account without a confirmed handle.
 	Acct string `json:"acct"`
 
-	// AiOptOut Whether the account's pages state that AI may neither train on nor use them
-	// (FR-412, ADR-0057), whatever the instance's `ai_usage`. The statement is made by the
+	// AiOptOut Whether the account's pages state that AI may neither train on nor use them, whatever the instance's `ai_usage`. The statement is made by the
 	// pages of this instance only; other servers and the media files do not carry it.
 	AiOptOut bool `json:"ai_opt_out"`
 
@@ -7750,7 +7849,7 @@ type CredentialAccount struct {
 	// remote account, every size is its media proxy URL.
 	Avatar *MediaVariants `json:"avatar,omitempty"`
 
-	// Badges The role badges that the account shows on its profile, highest role first (ADR-0071).
+	// Badges The role badges that the account shows on its profile, highest role first.
 	// Filled on the account's own endpoints (`getAccount`, `lookupAccount`,
 	// `verifyAccountCredentials`) only, and empty where accounts are listed or embedded (posts,
 	// notifications, lists of accounts) and for remote accounts. Badges are never federated.
@@ -7763,7 +7862,7 @@ type CredentialAccount struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// Discoverable Whether the account is suggested to others and found by the middle of its names in
-	// the account search (FR-307, FR-308); when `false`, the search finds it only by its
+	// the account search; when `false`, the search finds it only by its
 	// whole username. New accounts are discoverable.
 	Discoverable bool `json:"discoverable"`
 
@@ -7775,8 +7874,7 @@ type CredentialAccount struct {
 	// confirmed handle.
 	Domain string `json:"domain"`
 
-	// Emojis The custom emoji of the display name, the note, and the fields' names and values
-	// (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+	// Emojis The custom emoji of the display name, the note, and the fields' names and values. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text.
 	Emojis []CustomEmoji `json:"emojis"`
 
@@ -7807,13 +7905,13 @@ type CredentialAccount struct {
 
 	// Indexable Whether the account's profile and public posts may be indexed for search: by this
 	// instance's search and, when the instance's `search_indexing` is `allow`, by search
-	// engines (FR-412, ADR-0057). New accounts take the instance's default.
+	// engines. New accounts take the instance's default.
 	Indexable bool `json:"indexable"`
 
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
-	// Moved The account that the account moved to (ADR-0089), when it moved: clients show that it
+	// Moved The account that the account moved to, when it moved: clients show that it
 	// moved, with a link to this one. Present on the account's own endpoints, where
 	// `followers_count` is, and without a `moved` of its own (moves are not followed in
 	// chains).
@@ -7827,7 +7925,7 @@ type CredentialAccount struct {
 	// the permission of each admin operation regardless.
 	Permissions []Permission `json:"permissions"`
 
-	// Posting What the account's current moderation restrictions let it post (data-model/05-states-and-policies.md §5.4). The
+	// Posting What the account's current moderation restrictions let it post. The
 	// server applies the same policy when it posts: a status asked for with a visibility that is
 	// not in `visibilities` gets `visibility_ceiling` instead.
 	Posting PostingLimits `json:"posting"`
@@ -7847,7 +7945,7 @@ type CredentialAccount struct {
 	// one the page its actor declares (`url`), or its `uri` when it declares none.
 	Url string `json:"url"`
 
-	// Username The username, without the domain.
+	// Username The username, without the domain; empty for a remote account without a confirmed handle.
 	Username string `json:"username"`
 
 	// VoiceRoom The open voice chat room where the account is the host or a speaker, when the user sees
@@ -7858,9 +7956,9 @@ type CredentialAccount struct {
 // Cursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 type Cursor = string
 
-// CustomEmoji A custom emoji that a text uses (FR-111, ADR-0051 §4). The text has it as `:shortcode:`.
+// CustomEmoji A custom emoji that a text uses. The text has it as `:shortcode:`.
 // An emoji that is disabled or deleted, or whose images come from a domain whose media the
-// instance rejects (FR-702), is not listed, and its `:shortcode:` stays text. Clients show
+// instance rejects, is not listed, and its `:shortcode:` stays text. Clients show
 // `static_url` when animations should not play (`prefers-reduced-motion`), and `url`
 // otherwise.
 type CustomEmoji struct {
@@ -7882,7 +7980,7 @@ type CustomEmojiProblem struct {
 	Detail *string `json:"detail,omitempty"`
 
 	// Reason Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
-	// underscores. `shortcode_taken`: a local emoji has the shortcode. `invalid_alias`: an
+	// underscores. `shortcode_taken`: a local emoji has the shortcode, or a pending request reserves it. `invalid_alias`: an
 	// alias breaks the rules of a shortcode, or there are more than 10. `invalid_category`:
 	// the category is longer than 64 characters or not text. `media_not_found`: the media
 	// file is not an upload of the user. `media_not_ready`: it has not finished processing.
@@ -7911,7 +8009,7 @@ type CustomEmojiProblem struct {
 }
 
 // CustomEmojiProblemReason Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
-// underscores. `shortcode_taken`: a local emoji has the shortcode. `invalid_alias`: an
+// underscores. `shortcode_taken`: a local emoji has the shortcode, or a pending request reserves it. `invalid_alias`: an
 // alias breaks the rules of a shortcode, or there are more than 10. `invalid_category`:
 // the category is longer than 64 characters or not text. `media_not_found`: the media
 // file is not an upload of the user. `media_not_ready`: it has not finished processing.
@@ -7926,8 +8024,7 @@ type CustomEmojiProblem struct {
 type CustomEmojiProblemReason string
 
 // CustomEmojiRequest A request of a holder of `create_custom_emojis` for a new local custom emoji, or for a new
-// image of one they made, which a holder of `manage_custom_emojis` approves or rejects
-// (ADR-0070 §2). A request is not an emoji: no picker, post, reaction, or other server shows
+// image of one they made, which a holder of `manage_custom_emojis` approves or rejects. A request is not an emoji: no picker, post, reaction, or other server shows
 // its image until it is approved.
 type CustomEmojiRequest struct {
 	// CreatedAt When the request was made.
@@ -7946,7 +8043,7 @@ type CustomEmojiRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Kind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+	// Kind What a custom emoji request asks for: `create` a new local custom emoji,
 	// or `image` a new image of a local emoji that the requester made.
 	Kind CustomEmojiRequestKind `json:"kind"`
 
@@ -7976,7 +8073,7 @@ type CustomEmojiRequest struct {
 // emoji has the shortcode of the request. The last two can only be rejected.
 type CustomEmojiRequestConflictReason string
 
-// CustomEmojiRequestKind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+// CustomEmojiRequestKind What a custom emoji request asks for: `create` a new local custom emoji,
 // or `image` a new image of a local emoji that the requester made.
 type CustomEmojiRequestKind string
 
@@ -8069,7 +8166,7 @@ type DataImport struct {
 
 	// Kind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
 	// accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-	// domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+	// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
 	// `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
 	// posts the user bookmarked).
 	Kind DataImportKind `json:"kind"`
@@ -8093,7 +8190,7 @@ type DataImportState string
 
 // DataImportKind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
 // accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-// domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
 // `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
 // posts the user bookmarked).
 type DataImportKind string
@@ -8127,7 +8224,7 @@ type DataImportPreview struct {
 type DataImportRequest struct {
 	// Kind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
 	// accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-	// domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+	// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
 	// `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
 	// posts the user bookmarked).
 	Kind DataImportKind `json:"kind"`
@@ -8158,6 +8255,54 @@ type DataImportSkipped struct {
 // domain mutes, no domain).
 // `duplicate`: an earlier line names the same account, post, or domain.
 type DataImportSkippedReason string
+
+// DeactivateOwnAccountRequest The confirmation of the deactivation of the user's own account: `password`,
+// `two_factor_code`, `passkey`, or `external_confirmation`.
+type DeactivateOwnAccountRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
+	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+
+	// Password The user's current password.
+	Password *string `json:"password,omitempty"`
+
+	// TwoFactorCode A code of the user's authenticator app, or a recovery code.
+	TwoFactorCode *string `json:"two_factor_code,omitempty"`
+}
+
+// Deactivation The deactivation of the user's own account.
+type Deactivation struct {
+	// DeletionDueAt When the account is deleted unless the user reactivates it first.
+	DeletionDueAt time.Time `json:"deletion_due_at"`
+}
+
+// DeactivationPreview What deactivating the user's own account would do now.
+type DeactivationPreview struct {
+	// AvailableAt When the account can be deactivated again, for `recently_reactivated`.
+	AvailableAt *time.Time `json:"available_at,omitempty"`
+
+	// DeletionDueAt When the account would be deleted if it were deactivated now.
+	DeletionDueAt time.Time `json:"deletion_due_at"`
+
+	// Refusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+	// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+	// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+	// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+	// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+	// ago (`recently_reactivated`).
+	Refusal *DeactivationPreviewRefusal `json:"refusal,omitempty"`
+}
+
+// DeactivationPreviewRefusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+// ago (`recently_reactivated`).
+type DeactivationPreviewRefusal string
 
 // DecideAppealRequest The moderators' explanation of a decision on an appeal.
 type DecideAppealRequest struct {
@@ -8229,7 +8374,7 @@ type DomainBlockImportRow struct {
 	// `already_applied`: an action in effect of each of the row's kinds covers the domain
 	// already, on it or on a parent domain. `no_action`: the row stands for no action (a
 	// `noop` without rejections). `duplicate`: an earlier row has the same domain once
-	// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+	// normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
 	Status DomainBlockImportStatus `json:"status"`
 
 	// WrittenDomain The domain as written in the row.
@@ -8249,7 +8394,7 @@ type DomainBlockImportSkipped struct {
 // `already_applied`: an action in effect of each of the row's kinds covers the domain
 // already, on it or on a parent domain. `no_action`: the row stands for no action (a
 // `noop` without rejections). `duplicate`: an earlier row has the same domain once
-// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+// normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
 type DomainBlockImportStatus string
 
 // DomainBlockSeverity The `#severity` of Mastodon's domain block CSV. `suspend`: the action `suspend`.
@@ -8267,7 +8412,7 @@ type DomainMute struct {
 
 // DomainMutePage A page of domain mutes.
 type DomainMutePage struct {
-	DomainMutes []DomainMute `json:"domain_mutes"`
+	Items []DomainMute `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -8281,7 +8426,7 @@ type EditStatusRequest struct {
 	// Media The media to attach, in order.
 	Media *StatusMediaInput `json:"media,omitempty"`
 
-	// RemoveQuote Takes the status's quote away for good (ADR-0069 §3). A status keeps the status it
+	// RemoveQuote Takes the status's quote away for good. A status keeps the status it
 	// quotes otherwise: an edit cannot change it.
 	RemoveQuote *bool `json:"remove_quote,omitempty"`
 
@@ -8295,7 +8440,7 @@ type EditStatusRequest struct {
 	Text StatusText `json:"text"`
 }
 
-// EmailSuppression The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
+// EmailSuppression The suppression of the primary email address: the server stops sending to it
 // after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
 // email) stops every email but the verification email that the user asks for; verifying the
 // address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
@@ -8303,8 +8448,8 @@ type EditStatusRequest struct {
 type EmailSuppression struct {
 	Kind EmailSuppressionKind `json:"kind"`
 
-	// Since When the failure that started the suppression happened.
-	Since time.Time `json:"since"`
+	// StateChangedAt When the failure that started the suppression happened.
+	StateChangedAt time.Time `json:"state_changed_at"`
 }
 
 // EmailSuppressionKind defines model for EmailSuppression.Kind.
@@ -8319,7 +8464,7 @@ type EnableTotpRequest struct {
 	SetupToken string `json:"setup_token"`
 }
 
-// ErrorGroup An error group (ADR-0103 §7, §8): the reported errors of one fingerprint, with its state,
+// ErrorGroup An error group: the reported errors of one fingerprint, with its state,
 // what its first occurrence told about the error, and how often it happened. The text is
 // scrubbed of URLs, email addresses, handles, IP addresses, and IDs. The webhook events
 // `error_group.created` and `error_group.regressed` carry it as their `data`.
@@ -8363,13 +8508,13 @@ type ErrorGroup struct {
 	// Source What reported the errors of a group, the server or the web client.
 	Source ErrorGroupSource `json:"source"`
 
-	// State The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+	// State The state of an error group: `open` (new, unmuted, or regressed),
 	// `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 	// it to `open`), or `muted` (it notifies nobody until it is unmuted).
 	State ErrorGroupState `json:"state"`
 
-	// StateSince When the group entered its state; its first occurrence while it has always been open.
-	StateSince time.Time `json:"state_since"`
+	// StateChangedAt When the group entered its state; its first occurrence while it has always been open.
+	StateChangedAt time.Time `json:"state_changed_at"`
 
 	// Type The last type of the chain of the error (a Go type or the name of a JavaScript error).
 	Type string `json:"type"`
@@ -8430,13 +8575,13 @@ type ErrorGroupDetail struct {
 	// Source What reported the errors of a group, the server or the web client.
 	Source ErrorGroupSource `json:"source"`
 
-	// State The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+	// State The state of an error group: `open` (new, unmuted, or regressed),
 	// `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 	// it to `open`), or `muted` (it notifies nobody until it is unmuted).
 	State ErrorGroupState `json:"state"`
 
-	// StateSince When the group entered its state; its first occurrence while it has always been open.
-	StateSince time.Time `json:"state_since"`
+	// StateChangedAt When the group entered its state; its first occurrence while it has always been open.
+	StateChangedAt time.Time `json:"state_changed_at"`
 
 	// Type The last type of the chain of the error (a Go type or the name of a JavaScript error).
 	Type string `json:"type"`
@@ -8496,8 +8641,8 @@ type ErrorGroupSample struct {
 	// RequestId The request ID of the occurrence; omitted when it had none.
 	RequestId *string `json:"request_id,omitempty"`
 
-	// Role The role of the process that reported it (`all`, `web`, `worker`, or `stream`); the web client reports have the role of the server that received them.
-	Role string `json:"role"`
+	// Role The role of the process that reported it; the web client reports have the role of the server that received them.
+	Role ErrorGroupSampleRole `json:"role"`
 
 	// Stack The stack, in the form of the runtime that reported it, without the arguments of the frames.
 	Stack string `json:"stack"`
@@ -8512,10 +8657,13 @@ type ErrorGroupSample struct {
 	Version string `json:"version"`
 }
 
+// ErrorGroupSampleRole The role of the process that reported it; the web client reports have the role of the server that received them.
+type ErrorGroupSampleRole string
+
 // ErrorGroupSource What reported the errors of a group, the server or the web client.
 type ErrorGroupSource string
 
-// ErrorGroupState The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+// ErrorGroupState The state of an error group: `open` (new, unmuted, or regressed),
 // `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 // it to `open`), or `muted` (it notifies nobody until it is unmuted).
 type ErrorGroupState string
@@ -8533,7 +8681,7 @@ type ExternalAuthorizationStart struct {
 type ExternalConfirmationRequest struct {
 	// Operation An operation that the user confirms: registering a passkey (`passkey_registration`),
 	// changing or setting the password (`password_change`), removing it (`password_removal`),
-	// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+	// deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
 	// account at a login provider (`link`).
 	Operation ConfirmedOperation `json:"operation"`
 
@@ -8559,11 +8707,11 @@ type ExternalConfirmationToken = string
 // `memo` is the item's memo, present only while the instance shows the memos and the item has
 // one (an imported cost has none).
 type FinanceCostItemLine struct {
-	// Amount An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Amount An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Amount Money `json:"amount"`
 
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category CostCategory `json:"category"`
 	Memo     *string      `json:"memo,omitempty"`
 	Name     *string      `json:"name,omitempty"`
@@ -8577,14 +8725,14 @@ type FinanceCostItemLine struct {
 type FinanceCostPeriodTotal struct {
 	Breakdown []CostBreakdownLine `json:"breakdown"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn    CalendarDate          `json:"ends_on"`
 	Estimated bool                  `json:"estimated"`
 	Items     []FinanceCostItemLine `json:"items"`
 	Label     string                `json:"label"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 	Totals   []Money      `json:"totals"`
@@ -8592,9 +8740,9 @@ type FinanceCostPeriodTotal struct {
 
 // FinanceCostTotals The totals of the instance's costs as the holders of `view_finance` read them over the
 // periods from the one that holds `from` to the one that holds `to`, oldest first, and the
-// instance settings that decide what they read (ADR-0070 §5).
+// instance settings that decide what they read.
 type FinanceCostTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -8602,17 +8750,17 @@ type FinanceCostTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity          `json:"granularity"`
 	Periods     []FinanceCostPeriodTotal `json:"periods"`
 
-	// Rules How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
+	// Rules How the totals cut the periods, to show next to them: by calendar date
 	// without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's
 	// billing months in its own time zone (`billing_sources`, in its order).
 	Rules CostTotalsRules `json:"rules"`
 
 	// Viewer What the holders of `view_finance` read of the instance's finances beyond the totals and
-	// their breakdown (the instance settings of ADR-0070 §5): `item_names`
+	// their breakdown, by instance settings: `item_names`
 	// (`finance_viewer_item_names`) shows the names of the cost items and the services of the
 	// imported costs, `item_memos` (`finance_viewer_item_memos`) the memos of the cost items, and
 	// `income` (`finance_viewer_income`) the income as totals only or with the number of members
@@ -8621,20 +8769,20 @@ type FinanceCostTotals struct {
 }
 
 // FinanceViewerIncome How much of the income the holders of `view_finance` read (the instance setting
-// `finance_viewer_income`, ADR-0070 §5). `totals`: the total of each currency by period;
+// `finance_viewer_income`). `totals`: the total of each currency by period;
 // `plans`: also the number of members of each plan. No value shows the amounts of each plan or
 // who paid.
 type FinanceViewerIncome string
 
 // FinanceViewerSettings What the holders of `view_finance` read of the instance's finances beyond the totals and
-// their breakdown (the instance settings of ADR-0070 §5): `item_names`
+// their breakdown, by instance settings: `item_names`
 // (`finance_viewer_item_names`) shows the names of the cost items and the services of the
 // imported costs, `item_memos` (`finance_viewer_item_memos`) the memos of the cost items, and
 // `income` (`finance_viewer_income`) the income as totals only or with the number of members
 // of each plan.
 type FinanceViewerSettings struct {
 	// Income How much of the income the holders of `view_finance` read (the instance setting
-	// `finance_viewer_income`, ADR-0070 §5). `totals`: the total of each currency by period;
+	// `finance_viewer_income`). `totals`: the total of each currency by period;
 	// `plans`: also the number of members of each plan. No value shows the amounts of each plan or
 	// who paid.
 	Income    FinanceViewerIncome `json:"income"`
@@ -8643,7 +8791,7 @@ type FinanceViewerSettings struct {
 }
 
 // FinanceVisibility How much of the instance's costs everyone may read (the instance setting
-// `finance_visibility`, FR-903, ADR-0067 §8). `private`: nothing, and
+// `finance_visibility`). `private`: nothing, and
 // `GET /instance/cost_totals` is a 404; `totals`: the total of each currency by period;
 // `breakdown`: the totals and their breakdown by provider and category. No level publishes
 // the names, memos, or individual payments of the cost items.
@@ -8692,17 +8840,17 @@ type ImportSignupBlocksRequest struct {
 	Severity AdminSignupBlockSeverity `json:"severity"`
 
 	// Text The list: one value per line, or a CSV row whose first field is the value; blank
-	// lines and lines starting with `#` are ignored. At most 10,000 values.
+	// lines and lines starting with `#` are ignored. At most 10,000 values; the request body is at most 1 MiB, past which the answer is 413.
 	Text string `json:"text"`
 }
 
-// IncomeKind The kind of a money movement of the payment provider (ADR-0073 §2): `payment` of a
+// IncomeKind The kind of a money movement of the payment provider: `payment` of a
 // subscription, `refund` and `chargeback` of a payment (a negative gross), the
 // `chargeback_reversal` that gives a chargeback back, and a `fee` of the provider that
 // belongs to no payment (a zero gross and a negative net).
 type IncomeKind string
 
-// IncomeMovement A money movement of the payment provider as the income records keep it (ADR-0073 §2, §6):
+// IncomeMovement A money movement of the payment provider as the income records keep it:
 // recorded once its amounts are final, and never edited. `occurred_on` is `occurred_at` as a
 // date in the provider's reporting time zone. A payment carries the billing period it pays
 // for (`covers_starts_on` to `covers_ends_on`) when it has one; a refund, a chargeback, or a
@@ -8715,19 +8863,19 @@ type IncomeMovement struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	AccountId *Id `json:"account_id,omitempty"`
 
-	// CoversEndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// CoversEndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	CoversEndsOn *CalendarDate `json:"covers_ends_on,omitempty"`
 
-	// CoversStartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// CoversStartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	CoversStartsOn *CalendarDate `json:"covers_starts_on,omitempty"`
 
-	// Fee An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Fee An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Fee Money `json:"fee"`
 
-	// Gross An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Gross An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Gross Money `json:"gross"`
 
@@ -8736,18 +8884,18 @@ type IncomeMovement struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Kind The kind of a money movement of the payment provider (ADR-0073 §2): `payment` of a
+	// Kind The kind of a money movement of the payment provider: `payment` of a
 	// subscription, `refund` and `chargeback` of a payment (a negative gross), the
 	// `chargeback_reversal` that gives a chargeback back, and a `fee` of the provider that
 	// belongs to no payment (a zero gross and a negative net).
 	Kind IncomeKind `json:"kind"`
 
-	// Net An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Net An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Net        Money     `json:"net"`
 	OccurredAt time.Time `json:"occurred_at"`
 
-	// OccurredOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// OccurredOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	OccurredOn       CalendarDate `json:"occurred_on"`
 	ParentProviderId *string      `json:"parent_provider_id,omitempty"`
@@ -8780,18 +8928,18 @@ type IncomeMovementPage struct {
 type IncomePeriodTotal struct {
 	Balance *[]Money `json:"balance,omitempty"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn CalendarDate `json:"ends_on"`
 	Label  string       `json:"label"`
 	Net    []Money      `json:"net"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
 
-// IncomePlanCount The number of members of a supporter plan now (ADR-0073 §7): the subscriptions that hold
+// IncomePlanCount The number of members of a supporter plan now: the subscriptions that hold
 // the plan's role (active, canceling, or past due within the grace period). A retired plan
 // appears while it has members. Never the plan's amounts.
 type IncomePlanCount struct {
@@ -8805,19 +8953,18 @@ type IncomePlanCount struct {
 }
 
 // IncomeProviderRule The IANA time zone (`UTC`, `Asia/Tokyo`) in which a payment provider's money movements fall
-// on their dates: the provider's reporting time zone, or `UTC` when it could not be read
-// (ADR-0073 §3).
+// on their dates: the provider's reporting time zone, or `UTC` when it could not be read.
 type IncomeProviderRule struct {
 	Provider string `json:"provider"`
 	TimeZone string `json:"time_zone"`
 }
 
 // IncomeTotals The income totals over the periods from the one that holds `from` to the one that holds
-// `to`, oldest first (ADR-0073 §9). `plans`, the number of members of each supporter plan
+// `to`, oldest first. `plans`, the number of members of each supporter plan
 // now, is present only where the plans are shown. No answer carries individual payments, the
 // subscribers, the amounts of each plan, or the gross and the fees.
 type IncomeTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -8825,12 +8972,12 @@ type IncomeTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity     `json:"granularity"`
 	Periods     []IncomePeriodTotal `json:"periods"`
 	Plans       *[]IncomePlanCount  `json:"plans,omitempty"`
 
-	// Rules How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+	// Rules How the income totals cut the periods and place the payments, to show
 	// next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
 	// each money movement on its date in its payment provider's reporting time zone
 	// (`providers`), and under the `amortized` basis a payment that covers more than
@@ -8840,7 +8987,7 @@ type IncomeTotals struct {
 	Rules IncomeTotalsRules `json:"rules"`
 }
 
-// IncomeTotalsRules How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+// IncomeTotalsRules How the income totals cut the periods and place the payments, to show
 // next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
 // each money movement on its date in its payment provider's reporting time zone
 // (`providers`), and under the `amortized` basis a payment that covers more than
@@ -8857,7 +9004,7 @@ type IncomeTotalsRules struct {
 type IncomeTotalsRulesWeekStart string
 
 // IncomeVisibility How much of the instance's income everyone may read (the instance setting
-// `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:
+// `income_visibility`), apart from `finance_visibility`. `private`:
 // nothing, and `GET /instance/income_totals` is a 404; `totals`: the net income of each
 // currency by period; `plans`: also the number of members of each supporter plan now. No
 // level publishes individual payments, the subscribers, the amounts of each plan, or the
@@ -8866,13 +9013,13 @@ type IncomeVisibility string
 
 // Instance Public information about the instance.
 type Instance struct {
-	// AiUsage What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
+	// AiUsage What the instance states to AI crawlers (the instance setting `ai_usage`).
 	// `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
 	// and no use by AI search, assistants, and agents. An account can opt out of what the
 	// instance allows (`ai_opt_out`), never the reverse.
 	AiUsage AIUsage `json:"ai_usage"`
 
-	// Closure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+	// Closure The closure of the service, present while a closure is announced and after
 	// the server closes; absent when none is announced. Clients show it on every screen with the
 	// way to export the data and to move the account.
 	Closure *InstanceClosure `json:"closure,omitempty"`
@@ -8892,12 +9039,12 @@ type Instance struct {
 	// Domain The domain that serves the instance.
 	Domain string `json:"domain"`
 
-	// Federation How the instance federates with other servers (FR-413), so that clients offer only the
+	// Federation How the instance federates with other servers, so that clients offer only the
 	// operations on remote accounts and posts that can work.
 	Federation InstanceFederation `json:"federation"`
 
 	// FinanceVisibility How much of the instance's costs everyone may read (the instance setting
-	// `finance_visibility`, FR-903, ADR-0067 §8). `private`: nothing, and
+	// `finance_visibility`). `private`: nothing, and
 	// `GET /instance/cost_totals` is a 404; `totals`: the total of each currency by period;
 	// `breakdown`: the totals and their breakdown by provider and category. No level publishes
 	// the names, memos, or individual payments of the cost items.
@@ -8913,7 +9060,7 @@ type Instance struct {
 	Icon *InstanceBrandImage `json:"icon,omitempty"`
 
 	// IncomeVisibility How much of the instance's income everyone may read (the instance setting
-	// `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:
+	// `income_visibility`), apart from `finance_visibility`. `private`:
 	// nothing, and `GET /instance/income_totals` is a 404; `totals`: the net income of each
 	// currency by period; `plans`: also the number of members of each supporter plan now. No
 	// level publishes individual payments, the subscribers, the amounts of each plan, or the
@@ -8923,9 +9070,9 @@ type Instance struct {
 	// Limits Limits that clients check before sending a request.
 	Limits InstanceLimits `json:"limits"`
 
-	// LinkCardsEnabled Whether the server fetches the pages that posts link to, for their link cards. While it is
+	// LinkCards Whether the server fetches the pages that posts link to, for their link cards. While it is
 	// false, the server fetches nothing for link cards.
-	LinkCardsEnabled bool `json:"link_cards_enabled"`
+	LinkCards bool `json:"link_cards"`
 
 	// LinkCardsIgnoreRobotsTxt Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
 	// link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
@@ -8974,7 +9121,7 @@ type Instance struct {
 	Rules []InstanceRule `json:"rules"`
 
 	// SearchIndexing Whether the instance lets search engines index its pages (the instance setting
-	// `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
+	// `search_indexing`). `allow`: the profiles and public posts of the accounts
 	// that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
 	// the reverse.
 	SearchIndexing SearchIndexing `json:"search_indexing"`
@@ -8990,13 +9137,15 @@ type Instance struct {
 	// SourceUrl Where users get the source code of the running server (AGPL-3.0 section 13), as an https URL to read it at or a mailto URI to request it by email.
 	SourceUrl string `json:"source_url"`
 
-	// StatusPageUrl The https address of the instance's status page, on a service apart from the server (ADR-0085). Absent when the operator has not set one.
+	// StatusPageUrl The https address of the instance's status page, on a service apart from the server. Absent when the operator has not set one.
 	StatusPageUrl *string `json:"status_page_url,omitempty"`
 
-	// SupporterListVisibility Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-	// §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-	// `signed_in`, the users signed in to this server.
-	SupporterListVisibility SupporterListVisibility `json:"supporter_list_visibility"`
+	// SupporterListVisibility Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	SupporterListVisibility InstanceAudience `json:"supporter_list_visibility"`
 
 	// SupportersEnabled Whether the supporter program is enabled: its plans (`GET /instance/supporter_plans`)
 	// and the subscriptions show only then.
@@ -9007,7 +9156,7 @@ type Instance struct {
 	// so that clients do not link to it.
 	TermsUrl *string `json:"terms_url,omitempty"`
 
-	// Theme The instance's theme (ADR-0059), for clients that do not load the server's HTML shell: the
+	// Theme The instance's theme, for clients that do not load the server's HTML shell: the
 	// stylesheet to apply and the overridden tokens. `Instance.theme` omits it when the
 	// instance has no theme.
 	Theme *InstanceTheme `json:"theme,omitempty"`
@@ -9016,10 +9165,10 @@ type Instance struct {
 	// variant of the media file. Omitted when there is none, or while the file is processing.
 	Thumbnail *InstanceThumbnail `json:"thumbnail,omitempty"`
 
-	// Timelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
-	// setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-	// setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-	// timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+	// Timelines Who may read the public timelines the instance serves: `local` is the instance
+	// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+	// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 	Timelines InstanceTimelines `json:"timelines"`
 
 	// Version The server version.
@@ -9040,6 +9189,13 @@ type Instance struct {
 // voice chat is off.
 type InstanceVoiceRoomStarters string
 
+// InstanceAudience Who may read something public about the instance, the value of the instance settings
+// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+// a 401; `everyone`, everyone, anonymous visitors included.
+type InstanceAudience string
+
 // InstanceBrandImage A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 // under `/brand/` on the server that name the revision, so their content never changes and
 // they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
@@ -9058,7 +9214,7 @@ type InstanceBrandImage struct {
 	Width int `json:"width"`
 }
 
-// InstanceClosure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+// InstanceClosure The closure of the service, present while a closure is announced and after
 // the server closes; absent when none is announced. Clients show it on every screen with the
 // way to export the data and to move the account.
 type InstanceClosure struct {
@@ -9071,7 +9227,7 @@ type InstanceClosure struct {
 	// Message The operator's message to the users, as plain text; omitted when there is none.
 	Message *string `json:"message,omitempty"`
 
-	// State Where the server is in its closure (ADR-0088 §1):
+	// State Where the server is in its closure:
 	//
 	// - `none`: no closure is announced.
 	// - `announced`: the closure is announced; the server runs as before until it closes.
@@ -9133,7 +9289,7 @@ type InstanceDocument struct {
 // (`terms`, `privacy_policy`, `commerce_disclosure`).
 type InstanceDocumentKind string
 
-// InstanceDomainAction A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly (FR-718).
+// InstanceDomainAction A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly.
 type InstanceDomainAction struct {
 	// Comment The public reason for the action; omitted when there is none or the viewer may not read it.
 	Comment *string `json:"comment,omitempty"`
@@ -9162,7 +9318,7 @@ type InstanceDomainActionPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// InstanceFederation How the instance federates with other servers (FR-413), so that clients offer only the
+// InstanceFederation How the instance federates with other servers, so that clients offer only the
 // operations on remote accounts and posts that can work.
 type InstanceFederation struct {
 	// Mode The direction the instance federates in (the instance setting `federation_mode`):
@@ -9202,7 +9358,7 @@ type InstanceLimits struct {
 	MaxPostCharacters int `json:"max_post_characters"`
 
 	// RequireMediaDescription Whether every media file attached to a post needs an alternative text (the instance
-	// setting `require_media_description`, FR-105). While it is on, a post or an edit with
+	// setting `require_media_description`). While it is on, a post or an edit with
 	// a media file without one is a 422, so clients ask for it before sending.
 	RequireMediaDescription bool `json:"require_media_description"`
 }
@@ -9232,7 +9388,7 @@ type InstanceRegistrations struct {
 // none of them lets new users sign up.
 type InstanceRegistrationsMode string
 
-// InstanceRule A rule of the instance (FR-705). Its text and hint hold one value each, written in any
+// InstanceRule A rule of the instance. Its text and hint hold one value each, written in any
 // language and the same in every locale. Reports cite it by `id`.
 type InstanceRule struct {
 	// Hint An explanation of the rule, as plain text; omitted when there is none.
@@ -9257,7 +9413,7 @@ type InstanceRuleInput struct {
 	Text string `json:"text"`
 }
 
-// InstanceSettingKey The key of an instance setting (docs/operations/instance-settings.md). New keys may be
+// InstanceSettingKey The key of an instance setting. New keys may be
 // added; clients show the ones they know.
 type InstanceSettingKey string
 
@@ -9276,7 +9432,7 @@ type InstanceSettingKind string
 // (Markdown, shown at `/about/commerce`; the server does not vouch for what they say).
 type InstanceTextKey string
 
-// InstanceTheme The instance's theme (ADR-0059), for clients that do not load the server's HTML shell: the
+// InstanceTheme The instance's theme, for clients that do not load the server's HTML shell: the
 // stylesheet to apply and the overridden tokens. `Instance.theme` omits it when the
 // instance has no theme.
 type InstanceTheme struct {
@@ -9295,22 +9451,24 @@ type InstanceThumbnail struct {
 	Width  int     `json:"width"`
 }
 
-// InstanceTimelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
-// setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-// setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-// timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+// InstanceTimelines Who may read the public timelines the instance serves: `local` is the instance
+// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 type InstanceTimelines struct {
-	// Federated Who may read a public timeline (the instance settings `local_timeline_access` and
-	// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-	// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-	// `everyone`, everyone, anonymous visitors included.
-	Federated TimelineAccess `json:"federated"`
+	// Federated Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	Federated InstanceAudience `json:"federated"`
 
-	// Local Who may read a public timeline (the instance settings `local_timeline_access` and
-	// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-	// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-	// `everyone`, everyone, anonymous visitors included.
-	Local TimelineAccess `json:"local"`
+	// Local Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	Local InstanceAudience `json:"local"`
 }
 
 // InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
@@ -9329,12 +9487,12 @@ type LiftAccountActionRequest struct {
 	Reason *string `json:"reason,omitempty"`
 }
 
-// LinkCard The card of the first link in a status (ADR-0062): the title, description, and image
+// LinkCard The card of the first link in a status: the title, description, and image
 // that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
 // after the status was posted or received. Omitted from a status with attachments or a
 // poll, from a status whose link has no card yet, from a status whose link is on a domain
 // where a rule of the crawler stops fetching, and when the instance setting
-// `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+// `link_cards` is off. A card appears after its fetch, so a status read right after
 // it was posted may have none.
 //
 // Clients show the card as one link to `url` and, under a content warning, only once the
@@ -9638,7 +9796,7 @@ type MediaAnimatedVariants struct {
 // attachment has none.
 //
 // A file of a remote status is always `ready`: the instance does not process it, so it has
-// no `variants`; `url` and `preview_url` are its media proxy URLs (federation.md §9),
+// no `variants`; `url` and `preview_url` are its media proxy URLs,
 // `remote_url` its URL on the remote server, and `meta`, `blurhash`, and `type` what the
 // remote server declared.
 type MediaAttachment struct {
@@ -9799,7 +9957,7 @@ type MediaVariants struct {
 }
 
 // MemberInviteLimits The caps and defaults of the invites that members create, from the instance settings
-// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
 type MemberInviteLimits struct {
 	// DefaultExpiresIn The seconds an invite created without `expires_in` works.
 	DefaultExpiresIn int `json:"default_expires_in"`
@@ -9817,7 +9975,7 @@ type MemberInviteLimits struct {
 	MaxUses int `json:"max_uses"`
 }
 
-// ModerationAction A moderation action on the authenticated user's own account (FR-715, NFR-MOD-6), as the
+// ModerationAction A moderation action on the authenticated user's own account, as the
 // user sees it. It never carries the moderators' private note, the report the action
 // follows from, or who filed the report or issued the action.
 type ModerationAction struct {
@@ -9867,7 +10025,7 @@ type ModerationAction struct {
 
 	// State `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
 	// lifted it.
-	State AdminAccountActionState `json:"state"`
+	State ModerationActionState `json:"state"`
 
 	// StatusIds The posts that an action on posts acted on; empty for an action on the whole account.
 	StatusIds []Id `json:"status_ids"`
@@ -9880,6 +10038,10 @@ type ModerationActionPage struct {
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
+
+// ModerationActionState `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
+// lifted it.
+type ModerationActionState string
 
 // ModerationAppeal The authenticated user's appeal of an action on their account. It never names the
 // moderator who decided it.
@@ -9908,7 +10070,7 @@ type ModerationAppeal struct {
 // `overturned` lifted it.
 type ModerationAppealState string
 
-// Money An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+// Money An amount of money: a decimal string in the major unit with the digits of
 // its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 type Money struct {
 	Amount   string `json:"amount"`
@@ -9945,8 +10107,8 @@ type MuteAccountRequest struct {
 	// Duration How long the mute lasts, in seconds; 0 mutes until unmuted.
 	Duration *int `json:"duration,omitempty"`
 
-	// Notifications Also hide the account's notifications.
-	Notifications *bool `json:"notifications,omitempty"`
+	// HideNotifications Also hide the account's notifications.
+	HideNotifications *bool `json:"hide_notifications,omitempty"`
 }
 
 // MuteDomainRequest The domain to mute.
@@ -9957,7 +10119,7 @@ type MuteDomainRequest struct {
 
 // MutePage A page of mutes.
 type MutePage struct {
-	Mutes []MutedAccount `json:"mutes"`
+	Items []MutedAccount `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -9965,14 +10127,14 @@ type MutePage struct {
 
 // MutedAccount An account that the viewer mutes, with the mute's settings.
 type MutedAccount struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// ExpiresAt When the mute ends; left out for a mute until unmuted.
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 
-	// Notifications Whether the mute also hides the account's notifications.
-	Notifications bool `json:"notifications"`
+	// HideNotifications Whether the mute also hides the account's notifications.
+	HideNotifications bool `json:"hide_notifications"`
 }
 
 // NewCustomEmojiRequest A new custom emoji request: `create` takes the `shortcode` of the new emoji, and `image` the
@@ -9983,7 +10145,7 @@ type NewCustomEmojiRequest struct {
 	// EmojiId For `image`, the emoji whose image the request replaces.
 	EmojiId *Id `json:"emoji_id,omitempty"`
 
-	// Kind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+	// Kind What a custom emoji request asks for: `create` a new local custom emoji,
 	// or `image` a new image of a local emoji that the requester made.
 	Kind CustomEmojiRequestKind `json:"kind"`
 
@@ -9998,11 +10160,11 @@ type NewCustomEmojiRequest struct {
 
 // Notification A notification of something that happened to the authenticated user.
 type Notification struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account *Account `json:"account,omitempty"`
 
 	// AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
-	// `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+	// `account` moved to `target`. Only the user's follows of the moved account move;
 	// its posts stay where they are.
 	AccountMove *AccountMove `json:"account_move,omitempty"`
 
@@ -10048,7 +10210,7 @@ type Notification struct {
 	ReportId *Id `json:"report_id,omitempty"`
 
 	// ServiceClosure What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
-	// tells of the closure of the service (ADR-0088). `change` is what the event of a
+	// tells of the closure of the service. `change` is what the event of a
 	// `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
 	// changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
 	// for the other types. `closes_at` and `export_until` are the dates of the announcement that the
@@ -10353,7 +10515,7 @@ type NotificationSettingsUpdateChangesChannel string
 // announcement is withdrawn or its window ends.
 type NotificationType string
 
-// OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
+// OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
 // it gets no first-party-only scope and calls no account security operation.
 type OAuthApp struct {
 	// ClientId The public identifier that the app sends as `client_id`.
@@ -10399,7 +10561,7 @@ type OAuthAppClientType string
 
 // OAuthAppCreated A new OAuth app, with the secret of a confidential app.
 type OAuthAppCreated struct {
-	// App An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
+	// App An OAuth app that the authenticated user registered. Like every third-party app,
 	// it gets no first-party-only scope and calls no account security operation.
 	App OAuthApp `json:"app"`
 
@@ -10438,13 +10600,13 @@ type OAuthAppToken struct {
 // OAuthAppTokenTokenType defines model for OAuthAppToken.TokenType.
 type OAuthAppTokenTokenType string
 
-// OAuthClientRegistration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+// OAuthClientRegistration The route by which an OAuth client was registered: `first_party` is one of the
 // server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
 // client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
 // that registered itself (RFC 7591).
 type OAuthClientRegistration string
 
-// OwnCustomEmoji A local custom emoji that the user made (ADR-0070 §3).
+// OwnCustomEmoji A local custom emoji that the user made.
 type OwnCustomEmoji struct {
 	// Aliases The other names that the picker finds the emoji by.
 	Aliases []string `json:"aliases"`
@@ -10480,8 +10642,7 @@ type OwnCustomEmoji struct {
 	VisibleInPicker bool `json:"visible_in_picker"`
 }
 
-// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their monthly limit
-// (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their monthly limit: `used` counts the requests to create an emoji that the user submitted this UTC
 // calendar month and that are approved or pending (deleting an emoji does not lower it),
 // `pending` is the part of `used` that the pending requests take, `limit` is how many they may
 // submit in a month, absent for no limit, and `resets_at` is when the count resets.
@@ -10546,7 +10707,7 @@ type OwnInvitePage struct {
 	Items     []OwnInvite `json:"items"`
 
 	// Limits The caps and defaults of the invites that members create, from the instance settings
-	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
 	Limits MemberInviteLimits `json:"limits"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
@@ -10558,7 +10719,7 @@ type OwnInvitePage struct {
 
 // OwnSupporterSubscription The authenticated user's subscription that goes on, and whether they may subscribe.
 type OwnSupporterSubscription struct {
-	// IneligibleReason Why the user may not subscribe to a supporter plan (ADR-0072 §6): `not_local`, not a user
+	// IneligibleReason Why the user may not subscribe to a supporter plan: `not_local`, not a user
 	// of this server; `email_unverified`, the primary email address is not verified;
 	// `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
 	// the user may subscribe.
@@ -10691,7 +10852,7 @@ type PaymentReconcileRunErrorKind string
 // continuation takes over; `failed` when the provider failed.
 type PaymentReconcileRunOutcome string
 
-// PaymentStatus The state of the payment provider (ADR-0074 §4).
+// PaymentStatus The state of the payment provider.
 type PaymentStatus struct {
 	// LastReconcile The last attempt of the reconciliation with the payment provider; omitted before the first.
 	LastReconcile *PaymentReconcileRun `json:"last_reconcile,omitempty"`
@@ -10704,7 +10865,7 @@ type PaymentStatus struct {
 	// credentials.
 	Mode PaymentStatusMode `json:"mode"`
 
-	// Provider The provider of `payments_provider` (`stripe`, `payjp`).
+	// Provider The provider of `payments` (`stripe`, `payjp`).
 	Provider string `json:"provider"`
 
 	// TimeZone The IANA time zone of the provider's reports (`UTC`), in which the income is dated.
@@ -10735,27 +10896,27 @@ type PaymentStatusWarnings string
 // server's announcements to every local user. `manage_finance`: the instance's costs and
 // the state of the billing imports (only the built-in admin role by default). `view_finance`:
 // reading the totals of the instance's costs on `GET /finance/cost_totals`, a member
-// permission outside the staff's areas (ADR-0070). `manage_supporters`: the supporter program, its plans, and their
+// permission outside the staff's areas. `manage_supporters`: the supporter program, its plans, and their
 // subscriptions (only the built-in admin role by default). `create_custom_emojis`: requesting
 // new local custom emoji, which a holder of `manage_custom_emojis` approves, and changing and
 // deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
-// member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
+// member permission. `manage_oauth_apps`: all the OAuth clients, disabling them,
 // and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
-// `/admin/oauth_client_host_denials` (ADR-0090). `manage_service_closure`: announcing the closure
+// `/admin/oauth_client_host_denials`. `manage_service_closure`: announcing the closure
 // of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
-// admin role by default, ADR-0088). `start_voice_rooms`: opening voice chat rooms while the
+// admin role by default). `start_voice_rooms`: opening voice chat rooms while the
 // instance setting `voice_room_starters` is `permitted`, a member permission (only the
-// built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
+// built-in admin role by default). `manage_errors`: the error groups of the server
 // and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
-// the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
+// the webhook events `error_group.*` (only the built-in admin role by default).
 // `manage_login_providers`: the external identity providers that users sign in with (only the
-// built-in admin role by default, ADR-0106). `create_invites`: creating, listing, and revoking
+// built-in admin role by default). `create_invites`: creating, listing, and revoking
 // invites of one's own on `/invites` while the instance setting `invite_creators` is
-// `permitted`, a member permission (only the built-in admin role by default, ADR-0108). The
+// `permitted`, a member permission (only the built-in admin role by default). The
 // others guard no client API operation yet.
 type Permission string
 
-// PickerCustomEmoji A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
+// PickerCustomEmoji A local custom emoji that the picker offers. Picking it inserts
 // `:shortcode:` into the text.
 type PickerCustomEmoji struct {
 	// Aliases Other names that a search of the picker finds the emoji by.
@@ -10779,7 +10940,7 @@ type PickerCustomEmojiList struct {
 	Items []PickerCustomEmoji `json:"items"`
 }
 
-// Poll The poll of a status (FR-112); omitted when the status has none. The counts of a poll of
+// Poll The poll of a status; omitted when the status has none. The counts of a poll of
 // another server are those its server last reported. A poll whose author hides the votes of
 // each option until it ends leaves out `votes_count` of its options until then. `voted` and
 // `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.
@@ -10815,7 +10976,7 @@ type Poll struct {
 	VotesCount int `json:"votes_count"`
 }
 
-// PollInput A poll of a new status (FR-112). It ends `expires_in` seconds after the status is
+// PollInput A poll of a new status. It ends `expires_in` seconds after the status is
 // posted; the author and the users who voted are notified then.
 type PollInput struct {
 	// ExpiresIn How long the poll takes votes, in seconds (5 minutes to 30 days).
@@ -10841,7 +11002,7 @@ type PollOption struct {
 	VotesCount *int `json:"votes_count,omitempty"`
 }
 
-// PostingLimits What the account's current moderation restrictions let it post (data-model/05-states-and-policies.md §5.4). The
+// PostingLimits What the account's current moderation restrictions let it post. The
 // server applies the same policy when it posts: a status asked for with a visibility that is
 // not in `visibilities` gets `visibility_ceiling` instead.
 type PostingLimits struct {
@@ -10849,7 +11010,7 @@ type PostingLimits struct {
 	// narrowest; every visibility while the account is not restricted.
 	Visibilities []Visibility `json:"visibilities"`
 
-	// VisibilityCeiling Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// VisibilityCeiling Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -10864,7 +11025,7 @@ type Preferences struct {
 	// DefaultQuotePolicy Who may quote the user's new statuses that name no `quote_policy`.
 	DefaultQuotePolicy QuotePolicy `json:"default_quote_policy"`
 
-	// DefaultVisibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// DefaultVisibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -10902,7 +11063,7 @@ type Preferences struct {
 	TimeZoneFollowsBrowser bool `json:"time_zone_follows_browser"`
 
 	// TimelineAutoInsert Whether the web client inserts new timeline posts without asking, instead of offering them
-	// behind a "show new posts" button (ADR-0077). On for a new user; the same on every device.
+	// behind a "show new posts" button. On for a new user; the same on every device.
 	TimelineAutoInsert bool `json:"timeline_auto_insert"`
 
 	// TimelineLanguages The languages that timelines show, sorted; empty shows every language.
@@ -10911,7 +11072,7 @@ type Preferences struct {
 
 // PreviewDomainBlockImportRequest A domain block CSV to preview.
 type PreviewDomainBlockImportRequest struct {
-	// Csv The file's text, with a header or as a list of domains; at most 5,000 rows.
+	// Csv The file's text, with a header or as a list of domains; at most 5,000 rows, and the request body at most 1 MiB, past which the answer is 413.
 	Csv string `json:"csv"`
 }
 
@@ -10962,6 +11123,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
 //   - `/api/v1/problems/wrong-password` (422): the password given to confirm the operation is
 //     not the user's current password.
+//   - `/api/v1/problems/deactivation-refused` (409): the user's own account cannot be deactivated
+//     now; the detail says why.
 //   - `/api/v1/problems/export-in-progress` (409): another data export of the user is being
 //     built. Wait for it to end.
 //   - `/api/v1/problems/export-not-ready` (409): the data export has no archive to download:
@@ -11018,14 +11181,14 @@ type PreviewDomainBlockImportRequest struct {
 //     server whose closure is not announced or whose `closes_at` has not come
 //     (`POST /admin/closure/close`).
 //   - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
-//     stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+//     stops new registrations and supporter subscriptions: approving a pending
 //     registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
 //     (`POST /supporter/checkout`).
-//   - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
+//   - `/api/v1/problems/service-closed` (403): the server is closed. A closed
 //     server serves only the operations with which the users take their data away: their own
 //     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
 //     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
-//     (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+//     (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, `POST /client_errors`, and
 //     the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
 //     `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
 //     this problem; signing in and resetting a password stay available outside the client API.
@@ -11090,8 +11253,13 @@ type PreviewDomainBlockImportRequest struct {
 //     expire or be used up.
 //   - `/api/v1/problems/registration-closed` (409): the registration mode is `closed`, which
 //     takes no invite.
-//   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
-//     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+//   - `/api/v1/problems/target-outranks-actor` (403): the admin operation on an account needs the
+//     user to rank above the account: the highest `position` among the user's roles must be above
+//     that of every role of the account, so it refuses a higher or equal rank and the user's own
+//     account.
+//   - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
+//     an administrator. Make another user an administrator first.
+//   - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).
 //   - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
 //     `DELETE /sessions/{id}`; signing out ends it.
@@ -11104,12 +11272,29 @@ type PreviewDomainBlockImportRequest struct {
 //     own, is not found, cannot be fetched from its server, or is suspended here.
 //   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
 //     or moved to that account before.
-//   - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
+//   - `/api/v1/problems/maintenance` (503): the server is under maintenance and
 //     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
 //     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
 //     each present only when the operator set it: `message`, the administrators' notice in
 //     plain text; `until`, when the maintenance is expected to end (RFC 3339); and
 //     `status_page_url`, the instance's status page.
+//   - `/api/v1/problems/custom-emoji-request-conflict` (409): a request for a custom emoji
+//     is not in the state the operation needs, or was decided meanwhile.
+//   - `/api/v1/problems/email-already-verified` (409): the primary email address is already
+//     confirmed, so no confirmation mail is sent.
+//   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
+//     suppressed, so there is nothing to lift.
+//   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
+//     `reason` says which.
+//   - `/api/v1/problems/invalid-role` (422): a role change breaks a rule; `reason` says which.
+//   - `/api/v1/problems/voice-already-invited` (409): the account is already invited to the room.
+//   - `/api/v1/problems/voice-cannot-speak` (403): the participant may not speak in the room.
+//   - `/api/v1/problems/voice-invalid-invitee` (422): the account cannot be invited to the room.
+//   - `/api/v1/problems/voice-invalid-participant` (422): the account is not a participant that
+//     the operation can act on.
+//   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
+//     co-hosts of the room.
+//   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
 type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
@@ -11166,7 +11351,8 @@ type PushSubscriptionKeys struct {
 
 // PushSubscriptionRequest A browser's push subscription and the notification types to push to it.
 type PushSubscriptionRequest struct {
-	// Alerts The notification types to push, each at most once; empty pushes none.
+	// Alerts The notification types to push, each at most once; empty pushes none. A third-party
+	// client's subscription leaves out the moderator notification types.
 	Alerts []NotificationType `json:"alerts"`
 
 	// Endpoint The push service URL (`PushSubscription.endpoint`), an `https` URL.
@@ -11186,13 +11372,13 @@ type QrCode struct {
 	Size int `json:"size"`
 }
 
-// QuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
+// QuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
 // the author's followers, `nobody` the author alone. A followers-only status is quoted only
 // by its author, in a followers-only or direct status, and a direct one by nobody, whatever
 // its policy.
 type QuotePolicy string
 
-// QuoteState The state of a quote as the viewer sees it (ADR-0069), with the values of Mastodon's
+// QuoteState The state of a quote as the viewer sees it, with the values of Mastodon's
 // `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and
 // behind the reason for `muted_account` and `blocked_domain`:
 //
@@ -11243,7 +11429,7 @@ type RecoveryCodes struct {
 
 // RegistrationDecisionRequest A moderator's decision on a registration.
 type RegistrationDecisionRequest struct {
-	// Note A note for the moderators, as plain text; omitted or empty for none.
+	// Note A note for the moderators, as plain text, which the registration shows as `decision_note`; omitted or empty for none.
 	Note *string `json:"note,omitempty"`
 }
 
@@ -11259,15 +11445,21 @@ type RejectCustomEmojiRequestRequest struct {
 
 // Relationship The viewer's relationship with an account. It never says whether the account blocks
 // the viewer: such an account is not found at all.
+//
+// A token sees the fields its scopes cover, wherever the relationship comes from, and the
+// rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
+// `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
+// `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
+// `read:mutes` or `write:mutes`.
 type Relationship struct {
 	// Blocking Whether the viewer blocks the account.
-	Blocking bool `json:"blocking"`
+	Blocking *bool `json:"blocking,omitempty"`
 
 	// FollowedBy Whether the account actively follows the viewer.
-	FollowedBy bool `json:"followed_by"`
+	FollowedBy *bool `json:"followed_by,omitempty"`
 
 	// Following Whether the viewer actively follows the account.
-	Following bool `json:"following"`
+	Following *bool `json:"following,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
@@ -11275,24 +11467,29 @@ type Relationship struct {
 	Id Id `json:"id"`
 
 	// Muting Whether the viewer mutes the account (a mute that has not expired).
-	Muting bool `json:"muting"`
+	Muting *bool `json:"muting,omitempty"`
 
 	// MutingNotifications Whether the viewer's mute also hides the account's notifications.
-	MutingNotifications bool `json:"muting_notifications"`
+	MutingNotifications *bool `json:"muting_notifications,omitempty"`
 
 	// Notify Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
 	// without a follow. A subscription asked for with a follow request to an account on another
 	// server is false until that server accepts the follow.
-	Notify bool `json:"notify"`
+	Notify *bool `json:"notify,omitempty"`
 
 	// Requested Whether the viewer's follow request awaits the account's approval.
-	Requested bool `json:"requested"`
+	Requested *bool `json:"requested,omitempty"`
 
 	// RequestedBy Whether the account's follow request awaits the viewer's approval.
-	RequestedBy bool `json:"requested_by"`
+	RequestedBy *bool `json:"requested_by,omitempty"`
 
 	// ShowBoosts Whether the viewer's follow shows the account's boosts in the home timeline (true without a follow).
-	ShowBoosts bool `json:"show_boosts"`
+	ShowBoosts *bool `json:"show_boosts,omitempty"`
+}
+
+// RelationshipList The relationships, in the order of the request.
+type RelationshipList struct {
+	Items []Relationship `json:"items"`
 }
 
 // RelationshipSeverance The follows that a `relationships_severed` tells of: the user lost them when the
@@ -11350,7 +11547,7 @@ type RelayProblem struct {
 // `accepted` relay, leaving or deleting one that is not).
 type RelayProblemReason string
 
-// RelayProtocol How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
+// RelayProtocol How a relay is joined. `mastodon`: at its inbox, by a `Follow` of the Public
 // collection. `litepub`: at its actor, by a `Follow` of the actor.
 type RelayProtocol string
 
@@ -11410,8 +11607,9 @@ type Report struct {
 	State     ReportState `json:"state"`
 	StatusIds []Id        `json:"status_ids"`
 
-	// TargetAccount An account, as clients show it (FR-006).
-	TargetAccount Account `json:"target_account"`
+	// TargetAccount The account reported, as the user would see it through `getAccount`; omitted when that
+	// answers 404, because the account is suspended, deleted, or blocks the user.
+	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// VoiceRoomId The voice chat room reported; omitted for none.
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
@@ -11445,11 +11643,11 @@ type ResolveReportRequest struct {
 // such a path.
 type ReturnTo = string
 
-// RoleBadge The badge of a role (ADR-0071), which its holders may show on their profile. The label is
+// RoleBadge The badge of a role, which its holders may show on their profile. The label is
 // the staff's own text, the same in every locale: clients show it as user content
 // (`dir="auto"`), never translated.
 type RoleBadge struct {
-	// Color The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+	// Color The color of a role badge: the name of a pair of the web client's design tokens
 	// for its background and its text, which keep their contrast in the light and the dark theme.
 	// Server themes do not change them. The color is decoration; the badge's `label` carries its
 	// meaning.
@@ -11518,28 +11716,28 @@ type SanitizeBrandRequest struct {
 }
 
 // SearchIndexing Whether the instance lets search engines index its pages (the instance setting
-// `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
+// `search_indexing`). `allow`: the profiles and public posts of the accounts
 // that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
 // the reverse.
 type SearchIndexing string
 
-// ServerHealth The health of the server (ADR-0085 §1). The values are fixed, machine-readable words, never
+// ServerHealth The health of the server. The values are fixed, machine-readable words, never
 // localized.
 type ServerHealth struct {
 	// CheckedAt When this process last checked the database; absent during the maintenance mode.
 	CheckedAt *time.Time `json:"checked_at,omitempty"`
 
 	// Status `ok` while the server is healthy, `unavailable` while the database is unreachable or its
-	// schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+	// schema is not applied, `maintenance` during the maintenance mode.
 	Status ServerHealthStatus `json:"status"`
 }
 
 // ServerHealthStatus `ok` while the server is healthy, `unavailable` while the database is unreachable or its
-// schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+// schema is not applied, `maintenance` during the maintenance mode.
 type ServerHealthStatus string
 
 // ServiceClosureNotice What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
-// tells of the closure of the service (ADR-0088). `change` is what the event of a
+// tells of the closure of the service. `change` is what the event of a
 // `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
 // changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
 // for the other types. `closes_at` and `export_until` are the dates of the announcement that the
@@ -11557,7 +11755,7 @@ type ServiceClosureNotice struct {
 // ServiceClosureNoticeChange defines model for ServiceClosureNotice.Change.
 type ServiceClosureNoticeChange string
 
-// ServiceClosureState Where the server is in its closure (ADR-0088 §1):
+// ServiceClosureState Where the server is in its closure:
 //
 //   - `none`: no closure is announced.
 //   - `announced`: the closure is announced; the server runs as before until it closes.
@@ -11597,9 +11795,6 @@ type SetInstanceTextRequest struct {
 
 // SetLinkCardDomainRuleRequest The rule to set on a domain.
 type SetLinkCardDomainRuleRequest struct {
-	// Domain The domain, a host without a scheme, path, or port; it also covers its subdomains.
-	Domain string `json:"domain"`
-
 	// Mode What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
 	// neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
 	// but no images, and its cards show without their images.
@@ -11611,7 +11806,7 @@ type SetLinkCardDomainRuleRequest struct {
 
 // SetQuotePolicyRequest Who may quote the status from now on. Approvals given before stay.
 type SetQuotePolicyRequest struct {
-	// QuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
+	// QuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
 	// the author's followers, `nobody` the author alone. A followers-only status is quoted only
 	// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
 	// its policy.
@@ -11665,7 +11860,7 @@ type SpoilerText = string
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
 type Status struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Bookmarked Whether the authenticated user bookmarked the status.
@@ -11688,12 +11883,12 @@ type Status struct {
 	// BoostsCount The number of boosts.
 	BoostsCount int `json:"boosts_count"`
 
-	// Card The card of the first link in a status (ADR-0062): the title, description, and image
+	// Card The card of the first link in a status: the title, description, and image
 	// that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
 	// after the status was posted or received. Omitted from a status with attachments or a
 	// poll, from a status whose link has no card yet, from a status whose link is on a domain
 	// where a rule of the crawler stops fetching, and when the instance setting
-	// `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+	// `link_cards` is off. A card appears after its fetch, so a status read right after
 	// it was posted may have none.
 	//
 	// Clients show the card as one link to `url` and, under a content warning, only once the
@@ -11702,7 +11897,7 @@ type Status struct {
 	Card *LinkCard `json:"card,omitempty"`
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-	// remote status is what the server's sanitizer kept of the received document (ADR-0019 §2).
+	// remote status is what the server's sanitizer kept of the received document.
 	Content string `json:"content"`
 
 	// CreatedAt When the status was posted.
@@ -11711,8 +11906,7 @@ type Status struct {
 	// EditedAt When the status was last edited; omitted when it never was.
 	EditedAt *time.Time `json:"edited_at,omitempty"`
 
-	// Emojis The custom emoji of the text, the content warning, and the poll's choices
-	// (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+	// Emojis The custom emoji of the text, the content warning, and the poll's choices. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text. Empty for a boost, whose emoji are those of `boost`.
 	Emojis []CustomEmoji `json:"emojis"`
 
@@ -11754,7 +11948,7 @@ type Status struct {
 	// Pinned Whether the status is pinned to the author's profile; given only to the author.
 	Pinned *bool `json:"pinned,omitempty"`
 
-	// Poll The poll of a status (FR-112); omitted when the status has none. The counts of a poll of
+	// Poll The poll of a status; omitted when the status has none. The counts of a poll of
 	// another server are those its server last reported. A poll whose author hides the votes of
 	// each option until it ends leaves out `votes_count` of its options until then. `voted` and
 	// `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.
@@ -11795,7 +11989,7 @@ type Status struct {
 	// when it has none.
 	Url *string `json:"url,omitempty"`
 
-	// Visibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// Visibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -11862,18 +12056,10 @@ type StatusMention struct {
 	// Acct The username for local accounts, `username@domain` for remote ones.
 	Acct string `json:"acct"`
 
-	// Domain The domain of the account: the domain of its handle, which for local accounts is the
-	// instance's account domain, or the host of its `uri` when a remote account has no
-	// confirmed handle.
-	Domain *string `json:"domain,omitempty"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
-
-	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
-	Uri *string `json:"uri,omitempty"`
 
 	// Url The account's profile page.
 	Url string `json:"url"`
@@ -11891,7 +12077,7 @@ type StatusPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// StatusQuote The status that a status quotes (FR-114, ADR-0069). Quotes are shown one level deep:
+// StatusQuote The status that a status quotes. Quotes are shown one level deep:
 // `quoted_status` has no `quote` of its own, and clients link to it instead.
 type StatusQuote struct {
 	// QuotedStatus A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
@@ -11905,7 +12091,7 @@ type StatusQuote struct {
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
 	QuotedStatus *Status `json:"quoted_status,omitempty"`
 
-	// State The state of a quote as the viewer sees it (ADR-0069), with the values of Mastodon's
+	// State The state of a quote as the viewer sees it, with the values of Mastodon's
 	// `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and
 	// behind the reason for `muted_account` and `blocked_domain`:
 	//
@@ -11958,7 +12144,7 @@ type StatusReactionPage struct {
 
 // StatusReactor One emoji reaction to a status, with the account that reacted.
 type StatusReactor struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// CreatedAt When the account reacted.
@@ -12017,7 +12203,7 @@ type SupporterCheckout struct {
 // it. `canceled`: it was canceled, or it ended at the payment provider.
 type SupporterEndReason string
 
-// SupporterIneligibleReason Why the user may not subscribe to a supporter plan (ADR-0072 §6): `not_local`, not a user
+// SupporterIneligibleReason Why the user may not subscribe to a supporter plan: `not_local`, not a user
 // of this server; `email_unverified`, the primary email address is not verified;
 // `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
 // the user may subscribe.
@@ -12028,7 +12214,7 @@ type SupporterInterval string
 
 // SupporterListEntry A member on the supporter list.
 type SupporterListEntry struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// PlanId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -12059,11 +12245,6 @@ type SupporterListPlan struct {
 	Name string `json:"name"`
 }
 
-// SupporterListVisibility Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-// §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-// `signed_in`, the users signed in to this server.
-type SupporterListVisibility string
-
 // SupporterListing Whether the user is on the supporter list.
 type SupporterListing struct {
 	Listed bool `json:"listed"`
@@ -12079,7 +12260,7 @@ type SupporterPlan struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice Money  `json:"monthly_price"`
 	Name         string `json:"name"`
@@ -12087,7 +12268,7 @@ type SupporterPlan struct {
 	// Rank A higher rank is a higher plan, which includes everything of the lower ones.
 	Rank int `json:"rank"`
 
-	// YearlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// YearlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	YearlyPrice Money `json:"yearly_price"`
 }
@@ -12183,7 +12364,7 @@ type SupporterScheduledChange struct {
 	PlanId   Id     `json:"plan_id"`
 	PlanName string `json:"plan_name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 }
@@ -12222,7 +12403,7 @@ type SupporterSubscription struct {
 	PlanId   Id     `json:"plan_id"`
 	PlanName string `json:"plan_name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 
@@ -12230,7 +12411,7 @@ type SupporterSubscription struct {
 	ScheduledChange *SupporterScheduledChange `json:"scheduled_change,omitempty"`
 	StartedAt       time.Time                 `json:"started_at"`
 
-	// State The state of a subscription (ADR-0072 §7). `pending`: started, not paid yet. `active`:
+	// State The state of a subscription. `pending`: started, not paid yet. `active`:
 	// paid. `canceling`: canceled at the end of the period. `past_due`: a payment failed less
 	// than 7 days ago. `lapsed`: a payment failed more than 7 days ago, or the subscription is
 	// paused. `expired`: ended. `revoked`: a full refund or a chargeback. `abandoned`: ended
@@ -12238,20 +12419,25 @@ type SupporterSubscription struct {
 	State SupporterSubscriptionState `json:"state"`
 }
 
-// SupporterSubscriptionState The state of a subscription (ADR-0072 §7). `pending`: started, not paid yet. `active`:
+// SupporterSubscriptionState The state of a subscription. `pending`: started, not paid yet. `active`:
 // paid. `canceling`: canceled at the end of the period. `past_due`: a payment failed less
 // than 7 days ago. `lapsed`: a payment failed more than 7 days ago, or the subscription is
 // paused. `expired`: ended. `revoked`: a full refund or a chargeback. `abandoned`: ended
 // before its first payment. The role is held while `active`, `canceling`, or `past_due`.
 type SupporterSubscriptionState string
 
-// TagSuggestion A hashtag that the prefix search of hashtags found (ADR-0092).
+// TagSuggestion A hashtag that the prefix search of hashtags found.
 type TagSuggestion struct {
 	// Name The hashtag as first written on this server, without `#`.
 	Name string `json:"name"`
 
 	// StatusesCount How many posts of visibility `public`, `local`, or `unlisted` carry the hashtag now.
 	StatusesCount int64 `json:"statuses_count"`
+}
+
+// TagSuggestionList The tags that match.
+type TagSuggestionList struct {
+	Items []TagSuggestion `json:"items"`
 }
 
 // ThemeError One reason a theme cannot be saved. `code` is `unknown_token`, `duplicate_token`,
@@ -12306,12 +12492,6 @@ type ThemeTokenValue struct {
 	Value *string `json:"value,omitempty"`
 }
 
-// TimelineAccess Who may read a public timeline (the instance settings `local_timeline_access` and
-// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-// `everyone`, everyone, anonymous visitors included.
-type TimelineAccess string
-
 // TotpSetup A new TOTP secret to add to an authenticator app.
 type TotpSetup struct {
 	// ExpiresAt When `setup_token` stops working.
@@ -12356,7 +12536,7 @@ type UpdateBadgeChoiceRequest struct {
 
 // UpdateCredentialsRequest A change of the profile; properties left out keep their current values.
 type UpdateCredentialsRequest struct {
-	// AiOptOut Whether the account's pages state that AI may neither train on nor use them (FR-412).
+	// AiOptOut Whether the account's pages state that AI may neither train on nor use them.
 	AiOptOut *bool `json:"ai_opt_out,omitempty"`
 
 	// AvatarMediaId The ID of a processed image that the user uploaded, to become the avatar; empty
@@ -12367,7 +12547,7 @@ type UpdateCredentialsRequest struct {
 	Bot *bool `json:"bot,omitempty"`
 
 	// Discoverable Whether the account is suggested to others and found by the middle of its names in the
-	// account search (FR-307, FR-308); when `false`, the search finds it only by its whole
+	// account search; when `false`, the search finds it only by its whole
 	// username. New accounts are discoverable.
 	Discoverable *bool `json:"discoverable,omitempty"`
 
@@ -12381,7 +12561,7 @@ type UpdateCredentialsRequest struct {
 	// empty removes the header image.
 	HeaderMediaId *string `json:"header_media_id,omitempty"`
 
-	// Indexable Whether the account's profile and public posts may be indexed for search (FR-412).
+	// Indexable Whether the account's profile and public posts may be indexed for search.
 	Indexable *bool `json:"indexable,omitempty"`
 
 	// Locked Whether follow requests need the user's approval.
@@ -12478,13 +12658,13 @@ type UpdatePreferencesRequest struct {
 	// DefaultPostLanguage The language of new posts that name none; `und` for undetermined.
 	DefaultPostLanguage *string `json:"default_post_language,omitempty"`
 
-	// DefaultQuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
+	// DefaultQuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
 	// the author's followers, `nobody` the author alone. A followers-only status is quoted only
 	// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
 	// its policy.
 	DefaultQuotePolicy *QuotePolicy `json:"default_quote_policy,omitempty"`
 
-	// DefaultVisibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// DefaultVisibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -12517,7 +12697,7 @@ type UpdatePreferencesRequest struct {
 
 // UpdateRoleRequest The changes to a role; what is omitted stays.
 type UpdateRoleRequest struct {
-	// Badge The new badge of the role (ADR-0071). Its holders keep their choice to show it.
+	// Badge The new badge of the role. Its holders keep their choice to show it.
 	Badge *RoleBadge `json:"badge,omitempty"`
 
 	// Permissions The new permissions of the role, each once; empty removes them all.
@@ -12539,11 +12719,17 @@ type UpdateWebhookRequest struct {
 	Url         *string             `json:"url,omitempty"`
 }
 
-// Visibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+// Visibility Who may see a status: `public` everyone, listed on public timelines;
 // `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 // public timelines; `private` followers and mentioned accounts; `direct` mentioned
 // accounts.
 type Visibility string
+
+// VoiceEndReason Why a voice chat room ended: `host` the host ended it, `empty` nobody was left in it,
+// `host_disconnected` the host lost the connection and nobody took over, `host_ineligible` the
+// host may no longer host, `moderator` a moderator ended it, `time_limit` it reached the limit
+// of its duration, and `disabled` the voice chat was turned off.
+type VoiceEndReason string
 
 // VoiceGrant What the client of a session needs to connect to the audio of a room. `kind` is the method
 // of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
@@ -12553,7 +12739,7 @@ type VoiceGrant struct {
 
 	// IceServers The STUN and TURN servers of the connections.
 	IceServers []VoiceIceServer `json:"ice_servers"`
-	Kind       string           `json:"kind"`
+	Kind       VoiceGrantKind   `json:"kind"`
 
 	// Options The options of the method for the client.
 	Options map[string]string `json:"options"`
@@ -12567,6 +12753,9 @@ type VoiceGrant struct {
 	// Url The endpoint of the media server; omitted for `p2p`.
 	Url *string `json:"url,omitempty"`
 }
+
+// VoiceGrantKind defines model for VoiceGrant.Kind.
+type VoiceGrantKind string
 
 // VoiceHostChoice The participant who becomes the host.
 type VoiceHostChoice struct {
@@ -12610,7 +12799,7 @@ type VoiceRoom struct {
 	// Hashtags The hashtags of the room, without the `#`, as the host typed them.
 	Hashtags []string `json:"hashtags"`
 
-	// Host An account, as clients show it (FR-006).
+	// Host An account, as clients show it.
 	Host Account `json:"host"`
 
 	// Icon The emoji that a voice chat room shows before its name: a Unicode emoji, or a custom emoji
@@ -12672,9 +12861,8 @@ type VoiceRoomEntryRole string
 
 // VoiceRoomHistoryEntry A voice chat room that the user hosted, as its settings stand last.
 type VoiceRoomHistoryEntry struct {
-	// EndReason Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
-	// `moderator`, `time_limit`, `disabled`); omitted while it is open.
-	EndReason *string `json:"end_reason,omitempty"`
+	// EndReason Why the room ended; omitted while it is open.
+	EndReason *VoiceEndReason `json:"end_reason,omitempty"`
 
 	// EndedAt When the room ended; omitted while it is open.
 	EndedAt *time.Time `json:"ended_at,omitempty"`
@@ -12714,7 +12902,7 @@ type VoiceRoomIcon struct {
 // VoiceRoomInvitation An invitation to a voice chat room. The invited user sees the room until the invitation is
 // revoked; an invitation as a speaker also lets the user speak without asking.
 type VoiceRoomInvitation struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -12779,7 +12967,7 @@ type VoiceRoomPage struct {
 
 // VoiceRoomParticipant A participant of a voice chat room.
 type VoiceRoomParticipant struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Blocked Whether the user blocks the participant or the participant blocks the user.
@@ -12818,21 +13006,18 @@ type VoiceRoomSettings struct {
 	// Name 1 to 100 characters on one line.
 	Name string `json:"name"`
 
-	// Post The post that the host writes when opening a voice chat room. The link of the room is
-	// appended to the text on a line of its own. The post is the host's own: `local` for a room of
+	// Post The post that the host writes when opening a voice chat room. Asking for one needs the
+	// `write:statuses` scope besides `write:voice`, or the request is a 403
+	// `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
 	// the `local` visibility and `private` for a room of the `followers` visibility, federated like
 	// any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
 	// visibility has no start post.
 	Post *VoiceStartPost `json:"post,omitempty"`
 
-	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// Speakers Who may become a speaker without asking; `manual` when omitted.
 	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
 
-	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
-	// invited users always see it, and a block with the host or a co-host always hides it.
+	// Visibility Who sees the room; `local` when omitted.
 	Visibility *VoiceRoomVisibility `json:"visibility,omitempty"`
 }
 
@@ -12850,7 +13035,7 @@ type VoiceRoomSummary struct {
 	// Description The description of the room, empty for none.
 	Description *string `json:"description,omitempty"`
 
-	// Host An account, as clients show it (FR-006).
+	// Host An account, as clients show it.
 	Host *Account `json:"host,omitempty"`
 
 	// Icon The icon of the room; present only with `name`, and omitted when the room has none.
@@ -12933,8 +13118,9 @@ type VoiceSignal struct {
 // VoiceSignalKind The kind of a WebRTC signal.
 type VoiceSignalKind string
 
-// VoiceStartPost The post that the host writes when opening a voice chat room. The link of the room is
-// appended to the text on a line of its own. The post is the host's own: `local` for a room of
+// VoiceStartPost The post that the host writes when opening a voice chat room. Asking for one needs the
+// `write:statuses` scope besides `write:voice`, or the request is a 403
+// `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
 // the `local` visibility and `private` for a room of the `followers` visibility, federated like
 // any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
 // visibility has no start post.
@@ -12949,12 +13135,15 @@ type VoiceStartPost struct {
 
 // VoiceStreamEnd The data of the `removed`, `replaced`, and `ended` events of a voice chat room stream, after
 // which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
-// `moved`, `disconnected`, `removed`, `blocked`, `suspended`), the one of `replaced` is
+// `moved`, `disconnected`, `removed`, `blocked`, `suspended`, `room_ended`), the one of `replaced` is
 // `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
 // `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
 type VoiceStreamEnd struct {
-	Reason string `json:"reason"`
+	Reason VoiceStreamEndReason `json:"reason"`
 }
+
+// VoiceStreamEndReason defines model for VoiceStreamEnd.Reason.
+type VoiceStreamEndReason string
 
 // VoiceStreamGrant The data of a `grant` event of a voice chat room stream.
 type VoiceStreamGrant struct {
@@ -13029,7 +13218,7 @@ type WebhookCustomEmoji struct {
 	// CreatedAt When the emoji was registered or first seen.
 	CreatedAt time.Time `json:"created_at"`
 
-	// CreatedBy The account of the user who made a local emoji (ADR-0070 §7): the requester of an
+	// CreatedBy The account of the user who made a local emoji: the requester of an
 	// approved request, or the administrator who registered or copied it. Absent for an emoji
 	// made with the CLI, a remote one, and one whose creator's account is deleted
 	// (`created_by_deleted`).
@@ -13078,7 +13267,7 @@ type WebhookCustomEmoji struct {
 	VisibleInPicker bool `json:"visible_in_picker"`
 }
 
-// WebhookEventType An event that a webhook subscribes to (ADR-0060). Subscribing needs, besides
+// WebhookEventType An event that a webhook subscribes to. Subscribing needs, besides
 // `manage_webhooks`, `manage_reports` for `report.*`; `manage_accounts` for
 // `registration.pending`, `account.*`, `moderation_action.*`, and `appeal.created`;
 // `manage_domains` for `domain_moderation_action.*`; `manage_custom_emojis` for
@@ -13097,7 +13286,7 @@ type WebhookCustomEmoji struct {
 // seen is sent when a report with one comes, unless it is muted by then.
 type WebhookEventType string
 
-// WebhookMessage The body of a message that a webhook receives (ADR-0060, Standard Webhooks), posted as
+// WebhookMessage The body of a message that a webhook receives (Standard Webhooks), posted as
 // `application/json` with the headers `webhook-id`, `webhook-timestamp`, and
 // `webhook-signature`. `data` is what the admin API answers for the object of the event,
 // presented in the transaction of the event: `AdminReport` for `report.*`,
@@ -13106,8 +13295,7 @@ type WebhookEventType string
 // for `appeal.created`, `AdminDomainAction` for `domain_moderation_action.*`,
 // `WebhookCustomEmoji` for `custom_emoji.*`, `ErrorGroup` for `error_group.*`,
 // `WebhookStatus` for `status.created`, and
-// `WebhookTest` for `webhook.test`. No operation returns it; docs/reference/webhooks.md
-// describes it.
+// `WebhookTest` for `webhook.test`. No operation returns it.
 type WebhookMessage struct {
 	Data map[string]interface{} `json:"data"`
 
@@ -13347,7 +13535,7 @@ type VoiceRoomId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type WebhookId = Id
 
-// AccountProfile An account, as clients show it (FR-006).
+// AccountProfile An account, as clients show it.
 type AccountProfile = Account
 
 // StatusAfterAction A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
@@ -13363,7 +13551,7 @@ type StatusAfterAction = Status
 
 // LookupAccountParams defines parameters for LookupAccount.
 type LookupAccountParams struct {
-	// Acct The handle, `username` or `username@domain`, or the `https` URL of an actor.
+	// Acct The handle, `username` or `username@domain`, or the `https` or `http` URL of an actor.
 	Acct string `form:"acct" json:"acct"`
 
 	// Resolve Fetch a remote account that the instance does not know yet.
@@ -13382,7 +13570,7 @@ type SearchAccountsParams struct {
 	// characters after a leading `@`, which is ignored. Anything else is a 400.
 	Q string `form:"q" json:"q"`
 
-	// Limit The maximum number of results of a prefix search for the autocomplete (ADR-0092).
+	// Limit The maximum number of results of a prefix search for the autocomplete.
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
@@ -13746,7 +13934,7 @@ type ListInstanceRulesParams struct {
 type GetLoginProvidersOnlyImpactParams struct {
 	// ProviderId A provider to count as if it were enabled, for the question of what enabling it would do.
 	// A new provider needs none: nobody links to it yet.
-	ProviderId *openapi_types.UUID `form:"provider_id,omitempty" json:"provider_id,omitempty"`
+	ProviderId *Id `form:"provider_id,omitempty" json:"provider_id,omitempty"`
 }
 
 // ListSignupBlocksParams defines parameters for ListSignupBlocks.
@@ -14033,8 +14221,17 @@ type SearchTagsParams struct {
 	// Anything else is a 400.
 	Q string `form:"q" json:"q"`
 
-	// Limit The maximum number of results of a prefix search for the autocomplete (ADR-0092).
+	// Limit The maximum number of results of a prefix search for the autocomplete.
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetFederatedTimelineParams defines parameters for GetFederatedTimeline.
+type GetFederatedTimelineParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // GetHomeTimelineParams defines parameters for GetHomeTimeline.
@@ -14057,15 +14254,6 @@ type GetListTimelineParams struct {
 
 // GetLocalTimelineParams defines parameters for GetLocalTimeline.
 type GetLocalTimelineParams struct {
-	// Cursor The `next_cursor` of the previous page; omitted for the first page.
-	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
-
-	// Limit The maximum number of items in the page.
-	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// GetPublicTimelineParams defines parameters for GetPublicTimeline.
-type GetPublicTimelineParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -14126,6 +14314,9 @@ type AddAccountAliasJSONRequestBody = AddAccountAliasRequest
 
 // RemoveAccountAliasJSONRequestBody defines body for RemoveAccountAlias for application/json ContentType.
 type RemoveAccountAliasJSONRequestBody = RemoveAccountAliasRequest
+
+// DeactivateOwnAccountJSONRequestBody defines body for DeactivateOwnAccount for application/json ContentType.
+type DeactivateOwnAccountJSONRequestBody = DeactivateOwnAccountRequest
 
 // DeleteOwnAccountJSONRequestBody defines body for DeleteOwnAccount for application/json ContentType.
 type DeleteOwnAccountJSONRequestBody = DeleteOwnAccountRequest
@@ -14444,6 +14635,12 @@ type ServerInterface interface {
 	// RemoveAccountAlias Remove an alias of the authenticated user
 	// (POST /accounts/aliases/remove)
 	RemoveAccountAlias(w http.ResponseWriter, r *http.Request)
+	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
+	// (GET /accounts/deactivation)
+	GetDeactivationPreview(w http.ResponseWriter, r *http.Request)
+	// DeactivateOwnAccount Deactivate the authenticated user's account
+	// (POST /accounts/deactivation)
+	DeactivateOwnAccount(w http.ResponseWriter, r *http.Request)
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(w http.ResponseWriter, r *http.Request)
@@ -14486,9 +14683,15 @@ type ServerInterface interface {
 	// GetAccount Get an account
 	// (GET /accounts/{id})
 	GetAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	// UnblockAccount Unblock an account
+	// (DELETE /accounts/{id}/block)
+	UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// BlockAccount Block an account
 	// (POST /accounts/{id}/block)
 	BlockAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	// UnfollowAccount Unfollow an account
+	// (DELETE /accounts/{id}/follow)
+	UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// FollowAccount Follow an account
 	// (POST /accounts/{id}/follow)
 	FollowAccount(w http.ResponseWriter, r *http.Request, id AccountId)
@@ -14501,6 +14704,9 @@ type ServerInterface interface {
 	// ListAccountLists List the user's lists that have an account
 	// (GET /accounts/{id}/lists)
 	ListAccountLists(w http.ResponseWriter, r *http.Request, id AccountId)
+	// UnmuteAccount Unmute an account
+	// (DELETE /accounts/{id}/mute)
+	UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
@@ -14510,21 +14716,12 @@ type ServerInterface interface {
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(w http.ResponseWriter, r *http.Request, id Id, params ListAccountStatusesParams)
+	// UnsubscribeAccount Stop being notified of an account's new posts
+	// (DELETE /accounts/{id}/subscribe)
+	UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// SubscribeAccount Be notified of an account's new posts
 	// (POST /accounts/{id}/subscribe)
 	SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId)
-	// UnblockAccount Unblock an account
-	// (POST /accounts/{id}/unblock)
-	UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId)
-	// UnfollowAccount Unfollow an account
-	// (POST /accounts/{id}/unfollow)
-	UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId)
-	// UnmuteAccount Unmute an account
-	// (POST /accounts/{id}/unmute)
-	UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
-	// UnsubscribeAccount Stop being notified of an account's new posts
-	// (POST /accounts/{id}/unsubscribe)
-	UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// GetAccountAction Get a moderation action on an account
 	// (GET /admin/account_actions/{id})
 	GetAccountAction(w http.ResponseWriter, r *http.Request, id AccountActionId)
@@ -14774,12 +14971,12 @@ type ServerInterface interface {
 	// ListLinkCardDomainRules List the rules of the link card crawler
 	// (GET /admin/link_card_domains)
 	ListLinkCardDomainRules(w http.ResponseWriter, r *http.Request)
-	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
-	// (POST /admin/link_card_domains)
-	SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request)
 	// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
 	// (DELETE /admin/link_card_domains/{domain})
 	RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string)
+	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
+	// (PUT /admin/link_card_domains/{domain})
+	SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string)
 	// ListAdminLoginProviders List the login providers
 	// (GET /admin/login_providers)
 	ListAdminLoginProviders(w http.ResponseWriter, r *http.Request)
@@ -14898,7 +15095,7 @@ type ServerInterface interface {
 	// (GET /admin/rules/{id})
 	GetInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId)
 	// UpdateInstanceRule Revise the text of an instance rule
-	// (PATCH /admin/rules/{id})
+	// (PUT /admin/rules/{id})
 	UpdateInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId)
 	// MoveInstanceRule Move an instance rule
 	// (POST /admin/rules/{id}/move)
@@ -15075,7 +15272,7 @@ type ServerInterface interface {
 	// (GET /follow_requests)
 	ListFollowRequests(w http.ResponseWriter, r *http.Request, params ListFollowRequestsParams)
 	// AcceptFollowRequest Accept a follow request
-	// (POST /follow_requests/{id}/authorize)
+	// (POST /follow_requests/{id}/accept)
 	AcceptFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId)
 	// RejectFollowRequest Reject a follow request
 	// (POST /follow_requests/{id}/reject)
@@ -15207,7 +15404,7 @@ type ServerInterface interface {
 	// (PATCH /oauth_apps/{id})
 	UpdateOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId)
 	// RotateOAuthAppSecret Issue a new secret to a confidential OAuth app
-	// (POST /oauth_apps/{id}/secret)
+	// (POST /oauth_apps/{id}/rotate_secret)
 	RotateOAuthAppSecret(w http.ResponseWriter, r *http.Request, id OAuthAppId)
 	// IssueOAuthAppToken Issue tokens of an OAuth app to the authenticated user
 	// (POST /oauth_apps/{id}/tokens)
@@ -15380,6 +15577,9 @@ type ServerInterface interface {
 	// SearchTags Search hashtags by prefix
 	// (GET /tags/search)
 	SearchTags(w http.ResponseWriter, r *http.Request, params SearchTagsParams)
+	// GetFederatedTimeline Get the federated timeline
+	// (GET /timelines/federated)
+	GetFederatedTimeline(w http.ResponseWriter, r *http.Request, params GetFederatedTimelineParams)
 	// GetHomeTimeline Get the home timeline
 	// (GET /timelines/home)
 	GetHomeTimeline(w http.ResponseWriter, r *http.Request, params GetHomeTimelineParams)
@@ -15389,9 +15589,6 @@ type ServerInterface interface {
 	// GetLocalTimeline Get the local timeline
 	// (GET /timelines/local)
 	GetLocalTimeline(w http.ResponseWriter, r *http.Request, params GetLocalTimelineParams)
-	// GetPublicTimeline Get the federated timeline
-	// (GET /timelines/public)
-	GetPublicTimeline(w http.ResponseWriter, r *http.Request, params GetPublicTimelineParams)
 	// GetHashtagTimeline Get the timeline of a hashtag
 	// (GET /timelines/tag/{hashtag})
 	GetHashtagTimeline(w http.ResponseWriter, r *http.Request, hashtag string, params GetHashtagTimelineParams)
@@ -15464,18 +15661,18 @@ type ServerInterface interface {
 	// AssignVoiceCohost Make a participant of a voice chat room a co-host
 	// (POST /voice/rooms/{id}/participants/{account_id}/cohost)
 	AssignVoiceCohost(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
-	// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
-	// (DELETE /voice/rooms/{id}/participants/{account_id}/grant)
-	RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
-	// GrantVoiceSpeaking Let a participant of a voice chat room speak
-	// (POST /voice/rooms/{id}/participants/{account_id}/grant)
-	GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
 	// DismissVoiceHand Dismiss the raised hand of a participant of a voice chat room
 	// (DELETE /voice/rooms/{id}/participants/{account_id}/hand)
 	DismissVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
 	// MuteVoiceParticipant Mute a participant of a voice chat room
 	// (POST /voice/rooms/{id}/participants/{account_id}/mute)
 	MuteVoiceParticipant(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
+	// (DELETE /voice/rooms/{id}/participants/{account_id}/speaking_permission)
+	RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
+	// GrantVoiceSpeaking Let a participant of a voice chat room speak
+	// (POST /voice/rooms/{id}/participants/{account_id}/speaking_permission)
+	GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId)
 	// LeaveVoiceRoom Leave a voice chat room
 	// (DELETE /voice/rooms/{id}/participation)
 	LeaveVoiceRoom(w http.ResponseWriter, r *http.Request, id VoiceRoomId, params LeaveVoiceRoomParams)
@@ -15541,6 +15738,34 @@ func (siw *ServerInterfaceWrapper) RemoveAccountAlias(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RemoveAccountAlias(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDeactivationPreview operation middleware
+func (siw *ServerInterfaceWrapper) GetDeactivationPreview(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDeactivationPreview(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeactivateOwnAccount operation middleware
+func (siw *ServerInterfaceWrapper) DeactivateOwnAccount(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeactivateOwnAccount(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -15860,6 +16085,32 @@ func (siw *ServerInterfaceWrapper) GetAccount(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// UnblockAccount operation middleware
+func (siw *ServerInterfaceWrapper) UnblockAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnblockAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // BlockAccount operation middleware
 func (siw *ServerInterfaceWrapper) BlockAccount(w http.ResponseWriter, r *http.Request) {
 
@@ -15877,6 +16128,32 @@ func (siw *ServerInterfaceWrapper) BlockAccount(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.BlockAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnfollowAccount operation middleware
+func (siw *ServerInterfaceWrapper) UnfollowAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnfollowAccount(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -16048,6 +16325,32 @@ func (siw *ServerInterfaceWrapper) ListAccountLists(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// UnmuteAccount operation middleware
+func (siw *ServerInterfaceWrapper) UnmuteAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnmuteAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // MuteAccount operation middleware
 func (siw *ServerInterfaceWrapper) MuteAccount(w http.ResponseWriter, r *http.Request) {
 
@@ -16194,110 +16497,6 @@ func (siw *ServerInterfaceWrapper) ListAccountStatuses(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
-// SubscribeAccount operation middleware
-func (siw *ServerInterfaceWrapper) SubscribeAccount(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id AccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SubscribeAccount(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnblockAccount operation middleware
-func (siw *ServerInterfaceWrapper) UnblockAccount(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id AccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnblockAccount(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnfollowAccount operation middleware
-func (siw *ServerInterfaceWrapper) UnfollowAccount(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id AccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnfollowAccount(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnmuteAccount operation middleware
-func (siw *ServerInterfaceWrapper) UnmuteAccount(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id AccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnmuteAccount(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // UnsubscribeAccount operation middleware
 func (siw *ServerInterfaceWrapper) UnsubscribeAccount(w http.ResponseWriter, r *http.Request) {
 
@@ -16315,6 +16514,32 @@ func (siw *ServerInterfaceWrapper) UnsubscribeAccount(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UnsubscribeAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SubscribeAccount operation middleware
+func (siw *ServerInterfaceWrapper) SubscribeAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SubscribeAccount(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19030,20 +19255,6 @@ func (siw *ServerInterfaceWrapper) ListLinkCardDomainRules(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
-// SetLinkCardDomainRule operation middleware
-func (siw *ServerInterfaceWrapper) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetLinkCardDomainRule(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // RemoveLinkCardDomainRule operation middleware
 func (siw *ServerInterfaceWrapper) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
 
@@ -19061,6 +19272,32 @@ func (siw *ServerInterfaceWrapper) RemoveLinkCardDomainRule(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RemoveLinkCardDomainRule(w, r, domain)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetLinkCardDomainRule operation middleware
+func (siw *ServerInterfaceWrapper) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "domain" -------------
+	var domain string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "domain", r.PathValue("domain"), &domain, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domain", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetLinkCardDomainRule(w, r, domain)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24332,6 +24569,52 @@ func (siw *ServerInterfaceWrapper) SearchTags(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// GetFederatedTimeline operation middleware
+func (siw *ServerInterfaceWrapper) GetFederatedTimeline(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFederatedTimelineParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetFederatedTimeline(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHomeTimeline operation middleware
 func (siw *ServerInterfaceWrapper) GetHomeTimeline(w http.ResponseWriter, r *http.Request) {
 
@@ -24470,52 +24753,6 @@ func (siw *ServerInterfaceWrapper) GetLocalTimeline(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetLocalTimeline(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetPublicTimeline operation middleware
-func (siw *ServerInterfaceWrapper) GetPublicTimeline(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetPublicTimelineParams
-
-	// ------------- Optional query parameter "cursor" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPublicTimeline(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25224,76 +25461,6 @@ func (siw *ServerInterfaceWrapper) AssignVoiceCohost(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
-// RevokeVoiceSpeaking operation middleware
-func (siw *ServerInterfaceWrapper) RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id VoiceRoomId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "account_id" -------------
-	var accountId VoiceAccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RevokeVoiceSpeaking(w, r, id, accountId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GrantVoiceSpeaking operation middleware
-func (siw *ServerInterfaceWrapper) GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id VoiceRoomId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "account_id" -------------
-	var accountId VoiceAccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GrantVoiceSpeaking(w, r, id, accountId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // DismissVoiceHand operation middleware
 func (siw *ServerInterfaceWrapper) DismissVoiceHand(w http.ResponseWriter, r *http.Request) {
 
@@ -25355,6 +25522,76 @@ func (siw *ServerInterfaceWrapper) MuteVoiceParticipant(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.MuteVoiceParticipant(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeVoiceSpeaking operation middleware
+func (siw *ServerInterfaceWrapper) RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId VoiceAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeVoiceSpeaking(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GrantVoiceSpeaking operation middleware
+func (siw *ServerInterfaceWrapper) GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id VoiceRoomId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId VoiceAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GrantVoiceSpeaking(w, r, id, accountId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25727,6 +25964,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/preferences/notifications", wrapper.UpdateNotificationSettings)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.GetSupporterListing)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.UpdateSupporterListing)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/deactivation", wrapper.GetDeactivationPreview)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/deactivation", wrapper.DeactivateOwnAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/delete", wrapper.DeleteOwnAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/move", wrapper.MoveOwnAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/move/cancel", wrapper.CancelOwnAccountMove)
@@ -25765,29 +26004,29 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/oauth_apps/{id}", wrapper.DeleteOAuthApp)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/oauth_apps/{id}", wrapper.GetOAuthApp)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/oauth_apps/{id}", wrapper.UpdateOAuthApp)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/oauth_apps/{id}/secret", wrapper.RotateOAuthAppSecret)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/oauth_apps/{id}/rotate_secret", wrapper.RotateOAuthAppSecret)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/oauth_apps/{id}/tokens", wrapper.IssueOAuthAppToken)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/lookup", wrapper.LookupAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/relationships", wrapper.GetRelationships)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/search", wrapper.SearchAccounts)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/suggestions", wrapper.ListAccountSuggestions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}", wrapper.GetAccount)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/block", wrapper.UnblockAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/block", wrapper.BlockAccount)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/follow", wrapper.UnfollowAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/follow", wrapper.FollowAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/followers", wrapper.ListAccountFollowers)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/following", wrapper.ListAccountFollowing)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/lists", wrapper.ListAccountLists)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.UnmuteAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.MuteAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/remove_from_followers", wrapper.RemoveAccountFromFollowers)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unblock", wrapper.UnblockAccount)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unfollow", wrapper.UnfollowAccount)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unmute", wrapper.UnmuteAccount)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.UnsubscribeAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.SubscribeAccount)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unsubscribe", wrapper.UnsubscribeAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/subscriptions", wrapper.ListSubscriptions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/blocks", wrapper.ListBlocks)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/follow_requests", wrapper.ListFollowRequests)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/follow_requests/{id}/authorize", wrapper.AcceptFollowRequest)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/follow_requests/{id}/accept", wrapper.AcceptFollowRequest)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/follow_requests/{id}/reject", wrapper.RejectFollowRequest)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/mutes", wrapper.ListMutes)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/domain_mutes", wrapper.ListDomainMutes)
@@ -25840,7 +26079,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/tags/search", wrapper.SearchTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/home", wrapper.GetHomeTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/local", wrapper.GetLocalTimeline)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/public", wrapper.GetPublicTimeline)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/federated", wrapper.GetFederatedTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/tag/{hashtag}", wrapper.GetHashtagTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/list/{id}", wrapper.GetListTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports", wrapper.ListOwnReports)
@@ -25873,8 +26112,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/hand", wrapper.LowerVoiceHand)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/hand", wrapper.RaiseVoiceHand)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}", wrapper.RemoveVoiceParticipant)
-	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/grant", wrapper.RevokeVoiceSpeaking)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/grant", wrapper.GrantVoiceSpeaking)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/speaking_permission", wrapper.RevokeVoiceSpeaking)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/speaking_permission", wrapper.GrantVoiceSpeaking)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/hand", wrapper.DismissVoiceHand)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/mute", wrapper.MuteVoiceParticipant)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}/participants/{account_id}/cohost", wrapper.RemoveVoiceCohost)
@@ -25933,7 +26172,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/rules", wrapper.ListInstanceRules)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/rules", wrapper.CreateInstanceRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/rules/{id}", wrapper.GetInstanceRule)
-	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/rules/{id}", wrapper.UpdateInstanceRule)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/rules/{id}", wrapper.UpdateInstanceRule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/rules/{id}/move", wrapper.MoveInstanceRule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/rules/{id}/retire", wrapper.RetireInstanceRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/announcements", wrapper.ListAdminAnnouncements)
@@ -26029,8 +26268,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/webhooks/{id}/deliveries", wrapper.ListWebhookDeliveries)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/webhooks/{id}/deliveries/{delivery_id}/redeliver", wrapper.RedeliverWebhookDelivery)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/link_card_domains", wrapper.ListLinkCardDomainRules)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/link_card_domains", wrapper.SetLinkCardDomainRule)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/link_card_domains/{domain}", wrapper.RemoveLinkCardDomainRule)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/link_card_domains/{domain}", wrapper.SetLinkCardDomainRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/relays", wrapper.ListAdminRelays)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/relays", wrapper.CreateRelay)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/relays/{id}", wrapper.DeleteRelay)
@@ -26669,6 +26908,119 @@ func (response RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type GetDeactivationPreviewRequestObject struct {
+}
+
+type GetDeactivationPreviewResponseObject interface {
+	VisitGetDeactivationPreviewResponse(w http.ResponseWriter) error
+}
+
+type GetDeactivationPreview200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetDeactivationPreview200JSONResponse struct {
+	Body    DeactivationPreview
+	Headers GetDeactivationPreview200ResponseHeaders
+}
+
+func (response GetDeactivationPreview200JSONResponse) VisitGetDeactivationPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeactivationPreviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetDeactivationPreviewdefaultApplicationProblemPlusJSONResponse) VisitGetDeactivationPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeactivateOwnAccountRequestObject struct {
+	Body *DeactivateOwnAccountJSONRequestBody
+}
+
+type DeactivateOwnAccountResponseObject interface {
+	VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error
+}
+
+type DeactivateOwnAccount200JSONResponse Deactivation
+
+func (response DeactivateOwnAccount200JSONResponse) VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse) VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteOwnAccountRequestObject struct {
 	Body *DeleteOwnAccountJSONRequestBody
 }
@@ -27072,7 +27424,7 @@ type GetRelationships200ResponseHeaders struct {
 }
 
 type GetRelationships200JSONResponse struct {
-	Body    []Relationship
+	Body    RelationshipList
 	Headers GetRelationships200ResponseHeaders
 }
 
@@ -27134,7 +27486,7 @@ type SearchAccounts200ResponseHeaders struct {
 }
 
 type SearchAccounts200JSONResponse struct {
-	Body    []Account
+	Body    AccountList
 	Headers SearchAccounts200ResponseHeaders
 }
 
@@ -27196,7 +27548,7 @@ type ListAccountSuggestions200ResponseHeaders struct {
 }
 
 type ListAccountSuggestions200JSONResponse struct {
-	Body    []AccountSuggestion
+	Body    AccountSuggestionList
 	Headers ListAccountSuggestions200ResponseHeaders
 }
 
@@ -27423,6 +27775,61 @@ func (response GetAccountdefaultApplicationProblemPlusJSONResponse) VisitGetAcco
 	return err
 }
 
+type UnblockAccountRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type UnblockAccountResponseObject interface {
+	VisitUnblockAccountResponse(w http.ResponseWriter) error
+}
+
+type UnblockAccount200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response UnblockAccount200JSONResponse) VisitUnblockAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnblockAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UnblockAccountdefaultApplicationProblemPlusJSONResponse) VisitUnblockAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type BlockAccountRequestObject struct {
 	Id AccountId `json:"id"`
 }
@@ -27455,6 +27862,61 @@ type BlockAccountdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response BlockAccountdefaultApplicationProblemPlusJSONResponse) VisitBlockAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnfollowAccountRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type UnfollowAccountResponseObject interface {
+	VisitUnfollowAccountResponse(w http.ResponseWriter) error
+}
+
+type UnfollowAccount200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response UnfollowAccount200JSONResponse) VisitUnfollowAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnfollowAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UnfollowAccountdefaultApplicationProblemPlusJSONResponse) VisitUnfollowAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -27701,6 +28163,61 @@ func (response ListAccountListsdefaultApplicationProblemPlusJSONResponse) VisitL
 	return err
 }
 
+type UnmuteAccountRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type UnmuteAccountResponseObject interface {
+	VisitUnmuteAccountResponse(w http.ResponseWriter) error
+}
+
+type UnmuteAccount200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response UnmuteAccount200JSONResponse) VisitUnmuteAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmuteAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UnmuteAccountdefaultApplicationProblemPlusJSONResponse) VisitUnmuteAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type MuteAccountRequestObject struct {
 	Id   AccountId `json:"id"`
 	Body *MuteAccountJSONRequestBody
@@ -27868,226 +28385,6 @@ func (response ListAccountStatusesdefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
-type SubscribeAccountRequestObject struct {
-	Id AccountId `json:"id"`
-}
-
-type SubscribeAccountResponseObject interface {
-	VisitSubscribeAccountResponse(w http.ResponseWriter) error
-}
-
-type SubscribeAccount200JSONResponse struct{ RelationshipJSONResponse }
-
-func (response SubscribeAccount200JSONResponse) VisitSubscribeAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SubscribeAccountdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response SubscribeAccountdefaultApplicationProblemPlusJSONResponse) VisitSubscribeAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnblockAccountRequestObject struct {
-	Id AccountId `json:"id"`
-}
-
-type UnblockAccountResponseObject interface {
-	VisitUnblockAccountResponse(w http.ResponseWriter) error
-}
-
-type UnblockAccount200JSONResponse struct{ RelationshipJSONResponse }
-
-func (response UnblockAccount200JSONResponse) VisitUnblockAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnblockAccountdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response UnblockAccountdefaultApplicationProblemPlusJSONResponse) VisitUnblockAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnfollowAccountRequestObject struct {
-	Id AccountId `json:"id"`
-}
-
-type UnfollowAccountResponseObject interface {
-	VisitUnfollowAccountResponse(w http.ResponseWriter) error
-}
-
-type UnfollowAccount200JSONResponse struct{ RelationshipJSONResponse }
-
-func (response UnfollowAccount200JSONResponse) VisitUnfollowAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnfollowAccountdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response UnfollowAccountdefaultApplicationProblemPlusJSONResponse) VisitUnfollowAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnmuteAccountRequestObject struct {
-	Id AccountId `json:"id"`
-}
-
-type UnmuteAccountResponseObject interface {
-	VisitUnmuteAccountResponse(w http.ResponseWriter) error
-}
-
-type UnmuteAccount200JSONResponse struct{ RelationshipJSONResponse }
-
-func (response UnmuteAccount200JSONResponse) VisitUnmuteAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnmuteAccountdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response UnmuteAccountdefaultApplicationProblemPlusJSONResponse) VisitUnmuteAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type UnsubscribeAccountRequestObject struct {
 	Id AccountId `json:"id"`
 }
@@ -28120,6 +28417,61 @@ type UnsubscribeAccountdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UnsubscribeAccountdefaultApplicationProblemPlusJSONResponse) VisitUnsubscribeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubscribeAccountRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type SubscribeAccountResponseObject interface {
+	VisitSubscribeAccountResponse(w http.ResponseWriter) error
+}
+
+type SubscribeAccount200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response SubscribeAccount200JSONResponse) VisitSubscribeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubscribeAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SubscribeAccountdefaultApplicationProblemPlusJSONResponse) VisitSubscribeAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -28450,9 +28802,9 @@ type CreateAccountActionResponseObject interface {
 	VisitCreateAccountActionResponse(w http.ResponseWriter) error
 }
 
-type CreateAccountAction200JSONResponse struct{ AdminAccountActionJSONResponse }
+type CreateAccountAction201JSONResponse struct{ AdminAccountActionJSONResponse }
 
-func (response CreateAccountAction200JSONResponse) VisitCreateAccountActionResponse(w http.ResponseWriter) error {
+func (response CreateAccountAction201JSONResponse) VisitCreateAccountActionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -28462,7 +28814,7 @@ func (response CreateAccountAction200JSONResponse) VisitCreateAccountActionRespo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -28613,11 +28965,11 @@ type RefetchAccountStatusesResponseObject interface {
 	VisitRefetchAccountStatusesResponse(w http.ResponseWriter) error
 }
 
-type RefetchAccountStatuses204Response struct {
+type RefetchAccountStatuses202Response struct {
 }
 
-func (response RefetchAccountStatuses204Response) VisitRefetchAccountStatusesResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RefetchAccountStatuses202Response) VisitRefetchAccountStatusesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -28995,9 +29347,9 @@ type CreateAdminAnnouncementResponseObject interface {
 	VisitCreateAdminAnnouncementResponse(w http.ResponseWriter) error
 }
 
-type CreateAdminAnnouncement200JSONResponse struct{ AdminAnnouncementJSONResponse }
+type CreateAdminAnnouncement201JSONResponse struct{ AdminAnnouncementJSONResponse }
 
-func (response CreateAdminAnnouncement200JSONResponse) VisitCreateAdminAnnouncementResponse(w http.ResponseWriter) error {
+func (response CreateAdminAnnouncement201JSONResponse) VisitCreateAdminAnnouncementResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -29007,7 +29359,7 @@ func (response CreateAdminAnnouncement200JSONResponse) VisitCreateAdminAnnouncem
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -29623,11 +29975,11 @@ type RunBillingImportResponseObject interface {
 	VisitRunBillingImportResponse(w http.ResponseWriter) error
 }
 
-type RunBillingImport204Response struct {
+type RunBillingImport202Response struct {
 }
 
-func (response RunBillingImport204Response) VisitRunBillingImportResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RunBillingImport202Response) VisitRunBillingImportResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -30013,9 +30365,9 @@ type CreateCostItemResponseObject interface {
 	VisitCreateCostItemResponse(w http.ResponseWriter) error
 }
 
-type CreateCostItem200JSONResponse struct{ CostItemJSONResponse }
+type CreateCostItem201JSONResponse struct{ CostItemJSONResponse }
 
-func (response CreateCostItem200JSONResponse) VisitCreateCostItemResponse(w http.ResponseWriter) error {
+func (response CreateCostItem201JSONResponse) VisitCreateCostItemResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -30025,7 +30377,7 @@ func (response CreateCostItem200JSONResponse) VisitCreateCostItemResponse(w http
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -30787,9 +31139,9 @@ type CreateCustomEmojiResponseObject interface {
 	VisitCreateCustomEmojiResponse(w http.ResponseWriter) error
 }
 
-type CreateCustomEmoji200JSONResponse struct{ AdminCustomEmojiJSONResponse }
+type CreateCustomEmoji201JSONResponse struct{ AdminCustomEmojiJSONResponse }
 
-func (response CreateCustomEmoji200JSONResponse) VisitCreateCustomEmojiResponse(w http.ResponseWriter) error {
+func (response CreateCustomEmoji201JSONResponse) VisitCreateCustomEmojiResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -30799,7 +31151,7 @@ func (response CreateCustomEmoji200JSONResponse) VisitCreateCustomEmojiResponse(
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -31066,9 +31418,9 @@ type CopyCustomEmojiResponseObject interface {
 	VisitCopyCustomEmojiResponse(w http.ResponseWriter) error
 }
 
-type CopyCustomEmoji200JSONResponse struct{ AdminCustomEmojiJSONResponse }
+type CopyCustomEmoji201JSONResponse struct{ AdminCustomEmojiJSONResponse }
 
-func (response CopyCustomEmoji200JSONResponse) VisitCopyCustomEmojiResponse(w http.ResponseWriter) error {
+func (response CopyCustomEmoji201JSONResponse) VisitCopyCustomEmojiResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -31078,7 +31430,7 @@ func (response CopyCustomEmoji200JSONResponse) VisitCopyCustomEmojiResponse(w ht
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -31283,9 +31635,9 @@ type CreateDomainActionResponseObject interface {
 	VisitCreateDomainActionResponse(w http.ResponseWriter) error
 }
 
-type CreateDomainAction200JSONResponse struct{ AdminDomainActionJSONResponse }
+type CreateDomainAction201JSONResponse struct{ AdminDomainActionJSONResponse }
 
-func (response CreateDomainAction200JSONResponse) VisitCreateDomainActionResponse(w http.ResponseWriter) error {
+func (response CreateDomainAction201JSONResponse) VisitCreateDomainActionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -31295,7 +31647,7 @@ func (response CreateDomainAction200JSONResponse) VisitCreateDomainActionRespons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -32693,11 +33045,11 @@ type RefetchInstanceStatusesResponseObject interface {
 	VisitRefetchInstanceStatusesResponse(w http.ResponseWriter) error
 }
 
-type RefetchInstanceStatuses204Response struct {
+type RefetchInstanceStatuses202Response struct {
 }
 
-func (response RefetchInstanceStatuses204Response) VisitRefetchInstanceStatusesResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RefetchInstanceStatuses202Response) VisitRefetchInstanceStatusesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -32801,9 +33153,9 @@ type CreateInviteResponseObject interface {
 	VisitCreateInviteResponse(w http.ResponseWriter) error
 }
 
-type CreateInvite200JSONResponse struct{ AdminInviteJSONResponse }
+type CreateInvite201JSONResponse struct{ AdminInviteJSONResponse }
 
-func (response CreateInvite200JSONResponse) VisitCreateInviteResponse(w http.ResponseWriter) error {
+func (response CreateInvite201JSONResponse) VisitCreateInviteResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -32813,7 +33165,7 @@ func (response CreateInvite200JSONResponse) VisitCreateInviteResponse(w http.Res
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -33036,11 +33388,11 @@ type RetryAdminJobResponseObject interface {
 	VisitRetryAdminJobResponse(w http.ResponseWriter) error
 }
 
-type RetryAdminJob204Response struct {
+type RetryAdminJob202Response struct {
 }
 
-func (response RetryAdminJob204Response) VisitRetryAdminJobResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RetryAdminJob202Response) VisitRetryAdminJobResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -33135,8 +33487,55 @@ func (response ListLinkCardDomainRulesdefaultApplicationProblemPlusJSONResponse)
 	return err
 }
 
+type RemoveLinkCardDomainRuleRequestObject struct {
+	Domain string `json:"domain"`
+}
+
+type RemoveLinkCardDomainRuleResponseObject interface {
+	VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error
+}
+
+type RemoveLinkCardDomainRule204Response struct {
+}
+
+func (response RemoveLinkCardDomainRule204Response) VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse) VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SetLinkCardDomainRuleRequestObject struct {
-	Body *SetLinkCardDomainRuleJSONRequestBody
+	Domain string `json:"domain"`
+	Body   *SetLinkCardDomainRuleJSONRequestBody
 }
 
 type SetLinkCardDomainRuleResponseObject interface {
@@ -33174,52 +33573,6 @@ type SetLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response SetLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse) VisitSetLinkCardDomainRuleResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RemoveLinkCardDomainRuleRequestObject struct {
-	Domain string `json:"domain"`
-}
-
-type RemoveLinkCardDomainRuleResponseObject interface {
-	VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error
-}
-
-type RemoveLinkCardDomainRule204Response struct {
-}
-
-func (response RemoveLinkCardDomainRule204Response) VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse) VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -33312,9 +33665,9 @@ type CreateLoginProviderResponseObject interface {
 	VisitCreateLoginProviderResponse(w http.ResponseWriter) error
 }
 
-type CreateLoginProvider200JSONResponse struct{ AdminLoginProviderJSONResponse }
+type CreateLoginProvider201JSONResponse struct{ AdminLoginProviderJSONResponse }
 
-func (response CreateLoginProvider200JSONResponse) VisitCreateLoginProviderResponse(w http.ResponseWriter) error {
+func (response CreateLoginProvider201JSONResponse) VisitCreateLoginProviderResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -33324,7 +33677,7 @@ func (response CreateLoginProvider200JSONResponse) VisitCreateLoginProviderRespo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -34081,11 +34434,11 @@ type RunPaymentReconcileResponseObject interface {
 	VisitRunPaymentReconcileResponse(w http.ResponseWriter) error
 }
 
-type RunPaymentReconcile204Response struct {
+type RunPaymentReconcile202Response struct {
 }
 
-func (response RunPaymentReconcile204Response) VisitRunPaymentReconcileResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RunPaymentReconcile202Response) VisitRunPaymentReconcileResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -34484,9 +34837,9 @@ type CreateRelayResponseObject interface {
 	VisitCreateRelayResponse(w http.ResponseWriter) error
 }
 
-type CreateRelay200JSONResponse struct{ AdminRelayJSONResponse }
+type CreateRelay201JSONResponse struct{ AdminRelayJSONResponse }
 
-func (response CreateRelay200JSONResponse) VisitCreateRelayResponse(w http.ResponseWriter) error {
+func (response CreateRelay201JSONResponse) VisitCreateRelayResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -34496,7 +34849,7 @@ func (response CreateRelay200JSONResponse) VisitCreateRelayResponse(w http.Respo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -35231,9 +35584,9 @@ type CreateRoleResponseObject interface {
 	VisitCreateRoleResponse(w http.ResponseWriter) error
 }
 
-type CreateRole200JSONResponse struct{ AdminRoleJSONResponse }
+type CreateRole201JSONResponse struct{ AdminRoleJSONResponse }
 
-func (response CreateRole200JSONResponse) VisitCreateRoleResponse(w http.ResponseWriter) error {
+func (response CreateRole201JSONResponse) VisitCreateRoleResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -35243,7 +35596,7 @@ func (response CreateRole200JSONResponse) VisitCreateRoleResponse(w http.Respons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -35516,9 +35869,9 @@ type CreateInstanceRuleResponseObject interface {
 	VisitCreateInstanceRuleResponse(w http.ResponseWriter) error
 }
 
-type CreateInstanceRule200JSONResponse struct{ AdminRuleJSONResponse }
+type CreateInstanceRule201JSONResponse struct{ AdminRuleJSONResponse }
 
-func (response CreateInstanceRule200JSONResponse) VisitCreateInstanceRuleResponse(w http.ResponseWriter) error {
+func (response CreateInstanceRule201JSONResponse) VisitCreateInstanceRuleResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -35528,7 +35881,7 @@ func (response CreateInstanceRule200JSONResponse) VisitCreateInstanceRuleRespons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -36026,9 +36379,9 @@ type CreateSignupBlockResponseObject interface {
 	VisitCreateSignupBlockResponse(w http.ResponseWriter) error
 }
 
-type CreateSignupBlock200JSONResponse struct{ AdminSignupBlockJSONResponse }
+type CreateSignupBlock201JSONResponse struct{ AdminSignupBlockJSONResponse }
 
-func (response CreateSignupBlock200JSONResponse) VisitCreateSignupBlockResponse(w http.ResponseWriter) error {
+func (response CreateSignupBlock201JSONResponse) VisitCreateSignupBlockResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -36038,7 +36391,7 @@ func (response CreateSignupBlock200JSONResponse) VisitCreateSignupBlockResponse(
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -36253,11 +36606,11 @@ type RefetchStatusResponseObject interface {
 	VisitRefetchStatusResponse(w http.ResponseWriter) error
 }
 
-type RefetchStatus204Response struct {
+type RefetchStatus202Response struct {
 }
 
-func (response RefetchStatus204Response) VisitRefetchStatusResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RefetchStatus202Response) VisitRefetchStatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -36360,9 +36713,9 @@ type CreateSupporterPlanResponseObject interface {
 	VisitCreateSupporterPlanResponse(w http.ResponseWriter) error
 }
 
-type CreateSupporterPlan200JSONResponse struct{ AdminSupporterPlanJSONResponse }
+type CreateSupporterPlan201JSONResponse struct{ AdminSupporterPlanJSONResponse }
 
-func (response CreateSupporterPlan200JSONResponse) VisitCreateSupporterPlanResponse(w http.ResponseWriter) error {
+func (response CreateSupporterPlan201JSONResponse) VisitCreateSupporterPlanResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -36372,7 +36725,7 @@ func (response CreateSupporterPlan200JSONResponse) VisitCreateSupporterPlanRespo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -36515,12 +36868,21 @@ type RetireSupporterPlanResponseObject interface {
 	VisitRetireSupporterPlanResponse(w http.ResponseWriter) error
 }
 
-type RetireSupporterPlan204Response struct {
-}
+type RetireSupporterPlan200JSONResponse struct{ AdminSupporterPlanJSONResponse }
 
-func (response RetireSupporterPlan204Response) VisitRetireSupporterPlanResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
+func (response RetireSupporterPlan200JSONResponse) VisitRetireSupporterPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type RetireSupporterPlandefaultApplicationProblemPlusJSONResponse struct {
@@ -37027,16 +37389,16 @@ type CreateWebhookResponseObject interface {
 	VisitCreateWebhookResponse(w http.ResponseWriter) error
 }
 
-type CreateWebhook200ResponseHeaders struct {
+type CreateWebhook201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type CreateWebhook200JSONResponse struct {
+type CreateWebhook201JSONResponse struct {
 	Body    AdminWebhookCreated
-	Headers CreateWebhook200ResponseHeaders
+	Headers CreateWebhook201ResponseHeaders
 }
 
-func (response CreateWebhook200JSONResponse) VisitCreateWebhookResponse(w http.ResponseWriter) error {
+func (response CreateWebhook201JSONResponse) VisitCreateWebhookResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -37046,7 +37408,7 @@ func (response CreateWebhook200JSONResponse) VisitCreateWebhookResponse(w http.R
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -38243,9 +38605,9 @@ type CreateCustomEmojiRequestResponseObject interface {
 	VisitCreateCustomEmojiRequestResponse(w http.ResponseWriter) error
 }
 
-type CreateCustomEmojiRequest200JSONResponse struct{ CustomEmojiRequestJSONResponse }
+type CreateCustomEmojiRequest201JSONResponse struct{ CustomEmojiRequestJSONResponse }
 
-func (response CreateCustomEmojiRequest200JSONResponse) VisitCreateCustomEmojiRequestResponse(w http.ResponseWriter) error {
+func (response CreateCustomEmojiRequest201JSONResponse) VisitCreateCustomEmojiRequestResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -38255,7 +38617,7 @@ func (response CreateCustomEmojiRequest200JSONResponse) VisitCreateCustomEmojiRe
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -40128,9 +40490,9 @@ type CreateOwnInviteResponseObject interface {
 	VisitCreateOwnInviteResponse(w http.ResponseWriter) error
 }
 
-type CreateOwnInvite200JSONResponse struct{ OwnInviteJSONResponse }
+type CreateOwnInvite201JSONResponse struct{ OwnInviteJSONResponse }
 
-func (response CreateOwnInvite200JSONResponse) VisitCreateOwnInviteResponse(w http.ResponseWriter) error {
+func (response CreateOwnInvite201JSONResponse) VisitCreateOwnInviteResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -40140,7 +40502,7 @@ func (response CreateOwnInvite200JSONResponse) VisitCreateOwnInviteResponse(w ht
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -40523,9 +40885,9 @@ type CreateListResponseObject interface {
 	VisitCreateListResponse(w http.ResponseWriter) error
 }
 
-type CreateList200JSONResponse struct{ ListJSONResponse }
+type CreateList201JSONResponse struct{ ListJSONResponse }
 
-func (response CreateList200JSONResponse) VisitCreateListResponse(w http.ResponseWriter) error {
+func (response CreateList201JSONResponse) VisitCreateListResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -40535,7 +40897,7 @@ func (response CreateList200JSONResponse) VisitCreateListResponse(w http.Respons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -41833,16 +42195,16 @@ type IssueOAuthAppTokenResponseObject interface {
 	VisitIssueOAuthAppTokenResponse(w http.ResponseWriter) error
 }
 
-type IssueOAuthAppToken200ResponseHeaders struct {
+type IssueOAuthAppToken201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type IssueOAuthAppToken200JSONResponse struct {
+type IssueOAuthAppToken201JSONResponse struct {
 	Body    OAuthAppToken
-	Headers IssueOAuthAppToken200ResponseHeaders
+	Headers IssueOAuthAppToken201ResponseHeaders
 }
 
-func (response IssueOAuthAppToken200JSONResponse) VisitIssueOAuthAppTokenResponse(w http.ResponseWriter) error {
+func (response IssueOAuthAppToken201JSONResponse) VisitIssueOAuthAppTokenResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -41852,7 +42214,7 @@ func (response IssueOAuthAppToken200JSONResponse) VisitIssueOAuthAppTokenRespons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -41956,15 +42318,25 @@ type CreatePasskeyResponseObject interface {
 	VisitCreatePasskeyResponse(w http.ResponseWriter) error
 }
 
-type CreatePasskey201JSONResponse Passkey
+type CreatePasskey201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type CreatePasskey201JSONResponse struct {
+	Body    Passkey
+	Headers CreatePasskey201ResponseHeaders
+}
 
 func (response CreatePasskey201JSONResponse) VisitCreatePasskeyResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
@@ -43085,16 +43457,16 @@ type CreateReportResponseObject interface {
 	VisitCreateReportResponse(w http.ResponseWriter) error
 }
 
-type CreateReport200ResponseHeaders struct {
+type CreateReport201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type CreateReport200JSONResponse struct {
+type CreateReport201JSONResponse struct {
 	Body    Report
-	Headers CreateReport200ResponseHeaders
+	Headers CreateReport201ResponseHeaders
 }
 
-func (response CreateReport200JSONResponse) VisitCreateReportResponse(w http.ResponseWriter) error {
+func (response CreateReport201JSONResponse) VisitCreateReportResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -43104,7 +43476,7 @@ func (response CreateReport200JSONResponse) VisitCreateReportResponse(w http.Res
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -43300,16 +43672,16 @@ type CreateStatusResponseObject interface {
 	VisitCreateStatusResponse(w http.ResponseWriter) error
 }
 
-type CreateStatus200ResponseHeaders struct {
+type CreateStatus201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type CreateStatus200JSONResponse struct {
+type CreateStatus201JSONResponse struct {
 	Body    Status
-	Headers CreateStatus200ResponseHeaders
+	Headers CreateStatus201ResponseHeaders
 }
 
-func (response CreateStatus200JSONResponse) VisitCreateStatusResponse(w http.ResponseWriter) error {
+func (response CreateStatus201JSONResponse) VisitCreateStatusResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -43319,7 +43691,7 @@ func (response CreateStatus200JSONResponse) VisitCreateStatusResponse(w http.Res
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -45098,7 +45470,7 @@ type SearchTags200ResponseHeaders struct {
 }
 
 type SearchTags200JSONResponse struct {
-	Body    []TagSuggestion
+	Body    TagSuggestionList
 	Headers SearchTags200ResponseHeaders
 }
 
@@ -45124,6 +45496,61 @@ type SearchTagsdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response SearchTagsdefaultApplicationProblemPlusJSONResponse) VisitSearchTagsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetFederatedTimelineRequestObject struct {
+	Params GetFederatedTimelineParams
+}
+
+type GetFederatedTimelineResponseObject interface {
+	VisitGetFederatedTimelineResponse(w http.ResponseWriter) error
+}
+
+type GetFederatedTimeline200JSONResponse struct{ StatusPageJSONResponse }
+
+func (response GetFederatedTimeline200JSONResponse) VisitGetFederatedTimelineResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetFederatedTimelinedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetFederatedTimelinedefaultApplicationProblemPlusJSONResponse) VisitGetFederatedTimelineResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -45290,61 +45717,6 @@ type GetLocalTimelinedefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GetLocalTimelinedefaultApplicationProblemPlusJSONResponse) VisitGetLocalTimelineResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetPublicTimelineRequestObject struct {
-	Params GetPublicTimelineParams
-}
-
-type GetPublicTimelineResponseObject interface {
-	VisitGetPublicTimelineResponse(w http.ResponseWriter) error
-}
-
-type GetPublicTimeline200JSONResponse struct{ StatusPageJSONResponse }
-
-func (response GetPublicTimeline200JSONResponse) VisitGetPublicTimelineResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetPublicTimelinedefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response GetPublicTimelinedefaultApplicationProblemPlusJSONResponse) VisitGetPublicTimelineResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -46615,12 +46987,28 @@ type RemoveVoiceParticipantResponseObject interface {
 	VisitRemoveVoiceParticipantResponse(w http.ResponseWriter) error
 }
 
-type RemoveVoiceParticipant204Response struct {
+type RemoveVoiceParticipant200ResponseHeaders struct {
+	CacheControl *string
 }
 
-func (response RemoveVoiceParticipant204Response) VisitRemoveVoiceParticipantResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
+type RemoveVoiceParticipant200JSONResponse struct {
+	Body    VoiceRoom
+	Headers RemoveVoiceParticipant200ResponseHeaders
+}
+
+func (response RemoveVoiceParticipant200JSONResponse) VisitRemoveVoiceParticipantResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type RemoveVoiceParticipantdefaultApplicationProblemPlusJSONResponse struct {
@@ -46779,6 +47167,116 @@ func (response AssignVoiceCohostdefaultApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
+type DismissVoiceHandRequestObject struct {
+	Id        VoiceRoomId    `json:"id"`
+	AccountId VoiceAccountId `json:"account_id"`
+}
+
+type DismissVoiceHandResponseObject interface {
+	VisitDismissVoiceHandResponse(w http.ResponseWriter) error
+}
+
+type DismissVoiceHand200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type DismissVoiceHand200JSONResponse struct {
+	Body    VoiceRoom
+	Headers DismissVoiceHand200ResponseHeaders
+}
+
+func (response DismissVoiceHand200JSONResponse) VisitDismissVoiceHandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DismissVoiceHanddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DismissVoiceHanddefaultApplicationProblemPlusJSONResponse) VisitDismissVoiceHandResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MuteVoiceParticipantRequestObject struct {
+	Id        VoiceRoomId    `json:"id"`
+	AccountId VoiceAccountId `json:"account_id"`
+}
+
+type MuteVoiceParticipantResponseObject interface {
+	VisitMuteVoiceParticipantResponse(w http.ResponseWriter) error
+}
+
+type MuteVoiceParticipant204Response struct {
+}
+
+func (response MuteVoiceParticipant204Response) VisitMuteVoiceParticipantResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type MuteVoiceParticipantdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response MuteVoiceParticipantdefaultApplicationProblemPlusJSONResponse) VisitMuteVoiceParticipantResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RevokeVoiceSpeakingRequestObject struct {
 	Id        VoiceRoomId    `json:"id"`
 	AccountId VoiceAccountId `json:"account_id"`
@@ -46882,116 +47380,6 @@ type GrantVoiceSpeakingdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GrantVoiceSpeakingdefaultApplicationProblemPlusJSONResponse) VisitGrantVoiceSpeakingResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DismissVoiceHandRequestObject struct {
-	Id        VoiceRoomId    `json:"id"`
-	AccountId VoiceAccountId `json:"account_id"`
-}
-
-type DismissVoiceHandResponseObject interface {
-	VisitDismissVoiceHandResponse(w http.ResponseWriter) error
-}
-
-type DismissVoiceHand200ResponseHeaders struct {
-	CacheControl *string
-}
-
-type DismissVoiceHand200JSONResponse struct {
-	Body    VoiceRoom
-	Headers DismissVoiceHand200ResponseHeaders
-}
-
-func (response DismissVoiceHand200JSONResponse) VisitDismissVoiceHandResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type DismissVoiceHanddefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response DismissVoiceHanddefaultApplicationProblemPlusJSONResponse) VisitDismissVoiceHandResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type MuteVoiceParticipantRequestObject struct {
-	Id        VoiceRoomId    `json:"id"`
-	AccountId VoiceAccountId `json:"account_id"`
-}
-
-type MuteVoiceParticipantResponseObject interface {
-	VisitMuteVoiceParticipantResponse(w http.ResponseWriter) error
-}
-
-type MuteVoiceParticipant204Response struct {
-}
-
-func (response MuteVoiceParticipant204Response) VisitMuteVoiceParticipantResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type MuteVoiceParticipantdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response MuteVoiceParticipantdefaultApplicationProblemPlusJSONResponse) VisitMuteVoiceParticipantResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -47415,6 +47803,12 @@ type StrictServerInterface interface {
 	// RemoveAccountAlias Remove an alias of the authenticated user
 	// (POST /accounts/aliases/remove)
 	RemoveAccountAlias(ctx context.Context, request RemoveAccountAliasRequestObject) (RemoveAccountAliasResponseObject, error)
+	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
+	// (GET /accounts/deactivation)
+	GetDeactivationPreview(ctx context.Context, request GetDeactivationPreviewRequestObject) (GetDeactivationPreviewResponseObject, error)
+	// DeactivateOwnAccount Deactivate the authenticated user's account
+	// (POST /accounts/deactivation)
+	DeactivateOwnAccount(ctx context.Context, request DeactivateOwnAccountRequestObject) (DeactivateOwnAccountResponseObject, error)
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(ctx context.Context, request DeleteOwnAccountRequestObject) (DeleteOwnAccountResponseObject, error)
@@ -47457,9 +47851,15 @@ type StrictServerInterface interface {
 	// GetAccount Get an account
 	// (GET /accounts/{id})
 	GetAccount(ctx context.Context, request GetAccountRequestObject) (GetAccountResponseObject, error)
+	// UnblockAccount Unblock an account
+	// (DELETE /accounts/{id}/block)
+	UnblockAccount(ctx context.Context, request UnblockAccountRequestObject) (UnblockAccountResponseObject, error)
 	// BlockAccount Block an account
 	// (POST /accounts/{id}/block)
 	BlockAccount(ctx context.Context, request BlockAccountRequestObject) (BlockAccountResponseObject, error)
+	// UnfollowAccount Unfollow an account
+	// (DELETE /accounts/{id}/follow)
+	UnfollowAccount(ctx context.Context, request UnfollowAccountRequestObject) (UnfollowAccountResponseObject, error)
 	// FollowAccount Follow an account
 	// (POST /accounts/{id}/follow)
 	FollowAccount(ctx context.Context, request FollowAccountRequestObject) (FollowAccountResponseObject, error)
@@ -47472,6 +47872,9 @@ type StrictServerInterface interface {
 	// ListAccountLists List the user's lists that have an account
 	// (GET /accounts/{id}/lists)
 	ListAccountLists(ctx context.Context, request ListAccountListsRequestObject) (ListAccountListsResponseObject, error)
+	// UnmuteAccount Unmute an account
+	// (DELETE /accounts/{id}/mute)
+	UnmuteAccount(ctx context.Context, request UnmuteAccountRequestObject) (UnmuteAccountResponseObject, error)
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(ctx context.Context, request MuteAccountRequestObject) (MuteAccountResponseObject, error)
@@ -47481,21 +47884,12 @@ type StrictServerInterface interface {
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(ctx context.Context, request ListAccountStatusesRequestObject) (ListAccountStatusesResponseObject, error)
+	// UnsubscribeAccount Stop being notified of an account's new posts
+	// (DELETE /accounts/{id}/subscribe)
+	UnsubscribeAccount(ctx context.Context, request UnsubscribeAccountRequestObject) (UnsubscribeAccountResponseObject, error)
 	// SubscribeAccount Be notified of an account's new posts
 	// (POST /accounts/{id}/subscribe)
 	SubscribeAccount(ctx context.Context, request SubscribeAccountRequestObject) (SubscribeAccountResponseObject, error)
-	// UnblockAccount Unblock an account
-	// (POST /accounts/{id}/unblock)
-	UnblockAccount(ctx context.Context, request UnblockAccountRequestObject) (UnblockAccountResponseObject, error)
-	// UnfollowAccount Unfollow an account
-	// (POST /accounts/{id}/unfollow)
-	UnfollowAccount(ctx context.Context, request UnfollowAccountRequestObject) (UnfollowAccountResponseObject, error)
-	// UnmuteAccount Unmute an account
-	// (POST /accounts/{id}/unmute)
-	UnmuteAccount(ctx context.Context, request UnmuteAccountRequestObject) (UnmuteAccountResponseObject, error)
-	// UnsubscribeAccount Stop being notified of an account's new posts
-	// (POST /accounts/{id}/unsubscribe)
-	UnsubscribeAccount(ctx context.Context, request UnsubscribeAccountRequestObject) (UnsubscribeAccountResponseObject, error)
 	// GetAccountAction Get a moderation action on an account
 	// (GET /admin/account_actions/{id})
 	GetAccountAction(ctx context.Context, request GetAccountActionRequestObject) (GetAccountActionResponseObject, error)
@@ -47745,12 +48139,12 @@ type StrictServerInterface interface {
 	// ListLinkCardDomainRules List the rules of the link card crawler
 	// (GET /admin/link_card_domains)
 	ListLinkCardDomainRules(ctx context.Context, request ListLinkCardDomainRulesRequestObject) (ListLinkCardDomainRulesResponseObject, error)
-	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
-	// (POST /admin/link_card_domains)
-	SetLinkCardDomainRule(ctx context.Context, request SetLinkCardDomainRuleRequestObject) (SetLinkCardDomainRuleResponseObject, error)
 	// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
 	// (DELETE /admin/link_card_domains/{domain})
 	RemoveLinkCardDomainRule(ctx context.Context, request RemoveLinkCardDomainRuleRequestObject) (RemoveLinkCardDomainRuleResponseObject, error)
+	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
+	// (PUT /admin/link_card_domains/{domain})
+	SetLinkCardDomainRule(ctx context.Context, request SetLinkCardDomainRuleRequestObject) (SetLinkCardDomainRuleResponseObject, error)
 	// ListAdminLoginProviders List the login providers
 	// (GET /admin/login_providers)
 	ListAdminLoginProviders(ctx context.Context, request ListAdminLoginProvidersRequestObject) (ListAdminLoginProvidersResponseObject, error)
@@ -47869,7 +48263,7 @@ type StrictServerInterface interface {
 	// (GET /admin/rules/{id})
 	GetInstanceRule(ctx context.Context, request GetInstanceRuleRequestObject) (GetInstanceRuleResponseObject, error)
 	// UpdateInstanceRule Revise the text of an instance rule
-	// (PATCH /admin/rules/{id})
+	// (PUT /admin/rules/{id})
 	UpdateInstanceRule(ctx context.Context, request UpdateInstanceRuleRequestObject) (UpdateInstanceRuleResponseObject, error)
 	// MoveInstanceRule Move an instance rule
 	// (POST /admin/rules/{id}/move)
@@ -48046,7 +48440,7 @@ type StrictServerInterface interface {
 	// (GET /follow_requests)
 	ListFollowRequests(ctx context.Context, request ListFollowRequestsRequestObject) (ListFollowRequestsResponseObject, error)
 	// AcceptFollowRequest Accept a follow request
-	// (POST /follow_requests/{id}/authorize)
+	// (POST /follow_requests/{id}/accept)
 	AcceptFollowRequest(ctx context.Context, request AcceptFollowRequestRequestObject) (AcceptFollowRequestResponseObject, error)
 	// RejectFollowRequest Reject a follow request
 	// (POST /follow_requests/{id}/reject)
@@ -48178,7 +48572,7 @@ type StrictServerInterface interface {
 	// (PATCH /oauth_apps/{id})
 	UpdateOAuthApp(ctx context.Context, request UpdateOAuthAppRequestObject) (UpdateOAuthAppResponseObject, error)
 	// RotateOAuthAppSecret Issue a new secret to a confidential OAuth app
-	// (POST /oauth_apps/{id}/secret)
+	// (POST /oauth_apps/{id}/rotate_secret)
 	RotateOAuthAppSecret(ctx context.Context, request RotateOAuthAppSecretRequestObject) (RotateOAuthAppSecretResponseObject, error)
 	// IssueOAuthAppToken Issue tokens of an OAuth app to the authenticated user
 	// (POST /oauth_apps/{id}/tokens)
@@ -48351,6 +48745,9 @@ type StrictServerInterface interface {
 	// SearchTags Search hashtags by prefix
 	// (GET /tags/search)
 	SearchTags(ctx context.Context, request SearchTagsRequestObject) (SearchTagsResponseObject, error)
+	// GetFederatedTimeline Get the federated timeline
+	// (GET /timelines/federated)
+	GetFederatedTimeline(ctx context.Context, request GetFederatedTimelineRequestObject) (GetFederatedTimelineResponseObject, error)
 	// GetHomeTimeline Get the home timeline
 	// (GET /timelines/home)
 	GetHomeTimeline(ctx context.Context, request GetHomeTimelineRequestObject) (GetHomeTimelineResponseObject, error)
@@ -48360,9 +48757,6 @@ type StrictServerInterface interface {
 	// GetLocalTimeline Get the local timeline
 	// (GET /timelines/local)
 	GetLocalTimeline(ctx context.Context, request GetLocalTimelineRequestObject) (GetLocalTimelineResponseObject, error)
-	// GetPublicTimeline Get the federated timeline
-	// (GET /timelines/public)
-	GetPublicTimeline(ctx context.Context, request GetPublicTimelineRequestObject) (GetPublicTimelineResponseObject, error)
 	// GetHashtagTimeline Get the timeline of a hashtag
 	// (GET /timelines/tag/{hashtag})
 	GetHashtagTimeline(ctx context.Context, request GetHashtagTimelineRequestObject) (GetHashtagTimelineResponseObject, error)
@@ -48435,18 +48829,18 @@ type StrictServerInterface interface {
 	// AssignVoiceCohost Make a participant of a voice chat room a co-host
 	// (POST /voice/rooms/{id}/participants/{account_id}/cohost)
 	AssignVoiceCohost(ctx context.Context, request AssignVoiceCohostRequestObject) (AssignVoiceCohostResponseObject, error)
-	// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
-	// (DELETE /voice/rooms/{id}/participants/{account_id}/grant)
-	RevokeVoiceSpeaking(ctx context.Context, request RevokeVoiceSpeakingRequestObject) (RevokeVoiceSpeakingResponseObject, error)
-	// GrantVoiceSpeaking Let a participant of a voice chat room speak
-	// (POST /voice/rooms/{id}/participants/{account_id}/grant)
-	GrantVoiceSpeaking(ctx context.Context, request GrantVoiceSpeakingRequestObject) (GrantVoiceSpeakingResponseObject, error)
 	// DismissVoiceHand Dismiss the raised hand of a participant of a voice chat room
 	// (DELETE /voice/rooms/{id}/participants/{account_id}/hand)
 	DismissVoiceHand(ctx context.Context, request DismissVoiceHandRequestObject) (DismissVoiceHandResponseObject, error)
 	// MuteVoiceParticipant Mute a participant of a voice chat room
 	// (POST /voice/rooms/{id}/participants/{account_id}/mute)
 	MuteVoiceParticipant(ctx context.Context, request MuteVoiceParticipantRequestObject) (MuteVoiceParticipantResponseObject, error)
+	// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
+	// (DELETE /voice/rooms/{id}/participants/{account_id}/speaking_permission)
+	RevokeVoiceSpeaking(ctx context.Context, request RevokeVoiceSpeakingRequestObject) (RevokeVoiceSpeakingResponseObject, error)
+	// GrantVoiceSpeaking Let a participant of a voice chat room speak
+	// (POST /voice/rooms/{id}/participants/{account_id}/speaking_permission)
+	GrantVoiceSpeaking(ctx context.Context, request GrantVoiceSpeakingRequestObject) (GrantVoiceSpeakingResponseObject, error)
 	// LeaveVoiceRoom Leave a voice chat room
 	// (DELETE /voice/rooms/{id}/participation)
 	LeaveVoiceRoom(ctx context.Context, request LeaveVoiceRoomRequestObject) (LeaveVoiceRoomResponseObject, error)
@@ -48588,6 +48982,61 @@ func (sh *strictHandler) RemoveAccountAlias(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RemoveAccountAliasResponseObject); ok {
 		if err := validResponse.VisitRemoveAccountAliasResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDeactivationPreview operation middleware
+func (sh *strictHandler) GetDeactivationPreview(w http.ResponseWriter, r *http.Request) {
+	var request GetDeactivationPreviewRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDeactivationPreview(ctx, request.(GetDeactivationPreviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDeactivationPreview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDeactivationPreviewResponseObject); ok {
+		if err := validResponse.VisitGetDeactivationPreviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeactivateOwnAccount operation middleware
+func (sh *strictHandler) DeactivateOwnAccount(w http.ResponseWriter, r *http.Request) {
+	var request DeactivateOwnAccountRequestObject
+
+	var body DeactivateOwnAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeactivateOwnAccount(ctx, request.(DeactivateOwnAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeactivateOwnAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeactivateOwnAccountResponseObject); ok {
+		if err := validResponse.VisitDeactivateOwnAccountResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -48976,6 +49425,32 @@ func (sh *strictHandler) GetAccount(w http.ResponseWriter, r *http.Request, id A
 	}
 }
 
+// UnblockAccount operation middleware
+func (sh *strictHandler) UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request UnblockAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnblockAccount(ctx, request.(UnblockAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnblockAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnblockAccountResponseObject); ok {
+		if err := validResponse.VisitUnblockAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // BlockAccount operation middleware
 func (sh *strictHandler) BlockAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
 	var request BlockAccountRequestObject
@@ -48995,6 +49470,32 @@ func (sh *strictHandler) BlockAccount(w http.ResponseWriter, r *http.Request, id
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(BlockAccountResponseObject); ok {
 		if err := validResponse.VisitBlockAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnfollowAccount operation middleware
+func (sh *strictHandler) UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request UnfollowAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnfollowAccount(ctx, request.(UnfollowAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnfollowAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnfollowAccountResponseObject); ok {
+		if err := validResponse.VisitUnfollowAccountResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -49118,6 +49619,32 @@ func (sh *strictHandler) ListAccountLists(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// UnmuteAccount operation middleware
+func (sh *strictHandler) UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request UnmuteAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnmuteAccount(ctx, request.(UnmuteAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnmuteAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnmuteAccountResponseObject); ok {
+		if err := validResponse.VisitUnmuteAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // MuteAccount operation middleware
 func (sh *strictHandler) MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
 	var request MuteAccountRequestObject
@@ -49207,110 +49734,6 @@ func (sh *strictHandler) ListAccountStatuses(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// SubscribeAccount operation middleware
-func (sh *strictHandler) SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
-	var request SubscribeAccountRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.SubscribeAccount(ctx, request.(SubscribeAccountRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "SubscribeAccount")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(SubscribeAccountResponseObject); ok {
-		if err := validResponse.VisitSubscribeAccountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UnblockAccount operation middleware
-func (sh *strictHandler) UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
-	var request UnblockAccountRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UnblockAccount(ctx, request.(UnblockAccountRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UnblockAccount")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UnblockAccountResponseObject); ok {
-		if err := validResponse.VisitUnblockAccountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UnfollowAccount operation middleware
-func (sh *strictHandler) UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
-	var request UnfollowAccountRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UnfollowAccount(ctx, request.(UnfollowAccountRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UnfollowAccount")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UnfollowAccountResponseObject); ok {
-		if err := validResponse.VisitUnfollowAccountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UnmuteAccount operation middleware
-func (sh *strictHandler) UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
-	var request UnmuteAccountRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UnmuteAccount(ctx, request.(UnmuteAccountRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UnmuteAccount")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UnmuteAccountResponseObject); ok {
-		if err := validResponse.VisitUnmuteAccountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // UnsubscribeAccount operation middleware
 func (sh *strictHandler) UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
 	var request UnsubscribeAccountRequestObject
@@ -49330,6 +49753,32 @@ func (sh *strictHandler) UnsubscribeAccount(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UnsubscribeAccountResponseObject); ok {
 		if err := validResponse.VisitUnsubscribeAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SubscribeAccount operation middleware
+func (sh *strictHandler) SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request SubscribeAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SubscribeAccount(ctx, request.(SubscribeAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SubscribeAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SubscribeAccountResponseObject); ok {
+		if err := validResponse.VisitSubscribeAccountResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -51489,10 +51938,13 @@ func (sh *strictHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
 
 	var body CreateInviteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
 	}
-	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateInvite(ctx, request.(CreateInviteRequestObject))
@@ -51643,9 +52095,37 @@ func (sh *strictHandler) ListLinkCardDomainRules(w http.ResponseWriter, r *http.
 	}
 }
 
+// RemoveLinkCardDomainRule operation middleware
+func (sh *strictHandler) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string) {
+	var request RemoveLinkCardDomainRuleRequestObject
+
+	request.Domain = domain
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveLinkCardDomainRule(ctx, request.(RemoveLinkCardDomainRuleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveLinkCardDomainRule")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveLinkCardDomainRuleResponseObject); ok {
+		if err := validResponse.VisitRemoveLinkCardDomainRuleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SetLinkCardDomainRule operation middleware
-func (sh *strictHandler) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string) {
 	var request SetLinkCardDomainRuleRequestObject
+
+	request.Domain = domain
 
 	var body SetLinkCardDomainRuleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -51667,32 +52147,6 @@ func (sh *strictHandler) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetLinkCardDomainRuleResponseObject); ok {
 		if err := validResponse.VisitSetLinkCardDomainRuleResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// RemoveLinkCardDomainRule operation middleware
-func (sh *strictHandler) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string) {
-	var request RemoveLinkCardDomainRuleRequestObject
-
-	request.Domain = domain
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RemoveLinkCardDomainRule(ctx, request.(RemoveLinkCardDomainRuleRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RemoveLinkCardDomainRule")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RemoveLinkCardDomainRuleResponseObject); ok {
-		if err := validResponse.VisitRemoveLinkCardDomainRuleResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -54784,10 +55238,13 @@ func (sh *strictHandler) CreateOwnInvite(w http.ResponseWriter, r *http.Request)
 
 	var body CreateOwnInviteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
 	}
-	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateOwnInvite(ctx, request.(CreateOwnInviteRequestObject))
@@ -57174,6 +57631,32 @@ func (sh *strictHandler) SearchTags(w http.ResponseWriter, r *http.Request, para
 	}
 }
 
+// GetFederatedTimeline operation middleware
+func (sh *strictHandler) GetFederatedTimeline(w http.ResponseWriter, r *http.Request, params GetFederatedTimelineParams) {
+	var request GetFederatedTimelineRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetFederatedTimeline(ctx, request.(GetFederatedTimelineRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetFederatedTimeline")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetFederatedTimelineResponseObject); ok {
+		if err := validResponse.VisitGetFederatedTimelineResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetHomeTimeline operation middleware
 func (sh *strictHandler) GetHomeTimeline(w http.ResponseWriter, r *http.Request, params GetHomeTimelineParams) {
 	var request GetHomeTimelineRequestObject
@@ -57246,32 +57729,6 @@ func (sh *strictHandler) GetLocalTimeline(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetLocalTimelineResponseObject); ok {
 		if err := validResponse.VisitGetLocalTimelineResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetPublicTimeline operation middleware
-func (sh *strictHandler) GetPublicTimeline(w http.ResponseWriter, r *http.Request, params GetPublicTimelineParams) {
-	var request GetPublicTimelineRequestObject
-
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetPublicTimeline(ctx, request.(GetPublicTimelineRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetPublicTimeline")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetPublicTimelineResponseObject); ok {
-		if err := validResponse.VisitGetPublicTimelineResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -57967,60 +58424,6 @@ func (sh *strictHandler) AssignVoiceCohost(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// RevokeVoiceSpeaking operation middleware
-func (sh *strictHandler) RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
-	var request RevokeVoiceSpeakingRequestObject
-
-	request.Id = id
-	request.AccountId = accountId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RevokeVoiceSpeaking(ctx, request.(RevokeVoiceSpeakingRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RevokeVoiceSpeaking")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RevokeVoiceSpeakingResponseObject); ok {
-		if err := validResponse.VisitRevokeVoiceSpeakingResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GrantVoiceSpeaking operation middleware
-func (sh *strictHandler) GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
-	var request GrantVoiceSpeakingRequestObject
-
-	request.Id = id
-	request.AccountId = accountId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GrantVoiceSpeaking(ctx, request.(GrantVoiceSpeakingRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GrantVoiceSpeaking")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GrantVoiceSpeakingResponseObject); ok {
-		if err := validResponse.VisitGrantVoiceSpeakingResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // DismissVoiceHand operation middleware
 func (sh *strictHandler) DismissVoiceHand(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
 	var request DismissVoiceHandRequestObject
@@ -58068,6 +58471,60 @@ func (sh *strictHandler) MuteVoiceParticipant(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(MuteVoiceParticipantResponseObject); ok {
 		if err := validResponse.VisitMuteVoiceParticipantResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeVoiceSpeaking operation middleware
+func (sh *strictHandler) RevokeVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+	var request RevokeVoiceSpeakingRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeVoiceSpeaking(ctx, request.(RevokeVoiceSpeakingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeVoiceSpeaking")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeVoiceSpeakingResponseObject); ok {
+		if err := validResponse.VisitRevokeVoiceSpeakingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GrantVoiceSpeaking operation middleware
+func (sh *strictHandler) GrantVoiceSpeaking(w http.ResponseWriter, r *http.Request, id VoiceRoomId, accountId VoiceAccountId) {
+	var request GrantVoiceSpeakingRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GrantVoiceSpeaking(ctx, request.(GrantVoiceSpeakingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GrantVoiceSpeaking")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GrantVoiceSpeakingResponseObject); ok {
+		if err := validResponse.VisitGrantVoiceSpeakingResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

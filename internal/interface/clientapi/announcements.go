@@ -55,7 +55,7 @@ func timeOrZero(t *time.Time) time.Time {
 func newAnnouncement(a appinstance.ReaderAnnouncement) Announcement {
 	return Announcement{
 		Id: a.ID, Title: a.Revision.Title, Content: a.HTML, PublishedAt: a.ShowsFrom().UTC(), EndsAt: optionalTime(a.Revision.EndsAt),
-		UpdatedAt: a.Revision.RevisedAt.UTC(), Read: a.Read, Ended: a.Ended,
+		RevisedAt: a.Revision.RevisedAt.UTC(), Read: a.Read, Ended: a.Ended,
 	}
 }
 
@@ -160,7 +160,7 @@ func (s *Server) newAdminAnnouncement(a instance.Announcement) AdminAnnouncement
 	return AdminAnnouncement{
 		Id: a.ID, Title: a.Revision.Title, Text: a.Revision.Body, Content: s.o.Announcements.RenderAnnouncement(a.Revision.Body),
 		State: AdminAnnouncementState(a.State), StartsAt: optionalTime(a.Revision.StartsAt), EndsAt: optionalTime(a.Revision.EndsAt),
-		PublishedAt: optionalTime(a.PublishedAt), CreatedAt: a.CreatedAt.UTC(), UpdatedAt: a.Revision.RevisedAt.UTC(),
+		PublishedAt: optionalTime(a.PublishedAt), CreatedAt: a.CreatedAt.UTC(), RevisedAt: a.Revision.RevisedAt.UTC(),
 	}
 }
 
@@ -250,7 +250,7 @@ func (s *Server) CreateAdminAnnouncement(ctx context.Context, req CreateAdminAnn
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: create an announcement: %w", err)
 	}
-	return CreateAdminAnnouncement200JSONResponse{s.adminAnnouncementResponse(a)}, nil
+	return CreateAdminAnnouncement201JSONResponse{s.adminAnnouncementResponse(a)}, nil
 }
 
 // GetAdminAnnouncement serves GET /api/v1/admin/announcements/{id}.

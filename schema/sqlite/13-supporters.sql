@@ -26,7 +26,7 @@ CREATE TABLE supporter_program_changes (
 CREATE TABLE supporter_plans (
   id TEXT NOT NULL PRIMARY KEY,
   role_id TEXT NOT NULL,
-  currency TEXT NOT NULL CHECK (length(currency) = 3 AND upper(currency) = currency),
+  currency TEXT NOT NULL CHECK (currency GLOB '[A-Z][A-Z][A-Z]'),
   created_by_user_id TEXT,
   created_at INTEGER NOT NULL
 ) STRICT;
@@ -63,7 +63,7 @@ CREATE TABLE supporter_plan_heads (
   plan_id TEXT NOT NULL PRIMARY KEY,
   revision_id TEXT NOT NULL,
   rank INTEGER NOT NULL,
-  visibility TEXT NOT NULL
+  visibility TEXT NOT NULL CHECK (visibility IN ('public', 'hidden'))
 ) STRICT;
 CREATE UNIQUE INDEX supporter_plan_heads_rank ON supporter_plan_heads (rank);
 
@@ -76,7 +76,7 @@ CREATE TABLE supporter_plan_prices (
   plan_id TEXT NOT NULL,
   interval TEXT NOT NULL CHECK (interval IN ('month', 'year')),
   amount_minor INTEGER NOT NULL CHECK (amount_minor >= 1),
-  currency TEXT NOT NULL CHECK (length(currency) = 3),
+  currency TEXT NOT NULL CHECK (currency GLOB '[A-Z][A-Z][A-Z]'),
   provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
   provider_price_id TEXT NOT NULL CHECK (length(provider_price_id) BETWEEN 1 AND 255),
   created_at INTEGER NOT NULL
@@ -87,7 +87,7 @@ CREATE UNIQUE INDEX supporter_plan_prices_provider_price ON supporter_plan_price
 -- the newest price of the plan and the interval that is not archived.
 CREATE TABLE supporter_plan_price_heads (
   plan_id TEXT NOT NULL,
-  interval TEXT NOT NULL,
+  interval TEXT NOT NULL CHECK (interval IN ('month', 'year')),
   price_id TEXT NOT NULL,
   PRIMARY KEY (plan_id, interval)
 ) STRICT;
@@ -119,7 +119,6 @@ CREATE TABLE supporter_subscriptions (
   provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
   created_at INTEGER NOT NULL
 ) STRICT;
-CREATE INDEX supporter_subscriptions_user_id_id ON supporter_subscriptions (user_id, id DESC);
 
 -- Event: a hosted checkout started for a pending subscription, open until expires_at; starting
 -- again while the subscription is pending makes a new one. The reconciliation re-reads the open
@@ -200,7 +199,7 @@ CREATE TABLE supporter_subscription_heads (
   transition_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
   plan_id TEXT NOT NULL,
-  state TEXT NOT NULL
+  state TEXT NOT NULL CHECK (state IN ('pending', 'active', 'canceling', 'past_due', 'lapsed', 'expired', 'revoked', 'abandoned'))
 ) STRICT;
 CREATE INDEX supporter_subscription_heads_plan_id_state ON supporter_subscription_heads (plan_id, state);
 CREATE INDEX supporter_subscription_heads_user_id ON supporter_subscription_heads (user_id);
@@ -238,7 +237,7 @@ CREATE TABLE supporter_listings (
 ) STRICT;
 
 -- Event: a webhook delivery of the payment provider (ADR-0074 §3, §4), recorded once per
--- (provider, event_id) in the transaction that queues its supporters.payment_event job. Only the
+-- (provider, event_id) in the transaction that queues its supporters.apply_payment_event job. Only the
 -- IDs and the type are kept, never the body (§5). The daily purge deletes the rows older than
 -- 45 days; a delivery that comes again after it is recorded again, and its job changes nothing.
 CREATE TABLE payment_webhook_receipts (
@@ -284,15 +283,15 @@ CREATE INDEX payment_reconcile_runs_provider_occurred_at ON payment_reconcile_ru
 -- Current value: the claim of a checkout of the payment provider's own pages (ADR-0099 §1) while
 -- one server process creates its subscription, so that the posts of one checkout on several
 -- replicas create one subscription when the provider takes no idempotency key (PAY.JP v1). One row
--- per (provider, checkout_id); holder is the post that holds it. The holder deletes the row when it
+-- per (provider, provider_checkout_id); holder is the post that holds it. The holder deletes the row when it
 -- is done; a row whose expires_at has passed (its process stopped) is taken over by the next claim,
 -- and the receipt purge deletes the expired ones.
 CREATE TABLE payment_checkout_claims (
   provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
-  checkout_id TEXT NOT NULL CHECK (length(checkout_id) BETWEEN 1 AND 255),
+  provider_checkout_id TEXT NOT NULL CHECK (length(provider_checkout_id) BETWEEN 1 AND 255),
   holder TEXT NOT NULL,
   claimed_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL CHECK (expires_at > claimed_at),
-  PRIMARY KEY (provider, checkout_id)
+  PRIMARY KEY (provider, provider_checkout_id)
 ) STRICT;
 CREATE INDEX payment_checkout_claims_expires_at ON payment_checkout_claims (expires_at);

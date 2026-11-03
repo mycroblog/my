@@ -260,7 +260,7 @@ type DeliveryAttempt struct {
 	DeliveryID      string
 	Outcome         string
 	SignatureScheme sql.NullString
-	HttpStatus      sql.NullInt64
+	StatusCode      sql.NullInt64
 	Error           sql.NullString
 	AttemptedAt     int64
 }
@@ -550,7 +550,7 @@ type LocalPostCounter struct {
 type LocalStatus struct {
 	StatusID        string
 	AuthorAccountID string
-	ClientID        sql.NullString
+	OauthClientID   sql.NullString
 	IdempotencyKey  sql.NullString
 }
 
@@ -705,7 +705,7 @@ type NotificationSetting struct {
 
 type OauthAuthorizationCode struct {
 	CodeHash      []byte
-	ClientID      string
+	OauthClientID string
 	UserID        string
 	RedirectUri   string
 	Scope         string
@@ -741,29 +741,29 @@ type OauthClientHostDenial struct {
 }
 
 type OauthClientMetadataDocument struct {
-	ClientID   string
-	ClientName string
-	ClientUri  string
-	LogoUri    string
-	Scope      string
-	FetchedAt  int64
-	ExpiresAt  int64
+	OauthClientID string
+	ClientName    string
+	ClientUri     string
+	LogoUri       string
+	Scope         string
+	FetchedAt     int64
+	ExpiresAt     int64
 }
 
 type OauthClientRevision struct {
-	ID        string
-	ClientID  string
-	Name      string
-	Website   sql.NullString
-	Scope     string
-	RevisedAt int64
+	ID            string
+	OauthClientID string
+	Name          string
+	Website       sql.NullString
+	Scope         string
+	RevisedAt     int64
 }
 
 type OauthClientSecretRotation struct {
-	ID         string
-	ClientID   string
-	SecretHash []byte
-	RotatedAt  int64
+	ID            string
+	OauthClientID string
+	SecretHash    []byte
+	RotatedAt     int64
 }
 
 type OutboundActivity struct {

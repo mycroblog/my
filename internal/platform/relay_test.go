@@ -160,7 +160,7 @@ func postInbox(t *testing.T, c *statusesClient, signer remoteActor, activity map
 func TestRelays(t *testing.T) {
 	t.Parallel()
 	network := &relayNet{docs: map[string][]byte{}}
-	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline", "MY_RELAY_INGEST_HOURLY_LIMIT": "2"},
+	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline", "MY_RELAY_MAX_ACTIVITIES_PER_HOUR": "2"},
 		platform.AppOptions{HTTPClient: network}, "alice")
 	ctx := t.Context()
 	relay := newRemoteActor(t, network, "https://relay.example/actor", "Application", "https://relay.example/inbox")
@@ -168,7 +168,7 @@ func TestRelays(t *testing.T) {
 
 	// Register and join the relay at its inbox.
 	var r clientapi.AdminRelay
-	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": "https://relay.example/inbox"}, &r); res.StatusCode != http.StatusOK {
+	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": "https://relay.example/inbox"}, &r); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /admin/relays = %d", res.StatusCode)
 	}
 	if r.Protocol != clientapi.RelayProtocolMastodon || r.State != clientapi.RelayStatePending || !r.Receive || r.InboxUrl != "https://relay.example/inbox" {
@@ -257,8 +257,8 @@ func TestRelays(t *testing.T) {
 		}
 	}
 	var timeline clientapi.StatusPage
-	if res := c.do("alice", http.MethodGet, "/timelines/public", nil, &timeline); res.StatusCode != http.StatusOK {
-		t.Fatalf("GET /timelines/public = %d", res.StatusCode)
+	if res := c.do("alice", http.MethodGet, "/timelines/federated", nil, &timeline); res.StatusCode != http.StatusOK {
+		t.Fatalf("GET /timelines/federated = %d", res.StatusCode)
 	}
 	if !slices.ContainsFunc(timeline.Items, func(s clientapi.Status) bool { return s.Id == st.ID }) {
 		t.Errorf("the federated timeline does not show the relayed post")
@@ -276,7 +276,7 @@ func TestRelays(t *testing.T) {
 		doc["endpoints"] = map[string]any{"sharedInbox": "https://litepub.example/inbox"}
 	})
 	var lr clientapi.AdminRelay
-	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": lite.id}, &lr); res.StatusCode != http.StatusOK {
+	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": lite.id}, &lr); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /admin/relays (litepub) = %d", res.StatusCode)
 	}
 	if lr.Protocol != clientapi.RelayProtocolLitepub || lr.InboxUrl != "https://litepub.example/inbox" {

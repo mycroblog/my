@@ -42,7 +42,7 @@ function rulesServer(initial: readonly Rule[]) {
       rules = [...rules, rule];
       return HttpResponse.json(rule);
     }),
-    http.patch(`${apiBase}/admin/rules/:id`, async ({ request, params }) => {
+    http.put(`${apiBase}/admin/rules/:id`, async ({ request, params }) => {
       await record(request);
       const { text, hint } = (await request.json()) as Schemas["InstanceRuleInput"];
       rules = rules.map((rule) =>
@@ -175,7 +175,7 @@ describe("the rules", () => {
     expect(await screen.findByText("Saved “No spam or ads”. The audit log records the change.")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(rules.writes).toEqual([
-      { method: "PATCH", path: `/admin/rules/${second.id}`, body: { text: "No spam or ads" } },
+      { method: "PUT", path: `/admin/rules/${second.id}`, body: { text: "No spam or ads" } },
     ]);
   });
 

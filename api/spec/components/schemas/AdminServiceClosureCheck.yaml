@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
+  What the administrator reviews before closing the server. The admin
   screen and the CLI show it with the confirmation of the closure.
 type: object
 required:
@@ -29,14 +29,13 @@ properties:
     minimum: 0
   pending_migrations:
     description: |
-      The account migrations (the sending of a `Move` and the jobs that move the followers,
-      ADR-0089) that have not ended. They should end before the closure delivers its `Delete`;
+      The account migrations (the sending of a `Move` and the jobs that move the followers) that have not ended. They should end before the closure delivers its `Delete`;
       the admin screen and the CLI warn while it is not 0.
     type: integer
     minimum: 0
   retention_holds:
     description: |
-      The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
+      The accounts under a retention hold. While it is not 0, the operator exports
       their records with the CLI before discarding the data of the closed server.
     type: integer
     minimum: 0

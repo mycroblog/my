@@ -124,18 +124,18 @@ func (q *Queries) InsertAccountMove(ctx context.Context, arg InsertAccountMovePa
 }
 
 const insertAccountMoveCancellation = `-- name: InsertAccountMoveCancellation :execrows
-INSERT INTO account_move_cancellations (move_id, cancelled_at) VALUES (?, ?)
+INSERT INTO account_move_cancellations (move_id, canceled_at) VALUES (?, ?)
 ON CONFLICT (move_id) DO NOTHING
 `
 
 type InsertAccountMoveCancellationParams struct {
-	MoveID      string
-	CancelledAt int64
+	MoveID     string
+	CanceledAt int64
 }
 
-// InsertAccountMoveCancellation inserts nothing when the move is cancelled already.
+// InsertAccountMoveCancellation inserts nothing when the move is canceled already.
 func (q *Queries) InsertAccountMoveCancellation(ctx context.Context, arg InsertAccountMoveCancellationParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, insertAccountMoveCancellation, arg.MoveID, arg.CancelledAt)
+	result, err := q.db.ExecContext(ctx, insertAccountMoveCancellation, arg.MoveID, arg.CanceledAt)
 	if err != nil {
 		return 0, err
 	}
@@ -144,7 +144,7 @@ func (q *Queries) InsertAccountMoveCancellation(ctx context.Context, arg InsertA
 
 const listAccountMoveRecords = `-- name: ListAccountMoveRecords :many
 SELECT m.id, m.account_id, m.target_account_id, m.initiated_by, m.activity_uri, m.occurred_at,
-  EXISTS (SELECT 1 FROM account_move_cancellations c WHERE c.move_id = m.id) AS cancelled
+  EXISTS (SELECT 1 FROM account_move_cancellations c WHERE c.move_id = m.id) AS canceled
 FROM account_moves m
 ORDER BY m.account_id, m.occurred_at, m.id
 `
@@ -156,10 +156,10 @@ type ListAccountMoveRecordsRow struct {
 	InitiatedBy     string
 	ActivityUri     sql.NullString
 	OccurredAt      int64
-	Cancelled       bool
+	Canceled        bool
 }
 
-// ListAccountMoveRecords returns every move with whether it is cancelled, the source of
+// ListAccountMoveRecords returns every move with whether it is canceled, the source of
 // account_move_states.
 func (q *Queries) ListAccountMoveRecords(ctx context.Context) ([]ListAccountMoveRecordsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listAccountMoveRecords)
@@ -177,7 +177,7 @@ func (q *Queries) ListAccountMoveRecords(ctx context.Context) ([]ListAccountMove
 			&i.InitiatedBy,
 			&i.ActivityUri,
 			&i.OccurredAt,
-			&i.Cancelled,
+			&i.Canceled,
 		); err != nil {
 			return nil, err
 		}

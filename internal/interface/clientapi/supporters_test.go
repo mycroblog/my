@@ -182,7 +182,7 @@ func activeSubscription() *appsupporters.SubscriptionView {
 	}
 }
 
-func newOwnSupportersEnv(t *testing.T, f *fakeOwnSupporters, visibility instance.SupporterListVisibility) *authEnv {
+func newOwnSupportersEnv(t *testing.T, f *fakeOwnSupporters, visibility instance.Audience) *authEnv {
 	t.Helper()
 	settings := settingsInstance{&fakeSettings{stored: []instance.CurrentSetting{
 		{Key: instance.SettingSupporterListVisibility, Value: string(visibility)},
@@ -206,7 +206,7 @@ func problemType(t *testing.T, res *http.Response) string {
 // the checkout and the portal return to the web client; and the problems of the changes.
 func TestOwnSupporterSubscription(t *testing.T) {
 	f := &fakeOwnSupporters{disabled: true, listed: map[string]bool{}}
-	e := newOwnSupportersEnv(t, f, instance.SupporterListOff)
+	e := newOwnSupportersEnv(t, f, instance.AudienceOff)
 	if res := e.send(t, http.MethodGet, "/supporter/subscription", "supporters", ""); res.StatusCode != http.StatusNotFound {
 		t.Fatalf("GET while disabled = %d, want 404", res.StatusCode)
 	}
@@ -299,7 +299,7 @@ func TestOwnSupporterSubscription(t *testing.T) {
 // member of a plan has one.
 func TestSupporterListingChoice(t *testing.T) {
 	f := &fakeOwnSupporters{listed: map[string]bool{}}
-	e := newOwnSupportersEnv(t, f, instance.SupporterListPublic)
+	e := newOwnSupportersEnv(t, f, instance.AudienceEveryone)
 	if res := e.send(t, http.MethodGet, "/preferences/supporter_listing", "accounts", ""); res.StatusCode != http.StatusNotFound {
 		t.Errorf("GET without a subscription = %d, want 404", res.StatusCode)
 	}
@@ -333,8 +333,8 @@ func TestInstanceSupporters(t *testing.T) {
 		Last: &last,
 	}}
 
-	off := newOwnSupportersEnv(t, f, instance.SupporterListOff)
-	if v := decode[clientapi.Instance](t, off.send(t, http.MethodGet, "/instance", "", "")).SupporterListVisibility; v != clientapi.SupporterListVisibilityOff {
+	off := newOwnSupportersEnv(t, f, instance.AudienceOff)
+	if v := decode[clientapi.Instance](t, off.send(t, http.MethodGet, "/instance", "", "")).SupporterListVisibility; v != clientapi.InstanceAudienceOff {
 		t.Errorf("Instance.supporter_list_visibility = %q, want off", v)
 	}
 	for _, token := range []string{"", "read"} {
@@ -346,7 +346,7 @@ func TestInstanceSupporters(t *testing.T) {
 		t.Errorf("off read the list: %v", f.filters)
 	}
 
-	signedIn := newOwnSupportersEnv(t, f, instance.SupporterListSignedIn)
+	signedIn := newOwnSupportersEnv(t, f, instance.AudienceSignedIn)
 	res := signedIn.send(t, http.MethodGet, "/instance/supporters", "", "")
 	if res.StatusCode != http.StatusUnauthorized || problemType(t, res) != clientapi.ProblemTypeUnauthenticated {
 		t.Errorf("GET with signed_in, anonymous = %d, want 401", res.StatusCode)
@@ -356,7 +356,7 @@ func TestInstanceSupporters(t *testing.T) {
 		t.Errorf("GET with signed_in, signed in = %d, Cache-Control %q", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
 
-	public := newOwnSupportersEnv(t, f, instance.SupporterListPublic)
+	public := newOwnSupportersEnv(t, f, instance.AudienceEveryone)
 	res = public.send(t, http.MethodGet, "/instance/supporters?plan_id="+smallPlanID+"&limit=2", "", "")
 	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "public, max-age=60" ||
 		res.Header.Get("X-Robots-Tag") != "noindex, noarchive" {

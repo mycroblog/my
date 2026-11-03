@@ -2,7 +2,7 @@
 description: |
   The voice chat room that a report points at, as the moderators review it: every revision
   of its settings, and the records of its participants while the server keeps them (90 days
-  after the room ends by default, `retention_voice_participants`, and as long as a report
+  after the room ends by default, `voice_participants_retention_days`, and as long as a report
   points at the room).
 type: object
 required: [id, reported_revision_id, opened_at, revisions, participations, bans]
@@ -21,10 +21,9 @@ properties:
     type: string
     format: date-time
   end_reason:
-    description: |
-      Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
-      `moderator`, `time_limit`, `disabled`); omitted while it is open.
-    type: string
+    description: Why the room ended; omitted while it is open.
+    allOf:
+      - $ref: ./VoiceEndReason.yaml
   ended_by_account_id:
     description: Who ended the room; omitted for an automatic end and while it is open.
     allOf:

@@ -30,7 +30,7 @@ CREATE INDEX statuses_conversation_uri_id ON statuses (conversation_uri, id);
 CREATE TABLE local_statuses (
   status_id TEXT NOT NULL PRIMARY KEY,
   author_account_id TEXT NOT NULL,
-  client_id TEXT,
+  oauth_client_id TEXT,
   idempotency_key TEXT
 ) STRICT;
 CREATE UNIQUE INDEX local_statuses_author_account_id_idempotency_key ON local_statuses (author_account_id, idempotency_key);
@@ -94,7 +94,8 @@ CREATE TABLE status_revision_emojis (
 -- The purge of unreferenced remote custom emoji looks up the references to an emoji.
 CREATE INDEX status_revision_emojis_emoji_id ON status_revision_emojis (emoji_id);
 
--- Event: the deletion of a status. It outlives the purge as the tombstone of the URI.
+-- Event: the deletion of a status. It outlives the purge as the tombstone of the URI, except a
+-- deletion by retention, which is no tombstone and goes after 30 days once nothing names the status.
 CREATE TABLE status_deletions (
   status_id TEXT NOT NULL PRIMARY KEY,
   uri TEXT NOT NULL,
@@ -107,6 +108,7 @@ CREATE INDEX status_deletions_uri ON status_deletions (uri);
 -- A deletion other than by retention keeps its URI from coming back, so there is at most one.
 -- A remote status deleted by retention may be fetched again and deleted again (ADR-0034).
 CREATE UNIQUE INDEX status_deletions_tombstone_uri ON status_deletions (uri) WHERE origin <> 'retention';
+CREATE INDEX status_deletions_retention ON status_deletions (deleted_at) WHERE origin = 'retention';
 
 -- Resource: a hashtag, unique by its normalized name. name_normalized compares byte by byte (the
 -- default BINARY), so that the prefix search of hashtags (ADR-0092 §1) reads the range
@@ -251,7 +253,7 @@ CREATE INDEX boosts_status_id ON boosts (status_id);
 -- Event: a boost was retracted (Undo Announce). A boost is retracted at most once.
 CREATE TABLE boost_retractions (
   boost_id TEXT NOT NULL PRIMARY KEY,
-  origin TEXT NOT NULL CHECK (origin IN ('booster', 'status_deleted', 'moderation', 'remote')),
+  origin TEXT NOT NULL CHECK (origin IN ('booster', 'remote')),
   retracted_at INTEGER NOT NULL
 ) STRICT;
 
@@ -277,7 +279,7 @@ CREATE UNIQUE INDEX favourites_uri ON favourites (uri);
 CREATE INDEX favourites_account_id_id ON favourites (account_id, id);
 CREATE INDEX favourites_status_id_id ON favourites (status_id, id);
 
--- Resource: an account's emoji reaction to a status (FR-116, ADR-0052), deleted when it is taken
+-- Current value: an account's emoji reaction to a status (FR-116, ADR-0052), deleted when it is taken
 -- back (content.unreacted). emoji_key is the Unicode emoji, fully qualified, or the
 -- custom_emojis.id of custom_emoji_id, NULL for a Unicode emoji. uri is the IRI of the Like or
 -- EmojiReact.
@@ -426,7 +428,7 @@ CREATE INDEX media_blob_deletions_delete_after ON media_blob_deletions (delete_a
 -- Current value (cache): the link card of a URL (ADR-0062), read from the page's head and shared
 -- by every status that links the URL. url is the requested URL, normalized; card_url is where the
 -- card links (the final URL, or its og:url of the same origin). A fetch upserts the row;
--- content.cleanup_link_cards deletes the rows that no status refers to 14 days after their fetch.
+-- content.purge_link_cards deletes the rows that no status refers to 14 days after their fetch.
 -- author_name is empty when the page names no author.
 CREATE TABLE link_cards (
   url TEXT NOT NULL PRIMARY KEY,
@@ -545,6 +547,7 @@ CREATE TABLE custom_emojis (
   created_at INTEGER NOT NULL
 ) STRICT;
 CREATE UNIQUE INDEX custom_emojis_shortcode_domain ON custom_emojis (shortcode, domain);
+CREATE INDEX custom_emojis_domain_shortcode ON custom_emojis (domain, shortcode);
 CREATE UNIQUE INDEX custom_emojis_uri ON custom_emojis (uri);
 -- The creators' own emoji (/custom_emojis/mine).
 CREATE INDEX custom_emojis_created_by_user_id_id ON custom_emojis (created_by_user_id, id);
@@ -580,11 +583,12 @@ CREATE TABLE custom_emoji_aliases (
 -- Resource: a request of a holder of create_custom_emojis (ADR-0070 §2, §3): to create a local
 -- custom emoji (kind create, emoji_id NULL) or to replace the image of one the requester made
 -- (kind image, emoji_id the emoji, shortcode a copy of its own). media_id is an upload of the
--- requester's local account. Kept after it ends, for the requester's history and the audit log.
+-- requester's local account. Kept after it ends, for the requester's history and the audit log;
+-- requester_user_id is NULL once the requester's account has been erased.
 CREATE TABLE custom_emoji_requests (
   id TEXT NOT NULL PRIMARY KEY,
   kind TEXT NOT NULL CHECK (kind IN ('create', 'image')),
-  requester_user_id TEXT NOT NULL,
+  requester_user_id TEXT,
   emoji_id TEXT,
   shortcode TEXT NOT NULL,
   media_id TEXT NOT NULL,
@@ -597,8 +601,8 @@ CREATE INDEX custom_emoji_requests_media_id ON custom_emoji_requests (media_id);
 
 -- Event: the end of a custom emoji request, at most one per request; a request without one is
 -- pending. decided_by_user_id is NULL for the CLI and for lapsed (a request to replace the image
--- of an emoji that was deleted); reason is the optional reason of a rejection; emoji_id is the
--- emoji that an approval made or changed.
+-- of an emoji that was deleted, or a pending request of an erased account); reason is the optional
+-- reason of a rejection; emoji_id is the emoji that an approval made or changed.
 CREATE TABLE custom_emoji_request_outcomes (
   id TEXT NOT NULL PRIMARY KEY,
   request_id TEXT NOT NULL,

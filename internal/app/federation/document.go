@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/url"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -22,12 +21,13 @@ type NoteParts interface {
 }
 
 // NoteQuotes reads what the Note of a status says of quotes (ADR-0069 §3): its quote, who may
-// quote it, and the page of the quoted status that the fallback links. *appcontent.Service
+// quote it, the page of the quoted status that the fallback links, and whether the Note may name
+// that status at all. *appcontent.Service
 // implements it.
 type NoteQuotes interface {
 	FindQuote(ctx context.Context, statusID string) (appcontent.Quote, appcontent.QuoteState, error)
 	FindQuotePolicy(ctx context.Context, statusID string) (appcontent.StatusQuotePolicy, error)
-	QuotedPageURL(ctx context.Context, uri string) (string, error)
+	FederatedQuotePage(ctx context.Context, uri string) (string, bool, error)
 }
 
 // Relationships reads the relationship of an account with another; *appgraph.Service
@@ -37,7 +37,8 @@ type Relationships interface {
 }
 
 // notes builds the Note of a local status, the one place that the fan-out (the object of Create
-// and Update) and object fetches (GET of the status's IRI) build it (federation.md §7.4).
+// and Update), object fetches (GET of the status's IRI), and the outbox and featured collections
+// build it (federation.md §7.4).
 type notes struct {
 	parts NoteParts
 	graph Relationships
@@ -75,25 +76,28 @@ func (n notes) note(ctx context.Context, st appcontent.Status, rev appcontent.Re
 		}
 		parts.Mentions = kept
 	}
-	note := statusNote(st, rev, author, vis, parts, updated, n.host, n.accountDomain)
+	return n.withQuotes(ctx, statusNote(st, rev, author, vis, parts, updated, n.host, n.accountDomain), st, author, vis)
+}
+
+// withQuotes adds to the Note of the local status st its quote, unless the author took it away or
+// the quoted status is local-visibility (ADR-0144 §4), and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
+// the author alone for the others, which remote servers see as followers-only. Without quotes it
+// returns note as it is.
+func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility) (federation.NoteDocument, error) {
 	if n.quotes == nil {
 		return note, nil
 	}
-	return n.withQuotes(ctx, note, st, author, vis)
-}
-
-// withQuotes adds to the Note of the local status st its quote, unless the author took it away,
-// and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
-// the author alone for the others, which remote servers see as followers-only.
-func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility) (federation.NoteDocument, error) {
 	switch q, state, err := n.quotes.FindQuote(ctx, st.ID); {
 	case errors.Is(err, appcontent.ErrNotFound):
 	case err != nil:
 		return federation.NoteDocument{}, err
 	case state.Approval != appcontent.QuoteApprovalDetached:
-		page, err := n.quotes.QuotedPageURL(ctx, q.QuotedURI)
+		page, ok, err := n.quotes.FederatedQuotePage(ctx, q.QuotedURI)
 		if err != nil {
 			return federation.NoteDocument{}, err
+		}
+		if !ok {
+			break
 		}
 		auth := ""
 		if state.Approval == appcontent.QuoteApprovalAccepted {
@@ -174,7 +178,7 @@ func statusNote(st appcontent.Status, rev appcontent.Revision, author appaccount
 	}
 	for _, t := range parts.Tags {
 		note.Tag = append(note.Tag, federation.TagDocument{
-			Type: federation.TagHashtag, Href: "https://" + host + "/tags/" + url.PathEscape(t.Name), Name: "#" + t.Name,
+			Type: federation.TagHashtag, Href: appcontent.TagURL(host, t.NameNormalized), Name: "#" + t.Name,
 		})
 	}
 	for _, e := range parts.Emojis {
@@ -311,17 +315,23 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 		if err != nil {
 			return nil, err
 		}
-		aud := federation.Address(federation.Visibility(s.visibility), federation.FollowersOf(actor), mentioned)
-		announce := federation.NewActivityDocument(federation.IRI(s.boost.URI), federation.ActivityAnnounce, actor,
-			s.boost.BoostedAt, aud, federation.IRI(s.status.URI))
+		announce := announceDocument(s.boost, s.status, actor, s.visibility, mentioned)
 		doc = announce
 		if act.Type == federation.ActivityUndo {
-			doc = federation.NewActivityDocument(act.ActivityURI, act.Type, actor, act.CreatedAt, aud, announce.Embedded())
+			doc = federation.NewActivityDocument(act.ActivityURI, act.Type, actor, act.CreatedAt, federation.Audience{To: announce.To, Cc: announce.Cc}, announce.Embedded())
 		}
 	default:
 		return nil, fmt.Errorf("%w: %s of a %s", federation.ErrInvalidOutbound, act.Type, act.ObjectKind)
 	}
 	return doc.Marshal()
+}
+
+// announceDocument returns the Announce of boost b of st by actor, addressed by the effective
+// visibility vis to its followers and mentioned, the one place that the fan-out and GET of the
+// Announce's IRI build it (federation.md §7.4, §10).
+func announceDocument(b appcontent.Boost, st appcontent.Status, actor federation.IRI, vis appcontent.Visibility, mentioned []federation.IRI) federation.ActivityDocument {
+	aud := federation.Address(federation.Visibility(vis), federation.FollowersOf(actor), mentioned)
+	return federation.NewActivityDocument(federation.IRI(b.URI), federation.ActivityAnnounce, actor, b.BoostedAt, aud, federation.IRI(st.URI))
 }
 
 // accountDocument builds the Update or the Delete of a local actor, addressed to the public as

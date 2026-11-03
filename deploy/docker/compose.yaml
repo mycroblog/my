@@ -31,7 +31,7 @@ x-app: &app
     # Reverse proxies whose X-Forwarded-For tells the client IP for the rate limits; empty trusts none.
     MY_TRUSTED_PROXIES: ${MY_TRUSTED_PROXIES:-}
     MY_ROLE: all
-    MY_DB: sqlite
+    MY_DATABASE: sqlite
     MY_DATABASE_URL: /data/my.db
     # Uploaded and processed media, in the same volume as the database (back them up together).
     MY_BLOB_FS_DIR: /data/blobs

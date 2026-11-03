@@ -49,7 +49,7 @@ func TestProjectionsVerifyAndRebuild(t *testing.T) {
 				dbURL = newPostgresDatabase(t)
 			}
 			cfg := loadConfig(t, map[string]string{
-				"MY_DB": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_MAIL": "none", "MY_BILLING_SOURCES": "aws",
+				"MY_DATABASE": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_MAIL": "none", "MY_BILLING_SOURCES": "aws",
 			})
 			app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{
 				Logger: slog.New(slog.DiscardHandler), BillingSources: map[string]appfinance.BillingSource{"aws": billingFixture()},
@@ -68,6 +68,34 @@ func TestProjectionsVerifyAndRebuild(t *testing.T) {
 	}
 }
 
+// fillDeactivations leaves an account deactivated and another that came back, with a post each, for
+// the feed restrictions and the search terms (ADR-0145 §5).
+func fillDeactivations(t *testing.T, a *platform.App) {
+	t.Helper()
+	ctx := t.Context()
+	for _, name := range []string{"gwen", "hana"} {
+		reg, err := a.Identity.RegisterLocalUser(ctx, identity.RegisterInput{
+			Username: name, Password: "correct horse battery staple", DisplayName: name, Locale: "en",
+		})
+		if err != nil {
+			t.Fatalf("RegisterLocalUser(%s): %v", name, err)
+		}
+		if _, err := a.Content.Create(ctx, appcontent.CreateInput{
+			AuthorAccountID: reg.AccountID, TextInput: appcontent.TextInput{Text: "before leaving"}, Visibility: domcontent.VisibilityPublic,
+		}); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+		if _, err := a.Identity.DeactivateOwnAccount(ctx, reg.User.ID, identity.Confirmation{Password: "correct horse battery staple"}); err != nil {
+			t.Fatalf("DeactivateOwnAccount(%s): %v", name, err)
+		}
+		if name == "hana" {
+			if err := a.Identity.ReactivateOwnAccount(ctx, reg.User.ID); err != nil {
+				t.Fatalf("ReactivateOwnAccount: %v", err)
+			}
+		}
+	}
+}
+
 func fillProjections(t *testing.T, a *platform.App) {
 	t.Helper()
 	ctx := t.Context()
@@ -82,6 +110,7 @@ func fillProjections(t *testing.T, a *platform.App) {
 		ids[name] = reg.AccountID
 	}
 	alice, bob, carol := ids["alice"], ids["bob"], ids["carol"]
+	fillDeactivations(t, a)
 	var dave string
 	err := a.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		d, err := a.Accounts.UpsertRemoteActor(ctx, tx, appaccount.RemoteActorInput{
@@ -126,6 +155,9 @@ func fillProjections(t *testing.T, a *platform.App) {
 	}
 	if _, err := a.Graph.Mute(ctx, alice, carol, appgraph.MuteInput{HideNotifications: true}); err != nil {
 		t.Fatalf("Mute: %v", err)
+	}
+	if _, err := a.Interactions.React(ctx, alice, hello, "\U0001F44D"); err != nil {
+		t.Fatalf("React: %v", err)
 	}
 	fillRemotePoll(t, a, dave)
 	fillModeration(t, a, ids, dave, hello)
@@ -449,7 +481,7 @@ func checkProjections(t *testing.T, a *platform.App, exec func(string), count fu
 	for _, table := range []string{
 		"account_handles", "account_profile_heads", "remote_account_heads", "follow_edges", "follow_counters",
 		"block_edges", "status_heads", "status_mention_index", "status_counters", "account_post_counters", "local_post_counters",
-		"boost_edges", "feed_entries", "feed_tag_entries", "feed_follow_edges", "feed_exclusions",
+		"boost_edges", "status_reaction_counts", "feed_entries", "feed_tag_entries", "feed_follow_edges", "feed_exclusions",
 		"notification_exclusions", "notification_deleted_statuses", "poll_tallies",
 		"account_restrictions", "domain_restrictions", "report_states", "appeal_states", "status_sensitivity_overrides",
 		"feed_author_restrictions", "feed_domain_restrictions", "user_roles", "user_registration_states", "user_primary_emails",
@@ -483,6 +515,9 @@ func checkProjections(t *testing.T, a *platform.App, exec func(string), count fu
 	exec("UPDATE relay_states SET state = 'left'")
 	exec("UPDATE cost_item_heads SET ends_on = NULL")
 	exec("DELETE FROM imported_cost_heads WHERE service = 'Tax'")
+	exec("UPDATE status_reaction_counts SET count = count + 1")
+	exec("INSERT INTO service_closure_heads (id, state, event_id, announcement_event_id) VALUES (1, 'announced', '" + testkit.NamedID("no-such-event") + "', '" + testkit.NamedID("no-such-event") + "')")
+	exec("INSERT INTO custom_emoji_pending_requests (request_id, requester_user_id, reserved_shortcode) VALUES ('" + testkit.NamedID("no-such-request") + "', '" + testkit.NamedID("no-such-user") + "', 'ghost')")
 
 	drifted := []string{}
 	for _, p := range svc.List() {
@@ -498,9 +533,9 @@ func checkProjections(t *testing.T, a *platform.App, exec func(string), count fu
 	}
 	slices.Sort(drifted)
 	want := []string{
-		"account_restrictions", "appeal_states", "cost_item_heads", "domain_restrictions", "feed_author_restrictions", "feed_domain_restrictions",
+		"account_restrictions", "appeal_states", "cost_item_heads", "custom_emoji_pending_requests", "domain_restrictions", "feed_author_restrictions", "feed_domain_restrictions",
 		"feed_tag_entries", "follow_counters", "imported_cost_heads", "local_post_counters", "notification_deleted_statuses", "notification_exclusions",
-		"poll_tallies", "relay_states", "remote_account_heads", "report_states", "status_counters", "status_sensitivity_overrides",
+		"poll_tallies", "relay_states", "remote_account_heads", "report_states", "service_closure_heads", "status_counters", "status_reaction_counts", "status_sensitivity_overrides",
 		"user_primary_emails", "user_registration_states", "user_roles", "webhook_endpoint_failures", "webhook_endpoint_heads",
 	}
 	if !slices.Equal(drifted, want) {

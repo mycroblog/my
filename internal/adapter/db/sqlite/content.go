@@ -57,7 +57,7 @@ func (r *StatusRepository) InsertLocalStatus(ctx context.Context, tx uow.Tx, ls 
 	err = q.InsertLocalStatus(ctx, sqlitegen.InsertLocalStatusParams{
 		StatusID:        ls.StatusID,
 		AuthorAccountID: ls.AuthorAccountID,
-		ClientID:        toNullString(ls.ClientID),
+		OauthClientID:   toNullString(ls.ClientID),
 		IdempotencyKey:  toNullString(ls.IdempotencyKey),
 	})
 	if isUniqueViolation(err, "local_statuses.author_account_id, local_statuses.idempotency_key") {
@@ -696,7 +696,7 @@ func localStatusFrom(row sqlitegen.LocalStatus) content.LocalStatus {
 	return content.LocalStatus{
 		StatusID:        row.StatusID,
 		AuthorAccountID: row.AuthorAccountID,
-		ClientID:        row.ClientID.String,
+		ClientID:        row.OauthClientID.String,
 		IdempotencyKey:  row.IdempotencyKey.String,
 	}
 }

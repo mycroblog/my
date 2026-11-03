@@ -20,8 +20,7 @@ get:
         A provider to count as if it were enabled, for the question of what enabling it would do.
         A new provider needs none: nobody links to it yet.
       schema:
-        type: string
-        format: uuid
+        $ref: ../components/schemas/Id.yaml
   responses:
     "200":
       description: The count.

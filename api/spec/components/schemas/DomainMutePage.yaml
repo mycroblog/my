@@ -3,9 +3,9 @@ description: A page of domain mutes.
 allOf:
   - $ref: ./PageInfo.yaml
   - type: object
-    required: [domain_mutes]
+    required: [items]
     properties:
-      domain_mutes:
+      items:
         type: array
         items:
           $ref: ./DomainMute.yaml

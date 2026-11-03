@@ -36,7 +36,7 @@ const (
 	// JobClosureEmail sends one email of the service closure to one user.
 	JobClosureEmail = "identity.closure_email"
 	// JobClosureEmailReminders queues the reminders of the service closure whose time has come.
-	JobClosureEmailReminders = "identity.closure_email_reminders"
+	JobClosureEmailReminders = "identity.queue_closure_reminders"
 )
 
 // ClosureEmailReminderInterval is how often JobClosureEmailReminders runs. It is well under the
@@ -234,6 +234,12 @@ func (s *Service) sendClosureEmail(ctx context.Context, run queue.Job, job closu
 	case errors.Is(err, ErrInvalidCredentials):
 		return nil
 	case err != nil:
+		return err
+	}
+	// A deactivated account gets no email but the one of its deactivation (ADR-0145 §3).
+	if st, err := s.d.Accounts.UserLifecycle(ctx, job.UserID); err == nil && st.Deactivated() {
+		return nil
+	} else if err != nil {
 		return err
 	}
 	email, verified, err := s.d.Repository.FindPrimaryEmail(ctx, job.UserID)

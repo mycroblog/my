@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: exportCsv
+  x-first-party-only: true
   summary: Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
   description: |
     Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
-    Mastodon and this server import (FR-008): `following` is `following_accounts.csv`
+    Mastodon and this server import: `following` is `following_accounts.csv`
     (`Account address,Show boosts,Notify on new posts,Languages`, the active follows),
     `blocks` is `blocked_accounts.csv` (one address per line), `mutes` is
     `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),

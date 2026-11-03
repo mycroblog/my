@@ -1,14 +1,15 @@
 # SPDX-License-Identifier: MIT
 description: |
   The kind of an audited operation, each on one kind of target. On an `account`:
-  `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+  `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
   `revealed_private_data` (a moderator was shown the account's email address and IP
   addresses), `two_factor_disabled` (an administrator removed the account's two-factor
   authentication), `password_reset_link_issued` (an administrator issued a link that sets
   a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
   suppression of the primary email address of the account's user), `account_moved` (a limited
   local account moved to another local account, which does not inherit the limit). On a `domain`:
-  `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+  `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+  cleared the failures of the server). On a `report`: `report_assigned`,
   `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
   `user` (a registration):
   `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -20,7 +21,7 @@ description: |
   `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
   an `appeal`:
   `appeal_upheld`, `appeal_overturned` (which also records the action's
-  `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+  `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
   `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
   `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
   `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -61,7 +62,7 @@ description: |
   the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
   `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
   the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-  `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+  `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
   (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
   and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
   name.
@@ -91,7 +92,7 @@ enum:
   - role_deleted
   - appeal_upheld
   - appeal_overturned
-  - account_deletion_cancelled
+  - account_deletion_canceled
   - revealed_private_data
   - signup_block_added
   - signup_block_lifted
@@ -162,3 +163,4 @@ enum:
   - link_card_domain_fetch_stopped
   - link_card_domain_images_stopped
   - link_card_domain_rule_removed
+  - instance_marked_available

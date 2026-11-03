@@ -71,8 +71,9 @@ func newFiledReportsEnv(t *testing.T, ns ...notification.Notification) *authEnv 
 			accounts[id] = a
 		}
 		accounts[reportTargetID] = appaccount.Actor{
-			Account: account.Account{ID: reportTargetID, Domain: "remote.example", URI: "https://remote.example/users/bob", CreatedAt: createdAt},
-			Handle:  &account.Handle{AccountID: reportTargetID, Username: "bob", Domain: "remote.example"},
+			Account:   account.Account{ID: reportTargetID, Domain: "remote.example", URI: "https://remote.example/users/bob", CreatedAt: createdAt},
+			Handle:    &account.Handle{AccountID: reportTargetID, Username: "bob", Domain: "remote.example"},
+			Lifecycle: account.InitialLifecycleState(reportTargetID),
 		}
 		o.Accounts = accounts
 		o.FiledReports = filed

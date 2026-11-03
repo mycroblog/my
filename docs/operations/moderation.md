@@ -84,14 +84,41 @@ In the admin API: `POST /api/v1/admin/accounts/{id}/actions` (the body has `kind
 ### What the user sees
 
 - An action with `notify_target` true reaches the user as a notification (`moderation_notice`). It carries the kind, the reason category, `public_reason`, the end time and the state. The kind and the category also come back as display names in the user's UI language.
-- The user can check the actions against them with `GET /api/v1/moderation/actions` (scope `read:accounts`, filter with `active`), newest first. Actions with `notify_target` false and lifted or expired actions are listed too.
+- The user can check the actions against them with the first-party `GET /api/v1/moderation/actions` (filter with `active`), newest first. Actions with `notify_target` false and lifted or expired actions are listed too.
 - `private_note`, the report, who took the action and the reason for lifting are never shown to the user.
 - A user can appeal each action once ([appeals](#appeals)). The action list and the action in a notification include whether it can be appealed (`appealable`), the deadline (`appeal_deadline`), and the appeal and its outcome (`appeal`).
 - A user under `disable_login`, `suspend` or `ban` cannot use the app or the API but can still sign in on the sign-in page (`/auth/sign_in`). There they see the kind, the reason and the end time of the action in effect
   (for `ban`, the number of days until the account is deleted), and they can appeal from that page ([appeals](#appeals)). The authorization endpoint (`/oauth/authorize`) answers with `403` and issues no token.
   A user under `ban` can sign in until the account is deleted, and the deletion revokes that session too. A user whose own deletion is scheduled, and an account that has been disabled, cannot sign in even on the sign-in page.
 
-### Appeals
+### Accounts that their owners deactivated
+
+A user can deactivate their own account from the account settings, after entering their password or a
+two-factor code again, or confirming with a passkey (a user with none of these signs in again at a linked
+login provider). The account is not a moderation action and moderators cannot deactivate anyone:
+
+- The profile and posts are hidden from everyone but moderators, and other servers receive an `Update` of the
+  actor marked `suspended`, so they may show the account as suspended. Every session and token of the user ends.
+  Where the server sends mail, one email states the date of the deletion; no other email is sent before it.
+- Nothing reaches the account: mentions and direct messages are dropped, no notifications, emails, or Web Push are
+  made, and new followers are refused. Favourites and boosts are counted. Existing follows stay.
+- The user signs in to a server page, which shows the date of the deletion and lets them reactivate or delete the
+  account. Reactivating brings everything back. The next deactivation has to wait 24 hours.
+- Thirty days after the deactivation, the hourly job deletes the account. A reactivation after that date is refused
+  even if the job has not run yet. The username is not released.
+
+Moderators see the state `deactivated` in the account list (`state=deactivated`), and can still read reports about
+the account and act on it. A moderation action does not change the date of the deletion, except a `ban`, which
+replaces it with its own: from then on the user cannot reactivate. A suspension sends nothing to other servers while the
+account is deactivated, and it stays in effect after the user reactivates. A user cannot deactivate an account while
+moderation keeps it from signing in, while its deletion is scheduled, after it moved, while its registration waits
+for review, while a paid subscription is still running (including one set to end at the end of its period), or when
+it is the only administrator who can sign in. A deactivated administrator does not count as one who can. If a
+deactivated administrator's date passes while no other administrator can sign in, the hourly job does not delete the
+account and logs a warning. That administrator can no longer sign in either, so create another administrator with
+`my admin create`; the next run then deletes the account.
+
+## Appeals
 
 A local user can appeal an action against them.
 A moderator reviews the appeal and either upholds it (`uphold`) or overturns it (`overturn`).
@@ -108,18 +135,22 @@ While [sign-in is limited to login providers](login-providers.md#limit-sign-in-t
 The page shows the form and the deadline for an action that can be appealed, the content and outcome for an action already appealed, and the reason for an action whose deadline has passed or that cannot be appealed. For a rejected appeal it shows the reason.
 In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{id}`, and `POST .../{id}/uphold` and `POST .../{id}/overturn` (the body `{"public_reason": "..."}` is optional). They need the `manage_accounts` permission.
 
-- An action can be appealed once, and the text is 1 to 2,000 characters. The deadline is the number of days in the instance setting `appeal_window` after the action (default 180 days, 20 to 365; see [instance settings](instance-settings.md)).
+- An action can be appealed once, and the text is 1 to 2,000 characters. The deadline is the number of days in the instance setting `appeal_window_days` after the action (default 180 days, 20 to 365; see [instance settings](instance-settings.md)).
   An action past the deadline and a second appeal give `422` (`/api/v1/problems/appeal-window-closed` and `/api/v1/problems/already-appealed`).
-- A `ban` can be appealed until the account is deleted (30 days after the action, or until the `appeal_window` deadline if that is shorter). A `ban` of a deleted account gives `422` (`/api/v1/problems/not-appealable`). A lifted or expired action can still be appealed within the deadline.
+- A `ban` can be appealed until the account is deleted (30 days after the action, or until the `appeal_window_days` deadline if that is shorter). A `ban` of a deleted account gives `422` (`/api/v1/problems/not-appealable`). A lifted or expired action can still be appealed within the deadline.
 - When a user appeals, people with `manage_accounts` get a notification (`admin_appeal`). When it is reviewed, the user gets a notification (`appeal_decided`) and can see the outcome and `public_reason`. The reviewer is not shown.
 - Overturning lifts the action in the same transaction (the same effect as `lift`, with an empty lift reason). Overturning `delete_statuses` does not bring back the deleted posts. An action already lifted before the review stays as it is.
-- Overturning a `ban` also cancels the scheduled account deletion in the same transaction (the audit log records `account_deletion_cancelled`), ends the suspension, and sends the original profile `Update` to other servers. Revoked sessions and tokens do not come back, so the user signs in again.
+- Overturning a `ban` also cancels the scheduled account deletion in the same transaction (the audit log records `account_deletion_canceled`), ends the suspension, and sends the original profile `Update` to other servers. Revoked sessions and tokens do not come back, so the user signs in again.
   If the account was deleted before the review, it cannot be overturned (`422`, `/api/v1/problems/not-appealable`; upholding is still possible).
 - A review happens once. Reviewing again with the same outcome changes nothing, and the opposite outcome gives `409` (`/api/v1/problems/appeal-decided`).
 
 ## Account management
 
 Searching accounts, viewing their details and revealing IP addresses and email addresses are done through the admin API and need the `manage_accounts` permission.
+
+Staff act only on lower ranks: issuing or lifting an action, deciding an appeal, lifting an email suppression, revealing private data, issuing a password reset link, and removing two-factor authentication need the highest `position` among your roles to be above that of every role of the target.
+A higher or equal rank, your own account included, returns `403` with the problem type `/api/v1/problems/target-outranks-actor`, so a moderator cannot ban an administrator and one administrator cannot ban another. The `my admin` commands have no such limit.
+An action that keeps the only administrator who can sign in from signing in (`disable_login`, `suspend`, `ban`) is refused whoever issues it, and that administrator cannot delete their own account (`409` with `/api/v1/problems/last-administrator`). See [admin-cli.md](admin-cli.md) for the roles.
 
 - `GET /api/v1/admin/accounts` returns local and remote accounts, newest first (the instance Actor is excluded).
   You can filter by username prefix (`username`), domain (`domain`), local or remote (`origin`), state (`state`), and, for local accounts, email address (`email`), email domain (`email_domain`) and the IP address used to register or sign in (`ip`).
@@ -189,6 +220,7 @@ my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 ```
 
 In the admin API: `GET /api/v1/admin/domain_actions/export` (`text/csv`), `POST .../import/preview` (the body has `csv`), and `POST .../import` (the body has `blocks`, the chosen rows, and `private_note`).
+A row for this server's own domain is skipped (`own_domain`), and a domain action on it is refused.
 In the web client, use "Import a CSV" and "Export CSV" on the Domain actions screen (`/moderation/domain-actions`).
 
 | CSV row | Action on this server |
@@ -217,20 +249,20 @@ A domain `suspend` and a remote account `suspend` cut follows between local user
 ### Publishing the domains you act on
 
 You can publish the `limit` and `suspend` actions in effect through `GET /api/v1/instance/domain_actions`.
-The instance setting `domain_actions_visibility` (`none` / `users` / `all`, default `none`) decides who sees the list, and
-`domain_actions_rationale_visibility` (the same values, default `none`) decides who sees the public comments ([instance settings](instance-settings.md)).
+The instance setting `domain_actions_visibility` (`off` / `signed_in` / `everyone`, default `off`) decides who sees the list, and
+`domain_actions_rationale_visibility` (the same values, default `off`) decides who sees the public comments ([instance settings](instance-settings.md)).
 
 ```sh
-my instance set domain_actions_visibility users
-my instance set domain_actions_rationale_visibility users
+my instance set domain_actions_visibility signed_in
+my instance set domain_actions_rationale_visibility signed_in
 ```
 
-- With `none` the API returns `404`, and with `users` it returns `401` to a request without an access token.
+- With `off` the API returns `404`, and with `signed_in` it returns `401` to a request without an access token.
 - There is one entry per action, newest first. An entry has the domain, the SHA-256 of the domain (hex) and the kind, and the public comment for people allowed to see it. Private notes are never returned.
 - For an action with `-obfuscate` (`obfuscate`), the middle half of the domain's characters (other than dots) is replaced with `*` (`bad.example` becomes `bad.*****le`).
   Anyone can compare the SHA-256 of a domain they know to check whether it is an obfuscated one.
 - `reject_media`, `reject_reports` and `force_sensitive` actions, and lifted or expired actions, are not published.
-- The web client's instance information page (`https://<host>/about`) shows this list under the same settings. With `none` the section is not shown, and with `users` people who are not signed in see a note that only signed-in users can see it.
+- The web client's instance information page (`https://<host>/about`) shows this list under the same settings. With `off` the section is not shown, and with `users` people who are not signed in see a note that only signed-in users can see it.
 
 ## Refetching remote posts
 
@@ -276,6 +308,7 @@ In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, 
 - Reopening (`reopen`) puts a resolved report back to `open` (the assignment stays). An open report cannot be reopened (`409` in the admin API).
 - The report details (`show`, `GET .../{id}`) return the notes, oldest first, with the number of other reports about the target and the number of actions against the target (lifted and expired ones included). The list does not return notes.
 - Assignments, resolutions, reopenings and notes are kept as events (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`), and `report_states` holds the current state.
+- A reporter sees of the target only what they would see of the account otherwise: while it is suspended or blocks them, their report stays listed without the account. Moderators always see the whole target.
 - A local reporter gets a notification (`report_resolved`) at the first resolution. Reopening and resolving again adds no notification.
   A reporter can list their own reports with `GET /api/v1/reports` and sees only whether each is open or resolved. The outcome, the action taken, the reason given to the target and the assignee are not shown.
 
@@ -284,7 +317,7 @@ In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, 
 - A local user can report an open voice chat room that they can see (`POST /api/v1/reports` with `voice_room_id`, and `account_id` set to the room's host).
   The report targets the host at that moment and points at the room's settings (name and description) as they were then. It points at no posts and is never forwarded to another server.
 - The report details (`GET /api/v1/admin/reports/{id}`) show the room (`voice_room`): every change of its settings, who took part and when they left, who was removed from it, and how it ended.
-  The records of who took part are kept for 90 days after the room ends (`retention_voice_participants`) and as long as a report points at the room ([record retention](#record-retention-and-holds)).
+  The records of who took part are kept for 90 days after the room ends (`voice_participants_retention_days`) and as long as a report points at the room ([record retention](#record-retention-and-holds)).
   There are no recordings and no text chat, so these records are the only evidence.
 - A holder of `manage_reports` can end an open room for every participant with `POST /api/v1/admin/voice_rooms/{id}/end` (body `{"reason": "..."}`, optional, up to 500 characters).
   The reason is only for the moderators; the participants see only that the room ended. It works while the voice chat is off too, and the audit log records `voice_room_ended`.
@@ -328,15 +361,15 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 
 | Target kind | Operations |
 | --- | --- |
-| `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_cancelled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts) |
+| `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_canceled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts) |
 | `status` | `status_refetch_queued` (refetch of a remote post; the target name is the post URI) |
-| `domain` | `domain_action_issued` and `domain_action_lifted` (issuing and lifting a domain action), `domain_statuses_refetch_queued` (refetch of posts of the domain's accounts) |
+| `domain` | `domain_action_issued` and `domain_action_lifted` (issuing and lifting a domain action), `domain_statuses_refetch_queued` (refetch of posts of the domain's accounts), `instance_marked_available` (clearing the failures of a server) |
 | `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added` (assigning, unassigning, resolving and reopening a report, and adding a note) |
 | `user` | `registration_approved`, `registration_rejected` (registration review) |
 | `setting` | `setting_changed` (instance settings), `text_changed` (instance texts) |
 | `rule` | `rule_added`, `rule_revised`, `rule_moved`, `rule_retired` (instance rules) |
 | `role` | `role_granted`, `role_revoked` (granting and revoking a role for a user), `role_created`, `role_updated`, `role_deleted` (creating, changing and deleting a role) |
-| `appeal` | `appeal_upheld`, `appeal_overturned` (appeal review; overturning also records `account_action_lifted` for the action, and `account_deletion_cancelled` for a `ban`) |
+| `appeal` | `appeal_upheld`, `appeal_overturned` (appeal review; overturning also records `account_action_lifted` for the action, and `account_deletion_canceled` for a `ban`) |
 | `signup_block` | `signup_block_added`, `signup_block_lifted` (adding and lifting a sign-up block) |
 | `custom_emoji` | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` (registering a custom emoji, replacing its image, copying an emoji from another server, changing, enabling, disabling and deleting it) |
 | `webhook` | `webhook_created`, `webhook_updated`, `webhook_deleted`, `webhook_enabled`, `webhook_disabled`, `webhook_secret_rotated` (creating, changing, deleting, enabling and disabling a webhook, and regenerating its secret) |
@@ -377,17 +410,17 @@ In the admin API: `GET /api/v1/admin/audit_log` (filter with `actor_account_id`,
 ## Record retention and holds
 
 After the retention period for each kind of record, hourly jobs (`moderation.purge_records`, `identity.purge_origins`, and `voice.purge_records`) remove moderation records.
-You can change the periods in the instance settings, but not below the lower limit ([instance settings](instance-settings.md)). A changed period takes effect from the next run.
+You can change the periods in the instance settings, but not below the lower limit ([instance settings](instance-settings.md)). A changed period takes effect from the next run. A released retention hold, with its reason, is removed once the retention period for moderation actions has passed since its release.
 
 | Record | Setting | Default | Lower limit | Starts from |
 | --- | --- | --- | --- | --- |
-| Sign-in IP address and User-Agent | `retention_session_origins` | 180 days | 90 days | The sign-in |
-| Registration IP address | `retention_registration_origins` | 180 days | 90 days | The registration |
-| Reports (comment, target posts, notes, assignments, resolutions, reopenings) | `retention_reports` | 365 days | 180 days | The last resolution |
-| Actions against accounts (reason, note, target posts, lifting) and appeals | `retention_moderation_actions` | 365 days | 180 days | The end of the action |
-| Audit log | `retention_audit_log` | 730 days | 365 days | The record |
+| Sign-in IP address and User-Agent | `session_origins_retention_days` | 180 days | 90 days | The sign-in |
+| Registration IP address | `registration_origins_retention_days` | 180 days | 90 days | The registration |
+| Reports (comment, target posts, notes, assignments, resolutions, reopenings) | `reports_retention_days` | 365 days | 180 days | The last resolution |
+| Actions against accounts (reason, note, target posts, lifting) and appeals | `moderation_actions_retention_days` | 365 days | 180 days | The end of the action |
+| Audit log | `audit_log_retention_days` | 730 days | 365 days | The record |
 | Sign-up blocks | None (cannot be changed) | 30 days | n/a | The earlier of lifting and expiry |
-| Who took part in a voice chat room (participations, speakers and listeners, raised hands, invitations, removals) | `retention_voice_participants` | 90 days | 30 days | The end of the room |
+| Who took part in a voice chat room (participations, speakers and listeners, raised hands, invitations, removals) | `voice_participants_retention_days` | 90 days | 30 days | The end of the room |
 
 - Open reports are never removed. A report that an action refers to (`report_id` of the action) stays until that action is removed.
 - The end of an action is the earlier of lifting and expiry. For an action that was appealed, if the review comes later than that, the end is the time of the review, and the action is kept while the appeal waits for review.
@@ -411,7 +444,7 @@ my admin retention release <hold id>
   A sign-up block created from that account's ban is also kept past 30 days after lifting or expiry.
 - You can place several holds on one account. When you release them all, records past their period are removed on the next run. Releasing an already released hold changes nothing.
 - Holds and their release are done only with the CLI, and the actor in the record is the CLI.
-- The data of a deleted account (one whose `ban` reached its date, or one the user deleted) is erased 7 days after deletion by the hourly job `account.erase_deleted`.
+- The data of a deleted account (one whose `ban` reached its date, one the user deleted, or a remote account that its server deleted) is erased 7 days after deletion by the hourly job `account.erase_deleted`. A remote account's posts go too, including those that local users bookmarked or replied to.
   An account under a hold is not erased. Posts that a report or action points to stay until that record is removed. The account's URI and username and the action records remain.
   The names and descriptions that the account gave its voice chat rooms are emptied; the rooms stay.
 

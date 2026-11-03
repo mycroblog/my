@@ -3,16 +3,20 @@ get:
   operationId: listAccountStatuses
   summary: List the posts and boosts of an account
   description: |
-    The account's posts and boosts that the viewer may see, newest first: its public posts
+    The account's posts and boosts that the viewer may see, newest first: its public and unlisted posts
     for everyone, its local posts for logged-in viewers, its followers-only posts for its
     followers, and its direct posts addressed to the viewer. With `pinned`, the page lists
-    the account's pinned posts instead, newest pin first, in a single page.
+    the account's pinned posts instead, newest pin first, in a single page. A reply whose parent the viewer may not see has no
+    `in_reply_to_id`.
 
     The page lists only the posts this server has received. For a remote account, the first
     page (no `cursor`, no `pinned`) of a logged-in viewer may start fetching the account's
     recent public posts from its server in the background; `remote_fetch_started` tells
     that it did. It does at most once a day per account, for at most 30 accounts per viewer
     in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
+
+    An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+    deleted account, the instance actor, and an account that blocks the viewer.
   tags: [timelines]
   security:
     - {}

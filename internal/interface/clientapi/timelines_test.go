@@ -123,8 +123,9 @@ var (
 		Local:   &account.LocalAccount{AccountID: aliceAccountID, UserID: userOf(aliceAccountID), Username: "alice"},
 	}
 	bobActor = appaccount.Actor{
-		Account: account.Account{ID: bobAccountID, URI: "https://social.example/ap/actors/" + bobAccountID, CreatedAt: createdAt},
-		Local:   &account.LocalAccount{AccountID: bobAccountID, UserID: userOf(bobAccountID), Username: "bob"},
+		Account:   account.Account{ID: bobAccountID, URI: "https://social.example/ap/actors/" + bobAccountID, CreatedAt: createdAt},
+		Local:     &account.LocalAccount{AccountID: bobAccountID, UserID: userOf(bobAccountID), Username: "bob"},
+		Lifecycle: account.InitialLifecycleState(bobAccountID),
 	}
 )
 
@@ -194,6 +195,8 @@ func newTimelineEnv(t *testing.T) *timelineEnv {
 	}
 	te.authEnv = newAuthEnv(t, func(o *clientapi.Options) {
 		o.Timelines, o.TimelineReader, o.Outboxes = te.timelines, te.views, te.outboxes
+		// These tests read the federated timeline anonymously, which its default does not allow.
+		o.Instance = federatedTimelineForEveryone()
 		o.TimelineLanguages = func(_ context.Context, userID string) ([]string, error) {
 			if userID != userOf(aliceAccountID) {
 				t.Errorf("TimelineLanguages(%q), want alice's user", userID)
@@ -207,9 +210,12 @@ func newTimelineEnv(t *testing.T) *timelineEnv {
 }
 
 // remoteActor is a remote account, whose profile may start fetching its recent posts.
-var remoteActor = appaccount.Actor{Account: account.Account{
-	ID: "01890a5d-ac96-774b-bcce-b302099a8110", Domain: "remote.example", URI: "https://remote.example/users/carol", CreatedAt: createdAt,
-}}
+var remoteActor = appaccount.Actor{
+	Account: account.Account{
+		ID: "01890a5d-ac96-774b-bcce-b302099a8110", Domain: "remote.example", URI: "https://remote.example/users/carol", CreatedAt: createdAt,
+	},
+	Lifecycle: account.InitialLifecycleState("01890a5d-ac96-774b-bcce-b302099a8110"),
+}
 
 func decodePage(t *testing.T, res *http.Response) clientapi.StatusPage {
 	t.Helper()
@@ -353,7 +359,7 @@ func TestLocalTimelineForVisitors(t *testing.T) {
 
 func TestPublicTimeline(t *testing.T) {
 	e := newTimelineEnv(t)
-	res := e.get(t, "/timelines/public?limit=2", nil)
+	res := e.get(t, "/timelines/federated?limit=2", nil)
 	page := decodePage(t, res)
 	want := []timelineCall{{timeline: "public", viewer: appcontent.Viewer{Kind: appcontent.ViewerAnonymous}, query: apptimeline.Query{Limit: 2}}}
 	if !slices.EqualFunc(e.timelines.calls, want, equalCall) || len(page.Items) != 2 {
@@ -362,17 +368,22 @@ func TestPublicTimeline(t *testing.T) {
 	if cc := res.Header.Get("Cache-Control"); cc != "public, max-age=60" {
 		t.Errorf("Cache-Control = %q, want public, max-age=60", cc)
 	}
-	res = e.get(t, "/timelines/public", map[string]string{"Authorization": "Bearer read"})
+	res = e.get(t, "/timelines/federated", map[string]string{"Authorization": "Bearer read"})
 	decodePage(t, res)
 	if c := e.timelines.calls[1]; c.viewer.AccountID != aliceAccountID || !slices.Equal(c.query.Languages, []string{"ja"}) {
 		t.Errorf("logged-in call = %+v, want alice in her timeline languages", c)
 	}
-	if res := e.get(t, "/timelines/public?limit=41", nil); res.StatusCode != http.StatusBadRequest {
+	if res := e.get(t, "/timelines/federated?limit=41", nil); res.StatusCode != http.StatusBadRequest {
 		t.Errorf("limit=41 = %d, want 400", res.StatusCode)
 	}
 }
 
 // timelineAccessEnv is a timeline environment whose instance settings are settings.
+// federatedTimelineForEveryone is an instance whose federated timeline anonymous visitors may read.
+func federatedTimelineForEveryone() *fakeInstance {
+	return &fakeInstance{settings: []instance.CurrentSetting{{Key: instance.SettingFederatedTimelineVisibility, RevisionID: testkit.NamedID("revision-1"), Value: "everyone"}}}
+}
+
 func timelineAccessEnv(t *testing.T, settings ...instance.CurrentSetting) *timelineEnv {
 	te := &timelineEnv{timelines: &fakeTimelines{}, views: &fakeViews{}}
 	te.authEnv = newAuthEnv(t, func(o *clientapi.Options) {
@@ -384,9 +395,9 @@ func timelineAccessEnv(t *testing.T, settings ...instance.CurrentSetting) *timel
 }
 
 func TestPublicTimelineCanBeTurnedOff(t *testing.T) {
-	te := timelineAccessEnv(t, instance.CurrentSetting{Key: instance.SettingFederatedTimelineAccess, RevisionID: testkit.NamedID("revision-1"), Value: "off"})
+	te := timelineAccessEnv(t, instance.CurrentSetting{Key: instance.SettingFederatedTimelineVisibility, RevisionID: testkit.NamedID("revision-1"), Value: "off"})
 	for _, auth := range []map[string]string{{"Accept-Language": "ja"}, {"Accept-Language": "ja", "Authorization": "Bearer read"}} {
-		res := te.get(t, "/timelines/public", auth)
+		res := te.get(t, "/timelines/federated", auth)
 		if res.StatusCode != http.StatusNotFound {
 			t.Fatalf("federated timeline turned off = %d, want 404", res.StatusCode)
 		}
@@ -402,7 +413,7 @@ func TestPublicTimelineCanBeTurnedOff(t *testing.T) {
 }
 
 func TestLocalTimelineCanBeTurnedOff(t *testing.T) {
-	te := timelineAccessEnv(t, instance.CurrentSetting{Key: instance.SettingLocalTimelineAccess, RevisionID: testkit.NamedID("revision-1"), Value: "off"})
+	te := timelineAccessEnv(t, instance.CurrentSetting{Key: instance.SettingLocalTimelineVisibility, RevisionID: testkit.NamedID("revision-1"), Value: "off"})
 	for _, auth := range []map[string]string{nil, {"Authorization": "Bearer read"}} {
 		if res := te.get(t, "/timelines/local", auth); res.StatusCode != http.StatusNotFound {
 			t.Errorf("local timeline turned off = %d, want 404", res.StatusCode)
@@ -411,21 +422,33 @@ func TestLocalTimelineCanBeTurnedOff(t *testing.T) {
 	if len(te.timelines.calls) != 0 {
 		t.Errorf("calls = %+v, want none", te.timelines.calls)
 	}
-	decodePage(t, te.get(t, "/timelines/public", nil))
+	// The federated timeline has its own setting.
+	decodePage(t, te.get(t, "/timelines/federated", map[string]string{"Authorization": "Bearer read"}))
 }
 
-// TestTimelinesForLoggedInUsers checks the timelines whose access is logged_in: an anonymous
+// TestTimelineDefaults checks what an instance with no stored settings serves: only the federated
+// timeline needs a sign-in, and the local timeline stays open to anonymous visitors.
+func TestTimelineDefaults(t *testing.T) {
+	te := timelineAccessEnv(t)
+	if res := te.get(t, "/timelines/federated", nil); res.StatusCode != http.StatusUnauthorized {
+		t.Errorf("anonymous federated timeline = %d, want 401", res.StatusCode)
+	}
+	decodePage(t, te.get(t, "/timelines/federated", map[string]string{"Authorization": "Bearer read"}))
+	decodePage(t, te.get(t, "/timelines/local", nil))
+}
+
+// TestTimelinesForLoggedInUsers checks the timelines whose access is signed_in: an anonymous
 // request is a 401 that no shared cache keeps, and a logged-in user gets the same page as ever.
 func TestTimelinesForLoggedInUsers(t *testing.T) {
 	for _, tc := range []struct {
 		path, timeline string
 		key            instance.SettingKey
 	}{
-		{"/timelines/local", "local", instance.SettingLocalTimelineAccess},
-		{"/timelines/public", "public", instance.SettingFederatedTimelineAccess},
+		{"/timelines/local", "local", instance.SettingLocalTimelineVisibility},
+		{"/timelines/federated", "public", instance.SettingFederatedTimelineVisibility},
 	} {
 		t.Run(tc.timeline, func(t *testing.T) {
-			te := timelineAccessEnv(t, instance.CurrentSetting{Key: tc.key, RevisionID: testkit.NamedID("revision-1"), Value: "logged_in"})
+			te := timelineAccessEnv(t, instance.CurrentSetting{Key: tc.key, RevisionID: testkit.NamedID("revision-1"), Value: "signed_in"})
 			res := te.get(t, tc.path, map[string]string{"Accept-Language": "ja"})
 			if res.StatusCode != http.StatusUnauthorized {
 				t.Fatalf("anonymous request = %d, want 401", res.StatusCode)

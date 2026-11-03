@@ -10,4 +10,4 @@ properties:
     maxProperties: 64
     additionalProperties:
       type: string
-      maxLength: 320
+      maxLength: 2048

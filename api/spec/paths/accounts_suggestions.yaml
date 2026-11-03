@@ -3,7 +3,7 @@ get:
   operationId: listAccountSuggestions
   summary: Suggest accounts to follow
   description: |
-    Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+    Accounts of this server for the viewer to follow: first the accounts that the
     administrators feature (the instance setting `featured_accounts`), in the order they gave,
     then the accounts that published a public or local post in the last 30 days, the one that
     posted last first. Each account comes once.
@@ -35,8 +35,6 @@ get:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: ../components/schemas/AccountSuggestion.yaml
+            $ref: ../components/schemas/AccountSuggestionList.yaml
     default:
       $ref: ../components/responses/Problem.yaml

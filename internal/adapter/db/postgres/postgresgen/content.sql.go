@@ -281,7 +281,7 @@ func (q *Queries) GetLiveStatusByURI(ctx context.Context, uri string) (Status, e
 }
 
 const getLocalStatus = `-- name: GetLocalStatus :one
-SELECT status_id, author_account_id, client_id, idempotency_key FROM local_statuses WHERE status_id = $1
+SELECT status_id, author_account_id, oauth_client_id, idempotency_key FROM local_statuses WHERE status_id = $1
 `
 
 func (q *Queries) GetLocalStatus(ctx context.Context, statusID string) (LocalStatus, error) {
@@ -290,14 +290,14 @@ func (q *Queries) GetLocalStatus(ctx context.Context, statusID string) (LocalSta
 	err := row.Scan(
 		&i.StatusID,
 		&i.AuthorAccountID,
-		&i.ClientID,
+		&i.OauthClientID,
 		&i.IdempotencyKey,
 	)
 	return i, err
 }
 
 const getLocalStatusByIdempotencyKey = `-- name: GetLocalStatusByIdempotencyKey :one
-SELECT status_id, author_account_id, client_id, idempotency_key FROM local_statuses
+SELECT status_id, author_account_id, oauth_client_id, idempotency_key FROM local_statuses
 WHERE author_account_id = $1 AND idempotency_key = $2
 `
 
@@ -312,7 +312,7 @@ func (q *Queries) GetLocalStatusByIdempotencyKey(ctx context.Context, arg GetLoc
 	err := row.Scan(
 		&i.StatusID,
 		&i.AuthorAccountID,
-		&i.ClientID,
+		&i.OauthClientID,
 		&i.IdempotencyKey,
 	)
 	return i, err
@@ -514,13 +514,13 @@ func (q *Queries) GetTagByName(ctx context.Context, nameNormalized string) (Tag,
 }
 
 const insertLocalStatus = `-- name: InsertLocalStatus :exec
-INSERT INTO local_statuses (status_id, author_account_id, client_id, idempotency_key) VALUES ($1, $2, $3, $4)
+INSERT INTO local_statuses (status_id, author_account_id, oauth_client_id, idempotency_key) VALUES ($1, $2, $3, $4)
 `
 
 type InsertLocalStatusParams struct {
 	StatusID        string
 	AuthorAccountID string
-	ClientID        *string
+	OauthClientID   *string
 	IdempotencyKey  *string
 }
 
@@ -528,7 +528,7 @@ func (q *Queries) InsertLocalStatus(ctx context.Context, arg InsertLocalStatusPa
 	_, err := q.db.Exec(ctx, insertLocalStatus,
 		arg.StatusID,
 		arg.AuthorAccountID,
-		arg.ClientID,
+		arg.OauthClientID,
 		arg.IdempotencyKey,
 	)
 	return err

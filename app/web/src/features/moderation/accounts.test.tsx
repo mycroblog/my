@@ -323,6 +323,25 @@ describe("an account's admin page", () => {
     expect(requests.filter((request) => request.includes("/reveal"))).toEqual([]);
   });
 
+  test("shows the note of the decision on the registration, and no reports when the viewer may not see them", async () => {
+    const { reports: _reports, ...withoutReports } = bobDetail;
+    const decided = {
+      ...withoutReports,
+      registration: {
+        submitted_at: "2026-10-01T00:00:00Z",
+        state_changed_at: "2026-10-01T01:00:00Z",
+        decision_note: "Known to the moderators.",
+      },
+    };
+    accountServer(decided);
+    await renderApp({ path: `/moderation/accounts/${decided.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Account" })).toBeInTheDocument();
+    expect(within(region("Account")).getByText("Known to the moderators.")).toHaveAttribute("dir", "auto");
+    expect(screen.queryByRole("region", { name: "Reports" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Reports" })).not.toBeInTheDocument();
+  });
+
   test("shows the invite the account signed up with and who created it", async () => {
     const invited = adminAccountDetailFixture(otherAccountFixture, {
       registration: {
@@ -682,7 +701,10 @@ describe("an account's admin page", () => {
 
   test("shows the email suppression of a local account and lifts it after its confirmation, keeping focus in its region", async () => {
     const requests = recordAccountRequests();
-    let detail: Detail = { ...bobDetail, email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } };
+    let detail: Detail = {
+      ...bobDetail,
+      email_suppression: { kind: "hard_bounce", state_changed_at: "2026-10-10T09:30:00Z" },
+    };
     server.use(
       operatorHandler(["manage_accounts", "manage_reports", "view_audit"]),
       http.get(`${apiBase}/admin/accounts/:id`, () => HttpResponse.json(detail)),

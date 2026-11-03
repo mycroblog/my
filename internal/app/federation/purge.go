@@ -15,7 +15,7 @@ import (
 // Retention of the inbox and delivery records (ADR-0034, data-model §4.8, FR-803).
 const (
 	// JobPurge deletes the inbox and delivery records past their retention; no payload.
-	JobPurge = "federation.purge"
+	JobPurge = "federation.purge_records"
 	// PurgeInterval is the period of the purge's schedule.
 	PurgeInterval = time.Hour
 	// ReceivedDocumentRetention is how long a received document is kept, for investigation and
@@ -31,6 +31,15 @@ const (
 	OutboundDocumentRetention = 30 * 24 * time.Hour
 	// DeliveryAttemptRetention is how long the record of a delivery attempt is kept (NFR-OPS-3).
 	DeliveryAttemptRetention = 30 * 24 * time.Hour
+	// OutboundActivityRetention is how long an outbound activity and its deliveries are kept. A
+	// status's Create stays longer: its deliveries are the inboxes of the status's later Update
+	// and Delete, so it goes this long after the Delete of the status or of its actor.
+	OutboundActivityRetention = 30 * 24 * time.Hour
+	// InstanceObservationRetention is how long a NodeInfo observation or an availability event of
+	// a server is kept; the newest of each server always stays.
+	InstanceObservationRetention = 90 * 24 * time.Hour
+	// outboundPurgeBatch bounds the activities of one transaction, each with a delivery per inbox.
+	outboundPurgeBatch = 100
 	// PurgeBatch is the number of rows one statement deletes; purgeMaxBatches bounds the
 	// batches of one table in one run, and the next run continues.
 	PurgeBatch      = 1000
@@ -59,6 +68,19 @@ type PurgeRepository interface {
 	DeleteOutboundDocumentsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
 	// DeleteDeliveryAttemptsBefore deletes the delivery attempts made before t.
 	DeleteDeliveryAttemptsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
+	// DeleteSupersededStatusCreates deletes the Creates of statuses whose Delete, or the Delete of
+	// whose actor (not the service closure's), was recorded before t, with their deliveries.
+	DeleteSupersededStatusCreates(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
+	// DeleteExpiredOutboundActivities deletes the activities recorded before t with their
+	// documents, deliveries, attempts, and fan-out completions, except a status's Create, the
+	// service closure's Deletes, and a Delete that a kept Create depends on.
+	DeleteExpiredOutboundActivities(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
+	// DeleteNodeInfoObservationsBefore deletes the NodeInfo observations made before t, except the
+	// newest of each server.
+	DeleteNodeInfoObservationsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
+	// DeleteAvailabilityEventsBefore deletes the availability events that occurred before t, except
+	// the newest of each server.
+	DeleteAvailabilityEventsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
 }
 
 // PurgeDeps are the ports of the purge.
@@ -72,8 +94,9 @@ type PurgeDeps struct {
 
 // Purger runs JobPurge: it deletes received documents after ReceivedDocumentRetention, the
 // records of received activities and the tombstones of unknown Follows and objects after 30 days,
-// and the bodies of outbound activities and the delivery attempts after 30 days. Each statement
-// deletes a bounded batch in a transaction of its own; a document always goes before the record
+// the bodies of outbound activities and the delivery attempts after 30 days, the outbound
+// activities with their deliveries after OutboundActivityRetention, and the observations of servers
+// after InstanceObservationRetention. Each statement deletes a bounded batch in a transaction of its own; a document always goes before the record
 // of its activity, and a Follow tombstone before the object tombstones, whose row with its
 // activity_uri marks it used: the marker is never older than the tombstone it marks, so a used
 // tombstone never outlives its marker and drops a Follow again.
@@ -107,29 +130,39 @@ func (p *Purger) Run(ctx context.Context) (int64, error) {
 		name   string
 		before time.Time
 		del    func(context.Context, uow.Tx, time.Time, int) (int64, error)
+		batch  int
 	}{
-		{"received documents", now.Add(-ReceivedDocumentRetention), r.DeleteReceivedDocumentsBefore},
-		{"received activities", now.Add(-ReceivedActivityRetention), r.DeleteReceivedActivitiesBefore},
-		{"received activity answers", now.Add(-ReceivedActivityRetention), r.DeleteReceivedActivityAnswersBefore},
-		{"remote follow tombstones", now.Add(-RemoteFollowTombstoneRetention), r.DeleteRemoteFollowTombstonesBefore},
-		{"remote object tombstones", now.Add(-RemoteObjectTombstoneRetention), r.DeleteRemoteObjectTombstonesBefore},
-		{"outbound documents", now.Add(-OutboundDocumentRetention), r.DeleteOutboundDocumentsBefore},
-		{"delivery attempts", now.Add(-DeliveryAttemptRetention), r.DeleteDeliveryAttemptsBefore},
+		{"received documents", now.Add(-ReceivedDocumentRetention), r.DeleteReceivedDocumentsBefore, 0},
+		{"received activities", now.Add(-ReceivedActivityRetention), r.DeleteReceivedActivitiesBefore, 0},
+		{"received activity answers", now.Add(-ReceivedActivityRetention), r.DeleteReceivedActivityAnswersBefore, 0},
+		{"remote follow tombstones", now.Add(-RemoteFollowTombstoneRetention), r.DeleteRemoteFollowTombstonesBefore, 0},
+		{"remote object tombstones", now.Add(-RemoteObjectTombstoneRetention), r.DeleteRemoteObjectTombstonesBefore, 0},
+		{"outbound documents", now.Add(-OutboundDocumentRetention), r.DeleteOutboundDocumentsBefore, 0},
+		{"delivery attempts", now.Add(-DeliveryAttemptRetention), r.DeleteDeliveryAttemptsBefore, 0},
+		// The Creates go first: a Delete stays as long as a Create depends on it.
+		{"superseded status creates", now.Add(-OutboundActivityRetention), r.DeleteSupersededStatusCreates, outboundPurgeBatch},
+		{"outbound activities", now.Add(-OutboundActivityRetention), r.DeleteExpiredOutboundActivities, outboundPurgeBatch},
+		{"nodeinfo observations", now.Add(-InstanceObservationRetention), r.DeleteNodeInfoObservationsBefore, 0},
+		{"availability events", now.Add(-InstanceObservationRetention), r.DeleteAvailabilityEventsBefore, 0},
 	}
 	var total int64
 	for _, s := range steps {
+		batch := p.d.Batch
+		if s.batch > 0 && s.batch < batch {
+			batch = s.batch
+		}
 		for range purgeMaxBatches {
 			var n int64
 			err := p.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 				var err error
-				n, err = s.del(ctx, tx, s.before, p.d.Batch)
+				n, err = s.del(ctx, tx, s.before, batch)
 				return err
 			})
 			if err != nil {
 				return total, fmt.Errorf("federation: purge %s: %w", s.name, err)
 			}
 			total += n
-			if n < int64(p.d.Batch) {
+			if n < int64(batch) {
 				break
 			}
 		}

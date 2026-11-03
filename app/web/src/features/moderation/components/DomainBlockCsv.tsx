@@ -47,6 +47,7 @@ const skipReasonLabels: Readonly<Record<Exclude<DomainBlockImportStatus, "import
   already_applied: "client:admin.domain_actions.csv.status.already_applied",
   no_action: "client:admin.domain_actions.csv.status.no_action",
   duplicate: "client:admin.domain_actions.csv.status.duplicate",
+  own_domain: "client:admin.domain_actions.csv.status.own_domain",
   invalid: "client:admin.domain_actions.csv.status.invalid",
 };
 

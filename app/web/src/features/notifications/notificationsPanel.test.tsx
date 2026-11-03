@@ -63,7 +63,7 @@ const announcement: Schemas["Announcement"] = {
   title: "Maintenance on Sunday",
   content: "<p>Maintenance on Sunday.</p>",
   published_at: "2026-10-21T00:00:00Z",
-  updated_at: "2026-10-21T00:00:00Z",
+  revised_at: "2026-10-21T00:00:00Z",
   read: false,
   ended: false,
 };

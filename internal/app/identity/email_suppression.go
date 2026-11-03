@@ -226,6 +226,9 @@ func (s *AccountAdmin) LiftEmailSuppression(ctx context.Context, accountID, byUs
 	if actor.Local == nil || actor.Local.UserID == "" {
 		return ErrNotLocalAccount
 	}
+	if err := checkActOn(ctx, s.d.Repository, byUserID, actor.Local.UserID); err != nil {
+		return err
+	}
 	email, _, err := s.d.Repository.FindPrimaryEmail(ctx, actor.Local.UserID)
 	if errors.Is(err, ErrNotFound) {
 		return ErrNotSuppressed

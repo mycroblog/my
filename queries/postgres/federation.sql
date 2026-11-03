@@ -113,11 +113,11 @@ SELECT id, outbound_activity_id, inbox_url, domain, created_at FROM deliveries
 WHERE outbound_activity_id = sqlc.arg(outbound_activity_id)::uuid AND id > COALESCE(sqlc.narg(after_id)::uuid, '00000000-0000-0000-0000-000000000000') ORDER BY id LIMIT @batch_limit;
 
 -- name: InsertDeliveryAttempt :exec
-INSERT INTO delivery_attempts (id, delivery_id, outcome, signature_scheme, http_status, error, attempted_at)
-VALUES (@id, @delivery_id, @outcome, @signature_scheme, @http_status, @error, @attempted_at);
+INSERT INTO delivery_attempts (id, delivery_id, outcome, signature_scheme, status_code, error, attempted_at)
+VALUES (@id, @delivery_id, @outcome, @signature_scheme, @status_code, @error, @attempted_at);
 
 -- name: ListDeliveryAttempts :many
-SELECT id, delivery_id, outcome, signature_scheme, http_status, error, attempted_at FROM delivery_attempts
+SELECT id, delivery_id, outcome, signature_scheme, status_code, error, attempted_at FROM delivery_attempts
 WHERE delivery_id = sqlc.arg(delivery_id)::uuid ORDER BY id;
 
 -- InsertOutboundFanOutCompletion records once that the fan-out of an activity enqueued its last
@@ -276,4 +276,74 @@ DELETE FROM remote_follow_tombstones
 WHERE activity_uri IN (
   SELECT t.activity_uri FROM remote_follow_tombstones t
   WHERE t.received_at < @received_before ORDER BY t.received_at LIMIT @batch_limit
+);
+
+-- ListSupersededStatusCreates returns at most @batch_limit Creates of statuses whose Delete, or
+-- the Delete of whose actor, was recorded before @created_before: the fan-out of that Delete read
+-- the inboxes of the Create, and nothing reads them again. The closure's Delete of an actor stays
+-- out of this, because it erases nothing.
+-- name: ListSupersededStatusCreates :many
+SELECT c.id FROM outbound_activities d
+JOIN outbound_activities c ON c.object_type = 'status' AND c.type = 'Create' AND c.object_id = d.object_id
+WHERE d.type = 'Delete' AND d.object_type = 'status' AND d.created_at < @created_before
+UNION ALL
+SELECT c.id FROM outbound_activities d
+JOIN outbound_activities c ON c.object_type = 'status' AND c.type = 'Create' AND c.actor_account_id = d.object_id
+WHERE d.type = 'Delete' AND d.object_type = 'account' AND d.created_at < @created_before
+  AND NOT EXISTS (SELECT 1 FROM closure_deletes x WHERE x.outbound_activity_id = d.id)
+LIMIT @batch_limit;
+
+-- ListExpiredOutboundActivities returns at most @batch_limit activities recorded before
+-- @created_before, the oldest first, except a status's Create; the closure's Deletes, which the
+-- closure counts; and a Delete that a kept Create still depends on (ListSupersededStatusCreates).
+-- name: ListExpiredOutboundActivities :many
+SELECT o.id FROM outbound_activities o
+WHERE NOT (o.object_type = 'status' AND o.type = 'Create')
+  AND o.created_at < @created_before
+  AND NOT EXISTS (SELECT 1 FROM closure_deletes x WHERE x.outbound_activity_id = o.id)
+  AND NOT (o.type = 'Delete' AND o.object_type = 'status' AND EXISTS (
+    SELECT 1 FROM outbound_activities c WHERE c.object_type = 'status' AND c.type = 'Create' AND c.object_id = o.object_id))
+  AND NOT (o.type = 'Delete' AND o.object_type = 'account' AND EXISTS (
+    SELECT 1 FROM outbound_activities c WHERE c.object_type = 'status' AND c.type = 'Create' AND c.actor_account_id = o.object_id))
+ORDER BY o.created_at, o.id
+LIMIT @batch_limit;
+
+-- name: DeleteAttemptsOfOutboundActivities :exec
+DELETE FROM delivery_attempts WHERE delivery_id IN (
+  SELECT d.id FROM deliveries d WHERE d.outbound_activity_id = ANY(sqlc.arg(activity_ids)::uuid[]));
+
+-- name: DeleteDeliveriesOfOutboundActivities :exec
+DELETE FROM deliveries WHERE outbound_activity_id = ANY(sqlc.arg(activity_ids)::uuid[]);
+
+-- name: DeleteDocumentsOfOutboundActivities :exec
+DELETE FROM outbound_activity_documents WHERE outbound_activity_id = ANY(sqlc.arg(activity_ids)::uuid[]);
+
+-- name: DeleteCompletionsOfOutboundActivities :exec
+DELETE FROM outbound_fanout_completions WHERE outbound_activity_id = ANY(sqlc.arg(activity_ids)::uuid[]);
+
+-- name: DeleteOutboundActivities :exec
+DELETE FROM outbound_activities WHERE id = ANY(sqlc.arg(activity_ids)::uuid[]);
+
+-- DeleteNodeInfoObservationsBefore removes at most @batch_limit observations made before
+-- @observed_before, except the newest of each domain. @id_before (the UUIDv7 floor of
+-- @observed_before) bounds the scan of the primary key.
+-- name: DeleteNodeInfoObservationsBefore :execrows
+DELETE FROM instance_nodeinfo_observations
+WHERE id IN (
+  SELECT o.id FROM instance_nodeinfo_observations o
+  WHERE o.id < sqlc.arg(id_before)::uuid AND o.observed_at < @observed_before
+    AND EXISTS (SELECT 1 FROM instance_nodeinfo_observations n WHERE n.domain = o.domain AND n.id > o.id)
+  ORDER BY o.id LIMIT @batch_limit
+);
+
+-- DeleteAvailabilityEventsBefore removes at most @batch_limit events that occurred before
+-- @occurred_before, except the newest of each domain. @id_before (the UUIDv7 floor of
+-- @occurred_before) bounds the scan of the primary key.
+-- name: DeleteAvailabilityEventsBefore :execrows
+DELETE FROM instance_availability_events
+WHERE id IN (
+  SELECT e.id FROM instance_availability_events e
+  WHERE e.id < sqlc.arg(id_before)::uuid AND e.occurred_at < @occurred_before
+    AND EXISTS (SELECT 1 FROM instance_availability_events n WHERE n.domain = e.domain AND n.id > e.id)
+  ORDER BY e.id LIMIT @batch_limit
 );

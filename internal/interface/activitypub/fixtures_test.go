@@ -36,7 +36,8 @@ const (
 
 	aliceID    = "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f"
 	botID      = "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e70"
-	carolID    = "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e71" // deactivated
+	carolID    = "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e71" // waiting for a scheduled deletion
+	gwenID     = "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e7a" // deactivated by her owner
 	daveID     = "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e72" // deleted
 	remoteID   = "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e73" // a remote account
 	instanceID = "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e74"
@@ -135,7 +136,10 @@ func newAccounts(t *testing.T) *fakeAccounts {
 	})
 	bot := localActor(t, botID, "Botty", account.ProfileRevision{DisplayName: "Botty", Bot: true, Locked: true, Indexable: true})
 	carol := localActor(t, carolID, "carol", account.ProfileRevision{DisplayName: "Carol"})
-	carol.Lifecycle = account.LifecycleState{AccountID: carolID, State: account.StateDeactivated, Since: created}
+	carolDue := created.Add(30 * 24 * time.Hour)
+	carol.Lifecycle = account.LifecycleState{AccountID: carolID, State: account.StateDeletionScheduled, Since: created, DeletionDueAt: &carolDue}
+	gwen := localActor(t, gwenID, "gwen", account.ProfileRevision{DisplayName: "Gwen"})
+	gwen.Lifecycle = account.LifecycleState{AccountID: gwenID, State: account.StateDeactivated, Since: created}
 	dave := localActor(t, daveID, "dave", account.ProfileRevision{DisplayName: "Dave"})
 	dave.Lifecycle = account.LifecycleState{AccountID: daveID, State: account.StateDeleted, Since: created}
 	remote := appaccount.Actor{
@@ -148,7 +152,7 @@ func newAccounts(t *testing.T) *fakeAccounts {
 	instance.Local, instance.Handle, instance.Profile = nil, nil, nil
 
 	f := &fakeAccounts{actors: map[string]appaccount.Actor{}, instance: instanceID, users: 4}
-	for _, a := range []appaccount.Actor{alice, bot, carol, dave, remote, instance} {
+	for _, a := range []appaccount.Actor{alice, bot, carol, dave, gwen, remote, instance} {
 		f.actors[a.Account.ID] = a
 	}
 	return f

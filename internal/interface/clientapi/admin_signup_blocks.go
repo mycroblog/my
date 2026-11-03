@@ -33,7 +33,7 @@ func newAdminSignupBlock(v appmoderation.SignupBlockView) AdminSignupBlock {
 	b := v.Block
 	out := AdminSignupBlock{
 		Id: b.ID, Kind: AdminSignupBlockKind(b.Kind), Value: b.Value, Severity: AdminSignupBlockSeverity(b.Severity),
-		State: AdminSignupBlockState(v.State), CreatedAt: b.CreatedAt.UTC(),
+		State: ModerationActionState(v.State), CreatedAt: b.CreatedAt.UTC(),
 	}
 	if b.Comment != "" {
 		out.Comment = &b.Comment
@@ -145,7 +145,7 @@ func (s *Server) CreateSignupBlock(ctx context.Context, req CreateSignupBlockReq
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: signup block %s: %w", block.ID, err)
 	}
-	return CreateSignupBlock200JSONResponse{signupBlockResponse(view)}, nil
+	return CreateSignupBlock201JSONResponse{signupBlockResponse(view)}, nil
 }
 
 // GetSignupBlock serves GET /api/v1/admin/signup_blocks/{id}.

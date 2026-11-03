@@ -3,7 +3,7 @@ get:
   operationId: listAppeals
   summary: List the appeals of moderation actions
   description: |
-    The appeals that local users made of the actions on their accounts (FR-707), newest
+    The appeals that local users made of the actions on their accounts, newest
     first, each with its action. Needs the `manage_accounts` permission.
   tags: [admin-moderation]
   security:

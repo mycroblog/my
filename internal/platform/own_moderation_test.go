@@ -29,6 +29,7 @@ import (
 func TestOwnModerationActions(t *testing.T) {
 	t.Parallel()
 	e := newAccountsEnv(t)
+	e.user("root") // the suspension below is not of the last administrator
 	alice := e.user("alice")
 	issue := func(in appmoderation.AccountActionInput) moderation.Action {
 		t.Helper()
@@ -77,7 +78,7 @@ func TestOwnModerationActions(t *testing.T) {
 
 	// An action on statuses names them.
 	var post clientapi.Status
-	e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{"text": "hello", "visibility": "public"}, &post), http.StatusOK, "post")
+	e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{"text": "hello", "visibility": "public"}, &post), http.StatusCreated, "post")
 	sensitive := issue(appmoderation.AccountActionInput{
 		Kind: moderation.ActionMarkStatusesSensitive, ReasonCategory: moderation.CategoryViolation, StatusIDs: []string{post.Id},
 	})

@@ -32,7 +32,7 @@ const (
 	JobFetchLinkCard = "content.fetch_link_card"
 	// JobCleanupLinkCards deletes the cards that no status refers to and the images that no card
 	// uses (FR-803); no payload.
-	JobCleanupLinkCards = "content.cleanup_link_cards"
+	JobCleanupLinkCards = "content.purge_link_cards"
 	// LinkCardCleanupInterval is the period of JobCleanupLinkCards.
 	LinkCardCleanupInterval = 24 * time.Hour
 	// LinkCardFailureTTL is how long a failed fetch of a URL is remembered, so that the URL is
@@ -149,7 +149,7 @@ type LinkCardsDeps struct {
 	Accounts LinkCardAccounts
 	// Creators verifies the fediverse:creator of pages; nil records none.
 	Creators LinkCardCreators
-	// Enabled returns the link_cards_enabled instance setting; nil means enabled.
+	// Enabled returns the link_cards instance setting; nil means enabled.
 	Enabled func(ctx context.Context) (bool, error)
 	// IgnoreRobotsTxt returns the link_cards_ignore_robots_txt instance setting; nil means that
 	// robots.txt is obeyed.

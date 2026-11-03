@@ -136,7 +136,7 @@ func (s *Server) CreateOAuthApp(ctx context.Context, req CreateOAuthAppRequestOb
 		return CreateOAuthAppdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "body")), nil
 	}
 	if !req.Body.ClientType.Valid() {
-		return CreateOAuthAppdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "client_type")), nil
+		return CreateOAuthAppdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "client_type")), nil
 	}
 	if p, h, limited := s.LimitProblem(ctx, OAuthAppRegisterLimit, v.UserID); limited {
 		return CreateOAuthAppdefaultApplicationProblemPlusJSONResponse{Body: p, Headers: h, StatusCode: http.StatusTooManyRequests}, nil
@@ -231,7 +231,7 @@ func (s *Server) DeleteOAuthApp(ctx context.Context, req DeleteOAuthAppRequestOb
 	return DeleteOAuthApp204Response{}, nil
 }
 
-// RotateOAuthAppSecret serves POST /api/v1/oauth_apps/{id}/secret.
+// RotateOAuthAppSecret serves POST /api/v1/oauth_apps/{id}/rotate_secret.
 func (s *Server) RotateOAuthAppSecret(ctx context.Context, req RotateOAuthAppSecretRequestObject) (RotateOAuthAppSecretResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
@@ -278,5 +278,5 @@ func (s *Server) IssueOAuthAppToken(ctx context.Context, req IssueOAuthAppTokenR
 		AccessToken: issued.AccessToken, TokenType: OAuthAppTokenTokenTypeBearer, RefreshToken: issued.RefreshToken,
 		ExpiresIn: int(issued.Token.ExpiresAt.Sub(issued.Token.IssuedAt).Seconds()), Scope: string(issued.Token.Scope),
 	}
-	return IssueOAuthAppToken200JSONResponse{Body: body, Headers: IssueOAuthAppToken200ResponseHeaders{CacheControl: &cache}}, nil
+	return IssueOAuthAppToken201JSONResponse{Body: body, Headers: IssueOAuthAppToken201ResponseHeaders{CacheControl: &cache}}, nil
 }

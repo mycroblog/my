@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
-description: A user's registration as the moderators review it (FR-721).
+description: A user's registration as the moderators review it.
 type: object
-required: [user_id, state, since, email, email_verified, submitted_at]
+required: [user_id, state, state_changed_at, submitted_at]
 properties:
   user_id:
     $ref: ./Id.yaml
@@ -14,16 +14,23 @@ properties:
     type: string
   state:
     $ref: ./RegistrationState.yaml
-  since:
+  state_changed_at:
     description: When the registration entered its state.
     type: string
     format: date-time
   email:
-    description: The user's primary email address; empty when there is none.
+    description: |
+      The user's primary email address, shown only while the registration is pending, for its
+      review; omitted when the user has none and once the registration is decided.
     type: string
   email_verified:
-    description: Whether the user confirmed the email address.
+    description: Whether the user confirmed the email address; present together with `email`.
     type: boolean
+  decision_note:
+    description: |
+      The moderators' note on the decision, as plain text; omitted while the registration is
+      pending and when the decision has no note.
+    type: string
   reason:
     description: Why the user wants to join, as plain text; omitted when they gave none.
     type: string

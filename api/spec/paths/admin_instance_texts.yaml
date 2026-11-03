@@ -3,8 +3,8 @@ get:
   operationId: listInstanceTexts
   summary: List the instance texts
   description: |
-    The current text of every key that has one (FR-705): the name, the descriptions, the
-    terms of service, the privacy policy, and the alternative texts of the preview image and
+    The current text of every key that has one: the name, the descriptions, the
+    terms of service, the privacy policy, the commerce disclosure, and the alternative texts of the preview image and
     the thumbnail, by key. Each holds one value, shown as it is in every locale. Cleared
     texts are not listed. The list is not paginated. Needs the `manage_settings` permission.
   tags: [admin-server]

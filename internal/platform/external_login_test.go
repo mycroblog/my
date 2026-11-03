@@ -373,12 +373,12 @@ func TestExternalSignIn(t *testing.T) {
 		}
 	})
 
-	t.Run("a cancelled sign-in", func(t *testing.T) {
+	t.Run("a canceled sign-in", func(t *testing.T) {
 		c := e.client()
 		u, _ := url.Parse(begin(c, id))
 		resp, body := c.do(http.MethodGet, "/auth/external/"+id+"/callback?error=access_denied&state="+url.QueryEscape(u.Query().Get("state")), nil, nil)
 		if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(body, "did not complete") || e.sessionUser(c) != "" {
-			t.Errorf("cancelled callback = %d\n%s", resp.StatusCode, body)
+			t.Errorf("canceled callback = %d\n%s", resp.StatusCode, body)
 		}
 	})
 

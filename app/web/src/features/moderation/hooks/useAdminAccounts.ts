@@ -21,7 +21,7 @@ import {
   adminAccountOrigins,
   type AdminAccountPrivateData,
   adminAccountQueryOptions,
-  type AdminAccountRegistrationState,
+  type RegistrationState,
   type AdminAccountRestriction,
   type AdminAccountSearch,
   adminAccountsQueryOptions,
@@ -50,6 +50,7 @@ export const adminAccountStateLabels: Readonly<Record<AdminAccountState, ClientM
   limited: "client:admin.accounts.state.limited",
   disabled: "client:admin.accounts.state.disabled",
   suspended: "client:admin.accounts.state.suspended",
+  deactivated: "client:admin.accounts.state.deactivated",
   deleted: "client:admin.accounts.state.deleted",
 };
 
@@ -65,7 +66,7 @@ export const adminAccountRestrictionLabels: Readonly<Record<AdminAccountRestrict
   federation: "client:admin.accounts.restriction.federation",
 };
 
-export const adminAccountRegistrationStateLabels: Readonly<Record<AdminAccountRegistrationState, ClientMessageKey>> = {
+export const adminAccountRegistrationStateLabels: Readonly<Record<RegistrationState, ClientMessageKey>> = {
   pending: "client:admin.accounts.registration.pending",
   approved: "client:admin.accounts.registration.approved",
   rejected: "client:admin.accounts.registration.rejected",

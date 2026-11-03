@@ -16,7 +16,13 @@ import { HomeLink } from "./-layout/HomeLink";
  */
 export const Route = createFileRoute("/public")({
   // A feed to add to: the shell floats the new-post button over this page (web-client/16-look-states-and-wording.md G4).
-  staticData: { title: "client:public.title", hideHeading: "wide", composeButton: true, timeline: true },
+  staticData: {
+    reloadSafe: true,
+    title: "client:public.title",
+    hideHeading: "wide",
+    composeButton: true,
+    timeline: true,
+  },
   loader: async ({ context: { queryClient, api } }) => {
     // Cached pages that no write has marked stale are shown at once (and refetched in the background once
     // old); marked or missing ones are fetched and waited for (web-client/README.md S7).
@@ -52,7 +58,7 @@ function PublicPending() {
 
 /**
  * A 404 is the instance setting that turns the federated timeline off, and a 401 the one that keeps it for
- * signed-in users (api/openapi.yaml, getPublicTimeline), reached from an old link, a bookmark, or a shared address: it says
+ * signed-in users (api/openapi.yaml, getFederatedTimeline), reached from an old link, a bookmark, or a shared address: it says
  * so, with the way to sign in for the latter, instead of offering to try again.
  */
 function PublicError(props: ErrorComponentProps) {

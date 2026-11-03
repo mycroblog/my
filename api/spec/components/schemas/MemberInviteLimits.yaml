@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   The caps and defaults of the invites that members create, from the instance settings
-  `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+  `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
 type: object
 required: [max_active, max_uses, max_expires_in, default_max_uses, default_expires_in]
 properties:

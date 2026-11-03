@@ -12,6 +12,15 @@ import (
 	"database/sql"
 )
 
+const eraseRelationshipSeverances = `-- name: EraseRelationshipSeverances :exec
+DELETE FROM relationship_severances WHERE account_id = ?1
+`
+
+func (q *Queries) EraseRelationshipSeverances(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseRelationshipSeverances, accountID)
+	return err
+}
+
 const getRelationshipSeverance = `-- name: GetRelationshipSeverance :one
 SELECT s.id, s.domain_action_id, s.action_id, s.account_id, s.followers_lost, s.following_lost, s.occurred_at,
   d.domain AS target_domain, a.target_account_id

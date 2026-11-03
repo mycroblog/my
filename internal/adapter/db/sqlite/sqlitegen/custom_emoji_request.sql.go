@@ -12,6 +12,16 @@ import (
 	"database/sql"
 )
 
+const blankCustomEmojiRequester = `-- name: BlankCustomEmojiRequester :exec
+UPDATE custom_emoji_requests SET requester_user_id = NULL WHERE requester_user_id = ?1
+`
+
+// BlankCustomEmojiRequester takes an erased user out of its requests, which stay for the audit log.
+func (q *Queries) BlankCustomEmojiRequester(ctx context.Context, userID sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, blankCustomEmojiRequester, userID)
+	return err
+}
+
 const countCustomEmojiUsage = `-- name: CountCustomEmojiUsage :one
 SELECT CAST(COALESCE(SUM(CASE WHEN o.outcome = 'approved' THEN 1 ELSE 0 END), 0) AS INTEGER) AS approved,
   CAST(COALESCE(SUM(CASE WHEN o.request_id IS NULL THEN 1 ELSE 0 END), 0) AS INTEGER) AS pending
@@ -23,7 +33,7 @@ WHERE r.requester_user_id = ?1 AND r.kind = 'create'
 `
 
 type CountCustomEmojiUsageParams struct {
-	UserID string
+	UserID sql.NullString
 	Since  int64
 	Until  int64
 }
@@ -56,6 +66,15 @@ func (q *Queries) CustomEmojiShortcodeReserved(ctx context.Context, shortcode st
 	return reserved, err
 }
 
+const deleteAllCustomEmojiPendingRequests = `-- name: DeleteAllCustomEmojiPendingRequests :exec
+DELETE FROM custom_emoji_pending_requests
+`
+
+func (q *Queries) DeleteAllCustomEmojiPendingRequests(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteAllCustomEmojiPendingRequests)
+	return err
+}
+
 const deleteCustomEmojiPendingRequest = `-- name: DeleteCustomEmojiPendingRequest :execrows
 DELETE FROM custom_emoji_pending_requests WHERE request_id = ?1
 `
@@ -81,7 +100,7 @@ WHERE r.id = ?1
 type GetCustomEmojiRequestRow struct {
 	ID              string
 	Kind            string
-	RequesterUserID string
+	RequesterUserID sql.NullString
 	EmojiID         sql.NullString
 	Shortcode       string
 	MediaID         string
@@ -157,7 +176,7 @@ VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
 type InsertCustomEmojiRequestParams struct {
 	ID              string
 	Kind            string
-	RequesterUserID string
+	RequesterUserID sql.NullString
 	EmojiID         sql.NullString
 	Shortcode       string
 	MediaID         string
@@ -247,7 +266,7 @@ type ListCustomEmojiRequestsParams struct {
 type ListCustomEmojiRequestsRow struct {
 	ID              string
 	Kind            string
-	RequesterUserID string
+	RequesterUserID sql.NullString
 	EmojiID         sql.NullString
 	Shortcode       string
 	MediaID         string
@@ -319,7 +338,7 @@ ORDER BY r.id
 type ListCustomEmojiRequestsByIDRow struct {
 	ID              string
 	Kind            string
-	RequesterUserID string
+	RequesterUserID sql.NullString
 	EmojiID         sql.NullString
 	Shortcode       string
 	MediaID         string
@@ -370,6 +389,35 @@ func (q *Queries) ListCustomEmojiRequestsByID(ctx context.Context, ids string) (
 	return items, nil
 }
 
+const listPendingCustomEmojiRequestsOfUser = `-- name: ListPendingCustomEmojiRequestsOfUser :many
+SELECT request_id FROM custom_emoji_pending_requests
+WHERE requester_user_id = ?1 ORDER BY request_id
+`
+
+// ListPendingCustomEmojiRequestsOfUser returns the pending requests of a user, for its erasure.
+func (q *Queries) ListPendingCustomEmojiRequestsOfUser(ctx context.Context, userID string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listPendingCustomEmojiRequestsOfUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var request_id string
+		if err := rows.Scan(&request_id); err != nil {
+			return nil, err
+		}
+		items = append(items, request_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const localCustomEmojiShortcodeTaken = `-- name: LocalCustomEmojiShortcodeTaken :one
 SELECT CAST(EXISTS (SELECT 1 FROM custom_emojis WHERE shortcode = ?1 AND domain = '') AS INTEGER) AS taken
 `
@@ -380,4 +428,20 @@ func (q *Queries) LocalCustomEmojiShortcodeTaken(ctx context.Context, shortcode 
 	var taken int64
 	err := row.Scan(&taken)
 	return taken, err
+}
+
+const rebuildCustomEmojiPendingRequests = `-- name: RebuildCustomEmojiPendingRequests :exec
+INSERT INTO custom_emoji_pending_requests (request_id, requester_user_id, reserved_shortcode, emoji_id)
+SELECT r.id, r.requester_user_id, CASE WHEN r.kind = 'create' THEN r.shortcode END, r.emoji_id
+FROM custom_emoji_requests r
+WHERE r.requester_user_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM custom_emoji_request_outcomes o WHERE o.request_id = r.id)
+`
+
+// RebuildCustomEmojiPendingRequests states the rule of the writes: a request without an outcome is
+// pending, a request to create reserves its shortcode, and a request for an image names its emoji.
+// A request whose requester was erased has an outcome by then.
+func (q *Queries) RebuildCustomEmojiPendingRequests(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, rebuildCustomEmojiPendingRequests)
+	return err
 }

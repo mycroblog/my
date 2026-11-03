@@ -149,9 +149,10 @@ type OAuthRepository interface {
 	InsertOAuthClientDeletion(ctx context.Context, tx uow.Tx, d identity.OAuthClientDeletion) (bool, error)
 	// ListUnusedDynamicOAuthClients returns the IDs of up to limit dynamically registered
 	// clients without a deletion that are unused (ADR-0090 §1), oldest first: no authorization
-	// code of them was exchanged and they were registered before unredeemedBefore, or none of
-	// their tokens was issued at or after idleBefore or is still usable at now.
-	ListUnusedDynamicOAuthClients(ctx context.Context, unredeemedBefore, idleBefore, now time.Time, limit int) ([]string, error)
+	// code of them was exchanged and they were registered before unredeemedBefore but not before
+	// recordsKeptSince (the exchanged codes of an older client may be purged), or none of their
+	// tokens was issued at or after idleBefore or is still usable at now.
+	ListUnusedDynamicOAuthClients(ctx context.Context, unredeemedBefore, recordsKeptSince, idleBefore, now time.Time, limit int) ([]string, error)
 	// TokenFamilyActive reports whether a token of the family has no revocation and an access
 	// or refresh token that has not expired at now.
 	TokenFamilyActive(ctx context.Context, familyID string, now time.Time) (bool, error)

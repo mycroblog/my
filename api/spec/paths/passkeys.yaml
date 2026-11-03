@@ -44,6 +44,9 @@ post:
   responses:
     "201":
       description: The new passkey.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
       content:
         application/json:
           schema:

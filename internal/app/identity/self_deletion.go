@@ -5,6 +5,8 @@ package identity
 import (
 	"context"
 	"errors"
+
+	"github.com/mycroblog/my/internal/app/uow"
 )
 
 // ErrWrongPassword reports a password that does not match the user's current one, given to
@@ -17,7 +19,7 @@ var ErrWrongPassword = errors.New("identity: the password is wrong")
 // the Delete of the actor to the remote servers, and leaves the data to the erasure (data-model
 // §8). A wrong password fails with ErrWrongPassword, a wrong passkey with the errors of
 // Service.confirm, and too many of them (SelfDeletionLimit) with a *kernel.RateLimitedError; they
-// change nothing.
+// change nothing. The last administrator (IsLastAdministratorTx) fails with ErrLastAdmin.
 func (s *Service) DeleteOwnAccount(ctx context.Context, userID string, c Confirmation) error {
 	if s.d.RateLimiter == nil {
 		return errors.New("identity: DeleteOwnAccount needs a RateLimiter")
@@ -29,5 +31,7 @@ func (s *Service) DeleteOwnAccount(ctx context.Context, userID string, c Confirm
 	if err != nil {
 		return err
 	}
-	return s.d.Accounts.DeleteBySelf(ctx, st.AccountID)
+	return s.d.Accounts.DeleteBySelfGuarded(ctx, st.AccountID, func(tx uow.Tx) error {
+		return s.refuseLastAdministratorTx(ctx, tx, userID)
+	})
 }

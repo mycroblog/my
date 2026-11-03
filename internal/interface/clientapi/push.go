@@ -78,6 +78,10 @@ func (s *Server) PutPushSubscription(ctx context.Context, req PutPushSubscriptio
 		AccountID: v.AccountID, TokenFamilyID: v.FamilyID, Endpoint: b.Endpoint, KeyP256DH: b.Keys.P256dh, KeyAuth: b.Keys.Auth,
 	}
 	for _, t := range b.Alerts {
+		// The moderator notifications stay with the first-party clients, as in the list.
+		if _, moderator := notification.ModeratorPermission(notification.Type(t)); moderator && !v.FirstParty {
+			continue
+		}
 		in.Alerts = append(in.Alerts, notification.Type(t))
 	}
 	sub, err := s.o.Push.Subscribe(ctx, in)

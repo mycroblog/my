@@ -58,6 +58,8 @@ var ErrUnusableImage = errors.New("account: the media file is not a processed im
 // Service runs the account module's use cases.
 type Service struct {
 	d Deps
+	// deletionHold is set once, while the server is assembled (SetDeletionHold).
+	deletionHold DeletionHold
 }
 
 // NewService returns a Service on d.
@@ -731,6 +733,19 @@ func (s *Service) UserLifecycle(ctx context.Context, userID string) (account.Lif
 		return account.LifecycleState{}, err
 	}
 	st, err := s.d.Repository.FindLifecycleState(ctx, la.AccountID)
+	if errors.Is(err, ErrNotFound) {
+		return account.InitialLifecycleState(la.AccountID), nil
+	}
+	return st, err
+}
+
+// UserLifecycleTx is UserLifecycle read in tx, with a lock where the database takes one.
+func (s *Service) UserLifecycleTx(ctx context.Context, tx uow.Tx, userID string) (account.LifecycleState, error) {
+	la, err := s.d.Repository.FindLocalAccountByUserTx(ctx, tx, userID)
+	if err != nil {
+		return account.LifecycleState{}, err
+	}
+	st, err := s.d.Repository.LifecycleState(ctx, tx, la.AccountID)
 	if errors.Is(err, ErrNotFound) {
 		return account.InitialLifecycleState(la.AccountID), nil
 	}

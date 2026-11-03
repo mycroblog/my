@@ -23,8 +23,9 @@ properties:
     description: The version of the server of the occurrence.
     type: string
   role:
-    description: The role of the process that reported it (`all`, `web`, `worker`, or `stream`); the web client reports have the role of the server that received them.
+    description: The role of the process that reported it; the web client reports have the role of the server that received them.
     type: string
+    enum: [all, web, worker]
   occurred_at:
     type: string
     format: date-time

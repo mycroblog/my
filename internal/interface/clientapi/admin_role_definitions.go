@@ -116,7 +116,7 @@ func (s *Server) CreateRole(ctx context.Context, req CreateRoleRequestObject) (C
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: create role %s: %w", req.Body.Key, err)
 	}
-	return CreateRole200JSONResponse{adminRoleResponse(r)}, nil
+	return CreateRole201JSONResponse{adminRoleResponse(r)}, nil
 }
 
 // UpdateRole serves PATCH /api/v1/admin/roles/{role}.

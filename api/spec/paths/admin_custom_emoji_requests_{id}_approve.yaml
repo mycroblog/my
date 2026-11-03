@@ -5,7 +5,7 @@ post:
   operationId: approveCustomEmojiRequest
   summary: Approve a custom emoji request
   description: |
-    Approves a pending request (ADR-0070 §2): a `create` request makes the local emoji,
+    Approves a pending request: a `create` request makes the local emoji,
     without a category, in the picker, and enabled, whose creator is the requester; an `image`
     request gives the emoji the requested image. The image is copied as an upload of the
     instance. The approval and the emoji's registration or new image are recorded in the

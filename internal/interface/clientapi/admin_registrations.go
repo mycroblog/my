@@ -52,8 +52,16 @@ func decodeRegistrationCursor(position string) (appidentity.RegistrationPosition
 func newAdminRegistration(e appidentity.RegistrationEntry) AdminRegistration {
 	a := e.Application
 	out := AdminRegistration{
-		UserId: a.UserID, State: RegistrationState(e.State.State), Since: e.State.Since.UTC(),
-		Email: e.Email, EmailVerified: e.EmailVerified, SubmittedAt: a.SubmittedAt.UTC(),
+		UserId: a.UserID, State: RegistrationState(e.State.State), StateChangedAt: e.State.Since.UTC(), SubmittedAt: a.SubmittedAt.UTC(),
+	}
+	// Only the review of a pending registration needs the address; after it, only the audited
+	// reveal of the account shows it.
+	if e.State.State == identity.RegistrationPending && e.Email != "" {
+		verified := e.EmailVerified
+		out.Email, out.EmailVerified = &e.Email, &verified
+	}
+	if e.DecisionNote != "" {
+		out.DecisionNote = &e.DecisionNote
 	}
 	if e.AccountID != "" {
 		out.AccountId = &e.AccountID

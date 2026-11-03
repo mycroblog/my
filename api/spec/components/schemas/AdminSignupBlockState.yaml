@@ -1,6 +1,0 @@
-# SPDX-License-Identifier: MIT
-description: |
-  `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-  lifted it.
-type: string
-enum: [active, expired, lifted]

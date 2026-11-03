@@ -49,7 +49,7 @@ switch to the [maintenance mode](maintenance.md) first: in the maintenance mode 
 `my db backup <file>` writes a consistent copy of the SQLite database to a new file while the server keeps running.
 The copy holds every write committed before the command started, including those still in the `-wal` file, and none after.
 It is a single file, smaller than the original because free pages are left out. The command refuses a file that already exists,
-and works only with `db = sqlite`.
+and works only with `database = sqlite`.
 
 ```sh
 my db backup /backup/my-$(date +%Y%m%d%H%M).db
@@ -182,6 +182,8 @@ with your deployment files, without the KEK.
 
 ## Restoring
 
+A backup holds the `host` and `account_domain` of its instance. Start the restored database with the same values: with others, the server refuses to start.
+
 Restore into an empty environment (a new machine, new volumes, or a new database), in this order: the database, the media (the directory or the bucket),
 then the configuration with **the same KEK** (and the same `kek_previous`) that was in use when the backup was taken. Then start the server as usual.
 
@@ -207,8 +209,7 @@ The server image runs as the user `65532`, which must own the files of the volum
 
 Restore into a new, empty database prepared as for a new instance, but without applying the schema: the dump contains it.
 
-1. Create the role and the database. The dump creates the `pg_trgm` extension, which the database owner may create
-   (see [With `my schema apply`](database.md#with-my-schema-apply)).
+1. Create the role and the database.
 2. Restore the dump. As a superuser, the restored tables keep their owner (the role must exist); as the database owner, add `--no-owner`.
 
    ```sh

@@ -15,7 +15,7 @@ get:
     (`local`) or the federated timeline (`federated`), from the moment it opens. Read it with
     `fetch` and send the access token in `Authorization`, like every other operation
     (`EventSource` cannot send it). Only logged-in users open it, whatever the instance setting
-    `local_timeline_access` or `federated_timeline_access` allows anonymous visitors; while the
+    `local_timeline_visibility` or `federated_timeline_visibility` allows anonymous visitors; while the
     setting of the timeline is `off` it is a 404.
 
     Events:
@@ -37,6 +37,11 @@ get:
     cannot receive updates (its broker is not ready, or it is shutting down) the answer is 503
     with `Retry-After`; try again after that many seconds. The server may also end an open
     stream when it may have missed updates; reconnect and read again, as after any other end.
+
+    With the `stream = hub` setting, each server process delivers only the updates that it
+    produced itself, so a deployment that runs several web processes, or separate web and
+    worker processes, misses updates on some streams. A deployment with a shared stream broker
+    does not.
   tags: [streaming]
   security:
     - oauth2: ["read:statuses"]

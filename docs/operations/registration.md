@@ -44,12 +44,12 @@ my instance set registration_mode invite
   An OpenID Connect provider is asked to authenticate the user again (`max_age=0` and `prompt=login`), and an earlier authentication is refused.
   The confirmation works once, for that operation only, within 10 minutes; signing in with an account that is not the linked one counts as a wrong attempt, against the same limit as a wrong password.
 - On every registration and sign-in, the server records the client IP address (and, for sign-in, the User-Agent). The records are removed automatically after 180 days
-  (the instance settings `retention_session_origins` and `retention_registration_origins`, at least 90 days). Records of an account under a retention hold are kept ([record retention and holds](moderation.md#record-retention-and-holds)).
+  (the instance settings `session_origins_retention_days` and `registration_origins_retention_days`, at least 90 days). Records of an account under a retention hold are kept ([record retention and holds](moderation.md#record-retention-and-holds)).
   State this retention period in your privacy policy.
 
 ## When a user can use the app
 
-Users who are waiting for approval, were rejected, or have not confirmed their email address can still sign in on the sign-in page.
+Users who are waiting for approval, were rejected, or have not confirmed their email address can still sign in on the sign-in page. So can users who deactivated their own account, until the date of its deletion: they see that date there, and can reactivate or delete the account ([moderation](moderation.md#accounts-that-their-owners-deactivated)).
 After signing in, they see what they are waiting for (a moderator's approval, or confirmation of the email address), or that their registration was not approved, and they cannot go further.
 Only approved users can use the app (the OAuth authorization and token issuance of the client API), and on setups that require email confirmation, only those who have confirmed their email address.
 
@@ -69,11 +69,11 @@ SMTP examples, DNS setup and how to read delivery failures are in [sending email
   Opening the link shows a page with a confirm button, and the address is confirmed when the user presses it (so that scanners that prefetch links in mail do not consume the token).
   After signing in, the user can have the mail sent again up to 3 times an hour.
   The connection to the SMTP server is always encrypted with STARTTLS, and the server verifies the certificate before authenticating and sending. It never sends to a server that does not offer STARTTLS.
-- `mail = none` (default): the server sends no mail and writes the body (including the confirmation link) to the server log as `mail not sent (mail = none)`.
+- `mail = none` (default): the server sends no mail and writes `mail not sent (mail = none)` with the category of the message to the server log. Only with `profile = development` does the line also hold the address and the body, including the confirmation link.
   Because mail never reaches the user, the server asks for a moderator's approval instead of email confirmation.
   So a registration in `open` mode also starts as waiting for approval, and an unconfirmed email address does not block use of the app.
 
-The confirmation token is recorded nowhere except this log line (access logs do not record query strings). The database stores only the SHA-256 of the token.
+The confirmation token is recorded nowhere except this development log line (access logs do not record query strings). The database stores only the SHA-256 of the token.
 
 ## Registration limited to login providers
 
@@ -140,7 +140,7 @@ Administrators change them, and `invite_creators`, under "Member invites" on the
 | --- | --- | --- | --- |
 | `member_invite_max_active` | How many usable invites (not revoked, expired or used up) one member may hold at once | `5` | 0-100 (0: members cannot create invites) |
 | `member_invite_max_uses` | How many people may sign up with one invite | `10` | 1-1,000 |
-| `member_invite_max_expires_in` | How long one invite may work, in seconds | `2592000` (30 days) | 3,600 (1 hour) to 31,536,000 (365 days) |
+| `member_invite_max_lifetime_seconds` | How long one invite may work, in seconds | `2592000` (30 days) | 3,600 (1 hour) to 31,536,000 (365 days) |
 
 - A member chooses the uses and the lifetime within the limits; without a choice, an invite allows 1 sign-up and works for 7 days (or less, when a limit is lower). An invite without a limit on uses or time cannot be created.
 - Lowering a limit does not change existing invites; it applies to the next invite created.
@@ -170,7 +170,7 @@ The same decisions can be made from the admin screens (the client API). All of t
 | Operation | What it does |
 | --- | --- |
 | `GET /api/v1/admin/registrations` | Registrations waiting for approval (longest wait first). Returns the reason for joining, the email address and whether it is confirmed, and the local account |
-| `POST /api/v1/admin/registrations/{user_id}/approve` | Approves. The body `{"note": "..."}` is optional |
+| `POST /api/v1/admin/registrations/{user_id}/approve` | Approves. The body `{"note": "..."}` is optional. The answer shows the note as `decision_note`, and an answer on a decided registration has no email address |
 | `POST /api/v1/admin/registrations/{user_id}/reject` | Rejects. The body is the same as for `approve` |
 
 - This is the same use case as the CLI, and it records the decision in `registration_decisions` and the audit log (`registration_approved`, `registration_rejected`). The actor of a CLI decision is `cli`; the actor of an API decision is the moderator who decided.

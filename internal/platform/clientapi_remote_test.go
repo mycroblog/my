@@ -86,13 +86,22 @@ func TestClientAPIPresentsRemoteStatuses(t *testing.T) {
 	local := e.post(t, alice, "local only", domcontent.VisibilityLocal, "en")
 	pub := e.post(t, alice, "hello", domcontent.VisibilityPublic, "en")
 
+	// By default the federated timeline is for signed-in users, until the operator opens it.
+	unset := e.spec.Serve(t, e.h, httptest.NewRequest(http.MethodGet, clientapi.BasePath+"/timelines/federated", nil))
+	if unset.StatusCode != http.StatusUnauthorized {
+		t.Errorf("anonymous federated timeline by default = %d, want 401", unset.StatusCode)
+	}
+	if _, err := e.app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingFederatedTimelineVisibility, Value: "everyone"}); err != nil {
+		t.Fatalf("SetSetting: %v", err)
+	}
+
 	for _, viewer := range []*timelineUser{nil, &alice} {
-		page := e.page(t, viewer, "/timelines/public")
+		page := e.page(t, viewer, "/timelines/federated")
 		if got, want := itemIDs(page), []string{pub, public}; !slices.Equal(got, want) {
 			t.Errorf("federated timeline = %v, want the public posts %v (not %s)", got, want, local)
 		}
 	}
-	st := e.page(t, nil, "/timelines/public").Items[1]
+	st := e.page(t, nil, "/timelines/federated").Items[1]
 	if want := htmlsanitizer.New().SanitizeHTML(dirty); st.Content != want {
 		t.Errorf("content = %q, want the sanitizer's output %q", st.Content, want)
 	}
@@ -113,7 +122,7 @@ func TestClientAPIPresentsRemoteStatuses(t *testing.T) {
 	if len(st.MediaAttachments) != domcontent.MaxAttachments || st.OmittedMediaCount == nil || *st.OmittedMediaCount != 2 {
 		t.Fatalf("media = %+v, omitted = %v, want the first four remote images and two omitted", st.MediaAttachments, st.OmittedMediaCount)
 	}
-	if got := e.page(t, nil, "/timelines/public").Items[0].OmittedMediaCount; got != nil {
+	if got := e.page(t, nil, "/timelines/federated").Items[0].OmittedMediaCount; got != nil {
 		t.Errorf("local status omitted_media_count = %v, want none", *got)
 	}
 	m := st.MediaAttachments[0]
@@ -123,10 +132,10 @@ func TestClientAPIPresentsRemoteStatuses(t *testing.T) {
 	}
 
 	// The operator turns the federated timeline off.
-	if _, err := e.app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingFederatedTimelineAccess, Value: "off"}); err != nil {
+	if _, err := e.app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingFederatedTimelineVisibility, Value: "off"}); err != nil {
 		t.Fatalf("SetSetting: %v", err)
 	}
-	res := e.spec.Serve(t, e.h, httptest.NewRequest(http.MethodGet, clientapi.BasePath+"/timelines/public", nil))
+	res := e.spec.Serve(t, e.h, httptest.NewRequest(http.MethodGet, clientapi.BasePath+"/timelines/federated", nil))
 	if res.StatusCode != http.StatusNotFound {
 		t.Errorf("disabled federated timeline = %d, want 404", res.StatusCode)
 	}

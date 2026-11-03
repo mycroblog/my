@@ -10,20 +10,21 @@
 -- ---------------------------------------------------------------------------------------------
 
 -- Event (revision): one change of a setting. value is the canonical string form of the key's
--- scalar type. revised_by_user_id is NULL for a change from the CLI.
+-- type: a scalar, or an ordered list of usernames for featured_accounts, which no query filters
+-- by item (ADR-0020 rule 4). revised_by_user_id is NULL for a change from the CLI.
 CREATE TABLE instance_setting_revisions (
   id TEXT NOT NULL PRIMARY KEY,
   key TEXT NOT NULL CHECK (key IN (
-    'registration_mode', 'max_status_length', 'default_locale', 'local_timeline_access', 'federated_timeline_access',
-    'preview_image', 'contact_account', 'contact_email', 'thumbnail', 'remote_media_policy', 'remote_media_cache_ttl', 'authorized_fetch',
-    'domain_actions_visibility', 'domain_actions_rationale_visibility', 'appeal_window',
-    'retention_session_origins', 'retention_registration_origins', 'retention_reports',
-    'retention_moderation_actions', 'retention_audit_log',
-    'search_indexing', 'ai_usage', 'indexable_default', 'security_contact', 'require_media_description', 'link_cards_enabled', 'link_cards_ignore_robots_txt',
+    'registration_mode', 'max_status_length', 'default_locale', 'local_timeline_visibility', 'federated_timeline_visibility',
+    'preview_image', 'contact_account', 'contact_email', 'thumbnail', 'remote_media_policy', 'remote_media_cache_ttl_seconds', 'authorized_fetch',
+    'domain_actions_visibility', 'domain_actions_rationale_visibility', 'appeal_window_days',
+    'session_origins_retention_days', 'registration_origins_retention_days', 'reports_retention_days',
+    'moderation_actions_retention_days', 'audit_log_retention_days',
+    'search_indexing', 'ai_usage', 'indexable_default', 'security_contact', 'require_media_description', 'link_cards', 'link_cards_ignore_robots_txt',
     'finance_visibility', 'finance_viewer_item_names', 'finance_viewer_item_memos', 'finance_viewer_income',
     'supporter_list_visibility', 'income_visibility', 'federation_mode', 'oauth_metadata_document_clients', 'dynamic_client_registration',
-    'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'retention_voice_participants',
-    'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_expires_in',
+    'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'voice_participants_retention_days',
+    'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_lifetime_seconds',
     'public_counts', 'featured_accounts', 'login_providers_only'
   )),
   value TEXT NOT NULL,
@@ -78,7 +79,7 @@ CREATE TABLE instance_theme_revisions (
 -- (light and dark for a color token, all for the others). The token list is generated from the
 -- web client's theme.css (internal/domain/instance/theme_tokens.gen.go).
 CREATE TABLE instance_theme_tokens (
-  theme_revision_id TEXT NOT NULL,
+  revision_id TEXT NOT NULL,
   token TEXT NOT NULL CHECK (token IN (
     'color-surface', 'color-surface-raised', 'color-surface-sunken', 'color-soft', 'color-fg',
    'color-fg-muted', 'color-accent', 'color-accent-hover', 'color-accent-fg', 'color-accent-fill',
@@ -99,7 +100,7 @@ CREATE TABLE instance_theme_tokens (
   )),
   scheme TEXT NOT NULL CHECK (scheme IN ('light', 'dark', 'all')),
   value TEXT NOT NULL,
-  PRIMARY KEY (theme_revision_id, token, scheme)
+  PRIMARY KEY (revision_id, token, scheme)
 ) STRICT;
 
 -- Projection: the current theme revision, one row once a theme has been saved.
@@ -126,13 +127,12 @@ CREATE TABLE instance_brand_revisions (
   revised_at INTEGER NOT NULL,
   CHECK ((kind = 'icon' AND action = 'set') = (background_color IS NOT NULL))
 ) STRICT;
-CREATE INDEX instance_brand_revisions_kind_id ON instance_brand_revisions (kind, id DESC);
 
 -- Event (child of a set revision): one stored file, the sanitized SVG or one of its PNG
 -- renditions. width and height are pixels for a PNG and the viewBox, rounded, for the SVG;
 -- sha256 is the hex SHA-256 of the content.
 CREATE TABLE instance_brand_files (
-  brand_revision_id TEXT NOT NULL,
+  revision_id TEXT NOT NULL,
   rendition TEXT NOT NULL CHECK (rendition IN (
     'svg', 'favicon-32', 'favicon-48', 'apple-touch-180', 'pwa-192', 'pwa-512', 'maskable-512',
     'logo-mail', 'logo-dark-mail', 'preview-1200x630'
@@ -141,14 +141,14 @@ CREATE TABLE instance_brand_files (
   content_type TEXT NOT NULL CHECK (content_type IN ('image/svg+xml', 'image/png')),
   width INTEGER NOT NULL CHECK (width > 0),
   height INTEGER NOT NULL CHECK (height > 0),
-  byte_size INTEGER NOT NULL CHECK (byte_size > 0),
+  file_size INTEGER NOT NULL CHECK (file_size > 0),
   sha256 TEXT NOT NULL CHECK (length(sha256) = 64),
-  PRIMARY KEY (brand_revision_id, rendition)
+  PRIMARY KEY (revision_id, rendition)
 ) STRICT;
 
 -- Projection: the current set revision of each kind; a clear revision deletes the row.
 CREATE TABLE instance_brands (
-  kind TEXT NOT NULL PRIMARY KEY,
+  kind TEXT NOT NULL PRIMARY KEY CHECK (kind IN ('icon', 'logo', 'logo_dark')),
   revision_id TEXT NOT NULL
 ) STRICT;
 
@@ -233,7 +233,6 @@ CREATE TABLE announcement_revisions (
   revised_at INTEGER NOT NULL,
   CHECK (starts_at IS NULL OR ends_at IS NULL OR ends_at > starts_at)
 ) STRICT;
-CREATE INDEX announcement_revisions_announcement_id_id ON announcement_revisions (announcement_id, id DESC);
 
 -- Event: an announcement was published or withdrawn; a withdrawal is for good.
 -- changed_by_user_id is NULL for the CLI.
@@ -244,7 +243,6 @@ CREATE TABLE announcement_state_changes (
   changed_by_user_id TEXT,
   changed_at INTEGER NOT NULL
 ) STRICT;
-CREATE INDEX announcement_state_changes_announcement_id_id ON announcement_state_changes (announcement_id, id DESC);
 
 -- Projection: the current revision and state of each announcement. published_at is the time of
 -- its latest publication, set exactly when it has been published.
@@ -276,7 +274,7 @@ CREATE TABLE announcement_reads (
 CREATE TABLE service_closure_events (
   id TEXT NOT NULL PRIMARY KEY,
   kind TEXT NOT NULL CHECK (kind IN ('announced', 'withdrawn', 'closed', 'delivery_completed')),
-  by_user_id TEXT,
+  changed_by_user_id TEXT,
   occurred_at INTEGER NOT NULL
 ) STRICT;
 
@@ -314,3 +312,17 @@ CREATE TABLE instance_secrets (
   created_at INTEGER NOT NULL
 ) STRICT;
 CREATE UNIQUE INDEX instance_secrets_name ON instance_secrets (name);
+
+-- ---------------------------------------------------------------------------------------------
+-- instance: domains of the instance (data-model §4.9, ADR-0018). Owned by internal/app/instance.
+-- ---------------------------------------------------------------------------------------------
+
+-- Resource: the host and account_domain that this database belongs to, one row written once. The
+-- server refuses to start when the configuration differs, since other servers store ids and
+-- handles made from them.
+CREATE TABLE instance_domains (
+  id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+  host TEXT NOT NULL,
+  account_domain TEXT NOT NULL,
+  recorded_at INTEGER NOT NULL
+) STRICT;

@@ -6,7 +6,7 @@ put:
     Records a revision of the text of `key`, which becomes its current text in every locale:
     the administrator writes it once, in any language, and readers of every locale see the
     same value. An empty `body` clears the text. The revision and the change are kept
-    (`instance_text_revisions`, the audit log's `text_changed`). The terms of service and the privacy policy are Markdown, which the server renders and
+    (the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
     sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
     `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
     the other texts are plain text. The display name (`name`) names the instance to people
@@ -15,7 +15,7 @@ put:
     without a name, the domain names it, and handles and URLs always use the domain. An
     unknown key is a 404. A body longer than the key allows (100 characters for
     `name`, 500 for `short_description`, 1,500 for `preview_image_alt` and `thumbnail_alt`, 20,000 for
-    `description`, 100,000 for `terms` and `privacy_policy`), or with a line break in `name`
+    `description`, 100,000 for `terms`, `privacy_policy` and `commerce_disclosure`), or with a line break in `name`
     or of only spaces in `name`, is a 422 naming `body`. Needs the `manage_settings`
     permission.
   tags: [admin-server]

@@ -340,7 +340,7 @@ func (r *recentIDs) add(id string) {
 func (st *streamState) notifications(ctx context.Context) error {
 	for {
 		ns, err := st.s.o.Notifications.List(ctx, st.viewer.AccountID, appnotification.Query{
-			After: st.lastNotification, Limit: appnotification.MaxPageLimit,
+			After: st.lastNotification, Limit: appnotification.MaxPageLimit, WithoutModerator: !st.viewer.FirstParty,
 		})
 		if err != nil {
 			return fmt.Errorf("list the notifications of %s: %w", st.viewer.AccountID, err)

@@ -181,6 +181,9 @@ func oauthDeletesUnusedDynamicClients(t *testing.T, e *accountEnv) {
 	wantKnown(never.ClientID, false, "the unused client")
 	wantKnown(used.ClientID, true, "the client with a token")
 	wantKnown(fresh.ClientID, true, "the client registered just now")
+	e.clock.Advance(25 * time.Hour)
+	sweep(1, "a day after the registration: the client never used")
+	wantKnown(fresh.ClientID, false, "the client never used")
 
 	// The deletion is an event with the reason unused, and the client works no more.
 	state, err := e.h.Identity.FindOAuthClientState(ctx, never.ID)
@@ -188,15 +191,14 @@ func oauthDeletesUnusedDynamicClients(t *testing.T, e *accountEnv) {
 		t.Errorf("FindOAuthClientState(unused client) = %+v, %v; want deleted", state, err)
 	}
 
-	e.clock.Advance(88 * day) // 89 days after the first registration
+	e.clock.Advance(87*day - 2*time.Hour) // 89 days after the first registration
 	err = e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		return e.h.Identity.UpsertTokenFamilyLastUsed(ctx, tx, activeTokens.Token.FamilyID, e.clock.Now())
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	sweep(1, "after 89 days: the client that was never used since a day")
-	wantKnown(fresh.ClientID, false, "the client never used")
+	sweep(0, "after 89 days")
 	wantKnown(used.ClientID, true, "the client with tokens issued 89 days ago")
 	wantKnown(revoked.ClientID, true, "the client with revoked tokens issued 89 days ago")
 
@@ -211,5 +213,28 @@ func oauthDeletesUnusedDynamicClients(t *testing.T, e *accountEnv) {
 	}
 	if _, err := e.identity.ValidateAuthorization(ctx, appAuthorizationRequest()); err != nil {
 		t.Errorf("ValidateAuthorization(user's client) = %v; the clean-up must keep it", err)
+	}
+}
+
+// oauthKeepsPurgedDynamicClients checks that the purge of a client's expired token family does not
+// make the client look as if it never exchanged a code: the idle TTL still decides.
+func oauthKeepsPurgedDynamicClients(t *testing.T, e *accountEnv) {
+	ctx := t.Context()
+	userID := e.register(t, "alice").User.ID
+	s := e.dynamicService(true)
+	client := e.registerDynamic(t, s).Client
+	e.dynamicTokens(t, s, client.ClientID, userID)
+	purge := appidentity.NewAuthRecordPurger(appidentity.AuthRecordPurgeDeps{UnitOfWork: e.h.UnitOfWork, Repository: e.h.Identity, Clock: e.clock})
+
+	e.clock.Advance(61 * 24 * time.Hour) // the refresh token expired 31 days ago
+	if n, err := purge.Run(ctx); err != nil || n == 0 {
+		t.Fatalf("Run = %d, %v; want the expired family gone", n, err)
+	}
+	if n, err := s.DeleteUnusedDynamicClients(ctx); err != nil || n != 0 {
+		t.Errorf("DeleteUnusedDynamicClients after the purge = %d, %v; want 0", n, err)
+	}
+	e.clock.Advance(30 * 24 * time.Hour) // 91 days
+	if n, err := s.DeleteUnusedDynamicClients(ctx); err != nil || n != 1 {
+		t.Errorf("DeleteUnusedDynamicClients after the idle TTL = %d, %v; want 1", n, err)
 	}
 }

@@ -83,8 +83,8 @@ describe("an unblock from the settings", () => {
     let blocked = true;
     server.use(
       resumableSession(),
-      http.get(`${apiBase}/blocks`, () => HttpResponse.json({ accounts: blocked ? [otherAccountFixture] : [] })),
-      http.post(`${apiBase}/accounts/:id/unblock`, ({ params }) => {
+      http.get(`${apiBase}/blocks`, () => HttpResponse.json({ items: blocked ? [otherAccountFixture] : [] })),
+      http.delete(`${apiBase}/accounts/:id/block`, ({ params }) => {
         blocked = false;
         return HttpResponse.json(relationshipFixture(String(params["id"])));
       }),

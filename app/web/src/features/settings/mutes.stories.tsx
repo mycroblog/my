@@ -19,14 +19,14 @@ import { listedAccounts } from "./test/storyFixtures";
 /** GET /mutes answering `mutes`, with a next page when `more`. */
 function muting(mutes: Schemas["MutedAccount"][], more = false) {
   return http.get(`${apiBase}/mutes`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json(more ? { mutes, next_cursor: "next" } : { mutes })),
+    withViewer(request, () => HttpResponse.json(more ? { items: mutes, next_cursor: "next" } : { items: mutes })),
   );
 }
 
 /** Ten muted accounts: some with their notifications, some until a date. */
 const tenMutes: Schemas["MutedAccount"][] = listedAccounts.map((account, i) => ({
   account,
-  notifications: i % 2 === 0,
+  hide_notifications: i % 2 === 0,
   ...(i % 3 === 0 ? { expires_at: `2026-11-${String(i + 1).padStart(2, "0")}T00:00:00Z` } : {}),
 }));
 

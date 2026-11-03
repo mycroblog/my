@@ -96,7 +96,7 @@ async function userServer(page: Page) {
     }
     if (key === "GET /accounts/aliases") {
       return json(route, {
-        aliases: [
+        items: [
           { uri: "https://old.example/users/alice", acct: "alice@old.example", created_at: "2026-10-01T09:00:00Z" },
         ],
       });

@@ -114,7 +114,7 @@ func TestPostSubscribersWithinOneJob(t *testing.T) {
 			for _, s := range subs {
 				e.relate("subscribe", s, author, nil)
 			}
-			e.want(e.do(http.MethodPost, "/statuses", author.token, map[string]any{"text": "news", "visibility": "public"}, &clientapi.Status{}), http.StatusOK, "post")
+			e.want(e.do(http.MethodPost, "/statuses", author.token, map[string]any{"text": "news", "visibility": "public"}, &clientapi.Status{}), http.StatusCreated, "post")
 			jobs := e.pending(appnotification.JobNotifyPostSubscribers)
 			if len(jobs) != 1 {
 				t.Fatalf("jobs after the post = %d, want the first", len(jobs))
@@ -143,7 +143,7 @@ func TestPostSubscribersFanOut(t *testing.T) {
 	for _, s := range subs {
 		e.relate("subscribe", s, author, nil)
 	}
-	e.want(e.do(http.MethodPost, "/statuses", author.token, map[string]any{"text": "news", "visibility": "public"}, &clientapi.Status{}), http.StatusOK, "post")
+	e.want(e.do(http.MethodPost, "/statuses", author.token, map[string]any{"text": "news", "visibility": "public"}, &clientapi.Status{}), http.StatusCreated, "post")
 
 	jobs := e.pending(appnotification.JobNotifyPostSubscribers)
 	if len(jobs) != 1 {
@@ -217,7 +217,7 @@ func TestAnnouncementFanOut(t *testing.T) {
 	admin := e.user("admin")
 	users := append(e.members("user", 5), admin)
 	var a clientapi.AdminAnnouncement
-	e.want(e.do(http.MethodPost, "/admin/announcements", admin.token, map[string]any{"title": "Hello", "text": "Hello"}, &a), http.StatusOK, "create")
+	e.want(e.do(http.MethodPost, "/admin/announcements", admin.token, map[string]any{"title": "Hello", "text": "Hello"}, &a), http.StatusCreated, "create")
 	e.want(e.do(http.MethodPost, "/admin/announcements/"+a.Id+"/publish", admin.token, nil, nil), http.StatusOK, "publish")
 
 	jobs := e.pending(appnotification.JobNotifyAnnouncement)

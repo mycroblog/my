@@ -91,9 +91,9 @@ stateDiagram-v2
 | `voice_room:<room>` | `voice.apply`、`voice.media_event` | 同じルームの操作を順に実行する |
 | `supporter_subscription:<id>` | `supporters.sync`、`supporters.command` | 同じ契約を順に処理する |
 | `supporter_plan:<plan>` | `supporters.ensure_prices` | 同じプランを順に処理する |
-| `payment:<provider>:<object>` | `supporters.payment_event` | 決済の同じオブジェクトを順に処理する |
+| `payment:<provider>:<object>` | `supporters.apply_payment_event` | 決済の同じオブジェクトを順に処理する |
 | `identity.process_import:<import>` | `identity.process_import` | 1 つのインポートのバッチを順に処理する |
-| `instance.closure_fanout` | `instance.closure_fanout` | 続きのページが重ならないようにする |
+| `instance.closure_delete_actors` | `instance.closure_delete_actors` | 続きのページが重ならないようにする |
 
 ## 3. Fan-out
 
@@ -109,7 +109,7 @@ flowchart TD
   post -- "1" --> fanout["federation.fanout"]
   post -- "投票があれば 1<br/>終了時刻に実行" --> closepoll["content.close_poll"]
   post -- "URL のカードが無いか古ければ 1" --> card["content.fetch_link_card"]
-  post -- "購読者がいれば 1" --> subs["notification.notify_post_subscribers"]
+  post -- "購読者がいれば 1" --> subs["notification.post_subscribers"]
   post -- "メンションされたローカルの利用者ごと" --> notify["通知の行"]
   post -- "公開なら、購読するエンドポイントの数" --> webhook["webhook.deliver"]
   fanout -- "次のバッチ 0 か 1<br/>500 人ごと" --> fanout
@@ -117,13 +117,13 @@ flowchart TD
   subs -- "購読者の数" --> notify
   notify -- "種類を受ける購読の数" --> push["notification.push"]
   notify -- "メールが有効なら 1<br/>15 分後" --> email["notification.email"]
-  closepoll -- "1" --> pollupdate["federation.poll_update"]
+  closepoll -- "1" --> pollupdate["federation.update_poll"]
   pollupdate -- "1" --> fanout
 ```
 
 - **`federation.fanout`**: 公開の投稿はメンション・フォロワー・リレーの段階を順に進み、1 つのジョブが最大 500 の受信者（`FanOutBatch`）を読みます。段階ごとに 1 ジョブ以上で、フォロワーの段階のジョブ数は約 `フォロワー数 / 500` です。
 - **`federation.deliver`**: 受信者を共有 inbox にまとめ、`(activity, inbox)` で一意にします。数はフォロワー数ではなく、**フォロワーのいるリモートの inbox の数**です。ローカルのフォロワーと、ドメインブロックや配送不能のサーバーは含みません。リトライは行を増やさず、同じジョブの実行を増やします（最大 9 回）。
-- **`notification.notify_post_subscribers`**: 最初のジョブが購読者を数え、1,000 人以内なら自分で 100 人ごとの短いトランザクションで通知します。それより多ければ、同じ種類のジョブを範囲ごとに積みます（[§3.6](#36-広いジョブの分割)）。再実行しても重複しません。
+- **`notification.post_subscribers`**: 最初のジョブが購読者を数え、1,000 人以内なら自分で 100 人ごとの短いトランザクションで通知します。それより多ければ、同じ種類のジョブを範囲ごとに積みます（[§3.6](#36-広いジョブの分割)）。再実行しても重複しません。
 - **ホームタイムライン**: 配信のジョブはありません。
 
 | 例（フォロワーとリモートの inbox の数は推定の例） | `federation.fanout` | `federation.deliver` |
@@ -152,7 +152,7 @@ flowchart TD
   inbox -- "保存していない親で 1" --> fetchobj["federation.fetch_object"]
   inbox -- "引用があれば 1" --> quote["federation.verify_quote"]
   inbox -- "カードが無いか古ければ 1<br/>0〜60 秒後" --> card["content.fetch_link_card"]
-  inbox -- "購読者がいれば 1" --> subs["notification.notify_post_subscribers"]
+  inbox -- "購読者がいれば 1" --> subs["notification.post_subscribers"]
   inbox -- "ローカルの宛先ごと" --> notify["通知の行"]
   inbox -- "初めて見るサーバーで 1" --> observe["federation.observe_instance"]
   inbox -- "actor の文書を保存すると 0 か 1" --> featured["federation.fetch_featured"]
@@ -176,7 +176,7 @@ flowchart TD
 ```mermaid
 flowchart TD
   self["本人の削除（すぐ実行）"] -- "1" --> fanout
-  sched["毎時の周期"] --> exec["account.execute_deletions<br/>期限の来た予定、1 回最大 100"]
+  sched["毎時の周期"] --> exec["account.execute_deletions<br/>期限の来た予定と無効化、それぞれ 1 回最大 100"]
   exec -- "削除したアカウントごとに 1" --> fanout["federation.fanout<br/>Delete: フォロワー → 共有 inbox"]
   fanout -- "次のバッチ" --> fanout
   fanout -- "フォロワーの inbox と既知のすべての共有 inbox" --> deliver["federation.deliver"]
@@ -184,7 +184,7 @@ flowchart TD
   erase -- "続きがあれば 1" --> erase
 ```
 
-- 本人の削除は同じトランザクションで `Delete` を送り始めます。BAN などの予定は `account.execute_deletions` が拾います。
+- 本人の削除は同じトランザクションで `Delete` を送り始めます。BAN の予定と、30 日を過ぎた本人の無効化は `account.execute_deletions` が拾います。
 - アカウントの削除では投稿ごとの `Delete` を送りません（`ByAccountErasure`）。配送は actor の `Delete` です。
 - `Delete` の配送は既知のサーバーの数まで広がります。予定の削除が重なると、1 時間に `100 × 既知の共有 inbox の数` まで増える計算です（理論上の上限で、実際の数は推定できていません）。
 - 消去は `account.erase_deleted` の中で閉じ、配送を増やしません。
@@ -196,17 +196,17 @@ flowchart TD
 | 周期（定数） | 種別 | 広がり |
 | --- | --- | --- |
 | 1 分 | `voice.sweep` | |
-| 5 分 | `moderation.expire_restrictions`、`supporters.deadlines` | |
-| 10 分 | `instance.closure_completion` | |
+| 5 分 | `moderation.expire_restrictions`、`supporters.sync_due` | |
+| 10 分 | `instance.check_closure_delivery` | |
 | 15 分 | `stream.sweep`、`metrics.snapshot` | |
-| 1 時間 | `federation.refresh_actors` | 200 件ごとに続き 1、古くてフォロワーのいる actor ごとに `federation.refresh_actor` |
+| 1 時間 | `federation.refresh_stale_actors` | 200 件ごとに続き 1、古くてフォロワーのいる actor ごとに `federation.refresh_actor` |
 | 1 時間 | `content.purge_remote_statuses`、`content.purge_relayed_statuses`、`content.auto_delete_statuses`、`account.erase_deleted` | 続きがあれば 1 |
 | 1 時間 | `account.execute_deletions` | [§3.3](#33-アカウントの削除と消去) |
-| 1 時間 | `kv.cleanup`、`media.cleanup`、`media.cleanup_remote`、`graph.cleanup_mutes`、`moderation.purge_records`、`federation.purge`、`webhook.purge`、`queue.purge_dead_jobs`、`voice.purge_records`、`identity.expire_imports`、`identity.expire_exports`、`identity.delete_unused_oauth_clients`、`identity.purge_origins`、`identity.closure_email_reminders` | |
-| 6 時間（設定で 15 分〜7 日） | `supporters.payment_reconcile` | |
+| 1 時間 | `kv.purge_expired`、`media.purge_unattached`、`media.purge_remote_cache`、`graph.expire_mutes`、`moderation.purge_records`、`federation.purge_records`、`webhook.purge`、`queue.purge_dead_jobs`、`voice.purge_records`、`identity.expire_imports`、`identity.expire_exports`、`identity.purge_unused_oauth_clients`、`identity.purge_origins`、`identity.purge_auth_records`、`identity.queue_closure_reminders` | |
+| 6 時間（設定で 15 分〜7 日） | `supporters.reconcile_payments` | |
 | 1 日 | `federation.probe_instances` | 50 件ごとに続き 1 |
 | 1 日 | `account.prune_remote_profiles`、`content.purge_remote_emojis` | 続きがあれば 1 |
-| 1 日 | `content.cleanup_link_cards`、`projection.verify`、`finance.billing_import`、`notification.prune_error_group_notices`、`diagnostics.prune_error_counts`、`supporters.payment_receipt_purge` | |
+| 1 日 | `content.purge_link_cards`、`projection.verify`、`finance.billing_import`、`notification.purge_error_group_notices`、`diagnostics.purge_error_counts`、`supporters.purge_payment_receipts` | |
 
 合図のキューの掃除 `queue.wake` はジョブではなく、tick の中で動きます。
 
@@ -215,16 +215,17 @@ flowchart TD
 | 契機 | 流れ | 広がり |
 | --- | --- | --- |
 | お知らせの公開 | `instance.notify_announcement` → 通知 → `notification.push` | ローカルの全利用者（[§3.6](#36-広いジョブの分割)） |
-| サービス終了の予告 | `notification.service_closure_fanout` → 通知 → `notification.push`、`identity.closure_email_fanout` → `identity.closure_email`、`identity.closure_rejections`、`supporters.closure_notice`、`notification.service_closure_due` | ローカルの全利用者、確認済みのメールの全利用者（100 人ごと） |
-| サービス終了の実行 | `instance.closure_fanout` → アカウントごとの `federation.fanout` → `federation.deliver` | ローカルの全アカウント × 既知のサーバーの数 |
+| サービス終了の予告 | `notification.closure_fanout` → 通知 → `notification.push`、`identity.closure_email_fanout` → `identity.closure_email`、`identity.reject_for_closure`、`supporters.cancel_for_closure`、`notification.closure_due` | ローカルの全利用者、確認済みのメールの全利用者（100 人ごと） |
+| サービス終了の実行 | `instance.closure_delete_actors` → アカウントごとの `federation.fanout` → `federation.deliver` | ローカルの全アカウント × 既知のサーバーの数 |
 | 通話の開始 | `voice.notify_started` → 通知 → `notification.push` | ローカルのフォロワー（[§3.6](#36-広いジョブの分割)） |
 | 通話の参加者の確認 | `voice.check_account`、`voice.check_block`、`voice.check_hosts` | アカウント・ブロックの変更ごとに 1、ロールの変更で開いている全ルーム |
 | 通報・登録の申請など | 通知 → `notification.push`、`notification.moderator_email` | その種類を受け取る権限を持つ人の数 |
 | パスワードの変更・削除 | `identity.password_notice_email` | 1 |
+| 本人による無効化 | `identity.deactivation_email`、`federation.fanout` → `federation.deliver` | メール 1 通と、`Delete` と同じ宛先への `Update` |
 | ドメインの凍結 | `moderation.sever_domain` | ローカルの全アカウントを読む（[§3.6](#36-広いジョブの分割)） |
 | インポート | `identity.process_import` → フォローごとの `federation.fanout` → `federation.deliver` | 1 回 20 項目 |
-| 投稿の取り直し | `federation.refetch_statuses` → `federation.refetch_status` | 100 件ごと |
-| サポーターの決済 | `supporters.payment_event` → `supporters.sync`・`supporters.command`、`notification.supporter_email` | 決済の通知ごと |
+| 投稿の取り直し | `federation.refetch_walk` → `federation.refetch_status` | 100 件ごと |
+| サポーターの決済 | `supporters.apply_payment_event` → `supporters.sync`・`supporters.command`、`notification.supporter_email` | 決済の通知ごと |
 
 ### 3.6 広いジョブの分割
 
@@ -242,13 +243,13 @@ flowchart LR
   range --> tx["100 件ごとのトランザクション"]
 ```
 
-- **対象**: `notification.notify_post_subscribers`（最初に `COUNT` で数える）、`instance.notify_announcement`、`notification.service_closure_fanout`、`identity.closure_email_fanout`、`voice.notify_started`、`moderation.sever_domain`（最初のページで判定する）。種類は増やさず、ペイロードの `cursor` と `range` で区別するので、同じワーカーで動きます。
+- **対象**: `notification.post_subscribers`（最初に `COUNT` で数える）、`instance.notify_announcement`、`notification.closure_fanout`、`identity.closure_email_fanout`、`voice.notify_started`、`moderation.sever_domain`（最初のページで判定する）。種類は増やさず、ペイロードの `cursor` と `range` で区別するので、同じワーカーで動きます。
 - **冪等キー**: 最初のジョブの冪等キーに範囲の始まりを足します。最初のジョブのやり直しは、まだ待っている範囲を積みません。すでに終わった範囲は積み直すことがありますが、各ジョブは 2 度処理しても安全です。
 - **途中の変更**: 範囲はキーの境界だけを持つので、途中で増えた人はその場所の範囲か、終わりのない最後の範囲で処理します。消えた人は処理せず、範囲が次の範囲に少しはみ出すことはあります。
 - **並行**: 範囲のジョブは順序キーを持たないので、[同時実行](../operations/running.md)や複数のワーカーで並びます。
 - **1,000 件の根拠**: 手元の WSL2 上の PostgreSQL 18（本番相当ではない）で購読者の通知は 1 人あたり約 3 ms（300 人で 3 回計測。再実行も同じ費用）で、1,000 人で約 3 秒です。リースの 5 分に約 100 倍の余裕があり、DB が遅くなっても 1 ジョブがリース内に収まる見込みです（推定）。また、1,000 件の境界を読むのは 100 回で 5.6 秒（100 万行）、数えるのは 32 ms でした。
 
-`instance.closure_fanout` と `identity.closure_rejections` は対象外です。前者はページごとに続きを積み、後者は処理した登録が待ちの一覧から外れるので、やり直しても進みます。
+`instance.closure_delete_actors` と `identity.reject_for_closure` は対象外です。前者はページごとに続きを積み、後者は処理した登録が待ちの一覧から外れるので、やり直しても進みます。
 
 ## 4. 負荷が集中するところ（推定）
 

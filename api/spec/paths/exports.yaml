@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listDataExports
+  x-first-party-only: true
   summary: List the authenticated user's data exports
   description: |
     Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -22,13 +23,14 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: requestDataExport
+  x-first-party-only: true
   summary: Request an archive of the authenticated user's data
   description: |
-    Starts building a ZIP archive of the user's data (FR-008): `actor.json` (the actor),
+    Starts building a ZIP archive of the user's data: `actor.json` (the actor),
     `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
     activities), `moderation.json` (the moderation actions on the account, its appeals, and
     the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
-    `blocked_accounts.csv`, `muted_accounts.csv`, `bookmarks.csv`). The export is
+    `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
     `pending` until the archive is built. While
     another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
     at most 3 requests per account are accepted every day.

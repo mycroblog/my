@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The federated timeline in every width × locale project (FR-202, ADR-0027): its navigation item, which
-// the instance setting federated_timeline_access takes away, and its feed of posts of this server and of
+// the instance setting federated_timeline_visibility takes away, and its feed of posts of this server and of
 // another one. `vite preview` has no client API, so the spec answers GET /instance and the timeline with
 // `page.route`, shaped like api/openapi.yaml. Names change with the locale, so the navigation item is
 // found by its address and the feed by the page heading.
@@ -74,7 +74,7 @@ function instance(federated: Instance["timelines"]["federated"]): Instance {
     sends_email: false,
     search_indexing: "deny",
     ai_usage: "deny",
-    link_cards_enabled: true,
+    link_cards: true,
     link_cards_ignore_robots_txt: false,
     finance_visibility: "private",
     income_visibility: "private",
@@ -106,7 +106,7 @@ async function serveApi(page: Page, federated: boolean): Promise<void> {
   await page.route("**/api/v1/timelines/local*", (route) =>
     json(route, { items: [status(1, bob)] } satisfies StatusPage),
   );
-  await page.route("**/api/v1/timelines/public*", (route) =>
+  await page.route("**/api/v1/timelines/federated*", (route) =>
     federated
       ? json(route, { items: [status(1, bob), status(2, carol), status(3, carol)] } satisfies StatusPage)
       : json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404),
@@ -240,11 +240,11 @@ test.describe("the federated timeline while the server keeps it for signed-in us
         contentType: statusCode < 400 ? "application/json" : "application/problem+json",
         body: JSON.stringify(body),
       });
-    await page.route("**/api/v1/instance", (route) => json(route, instance("logged_in")));
+    await page.route("**/api/v1/instance", (route) => json(route, instance("signed_in")));
     await page.route("**/api/v1/timelines/local*", (route) =>
       json(route, { items: [status(1, bob)] } satisfies StatusPage),
     );
-    await page.route("**/api/v1/timelines/public*", (route) =>
+    await page.route("**/api/v1/timelines/federated*", (route) =>
       json(route, { type: "/api/v1/problems/unauthenticated", title: "Unauthenticated", status: 401 }, 401),
     );
   });

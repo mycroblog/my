@@ -22,8 +22,7 @@ post:
   operationId: createSupporterPlan
   summary: Create a supporter plan
   description: |
-    Creates a supporter plan on a role, which then only the plan's subscriptions grant
-    (ADR-0072 §3, §5). The prices are made at the payment provider after the answer; the
+    Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the
     plan takes subscriptions once `prices_ready`. A plan that breaks a rule is a 422
     `/api/v1/problems/invalid-supporter-plan`, an unknown role a 404, and a server without a
     payment provider a 409 `/api/v1/problems/supporters-unavailable`. Recorded in the audit
@@ -38,7 +37,7 @@ post:
         schema:
           $ref: ../components/schemas/AdminSupporterPlanCreateRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminSupporterPlan.yaml
     "422":
       $ref: ../components/responses/SupporterPlanProblem.yaml

@@ -127,6 +127,7 @@ func newOAuthClientsEnv(t *testing.T) (*authEnv, *fakeOAuthClients) {
 	e := newAuthEnv(t, func(o *clientapi.Options) {
 		o.Permissions = fakePermissions{userOf(aliceAccountID): identity.AllPermissions()}
 		o.OAuthClients = f
+		o.UserAccounts = fakeUserAccounts{}
 	})
 	e.auth.tokens["admin"] = bearer("admin", aliceAccountID)
 	e.auth.tokens["admin-read"] = bearer("admin:read", aliceAccountID)
@@ -162,10 +163,10 @@ func TestListOAuthClients(t *testing.T) {
 	if res.StatusCode != http.StatusOK || len(page.Items) != 2 || page.Items[0].Id != oauthClientUser || page.NextCursor == nil {
 		t.Fatalf("first page = %d %+v", res.StatusCode, page)
 	}
-	if c := page.Items[0]; !c.Confidential || c.OwnerId == nil || *c.OwnerId != userOf(aliceAccountID) || c.Registration != clientapi.OAuthClientRegistrationUser {
+	if c := page.Items[0]; !c.Confidential || c.Owner == nil || c.Owner.Id != aliceAccountID || c.OwnerDeleted || c.Registration != clientapi.OAuthClientRegistrationUser {
 		t.Errorf("user client = %+v", c)
 	}
-	if c := page.Items[1]; c.Confidential || c.Website == nil || c.OwnerId != nil || c.Registration != clientapi.OAuthClientRegistrationMetadataDocument {
+	if c := page.Items[1]; c.Confidential || c.Website == nil || c.Owner != nil || c.OwnerDeleted || c.Registration != clientapi.OAuthClientRegistrationMetadataDocument {
 		t.Errorf("metadata document client = %+v", c)
 	}
 	page = decodeJSON[clientapi.AdminOAuthClientPage](t, e.admin(t, http.MethodGet, "/admin/oauth_clients?limit=2&cursor="+*page.NextCursor, "admin-read", nil))
@@ -207,11 +208,29 @@ func TestDisableAndEnableOAuthClients(t *testing.T) {
 	}
 }
 
+// An owner or a denier whose account is gone is told apart from an operation without a user.
+func TestOAuthClientsOfDeletedAccounts(t *testing.T) {
+	e, f := newOAuthClientsEnv(t)
+	f.clients[0].OwnerUserID = "01890a5d-ac96-774b-bcce-b302099a8fff"
+	f.denials[0].DeniedByUserID = "01890a5d-ac96-774b-bcce-b302099a8fff"
+	page := decodeJSON[clientapi.AdminOAuthClientPage](t, e.admin(t, http.MethodGet, "/admin/oauth_clients", "admin-read", nil))
+	if c := page.Items[0]; c.Owner != nil || !c.OwnerDeleted {
+		t.Errorf("client = %+v, want a deleted owner", c)
+	}
+	if c := page.Items[1]; c.OwnerDeleted {
+		t.Errorf("client without an owner = %+v", c)
+	}
+	denials := decodeJSON[clientapi.AdminOAuthClientHostDenialPage](t, e.admin(t, http.MethodGet, "/admin/oauth_client_host_denials", "admin-read", nil))
+	if d := denials.Items[0]; d.DeniedBy != nil || !d.DeniedByDeleted {
+		t.Errorf("denial = %+v, want a deleted denier", d)
+	}
+}
+
 func TestDenyAndAllowOAuthClientHosts(t *testing.T) {
 	e, f := newOAuthClientsEnv(t)
 	res := e.admin(t, http.MethodGet, "/admin/oauth_client_host_denials", "admin-read", nil)
 	page := decodeJSON[clientapi.AdminOAuthClientHostDenialPage](t, res)
-	if res.StatusCode != http.StatusOK || len(page.Items) != 1 || page.Items[0].Host != "bad.example" || page.Items[0].DeniedBy == nil || page.NextCursor != nil {
+	if res.StatusCode != http.StatusOK || len(page.Items) != 1 || page.Items[0].Host != "bad.example" || page.Items[0].DeniedBy == nil || page.Items[0].DeniedBy.Id != aliceAccountID || page.NextCursor != nil {
 		t.Fatalf("list = %d %+v", res.StatusCode, page)
 	}
 	if res := e.sendJSON(t, http.MethodPost, "/admin/oauth_client_host_denials", "admin", `{"host":"App.Example"}`); res.StatusCode != http.StatusNoContent {
@@ -223,6 +242,10 @@ func TestDenyAndAllowOAuthClientHosts(t *testing.T) {
 	want := []string{"deny app.example by " + userOf(aliceAccountID), "allow bad.example by " + userOf(aliceAccountID)}
 	if !slices.Equal(f.calls, want) {
 		t.Errorf("calls = %v, want %v", f.calls, want)
+	}
+	// A malformed host is not denied, so lifting it answers as for any host that is not denied.
+	if res := e.send(t, http.MethodDelete, "/admin/oauth_client_host_denials/app.example:8443", "admin", ""); res.StatusCode != http.StatusNoContent {
+		t.Errorf("allow a malformed host = %d, want 204", res.StatusCode)
 	}
 	// A host with a port or a path is refused.
 	for _, host := range []string{"app.example:8443", "app.example/x"} {

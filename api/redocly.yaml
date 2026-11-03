@@ -30,6 +30,97 @@ rules:
     assertions:
       ref: /^\.\.\/components\/responses\/Problem\.yaml$/
     message: The `default` response refers to `../components/responses/Problem.yaml` (ADR-0016).
+  # The status of what an operation does (client-api.md section 2.3): 201 for a resource it
+  # created, 202 for work it queued.
+  rule/create-answers-201:
+    subject:
+      type: Responses
+    where:
+      - subject:
+          type: Operation
+          property: operationId
+        assertions:
+          pattern: /^create/
+    assertions:
+      required: ["201"]
+    message: An operation that creates a resource answers 201.
+  rule/queue-answers-202:
+    subject:
+      type: Responses
+    where:
+      - subject:
+          type: Operation
+          property: operationId
+        assertions:
+          pattern: /^(refetch|retry|run)[A-Z]/
+    assertions:
+      required: ["202"]
+    message: An operation that queues work answers 202.
+  # The spec is served publicly: its text explains the behaviour itself, without the design
+  # documents, the repository's paths, or the tables behind it.
+  rule/no-design-references-info:
+    subject:
+      type: Info
+      property: description
+    assertions:
+      notPattern: /ADR-\d|\bN?FR-[A-Z0-9]|docs\/(adr|architecture|operations|reference|requirements)|data-model|(client-api|federation|visibility)\.md|_revisions\b/
+    message: Public text does not cite ADRs, requirements, repository documents, or tables.
+  rule/no-design-references-tag:
+    subject:
+      type: Tag
+      property: description
+    assertions:
+      notPattern: /ADR-\d|\bN?FR-[A-Z0-9]|docs\/(adr|architecture|operations|reference|requirements)|data-model|(client-api|federation|visibility)\.md|_revisions\b/
+    message: Public text does not cite ADRs, requirements, repository documents, or tables.
+  rule/no-design-references-operation:
+    subject:
+      type: Operation
+      property: description
+    assertions:
+      notPattern: /ADR-\d|\bN?FR-[A-Z0-9]|docs\/(adr|architecture|operations|reference|requirements)|data-model|(client-api|federation|visibility)\.md|_revisions\b/
+    message: Public text does not cite ADRs, requirements, repository documents, or tables.
+  rule/no-design-references-operation-summary:
+    subject:
+      type: Operation
+      property: summary
+    assertions:
+      notPattern: /ADR-\d|\bN?FR-[A-Z0-9]|docs\/(adr|architecture|operations|reference|requirements)|data-model|(client-api|federation|visibility)\.md|_revisions\b/
+    message: Public text does not cite ADRs, requirements, repository documents, or tables.
+  rule/no-design-references-schema:
+    subject:
+      type: Schema
+      property: description
+    assertions:
+      notPattern: /ADR-\d|\bN?FR-[A-Z0-9]|docs\/(adr|architecture|operations|reference|requirements)|data-model|(client-api|federation|visibility)\.md|_revisions\b/
+    message: Public text does not cite ADRs, requirements, repository documents, or tables.
+  rule/no-design-references-parameter:
+    subject:
+      type: Parameter
+      property: description
+    assertions:
+      notPattern: /ADR-\d|\bN?FR-[A-Z0-9]|docs\/(adr|architecture|operations|reference|requirements)|data-model|(client-api|federation|visibility)\.md|_revisions\b/
+    message: Public text does not cite ADRs, requirements, repository documents, or tables.
+  rule/no-design-references-response:
+    subject:
+      type: Response
+      property: description
+    assertions:
+      notPattern: /ADR-\d|\bN?FR-[A-Z0-9]|docs\/(adr|architecture|operations|reference|requirements)|data-model|(client-api|federation|visibility)\.md|_revisions\b/
+    message: Public text does not cite ADRs, requirements, repository documents, or tables.
+  rule/no-design-references-header:
+    subject:
+      type: Header
+      property: description
+    assertions:
+      notPattern: /ADR-\d|\bN?FR-[A-Z0-9]|docs\/(adr|architecture|operations|reference|requirements)|data-model|(client-api|federation|visibility)\.md|_revisions\b/
+    message: Public text does not cite ADRs, requirements, repository documents, or tables.
+  rule/no-design-references-security-scheme:
+    subject:
+      type: SecurityScheme
+      property: description
+    assertions:
+      notPattern: /ADR-\d|\bN?FR-[A-Z0-9]|docs\/(adr|architecture|operations|reference|requirements)|data-model|(client-api|federation|visibility)\.md|_revisions\b/
+    message: Public text does not cite ADRs, requirements, repository documents, or tables.
   # snake_case property and parameter names, like the rest of the API.
   rule/property-snake-case:
     subject:

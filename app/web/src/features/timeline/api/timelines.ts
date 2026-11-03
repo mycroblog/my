@@ -14,7 +14,7 @@ import type { components } from "@mycroblog/mykit";
 export type Status = components["schemas"]["Status"];
 
 /** Who may read a public timeline: nobody (it is a 404), the signed-in users (a 401 for visitors), or everyone (FR-202). */
-export type TimelineAccess = components["schemas"]["TimelineAccess"];
+export type InstanceAudience = components["schemas"]["InstanceAudience"];
 
 /** A page of a timeline. */
 export type StatusPage = components["schemas"]["StatusPage"];
@@ -37,7 +37,7 @@ export type AccountTimelineFilter = (typeof accountTimelineFilters)[number];
 export type Timeline =
   | { kind: "home" }
   | { kind: "local" }
-  /** The federated timeline (GET /timelines/public): public posts of this server and of the others it knows. */
+  /** The federated timeline (GET /timelines/federated): public posts of this server and of the others it knows. */
   | { kind: "public" }
   | { kind: "tag"; tag: string }
   /** The posts the viewer bookmarked (GET /bookmarks, FR-113), newest bookmark first. */
@@ -69,7 +69,7 @@ function timelineQueryKey(timeline: Timeline) {
     case "local":
       return ["get", "/timelines/local", "pages"] as const;
     case "public":
-      return ["get", "/timelines/public", "pages"] as const;
+      return ["get", "/timelines/federated", "pages"] as const;
     case "tag":
       return ["get", "/timelines/tag/{hashtag}", { params: { path: { hashtag: timeline.tag } } }, "pages"] as const;
     case "list":
@@ -103,7 +103,7 @@ async function fetchTimelinePage(
       case "local":
         return api.fetch.GET("/timelines/local", { params: { query }, signal });
       case "public":
-        return api.fetch.GET("/timelines/public", { params: { query }, signal });
+        return api.fetch.GET("/timelines/federated", { params: { query }, signal });
       case "tag":
         return api.fetch.GET("/timelines/tag/{hashtag}", {
           params: { path: { hashtag: timeline.tag }, query },

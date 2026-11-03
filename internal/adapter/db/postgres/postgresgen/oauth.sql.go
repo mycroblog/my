@@ -13,28 +13,28 @@ import (
 )
 
 const deleteOAuthClientRedirectURI = `-- name: DeleteOAuthClientRedirectURI :exec
-DELETE FROM oauth_client_redirect_uris WHERE client_id = $1 AND redirect_uri = $2
+DELETE FROM oauth_client_redirect_uris WHERE oauth_client_id = $1 AND redirect_uri = $2
 `
 
 type DeleteOAuthClientRedirectURIParams struct {
-	ClientID    string
-	RedirectUri string
+	OauthClientID string
+	RedirectUri   string
 }
 
 func (q *Queries) DeleteOAuthClientRedirectURI(ctx context.Context, arg DeleteOAuthClientRedirectURIParams) error {
-	_, err := q.db.Exec(ctx, deleteOAuthClientRedirectURI, arg.ClientID, arg.RedirectUri)
+	_, err := q.db.Exec(ctx, deleteOAuthClientRedirectURI, arg.OauthClientID, arg.RedirectUri)
 	return err
 }
 
 const getAccessTokenByAccessHash = `-- name: GetAccessTokenByAccessHash :one
-SELECT t.id, t.family_id, t.client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
+SELECT t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
   t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at,
   EXISTS (SELECT 1 FROM oauth_token_revocations r WHERE r.token_id = t.id) AS revoked,
   EXISTS (
     SELECT 1 FROM oauth_client_disablements d
-    WHERE d.client_id = t.client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+    WHERE d.oauth_client_id = t.oauth_client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
   ) AS client_disabled,
-  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = t.client_id) AS client_deleted
+  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = t.oauth_client_id) AS client_deleted
 FROM oauth_access_tokens t
 WHERE t.access_token_hash = $1
 `
@@ -42,7 +42,7 @@ WHERE t.access_token_hash = $1
 type GetAccessTokenByAccessHashRow struct {
 	ID                 string
 	FamilyID           string
-	ClientID           string
+	OauthClientID      string
 	UserID             string
 	AccessTokenHash    []byte
 	RefreshTokenHash   []byte
@@ -64,7 +64,7 @@ func (q *Queries) GetAccessTokenByAccessHash(ctx context.Context, accessTokenHas
 	err := row.Scan(
 		&i.ID,
 		&i.FamilyID,
-		&i.ClientID,
+		&i.OauthClientID,
 		&i.UserID,
 		&i.AccessTokenHash,
 		&i.RefreshTokenHash,
@@ -81,14 +81,14 @@ func (q *Queries) GetAccessTokenByAccessHash(ctx context.Context, accessTokenHas
 }
 
 const getAccessTokenByRefreshHash = `-- name: GetAccessTokenByRefreshHash :one
-SELECT t.id, t.family_id, t.client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
+SELECT t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
   t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at,
   EXISTS (SELECT 1 FROM oauth_token_revocations r WHERE r.token_id = t.id) AS revoked,
   EXISTS (
     SELECT 1 FROM oauth_client_disablements d
-    WHERE d.client_id = t.client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+    WHERE d.oauth_client_id = t.oauth_client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
   ) AS client_disabled,
-  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = t.client_id) AS client_deleted
+  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = t.oauth_client_id) AS client_deleted
 FROM oauth_access_tokens t
 WHERE t.refresh_token_hash = $1
 `
@@ -96,7 +96,7 @@ WHERE t.refresh_token_hash = $1
 type GetAccessTokenByRefreshHashRow struct {
 	ID                 string
 	FamilyID           string
-	ClientID           string
+	OauthClientID      string
 	UserID             string
 	AccessTokenHash    []byte
 	RefreshTokenHash   []byte
@@ -118,7 +118,7 @@ func (q *Queries) GetAccessTokenByRefreshHash(ctx context.Context, refreshTokenH
 	err := row.Scan(
 		&i.ID,
 		&i.FamilyID,
-		&i.ClientID,
+		&i.OauthClientID,
 		&i.UserID,
 		&i.AccessTokenHash,
 		&i.RefreshTokenHash,
@@ -135,7 +135,7 @@ func (q *Queries) GetAccessTokenByRefreshHash(ctx context.Context, refreshTokenH
 }
 
 const getAuthorizationCode = `-- name: GetAuthorizationCode :one
-SELECT code_hash, client_id, user_id, redirect_uri, scope, code_challenge, session_id, issued_at, expires_at
+SELECT code_hash, oauth_client_id, user_id, redirect_uri, scope, code_challenge, session_id, issued_at, expires_at
 FROM oauth_authorization_codes
 WHERE code_hash = $1
 `
@@ -145,7 +145,7 @@ func (q *Queries) GetAuthorizationCode(ctx context.Context, codeHash []byte) (Oa
 	var i OauthAuthorizationCode
 	err := row.Scan(
 		&i.CodeHash,
-		&i.ClientID,
+		&i.OauthClientID,
 		&i.UserID,
 		&i.RedirectUri,
 		&i.Scope,
@@ -215,16 +215,16 @@ func (q *Queries) GetOAuthClientByID(ctx context.Context, id string) (OauthClien
 }
 
 const getOAuthClientMetadataDocument = `-- name: GetOAuthClientMetadataDocument :one
-SELECT client_id, client_name, client_uri, logo_uri, scope, fetched_at, expires_at
+SELECT oauth_client_id, client_name, client_uri, logo_uri, scope, fetched_at, expires_at
 FROM oauth_client_metadata_documents
-WHERE client_id = $1
+WHERE oauth_client_id = $1
 `
 
-func (q *Queries) GetOAuthClientMetadataDocument(ctx context.Context, clientID string) (OauthClientMetadataDocument, error) {
-	row := q.db.QueryRow(ctx, getOAuthClientMetadataDocument, clientID)
+func (q *Queries) GetOAuthClientMetadataDocument(ctx context.Context, oauthClientID string) (OauthClientMetadataDocument, error) {
+	row := q.db.QueryRow(ctx, getOAuthClientMetadataDocument, oauthClientID)
 	var i OauthClientMetadataDocument
 	err := row.Scan(
-		&i.ClientID,
+		&i.OauthClientID,
 		&i.ClientName,
 		&i.ClientUri,
 		&i.LogoUri,
@@ -239,9 +239,9 @@ const getOAuthClientState = `-- name: GetOAuthClientState :one
 SELECT
   EXISTS (
     SELECT 1 FROM oauth_client_disablements d
-    WHERE d.client_id = c.id::text AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+    WHERE d.oauth_client_id = c.id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
   ) AS disabled,
-  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id::text) AS deleted
+  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id) AS deleted
 FROM oauth_clients c
 WHERE c.id = $1
 `
@@ -262,7 +262,7 @@ func (q *Queries) GetOAuthClientState(ctx context.Context, id string) (GetOAuthC
 
 const insertAccessToken = `-- name: InsertAccessToken :exec
 INSERT INTO oauth_access_tokens (
-  id, family_id, client_id, user_id, access_token_hash, refresh_token_hash, scope, rotated_from_token_id,
+  id, family_id, oauth_client_id, user_id, access_token_hash, refresh_token_hash, scope, rotated_from_token_id,
   issued_at, expires_at, refresh_expires_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 `
@@ -270,7 +270,7 @@ INSERT INTO oauth_access_tokens (
 type InsertAccessTokenParams struct {
 	ID                 string
 	FamilyID           string
-	ClientID           string
+	OauthClientID      string
 	UserID             string
 	AccessTokenHash    []byte
 	RefreshTokenHash   []byte
@@ -285,7 +285,7 @@ func (q *Queries) InsertAccessToken(ctx context.Context, arg InsertAccessTokenPa
 	_, err := q.db.Exec(ctx, insertAccessToken,
 		arg.ID,
 		arg.FamilyID,
-		arg.ClientID,
+		arg.OauthClientID,
 		arg.UserID,
 		arg.AccessTokenHash,
 		arg.RefreshTokenHash,
@@ -299,13 +299,13 @@ func (q *Queries) InsertAccessToken(ctx context.Context, arg InsertAccessTokenPa
 }
 
 const insertAuthorizationCode = `-- name: InsertAuthorizationCode :exec
-INSERT INTO oauth_authorization_codes (code_hash, client_id, user_id, redirect_uri, scope, code_challenge, session_id, issued_at, expires_at)
+INSERT INTO oauth_authorization_codes (code_hash, oauth_client_id, user_id, redirect_uri, scope, code_challenge, session_id, issued_at, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 `
 
 type InsertAuthorizationCodeParams struct {
 	CodeHash      []byte
-	ClientID      string
+	OauthClientID string
 	UserID        string
 	RedirectUri   string
 	Scope         string
@@ -318,7 +318,7 @@ type InsertAuthorizationCodeParams struct {
 func (q *Queries) InsertAuthorizationCode(ctx context.Context, arg InsertAuthorizationCodeParams) error {
 	_, err := q.db.Exec(ctx, insertAuthorizationCode,
 		arg.CodeHash,
-		arg.ClientID,
+		arg.OauthClientID,
 		arg.UserID,
 		arg.RedirectUri,
 		arg.Scope,
@@ -350,12 +350,12 @@ func (q *Queries) InsertAuthorizationCodeRedemptionIfAbsent(ctx context.Context,
 }
 
 const insertOAuthClientDeletionIfAbsent = `-- name: InsertOAuthClientDeletionIfAbsent :execrows
-INSERT INTO oauth_client_deletions (client_id, reason, deleted_by_user_id, deleted_at) VALUES ($1, $2, $3, $4)
-ON CONFLICT (client_id) DO NOTHING
+INSERT INTO oauth_client_deletions (oauth_client_id, reason, deleted_by_user_id, deleted_at) VALUES ($1, $2, $3, $4)
+ON CONFLICT (oauth_client_id) DO NOTHING
 `
 
 type InsertOAuthClientDeletionIfAbsentParams struct {
-	ClientID        string
+	OauthClientID   string
 	Reason          string
 	DeletedByUserID *string
 	DeletedAt       time.Time
@@ -363,7 +363,7 @@ type InsertOAuthClientDeletionIfAbsentParams struct {
 
 func (q *Queries) InsertOAuthClientDeletionIfAbsent(ctx context.Context, arg InsertOAuthClientDeletionIfAbsentParams) (int64, error) {
 	result, err := q.db.Exec(ctx, insertOAuthClientDeletionIfAbsent,
-		arg.ClientID,
+		arg.OauthClientID,
 		arg.Reason,
 		arg.DeletedByUserID,
 		arg.DeletedAt,
@@ -375,17 +375,17 @@ func (q *Queries) InsertOAuthClientDeletionIfAbsent(ctx context.Context, arg Ins
 }
 
 const insertOAuthClientDisablementIfEnabled = `-- name: InsertOAuthClientDisablementIfEnabled :execrows
-INSERT INTO oauth_client_disablements (id, client_id, disabled_by_user_id, disabled_at)
-SELECT $1::uuid, $2::text, $3::uuid, $4::timestamptz
+INSERT INTO oauth_client_disablements (id, oauth_client_id, disabled_by_user_id, disabled_at)
+SELECT $1::uuid, $2::uuid, $3::uuid, $4::timestamptz
 WHERE NOT EXISTS (
     SELECT 1 FROM oauth_client_disablements d
-    WHERE d.client_id = $2::text AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+    WHERE d.oauth_client_id = $2::uuid AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
   )
 `
 
 type InsertOAuthClientDisablementIfEnabledParams struct {
 	ID               string
-	ClientID         string
+	OauthClientID    string
 	DisabledByUserID *string
 	DisabledAt       time.Time
 }
@@ -395,7 +395,7 @@ type InsertOAuthClientDisablementIfEnabledParams struct {
 func (q *Queries) InsertOAuthClientDisablementIfEnabled(ctx context.Context, arg InsertOAuthClientDisablementIfEnabledParams) (int64, error) {
 	result, err := q.db.Exec(ctx, insertOAuthClientDisablementIfEnabled,
 		arg.ID,
-		arg.ClientID,
+		arg.OauthClientID,
 		arg.DisabledByUserID,
 		arg.DisabledAt,
 	)
@@ -472,17 +472,17 @@ func (q *Queries) InsertOAuthClientIfAbsent(ctx context.Context, arg InsertOAuth
 }
 
 const insertOAuthClientRedirectURIIfAbsent = `-- name: InsertOAuthClientRedirectURIIfAbsent :exec
-INSERT INTO oauth_client_redirect_uris (client_id, redirect_uri) VALUES ($1, $2)
-ON CONFLICT (client_id, redirect_uri) DO NOTHING
+INSERT INTO oauth_client_redirect_uris (oauth_client_id, redirect_uri) VALUES ($1, $2)
+ON CONFLICT (oauth_client_id, redirect_uri) DO NOTHING
 `
 
 type InsertOAuthClientRedirectURIIfAbsentParams struct {
-	ClientID    string
-	RedirectUri string
+	OauthClientID string
+	RedirectUri   string
 }
 
 func (q *Queries) InsertOAuthClientRedirectURIIfAbsent(ctx context.Context, arg InsertOAuthClientRedirectURIIfAbsentParams) error {
-	_, err := q.db.Exec(ctx, insertOAuthClientRedirectURIIfAbsent, arg.ClientID, arg.RedirectUri)
+	_, err := q.db.Exec(ctx, insertOAuthClientRedirectURIIfAbsent, arg.OauthClientID, arg.RedirectUri)
 	return err
 }
 
@@ -508,19 +508,19 @@ func (q *Queries) InsertTokenRevocationIfAbsent(ctx context.Context, arg InsertT
 const liftOAuthClientDisablements = `-- name: LiftOAuthClientDisablements :execrows
 INSERT INTO oauth_client_disablement_lifts (disablement_id, lifted_by_user_id, lifted_at)
 SELECT d.id, $1::uuid, $2::timestamptz FROM oauth_client_disablements d
-WHERE d.client_id = $3::text
+WHERE d.oauth_client_id = $3::uuid
 ON CONFLICT (disablement_id) DO NOTHING
 `
 
 type LiftOAuthClientDisablementsParams struct {
 	LiftedByUserID *string
 	LiftedAt       time.Time
-	ClientID       string
+	OauthClientID  string
 }
 
 // LiftOAuthClientDisablements lifts every disablement of a client that has no lift yet.
 func (q *Queries) LiftOAuthClientDisablements(ctx context.Context, arg LiftOAuthClientDisablementsParams) (int64, error) {
-	result, err := q.db.Exec(ctx, liftOAuthClientDisablements, arg.LiftedByUserID, arg.LiftedAt, arg.ClientID)
+	result, err := q.db.Exec(ctx, liftOAuthClientDisablements, arg.LiftedByUserID, arg.LiftedAt, arg.OauthClientID)
 	if err != nil {
 		return 0, err
 	}
@@ -555,7 +555,7 @@ SELECT t.family_id, t.scope AS token_scope,
   u.last_used_at,
   c.id, c.client_id, c.client_secret_hash, c.name, c.website, c.scope, c.registration, c.owner_user_id, c.created_at
 FROM oauth_access_tokens t
-JOIN oauth_clients c ON c.id::text = t.client_id
+JOIN oauth_clients c ON c.id = t.oauth_client_id
 LEFT JOIN oauth_token_family_last_used u ON u.family_id = t.family_id
 WHERE t.user_id = $1
   AND (t.expires_at > $2::timestamptz OR t.refresh_expires_at > $2::timestamptz)
@@ -624,7 +624,7 @@ func (q *Queries) ListAuthorizedAppTokens(ctx context.Context, arg ListAuthorize
 const listBrowserSessionFamilies = `-- name: ListBrowserSessionFamilies :many
 SELECT DISTINCT c.session_id, t.family_id, u.last_used_at
 FROM oauth_access_tokens t
-JOIN oauth_clients cl ON cl.id::text = t.client_id
+JOIN oauth_clients cl ON cl.id = t.oauth_client_id
 JOIN oauth_authorization_code_redemptions r ON r.token_id = t.family_id
 JOIN oauth_authorization_codes c ON c.code_hash = r.code_hash
 LEFT JOIN oauth_token_family_last_used u ON u.family_id = t.family_id
@@ -679,7 +679,7 @@ WHERE s.user_id = $1
       SELECT 1 FROM oauth_authorization_codes c
       JOIN oauth_authorization_code_redemptions r ON r.code_hash = c.code_hash
       JOIN oauth_access_tokens t ON t.family_id = r.token_id
-      JOIN oauth_clients cl ON cl.id::text = t.client_id
+      JOIN oauth_clients cl ON cl.id = t.oauth_client_id
       WHERE c.session_id = s.id AND cl.registration = 'first_party'
         AND (t.expires_at > $2::timestamptz OR t.refresh_expires_at > $2::timestamptz)
         AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id)
@@ -804,11 +804,11 @@ func (q *Queries) ListOAuthClientHostDenials(ctx context.Context, arg ListOAuthC
 }
 
 const listOAuthClientRedirectURIs = `-- name: ListOAuthClientRedirectURIs :many
-SELECT redirect_uri FROM oauth_client_redirect_uris WHERE client_id = $1 ORDER BY redirect_uri
+SELECT redirect_uri FROM oauth_client_redirect_uris WHERE oauth_client_id = $1 ORDER BY redirect_uri
 `
 
-func (q *Queries) ListOAuthClientRedirectURIs(ctx context.Context, clientID string) ([]string, error) {
-	rows, err := q.db.Query(ctx, listOAuthClientRedirectURIs, clientID)
+func (q *Queries) ListOAuthClientRedirectURIs(ctx context.Context, oauthClientID string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listOAuthClientRedirectURIs, oauthClientID)
 	if err != nil {
 		return nil, err
 	}
@@ -831,10 +831,10 @@ const listOAuthClients = `-- name: ListOAuthClients :many
 SELECT c.id, c.client_id, c.client_secret_hash, c.name, c.website, c.scope, c.registration, c.owner_user_id, c.created_at,
   EXISTS (
     SELECT 1 FROM oauth_client_disablements d
-    WHERE d.client_id = c.id::text AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+    WHERE d.oauth_client_id = c.id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
   ) AS disabled
 FROM oauth_clients c
-WHERE NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id::text)
+WHERE NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id)
   AND ($1::text IS NULL OR c.registration = $1::text)
   AND ($2::uuid IS NULL OR c.id < $2::uuid)
 ORDER BY c.id DESC
@@ -896,27 +896,28 @@ func (q *Queries) ListOAuthClients(ctx context.Context, arg ListOAuthClientsPara
 const listUnusedDynamicOAuthClients = `-- name: ListUnusedDynamicOAuthClients :many
 SELECT c.id FROM oauth_clients c
 WHERE c.registration = 'dynamic'
-  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id::text)
+  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id)
   AND (
-    (c.created_at < $1::timestamptz AND NOT EXISTS (
+    (c.created_at < $1::timestamptz AND c.created_at >= $2::timestamptz AND NOT EXISTS (
       SELECT 1 FROM oauth_authorization_codes a
       JOIN oauth_authorization_code_redemptions r ON r.code_hash = a.code_hash
-      WHERE a.client_id = c.id::text))
+      WHERE a.oauth_client_id = c.id))
     OR
-    (c.created_at < $2::timestamptz AND NOT EXISTS (
+    (c.created_at < $3::timestamptz AND NOT EXISTS (
       SELECT 1 FROM oauth_access_tokens t
-      WHERE t.client_id = c.id::text
-        AND (t.issued_at >= $2::timestamptz
-          OR EXISTS (SELECT 1 FROM oauth_token_family_last_used u WHERE u.family_id = t.family_id AND u.last_used_at >= $2::timestamptz)
-          OR ((t.expires_at > $3::timestamptz OR t.refresh_expires_at > $3::timestamptz)
+      WHERE t.oauth_client_id = c.id
+        AND (t.issued_at >= $3::timestamptz
+          OR EXISTS (SELECT 1 FROM oauth_token_family_last_used u WHERE u.family_id = t.family_id AND u.last_used_at >= $3::timestamptz)
+          OR ((t.expires_at > $4::timestamptz OR t.refresh_expires_at > $4::timestamptz)
             AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id)))))
   )
 ORDER BY c.created_at, c.id
-LIMIT $4::int
+LIMIT $5::int
 `
 
 type ListUnusedDynamicOAuthClientsParams struct {
 	UnredeemedBefore time.Time
+	RecordsKeptSince time.Time
 	IdleBefore       time.Time
 	Now              time.Time
 	BatchLimit       int32
@@ -924,12 +925,14 @@ type ListUnusedDynamicOAuthClientsParams struct {
 
 // ListUnusedDynamicOAuthClients returns the IDs of the dynamically registered clients that have no
 // deletion and are unused (ADR-0090 section 1), oldest first: no authorization code was exchanged
-// and the client was registered before unredeemed_before, or it has no token that was issued after
+// and the client was registered before unredeemed_before but not before records_kept_since (the
+// exchanged codes of an older client may be purged, so that it can no longer tell), or it has no token that was issued after
 // idle_before, whose family was used after idle_before (oauth_token_family_last_used), or that is
 // still usable at now.
 func (q *Queries) ListUnusedDynamicOAuthClients(ctx context.Context, arg ListUnusedDynamicOAuthClientsParams) ([]string, error) {
 	rows, err := q.db.Query(ctx, listUnusedDynamicOAuthClients,
 		arg.UnredeemedBefore,
+		arg.RecordsKeptSince,
 		arg.IdleBefore,
 		arg.Now,
 		arg.BatchLimit,
@@ -984,7 +987,7 @@ SELECT t.id, $1::text, $2::timestamptz
 FROM oauth_authorization_codes c
 JOIN oauth_authorization_code_redemptions r ON r.code_hash = c.code_hash
 JOIN oauth_access_tokens t ON t.family_id = r.token_id
-JOIN oauth_clients cl ON cl.id::text = t.client_id
+JOIN oauth_clients cl ON cl.id = t.oauth_client_id
 WHERE c.session_id = $3 AND cl.registration = 'first_party'
 ON CONFLICT (token_id) DO NOTHING
 `
@@ -1070,21 +1073,21 @@ func (q *Queries) RevokeTokenFamily(ctx context.Context, arg RevokeTokenFamilyPa
 const revokeTokensOfClient = `-- name: RevokeTokensOfClient :exec
 INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
 SELECT t.id, $1::text, $2::timestamptz FROM oauth_access_tokens t
-WHERE t.client_id = $3::text
+WHERE t.oauth_client_id = $3::uuid
   AND (t.expires_at > $2::timestamptz OR t.refresh_expires_at > $2::timestamptz)
 ON CONFLICT (token_id) DO NOTHING
 `
 
 type RevokeTokensOfClientParams struct {
-	Reason    string
-	RevokedAt time.Time
-	ClientID  string
+	Reason        string
+	RevokedAt     time.Time
+	OauthClientID string
 }
 
 // RevokeTokensOfClient revokes every token of a client whose access or refresh token has not
 // expired at revoked_at and that has no revocation yet.
 func (q *Queries) RevokeTokensOfClient(ctx context.Context, arg RevokeTokensOfClientParams) error {
-	_, err := q.db.Exec(ctx, revokeTokensOfClient, arg.Reason, arg.RevokedAt, arg.ClientID)
+	_, err := q.db.Exec(ctx, revokeTokensOfClient, arg.Reason, arg.RevokedAt, arg.OauthClientID)
 	return err
 }
 
@@ -1112,15 +1115,15 @@ func (q *Queries) RevokeTokensOfUser(ctx context.Context, arg RevokeTokensOfUser
 const revokeTokensOfUserAndClient = `-- name: RevokeTokensOfUserAndClient :execrows
 INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
 SELECT t.id, $1::text, $2::timestamptz FROM oauth_access_tokens t
-WHERE t.user_id = $3 AND t.client_id = $4::text
+WHERE t.user_id = $3 AND t.oauth_client_id = $4::uuid
 ON CONFLICT (token_id) DO NOTHING
 `
 
 type RevokeTokensOfUserAndClientParams struct {
-	Reason    string
-	RevokedAt time.Time
-	UserID    string
-	ClientID  string
+	Reason        string
+	RevokedAt     time.Time
+	UserID        string
+	OauthClientID string
 }
 
 // RevokeTokensOfUserAndClient revokes every token of the client that the user holds and that has
@@ -1130,7 +1133,7 @@ func (q *Queries) RevokeTokensOfUserAndClient(ctx context.Context, arg RevokeTok
 		arg.Reason,
 		arg.RevokedAt,
 		arg.UserID,
-		arg.ClientID,
+		arg.OauthClientID,
 	)
 	if err != nil {
 		return 0, err
@@ -1173,27 +1176,27 @@ func (q *Queries) TokenFamilyActive(ctx context.Context, arg TokenFamilyActivePa
 }
 
 const upsertOAuthClientMetadataDocument = `-- name: UpsertOAuthClientMetadataDocument :exec
-INSERT INTO oauth_client_metadata_documents (client_id, client_name, client_uri, logo_uri, scope, fetched_at, expires_at)
+INSERT INTO oauth_client_metadata_documents (oauth_client_id, client_name, client_uri, logo_uri, scope, fetched_at, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-ON CONFLICT (client_id) DO UPDATE SET
+ON CONFLICT (oauth_client_id) DO UPDATE SET
   client_name = excluded.client_name, client_uri = excluded.client_uri, logo_uri = excluded.logo_uri,
   scope = excluded.scope, fetched_at = excluded.fetched_at, expires_at = excluded.expires_at
 `
 
 type UpsertOAuthClientMetadataDocumentParams struct {
-	ClientID   string
-	ClientName string
-	ClientUri  string
-	LogoUri    string
-	Scope      string
-	FetchedAt  time.Time
-	ExpiresAt  time.Time
+	OauthClientID string
+	ClientName    string
+	ClientUri     string
+	LogoUri       string
+	Scope         string
+	FetchedAt     time.Time
+	ExpiresAt     time.Time
 }
 
 // UpsertOAuthClientMetadataDocument stores the last fetch of a client's metadata document.
 func (q *Queries) UpsertOAuthClientMetadataDocument(ctx context.Context, arg UpsertOAuthClientMetadataDocumentParams) error {
 	_, err := q.db.Exec(ctx, upsertOAuthClientMetadataDocument,
-		arg.ClientID,
+		arg.OauthClientID,
 		arg.ClientName,
 		arg.ClientUri,
 		arg.LogoUri,

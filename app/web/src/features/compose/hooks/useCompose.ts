@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useQueryClient } from "@tanstack/react-query";
-import { createContext, use, useState, useSyncExternalStore } from "react";
+import { createContext, use, useEffect, useState, useSyncExternalStore } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
+import { registerReloadBlocker } from "../../../lib/reloadSafety";
 import { composeKey } from "../../../lib/storage";
 import { useViewer } from "../../session";
 import { cacheReplyTarget, type Status } from "../api/compose";
-import { type ComposeState, DraftStore } from "./draftStore";
+import { type ComposeState, DraftStore, hasUnuploadedAttachment } from "./draftStore";
 import { directMessageText, replyMentions } from "./policy";
 
 /** The id of the post's text area, which a reply focuses. Only one form is on the page at a time. */
@@ -40,6 +41,11 @@ export function useComposeController(): ComposeController | null {
     setStore(accountId === null ? null : { accountId, store: new DraftStore(composeKey(accountId)) });
   }
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const currentStore = store?.store;
+  useEffect(() => {
+    if (currentStore === undefined) return;
+    return registerReloadBlocker(() => hasUnuploadedAttachment(currentStore.getSnapshot()));
+  }, [currentStore]);
   if (store === null || accountId === null || store.accountId !== accountId) return null;
   const draftStore = store.store;
   return {

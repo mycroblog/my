@@ -27,6 +27,7 @@ import { ExpirationPlugin } from "workbox-expiration";
 import {
   addRoute,
   cleanupOutdatedCaches,
+  getCacheKeyForURL,
   precache,
   PrecacheFallbackPlugin,
   type PrecacheEntry,
@@ -43,6 +44,8 @@ import {
   shellPath,
   themeCacheName,
   brandCacheName,
+  hasPrecachedURL,
+  precachedMessageType,
   skipWaitingMessage,
 } from "../src/lib/sw-protocol.ts";
 import { clickedURL, notificationFor } from "./push.ts";
@@ -58,8 +61,8 @@ const navigationTimeoutSeconds = 3;
 
 setCacheNameDetails({ prefix: cachePrefix });
 // The first worker takes over the open pages when it activates, so the first visit already works
-// offline. A later version activates only when the user applies it (SKIP_WAITING below); the page then
-// reloads into it.
+// offline. A later version waits until all tabs close, or until a page of its own build finds that no tab of
+// another build runs and sends SKIP_WAITING (lib/pwa, ADR-0141 §2); no page reloads for it.
 clientsClaim();
 
 /**
@@ -161,7 +164,10 @@ async function clearCaches(): Promise<void> {
 }
 
 self.addEventListener("message", (event) => {
-  if (isMessage(event.data, skipWaitingMessage.type)) {
+  const precachedURL = hasPrecachedURL(event.data);
+  if (precachedURL !== null) {
+    event.ports[0]?.postMessage({ type: precachedMessageType, has: getCacheKeyForURL(precachedURL) !== undefined });
+  } else if (isMessage(event.data, skipWaitingMessage.type)) {
     void self.skipWaiting();
   } else if (isMessage(event.data, clearCachesMessage.type)) {
     const port = event.ports[0];

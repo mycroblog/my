@@ -96,16 +96,16 @@ func TestAccountAliases(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("add a handle = %d, want 200", res.StatusCode)
 	}
-	if list := decode[clientapi.AccountAliasList](t, res); len(list.Aliases) != 1 || list.Aliases[0].Uri != remoteBob.Account.URI {
-		t.Fatalf("aliases after adding a handle = %+v, want bob's actor id", list.Aliases)
+	if list := decode[clientapi.AccountAliasList](t, res); len(list.Items) != 1 || list.Items[0].Uri != remoteBob.Account.URI {
+		t.Fatalf("aliases after adding a handle = %+v, want bob's actor id", list.Items)
 	}
 	// The URL of the same actor, now stored, changes nothing; the alias shows its handle.
 	accounts[remoteAccountID] = remoteBob
 	if res := add(remoteBob.Account.URI); res.StatusCode != http.StatusOK {
 		t.Fatalf("add the same alias by URL = %d, want 200", res.StatusCode)
-	} else if list := decode[clientapi.AccountAliasList](t, res); len(list.Aliases) != 1 || list.Aliases[0].Acct == nil ||
-		*list.Aliases[0].Acct != "bob@remote.example" {
-		t.Errorf("aliases after adding the same alias = %+v, want bob with its handle", list.Aliases)
+	} else if list := decode[clientapi.AccountAliasList](t, res); len(list.Items) != 1 || list.Items[0].Acct == nil ||
+		*list.Items[0].Acct != "bob@remote.example" {
+		t.Errorf("aliases after adding the same alias = %+v, want bob with its handle", list.Items)
 	}
 
 	wantProblem(add("alice"), clientapi.ProblemTypeInvalidAlias, "add the viewer by handle")
@@ -134,8 +134,8 @@ func TestAccountAliases(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("remove = %d, want 200", res.StatusCode)
 	}
-	if list := decode[clientapi.AccountAliasList](t, res); len(list.Aliases) != account.MaxAliases-1 || list.Aliases[0].Acct != nil {
-		t.Errorf("aliases after removing one = %+v, want 4 without handles", list.Aliases)
+	if list := decode[clientapi.AccountAliasList](t, res); len(list.Items) != account.MaxAliases-1 || list.Items[0].Acct != nil {
+		t.Errorf("aliases after removing one = %+v, want 4 without handles", list.Items)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/aliases/remove", "write", `{"uri":"https://nowhere.example/users/x"}`)
 	if res.StatusCode != http.StatusOK {
@@ -145,7 +145,7 @@ func TestAccountAliases(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("list = %d, want 200", res.StatusCode)
 	}
-	if list := decode[clientapi.AccountAliasList](t, res); len(list.Aliases) != account.MaxAliases-1 {
-		t.Errorf("aliases = %+v, want 4", list.Aliases)
+	if list := decode[clientapi.AccountAliasList](t, res); len(list.Items) != account.MaxAliases-1 {
+		t.Errorf("aliases = %+v, want 4", list.Items)
 	}
 }

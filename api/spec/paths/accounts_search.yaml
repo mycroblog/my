@@ -5,8 +5,7 @@ get:
   description: |
     The accounts whose username, `username@domain`, or a word of the display name starts
     with `q`, and the accounts of this server whose username or display name contains `q`,
-    for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
-    ADR-0092). The search covers the local accounts and the remote accounts that the
+    for the autocomplete of mentions and the account search. The search covers the local accounts and the remote accounts that the
     instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
     (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
     `resolve=true`).
@@ -49,8 +48,6 @@ get:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: ../components/schemas/Account.yaml
+            $ref: ../components/schemas/AccountList.yaml
     default:
       $ref: ../components/responses/Problem.yaml

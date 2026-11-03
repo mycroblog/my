@@ -133,3 +133,77 @@ test("opens another page offline with its heading under the offline bar, which g
   await context.setOffline(false);
   await expect(page.getByRole("status").filter({ hasText: "You are offline." })).toHaveCount(0);
 });
+
+/**
+ * Makes the browser install a new worker of the same build. A new URL of the script is a new worker for the same scope;
+ * the page's CSP lets only lib/pwa register a worker, hence bypassCSP below.
+ */
+async function deployNewWorker(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.register("/sw.js?deploy=1", { scope: "/" });
+  });
+}
+
+/** Whether a new worker waits, as a page sees it. */
+function workerWaits(page: Page): Promise<boolean> {
+  return page.evaluate(async () => (await navigator.serviceWorker.ready).waiting !== null);
+}
+
+test("every tab holds the lock of its build", async ({ page, context }) => {
+  await openControlled(page, "/local");
+  const other = await context.newPage();
+  await openControlled(other, "/local");
+
+  const builds = await page.evaluate(async () => {
+    const { held = [] } = await navigator.locks.query();
+    return held.map((lock) => lock.name).filter((name) => name?.startsWith("my:build:"));
+  });
+  expect(builds).toHaveLength(2);
+  expect(new Set(builds).size).toBe(1);
+  await other.close();
+});
+
+test.describe("a new worker", () => {
+  test.use({ bypassCSP: true });
+
+  test("swaps in a worker of the same build without a reload or a toast, once no tab of another build runs", async ({
+    page,
+    context,
+  }) => {
+    await openControlled(page, "/local");
+    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
+    // A mark on the window, which a reload would remove.
+    await page.evaluate(() => {
+      (window as unknown as { notReloaded: boolean }).notReloaded = true;
+    });
+
+    // A tab of another build, as far as the locks of the origin tell.
+    const old = await context.newPage();
+    await openControlled(old, "/local");
+    await old.evaluate(() => {
+      void navigator.locks.request(
+        "my:build:http://old/assets/index-old.js",
+        { mode: "shared" },
+        () => new Promise(() => undefined),
+      );
+    });
+
+    await deployNewWorker(page);
+    await expect.poll(() => workerWaits(page)).toBe(true);
+    await expect(page.getByRole("button", { name: "Update" })).toHaveCount(0);
+
+    await old.close();
+    // The page looks again whenever it becomes visible, and the closed tab's locks are released soon after it closes.
+    await expect
+      .poll(async () => {
+        await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+        return workerWaits(page);
+      })
+      .toBe(false);
+    await expect
+      .poll(() => page.evaluate(() => navigator.serviceWorker.controller?.scriptURL))
+      .toContain("/sw.js?deploy=1");
+    expect(await page.evaluate(() => (window as unknown as { notReloaded?: boolean }).notReloaded)).toBe(true);
+    await expect(page.getByRole("button", { name: "Update" })).toHaveCount(0);
+  });
+});

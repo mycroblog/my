@@ -206,8 +206,11 @@ func (s *Server) StartSupporterCheckout(ctx context.Context, req StartSupporterC
 	if err != nil {
 		return nil, err
 	}
-	if req.Body == nil || !req.Body.Interval.Valid() {
+	if req.Body == nil {
 		return StartSupporterCheckoutdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "interval")), nil
+	}
+	if !req.Body.Interval.Valid() {
+		return StartSupporterCheckoutdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "interval")), nil
 	}
 	back := s.webOrigin() + supporterReturnPath
 	co, err := sup.StartCheckout(ctx, appsupporters.CheckoutInput{
@@ -252,8 +255,11 @@ func (s *Server) changeOwn(ctx context.Context, op func(OwnSupporters, string) (
 
 // ChangeOwnSupporterSubscription serves POST /api/v1/supporter/subscription/change.
 func (s *Server) ChangeOwnSupporterSubscription(ctx context.Context, req ChangeOwnSupporterSubscriptionRequestObject) (ChangeOwnSupporterSubscriptionResponseObject, error) {
-	if req.Body == nil || !req.Body.Interval.Valid() {
+	if req.Body == nil {
 		return ChangeOwnSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "interval")), nil
+	}
+	if !req.Body.Interval.Valid() {
+		return ChangeOwnSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "interval")), nil
 	}
 	out, p, err := s.changeOwn(ctx, func(sup OwnSupporters, userID string) (appsupporters.SubscriptionView, error) {
 		return sup.ChangePlan(ctx, userID, knownID(req.Body.PlanId), supporters.Interval(req.Body.Interval))
@@ -420,8 +426,8 @@ func (s *Server) ListInstanceSupporters(ctx context.Context, req ListInstanceSup
 	}
 	viewer := viewerOf(ctx)
 	switch settings.SupporterListVisibility() {
-	case instance.SupporterListPublic:
-	case instance.SupporterListSignedIn:
+	case instance.AudienceEveryone:
+	case instance.AudienceSignedIn:
 		if viewer == nil {
 			body, headers := s.NewProblem(ctx, http.StatusUnauthorized, ProblemTypeUnauthenticated, s.Localizer(ctx).ServerErrorsUnauthenticated(), "")
 			challenge := "Bearer"
@@ -487,7 +493,7 @@ func (s *Server) ListInstanceSupporters(ctx context.Context, req ListInstanceSup
 	// locale like any anonymous operation (client-api.md §2.4).
 	cache, robots := cachePublic, supporterListRobots
 	switch {
-	case settings.SupporterListVisibility() == instance.SupporterListSignedIn:
+	case settings.SupporterListVisibility() == instance.AudienceSignedIn:
 		cache = cachePrivateNoStore
 	case viewer != nil:
 		cache = cachePrivate

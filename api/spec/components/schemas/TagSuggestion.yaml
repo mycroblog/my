@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: A hashtag that the prefix search of hashtags found (ADR-0092).
+description: A hashtag that the prefix search of hashtags found.
 type: object
 required: [name, statuses_count]
 properties:

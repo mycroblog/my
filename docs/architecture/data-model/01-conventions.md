@@ -21,7 +21,7 @@
 
 | 論理型 | 意味 | SQLite 系 | PostgreSQL 系 |
 | --- | --- | --- | --- |
-| `id` | UUIDv7 の正規形文字列（36 文字、小文字） | `TEXT` | `uuid`（16 バイトのバイト順 = 時刻順。[ADR-0078](../../adr/0078-postgres-uuid-columns.md)）。Go では `string`。UUID でない値を持つ列（外部の事業者の ID、`client_id`、監査ログの `target_id`、`emoji_key` など）は `text COLLATE "C"` |
+| `id` | UUIDv7 の正規形文字列（36 文字、小文字） | `TEXT` | `uuid`（16 バイトのバイト順 = 時刻順。[ADR-0078](../../adr/0078-postgres-uuid-columns.md)）。Go では `string`。UUID でない値を持つ列（外部の事業者の ID、公開の `client_id`（`oauth_clients.client_id`、`login_provider_revisions.client_id`）、監査ログの `target_id`、`emoji_key` など）は `text COLLATE "C"` |
 | `string(n)` | 長さ上限つき文字列（上限はアプリで検証） | `TEXT` | `text` |
 | `text` | 長文 | `TEXT` | `text` |
 | `iri` | URL / ActivityPub の IRI（最大 2048 文字を想定） | `TEXT` | `text` |
@@ -53,9 +53,12 @@
   リクエストのパス・クエリのパラメーター・`application/x-www-form-urlencoded` の本文のフィールドは `platform` の `rejectInvalidText` が `400` に、
   クライアント API の JSON の本文の文字列は `clientapi` の `rejectInvalidBodyText`（strict のミドルウェア）がプロパティ名を示す `422` にします。
   検索に使うヘッダーと Cookie のトークン（アクセストークン・セッション）は、ハッシュにしてから検索します。
-- 表記: カラムは特記がなければ `NOT NULL`。NULL 可のものは「NULL 可」と書きます。
+- 表記: カラムは特記がなければ `NOT NULL`。NULL 可のものは、どんなときに値があるかの説明があっても「NULL 可」と書きます。
   - **状態を NULL で表すことはしません**（ADR-0020 規約 4）。NULL 可は「任意の関連」（例: 通報に基づかない処分の `report_id`）と「無期限」（`expires_at`）に限ります。
+- 外部キーは付けません。テーブルの間の参照はすべて論理参照で、消去と保持期間の消す順序を縛らず、書き込みの費用も増やしません。整合はコントラクトテストで保ちます。
 - 名前: カラム・テーブルは英語スネークケースで、テーブル名は複数形です。
+  - 例外として、1 件ごとの実体の集まりではなく、1 つの値か不可算の名詞を表す表は単数形のままにします（`session_activity`・`oauth_token_family_last_used`・`status_mention_index`・`media_focus`・`remote_media_cache`・`instance_health`・`instance_theme`・`tag_usage`）。
+  - インデックスの名前は `<table>_<columns>` を基本にします。部分インデックスなど列だけでは用途が分からないものは、列の代わりに用途の名前を付けてかまいません（`feed_entries_local`）。一意違反を名前で見分けるコード（`isUniqueViolation`）があるので、既存の名前を変えるときはそちらも合わせます。
   - 大文字小文字を無視する値は正規化済みカラム（`*_normalized`）を別に持ち、そちらに一意制約を張ります。
   - ドメイン名とリモートの URI のホストは、IDNA 2008 の A-label（小文字の punycode）で保存します（[federation §1.2](../federation.md#12-自サーバーの-uri)）。
 - 「ローカル」を表すドメインは空文字 `''` です。NULL は一意制約上は互いに別の値として扱われるため、NULL では表しません。

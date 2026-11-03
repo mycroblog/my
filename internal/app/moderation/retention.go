@@ -39,7 +39,7 @@ const (
 )
 
 // RetentionPeriods are how long the moderation records are kept (the instance settings
-// retention_reports, retention_moderation_actions, and retention_audit_log).
+// reports_retention_days, moderation_actions_retention_days, and audit_log_retention_days).
 type RetentionPeriods struct {
 	Reports  time.Duration
 	Actions  time.Duration
@@ -90,6 +90,10 @@ type RetentionRepository interface {
 	// PurgeActions deletes the actions with their statuses, lifts, appeals, the appeals'
 	// decisions and states, and their restriction rows.
 	PurgeActions(ctx context.Context, tx uow.Tx, ids []string) error
+	// ListRetentionHoldsToPurge returns up to limit holds released before t, the oldest first.
+	ListRetentionHoldsToPurge(ctx context.Context, tx uow.Tx, t time.Time, limit int) ([]string, error)
+	// PurgeRetentionHolds deletes the holds with their releases.
+	PurgeRetentionHolds(ctx context.Context, tx uow.Tx, ids []string) error
 	// ListReportsToPurge returns up to limit reports, oldest first, resolved before
 	// resolvedBefore and still resolved, that no action follows from and whose target and
 	// reporter no hold preserves.
@@ -227,13 +231,13 @@ func (s *Service) retentionPeriods(ctx context.Context) (RetentionPeriods, error
 
 // PurgedRecords counts what one run of PurgeRecords erased.
 type PurgedRecords struct {
-	Actions, Reports, SignupBlocks int
-	AuditEntries                   int64
+	Actions, Reports, SignupBlocks, RetentionHolds int
+	AuditEntries                                   int64
 }
 
 // PurgeRecords erases the moderation records past their retention: the actions with their
 // appeals first, so that a report they followed from is erased in the same run, then the
-// reports, then the sign-up blocks, then the audit log entries. Each batch is one short
+// reports, then the sign-up blocks, then the released retention holds, then the audit log entries. Each batch is one short
 // transaction, and one run deletes a bounded number of rows of each kind; the next run
 // continues. It is safe to repeat.
 func (s *Service) PurgeRecords(ctx context.Context) (PurgedRecords, error) {
@@ -274,6 +278,10 @@ func (s *Service) PurgeRecords(ctx context.Context) (PurgedRecords, error) {
 		return out, err
 	}
 	if out.SignupBlocks, err = purge("sign-up blocks", now.Add(-moderation.SignupBlockRetention), repo.ListSignupBlocksToPurge, repo.PurgeSignupBlocks); err != nil {
+		return out, err
+	}
+	// A released hold preserves nothing any more, and its reason goes with the actions' records.
+	if out.RetentionHolds, err = purge("retention holds", now.Add(-periods.Actions), repo.ListRetentionHoldsToPurge, repo.PurgeRetentionHolds); err != nil {
 		return out, err
 	}
 	before := now.Add(-periods.AuditLog)

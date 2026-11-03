@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
+	appfederation "github.com/mycroblog/my/internal/app/federation"
 )
 
 // WebFinger link relations (RFC 7033) that the JRD carries.
@@ -62,15 +63,21 @@ func (h *Handler) webFinger(w http.ResponseWriter, r *http.Request) {
 	h.writeJSON(w, r, typeJRD, doc)
 }
 
-// resolveResource finds the visible local actor that a WebFinger resource names.
+// resolveResource finds the visible local actor that a WebFinger resource names; it fails with
+// errActorGone for a deleted one.
 func (h *Handler) resolveResource(r *http.Request, resource string) (appaccount.Actor, error) {
 	if strings.HasPrefix(resource, "https://") {
-		id, username, ok := parseLocalURI(h.o.Host, resource)
+		uri := resource
+		// parseLocalURI refuses a query or a fragment, so it reads such a resource as it came.
+		if c, err := appfederation.CanonicalIRI(resource); err == nil && !strings.ContainsAny(resource, "?#") {
+			uri = string(c)
+		}
+		id, username, ok := parseLocalURI(h.o.Host, uri)
 		switch {
 		case !ok:
 			return appaccount.Actor{}, appaccount.ErrNotFound
 		case id != "":
-			return h.lookupID(r, id)
+			return h.lookupResource(r, id)
 		default:
 			return h.lookupUsername(r, username)
 		}
@@ -83,10 +90,29 @@ func (h *Handler) resolveResource(r *http.Request, resource string) (appaccount.
 		return appaccount.Actor{}, appaccount.ErrNotFound
 	}
 	username, domain := acct[:at], acct[at+1:]
-	if !strings.EqualFold(domain, h.o.AccountDomain) && !strings.EqualFold(domain, h.o.Host) {
+	if !sameHost(domain, h.o.AccountDomain) && !sameHost(domain, h.o.Host) {
 		return appaccount.Actor{}, appaccount.ErrNotFound
 	}
+	// The instance actor's username is the account domain, spelled in any form too.
+	if sameHost(username, h.o.AccountDomain) {
+		username = h.instanceActorUsername()
+	}
 	return h.lookupUsername(r, username)
+}
+
+// sameHost reports whether a domain from a request names the configured host (federation.md §1.2):
+// U-label, A-label, and trailing-dot spellings are the same. A configured host with a port, which
+// local development allows, has no canonical form and compares as it is written.
+func sameHost(domain, host string) bool {
+	if strings.EqualFold(domain, host) {
+		return true
+	}
+	d, err := appfederation.CanonicalHost(domain)
+	if err != nil {
+		return false
+	}
+	c, err := appfederation.CanonicalHost(host)
+	return err == nil && d == c
 }
 
 // descriptor builds the JRD of a visible local actor.

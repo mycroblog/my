@@ -25,8 +25,8 @@ import (
 
 // AdminAccountState is the state of an account as moderators see it, derived from the account's
 // lifecycle, its own moderation actions, and its registration, in this order of precedence:
-// deleted, suspended (suspend, ban), disabled (disable_login), rejected and pending (the
-// registration), limited (limit), and active.
+// deleted, suspended (suspend, ban), disabled (disable_login), deactivated (by its owner,
+// ADR-0145 §5), rejected and pending (the registration), limited (limit), and active.
 type AdminAccountState string
 
 // States of accounts.
@@ -38,13 +38,15 @@ const (
 	AdminAccountDisabled  AdminAccountState = "disabled"
 	AdminAccountSuspended AdminAccountState = "suspended"
 	AdminAccountDeleted   AdminAccountState = "deleted"
+	// AdminAccountDeactivated is an account that its owner deactivated.
+	AdminAccountDeactivated AdminAccountState = "deactivated"
 )
 
 // Valid reports whether s is one of the states.
 func (s AdminAccountState) Valid() bool {
 	switch s {
 	case AdminAccountActive, AdminAccountPending, AdminAccountRejected, AdminAccountLimited, AdminAccountDisabled,
-		AdminAccountSuspended, AdminAccountDeleted:
+		AdminAccountSuspended, AdminAccountDeleted, AdminAccountDeactivated:
 		return true
 	}
 	return false
@@ -138,6 +140,8 @@ type AdminAccountDetail struct {
 	AdminAccount
 	// Application is the user's registration application; nil without one.
 	Application *identity.RegistrationApplication
+	// DecisionNote is the note of the decision on the application, "" without one.
+	DecisionNote string
 	// Invite is the invite the user signed up with, whose creator invited them (ADR-0108 §5);
 	// nil without one.
 	Invite *identity.Invite
@@ -342,6 +346,10 @@ func (s *AccountAdmin) source(q AccountSearch) (source, error) {
 		return accounts(func(ctx context.Context, before string, limit int) ([]string, error) {
 			return s.d.Accounts.DeletedAccounts(ctx, before, limit)
 		}), nil
+	case AdminAccountDeactivated:
+		return accounts(func(ctx context.Context, before string, limit int) ([]string, error) {
+			return s.d.Accounts.DeactivatedAccounts(ctx, before, limit)
+		}), nil
 	}
 	return accounts(func(ctx context.Context, before string, limit int) ([]string, error) {
 		return s.d.Accounts.Search(ctx, account.SearchQuery{
@@ -459,6 +467,8 @@ func adminState(a AdminAccount) AdminAccountState {
 		return AdminAccountSuspended
 	case has(appmoderation.RestrictLogin):
 		return AdminAccountDisabled
+	case a.Actor.Lifecycle.Deactivated():
+		return AdminAccountDeactivated
 	case a.Registration != nil && a.Registration.State == identity.RegistrationRejected:
 		return AdminAccountRejected
 	case a.Registration != nil && a.Registration.State == identity.RegistrationPending:
@@ -495,6 +505,9 @@ func (s *AccountAdmin) Detail(ctx context.Context, accountID string) (AdminAccou
 	switch {
 	case err == nil:
 		out.Application = &app
+		if out.DecisionNote, err = repo.RegistrationDecisionNote(ctx, app.ID); err != nil {
+			return AdminAccountDetail{}, err
+		}
 	case !errors.Is(err, ErrNotFound):
 		return AdminAccountDetail{}, err
 	}
@@ -537,8 +550,8 @@ func (s *AccountAdmin) Detail(ctx context.Context, accountID string) (AdminAccou
 // other accounts that used the same IP addresses, for byUserID ("" for the CLI). The call is
 // recorded in the audit log (revealed_private_data) in a transaction of its own before anything
 // is returned: when the entry cannot be written, nothing is shown. It fails with
-// account.ErrNotFound for an unknown account and ErrNotLocalAccount for an account without a
-// user.
+// account.ErrNotFound for an unknown account, ErrNotLocalAccount for an account without a user,
+// and ErrTargetOutranksActor when byUserID does not rank above the account's user.
 func (s *AccountAdmin) Reveal(ctx context.Context, accountID, byUserID string) (PrivateData, error) {
 	actor, err := s.d.Accounts.FindByID(ctx, accountID)
 	if err != nil {
@@ -546,6 +559,9 @@ func (s *AccountAdmin) Reveal(ctx context.Context, accountID, byUserID string) (
 	}
 	if actor.Local == nil || actor.Local.UserID == "" {
 		return PrivateData{}, ErrNotLocalAccount
+	}
+	if err := checkActOn(ctx, s.d.Repository, byUserID, actor.Local.UserID); err != nil {
+		return PrivateData{}, err
 	}
 	userID, repo := actor.Local.UserID, s.d.Repository
 	out := PrivateData{SignIns: []identity.SessionOrigin{}, SameIP: []SameIPAccounts{}}

@@ -135,7 +135,7 @@ func (s *Server) CreateRelay(ctx context.Context, req CreateRelayRequestObject) 
 	if pr := req.Body.Protocol; pr != nil {
 		in.Protocol = federation.RelayProtocol(*pr)
 		if !in.Protocol.Valid() {
-			return CreateRelaydefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "protocol")), nil
+			return CreateRelaydefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "protocol")), nil
 		}
 	}
 	if r := req.Body.Receive; r != nil {
@@ -148,7 +148,7 @@ func (s *Server) CreateRelay(ctx context.Context, req CreateRelayRequestObject) 
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: add relay: %w", err)
 	}
-	return CreateRelay200JSONResponse{adminRelayResponse(rv)}, nil
+	return CreateRelay201JSONResponse{adminRelayResponse(rv)}, nil
 }
 
 // DeleteRelay serves DELETE /api/v1/admin/relays/{id}.

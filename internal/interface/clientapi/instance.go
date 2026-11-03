@@ -45,6 +45,15 @@ const cachePublic = "public, max-age=60"
 // depend on the viewer's locale.
 const cachePrivate = "private, max-age=60"
 
+// publicCache returns the Cache-Control of a public resource: an answer to a request with an access
+// token is in the user's locale, so shared caches do not store it.
+func publicCache(ctx context.Context) string {
+	if _, ok := ViewerFrom(ctx); ok {
+		return cachePrivate
+	}
+	return cachePublic
+}
+
 // GetInstance serves GET /api/v1/instance. The administrators' texts and rules hold one value
 // each, the same in every locale. Like every response, it varies with Accept-Language (localize)
 // for anonymous requests and is private for authenticated ones.
@@ -80,7 +89,7 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		}
 	}
 	out.Limits = InstanceLimits{MaxPostCharacters: settings.MaxStatusLength(), RequireMediaDescription: settings.RequireMediaDescription()}
-	out.Timelines = InstanceTimelines{Local: TimelineAccess(settings.LocalTimelineAccess()), Federated: TimelineAccess(settings.FederatedTimelineAccess())}
+	out.Timelines = InstanceTimelines{Local: InstanceAudience(settings.LocalTimelineVisibility()), Federated: InstanceAudience(settings.FederatedTimelineVisibility())}
 	// The direction the instance federates in, by which clients offer the operations on remote
 	// accounts and posts (FR-413, ADR-0076).
 	out.Federation = InstanceFederation{Mode: InstanceFederationMode(federationMode(settings))}
@@ -89,13 +98,13 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	out.SearchIndexing, out.AiUsage = SearchIndexing(settings.SearchIndexing()), AIUsage(settings.AIUsage())
 	// What the link card crawler does on this instance, for the page that tells site operators
 	// about it (ADR-0131).
-	out.LinkCardsEnabled, out.LinkCardsIgnoreRobotsTxt = settings.LinkCardsEnabled(), settings.LinkCardsIgnoreRobotsTxt()
+	out.LinkCards, out.LinkCardsIgnoreRobotsTxt = settings.LinkCardsEnabled(), settings.LinkCardsIgnoreRobotsTxt()
 	// How much of the costs GET /instance/cost_totals publishes (FR-903, ADR-0067 §8).
 	out.FinanceVisibility = FinanceVisibility(settings.FinanceVisibility())
 	// How much of the income GET /instance/income_totals publishes (FR-917, ADR-0073 §7).
 	out.IncomeVisibility = IncomeVisibility(settings.IncomeVisibility())
 	// Who may read the supporter list of GET /instance/supporters (ADR-0071 §4).
-	out.SupporterListVisibility = SupporterListVisibility(settings.SupporterListVisibility())
+	out.SupporterListVisibility = InstanceAudience(settings.SupporterListVisibility())
 	// Whether the supporter program shows its plans (ADR-0072 §2).
 	if s.o.Supporters != nil {
 		enabled, err := s.o.Supporters.Enabled(ctx)

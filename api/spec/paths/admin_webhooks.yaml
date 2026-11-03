@@ -3,7 +3,7 @@ get:
   operationId: listAdminWebhooks
   summary: List the webhooks
   description: |
-    The webhook endpoints of the instance that are not deleted, newest first (ADR-0060).
+    The webhook endpoints of the instance that are not deleted, newest first.
     Needs the `manage_webhooks` permission.
   tags: [admin-server]
   security:
@@ -25,7 +25,7 @@ post:
   summary: Set up a webhook
   description: |
     Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes
-    to, signed with Standard Webhooks v1 (`docs/reference/webhooks.md`). The answer carries
+    to, signed with Standard Webhooks v1. The answer carries
     its secret, which is shown only now. The user needs the permission of every event
     besides `manage_webhooks` (`WebhookEventType`). A URL, a description, or events that
     break a rule, or an event whose permission the user lacks, is a 422
@@ -43,7 +43,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateWebhookRequest.yaml
   responses:
-    "200":
+    "201":
       description: The new webhook and its secret.
       headers:
         Cache-Control:

@@ -18,7 +18,7 @@ const maintenance = adminAnnouncementFixture("0199f0e0-0000-7000-8000-00000000a0
   starts_at: "2026-10-28T00:00:00Z",
   ends_at: "2026-11-02T04:00:00Z",
   published_at: "2026-10-27T09:00:00Z",
-  updated_at: "2026-10-27T09:00:00Z",
+  revised_at: "2026-10-27T09:00:00Z",
 });
 
 /** The announcements of a server: published, a draft, and withdrawn ones. */
@@ -33,7 +33,7 @@ const announcements: Schemas["AdminAnnouncement"][] = [
     content: "<p>The server moves to a new home this weekend.</p>",
     state: "withdrawn",
     published_at: "2026-10-01T00:00:00Z",
-    updated_at: "2026-10-03T00:00:00Z",
+    revised_at: "2026-10-03T00:00:00Z",
   }),
   adminAnnouncementFixture("0199f0e0-0000-7000-8000-00000000a004", {
     text: "Registrations are open again.",

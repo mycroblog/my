@@ -25,6 +25,10 @@ func TestAdminAccountActionCommands(t *testing.T) {
 	if code, _, stderr := runAdminCreate(t, adminPassword+"\n", "-username", "root", "-email", "root@example.com"); code != 0 {
 		t.Fatalf("admin create: %d %q", code, stderr)
 	}
+	// With a second administrator, @root is not the last one and can be locked out.
+	if code, _, stderr := runAdminCreate(t, adminPassword+"\n", "-username", "second", "-email", "second@example.com"); code != 0 {
+		t.Fatalf("admin create: %d %q", code, stderr)
+	}
 	code, stdout, stderr := runCmd(t, adminCmd, "account", "action", "issue", "-kind", "disable_login", "-category", "spam",
 		"-public-reason", "spam\nwave", "@root")
 	m := issuedAccountAction.FindStringSubmatch(stdout)

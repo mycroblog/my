@@ -90,7 +90,7 @@ func (s *Server) SubscribeAccount(ctx context.Context, req SubscribeAccountReque
 	return SubscribeAccount200JSONResponse{*res}, nil
 }
 
-// UnsubscribeAccount serves POST /api/v1/accounts/{id}/unsubscribe.
+// UnsubscribeAccount serves DELETE /api/v1/accounts/{id}/subscribe.
 func (s *Server) UnsubscribeAccount(ctx context.Context, req UnsubscribeAccountRequestObject) (UnsubscribeAccountResponseObject, error) {
 	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.changeSubscription(ctx, v, req.Id, false)
@@ -157,7 +157,7 @@ func (s *Server) ListSubscriptions(ctx context.Context, req ListSubscriptionsReq
 	if err != nil {
 		return nil, err
 	}
-	page := AccountPage{Accounts: accounts}
+	page := AccountPage{Items: accounts}
 	if last >= 0 {
 		page.NextCursor = encodeSubscriptionCursor(subs[last])
 	}

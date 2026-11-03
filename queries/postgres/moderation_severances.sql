@@ -18,3 +18,6 @@ FROM relationship_severances s
 LEFT JOIN domain_moderation_actions d ON d.id = s.domain_action_id
 LEFT JOIN moderation_actions a ON a.id = s.action_id
 WHERE s.id = $1 AND s.account_id = $2;
+
+-- name: EraseRelationshipSeverances :exec
+DELETE FROM relationship_severances WHERE account_id = sqlc.arg(account_id)::uuid;

@@ -2,7 +2,7 @@
 description: |
   The totals of the instance's costs as the holders of `view_finance` read them over the
   periods from the one that holds `from` to the one that holds `to`, oldest first, and the
-  instance settings that decide what they read (ADR-0070 §5).
+  instance settings that decide what they read.
 type: object
 required: [granularity, basis, periods, rules, viewer]
 properties:

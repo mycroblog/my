@@ -188,6 +188,7 @@ func TestOAuthAppRegistration(t *testing.T) {
 
 	for _, tc := range []struct{ body, param string }{
 		{`{"name":"","redirect_uris":["https://bot.example/cb"],"scope":"read","client_type":"public"}`, "name"},
+		{`{"name":"Bot","redirect_uris":["https://bot.example/cb"],"scope":"read","client_type":"desktop","x":"invalid-on-purpose"}`, "client_type"},
 		{`{"name":"Bot","redirect_uris":["http://localhost/cb"],"scope":"read","client_type":"public"}`, "redirect_uris"},
 		{`{"name":"Bot","website":"ftp://bot.example/","redirect_uris":["https://bot.example/cb"],"scope":"read","client_type":"public"}`, "website"},
 		{`{"name":"Bot","redirect_uris":["https://bot.example/cb"],"scope":"admin:read","client_type":"public"}`, "scope"},
@@ -229,19 +230,19 @@ func TestOAuthAppChanges(t *testing.T) {
 		t.Errorf("update with a first-party-only scope = %d %+v, want a 422 naming scope", res.StatusCode, p)
 	}
 
-	res = e.send(t, http.MethodPost, "/oauth_apps/"+id+"/secret", "write", "")
+	res = e.send(t, http.MethodPost, "/oauth_apps/"+id+"/rotate_secret", "write", "")
 	if s := decodeJSON[clientapi.OAuthAppSecret](t, res); res.StatusCode != http.StatusOK || s.ClientSecret != appidentity.ClientSecretPrefix+"rotated" {
 		t.Errorf("rotate = %d %+v, want the new secret", res.StatusCode, s)
 	}
 
 	res = e.sendJSON(t, http.MethodPost, "/oauth_apps/"+id+"/tokens", "write", `{"scope":"read"}`)
 	tok := decodeJSON[clientapi.OAuthAppToken](t, res)
-	if res.StatusCode != http.StatusOK || tok.AccessToken == "" || tok.RefreshToken == "" || tok.TokenType != clientapi.OAuthAppTokenTokenTypeBearer ||
+	if res.StatusCode != http.StatusCreated || tok.AccessToken == "" || tok.RefreshToken == "" || tok.TokenType != clientapi.OAuthAppTokenTokenTypeBearer ||
 		tok.ExpiresIn != 3600 || tok.Scope != "read" || res.Header.Get("Cache-Control") != "no-store" {
 		t.Errorf("issue tokens = %d %+v, want a pair for an hour", res.StatusCode, tok)
 	}
 	res = e.send(t, http.MethodPost, "/oauth_apps/"+id+"/tokens", "write", "")
-	if tok := decodeJSON[clientapi.OAuthAppToken](t, res); res.StatusCode != http.StatusOK || tok.Scope != "read write:statuses" {
+	if tok := decodeJSON[clientapi.OAuthAppToken](t, res); res.StatusCode != http.StatusCreated || tok.Scope != "read write:statuses" {
 		t.Errorf("issue tokens without a body = %d %+v, want the app's scope", res.StatusCode, tok)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/oauth_apps/"+id+"/tokens", "write", `{"scope":"follow"}`)
@@ -260,7 +261,7 @@ func TestOAuthAppChanges(t *testing.T) {
 	f.disabled = true
 	pub := decodeJSON[clientapi.OAuthAppCreated](t, e.sendJSON(t, http.MethodPost, "/oauth_apps", "write",
 		`{"name":"Script","redirect_uris":["http://127.0.0.1/cb"],"scope":"read","client_type":"public"}`))
-	res = e.send(t, http.MethodPost, "/oauth_apps/"+pub.App.Id+"/secret", "write", "")
+	res = e.send(t, http.MethodPost, "/oauth_apps/"+pub.App.Id+"/rotate_secret", "write", "")
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypePublicOAuthApp {
 		t.Errorf("rotate a public app = %d %+v, want 409", res.StatusCode, p)
 	}

@@ -6,9 +6,10 @@ get:
   summary: List the statuses that quote the authenticated user's status
   description: |
     The statuses that quote a status of the user, newest first, each with its `quote` and
-    its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
+    its state. Statuses the user may not see, and quotes taken away, are left
     out, so a page may hold fewer than `limit` statuses before the last. Another account's
-    status is a 404.
+    status is a 404, and so is the user's own `direct` status without `read:direct`, which
+    also leaves out the `direct` statuses that quote one.
   tags: [statuses]
   security:
     - oauth2: ["read:statuses"]

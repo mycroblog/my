@@ -409,7 +409,7 @@ func postingPosts(t *testing.T, e *postingEnv) {
 			SpoilerText: "cw", Sensitive: true, Language: "ja_jp",
 		},
 		Visibility:     content.VisibilityUnlisted,
-		ClientID:       "client-1",
+		ClientID:       NamedID("client-1"),
 		IdempotencyKey: "key-1",
 	})
 	st, rev := p.Status, p.Revision
@@ -459,7 +459,7 @@ func postingPosts(t *testing.T, e *postingEnv) {
 		t.Errorf("Find = %+v, %v; want the posted status", got, err)
 	}
 	ls, err := e.repo.FindLocalStatus(ctx, st.ID)
-	if err != nil || ls != (content.LocalStatus{StatusID: st.ID, AuthorAccountID: alice, ClientID: "client-1", IdempotencyKey: "key-1"}) {
+	if err != nil || ls != (content.LocalStatus{StatusID: st.ID, AuthorAccountID: alice, ClientID: NamedID("client-1"), IdempotencyKey: "key-1"}) {
 		t.Errorf("local status = %+v, %v", ls, err)
 	}
 	if h := e.head(t, st.ID); h.RevisionID != rev.ID || h.Edited() {

@@ -4,9 +4,12 @@ get:
   summary: List the reports that the authenticated user filed
   description: |
     The reports that the user filed, newest first, each with whether it is still open or
-    resolved (FR-711). A report reopened by the moderators is open again. It never tells how
+    resolved. A report reopened by the moderators is open again. It never tells how
     a report was resolved, which actions it led to, the reasons given to the account, or
-    who handles it.
+    who handles it. A report stays listed when the user may no longer see its target (the
+    account is suspended, deleted, or blocks the user), without `target_account`. A report
+    whose target no longer exists at all is left out, so a page may hold fewer
+    reports than `limit` and still have a `next_cursor`.
   tags: [reports]
   security:
     - oauth2: ["read:reports"]
@@ -29,7 +32,7 @@ post:
   operationId: createReport
   summary: Report an account
   description: |
-    Reports an account, and optionally some of its posts, to the moderators (FR-701). The
+    Reports an account, and optionally some of its posts, to the moderators. The
     report waits, open, in the moderators' queue; nothing tells the account of it, and
     nothing that the account can read names the reporter. 422 when the account does not
     exist or is the user's own (`account_id`), when a post is not the account's or the
@@ -46,7 +49,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateReportRequest.yaml
   responses:
-    "200":
+    "201":
       description: The filed report.
       headers:
         Cache-Control:

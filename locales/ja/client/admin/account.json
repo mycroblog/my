@@ -51,14 +51,6 @@
     "defaultMessage": "コマンドライン",
     "description": "Who took an account action: a moderator on the command line."
   },
-  "admin.account.actions.issuer.remote": {
-    "defaultMessage": "アカウントのサーバー",
-    "description": "Who took an account action: the account's own server."
-  },
-  "admin.account.actions.issuer.system": {
-    "defaultMessage": "このサーバー",
-    "description": "Who took an account action: this server by itself."
-  },
   "admin.account.actions.lift": {
     "defaultMessage": "解除",
     "description": "Button that lifts a moderation action on an account, and the confirmation's button."
@@ -198,6 +190,10 @@
   "admin.account.profile": {
     "defaultMessage": "プロフィールを開く",
     "description": "Link from an account's admin page to its profile."
+  },
+  "admin.account.registration.decision_note": {
+    "defaultMessage": "判断のメモ",
+    "description": "Label of the note a moderator wrote when deciding on the account's registration."
   },
   "admin.account.registration.invite": {
     "defaultMessage": "招待",

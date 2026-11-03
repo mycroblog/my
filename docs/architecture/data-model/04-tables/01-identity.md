@@ -18,11 +18,11 @@
 | `user_email_addresses` | リソース | `id`, `user_id`, `address`（`string(320)`）, `address_normalized`, `added_at` | インデックス `(user_id, id)` |
 | `user_email_verifications` | イベント | `email_address_id`（PK）, `verified_at` | 確認は 1 アドレスにつき 1 回 |
 | `user_primary_emails` | 投影 | `user_id`（PK）, `email_address_id`, `address_normalized` | **一意 `(address_normalized)`**。ログイン時の照合とアドレスの重複防止 |
-| `email_delivery_failures` | イベント | `id`, `email_address_id`, `kind`（`hard_bounce` / `complaint`）, `source`（`rejection` / `ses`）, `feedback_key`, `enhanced_status`（任意。`5.1.1` など）, `occurred_at` | **一意 `(feedback_key)`**、インデックス `(email_address_id, occurred_at)` |
+| `email_delivery_failures` | イベント | `id`, `email_address_id`, `kind`（`hard_bounce` / `complaint`）, `source`（`rejection` / `ses`）, `feedback_key`, `enhanced_status`（NULL 可。任意。`5.1.1` など）, `occurred_at` | **一意 `(feedback_key)`**、インデックス `(email_address_id, occurred_at)` |
 | `email_suppression_lifts` | イベント | `id`, `email_address_id`, `reason`（`reverified` / `moderator`）, `lifted_at` | インデックス `(email_address_id, lifted_at)` |
 | `email_suppressions` | 投影 | `email_address_id`（PK）, `kind`, `failure_id` | 送信を止めているアドレス |
 
-- メールアドレスの変更は、新しいアドレスの追加 → 確認 → 主アドレスの切り替え（投影の更新）で表します。古いアドレスは消去ジョブの対象です。
+- メールアドレスは登録と管理者の作成で 1 つだけ追加します。変更する操作はありません（§9 の `user_primary_emails`）。
 - 届かないアドレスと苦情を受けたアドレスへの送信を止めます（ADR-0086 §5）。`email_delivery_failures` は、送信時の宛先の拒否（`kernel.ErrRecipientRejected`。`feedback_key` は `job:<ジョブの ID>:<試行>`）と SES の通知（`feedback_key` は `feedbackId`）を記録し、一意制約で同じ事実は 1 行にします。イベントはアドレスの文字列を持たず、`user_email_addresses` を参照します。
   - `email_suppressions` は、各アドレスの最後の解除（`lifted_at`）より後の失敗から導きます。そのうちハードバウンスがあれば最も早いハードバウンス、なければ最も早い苦情を `failure_id` にします。失敗と解除を記録するトランザクションで、そのアドレスの行を同じ規則で導き直し、`my projection rebuild identity` が全体を再構築します。
   - ハードバウンスは利用者が求めた確認のメールを除くすべてのメールを、苦情は通知と告知のメールだけを止めます（`identity.EmailSuppression.Stops`）。パスワードのリセットのメールも送らず、応答は変えません。確認済みのアドレスでもハードバウンスで止まっていれば確認のメールを再送でき、失敗より後に発行したトークンで確認すると `reverified` の解除を記録します。モデレーターの解除（`moderator`）は監査ログに `email_suppression_lifted` を残し、その `source_event_id` は解除の `id` です。
@@ -119,7 +119,7 @@
 - アプリ（クライアント API と OAuth の認可）を使えるのは、`user_registration_states` が `approved`（または行が無い）で、メール確認が必要な構成では主アドレスが確認済みの利用者だけです。
   承認待ち・却下・未確認の利用者もサーバーが返す画面にはログインでき、何を待っているかが表示されます。
   ログインを奪う処分（制限 `login`、§5.2）を受けた利用者も同じで、サーバーが返す画面にはログインでき、効いている処分のうちログインを奪うもの（種類・理由のカテゴリと公開の理由・期限。`ban` は削除までの日数）が本人の UI 言語で表示され、その画面から異議を申し立てられます。アクセストークンは得られません。
-  ライフサイクルが `active` でないアカウント（§4.2）はログインできません。例外は `ban` が効いているあいだの `deletion_scheduled` で、削除まで（`ban` への異議申し立ての期間、§4.3）は同じくサーバーが返す画面にだけログインできます。本人による削除の予約・無効化はログインできないままです。
+  ライフサイクルが `active` でないアカウント（§4.2）はログインできません。例外は `ban` が効いているあいだの `deletion_scheduled` で、削除まで（`ban` への異議申し立ての期間、§4.3）は同じくサーバーが返す画面にだけログインできます。本人が無効化した `deactivated` も、削除の日付までは同じくサーバーが返す画面にだけログインでき、再有効化と削除を選びます（§5.6）。本人による削除の予約・無効化はログインできないままです。
 - モデレーターの決定（CLI と管理の API）は、`pending` の行だけを更新する条件付きの更新で `user_registration_states` を変え、同じトランザクションで `registration_decisions` と監査ログの行を加えます。
   更新する行が無ければ（決定済み、または同時に決まった）何も記録しないので、登録の決定は 1 回だけです。
 - CLI で作った管理者の主アドレスは、作成と同じトランザクションで確認済みにします（運営者が与えたアドレスなので）。
@@ -131,7 +131,7 @@
 | `invites` | リソース | `id`, `code`（80 ビットの乱数の base32、16 文字。照合は大文字・空白とハイフンを除いた形で行う）, `created_by_user_id`（NULL 可 = CLI による作成）, `creator_kind`（`enum(staff, member)`、既定 `staff`）, `max_uses`（NULL 可 = 無制限）, `expires_at`（NULL 可）, `created_at` | 一意 `(code)`、インデックス `(created_by_user_id, id)` |
 | `invite_redemptions` | イベント | `invite_id`, `seq`（`int`、1 始まり）, `user_id`, `redeemed_at` | PK `(invite_id, seq)`。`seq = 既存件数 + 1` で挿入し、一意制約違反なら再試行する。`seq > max_uses` は拒否する |
 | `invite_revocations` | イベント | `invite_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による取り消し）, `revoked_at` | 取り消しは 1 回だけ記録する（2 回目は何もしない） |
-| `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset, email_unsubscribe)`）, `email_address_id`（NULL 可）, `unsubscribe_category`（`enum` は `notification_settings.notification_group` と同じ値。`email_unsubscribe` だけが持ち、ほかは NULL）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間。この 2 つは `user_token_redemptions` で 1 回だけ使える。配信停止のトークン（ADR-0086 §4）は接頭辞 `my_eut_`、有効期限 90 日で、通知のメールごとにジョブが発行し、期限まで何度使ってもよい。区分は通知の設定のグループ（ADR-0109 §4）で、使うとそのグループのメールの設定をオフにする（§4.7） |
+| `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset, email_unsubscribe)`）, `email_address_id`（NULL 可）, `unsubscribe_category`（NULL 可。`enum` は `notification_settings.notification_group` と同じ値。`email_unsubscribe` だけが持ち、ほかは NULL）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。インデックス `(expires_at)`（期限切れの行の消去）, `(user_id)`（アカウントの消去）。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間。この 2 つは `user_token_redemptions` で 1 回だけ使える。配信停止のトークン（ADR-0086 §4）は接頭辞 `my_eut_`、有効期限 90 日で、通知のメールごとにジョブが発行し、期限まで何度使ってもよい。区分は通知の設定のグループ（ADR-0109 §4）で、使うとそのグループのメールの設定をオフにする（§4.7） |
 | `user_token_redemptions` | イベント | `token_id`（PK）, `redeemed_at` | 挿入の成否で 1 回性を保証する |
 
 - 招待の作成の経路は `creator_kind` に記録します（[ADR-0108](../../../adr/0108-member-invites.md) §3）。`staff` は `manage_invites` を持つスタッフと CLI の招待で、上限がなく、登録のときに作成者を確かめません。
@@ -192,23 +192,23 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `sessions` | リソース | `id`, `user_id`, `token_hash`（`bytes`。Cookie の値の SHA-256）, `created_at`, `expires_at` | 一意 `(token_hash)`。インデックス `(user_id)`（処分による失効） |
+| `sessions` | リソース | `id`, `user_id`, `token_hash`（`bytes`。Cookie の値の SHA-256）, `created_at`, `expires_at` | 一意 `(token_hash)`。インデックス `(user_id)`（処分による失効）, `(expires_at)`（期限切れの行の消去） |
 | `session_origins` | リソース（子） | `session_id`（PK）, `user_id`, `ip`（NULL 可）, `user_agent`（`string(512)`、NULL 可）, `created_at` | インデックス `(ip)`（同じ IP のアカウントの検索、FR-714）, `(user_id, created_at DESC)`（アカウントの最近のログイン元、FR-714）, `(created_at)`（保持期間による消去）。保持期間（[ADR-0038](../../../adr/0038-moderation-personal-data-retention.md)、既定 180 日）を過ぎた行を消去ジョブが消す |
-| `session_revocations` | イベント | `session_id`（PK）, `reason`（`enum(logout, replaced, password_changed, moderation, expired_cleanup, account_deleted)`）, `revoked_at` | 有効なセッション = 失効イベントが無く `expires_at` を過ぎていないもの。`replaced` は同じブラウザでのログインし直し |
+| `session_revocations` | イベント | `session_id`（PK）, `reason`（`enum(logout, replaced, password_changed, moderation, account_deleted)`）, `revoked_at` | 有効なセッション = 失効イベントが無く `expires_at` を過ぎていないもの。`replaced` は同じブラウザでのログインし直し |
 | `session_activity` | 現在値 | `session_id`（PK）, `last_seen_at` | ログイン時に作り、以後の更新は 1 時間に 1 回に間引く |
 | `oauth_clients` | リソース | `id`, `client_id`, `client_secret_hash`（NULL 可 = 公開クライアント）, `name`, `website`（NULL 可）, `scope`, `registration`（`enum(first_party, user, metadata_document, dynamic)`）, `owner_user_id`（NULL 可）, `created_at` | 一意 `(client_id)`。インデックス `(owner_user_id)`。`registration` は登録の経路で、変わらない。`name`・`website`・`scope`・`client_secret_hash` は登録したときの値 |
-| `oauth_client_disablements` | イベント | `id`, `client_id`, `disabled_by_user_id`（NULL 可 = CLI）, `disabled_at` | インデックス `(client_id)`。取り消しのない行があればクライアントは無効 |
+| `oauth_client_disablements` | イベント | `id`, `oauth_client_id`, `disabled_by_user_id`（NULL 可 = CLI）, `disabled_at` | インデックス `(oauth_client_id)`。取り消しのない行があればクライアントは無効 |
 | `oauth_client_disablement_lifts` | イベント | `disablement_id`（PK）, `lifted_by_user_id`（NULL 可 = CLI）, `lifted_at` | 無効化の取り消し |
-| `oauth_client_deletions` | イベント | `client_id`（PK）, `reason`（`enum(owner, unused)`）, `deleted_by_user_id`（NULL 可 = 使われないクライアントの自動の削除）, `deleted_at` | 削除したクライアントは二度と使えない |
-| `oauth_client_revisions` | イベント | `id`, `client_id`, `name`, `website`（NULL 可）, `scope`, `revised_at` | インデックス `(client_id, id)`。登録者による変更。いちばん新しい行がいまの名前・サイト・スコープ |
-| `oauth_client_secret_rotations` | イベント | `id`, `client_id`, `secret_hash`, `rotated_at` | インデックス `(client_id, id)`。シークレットの再発行。いちばん新しい行のシークレットだけが使える |
-| `oauth_client_redirect_uris` | 現在値 | `client_id`, `redirect_uri` | PK `(client_id, redirect_uri)`。完全一致で照合する |
-| `oauth_client_metadata_documents` | 現在値（キャッシュ） | `client_id`（PK）, `client_name`, `client_uri`（無ければ空）, `logo_uri`（無ければ空）, `scope`, `fetched_at`, `expires_at` | 経路が `metadata_document` のクライアントの、最後に取得した Client ID Metadata Document。取得のたびに UPSERT し、`oauth_client_redirect_uris` も文書の `redirect_uris` に置き換える |
+| `oauth_client_deletions` | イベント | `oauth_client_id`（PK）, `reason`（`enum(owner, unused)`）, `deleted_by_user_id`（NULL 可 = 使われないクライアントの自動の削除）, `deleted_at` | 削除したクライアントは二度と使えない |
+| `oauth_client_revisions` | イベント | `id`, `oauth_client_id`, `name`, `website`（NULL 可）, `scope`, `revised_at` | インデックス `(oauth_client_id, id)`。登録者による変更。いちばん新しい行がいまの名前・サイト・スコープ |
+| `oauth_client_secret_rotations` | イベント | `id`, `oauth_client_id`, `secret_hash`, `rotated_at` | インデックス `(oauth_client_id, id)`。シークレットの再発行。いちばん新しい行のシークレットだけが使える |
+| `oauth_client_redirect_uris` | 現在値 | `oauth_client_id`, `redirect_uri` | PK `(oauth_client_id, redirect_uri)`。完全一致で照合する |
+| `oauth_client_metadata_documents` | 現在値（キャッシュ） | `oauth_client_id`（PK）, `client_name`, `client_uri`（無ければ空）, `logo_uri`（無ければ空）, `scope`, `fetched_at`, `expires_at` | 経路が `metadata_document` のクライアントの、最後に取得した Client ID Metadata Document。取得のたびに UPSERT し、`oauth_client_redirect_uris` も文書の `redirect_uris` に置き換える |
 | `oauth_client_host_denials` | イベント | `id`, `host`, `denied_by_user_id`（NULL 可 = CLI）, `denied_at` | インデックス `(host)`。取り消しのない行があれば、そのホストの `client_id` の URL は取得も利用もしない |
 | `oauth_client_host_denial_lifts` | イベント | `denial_id`（PK）, `lifted_by_user_id`（NULL 可 = CLI）, `lifted_at` | ホストの拒否の取り消し |
-| `oauth_authorization_codes` | リソース | `code_hash`（PK）, `client_id`, `user_id`, `redirect_uri`, `scope`, `code_challenge`, `session_id`（NULL 可 = セッションの外で発行）, `issued_at`, `expires_at` | `session_id` は認可した画面のセッション |
+| `oauth_authorization_codes` | リソース | `code_hash`（PK）, `oauth_client_id`, `user_id`, `redirect_uri`, `scope`, `code_challenge`, `session_id`（NULL 可 = セッションの外で発行）, `issued_at`, `expires_at` | `session_id` は認可した画面のセッション。インデックス `(session_id)`（画面のセッションと OAuth のトークンの対応）, `(expires_at)`（期限切れの行の消去）, `(user_id)`（アカウントの消去） |
 | `oauth_authorization_code_redemptions` | イベント | `code_hash`（PK）, `token_id`, `redeemed_at` | 一意 `(token_id)`。`token_id` は交換で発行した系列の最初のトークン |
-| `oauth_access_tokens` | リソース | `id`, `family_id`, `client_id`, `user_id`, `access_token_hash`, `refresh_token_hash`（NULL 可）, `scope`, `rotated_from_token_id`（NULL 可）, `issued_at`, `expires_at`, `refresh_expires_at`（NULL 可） | 一意 `(access_token_hash)`, `(refresh_token_hash)`。インデックス `(family_id)`, `(user_id)`（処分による失効）, `(client_id)`（クライアントの無効化・削除による失効）。`refresh_token_hash` と `refresh_expires_at` は同時に NULL |
+| `oauth_access_tokens` | リソース | `id`, `family_id`, `oauth_client_id`, `user_id`, `access_token_hash`, `refresh_token_hash`（NULL 可）, `scope`, `rotated_from_token_id`（NULL 可）, `issued_at`, `expires_at`, `refresh_expires_at`（NULL 可） | 一意 `(access_token_hash)`, `(refresh_token_hash)`。インデックス `(family_id)`, `(user_id)`（処分による失効）, `(oauth_client_id)`（クライアントの無効化・削除による失効）。`refresh_token_hash` と `refresh_expires_at` は同時に NULL |
 | `oauth_token_revocations` | イベント | `token_id`（PK）, `reason`（`enum(user, rotation, refresh_reuse, code_reuse, password_changed, moderation, account_deleted, client_disabled, client_deleted, session_replaced)`）, `revoked_at` | |
 | `oauth_token_family_last_used` | 現在値 | `family_id`（PK）, `last_used_at` | アクセストークンの認証で、系列ごとに 1 時間に 1 回まで更新する（`KeyValueStore` の名前空間 `oauth_last_used` の `IncrBy` で間引く）。行は系列が使われてから作る |
 
@@ -224,13 +224,19 @@
 - ログイン元（`session_origins`）と登録元（`registration_origins`）は、セッション・利用者と同じトランザクションで記録します。
   - IP アドレスは正規形（IPv4 射影の IPv6 は IPv4、ゾーンは外す）で持ち、同じアドレスが同じ文字列になるようにします。IP アドレスとして読めない値は記録しません。
   - IP アドレスも User-Agent も分からないログインは `session_origins` の行を作らず、IP アドレスの分からない登録は `registration_origins` の行を作りません。どちらもログインと登録を妨げません。
-  - 1 時間ごとの消去ジョブ `identity.purge_origins` が、保持期間（インスタンス設定 `retention_session_origins`・`retention_registration_origins`、既定 180 日、§4.9）を過ぎた行を、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。
+  - 1 時間ごとの消去ジョブ `identity.purge_origins` が、保持期間（インスタンス設定 `session_origins_retention_days`・`registration_origins_retention_days`、既定 180 日、§4.9）を過ぎた行を、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。
     保全（§4.3）のあるローカルのアカウントの利用者の行は消しません。期間と保全のある利用者は回ごとに読み直します。セッションと利用者は残ります。
   - IP アドレスとメールアドレスを返すのは、モデレーターのアカウントの管理（FR-714）の「表示」（`identity.AccountAdmin.Reveal`）だけで、呼ぶたびにそのためのトランザクションで監査ログ（`revealed_private_data`）を書き、書けたときだけ返します。
 - アカウントの管理（FR-714）の検索は、モジュールをまたぐ JOIN をしません。条件ごとに 1 つのモジュールが自分のテーブルから ID を新しい順のキーセットで返し（メールアドレス・メールのドメイン・IP アドレス・登録の状態は `identity` が利用者の ID で、処分の制限は `moderation` が `account_restrictions` から、削除は `account` が `account_lifecycle_states` から、それ以外は `account` が `accounts` と `account_handles` から）、`identity.AccountAdmin` が残りの条件をアカウントごとに確かめます。
   1 ページを埋めるのに読むのは 400 アカウントまでで、埋まらなければ読んだ位置をカーソルにして返します（短い、または空のページにも続きがある）。
+- 期限切れのサインインの記録は、1 時間ごとの消去ジョブ `identity.purge_auth_records` が、期限の 30 日後に、1 トランザクションあたり 100 件・種類ごとに 20 トランザクションまで消します。
+  - トークンの系列は、すべての行のアクセストークンとリフレッシュトークンが切れて 30 日たってから、失効・`oauth_token_family_last_used`・系列を始めた認可コードと引き換えごとに消します。回転で切れた行だけを先に消すと、古いリフレッシュトークンの再利用を検出できなくなるためです。
+  - 引き換えられなかった認可コードは期限の 30 日後に消します。
+  - セッションは期限の 30 日後に失効と `session_activity` ごとに消します。認可コードがまだ指しているセッションは残します。`session_origins` は自分の保持期間で消えます。
+  - 1 回限りのトークン（`user_tokens`）は期限の 30 日後に引き換えごとに消します。
+  - 動的に登録したクライアントは、引き換えた認可コードが消えていることがあるので、登録から 30 日より後は `dynamic_client_idle_retention` だけで「使われていない」と判断します。
 - `scope` は RFC 6749 の scope 文字列（空白区切り・ソート済みの正規形）です。照合は文字列全体で行い、個々のスコープの検索には使わないため、1 カラムで持ちます。
-- `oauth_clients` 以外のテーブルの `client_id` は `oauth_clients.id` を指します。クライアントが送る公開の識別子は `oauth_clients.client_id` です。
+- `oauth_client_id` の列は `oauth_clients.id` を指します（PostgreSQL では `uuid`）。クライアントが送る公開の識別子は `oauth_clients.client_id` で、URL のこともあるので `text` です。
 - 登録の経路（[ADR-0090](../../../adr/0090-third-party-oauth-apps.md) §1）は `first_party`（サーバー自身のクライアント。同意の画面を出さない）・`user`（利用者による登録、`owner_user_id` が登録者）・
   `metadata_document`（Client ID Metadata Document）・`dynamic`（動的クライアント登録、RFC 7591）です。一次のクライアントかどうかはこの経路だけで決めます（`identity.OAuthClient.FirstParty`）。
 - 利用者による登録（ADR-0090 §1・§2、client API の `/api/v1/oauth_apps`）は、`oauth_clients` に `registration` が `user`・`owner_user_id` が登録者の行を作ります。

@@ -67,6 +67,13 @@ func (p *AccountPolicy) OwnRestrictionsTx(ctx context.Context, tx uow.Tx, accoun
 	return p.repo.AccountRestrictionsInEffectTx(ctx, tx, accountID, p.clock.Now())
 }
 
+// LoginRestrictedTx reports whether an account's own actions forbid it to log in as LoginRestricted
+// does, read in tx.
+func (p *AccountPolicy) LoginRestrictedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
+	rs, err := p.OwnRestrictionsTx(ctx, tx, accountID)
+	return slices.Contains(rs, moderation.RestrictLogin), err
+}
+
 // RejectsMediaTx reports whether the media of a domain are rejected as RejectsMedia does, read
 // in tx.
 func (p *FederationPolicy) RejectsMediaTx(ctx context.Context, tx uow.Tx, domain string) (bool, error) {
@@ -88,6 +95,16 @@ func (p *AccountPolicy) SuspendedTx(ctx context.Context, tx uow.Tx, accountID st
 		return false, err
 	}
 	return moderation.FederationSuspended(rows, p.clock.Now()), nil
+}
+
+// AccountEffectsTx returns inside tx the restrictions that an account's own actions have in effect
+// at the policy's now, each with its end, as moderation.account_restrictions_changed carries them.
+func (p *AccountPolicy) AccountEffectsTx(ctx context.Context, tx uow.Tx, accountID string) ([]Effect, error) {
+	rows, err := p.repo.AccountRestrictionRows(ctx, tx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	return moderation.Merge(rows, p.clock.Now()), nil
 }
 
 // UnsolicitedReachRestrictedTx is UnsolicitedReachRestricted inside tx.

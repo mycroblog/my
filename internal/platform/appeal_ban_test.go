@@ -47,7 +47,7 @@ func TestBanAppealsThroughTheCompositionRoot(t *testing.T) {
 	ban := func(who testUser) clientapi.AdminAccountAction {
 		t.Helper()
 		var a clientapi.AdminAccountAction
-		e.want(e.do(http.MethodPost, "/admin/accounts/"+who.id+"/actions", mod.token, map[string]any{"kind": "ban"}, &a), http.StatusOK, "ban")
+		e.want(e.do(http.MethodPost, "/admin/accounts/"+who.id+"/actions", mod.token, map[string]any{"kind": "ban"}, &a), http.StatusCreated, "ban")
 		return a
 	}
 	alice, aliceUser := member("alice")
@@ -74,7 +74,7 @@ func TestBanAppealsThroughTheCompositionRoot(t *testing.T) {
 	var decided clientapi.AdminAppeal
 	e.want(e.do(http.MethodPost, "/admin/appeals/"+v.Appeal.ID+"/overturn", mod.token, map[string]any{"public_reason": "Our mistake."}, &decided),
 		http.StatusOK, "overturn the ban's appeal")
-	if decided.State != clientapi.ModerationAppealStateOverturned || decided.Action.State != clientapi.AdminAccountActionStateLifted {
+	if decided.State != clientapi.ModerationAppealStateOverturned || decided.Action.State != clientapi.ModerationActionStateLifted {
 		t.Errorf("overturned = %+v, want the ban lifted", decided)
 	}
 	actor, err := app.Accounts.FindByID(ctx, alice.id)
@@ -93,8 +93,8 @@ func TestBanAppealsThroughTheCompositionRoot(t *testing.T) {
 	for _, en := range audit.Items {
 		actions = append(actions, en.Action)
 	}
-	if len(actions) < 3 || actions[0] != clientapi.AdminAuditActionAccountActionLifted || actions[1] != clientapi.AdminAuditActionAccountDeletionCancelled {
-		t.Errorf("audit log of alice = %v, want the lift after the cancelled deletion", actions)
+	if len(actions) < 3 || actions[0] != clientapi.AdminAuditActionAccountActionLifted || actions[1] != clientapi.AdminAuditActionAccountDeletionCanceled {
+		t.Errorf("audit log of alice = %v, want the lift after the canceled deletion", actions)
 	}
 
 	// Once the account is deleted, its ban is not appealed.

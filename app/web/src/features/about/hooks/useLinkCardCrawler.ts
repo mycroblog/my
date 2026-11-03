@@ -14,7 +14,7 @@ export type LinkCardCrawlerState =
       status: "ready";
       /** The User-Agent of the crawler's requests, as the server builds it. */
       userAgent: string;
-      /** The setting link_cards_enabled: while false, the crawler fetches nothing. */
+      /** The setting link_cards: while false, the crawler fetches nothing. */
       enabled: boolean;
       /** The setting link_cards_ignore_robots_txt: while true, the crawler does not read robots.txt. */
       ignoresRobotsTxt: boolean;
@@ -34,7 +34,7 @@ export function useLinkCardCrawler(): LinkCardCrawlerState {
     return {
       status: "ready",
       userAgent: `my-linkcard/${instance.version} (+https://${instance.domain}/)`,
-      enabled: instance.link_cards_enabled,
+      enabled: instance.link_cards,
       ignoresRobotsTxt: instance.link_cards_ignore_robots_txt,
       contact: instance.contact,
     };

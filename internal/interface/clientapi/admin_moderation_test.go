@@ -75,6 +75,9 @@ func (f *fakeModeration) DomainAction(_ context.Context, id string) (appmoderati
 }
 
 func (f *fakeModeration) IssueDomainAction(_ context.Context, in appmoderation.DomainActionInput) (moderation.DomainAction, error) {
+	if in.Domain == "self.example" {
+		return moderation.DomainAction{}, moderation.ErrOwnDomain
+	}
 	f.issued = append(f.issued, in)
 	a := moderation.DomainAction{
 		ID: f.id(), Domain: in.Domain, Kind: in.Kind, PublicComment: in.PublicComment, PrivateNote: in.PrivateNote,
@@ -257,10 +260,10 @@ func TestCreateAndLiftDomainAction(t *testing.T) {
 	res := e.sendJSON(t, http.MethodPost, "/admin/domain_actions", "admin",
 		`{"domain":"Bad.Example.","kind":"suspend","public_comment":"spam","private_note":"see #12","obfuscate":true,"expires_in":3600}`)
 	got := decodeJSON[clientapi.AdminDomainAction](t, res)
-	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
+	if res.StatusCode != http.StatusCreated || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("create = %d (%s)", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
-	if got.Domain != "bad.example" || got.Kind != clientapi.AdminDomainActionKindSuspend || got.State != clientapi.AdminDomainActionStateActive ||
+	if got.Domain != "bad.example" || got.Kind != clientapi.AdminDomainActionKindSuspend || got.State != clientapi.ModerationActionStateActive ||
 		!got.Obfuscate || got.PublicComment == nil || *got.PublicComment != "spam" || got.PrivateNote == nil ||
 		got.ExpiresAt == nil || !got.ExpiresAt.Equal(adminNow.Add(time.Hour)) || got.LiftedAt != nil {
 		t.Errorf("created = %+v", got)
@@ -276,14 +279,14 @@ func TestCreateAndLiftDomainAction(t *testing.T) {
 
 	res = e.sendJSON(t, http.MethodPost, "/admin/domain_actions/"+got.Id+"/lift", "admin", "")
 	lifted := decodeJSON[clientapi.AdminDomainAction](t, res)
-	if res.StatusCode != http.StatusOK || lifted.State != clientapi.AdminDomainActionStateLifted || lifted.LiftedAt == nil {
+	if res.StatusCode != http.StatusOK || lifted.State != clientapi.ModerationActionStateLifted || lifted.LiftedAt == nil {
 		t.Errorf("lift = %d %+v", res.StatusCode, lifted)
 	}
 	if l := f.actions[0].Lift; l == nil || l.LiftedByUserID != userOf(aliceAccountID) {
 		t.Errorf("lift = %+v, want by alice", l)
 	}
 	res = e.sendJSON(t, http.MethodGet, "/admin/domain_actions/"+got.Id, "admin-read", "")
-	if again := decodeJSON[clientapi.AdminDomainAction](t, res); again.State != clientapi.AdminDomainActionStateLifted {
+	if again := decodeJSON[clientapi.AdminDomainAction](t, res); again.State != clientapi.ModerationActionStateLifted {
 		t.Errorf("get = %+v", again)
 	}
 	for _, path := range []string{"/admin/domain_actions/" + reportOne, "/admin/domain_actions/" + reportOne + "/lift"} {
@@ -303,6 +306,7 @@ func TestCreateDomainActionRejectsInvalidInput(t *testing.T) {
 	for body, want := range map[string]string{
 		`{"domain":"https://bad.example/","kind":"suspend"}`:                                                                                          "domain",
 		`{"domain":"bad..example","kind":"suspend"}`:                                                                                                  "domain",
+		`{"domain":"self.example","kind":"suspend"}`:                                                                                                  "domain",
 		`{"domain":"bad.example","kind":"silence","x":"invalid-on-purpose"}`:                                                                          "kind",
 		`{"domain":"bad.example","kind":"suspend","expires_in":0,"x":"invalid-on-purpose"}`:                                                           "expires_in",
 		`{"domain":"bad.example","kind":"suspend","expires_in":315360001,"x":"invalid-on-purpose"}`:                                                   "expires_in",
@@ -338,7 +342,7 @@ func TestListDomainActions(t *testing.T) {
 	res := e.sendJSON(t, http.MethodGet, "/admin/domain_actions?limit=2", "admin-read", "")
 	page := decodeJSON[clientapi.AdminDomainActionPage](t, res)
 	if res.StatusCode != http.StatusOK || !slices.Equal(ids(page), []string{last.ID, expired.ID}) || page.NextCursor == nil ||
-		page.Items[1].State != clientapi.AdminDomainActionStateExpired {
+		page.Items[1].State != clientapi.ModerationActionStateExpired {
 		t.Fatalf("first page = %d %+v", res.StatusCode, page)
 	}
 	res = e.sendJSON(t, http.MethodGet, "/admin/domain_actions?limit=2&cursor="+*page.NextCursor, "admin-read", "")
@@ -372,7 +376,7 @@ func TestListAndGetReports(t *testing.T) {
 	if two.State != clientapi.AdminReportStateOpen || two.Outcome != nil || two.AssigneeAccountId != nil || two.Uri == nil ||
 		two.ReporterAccount == nil || two.ReporterAccount.Acct != "remote.example@remote.example" ||
 		two.TargetAccount == nil || two.TargetAccount.Username != "alice" || len(two.StatusIds) != 1 ||
-		two.Category != clientapi.AdminReportCategoryOther || !two.StateChangedAt.Equal(two.FiledAt) {
+		two.Category != clientapi.ReportCategoryOther || !two.StateChangedAt.Equal(two.FiledAt) {
 		t.Errorf("report = %+v", two)
 	}
 	res = e.sendJSON(t, http.MethodGet, "/admin/reports?limit=2&cursor="+*page.NextCursor, "admin-read", "")

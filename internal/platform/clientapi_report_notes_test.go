@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mycroblog/my/internal/app/identity"
+	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 )
 
@@ -18,9 +20,12 @@ import (
 func TestReportNotesReopenAndActionThroughTheAPI(t *testing.T) {
 	t.Parallel()
 	c := newStatusesClient(t, "alice", "bob", "carol")
+	if _, err := c.app.Identity.RevokeRole(t.Context(), identity.RoleChangeInput{UserID: c.userIDs["bob"], RoleKey: domainidentity.RoleAdmin}); err != nil {
+		t.Fatal(err)
+	}
 	const secret = "Probably the same person as before"
 	var report clientapi.Report
-	if res := c.do("alice", http.MethodPost, "/reports", map[string]any{"account_id": c.ids["bob"], "category": "spam"}, &report); res.StatusCode != http.StatusOK {
+	if res := c.do("alice", http.MethodPost, "/reports", map[string]any{"account_id": c.ids["bob"], "category": "spam"}, &report); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /reports = %d", res.StatusCode)
 	}
 	var detail clientapi.AdminReportDetail
@@ -40,7 +45,7 @@ func TestReportNotesReopenAndActionThroughTheAPI(t *testing.T) {
 	}
 	if res := c.do("carol", http.MethodPost, "/admin/accounts/"+c.ids["bob"]+"/actions", map[string]any{
 		"kind": "warn", "reason_category": "spam", "report_id": report.Id, "notify_target": false,
-	}, nil); res.StatusCode != http.StatusOK {
+	}, nil); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST actions = %d", res.StatusCode)
 	}
 	if res := c.do("carol", http.MethodGet, "/admin/reports/"+report.Id, nil, &detail); res.StatusCode != http.StatusOK ||

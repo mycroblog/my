@@ -72,7 +72,9 @@ export function posting(posts: Schemas["Status"][]) {
 /** The viewer's relationship with every account is `overrides`. */
 export function relatedAs(overrides: Partial<Schemas["Relationship"]>) {
   return http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
-    HttpResponse.json(new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id, overrides))),
+    HttpResponse.json({
+      items: new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id, overrides)),
+    }),
   );
 }
 

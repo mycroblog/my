@@ -167,7 +167,7 @@ export class FakeServer {
     if (route === "POST /api/v1/statuses") {
       const body = (await request.json()) as CreateStatusRequest;
       this.posts.push({ key: request.headers.get("Idempotency-Key"), body });
-      return json(status(9000 + this.posts.length, this.me, body.text, body.visibility));
+      return json(status(9000 + this.posts.length, this.me, body.text, body.visibility), 201);
     }
     const reaction = /^PUT \/api\/v1\/statuses\/([^/]+)\/reaction$/.exec(route);
     if (reaction !== null) {

@@ -79,7 +79,7 @@ export function serverEnv(server: E2EServer = "main"): NodeJS.ProcessEnv {
     MY_HOST: host,
     MY_LISTEN: `127.0.0.1:${port}`,
     MY_WEB_ORIGIN: `http://${host}`,
-    MY_DB: "sqlite",
+    MY_DATABASE: "sqlite",
     MY_DATABASE_URL: serverDatabaseOf(server),
     MY_BLOB_FS_DIR: join(serverDirOf(server), "blobs"),
     // The demo server reads its KEK from a file that e2e/server.ts writes: Bun, which runs the demo seed and its
@@ -90,11 +90,11 @@ export function serverEnv(server: E2EServer = "main"): NodeJS.ProcessEnv {
     ...(server !== "main" && { MY_VOICE: "p2p" }),
     ...(server === "demo" && {
       MY_PROFILE: "development",
-      MY_PAYMENTS_PROVIDER: "fake",
+      MY_PAYMENTS: "fake",
       MY_MAIL: "smtp",
       MY_MAIL_FROM: "noreply@demo.test",
-      MY_SMTP_HOST: "localhost",
-      MY_SMTP_PORT: String(mailpit.smtpPort),
+      MY_MAIL_SMTP_HOST: "localhost",
+      MY_MAIL_SMTP_PORT: String(mailpit.smtpPort),
       // mail = smtp verifies Mailpit's certificate: trust the development CA instead of the system roots, which also
       // keeps the server off outside HTTPS servers. The fake push service's certificate is signed by the same CA.
       SSL_CERT_FILE: mailpit.ca,

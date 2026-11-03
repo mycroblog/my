@@ -20,7 +20,7 @@ import (
 // The cases of VoiceRoomsContract for the moderation of the rooms and the retention of their
 // records (ADR-0100 §11, §13).
 
-// roomsRetention is the instance setting retention_voice_participants, the rooms that reports
+// roomsRetention is the instance setting voice_participants_retention_days, the rooms that reports
 // point at, and the accounts that holds preserve, as the moderation module answers them.
 type roomsRetention struct {
 	mu       sync.Mutex
@@ -175,7 +175,7 @@ func roomsPurge(t *testing.T, e *roomsEnv) {
 		room := e.open(t, host, appvoice.SettingsInput{Name: "Room"}).Room.ID
 		e.join(t, listener, room)
 		e.join(t, removed, room)
-		if err := e.svc.Remove(ctx, host, room, removed); err != nil {
+		if err := e.remove(ctx, host, room, removed); err != nil {
 			t.Fatal(err)
 		}
 		if err := e.svc.End(ctx, host, room); err != nil {

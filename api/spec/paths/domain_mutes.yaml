@@ -26,7 +26,7 @@ post:
   summary: Mute a domain
   description: |
     Hides the posts of a remote domain and of its subdomains from the viewer's timelines
-    other than home, their boosts from home, and their notifications (FR-304). The accounts
+    other than home, their boosts from home, and their notifications. The accounts
     of the domain that the viewer follows stay on the home timeline. Nothing is sent to the
     domain. Muting a domain that the viewer already mutes changes nothing. The domain is
     normalized (IDNA A-labels in lower case, without a trailing dot); one that is not a

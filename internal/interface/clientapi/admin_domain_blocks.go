@@ -58,7 +58,7 @@ func (s *Server) PreviewDomainBlockImport(ctx context.Context, req PreviewDomain
 		return PreviewDomainBlockImportdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank,
 			l.ServerErrorsUnprocessable(), l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: moderation.MaxDomainBlockImport, Name: "csv"}))), nil
 	case errors.Is(err, moderation.ErrMalformedDomainBlockCSV):
-		return PreviewDomainBlockImportdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "csv")), nil
+		return PreviewDomainBlockImportdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "csv")), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: preview domain blocks: %w", err)
 	}

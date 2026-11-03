@@ -37,7 +37,7 @@ func (r *CustomEmojiRepository) InsertCustomEmojiRequest(ctx context.Context, tx
 		pending.EmojiID = toNullString(req.EmojiID)
 	}
 	err = q.InsertCustomEmojiRequest(ctx, sqlitegen.InsertCustomEmojiRequestParams{
-		ID: req.ID, Kind: string(req.Kind), RequesterUserID: req.RequesterUserID, EmojiID: toNullString(req.EmojiID),
+		ID: req.ID, Kind: string(req.Kind), RequesterUserID: toNullString(req.RequesterUserID), EmojiID: toNullString(req.EmojiID),
 		Shortcode: req.Shortcode, MediaID: req.MediaID, CreatedAt: toMillis(req.CreatedAt),
 	})
 	if err != nil {
@@ -92,19 +92,19 @@ func (r *CustomEmojiRepository) PendingImageRequestOf(ctx context.Context, tx uo
 // emojiRequestRow is a row of GetCustomEmojiRequest, ListCustomEmojiRequests, or
 // ListCustomEmojiRequestsByID.
 type emojiRequestRow struct {
-	ID, Kind, RequesterUserID string
-	EmojiID                   sql.NullString
-	Shortcode, MediaID        string
-	CreatedAt                 int64
-	OutcomeID, Outcome        string
-	DecidedByUserID, Reason   string
-	OutcomeEmojiID            string
-	DecidedAt                 int64
+	ID, Kind                 string
+	RequesterUserID, EmojiID sql.NullString
+	Shortcode, MediaID       string
+	CreatedAt                int64
+	OutcomeID, Outcome       string
+	DecidedByUserID, Reason  string
+	OutcomeEmojiID           string
+	DecidedAt                int64
 }
 
 func emojiRequestFrom(row emojiRequestRow) content.CustomEmojiRequestRecord {
 	out := content.CustomEmojiRequestRecord{Request: content.CustomEmojiRequest{
-		ID: row.ID, Kind: content.CustomEmojiRequestKind(row.Kind), RequesterUserID: row.RequesterUserID, EmojiID: row.EmojiID.String,
+		ID: row.ID, Kind: content.CustomEmojiRequestKind(row.Kind), RequesterUserID: row.RequesterUserID.String, EmojiID: row.EmojiID.String,
 		Shortcode: row.Shortcode, MediaID: row.MediaID, CreatedAt: fromMillis(row.CreatedAt),
 	}}
 	if row.OutcomeID != "" {
@@ -162,7 +162,7 @@ func (r *CustomEmojiRepository) ListCustomEmojiRequestsByID(ctx context.Context,
 
 // CountCustomEmojiUsage implements content.CustomEmojiRequestRepository.
 func (r *CustomEmojiRepository) CountCustomEmojiUsage(ctx context.Context, userID string, since, until time.Time) (approved, pending int, err error) {
-	row, err := r.db.reader().CountCustomEmojiUsage(ctx, sqlitegen.CountCustomEmojiUsageParams{UserID: userID, Since: toMillis(since), Until: toMillis(until)})
+	row, err := r.db.reader().CountCustomEmojiUsage(ctx, sqlitegen.CountCustomEmojiUsageParams{UserID: toNullString(userID), Since: toMillis(since), Until: toMillis(until)})
 	return int(row.Approved), int(row.Pending), wrap(err, "count custom emoji usage")
 }
 
@@ -170,4 +170,35 @@ func (r *CustomEmojiRepository) CountCustomEmojiUsage(ctx context.Context, userI
 func (r *CustomEmojiRepository) IsMediaOfPendingCustomEmojiRequest(ctx context.Context, mediaID string) (bool, error) {
 	n, err := r.db.reader().IsMediaOfPendingCustomEmojiRequest(ctx, mediaID)
 	return n != 0, wrap(err, "is media of a pending custom emoji request")
+}
+
+// ListPendingCustomEmojiRequestsOfUser implements content.CustomEmojiRequestRepository.
+func (r *CustomEmojiRepository) ListPendingCustomEmojiRequestsOfUser(ctx context.Context, tx uow.Tx, userID string) ([]string, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := q.ListPendingCustomEmojiRequestsOfUser(ctx, userID)
+	return ids, wrap(err, "list pending custom emoji requests")
+}
+
+// BlankCustomEmojiRequester implements content.CustomEmojiRequestRepository.
+func (r *CustomEmojiRepository) BlankCustomEmojiRequester(ctx context.Context, tx uow.Tx, userID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.BlankCustomEmojiRequester(ctx, toNullString(userID)), "blank custom emoji requester")
+}
+
+// RebuildCustomEmojiPendingRequests implements content.CustomEmojiRequestRepository.
+func (r *CustomEmojiRepository) RebuildCustomEmojiPendingRequests(ctx context.Context, tx uow.Tx) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	if err := q.DeleteAllCustomEmojiPendingRequests(ctx); err != nil {
+		return wrap(err, "delete custom emoji pending requests")
+	}
+	return wrap(q.RebuildCustomEmojiPendingRequests(ctx), "rebuild custom emoji pending requests")
 }

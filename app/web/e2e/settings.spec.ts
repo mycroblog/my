@@ -61,7 +61,7 @@ type ServerOptions = {
   permissions?: string[];
   sendsEmail?: boolean;
   timeZoneChosen?: boolean;
-  emailSuppression?: { kind: string; since: string };
+  emailSuppression?: { kind: string; state_changed_at: string };
 };
 
 /**
@@ -250,7 +250,7 @@ async function signedInServer(
           rules: [],
           search_indexing: "deny",
           ai_usage: "deny",
-          link_cards_enabled: true,
+          link_cards: true,
           link_cards_ignore_robots_txt: false,
         });
       case "GET /accounts/verify_credentials":
@@ -291,13 +291,13 @@ async function signedInServer(
         return json(route, { rows: notificationRows });
       }
       case "GET /blocks":
-        return json(route, { accounts: [bob] });
+        return json(route, { items: [bob] });
       case "GET /mutes":
-        return json(route, { mutes: [{ account: bob, notifications: true }] });
+        return json(route, { items: [{ account: bob, hide_notifications: true }] });
       case "GET /domain_mutes":
         // A long domain, and one in IDNA A-labels that the page shows with its U-labels too.
         return json(route, {
-          domain_mutes: [
+          items: [
             {
               domain: "a-very-long-subdomain-name-for-the-narrowest-screens.spam.example",
               created_at: "2026-10-17T10:00:00Z",
@@ -306,7 +306,7 @@ async function signedInServer(
           ],
         });
       case "GET /follow_requests":
-        return json(route, { accounts: [bob] });
+        return json(route, { items: [bob] });
       case "GET /exports":
         return json(route, {
           items: [
@@ -365,6 +365,10 @@ async function signedInServer(
         return json(route, { enabled: false });
       case "GET /accounts/password":
         return json(route, { has_password: true });
+      case "GET /accounts/deactivation":
+        return json(route, { deletion_due_at: "2031-03-14T09:00:00Z" });
+      case "POST /accounts/deactivation":
+        return json(route, { deletion_due_at: "2031-03-14T09:00:00Z" });
       case "GET /passkeys":
         return json(route, {
           items: [
@@ -679,6 +683,27 @@ test("the automatic deletion of old posts is turned on and saved without axe vio
   await expect(
     main.getByRole("status").getByText(message("settings.auto_delete.saved_on").replace(/\{.*$/s, "").trim()),
   ).toBeVisible();
+  await expectNoAxeViolations(makeAxeBuilder);
+  await expectNoHorizontalScroll(page);
+});
+
+// Deactivating states the date before and after it (ADR-0145 §3), and the page after it stands without a session.
+test("deactivating the account states the date and ends on its own page", async ({ page, makeAxeBuilder }) => {
+  await signedInServer(page, projectLocale());
+  await page.goto("/settings/account");
+  const main = page.getByRole("main");
+  await main.getByRole("button", { name: message("settings.account.deactivate.open") }).click();
+  const dialog = page.getByRole("alertdialog");
+  await expect(
+    dialog.getByRole("heading", { name: message("settings.account.deactivate.confirm.title") }),
+  ).toBeVisible();
+  await expect(dialog.getByText("2031")).toBeVisible();
+  await expectNoAxeViolations(makeAxeBuilder);
+  await dialog.locator('input[autocomplete="current-password"]').fill("correct horse battery staple");
+  await dialog.getByRole("button", { name: message("settings.account.deactivate.confirm"), exact: true }).click();
+  await expect(page).toHaveURL(/\/deactivated\?/u);
+  await expect(page.getByRole("heading", { name: message("deactivated.title") })).toBeVisible();
+  await expect(page.getByText("2031")).toBeVisible();
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
 });
@@ -1000,7 +1025,7 @@ test.describe("post defaults", () => {
 test.describe("email suppression", () => {
   test("says that emails do not reach the address, and what to do", async ({ page, makeAxeBuilder }) => {
     await signedInServer(page, projectLocale(), {
-      emailSuppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" },
+      emailSuppression: { kind: "hard_bounce", state_changed_at: "2026-10-10T09:30:00Z" },
     });
     await page.goto("/settings/notifications");
     const section = page

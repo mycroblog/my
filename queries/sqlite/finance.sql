@@ -81,7 +81,7 @@ FROM (
 -- InsertBillingImportReservation records the requests that an attempt reserved before it calls
 -- the provider.
 -- name: InsertBillingImportReservation :exec
-INSERT INTO billing_import_reservations (id, source, run_key, requests, reserved_at) VALUES (?, ?, ?, ?, ?);
+INSERT INTO billing_import_reservations (id, source, requests, reserved_at) VALUES (?, ?, ?, ?);
 
 -- PendingBillingImportReservation reports whether an attempt of a source reserved requests at or
 -- after since and is not recorded yet: it is still running.
@@ -132,23 +132,23 @@ WHERE (CAST(sqlc.arg(source) AS TEXT) = '' OR h.source = sqlc.arg(source))
 ORDER BY h.source, h.billing_month, h.service, h.charge_type;
 
 -- The income records (ADR-0073 section 8). income_movements is written once per (provider,
--- provider_id); the totals read it on every request.
+-- provider_movement_id); the totals read it on every request.
 
 -- InsertIncomeMovement writes nothing when the movement is already recorded.
 -- name: InsertIncomeMovement :execrows
 INSERT INTO income_movements (
-  id, provider, provider_id, kind, parent_movement_id, subscription_id, occurred_at, occurred_on, covers_starts_on,
+  id, provider, provider_movement_id, kind, parent_movement_id, subscription_id, occurred_at, occurred_on, covers_starts_on,
   covers_ends_on, gross_minor, fee_minor, net_minor, currency, recorded_at
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT (provider, provider_id) DO NOTHING;
+ON CONFLICT (provider, provider_movement_id) DO NOTHING;
 
 -- name: FindIncomeMovementID :one
-SELECT id FROM income_movements WHERE provider = ? AND provider_id = ?;
+SELECT id FROM income_movements WHERE provider = ? AND provider_movement_id = ?;
 
 -- KnownIncomeMovements returns the provider IDs among ids (a JSON array) that are recorded.
 -- name: KnownIncomeMovements :many
-SELECT provider_id FROM income_movements
-WHERE provider = sqlc.arg(provider) AND provider_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
+SELECT provider_movement_id FROM income_movements
+WHERE provider = sqlc.arg(provider) AND provider_movement_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
 
 -- ListIncomeMovementsInWindow returns the movements whose place in the totals can meet the
 -- dates from starts_on to ends_on: those on the dates, the payments whose period meets them,
@@ -166,8 +166,8 @@ ORDER BY m.occurred_on, m.id;
 -- ListIncomeMovements returns up to lim movements on the dates from starts_on to ends_on, of
 -- kind unless it is empty, newest first, before the movement before unless it is empty.
 -- name: ListIncomeMovements :many
-SELECT m.id, m.provider, m.provider_id, m.kind, m.subscription_id, m.occurred_at, m.occurred_on, m.covers_starts_on,
-  m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency, m.recorded_at, p.provider_id AS parent_provider_id
+SELECT m.id, m.provider, m.provider_movement_id, m.kind, m.subscription_id, m.occurred_at, m.occurred_on, m.covers_starts_on,
+  m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency, m.recorded_at, p.provider_movement_id AS parent_provider_movement_id
 FROM income_movements m LEFT JOIN income_movements p ON p.id = m.parent_movement_id
 WHERE m.occurred_on >= sqlc.arg(starts_on) AND m.occurred_on <= sqlc.arg(ends_on)
   AND (CAST(sqlc.arg(kind) AS TEXT) = '' OR m.kind = sqlc.arg(kind))

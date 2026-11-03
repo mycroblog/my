@@ -148,11 +148,10 @@ async function serveApi(page: Page): Promise<void> {
     }
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [bobsPost] });
-    if (path === "/accounts/search") return json(route, [bob, carol]);
+    if (path === "/accounts/search") return json(route, { items: [bob, carol] });
     if (path === "/accounts/relationships") {
-      return json(
-        route,
-        url.searchParams.getAll("id").map((id) => ({
+      return json(route, {
+        items: url.searchParams.getAll("id").map((id) => ({
           id,
           following: id === bob.id,
           requested: false,
@@ -164,7 +163,7 @@ async function serveApi(page: Page): Promise<void> {
           muting: false,
           muting_notifications: false,
         })),
-      );
+      });
     }
     if (path === "/accounts/lookup") {
       const acct = url.searchParams.get("acct");
@@ -210,7 +209,7 @@ async function serveApi(page: Page): Promise<void> {
       return route.fulfill({ status: 204 });
     }
     const listMembers = /^\/lists\/([^/]+)\/accounts$/u.exec(path);
-    if (listMembers !== null) return json(route, { accounts: members.get(listMembers[1] ?? "") ?? [] });
+    if (listMembers !== null) return json(route, { items: members.get(listMembers[1] ?? "") ?? [] });
     const one = /^\/lists\/([^/]+)$/u.exec(path);
     if (one !== null) {
       const list = lists.find((item) => item.id === one[1]);

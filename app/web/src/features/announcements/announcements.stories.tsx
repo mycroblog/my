@@ -34,7 +34,7 @@ const announcementsFixture: Schemas["Announcement"][] = [
     title: "New rules",
     content: "<p>We updated the rules: please credit the recipes you share.</p>",
     published_at: "2026-10-01T00:00:00Z",
-    updated_at: "2026-10-03T00:00:00Z",
+    revised_at: "2026-10-03T00:00:00Z",
     read: true,
   }),
 ];

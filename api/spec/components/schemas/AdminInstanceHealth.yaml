@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: Whether deliveries go to a remote server (federation.md §7.3).
+description: Whether deliveries go to a remote server.
 type: object
 required: [domain, state, failure_days]
 properties:
@@ -7,7 +7,7 @@ properties:
     type: string
   state:
     $ref: ./AdminInstanceState.yaml
-  since:
+  state_changed_at:
     description: When the server entered its state; omitted for a server without failures.
     type: string
     format: date-time

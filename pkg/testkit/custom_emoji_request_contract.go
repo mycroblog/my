@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/media"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -514,5 +515,60 @@ func requestAppliesTheLimit(t *testing.T, e *emojiEnv) {
 	}
 	if u, err := r.service.Usage(ctx, requesterAUser); err != nil || u != (appcontent.CustomEmojiUsage{Used: 2, Pending: 1, Limit: 2, Limited: true, ResetsAt: december}) {
 		t.Errorf("Usage in November = %+v, %v", u, err)
+	}
+}
+
+// requestLapsesWithItsRequester checks the erasure of a requester: its pending request lapses and
+// gives up its shortcode, an ended request stays, and neither names the requester any more.
+func requestLapsesWithItsRequester(t *testing.T, e *emojiEnv) {
+	r := newRequestEnv(t, e)
+	ctx := t.Context()
+	pending := r.mustSubmit(t, requesterA, requesterAUser, "blob_pending")
+	ended := r.mustSubmit(t, requesterA, requesterAUser, "blob_ended")
+	if _, err := r.service.RejectRequest(ctx, ended.Request.ID, "", ""); err != nil {
+		t.Fatal(err)
+	}
+	other := r.mustSubmit(t, requesterB, requesterBUser, "blob_other")
+
+	for range 2 { // safe to repeat
+		if _, err := r.service.EraseAccountData(ctx, appaccount.ErasureTarget{AccountID: requesterA, UserID: requesterAUser}, "", 0); err != nil {
+			t.Fatalf("EraseAccountData = %v", err)
+		}
+	}
+	got, err := r.service.GetRequest(ctx, pending.Request.ID)
+	if err != nil || got.Outcome == nil || got.Outcome.Outcome != content.RequestLapsed || got.Request.RequesterUserID != "" {
+		t.Errorf("the pending request = %+v, %v; want lapsed with no requester", got.CustomEmojiRequestRecord, err)
+	}
+	got, err = r.service.GetRequest(ctx, ended.Request.ID)
+	if err != nil || got.Outcome == nil || got.Outcome.Outcome != content.RequestRejected || got.Request.RequesterUserID != "" {
+		t.Errorf("the ended request = %+v, %v; want rejected with no requester", got.CustomEmojiRequestRecord, err)
+	}
+	got, err = r.service.GetRequest(ctx, other.Request.ID)
+	if err != nil || got.Outcome != nil || got.Request.RequesterUserID != requesterBUser {
+		t.Errorf("another user's request = %+v, %v; want it untouched", got.CustomEmojiRequestRecord, err)
+	}
+	// The shortcode is free again.
+	r.mustSubmit(t, requesterB, requesterBUser, "blob_pending")
+}
+
+// requestRebuildsPendingRequests checks that the pending requests come back from the requests and
+// their outcomes: a request to create with its shortcode reserved, and not a request that ended.
+func requestRebuildsPendingRequests(t *testing.T, e *emojiEnv) {
+	r := newRequestEnv(t, e)
+	ctx := t.Context()
+	pending := r.mustSubmit(t, requesterA, requesterAUser, "blob_pending")
+	ended := r.mustSubmit(t, requesterA, requesterAUser, "blob_ended")
+	if _, err := r.service.RejectRequest(ctx, ended.Request.ID, "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := appcontent.RebuildCustomEmojiRequestProjection(ctx, e.h.UnitOfWork, e.h.Emojis); err != nil {
+		t.Fatalf("RebuildCustomEmojiRequestProjection = %v", err)
+	}
+	if _, err := r.submit(t, requesterB, requesterBUser, "blob_pending"); err == nil {
+		t.Error("the rebuilt projection does not reserve the pending request's shortcode")
+	}
+	r.mustSubmit(t, requesterB, requesterBUser, "blob_ended")
+	if _, err := r.service.WithdrawRequest(ctx, pending.Request.ID, requesterAUser); err != nil {
+		t.Errorf("WithdrawRequest(a rebuilt pending request) = %v", err)
 	}
 }

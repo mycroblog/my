@@ -34,7 +34,7 @@ const known: Schemas["Account"][] = [
 ];
 
 const followList = (id: string): Schemas["AccountPage"] => ({
-  accounts: [id === viewerFixture.id ? otherAccountFixture : viewerFixture],
+  items: [id === viewerFixture.id ? otherAccountFixture : viewerFixture],
 });
 
 export const handlers = [
@@ -45,12 +45,19 @@ export const handlers = [
   }),
   http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
     withViewer(request, () =>
-      HttpResponse.json(new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id))),
+      HttpResponse.json({ items: new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id)) }),
     ),
   ),
   http.post(`${apiBase}/accounts/:id/:action`, ({ request, params }) => {
     if (!authorized(request)) return unauthenticated(request);
     const after = relationshipAfter[String(params["action"])];
+    return after === undefined
+      ? problem(404, "about:blank", "Not Found")
+      : HttpResponse.json(relationshipFixture(String(params["id"]), after));
+  }),
+  http.delete(`${apiBase}/accounts/:id/:relation`, ({ request, params }) => {
+    if (!authorized(request)) return unauthenticated(request);
+    const after = relationshipAfter[`un${String(params["relation"])}`];
     return after === undefined
       ? problem(404, "about:blank", "Not Found")
       : HttpResponse.json(relationshipFixture(String(params["id"]), after));

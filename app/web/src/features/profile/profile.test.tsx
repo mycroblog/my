@@ -32,7 +32,9 @@ function bobServer(relationship: Partial<Relationship> = {}, account: Partial<ty
         ? HttpResponse.json({ ...bob, ...account })
         : problem(404, "about:blank", "Not Found"),
     ),
-    http.get(`${apiBase}/accounts/relationships`, () => HttpResponse.json([relationshipFixture(bob.id, relationship)])),
+    http.get(`${apiBase}/accounts/relationships`, () =>
+      HttpResponse.json({ items: [relationshipFixture(bob.id, relationship)] }),
+    ),
     http.post(`${apiBase}/accounts/:id/:action`, ({ params }) => {
       const action = String(params["action"]);
       changes.push(action);
@@ -47,9 +49,13 @@ function bobServer(relationship: Partial<Relationship> = {}, account: Partial<ty
               ? { muting: true, muting_notifications: true }
               : action === "subscribe"
                 ? { ...relationship, notify: true }
-                : action === "unsubscribe"
-                  ? { ...relationship, notify: false }
-                  : {};
+                : {};
+      return HttpResponse.json(relationshipFixture(String(params["id"]), after));
+    }),
+    http.delete(`${apiBase}/accounts/:id/:relation`, ({ params }) => {
+      const relation = String(params["relation"]);
+      changes.push(`un${relation}`);
+      const after: Partial<Relationship> = relation === "subscribe" ? { ...relationship, notify: false } : {};
       return HttpResponse.json(relationshipFixture(String(params["id"]), after));
     }),
   );
@@ -391,7 +397,7 @@ describe("the bell of a profile", () => {
     const changes: string[] = [];
     server.use(
       http.get(`${apiBase}/accounts/relationships`, () =>
-        HttpResponse.json([relationshipFixture(remoteAccountFixture.id, relationship)]),
+        HttpResponse.json({ items: [relationshipFixture(remoteAccountFixture.id, relationship)] }),
       ),
       http.post(`${apiBase}/accounts/:id/:action`, ({ params }) => {
         const action = String(params["action"]);
@@ -481,9 +487,9 @@ describe("the follow lists", () => {
         cursors.push(cursor);
         return HttpResponse.json(
           cursor === null
-            ? { accounts: [viewerFixture], next_cursor: "page-2" }
+            ? { items: [viewerFixture], next_cursor: "page-2" }
             : {
-                accounts: [
+                items: [
                   {
                     ...viewerFixture,
                     id: "0192f0c4-7a8e-7000-8000-000000000003",
@@ -524,7 +530,7 @@ describe("the follow lists", () => {
     server.use(
       http.get(`${apiBase}/accounts/:id/followers`, async () => {
         await released;
-        return HttpResponse.json({ accounts: [viewerFixture] });
+        return HttpResponse.json({ items: [viewerFixture] });
       }),
     );
     const { user } = await renderApp({ path: "/@bob" });
@@ -556,15 +562,13 @@ describe("the follow lists", () => {
     const requested: string[][] = [];
     const follows: string[] = [];
     server.use(
-      http.get(`${apiBase}/accounts/:id/followers`, () =>
-        HttpResponse.json({ accounts: [viewerFixture, carol, dave] }),
-      ),
+      http.get(`${apiBase}/accounts/:id/followers`, () => HttpResponse.json({ items: [viewerFixture, carol, dave] })),
       http.get(`${apiBase}/accounts/relationships`, ({ request }) => {
         const ids = new URL(request.url).searchParams.getAll("id");
         requested.push(ids);
-        return HttpResponse.json(
-          ids.map((id) => relationshipFixture(id, id === carol.id ? { followed_by: true } : {})),
-        );
+        return HttpResponse.json({
+          items: ids.map((id) => relationshipFixture(id, id === carol.id ? { followed_by: true } : {})),
+        });
       }),
       http.post(`${apiBase}/accounts/:id/follow`, ({ params }) => {
         follows.push(String(params["id"]));
@@ -594,7 +598,7 @@ describe("the follow lists", () => {
 
   test("say so when an account follows nobody", async () => {
     bobServer();
-    server.use(http.get(`${apiBase}/accounts/:id/following`, () => HttpResponse.json({ accounts: [] })));
+    server.use(http.get(`${apiBase}/accounts/:id/following`, () => HttpResponse.json({ items: [] })));
     await renderApp({ path: "/@bob/following" });
 
     expect(

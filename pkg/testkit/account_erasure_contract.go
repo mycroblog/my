@@ -11,6 +11,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	appfederation "github.com/mycroblog/my/internal/app/federation"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/media"
@@ -19,6 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
+	"github.com/mycroblog/my/internal/domain/identity"
 )
 
 // AccountErasureHarness is one database under test for the erasure of deleted accounts: the
@@ -46,7 +48,8 @@ type AccountErasureFactory func(t *testing.T, opts uow.Options) AccountErasureHa
 // notifications, timeline rows, lists and their membership in others' lists) while its row, URI, domain, username, and lifecycle stay; its
 // statuses become deletions with origin account_deletion, the other accounts' counters lose it,
 // and a status that the moderation records need keeps its rows until they are gone, after which
-// the account is recorded as erased once.
+// the account is recorded as erased once. A remote account deleted on its server is erased the same
+// way, with the statuses that local accounts bookmarked or replied to, and does not come back.
 func AccountErasureContract(t *testing.T, newHarness AccountErasureFactory) {
 	t.Helper()
 	cases := []struct {
@@ -55,6 +58,14 @@ func AccountErasureContract(t *testing.T, newHarness AccountErasureFactory) {
 	}{
 		{"ErasesDeletedAccounts", erasureErasesDeletedAccounts},
 		{"WaitsForTheDelayAndHolds", erasureWaits},
+		{"ErasesDeletedRemoteActors", erasureErasesRemoteActors},
+		{"RemoteActorsWaitForTheDelayAndHolds", erasureRemoteActorsWait},
+		{"ErasedRemoteActorsDoNotComeBack", erasureRemoteActorsStayErased},
+		{"DisablesAndBlanksOwnedOAuthClients", erasureBlanksOwnedOAuthClients},
+		{"PurgesSensitivityOverrides", erasurePurgesSensitivityOverrides},
+		{"ErasesTheLastUseOfTokenFamilies", erasureErasesTokenFamilyLastUse},
+		{"PurgesExpiredAuthRecords", authRecordsPurged},
+		{"PurgesExpiredUserTokensInBatches", authRecordsPurgedInBatches},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newErasureEnv(t, newHarness)) })
@@ -130,7 +141,7 @@ func (e *erasureEnv) eraser(evidence appcontent.RetainedStatuses, holds appaccou
 			apptimeline.NewEraser(u, e.eh.TimelineErasure),
 			notifications,
 			appcontent.NewMediaEraser(appcontent.MediaErasureDeps{UnitOfWork: u, Repository: e.eh.Media, Blobs: e.blobs}),
-			appidentity.NewEraser(u, e.eh.IdentityErasure),
+			appidentity.NewEraser(u, e.eh.IdentityErasure, e.clock, e.ids),
 		},
 	})
 }
@@ -464,4 +475,226 @@ func erasureWaits(t *testing.T, e *erasureEnv) {
 	if !profile(bob) {
 		t.Error("bob's profile is gone")
 	}
+}
+
+// markRemoteDeleted records that the remote account was deleted on its server.
+func (e *erasureEnv) markRemoteDeleted(t *testing.T, accountID string) {
+	t.Helper()
+	ctx := t.Context()
+	if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return e.accounts.MarkRemoteDeleted(ctx, tx, accountID) }); err != nil {
+		t.Fatalf("MarkRemoteDeleted = %v", err)
+	}
+}
+
+func erasureErasesRemoteActors(t *testing.T, e *erasureEnv) {
+	ctx := t.Context()
+	const alice = "https://remote.example/users/alice"
+	statuses, reader, _ := e.referencedStatuses(t)
+	aliceID := statuses["unrelated"].AuthorAccountID
+	own := e.postAs(t, reader, "the reader's")
+	attached := e.note(t, alice, alice+"/notes/attached", time.Hour, map[string]any{
+		"attachment": []any{map[string]any{"type": "Document", "mediaType": "image/png", "url": "https://remote.example/files/a.png"}},
+	})
+	reported := e.note(t, alice, alice+"/notes/reported", time.Hour, map[string]any{
+		"attachment": []any{map[string]any{"type": "Document", "mediaType": "image/png", "url": "https://remote.example/files/reported.png"}},
+	})
+	statuses["attached"] = attached
+	// She favourites a status of the reader and follows them.
+	if _, err := e.interactions.RecordRemoteReaction(ctx, appcontent.RemoteReactionInput{
+		URI: alice + "/reactions/1", AccountID: aliceID, StatusID: own.ID, Emoji: appcontent.RemoteReactionEmoji{Unicode: "👍"},
+	}); err != nil {
+		t.Fatalf("RecordRemoteReaction = %v", err)
+	}
+	e.follow(t, aliceID, reader)
+	if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return e.h.Accounts.UpsertHandle(ctx, tx, account.Handle{AccountID: aliceID, Username: "alice", UsernameNormalized: "alice", Domain: "remote.example"})
+	}); err != nil {
+		t.Fatalf("UpsertHandle = %v", err)
+	}
+	e.rows(t, "remote_account_heads", "account_id", aliceID, 1)
+	e.rows(t, "remote_media", "owner_account_id", aliceID, 2)
+
+	e.markRemoteDeleted(t, aliceID)
+	e.clock.Advance(appaccount.ErasureDelay)
+
+	// A status that the moderation records need keeps its rows and its attachment until they go.
+	if n := e.run(t, e.eraser(stubEvidence{statuses: map[string]bool{reported.ID: true}}, nil, 2)); n != 0 {
+		t.Errorf("erased %d accounts while evidence stays, want 0", n)
+	}
+	if !e.stored(t, reported.URI) {
+		t.Errorf("the reported status is gone, want its rows kept")
+	}
+	e.rows(t, "remote_media", "owner_account_id", aliceID, 1)
+	if erased, err := e.eh.AccountErasure.AccountErased(ctx, aliceID); err != nil || erased {
+		t.Errorf("AccountErased while evidence stays = %v, %v; want false", erased, err)
+	}
+
+	if n := e.run(t, e.eraser(stubEvidence{}, nil, 2)); n != 1 {
+		t.Errorf("erased %d accounts, want 1", n)
+	}
+	statuses["reported"] = reported
+	for name, st := range statuses {
+		if e.stored(t, st.URI) {
+			t.Errorf("status %q is still stored", name)
+		}
+		e.rows(t, "status_revisions", "status_id", st.ID, 0)
+		e.rows(t, "boosts", "status_id", st.ID, 0)
+		e.rows(t, "favourites", "status_id", st.ID, 0)
+		e.rows(t, "bookmarks", "status_id", st.ID, 0)
+		if d, err := e.eh.Statuses.FindDeletion(ctx, st.ID); err != nil || d.Origin != content.DeletedByAccountDeletion {
+			t.Errorf("FindDeletion(%s) = %+v, %v; want origin account_deletion", name, d, err)
+		}
+	}
+	for _, table := range []string{"account_profile_revisions", "account_profile_heads", "account_keys", "account_handles",
+		"remote_account_snapshots", "remote_account_heads", "remote_account_handle_verifications", "reactions", "follow_counters", "account_post_counters"} {
+		e.rows(t, table, "account_id", aliceID, 0)
+	}
+	e.rows(t, "remote_media", "owner_account_id", aliceID, 0)
+	e.rows(t, "media_files", "owner_account_id", aliceID, 0)
+	e.rows(t, "follows", "follower_account_id", aliceID, 0)
+	e.rows(t, "follows", "followee_account_id", aliceID, 0)
+	e.rows(t, "feed_entries", "author_account_id", aliceID, 0)
+	e.rows(t, "feed_entries", "original_author_account_id", aliceID, 0)
+	e.rows(t, "notifications", "source_account_id", aliceID, 0)
+
+	// The row, its URI, and the lifecycle stay; the actor reads as deleted.
+	e.rows(t, "accounts", "id", aliceID, 1)
+	e.rows(t, "remote_accounts", "account_id", aliceID, 1)
+	e.rows(t, "account_lifecycle_events", "account_id", aliceID, 1)
+	actor, err := e.accounts.FindByURI(ctx, alice)
+	if err != nil || !actor.Deleted() || actor.Profile != nil || len(actor.Keys) != 0 || actor.Handle != nil {
+		t.Errorf("erased actor = %+v, %v; want the account and its lifecycle only", actor, err)
+	}
+
+	// The reader keeps their own and loses the counts of hers.
+	if !e.stored(t, own.URI) {
+		t.Errorf("the reader's status is gone")
+	}
+	e.rows(t, "status_reaction_counts", "status_id", own.ID, 0)
+	if c, _ := e.graph.Counters(ctx, reader); c.FollowersCount != 0 || c.FollowingCount != 0 {
+		t.Errorf("the reader's follow counters = %+v, want none", c)
+	}
+	if erased, err := e.eh.AccountErasure.AccountErased(ctx, aliceID); err != nil || !erased {
+		t.Errorf("AccountErased = %v, %v; want true", erased, err)
+	}
+	if n := e.run(t, e.eraser(stubEvidence{}, nil, 2)); n != 0 {
+		t.Errorf("erased %d accounts again, want 0", n)
+	}
+	// The reader's own account is untouched.
+	if a, err := e.accounts.FindByID(ctx, reader); err != nil || a.Profile == nil || a.Handle == nil {
+		t.Errorf("FindByID(reader) = %+v, %v", a, err)
+	}
+}
+
+func erasureRemoteActorsWait(t *testing.T, e *erasureEnv) {
+	ctx := t.Context()
+	const alice = "https://remote.example/users/alice"
+	aliceID := e.actor(t, alice)
+	reader := e.user(t, "reader")
+	e.follow(t, reader, aliceID)
+	note := e.note(t, alice, alice+"/notes/1", time.Hour, nil)
+	profile := func() bool {
+		t.Helper()
+		a, err := e.accounts.FindByID(ctx, aliceID)
+		if err != nil {
+			t.Fatalf("FindByID = %v", err)
+		}
+		return a.Profile != nil
+	}
+	// A remote account that is not deleted is never erased.
+	e.clock.Advance(2 * appaccount.ErasureDelay)
+	if n := e.run(t, e.eraser(nil, nil, 0)); n != 0 || !profile() {
+		t.Errorf("erased %d accounts that are not deleted, want 0", n)
+	}
+	e.markRemoteDeleted(t, aliceID)
+	e.clock.Advance(appaccount.ErasureDelay - time.Minute)
+	if n := e.run(t, e.eraser(nil, nil, 0)); n != 0 || !profile() || !e.stored(t, note.URI) {
+		t.Errorf("erased %d accounts within the delay, want 0", n)
+	}
+	e.clock.Advance(time.Minute)
+	if n := e.run(t, e.eraser(nil, stubHolds{aliceID}, 0)); n != 0 || !profile() || !e.stored(t, note.URI) {
+		t.Errorf("erased %d held accounts, want 0", n)
+	}
+	if n := e.run(t, e.eraser(nil, nil, 0)); n != 1 || profile() || e.stored(t, note.URI) {
+		t.Errorf("erased %d accounts, want 1", n)
+	}
+}
+
+func erasureRemoteActorsStayErased(t *testing.T, e *erasureEnv) {
+	ctx := t.Context()
+	const alice = "https://remote.example/users/alice"
+	aliceID := e.actor(t, alice)
+	reader := e.user(t, "reader")
+	e.follow(t, reader, aliceID)
+	e.note(t, alice, alice+"/notes/1", time.Hour, nil)
+	create := func(id string) []byte {
+		return remoteActivity(t, "Create", id+"/activity", alice, remoteNote(id, alice, remoteNow.Add(-time.Hour), nil))
+	}
+	e.markRemoteDeleted(t, aliceID)
+
+	// Before the erasure, nothing new of the actor is stored.
+	e.expect(t, create(alice+"/notes/2"), appfederation.InboxDropped)
+	if e.stored(t, alice+"/notes/2") {
+		t.Errorf("a post of the deleted actor was stored")
+	}
+	e.clock.Advance(appaccount.ErasureDelay)
+	if n := e.run(t, e.eraser(nil, nil, 0)); n != 1 {
+		t.Fatalf("erased %d accounts, want 1", n)
+	}
+
+	// After it, its activities bring nothing back.
+	e.expect(t, create(alice+"/notes/3"), appfederation.InboxDropped)
+	e.rows(t, "statuses", "author_account_id", aliceID, 0)
+	for _, table := range []string{"account_profile_revisions", "account_handles", "remote_account_snapshots", "remote_account_heads"} {
+		e.rows(t, table, "account_id", aliceID, 0)
+	}
+	if erased, err := e.eh.AccountErasure.AccountErased(ctx, aliceID); err != nil || !erased {
+		t.Errorf("AccountErased = %v, %v; want true", erased, err)
+	}
+}
+
+// erasureBlanksOwnedOAuthClients checks that the erasure of a client's owner removes its name and
+// website, with those of its revisions, and disables it, which stops the tokens other users gave it.
+func erasureBlanksOwnedOAuthClients(t *testing.T, e *erasureEnv) {
+	ctx := t.Context()
+	client := e.thirdPartyApp(t)
+	tokens := e.appTokensFor(t, e.register(t, "user").User.ID)
+	revision := identity.OAuthClientRevision{
+		ID: e.ids.NewID(), ClientID: client.ID, Name: "Renamed", Website: "https://renamed.example/", Scope: client.Scope, RevisedAt: e.clock.Now(),
+	}
+	err := e.eh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return e.accountEnv.h.Identity.InsertOAuthClientRevision(ctx, tx, revision) })
+	if err != nil {
+		t.Fatal(err)
+	}
+	eraser := appidentity.NewEraser(e.eh.UnitOfWork, e.eh.IdentityErasure, e.clock, e.ids)
+	for range 2 { // safe to repeat
+		if _, err := eraser.EraseAccountData(ctx, appaccount.ErasureTarget{UserID: client.OwnerUserID}, "", 0); err != nil {
+			t.Fatalf("EraseAccountData = %v", err)
+		}
+	}
+	got, err := e.accountEnv.h.Identity.FindOAuthClientByID(ctx, client.ID)
+	if err != nil || got.Name != "" || got.Website != "" {
+		t.Errorf("the erased owner's client = %+v, %v; want no name or website", got, err)
+	}
+	e.rows(t, "oauth_client_revisions", "name", "Renamed", 0)
+	e.rows(t, "oauth_client_revisions", "website", "https://renamed.example/", 0)
+	e.rows(t, "oauth_client_revisions", "oauth_client_id", client.ID, 1)
+	e.rows(t, "oauth_client_disablements", "oauth_client_id", client.ID, 1)
+	e.wantAccess(t, tokens.AccessToken, false, "a token given to the client of an erased owner")
+}
+
+// erasurePurgesSensitivityOverrides checks that a purged status leaves no sensitivity override.
+func erasurePurgesSensitivityOverrides(t *testing.T, e *erasureEnv) {
+	ctx := t.Context()
+	st := e.postAs(t, e.user(t, "author"), "marked")
+	err := e.eh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := e.eh.Statuses.InsertSensitivityOverride(ctx, tx, st.ID, e.ids.NewID()); err != nil {
+			return err
+		}
+		return e.rh.Retention.PurgeStatuses(ctx, tx, []string{st.ID})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.rows(t, "status_sensitivity_overrides", "status_id", st.ID, 0)
 }

@@ -54,8 +54,9 @@ func newReportsEnvWith(t *testing.T, reports *fakeReports, rooms clientapi.Voice
 			accounts[id] = a
 		}
 		accounts[reportTargetID] = appaccount.Actor{
-			Account: account.Account{ID: reportTargetID, Domain: "remote.example", URI: "https://remote.example/users/bob", CreatedAt: createdAt},
-			Handle:  &account.Handle{AccountID: reportTargetID, Username: "bob", Domain: "remote.example"},
+			Account:   account.Account{ID: reportTargetID, Domain: "remote.example", URI: "https://remote.example/users/bob", CreatedAt: createdAt},
+			Handle:    &account.Handle{AccountID: reportTargetID, Username: "bob", Domain: "remote.example"},
+			Lifecycle: account.InitialLifecycleState(reportTargetID),
 		}
 		o.Accounts = accounts
 		o.Reports = reports
@@ -82,8 +83,8 @@ func TestCreateReport(t *testing.T) {
 		"account_id": reportTargetID, "status_ids": []string{"01890a5d-ac96-774b-bcce-b302099a7101"},
 		"category": "violation", "rule_ids": []string{"01890a5d-ac96-774b-bcce-b302099a7201"}, "comment": "rude", "forward": true,
 	})
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("status = %d, want 200", res.StatusCode)
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("status = %d, want 201", res.StatusCode)
 	}
 	if cc := res.Header.Get("Cache-Control"); cc != "no-store" {
 		t.Errorf("Cache-Control = %q, want no-store", cc)
@@ -107,8 +108,8 @@ func TestCreateReport(t *testing.T) {
 	}
 
 	// The fewest fields: no statuses, rules, or comment.
-	if res := e.postReport(t, "write", map[string]any{"account_id": reportTargetID, "category": "spam"}); res.StatusCode != http.StatusOK {
-		t.Errorf("minimal report = %d, want 200", res.StatusCode)
+	if res := e.postReport(t, "write", map[string]any{"account_id": reportTargetID, "category": "spam"}); res.StatusCode != http.StatusCreated {
+		t.Errorf("minimal report = %d, want 201", res.StatusCode)
 	}
 	if in := reports.got[1]; in.StatusIDs != nil || in.RuleIDs != nil || in.Comment != "" || in.Forward {
 		t.Errorf("minimal report filed %+v", in)
@@ -144,8 +145,8 @@ func TestCreateReportProblems(t *testing.T) {
 func TestCreateReportIsRateLimited(t *testing.T) {
 	e := newReportsEnv(t, &fakeReports{})
 	for i := range clientapi.ReportLimit.Max {
-		if res := e.postReport(t, "write", map[string]any{"account_id": reportTargetID, "category": "spam"}); res.StatusCode != http.StatusOK {
-			t.Fatalf("report %d = %d, want 200", i+1, res.StatusCode)
+		if res := e.postReport(t, "write", map[string]any{"account_id": reportTargetID, "category": "spam"}); res.StatusCode != http.StatusCreated {
+			t.Fatalf("report %d = %d, want 201", i+1, res.StatusCode)
 		}
 	}
 	res := e.postReport(t, "write", map[string]any{"account_id": reportTargetID, "category": "spam"})
@@ -153,7 +154,7 @@ func TestCreateReportIsRateLimited(t *testing.T) {
 		t.Errorf("one report too many = %d (Retry-After %q), want 429", res.StatusCode, res.Header.Get("Retry-After"))
 	}
 	e.clock.Advance(2 * clientapi.ReportLimit.Window)
-	if res := e.postReport(t, "write", map[string]any{"account_id": reportTargetID, "category": "spam"}); res.StatusCode != http.StatusOK {
-		t.Errorf("after the window = %d, want 200", res.StatusCode)
+	if res := e.postReport(t, "write", map[string]any{"account_id": reportTargetID, "category": "spam"}); res.StatusCode != http.StatusCreated {
+		t.Errorf("after the window = %d, want 201", res.StatusCode)
 	}
 }

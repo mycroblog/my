@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: MIT
 post:
-  operationId: unfollowAccount
-  summary: Unfollow an account
-  description: Ends the follow or withdraws the follow request. Without one it changes nothing.
+  operationId: acceptFollowRequest
+  summary: Accept a follow request
+  description: |
+    Makes the account's pending follow of the viewer active. Accepting a follow
+    that is already active changes nothing; without a follow it is a 404.
   tags: [accounts]
   security:
     - oauth2: ["write:follows"]

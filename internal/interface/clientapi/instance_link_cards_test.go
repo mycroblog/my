@@ -17,15 +17,15 @@ func TestInstanceLinkCardSettings(t *testing.T) {
 		t.Helper()
 		return decode[clientapi.Instance](t, e.send(t, http.MethodGet, "/instance", "", ""))
 	}
-	if got := read(); !got.LinkCardsEnabled || got.LinkCardsIgnoreRobotsTxt {
-		t.Errorf("by default: enabled %v, ignore robots.txt %v, want true and false", got.LinkCardsEnabled, got.LinkCardsIgnoreRobotsTxt)
+	if got := read(); !got.LinkCards || got.LinkCardsIgnoreRobotsTxt {
+		t.Errorf("by default: enabled %v, ignore robots.txt %v, want true and false", got.LinkCards, got.LinkCardsIgnoreRobotsTxt)
 	}
 	setSetting(t, e, "link_cards_ignore_robots_txt", "true")
-	if got := read(); !got.LinkCardsEnabled || !got.LinkCardsIgnoreRobotsTxt {
-		t.Errorf("ignoring robots.txt: enabled %v, ignore robots.txt %v, want true and true", got.LinkCardsEnabled, got.LinkCardsIgnoreRobotsTxt)
+	if got := read(); !got.LinkCards || !got.LinkCardsIgnoreRobotsTxt {
+		t.Errorf("ignoring robots.txt: enabled %v, ignore robots.txt %v, want true and true", got.LinkCards, got.LinkCardsIgnoreRobotsTxt)
 	}
-	setSetting(t, e, "link_cards_enabled", "false")
-	if got := read(); got.LinkCardsEnabled {
-		t.Errorf("link cards off: enabled %v, want false", got.LinkCardsEnabled)
+	setSetting(t, e, "link_cards", "false")
+	if got := read(); got.LinkCards {
+		t.Errorf("link cards off: enabled %v, want false", got.LinkCards)
 	}
 }

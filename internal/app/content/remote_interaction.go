@@ -44,7 +44,7 @@ type RemoteBoostInput struct {
 // Recording the same Announce again, or another one while the account boosts the status, returns
 // the existing boost and emits nothing.
 func (s *Interactions) RecordRemoteBoost(ctx context.Context, in RemoteBoostInput) (content.Boost, error) {
-	st, err := s.remoteVisibleStatus(ctx, in.BoosterAccountID, in.StatusID)
+	st, err := s.remoteCountedStatus(ctx, in.BoosterAccountID, in.StatusID)
 	if err != nil {
 		return content.Boost{}, err
 	}
@@ -162,7 +162,7 @@ func (s *Interactions) RecordRemoteFavourite(ctx context.Context, in RemoteFavou
 	if err := s.checkRestrictions(ctx, in.AccountID, false); err != nil {
 		return content.Favourite{}, err
 	}
-	st, err := s.remoteVisibleStatus(ctx, in.AccountID, in.StatusID)
+	st, err := s.remoteCountedStatus(ctx, in.AccountID, in.StatusID)
 	if err != nil {
 		return content.Favourite{}, err
 	}
@@ -232,7 +232,8 @@ func (s *Interactions) RemoveRemoteFavourite(ctx context.Context, uri, accountID
 // remote status is visible to every remote account that knows of it: its own server decides who
 // sees it. A local status is judged as an ActivityPub fetch by the account would be
 // (content.CanView in ContextObjectFetch). A status that is missing, deleted, or hidden fails
-// with ErrNotFound; an account that is missing or local with ErrActorUnavailable.
+// with ErrNotFound; an account that is missing or local with ErrActorUnavailable. See
+// remoteCountedStatus for what the status of a deactivated author takes.
 func (s *Interactions) remoteVisibleStatus(ctx context.Context, accountID, statusID string) (content.Status, error) {
 	actor, err := s.d.Accounts.FindByID(ctx, accountID)
 	if errors.Is(err, appaccount.ErrNotFound) {
@@ -257,6 +258,48 @@ func (s *Interactions) remoteVisibleStatus(ctx context.Context, accountID, statu
 		return content.Status{}, fmt.Errorf("status %s: %w", statusID, ErrNotFound)
 	}
 	return st, nil
+}
+
+// remoteCountedStatus is remoteVisibleStatus for a boost, a favourite, or a reaction, which remote
+// servers that still show a post may send: it counts on a status that only its author's deactivation
+// hides, so that the numbers are right when the account comes back, and the notification
+// projector tells the deactivated author nothing (ADR-0145 §6).
+func (s *Interactions) remoteCountedStatus(ctx context.Context, accountID, statusID string) (content.Status, error) {
+	st, err := s.remoteVisibleStatus(ctx, accountID, statusID)
+	if !errors.Is(err, ErrNotFound) {
+		return st, err
+	}
+	a := s.audience()
+	st, liveErr := a.live(ctx, statusID)
+	if liveErr != nil {
+		return content.Status{}, err
+	}
+	author, findErr := a.accounts.FindByID(ctx, st.AuthorAccountID)
+	if findErr != nil || !author.Lifecycle.Deactivated() {
+		return content.Status{}, err
+	}
+	switch ok, visErr := a.remoteVisibleAsActive(ctx, accountID, st); {
+	case visErr != nil:
+		return content.Status{}, visErr
+	case !ok:
+		return content.Status{}, err
+	}
+	return st, nil
+}
+
+// remoteVisibleAsActive is remoteVisible as though the author of st had not left.
+func (a audience) remoteVisibleAsActive(ctx context.Context, accountID string, st content.Status) (bool, error) {
+	r, err := a.restrictions.Restrictions(ctx, st.AuthorAccountID)
+	if err != nil {
+		return false, err
+	}
+	rel, err := a.relation(ctx, accountID, st)
+	if err != nil {
+		return false, err
+	}
+	viewer := content.Viewer{Kind: content.ViewerRemote, AccountID: accountID}
+	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	return content.CanView(content.ContextObjectFetch, viewer, facts, r.Author, rel), nil
 }
 
 // remoteVisible reports whether the remote account accountID may see the local status st, as

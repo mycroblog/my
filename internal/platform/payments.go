@@ -14,13 +14,13 @@ import (
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
-// paymentProviderAdapters builds the PaymentProvider of each value of payments_provider whose
+// paymentProviderAdapters builds the PaymentProvider of each value of payments whose
 // adapter is in this build (ADR-0074 §8): the files of the adapters, under their build tags,
 // add theirs.
 var paymentProviderAdapters = map[string]func(ctx context.Context, cfg *config.Config, logger *slog.Logger) (supporters.PaymentProvider, error){}
 
-// newPaymentProvider returns the PaymentProvider of payments_provider, AppOptions.PaymentProvider
-// standing in for it, and nil with payments_provider = none.
+// newPaymentProvider returns the PaymentProvider of payments, AppOptions.PaymentProvider
+// standing in for it, and nil with payments = none.
 func newPaymentProvider(ctx context.Context, cfg *config.Config, opts AppOptions, logger *slog.Logger) (supporters.PaymentProvider, error) {
 	if opts.PaymentProvider != nil {
 		return opts.PaymentProvider, nil
@@ -30,11 +30,11 @@ func newPaymentProvider(ctx context.Context, cfg *config.Config, opts AppOptions
 	}
 	build, ok := paymentProviderAdapters[cfg.PaymentsProvider]
 	if !ok {
-		return nil, fmt.Errorf("payments_provider = %s: this build has no adapter of %s", cfg.PaymentsProvider, cfg.PaymentsProvider)
+		return nil, fmt.Errorf("payments = %s: this build has no adapter of %s", cfg.PaymentsProvider, cfg.PaymentsProvider)
 	}
 	prov, err := build(ctx, cfg, logger)
 	if err != nil {
-		return nil, fmt.Errorf("payments_provider = %s: %w", cfg.PaymentsProvider, err)
+		return nil, fmt.Errorf("payments = %s: %w", cfg.PaymentsProvider, err)
 	}
 	return prov, nil
 }
@@ -59,7 +59,7 @@ func (a *App) setUpPayments(cfg *config.Config, repo supporters.PaymentRepositor
 		return nil
 	}
 	if sync == nil {
-		return fmt.Errorf("payments_provider = %s: no subscriptions of the supporters module apply the payments", prov.Name())
+		return fmt.Errorf("payments = %s: no subscriptions of the supporters module apply the payments", prov.Name())
 	}
 	outbox := a.Outbox
 	if outbox == nil {

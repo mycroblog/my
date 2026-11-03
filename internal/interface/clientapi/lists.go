@@ -126,7 +126,7 @@ func (s *Server) CreateList(ctx context.Context, req CreateListRequestObject) (C
 		}
 		return nil, err
 	}
-	return CreateList200JSONResponse{listResponse(l)}, nil
+	return CreateList201JSONResponse{listResponse(l)}, nil
 }
 
 // GetList serves GET /api/v1/lists/{id}.
@@ -211,7 +211,7 @@ func (s *Server) ListListAccounts(ctx context.Context, req ListListAccountsReque
 	if err != nil {
 		return nil, err
 	}
-	page := AccountPage{Accounts: accounts}
+	page := AccountPage{Items: accounts}
 	if last >= 0 {
 		page.NextCursor = encodeCursor(ids[last])
 	}

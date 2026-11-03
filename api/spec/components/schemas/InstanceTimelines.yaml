@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: MIT
 description: |
-  Who may read the public timelines the instance serves (FR-202): `local` is the instance
-  setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-  setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-  timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+  Who may read the public timelines the instance serves: `local` is the instance
+  setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+  setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+  timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 type: object
 required: [local, federated]
 properties:
   local:
-    $ref: ./TimelineAccess.yaml
+    $ref: ./InstanceAudience.yaml
   federated:
-    $ref: ./TimelineAccess.yaml
+    $ref: ./InstanceAudience.yaml

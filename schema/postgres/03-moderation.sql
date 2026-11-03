@@ -21,7 +21,7 @@ CREATE TABLE moderation_actions (
   public_reason text,
   private_note text,
   report_id uuid,
-  issuer text NOT NULL CHECK (issuer IN ('moderator', 'system', 'remote')),
+  issuer text NOT NULL CHECK (issuer IN ('moderator')),
   issued_by_user_id uuid,
   notify_target boolean NOT NULL,
   expires_at timestamptz,
@@ -222,7 +222,7 @@ CREATE TABLE audit_log_entries (
     'registration_approved', 'registration_rejected', 'setting_changed', 'text_changed',
     'rule_added', 'rule_revised', 'rule_moved', 'rule_retired', 'role_granted', 'role_revoked',
     'role_created', 'role_updated', 'role_deleted', 'appeal_upheld',
-    'appeal_overturned', 'account_deletion_cancelled',
+    'appeal_overturned', 'account_deletion_canceled',
     'revealed_private_data', 'signup_block_added', 'signup_block_lifted', 'two_factor_disabled',
     'password_reset_link_issued',
     'email_suppression_lifted', 'account_moved',
@@ -243,7 +243,8 @@ CREATE TABLE audit_log_entries (
     'service_closure_announced', 'service_closure_withdrawn', 'service_closure_closed', 'service_closure_delivery_completed',
     'voice_room_ended', 'login_provider_created', 'login_provider_updated', 'login_provider_deleted',
     'login_provider_enabled', 'login_provider_disabled', 'login_provider_secret_rotated',
-    'link_card_domain_fetch_stopped', 'link_card_domain_images_stopped', 'link_card_domain_rule_removed'
+    'link_card_domain_fetch_stopped', 'link_card_domain_images_stopped', 'link_card_domain_rule_removed',
+    'instance_marked_available'
   )),
   target_kind text NOT NULL CHECK (target_kind IN (
     'account', 'status', 'domain', 'report', 'appeal', 'user', 'role', 'setting', 'rule',
@@ -289,7 +290,7 @@ CREATE UNIQUE INDEX relationship_severances_action_id_account_id ON relationship
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a local account's appeal of an action on it, at most one per action, within the
--- appeal window (instance setting appeal_window) from the action.
+-- appeal window (instance setting appeal_window_days) from the action.
 CREATE TABLE moderation_appeals (
   id uuid NOT NULL PRIMARY KEY,
   action_id uuid NOT NULL,

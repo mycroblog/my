@@ -47,6 +47,8 @@ description: |
   - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
   - `/api/v1/problems/wrong-password` (422): the password given to confirm the operation is
     not the user's current password.
+  - `/api/v1/problems/deactivation-refused` (409): the user's own account cannot be deactivated
+    now; the detail says why.
   - `/api/v1/problems/export-in-progress` (409): another data export of the user is being
     built. Wait for it to end.
   - `/api/v1/problems/export-not-ready` (409): the data export has no archive to download:
@@ -103,14 +105,14 @@ description: |
     server whose closure is not announced or whose `closes_at` has not come
     (`POST /admin/closure/close`).
   - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
-    stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+    stops new registrations and supporter subscriptions: approving a pending
     registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
     (`POST /supporter/checkout`).
-  - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
+  - `/api/v1/problems/service-closed` (403): the server is closed. A closed
     server serves only the operations with which the users take their data away: their own
     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
-    (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+    (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, `POST /client_errors`, and
     the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
     `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
     this problem; signing in and resetting a password stay available outside the client API.
@@ -175,8 +177,13 @@ description: |
     expire or be used up.
   - `/api/v1/problems/registration-closed` (409): the registration mode is `closed`, which
     takes no invite.
-  - `/api/v1/problems/account-moved` (403): the user's account moved to another account
-    (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+  - `/api/v1/problems/target-outranks-actor` (403): the admin operation on an account needs the
+    user to rank above the account: the highest `position` among the user's roles must be above
+    that of every role of the account, so it refuses a higher or equal rank and the user's own
+    account.
+  - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
+    an administrator. Make another user an administrator first.
+  - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
     (`POST /accounts/move/cancel`).
   - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
     `DELETE /sessions/{id}`; signing out ends it.
@@ -189,12 +196,29 @@ description: |
     own, is not found, cannot be fetched from its server, or is suspended here.
   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
     or moved to that account before.
-  - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
+  - `/api/v1/problems/maintenance` (503): the server is under maintenance and
     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
     each present only when the operator set it: `message`, the administrators' notice in
     plain text; `until`, when the maintenance is expected to end (RFC 3339); and
     `status_page_url`, the instance's status page.
+  - `/api/v1/problems/custom-emoji-request-conflict` (409): a request for a custom emoji
+    is not in the state the operation needs, or was decided meanwhile.
+  - `/api/v1/problems/email-already-verified` (409): the primary email address is already
+    confirmed, so no confirmation mail is sent.
+  - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
+    suppressed, so there is nothing to lift.
+  - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
+    `reason` says which.
+  - `/api/v1/problems/invalid-role` (422): a role change breaks a rule; `reason` says which.
+  - `/api/v1/problems/voice-already-invited` (409): the account is already invited to the room.
+  - `/api/v1/problems/voice-cannot-speak` (403): the participant may not speak in the room.
+  - `/api/v1/problems/voice-invalid-invitee` (422): the account cannot be invited to the room.
+  - `/api/v1/problems/voice-invalid-participant` (422): the account is not a participant that
+    the operation can act on.
+  - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
+    co-hosts of the room.
+  - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
 type: object
 required: [type, title, status]
 properties:

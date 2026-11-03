@@ -48,11 +48,11 @@ func TestSignupBlocksThroughTheAPI(t *testing.T) {
 		return b
 	}
 
-	domain := add(map[string]any{"kind": "email_domain", "value": "例え.jp", "severity": "reject", "comment": "spam wave"}, http.StatusOK)
-	if domain.Value != "xn--r8jz45g.jp" || domain.State != clientapi.AdminSignupBlockStateActive || domain.Comment == nil || *domain.Comment != "spam wave" {
+	domain := add(map[string]any{"kind": "email_domain", "value": "例え.jp", "severity": "reject", "comment": "spam wave"}, http.StatusCreated)
+	if domain.Value != "xn--r8jz45g.jp" || domain.State != clientapi.ModerationActionStateActive || domain.Comment == nil || *domain.Comment != "spam wave" {
 		t.Errorf("domain block = %+v", domain)
 	}
-	ip := add(map[string]any{"kind": "ip_range", "value": "192.0.2.7/24", "severity": "require_approval", "expires_in": 3600}, http.StatusOK)
+	ip := add(map[string]any{"kind": "ip_range", "value": "192.0.2.7/24", "severity": "require_approval", "expires_in": 3600}, http.StatusCreated)
 	if ip.Value != "192.0.2.0/24" || ip.ExpiresAt == nil {
 		t.Errorf("ip block = %+v", ip)
 	}
@@ -75,7 +75,7 @@ func TestSignupBlocksThroughTheAPI(t *testing.T) {
 	// A lifted block no longer matches; the username of the refused sign-up was never taken.
 	var lifted clientapi.AdminSignupBlock
 	if res := c.do("carol", http.MethodPost, "/admin/signup_blocks/"+domain.Id+"/lift", nil, &lifted); res.StatusCode != http.StatusOK ||
-		lifted.State != clientapi.AdminSignupBlockStateLifted || lifted.LiftedAt == nil {
+		lifted.State != clientapi.ModerationActionStateLifted || lifted.LiftedAt == nil {
 		t.Errorf("lift = %d %+v, want lifted", res.StatusCode, lifted)
 	}
 	if _, err := signUp("dave", "dave@mx.xn--r8jz45g.jp", ""); err != nil {
@@ -96,7 +96,7 @@ func TestSignupBlocksThroughTheAPI(t *testing.T) {
 	// A ban with block_email rejects new sign-ups with the banned user's address, +tags included.
 	var action clientapi.AdminAccountAction
 	if res := c.do("carol", http.MethodPost, "/admin/accounts/"+approved.AccountID+"/actions",
-		map[string]any{"kind": "ban", "reason_category": "spam", "block_email": true}, &action); res.StatusCode != http.StatusOK {
+		map[string]any{"kind": "ban", "reason_category": "spam", "block_email": true}, &action); res.StatusCode != http.StatusCreated {
 		t.Fatalf("ban with block_email = %d", res.StatusCode)
 	}
 	if res := c.do("carol", http.MethodPost, "/admin/accounts/"+approved.AccountID+"/actions",

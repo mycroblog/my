@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: A moderation action on an account (FR-703).
+description: A moderation action on an account.
 type: object
 required: [id, account_id, kind, reason_category, issuer, notify_target, state, issued_at]
 properties:
@@ -24,11 +24,9 @@ properties:
     allOf:
       - $ref: ./Id.yaml
   issuer:
-    description: |
-      `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-      account's own server.
+    description: "`moderator`: a moderator or the CLI."
     type: string
-    enum: [moderator, system, remote]
+    enum: [moderator]
   issued_by_account_id:
     description: |
       The account of the moderator who took the action; omitted for the CLI and the
@@ -39,7 +37,7 @@ properties:
     description: Whether the account is told of the action.
     type: boolean
   state:
-    $ref: ./AdminAccountActionState.yaml
+    $ref: ./ModerationActionState.yaml
   issued_at:
     type: string
     format: date-time

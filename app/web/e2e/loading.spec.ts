@@ -83,7 +83,7 @@ test.describe("a timeline's first page", () => {
 test.describe("a follow list's first page", () => {
   test("is a busy skeleton of rows named once, under the page heading", async ({ page, makeAxeBuilder }) => {
     await page.route("**/api/v1/accounts/lookup*", (route) => route.fulfill(json(bob)));
-    const { release } = await hold(page, `**/api/v1/accounts/${bob.id}/followers*`, { accounts: [] });
+    const { release } = await hold(page, `**/api/v1/accounts/${bob.id}/followers*`, { items: [] });
     await page.goto("/@bob/followers");
 
     await expectLoadingRegion(page);

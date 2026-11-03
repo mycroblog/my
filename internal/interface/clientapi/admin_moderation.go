@@ -63,7 +63,7 @@ func newAdminDomainAction(v appmoderation.DomainActionView) AdminDomainAction {
 	a := v.Action
 	out := AdminDomainAction{
 		Id: a.ID, Domain: a.Domain, Kind: AdminDomainActionKind(a.Kind), Obfuscate: a.Obfuscate,
-		State: AdminDomainActionState(v.State), IssuedAt: a.IssuedAt.UTC(),
+		State: ModerationActionState(v.State), IssuedAt: a.IssuedAt.UTC(),
 	}
 	if a.PublicComment != "" {
 		out.PublicComment = &a.PublicComment
@@ -171,6 +171,8 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
 	case errors.As(err, &textErr):
 		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
+	case errors.Is(err, moderation.ErrOwnDomain):
+		return unprocessable(l.ServerErrorsInvalidValue("domain"))
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: issue a domain action on %s: %w", in.Domain, err)
 	}
@@ -178,7 +180,7 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: domain action %s: %w", a.ID, err)
 	}
-	return CreateDomainAction200JSONResponse{domainActionResponse(view)}, nil
+	return CreateDomainAction201JSONResponse{domainActionResponse(view)}, nil
 }
 
 // GetDomainAction serves GET /api/v1/admin/domain_actions/{id}.
@@ -272,7 +274,7 @@ func (s *Server) newAdminReportsWith(ctx context.Context, reads presentReads, re
 	for _, rec := range recs {
 		r, st := rec.Report, rec.Status
 		item := AdminReport{
-			Id: r.ID, Category: AdminReportCategory(r.Category), Comment: r.Comment, Forwarded: r.Forwarded,
+			Id: r.ID, Category: ReportCategory(r.Category), Comment: r.Comment, Forwarded: r.Forwarded,
 			FiledAt: r.FiledAt.UTC(), State: AdminReportState(st.State), StateChangedAt: st.Since.UTC(),
 			ReporterAccountId: r.ReporterAccountID, ReporterAccount: accounts[r.ReporterAccountID],
 			TargetAccountId: r.TargetAccountID, TargetAccount: accounts[r.TargetAccountID],

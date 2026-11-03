@@ -187,7 +187,7 @@ func (s *Server) CreateCostItem(ctx context.Context, req CreateCostItemRequestOb
 		}
 		return nil, fmt.Errorf("clientapi: create cost item: %w", err)
 	}
-	return CreateCostItem200JSONResponse{costItemResponse(item)}, nil
+	return CreateCostItem201JSONResponse{costItemResponse(item)}, nil
 }
 
 // GetCostItem serves GET /api/v1/admin/cost_items/{id}.
@@ -470,7 +470,7 @@ func (s *Server) GetInstanceCostTotals(ctx context.Context, req GetInstanceCostT
 	if p != nil {
 		return GetInstanceCostTotalsdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	cache := cachePublic
+	cache := publicCache(ctx)
 	return GetInstanceCostTotals200JSONResponse{Body: out, Headers: GetInstanceCostTotals200ResponseHeaders{CacheControl: &cache}}, nil
 }
 

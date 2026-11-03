@@ -92,7 +92,7 @@ func TestCreateUpdateAndDeleteRoles(t *testing.T) {
 	alice := userOf(aliceAccountID)
 
 	res := e.send(t, http.MethodPost, "/admin/roles", "admin", `{"key":"helper","position":50,"permissions":["view_audit","manage_reports"]}`)
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create = %d %+v", res.StatusCode, decodeProblem(t, res))
 	}
 	if cc := res.Header.Get("Cache-Control"); cc != "no-store" {

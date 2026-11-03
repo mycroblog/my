@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   How much of the instance's income everyone may read (the instance setting
-  `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:
+  `income_visibility`), apart from `finance_visibility`. `private`:
   nothing, and `GET /instance/income_totals` is a 404; `totals`: the net income of each
   currency by period; `plans`: also the number of members of each supporter plan now. No
   level publishes individual payments, the subscribers, the amounts of each plan, or the

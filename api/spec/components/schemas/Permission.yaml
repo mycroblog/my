@@ -12,23 +12,23 @@ description: |
   server's announcements to every local user. `manage_finance`: the instance's costs and
   the state of the billing imports (only the built-in admin role by default). `view_finance`:
   reading the totals of the instance's costs on `GET /finance/cost_totals`, a member
-  permission outside the staff's areas (ADR-0070). `manage_supporters`: the supporter program, its plans, and their
+  permission outside the staff's areas. `manage_supporters`: the supporter program, its plans, and their
   subscriptions (only the built-in admin role by default). `create_custom_emojis`: requesting
   new local custom emoji, which a holder of `manage_custom_emojis` approves, and changing and
   deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
-  member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
+  member permission. `manage_oauth_apps`: all the OAuth clients, disabling them,
   and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
-  `/admin/oauth_client_host_denials` (ADR-0090). `manage_service_closure`: announcing the closure
+  `/admin/oauth_client_host_denials`. `manage_service_closure`: announcing the closure
   of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
-  admin role by default, ADR-0088). `start_voice_rooms`: opening voice chat rooms while the
+  admin role by default). `start_voice_rooms`: opening voice chat rooms while the
   instance setting `voice_room_starters` is `permitted`, a member permission (only the
-  built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
+  built-in admin role by default). `manage_errors`: the error groups of the server
   and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
-  the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
+  the webhook events `error_group.*` (only the built-in admin role by default).
   `manage_login_providers`: the external identity providers that users sign in with (only the
-  built-in admin role by default, ADR-0106). `create_invites`: creating, listing, and revoking
+  built-in admin role by default). `create_invites`: creating, listing, and revoking
   invites of one's own on `/invites` while the instance setting `invite_creators` is
-  `permitted`, a member permission (only the built-in admin role by default, ADR-0108). The
+  `permitted`, a member permission (only the built-in admin role by default). The
   others guard no client API operation yet.
 type: string
 enum:

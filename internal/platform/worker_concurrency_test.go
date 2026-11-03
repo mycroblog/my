@@ -48,10 +48,10 @@ func TestWorkerRunsRealJobsAtOnce(t *testing.T) {
 			return map[string]string{"MY_DATABASE_URL": newDatabase(t, true)}
 		}},
 		{"postgres", func(t *testing.T) map[string]string {
-			return map[string]string{"MY_DB": "postgres", "MY_DATABASE_URL": postgresURLWithPool(t, 16)}
+			return map[string]string{"MY_DATABASE": "postgres", "MY_DATABASE_URL": postgresURLWithPool(t, 16)}
 		}},
 		{"postgres with a selection of job types", func(t *testing.T) map[string]string {
-			return map[string]string{"MY_DB": "postgres", "MY_DATABASE_URL": postgresURLWithPool(t, 16), "MY_WORKER_JOB_TYPES_EXCEPT": "media.*"}
+			return map[string]string{"MY_DATABASE": "postgres", "MY_DATABASE_URL": postgresURLWithPool(t, 16), "MY_WORKER_JOB_TYPES_EXCEPT": "media.*"}
 		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -206,7 +206,7 @@ func TestWorkerJobConcurrencyAgainstThePool(t *testing.T) {
 		{"given as one on a pool of one", 1, "1", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			env := map[string]string{"MY_DB": "postgres", "MY_DATABASE_URL": postgresURLWithPool(t, tc.pool)}
+			env := map[string]string{"MY_DATABASE": "postgres", "MY_DATABASE_URL": postgresURLWithPool(t, tc.pool)}
 			if tc.concurrency != "" {
 				env["MY_WORKER_JOB_CONCURRENCY"] = tc.concurrency
 			}
@@ -223,7 +223,7 @@ func TestWorkerJobConcurrencyAgainstThePool(t *testing.T) {
 		})
 	}
 	t.Run("a web process does not run jobs", func(t *testing.T) {
-		env := map[string]string{"MY_DB": "postgres", "MY_DATABASE_URL": postgresURLWithPool(t, 1), "MY_ROLE": "web", "MY_WORKER_JOB_CONCURRENCY": "1"}
+		env := map[string]string{"MY_DATABASE": "postgres", "MY_DATABASE_URL": postgresURLWithPool(t, 1), "MY_ROLE": "web", "MY_WORKER_JOB_CONCURRENCY": "1"}
 		a, err := platform.NewApp(t.Context(), loadConfig(t, env), platform.AppOptions{})
 		if err != nil {
 			t.Fatalf("NewApp = %v", err)

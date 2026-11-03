@@ -41,7 +41,7 @@ var errEntryExists = errors.New("timeline: the feed entry already exists")
 // concurrent boost of the same pair) never reaches them. RebuildProjections applies the same
 // projectors to the events that the source modules replay, so updating incrementally and
 // rebuilding agree.
-func RegisterProjectors(r *uow.Projectors, repo Repository) {
+func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedEffects) {
 	r.Register(appcontent.EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.StatusCreated)
 		s, rev := ev.Status, ev.Revision
@@ -173,19 +173,36 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		return repo.DeleteDomainMute(ctx, tx, ev.AccountID, ev.Domain)
 	})
 
-	registerDeletionProjector(r, repo)
+	registerLifecycleProjector(r, repo, moderated)
 }
 
-// registerDeletionProjector registers the projector of the deletions of accounts:
-// feed_author_restrictions holds profile_view for each deleted account.
-func registerDeletionProjector(r *uow.Projectors, repo Repository) {
+// registerLifecycleProjector registers the projector of the lifecycle of accounts:
+// feed_author_restrictions holds profile_view for each deleted or deactivated account, and a
+// reactivation puts back what moderation has in effect (ADR-0145 §5), so a suspension goes on.
+func registerLifecycleProjector(r *uow.Projectors, repo Repository, moderated ModeratedEffects) {
 	r.Register(appaccount.EventLifecycleEventRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appaccount.LifecycleEventRecorded)
-		if !ev.Deletes() {
-			return nil
+		id := ev.Event.AccountID
+		switch {
+		case ev.Deletes(), ev.Deactivates():
+			// Deletion is final, so its restriction never ends (data-model §4.6, §8), and a
+			// deactivation lasts until the reactivation.
+			return repo.UpsertAuthorRestriction(ctx, tx, AuthorRestriction{AccountID: id, Restriction: timeline.RestrictProfileView})
+		case ev.Reactivates():
+			var effects []appmoderation.Effect
+			if moderated != nil {
+				var err error
+				if effects, err = moderated.AccountEffectsTx(ctx, tx, id); err != nil {
+					return err
+				}
+			}
+			return replaceRestrictions(effects, func(r timeline.Restriction, until *time.Time) error {
+				return repo.UpsertAuthorRestriction(ctx, tx, AuthorRestriction{AccountID: id, Restriction: r, EffectiveUntil: until})
+			}, func(r timeline.Restriction) error {
+				return repo.DeleteAuthorRestriction(ctx, tx, id, r)
+			})
 		}
-		// Deletion is final, so the restriction never ends (data-model §4.6, §8).
-		return repo.UpsertAuthorRestriction(ctx, tx, AuthorRestriction{AccountID: ev.Event.AccountID, Restriction: timeline.RestrictProfileView})
+		return nil
 	})
 }
 
@@ -250,11 +267,11 @@ func ContentSource(statuses appcontent.Repository, interactions appcontent.Inter
 	}
 }
 
-// AccountSource replays the deletions of accounts of the account module
-// (appaccount.ReplayDeletions).
+// AccountSource replays the deletions and the deactivations in force of accounts of the account
+// module (appaccount.ReplayLifecycle).
 func AccountSource(repo appaccount.Repository) Source {
 	return func(ctx context.Context, tx uow.Tx, emit func(uow.Event) error) error {
-		return appaccount.ReplayDeletions(ctx, tx, repo, emit)
+		return appaccount.ReplayLifecycle(ctx, tx, repo, emit)
 	}
 }
 
@@ -280,7 +297,7 @@ func GraphSource(repo appgraph.Repository) Source {
 // holds leaves them, as the end of the follow would have taken it out.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository, sources ...Source) error {
 	projectors := &uow.Projectors{}
-	RegisterProjectors(projectors, repo)
+	RegisterProjectors(projectors, repo, nil)
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		if err := repo.DeleteProjection(ctx, tx); err != nil {
 			return err

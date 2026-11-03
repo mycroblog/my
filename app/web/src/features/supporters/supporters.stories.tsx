@@ -15,7 +15,7 @@ import {
 } from "../../test/stories";
 import { listing, members, programOn } from "./test/storyFixtures";
 
-const listed = [programOn("public"), listing(members)];
+const listed = [programOn("everyone"), listing(members)];
 
 const meta = {
   title: "Screens/About/Supporters",
@@ -32,7 +32,7 @@ type Story = StoryObj<typeof meta>;
 export const Normal: Story = {};
 
 /** A published list that nobody is on yet. */
-export const Empty: Story = answering(programOn("public"), listing([]));
+export const Empty: Story = answering(programOn("everyone"), listing([]));
 
 /** A server that does not publish the list. */
 export const NotPublished: Story = answering(

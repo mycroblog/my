@@ -3,14 +3,12 @@ get:
   operationId: listCustomEmojis
   summary: List the custom emoji of the picker
   description: |
-    The custom emoji of the instance that the picker offers (FR-111, ADR-0051 §4): every
+    The custom emoji of the instance that the picker offers: every
     enabled local emoji that is not hidden from the picker, by category (those without one
     first) and shortcode. A text can use every enabled local emoji, hidden or not. The list
     is not paginated.
   tags: [instance]
-  security:
-    - {}
-    - oauth2: ["read"]
+  security: []
   responses:
     "200":
       description: The custom emoji.

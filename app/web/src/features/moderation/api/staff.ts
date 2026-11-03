@@ -121,7 +121,7 @@ export function isMissingPermission(error: unknown): boolean {
 
 export type DomainAction = Schemas["AdminDomainAction"];
 export type DomainActionKind = Schemas["AdminDomainActionKind"];
-export type DomainActionState = Schemas["AdminDomainActionState"];
+export type DomainActionState = Schemas["ModerationActionState"];
 export type NewDomainAction = Schemas["CreateDomainActionRequest"];
 
 /** The kinds of domain action, from the lightest to the heaviest, in the order of the form. */
@@ -302,7 +302,7 @@ export const auditActions = [
   "role_deleted",
   "appeal_upheld",
   "appeal_overturned",
-  "account_deletion_cancelled",
+  "account_deletion_canceled",
   "signup_block_added",
   "signup_block_lifted",
   "custom_emoji_created",
@@ -368,6 +368,7 @@ export const auditActions = [
   "link_card_domain_fetch_stopped",
   "link_card_domain_images_stopped",
   "link_card_domain_rule_removed",
+  "instance_marked_available",
 ] as const satisfies readonly AuditAction[];
 
 /** The kinds of target of an audited operation, in the order of the filter. */

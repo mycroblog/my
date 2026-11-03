@@ -10,6 +10,7 @@ import (
 	"slices"
 	"time"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
 )
@@ -74,6 +75,13 @@ type CustomEmojiRequestRepository interface {
 	// PendingImageRequestOf returns, in tx, the pending request to replace the image of an
 	// emoji, "" for none.
 	PendingImageRequestOf(ctx context.Context, tx uow.Tx, emojiID string) (string, error)
+	// ListPendingCustomEmojiRequestsOfUser returns, in tx, the pending requests of a user.
+	ListPendingCustomEmojiRequestsOfUser(ctx context.Context, tx uow.Tx, userID string) ([]string, error)
+	// BlankCustomEmojiRequester removes a user from its requests, which stay for the audit log.
+	BlankCustomEmojiRequester(ctx context.Context, tx uow.Tx, userID string) error
+	// RebuildCustomEmojiPendingRequests makes custom_emoji_pending_requests again from the requests
+	// without an outcome (data-model §9).
+	RebuildCustomEmojiPendingRequests(ctx context.Context, tx uow.Tx) error
 	FindCustomEmojiRequest(ctx context.Context, id string) (content.CustomEmojiRequestRecord, error)
 	// ListCustomEmojiRequests returns up to limit requests matching q, newest first.
 	ListCustomEmojiRequests(ctx context.Context, q CustomEmojiRequestQuery, limit int) ([]content.CustomEmojiRequestRecord, error)
@@ -666,4 +674,37 @@ func (s *CustomEmojiService) DeleteOwn(ctx context.Context, id, userID string) e
 		return err
 	}
 	return s.delete(ctx, r, userID)
+}
+
+// EraseAccountData implements account.DataEraser: it closes the pending requests of a deleted
+// account's user as lapsed, which frees their shortcodes and the emoji whose image they would
+// replace, and takes the user out of its requests (data-model §8). It is safe to repeat.
+func (s *CustomEmojiService) EraseAccountData(ctx context.Context, t appaccount.ErasureTarget, _ string, _ int) (appaccount.ErasureStep, error) {
+	if t.UserID == "" {
+		return appaccount.ErasureStep{Done: true}, nil
+	}
+	now := s.d.Clock.Now()
+	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		pending, err := s.d.Repository.ListPendingCustomEmojiRequestsOfUser(ctx, tx, t.UserID)
+		if err != nil {
+			return err
+		}
+		for _, id := range pending {
+			lapse := content.CustomEmojiRequestOutcome{ID: s.d.IDs.NewID(), RequestID: id, Outcome: content.RequestLapsed, DecidedAt: now}
+			if err := s.d.Repository.CloseCustomEmojiRequest(ctx, tx, lapse); err != nil {
+				return err
+			}
+		}
+		return s.d.Repository.BlankCustomEmojiRequester(ctx, tx, t.UserID)
+	})
+	return appaccount.ErasureStep{Done: true}, err
+}
+
+// RebuildCustomEmojiRequestProjection makes the pending requests again from the requests and their
+// outcomes (data-model §9).
+func RebuildCustomEmojiRequestProjection(ctx context.Context, u uow.UnitOfWork, repo CustomEmojiRequestRepository) error {
+	if err := u.Tx(ctx, func(tx uow.Tx) error { return repo.RebuildCustomEmojiPendingRequests(ctx, tx) }); err != nil {
+		return fmt.Errorf("rebuild custom_emoji_pending_requests: %w", err)
+	}
+	return nil
 }

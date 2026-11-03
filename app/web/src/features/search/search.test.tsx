@@ -159,13 +159,17 @@ describe("an account on another server", () => {
     server.use(
       http.get(`${apiBase}/accounts/lookup`, () => HttpResponse.json(carol)),
       http.get(`${apiBase}/accounts/relationships`, () =>
-        HttpResponse.json([relationshipFixture(carol.id, relationship)]),
+        HttpResponse.json({ items: [relationshipFixture(carol.id, relationship)] }),
       ),
       http.post(`${apiBase}/accounts/:id/:action`, ({ params }) => {
         const action = String(params["action"]);
         changes.push(action);
         // Her server answers the Follow later: until then the follow is a request.
         return HttpResponse.json(relationshipFixture(carol.id, action === "follow" ? { requested: true } : {}));
+      }),
+      http.delete(`${apiBase}/accounts/:id/:relation`, ({ params }) => {
+        changes.push(`un${String(params["relation"])}`);
+        return HttpResponse.json(relationshipFixture(carol.id));
       }),
     );
     return { changes };
@@ -214,7 +218,7 @@ describe("an account on another server", () => {
   test("is listed with her full handle among the accounts the viewer follows", async () => {
     server.use(resumableSession());
     server.use(
-      http.get(`${apiBase}/accounts/${viewerFixture.id}/following`, () => HttpResponse.json({ accounts: [carol] })),
+      http.get(`${apiBase}/accounts/${viewerFixture.id}/following`, () => HttpResponse.json({ items: [carol] })),
       http.get(`${apiBase}/accounts/${viewerFixture.id}/statuses`, () => HttpResponse.json(statusPage([]))),
     );
     await renderApp({ path: "/@alice/following" });
@@ -300,7 +304,9 @@ describe("while the instance takes nothing in from other servers", () => {
     federationServer("outbound");
     server.use(
       http.get(`${apiBase}/accounts/lookup`, () => HttpResponse.json(carol)),
-      http.get(`${apiBase}/accounts/relationships`, () => HttpResponse.json([relationshipFixture(carol.id)])),
+      http.get(`${apiBase}/accounts/relationships`, () =>
+        HttpResponse.json({ items: [relationshipFixture(carol.id)] }),
+      ),
     );
     await renderApp({ path: `/@${carol.acct}` });
 
@@ -316,7 +322,7 @@ describe("while the instance takes nothing in from other servers", () => {
     server.use(
       http.get(`${apiBase}/accounts/lookup`, () => HttpResponse.json(carol)),
       http.get(`${apiBase}/accounts/relationships`, () =>
-        HttpResponse.json([relationshipFixture(carol.id, { following: true })]),
+        HttpResponse.json({ items: [relationshipFixture(carol.id, { following: true })] }),
       ),
     );
     await renderApp({ path: `/@${carol.acct}` });
@@ -333,7 +339,7 @@ describe("the search by name", () => {
     server.use(
       http.get(`${apiBase}/accounts/search`, ({ request }) => {
         queries.push(new URL(request.url).searchParams.get("q") ?? "");
-        return HttpResponse.json([carol]);
+        return HttpResponse.json({ items: [carol] });
       }),
     );
     const { user, field } = await openSearch();

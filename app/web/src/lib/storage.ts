@@ -278,8 +278,8 @@ export const notificationSoundKey = declareKey<NotificationSoundSettings>("my:no
 });
 
 /** Which public timelines the instance served when GET /instance last answered (features/timeline). */
-/** Who may read a public timeline (the instance settings `local_timeline_access` and `federated_timeline_access`). */
-const timelineAccess = z.enum(["off", "logged_in", "everyone"]);
+/** Who may read a public timeline (the instance settings `local_timeline_visibility` and `federated_timeline_visibility`). */
+const timelineAccess = z.enum(["off", "signed_in", "everyone"]);
 
 export type StoredTimelines = { local: z.infer<typeof timelineAccess>; federated: z.infer<typeof timelineAccess> };
 
@@ -354,6 +354,24 @@ export const signInKey = declareKey<StoredSignIn | null>("my:oauth-pending", {
   version: 1,
   defaultValue: null,
   parse: schemaParser(z.object({ state: z.string(), codeVerifier: z.string(), returnTo: z.string() })),
+  userData: false,
+});
+
+/** When a waiting Service Worker was first found (lib/pwa, ADR-0141 §3), in epoch milliseconds; a swap removes it. */
+export const updateSeenKey = declareKey<number | null>("my:update-seen-at", {
+  area: "local",
+  version: 1,
+  defaultValue: null,
+  parse: schemaParser(z.number()),
+  userData: false,
+});
+
+/** The `webClientEpoch` this tab last reloaded for by itself (lib/pwa, ADR-0141 §4). */
+export const requiredReloadKey = declareKey<number | null>("my:required-reload-epoch", {
+  area: "session",
+  version: 1,
+  defaultValue: null,
+  parse: schemaParser(z.number()),
   userData: false,
 });
 

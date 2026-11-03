@@ -70,7 +70,7 @@ func (r *FinanceRepository) InsertReservation(ctx context.Context, tx uow.Tx, re
 		return err
 	}
 	return wrap(q.InsertBillingImportReservation(ctx, sqlitegen.InsertBillingImportReservationParams{
-		ID: res.ID, Source: res.Source, RunKey: res.RunKey, Requests: int64(res.Requests), ReservedAt: toMillis(res.ReservedAt),
+		ID: res.ID, Source: res.Source, Requests: int64(res.Requests), ReservedAt: toMillis(res.ReservedAt),
 	}), "insert billing import reservation")
 }
 

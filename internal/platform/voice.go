@@ -208,7 +208,7 @@ func (m voiceMembers) Member(ctx context.Context, accountID string) (appvoice.Me
 	if err != nil {
 		return appvoice.Member{}, err
 	}
-	return appvoice.Member{Local: true, Active: !act.Deleted() && !suspended, Limited: limited, MayStart: mayStart}, nil
+	return appvoice.Member{Local: true, Active: !act.Deleted() && !act.Lifecycle.Deactivated() && !suspended, Limited: limited, MayStart: mayStart}, nil
 }
 
 func (m voiceMembers) EveryoneStarts(ctx context.Context) (bool, error) {
@@ -236,7 +236,7 @@ func (r voiceRetention) ParticipantRetention(ctx context.Context) (time.Duration
 	if err != nil {
 		return 0, err
 	}
-	return s.Retention(instance.SettingRetentionVoiceParticipants), nil
+	return s.Retention(instance.SettingVoiceParticipantsRetentionDays), nil
 }
 
 func (r voiceRetention) ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map[string]bool, error) {

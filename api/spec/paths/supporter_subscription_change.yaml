@@ -3,13 +3,16 @@ post:
   operationId: changeOwnSupporterSubscription
   summary: Change the plan or the interval of the authenticated user's subscription
   description: |
-    Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+    Changes an `active` subscription to another plan or interval: to a higher
     plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
     or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
     current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
     subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
     that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
-    current plan and interval.
+    current plan and interval. An unknown plan is a 404, no subscription a 409
+    `/api/v1/problems/supporter-subscription-state`, and an interval that is neither `month`
+    nor `year` a 422. While the supporter program is off, the operation answers the 404 or the
+    503 `/api/v1/problems/supporters-unavailable` that says what is missing.
   tags: [supporters]
   security:
     - oauth2: ["write:supporters"]

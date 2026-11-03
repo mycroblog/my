@@ -3,7 +3,7 @@ post:
   operationId: retireSupporterPlan
   summary: Retire a supporter plan
   description: |
-    Retires a supporter plan for good (ADR-0072 §9): it takes no subscriptions any more, and
+    Retires a supporter plan for good: it takes no subscriptions any more, and
     every subscription of it ends at the end of its period (a pending one at once). A
     retired plan is a 409 `/api/v1/problems/supporter-plan-retired`, and an unknown one a
     404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -13,7 +13,7 @@ post:
   parameters:
     - $ref: ../components/parameters/SupporterPlanId.yaml
   responses:
-    "204":
-      description: The plan is retired.
+    "200":
+      $ref: ../components/responses/AdminSupporterPlan.yaml
     default:
       $ref: ../components/responses/Problem.yaml

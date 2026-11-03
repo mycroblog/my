@@ -23,6 +23,27 @@ func (q *Queries) AccountErased(ctx context.Context, accountID string) (bool, er
 	return exists, err
 }
 
+const blankOAuthClientDetailsOf = `-- name: BlankOAuthClientDetailsOf :exec
+UPDATE oauth_clients SET name = '', website = NULL WHERE owner_user_id = ?1
+`
+
+// BlankOAuthClientDetailsOf removes the name and website of the clients of an erased owner.
+func (q *Queries) BlankOAuthClientDetailsOf(ctx context.Context, userID sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, blankOAuthClientDetailsOf, userID)
+	return err
+}
+
+const blankOAuthClientRevisionDetailsOf = `-- name: BlankOAuthClientRevisionDetailsOf :exec
+UPDATE oauth_client_revisions SET name = '', website = NULL WHERE oauth_client_id IN (
+  SELECT c.id FROM oauth_clients c WHERE c.owner_user_id = ?1)
+`
+
+// BlankOAuthClientRevisionDetailsOf removes the same from the revisions of those clients.
+func (q *Queries) BlankOAuthClientRevisionDetailsOf(ctx context.Context, userID sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, blankOAuthClientRevisionDetailsOf, userID)
+	return err
+}
+
 const countUsedFeedTagsOfEntries = `-- name: CountUsedFeedTagsOfEntries :many
 SELECT tag_id, count(*) AS n FROM feed_tag_entries
 WHERE entry_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND visibility IN ('public', 'local', 'unlisted')
@@ -1175,6 +1196,57 @@ func (q *Queries) EraseRegistrationState(ctx context.Context, userID string) err
 	return err
 }
 
+const eraseRemoteAccountHandle = `-- name: EraseRemoteAccountHandle :exec
+DELETE FROM account_handles WHERE account_handles.account_id = ?1
+  AND EXISTS (SELECT 1 FROM remote_accounts r WHERE r.account_id = ?1)
+`
+
+func (q *Queries) EraseRemoteAccountHandle(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseRemoteAccountHandle, accountID)
+	return err
+}
+
+const eraseRemoteAccountHandleVerifications = `-- name: EraseRemoteAccountHandleVerifications :exec
+DELETE FROM remote_account_handle_verifications WHERE account_id = ?1
+`
+
+func (q *Queries) EraseRemoteAccountHandleVerifications(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseRemoteAccountHandleVerifications, accountID)
+	return err
+}
+
+const eraseRemoteAccountHead = `-- name: EraseRemoteAccountHead :exec
+DELETE FROM remote_account_heads WHERE account_id = ?1
+`
+
+func (q *Queries) EraseRemoteAccountHead(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseRemoteAccountHead, accountID)
+	return err
+}
+
+const eraseRemoteAccountSnapshots = `-- name: EraseRemoteAccountSnapshots :exec
+
+DELETE FROM remote_account_snapshots WHERE account_id = ?1
+`
+
+// A remote account keeps no snapshot, endpoint, or handle: the handle may be someone else's later.
+// A local account has none of the first three and keeps its handle, so that its username is not
+// used again.
+func (q *Queries) EraseRemoteAccountSnapshots(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseRemoteAccountSnapshots, accountID)
+	return err
+}
+
+const eraseRemoteProfileRevisions = `-- name: EraseRemoteProfileRevisions :exec
+DELETE FROM remote_profile_revisions WHERE revision_id IN (
+  SELECT r.id FROM account_profile_revisions r WHERE r.account_id = ?1)
+`
+
+func (q *Queries) EraseRemoteProfileRevisions(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseRemoteProfileRevisions, accountID)
+	return err
+}
+
 const eraseServiceClosureEmails = `-- name: EraseServiceClosureEmails :exec
 DELETE FROM service_closure_emails WHERE user_id = ?1
 `
@@ -1249,6 +1321,16 @@ DELETE FROM totp_recovery_codes WHERE enrollment_id IN (
 
 func (q *Queries) EraseTOTPRecoveryCodes(ctx context.Context, userID string) error {
 	_, err := q.db.ExecContext(ctx, eraseTOTPRecoveryCodes, userID)
+	return err
+}
+
+const eraseTokenFamilyLastUsed = `-- name: EraseTokenFamilyLastUsed :exec
+DELETE FROM oauth_token_family_last_used WHERE family_id IN (
+  SELECT t.family_id FROM oauth_access_tokens t WHERE t.user_id = ?1)
+`
+
+func (q *Queries) EraseTokenFamilyLastUsed(ctx context.Context, userID string) error {
+	_, err := q.db.ExecContext(ctx, eraseTokenFamilyLastUsed, userID)
 	return err
 }
 
@@ -1345,7 +1427,7 @@ const listAccountsToErase = `-- name: ListAccountsToErase :many
 
 
 SELECT s.account_id, la.user_id FROM account_lifecycle_states s
-JOIN local_accounts la ON la.account_id = s.account_id
+LEFT JOIN local_accounts la ON la.account_id = s.account_id
 WHERE s.state = 'deleted' AND s.since <= CAST(?1 AS INTEGER)
   AND s.account_id > CAST(?2 AS TEXT)
   AND NOT EXISTS (SELECT 1 FROM account_erasures e WHERE e.account_id = s.account_id)
@@ -1361,16 +1443,17 @@ type ListAccountsToEraseParams struct {
 
 type ListAccountsToEraseRow struct {
 	AccountID string
-	UserID    string
+	UserID    sql.NullString
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
-// The erasure of deleted local accounts' data (data-model sections 4.2 and 8, #397). Each module
+// The erasure of deleted accounts' data (data-model sections 4.2 and 8, #397). Each module
 // erases its own tables; the statements whose rows grow with the number of users or followers
 // take a bounded batch (@lim). A list argument is a JSON array of strings, read with json_each.
 // account ---------------------------------------------------------------------------------------
-// ListAccountsToErase returns, in account ID order after @after, up to @lim local accounts that
-// were deleted at or before @deleted_before and are not erased yet, with their users.
+// ListAccountsToErase returns, in account ID order after @after, up to @lim accounts that were
+// deleted at or before @deleted_before and are not erased yet, local or remote (remote_deleted),
+// with the user of a local one.
 func (q *Queries) ListAccountsToErase(ctx context.Context, arg ListAccountsToEraseParams) ([]ListAccountsToEraseRow, error) {
 	rows, err := q.db.QueryContext(ctx, listAccountsToErase, arg.DeletedBefore, arg.After, arg.Lim)
 	if err != nil {
@@ -1641,6 +1724,72 @@ func (q *Queries) ListNotificationIDsToErase(ctx context.Context, arg ListNotifi
 			return nil, err
 		}
 		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOAuthClientIDsOwnedBy = `-- name: ListOAuthClientIDsOwnedBy :many
+SELECT id FROM oauth_clients WHERE owner_user_id = ?1 ORDER BY id
+`
+
+func (q *Queries) ListOAuthClientIDsOwnedBy(ctx context.Context, userID sql.NullString) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listOAuthClientIDsOwnedBy, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRemoteMediaToErase = `-- name: ListRemoteMediaToErase :many
+
+SELECT r.media_id FROM remote_media r
+WHERE r.owner_account_id = ?1
+  AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = r.media_id)
+  AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = r.media_id)
+ORDER BY r.media_id LIMIT ?2
+`
+
+type ListRemoteMediaToEraseParams struct {
+	AccountID string
+	Lim       int64
+}
+
+// The remote media files of the account that no attachment and no custom emoji uses, up to lim.
+// A status that the moderation records keep keeps its attachments until a later run.
+func (q *Queries) ListRemoteMediaToErase(ctx context.Context, arg ListRemoteMediaToEraseParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listRemoteMediaToErase, arg.AccountID, arg.Lim)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var media_id string
+		if err := rows.Scan(&media_id); err != nil {
+			return nil, err
+		}
+		items = append(items, media_id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

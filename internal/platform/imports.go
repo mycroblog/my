@@ -142,7 +142,7 @@ func (t importTargets) List(ctx context.Context, accountID string, kind domident
 		}
 	case domidentity.ImportBookmarks:
 		for before := ""; ; {
-			page, err := t.a.Statuses.Bookmarks(ctx, accountID, before, graph.MaxPageLimit)
+			page, err := t.a.Statuses.Bookmarks(ctx, content.Viewer{Kind: content.ViewerLocal, AccountID: accountID}, before, graph.MaxPageLimit)
 			if err != nil {
 				return nil, err
 			}

@@ -16,6 +16,7 @@ import { hasClosed, useClosure } from "../../../lib/closure";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { type Maintenance, useMaintenance } from "../../../lib/maintenance";
+import { reportCallActive } from "../../../lib/reloadSafety";
 import {
   cacheVoiceRoomState,
   leaveVoiceRoom,
@@ -169,6 +170,13 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
   const call = signedIn ? active : null;
   const snapshot = useSyncExternalStore(call?.subscribe ?? noSubscription, call?.getSnapshot ?? noSnapshot);
   const inCall = snapshot !== undefined && snapshot.phase !== "ended";
+  // A required update does not reload during the call, and a stale tab's toast waits for its end (ADR-0141).
+  useEffect(() => {
+    reportCallActive(inCall);
+    return () => {
+      reportCallActive(false);
+    };
+  }, [inCall]);
   // Screens without the pages (and so without the mini-player): the server's maintenance, and its closure for a user.
   const underMaintenance = useMaintenance(maintenance) !== null;
   const closure = useClosure();

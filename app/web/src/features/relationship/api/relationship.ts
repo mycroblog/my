@@ -55,7 +55,8 @@ function sendRelationships(api: Api) {
       .then(({ data, error }) => {
         // The client's middleware throws an ApiError for every error status (lib/api/client.ts).
         if (data === undefined) throw new ApiError(error);
-        for (const request of waiting) request.resolve(data.filter((relationship) => relationship.id === request.id));
+        for (const request of waiting)
+          request.resolve(data.items.filter((relationship) => relationship.id === request.id));
       })
       .catch((reason: unknown) => {
         for (const request of waiting) request.reject(reason);
@@ -70,9 +71,9 @@ function sendRelationships(api: Api) {
 export function relationshipQueryOptions(api: Api, id: string) {
   return {
     ...api.query.queryOptions("get", "/accounts/relationships", { params: { query: { id: [id] } } }),
-    queryFn: () => loadRelationship(api, id),
-    select: (relationships: Relationship[]): Relationship | null =>
-      relationships.find((relationship) => relationship.id === id) ?? null,
+    queryFn: async () => ({ items: await loadRelationship(api, id) }),
+    select: (relationships: { items: Relationship[] }): Relationship | null =>
+      relationships.items.find((relationship) => relationship.id === id) ?? null,
   };
 }
 
@@ -91,19 +92,19 @@ export async function changeRelationship(api: Api, id: string, action: Relations
       case "follow":
         return api.fetch.POST("/accounts/{id}/follow", init);
       case "unfollow":
-        return api.fetch.POST("/accounts/{id}/unfollow", init);
+        return api.fetch.DELETE("/accounts/{id}/follow", init);
       case "block":
         return api.fetch.POST("/accounts/{id}/block", init);
       case "unblock":
-        return api.fetch.POST("/accounts/{id}/unblock", init);
+        return api.fetch.DELETE("/accounts/{id}/block", init);
       case "mute":
         return api.fetch.POST("/accounts/{id}/mute", init);
       case "unmute":
-        return api.fetch.POST("/accounts/{id}/unmute", init);
+        return api.fetch.DELETE("/accounts/{id}/mute", init);
       case "subscribe":
         return api.fetch.POST("/accounts/{id}/subscribe", init);
       case "unsubscribe":
-        return api.fetch.POST("/accounts/{id}/unsubscribe", init);
+        return api.fetch.DELETE("/accounts/{id}/subscribe", init);
     }
   })();
   if (data === undefined) throw new ApiError(error);
@@ -170,7 +171,7 @@ export async function storeRelationship(
   action: RelationshipAction,
   viewerId: string,
 ): Promise<void> {
-  queryClient.setQueryData(relationshipQueryOptions(api, relationship.id).queryKey, [relationship]);
+  queryClient.setQueryData(relationshipQueryOptions(api, relationship.id).queryKey, { items: [relationship] });
   await Promise.all([
     refreshRelationship(queryClient, action, relationship.id, viewerId),
     queryClient.invalidateQueries({ queryKey: ["get", "/blocks"] }),

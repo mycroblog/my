@@ -103,6 +103,7 @@ const (
 	AuditLinkCardDomainFetchStopped      = moderation.AuditLinkCardDomainFetchStopped
 	AuditLinkCardDomainImagesStopped     = moderation.AuditLinkCardDomainImagesStopped
 	AuditLinkCardDomainRuleRemoved       = moderation.AuditLinkCardDomainRuleRemoved
+	AuditInstanceMarkedAvailable         = moderation.AuditInstanceMarkedAvailable
 
 	AuditTargetUser                  = moderation.AuditTargetUser
 	AuditTargetSetting               = moderation.AuditTargetSetting
@@ -262,11 +263,11 @@ type AuditTarget struct {
 }
 
 // GoneAuditTargets returns the targets of entries that no longer exist: accounts, reports,
-// appeals, and sign-up blocks erased (past their retention, ADR-0038), and roles, custom emoji,
-// custom emoji requests, webhooks, and relays deleted (through Deps.AuditTargets). It looks up
-// each kind of target once for all the entries. A domain, a user, a setting, a rule, an announcement, an invite, and the domain of a link
-// card rule are never removed, a canceled cost item keeps its rows, and a status has no operation recorded on it;
-// none of these is reported gone.
+// appeals, and sign-up blocks erased (past their retention, ADR-0038), and roles, login providers,
+// custom emoji, custom emoji requests, webhooks, relays, and link card rules deleted (through
+// Deps.AuditTargets). It looks up each kind of target once for all the entries. A domain, a user, a
+// setting, a rule, an announcement, and an invite are never removed, a canceled cost item keeps its
+// rows, and a status has no operation recorded on it; none of these is reported gone.
 func (s *Service) GoneAuditTargets(ctx context.Context, entries []moderation.AuditEntry) (map[AuditTarget]bool, error) {
 	ids := map[moderation.AuditTargetKind][]string{}
 	seen := map[AuditTarget]bool{}
@@ -280,7 +281,7 @@ func (s *Service) GoneAuditTargets(ctx context.Context, entries []moderation.Aud
 		case moderation.AuditTargetAccount, moderation.AuditTargetReport, moderation.AuditTargetAppeal, moderation.AuditTargetSignupBlock:
 			ids[e.TargetKind] = append(ids[e.TargetKind], e.TargetID)
 		case moderation.AuditTargetRole, moderation.AuditTargetCustomEmoji, moderation.AuditTargetCustomEmojiRequest, moderation.AuditTargetWebhook,
-			moderation.AuditTargetRelay:
+			moderation.AuditTargetRelay, moderation.AuditTargetLoginProvider, moderation.AuditTargetLinkCardDomain:
 			if s.d.AuditTargets != nil {
 				ids[e.TargetKind] = append(ids[e.TargetKind], e.TargetID)
 			}
@@ -294,7 +295,7 @@ func (s *Service) GoneAuditTargets(ctx context.Context, entries []moderation.Aud
 		case moderation.AuditTargetAccount:
 			existing, err = s.d.Accounts.ExistingIDs(ctx, list)
 		case moderation.AuditTargetRole, moderation.AuditTargetCustomEmoji, moderation.AuditTargetCustomEmojiRequest, moderation.AuditTargetWebhook,
-			moderation.AuditTargetRelay:
+			moderation.AuditTargetRelay, moderation.AuditTargetLoginProvider, moderation.AuditTargetLinkCardDomain:
 			existing, err = s.d.AuditTargets.ExistingAuditTargets(ctx, kind, list)
 		default:
 			existing, err = s.d.Repository.ExistingAuditTargets(ctx, kind, list)

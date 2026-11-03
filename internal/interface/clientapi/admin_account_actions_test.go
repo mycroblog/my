@@ -177,10 +177,10 @@ func TestCreateListAndLiftAccountActions(t *testing.T) {
 	res := e.sendJSON(t, http.MethodPost, path, "admin",
 		`{"kind":"suspend","reason_category":"spam","public_reason":"spam","private_note":"see #12","report_id":"`+reportOne+`","expires_in":3600}`)
 	got := decodeJSON[clientapi.AdminAccountAction](t, res)
-	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
+	if res.StatusCode != http.StatusCreated || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("create = %d (%s)", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
-	if got.AccountId != bobAccountID || got.Kind != clientapi.AdminAccountActionKindSuspend || got.State != clientapi.AdminAccountActionStateActive ||
+	if got.AccountId != bobAccountID || got.Kind != clientapi.AdminAccountActionKindSuspend || got.State != clientapi.ModerationActionStateActive ||
 		got.ReasonCategory != clientapi.AdminAccountActionCategorySpam || got.Issuer != clientapi.AdminAccountActionIssuerModerator ||
 		!got.NotifyTarget || got.PublicReason == nil || *got.PublicReason != "spam" || got.PrivateNote == nil ||
 		got.ReportId == nil || *got.ReportId != reportOne || got.IssuedByAccountId == nil || *got.IssuedByAccountId != aliceAccountID ||
@@ -203,22 +203,22 @@ func TestCreateListAndLiftAccountActions(t *testing.T) {
 	}
 	// A remote account takes the kinds that apply to it.
 	res = e.sendJSON(t, http.MethodPost, "/admin/accounts/"+reporterAccountID+"/actions", "admin", `{"kind":"limit"}`)
-	if r := decodeJSON[clientapi.AdminAccountAction](t, res); res.StatusCode != http.StatusOK || r.AccountId != reporterAccountID {
+	if r := decodeJSON[clientapi.AdminAccountAction](t, res); res.StatusCode != http.StatusCreated || r.AccountId != reporterAccountID {
 		t.Errorf("remote limit = %d %+v", res.StatusCode, r)
 	}
 
 	res = e.sendJSON(t, http.MethodPost, "/admin/account_actions/"+login.Id+"/lift", "admin", `{"reason":"appealed"}`)
 	lifted := decodeJSON[clientapi.AdminAccountAction](t, res)
-	if res.StatusCode != http.StatusOK || lifted.State != clientapi.AdminAccountActionStateLifted || lifted.LiftedAt == nil ||
+	if res.StatusCode != http.StatusOK || lifted.State != clientapi.ModerationActionStateLifted || lifted.LiftedAt == nil ||
 		lifted.LiftReason == nil || *lifted.LiftReason != "appealed" {
 		t.Errorf("lift = %d %+v", res.StatusCode, lifted)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/admin/account_actions/"+got.Id+"/lift", "admin", "")
-	if l := decodeJSON[clientapi.AdminAccountAction](t, res); res.StatusCode != http.StatusOK || l.LiftReason != nil || l.State != clientapi.AdminAccountActionStateLifted {
+	if l := decodeJSON[clientapi.AdminAccountAction](t, res); res.StatusCode != http.StatusOK || l.LiftReason != nil || l.State != clientapi.ModerationActionStateLifted {
 		t.Errorf("lift without a body = %d %+v", res.StatusCode, l)
 	}
 	res = e.sendJSON(t, http.MethodGet, "/admin/account_actions/"+login.Id, "admin-read", "")
-	if again := decodeJSON[clientapi.AdminAccountAction](t, res); again.State != clientapi.AdminAccountActionStateLifted {
+	if again := decodeJSON[clientapi.AdminAccountAction](t, res); again.State != clientapi.ModerationActionStateLifted {
 		t.Errorf("get = %+v", again)
 	}
 
@@ -271,7 +271,7 @@ func TestAccountActionsOnStatusesAndBans(t *testing.T) {
 	path := "/admin/accounts/" + bobAccountID + "/actions"
 	res := e.sendJSON(t, http.MethodPost, path, "admin", `{"kind":"delete_statuses","status_ids":["`+bobStatusTwo+`","`+bobStatusOne+`"]}`)
 	del := decodeJSON[clientapi.AdminAccountAction](t, res)
-	if res.StatusCode != http.StatusOK || del.Kind != clientapi.AdminAccountActionKindDeleteStatuses || del.StatusIds == nil ||
+	if res.StatusCode != http.StatusCreated || del.Kind != clientapi.AdminAccountActionKindDeleteStatuses || del.StatusIds == nil ||
 		!slices.Equal(*del.StatusIds, []string{bobStatusOne, bobStatusTwo}) {
 		t.Errorf("delete_statuses = %d %+v", res.StatusCode, del)
 	}
@@ -281,7 +281,7 @@ func TestAccountActionsOnStatusesAndBans(t *testing.T) {
 	}
 	res = e.sendJSON(t, http.MethodPost, path, "admin", `{"kind":"ban","public_reason":"spam"}`)
 	ban := decodeJSON[clientapi.AdminAccountAction](t, res)
-	if res.StatusCode != http.StatusOK || ban.Kind != clientapi.AdminAccountActionKindBan || ban.ExpiresAt != nil {
+	if res.StatusCode != http.StatusCreated || ban.Kind != clientapi.AdminAccountActionKindBan || ban.ExpiresAt != nil {
 		t.Fatalf("ban = %d %+v", res.StatusCode, ban)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/admin/account_actions/"+ban.Id+"/lift", "admin", "")

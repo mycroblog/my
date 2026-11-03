@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/blob"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -30,6 +31,9 @@ type fakeOwnAccount struct {
 	noPasskey bool
 	// providersOnly refuses a new password as the limit to login providers does.
 	providersOnly bool
+	// deactivated holds the confirmations of the deactivations; refusal refuses them.
+	deactivated []appidentity.Confirmation
+	refusal     appaccount.DeactivationRefusal
 }
 
 func (f *fakeOwnAccount) confirm(c appidentity.Confirmation) error {
@@ -85,6 +89,28 @@ func (f *fakeOwnAccount) DeleteOwnAccount(_ context.Context, userID string, c ap
 	return nil
 }
 
+func (f *fakeOwnAccount) PreviewDeactivation(context.Context, string) (appidentity.DeactivationPreview, error) {
+	return appidentity.DeactivationPreview{DeletionDueAt: time.Date(2026, 12, 3, 9, 0, 0, 0, time.UTC)}, nil
+}
+
+func (f *fakeOwnAccount) DeactivateOwnAccount(_ context.Context, _ string, c appidentity.Confirmation) (time.Time, error) {
+	if f.refusal != "" {
+		return time.Time{}, &appaccount.DeactivationRefusedError{Reason: f.refusal}
+	}
+	if c.TwoFactorCode != "" {
+		if c.TwoFactorCode != "123456" {
+			return time.Time{}, appidentity.ErrInvalidSecondFactor
+		}
+		f.deactivated = append(f.deactivated, c)
+		return time.Date(2026, 12, 3, 9, 0, 0, 0, time.UTC), nil
+	}
+	if err := f.confirm(c); err != nil {
+		return time.Time{}, err
+	}
+	f.deactivated = append(f.deactivated, c)
+	return time.Date(2026, 12, 3, 9, 0, 0, 0, time.UTC), nil
+}
+
 // fakeExports keeps the exports in memory, newest first; a ready export's archive is its ID.
 type fakeExports struct {
 	now     time.Time
@@ -127,6 +153,50 @@ func (f *fakeExports) OpenExport(_ context.Context, userID, id string) (io.ReadC
 
 func (f *fakeExports) Now() time.Time { return f.now }
 
+// TestDeactivateOwnAccount checks that each kind of confirmation in the request reaches the use
+// case, and what its failures and refusals answer.
+func TestDeactivateOwnAccount(t *testing.T) {
+	own := &fakeOwnAccount{}
+	// Each request gets a server of its own: at most 5 attempts per account are accepted every hour.
+	send := func(body string) *http.Response {
+		t.Helper()
+		return newAuthEnv(t, func(o *clientapi.Options) { o.OwnAccount = own }).sendJSON(t, http.MethodPost, "/accounts/deactivation", "write", body)
+	}
+	for _, tc := range []struct {
+		name, body, problem string
+		status              int
+	}{
+		{"no confirmation", `{}`, "", http.StatusBadRequest},
+		{"wrong password", `{"password":"wrong"}`, clientapi.ProblemTypeWrongPassword, http.StatusUnprocessableEntity},
+		{"wrong code", `{"two_factor_code":"000000"}`, clientapi.ProblemTypeInvalidTwoFactorCode, http.StatusUnprocessableEntity},
+		{"wrong passkey", `{"passkey":{"confirmation_token":"bad","credential":{"id":"x"}}}`, clientapi.ProblemTypeInvalidPasskey, http.StatusUnprocessableEntity},
+	} {
+		res := send(tc.body)
+		p := decodeProblem(t, res)
+		if res.StatusCode != tc.status || (tc.problem != "" && p.Type != tc.problem) {
+			t.Errorf("%s = %d %+v, want %d %s", tc.name, res.StatusCode, p, tc.status, tc.problem)
+		}
+	}
+	if len(own.deactivated) != 0 {
+		t.Fatalf("deactivated = %+v, want none yet", own.deactivated)
+	}
+	for _, body := range []string{
+		`{"password":"secret"}`, `{"two_factor_code":"123456"}`, `{"passkey":{"confirmation_token":"good","credential":{"id":"x"}}}`,
+	} {
+		if res := send(body); res.StatusCode != http.StatusOK {
+			t.Errorf("%s = %d, want 200", body, res.StatusCode)
+		}
+	}
+	if len(own.deactivated) != 3 || own.deactivated[0].Password != "secret" || own.deactivated[1].TwoFactorCode != "123456" || own.deactivated[2].Passkey.Token != "good" {
+		t.Errorf("deactivated = %+v, want the password, the code, and the passkey", own.deactivated)
+	}
+	own.refusal = appaccount.DeactivationRefusedLastAdministrator
+	res := send(`{"password":"secret"}`)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypeDeactivationRefused || p.Detail == nil || *p.Detail == "" {
+		t.Errorf("refused = %d %+v, want 409 with the reason", res.StatusCode, p)
+	}
+}
+
 func TestDeleteOwnAccount(t *testing.T) {
 	own := &fakeOwnAccount{}
 	e := newAuthEnv(t, func(o *clientapi.Options) { o.OwnAccount = own })
@@ -143,8 +213,8 @@ func TestDeleteOwnAccount(t *testing.T) {
 		t.Fatalf("deleted = %v, want none yet", own.deleted)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/delete", "write", `{}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, "password") {
-		t.Errorf("no confirmation = %d %+v, want 400 on password", res.StatusCode, p)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "password") {
+		t.Errorf("no confirmation = %d %+v, want 422 on password", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/delete", "write", `{"passkey":{"confirmation_token":"bad","credential":{"id":"x"}}}`)
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Type != clientapi.ProblemTypeInvalidPasskey {
@@ -176,9 +246,9 @@ func TestChangePassword(t *testing.T) {
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Type != clientapi.ProblemTypeWrongPassword {
 		t.Errorf("wrong password = %d %+v, want 422 wrong-password", res.StatusCode, p)
 	}
-	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"current_password":"secret","new_password":"short"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, "new_password") {
-		t.Errorf("short new password = %d %+v, want 400 on new_password", res.StatusCode, p)
+	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"current_password":"secret","new_password":"short","x":"invalid-on-purpose"}`)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "new_password") {
+		t.Errorf("short new password = %d %+v, want 422 on new_password", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"current_password":"limited","new_password":"new password"}`)
 	if res.StatusCode != http.StatusTooManyRequests || res.Header.Get("Retry-After") != "90" {
@@ -204,8 +274,8 @@ func TestChangePassword(t *testing.T) {
 		t.Errorf("expired passkey confirmation = %d %+v, want 422 passkey-confirmation-expired", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"passkey":{"confirmation_token":"","credential":{}},"new_password":"new password"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, "passkey") {
-		t.Errorf("empty passkey = %d %+v, want 400 on passkey", res.StatusCode, p)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "passkey") {
+		t.Errorf("empty passkey = %d %+v, want 422 on passkey", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"passkey":{"confirmation_token":"good","credential":{"id":"x"}},"new_password":"new password"}`)
 	if res.StatusCode != http.StatusNoContent || len(own.changed) != 2 || own.changed[1].Confirmation.Passkey.Token != "good" ||
@@ -229,8 +299,8 @@ func TestRemovePassword(t *testing.T) {
 		t.Errorf("wrong passkey = %d %+v, want 422 invalid-passkey", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password/remove", "write", `{"passkey":{"confirmation_token":"","credential":{}}}`)
-	if res.StatusCode != http.StatusBadRequest {
-		t.Errorf("an empty passkey = %d, want 400", res.StatusCode)
+	if res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("an empty passkey = %d, want 422", res.StatusCode)
 	}
 	own.noPasskey = true
 	res = e.sendJSON(t, http.MethodPost, "/accounts/password/remove", "write", `{"passkey":{"confirmation_token":"good","credential":{"id":"x"}}}`)

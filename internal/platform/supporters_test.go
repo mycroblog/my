@@ -37,8 +37,8 @@ func newSupportersEnvOn(t *testing.T, dialect string) (*accountsEnv, *fake.Provi
 	}
 	smtpPort := closingSMTPServer(t)
 	cfg := loadConfig(t, map[string]string{
-		"MY_DB": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline",
-		"MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_SMTP_HOST": "127.0.0.1", "MY_SMTP_PORT": smtpPort,
+		"MY_DATABASE": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline",
+		"MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_MAIL_SMTP_HOST": "127.0.0.1", "MY_MAIL_SMTP_PORT": smtpPort,
 	})
 	prov := fake.New(fake.Options{Name: "stripe"})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), PaymentProvider: prov})
@@ -96,7 +96,7 @@ func TestSupporterProgram(t *testing.T) {
 	}
 
 	e.want(e.do(http.MethodPost, "/admin/roles", admin.token, map[string]any{"key": "supporter", "position": 10, "permissions": []string{}}, nil),
-		http.StatusOK, "POST /admin/roles")
+		http.StatusCreated, "POST /admin/roles")
 	plan := map[string]any{
 		"role": "moderator", "name": "Supporter", "description": "Thank you", "monthly_price": map[string]string{"amount": "500", "currency": "JPY"},
 		"annual_discount_percent": 10, "emoji_limit": 5, "rank": 1, "visibility": "public",
@@ -107,7 +107,7 @@ func TestSupporterProgram(t *testing.T) {
 	}
 	plan["role"] = "supporter"
 	var created clientapi.AdminSupporterPlan
-	e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, plan, &created), http.StatusOK, "POST /admin/supporter_plans")
+	e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, plan, &created), http.StatusCreated, "POST /admin/supporter_plans")
 	if created.Name != "Supporter" || created.YearlyPrice != (clientapi.Money{Amount: "5400", Currency: "JPY"}) || created.Role.Key != "supporter" {
 		t.Errorf("created %+v", created)
 	}
@@ -161,7 +161,7 @@ func TestSupporterProgram(t *testing.T) {
 		t.Errorf("the provider's subscription after the deletion: %s", s.Status)
 	}
 
-	e.want(e.do(http.MethodPost, "/admin/supporter_plans/"+created.Id+"/retire", admin.token, nil, nil), http.StatusNoContent, "retire")
+	e.want(e.do(http.MethodPost, "/admin/supporter_plans/"+created.Id+"/retire", admin.token, nil, nil), http.StatusOK, "retire")
 	res = e.do(http.MethodPost, "/admin/supporter_plans/"+created.Id+"/retire", admin.token, nil, nil)
 	if typ := e.want(res, http.StatusConflict, "retire again"); typ != clientapi.ProblemTypeSupporterPlanRetired {
 		t.Errorf("problem %s", typ)
@@ -199,12 +199,12 @@ func TestSupporterPlanAmountComesBack(t *testing.T) {
 			ctx := t.Context()
 			admin := e.user("alice")
 			e.want(e.do(http.MethodPost, "/admin/roles", admin.token, map[string]any{"key": "supporter", "position": 10, "permissions": []string{}}, nil),
-				http.StatusOK, "POST /admin/roles")
+				http.StatusCreated, "POST /admin/roles")
 			var plan clientapi.AdminSupporterPlan
 			e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, map[string]any{
 				"role": "supporter", "name": "Supporter", "monthly_price": map[string]string{"amount": "500", "currency": "JPY"},
 				"annual_discount_percent": 0, "emoji_limit": 0, "rank": 1, "visibility": "public",
-			}, &plan), http.StatusOK, "POST /admin/supporter_plans")
+			}, &plan), http.StatusCreated, "POST /admin/supporter_plans")
 			e.want(e.do(http.MethodPut, "/admin/supporter_program", admin.token, map[string]any{"enabled": true}, nil), http.StatusOK, "enable")
 			bob := e.user("bob")
 			subID := subscribeOnFake(t, e.app, prov, bob.id, plan.Id, "sub_1")
@@ -296,17 +296,18 @@ func TestSupporterSuspension(t *testing.T) {
 	ctx := t.Context()
 	admin := e.user("alice")
 	e.want(e.do(http.MethodPost, "/admin/roles", admin.token, map[string]any{"key": "supporter", "position": 10, "permissions": []string{}}, nil),
-		http.StatusOK, "POST /admin/roles")
+		http.StatusCreated, "POST /admin/roles")
 	var plan clientapi.AdminSupporterPlan
 	e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, map[string]any{
 		"role": "supporter", "name": "Supporter", "monthly_price": map[string]string{"amount": "500", "currency": "JPY"},
 		"annual_discount_percent": 0, "emoji_limit": 0, "rank": 1, "visibility": "public",
-	}, &plan), http.StatusOK, "POST /admin/supporter_plans")
+	}, &plan), http.StatusCreated, "POST /admin/supporter_plans")
 	e.want(e.do(http.MethodPut, "/admin/supporter_program", admin.token, map[string]any{"enabled": true}, nil), http.StatusOK, "enable")
 	carol := e.user("carol")
+	e.setRole(carol, "")
 	subID := subscribeOnFake(t, e.app, prov, carol.id, plan.Id, "sub_9")
 	e.want(e.do(http.MethodPost, "/admin/accounts/"+carol.id+"/actions", admin.token, map[string]any{"kind": "suspend", "public_reason": "rules"}, nil),
-		http.StatusOK, "suspend")
+		http.StatusCreated, "suspend")
 	v, err := e.app.Supporters.Subscription(ctx, subID)
 	if err != nil || v.Current.State != domain.StateCanceling || v.Current.Reason != domain.ReasonAccountSuspended {
 		t.Fatalf("after the suspension: %+v, %v", v.Current, err)
@@ -383,12 +384,12 @@ func TestSupporterSubscriptionAndList(t *testing.T) {
 	e.want(e.do(http.MethodGet, "/supporter/subscription", bob.token, nil, nil), http.StatusNotFound, "the subscription while disabled")
 
 	e.want(e.do(http.MethodPost, "/admin/roles", admin.token, map[string]any{"key": "supporter", "position": 10, "permissions": []string{}}, nil),
-		http.StatusOK, "POST /admin/roles")
+		http.StatusCreated, "POST /admin/roles")
 	var plan clientapi.AdminSupporterPlan
 	e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, map[string]any{
 		"role": "supporter", "name": "Supporter", "monthly_price": map[string]string{"amount": "500", "currency": "JPY"},
 		"annual_discount_percent": 0, "emoji_limit": 0, "rank": 1, "visibility": "public",
-	}, &plan), http.StatusOK, "POST /admin/supporter_plans")
+	}, &plan), http.StatusCreated, "POST /admin/supporter_plans")
 	e.want(e.do(http.MethodPut, "/admin/supporter_program", admin.token, map[string]any{"enabled": true}, nil), http.StatusOK, "enable")
 
 	var own clientapi.OwnSupporterSubscription
@@ -462,7 +463,7 @@ func TestSupporterSubscriptionAndList(t *testing.T) {
 		return page
 	}
 	e.want(e.do(http.MethodGet, "/instance/supporters", "", nil, nil), http.StatusNotFound, "the list while off")
-	setVisibility("public")
+	setVisibility("everyone")
 	if page := list(""); len(page.Items) != 0 || len(page.Plans) != 1 || page.Plans[0].Name != "Supporter" {
 		t.Errorf("nobody is listed before choosing to be: %+v", page)
 	}

@@ -47,11 +47,13 @@ type StatusReader interface {
 	View(ctx context.Context, viewer appcontent.Viewer, statusID string) (appcontent.StatusView, error)
 	Thread(ctx context.Context, viewer appcontent.Viewer, statusID string) (appcontent.Thread, error)
 	History(ctx context.Context, viewer appcontent.Viewer, statusID string) ([]appcontent.RevisionView, error)
-	Source(ctx context.Context, accountID, statusID string) (content.Revision, error)
-	Bookmarks(ctx context.Context, accountID, before string, limit int) (appcontent.BookmarkPage, error)
+	Visible(ctx context.Context, viewer appcontent.Viewer, statusID string) (content.Status, error)
+	Live(ctx context.Context, statusID string) error
+	Source(ctx context.Context, viewer appcontent.Viewer, statusID string) (content.Revision, error)
+	Bookmarks(ctx context.Context, viewer appcontent.Viewer, before string, limit int) (appcontent.BookmarkPage, error)
 	Reactions(ctx context.Context, viewer appcontent.Viewer, statusID, emoji, before string, limit int) (appcontent.ReactedPage, error)
 	ReactionEmoji(ctx context.Context, e appcontent.ReactionEmoji) (appcontent.EmojiView, error)
-	Quotes(ctx context.Context, accountID, statusID, before string, limit int) (appcontent.QuotesPage, error)
+	Quotes(ctx context.Context, viewer appcontent.Viewer, statusID, before string, limit int) (appcontent.QuotesPage, error)
 }
 
 // Interactions runs boosts, favourites, bookmarks, and pins. *appcontent.Interactions
@@ -70,9 +72,6 @@ type Interactions interface {
 	VotePoll(ctx context.Context, accountID, statusID, pollID string, choices []int) ([]content.PollVote, error)
 	RevokeQuote(ctx context.Context, accountID, quotedStatusID, quotingStatusID string) error
 }
-
-// defaultLimit is the page size of collections without a limit parameter.
-const defaultLimit = 20
 
 // contentViewer returns the viewer of ctx for the content module: the authenticated local
 // account, or an anonymous visitor. A token without read:direct does not see direct posts.
@@ -154,6 +153,8 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 		return unprocessable(l.ServerErrorsStatusQuoteNotFound())
 	case errors.Is(err, appcontent.ErrQuoteNotAllowed):
 		return unprocessable(l.ServerErrorsStatusQuoteNotAllowed())
+	case errors.Is(err, appcontent.ErrQuoteRemoteAudience):
+		return unprocessable(l.ServerErrorsStatusQuoteRemoteAudience())
 	case errors.Is(err, appcontent.ErrInvalidQuotePolicy):
 		return unprocessable(l.ServerErrorsInvalidValue("quote_policy"))
 	case errors.Is(err, appcontent.ErrTooManyMedia):
@@ -523,7 +524,7 @@ func (s *Server) createdStatus(ctx context.Context, statusID string) (CreateStat
 		}
 		return nil, err
 	}
-	return CreateStatus200JSONResponse{Body: out, Headers: CreateStatus200ResponseHeaders{CacheControl: statusCache(ctx)}}, nil
+	return CreateStatus201JSONResponse{Body: out, Headers: CreateStatus201ResponseHeaders{CacheControl: statusCache(ctx)}}, nil
 }
 
 // quotableRemotely refuses a quote of a remote status while the federation mode does not send
@@ -688,7 +689,7 @@ func (s *Server) GetStatusSource(ctx context.Context, req GetStatusSourceRequest
 	if err != nil {
 		return nil, err
 	}
-	rev, err := s.o.StatusReader.Source(ctx, v.AccountID, req.Id)
+	rev, err := s.o.StatusReader.Source(ctx, localContentViewer(v), req.Id)
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {
 			return GetStatusSourcedefaultApplicationProblemPlusJSONResponse(p), nil
@@ -708,14 +709,11 @@ func (s *Server) ListBookmarks(ctx context.Context, req ListBookmarksRequestObje
 	if err != nil {
 		return nil, err
 	}
-	limit := defaultLimit
-	if req.Params.Limit != nil {
-		limit = *req.Params.Limit
+	if p := s.plainPageProblem(ctx, req.Params.Cursor, req.Params.Limit); p != nil {
+		return ListBookmarksdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	if !validCursor(req.Params.Cursor) {
-		return ListBookmarksdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "cursor")), nil
-	}
-	page, err := s.o.StatusReader.Bookmarks(ctx, v.AccountID, deref(req.Params.Cursor), limit)
+	limit, _ := pageLimit(req.Params.Limit)
+	page, err := s.o.StatusReader.Bookmarks(ctx, localContentViewer(v), deref(req.Params.Cursor), limit)
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {
 			return ListBookmarksdefaultApplicationProblemPlusJSONResponse(p), nil
@@ -734,13 +732,46 @@ func (s *Server) ListBookmarks(ctx context.Context, req ListBookmarksRequestObje
 }
 
 // act runs an interaction of the viewer with a status and returns the status afterwards, or
-// the problem of the failure.
+// the problem of the failure. A status that the token's viewer may not see, whether gone or
+// hidden, answers 404 before anything changes.
 func (s *Server) act(ctx context.Context, statusID string, run func(accountID string) error) (StatusAfterActionJSONResponse, *problem, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return StatusAfterActionJSONResponse{}, nil, err
 	}
-	err = run(v.AccountID)
+	_, err = s.o.StatusReader.Visible(ctx, localContentViewer(v), statusID)
+	if err == nil {
+		err = run(v.AccountID)
+	}
+	if err == nil {
+		var out Status
+		if out, err = s.viewStatus(ctx, statusID); err == nil {
+			return StatusAfterActionJSONResponse{Body: out, Headers: StatusAfterActionResponseHeaders{CacheControl: statusCache(ctx)}}, nil, nil
+		}
+	}
+	if p, ok := s.statusProblem(ctx, err); ok {
+		return StatusAfterActionJSONResponse{}, &p, nil
+	}
+	return StatusAfterActionJSONResponse{}, nil, err
+}
+
+// unact takes back an interaction of the viewer with a status and returns the status afterwards,
+// or the problem of the failure. A status that is gone answers 404 and nothing changes. A status
+// that exists but that the token's viewer may not see still loses the interaction, because the
+// user's name must not stay on it for want of a way to remove it; the answer is the same 404, as
+// the response would otherwise show the status.
+func (s *Server) unact(ctx context.Context, statusID string, run func(accountID string) error) (StatusAfterActionJSONResponse, *problem, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return StatusAfterActionJSONResponse{}, nil, err
+	}
+	err = s.o.StatusReader.Live(ctx, statusID)
+	if err == nil {
+		err = run(v.AccountID)
+	}
+	if err == nil {
+		_, err = s.o.StatusReader.Visible(ctx, localContentViewer(v), statusID)
+	}
 	if err == nil {
 		var out Status
 		if out, err = s.viewStatus(ctx, statusID); err == nil {
@@ -795,7 +826,7 @@ func (s *Server) VoteInPoll(ctx context.Context, req VoteInPollRequestObject) (V
 
 // UnboostStatus serves DELETE /api/v1/statuses/{id}/boost.
 func (s *Server) UnboostStatus(ctx context.Context, req UnboostStatusRequestObject) (UnboostStatusResponseObject, error) {
-	res, p, err := s.act(ctx, req.Id, func(a string) error { return s.o.Interactions.Unboost(ctx, a, req.Id) })
+	res, p, err := s.unact(ctx, req.Id, func(a string) error { return s.o.Interactions.Unboost(ctx, a, req.Id) })
 	if p != nil {
 		return UnboostStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
@@ -813,7 +844,7 @@ func (s *Server) FavouriteStatus(ctx context.Context, req FavouriteStatusRequest
 
 // UnfavouriteStatus serves DELETE /api/v1/statuses/{id}/favourite.
 func (s *Server) UnfavouriteStatus(ctx context.Context, req UnfavouriteStatusRequestObject) (UnfavouriteStatusResponseObject, error) {
-	res, p, err := s.act(ctx, req.Id, func(a string) error { return s.o.Interactions.Unfavourite(ctx, a, req.Id) })
+	res, p, err := s.unact(ctx, req.Id, func(a string) error { return s.o.Interactions.Unfavourite(ctx, a, req.Id) })
 	if p != nil {
 		return UnfavouriteStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
@@ -831,7 +862,7 @@ func (s *Server) BookmarkStatus(ctx context.Context, req BookmarkStatusRequestOb
 
 // UnbookmarkStatus serves DELETE /api/v1/statuses/{id}/bookmark.
 func (s *Server) UnbookmarkStatus(ctx context.Context, req UnbookmarkStatusRequestObject) (UnbookmarkStatusResponseObject, error) {
-	res, p, err := s.act(ctx, req.Id, func(a string) error { return s.o.Interactions.Unbookmark(ctx, a, req.Id) })
+	res, p, err := s.unact(ctx, req.Id, func(a string) error { return s.o.Interactions.Unbookmark(ctx, a, req.Id) })
 	if p != nil {
 		return UnbookmarkStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
@@ -849,7 +880,7 @@ func (s *Server) PinStatus(ctx context.Context, req PinStatusRequestObject) (Pin
 
 // UnpinStatus serves DELETE /api/v1/statuses/{id}/pin.
 func (s *Server) UnpinStatus(ctx context.Context, req UnpinStatusRequestObject) (UnpinStatusResponseObject, error) {
-	res, p, err := s.act(ctx, req.Id, func(a string) error { return s.o.Interactions.Unpin(ctx, a, req.Id) })
+	res, p, err := s.unact(ctx, req.Id, func(a string) error { return s.o.Interactions.Unpin(ctx, a, req.Id) })
 	if p != nil {
 		return UnpinStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
@@ -881,14 +912,11 @@ func (s *Server) ListStatusQuotes(ctx context.Context, req ListStatusQuotesReque
 	if err != nil {
 		return nil, err
 	}
-	limit := defaultLimit
-	if req.Params.Limit != nil {
-		limit = *req.Params.Limit
+	if p := s.plainPageProblem(ctx, req.Params.Cursor, req.Params.Limit); p != nil {
+		return ListStatusQuotesdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	if !validCursor(req.Params.Cursor) {
-		return ListStatusQuotesdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "cursor")), nil
-	}
-	page, err := s.o.StatusReader.Quotes(ctx, v.AccountID, req.Id, deref(req.Params.Cursor), limit)
+	limit, _ := pageLimit(req.Params.Limit)
+	page, err := s.o.StatusReader.Quotes(ctx, localContentViewer(v), req.Id, deref(req.Params.Cursor), limit)
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {
 			return ListStatusQuotesdefaultApplicationProblemPlusJSONResponse(p), nil

@@ -3,7 +3,7 @@ get:
   operationId: listAdminAnnouncements
   summary: List the announcements
   description: |
-    Every announcement, drafts and withdrawn ones included, newest first (FR-726). The
+    Every announcement, drafts and withdrawn ones included, newest first. The
     list is not paginated. Needs the `manage_announcements` permission.
   tags: [admin-server]
   security:
@@ -42,7 +42,7 @@ post:
         schema:
           $ref: ../components/schemas/AdminAnnouncementCreateRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminAnnouncement.yaml
     default:
       $ref: ../components/responses/Problem.yaml

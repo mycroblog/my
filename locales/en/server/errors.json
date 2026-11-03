@@ -419,6 +419,10 @@
     "defaultMessage": "You cannot quote this post.",
     "description": "Detail of the HTTP 422 API error when a post quotes a post whose quote policy or visibility does not let the user quote it."
   },
+  "errors.status.quote_remote_audience": {
+    "defaultMessage": "A local, followers-only, or direct post cannot quote a post from another server.",
+    "description": "Detail of the HTTP 422 API error when a post whose visibility keeps it from other servers quotes a post from another server."
+  },
   "errors.status.reply_not_found": {
     "defaultMessage": "The post you are replying to was not found.",
     "description": "Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see."
@@ -438,6 +442,10 @@
   "errors.streaming.unavailable": {
     "defaultMessage": "Real-time updates are unavailable right now. Try again later.",
     "description": "Title of the HTTP 503 API error when the server is shutting down and accepts no new real-time update streams."
+  },
+  "errors.target_outranks_actor": {
+    "defaultMessage": "This account's role does not rank below yours, so you cannot do this to it.",
+    "description": "API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included."
   },
   "errors.too_long": {
     "defaultMessage": "{max, plural, one {{name} can be at most # character long.} other {{name} can be at most # characters long.}}",
@@ -567,6 +575,10 @@
     "defaultMessage": "This list already has the most members allowed. Remove one first.",
     "description": "API error title for HTTP 422 when the user adds another account to a list beyond the limit of members of a list."
   },
+  "errors.last_administrator": {
+    "defaultMessage": "This is the only administrator of this server. Make another user an administrator first.",
+    "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
+  },
   "errors.list_members.not_followed": {
     "defaultMessage": "Only accounts you follow can be added to a list.",
     "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."
@@ -686,5 +698,41 @@
   "errors.login_providers_only": {
     "defaultMessage": "This server signs in only through its login providers, so passwords and passkeys cannot be set here.",
     "description": "Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers."
+  },
+  "errors.deactivation.refused": {
+    "defaultMessage": "This account cannot be deactivated now.",
+    "description": "API error title for HTTP 409 when the user cannot deactivate their own account now; the detail says why."
+  },
+  "errors.deactivation.login_restricted": {
+    "defaultMessage": "A moderation action keeps this account from signing in.",
+    "description": "API error detail: the account cannot be deactivated because a moderation action disables its login."
+  },
+  "errors.deactivation.deletion_scheduled": {
+    "defaultMessage": "This account is waiting to be deleted.",
+    "description": "API error detail: the account cannot be deactivated because its deletion is scheduled."
+  },
+  "errors.deactivation.already_deactivated": {
+    "defaultMessage": "This account is deactivated.",
+    "description": "API error detail: the account cannot be deactivated because it is deactivated already."
+  },
+  "errors.deactivation.moved": {
+    "defaultMessage": "This account moved to another account.",
+    "description": "API error detail: the account cannot be deactivated because it moved to another account."
+  },
+  "errors.deactivation.registration_pending": {
+    "defaultMessage": "The registration of this account is waiting for review.",
+    "description": "API error detail: the account cannot be deactivated because its registration waits for review."
+  },
+  "errors.deactivation.paid_subscription": {
+    "defaultMessage": "Cancel your supporter subscription first.",
+    "description": "API error detail: the account cannot be deactivated while a paid supporter subscription goes on."
+  },
+  "errors.deactivation.recently_reactivated": {
+    "defaultMessage": "This account was reactivated less than 24 hours ago.",
+    "description": "API error detail: the account cannot be deactivated until 24 hours after its last reactivation."
+  },
+  "errors.deactivation.last_administrator": {
+    "defaultMessage": "This is the only administrator account that can sign in. Make someone else an administrator first.",
+    "description": "API error detail: the account cannot be deactivated or deleted because no other administrator can sign in."
   }
 }

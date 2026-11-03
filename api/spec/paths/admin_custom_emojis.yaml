@@ -3,7 +3,7 @@ get:
   operationId: listAdminCustomEmojis
   summary: List the custom emoji
   description: |
-    The custom emoji, local and remote, newest first (ADR-0051 §4). `local` keeps the
+    The custom emoji, local and remote, newest first. `local` keeps the
     emoji of this instance (`true`) or of other servers (`false`); `domain` keeps those of
     one remote domain; `shortcode` keeps those whose shortcode contains it, ignoring case.
     Needs the `manage_custom_emojis` permission.
@@ -69,7 +69,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateCustomEmojiRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminCustomEmoji.yaml
     "422":
       $ref: ../components/responses/CustomEmojiProblem.yaml

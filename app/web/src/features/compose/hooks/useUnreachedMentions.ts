@@ -50,7 +50,7 @@ export function useUnreachedMentions(text: string, isLocal: boolean): string[] {
   const ids = [...new Set(remote.map((account) => account.id))].slice(0, maxRelationshipIds);
   const relationships = useQuery({ ...relationshipsQueryOptions(api, ids), enabled: ids.length > 0 });
   if (!isLocal || relationships.data === undefined) return [];
-  const followers = new Set(relationships.data.filter((r) => r.followed_by).map((r) => r.id));
+  const followers = new Set(relationships.data.items.filter((r) => r.followed_by).map((r) => r.id));
   const checked = new Set(ids);
   return [
     ...new Set(

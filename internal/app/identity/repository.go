@@ -71,6 +71,7 @@ type Repository interface {
 	OAuthAppRepository
 	RegistrationRepository
 	OriginRepository
+	AuthRecordPurgeRepository
 	ExportRepository
 	ImportRepository
 	RoleRepository

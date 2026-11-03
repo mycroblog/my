@@ -205,10 +205,10 @@ func (s *Server) GetHomeTimeline(ctx context.Context, req GetHomeTimelineRequest
 
 // GetLocalTimeline serves GET /api/v1/timelines/local. Visitors who are not logged in see only
 // public posts; local posts need a logged-in viewer (ADR-0017). It is a 404 while the instance
-// setting local_timeline_access is off, and a 401 for anonymous requests while it is logged_in
+// setting local_timeline_visibility is off, and a 401 for anonymous requests while it is signed_in
 // (FR-202).
 func (s *Server) GetLocalTimeline(ctx context.Context, req GetLocalTimelineRequestObject) (GetLocalTimelineResponseObject, error) {
-	denied, err := s.timelineDenied(ctx, instance.Settings.LocalTimelineAccess)
+	denied, err := s.timelineDenied(ctx, instance.Settings.LocalTimelineVisibility)
 	if err != nil {
 		return nil, err
 	} else if denied != nil {
@@ -232,8 +232,8 @@ func (s *Server) GetLocalTimeline(ctx context.Context, req GetLocalTimelineReque
 
 // timelineDenied returns the problem that refuses a timeline to the request under the instance
 // setting access (FR-202): a 404 while it is off, and a 401 for an anonymous request while it is
-// logged_in. It returns nil when the request may read the timeline.
-func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settings) instance.TimelineAccess) (*problem, error) {
+// signed_in. It returns nil when the request may read the timeline.
+func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settings) instance.Audience) (*problem, error) {
 	var settings instance.Settings
 	if s.o.Instance != nil {
 		var err error
@@ -243,9 +243,9 @@ func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settin
 	}
 	_, loggedIn := ViewerFrom(ctx)
 	switch access(settings) {
-	case instance.TimelineEveryone:
+	case instance.AudienceEveryone:
 		return nil, nil
-	case instance.TimelineLoggedIn:
+	case instance.AudienceSignedIn:
 		if loggedIn {
 			return nil, nil
 		}
@@ -259,19 +259,19 @@ func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settin
 	}
 }
 
-// GetPublicTimeline serves GET /api/v1/timelines/public: the public posts of local and remote
-// accounts. It is a 404 while the instance setting federated_timeline_access is off, and a 401
-// for anonymous requests while it is logged_in (FR-202).
-func (s *Server) GetPublicTimeline(ctx context.Context, req GetPublicTimelineRequestObject) (GetPublicTimelineResponseObject, error) {
-	denied, err := s.timelineDenied(ctx, instance.Settings.FederatedTimelineAccess)
+// GetFederatedTimeline serves GET /api/v1/timelines/federated: the public posts of local and remote
+// accounts. It is a 404 while the instance setting federated_timeline_visibility is off, and a 401
+// for anonymous requests while it is signed_in (FR-202).
+func (s *Server) GetFederatedTimeline(ctx context.Context, req GetFederatedTimelineRequestObject) (GetFederatedTimelineResponseObject, error) {
+	denied, err := s.timelineDenied(ctx, instance.Settings.FederatedTimelineVisibility)
 	if err != nil {
 		return nil, err
 	} else if denied != nil {
-		return GetPublicTimelinedefaultApplicationProblemPlusJSONResponse(*denied), nil
+		return GetFederatedTimelinedefaultApplicationProblemPlusJSONResponse(*denied), nil
 	}
 	cv, v := timelineViewer(ctx)
 	if p := s.plainPageProblem(ctx, req.Params.Cursor, req.Params.Limit); p != nil {
-		return GetPublicTimelinedefaultApplicationProblemPlusJSONResponse(*p), nil
+		return GetFederatedTimelinedefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
 	q, err := s.timelineQuery(ctx, v, req.Params.Cursor, req.Params.Limit, true)
 	if err != nil {
@@ -282,7 +282,7 @@ func (s *Server) GetPublicTimeline(ctx context.Context, req GetPublicTimelineReq
 		return nil, err
 	}
 	res, err := s.statusPage(ctx, v, entryItems(p.Entries), p.Next)
-	return GetPublicTimeline200JSONResponse{res}, err
+	return GetFederatedTimeline200JSONResponse{res}, err
 }
 
 // GetHashtagTimeline serves GET /api/v1/timelines/tag/{hashtag}. A hashtag that no status used
@@ -311,7 +311,9 @@ func (s *Server) GetHashtagTimeline(ctx context.Context, req GetHashtagTimelineR
 }
 
 // ListAccountStatuses serves GET /api/v1/accounts/{id}/statuses: the account's profile
-// timeline, or its pinned statuses in one page. An unknown account is a 404. The viewer's
+// timeline, or its pinned statuses in one page. An account that getAccount answers with a 404
+// (unknown, not active, hidden by moderation, the instance actor, or blocking the viewer) is a
+// 404 here too. The viewer's
 // timeline languages do not apply: a profile shows the account in every language. The first
 // page of a logged-in viewer may start fetching the recent posts of a remote account
 // (Options.Outboxes, ADR-0044).
@@ -320,13 +322,12 @@ func (s *Server) ListAccountStatuses(ctx context.Context, req ListAccountStatuse
 	if p := s.plainPageProblem(ctx, req.Params.Cursor, req.Params.Limit); p != nil {
 		return ListAccountStatusesdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	account, err := s.o.Accounts.FindByID(ctx, req.Id)
-	if errors.Is(err, appaccount.ErrNotFound) {
-		l := s.Localizer(ctx)
-		body, headers := s.NewProblem(ctx, http.StatusNotFound, ProblemTypeBlank, l.ServerErrorsNotFound(), "")
-		return ListAccountStatusesdefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusNotFound}, nil
-	} else if err != nil {
+	account, ok, err := s.visibleAccount(ctx, v, req.Id)
+	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return ListAccountStatusesdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	}
 	params := req.Params
 	if params.Pinned != nil && *params.Pinned {

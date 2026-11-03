@@ -67,6 +67,18 @@ func (e LifecycleEventRecorded) ClosesLocalAccount() bool {
 	return e.Event.Kind == account.LifecycleDeleted || e.Event.Kind == account.LifecycleDeletionScheduled
 }
 
+// Deactivates reports whether the event hides a local account from everyone at its owner's wish
+// (ADR-0145).
+func (e LifecycleEventRecorded) Deactivates() bool {
+	return e.Event.Kind == account.LifecycleDeactivated
+}
+
+// Reactivates reports whether the event brings back a local account that its owner deactivated
+// (ADR-0145).
+func (e LifecycleEventRecorded) Reactivates() bool {
+	return e.Event.Kind == account.LifecycleReactivated
+}
+
 // RegisterProjectors registers the account module's synchronous projectors (data-model §9):
 // account_handles from local accounts and the handle checks of remote actors,
 // account_profile_heads from profile revisions, account_lifecycle_states from lifecycle events,
@@ -260,18 +272,32 @@ func rebuildLifecycleStates(ctx context.Context, tx uow.Tx, repo Repository) err
 	return nil
 }
 
-// ReplayDeletions emits inside tx LifecycleEventRecorded for each lifecycle event that deletes
-// an account (LifecycleEventRecorded.Deletes), in account and event order, for the rebuild of
-// the projections that other modules derive from the deletions (data-model §9). Deletion is
-// final, so these are the accounts that are deleted now.
-func ReplayDeletions(ctx context.Context, tx uow.Tx, repo Repository, emit func(uow.Event) error) error {
+// ReplayLifecycle emits inside tx LifecycleEventRecorded for each lifecycle event that deletes an
+// account (LifecycleEventRecorded.Deletes) and for the deactivated event of each account that is
+// deactivated now, in account and event order, for the rebuild of the projections that other
+// modules derive from them (data-model §9). Deletion is final, so these are the accounts that are
+// deleted or deactivated now.
+func ReplayLifecycle(ctx context.Context, tx uow.Tx, repo Repository, emit func(uow.Event) error) error {
 	events, err := repo.ListLifecycleEvents(ctx, tx)
 	if err != nil {
 		return err
 	}
+	states := map[string]account.LifecycleState{}
+	last := map[string]string{}
+	for _, e := range events {
+		s, seen := states[e.AccountID]
+		if !seen {
+			s = account.InitialLifecycleState(e.AccountID)
+		}
+		states[e.AccountID] = s.Apply(e)
+		if e.Kind == account.LifecycleDeactivated {
+			last[e.AccountID] = e.ID
+		}
+	}
 	for _, e := range events {
 		ev := LifecycleEventRecorded{Event: e}
-		if !ev.Deletes() {
+		inForce := last[e.AccountID] == e.ID && states[e.AccountID].Deactivated()
+		if !ev.Deletes() && !inForce {
 			continue
 		}
 		if err := emit(ev); err != nil {

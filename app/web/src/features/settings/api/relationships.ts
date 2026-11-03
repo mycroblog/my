@@ -69,11 +69,10 @@ export function followRequestsQueryOptions(api: Api) {
 }
 
 /** The actions on one account of the lists, each on the account's ID. */
-type AccountActionPath =
-  | "/accounts/{id}/unblock"
-  | "/accounts/{id}/unmute"
-  | "/follow_requests/{id}/authorize"
-  | "/follow_requests/{id}/reject";
+type AccountActionPath = "/follow_requests/{id}/accept" | "/follow_requests/{id}/reject";
+
+/** The relations that a list ends, each by a DELETE on its path. */
+type AccountRelationPath = "/accounts/{id}/block" | "/accounts/{id}/mute";
 
 /**
  * An action on the account with the given ID (POST `path`), as the options of TanStack Query's useMutation
@@ -84,6 +83,19 @@ export function accountActionMutation(api: Api, path: AccountActionPath) {
     mutationKey: ["post", path] as const,
     mutationFn: async (id: string) => {
       const { data, error } = await api.fetch.POST(path, { params: { path: { id } } });
+      // The middleware throws an ApiError for every error status, so this is only for the types.
+      if (data === undefined) throw new Error(error.title);
+      return data;
+    },
+  };
+}
+
+/** Ends a relation with the account with the given ID (DELETE `path`), like accountActionMutation. */
+export function endRelationMutation(api: Api, path: AccountRelationPath) {
+  return {
+    mutationKey: ["delete", path] as const,
+    mutationFn: async (id: string) => {
+      const { data, error } = await api.fetch.DELETE(path, { params: { path: { id } } });
       // The middleware throws an ApiError for every error status, so this is only for the types.
       if (data === undefined) throw new Error(error.title);
       return data;
@@ -108,7 +120,7 @@ export function removeFromList(queryClient: QueryClient, api: Api, change: ListC
             ...data,
             pages: data.pages.map((page) => ({
               ...page,
-              accounts: page.accounts.filter((account) => account.id !== id),
+              items: page.items.filter((account) => account.id !== id),
             })),
           },
       );
@@ -119,7 +131,7 @@ export function removeFromList(queryClient: QueryClient, api: Api, change: ListC
         (data) =>
           data && {
             ...data,
-            pages: data.pages.map((page) => ({ ...page, mutes: page.mutes.filter((mute) => mute.account.id !== id) })),
+            pages: data.pages.map((page) => ({ ...page, items: page.items.filter((mute) => mute.account.id !== id) })),
           },
       );
       return;
@@ -132,7 +144,7 @@ export function removeFromList(queryClient: QueryClient, api: Api, change: ListC
             ...data,
             pages: data.pages.map((page) => ({
               ...page,
-              accounts: page.accounts.filter((account) => account.id !== id),
+              items: page.items.filter((account) => account.id !== id),
             })),
           },
       );

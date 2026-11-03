@@ -1,16 +1,17 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 
--- The erasure of deleted local accounts' data (data-model sections 4.2 and 8, #397). Each module
+-- The erasure of deleted accounts' data (data-model sections 4.2 and 8, #397). Each module
 -- erases its own tables; the statements whose rows grow with the number of users or followers
 -- take a bounded batch (@lim). A list argument is a JSON array of strings, read with json_each.
 
 -- account ---------------------------------------------------------------------------------------
 
--- ListAccountsToErase returns, in account ID order after @after, up to @lim local accounts that
--- were deleted at or before @deleted_before and are not erased yet, with their users.
+-- ListAccountsToErase returns, in account ID order after @after, up to @lim accounts that were
+-- deleted at or before @deleted_before and are not erased yet, local or remote (remote_deleted),
+-- with the user of a local one.
 -- name: ListAccountsToErase :many
 SELECT s.account_id, la.user_id FROM account_lifecycle_states s
-JOIN local_accounts la ON la.account_id = s.account_id
+LEFT JOIN local_accounts la ON la.account_id = s.account_id
 WHERE s.state = 'deleted' AND s.since <= CAST(sqlc.arg(deleted_before) AS INTEGER)
   AND s.account_id > CAST(sqlc.arg(after) AS TEXT)
   AND NOT EXISTS (SELECT 1 FROM account_erasures e WHERE e.account_id = s.account_id)
@@ -33,6 +34,10 @@ DELETE FROM account_profile_revision_emojis WHERE revision_id IN (
 DELETE FROM account_profile_revision_sources WHERE revision_id IN (
   SELECT r.id FROM account_profile_revisions r WHERE r.account_id = sqlc.arg(account_id));
 
+-- name: EraseRemoteProfileRevisions :exec
+DELETE FROM remote_profile_revisions WHERE revision_id IN (
+  SELECT r.id FROM account_profile_revisions r WHERE r.account_id = sqlc.arg(account_id));
+
 -- name: EraseProfileHead :exec
 DELETE FROM account_profile_heads WHERE account_id = sqlc.arg(account_id);
 
@@ -52,6 +57,23 @@ DELETE FROM account_keys WHERE account_id = sqlc.arg(account_id);
 
 -- name: EraseAliases :exec
 DELETE FROM account_aliases WHERE account_id = sqlc.arg(account_id);
+
+-- A remote account keeps no snapshot, endpoint, or handle: the handle may be someone else's later.
+-- A local account has none of the first three and keeps its handle, so that its username is not
+-- used again.
+
+-- name: EraseRemoteAccountSnapshots :exec
+DELETE FROM remote_account_snapshots WHERE account_id = sqlc.arg(account_id);
+
+-- name: EraseRemoteAccountHead :exec
+DELETE FROM remote_account_heads WHERE account_id = sqlc.arg(account_id);
+
+-- name: EraseRemoteAccountHandleVerifications :exec
+DELETE FROM remote_account_handle_verifications WHERE account_id = sqlc.arg(account_id);
+
+-- name: EraseRemoteAccountHandle :exec
+DELETE FROM account_handles WHERE account_handles.account_id = sqlc.arg(account_id)
+  AND EXISTS (SELECT 1 FROM remote_accounts r WHERE r.account_id = sqlc.arg(account_id));
 
 -- name: InsertAccountErasure :exec
 INSERT INTO account_erasures (account_id, erased_at) VALUES (sqlc.arg(account_id), sqlc.arg(erased_at))
@@ -159,6 +181,10 @@ DELETE FROM oauth_authorization_codes WHERE user_id = sqlc.arg(user_id);
 -- name: EraseAccessTokenRevocations :exec
 DELETE FROM oauth_token_revocations WHERE token_id IN (
   SELECT t.id FROM oauth_access_tokens t WHERE t.user_id = sqlc.arg(user_id));
+
+-- name: EraseTokenFamilyLastUsed :exec
+DELETE FROM oauth_token_family_last_used WHERE family_id IN (
+  SELECT t.family_id FROM oauth_access_tokens t WHERE t.user_id = sqlc.arg(user_id));
 
 -- name: EraseAccessTokens :exec
 DELETE FROM oauth_access_tokens WHERE user_id = sqlc.arg(user_id);
@@ -278,6 +304,16 @@ DELETE FROM bookmarks WHERE bookmarks.account_id = sqlc.arg(account_id) AND book
 -- name: ErasePollVotesBy :execrows
 DELETE FROM poll_votes WHERE poll_votes.id IN (
   SELECT v.id FROM poll_votes v WHERE v.account_id = sqlc.arg(account_id) ORDER BY v.id LIMIT sqlc.arg(lim));
+
+-- The remote media files of the account that no attachment and no custom emoji uses, up to lim.
+-- A status that the moderation records keep keeps its attachments until a later run.
+
+-- name: ListRemoteMediaToErase :many
+SELECT r.media_id FROM remote_media r
+WHERE r.owner_account_id = sqlc.arg(account_id)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = r.media_id)
+  AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = r.media_id)
+ORDER BY r.media_id LIMIT sqlc.arg(lim);
 
 -- name: ErasePinsBy :execrows
 DELETE FROM status_pins WHERE account_id = sqlc.arg(account_id);
@@ -523,3 +559,15 @@ DELETE FROM post_subscriptions WHERE post_subscriptions.target_account_id = sqlc
 DELETE FROM post_subscription_requests WHERE post_subscription_requests.target_account_id = sqlc.arg(account_id) AND post_subscription_requests.account_id IN (
   SELECT x.account_id FROM post_subscription_requests x WHERE x.target_account_id = sqlc.arg(account_id)
   ORDER BY x.account_id LIMIT sqlc.arg(lim));
+
+-- name: ListOAuthClientIDsOwnedBy :many
+SELECT id FROM oauth_clients WHERE owner_user_id = sqlc.arg(user_id) ORDER BY id;
+
+-- BlankOAuthClientDetailsOf removes the name and website of the clients of an erased owner.
+-- name: BlankOAuthClientDetailsOf :exec
+UPDATE oauth_clients SET name = '', website = NULL WHERE owner_user_id = sqlc.arg(user_id);
+
+-- BlankOAuthClientRevisionDetailsOf removes the same from the revisions of those clients.
+-- name: BlankOAuthClientRevisionDetailsOf :exec
+UPDATE oauth_client_revisions SET name = '', website = NULL WHERE oauth_client_id IN (
+  SELECT c.id FROM oauth_clients c WHERE c.owner_user_id = sqlc.arg(user_id));

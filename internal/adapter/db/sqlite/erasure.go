@@ -38,7 +38,7 @@ func (r *AccountRepository) ListAccountsToErase(ctx context.Context, deletedBefo
 	}
 	out := make([]appaccount.ErasureTarget, len(rows))
 	for i, row := range rows {
-		out[i] = appaccount.ErasureTarget{AccountID: row.AccountID, UserID: row.UserID}
+		out[i] = appaccount.ErasureTarget{AccountID: row.AccountID, UserID: row.UserID.String}
 	}
 	return out, nil
 }
@@ -50,8 +50,9 @@ func (r *AccountRepository) EraseProfilesAndKeys(ctx context.Context, tx uow.Tx,
 		return err
 	}
 	return runSteps(ctx, accountID, "erase profiles and keys",
-		q.EraseProfileFieldSources, q.EraseProfileFields, q.EraseProfileRevisionEmojis, q.EraseProfileRevisionSources, q.EraseProfileHead,
-		q.EraseProfileRevisions, q.ErasePrivateKeys, q.EraseKeyRevocations, q.EraseKeys, q.EraseAliases)
+		q.EraseProfileFieldSources, q.EraseProfileFields, q.EraseProfileRevisionEmojis, q.EraseProfileRevisionSources, q.EraseRemoteProfileRevisions,
+		q.EraseProfileHead, q.EraseProfileRevisions, q.ErasePrivateKeys, q.EraseKeyRevocations, q.EraseKeys, q.EraseAliases,
+		q.EraseRemoteAccountSnapshots, q.EraseRemoteAccountHead, q.EraseRemoteAccountHandleVerifications, q.EraseRemoteAccountHandle)
 }
 
 // InsertErasure implements account.ErasureRepository.
@@ -84,8 +85,30 @@ func (r *IdentityRepository) EraseUserData(ctx context.Context, tx uow.Tx, userI
 		q.EraseUserExternalIdentities, q.EraseExternalIdentityUnlinks, q.EraseExternalIdentities, q.EraseExternalIdentityLinks,
 		q.EraseUserTokenRedemptions, q.EraseUserTokens, q.EraseSessionRevocations, q.EraseSessionActivity,
 		q.EraseSessions, q.EraseAuthorizationCodeRedemptions, q.EraseAuthorizationCodes,
-		q.EraseAccessTokenRevocations, q.EraseAccessTokens, q.EraseUserPreferences, q.EraseUserRoleBadgeDisplays, q.EraseUserTimelineLanguages, q.EraseUserTimeZone,
+		q.EraseAccessTokenRevocations, q.EraseTokenFamilyLastUsed, q.EraseAccessTokens, q.EraseUserPreferences, q.EraseUserRoleBadgeDisplays, q.EraseUserTimelineLanguages, q.EraseUserTimeZone,
 		q.EraseRegistrationDecisions, q.EraseRegistrationApplications, q.EraseRegistrationState, q.EraseServiceClosureEmails)
+}
+
+// ListOwnedOAuthClientIDs implements identity.ErasureRepository.
+func (r *IdentityRepository) ListOwnedOAuthClientIDs(ctx context.Context, tx uow.Tx, userID string) ([]string, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := q.ListOAuthClientIDsOwnedBy(ctx, toNullString(userID))
+	return ids, wrap(err, "list owned oauth clients")
+}
+
+// BlankOwnedOAuthClientDetails implements identity.ErasureRepository.
+func (r *IdentityRepository) BlankOwnedOAuthClientDetails(ctx context.Context, tx uow.Tx, userID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	if err := q.BlankOAuthClientRevisionDetailsOf(ctx, toNullString(userID)); err != nil {
+		return wrap(err, "blank owned oauth client revisions")
+	}
+	return wrap(q.BlankOAuthClientDetailsOf(ctx, toNullString(userID)), "blank owned oauth clients")
 }
 
 // ListAuthorStatusesToErase implements content.ErasureRepository.
@@ -168,6 +191,22 @@ func (r *StatusRepository) EraseInteractionsBy(ctx context.Context, tx uow.Tx, a
 			return keep(q.ErasePollVotesBy(ctx, sqlitegen.ErasePollVotesByParams{AccountID: accountID, Lim: lim}))
 		},
 		func() error { return keep(q.ErasePinsBy(ctx, accountID)) },
+		func() error {
+			ids, err := q.ListRemoteMediaToErase(ctx, sqlitegen.ListRemoteMediaToEraseParams{AccountID: accountID, Lim: lim})
+			if err != nil {
+				return err
+			}
+			for _, id := range ids {
+				if _, err := q.DeleteUnreferencedRemoteMedia(ctx, id); err != nil {
+					return err
+				}
+				if err := q.DeleteRemoteMediaFile(ctx, id); err != nil {
+					return err
+				}
+			}
+			most = max(most, int64(len(ids)))
+			return nil
+		},
 		// The automatic deletion policy (FR-118) is a setting of the account.
 		func() error { return q.EraseAutoDeleteKeptVisibilitiesBy(ctx, accountID) },
 		func() error { return q.EraseAutoDeletePolicyBy(ctx, accountID) },

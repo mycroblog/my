@@ -34,11 +34,13 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 	a.Moderation = moderation.NewService(moderation.Deps{
 		FanOutSize: a.fanOutSize,
 		UnitOfWork: a.UnitOfWork, Repository: repo, Accounts: a.Accounts, Clock: a.Clock, IDs: a.IDs,
+		Ranks:    moderationRanks{a},
 		Statuses: moderationStatuses{a}, Lifecycles: a.Accounts, AppealWindow: appealWindow{a},
 		Retention: retentionSettings{a},
 		Follows:   moderationFollows{a}, Directory: a.Accounts, Outbox: outbox,
 		Emails: moderationEmails{a}, CanonicalDomain: federation.CanonicalHost,
-		Evidence: moderationEvidence{a}, AuditTargets: moderationAuditTargets{a},
+		LocalDomains: []string{a.Config.Host, a.Config.AccountDomain},
+		Evidence:     moderationEvidence{a}, AuditTargets: moderationAuditTargets{a},
 	})
 	a.ModerationPolicy = moderation.NewFederationPolicy(repo, a.Clock)
 	a.AccountPolicy = moderation.NewAccountPolicy(repo, a.Accounts, a.Clock)
@@ -52,7 +54,7 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 }
 
 // appealWindow reads the appeal window of the moderation module from the instance setting
-// appeal_window (ADR-0038).
+// appeal_window_days (ADR-0038).
 type appealWindow struct{ a *App }
 
 func (w appealWindow) AppealWindow(ctx context.Context) (time.Duration, error) {
@@ -73,9 +75,9 @@ func (r retentionSettings) RetentionPeriods(ctx context.Context) (moderation.Ret
 		return moderation.RetentionPeriods{}, err
 	}
 	return moderation.RetentionPeriods{
-		Reports:  settings.Retention(instance.SettingRetentionReports),
-		Actions:  settings.Retention(instance.SettingRetentionModerationActions),
-		AuditLog: settings.Retention(instance.SettingRetentionAuditLog),
+		Reports:  settings.Retention(instance.SettingReportsRetentionDays),
+		Actions:  settings.Retention(instance.SettingModerationActionsRetentionDays),
+		AuditLog: settings.Retention(instance.SettingAuditLogRetentionDays),
 	}, nil
 }
 
@@ -94,8 +96,8 @@ func (o originRetention) OriginRetention(ctx context.Context) (identity.OriginRe
 		return identity.OriginRetentionPolicy{}, err
 	}
 	pol := identity.OriginRetentionPolicy{
-		SessionPeriod:      settings.Retention(instance.SettingRetentionSessionOrigins),
-		RegistrationPeriod: settings.Retention(instance.SettingRetentionRegistrationOrigins),
+		SessionPeriod:      settings.Retention(instance.SettingSessionOriginsRetentionDays),
+		RegistrationPeriod: settings.Retention(instance.SettingRegistrationOriginsRetentionDays),
 	}
 	for _, id := range held {
 		actor, err := o.a.Accounts.FindByID(ctx, id)
@@ -140,8 +142,8 @@ func (m moderationEvidence) Review(ctx context.Context, statusID string) (conten
 	return m.a.Statuses.Review(ctx, statusID)
 }
 
-// moderationAuditTargets gives the moderation module the roles, login providers, custom emoji, webhooks, and relays that
-// the audit log names, of modules that are built after it.
+// moderationAuditTargets gives the moderation module the roles, login providers, custom emoji, webhooks, relays, and
+// link card rules that the audit log names, of modules that are built after it.
 type moderationAuditTargets struct{ a *App }
 
 func (m moderationAuditTargets) ExistingAuditTargets(ctx context.Context, kind moderation.AuditTargetKind, ids []string) ([]string, error) {
@@ -158,6 +160,8 @@ func (m moderationAuditTargets) ExistingAuditTargets(ctx context.Context, kind m
 		return m.a.Webhooks.ExistingIDs(ctx, ids)
 	case kind == moderation.AuditTargetRelay && m.a.Relays != nil:
 		return m.a.Relays.ExistingIDs(ctx, ids)
+	case kind == moderation.AuditTargetLinkCardDomain && m.a.Instance != nil:
+		return m.a.Instance.ExistingLinkCardDomains(ctx, ids)
 	}
 	// A module that is not built has removed nothing.
 	return ids, nil
@@ -178,6 +182,17 @@ func (m moderationFollows) SeverByModeration(ctx context.Context, tx uow.Tx, acc
 // moderationEmails gives the moderation module the identity module, which is built after it
 // because it reads the moderation restrictions, for the sign-up block that a ban makes of the
 // banned user's email address.
+// moderationRanks reads the ranks from the identity module, which is built after moderation.
+type moderationRanks struct{ a *App }
+
+func (m moderationRanks) MayActOn(ctx context.Context, byUserID, targetUserID string) (bool, error) {
+	return m.a.Identity.MayActOn(ctx, byUserID, targetUserID)
+}
+
+func (m moderationRanks) IsLastAdministratorTx(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
+	return m.a.Identity.IsLastAdministratorTx(ctx, tx, userID)
+}
+
 type moderationEmails struct{ a *App }
 
 func (m moderationEmails) PrimaryEmailAddress(ctx context.Context, userID string) (string, error) {

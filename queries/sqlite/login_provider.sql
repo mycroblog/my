@@ -128,12 +128,12 @@ ORDER BY u.link_id;
 -- name: CountLoginProviderLinks :many
 SELECT provider_id, COUNT(*) AS users FROM user_external_identities GROUP BY provider_id;
 
--- CountActiveLocalUsersWithoutLoginProvider counts the users whose local account is active and who
--- have no current link to one of the providers.
+-- CountActiveLocalUsersWithoutLoginProvider counts the users whose local account is active, or
+-- deactivated and able to come back, and who have no current link to one of the providers.
 -- name: CountActiveLocalUsersWithoutLoginProvider :one
 SELECT COUNT(*) FROM local_accounts la
 LEFT JOIN account_lifecycle_states s ON s.account_id = la.account_id
-WHERE (s.state IS NULL OR s.state = 'active')
+WHERE (s.state IS NULL OR s.state IN ('active', 'deactivated'))
   AND NOT EXISTS (
     SELECT 1 FROM user_external_identities u
     WHERE u.user_id = la.user_id AND u.provider_id IN (sqlc.slice(provider_ids))

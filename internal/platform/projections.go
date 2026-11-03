@@ -31,6 +31,7 @@ type projectionRepositories struct {
 	follows       graph.Repository
 	statuses      content.Repository
 	interactions  content.InteractionRepository
+	emojis        content.CustomEmojiRepository
 	quotes        content.QuoteRepository
 	feeds         timeline.Repository
 	notifications notification.Repository
@@ -47,7 +48,7 @@ type projectionRepositories struct {
 // projectionRepositories returns the repositories of the database that the projections rebuild.
 func (r *repositories) projectionRepositories() projectionRepositories {
 	return projectionRepositories{
-		accounts: r.accounts, instances: r.instances, follows: r.follows, statuses: r.statuses, interactions: r.interactions,
+		accounts: r.accounts, instances: r.instances, follows: r.follows, statuses: r.statuses, interactions: r.interactions, emojis: r.emojis,
 		feeds: r.feeds, notifications: r.notifs, moderation: r.mods, identities: r.identities, webhooks: r.hooks, relays: r.feds,
 		finance: r.finance, quotes: r.quotes, supporters: r.supporters, voice: r.voice,
 		diagnostics: r.diagnostics,
@@ -63,7 +64,7 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 		Projections: []projection.Projection{
 			{
 				Name: "instance", Module: "instance",
-				Tables: []string{"instance_settings", "instance_texts", "instance_rule_heads", "instance_theme", "instance_brands", "announcement_heads"},
+				Tables: []string{"instance_settings", "instance_texts", "instance_rule_heads", "instance_theme", "instance_brands", "announcement_heads", "service_closure_heads"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return instance.RebuildProjections(ctx, u, r.instances)
 				},
@@ -126,9 +127,16 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 			},
 			{
 				Name: "boost_edges", Module: "content",
-				Tables: []string{"boost_edges"},
+				Tables: []string{"boost_edges", "status_reaction_counts"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return content.RebuildInteractionProjections(ctx, u, r.interactions)
+				},
+			},
+			{
+				Name: "custom_emoji_pending_requests", Module: "content",
+				Tables: []string{"custom_emoji_pending_requests"},
+				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
+					return content.RebuildCustomEmojiRequestProjection(ctx, u, r.emojis)
 				},
 			},
 			{
@@ -150,7 +158,7 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				Name: "feed_restrictions", Module: "timeline",
 				Tables: []string{"feed_author_restrictions", "feed_domain_restrictions"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
-					return timeline.RebuildRestrictions(ctx, u, r.feeds, a.Accounts, a.Clock,
+					return timeline.RebuildRestrictions(ctx, u, r.feeds, a.Accounts, moderatedEffects{a}, a.Clock,
 						timeline.ModerationSource(r.moderation, a.Clock), timeline.AccountSource(r.accounts))
 				},
 			},

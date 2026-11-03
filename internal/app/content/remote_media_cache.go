@@ -37,7 +37,7 @@ const (
 // ProxySettings are the instance settings of the media proxy.
 type ProxySettings struct {
 	Policy RemoteMediaPolicy
-	// CacheTTL is remote_media_cache_ttl: how long a copy is kept, and the max-age of the
+	// CacheTTL is remote_media_cache_ttl_seconds: how long a copy is kept, and the max-age of the
 	// proxy's responses.
 	CacheTTL time.Duration
 }
@@ -45,7 +45,7 @@ type ProxySettings struct {
 const (
 	// JobCleanupRemoteMedia deletes the copies of the remote media cache past their expiry and
 	// those over the size limit (FR-803); no payload.
-	JobCleanupRemoteMedia = "media.cleanup_remote"
+	JobCleanupRemoteMedia = "media.purge_remote_cache"
 	// DefaultRemoteMediaCacheMaxSize is the default size limit of the remote media cache.
 	DefaultRemoteMediaCacheMaxSize int64 = 1 << 30
 	// remoteMediaPrefix starts the private blob keys of the cached copies.

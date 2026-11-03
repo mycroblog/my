@@ -3,6 +3,28 @@
 {{if .Error}}<p class="alert" role="alert">{{.Error}}</p>{{end}}
 {{if .Notice}}<p class="notice" role="status">{{.Notice}}</p>{{end}}
 {{with .Status}}
+{{if .Deactivated}}<p>{{$.L.ServerAuthStatusDeactivated}}</p>
+<p><time datetime="{{.DeletionAt}}">{{$.L.ServerAuthStatusDeactivatedDeletion .DeletionDate}}</time></p>
+<form class="form" method="post" action="/auth/reactivate">
+<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+<p class="hint">{{$.L.ServerAuthStatusDeactivatedReactivateHint}}</p>
+<div class="actions">
+<button class="button" type="submit">{{$.L.ServerAuthStatusDeactivatedReactivate}}</button>
+</div>
+</form>
+<h2>{{$.L.ServerAuthStatusDeactivatedDeleteHeading}}</h2>
+<form class="form" method="post" action="/auth/deactivated/delete">
+<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+<p id="delete-hint" class="hint">{{$.L.ServerAuthStatusDeactivatedDeleteHint}}</p>
+{{if .DeleteAsksForPassword}}<div class="field">
+<label for="delete-password">{{$.L.ServerAuthStatusDeactivatedPasswordLabel}}</label>
+<input id="delete-password" name="password" type="password" autocomplete="current-password" required aria-describedby="delete-hint">
+</div>
+{{end}}<div class="actions">
+<button class="button button-secondary" type="submit">{{$.L.ServerAuthStatusDeactivatedDelete}}</button>
+</div>
+</form>
+{{end}}
 {{if .Restricted}}<p>{{$.L.ServerAuthStatusRestricted}}</p>
 {{with .Actions}}<ul class="moderation-actions">
 {{range .}}<li>

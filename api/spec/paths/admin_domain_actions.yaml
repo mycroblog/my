@@ -3,7 +3,7 @@ get:
   operationId: listDomainActions
   summary: List the moderation actions on domains
   description: |
-    The actions that moderators took on remote domains (FR-702), newest first, lifted and
+    The actions that moderators took on remote domains, newest first, lifted and
     expired ones included unless `active` is set. Needs the `manage_domains` permission.
   tags: [admin-moderation]
   security:
@@ -43,14 +43,14 @@ post:
   operationId: createDomainAction
   summary: Take a moderation action on a domain
   description: |
-    Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+    Records an action on a remote domain and its subdomains, in effect at once and
     until it expires or is lifted. A `suspend` stops every delivery to the domain, every
     fetch from it, and every activity received from it, and hides its accounts and posts
     from the timelines; `limit` keeps its posts off the public timelines and its accounts
     from reaching users who do not follow them; `reject_media` stops fetching its media;
     `reject_reports` drops the reports it sends; `force_sensitive` marks its media
     sensitive. The domain is normalized (IDNA A-labels in lower case, without a trailing
-    dot); one that is not a valid domain is a 422 naming `domain`. A `public_comment` or
+    dot); one that is not a valid domain, or this server's own, is a 422 naming `domain`. A `public_comment` or
     `private_note` that is too long or contains U+0000 is a 422 naming it. Needs the
     `manage_domains` permission.
   tags: [admin-moderation]
@@ -63,7 +63,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateDomainActionRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminDomainAction.yaml
     default:
       $ref: ../components/responses/Problem.yaml

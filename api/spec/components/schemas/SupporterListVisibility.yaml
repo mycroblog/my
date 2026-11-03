@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: MIT
-description: |
-  Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-  §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-  `signed_in`, the users signed in to this server.
-type: string
-enum: ["off", public, signed_in]

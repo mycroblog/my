@@ -9,7 +9,7 @@ delete:
     Revokes the invitation of a user, by the host or a co-host: the user no longer sees the
     room unless in it, and the permission to speak of an invitation as a speaker goes too; a
     participant stays in the room as a speaker or a listener. A 404 for a user without an
-    invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+    invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]

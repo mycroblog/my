@@ -31,7 +31,7 @@ CREATE UNIQUE INDEX error_groups_fingerprint ON error_groups (fingerprint);
 
 -- Current value: the occurrences of a group in the hour that starts at hour_start, with the time
 -- and version of the last of them. Every write adds to occurrences in one statement outside a
--- transaction; the daily diagnostics.prune_error_counts deletes the rows older than 90 days.
+-- transaction; the daily diagnostics.purge_error_counts deletes the rows older than 90 days.
 CREATE TABLE error_group_counts (
   group_id TEXT NOT NULL,
   hour_start INTEGER NOT NULL,

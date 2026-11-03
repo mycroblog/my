@@ -124,7 +124,7 @@ func notificationAnnouncement(t *testing.T, e *notificationEnv) {
 	}
 	unread := func(id string) int64 {
 		t.Helper()
-		n, err := svc.UnreadCount(ctx, id)
+		n, err := svc.UnreadCount(ctx, id, false)
 		if err != nil {
 			t.Fatal(err)
 		}

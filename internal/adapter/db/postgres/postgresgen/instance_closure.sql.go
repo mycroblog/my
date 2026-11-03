@@ -56,20 +56,20 @@ func (q *Queries) GetCurrentServiceClosure(ctx context.Context) (GetCurrentServi
 }
 
 const getServiceClosureEvent = `-- name: GetServiceClosureEvent :one
-SELECT e.id, e.kind, e.by_user_id, e.occurred_at, s.closes_at, s.export_until, s.message
+SELECT e.id, e.kind, e.changed_by_user_id, e.occurred_at, s.closes_at, s.export_until, s.message
 FROM service_closure_events e
 LEFT JOIN service_closure_schedules s ON s.event_id = e.id
 WHERE e.id = $1
 `
 
 type GetServiceClosureEventRow struct {
-	ID          string
-	Kind        string
-	ByUserID    *string
-	OccurredAt  time.Time
-	ClosesAt    *time.Time
-	ExportUntil *time.Time
-	Message     *string
+	ID              string
+	Kind            string
+	ChangedByUserID *string
+	OccurredAt      time.Time
+	ClosesAt        *time.Time
+	ExportUntil     *time.Time
+	Message         *string
 }
 
 func (q *Queries) GetServiceClosureEvent(ctx context.Context, id string) (GetServiceClosureEventRow, error) {
@@ -78,7 +78,7 @@ func (q *Queries) GetServiceClosureEvent(ctx context.Context, id string) (GetSer
 	err := row.Scan(
 		&i.ID,
 		&i.Kind,
-		&i.ByUserID,
+		&i.ChangedByUserID,
 		&i.OccurredAt,
 		&i.ClosesAt,
 		&i.ExportUntil,
@@ -106,14 +106,14 @@ func (q *Queries) GetServiceClosureHead(ctx context.Context) (GetServiceClosureH
 
 const insertServiceClosureEvent = `-- name: InsertServiceClosureEvent :exec
 
-INSERT INTO service_closure_events (id, kind, by_user_id, occurred_at) VALUES ($1, $2, $3, $4)
+INSERT INTO service_closure_events (id, kind, changed_by_user_id, occurred_at) VALUES ($1, $2, $3, $4)
 `
 
 type InsertServiceClosureEventParams struct {
-	ID         string
-	Kind       string
-	ByUserID   *string
-	OccurredAt time.Time
+	ID              string
+	Kind            string
+	ChangedByUserID *string
+	OccurredAt      time.Time
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
@@ -121,7 +121,7 @@ func (q *Queries) InsertServiceClosureEvent(ctx context.Context, arg InsertServi
 	_, err := q.db.Exec(ctx, insertServiceClosureEvent,
 		arg.ID,
 		arg.Kind,
-		arg.ByUserID,
+		arg.ChangedByUserID,
 		arg.OccurredAt,
 	)
 	return err
@@ -149,20 +149,20 @@ func (q *Queries) InsertServiceClosureSchedule(ctx context.Context, arg InsertSe
 }
 
 const listServiceClosureEvents = `-- name: ListServiceClosureEvents :many
-SELECT e.id, e.kind, e.by_user_id, e.occurred_at, s.closes_at, s.export_until, s.message
+SELECT e.id, e.kind, e.changed_by_user_id, e.occurred_at, s.closes_at, s.export_until, s.message
 FROM service_closure_events e
 LEFT JOIN service_closure_schedules s ON s.event_id = e.id
 ORDER BY e.id
 `
 
 type ListServiceClosureEventsRow struct {
-	ID          string
-	Kind        string
-	ByUserID    *string
-	OccurredAt  time.Time
-	ClosesAt    *time.Time
-	ExportUntil *time.Time
-	Message     *string
+	ID              string
+	Kind            string
+	ChangedByUserID *string
+	OccurredAt      time.Time
+	ClosesAt        *time.Time
+	ExportUntil     *time.Time
+	Message         *string
 }
 
 func (q *Queries) ListServiceClosureEvents(ctx context.Context) ([]ListServiceClosureEventsRow, error) {
@@ -177,7 +177,7 @@ func (q *Queries) ListServiceClosureEvents(ctx context.Context) ([]ListServiceCl
 		if err := rows.Scan(
 			&i.ID,
 			&i.Kind,
-			&i.ByUserID,
+			&i.ChangedByUserID,
 			&i.OccurredAt,
 			&i.ClosesAt,
 			&i.ExportUntil,

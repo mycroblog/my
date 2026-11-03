@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A custom emoji as the administrators manage it (ADR-0051 §4): a local one, or a remote
+  A custom emoji as the administrators manage it: a local one, or a remote
   one recorded from the posts and profiles of another server.
 type: object
 required: [id, shortcode, local, enabled, visible_in_picker, aliases, created_by_deleted, created_at, updated_at]
@@ -48,7 +48,7 @@ properties:
       type: string
   created_by:
     description: |
-      The account of the user who made a local emoji (ADR-0070 §7): the requester of an
+      The account of the user who made a local emoji: the requester of an
       approved request, or the administrator who registered or copied it. Absent for an emoji
       made with the CLI, a remote one, and one whose creator's account is deleted
       (`created_by_deleted`).

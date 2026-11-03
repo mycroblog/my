@@ -19,7 +19,7 @@ import { lookingUp, manyAccounts, relatedAs, richBob } from "./test/storyFixture
 
 /** Both lists of every account hold `accounts`, with a next page when `more`. */
 function listing(accounts: Schemas["Account"][], more = false) {
-  const page: Schemas["AccountPage"] = more ? { accounts, next_cursor: "next" } : { accounts };
+  const page: Schemas["AccountPage"] = more ? { items: accounts, next_cursor: "next" } : { items: accounts };
   return [
     http.get(`${apiBase}/accounts/:id/followers`, () => HttpResponse.json(page)),
     http.get(`${apiBase}/accounts/:id/following`, () => HttpResponse.json(page)),

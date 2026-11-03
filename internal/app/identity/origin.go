@@ -78,7 +78,7 @@ type OriginRetentionPolicy struct {
 }
 
 // OriginRetention reads the policy of the origin purge at each run: the instance settings
-// retention_session_origins and retention_registration_origins and the retention holds of the
+// session_origins_retention_days and registration_origins_retention_days and the retention holds of the
 // moderation module. The composition root implements it.
 type OriginRetention interface {
 	OriginRetention(ctx context.Context) (OriginRetentionPolicy, error)
@@ -97,7 +97,8 @@ type OriginPurgeDeps struct {
 
 // OriginPurger runs JobPurgeOrigins: it deletes the session origins and the registration
 // origins older than their periods, except those of held users (ADR-0038). The sessions and
-// users stay. Each statement deletes a bounded batch in a transaction of its own.
+// users have purges and erasures of their own. Each statement deletes a bounded batch in a
+// transaction of its own.
 type OriginPurger struct{ d OriginPurgeDeps }
 
 // NewOriginPurger returns the origin purge on d.

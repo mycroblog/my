@@ -19,6 +19,9 @@ It does not apply the schema: apply it with `my schema apply` before starting (s
 In the Docker Compose setup (`deploy/docker/compose.yaml`; see the [README](../../README.md#quick-start-docker-compose)), a one-shot `schema` service runs `my schema apply` before the server starts.
 If the schema is not applied, the process still starts and readiness returns 503.
 
+The first `my serve` or `my` command that uses the database records `host` and `account_domain` in it. When the configuration differs from the recorded values, `my serve` logs `start failed` with both pairs of values and exits with code 1, and the commands print the same error. The exceptions are `my schema apply` and `my db backup`, which do not check, and the maintenance mode, which does not read the database. `my config check -instance` and `my db upgrade -check` check but record nothing.
+A process that could not read the database when it started is not ready until it can. If it then finds different values, it stops with the same error.
+
 In the `production` profile, `my config check` also checks that the valid settings suit a production instance: errors, such as a `host` that other servers cannot reach or a KEK that is not random, make it exit 1, and warnings, such as `mail = none`, do not.
 `my serve` logs both as warnings when it starts but starts anyway, so run `my config check` as a step of the deployment.
 The [production checklist](production-checklist.md) lists the checks and what to verify by hand before going live.
@@ -357,7 +360,9 @@ Two common layouts, with the number of processes of your choosing:
 | Layout | Processes |
 | --- | --- |
 | Keep deliveries from delaying the rest | `worker_job_types = federation.deliver` for the deliveries, and `worker_job_types_except = federation.deliver` for everything else. Add processes to the first group during a burst. |
-| Keep email and notifications quick | `worker_job_types = notification.*,identity.*` for these, and a worker without a setting for everything, which also helps with these types when it is free. |
+| Keep email and notifications quick | `worker_job_types = identity.verification_email,identity.password_reset_email,identity.password_notice_email,identity.closure_email,notification.email,notification.moderator_email,notification.supporter_email,notification.push,notification.post_subscribers,instance.notify_announcement,voice.notify_started` for these, and a worker without a setting for everything, which also helps with these types when it is free. |
+
+A prefix such as `identity.*` is the code module that owns the types, not a kind of work. `identity.*` also takes data exports, imports, and expiry jobs, and it misses `instance.notify_announcement` and `voice.notify_started`, so a layout for one kind of work names each type.
 
 Keep these together, on workers with the same setting. Jobs of one ordering key run in order whatever their type, so if nothing runs the earlier job, the later one waits too, and if the group of the earlier job is backed up, the later job waits for it:
 
@@ -390,7 +395,7 @@ Raise it for jobs that spend their time waiting on other servers, such as `feder
 
 Keep these limits in mind:
 
-- **Database connections**: a job needs a connection to be claimed, for its own work, and to record its result. With `db = postgres` the setting must be below the pool maximum, or the server does not start. The maximum is `pool_max_conns` in `database_url`, by default the greater of 4 and the CPU count, so one vCPU allows 3 until you raise it. Check that your database or connection pooler accepts the connections of all your processes.
+- **Database connections**: a job needs a connection to be claimed, for its own work, and to record its result. With `database = postgres` the setting must be below the pool maximum, or the server does not start. The maximum is `pool_max_conns` in `database_url`, by default the greater of 4 and the CPU count, so one vCPU allows 3 until you raise it. Check that your database or connection pooler accepts the connections of all your processes.
 - **SQLite and libSQL**: they write one transaction at a time. Above 32 the server logs a warning, and in a local test SQLite ran slower at 128 than at 32.
 - **CPU-heavy jobs**: slots share one process's CPU and memory. `media.process` waits for its turn at a limit of half the CPUs by default, and the wait counts against the job's 5-minute lease, so a process full of `media.process` can run past the lease and start over. Give such jobs a process with few slots.
 - **One server at a time**: a process makes at most 8 connections to any one host, so one process delivers to a single server no faster than 8 connections allow, however many slots it has. Where most deliveries go to a few large servers, more processes help where more slots do not.
@@ -404,7 +409,7 @@ While no job is due, one slot polls and the others wait, so an idle process cost
 
 ### Waiting for a database connection
 
-With `db = postgres`, every statement and transaction first waits for a free connection of the process's pool.
+With `database = postgres`, every statement and transaction first waits for a free connection of the process's pool.
 [`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) (default `60s`) bounds that wait, and nothing else: a long query or
 transaction that already has its connection runs on, however long it takes. `0` waits without a limit. SQLite and libSQL have no limit on connections to wait for, so setting it there fails at startup.
 
@@ -425,7 +430,7 @@ Choose a value from how your instance runs:
 
 ### Cloud Tasks
 
-With `queue = cloudtasks` the jobs stay in the database (`db = postgres` or `libsql`), and Google Cloud Tasks only wakes the server up for each of them:
+With `queue = cloudtasks` the jobs stay in the database (`database = postgres` or `libsql`), and Google Cloud Tasks only wakes the server up for each of them:
 
 - For every job it stores, retries, or puts back, the server creates a task in `queue_cloudtasks_queue` once the transaction commits. The task calls
   `POST {queue_cloudtasks_url}/_internal/jobs` at the time the job is due, with the job's ID as its body and an OIDC ID token of
@@ -446,7 +451,7 @@ With `queue = cloudtasks` the jobs stay in the database (`db = postgres` or `lib
 
 ### Amazon SQS
 
-With `queue = sqs` the jobs stay in the database (`db = postgres` or `libsql`), and an Amazon SQS standard queue only carries a wake-up signal for each of them:
+With `queue = sqs` the jobs stay in the database (`database = postgres` or `libsql`), and an Amazon SQS standard queue only carries a wake-up signal for each of them:
 
 - For every job it stores, retries, or puts back, the server sends a message to `queue_sqs_queue_url` once the transaction commits, with the job's ID as its body
   and a delay until the job is due. SQS delays a message by at most 15 minutes, so a job due later is signaled at 15 minutes, and again when that message arrives.
@@ -565,6 +570,7 @@ So a queue that cannot keep up gets up to 500 duplicate signals a minute. They d
 - When readiness is not met, the response is 503 with an RFC 9457 `application/problem+json` body.
   Its `title` is translated according to `Accept-Language` and contains no internal detail. The cause (a connection error, or the names of missing tables) goes to the log.
 - One readiness check is cut off after 3 seconds.
+- Readiness also requires that the database holds the configured `host` and `account_domain`, or that the process could record them.
 - **Schema applied** means every table that the files in `schema/<dialect>/` declare with `CREATE TABLE` exists
   (SQLite is checked through `sqlite_schema`, PostgreSQL through the connection's `current_schema()`). `my schema apply` applies the whole schema, so a missing table means the schema is not applied or is older than the binary.
   Column and index differences are not checked; `scripts/task.sh db:check` detects differences.
@@ -614,7 +620,7 @@ A process whose `role` is `web` or `all` answers these endpoints, which other Fe
 | `GET /@{username}/status/{uuid}` | For an ActivityPub `Accept`, a 302 to the `id` (`/ap/objects/{uuid}`) of the post if a signed-out visitor can see it, and 404 if not. Otherwise the web client's HTML |
 
 - The instance Actor's handle is `{account_domain}@{account_domain}` (the same form as Mastodon).
-- An account that does not exist or cannot be shown (suspended, deleted, or remote) always gets the same 404 (`Cache-Control: no-store`).
+- An account that does not exist or cannot be shown (suspended, deactivated, deleted, or remote) always gets the same 404 (`Cache-Control: no-store`).
 - Anonymous responses carry `Cache-Control: public, max-age=60`. Responses that vary by `Accept` carry `Vary: Accept`.
   For a CDN that cannot handle `Vary: Accept`, exclude `/ap/*` and `/@*` from caching.
 

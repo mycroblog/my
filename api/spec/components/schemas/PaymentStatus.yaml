@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: MIT
-description: The state of the payment provider (ADR-0074 §4).
+description: The state of the payment provider.
 type: object
 required: [provider, mode, time_zone, warnings]
 properties:
   provider:
-    description: The provider of `payments_provider` (`stripe`, `payjp`).
+    description: The provider of `payments` (`stripe`, `payjp`).
     type: string
   mode:
     description: |

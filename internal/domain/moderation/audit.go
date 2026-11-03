@@ -182,9 +182,9 @@ const (
 	// AuditAppealOverturned: an appeal was decided and its action lifted
 	// (moderation_appeal_decisions); the lift has its own account_action_lifted entry.
 	AuditAppealOverturned AuditAction = "appeal_overturned"
-	// AuditAccountDeletionCancelled: an overturned appeal of a ban cancelled the scheduled
-	// deletion of the account (account_lifecycle_events, deletion_cancelled).
-	AuditAccountDeletionCancelled AuditAction = "account_deletion_cancelled"
+	// AuditAccountDeletionCanceled: an overturned appeal of a ban canceled the scheduled
+	// deletion of the account (account_lifecycle_events, deletion_canceled).
+	AuditAccountDeletionCanceled AuditAction = "account_deletion_canceled"
 	// AuditRevealedPrivateData: a moderator was shown the email address and the IP addresses of
 	// a local account (FR-714); the operation has no row of its own.
 	AuditRevealedPrivateData AuditAction = "revealed_private_data"
@@ -351,6 +351,10 @@ const (
 	AuditLinkCardDomainFetchStopped  AuditAction = "link_card_domain_fetch_stopped"
 	AuditLinkCardDomainImagesStopped AuditAction = "link_card_domain_images_stopped"
 	AuditLinkCardDomainRuleRemoved   AuditAction = "link_card_domain_rule_removed"
+	// AuditInstanceMarkedAvailable: an operator cleared the failures of a remote server, so that
+	// deliveries to it resume. The event of the health is its own record, which the entry does not
+	// point at.
+	AuditInstanceMarkedAvailable AuditAction = "instance_marked_available"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -382,7 +386,7 @@ var auditActions = []struct {
 	{AuditRoleDeleted, AuditTargetRole},
 	{AuditAppealUpheld, AuditTargetAppeal},
 	{AuditAppealOverturned, AuditTargetAppeal},
-	{AuditAccountDeletionCancelled, AuditTargetAccount},
+	{AuditAccountDeletionCanceled, AuditTargetAccount},
 	{AuditRevealedPrivateData, AuditTargetAccount},
 	{AuditSignupBlockAdded, AuditTargetSignupBlock},
 	{AuditSignupBlockLifted, AuditTargetSignupBlock},
@@ -453,6 +457,7 @@ var auditActions = []struct {
 	{AuditLinkCardDomainFetchStopped, AuditTargetLinkCardDomain},
 	{AuditLinkCardDomainImagesStopped, AuditTargetLinkCardDomain},
 	{AuditLinkCardDomainRuleRemoved, AuditTargetLinkCardDomain},
+	{AuditInstanceMarkedAvailable, AuditTargetDomain},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

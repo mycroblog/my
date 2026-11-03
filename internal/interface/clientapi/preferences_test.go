@@ -120,7 +120,7 @@ func TestPreferencesShowAnUndeliverableAddress(t *testing.T) {
 			t.Fatal(err)
 		}
 		if res.StatusCode != http.StatusOK || got.EmailSuppression == nil ||
-			got.EmailSuppression.Kind != clientapi.EmailSuppressionKindHardBounce || !got.EmailSuppression.Since.Equal(since) {
+			got.EmailSuppression.Kind != clientapi.EmailSuppressionKindHardBounce || !got.EmailSuppression.StateChangedAt.Equal(since) {
 			t.Errorf("%s = %d %+v, want the hard bounce", res.Request.Method, res.StatusCode, got.EmailSuppression)
 		}
 	}

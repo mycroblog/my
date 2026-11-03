@@ -172,7 +172,7 @@ const registration = {
   account_id: "0192f0c4-7a8e-7000-8000-0000000000c2",
   username: "bob",
   state: "pending",
-  since: "2026-10-16T09:00:00Z",
+  state_changed_at: "2026-10-16T09:00:00Z",
   email: "bob.with.a.long.address@birds.example",
   email_verified: true,
   reason: `I would like to post about birds. My blog is at https://birds.example/${"very-long-path-".repeat(6)}end.`,
@@ -246,7 +246,7 @@ const webhook: Schemas["AdminWebhook"] = {
   state_changed_at: "2026-10-20T00:00:00Z",
   failure: { consecutive_failures: 20, first_failed_at: "2026-10-17T00:00:00Z" },
   created_at: "2026-10-16T00:00:00Z",
-  updated_at: "2026-10-16T00:00:00Z",
+  revised_at: "2026-10-16T00:00:00Z",
 };
 
 /** The roles, as GET /admin/roles lists them: the built-in ones, and one with a long key and a badge. */
@@ -320,7 +320,7 @@ const announcement: Schemas["AdminAnnouncement"] = {
   published_at: "2026-10-20T00:00:00Z",
   ends_at: "2026-10-27T00:00:00Z",
   created_at: "2026-10-20T00:00:00Z",
-  updated_at: "2026-10-20T00:00:00Z",
+  revised_at: "2026-10-20T00:00:00Z",
 };
 
 /** A failing delivery of the webhook, as GET /admin/webhooks/{id}/deliveries lists it. */
@@ -341,8 +341,9 @@ const oauthClient: Schemas["AdminOAuthClient"] = {
   name: "A-very-long-named-app-for-testing-that-wraps-at-320-pixels",
   registration: "user",
   confidential: false,
-  scope: "read write",
-  owner_id: moderator.id,
+  scopes: ["read", "write"],
+  owner: target,
+  owner_deleted: false,
   disabled: false,
   created_at: "2026-10-22T00:00:00Z",
 };
@@ -372,7 +373,7 @@ const loginProvider: Schemas["AdminLoginProvider"] = {
   callback_url: "https://my.example/auth/external/0192f0c4-7a8e-7000-8000-0000000000f2/callback",
   linked_users: 3,
   created_at: "2026-10-22T00:00:00Z",
-  updated_at: "2026-10-22T00:00:00Z",
+  revised_at: "2026-10-22T00:00:00Z",
 };
 
 /** A joined relay on a long domain that a domain action suspends, as GET /admin/relays lists it. */
@@ -394,7 +395,7 @@ const relay: Schemas["AdminRelay"] = {
 const instance = {
   domain: longDomain,
   state: "unavailable",
-  since: "2026-10-10T08:00:00Z",
+  state_changed_at: "2026-10-10T08:00:00Z",
   failure_days: 7,
   last_failure_day: "2026-10-10",
 };
@@ -439,20 +440,20 @@ const instanceSettings: Schemas["AdminSettingList"] = {
     },
     { key: "default_locale", kind: "locale", value: "en", default: "en", stored: false },
     {
-      key: "local_timeline_access",
+      key: "local_timeline_visibility",
       kind: "enum",
       value: "everyone",
       default: "everyone",
       stored: false,
-      choices: ["off", "logged_in", "everyone"],
+      choices: ["off", "signed_in", "everyone"],
     },
     {
-      key: "federated_timeline_access",
+      key: "federated_timeline_visibility",
       kind: "enum",
       value: "everyone",
       default: "everyone",
       stored: false,
-      choices: ["off", "logged_in", "everyone"],
+      choices: ["off", "signed_in", "everyone"],
     },
     {
       key: "remote_media_policy",
@@ -463,7 +464,7 @@ const instanceSettings: Schemas["AdminSettingList"] = {
       choices: ["none", "avatars", "all"],
     },
     {
-      key: "remote_media_cache_ttl",
+      key: "remote_media_cache_ttl_seconds",
       kind: "int",
       value: "86400",
       default: "86400",
@@ -475,18 +476,18 @@ const instanceSettings: Schemas["AdminSettingList"] = {
     {
       key: "domain_actions_visibility",
       kind: "enum",
-      value: "none",
-      default: "none",
+      value: "off",
+      default: "off",
       stored: false,
-      choices: ["none", "users", "all"],
+      choices: ["off", "signed_in", "everyone"],
     },
     {
       key: "domain_actions_rationale_visibility",
       kind: "enum",
-      value: "none",
-      default: "none",
+      value: "off",
+      default: "off",
       stored: false,
-      choices: ["none", "users", "all"],
+      choices: ["off", "signed_in", "everyone"],
     },
     { key: "search_indexing", kind: "enum", value: "deny", default: "deny", stored: false, choices: ["allow", "deny"] },
     {
@@ -499,7 +500,7 @@ const instanceSettings: Schemas["AdminSettingList"] = {
     },
     { key: "indexable_default", kind: "bool", value: "false", default: "false", stored: false },
     { key: "security_contact", kind: "uri", value: "", default: "", stored: false },
-    { key: "link_cards_enabled", kind: "bool", value: "true", default: "true", stored: false },
+    { key: "link_cards", kind: "bool", value: "true", default: "true", stored: false },
     { key: "link_cards_ignore_robots_txt", kind: "bool", value: "false", default: "false", stored: false },
     {
       key: "invite_creators",
@@ -520,7 +521,7 @@ const instanceSettings: Schemas["AdminSettingList"] = {
       maximum: 1000,
     },
     {
-      key: "member_invite_max_expires_in",
+      key: "member_invite_max_lifetime_seconds",
       kind: "int",
       value: "2592000",
       default: "2592000",
@@ -551,7 +552,7 @@ const errorGroup: Schemas["ErrorGroup"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000e1",
   fingerprint: "0123456789abcdef0123456789abcdef",
   state: "open",
-  state_since: "2026-10-20T00:00:00Z",
+  state_changed_at: "2026-10-20T00:00:00Z",
   source: "server",
   kind: "panic",
   where: "client_api GET /api/v1/accounts/{id}/statuses/{status_id}/favourited_by",

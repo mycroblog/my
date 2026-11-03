@@ -102,7 +102,7 @@ func (r *StatusRepository) PurgeStatuses(ctx context.Context, tx uow.Tx, statusI
 	// Children before their parents: the revisions' rows, the polls', then the boosts, the
 	// quotes, and the statuses.
 	steps := []func(context.Context, []string) error{
-		q.PurgeStatusRevisionBodies, q.PurgeStatusRevisionSources, q.PurgeStatusRevisionAttachments,
+		q.PurgeStatusSensitivityOverrides, q.PurgeStatusRevisionBodies, q.PurgeStatusRevisionSources, q.PurgeStatusRevisionAttachments,
 		q.PurgeStatusRevisionMentions, q.PurgeStatusRevisionTags, q.PurgeStatusRevisionEmojis,
 		q.PurgeRemoteStatusRevisions, q.PurgePollTallyObservationCounts, q.PurgePollTallyObservations,
 		q.PurgePollVotes, q.PurgePollTallies, q.PurgePollOptions, q.PurgePolls, q.PurgeStatusRevisions,
@@ -250,4 +250,110 @@ func (r *AccountRepository) PrunePastProfiles(ctx context.Context, tx uow.Tx, ac
 		}
 	}
 	return nil
+}
+
+// DeleteSupersededStatusCreates implements federation.PurgeRepository.
+func (r *FederationRepository) DeleteSupersededStatusCreates(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	batch, err := toInt32(limit, "batch limit")
+	if err != nil {
+		return 0, err
+	}
+	ids, err := q.ListSupersededStatusCreates(ctx, postgresgen.ListSupersededStatusCreatesParams{CreatedBefore: t, BatchLimit: batch})
+	if err != nil {
+		return 0, wrap(err, "list superseded status creates")
+	}
+	return int64(len(ids)), deleteOutboundActivities(ctx, q, ids)
+}
+
+// DeleteExpiredOutboundActivities implements federation.PurgeRepository.
+func (r *FederationRepository) DeleteExpiredOutboundActivities(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	batch, err := toInt32(limit, "batch limit")
+	if err != nil {
+		return 0, err
+	}
+	ids, err := q.ListExpiredOutboundActivities(ctx, postgresgen.ListExpiredOutboundActivitiesParams{CreatedBefore: t, BatchLimit: batch})
+	if err != nil {
+		return 0, wrap(err, "list expired outbound activities")
+	}
+	return int64(len(ids)), deleteOutboundActivities(ctx, q, ids)
+}
+
+// deleteOutboundActivities deletes activities with their children, children first.
+func deleteOutboundActivities(ctx context.Context, q *postgresgen.Queries, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	return runSteps(ctx, ids, "delete outbound activities",
+		q.DeleteAttemptsOfOutboundActivities, q.DeleteDeliveriesOfOutboundActivities,
+		q.DeleteDocumentsOfOutboundActivities, q.DeleteCompletionsOfOutboundActivities, q.DeleteOutboundActivities)
+}
+
+// DeleteNodeInfoObservationsBefore implements federation.PurgeRepository.
+func (r *FederationRepository) DeleteNodeInfoObservationsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	batch, err := toInt32(limit, "batch limit")
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteNodeInfoObservationsBefore(ctx, postgresgen.DeleteNodeInfoObservationsBeforeParams{
+		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), ObservedBefore: t, BatchLimit: batch,
+	})
+	return n, wrap(err, "delete nodeinfo observations")
+}
+
+// DeleteAvailabilityEventsBefore implements federation.PurgeRepository.
+func (r *FederationRepository) DeleteAvailabilityEventsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	batch, err := toInt32(limit, "batch limit")
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteAvailabilityEventsBefore(ctx, postgresgen.DeleteAvailabilityEventsBeforeParams{
+		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), OccurredBefore: t, BatchLimit: batch,
+	})
+	return n, wrap(err, "delete availability events")
+}
+
+// DeleteRetentionDeletionsBefore implements content.RetentionRepository.
+func (r *StatusRepository) DeleteRetentionDeletionsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	batch, err := toInt32(limit, "batch limit")
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteRetentionDeletionsBefore(ctx, postgresgen.DeleteRetentionDeletionsBeforeParams{DeletedBefore: t, BatchLimit: batch})
+	return n, wrap(err, "delete retention deletions")
+}
+
+// DeleteHandleVerificationsBefore implements account.ProfilePruneRepository.
+func (r *AccountRepository) DeleteHandleVerificationsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	batch, err := toInt32(limit, "batch limit")
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteHandleVerificationsBefore(ctx, postgresgen.DeleteHandleVerificationsBeforeParams{
+		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), CheckedBefore: t, BatchLimit: batch,
+	})
+	return n, wrap(err, "delete handle verifications")
 }

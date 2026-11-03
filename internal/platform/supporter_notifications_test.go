@@ -31,12 +31,12 @@ func testSupporterNotifications(t *testing.T, dialect string) {
 	ctx := t.Context()
 	admin := e.user("alice")
 	e.want(e.do(http.MethodPost, "/admin/roles", admin.token, map[string]any{"key": "supporter", "position": 10, "permissions": []string{}}, nil),
-		http.StatusOK, "POST /admin/roles")
+		http.StatusCreated, "POST /admin/roles")
 	var plan clientapi.AdminSupporterPlan
 	e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, map[string]any{
 		"role": "supporter", "name": "Gold", "monthly_price": map[string]string{"amount": "500", "currency": "JPY"},
 		"annual_discount_percent": 0, "emoji_limit": 0, "rank": 1, "visibility": "public",
-	}, &plan), http.StatusOK, "POST /admin/supporter_plans")
+	}, &plan), http.StatusCreated, "POST /admin/supporter_plans")
 	e.want(e.do(http.MethodPut, "/admin/supporter_program", admin.token, map[string]any{"enabled": true}, nil), http.StatusOK, "enable")
 	carol := e.user("carol")
 	subID := subscribeOnFake(t, e.app, prov, carol.id, plan.Id, "sub_n")

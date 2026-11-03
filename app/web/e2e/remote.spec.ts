@@ -163,20 +163,22 @@ async function serveApi(page: Page, { fetching = false } = {}): Promise<{ status
     if (path === "/accounts/lookup" && url.searchParams.get("acct") === carol.acct)
       return json(route, { ...carol, followers_count: 3, following_count: 4 });
     if (path === "/accounts/relationships") {
-      return json(route, [
-        {
-          id: carol.id,
-          following: false,
-          requested: false,
-          followed_by: false,
-          requested_by: false,
-          show_boosts: true,
-          notify: false,
-          blocking: false,
-          muting: false,
-          muting_notifications: false,
-        },
-      ]);
+      return json(route, {
+        items: [
+          {
+            id: carol.id,
+            following: false,
+            requested: false,
+            followed_by: false,
+            requested_by: false,
+            show_boosts: true,
+            notify: false,
+            blocking: false,
+            muting: false,
+            muting_notifications: false,
+          },
+        ],
+      });
     }
     if (path === `/accounts/${carol.id}/statuses`) {
       // Carol pinned nothing that this server knows of.

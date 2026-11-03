@@ -26,7 +26,7 @@ func (r *InstanceRepository) InsertThemeRevision(ctx context.Context, tx uow.Tx,
 	for _, v := range rev.Tokens {
 		for _, row := range v.Rows() {
 			err := q.InsertInstanceThemeToken(ctx, postgresgen.InsertInstanceThemeTokenParams{
-				ThemeRevisionID: rev.ID, Token: row.Token, Scheme: string(row.Scheme), Value: row.Value,
+				RevisionID: rev.ID, Token: row.Token, Scheme: string(row.Scheme), Value: row.Value,
 			})
 			if err != nil {
 				return wrap(err, "insert instance theme token")

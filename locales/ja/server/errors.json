@@ -419,6 +419,10 @@
     "defaultMessage": "この投稿は引用できません。",
     "description": "Detail of the HTTP 422 API error when a post quotes a post whose quote policy or visibility does not let the user quote it."
   },
+  "errors.status.quote_remote_audience": {
+    "defaultMessage": "ローカル限定・フォロワー限定・ダイレクトの投稿では、ほかのサーバーの投稿を引用できません。",
+    "description": "Detail of the HTTP 422 API error when a post whose visibility keeps it from other servers quotes a post from another server."
+  },
   "errors.status.reply_not_found": {
     "defaultMessage": "返信先の投稿が見つかりません。",
     "description": "Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see."
@@ -438,6 +442,10 @@
   "errors.streaming.unavailable": {
     "defaultMessage": "リアルタイム更新は現在利用できません。しばらくしてからやり直してください。",
     "description": "Title of the HTTP 503 API error when the server is shutting down and accepts no new real-time update streams."
+  },
+  "errors.target_outranks_actor": {
+    "defaultMessage": "このアカウントのロールはあなたより下位ではないため、この操作はできません。",
+    "description": "API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included."
   },
   "errors.too_long": {
     "defaultMessage": "{max, plural, other {{name} は # 文字以内にしてください。}}",
@@ -567,6 +575,10 @@
     "defaultMessage": "このリストに入れられる人数の上限に達しています。先に誰かをリストから外してください。",
     "description": "API error title for HTTP 422 when the user adds another account to a list beyond the limit of members of a list."
   },
+  "errors.last_administrator": {
+    "defaultMessage": "このサーバーの管理者はこのアカウントだけです。先に別のユーザーを管理者にしてください。",
+    "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
+  },
   "errors.list_members.not_followed": {
     "defaultMessage": "リストに追加できるのはフォロー中のアカウントだけです。",
     "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."
@@ -686,5 +698,41 @@
   "errors.login_providers_only": {
     "defaultMessage": "このサーバーはログインプロバイダーでのみログインできるため、パスワードやパスキーはここでは設定できません。",
     "description": "Title of the HTTP 403 API error when a user sets a password or adds a passkey while the instance limits registration and sign-in to login providers."
+  },
+  "errors.deactivation.refused": {
+    "defaultMessage": "このアカウントはいま無効化できません。",
+    "description": "API error title for HTTP 409 when the user cannot deactivate their own account now; the detail says why."
+  },
+  "errors.deactivation.login_restricted": {
+    "defaultMessage": "モデレーションの処分により、このアカウントはログインできません。",
+    "description": "API error detail: the account cannot be deactivated because a moderation action disables its login."
+  },
+  "errors.deactivation.deletion_scheduled": {
+    "defaultMessage": "このアカウントは削除を待っています。",
+    "description": "API error detail: the account cannot be deactivated because its deletion is scheduled."
+  },
+  "errors.deactivation.already_deactivated": {
+    "defaultMessage": "このアカウントはすでに無効化されています。",
+    "description": "API error detail: the account cannot be deactivated because it is deactivated already."
+  },
+  "errors.deactivation.moved": {
+    "defaultMessage": "このアカウントは別のアカウントへ移転しました。",
+    "description": "API error detail: the account cannot be deactivated because it moved to another account."
+  },
+  "errors.deactivation.registration_pending": {
+    "defaultMessage": "このアカウントの登録は審査を待っています。",
+    "description": "API error detail: the account cannot be deactivated because its registration waits for review."
+  },
+  "errors.deactivation.paid_subscription": {
+    "defaultMessage": "先にサポーターの登録を解約してください。",
+    "description": "API error detail: the account cannot be deactivated while a paid supporter subscription goes on."
+  },
+  "errors.deactivation.recently_reactivated": {
+    "defaultMessage": "このアカウントは再有効化から 24 時間たっていません。",
+    "description": "API error detail: the account cannot be deactivated until 24 hours after its last reactivation."
+  },
+  "errors.deactivation.last_administrator": {
+    "defaultMessage": "ログインできる管理者はこのアカウントだけです。先にほかの人を管理者にしてください。",
+    "description": "API error detail: the account cannot be deactivated or deleted because no other administrator can sign in."
   }
 }

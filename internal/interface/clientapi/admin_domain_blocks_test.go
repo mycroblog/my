@@ -140,7 +140,7 @@ func TestPreviewAndImportDomainBlocks(t *testing.T) {
 			`{"domain":"calm.example","severity":"noop","reject_media":false,"reject_reports":false,"obfuscate":false}]}`)
 	got := decodeJSON[clientapi.DomainBlockImportResult](t, res)
 	if res.StatusCode != http.StatusOK || len(got.Issued) != 2 || got.Issued[0].Kind != clientapi.AdminDomainActionKindSuspend ||
-		got.Issued[1].Kind != clientapi.AdminDomainActionKindRejectReports || got.Issued[0].State != clientapi.AdminDomainActionStateActive ||
+		got.Issued[1].Kind != clientapi.AdminDomainActionKindRejectReports || got.Issued[0].State != clientapi.ModerationActionStateActive ||
 		len(got.Skipped) != 1 || got.Skipped[0].Reason != clientapi.DomainBlockImportStatusNoAction {
 		t.Fatalf("import = %d %+v", res.StatusCode, got)
 	}
@@ -156,8 +156,8 @@ func TestDomainBlockCSVRejectsInvalidInput(t *testing.T) {
 		"/admin/domain_actions/import":         `{"private_note":"\u0000","blocks":[]}`,
 	} {
 		res := e.sendJSON(t, http.MethodPost, path, "admin", body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity && res.StatusCode != http.StatusBadRequest {
-			t.Errorf("%s %s = %d %+v, want a 4xx", path, body, res.StatusCode, p)
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity {
+			t.Errorf("%s %s = %d %+v, want 422", path, body, res.StatusCode, p)
 		}
 	}
 	rows := strings.Repeat("x.example\n", moderation.MaxDomainBlockImport+1)

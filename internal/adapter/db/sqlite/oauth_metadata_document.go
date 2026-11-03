@@ -19,7 +19,7 @@ func (r *IdentityRepository) UpsertOAuthClientMetadataDocument(ctx context.Conte
 		return err
 	}
 	err = q.UpsertOAuthClientMetadataDocument(ctx, sqlitegen.UpsertOAuthClientMetadataDocumentParams{
-		ClientID: d.ClientID, ClientName: d.Name, ClientUri: d.Website, LogoUri: d.LogoURI, Scope: string(d.Scope),
+		OauthClientID: d.ClientID, ClientName: d.Name, ClientUri: d.Website, LogoUri: d.LogoURI, Scope: string(d.Scope),
 		FetchedAt: toMillis(d.FetchedAt), ExpiresAt: toMillis(d.ExpiresAt),
 	})
 	return wrap(err, "upsert oauth client metadata document")
@@ -32,7 +32,7 @@ func (r *IdentityRepository) FindOAuthClientMetadataDocument(ctx context.Context
 		return identity.ClientMetadataDocument{}, notFound(err, appidentity.ErrNotFound, "oauth client metadata document")
 	}
 	return identity.ClientMetadataDocument{
-		ClientID: row.ClientID, Name: row.ClientName, Website: row.ClientUri, LogoURI: row.LogoUri, Scope: identity.Scope(row.Scope),
+		ClientID: row.OauthClientID, Name: row.ClientName, Website: row.ClientUri, LogoURI: row.LogoUri, Scope: identity.Scope(row.Scope),
 		FetchedAt: fromMillis(row.FetchedAt), ExpiresAt: fromMillis(row.ExpiresAt),
 	}, nil
 }

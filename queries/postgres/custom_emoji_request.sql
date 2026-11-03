@@ -83,3 +83,25 @@ FROM custom_emoji_requests r
 LEFT JOIN custom_emoji_request_outcomes o ON o.request_id = r.id
 WHERE r.id = ANY(sqlc.arg(ids)::uuid[])
 ORDER BY r.id;
+
+-- ListPendingCustomEmojiRequestsOfUser returns the pending requests of a user, for its erasure.
+-- name: ListPendingCustomEmojiRequestsOfUser :many
+SELECT request_id FROM custom_emoji_pending_requests
+WHERE requester_user_id = sqlc.arg(user_id)::uuid ORDER BY request_id;
+
+-- BlankCustomEmojiRequester takes an erased user out of its requests, which stay for the audit log.
+-- name: BlankCustomEmojiRequester :exec
+UPDATE custom_emoji_requests SET requester_user_id = NULL WHERE requester_user_id = sqlc.arg(user_id)::uuid;
+
+-- name: DeleteAllCustomEmojiPendingRequests :exec
+DELETE FROM custom_emoji_pending_requests;
+
+-- RebuildCustomEmojiPendingRequests states the rule of the writes: a request without an outcome is
+-- pending, a request to create reserves its shortcode, and a request for an image names its emoji.
+-- A request whose requester was erased has an outcome by then.
+-- name: RebuildCustomEmojiPendingRequests :exec
+INSERT INTO custom_emoji_pending_requests (request_id, requester_user_id, reserved_shortcode, emoji_id)
+SELECT r.id, r.requester_user_id, CASE WHEN r.kind = 'create' THEN r.shortcode END, r.emoji_id
+FROM custom_emoji_requests r
+WHERE r.requester_user_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM custom_emoji_request_outcomes o WHERE o.request_id = r.id);

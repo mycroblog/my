@@ -15,8 +15,8 @@ describe("createTranslator", () => {
 
   test("falls back along the locale chain to en", () => {
     expect(createTranslator(catalogs, "ja-JP")("server:errors.not_found")).toBe("指定されたリソースが見つかりません。");
-    expect(createTranslator(catalogs, "fr")("server:config.missing", { name: "MY_DB" })).toBe(
-      "The required setting MY_DB is not set.",
+    expect(createTranslator(catalogs, "fr")("server:config.missing", { name: "MY_DATABASE" })).toBe(
+      "The required setting MY_DATABASE is not set.",
     );
   });
 });

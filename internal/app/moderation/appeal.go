@@ -60,7 +60,7 @@ type AppealDecided struct {
 func (AppealDecided) EventType() string { return EventAppealDecided }
 
 // AppealWindow reads how long after an action the account may appeal it: the instance setting
-// appeal_window. The composition root implements it on the instance module.
+// appeal_window_days. The composition root implements it on the instance module.
 type AppealWindow interface {
 	AppealWindow(ctx context.Context) (time.Duration, error)
 }
@@ -307,12 +307,13 @@ func (s *Service) CountPendingAppeals(ctx context.Context) (int64, error) {
 // entry in one transaction, and emits AppealDecided. Overturning also lifts the action in that
 // transaction, with LiftAccountAction's effects and audit log entry, a ban included; an action
 // lifted meanwhile stays as it is. Overturning a ban first cancels the deletion of its account
-// (Lifecycles.CancelDeletionByModeration, audited as account_deletion_cancelled); a ban whose
+// (Lifecycles.CancelDeletionByModeration, audited as account_deletion_canceled); a ban whose
 // account is deleted fails with ErrNotAppealable, and without Lifecycles with
 // ErrUnsupportedAction. Deciding a decided appeal the same way again records nothing; deciding it
 // otherwise fails with ErrAppealDecided. An unknown appeal fails with ErrNotFound, and an
 // unknown decision or an invalid reason with moderation.ErrInvalidAppeal (with a
-// *moderation.TextError for the reason). byUserID is the moderator, "" for the CLI.
+// *moderation.TextError for the reason). byUserID is the moderator, "" for the CLI, who fails with
+// ErrTargetOutranksActor when not ranking above the account's user.
 func (s *Service) DecideAppeal(ctx context.Context, appealID string, decision moderation.AppealDecisionKind, publicReason, byUserID string) (AppealView, error) {
 	now := kernel.Normalize(s.d.Clock.Now())
 	d := moderation.AppealDecision{AppealID: appealID, Decision: decision, PublicReason: publicReason, DecidedByUserID: byUserID, DecidedAt: now}
@@ -325,11 +326,20 @@ func (s *Service) DecideAppeal(ctx context.Context, appealID string, decision mo
 	if err != nil {
 		return AppealView{}, err
 	}
+	switch target, err := s.d.Accounts.FindByID(ctx, rec.Appeal.AccountID); {
+	case errors.Is(err, appaccount.ErrNotFound):
+	case err != nil:
+		return AppealView{}, err
+	default:
+		if err := s.checkRank(ctx, byUserID, target); err != nil {
+			return AppealView{}, err
+		}
+	}
 	label, err := s.accountLabel(ctx, rec.Appeal.AccountID)
 	if err != nil {
 		return AppealView{}, err
 	}
-	// The IDs follow the order of the records: the cancelled deletion, the lift, the decision.
+	// The IDs follow the order of the records: the canceled deletion, the lift, the decision.
 	cancelID, cancelAuditID, liftAuditID, auditID := s.d.IDs.NewID(), s.d.IDs.NewID(), s.d.IDs.NewID(), s.d.IDs.NewID()
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		err := repo.InsertAppealDecision(ctx, tx, d)
@@ -390,15 +400,15 @@ func (s *Service) cancelBanDeletion(ctx context.Context, tx uow.Tx, a moderation
 	if s.d.Lifecycles == nil {
 		return fmt.Errorf("%w: overturning ban %s", ErrUnsupportedAction, a.ID)
 	}
-	cancelled, err := s.d.Lifecycles.CancelDeletionByModeration(ctx, tx, a.TargetAccountID, a.ID, eventID)
+	canceled, err := s.d.Lifecycles.CancelDeletionByModeration(ctx, tx, a.TargetAccountID, a.ID, eventID)
 	if errors.Is(err, appaccount.ErrAlreadyDeleted) {
 		return fmt.Errorf("%w: the account of ban %s is deleted", ErrNotAppealable, a.ID)
 	}
-	if err != nil || !cancelled {
+	if err != nil || !canceled {
 		return err
 	}
 	return s.emitAudit(ctx, tx, moderation.AuditEntry{
-		ID: auditID, Action: moderation.AuditAccountDeletionCancelled, TargetKind: moderation.AuditTargetAccount,
+		ID: auditID, Action: moderation.AuditAccountDeletionCanceled, TargetKind: moderation.AuditTargetAccount,
 		TargetID: a.TargetAccountID, TargetLabel: label, SourceEventID: eventID, OccurredAt: kernel.Normalize(s.d.Clock.Now()),
 	}, byUserID)
 }

@@ -18,6 +18,10 @@ const (
 	minVoiceP2PMaxParticipants     = 2
 	maxVoiceP2PMaxParticipants     = 50
 	defaultVoiceP2PMaxParticipants = 10
+	// The limits a media server starts with, so that its cost has a bound before anyone sets them.
+	defaultVoiceMaxParticipants = 50
+	defaultVoiceMaxRoomDuration = "4h"
+	defaultVoiceMaxOpenRooms    = 10
 )
 
 // maxCloudflareTURNTTL is the longest validity of the credentials of Cloudflare's TURN service
@@ -46,7 +50,7 @@ func voiceChecks(vals map[string]string, present map[string]bool) []Issue {
 		}
 		switch vals["voice_turn"] {
 		case "coturn":
-			require("voice_turn is coturn", "voice_turn_urls", "voice_turn_secret")
+			require("voice_turn is coturn", "voice_turn_coturn_urls", "voice_turn_coturn_secret")
 		case "cloudflare":
 			require("voice_turn is cloudflare", "voice_turn_cloudflare_key_id", "voice_turn_cloudflare_api_token")
 			if ttl, err := time.ParseDuration(vals["voice_turn_credential_ttl"]); err == nil && ttl > maxCloudflareTURNTTL {
@@ -56,7 +60,7 @@ func voiceChecks(vals map[string]string, present map[string]bool) []Issue {
 	case "livekit":
 		require("voice is livekit", "voice_livekit_url", "voice_livekit_api_key", "voice_livekit_api_secret")
 	case "sora":
-		require("voice is sora", "voice_sora_mode", "voice_sora_signaling_urls", "voice_join_secret")
+		require("voice is sora", "voice_sora_mode", "voice_sora_signaling_urls", "voice_sora_join_secret")
 		switch vals["voice_sora_mode"] {
 		case "self_hosted":
 			// The API of a self-hosted Sora has no authentication of its own, and its webhooks

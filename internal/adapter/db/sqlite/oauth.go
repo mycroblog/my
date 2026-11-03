@@ -49,13 +49,13 @@ func (r *IdentityRepository) ReplaceOAuthClientRedirectURIs(ctx context.Context,
 		if slices.Contains(uris, u) {
 			continue
 		}
-		err := q.DeleteOAuthClientRedirectURI(ctx, sqlitegen.DeleteOAuthClientRedirectURIParams{ClientID: clientID, RedirectUri: u})
+		err := q.DeleteOAuthClientRedirectURI(ctx, sqlitegen.DeleteOAuthClientRedirectURIParams{OauthClientID: clientID, RedirectUri: u})
 		if err != nil {
 			return wrap(err, "delete oauth client redirect uri")
 		}
 	}
 	for _, u := range uris {
-		err := q.InsertOAuthClientRedirectURIIfAbsent(ctx, sqlitegen.InsertOAuthClientRedirectURIIfAbsentParams{ClientID: clientID, RedirectUri: u})
+		err := q.InsertOAuthClientRedirectURIIfAbsent(ctx, sqlitegen.InsertOAuthClientRedirectURIIfAbsentParams{OauthClientID: clientID, RedirectUri: u})
 		if err != nil {
 			return wrap(err, "insert oauth client redirect uri")
 		}
@@ -70,7 +70,7 @@ func (r *IdentityRepository) InsertAuthorizationCode(ctx context.Context, tx uow
 		return err
 	}
 	err = q.InsertAuthorizationCode(ctx, sqlitegen.InsertAuthorizationCodeParams{
-		CodeHash: c.CodeHash, ClientID: c.ClientID, UserID: c.UserID, RedirectUri: c.RedirectURI, Scope: string(c.Scope),
+		CodeHash: c.CodeHash, OauthClientID: c.ClientID, UserID: c.UserID, RedirectUri: c.RedirectURI, Scope: string(c.Scope),
 		CodeChallenge: c.CodeChallenge, SessionID: toNullString(c.SessionID), IssuedAt: toMillis(c.IssuedAt), ExpiresAt: toMillis(c.ExpiresAt),
 	})
 	return wrap(err, "insert authorization code")
@@ -99,7 +99,7 @@ func (r *IdentityRepository) InsertAccessToken(ctx context.Context, tx uow.Tx, t
 		refreshExpires = &t.RefreshExpiresAt
 	}
 	err = q.InsertAccessToken(ctx, sqlitegen.InsertAccessTokenParams{
-		ID: t.ID, FamilyID: t.FamilyID, ClientID: t.ClientID, UserID: t.UserID,
+		ID: t.ID, FamilyID: t.FamilyID, OauthClientID: t.ClientID, UserID: t.UserID,
 		AccessTokenHash: t.AccessTokenHash, RefreshTokenHash: t.RefreshTokenHash, Scope: string(t.Scope),
 		RotatedFromTokenID: toNullString(t.RotatedFromTokenID), IssuedAt: toMillis(t.IssuedAt),
 		ExpiresAt: toMillis(t.ExpiresAt), RefreshExpiresAt: toNullMillis(refreshExpires),
@@ -150,9 +150,9 @@ func (r *IdentityRepository) TokenFamilyActive(ctx context.Context, familyID str
 }
 
 // ListUnusedDynamicOAuthClients implements identity.Repository.
-func (r *IdentityRepository) ListUnusedDynamicOAuthClients(ctx context.Context, unredeemedBefore, idleBefore, now time.Time, limit int) ([]string, error) {
+func (r *IdentityRepository) ListUnusedDynamicOAuthClients(ctx context.Context, unredeemedBefore, recordsKeptSince, idleBefore, now time.Time, limit int) ([]string, error) {
 	ids, err := r.db.reader().ListUnusedDynamicOAuthClients(ctx, sqlitegen.ListUnusedDynamicOAuthClientsParams{
-		UnredeemedBefore: toMillis(unredeemedBefore), IdleBefore: toMillis(idleBefore), Now: toMillis(now), BatchLimit: int64(limit),
+		UnredeemedBefore: toMillis(unredeemedBefore), RecordsKeptSince: toMillis(recordsKeptSince), IdleBefore: toMillis(idleBefore), Now: toMillis(now), BatchLimit: int64(limit),
 	})
 	return ids, wrap(err, "list unused dynamic oauth clients")
 }
@@ -199,7 +199,7 @@ func (r *IdentityRepository) FindAuthorizationCode(ctx context.Context, codeHash
 		return identity.AuthorizationCode{}, notFound(err, appidentity.ErrNotFound, "authorization code")
 	}
 	return identity.AuthorizationCode{
-		CodeHash: row.CodeHash, ClientID: row.ClientID, UserID: row.UserID, RedirectURI: row.RedirectUri,
+		CodeHash: row.CodeHash, ClientID: row.OauthClientID, UserID: row.UserID, RedirectURI: row.RedirectUri,
 		Scope: identity.Scope(row.Scope), CodeChallenge: row.CodeChallenge, SessionID: row.SessionID.String,
 		IssuedAt: fromMillis(row.IssuedAt), ExpiresAt: fromMillis(row.ExpiresAt),
 	}, nil
@@ -248,7 +248,7 @@ func oauthClientFromRow(row sqlitegen.OauthClient) identity.OAuthClient {
 
 func accessTokenFromRow(row sqlitegen.GetAccessTokenByAccessHashRow) identity.AccessToken {
 	t := identity.AccessToken{
-		ID: row.ID, FamilyID: row.FamilyID, ClientID: row.ClientID, UserID: row.UserID,
+		ID: row.ID, FamilyID: row.FamilyID, ClientID: row.OauthClientID, UserID: row.UserID,
 		AccessTokenHash: row.AccessTokenHash, RefreshTokenHash: row.RefreshTokenHash, Scope: identity.Scope(row.Scope),
 		RotatedFromTokenID: row.RotatedFromTokenID.String, IssuedAt: fromMillis(row.IssuedAt), ExpiresAt: fromMillis(row.ExpiresAt),
 	}
@@ -295,7 +295,7 @@ func (r *IdentityRepository) RevokeTokensOfClient(ctx context.Context, tx uow.Tx
 	if err != nil {
 		return err
 	}
-	err = q.RevokeTokensOfClient(ctx, sqlitegen.RevokeTokensOfClientParams{Reason: string(reason), RevokedAt: toMillis(at), ClientID: clientID})
+	err = q.RevokeTokensOfClient(ctx, sqlitegen.RevokeTokensOfClientParams{Reason: string(reason), RevokedAt: toMillis(at), OauthClientID: clientID})
 	return wrap(err, "revoke the tokens of a client")
 }
 
@@ -327,7 +327,7 @@ func (r *IdentityRepository) InsertOAuthClientDisablement(ctx context.Context, t
 		return false, err
 	}
 	n, err := q.InsertOAuthClientDisablementIfEnabled(ctx, sqlitegen.InsertOAuthClientDisablementIfEnabledParams{
-		ID: dis.ID, ClientID: dis.ClientID, DisabledByUserID: toNullString(dis.DisabledByUserID), DisabledAt: toMillis(dis.DisabledAt),
+		ID: dis.ID, OauthClientID: dis.ClientID, DisabledByUserID: toNullString(dis.DisabledByUserID), DisabledAt: toMillis(dis.DisabledAt),
 	})
 	return n == 1, wrap(err, "insert oauth client disablement")
 }
@@ -339,7 +339,7 @@ func (r *IdentityRepository) LiftOAuthClientDisablements(ctx context.Context, tx
 		return false, err
 	}
 	n, err := q.LiftOAuthClientDisablements(ctx, sqlitegen.LiftOAuthClientDisablementsParams{
-		LiftedByUserID: toNullString(byUserID), LiftedAt: toMillis(at), ClientID: clientID,
+		LiftedByUserID: toNullString(byUserID), LiftedAt: toMillis(at), OauthClientID: clientID,
 	})
 	return n > 0, wrap(err, "lift oauth client disablements")
 }
@@ -351,7 +351,7 @@ func (r *IdentityRepository) InsertOAuthClientDeletion(ctx context.Context, tx u
 		return false, err
 	}
 	n, err := q.InsertOAuthClientDeletionIfAbsent(ctx, sqlitegen.InsertOAuthClientDeletionIfAbsentParams{
-		ClientID: del.ClientID, Reason: string(del.Reason), DeletedByUserID: toNullString(del.DeletedByUserID), DeletedAt: toMillis(del.DeletedAt),
+		OauthClientID: del.ClientID, Reason: string(del.Reason), DeletedByUserID: toNullString(del.DeletedByUserID), DeletedAt: toMillis(del.DeletedAt),
 	})
 	return n == 1, wrap(err, "insert oauth client deletion")
 }
@@ -396,7 +396,7 @@ func (r *IdentityRepository) RevokeTokensOfUserAndClient(ctx context.Context, tx
 	if err != nil {
 		return 0, err
 	}
-	n, err := q.RevokeTokensOfUserAndClient(ctx, sqlitegen.RevokeTokensOfUserAndClientParams{Reason: string(reason), RevokedAt: toMillis(at), UserID: userID, ClientID: clientID})
+	n, err := q.RevokeTokensOfUserAndClient(ctx, sqlitegen.RevokeTokensOfUserAndClientParams{Reason: string(reason), RevokedAt: toMillis(at), UserID: userID, OauthClientID: clientID})
 	return n, wrap(err, "revoke the tokens of a user and a client")
 }
 

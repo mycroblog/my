@@ -4,6 +4,7 @@ package clientapi_test
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -74,6 +75,7 @@ func (f *fakeRegistrations) DecideRegistration(_ context.Context, in appidentity
 		return identity.RegistrationDecision{}, appidentity.ErrNotPending
 	}
 	f.entries[i].State.State = in.Decision.State()
+	f.entries[i].DecisionNote = in.Note
 	f.decided = append(f.decided, in)
 	return identity.RegistrationDecision{ID: testkit.NamedID("decision"), Decision: in.Decision, Note: in.Note}, nil
 }
@@ -125,8 +127,8 @@ func TestListPendingRegistrations(t *testing.T) {
 	}
 	d := page.Items[0]
 	if d.Reason == nil || *d.Reason != "I am dave" || d.Username == nil || *d.Username != "dave" || d.AccountId == nil ||
-		*d.AccountId != testkit.NamedID("account-dave") || d.Email != "dave@example.com" || d.State != clientapi.RegistrationStatePending ||
-		!d.Since.Equal(registrationsNow) || page.Items[1].Reason != nil {
+		*d.AccountId != testkit.NamedID("account-dave") || d.Email == nil || *d.Email != "dave@example.com" || d.EmailVerified == nil || d.DecisionNote != nil || d.State != clientapi.RegistrationStatePending ||
+		!d.StateChangedAt.Equal(registrationsNow) || page.Items[1].Reason != nil {
 		t.Errorf("first page = %+v", page.Items)
 	}
 	res = e.admin(t, http.MethodGet, "/admin/registrations?limit=2&cursor="+*page.NextCursor, "admin-read", nil)
@@ -139,14 +141,30 @@ func TestListPendingRegistrations(t *testing.T) {
 	}
 }
 
+// A user without a primary email address has neither email property on the pending list.
+func TestPendingRegistrationWithoutEmail(t *testing.T) {
+	e, regs := newRegistrationsEnv(t, identity.PermManageAccounts)
+	regs.entries[0].Email = ""
+	res := e.admin(t, http.MethodGet, "/admin/registrations?limit=1", "admin-read", nil)
+	body, err := io.ReadAll(res.Body)
+	if err != nil || strings.Contains(string(body), `"email`) {
+		t.Errorf("the list = %s, %v; want no email properties", body, err)
+	}
+}
+
 func TestDecideRegistration(t *testing.T) {
 	e, regs := newRegistrationsEnv(t, identity.PermManageAccounts)
 	res := e.adminBody(t, http.MethodPost, "/admin/registrations/"+userDave+"/approve", "admin-write", `{"note":"welcome"}`)
 	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("approve = %d", res.StatusCode)
 	}
-	if got := decodeJSON[clientapi.AdminRegistration](t, res); got.State != clientapi.RegistrationStateApproved || got.UserId != userDave {
+	got := decodeJSON[clientapi.AdminRegistration](t, res)
+	if got.State != clientapi.RegistrationStateApproved || got.UserId != userDave || got.DecisionNote == nil || *got.DecisionNote != "welcome" {
 		t.Errorf("approved = %+v", got)
+	}
+	// Only the review of a pending registration shows the address.
+	if got.Email != nil || got.EmailVerified != nil {
+		t.Errorf("the answer on a decided registration carries the email: %+v", got)
 	}
 	if res := e.adminBody(t, http.MethodPost, "/admin/registrations/"+userErin+"/reject", "admin-write", ""); res.StatusCode != http.StatusOK ||
 		decodeJSON[clientapi.AdminRegistration](t, res).State != clientapi.RegistrationStateRejected {
@@ -154,8 +172,12 @@ func TestDecideRegistration(t *testing.T) {
 	}
 	// A decided registration stays as it is.
 	res = e.adminBody(t, http.MethodPost, "/admin/registrations/"+userDave+"/reject", "admin-write", "")
-	if res.StatusCode != http.StatusOK || decodeJSON[clientapi.AdminRegistration](t, res).State != clientapi.RegistrationStateApproved {
+	again := decodeJSON[clientapi.AdminRegistration](t, res)
+	if res.StatusCode != http.StatusOK || again.State != clientapi.RegistrationStateApproved {
 		t.Errorf("deciding again = %d, want 200 approved", res.StatusCode)
+	}
+	if again.Email != nil || again.EmailVerified != nil || again.DecisionNote == nil || *again.DecisionNote != "welcome" {
+		t.Errorf("deciding again = %+v, want the note of the decision and no email", again)
 	}
 	want := []appidentity.DecideInput{
 		{UserID: userDave, Decision: identity.DecisionApproved, DecidedByUserID: userOf(aliceAccountID), Note: "welcome"},

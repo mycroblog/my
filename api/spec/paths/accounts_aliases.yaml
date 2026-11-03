@@ -3,7 +3,7 @@ get:
   operationId: listAccountAliases
   summary: List the authenticated user's aliases
   description: |
-    The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+    The accounts that the user moves from, which the user's actor names in
     `alsoKnownAs`, oldest first.
   tags: [accounts]
   security:
@@ -15,9 +15,10 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: addAccountAlias
+  x-first-party-only: true
   summary: Add an alias to the authenticated user
   description: |
-    Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+    Adds the account that the user moves from as an alias: the user's actor
     names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
     actor's `Update` goes to the user's followers as a profile change does. An alias alone
     changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as

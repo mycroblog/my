@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: previewAutoDeletePolicy
+  x-first-party-only: true
   summary: Estimate what a draft automatic deletion of old posts would delete
   description: |
     Counts the user's posts that the given policy, which is not saved, would delete now,

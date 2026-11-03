@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  The number of members of a supporter plan now (ADR-0073 §7): the subscriptions that hold
+  The number of members of a supporter plan now: the subscriptions that hold
   the plan's role (active, canceling, or past due within the grace period). A retired plan
   appears while it has members. Never the plan's amounts.
 type: object

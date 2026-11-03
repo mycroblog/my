@@ -49,7 +49,7 @@ const unread: Schemas["Announcement"] = {
   content: `<p>Scheduled maintenance of ${"the-database-and-the-media-storage-".repeat(3)}tonight. See <a href="https://status.example/">the status page</a>.</p>`,
   published_at: "2026-10-21T00:00:00Z",
   ends_at: "2026-10-28T00:00:00Z",
-  updated_at: "2026-10-21T00:00:00Z",
+  revised_at: "2026-10-21T00:00:00Z",
   read: false,
   ended: false,
 };
@@ -60,7 +60,7 @@ const ended: Schemas["Announcement"] = {
   content: "<p>We updated the rules.</p>",
   published_at: "2026-09-01T00:00:00Z",
   ends_at: "2026-09-08T00:00:00Z",
-  updated_at: "2026-09-01T00:00:00Z",
+  revised_at: "2026-09-01T00:00:00Z",
   read: false,
   ended: true,
 };
@@ -69,7 +69,7 @@ const read: Schemas["Announcement"] = {
   title: "مرحبا",
   content: "<p>مرحبا بكم في الخادم</p>",
   published_at: "2026-10-20T00:00:00Z",
-  updated_at: "2026-10-20T00:00:00Z",
+  revised_at: "2026-10-20T00:00:00Z",
   read: true,
   ended: false,
 };
@@ -257,7 +257,7 @@ test.describe("announcements", () => {
             ...(body.ends_at === undefined ? {} : { ends_at: body.ends_at }),
             ...(body.publish ? { published_at: "2026-10-21T00:00:00Z" } : {}),
             created_at: "2026-10-21T00:00:00Z",
-            updated_at: "2026-10-21T00:00:00Z",
+            revised_at: "2026-10-21T00:00:00Z",
           },
         ];
         return json(route, announcements[0]);

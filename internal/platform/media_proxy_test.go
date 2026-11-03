@@ -108,11 +108,11 @@ func TestMediaProxy(t *testing.T) {
 		}
 	}
 
-	if _, err := s.app.Instance.SetSetting(t.Context(), instance.SetSettingInput{Key: domaininstance.SettingRemoteMediaCacheTTL, Value: "3600"}); err != nil {
+	if _, err := s.app.Instance.SetSetting(t.Context(), instance.SetSettingInput{Key: domaininstance.SettingRemoteMediaCacheTTLSeconds, Value: "3600"}); err != nil {
 		t.Fatal(err)
 	}
 	if resp, _ := s.do(t, http.MethodGet, path, nil); resp.Header.Get("Cache-Control") != "public, max-age=3600" {
-		t.Errorf("Cache-Control = %q after setting remote_media_cache_ttl", resp.Header.Get("Cache-Control"))
+		t.Errorf("Cache-Control = %q after setting remote_media_cache_ttl_seconds", resp.Header.Get("Cache-Control"))
 	}
 
 	unsigned, _, _ := strings.Cut(path, "?")

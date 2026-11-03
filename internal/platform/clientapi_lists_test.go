@@ -51,7 +51,7 @@ func TestListsAPI(t *testing.T) {
 	e.follow(t, alice, bob)
 
 	res := e.listCall(t, alice, http.MethodPost, "/lists", `{"name":"friends"}`)
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /lists = %d", res.StatusCode)
 	}
 	list := decodeJSON[clientapi.List](t, res)
@@ -76,8 +76,8 @@ func TestListsAPI(t *testing.T) {
 		t.Fatalf("adding bob = %d, want 204", res.StatusCode)
 	}
 	res = e.listCall(t, alice, http.MethodGet, "/lists/"+list.Id+"/accounts", "")
-	if page := decodeJSON[clientapi.AccountPage](t, res); len(page.Accounts) != 1 || page.Accounts[0].Id != bob.accountID {
-		t.Errorf("members = %+v, want bob", page.Accounts)
+	if page := decodeJSON[clientapi.AccountPage](t, res); len(page.Items) != 1 || page.Items[0].Id != bob.accountID {
+		t.Errorf("members = %+v, want bob", page.Items)
 	}
 	res = e.listCall(t, alice, http.MethodGet, "/accounts/"+bob.accountID+"/lists", "")
 	if c := decodeJSON[clientapi.ListCollection](t, res); len(c.Items) != 1 || c.Items[0].Id != list.Id {
@@ -112,7 +112,7 @@ func TestListsAPI(t *testing.T) {
 
 	// The limit of lists.
 	for i := 1; i < timeline.MaxLists; i++ {
-		if res := e.listCall(t, alice, http.MethodPost, "/lists", fmt.Sprintf(`{"name":"list %d"}`, i)); res.StatusCode != http.StatusOK {
+		if res := e.listCall(t, alice, http.MethodPost, "/lists", fmt.Sprintf(`{"name":"list %d"}`, i)); res.StatusCode != http.StatusCreated {
 			t.Fatalf("POST /lists #%d = %d", i, res.StatusCode)
 		}
 	}
@@ -126,8 +126,8 @@ func TestListsAPI(t *testing.T) {
 		t.Fatal(err)
 	}
 	res = e.listCall(t, alice, http.MethodGet, "/lists/"+list.Id+"/accounts", "")
-	if page := decodeJSON[clientapi.AccountPage](t, res); len(page.Accounts) != 0 {
-		t.Errorf("members after the unfollow = %+v, want none", page.Accounts)
+	if page := decodeJSON[clientapi.AccountPage](t, res); len(page.Items) != 0 {
+		t.Errorf("members after the unfollow = %+v, want none", page.Items)
 	}
 	if res := e.listCall(t, alice, http.MethodDelete, "/lists/"+list.Id, ""); res.StatusCode != http.StatusNoContent {
 		t.Errorf("DELETE /lists/{id} = %d, want 204", res.StatusCode)

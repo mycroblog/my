@@ -95,6 +95,11 @@ declare module "@tanstack/react-router" {
     /** The shell gives the page a wide column (the signed-out landing, whose hero has posts beside its text). */
     wideMain?: boolean;
     /**
+     * The page is for reading, so a required update may reload it by itself (ADR-0141 §5). A page without this is never
+     * reloaded without the user asking: a new page is on the safe side until it says otherwise.
+     */
+    reloadSafe?: boolean;
+    /**
      * The page's name, the text of its h1. RouteError keeps it as the heading when the page fails, so that the
      * page and the document title stay named after the page (web-client/16-look-states-and-wording.md G16). A page whose name depends on
      * its params passes the heading to RouteError from its own errorComponent instead.

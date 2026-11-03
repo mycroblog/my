@@ -4,7 +4,7 @@ post:
   summary: Follow an account
   description: |
     Follows the account at once, or sends a follow request when the account is locked:
-    then `requested` is true until the account accepts it (FR-301, FR-302). Following an
+    then `requested` is true until the account accepts it. Following an
     account that the viewer already follows or has requested to follow changes only the
     preferences in the body. Following an account that the viewer blocks is a 409
     `/api/v1/problems/blocking`. A follow of an account on another server is a request
@@ -23,6 +23,20 @@ post:
       application/json:
         schema:
           $ref: ../components/schemas/FollowAccountRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Relationship.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: unfollowAccount
+  summary: Unfollow an account
+  description: Ends the follow or withdraws the follow request. Without one it changes nothing.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
   responses:
     "200":
       $ref: ../components/responses/Relationship.yaml

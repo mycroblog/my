@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly (FR-718).
+description: A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly.
 type: object
 required: [domain, digest, kind]
 properties:

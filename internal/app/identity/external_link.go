@@ -55,6 +55,7 @@ const (
 	OperationPasswordChange      ConfirmedOperation = "password_change"
 	OperationPasswordRemoval     ConfirmedOperation = "password_removal"
 	OperationAccountDeletion     ConfirmedOperation = "account_deletion"
+	OperationAccountDeactivation ConfirmedOperation = "account_deactivation"
 	OperationAccountMove         ConfirmedOperation = "account_move"
 	OperationLink                ConfirmedOperation = "link"
 )
@@ -63,7 +64,7 @@ const (
 func ConfirmedOperations() []ConfirmedOperation {
 	return []ConfirmedOperation{
 		OperationPasskeyRegistration, OperationPasswordChange, OperationPasswordRemoval,
-		OperationAccountDeletion, OperationAccountMove, OperationLink,
+		OperationAccountDeletion, OperationAccountDeactivation, OperationAccountMove, OperationLink,
 	}
 }
 
@@ -85,6 +86,8 @@ func (op ConfirmedOperation) Limit() kernel.Limit {
 		return PasswordRemovalLimit
 	case OperationAccountDeletion:
 		return SelfDeletionLimit
+	case OperationAccountDeactivation:
+		return SelfDeactivationLimit
 	case OperationAccountMove:
 		return MoveConfirmationLimit
 	}

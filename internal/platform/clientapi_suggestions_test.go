@@ -42,7 +42,7 @@ func TestClientAPIAccountSuggestionsAndSearch(t *testing.T) {
 
 	post := func(u testUser, visibility string) {
 		t.Helper()
-		e.want(e.do(http.MethodPost, "/statuses", u.token, map[string]string{"text": "hello", "visibility": visibility}, nil), http.StatusOK, "post")
+		e.want(e.do(http.MethodPost, "/statuses", u.token, map[string]string{"text": "hello", "visibility": visibility}, nil), http.StatusCreated, "post")
 	}
 	post(alice, "public")
 	post(dave, "private")
@@ -50,10 +50,10 @@ func TestClientAPIAccountSuggestionsAndSearch(t *testing.T) {
 	post(bob, "local")
 	e.relate("follow", alice, carol, nil)
 
-	var got []clientapi.AccountSuggestion
+	var got clientapi.AccountSuggestionList
 	e.want(e.do(http.MethodGet, "/accounts/suggestions", alice.token, nil, &got), http.StatusOK, "suggestions")
 	var gotIDs []string
-	for _, s := range got {
+	for _, s := range got.Items {
 		gotIDs = append(gotIDs, string(s.Source)+":"+s.Account.Id)
 	}
 	if want := []string{"featured:" + erin.id, "recently_active:" + bob.id}; !slices.Equal(gotIDs, want) {
@@ -62,9 +62,9 @@ func TestClientAPIAccountSuggestionsAndSearch(t *testing.T) {
 
 	search := func(q string) []string {
 		t.Helper()
-		var accounts []clientapi.Account
+		var accounts clientapi.AccountList
 		e.want(e.do(http.MethodGet, "/accounts/search?q="+q, alice.token, nil, &accounts), http.StatusOK, "search "+q)
-		return ids(accounts)
+		return ids(accounts.Items)
 	}
 	if got := search("ri"); !slices.Equal(got, []string{erin.id}) {
 		t.Errorf("search ri = %v, want erin", got)

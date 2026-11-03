@@ -314,7 +314,7 @@ func (s *Server) CreateSupporterPlan(ctx context.Context, req CreateSupporterPla
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: create a supporter plan: %w", err)
 	}
-	return CreateSupporterPlan200JSONResponse{adminSupporterPlanResponse(plan)}, nil
+	return CreateSupporterPlan201JSONResponse{adminSupporterPlanResponse(plan)}, nil
 }
 
 // UpdateSupporterPlan serves PATCH /api/v1/admin/supporter_plans/{id}.
@@ -387,7 +387,12 @@ func (s *Server) RetireSupporterPlan(ctx context.Context, req RetireSupporterPla
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: retire supporter plan %s: %w", req.Id, err)
 	}
-	return RetireSupporterPlan204Response{}, nil
+	plan, err := s.o.Supporters.Plan(ctx, req.Id)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the supporter plan %s: %w", req.Id, err)
+	}
+	cache := cacheNoStore
+	return RetireSupporterPlan200JSONResponse{AdminSupporterPlanJSONResponse{Body: newAdminSupporterPlan(plan), Headers: AdminSupporterPlanResponseHeaders{CacheControl: &cache}}}, nil
 }
 
 func (s *Server) newAdminSupporterSubscription(ctx context.Context, sv appsupporters.SubscriptionView) (AdminSupporterSubscription, error) {

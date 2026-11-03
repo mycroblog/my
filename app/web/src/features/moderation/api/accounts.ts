@@ -19,7 +19,7 @@ export type AdminAccount = Schemas["AdminAccount"];
 export type AdminAccountDetail = Schemas["AdminAccountDetail"];
 export type AdminAccountState = Schemas["AdminAccountState"];
 export type AdminAccountRestriction = Schemas["AdminAccountRestriction"];
-export type AdminAccountRegistrationState = Schemas["AdminAccountRegistrationState"];
+export type RegistrationState = Schemas["RegistrationState"];
 export type AdminAccountPrivateData = Schemas["AdminAccountPrivateData"];
 export type EmailSuppression = Schemas["EmailSuppression"];
 export type AdminPasswordResetLink = Schemas["AdminPasswordResetLink"];
@@ -33,6 +33,7 @@ export const adminAccountStates = [
   "disabled",
   "suspended",
   "deleted",
+  "deactivated",
 ] as const satisfies readonly AdminAccountState[];
 
 /** Where the accounts of a search are: on this server or on others. */

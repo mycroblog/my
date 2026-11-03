@@ -3,7 +3,7 @@ post:
   operationId: runBillingImport
   summary: Import a provider's usage charges now
   description: |
-    Queues an import of the billing source now, besides the daily one (ADR-0068 §2). Its
+    Queues an import of the billing source now, besides the daily one. Its
     billed requests count toward the caps like the others. One import per source and UTC
     hour: another request in the hour after its import ran is a 429. A source that
     `billing_sources` does not enable is a 404. The request is recorded in the audit log.
@@ -19,7 +19,7 @@ post:
       schema:
         $ref: ../components/schemas/BillingSourceName.yaml
   responses:
-    "204":
+    "202":
       description: The import is queued.
     default:
       $ref: ../components/responses/Problem.yaml

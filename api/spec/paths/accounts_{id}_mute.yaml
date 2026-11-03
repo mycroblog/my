@@ -4,7 +4,7 @@ post:
   summary: Mute an account
   description: |
     Hides the account's posts, and unless `notifications` is false its notifications,
-    from the viewer (FR-303). Muting an account that the viewer already mutes replaces the
+    from the viewer. Muting an account that the viewer already mutes replaces the
     settings and the expiry.
   tags: [accounts]
   security:
@@ -17,6 +17,20 @@ post:
       application/json:
         schema:
           $ref: ../components/schemas/MuteAccountRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Relationship.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: unmuteAccount
+  summary: Unmute an account
+  description: Without a mute it changes nothing. It also works on an account that blocks the user.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:mutes"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
   responses:
     "200":
       $ref: ../components/responses/Relationship.yaml

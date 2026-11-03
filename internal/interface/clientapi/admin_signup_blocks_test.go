@@ -120,19 +120,19 @@ func TestSignupBlocksAPI(t *testing.T) {
 	e, blocks := newSignupBlocksEnv(t, identity.PermManageAccounts)
 	res := e.adminBody(t, http.MethodPost, "/admin/signup_blocks", "admin-write",
 		`{"kind":"email_domain","value":"spam.example","severity":"reject","comment":"wave","expires_in":60}`)
-	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
+	if res.StatusCode != http.StatusCreated || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("POST /admin/signup_blocks = %d", res.StatusCode)
 	}
 	b := decodeJSON[clientapi.AdminSignupBlock](t, res)
 	if b.Kind != clientapi.AdminSignupBlockKindEmailDomain || b.Value != "spam.example" || b.Severity != clientapi.AdminSignupBlockSeverityReject ||
-		b.Comment == nil || *b.Comment != "wave" || b.ExpiresAt == nil || b.State != clientapi.AdminSignupBlockStateActive || b.LiftedAt != nil {
+		b.Comment == nil || *b.Comment != "wave" || b.ExpiresAt == nil || b.State != clientapi.ModerationActionStateActive || b.LiftedAt != nil {
 		t.Errorf("created block = %+v", b)
 	}
 	if len(blocks.added) != 1 || blocks.added[0].CreatedByUserID != userOf(aliceAccountID) || blocks.added[0].Duration != time.Minute {
 		t.Errorf("added = %+v, want one by alice for a minute", blocks.added)
 	}
 	res = e.adminBody(t, http.MethodPost, "/admin/signup_blocks", "admin-write", `{"kind":"ip_range","value":"192.0.2.0/24","severity":"require_approval"}`)
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST a second block = %d", res.StatusCode)
 	}
 	second := decodeJSON[clientapi.AdminSignupBlock](t, res)
@@ -167,7 +167,7 @@ func TestSignupBlocksAPI(t *testing.T) {
 	}
 
 	res = e.admin(t, http.MethodPost, "/admin/signup_blocks/"+b.Id+"/lift", "admin-write", nil)
-	if lifted := decodeJSON[clientapi.AdminSignupBlock](t, res); res.StatusCode != http.StatusOK || lifted.State != clientapi.AdminSignupBlockStateLifted || lifted.LiftedAt == nil {
+	if lifted := decodeJSON[clientapi.AdminSignupBlock](t, res); res.StatusCode != http.StatusOK || lifted.State != clientapi.ModerationActionStateLifted || lifted.LiftedAt == nil {
 		t.Errorf("lift = %d %+v", res.StatusCode, lifted)
 	}
 	if len(blocks.lifted) != 1 || blocks.lifted[0] != userOf(aliceAccountID) {

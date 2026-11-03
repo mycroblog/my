@@ -55,7 +55,7 @@ func (s *Server) newAdminAccountActionsWith(ctx context.Context, reads presentRe
 		item := AdminAccountAction{
 			Id: a.ID, AccountId: a.TargetAccountID, Kind: AdminAccountActionKind(a.Kind),
 			ReasonCategory: AdminAccountActionCategory(a.ReasonCategory), Issuer: AdminAccountActionIssuer(a.Issuer),
-			NotifyTarget: a.NotifyTarget, State: AdminAccountActionState(v.State), IssuedAt: a.IssuedAt.UTC(),
+			NotifyTarget: a.NotifyTarget, State: ModerationActionState(v.State), IssuedAt: a.IssuedAt.UTC(),
 		}
 		if a.PublicReason != "" {
 			item.PublicReason = &a.PublicReason
@@ -208,6 +208,10 @@ func (s *Server) CreateAccountAction(ctx context.Context, req CreateAccountActio
 	switch {
 	case errors.Is(err, appmoderation.ErrAccountNotFound):
 		return CreateAccountActiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case errors.Is(err, appmoderation.ErrTargetOutranksActor):
+		return CreateAccountActiondefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
+	case errors.Is(err, appmoderation.ErrLastAdministrator):
+		return CreateAccountActiondefaultApplicationProblemPlusJSONResponse(s.lastAdministrator(ctx)), nil
 	case errors.Is(err, appmoderation.ErrInvalidReportReference):
 		return unprocessable(l.ServerErrorsInvalidValue("report_id"))
 	case errors.Is(err, appmoderation.ErrInvalidStatusReference), errors.Is(err, moderation.ErrInvalidActionStatuses):
@@ -229,7 +233,7 @@ func (s *Server) CreateAccountAction(ctx context.Context, req CreateAccountActio
 	if err != nil {
 		return nil, err
 	}
-	return CreateAccountAction200JSONResponse{res}, nil
+	return CreateAccountAction201JSONResponse{res}, nil
 }
 
 // GetAccountAction serves GET /api/v1/admin/account_actions/{id}.
@@ -270,6 +274,8 @@ func (s *Server) LiftAccountAction(ctx context.Context, req LiftAccountActionReq
 	switch {
 	case errors.Is(err, appmoderation.ErrNotFound):
 		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case errors.Is(err, appmoderation.ErrTargetOutranksActor):
+		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
 	case errors.Is(err, appmoderation.ErrNotLiftable):
 		return LiftAccountActiondefaultApplicationProblemPlusJSONResponse(
 			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("id"))), nil

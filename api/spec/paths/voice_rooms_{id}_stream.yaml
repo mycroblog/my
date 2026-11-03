@@ -39,8 +39,7 @@ get:
 
     When the stream ends otherwise, open it again with the same session; the first `state`
     brings the room up to date, and nothing is replayed. While the server cannot receive the
-    events (it is shutting down) the answer is 503 with `Retry-After`. A 404 while the voice
-    chat is off on the server.
+    events (it is shutting down) the answer is 503 with `Retry-After`.
   tags: [voice]
   security:
     - oauth2: ["read:voice"]

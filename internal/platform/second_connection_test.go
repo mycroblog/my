@@ -72,7 +72,7 @@ func TestOneConnectionIsEnough(t *testing.T) {
 	q := dbURL.Query()
 	q.Set("pool_max_conns", "1")
 	dbURL.RawQuery = q.Encode()
-	cfg := loadConfig(t, map[string]string{"MY_DB": "postgres", "MY_DATABASE_URL": dbURL.String(), "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline"})
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE": "postgres", "MY_DATABASE_URL": dbURL.String(), "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline"})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
@@ -133,6 +133,14 @@ func TestOneConnectionIsEnough(t *testing.T) {
 	if len(page.Items) == 0 {
 		t.Error("no notification came of the follow, the favourite, the boost, or the mention")
 	}
+	// A deactivation touches many modules in its transaction, and so does the way back.
+	do(http.MethodPost, "/accounts/deactivation", bob.token, map[string]any{"password": "correct horse battery staple"}, nil)
+	if err := app.Identity.ReactivateOwnAccount(t.Context(), member.User.ID); err != nil {
+		t.Fatalf("ReactivateOwnAccount: %v", err)
+	}
+	if _, err := app.Accounts.ExecuteDueDeletions(t.Context()); err != nil {
+		t.Fatalf("ExecuteDueDeletions: %v", err)
+	}
 	do(http.MethodPost, "/admin/accounts/"+bob.id+"/actions", alice.token, map[string]any{"kind": "suspend"}, nil)
 }
 
@@ -148,7 +156,7 @@ func TestDatabaseAcquireTimeoutAnswers503(t *testing.T) {
 	q.Set("pool_max_conns", "1")
 	dbURL.RawQuery = q.Encode()
 	cfg := loadConfig(t, map[string]string{
-		"MY_DB": "postgres", "MY_DATABASE_URL": dbURL.String(), "MY_WEB_ORIGIN": webOrigin,
+		"MY_DATABASE": "postgres", "MY_DATABASE_URL": dbURL.String(), "MY_WEB_ORIGIN": webOrigin,
 		"MY_DATABASE_ACQUIRE_TIMEOUT": "200ms",
 	})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})

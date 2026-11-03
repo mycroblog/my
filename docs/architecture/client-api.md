@@ -63,20 +63,23 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - ID は UUIDv7 の文字列で、`#/components/schemas/Id` を参照します（`x-go-type: string` により Go では `string`）。
 - 一覧はキーセットページングです。クエリで `#/components/parameters/Cursor` と `#/components/parameters/Limit` を受け、
   応答は `allOf` で `#/components/schemas/PageInfo` を含めて `next_cursor` を返し、要素の配列は `items` に入れます。最後のページでは `next_cursor` を省きます。
+  ページングしない一覧も、配列をそのまま返さず、`items` を持つオブジェクトで返します。
 - カーソルは不透明な文字列です。クライアントは解釈せずにそのまま返します。
   ハンドラは `limit` より 1 件多く読み、次のページがあるときだけ `next_cursor` を返します。
   アカウントの一覧のカーソルは、ページの最後の項目の位置（フォロー ID・ブロック ID・ミュートの作成時刻と対象）を base64url にしたものです（`Server.parsePage`）。
-- 生成コードは `minimum` / `maximum` などのスキーマの制約を検査しないので、`limit` やカーソル・本文の値の範囲はハンドラが検査し、外れたら 400 にします（`pageLimit`、`Server.invalidParameter`）。
+- 生成コードは `minimum` / `maximum` などのスキーマの制約を検査しないので、`limit` やカーソルなどのクエリとパスの値はハンドラが検査し、外れたら 400 にします（`pageLimit`、`Server.invalidParameter`）。
+  本文を読めなかったときも 400 です。読めた本文の値を断るとき（未知の enum の値を含む）は 422 にします（`Server.unprocessableValue`）。
 - 見せられない項目（[visibility.md §6](visibility.md#6-アカウントの表示)）を省く一覧では、最後でないページでも `limit` より少ないことがあります。
 - 投稿の一覧は `#/components/responses/StatusPage`（`items` が `#/components/schemas/Status` の配列）を返し、ハンドラは `Server.statuses` で投稿とブーストを詰め替えます（投稿は `Server.newStatus`）。
   ブーストは、ブーストした人の `Status` の `boost` に元の投稿を入れて表します。
 - 投稿のリンクのカード（`Status.card`、`LinkCard`）は、`StatusView.Card`（`content.LinkCards.View`）を `Server.newLinkCard` で詰め替えます。
-  カードは投稿の後にジョブが取得するので、投稿の直後の応答には無く、添付・投票のある投稿と `link_cards_enabled` が偽のときも省きます。
+  カードは投稿の後にジョブが取得するので、投稿の直後の応答には無く、添付・投票のある投稿と `link_cards` が偽のときも省きます。
   画像はメディアプロキシの `small` の URL だけを返します（[federation.md §9.1](federation.md#91-リンクのカード)、ADR-0062 §8）。
 - 投稿の引用（`Status.quote`、`StatusQuote`）は、`StatusView.Quote`（`content.Reader` が閲覧者ごとに決める `QuoteView`）を `Server.newStatus` で詰め替えます（ADR-0069 §5）。
   `state` は承認の状態か、閲覧者に引用先を見せない理由（`QuoteState`）で、`quoted_status` は `accepted`・`legacy` と、閲覧者のミュートの理由（`muted_account`・`blocked_domain`）のときだけ入れます。
   引用は 1 段で、`quoted_status` には `quote` を入れません。引用先の著者などのアカウントの分は、`Server.statusParts` が引用元と一緒に読みます。
   `Status.quotable`（ログインした閲覧者が引用できるか、`content.MayQuote`）と、作者にだけの `Status.quote_policy` も `StatusView` から詰め替えます。
+  公開範囲が `local`・`private`・`direct` の投稿でリモートの投稿を引用すると `422` で、投稿を作りません（[ADR-0144](../adr/0144-federation-differences-uri-quote.md) §4）。
   引用は投稿の作成（`createStatus` の `quoted_status_id` と `quote_policy`）でだけ付け、編集（`editStatus` の `remove_quote`）では外すことしかできません。
   作者は `setStatusQuotePolicy` で引用の許可を変え、`listStatusQuotes` で自分の投稿への引用を一覧し、`revokeStatusQuote` で承認を取り消します。既定の許可は `Preferences.default_quote_policy` です。
   アカウントの投稿の一覧（`listAccountStatuses`）だけは、`StatusPage` に `remote_fetch_started` を加えた `#/components/responses/AccountStatusPage` を返します。
@@ -84,6 +87,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 
 ### 2.3 エラー
 
+- リソースを作る操作は 201、ジョブに積むだけの操作は 202 で答えます（`api/redocly.yaml` の lint で強制）。
 - すべての操作は `default` 応答で `#/components/responses/Problem` を参照します（lint で強制）。
   本文は RFC 9457 の `application/problem+json` です。
 - 状態コード以上の意味を持たない問題は `type: about:blank` です。クライアントが分岐に使う問題には、安定した `type` の URI（`/api/v1/problems/<名前>` の相対参照）を割り当て、
@@ -121,14 +125,16 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - 匿名で取れる公開リソースの GET には `Cache-Control: public, max-age=60` を付けます（spec の `#/components/headers/CacheControl`）。
   利用者ごとに変わる応答には `private` か `no-store` を付けます。問題の応答は `no-store` です。
   匿名でも使える操作にトークン付きで来た要求は利用者のロケールで答えるので、`public` の代わりに `private, max-age=60` を付けます。
-- 閲覧できる範囲をインスタンス設定で選ぶ公開の一覧は、`security: [{}, {oauth2: [...]}]` にして、ハンドラが設定を読んで答えます。誰にも見せない設定では 404、サインインした人だけに見せる設定では、トークンのない要求に 401（`/api/v1/problems/unauthenticated`、`WWW-Authenticate: Bearer`）を返します。
+  アカウントと投稿（`GET /accounts/{id}`・`GET /statuses/{id}` など）はトークン付きの要求の答えが閲覧者のブロックや関係で変わるので、トークン付きは `no-store` です（`cacheFor`）。
+  ボイスチャットの部屋の匿名の要約（`GET /voice/rooms/{id}/summary`）は参加者の増減ですぐ変わり、GET が記録を書くこともあるので、匿名でも `no-store` です。
+- 閲覧できる範囲をインスタンス設定で選ぶ公開の一覧は、ハンドラが設定を読んで答えます。サインインした人だけに見せる設定を持つ一覧は `security: [{}, {oauth2: [...]}]` に、持たない一覧（`cost_totals`・`income_totals`）は `security: []` にします。誰にも見せない設定では 404、サインインした人だけに見せる設定では、トークンのない要求に 401（`/api/v1/problems/unauthenticated`、`WWW-Authenticate: Bearer`）を返します。
 
   | 操作 | 設定 | 値（見せない / サインインした人 / 誰にでも） | `Cache-Control` |
   | --- | --- | --- | --- |
-  | `GET /instance/domain_actions` | `domain_actions_visibility` | `none` / `users` / `all` | 匿名は `public, max-age=60`、トークン付きは `private, max-age=60` |
+  | `GET /instance/domain_actions` | `domain_actions_visibility` | `off` / `signed_in` / `everyone` | 匿名は `public, max-age=60`、トークン付きは `private, max-age=60` |
   | `GET /instance/cost_totals` | `finance_visibility` | `private`（404。ほかの値は公開する範囲） | 同上 |
   | `GET /instance/income_totals` | `income_visibility`（ADR-0073 §7） | `private`（404。ほかの値は公開する範囲） | 同上 |
-  | `GET /instance/supporters` | `supporter_list_visibility`（ADR-0071 §4） | `off` / `signed_in` / `public` | `public` は同上、`signed_in` は `private, no-store` |
+  | `GET /instance/supporters` | `supporter_list_visibility`（ADR-0071 §4） | `off` / `signed_in` / `everyone` | `everyone` は同上、`signed_in` は `private, no-store` |
 
   サポーターの一覧（`GET /instance/supporters`）の応答は、問題の応答も含め、`search_indexing` に関わらずいつも `X-Robots-Tag: noindex, noarchive` です（`platform` の `noArchivePaths`、ADR-0057）。
 - 投稿フォームの補完の前方一致の検索（`GET /accounts/search`・`GET /tags/search`、ADR-0092）はトークン必須で、アカウントの結果が閲覧者のブロック・ミュート・フォローで変わり、同じ接頭辞を打ち直すと同じ問い合わせが続くので、`Cache-Control: private, max-age=30` を付けます。
@@ -142,7 +148,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - ADR-0019 §9 のセキュリティヘッダは `platform` が全応答に付けます。
 - CORS は `platform` が `/api/v1` 以下に適用し、設定 `web_origin` のオリジンだけを `Access-Control-Allow-Origin` に返します。
   `Access-Control-Allow-Credentials` は付けません（API は `Authorization: Bearer` だけで認証する）。
-  `Content-Language`・`X-Request-Id`・`WWW-Authenticate`・`Retry-After`・`RateLimit`・`RateLimit-Policy` を `Access-Control-Expose-Headers` で公開します。
+  `Content-Language`・`X-Request-Id`・`WWW-Authenticate`・`Retry-After`・`RateLimit`・`RateLimit-Policy`・`X-Web-Client-Epoch`（すべての応答に付く、Web クライアントの必要な更新の番号。ADR-0141 §4）を `Access-Control-Expose-Headers` で公開します。
 
 ### 2.5 使える OpenAPI 3.1 の部分集合
 
@@ -231,10 +237,15 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
   `push` は Web Push だけです。
 - ダイレクトメッセージ（公開範囲 `direct`）の読み取りは `read:direct`（`read` が許す）に分け、`read:statuses` だけのトークンには、タイムライン・投稿・スレッド・通知の投稿のどれにも `direct` の投稿を出しません
   （作者自身の投稿も同じ。可視性の判定は `content.CanView` のまま、`Viewer.DirectDenied` で絞ります）。送信は `write:statuses` のままです（[ADR-0090](../adr/0090-third-party-oauth-apps.md) §4）。
+  ブックマーク・投稿のソース・引用の一覧も同じです。
+- 書き込みのスコープは、作用する投稿を読めます（投稿への操作の応答は投稿の全体です）。投稿への操作は、トークンの `Viewer` で見えない投稿（消えた投稿を含む）には何も変えずに 404 を返します。
+  取り消しは、消えた投稿には何も変えずに 404 を返し、まだある投稿には見えなくても効きます。利用者の名前が消せないまま投稿に残らないようにするためです。見えない投稿の応答は同じ 404 で、投稿の内容を出しません（`Status` を返すと内容が見えてしまいます）。
 - 一次のクライアントだけのスコープ（`admin`・`admin:read`・`admin:write`・`write:supporters`、`identity.FirstPartyOnlyScope`）は、一次でないクライアントの認可要求に含まれたら `invalid_scope` にし、
   広いスコープ（`write`）経由でも一次でないクライアントのトークンには許しません。
-  アカウントの保安の操作（パスワード・二要素認証・パスキー・認可したアプリの一覧と取り消し・アカウントの削除）は spec の操作に `x-first-party-only: true` を書き、スコープにかかわらず一次のクライアントのトークンだけを受けます。
+  アカウントの保安の操作（パスワード・二要素認証・パスキー・認可したアプリの一覧と取り消し・アカウントの削除）と、ADR-0143 の操作（データのエクスポートとインポート・投稿の自動削除の設定の変更とプレビュー・別名の追加と削除・招待・本人の処分の一覧と異議申し立て）は spec の操作に `x-first-party-only: true` を書き、スコープにかかわらず一次のクライアントのトークンだけを受けます。
   それ以外は 403 `/api/v1/problems/first-party-only` です。
+  モデレーターの通知（`notification.ModeratorPermission` に属する種類）は、操作を閉じずに種類で隠します。一次でないトークンには、利用者の権限にかかわらず、一覧・ストリーミング・未読の件数に出さず、Web Push の購読の `alerts` からも除きます。
+- `Relationship` は、トークンのスコープが覆うフィールドだけを返します。`following`・`requested`・`followed_by`・`requested_by`・`show_boosts`・`notify` は `read:follows` か `write:follows`、`blocking` は `read:blocks` か `write:blocks`、`muting`・`muting_notifications` は `read:mutes` か `write:mutes` です。無いフィールドは偽を意味しません。
   クライアントが一次かどうかの判定は `identity.OAuthClient.FirstParty` の 1 か所です。
 - 操作には細かいスコープを書きます（`verifyAccountCredentials` は `read:accounts`）。クライアントは広いスコープでも細かいスコープでも要求できます。
 - スコープを増やすときは、`internal/domain/identity` の定数と `knownScopes`（ソート済み）、spec の `scopes`、同意画面の文言（`server:auth.authorize.scope.*` と `authpages` の `scopeDescriptions`）を同時に変えます。
@@ -286,7 +297,7 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
 | `Bearer` でない、形式が違う、未知・失効・期限切れのトークン | 401 | `/api/v1/problems/invalid-token` | `Bearer error="invalid_token"` |
 | トークンは有効だが利用者がアプリを使えない（承認待ち・却下・メール未確認・停止・削除） | 403 | `/api/v1/problems/account-unavailable` | なし |
 | スコープ不足 | 403 | `/api/v1/problems/insufficient-scope` | `Bearer error="insufficient_scope", scope="<操作のスコープ>"` |
-| アカウントの保安の操作を、一次でないクライアントのトークンで呼んだ | 403 | `/api/v1/problems/first-party-only` | なし |
+| `x-first-party-only` の操作を、一次でないクライアントのトークンで呼んだ | 403 | `/api/v1/problems/first-party-only` | なし |
 | 管理の操作で、利用者のロールに権限がない | 403 | `/api/v1/problems/missing-permission` | なし |
 | レート制限の超過 | 429 | `about:blank` | なし（`Retry-After` を付ける） |
 
@@ -326,7 +337,7 @@ strict server は SSE を返せないので、`oapi-codegen.yaml` の `exclude-o
 `GET /api/v1/streaming/timelines/{timeline}`（`streamTimeline`、`timeline` は `local` か `federated`）は、ローカル・連合のタイムラインの新着を送る SSE です（ADR-0127）。
 `GET /streaming` と同じく生成から除き、`timeline_stream.go` に手で書いて `guard`（スコープ `read:statuses`）を通します。接続・ハートビート・後始末・503 は `GET /streaming` と同じ `Server.runStream` と `Server.subscribeRefused` で扱います。
 
-- ログインした利用者だけが開けます（spec の `security` に匿名を入れないので、未ログインは `guard` が 401 にします）。`local_timeline_access` / `federated_timeline_access` が `off` なら 404 で、
+- ログインした利用者だけが開けます（spec の `security` に匿名を入れないので、未ログインは `guard` が 401 にします）。`local_timeline_visibility` / `federated_timeline_visibility` が `off` なら 404 で、
   開いているストリームも次のハートビートで閉じます。`local` / `federated` 以外の `timeline` も 404 です。
 - イベントは `update`（`data` は `Status`）だけで、何も再送しません。つなぎ直したら、クライアントはそのタイムラインの最初のページを読み直します。
 - 投稿の作成（ローカルの投稿と、受信箱のジョブが保存したリモートの投稿の `content.status_created`）で、`timeline.RegisterCommitHooks` がホームの新着とは別に

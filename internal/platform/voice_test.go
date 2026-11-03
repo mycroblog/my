@@ -40,7 +40,7 @@ func TestVoiceSettingsThroughAdminAPI(t *testing.T) {
 	}
 	moderator := issueTokens(t, e.app, r.User.ID, "").AccessToken
 	keys := []clientapi.InstanceSettingKey{
-		clientapi.InstanceSettingKeyVoiceRoomStarters, clientapi.InstanceSettingKeyVoicePublicSummary, clientapi.InstanceSettingKeyRetentionVoiceParticipants,
+		clientapi.InstanceSettingKeyVoiceRoomStarters, clientapi.InstanceSettingKeyVoicePublicSummary, clientapi.InstanceSettingKeyVoiceParticipantsRetentionDays,
 	}
 	read := func() map[clientapi.InstanceSettingKey]clientapi.AdminSetting {
 		t.Helper()
@@ -64,8 +64,8 @@ func TestVoiceSettingsThroughAdminAPI(t *testing.T) {
 	if v := values(got); strings.Join(v, ",") != "permitted,false,90" {
 		t.Errorf("defaults = %v, want permitted, false, 90", v)
 	}
-	if s := got[clientapi.InstanceSettingKeyRetentionVoiceParticipants]; s.Minimum == nil || *s.Minimum != 30 || s.Kind != clientapi.InstanceSettingKindInt {
-		t.Errorf("retention_voice_participants = %+v, want an int of at least 30", s)
+	if s := got[clientapi.InstanceSettingKeyVoiceParticipantsRetentionDays]; s.Minimum == nil || *s.Minimum != 30 || s.Kind != clientapi.InstanceSettingKindInt {
+		t.Errorf("voice_participants_retention_days = %+v, want an int of at least 30", s)
 	}
 	if s := got[clientapi.InstanceSettingKeyVoiceRoomStarters]; s.Choices == nil || strings.Join(*s.Choices, ",") != "everyone,permitted" {
 		t.Errorf("voice_room_starters = %+v, want the choices everyone and permitted", s)
@@ -74,7 +74,7 @@ func TestVoiceSettingsThroughAdminAPI(t *testing.T) {
 	for _, bad := range []map[string]string{
 		{"voice_room_starters": "nobody"},
 		{"voice_public_summary": "yes"},
-		{"retention_voice_participants": "29"},
+		{"voice_participants_retention_days": "29"},
 	} {
 		e.want(e.do(http.MethodPatch, "/admin/settings", admin.token, map[string]any{"values": bad}, nil), http.StatusUnprocessableEntity, "PATCH an invalid value")
 	}
@@ -85,7 +85,7 @@ func TestVoiceSettingsThroughAdminAPI(t *testing.T) {
 	}
 
 	e.want(e.do(http.MethodPatch, "/admin/settings", admin.token, map[string]any{"values": map[string]string{
-		"voice_room_starters": "everyone", "voice_public_summary": "TRUE", "retention_voice_participants": "30",
+		"voice_room_starters": "everyone", "voice_public_summary": "TRUE", "voice_participants_retention_days": "30",
 	}}, nil), http.StatusOK, "PATCH the voice settings")
 	got = read()
 	if v := values(got); strings.Join(v, ",") != "everyone,true,30" {
@@ -135,7 +135,7 @@ func TestAppVoice(t *testing.T) {
 		t.Fatalf("NewApp: %v", err)
 	}
 	t.Cleanup(func() { _ = app.Close() })
-	want := platform.Voice{Method: platform.VoiceP2P, P2PMaxParticipants: 6, MaxRoomDuration: 2 * time.Hour, MaxOpenRooms: 3}
+	want := platform.Voice{Method: platform.VoiceP2P, P2PMaxParticipants: 6, MaxParticipants: 50, MaxRoomDuration: 2 * time.Hour, MaxOpenRooms: 3}
 	if app.Voice != want || !app.Voice.Enabled() || app.Voice.RoomCapacity() != 6 {
 		t.Errorf("Voice = %+v, want %+v, enabled, rooms of 6", app.Voice, want)
 	}
@@ -306,7 +306,7 @@ func TestVoiceParticipantsThroughAPI(t *testing.T) {
 	if len(got.Participants) != 2 || !got.Participants[1].HandRaised {
 		t.Errorf("after raising a hand = %+v", got.Participants)
 	}
-	e.want(e.do(http.MethodPost, room+"/participants/"+bob.id+"/grant", alice.token, nil, nil), http.StatusOK, "grant")
+	e.want(e.do(http.MethodPost, room+"/participants/"+bob.id+"/speaking_permission", alice.token, nil, nil), http.StatusOK, "grant")
 	e.want(e.do(http.MethodPost, room+"/speaker", bob.token, nil, &got), http.StatusOK, "speak after the grant")
 	if got.Participants[1].Role != clientapi.VoiceRoleSpeaker || got.Participants[1].HandRaised {
 		t.Errorf("after speaking = %+v", got.Participants[1])
@@ -347,6 +347,18 @@ func TestVoiceParticipantsThroughAPI(t *testing.T) {
 	}
 	e.want(e.do(http.MethodGet, room, bob.token, nil, nil), http.StatusNotFound, "get by the blocked participant")
 	e.want(e.do(http.MethodDelete, room+"/participants/"+carol.id, alice.token, nil, nil), http.StatusUnprocessableEntity, "remove a co-host")
+	// Removing a participant answers the room without them, as the other operations do.
+	e.want(e.do(http.MethodDelete, room+"/participants/"+carol.id+"/cohost", alice.token, nil, nil), http.StatusOK, "no longer a co-host")
+	var afterRemoval clientapi.VoiceRoom
+	e.want(e.do(http.MethodDelete, room+"/participants/"+carol.id, alice.token, nil, &afterRemoval), http.StatusOK, "remove a participant")
+	if afterRemoval.Id == "" {
+		t.Errorf("the answer to a removal = %+v, want the room", afterRemoval)
+	}
+	for _, p := range afterRemoval.Participants {
+		if p.Account.Id == carol.id {
+			t.Errorf("the removed participant is still in the room: %+v", afterRemoval.Participants)
+		}
+	}
 }
 
 // postSora posts body to an endpoint of Sora's webhooks with Basic authentication and returns
@@ -371,7 +383,7 @@ func TestVoiceSora(t *testing.T) {
 		"MY_DATABASE_URL": newDatabase(t, true), "MY_VOICE": "sora", "MY_VOICE_SORA_MODE": "self_hosted",
 		"MY_VOICE_SORA_SIGNALING_URLS": "wss://sora.example.org/signaling", "MY_VOICE_SORA_API_URL": "https://sora-api.example.org",
 		"MY_VOICE_SORA_WEBHOOK_USERNAME": "sora", "MY_VOICE_SORA_WEBHOOK_PASSWORD": "hunter2",
-		"MY_VOICE_JOIN_SECRET": "a-join-secret-of-at-least-32-bytes!",
+		"MY_VOICE_SORA_JOIN_SECRET": "a-join-secret-of-at-least-32-bytes!",
 	})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
 	if err != nil {

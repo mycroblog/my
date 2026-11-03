@@ -129,7 +129,7 @@ ADR-0033 の推奨案に従い、**署名の検証までを同期**、**処理�
 1. 原本を正規化する（§4）。正規化できなければ `Fail`（dead job に残る）。`relay_id` の付いたアクティビティは、何かを取得する前にリレーの関門を通す（§13）。
 2. `trust = refetch` なら、オブジェクトを `id` からオリジンに取得し直し（§6）、取得した文書を使う。`Announce` 以外で取得できなければ捨てる。
    オリジンで確かめられずに捨てる `trust = refetch` のアクティビティ（リレーの関門で捨てるものを含む）は、`received_activities` の行と原本を消す（`InboxRepository.ReleaseUnconfirmedActivity`）。重複排除のキーは確かめたアクティビティだけが持ち、同じアクティビティが後から届けば受け付ける。
-3. 主体（`actor`）のアカウントを解決する（未知なら取得、§6）。主体やそのドメインに `federation` の制限があれば捨てる（`Delete` / `Undo` / `Reject` は通す。§11）。
+3. 主体（`actor`）のアカウントを解決する（未知なら取得、§6）。主体が削除済み（`deleted` / `remote_deleted`）なら捨てる。主体やそのドメインに `federation` の制限があれば捨てる（`Delete` / `Undo` / `Reject` は通す。§11）。
 4. 種類ごとのハンドラ（§3.4）を呼ぶ。ハンドラは 1 つの短いトランザクションで、各モジュールの公開 API を呼んで書く。
 5. 結果: 書けたら `Done`、取得の一時的な失敗は `Retry`（ADR-0004 のバックオフ）、恒久的に処理できないものは `Fail`。
 
@@ -187,7 +187,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `Delete` | 投稿・`Tombstone` | `content.DeleteRemoteStatus`（`origin = remote`）。未知の URI が、承認済みの引用の `QuoteAuthorization` なら、その引用を `content.RevokeQuoteAuthorization` で取り消す（ADR-0069 §2。承認を出した人、つまり主体が引用された投稿の作者である引用だけ）。どちらでもなければ tombstone |
 | `QuoteRequest` | ローカルの投稿（`object`）を引用する主体の投稿（`instrument`。主体と同じオリジン） | `content.AnswerQuoteRequest` が自動で答える（ADR-0069 §2）。主体がリモートで、投稿を `ContextObjectFetch` で閲覧でき、ブロック関係と交流の禁止（FR-708）がなく、投稿の引用の許可に当てはまり（`content.MayQuote`。`local` の投稿はリモートからは引用させない）、引用元の投稿が保存済みなら主体の投稿であるなら、`quote_authorizations` に承認を記録して、`result` にその `QuoteAuthorization` を付けた `Accept` を返す。同じ引用の 2 度目の依頼には同じ承認を返す。それ以外は `Reject`。どちらも依頼を埋め込み、主体の inbox だけに送る。引用元の投稿が保存済みなら、その引用を承認する |
 | `Accept` / `Reject` | このサーバーが送った `QuoteRequest`（`id` が `{引用元の IRI}/quote_request`） | `QuoteHandlers.ReceiveQuoteAnswer`。主体は引用先の作者でなければならない。`Accept` は `result` の `QuoteAuthorization` を取得し、§6.3 の引用先の検証と同じ規則で確かめてから `content.AcceptQuote` で承認する（承認は §7.1 の `Update` で伝わる）。`Reject` は `content.RejectQuote` で拒否にする。フォローへの答えより先に照合する |
-| `Delete` | Actor（自分自身） | `RemoteActors.ReceiveActorDelete`。`account.MarkRemoteDeleted`（`remote_deleted`）で、プロフィールと投稿（タイムラインでは `feed_author_restrictions` の `profile_view`）がすぐに表示されなくなる。未知の Actor なら何もしない。投稿・フォロー・ブーストは消去ジョブが消す |
+| `Delete` | Actor（自分自身） | `RemoteActors.ReceiveActorDelete`。`account.MarkRemoteDeleted`（`remote_deleted`）で、プロフィールと投稿（タイムラインでは `feed_author_restrictions` の `profile_view`）がすぐに表示されなくなる。未知の Actor なら何もしない。7 日後に消去ジョブ（[data-model §8](data-model/08-deletion-and-purge.md#8-削除と消去)）がプロフィール・投稿（ローカルの利用者がブックマークや返信をした投稿を含む）・フォロー・ブーストなどを物理削除する。削除は取り消せず、以後その Actor のアクティビティは捨て、取得した文書も投稿も保存しない |
 | `Announce` | 投稿（主体が参加中のリレーの Actor で `relay_id` の付いたもの） | 投稿をオリジンから取得し、`public` なら取り込んで `relayed_statuses` に記録する。ブーストとしては記録しない（§13） |
 | `Announce` | 投稿（URI か埋め込み） | `content.RecordRemoteBoost`。ローカルの投稿と保存済みの投稿は `id` で引く。保存していないリモートの投稿は、ブーストした人をローカルのアカウントがフォローしているときだけ取り込み（ADR-0034）、埋め込みの投稿は、オリジンが主体と同じでなければ `id` から取得し直す。ブーストの公開範囲は、`Announce` の宛先から決めた公開範囲と元投稿の公開範囲の狭いほう（`direct` になるものは捨てる）。`local` の投稿、ほかの人の `private` の投稿、主体が閲覧できないローカルの投稿は捨てる |
 | `EmojiReact` | ローカルの投稿 | `content.RecordRemoteReaction`（絵文字リアクション、FR-116、ADR-0052）。`content` が絵文字でなければ捨てる。絵文字は、1 つの Unicode 絵文字（`emoji-test.txt` の表で fully-qualified の形に正規化する）か、`:shortcode:` で `tag` に `name` が一致する（コロンと `@host` の接尾辞を問わない）`Emoji` がちょうど 1 つあるカスタム絵文字。カスタム絵文字のドメインは `Emoji` の `id` のホスト（`id` が無ければ主体のドメイン）。主体のドメインの絵文字は ADR-0051 の規則で `custom_emojis` に画像と取り込む。ほかのサーバーの絵文字は、そのサーバーの文書から記録済みのとき（このサーバーの絵文字はローカルの絵文字）だけ使い、行も画像も変えない。記録が無ければ捨てる（ADR-0051 の「他のサーバーの絵文字を偽れない」。ADR-0052 §1 の取り込みの文を置き換える推奨案は ADR-0104）。同じ主体・投稿・絵文字のリアクションは 1 つで、絵文字ごとに複数を記録する。主体が閲覧できない投稿（`ContextObjectFetch`）・ブロック関係・交流の禁止（FR-708）は捨てる |
@@ -260,7 +260,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - **同じオリジン**: 最後のリダイレクト先のオリジンと、文書の `id` のオリジンが一致しなければ採用しません。要求した URL と `id` が異なるときは、`id` を 1 回だけ取得し直して一致を確かめます（[ActivityPub 付録 B.2](https://www.w3.org/TR/activitypub/#security-verification)、FEP-fe34）。
 - 投稿は、`attributedTo` のオリジンが投稿の `id` と同じでなければ採用しません。
 - 再帰的な取得（返信先・埋め込み・`Announce` の対象）は、1 回の処理につき深さと件数に上限を置きます（[ActivityPub 付録 B.5](https://www.w3.org/TR/activitypub/#security-recursive-objects)、ADR-0034）。
-- 404 / 410 と取得の失敗は、KV に 1 時間記録して同じ URI の取得を繰り返しません（名前空間 `federation.fetch_failure`、キーは URI の SHA-256）。Actor の 410 は `remote_deleted` にし、ほかの失敗は `remote_account_heads.consecutive_fetch_failures` に数えます。
+- 404 / 410 と取得の失敗は、KV に 1 時間記録して同じ URI の取得を繰り返しません（名前空間 `federation.fetch_failure`、キーは URI の SHA-256）。Actor の 410 は `remote_deleted` にし、ほかの失敗は `remote_account_heads.consecutive_fetch_failures` に数えます。削除済みの Actor の文書は、サーバーがまだ返しても保存しません（`account.ErrActorDeleted`）。その投稿も取り込みません。
 - ドメイン単位の `federation` の制限があるドメインと、自サーバーの URI からは取得しません。`instance_health` が `unavailable` のドメインからも取得しません（鍵の解決は `503`）。
   - リダイレクトの各ホップにも同じ制限を掛けます。`HTTPRequest.CheckRedirect` に `Fetcher` の検査を渡し、`HTTPClient` は自分の宛先の検査（SSRF ガード）の後にそれを呼んで、自サーバーと `federation` の制限があるドメインへのリダイレクトをたどらずに `ErrFetchRefused` で終えます。WebFinger と NodeInfo の取得も同じです。
 - 実装は `internal/app/federation` の `Fetcher`（取得の規則）と `RemoteActors`（Actor の解決・保存・ジョブ、`PublicKeyResolver`）です。コントラクトテストは `testkit.RemoteActorContract` です。
@@ -292,7 +292,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - 項目の順に、埋め込みなら `attributedTo` がそのアカウントで宛先に `as:Public` を含む投稿、IRI ならアカウントと同じオリジンの投稿を 5 件（`FeaturedMaxPosts`）まで選び、保存済みでなければ §6.3 の outbox と同じく取得した投稿として取り込みます（返信先は取得しない）。1 回の文書はコレクション・ページ・投稿の合わせて 7 件（`FeaturedMaxDocuments`）までです。
   - 選んだ投稿で `content.Interactions.ReplaceRemotePins` がそのアカウントの `status_pins` を置き換えます（コレクションの順、新しいピン留めが先）。空のコレクションと `featured` を宣言しなくなった文書はピン留めを消し、コレクションが取得できなければピン留めを残してジョブを完了にします。ストアの失敗は `Retry` です。
   - `GET /api/v1/accounts/{id}/statuses?pinned=true` はローカルと同じく `status_pins` を返すので、リモートのアカウントのプロフィールの先頭にも固定した投稿が出ます。コントラクトテストは `testkit.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の `featured.json` を取り込みます。
-- 取得から 24 時間を過ぎた Actor は、次に使われたとき（署名の検証・表示・配送）に非同期で取り直します（ジョブ `federation.refresh_actor`、冪等キー `refresh_actor:<account_id>`）。ローカルのアカウントがフォローしている Actor は、定期ジョブ `federation.refresh_actors`（1 時間ごと）が `remote_account_heads (last_fetched_at)` の古い順に 200 件ずつ読み、フォローされているものを取り直します（ADR-0034）。カーソル（`last_fetched_at` と `account_id`）を持った次のジョブが続きを読みます。
+- 取得から 24 時間を過ぎた Actor は、次に使われたとき（署名の検証・表示・配送）に非同期で取り直します（ジョブ `federation.refresh_actor`、冪等キー `refresh_actor:<account_id>`）。ローカルのアカウントがフォローしている Actor は、定期ジョブ `federation.refresh_stale_actors`（1 時間ごと）が `remote_account_heads (last_fetched_at)` の古い順に 200 件ずつ読み、フォローされているものを取り直します（ADR-0034）。カーソル（`last_fetched_at` と `account_id`）を持った次のジョブが続きを読みます。
 
 ### 6.3 投稿
 
@@ -335,7 +335,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - 取り込んだ投稿は、ほかの取得した投稿と同じく保持期間（ADR-0034、`content.purge_remote_statuses`）の対象で、プロフィールのタイムラインに出ます。新しいテーブルは使いません。
   - コントラクトテストは `testkit.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の outbox のフィクスチャ（`outbox.json`・`outbox-page.json`）を取り込みます。
 - 投稿の ID は `published` から作った UUIDv7 です（[data-model §1.3](data-model/01-conventions.md#13-id-とキーセットページング)、#71）。
-- 保持期間を過ぎたリモートの投稿は `content.purge_remote_statuses` が、関係の無くなったリモートのアカウントの過去のプロフィールは `account.prune_remote_profiles` が、受信の原本・記録と配送の記録は `federation.purge` が、どこからも参照されなくなったリモートのカスタム絵文字（管理者が無効にしたものを除く）は `content.purge_remote_emojis`（1 日ごと、ADR-0051 §1）が、件数を区切って消します（ADR-0034、[data-model §4.4 のリモート投稿の保持期間](data-model/04-tables/04-content.md#リモート投稿の保持期間)、§4.2、§4.8）。
+- 保持期間を過ぎたリモートの投稿は `content.purge_remote_statuses` が、関係の無くなったリモートのアカウントの過去のプロフィールは `account.prune_remote_profiles` が、受信の原本・記録と配送の記録は `federation.purge_records` が、どこからも参照されなくなったリモートのカスタム絵文字（管理者が無効にしたものを除く）は `content.purge_remote_emojis`（1 日ごと、ADR-0051 §1）が、件数を区切って消します（ADR-0034、[data-model §4.4 のリモート投稿の保持期間](data-model/04-tables/04-content.md#リモート投稿の保持期間)、§4.2、§4.8）。
   保持期間で消えた投稿（`origin = retention`）は tombstone にならないので、同じ URI の `Create` や取得でまた取り込めます。コントラクトテストは `testkit.RetentionContract` です。
 
 ### 6.4 投稿の取り直し
@@ -346,7 +346,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - 文書が投稿で `id` が投稿の URI と同じで、`attributedTo` が投稿の作者なら、受け取った `Update` と同じく `content.ReviseRemoteStatus` で記録します（メンションの解決を含む）。版の時刻が新しければ版を足し、そうでなければ投票の票数だけを記録します。
   - 410 Gone と、投稿の URI の `Tombstone` は、作者の `Delete` と同じく `content.DeleteRemoteStatus` で削除します（tombstone が残る）。404 は削除しません。フォロワー限定の投稿などはインスタンス Actor の取得に 404 を返すことがあるためです。
   - 取得できない・ほかの作者の・投稿でない文書は `info` のログを残してジョブを完了にし、投稿をそのまま残します。ローカル・削除済み・未知の投稿は何もしません。ストアの失敗は `Retry` です。
-- ジョブ `federation.refetch_statuses` は、アカウントかドメインの投稿をたどって `federation.refetch_status` を投入します。ペイロードは頼んだ監査ログの ID（`request`）、`account_id` か `domain`、カーソル（`before`・`before_account`）、残りの件数（`remaining`）で、冪等キーは `refetch_statuses:<request>:<before_account>:<before>` です。
+- ジョブ `federation.refetch_walk` は、アカウントかドメインの投稿をたどって `federation.refetch_status` を投入します。ペイロードは頼んだ監査ログの ID（`request`）、`account_id` か `domain`、カーソル（`before`・`before_account`）、残りの件数（`remaining`）で、冪等キーは `refetch_statuses:<request>:<before_account>:<before>` です。
   - アカウントは、削除されていないリモートの投稿を新しい順（`content.LiveRemoteStatusIDs`）に 100 件（`RefetchBatch`）ずつ、合わせて 1,000 件（`RefetchMaxStatuses`）までたどります。
   - ドメインは、そのドメインのリモートのアカウントを新しい順（`account.Search`）に 5 件（`RefetchAccountsBatch`）ずつ読み、アカウントごとに新しい投稿 20 件（`RefetchStatusesPerAccount`）まで、合わせて 1,000 件までたどります。
   - 続きのジョブは 1 分後（`RefetchBatchInterval`）に実行し、1 つのサーバーへの取得が一度に集まらないようにします。
@@ -368,7 +368,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `content.favourited` / `content.unfavourited`（リモートの投稿だけ） | `Like` / `Undo Like`（本文は projector がイベントから組み立てて保存する。Mastodon と同じく宛先を持たない） | 投稿の作者の inbox |
 | `content.reacted` / `content.unreacted`（ローカルの人のリモートの投稿へのものだけ） | `content` と `_misskey_reaction`（同じ文字列。Unicode 絵文字か `:shortcode:`）を付けた `Like`、カスタム絵文字なら `tag` に `Emoji` を 1 つ（ADR-0051 の形）。`@context` に `misskey` と `_misskey_reaction` を足す。`Undo Like` はその `Like` を埋め込む（ADR-0052 §3。お気に入りと同じ `Like` の枠の活動） | 投稿の作者の inbox |
 | `content.poll_voted`（リモートの投票だけ） | 選んだ選択肢ごとに `Create`。`object` は `Note`（`id` は回答の `uri`、`name` は選択肢の題、`inReplyTo` は `Question`、`attributedTo` は回答した人、`to` は投票の作者）で、`Create` の `id` は `{Note}/activity`。Mastodon が送る形で、Mastodon・Misskey・Pleroma（Akkoma）・GoToSocial は回答として数える（FR-112）。本文は projector がイベントから組み立てて保存する | 投稿の作者の inbox |
-| `content.poll_voted`（ローカルの投票。ローカルとリモートのアカウントの回答）、`content.poll_closed`（ローカルの投票） | ジョブ `federation.poll_update` を、回答なら 3 分後（`PollUpdateDelay`。冪等キーは投票ごとで、その間の回答は 1 つの `Update` にまとまる）に、締め切りならすぐに（冪等キーは回答のジョブと別で、待っている回答のジョブの後ろに並ばない）動かす。ジョブは投票が投稿の現在版のものなら、その版の `Update` をジョブの ID を活動の ID として記録し、やり直しで別の `Update` を作らない。`Question` の票数は展開がその時点の集計から組み立てる | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー）+ 回答したリモートのアカウント |
+| `content.poll_voted`（ローカルの投票。ローカルとリモートのアカウントの回答）、`content.poll_closed`（ローカルの投票） | ジョブ `federation.update_poll` を、回答なら 3 分後（`PollUpdateDelay`。冪等キーは投票ごとで、その間の回答は 1 つの `Update` にまとまる）に、締め切りならすぐに（冪等キーは回答のジョブと別で、待っている回答のジョブの後ろに並ばない）動かす。ジョブは投票が投稿の現在版のものなら、その版の `Update` をジョブの ID を活動の ID として記録し、やり直しで別の `Update` を作らない。`Question` の票数は展開がその時点の集計から組み立てる | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー）+ 回答したリモートのアカウント |
 | `graph.follow_requested` / `graph.followed`（相手がリモート） | `Follow` | 相手の inbox |
 | `graph.follow_terminated`（`unfollowed` / `blocked` / `moderation` / `moved`、自分がフォローした相手がリモート） | `Undo Follow` | 相手の inbox |
 | `graph.followed` / `graph.follow_accepted` / `graph.follow_rejected`（フォローした人がリモート。相手の `Accept` / `Reject` によるものを除く） | `Accept` / `Reject` | フォローした人の inbox |
@@ -378,7 +378,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `account.profile_revised`（ローカルのプロフィールの 2 版目以降。最初の版はアカウントの作成で、まだだれもフォローしていない） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `account.aliases_changed`（ローカルのアカウントの別名の追加・削除。ADR-0089。連合の向きが `publish` を通すときだけ積む） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `account.lifecycle_event_recorded`（ローカルのアカウントの `deleted`） | `Delete`（Actor の `id`） | リモートフォロワーの inbox + 既知の shared inbox（[data-model §8](data-model/08-deletion-and-purge.md#8-削除と消去)） |
-| `moderation.account_suspension_changed`（ローカルのアカウントの凍結と、その終わり。§11.1） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
+| `moderation.account_suspension_changed`（ローカルのアカウントの凍結と、その終わり。§11.1。本人が無効化している間は積まない） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
+| `account.lifecycle_event_recorded`（ローカルのアカウントの `deactivated` / `reactivated`。§11.2。凍結している間は積まない） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
 | `account.moved`（ローカルのアカウントが自分で移転したとき。`initiated_by = self`。ADR-0089） | `movedTo` 付きの `Update`（Actor の文書）、続けて `Move`（`object_type = move`、`object_id` は `account_moves.id`。`actor` と `object` はこちらの Actor、`target` は移転先の Actor、`to` はこちらの `followers`、`id` は `/ap/activities/{uuid}`） | リモートフォロワーの inbox（shared inbox に集約） |
 | `account.move_cancelled`（ローカルのアカウントの移転の取り消し） | `Update`（Actor の文書。`movedTo` なし） | リモートフォロワーの inbox |
 | `moderation.report_filed`（`forwarded` の通報だけ。§11） | `Flag`（主体はインスタンス Actor） | 通報されたアカウントの inbox |
@@ -481,11 +482,11 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - `sensitive` は CW があれば真です（Mastodon と同じ）。`summary` と `contentMap` は空なら省き、`sensitive`・`content`・`tag`・`attachment` は常に付けます。
   - `attachment` は処理の終わったメディアだけで、種類を問わず `type` は `Document`（Mastodon と同じ。種類は `mediaType` で伝える）、URL・`mediaType`・寸法は `large` の版のもので、アニメーションなら動く版（GIF）です（[ADR-0054](../adr/0054-media-variants-video-audio.md) §5）。焦点が中央なら `focalPoint` を省きます。
     動画・音声は remux したファイルを `url` に、ポスターの `large` を `icon`（`Image`。ポスターがなければ省く）に、長さを `duration`（`PT12.5S` の形の `xsd:duration`）に載せます（Mastodon と同じ形）。
-  - `Mention` は `href` が Actor の IRI、`name` が `@user@domain`（ローカルのアカウントは設定 `account_domain`）、`Hashtag` は `href` が `https://{host}/tags/{name}`（ADR-0018）、`name` が `#name` です。
+  - `Mention` は `href` が Actor の IRI、`name` が `@user@domain`（ローカルのアカウントは設定 `account_domain`）、`Hashtag` は `href` が本文のリンクと同じ `https://{host}/tags/{正規化した名前}`（ADR-0018）、`name` が `#` と保存された表記です。
   - `Emoji`（[ADR-0051](../adr/0051-custom-emoji.md) §3）は、版の本文と CW で使った有効なカスタム絵文字です。`id` はローカルなら `https://{host}/ap/emojis/{uuid}`（リモートなら記録した `uri`、無ければ省く）、`name` は `:shortcode:`、`updated` は現在の画像を設定した時刻、`icon` は `Image` で、`url` と `mediaType` は `large` の版（アニメーションなら動く版の GIF、静止画は常に PNG）です。
     ローカルの投稿とプロフィールの絵文字は、保存のときに原文の `:shortcode:` から有効なローカルの絵文字だけを版に記録したものです（data-model §4.4）。リアクション（ADR-0052）も同じ形を使います（`federation.EmojiTag`）。
 - 引用（FR-114、ADR-0069 §3）は、引用元の作者が外していなければ、`quote` と同じ IRI の `_misskey_quote`・`quoteUrl`・`quoteUri`、承認されていれば `quoteAuthorization` を付け、本文（`content` と `contentMap` のどの言語も）の前に `<p class="quote-inline">RE: <a href="{引用先の表示用 URL}">…</a></p>` を置きます（Mastodon と同じ形）。
-  どの投稿にも `interactionPolicy.canQuote.automaticApproval` を付けます。`public` / `unlisted` の投稿は引用の許可に従って `Public`・作者の followers・作者自身のどれか、`private` / `direct` / `local` は作者自身です。手で承認することはないので `manualApproval` は付けません。
+  どの投稿にも `interactionPolicy.canQuote.automaticApproval` を付けます。配送・投稿の GET・outbox・featured は同じ組み立てを通るので、同じ投稿の `Note` はどこでも同じ形です。`public` / `unlisted` の投稿は引用の許可に従って `Public`・作者の followers・作者自身のどれか、`private` / `direct` / `local` は作者自身です。手で承認することはないので `manualApproval` は付けません。
 - 投票のある投稿は `Question` です（FR-112）。単一選択は `oneOf`、複数選択は `anyOf` に、選択肢ごとの `Note`（`name` は題、`replies` は `totalItems` だけの `Collection`）を載せ、`endTime`（締め切り）、締め切った後は `closed`（`endTime` と同じ時刻）、`votersCount`（`toot:votersCount`）を付けます。
   票数は文書を組み立てる時点の集計で、作者が締め切りまで票数を隠す投票では締め切りまで 0 です。編集されていない投稿の票数の `Update` は `updated` を持たず、受け取ったサーバーは投稿を編集済みにしません（Mastodon は投票だけの更新として扱う）。
 - Note は `federation.notes`（`internal/app/federation`）の 1 か所で組み立て、配送（`Create` / `Update` の `object`）とオブジェクトの GET（§10）が同じものを使います。版のメディア・メンション先・ハッシュタグ・カスタム絵文字は `content.Reader.Parts` で引きます。
@@ -525,24 +526,24 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
     同じ URL を別の所有者が別の焦点で宣言しても、大きさの設定を変えても、別の入力から作った版を返しません。M / L は作らず、`full` を使います。
   - クライアント API はリモートの画像の `small` にこの URL を、`medium` / `large` に `full` を載せます。リモートのアカウントのアイコン・ヘッダーと添付の `preview_url` が小さくなり、アニメーションを止めて表示できます。
 - プロキシ（`content.MediaProxy` と `internal/interface/media`）は、`HTTPClient` で元の URL を取得し、形式を中身の先頭のバイトで判定して（ADR-0019 §8。許可リストは JPEG / PNG / GIF / WebP / AVIF / MP4 / WebM / MP3 / Ogg で、SVG は拒否）、
-  判定した `Content-Type`、`Cache-Control: public, max-age={remote_media_cache_ttl}`、`X-Content-Type-Options: nosniff`、`Content-Security-Policy: default-src 'none'; sandbox`、`Cross-Origin-Resource-Policy: cross-origin` を付けて中継します。
+  判定した `Content-Type`、`Cache-Control: public, max-age={remote_media_cache_ttl_seconds}`、`X-Content-Type-Options: nosniff`、`Content-Security-Policy: default-src 'none'; sandbox`、`Cross-Origin-Resource-Policy: cross-origin` を付けて中継します。
   リモートのヘッダ（`Content-Type` など）と利用者のリクエストのヘッダは使いません。CDN がキャッシュします（NFR-COST-4）。
 - サイズの上限は、中身で判定した種類ごとに画像 16 MiB、動画・音声 100 MiB です（ADR-0019 §1）。`Content-Length` が上限を超えるものは本文を読まずに断ります。
   長さのない画像は上限まで読んでから返し、長さのない動画・音声は中継の途中で上限を超えたらレスポンスを中断します（CDN が途中までのファイルをキャッシュしないように）。
 - カスタム絵文字の画像（`remote_media.purpose = emoji`、`custom_emoji_images` が指すもの）は、形式を PNG / GIF / WebP に絞り、上限を設定 `remote_custom_emoji_max_bytes`（既定 1 MiB）にします（ADR-0051 §2）。
   超えるもの・ほかの形式のものは 404 で、上限を下げる前に保存したキャッシュの複製も同じです。
 - 署名がない・合わない URL、記録のないメディア、`media_fetch` の制限、SSRF ガードが拒否した宛先、リモートの 4xx、許可リストにない形式、上限を超えるものは、どれも 404 です。リモートに届かないときと 5xx は 502 です。エラーのレスポンスは `Cache-Control: no-store` です。
-- インスタンス設定 `remote_media_policy`（`none` / `avatars` / `all`、既定 `none`）と `remote_media_cache_ttl`（秒、既定 86400）で、TTL 付きのキャッシュを選べます（FR-409）。
+- インスタンス設定 `remote_media_policy`（`none` / `avatars` / `all`、既定 `none`）と `remote_media_cache_ttl_seconds`（秒、既定 86400）で、TTL 付きのキャッシュを選べます（FR-409）。
   - `none` では、プロキシは毎回取得して中継し、キャッシュを読みも書きもしません。
   - `all` ではすべてのリモートのメディアを、`avatars` ではプロフィールのアバター・ヘッダー（`account` モジュールの `IsMediaReferenced`）とカスタム絵文字の画像（`custom_emoji_images`）だけを、キャッシュします。
   - キャッシュは URL ごとに 1 つで、Blob の非公開のキー `remote/{URL の SHA-256 の 16 進}-{乱数}` に置き、`remote_media_cache` に記録します。
     取得し直すたびに新しいキーに書くので、期限切れの複製を消すクリーンアップが、取得し直した複製の Blob を消すことはありません。
     キーは書く前に `media_blob_deletions`（data-model §4.4）に猶予付きで記録し、行を記録するトランザクションで外します。置き換えた前の複製の Blob は同じトランザクションで削除待ちに記録し、次のクリーンアップが消します。
     同じ URL を同時に取得し直したときは、前の行を読んでロックしてから置き換えるので、どちらの Blob も記録から漏れません。
-    期限（`expires_at` = 取得時刻 + `remote_media_cache_ttl`）の内はそこから返し、期限切れ・行がない・Blob がないときは取得し直します。
+    期限（`expires_at` = 取得時刻 + `remote_media_cache_ttl_seconds`）の内はそこから返し、期限切れ・行がない・Blob がないときは取得し直します。
     取得したファイルは中身で判定した形式とサイズの上限の検査を通したうえで Blob に最後まで書いてから返すので、上限を超えるもの・途中で切れたものは残りも返りもしません。
   - 返した時刻（`last_accessed_at`）は 1 時間より細かくは書きません。返すたびにデータベースへ書かないためです。
-  - 1 時間ごとのジョブ `media.cleanup_remote` が、期限切れのものを消し、続けて合計サイズが設定 `remote_media_cache_max_bytes`（既定 1 GiB）を超える分を `last_accessed_at` の古い順に消します（FR-803）。
+  - 1 時間ごとのジョブ `media.purge_remote_cache` が、期限切れのものを消し、続けて合計サイズが設定 `remote_media_cache_max_bytes`（既定 1 GiB）を超える分を `last_accessed_at` の古い順に消します（FR-803）。
     容量の上限は Blob の費用に効くので、インスタンス設定ではなく運用者の設定です。1 回の実行で見る行数には上限があり、残りは次の実行が消します。
     行を消すトランザクションで Blob のキーを `media_blob_deletions` に記録してから Blob を消すので、Blob の削除に失敗してもキーが残って次の実行が消し直し、どこからも指されない Blob は残りません。
     行は読んだときの `fetched_at` のままのときだけ消すので、その間に取得し直したものは行も Blob も残ります。
@@ -594,12 +595,14 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   カードは連合しません。
 - **クローラーのルール**: 管理者がドメインごとに置くルール（`link_card_domain_rules`、[ADR-0132](../adr/0132-link-card-domain-rules.md)）は、処分と同じホストに当たり、親ドメインにも効きます。`no_fetch` は `suspend` と同じく取得せず既存のカードを出さず、`no_images` は `reject_media` と同じく画像を取得せず既存の画像を出しません。
   リダイレクトの各段にも当て、飛ばした取得は失敗の記憶に書きません。メディアプロキシは止めたホストのカードの画像を配りません。ルールは連合とカード以外のメディアに効きません。
-- **保持**: 1 日 1 回のジョブ `content.cleanup_link_cards` が、どの投稿からも参照されず取得から 14 日を過ぎたカードと、どのカードも使わない画像（`link_card_media` と `media_files`）を消します（FR-803）。
-- インスタンス設定 `link_cards_enabled`（既定 `true`）が偽のとき、ジョブは何もせず、API はカードを返しません。
+- **保持**: 1 日 1 回のジョブ `content.purge_link_cards` が、どの投稿からも参照されず取得から 14 日を過ぎたカードと、どのカードも使わない画像（`link_card_media` と `media_files`）を消します（FR-803）。
+- インスタンス設定 `link_cards`（既定 `true`）が偽のとき、ジョブは何もせず、API はカードを返しません。
 
 ## 10. コレクションとオブジェクトの GET
 
-連合の向きが `publish` を通さないとき、投稿・`/activity`・コレクション（outbox・followers・following・featured）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
+連合の向きが `publish` を通さないとき、投稿・`/activity`・ブーストの `Announce`・コレクション（outbox・followers・following・featured）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
+
+削除されたローカルの Actor（`deleted` を記録した時点から、消去の後も）の GET は、だれにでも `410 Gone` と `Tombstone`（`id` は Actor の URI）です。WebFinger（`acct:`・Actor の `id`・プロフィールの URL のどれでも）と `/@{username}` への ActivityPub の要求も `410` です（ADR-0144 §1）。`Delete` を受け損ねたサーバーが消えたと分かるためです。`deleted` より前の状態は変わりません（凍結中は最小の文書、それ以外の有効でない Actor は `404`）。存在しないユーザーとリモートの Actor も `404` です。HTML を求める要求は、削除された投稿と同じく `404` です。削除された Actor のコレクションと inbox は `404` です。連合の向きが `off` なら、削除されていても `404` です（§14.2）。サービスの終了の配送中も、削除済みの Actor は `410` です。
 
 クローズしたサーバー（[§15](#15-サービスの終了)）では、これらの GET は連合の向きによらず `410 Gone` と `Tombstone`（`id` は要求された URI）です。ローカルの Actor は配送の間だけ凍結と同じ最小の文書を返します。
 
@@ -615,21 +618,28 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - 投稿の表示用 URL `/@{username}/status/{uuid}`（[ADR-0053](../adr/0053-status-page-url.md)）に ActivityPub の `Accept` で来たリクエストは、未ログインで閲覧できる削除されていないローカルの投稿だけ、その `id` へ `302` でリダイレクトし、それ以外は 404 です（`federation.Objects.PageStatusURI`）。
   URL を貼った検索（FR-305）で、ほかのサーバーが投稿を引けるようにするためです。`id` の GET は上の規則で改めて判定します。
   ローカルの投稿の `url`（`Note` とクライアント API）は保存せず、読むときに作者の現在のユーザー名と投稿 ID から作ります。
+- 引用先が `local` の投稿のとき、連合する `Note` は `quote`・その別名・`quoteAuthorization`・代替リンクを持ちません。公開範囲が `local`・`private`・`direct` のローカルの投稿は、リモートの投稿を引用できないので、`QuoteRequest` も送りません（ADR-0144 §4）。
 - `GET /ap/quote_authorizations/{uuid}` は、このサーバーが出した引用の承認の `QuoteAuthorization`（`attributedTo` は引用先の作者、`interactingObject` は引用元、`interactionTarget` は引用先）を `@context` 付きで返します（ADR-0069 §1）。
+  引用先が `local` の投稿の承認は、取り消しや削除の後も含めて `404` です（[ADR-0144](../adr/0144-federation-differences-uri-quote.md) §4）。
   引用元がすでに示しているものなので、だれにでも返し、`public, max-age=60` です（Authorized Fetch のときは署名を求める）。取り消した承認と、引用先が削除された承認は `410 Gone` と `Tombstone`、無いものは 404 です。
+- `GET /ap/activities/{uuid}` は、公開範囲が `public` / `unlisted` で取り消されていないローカルのブーストの `Announce` だけを、配送と同じ形で保存している事実から組み立てて返します（`federation.Objects.Announce`、[ADR-0144](../adr/0144-federation-differences-uri-quote.md) §5）。
+  - ブーストした人の実効の公開範囲が `public` / `unlisted` でないとき（上限がかかったとき）、ブーストした人や、ローカルの引用先の投稿の作者を `content.CanView` が見せないとき（凍結・ブロック）、ブーストした投稿が削除されたときは 404 です。リモートの投稿のブーストは、投稿の作者については判定しません（`CanView` の `ContextObjectFetch` はこのサーバーの投稿だけを扱うため）。
+  - 未ログインでも同じ結果になる応答だけ `public, max-age=60` で、HTML を求めるリクエストは 404 です。ブーストは `Undo` を配送するので、取り消した後は `410` にせず 404 です。
+  - 残りの活動（`Follow`・`Like`・`Undo`・`Update`・`Delete`・`Accept`・`Reject`・`Block`・`Move`・`Flag`）、`/ap/objects/{id}/quote_request`、投票の `/ap/objects/{vote}` とその `/activity`、`{object}/replies`・`/likes`・`/shares` は 404 で、文書でも広告しません。これらの id は取得できず、ActivityPub §3.1 の取得できない id の例外として扱います。あとからルートを足しても id は変わりません。
 - `GET /ap/emojis/{uuid}` は、有効なローカルのカスタム絵文字の `Emoji` を `@context` 付きで返します（Mastodon は `id` を引いて絵文字を解決する。ADR-0051 §3）。存在しない・削除した・無効の絵文字と、HTML を求めるリクエストは同じ 404 です。絵文字と画像は公開のものなので、Authorized Fetch は当てず、`public, max-age=60` です。
 - コレクションはだれにも同じ内容を返します。outbox・followers・following は `totalItems` と最初のページ（`?page=true`）へのリンクを持つ `OrderedCollection` で、ページ（`OrderedCollectionPage`）は `partOf` と次のページ（`?max_id={カーソル}&page=true`）を持ちます（Mastodon と同じ形）。
   - outbox は、未ログインの閲覧者がプロフィールで見られる投稿（`public` / `unlisted`）の `Create` を、新しい順に 20 件ずつ返します。ブーストは載せません。`totalItems` は削除されていない投稿の数です（Mastodon と同じ）。
   - followers / following は、承認済みのフォローの相手の Actor の `id` を、新しいフォロー順に 40 件ずつ返します。有効でないアカウントは省き、`totalItems` はフォローの件数です。
   - featured は、ピン留めした投稿のうち未ログインで閲覧できるもの（`public` / `unlisted`）の `Note` を `orderedItems` に並べます。featured-tags は空の `Collection` です。
+  - 埋め込む文書は `@context` を持たないので、outbox のページと featured の `@context` は §7.4 の文書と同じもの（`federation.LDContext`）で、埋め込む文書の語を定義します。それ以外は ActivityStreams だけです。
 - Authorized Fetch（FR-408、S）はインスタンス設定 `authorized_fetch`（既定 `false`、[data-model §4.9](data-model/04-tables/09-instance.md#49-instance)）で有効にします。設定はリクエストごとに読むので、変更はすぐに効きます。
   有効なときは、検証できる署名の無い GET（署名なし・検証できない・未ログインとして扱う署名者）に次のように答えます。
 
   | 対象 | 署名なし | 検証できる署名 |
   | --- | --- | --- |
-  | 利用者の Actor | 鍵の取得のための最小の文書（`@context`・`id`・`type`・`preferredUsername`・`inbox`・`publicKey`・`endpoints`。Mastodon と同じ項目。移転済みなら `movedTo` も） | Actor の文書全体 |
+  | 利用者の Actor | 鍵の取得のための最小の文書（`@context`・`id`・`type`・`preferredUsername`・`inbox`・`publicKey`・`endpoints`。ここまでは Mastodon と同じ項目。これに加えて、FEP-8b32 の証明の鍵を解決するための `assertionMethod`、移転済みなら `movedTo`） | Actor の文書全体 |
   | インスタンス Actor | 文書全体（もともと最小の文書） | 文書全体 |
-  | オブジェクト（`/activity` を含む）・コレクション | `401` | 無効なときと同じ判定 |
+  | オブジェクト（`/activity` を含む）・ブーストの `Announce`・コレクション | `401` | 無効なときと同じ判定 |
   | WebFinger・NodeInfo・host-meta・HTML を求めるリクエスト | 無効なときと同じ | 無効なときと同じ |
 
   - `401` は、存在するかどうかを確かめる前に返します（存在が漏れない）。ADR-0032 の GET の署名を求める `Accept-Signature: sig1=("@method" "@target-uri");created` を付けるので、double-knocking のクライアントは RFC 9421 で再送します。
@@ -686,6 +696,24 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - 処分を解除しても、切ったフォローは戻しません。
 - 受信した Actor の `suspended: true` は、リモートのアカウントの表示に出すだけで、このサーバーの処分にはしません。
 
+### 11.2 本人による無効化
+
+本人による無効化（[ADR-0145](../adr/0145-self-deactivation.md)）は、処分ではありませんが、連合では凍結と同じ文書で表します。
+
+| 契機 | 送るもの | 宛先 |
+| --- | --- | --- |
+| `deactivated` | `Update(Actor)`（`suspended: true`、プロフィールを空にする） | `Delete`（Actor）と同じ（§7.2） |
+| `reactivated` | `Update(Actor)`（元のプロフィール） | 同上 |
+| 30 日後の `deleted` | `Delete`（Actor）。§7.1 のアカウント削除と同じ経路 | 同上 |
+
+- Actor の GET は `federation.ActorDocument.Suspend` の文書を返し、`id`・コレクション・inbox・鍵を残します。WebFinger と `/@name` のリダイレクトは答えます。コレクションと投稿の GET は `404` です（`410` にしない）。投稿ごとの `Delete` は送りません。
+- アカウントが「見えない」状態は、無効化と凍結のどちらかが続く間は変わらないので、片方の変化だけでは何も送りません。`deactivated` と `reactivated` の projector は凍結を、`moderation.account_suspension_changed` の projector は無効化を、同じトランザクションで確かめます。
+- 個人の inbox は受け付けます（`202`）。受信の扱いは次のとおりです。shared inbox も同じです。
+  - 新しい `Follow` は `Reject` し、記録しません（`FollowRefusals`）。戻っても復元しません。すでにあるフォローか申請について届き直した `Follow` は、何も答えずに落とします。`Reject` を返すと、相手のサーバーで関係が切れるためです。
+  - `Undo(Follow)`・`Accept`・`Reject` と Actor についての活動は、処理します。
+  - `Create` の `Mention` と宛先からこの人を除きます。宛先がこの人だけの `direct` の投稿は保存しません。ほかの人に見える投稿は残ります。
+  - `Like`（`_misskey_reaction` を含む）と `Announce` は数として記録し、通知しません。
+
 ## 12. テスト
 
 | 種類 | 内容 | 実行 |
@@ -733,7 +761,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - 同期の部分（§3.1）は変えません。`refetch` のアクティビティと `Announce` だけ、署名者がどれかの参加中のリレーの Actor（`relay_states.relay_actor_uri`）かを引き、そうならジョブに `relay_id` を付けます。
 - 非同期の部分は、`relay_id` の付いたアクティビティを、何かを取得する前にリレーの関門（`federation.Relays.Admit`）に通します。
   1. 登録が `receive = false`、またはリレーが `accepted` でなければ捨てる。
-  2. リレーごとの 1 時間（UTC の時）の件数を KV（名前空間 `federation.relay_ingest`、キーは `<relay_id>:<YYYYMMDDHH>`、25 時間）で数え、設定 `relay_ingest_hourly_limit`（既定 1,000）を超えたら捨てる。
+  2. リレーごとの 1 時間（UTC の時）の件数を KV（名前空間 `federation.relay_ingest`、キーは `<relay_id>:<YYYYMMDDHH>`、25 時間）で数え、設定 `relay_max_activities_per_hour`（既定 1,000）を超えたら捨てる。
   3. `Create` / `Update` の `actor`、`Announce` の `object` のホストのドメインか、保存済みのアカウントに `federation` か `public_discovery` の制限があれば捨てる（`moderation.FederationPolicy.DiscoveryRestricted`）。`Delete` / `Undo` は捨てない。
 - 通ったものは、`trust = refetch` のとおりオリジンから取り直して（§3.2）、ほかの受信と同じハンドラで扱います。
   - `Create`（と、§3.3 で `Create` として扱う `Update`）は、取り込み範囲（§6.3）に入らなくても、`public` なら取り込みます。返信先と未知のメンション先は取得せず、取り込みのトランザクションで `relayed_statuses` に記録します。
@@ -774,7 +802,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 | 展開と配送（§7.2・§7.3） | すべて `skipped` | `follow_out`・`follow_in` の `Reject`・`retract`・`protect` だけ送る | `publish`・`follow_in`・`retract`・`protect` だけ送る | すべて送る |
 | 外の取得（§6） | しない | する | 署名の検証と配送の宛先に要る Actor だけ。メディアプロキシはフォロワーの Actor の画像だけ | する |
 | ローカルの Actor の GET（§10） | `404` | 鍵の取得のための最小の文書（Authorized Fetch の署名なしと同じ項目） | 全体を返す | 全体を返す |
-| 投稿・`/activity`・コレクション・カスタム絵文字・引用の承認の GET（§10） | `404` | `404` | 返す | 返す |
+| 投稿・`/activity`・ブーストの `Announce`・コレクション・カスタム絵文字・引用の承認の GET（§10） | `404` | `404` | 返す | 返す |
 | インスタンス Actor の GET | `404` | 返す | 返す | 返す |
 | WebFinger・host-meta | `404` | 答える | 答える | 答える |
 | NodeInfo | `404` | 答える | 答える | 答える |
@@ -822,7 +850,7 @@ NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`s
 
 ### 15.2 クローズの配送
 
-- `closed` を記録したトランザクションで、projector がジョブ `instance.closure_fanout` を outbox に積みます（`appfederation.ClosureDeletes`）。
+- `closed` を記録したトランザクションで、projector がジョブ `instance.closure_delete_actors` を outbox に積みます（`appfederation.ClosureDeletes`）。
 - ジョブはローカルのアカウントを ID 順に 100 件ずつ読み、インスタンス Actor と削除済みを除いて（凍結中は含む）、1 つのトランザクションで、アカウントごとに `closure_deletes` の行と `Delete`（Actor）の `outbound_activities` を記録し、その展開（§7.2）と次のページを積みます。ライフサイクル（`account_lifecycle_events`）は変えず、投稿ごとの `Delete` は送りません。
 - 1 巡目は移転していないアカウント、2 巡目は移転済みのアカウント（`account_move_states` に行がある。ADR-0089）です。移転済みの `Delete` は最後のフェーズにまとまり、それまでの間、移転済みの Actor の GET は `movedTo` を返し続けます。
 - 次のページは、前のページまでの `Delete` の展開がすべて終わり（`outbound_fanout_completions`）、終わっていない配送が 10,000 件以下になってから進みます。条件を満たさないページは、1 分後の同じページのジョブを積み直して待ちます。
@@ -831,7 +859,7 @@ NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`s
 
 ### 15.3 完了と進捗
 
-- 10 分ごとの定期ジョブ `instance.closure_completion` が、クローズの配送中に次をすべて確かめたら、`delivery_completed` を記録します（監査ログの `service_closure_delivery_completed`、操作した人はサーバー自身）。
+- 10 分ごとの定期ジョブ `instance.check_closure_delivery` が、クローズの配送中に次をすべて確かめたら、`delivery_completed` を記録します（監査ログの `service_closure_delivery_completed`、操作した人はサーバー自身）。
   - 対象のローカルのアカウントすべてに `closure_deletes` がある
   - どの `Delete` も展開が終わっている
   - どの配送も終わっている: 最後の試行が `succeeded` / `permanent_failure` / `skipped`、または `retryable_failure` で試行を使い切った（dead job。9 回）
@@ -845,7 +873,7 @@ NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`s
 | inbox（共有・Actor ごと） | 署名の検証より前に `410` | `410` |
 | ローカルの Actor の GET | 凍結と同じ最小の文書（空のプロフィール・`suspended: true`・鍵・移転済みは `movedTo`）を、だれにでも `private, no-store` で返す | `410` と `Tombstone` |
 | インスタンス Actor の GET | 文書全体を返す | `410` と `Tombstone` |
-| 投稿・`/activity`・コレクション・カスタム絵文字・引用の承認の GET | `410` と `Tombstone` | 同左 |
+| 投稿・`/activity`・ブーストの `Announce`・コレクション・カスタム絵文字・引用の承認の GET | `410` と `Tombstone` | 同左 |
 | WebFinger・host-meta・`/@{username}` の ActivityPub の要求 | `410` | 同左 |
 | NodeInfo | 答える（`metadata.serviceClosure` に状態） | 同左 |
 

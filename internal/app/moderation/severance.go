@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -46,6 +47,8 @@ type SeveranceRepository interface {
 	// InsertSeverance inserts a severance and reports whether it did: a severance of an account
 	// whose action already has one for it inserts nothing.
 	InsertSeverance(ctx context.Context, tx uow.Tx, s moderation.Severance) (bool, error)
+	// EraseSeverancesOf deletes the severances of an account.
+	EraseSeverancesOf(ctx context.Context, tx uow.Tx, accountID string) error
 	// FindSeverance returns a severance of accountID with what its action suspended; one of
 	// another account is ErrNotFound.
 	FindSeverance(ctx context.Context, accountID, id string) (moderation.SeveranceRecord, error)
@@ -234,4 +237,11 @@ func (s *Service) handleSeverDomain(ctx context.Context, j queue.Job) queue.Resu
 // relationships_severed notification; one of another account fails with ErrNotFound.
 func (s *Service) SeveranceOf(ctx context.Context, accountID, id string) (SeveranceRecord, error) {
 	return s.d.Repository.FindSeverance(ctx, accountID, id)
+}
+
+// EraseAccountData implements account.DataEraser: it deletes the records of the follows that a
+// deleted local account lost to suspensions (data-model §8). It is safe to repeat.
+func (s *Service) EraseAccountData(ctx context.Context, t appaccount.ErasureTarget, _ string, _ int) (appaccount.ErasureStep, error) {
+	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.EraseSeverancesOf(ctx, tx, t.AccountID) })
+	return appaccount.ErasureStep{Done: true}, err
 }

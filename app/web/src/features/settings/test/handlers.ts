@@ -311,12 +311,10 @@ export const handlers = [
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
   // operationIds listBlocks, listMutes, listFollowRequests, acceptFollowRequest, rejectFollowRequest: empty lists by default.
-  http.get(`${apiBase}/blocks`, ({ request }) => withViewer(request, () => HttpResponse.json({ accounts: [] }))),
-  http.get(`${apiBase}/mutes`, ({ request }) => withViewer(request, () => HttpResponse.json({ mutes: [] }))),
+  http.get(`${apiBase}/blocks`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
+  http.get(`${apiBase}/mutes`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   // operationIds listDomainMutes, muteDomain, unmuteDomain: no muted domains by default; muting answers the domain in lower case.
-  http.get(`${apiBase}/domain_mutes`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json({ domain_mutes: [] })),
-  ),
+  http.get(`${apiBase}/domain_mutes`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   http.post(`${apiBase}/domain_mutes`, async ({ request }) => {
     const body = (await request.clone().json()) as Schemas["MuteDomainRequest"];
     return withViewer(request, () =>
@@ -329,10 +327,8 @@ export const handlers = [
   http.delete(`${apiBase}/domain_mutes/:domain`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
-  http.get(`${apiBase}/follow_requests`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json({ accounts: [] })),
-  ),
-  http.post(`${apiBase}/follow_requests/:id/authorize`, ({ request, params }) =>
+  http.get(`${apiBase}/follow_requests`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
+  http.post(`${apiBase}/follow_requests/:id/accept`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json({ ...relationshipFixture(String(params["id"])), followed_by: true })),
   ),
   http.post(`${apiBase}/follow_requests/:id/reject`, ({ request, params }) =>
@@ -351,6 +347,12 @@ export const handlers = [
           headers: { "Content-Type": "application/zip" },
         }),
     ),
+  ),
+  http.get(`${apiBase}/accounts/deactivation`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ deletion_due_at: "2026-12-03T09:00:00Z" })),
+  ),
+  http.post(`${apiBase}/accounts/deactivation`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ deletion_due_at: "2026-12-03T09:00:00Z" })),
   ),
   http.post(`${apiBase}/accounts/delete`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),

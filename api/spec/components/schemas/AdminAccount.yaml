@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  An account as the moderators see it (FR-714). It never includes an email or IP address.
+  An account as the moderators see it. It never includes an email or IP address.
 type: object
 required: [id, account, local, state, restrictions]
 properties:
@@ -15,10 +15,14 @@ properties:
     $ref: ./AdminAccountState.yaml
   restrictions:
     description: |
-      What the account's own actions take away now (data-model §5.2), in a fixed order.
+      What the account's own actions take away now, in a fixed order.
       The domain actions on its domain are listed apart.
     type: array
     items:
       $ref: ./AdminAccountRestriction.yaml
   registration_state:
-    $ref: ./AdminAccountRegistrationState.yaml
+    description: |
+      Where the registration of a local account stands; a user made with the command line is
+      `approved`. Omitted for a remote account.
+    allOf:
+      - $ref: ./RegistrationState.yaml

@@ -21,7 +21,7 @@ const searchSchema = z.object({
 
 /** The signed-in user's notifications (FR-205). */
 export const Route = createFileRoute("/notifications")({
-  staticData: { title: "client:notifications.title", hideHeading: true },
+  staticData: { reloadSafe: true, title: "client:notifications.title", hideHeading: true },
   validateSearch: searchSchema,
   loaderDeps: ({ search: { filter } }): { filter: NotificationFilter } => ({ filter: filter ?? "all" }),
   // Notifications are the user's own, so the page needs a session (web-client/10-api-client-and-auth.md §10).

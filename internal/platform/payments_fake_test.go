@@ -19,7 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/platform"
 )
 
-// TestE2EFakesPaymentsCheckout starts the test build with payments_provider = fake and profile =
+// TestE2EFakesPaymentsCheckout starts the test build with payments = fake and profile =
 // development, as the demonstration does (ADR-0117 §2): the start warns that this is a test
 // build, and a user subscribes to a plan through the fake's checkout page, paying after a failed
 // attempt, and gets the plan's role. The same configuration in the production profile does not
@@ -28,9 +28,9 @@ func TestE2EFakesPaymentsCheckout(t *testing.T) {
 	t.Parallel()
 	env := map[string]string{
 		"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_QUEUE": "inline",
-		"MY_PROFILE": "development", "MY_PAYMENTS_PROVIDER": "fake",
+		"MY_PROFILE": "development", "MY_PAYMENTS": "fake",
 		// The program needs email; each one fails at once.
-		"MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_SMTP_HOST": "127.0.0.1", "MY_SMTP_PORT": closingSMTPServer(t),
+		"MY_MAIL": "smtp", "MY_MAIL_FROM": "noreply@example.test", "MY_MAIL_SMTP_HOST": "127.0.0.1", "MY_MAIL_SMTP_PORT": closingSMTPServer(t),
 	}
 	cfg := loadConfig(t, env)
 	logs := &syncBuffer{}
@@ -46,12 +46,12 @@ func TestE2EFakesPaymentsCheckout(t *testing.T) {
 
 	admin := e.user("alice")
 	e.want(e.do(http.MethodPost, "/admin/roles", admin.token, map[string]any{"key": "supporter", "position": 10, "permissions": []string{}}, nil),
-		http.StatusOK, "POST /admin/roles")
+		http.StatusCreated, "POST /admin/roles")
 	var plan clientapi.AdminSupporterPlan
 	e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, map[string]any{
 		"role": "supporter", "name": "Supporter", "monthly_price": map[string]string{"amount": "500", "currency": "JPY"},
 		"annual_discount_percent": 0, "emoji_limit": 0, "rank": 1, "visibility": "public",
-	}, &plan), http.StatusOK, "POST /admin/supporter_plans")
+	}, &plan), http.StatusCreated, "POST /admin/supporter_plans")
 	var prog clientapi.AdminSupporterProgram
 	if res := e.do(http.MethodPut, "/admin/supporter_program", admin.token, map[string]any{"enabled": true}, &prog); res.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(res.Body)
@@ -107,6 +107,11 @@ func TestE2EFakesPaymentsCheckout(t *testing.T) {
 	e.want(e.do(http.MethodGet, "/supporter/subscription", bob.token, nil, &own), http.StatusOK, "GET /supporter/subscription")
 	if own.Subscription == nil || own.Subscription.State != clientapi.SupporterSubscriptionStateActive {
 		t.Fatalf("bob's subscription after paying: %+v", own.Subscription)
+	}
+	// A paid subscription keeps the account from being deactivated (ADR-0145 §1).
+	res := e.do(http.MethodPost, "/accounts/deactivation", bob.token, map[string]any{"password": "correct horse battery staple"}, nil)
+	if typ := e.want(res, http.StatusConflict, "deactivate with a subscription"); typ != clientapi.ProblemTypeDeactivationRefused {
+		t.Errorf("deactivate with a subscription: %s", typ)
 	}
 	if roles := e.roleKeys(admin, bob); !slices.Contains(roles, "supporter") {
 		t.Errorf("bob's roles %v, want supporter", roles)

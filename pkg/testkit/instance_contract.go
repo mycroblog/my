@@ -39,7 +39,7 @@ type InstanceFactory func(t *testing.T, opts uow.Options) InstanceHarness
 // (instanceLinkCardDomainCases), the theme (instanceThemeCases), the brand
 // images (instanceBrandCases), the
 // announcements (instanceAnnouncementCases), the service closure (instanceClosureCases), and the
-// secrets of the instance (instanceSecretCases).
+// secrets of the instance (instanceSecretCases), and its domains (instanceDomainCases).
 func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 	t.Helper()
 	cases := []struct {
@@ -65,6 +65,7 @@ func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 	cases = append(cases, instanceAnnouncementCases...)
 	cases = append(cases, instanceClosureCases...)
 	cases = append(cases, instanceSecretCases...)
+	cases = append(cases, instanceDomainCases...)
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newInstanceEnv(t, newHarness)) })
 	}
@@ -137,9 +138,9 @@ func instanceReadsDefaults(t *testing.T, e *instanceEnv) {
 		}
 	}
 	if s.RegistrationMode() != instance.RegistrationApproval || s.MaxStatusLength() != 500 || s.DefaultLocale() != "en" ||
-		s.LocalTimelineAccess() != instance.TimelineEveryone || s.FederatedTimelineAccess() != instance.TimelineEveryone {
+		s.LocalTimelineVisibility() != instance.AudienceEveryone || s.FederatedTimelineVisibility() != instance.AudienceSignedIn {
 		t.Errorf("typed defaults = %v %d %q %v %v", s.RegistrationMode(), s.MaxStatusLength(), s.DefaultLocale(),
-			s.LocalTimelineAccess(), s.FederatedTimelineAccess())
+			s.LocalTimelineVisibility(), s.FederatedTimelineVisibility())
 	}
 	texts, err := e.service.Texts(t.Context())
 	if err != nil || len(texts) != 0 {
@@ -184,8 +185,8 @@ func instanceStoresCanonicalValues(t *testing.T, e *instanceEnv) {
 		raw, want string
 	}{
 		{instance.SettingAuthorizedFetch, "TRUE", "true"},
-		{instance.SettingLocalTimelineAccess, "off", "off"},
-		{instance.SettingFederatedTimelineAccess, "logged_in", "logged_in"},
+		{instance.SettingLocalTimelineVisibility, "off", "off"},
+		{instance.SettingFederatedTimelineVisibility, "signed_in", "signed_in"},
 		{instance.SettingMaxStatusLength, "0750", "750"},
 		{instance.SettingDefaultLocale, "zh_hant_tw", "zh-Hant-TW"},
 		{instance.SettingRegistrationMode, "invite", "invite"},
@@ -198,10 +199,10 @@ func instanceStoresCanonicalValues(t *testing.T, e *instanceEnv) {
 		}
 	}
 	s := e.settings(t)
-	if !s.AuthorizedFetch() || s.LocalTimelineAccess() != instance.TimelineOff ||
-		s.FederatedTimelineAccess() != instance.TimelineLoggedIn || s.MaxStatusLength() != 750 ||
+	if !s.AuthorizedFetch() || s.LocalTimelineVisibility() != instance.AudienceOff ||
+		s.FederatedTimelineVisibility() != instance.AudienceSignedIn || s.MaxStatusLength() != 750 ||
 		s.DefaultLocale() != "zh-Hant-TW" || s.RegistrationMode() != instance.RegistrationInvite {
-		t.Errorf("typed values = %v %v %v %d %q %v", s.AuthorizedFetch(), s.LocalTimelineAccess(), s.FederatedTimelineAccess(),
+		t.Errorf("typed values = %v %v %v %d %q %v", s.AuthorizedFetch(), s.LocalTimelineVisibility(), s.FederatedTimelineVisibility(),
 			s.MaxStatusLength(), s.DefaultLocale(), s.RegistrationMode())
 	}
 }
@@ -218,7 +219,7 @@ func instanceRejectsInvalidSettings(t *testing.T, e *instanceEnv) {
 		{instance.SettingMaxStatusLength, "0", instance.ErrInvalidValue},
 		{instance.SettingMaxStatusLength, "100001", instance.ErrInvalidValue},
 		{instance.SettingMaxStatusLength, "lots", instance.ErrInvalidValue},
-		{instance.SettingLocalTimelineAccess, "true", instance.ErrInvalidValue},
+		{instance.SettingLocalTimelineVisibility, "true", instance.ErrInvalidValue},
 		{instance.SettingAuthorizedFetch, "yes", instance.ErrInvalidValue},
 		{instance.SettingDefaultLocale, "", instance.ErrInvalidValue},
 		{instance.SettingDefaultLocale, "not a locale", instance.ErrInvalidValue},
@@ -243,11 +244,11 @@ func instanceSetsSeveralSettings(t *testing.T, e *instanceEnv) {
 	ctx := t.Context()
 	_, err := e.service.SetSettings(ctx, []appinstance.SetSettingInput{
 		{Key: instance.SettingRegistrationMode, Value: "invite"},
-		{Key: instance.SettingLocalTimelineAccess, Value: "maybe"},
+		{Key: instance.SettingLocalTimelineVisibility, Value: "maybe"},
 	})
 	var se *appinstance.SettingError
-	if !errors.As(err, &se) || se.Key != instance.SettingLocalTimelineAccess || !errors.Is(err, instance.ErrInvalidValue) {
-		t.Errorf("SetSettings(invalid local_timeline_access) = %v, want a SettingError of that key wrapping ErrInvalidValue", err)
+	if !errors.As(err, &se) || se.Key != instance.SettingLocalTimelineVisibility || !errors.Is(err, instance.ErrInvalidValue) {
+		t.Errorf("SetSettings(invalid local_timeline_visibility) = %v, want a SettingError of that key wrapping ErrInvalidValue", err)
 	}
 	if cur, err := e.h.Instance.ListCurrentSettings(ctx); err != nil || len(cur) != 0 {
 		t.Errorf("ListCurrentSettings = %+v, %v; want nothing written", cur, err)
@@ -257,14 +258,14 @@ func instanceSetsSeveralSettings(t *testing.T, e *instanceEnv) {
 	revs, err := e.service.SetSettings(ctx, []appinstance.SetSettingInput{
 		{Key: instance.SettingRegistrationMode, Value: "invite", RevisedByUserID: NamedID("admin")},
 		{Key: instance.SettingDefaultLocale, Value: "ja_jp", RevisedByUserID: NamedID("admin")},
-		{Key: instance.SettingFederatedTimelineAccess, Value: "off", RevisedByUserID: NamedID("admin")},
+		{Key: instance.SettingFederatedTimelineVisibility, Value: "off", RevisedByUserID: NamedID("admin")},
 	})
 	if err != nil || len(revs) != 3 {
 		t.Fatalf("SetSettings = %+v, %v; want 3 revisions", revs, err)
 	}
 	s := e.settings(t)
-	if s.RegistrationMode() != instance.RegistrationInvite || s.DefaultLocale() != "ja-JP" || s.FederatedTimelineAccess() != instance.TimelineOff {
-		t.Errorf("settings = %v %q %v; want invite, ja-JP, off", s.RegistrationMode(), s.DefaultLocale(), s.FederatedTimelineAccess())
+	if s.RegistrationMode() != instance.RegistrationInvite || s.DefaultLocale() != "ja-JP" || s.FederatedTimelineVisibility() != instance.AudienceOff {
+		t.Errorf("settings = %v %q %v; want invite, ja-JP, off", s.RegistrationMode(), s.DefaultLocale(), s.FederatedTimelineVisibility())
 	}
 	history, err := e.service.SettingHistory(ctx, instance.SettingDefaultLocale, 10)
 	if err != nil || !reflect.DeepEqual(history, revs[1:2]) || history[0].RevisedByUserID != NamedID("admin") {

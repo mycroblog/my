@@ -1,13 +1,13 @@
 {
-  "admin.settings.audience.all": {
+  "admin.settings.audience.everyone": {
     "defaultMessage": "誰にでも",
     "description": "Choice of who may read something: everyone, visitors included."
   },
-  "admin.settings.audience.none": {
+  "admin.settings.audience.off": {
     "defaultMessage": "誰にも見せない",
     "description": "Choice of who may read something: nobody."
   },
-  "admin.settings.audience.users": {
+  "admin.settings.audience.signed_in": {
     "defaultMessage": "ログインした利用者",
     "description": "Choice of who may read something: the server's signed-in users."
   },
@@ -123,7 +123,7 @@
     "defaultMessage": "公開コメントを見られる人",
     "description": "Label of the radio buttons of who may read the public comments of the domain actions."
   },
-  "admin.settings.domain_actions.comments.all": {
+  "admin.settings.domain_actions.comments.everyone": {
     "defaultMessage": "一覧を見られる人なら誰でもコメントを見られます。",
     "description": "Description of showing the comments of the domain actions to everyone."
   },
@@ -259,11 +259,11 @@
     "defaultMessage": "一覧を公開せず、サーバーの情報ページからもリンクしません。",
     "description": "Description of not publishing the supporter list."
   },
-  "admin.settings.supporter_list.public": {
+  "admin.settings.supporter_list.everyone": {
     "defaultMessage": "誰でも",
     "description": "Choice: everyone may read the supporter list."
   },
-  "admin.settings.supporter_list.public.description": {
+  "admin.settings.supporter_list.everyone.description": {
     "defaultMessage": "ログインしているかによらず、誰でも一覧を見られます。",
     "description": "Description of publishing the supporter list to everyone."
   },
@@ -347,11 +347,11 @@
     "defaultMessage": "脆弱性を報告する先です。https か mailto の URI (メールアドレスなら先頭に mailto と半角のコロンを付けたもの) を入れます。設定している間だけ、サーバーは /.well-known/security.txt を返します。",
     "description": "Help text of the security contact field."
   },
-  "admin.settings.domain_actions.comments.none": {
+  "admin.settings.domain_actions.comments.off": {
     "defaultMessage": "コメントは表示しません。",
     "description": "Description of not showing the comments of the domain actions."
   },
-  "admin.settings.domain_actions.comments.users": {
+  "admin.settings.domain_actions.comments.signed_in": {
     "defaultMessage": "一覧を見られるログインした利用者がコメントを見られます。",
     "description": "Description of showing the comments of the domain actions to signed-in users."
   },
@@ -363,15 +363,15 @@
     "defaultMessage": "一覧を見られる人",
     "description": "Label of the radio buttons of who may read the list of domain actions."
   },
-  "admin.settings.domain_actions.list.all": {
+  "admin.settings.domain_actions.list.everyone": {
     "defaultMessage": "ログインしていない人も含め、誰でも一覧を見られます。",
     "description": "Description of publishing the list of domain actions to everyone."
   },
-  "admin.settings.domain_actions.list.none": {
+  "admin.settings.domain_actions.list.off": {
     "defaultMessage": "一覧を公開しません。",
     "description": "Description of not publishing the list of domain actions."
   },
-  "admin.settings.domain_actions.list.users": {
+  "admin.settings.domain_actions.list.signed_in": {
     "defaultMessage": "このサーバーにログインした利用者だけが一覧を見られます。",
     "description": "Description of publishing the list of domain actions to signed-in users."
   },
@@ -401,7 +401,7 @@
   },
   "admin.settings.federation.link_cards": {
     "defaultMessage": "投稿のリンクのカードを表示する",
-    "description": "Checkbox of the link_cards_enabled setting: whether posts show the cards (title, description, image) of the pages they link to."
+    "description": "Checkbox of the link_cards setting: whether posts show the cards (title, description, image) of the pages they link to."
   },
   "admin.settings.federation.link_cards.description": {
     "defaultMessage": "サーバーが各投稿の最初のリンクのページを、投稿の公開範囲によらず取得し、題名・説明・画像を投稿の下に表示します。リンク先のサイトには、そのリンクがいつ投稿されたかが伝わりますが、誰が投稿したかは伝わりません。",
@@ -659,11 +659,11 @@
     "defaultMessage": "ログインしていない訪問者も見られます。ローカルタイムラインなら、ランディングページに見本の投稿が出ます。",
     "description": "Description of the choice that lets everyone read a public timeline."
   },
-  "admin.settings.timelines.access.logged_in": {
+  "admin.settings.timelines.access.signed_in": {
     "defaultMessage": "ログインした利用者に",
     "description": "Choice of who may read a public timeline: only the users signed in to this server."
   },
-  "admin.settings.timelines.access.logged_in.description": {
+  "admin.settings.timelines.access.signed_in.description": {
     "defaultMessage": "このサーバーにログインした利用者だけが見られます。訪問者にはログインを促します。",
     "description": "Description of the choice that lets only signed-in users read a public timeline."
   },

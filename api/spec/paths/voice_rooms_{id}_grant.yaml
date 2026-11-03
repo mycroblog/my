@@ -9,7 +9,7 @@ post:
     servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
     servers on its connections, and restarts ICE. A session that is not the user's current
     session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
-    server cannot give a grant now. A 404 while the voice chat is off on the server.
+    server cannot give a grant now.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]

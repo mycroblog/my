@@ -36,6 +36,7 @@ type Objects interface {
 	Status(ctx context.Context, req appfederation.Requester, statusID string) (appfederation.Object, error)
 	StatusActivity(ctx context.Context, req appfederation.Requester, statusID string) (appfederation.Object, error)
 	QuoteAuthorization(ctx context.Context, id string) (appfederation.Object, error)
+	Announce(ctx context.Context, req appfederation.Requester, id string) (appfederation.Object, error)
 	PageStatusURI(ctx context.Context, statusID string) (string, error)
 	OutboxTotal(ctx context.Context, accountID string) (int64, error)
 	Outbox(ctx context.Context, accountID, before string) (appfederation.OutboxPage, error)
@@ -157,8 +158,8 @@ const (
 
 // Register registers every endpoint on r. The federation mode (ADR-0076) gates the GETs by their
 // flow: the discovery documents and the actors identify (404 when the mode is off), and the
-// statuses, their activities, the collections, the custom emoji, and the approvals of quotes
-// publish (404 when the mode does not send the local posts out; never 410, so that nothing tells
+// statuses, their activities, the collections, the custom emoji, the approvals of quotes, and the
+// Announce of boosts publish (404 when the mode does not send the local posts out; never 410, so that nothing tells
 // what exists).
 //
 // The service closure comes first (ADR-0088 §2): once the server is closed, the inboxes, the
@@ -188,6 +189,7 @@ func (h *Handler) Register(r Router) {
 	r.Handle("GET "+objectsPrefix+"{id}/"+activitySegment, publish(h.object))
 	r.Handle("GET "+emojisPrefix+"{id}", publish(h.emoji))
 	r.Handle("GET "+quoteAuthorizationsPrefix+"{id}", publish(h.quoteAuthorization))
+	r.Handle("GET "+activitiesPrefix+"{id}", publish(h.activity))
 	// A wildcard cannot share a path segment with "@", so every single-segment GET that no
 	// more specific pattern serves comes here; profilePage passes those that are not profile
 	// pages to the HTML handler.
@@ -265,7 +267,7 @@ func (h *Handler) closure(op instance.ClosureOperation, open, closed http.Handle
 	}
 }
 
-// gone answers 410 Gone for a closed server: a GET under /ap/ gets a Tombstone of the requested
+// gone answers 410 Gone for a closed server or a deleted local actor: a GET under /ap/ gets a Tombstone of the requested
 // id, and any other request the error response.
 func (h *Handler) gone(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet || !strings.HasPrefix(r.URL.Path, apPrefix) {
@@ -295,6 +297,10 @@ func (h *Handler) notFound(w http.ResponseWriter, r *http.Request) {
 
 // fail answers a lookup error: 404 for ErrNotFound, otherwise 500 after logging it.
 func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, errActorGone) {
+		h.gone(w, r)
+		return
+	}
 	if errors.Is(err, appaccount.ErrNotFound) || errors.Is(err, appfederation.ErrNotFound) {
 		h.notFound(w, r)
 		return
@@ -313,6 +319,12 @@ func (h *Handler) report(ctx context.Context, err error) {
 // visible reports whether an actor may be presented: only active local actors are.
 func visible(a appaccount.Actor) bool {
 	return a.Account.IsLocal() && a.Lifecycle.Active()
+}
+
+// answers reports whether an actor answers for itself to the remote servers: a visible one, or a
+// local one that its owner deactivated, which comes back (ADR-0145 §6, §7).
+func answers(a appaccount.Actor) bool {
+	return visible(a) || (a.Account.IsLocal() && a.Lifecycle.Deactivated())
 }
 
 // findVisible looks up an actor and hides the ones that may not be presented as missing.

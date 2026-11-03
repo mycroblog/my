@@ -3,11 +3,11 @@ post:
   operationId: createStatus
   summary: Post a status
   description: |
-    Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+    Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
     returns the status posted with it, before the post rate limit and the other checks of
     a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
     finished processing (422 otherwise). A status with a `poll` attaches no media, and a
-    poll outside the limits of `PollInput` is a 422 (FR-112).
+    poll outside the limits of `PollInput` is a 422.
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]
@@ -20,7 +20,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateStatusRequest.yaml
   responses:
-    "200":
+    "201":
       description: The posted status.
       headers:
         Cache-Control:

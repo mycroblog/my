@@ -78,8 +78,10 @@ func (s *Server) serveClientError(w http.ResponseWriter, r *http.Request) {
 	if err := json.Unmarshal(body, &rep); err != nil || !clientErrorKinds[rep.Kind] {
 		return
 	}
-	_, signedIn := ViewerFrom(r.Context())
-	ev, ok := s.clientErrorEvent(rep, !signedIn)
+	// A third party's token does not vouch for a report: its text would reach the administrators'
+	// notifications.
+	v, signedIn := ViewerFrom(r.Context())
+	ev, ok := s.clientErrorEvent(rep, !signedIn || !v.FirstParty)
 	if !ok || s.o.ErrorReporter == nil {
 		return
 	}

@@ -23,7 +23,7 @@ func (r *FederationRepository) InsertDeliveryAttempt(ctx context.Context, tx uow
 	status := sql.NullInt64{Int64: int64(a.HTTPStatus), Valid: a.HTTPStatus != 0}
 	err = q.InsertDeliveryAttempt(ctx, sqlitegen.InsertDeliveryAttemptParams{
 		ID: a.ID, DeliveryID: a.DeliveryID, Outcome: string(a.Outcome), SignatureScheme: toNullString(a.Scheme),
-		HttpStatus: status, Error: toNullString(a.Error), AttemptedAt: toMillis(a.AttemptedAt),
+		StatusCode: status, Error: toNullString(a.Error), AttemptedAt: toMillis(a.AttemptedAt),
 	})
 	return wrap(err, "insert delivery attempt")
 }
@@ -76,7 +76,7 @@ func (r *FederationRepository) ListDeliveryAttempts(ctx context.Context, deliver
 	for i, row := range rows {
 		out[i] = federation.DeliveryAttempt{
 			ID: row.ID, DeliveryID: row.DeliveryID, Outcome: federation.DeliveryOutcome(row.Outcome),
-			Scheme: row.SignatureScheme.String, HTTPStatus: int(row.HttpStatus.Int64), Error: row.Error.String,
+			Scheme: row.SignatureScheme.String, HTTPStatus: int(row.StatusCode.Int64), Error: row.Error.String,
 			AttemptedAt: fromMillis(row.AttemptedAt),
 		}
 	}

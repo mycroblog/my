@@ -12,7 +12,7 @@ import (
 
 const (
 	// JobCleanupMutes deletes the mutes that have expired (FR-803); no payload.
-	JobCleanupMutes = "graph.cleanup_mutes"
+	JobCleanupMutes = "graph.expire_mutes"
 	// DefaultCleanupInterval is the period of the cleanup schedule.
 	DefaultCleanupInterval = time.Hour
 	// cleanupBatch is the number of mutes one cleanup transaction deletes; cleanupMaxBatches

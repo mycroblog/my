@@ -23,7 +23,7 @@ export const Route = createFileRoute("/")({
     // the page (the shell, which reads the same query, handles it). Cached data is shown at once (web-client/README.md S7).
     await queryClient.query({ ...instanceQueryOptions(api), staleTime: Infinity }).catch(() => undefined);
   },
-  staticData: { wideMain: true },
+  staticData: { reloadSafe: true, wideMain: true },
   component: LandingPage,
   errorComponent: LandingError,
 });

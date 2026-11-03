@@ -3,7 +3,7 @@ get:
   operationId: listCustomEmojiRequests
   summary: List the user's custom emoji requests
   description: |
-    The user's requests for new custom emoji and new images of their own (ADR-0070 §6),
+    The user's requests for new custom emoji and new images of their own,
     newest first, in every state. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
   tags: [custom-emojis]
   security:
@@ -28,8 +28,7 @@ post:
   summary: Request a custom emoji or a new image of one
   description: |
     Requests a new local custom emoji (`create`) or a new image of a local emoji that the user
-    made (`image`), which a holder of `manage_custom_emojis` approves or rejects (ADR-0070 §2,
-    §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
+    made (`image`), which a holder of `manage_custom_emojis` approves or rejects. Until then, the request is no emoji: nothing shows its image. A pending `create`
     request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
     A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
     pending request reserves, a `create` request once the approved and pending `create`
@@ -51,7 +50,7 @@ post:
         schema:
           $ref: ../components/schemas/NewCustomEmojiRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/CustomEmojiRequest.yaml
     "422":
       $ref: ../components/responses/CustomEmojiProblem.yaml

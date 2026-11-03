@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The federated timeline through the whole app (web-client/README.md T4): its page with the loading, empty and
-// error states, and its navigation item, which the instance setting federated_timeline_access turns off or keeps for signed-in users
+// error states, and its navigation item, which the instance setting federated_timeline_visibility turns off or keeps for signed-in users
 // (FR-202). The real router and QueryClient, MSW for the client API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { instanceFixture, statusPage, timelineStatusFixture } from "../../test/fixtures";
-import type { TimelineAccess } from "./api/timelines";
+import type { InstanceAudience } from "./api/timelines";
 import { findLoadingRegion } from "../../test/loading";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 
 /** GET /instance with the given public timelines turned on or off. */
-function instanceWith(timelines: { local: TimelineAccess; federated: TimelineAccess }) {
+function instanceWith(timelines: { local: InstanceAudience; federated: InstanceAudience }) {
   return http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, timelines }));
 }
 
@@ -58,7 +58,7 @@ describe("the federated timeline", () => {
       release = resolve;
     });
     server.use(
-      http.get(`${apiBase}/timelines/public`, async () => {
+      http.get(`${apiBase}/timelines/federated`, async () => {
         await released;
         return HttpResponse.json(statusPage([timelineStatusFixture]));
       }),
@@ -79,7 +79,7 @@ describe("the federated timeline", () => {
   });
 
   test("says so when there are no posts", async () => {
-    server.use(http.get(`${apiBase}/timelines/public`, () => HttpResponse.json(statusPage([]))));
+    server.use(http.get(`${apiBase}/timelines/federated`, () => HttpResponse.json(statusPage([]))));
     await renderApp({ path: "/public" });
 
     expect(await screen.findByRole("heading", { level: 2, name: "No posts yet" })).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe("the federated timeline", () => {
   test("shows the page's error when the first page fails, and loads it again on request", async () => {
     let fail = true;
     server.use(
-      http.get(`${apiBase}/timelines/public`, () =>
+      http.get(`${apiBase}/timelines/federated`, () =>
         fail
           ? problem(503, "about:blank", "Service Unavailable")
           : HttpResponse.json(statusPage([timelineStatusFixture])),
@@ -111,7 +111,7 @@ describe("the federated timeline", () => {
   test("says that the server has turned it off when its address is a 404", async () => {
     server.use(
       instanceWith({ local: "everyone", federated: "off" }),
-      http.get(`${apiBase}/timelines/public`, () => problem(404, "about:blank", "Not Found")),
+      http.get(`${apiBase}/timelines/federated`, () => problem(404, "about:blank", "Not Found")),
     );
     await renderApp({ path: "/public" });
 
@@ -123,8 +123,8 @@ describe("the federated timeline", () => {
 
   test("asks a visitor to sign in when the server keeps it for signed-in users", async () => {
     server.use(
-      instanceWith({ local: "everyone", federated: "logged_in" }),
-      http.get(`${apiBase}/timelines/public`, () =>
+      instanceWith({ local: "everyone", federated: "signed_in" }),
+      http.get(`${apiBase}/timelines/federated`, () =>
         problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated"),
       ),
     );

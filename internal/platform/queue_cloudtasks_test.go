@@ -33,7 +33,7 @@ func cloudTasksConfig(t *testing.T, role string) *config.Config {
 	t.Helper()
 	// queue = cloudtasks needs a shared database; the test runs it on SQLite all the same.
 	cfg := loadConfig(t, map[string]string{
-		"MY_DB": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_ROLE": role, "MY_QUEUE": "cloudtasks",
+		"MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_ROLE": role, "MY_QUEUE": "cloudtasks",
 		"MY_QUEUE_CLOUDTASKS_QUEUE":           "projects/p/locations/asia-northeast1/queues/my-jobs",
 		"MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT": "tasks@p.iam.gserviceaccount.com",
 		"MY_QUEUE_CLOUDTASKS_URL":             "https://jobs.example.test",

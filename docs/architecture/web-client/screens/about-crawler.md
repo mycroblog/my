@@ -7,7 +7,7 @@ paths: ["app/web/src/routes/about_.crawler.tsx", "app/web/src/features/about/com
 ## リンクのカードのクローラー（`/about/crawler`）
 
 このサーバーのリンクのカードのクローラー（`my-linkcard`。FR-117、ADR-0062、ADR-0131）に要求されたサイトの運営者が、ボットの正体と断り方を読む画面。ログインしていなくても読める。
-どのくらい断れるかはこのサーバーの設定で変わるので、設定（`GET /instance` の `link_cards_enabled`・`link_cards_ignore_robots_txt`）を読んでから本文を出す。読めない間は、従うとも従わないとも書かない。
+どのくらい断れるかはこのサーバーの設定で変わるので、設定（`GET /instance` の `link_cards`・`link_cards_ignore_robots_txt`）を読んでから本文を出す。読めない間は、従うとも従わないとも書かない。
 
 ### 1. 使う人と頻度
 

@@ -47,7 +47,7 @@ properties:
   block_email:
     description: |
       Whether a `ban` also blocks sign-ups with the email address of the account's user (a
-      `reject` sign-up block of kind `email_hash`, FR-719); only a `ban` of a local
+      `reject` sign-up block of kind `email_hash`); only a `ban` of a local
       account takes it, and a user without an email address is a 422. Omitted, nothing is
       blocked.
     type: boolean

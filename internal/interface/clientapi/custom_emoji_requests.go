@@ -257,7 +257,7 @@ func (s *Server) CreateCustomEmojiRequest(ctx context.Context, req CreateCustomE
 		}
 		in.EmojiID = knownID(*req.Body.EmojiId)
 	default:
-		return CreateCustomEmojiRequestdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "kind")), nil
+		return CreateCustomEmojiRequestdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "kind")), nil
 	}
 	r, err := s.o.CustomEmojiRequests.SubmitRequest(ctx, in)
 	if p, ok := s.customEmojiProblem(ctx, err); ok {
@@ -271,7 +271,7 @@ func (s *Server) CreateCustomEmojiRequest(ctx context.Context, req CreateCustomE
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: submit custom emoji request: %w", err)
 	}
-	return CreateCustomEmojiRequest200JSONResponse{customEmojiRequestResponse(newCustomEmojiRequest(r))}, nil
+	return CreateCustomEmojiRequest201JSONResponse{customEmojiRequestResponse(newCustomEmojiRequest(r))}, nil
 }
 
 // WithdrawCustomEmojiRequest serves POST /api/v1/custom_emoji_requests/{id}/withdraw.

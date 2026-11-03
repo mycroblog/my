@@ -49,7 +49,7 @@ function group(state: Schemas["ErrorGroupState"]): Schemas["ErrorGroup"] {
     id: groupId,
     fingerprint: "0123456789abcdef0123456789abcdef",
     state,
-    state_since: "2026-10-20T00:00:00Z",
+    state_changed_at: "2026-10-20T00:00:00Z",
     ...(state === "resolved" ? { resolved_version: "0.3.1" } : {}),
     source: "server",
     kind: "panic",

@@ -81,7 +81,7 @@ func (m Move) FollowsRemote(latest *Move) (bool, error) {
 }
 
 // FollowsLocal reports whether a local move m may follow the account's newest move latest (nil
-// for none): it must come LocalMoveInterval after latest, cancelled or not (ErrMoveTooSoon), and
+// for none): it must come LocalMoveInterval after latest, canceled or not (ErrMoveTooSoon), and
 // go to a target the account never moved to (ErrMovedBefore, which the repository reports for
 // the older moves).
 func (m Move) FollowsLocal(latest *Move) error {
@@ -96,15 +96,15 @@ func (m Move) FollowsLocal(latest *Move) error {
 	return nil
 }
 
-// MoveCancellation is the event that a local account cancelled its move
+// MoveCancellation is the event that a local account canceled its move
 // (account_move_cancellations).
 type MoveCancellation struct {
-	MoveID      string
-	CancelledAt time.Time
+	MoveID     string
+	CanceledAt time.Time
 }
 
 // MoveState is the move in force of an account (the account_move_states projection): its
-// newest move, unless that is cancelled. An account without one has not moved.
+// newest move, unless that is canceled. An account without one has not moved.
 type MoveState struct {
 	AccountID       string
 	MoveID          string
@@ -117,14 +117,14 @@ func StateOf(m Move) MoveState {
 	return MoveState{AccountID: m.AccountID, MoveID: m.ID, TargetAccountID: m.TargetAccountID, Since: m.OccurredAt}
 }
 
-// MoveRecord is a move with whether it is cancelled: the source of account_move_states.
+// MoveRecord is a move with whether it is canceled: the source of account_move_states.
 type MoveRecord struct {
-	Move      Move
-	Cancelled bool
+	Move     Move
+	Canceled bool
 }
 
 // MoveStates derives the move in force of every account from its moves: the newest one by
-// OccurredAt and then ID, when it is not cancelled. Updating account_move_states move by move
+// OccurredAt and then ID, when it is not canceled. Updating account_move_states move by move
 // and rebuilding it with this function agree. The states are ordered by account ID.
 func MoveStates(records []MoveRecord) []MoveState {
 	newest := map[string]MoveRecord{}
@@ -140,7 +140,7 @@ func MoveStates(records []MoveRecord) []MoveState {
 	}
 	out := make([]MoveState, 0, len(order))
 	for _, id := range order {
-		if r := newest[id]; !r.Cancelled {
+		if r := newest[id]; !r.Canceled {
 			out = append(out, StateOf(r.Move))
 		}
 	}

@@ -35,6 +35,6 @@ func (s *Server) GetInstanceOverview(ctx context.Context, _ GetInstanceOverviewR
 		}
 		out.Counts = &InstanceCounts{Members: c.Members, DailyPosts: c.DailyPosts, StartedAt: c.StartedAt, CountedAt: c.CountedAt}
 	}
-	cache := cachePublic
+	cache := publicCache(ctx)
 	return GetInstanceOverview200JSONResponse{Body: out, Headers: GetInstanceOverview200ResponseHeaders{CacheControl: &cache}}, nil
 }

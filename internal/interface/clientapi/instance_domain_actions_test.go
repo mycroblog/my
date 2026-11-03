@@ -67,15 +67,15 @@ func TestListInstanceDomainActions(t *testing.T) {
 		want                  []clientapi.InstanceDomainAction
 		wantCache             string
 	}{
-		{"everyone, without comments", instance.AudienceAll, instance.AudienceNone, "", []clientapi.InstanceDomainAction{spam, bad}, "public, max-age=60"},
-		{"everyone, comments for everyone", instance.AudienceAll, instance.AudienceAll, "", []clientapi.InstanceDomainAction{spam, badWithComment}, "public, max-age=60"},
-		{"everyone, comments for users, anonymous", instance.AudienceAll, instance.AudienceUsers, "", []clientapi.InstanceDomainAction{spam, bad}, "public, max-age=60"},
-		{"everyone, comments for users, logged in", instance.AudienceAll, instance.AudienceUsers, "read", []clientapi.InstanceDomainAction{spam, badWithComment}, "private, max-age=60"},
-		{"users, logged in", instance.AudienceUsers, instance.AudienceAll, "none", []clientapi.InstanceDomainAction{spam, badWithComment}, "private, max-age=60"},
+		{"everyone, without comments", instance.AudienceEveryone, instance.AudienceOff, "", []clientapi.InstanceDomainAction{spam, bad}, "public, max-age=60"},
+		{"everyone, comments for everyone", instance.AudienceEveryone, instance.AudienceEveryone, "", []clientapi.InstanceDomainAction{spam, badWithComment}, "public, max-age=60"},
+		{"everyone, comments for users, anonymous", instance.AudienceEveryone, instance.AudienceSignedIn, "", []clientapi.InstanceDomainAction{spam, bad}, "public, max-age=60"},
+		{"everyone, comments for users, logged in", instance.AudienceEveryone, instance.AudienceSignedIn, "read", []clientapi.InstanceDomainAction{spam, badWithComment}, "private, max-age=60"},
+		{"users, logged in", instance.AudienceSignedIn, instance.AudienceEveryone, "none", []clientapi.InstanceDomainAction{spam, badWithComment}, "private, max-age=60"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e := newPublicDomainActionsEnv(t, tc.visibility, tc.rationale)
-			e.auth.tokens["none"] = bearer("", aliceAccountID)
+			e.auth.tokens["none"] = bearer("read:accounts", aliceAccountID)
 			res := e.send(t, http.MethodGet, "/instance/domain_actions", tc.token, "")
 			if res.StatusCode != http.StatusOK {
 				t.Fatalf("status = %d, want 200", res.StatusCode)
@@ -92,7 +92,7 @@ func TestListInstanceDomainActions(t *testing.T) {
 }
 
 func TestListInstanceDomainActionsNeverShowsPrivateNotes(t *testing.T) {
-	e := newPublicDomainActionsEnv(t, instance.AudienceAll, instance.AudienceAll)
+	e := newPublicDomainActionsEnv(t, instance.AudienceEveryone, instance.AudienceEveryone)
 	res := e.send(t, http.MethodGet, "/instance/domain_actions", "", "")
 	page := decode[clientapi.InstanceDomainActionPage](t, res)
 	for _, it := range page.Items {
@@ -106,7 +106,7 @@ func TestListInstanceDomainActionsNeverShowsPrivateNotes(t *testing.T) {
 }
 
 func TestListInstanceDomainActionsPages(t *testing.T) {
-	e := newPublicDomainActionsEnv(t, instance.AudienceAll, instance.AudienceNone)
+	e := newPublicDomainActionsEnv(t, instance.AudienceEveryone, instance.AudienceOff)
 	res := e.send(t, http.MethodGet, "/instance/domain_actions?limit=1", "", "")
 	page := decode[clientapi.InstanceDomainActionPage](t, res)
 	if len(page.Items) != 1 || page.Items[0].Digest != digestSpamExample || page.NextCursor == nil {
@@ -132,12 +132,12 @@ func TestListInstanceDomainActionsRefusesReaders(t *testing.T) {
 		wantStatus int
 		wantType   string
 	}{
-		{"none, anonymous", instance.AudienceNone, "", http.StatusNotFound, "about:blank"},
-		{"none, logged in", instance.AudienceNone, "read", http.StatusNotFound, "about:blank"},
-		{"users, anonymous", instance.AudienceUsers, "", http.StatusUnauthorized, clientapi.ProblemTypeUnauthenticated},
+		{"none, anonymous", instance.AudienceOff, "", http.StatusNotFound, "about:blank"},
+		{"none, logged in", instance.AudienceOff, "read", http.StatusNotFound, "about:blank"},
+		{"users, anonymous", instance.AudienceSignedIn, "", http.StatusUnauthorized, clientapi.ProblemTypeUnauthenticated},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			e := newPublicDomainActionsEnv(t, tc.visibility, instance.AudienceAll)
+			e := newPublicDomainActionsEnv(t, tc.visibility, instance.AudienceEveryone)
 			res := e.send(t, http.MethodGet, "/instance/domain_actions", tc.token, "")
 			if res.StatusCode != tc.wantStatus {
 				t.Fatalf("status = %d, want %d", res.StatusCode, tc.wantStatus)

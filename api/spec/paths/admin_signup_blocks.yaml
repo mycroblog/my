@@ -3,7 +3,7 @@ get:
   operationId: listSignupBlocks
   summary: List the sign-up blocks
   description: |
-    The blocks on sign-ups from the registration page (FR-719), newest first, lifted and
+    The blocks on sign-ups from the registration page, newest first, lifted and
     expired ones included unless `active` is set. Needs the `manage_accounts` permission.
   tags: [admin-moderation]
   security:
@@ -39,7 +39,7 @@ post:
   operationId: createSignupBlock
   summary: Block sign-ups
   description: |
-    Records a block on sign-ups from the registration page (FR-719), in effect at once and
+    Records a block on sign-ups from the registration page, in effect at once and
     until it expires or is lifted; the block is audited. A sign-up whose email address or
     client address it matches is refused (`reject`) or starts pending for a moderator
     whatever the registration mode (`require_approval`); the page does not tell the
@@ -59,7 +59,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateSignupBlockRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminSignupBlock.yaml
     default:
       $ref: ../components/responses/Problem.yaml

@@ -228,7 +228,7 @@ function EmailDelivery({ suppression }: { suppression: Preferences["email_suppre
   const t = useT();
   const intl = useIntl();
   if (suppression === undefined) return null;
-  const since = intl.formatDate(suppression.since, { dateStyle: "medium", timeStyle: "short" });
+  const since = intl.formatDate(suppression.state_changed_at, { dateStyle: "medium", timeStyle: "short" });
   return (
     <Section title={t("client:settings.email_suppression.title")}>
       <Callout>

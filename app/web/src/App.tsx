@@ -70,7 +70,7 @@ export function App({ config, locale, queryClient, api, session, leaveApp, maint
               <SessionProvider session={session} api={api} leaveApp={leaveApp}>
                 <AnnouncerProvider>
                   <Toasts>
-                    <UpdatePrompt />
+                    <UpdatePrompt router={router} />
                     <VoiceCallProvider maintenance={maintenance}>
                       <AutoplayContext value={autoplay}>
                         <ExternalLinks>

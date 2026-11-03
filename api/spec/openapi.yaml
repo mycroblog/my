@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MIT
 #
-# The client API (ADR-0007, ADR-0016), split into one file per path item and per component (ADR-0066).
+# The client API, split into one file per path item and per component.
 # api/spec/ is the source of truth: `scripts/task.sh api:generate` bundles it into api/openapi.yaml, generates the Go
 # server interface in internal/interface/clientapi and the web client's types from the bundle, and
-# `scripts/task.sh api:lint` enforces the OpenAPI 3.1 subset that the generators support (ADR-0029).
+# `scripts/task.sh api:lint` enforces the OpenAPI 3.1 subset that the generators support.
 # docs/architecture/client-api.md explains how to add an endpoint.
 openapi: 3.1.0
 info:
@@ -21,15 +21,18 @@ info:
       (`read`, `write`, `follow`, `admin`) grants the fine-grained scopes under it. A missing or
       invalid token is a 401 with `WWW-Authenticate`, a token without the scope a 403
       `insufficient_scope`.
-    - Every response carries the `RateLimit` and `RateLimit-Policy` fields
+    - The operations carry the `RateLimit` and `RateLimit-Policy` fields
       (draft-ietf-httpapi-ratelimit-headers): anonymous requests share a limit per client IP,
-      authenticated requests one per account. Past the limit the answer is 429 with
-      `Retry-After`.
+      authenticated requests one per account, and an administrator may cap one client across
+      all its users (the `client` policy). Past a limit the answer is 429 with `Retry-After`.
+      The fields are left out while the server cannot read its limits, which then let requests
+      through.
+    - This document is served at `GET /openapi.yaml`, without a limit or a token.
     - IDs are UUIDv7 strings. Collections use keyset pagination: pass the `next_cursor` of a
       page as `cursor` to get the next page.
   license:
-    name: AGPL-3.0-only
-    identifier: AGPL-3.0-only
+    name: MIT
+    identifier: MIT
 servers:
   - url: /api/v1
 security:
@@ -61,7 +64,7 @@ tags:
     description: The moderation actions on the authenticated user's own account.
   - name: invites
     description: |
-      The invites that the authenticated user creates as a member (ADR-0108): creating them
+      The invites that the authenticated user creates as a member: creating them
       within the caps of the instance settings, listing them, and revoking them. The operations
       need a `read:accounts` or `write:accounts` scope.
   - name: notifications
@@ -83,18 +86,18 @@ tags:
   - name: custom-emojis
     description: |
       The custom emoji that the holders of the `create_custom_emojis` permission request and
-      made (ADR-0070 §6): their requests for new emoji and new images, which a holder of
+      made: their requests for new emoji and new images, which a holder of
       `manage_custom_emojis` approves, and the emoji they made. The operations need a
       `read:custom_emojis` or `write:custom_emojis` scope and the `create_custom_emojis`
       permission, never an `admin` scope.
   - name: finance
     description: |
       The instance's finances as the holders of the `view_finance` permission read them, as far
-      as the instance settings show (ADR-0070 §5). The operations need a `read` scope and the
+      as the instance settings show. The operations need the `read:finance` scope and the
       `view_finance` or the `manage_finance` permission, never an `admin` scope.
   - name: supporters
     description: |
-      The authenticated user's own subscription to the supporter plans (ADR-0072 §18):
+      The authenticated user's own subscription to the supporter plans:
       subscribing through the payment provider's hosted checkout, changing the plan, canceling
       and resuming, and the provider's portal. The operations need a `read:supporters` or
       `write:supporters` scope.
@@ -105,21 +108,23 @@ tags:
       hand, the operations of the host and the co-hosts on the participants, the
       invitations, and the rooms the user hosted. The operations need
       a `read:voice` or `write:voice` scope, except the summary of a room for the visitors who
-      do not see it, and answer 404 while the voice chat is off on the server.
+      do not see it. Every operation answers 404 while the voice chat is off on the server, and
+      for a room that the user does not see.
   - name: client-errors
     description: The uncaught errors of the web client, which it reports to its own server.
   - name: admin-moderation
     description: |
       The staff's moderation: reports, appeals, accounts and the actions on them, registrations,
       sign-up blocks, invites, domain actions, the health of remote servers, the audit log, and
-      the counts of what awaits the moderators (ADR-0058). The operations need an `admin` scope and a
+      the counts of what awaits the moderators. The operations need an `admin` scope and a
       permission of the user's roles in the moderation category; a user without it gets a 403
       `/api/v1/problems/missing-permission`.
   - name: admin-server
     description: |
-      The administration of the server itself: its settings and texts, its rules, the roles and
-      granting them, the custom emoji, the webhooks, the announcements, and the dead jobs of the
-      job queue (ADR-0058). The
+      The administration of the server itself: its settings, texts, theme, and brand, its rules,
+      the roles and granting them, the custom emoji, the webhooks, the announcements, the job
+      queue, the costs and income, the supporter program, the login providers, the OAuth apps, the
+      relays, the closure of the service, and the reported errors. The
       operations need an `admin` scope and a permission of the user's roles in the server
       category; a user without it gets a 403 `/api/v1/problems/missing-permission`.
 paths:
@@ -173,6 +178,8 @@ paths:
     $ref: ./paths/preferences_notifications.yaml
   /preferences/supporter_listing:
     $ref: ./paths/preferences_supporter_listing.yaml
+  /accounts/deactivation:
+    $ref: ./paths/accounts_deactivation.yaml
   /accounts/delete:
     $ref: ./paths/accounts_delete.yaml
   /accounts/move:
@@ -233,8 +240,8 @@ paths:
     $ref: ./paths/oauth_apps.yaml
   /oauth_apps/{id}:
     $ref: ./paths/oauth_apps_{id}.yaml
-  /oauth_apps/{id}/secret:
-    $ref: ./paths/oauth_apps_{id}_secret.yaml
+  /oauth_apps/{id}/rotate_secret:
+    $ref: ./paths/oauth_apps_{id}_rotate_secret.yaml
   /oauth_apps/{id}/tokens:
     $ref: ./paths/oauth_apps_{id}_tokens.yaml
   /accounts/lookup:
@@ -261,24 +268,16 @@ paths:
     $ref: ./paths/accounts_{id}_mute.yaml
   /accounts/{id}/remove_from_followers:
     $ref: ./paths/accounts_{id}_remove_from_followers.yaml
-  /accounts/{id}/unblock:
-    $ref: ./paths/accounts_{id}_unblock.yaml
-  /accounts/{id}/unfollow:
-    $ref: ./paths/accounts_{id}_unfollow.yaml
-  /accounts/{id}/unmute:
-    $ref: ./paths/accounts_{id}_unmute.yaml
   /accounts/{id}/subscribe:
     $ref: ./paths/accounts_{id}_subscribe.yaml
-  /accounts/{id}/unsubscribe:
-    $ref: ./paths/accounts_{id}_unsubscribe.yaml
   /subscriptions:
     $ref: ./paths/subscriptions.yaml
   /blocks:
     $ref: ./paths/blocks.yaml
   /follow_requests:
     $ref: ./paths/follow_requests.yaml
-  /follow_requests/{id}/authorize:
-    $ref: ./paths/follow_requests_{id}_authorize.yaml
+  /follow_requests/{id}/accept:
+    $ref: ./paths/follow_requests_{id}_accept.yaml
   /follow_requests/{id}/reject:
     $ref: ./paths/follow_requests_{id}_reject.yaml
   /mutes:
@@ -351,8 +350,8 @@ paths:
     $ref: ./paths/timelines_home.yaml
   /timelines/local:
     $ref: ./paths/timelines_local.yaml
-  /timelines/public:
-    $ref: ./paths/timelines_public.yaml
+  /timelines/federated:
+    $ref: ./paths/timelines_federated.yaml
   /timelines/tag/{hashtag}:
     $ref: ./paths/timelines_tag_{hashtag}.yaml
   /timelines/list/{id}:
@@ -407,8 +406,8 @@ paths:
     $ref: ./paths/voice_rooms_{id}_hand.yaml
   /voice/rooms/{id}/participants/{account_id}:
     $ref: ./paths/voice_rooms_{id}_participants_{account_id}.yaml
-  /voice/rooms/{id}/participants/{account_id}/grant:
-    $ref: ./paths/voice_rooms_{id}_participants_{account_id}_grant.yaml
+  /voice/rooms/{id}/participants/{account_id}/speaking_permission:
+    $ref: ./paths/voice_rooms_{id}_participants_{account_id}_speaking_permission.yaml
   /voice/rooms/{id}/participants/{account_id}/hand:
     $ref: ./paths/voice_rooms_{id}_participants_{account_id}_hand.yaml
   /voice/rooms/{id}/participants/{account_id}/mute:
@@ -706,16 +705,31 @@ components:
 
         `read:statuses` does not show posts whose visibility is `direct`, in timelines, in a post's
         thread, or in a post's own response, nor in the posts of a notification; `read:direct` (which
-        `read` grants) does. Sending a `direct` post needs only `write:statuses`.
+        `read` grants) does. The same holds for bookmarks, a post's source, and the posts that quote
+        a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`.
+
+        A write scope reads the post it acts on: the response to an action on a post, such as
+        favouriting it with `write:favourites`, is the whole post. A token without `read:direct`
+        cannot act on a `direct` post: it gets a 404 and nothing changes. It can still take back
+        what the user had on one (a favourite, say), and the answer is the same 404, which shows
+        nothing of the post.
 
         Only the server's own (first-party) clients may hold `admin`, `admin:read`, `admin:write`,
         and `write:supporters`: an authorization request of any other client that asks for one is
         refused with `invalid_scope`, and a broad scope such as `write` does not give such a client
         `write:supporters`. The operations that change how the user signs in or ends the account
-        (password, two-factor authentication, passkeys, signed-in browsers, authorized apps, deleting the account, the user's own
-        OAuth apps) are marked
+        (password, two-factor authentication, passkeys, linked identities, signed-in browsers, authorized apps, moving and deleting
+        the account, the user's own OAuth apps), and those whose consequences a consent screen cannot explain (data exports and
+        imports, changing and previewing the automatic deletion of posts, adding and removing
+        aliases, invites, the user's moderation actions and appeals), are marked
         `x-first-party-only: true`; whatever its scopes, the token of another client gets a 403
         `/api/v1/problems/first-party-only` from them.
+
+        The moderator notifications (`admin_report`, `admin_appeal`, `admin_sign_up`,
+        `admin_error_group`, and the other types that need a role's permission) reach first-party
+        clients only: another client's token, whatever the user's roles, does not get them in the
+        notification list, the stream, or the unread count, and they are dropped from the alerts of
+        its Web Push subscription.
       flows:
         authorizationCode:
           authorizationUrl: /oauth/authorize
@@ -729,31 +743,30 @@ components:
             write: Change everything the user can change.
             follow: Read and change follows, blocks, and mutes.
             push: Receive Web Push notifications.
-            "read:accounts": Read accounts, including the user's own.
+            "read:accounts": Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings, aliases, and automatic deletion policy.
             "read:blocks": Read the accounts the user blocks.
             "read:bookmarks": Read the user's bookmarks.
-            "read:favourites": Read the user's favourites.
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
             "read:direct": Read the direct posts the user sends and receives (`read:statuses` does not show them).
-            "read:finance": Read the totals of the instance's costs, as far as the user's roles allow.
-            "read:follows": Read follows and follow requests.
+            "read:finance": Read the totals of the instance's costs and income, as far as the user's roles allow.
+            "read:follows": Read follows, follow requests, lists, and the accounts whose new posts notify the user.
             "read:mutes": Read the accounts and domains the user mutes.
             "read:notifications": Read the user's notifications.
             "read:reports": Read the reports the user filed and whether they are resolved.
             "read:statuses": Read posts and timelines.
             "read:supporters": Read the user's own supporter subscription.
             "read:voice": Read the voice chat rooms the user sees.
-            "write:accounts": Change the user's profile and preferences.
+            "write:accounts": Change the user's profile, preferences, notification settings, badges, and supporter listing.
             "write:blocks": Block and unblock accounts.
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.
             "write:favourites": Favourite posts and react to them with emoji, and take both back.
-            "write:follows": Follow and unfollow accounts and answer follow requests.
-            "write:media": Upload media and change their descriptions.
+            "write:follows": Follow and unfollow accounts, answer follow requests, change lists, and subscribe to the new posts of accounts.
+            "write:media": Upload media, read their state while they process, and change their descriptions.
             "write:mutes": Mute and unmute accounts and domains.
             "write:notifications": Mark notifications read and dismiss them.
             "write:reports": Report accounts and posts to the moderators.
-            "write:statuses": Post, edit, delete, boost, and pin posts.
+            "write:statuses": Post, edit, delete, boost, and pin posts, vote in polls, and set who may quote a post.
             "write:supporters": Subscribe to the supporter plans, and change, cancel, and resume the subscription (first-party clients only).
             "write:voice": Open, join, and leave voice chat rooms, and host them.
   headers:
@@ -950,6 +963,14 @@ components:
       $ref: ./components/schemas/AccountAlias.yaml
     AccountAliasList:
       $ref: ./components/schemas/AccountAliasList.yaml
+    AccountList:
+      $ref: ./components/schemas/AccountList.yaml
+    AccountSuggestionList:
+      $ref: ./components/schemas/AccountSuggestionList.yaml
+    RelationshipList:
+      $ref: ./components/schemas/RelationshipList.yaml
+    TagSuggestionList:
+      $ref: ./components/schemas/TagSuggestionList.yaml
     AccountBadge:
       $ref: ./components/schemas/AccountBadge.yaml
     AccountMove:
@@ -976,8 +997,6 @@ components:
       $ref: ./components/schemas/AdminAccountActionKind.yaml
     AdminAccountActionPage:
       $ref: ./components/schemas/AdminAccountActionPage.yaml
-    AdminAccountActionState:
-      $ref: ./components/schemas/AdminAccountActionState.yaml
     AdminAccountDetail:
       $ref: ./components/schemas/AdminAccountDetail.yaml
     AdminAccountPage:
@@ -1014,8 +1033,6 @@ components:
       $ref: ./components/schemas/CreateLoginProviderRequest.yaml
     EmailSuppression:
       $ref: ./components/schemas/EmailSuppression.yaml
-    AdminAccountRegistrationState:
-      $ref: ./components/schemas/AdminAccountRegistrationState.yaml
     AdminAccountRestriction:
       $ref: ./components/schemas/AdminAccountRestriction.yaml
     AdminAccountSignIn:
@@ -1066,8 +1083,6 @@ components:
       $ref: ./components/schemas/AdminDomainActionKind.yaml
     AdminDomainActionPage:
       $ref: ./components/schemas/AdminDomainActionPage.yaml
-    AdminDomainActionState:
-      $ref: ./components/schemas/AdminDomainActionState.yaml
     AdminIncomePeriodTotal:
       $ref: ./components/schemas/AdminIncomePeriodTotal.yaml
     AdminIncomeTotals:
@@ -1200,8 +1215,6 @@ components:
       $ref: ./components/schemas/AdminSignupBlockPage.yaml
     AdminSignupBlockSeverity:
       $ref: ./components/schemas/AdminSignupBlockSeverity.yaml
-    AdminSignupBlockState:
-      $ref: ./components/schemas/AdminSignupBlockState.yaml
     AdminSupporterPlan:
       $ref: ./components/schemas/AdminSupporterPlan.yaml
     AdminSupporterPlanCreateRequest:
@@ -1406,6 +1419,12 @@ components:
       $ref: ./components/schemas/DataImportSkipped.yaml
     DecideAppealRequest:
       $ref: ./components/schemas/DecideAppealRequest.yaml
+    Deactivation:
+      $ref: ./components/schemas/Deactivation.yaml
+    DeactivationPreview:
+      $ref: ./components/schemas/DeactivationPreview.yaml
+    DeactivateOwnAccountRequest:
+      $ref: ./components/schemas/DeactivateOwnAccountRequest.yaml
     DeleteOwnAccountRequest:
       $ref: ./components/schemas/DeleteOwnAccountRequest.yaml
     MoveOwnAccountRequest:
@@ -1524,6 +1543,8 @@ components:
       $ref: ./components/schemas/InstanceDocument.yaml
     InstanceDocumentKind:
       $ref: ./components/schemas/InstanceDocumentKind.yaml
+    InstanceAudience:
+      $ref: ./components/schemas/InstanceAudience.yaml
     InstanceSettingKey:
       $ref: ./components/schemas/InstanceSettingKey.yaml
     InstanceSettingKind:
@@ -1730,6 +1751,8 @@ components:
       $ref: ./components/schemas/ReplaceCustomEmojiImageRequest.yaml
     Report:
       $ref: ./components/schemas/Report.yaml
+    ModerationActionState:
+      $ref: ./components/schemas/ModerationActionState.yaml
     ReportCategory:
       $ref: ./components/schemas/ReportCategory.yaml
     ReportPage:
@@ -1812,8 +1835,6 @@ components:
       $ref: ./components/schemas/SupporterListPage.yaml
     SupporterListPlan:
       $ref: ./components/schemas/SupporterListPlan.yaml
-    SupporterListVisibility:
-      $ref: ./components/schemas/SupporterListVisibility.yaml
     SupporterListing:
       $ref: ./components/schemas/SupporterListing.yaml
     SupporterPlan:
@@ -1846,8 +1867,6 @@ components:
       $ref: ./components/schemas/ThemeProblem.yaml
     ThemeTokenValue:
       $ref: ./components/schemas/ThemeTokenValue.yaml
-    TimelineAccess:
-      $ref: ./components/schemas/TimelineAccess.yaml
     TotpSetup:
       $ref: ./components/schemas/TotpSetup.yaml
     TwoFactor:
@@ -1876,6 +1895,8 @@ components:
       $ref: ./components/schemas/UpdateWebhookRequest.yaml
     Visibility:
       $ref: ./components/schemas/Visibility.yaml
+    VoiceEndReason:
+      $ref: ./components/schemas/VoiceEndReason.yaml
     VoiceGrant:
       $ref: ./components/schemas/VoiceGrant.yaml
     VoiceHostChoice:

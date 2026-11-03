@@ -49,7 +49,8 @@ CREATE TABLE remote_object_tombstones (
 );
 CREATE INDEX remote_object_tombstones_received_at ON remote_object_tombstones (received_at);
 
--- Event: an activity a local actor sends about one of its objects.
+-- Event: an activity a local actor sends about one of its objects. Kept for 30 days; a status's
+-- Create until 30 days after the status's Delete or its actor's Delete.
 CREATE TABLE outbound_activities (
   id uuid NOT NULL PRIMARY KEY,
   activity_uri text NOT NULL,
@@ -61,6 +62,11 @@ CREATE TABLE outbound_activities (
 );
 CREATE UNIQUE INDEX outbound_activities_activity_uri ON outbound_activities (activity_uri);
 CREATE INDEX outbound_activities_object_type_object_id_id ON outbound_activities (object_type, object_id, id);
+-- The retention purge (federation.purge_records): every activity but a status's Create goes after 30 days,
+-- and a Create when its status or actor is deleted.
+CREATE INDEX outbound_activities_retention ON outbound_activities (created_at, id) WHERE NOT (object_type = 'status' AND type = 'Create');
+CREATE INDEX outbound_activities_deletes ON outbound_activities (created_at) WHERE type = 'Delete';
+CREATE INDEX outbound_activities_status_creates ON outbound_activities (actor_account_id) WHERE object_type = 'status' AND type = 'Create';
 
 -- Event: the body of an outbound activity, built once by the fan-out so that every delivery
 -- and retry sends the same bytes.
@@ -87,7 +93,7 @@ CREATE TABLE delivery_attempts (
   delivery_id uuid NOT NULL,
   outcome text NOT NULL CHECK (outcome IN ('succeeded', 'retryable_failure', 'permanent_failure', 'skipped')),
   signature_scheme text CHECK (signature_scheme IN ('rfc9421', 'cavage')),
-  http_status integer,
+  status_code integer,
   error text,
   attempted_at timestamptz NOT NULL
 );
@@ -116,7 +122,8 @@ CREATE TABLE remote_instances (
   first_seen_at timestamptz NOT NULL
 );
 
--- Event: the software a server reported in its NodeInfo.
+-- Event: the software a server reported in its NodeInfo. Kept for 90 days, the newest of each
+-- server always.
 CREATE TABLE instance_nodeinfo_observations (
   id uuid NOT NULL PRIMARY KEY,
   domain text NOT NULL,
@@ -127,6 +134,7 @@ CREATE TABLE instance_nodeinfo_observations (
 CREATE INDEX instance_nodeinfo_observations_domain_id ON instance_nodeinfo_observations (domain, id DESC);
 
 -- Event: a server was marked unavailable or available as a delivery target, with the reason.
+-- Kept for 90 days, the newest of each server always.
 CREATE TABLE instance_availability_events (
   id uuid NOT NULL PRIMARY KEY,
   domain text NOT NULL,

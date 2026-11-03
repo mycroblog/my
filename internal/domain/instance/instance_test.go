@@ -41,8 +41,8 @@ func TestParse(t *testing.T) {
 		{instance.SettingAuthorizedFetch, "true", "true"},
 		{instance.SettingAuthorizedFetch, "False", "false"},
 		{instance.SettingAuthorizedFetch, "1", ""},
-		{instance.SettingLocalTimelineAccess, "logged_in", "logged_in"},
-		{instance.SettingFederatedTimelineAccess, "true", ""},
+		{instance.SettingLocalTimelineVisibility, "signed_in", "signed_in"},
+		{instance.SettingFederatedTimelineVisibility, "true", ""},
 		{instance.SettingMaxStatusLength, "1", "1"},
 		{instance.SettingMaxStatusLength, "+42", "42"},
 		{instance.SettingMaxStatusLength, "100000", "100000"},
@@ -58,26 +58,26 @@ func TestParse(t *testing.T) {
 		{instance.SettingDefaultLocale, "en--US", ""},
 		{instance.SettingDefaultLocale, "", ""},
 		// The retention periods may not go below their floors (ADR-0038).
-		{instance.SettingRetentionSessionOrigins, "90", "90"},
-		{instance.SettingRetentionSessionOrigins, "89", ""},
-		{instance.SettingRetentionRegistrationOrigins, "89", ""},
-		{instance.SettingRetentionReports, "180", "180"},
-		{instance.SettingRetentionReports, "179", ""},
-		{instance.SettingRetentionModerationActions, "179", ""},
-		{instance.SettingRetentionAuditLog, "365", "365"},
-		{instance.SettingRetentionAuditLog, "364", ""},
-		{instance.SettingRetentionAuditLog, "3650", "3650"},
-		{instance.SettingRetentionAuditLog, "3651", ""},
+		{instance.SettingSessionOriginsRetentionDays, "90", "90"},
+		{instance.SettingSessionOriginsRetentionDays, "89", ""},
+		{instance.SettingRegistrationOriginsRetentionDays, "89", ""},
+		{instance.SettingReportsRetentionDays, "180", "180"},
+		{instance.SettingReportsRetentionDays, "179", ""},
+		{instance.SettingModerationActionsRetentionDays, "179", ""},
+		{instance.SettingAuditLogRetentionDays, "365", "365"},
+		{instance.SettingAuditLogRetentionDays, "364", ""},
+		{instance.SettingAuditLogRetentionDays, "3650", "3650"},
+		{instance.SettingAuditLogRetentionDays, "3651", ""},
 		// The voice chat settings (ADR-0100 §2, §9, §13).
 		{instance.SettingVoiceRoomStarters, "everyone", "everyone"},
 		{instance.SettingVoiceRoomStarters, "permitted", "permitted"},
 		{instance.SettingVoiceRoomStarters, "nobody", ""},
 		{instance.SettingVoicePublicSummary, "TRUE", "true"},
 		{instance.SettingVoicePublicSummary, "yes", ""},
-		{instance.SettingRetentionVoiceParticipants, "30", "30"},
-		{instance.SettingRetentionVoiceParticipants, "29", ""},
-		{instance.SettingRetentionVoiceParticipants, "3650", "3650"},
-		{instance.SettingRetentionVoiceParticipants, "3651", ""},
+		{instance.SettingVoiceParticipantsRetentionDays, "30", "30"},
+		{instance.SettingVoiceParticipantsRetentionDays, "29", ""},
+		{instance.SettingVoiceParticipantsRetentionDays, "3650", "3650"},
+		{instance.SettingVoiceParticipantsRetentionDays, "3651", ""},
 	} {
 		d, err := instance.Lookup(tc.key)
 		if err != nil {
@@ -123,12 +123,12 @@ func TestRemoteMediaSettings(t *testing.T) {
 	}
 	s := instance.NewSettings([]instance.CurrentSetting{
 		{Key: instance.SettingRemoteMediaPolicy, RevisionID: testID(1), Value: "all"},
-		{Key: instance.SettingRemoteMediaCacheTTL, RevisionID: testID(2), Value: "3600"},
+		{Key: instance.SettingRemoteMediaCacheTTLSeconds, RevisionID: testID(2), Value: "3600"},
 	})
 	if s.RemoteMediaPolicy() != instance.RemoteMediaAll || s.RemoteMediaCacheTTL() != time.Hour {
 		t.Errorf("Settings = %s, %v; want all and an hour", s.RemoteMediaPolicy(), s.RemoteMediaCacheTTL())
 	}
-	d, err := instance.Lookup(instance.SettingRemoteMediaCacheTTL)
+	d, err := instance.Lookup(instance.SettingRemoteMediaCacheTTLSeconds)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,25 +183,25 @@ func TestFederationModeSetting(t *testing.T) {
 
 func TestDomainActionsVisibilitySettings(t *testing.T) {
 	var zero instance.Settings
-	if zero.DomainActionsVisibility() != instance.AudienceNone || zero.DomainActionsRationaleVisibility() != instance.AudienceNone {
-		t.Errorf("zero Settings list domain actions to %q and their comments to %q, want none by default",
+	if zero.DomainActionsVisibility() != instance.AudienceOff || zero.DomainActionsRationaleVisibility() != instance.AudienceOff {
+		t.Errorf("zero Settings list domain actions to %q and their comments to %q, want off by default",
 			zero.DomainActionsVisibility(), zero.DomainActionsRationaleVisibility())
 	}
 	s := instance.NewSettings([]instance.CurrentSetting{
-		{Key: instance.SettingDomainActionsVisibility, RevisionID: testID(1), Value: "all"},
-		{Key: instance.SettingDomainActionsRationaleVisibility, RevisionID: testID(2), Value: "users"},
+		{Key: instance.SettingDomainActionsVisibility, RevisionID: testID(1), Value: "everyone"},
+		{Key: instance.SettingDomainActionsRationaleVisibility, RevisionID: testID(2), Value: "signed_in"},
 	})
-	if s.DomainActionsVisibility() != instance.AudienceAll || s.DomainActionsRationaleVisibility() != instance.AudienceUsers {
-		t.Errorf("Settings list domain actions to %q and their comments to %q, want all and users",
+	if s.DomainActionsVisibility() != instance.AudienceEveryone || s.DomainActionsRationaleVisibility() != instance.AudienceSignedIn {
+		t.Errorf("Settings list domain actions to %q and their comments to %q, want everyone and signed_in",
 			s.DomainActionsVisibility(), s.DomainActionsRationaleVisibility())
 	}
 	for _, tc := range []struct {
 		a                   instance.Audience
 		anonymous, loggedIn bool
 	}{
-		{instance.AudienceNone, false, false},
-		{instance.AudienceUsers, false, true},
-		{instance.AudienceAll, true, true},
+		{instance.AudienceOff, false, false},
+		{instance.AudienceSignedIn, false, true},
+		{instance.AudienceEveryone, true, true},
 		{"unknown", false, false},
 	} {
 		if got := tc.a.Allows(false); got != tc.anonymous {
@@ -215,8 +215,49 @@ func TestDomainActionsVisibilitySettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := def.Parse("everyone"); !errors.Is(err, instance.ErrInvalidValue) {
-		t.Errorf("Parse(everyone) = %v, want ErrInvalidValue", err)
+	if _, err := def.Parse("all"); !errors.Is(err, instance.ErrInvalidValue) {
+		t.Errorf("Parse(all) = %v, want ErrInvalidValue", err)
+	}
+}
+
+// TestWhoMayReadSettingsShareOneVocabulary keeps every setting that decides who may read something
+// on the same key suffix and the same values.
+func TestWhoMayReadSettingsShareOneVocabulary(t *testing.T) {
+	for _, key := range []instance.SettingKey{
+		instance.SettingLocalTimelineVisibility, instance.SettingFederatedTimelineVisibility,
+		instance.SettingDomainActionsVisibility, instance.SettingDomainActionsRationaleVisibility,
+		instance.SettingSupporterListVisibility,
+	} {
+		if !strings.HasSuffix(string(key), "_visibility") {
+			t.Errorf("%s has no _visibility suffix", key)
+		}
+		def, err := instance.Lookup(key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := []string{"off", "signed_in", "everyone"}; !slices.Equal(def.Choices, want) {
+			t.Errorf("%s choices = %v, want %v", key, def.Choices, want)
+		}
+	}
+}
+
+// TestIntegerSettingsNameTheirUnit keeps the unit of a stored period in its key, since a bare number
+// cannot say it.
+func TestIntegerSettingsNameTheirUnit(t *testing.T) {
+	for _, key := range []instance.SettingKey{
+		instance.SettingAppealWindowDays, instance.SettingSessionOriginsRetentionDays,
+		instance.SettingRegistrationOriginsRetentionDays, instance.SettingReportsRetentionDays,
+		instance.SettingModerationActionsRetentionDays, instance.SettingAuditLogRetentionDays,
+		instance.SettingVoiceParticipantsRetentionDays,
+	} {
+		if !strings.HasSuffix(string(key), "_days") {
+			t.Errorf("%s does not name its unit, days", key)
+		}
+	}
+	for _, key := range []instance.SettingKey{instance.SettingRemoteMediaCacheTTLSeconds, instance.SettingMemberInviteMaxLifetimeSeconds} {
+		if !strings.HasSuffix(string(key), "_seconds") {
+			t.Errorf("%s does not name its unit, seconds", key)
+		}
 	}
 }
 
@@ -274,19 +315,19 @@ func TestFinanceViewerSettings(t *testing.T) {
 func TestVoiceSettings(t *testing.T) {
 	var zero instance.Settings
 	if zero.VoiceRoomStarters() != instance.VoiceRoomStartersPermitted || zero.VoicePublicSummary() ||
-		zero.Retention(instance.SettingRetentionVoiceParticipants) != 90*24*time.Hour {
+		zero.Retention(instance.SettingVoiceParticipantsRetentionDays) != 90*24*time.Hour {
 		t.Errorf("zero Settings = %s, %v, %v; want permitted, false, 90 days", zero.VoiceRoomStarters(), zero.VoicePublicSummary(),
-			zero.Retention(instance.SettingRetentionVoiceParticipants))
+			zero.Retention(instance.SettingVoiceParticipantsRetentionDays))
 	}
 	s := instance.NewSettings([]instance.CurrentSetting{
 		{Key: instance.SettingVoiceRoomStarters, RevisionID: testID(1), Value: "everyone"},
 		{Key: instance.SettingVoicePublicSummary, RevisionID: testID(2), Value: "true"},
-		{Key: instance.SettingRetentionVoiceParticipants, RevisionID: testID(3), Value: "30"},
+		{Key: instance.SettingVoiceParticipantsRetentionDays, RevisionID: testID(3), Value: "30"},
 	})
 	if s.VoiceRoomStarters() != instance.VoiceRoomStartersEveryone || !s.VoicePublicSummary() ||
-		s.Retention(instance.SettingRetentionVoiceParticipants) != 30*24*time.Hour {
+		s.Retention(instance.SettingVoiceParticipantsRetentionDays) != 30*24*time.Hour {
 		t.Errorf("Settings = %s, %v, %v; want everyone, true, 30 days", s.VoiceRoomStarters(), s.VoicePublicSummary(),
-			s.Retention(instance.SettingRetentionVoiceParticipants))
+			s.Retention(instance.SettingVoiceParticipantsRetentionDays))
 	}
 	unexpected := instance.NewSettings([]instance.CurrentSetting{{Key: instance.SettingVoiceRoomStarters, RevisionID: testID(1), Value: "nobody"}})
 	if unexpected.VoiceRoomStarters() != instance.VoiceRoomStartersPermitted {
@@ -307,17 +348,17 @@ func TestMemberInviteSettings(t *testing.T) {
 		{Key: instance.SettingInviteCreators, RevisionID: testID(1), Value: "everyone"},
 		{Key: instance.SettingMemberInviteMaxActive, RevisionID: testID(2), Value: "0"},
 		{Key: instance.SettingMemberInviteMaxUses, RevisionID: testID(3), Value: "1000"},
-		{Key: instance.SettingMemberInviteMaxExpiresIn, RevisionID: testID(4), Value: "3600"},
+		{Key: instance.SettingMemberInviteMaxLifetimeSeconds, RevisionID: testID(4), Value: "3600"},
 	})
 	want = instance.MemberInviteCaps{MaxActive: 0, MaxUses: 1000, MaxExpiresIn: time.Hour}
 	if s.InviteCreators() != instance.InviteCreatorsEveryone || s.MemberInviteCaps() != want {
 		t.Errorf("Settings = %s, %+v; want everyone, %+v", s.InviteCreators(), s.MemberInviteCaps(), want)
 	}
 	for key, bad := range map[instance.SettingKey][]string{
-		instance.SettingInviteCreators:           {"nobody", ""},
-		instance.SettingMemberInviteMaxActive:    {"-1", "101"},
-		instance.SettingMemberInviteMaxUses:      {"0", "1001"},
-		instance.SettingMemberInviteMaxExpiresIn: {"3599", "31536001"},
+		instance.SettingInviteCreators:                 {"nobody", ""},
+		instance.SettingMemberInviteMaxActive:          {"-1", "101"},
+		instance.SettingMemberInviteMaxUses:            {"0", "1001"},
+		instance.SettingMemberInviteMaxLifetimeSeconds: {"3599", "31536001"},
 	} {
 		def, err := instance.Lookup(key)
 		if err != nil {

@@ -80,7 +80,7 @@ func TestInboxAnswersOnce(t *testing.T) {
 }
 
 // TestMigrationRunsAgain runs the migration of a moved account again: a follower that moved stays
-// moved and is told once, and a move that was cancelled moves nobody more.
+// moved and is told once, and a move that was canceled moves nobody more.
 func TestMigrationRunsAgain(t *testing.T) {
 	t.Parallel()
 	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline"}, platform.AppOptions{}, "alice", "bob", "carol", "dan")
@@ -114,7 +114,7 @@ func TestMigrationRunsAgain(t *testing.T) {
 		t.Errorf("after running it again carol follows bob = %q, alice = %q", following(carol, bob), following(carol, alice))
 	}
 
-	// Once the move is cancelled, a follower of the account stays with it.
+	// Once the move is canceled, a follower of the account stays with it.
 	if err := c.app.Accounts.CancelMove(ctx, alice); err != nil {
 		t.Fatal(err)
 	}
@@ -125,6 +125,41 @@ func TestMigrationRunsAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	if following(dan, alice) != graph.StateActive || following(dan, bob) != graph.StateNone {
-		t.Errorf("after running a cancelled move dan follows alice = %q, bob = %q", following(dan, alice), following(dan, bob))
+		t.Errorf("after running a canceled move dan follows alice = %q, bob = %q", following(dan, alice), following(dan, bob))
+	}
+}
+
+// TestQuoteRequestAnswerAudience checks the QuoteRequest embedded in the answer to it: its
+// audiences are empty lists, not null.
+func TestQuoteRequestAnswerAudience(t *testing.T) {
+	t.Parallel()
+	network := &relayNet{docs: map[string][]byte{}}
+	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline"}, platform.AppOptions{HTTPClient: network}, "alice")
+	dave := newRemoteActor(t, network, "https://remote.example/users/dave", "Person", "https://remote.example/users/dave/inbox")
+	st := c.post("alice", map[string]any{"text": "quote me", "visibility": "public"})
+	network.taken() // the post's own deliveries
+
+	activity := map[string]any{
+		"id": dave.id + "/activities/quote", "type": "QuoteRequest", "actor": dave.id,
+		"object": "https://example.test/ap/objects/" + st.Id, "instrument": dave.id + "/statuses/1",
+	}
+	if code := inboxCode(t, c, dave, activity); code != http.StatusAccepted {
+		t.Fatalf("QuoteRequest = %d", code)
+	}
+	posts := network.taken()[dave.id+"/inbox"]
+	if len(posts) != 1 || posts[0]["type"] != "Accept" {
+		t.Fatalf("sent = %v, want an Accept", posts)
+	}
+	request, ok := posts[0]["object"].(map[string]any)
+	if !ok || request["type"] != "QuoteRequest" || request["id"] != activity["id"] || request["instrument"] != activity["instrument"] {
+		t.Fatalf("the Accept's object = %v", posts[0]["object"])
+	}
+	if _, ok := request["@context"]; ok {
+		t.Errorf("the embedded QuoteRequest has a context: %v", request)
+	}
+	for _, field := range []string{"to", "cc"} {
+		if got, ok := request[field].([]any); !ok || len(got) != 0 {
+			t.Errorf("the embedded QuoteRequest's %s = %v, want an empty list", field, request[field])
+		}
 	}
 }

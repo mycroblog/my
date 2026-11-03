@@ -72,6 +72,7 @@ func (a *App) Handler() http.Handler {
 	h = a.rejectInvalidText(h)
 	h = a.clientIPs(h)
 	h = clientAPICORS(a.Config.WebOrigin, h)
+	h = clientAPIEpoch(h)
 	h = a.crawlerHeaders(h)
 	h = a.recoverPanics(h)
 	h = securityHeaders(h, a.Voice.Enabled())

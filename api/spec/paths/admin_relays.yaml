@@ -3,7 +3,7 @@ get:
   operationId: listAdminRelays
   summary: List the relays
   description: |
-    The relays that the instance joins or joined (ADR-0061), in registration order, with
+    The relays that the instance joins or joined, in registration order, with
     the state of the membership and what each brought in during the last 24 hours. Needs the
     `manage_settings` permission.
   tags: [admin-server]
@@ -43,7 +43,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateRelayRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminRelay.yaml
     "422":
       $ref: ../components/responses/RelayProblem.yaml

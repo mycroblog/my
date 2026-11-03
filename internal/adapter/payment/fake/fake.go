@@ -6,7 +6,7 @@
 // PutChange, Fail) and send it webhook deliveries signed by Deliver.
 //
 // It is never part of a released binary: only a test build with the build tag e2e_fakes links it
-// into the server, as payments_provider = fake (NewPages), which serves a checkout page
+// into the server, as payments = fake (NewPages), which serves a checkout page
 // where the buyer pays, fails, or cancels without any money moving (ADR-0117 §2). Such a build
 // refuses to start outside profile = development, and the checks of the build tags, the
 // Dockerfile, and the release keep the tag out of the released binaries and images.

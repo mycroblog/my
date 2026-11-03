@@ -102,7 +102,7 @@ func (s *Server) edgePage(ctx context.Context, viewer *Viewer, edges []graph.Edg
 	if err != nil {
 		return AccountPage{}, err
 	}
-	page := AccountPage{Accounts: accounts}
+	page := AccountPage{Items: accounts}
 	if last >= 0 {
 		page.NextCursor = encodeCursor(edges[last].FollowID)
 	}
@@ -213,7 +213,7 @@ func (s *Server) ListBlocks(ctx context.Context, req ListBlocksRequestObject) (L
 	if err != nil {
 		return nil, err
 	}
-	page := AccountPage{Accounts: accounts}
+	page := AccountPage{Items: accounts}
 	if last >= 0 {
 		page.NextCursor = encodeCursor(edges[last].BlockID)
 	}
@@ -261,7 +261,7 @@ func (s *Server) ListMutes(ctx context.Context, req ListMutesRequestObject) (Lis
 		return nil, err
 	}
 	mutes, last := trim(mutes, q.limit)
-	page := MutePage{Mutes: []MutedAccount{}}
+	page := MutePage{Items: []MutedAccount{}}
 	var actors []appaccount.Actor
 	var shown []graph.Mute
 	for _, m := range mutes {
@@ -278,7 +278,7 @@ func (s *Server) ListMutes(ctx context.Context, req ListMutesRequestObject) (Lis
 		return nil, err
 	}
 	for i, m := range shown {
-		page.Mutes = append(page.Mutes, MutedAccount{Account: accounts[i], Notifications: m.HideNotifications, ExpiresAt: m.ExpiresAt})
+		page.Items = append(page.Items, MutedAccount{Account: accounts[i], HideNotifications: m.HideNotifications, ExpiresAt: m.ExpiresAt})
 	}
 	if last >= 0 {
 		page.NextCursor = encodeMuteCursor(mutes[last])

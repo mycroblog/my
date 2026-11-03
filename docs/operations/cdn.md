@@ -35,7 +35,7 @@ MY_MEDIA_ORIGIN=https://media.example.org
 | Path | `Cache-Control` |
 | --- | --- |
 | `/media/{...}` (local media) | `public, max-age=31536000, immutable` (one year) |
-| `/media/proxy/{...}` (remote media) | `public, max-age=` the number of seconds of the instance setting `remote_media_cache_ttl` |
+| `/media/proxy/{...}` (remote media) | `public, max-age=` the number of seconds of the instance setting `remote_media_cache_ttl_seconds` |
 
 Both are returned with `Cross-Origin-Resource-Policy: cross-origin`, so pages from other origins can read them.
 
@@ -53,7 +53,7 @@ Tell your users that a non-public post limits who sees the post, but does not st
 
 ## Deletion and the cache
 
-After you delete media, the CDN's cache keeps it for `max-age`. A deleted file can stay visible for up to a year for local media, and up to `remote_media_cache_ttl` for the proxy.
+After you delete media, the CDN's cache keeps it for `max-age`. A deleted file can stay visible for up to a year for local media, and up to `remote_media_cache_ttl_seconds` for the proxy.
 The server does not purge the CDN's cache. If something must disappear right after a deletion or a moderation action, purge it by hand in the CDN's console or API.
 
 ## Service Worker

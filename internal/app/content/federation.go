@@ -122,6 +122,22 @@ func (i *Interactions) FindBoost(ctx context.Context, id string) (Boost, error) 
 	return i.d.Interactions.FindBoost(ctx, id)
 }
 
+// FindLiveBoost returns a boost that is not retracted. It fails with ErrNotFound when there is
+// none or it is retracted.
+func (i *Interactions) FindLiveBoost(ctx context.Context, id string) (Boost, error) {
+	b, err := i.d.Interactions.FindBoost(ctx, id)
+	if err != nil {
+		return Boost{}, err
+	}
+	switch _, err := i.d.Interactions.FindBoostRetraction(ctx, id); {
+	case errors.Is(err, ErrNotFound):
+		return b, nil
+	case err != nil:
+		return Boost{}, err
+	}
+	return Boost{}, fmt.Errorf("boost %s is retracted: %w", id, ErrNotFound)
+}
+
 // EffectiveVisibility is content.EffectiveVisibility: the visibility a status is judged and
 // addressed by, min(original, the author's ceiling) (data-model §5.4).
 func EffectiveVisibility(original Visibility, author AuthorRestrictions) Visibility {

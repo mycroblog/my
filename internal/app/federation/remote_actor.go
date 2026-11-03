@@ -26,7 +26,7 @@ const (
 	JobRefreshActor = "federation.refresh_actor"
 	// JobRefreshActors walks the stale remote actors in batches and refreshes the ones that
 	// local accounts follow.
-	JobRefreshActors = "federation.refresh_actors"
+	JobRefreshActors = "federation.refresh_stale_actors"
 	// JobObserveInstance reads the NodeInfo of a server seen for the first time.
 	JobObserveInstance = "federation.observe_instance"
 	// RefreshActorsEvery is the period of JobRefreshActors.
@@ -174,6 +174,9 @@ func (r *RemoteActors) store(ctx context.Context, actor *federation.Actor, raw [
 		}
 		return r.seeInstance(ctx, tx, in.Domain)
 	})
+	if errors.Is(err, appaccount.ErrActorDeleted) {
+		return r.d.Accounts.FindByURI(ctx, in.URI) // a deleted actor stays deleted, and stays erased
+	}
 	if err != nil {
 		return appaccount.Actor{}, err
 	}
@@ -380,7 +383,7 @@ func (r *RemoteActors) handleRefresh(ctx context.Context, j queue.Job) queue.Res
 		return queue.Done()
 	case err != nil:
 		return queue.Retry(0, err)
-	case a.Account.IsLocal():
+	case a.Account.IsLocal(), a.Deleted():
 		return queue.Done()
 	}
 	_, err = r.Refresh(ctx, a.Account.URI)

@@ -157,7 +157,7 @@ func TestInstanceRuleOperationsNeedAPermission(t *testing.T) {
 		{http.MethodGet, "/admin/rules", ""},
 		{http.MethodPost, "/admin/rules", `{"text":"Be kind"}`},
 		{http.MethodGet, "/admin/rules/" + id, ""},
-		{http.MethodPatch, "/admin/rules/" + id, `{"text":"Be kind"}`},
+		{http.MethodPut, "/admin/rules/" + id, `{"text":"Be kind"}`},
 		{http.MethodPost, "/admin/rules/" + id + "/move", `{"position":1}`},
 		{http.MethodPost, "/admin/rules/" + id + "/retire", ""},
 	} {
@@ -182,7 +182,7 @@ func TestManageInstanceRules(t *testing.T) {
 	kind := decodeJSON[clientapi.AdminRule](t, res)
 	hint := "No harassment."
 	want := clientapi.AdminRule{Id: kind.Id, Position: 1, CreatedAt: adminNow, RevisedAt: adminNow, Text: "Be kind", Hint: &hint}
-	if res.StatusCode != http.StatusOK || !reflect.DeepEqual(kind, want) {
+	if res.StatusCode != http.StatusCreated || !reflect.DeepEqual(kind, want) {
 		t.Fatalf("create = %d %+v, want %+v", res.StatusCode, kind, want)
 	}
 	if cc := res.Header.Get("Cache-Control"); cc != "no-store" {
@@ -194,7 +194,7 @@ func TestManageInstanceRules(t *testing.T) {
 	spam := decodeJSON[clientapi.AdminRule](t, e.sendJSON(t, http.MethodPost, "/admin/rules", "admin", `{"text":"No spam"}`))
 
 	// Revising keeps the ID and replaces the text and the hint.
-	res = e.sendJSON(t, http.MethodPatch, "/admin/rules/"+kind.Id, "admin", `{"text":"とても親切に"}`)
+	res = e.sendJSON(t, http.MethodPut, "/admin/rules/"+kind.Id, "admin", `{"text":"とても親切に"}`)
 	revised := decodeJSON[clientapi.AdminRule](t, res)
 	if res.StatusCode != http.StatusOK || revised.Id != kind.Id || revised.Text != "とても親切に" || revised.Hint != nil {
 		t.Errorf("revise = %d %+v; want the same rule with the new text and no hint", res.StatusCode, revised)
@@ -270,13 +270,13 @@ func TestInstanceRuleProblems(t *testing.T) {
 	}{
 		{"too long", http.MethodPost, "/admin/rules", `{"text":"` + strings.Repeat("a", 301) + `","x":"invalid-on-purpose"}`, http.StatusUnprocessableEntity, "text"},
 		{"line break", http.MethodPost, "/admin/rules", `{"text":"a\nb"}`, http.StatusUnprocessableEntity, "text"},
-		{"blank", http.MethodPatch, "/admin/rules/" + r.ID, `{"text":"   "}`, http.StatusUnprocessableEntity, "text"},
-		{"hint too long", http.MethodPatch, "/admin/rules/" + r.ID, `{"text":"a","hint":"` + strings.Repeat("a", 1001) + `","x":"invalid-on-purpose"}`, http.StatusUnprocessableEntity, "hint"},
+		{"blank", http.MethodPut, "/admin/rules/" + r.ID, `{"text":"   "}`, http.StatusUnprocessableEntity, "text"},
+		{"hint too long", http.MethodPut, "/admin/rules/" + r.ID, `{"text":"a","hint":"` + strings.Repeat("a", 1001) + `","x":"invalid-on-purpose"}`, http.StatusUnprocessableEntity, "hint"},
 		{"position 0", http.MethodPost, "/admin/rules/" + r.ID + "/move", `{"position":0,"x":"invalid-on-purpose"}`, http.StatusUnprocessableEntity, "position"},
-		{"revise retired", http.MethodPatch, "/admin/rules/" + retired.ID, `{"text":"x"}`, http.StatusConflict, ""},
+		{"revise retired", http.MethodPut, "/admin/rules/" + retired.ID, `{"text":"x"}`, http.StatusConflict, ""},
 		{"move retired", http.MethodPost, "/admin/rules/" + retired.ID + "/move", `{"position":1}`, http.StatusConflict, ""},
 		{"get unknown", http.MethodGet, "/admin/rules/" + unknown, "", http.StatusNotFound, ""},
-		{"revise unknown", http.MethodPatch, "/admin/rules/" + unknown, `{"text":"x"}`, http.StatusNotFound, ""},
+		{"revise unknown", http.MethodPut, "/admin/rules/" + unknown, `{"text":"x"}`, http.StatusNotFound, ""},
 		{"retire unknown", http.MethodPost, "/admin/rules/" + unknown + "/retire", "", http.StatusNotFound, ""},
 	} {
 		var res *http.Response

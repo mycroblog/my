@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useApi, useSessionStatus, useSessionUnreachable } from "../../../lib/auth/SessionProvider";
 import { shellQueryRetry } from "../../../lib/query";
 import { timelinesKey } from "../../../lib/storage";
-import { instanceQueryOptions, type TimelineAccess } from "../api/timelines";
+import { instanceQueryOptions, type InstanceAudience } from "../api/timelines";
 
 /**
  * Which public timelines to offer the viewer: an instance setting turns each off (it is then a 404) or keeps it for
@@ -18,8 +18,8 @@ export type TimelineAvailability = {
 };
 
 /** Whether a timeline of `access` is offered to a viewer who is or is not signed in. */
-function offered(access: TimelineAccess, signedOut: boolean): boolean {
-  return access === "everyone" || (access === "logged_in" && !signedOut);
+function offered(access: InstanceAudience, signedOut: boolean): boolean {
+  return access === "everyone" || (access === "signed_in" && !signedOut);
 }
 
 /**

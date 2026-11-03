@@ -252,12 +252,12 @@ type MoneyMovement struct {
      秘密を切り替える間は Stripe が新旧の秘密で署名を並べるので、設定の秘密は 1 つでよい。
   3. 本文は `encoding/json` で `id`・`type`・`livemode`・`data.object.id`・`data.object.object` だけを読む。API の版で形が変わる項目は読まないので、SDK の版を上げても、エンドポイントの API の版が SDK と違っても受け付ける。
      `livemode` が鍵のモード（§5）と違えば `mode_mismatch` で拒む（テストのイベントで本番のロールが付かないように）。
-  4. 1 つの短いトランザクションで、受信の記録（§4 の `payment_webhook_receipts`、`(provider, event_id)` で一意）を足し、同じトランザクションで outbox（ADR-0004）にジョブ `supporters.payment_event` を積む。冪等キーは `payment_event:<provider>:<event_id>`、`orderingKey` は対象のオブジェクトの ID。
+  4. 1 つの短いトランザクションで、受信の記録（§4 の `payment_webhook_receipts`、`(provider, event_id)` で一意）を足し、同じトランザクションで outbox（ADR-0004）にジョブ `supporters.apply_payment_event` を積む。冪等キーは `payment_event:<provider>:<event_id>`、`orderingKey` は対象のオブジェクトの ID。
      受信の記録がもうあれば何もしない（重複の受信）。
   5. `2xx` を返す。署名の誤り・古い時刻・モードの食い違いは `400`、DB の失敗は `503`（Stripe が再送する）。`ignored` の種類も記録せずに `2xx` を返す。
 - 運営者が Stripe に登録するイベント: `checkout.session.completed`・`checkout.session.expired`、`customer.subscription.created`・`.updated`・`.deleted`・`.paused`・`.resumed`、`invoice.paid`・`invoice.payment_failed`、`charge.refunded`・`refund.created`・`refund.updated`、`charge.dispute.created`・`.closed`・`.funds_withdrawn`・`.funds_reinstated`。
   docs（#920）に一覧と、Stripe CLI・ダッシュボードでの登録の手順を書く。サーバーはエンドポイントを API で作らない（秘密 `whsec_` を運営者が設定に置くため）。
-- **ジョブ `supporters.payment_event`**（冪等、ADR-0004）:
+- **ジョブ `supporters.apply_payment_event`**（冪等、ADR-0004）:
   1. `Resolve` で、通知が指すサブスクリプション・申し込み・お金の動きを事業者から取り直す（イベントの本文の状態は使わない、T1）。
   2. 申し込みなら `GetCheckout` で完了を確かめ、顧客とサブスクリプションの ID を加入に結び付ける。
   3. サブスクリプションごとに `GetSubscription` を呼び、ADR-0072 の `supporters.sync`（スナップショットからこちらの状態を導き、ロールを付け外す）に渡す。
@@ -267,7 +267,7 @@ type MoneyMovement struct {
 
 ### 4. 照合のジョブ（C1）とデータモデル
 
-- `Scheduler`（ADR-0004）の定期ジョブ `supporters.payment_reconcile` を、課金が有効なときだけ載せる。周期は設定 `payments_reconcile_interval`（既定 6 時間、15 分〜7 日。決定者の回答 3）で、冪等キーは既存の `schedule:<name>:<slot>`。
+- `Scheduler`（ADR-0004）の定期ジョブ `supporters.reconcile_payments` を、課金が有効なときだけ載せる。周期は設定 `payments_reconcile_interval`（既定 6 時間、15 分〜7 日。決定者の回答 3）で、冪等キーは既存の `schedule:<name>:<slot>`。
   既定の 6 時間なら、webhook を落としても 6 時間で追いつき、7 日の猶予の判定には十分に短い。
 - 1 回の照合が事業者に送る要求は、設定 `payments_reconcile_max_requests`（既定 1,000）までにする。adapter は要求を 1 秒に 20 件まで（テストのモードでは 10 件まで）に抑え、`429` には `Retry-After` に従って待つ。
   Stripe の読み取りのレート制限（ライブで 1 秒に 100 件ほど、テストで 25 件ほど）の内に収めるための値で、制限の正確な値は **要検証**。既定の上限と速さなら、1 回の照合は 1 分ほどで終わる。
@@ -311,7 +311,7 @@ type MoneyMovement struct {
 
 | キー | 秘密 | 内容 |
 | --- | --- | --- |
-| `payments_provider` | | `none`（既定）か `stripe`。1 つだけ |
+| `payments` | | `none`（既定）か `stripe`。1 つだけ |
 | `payments_stripe_secret_key` | ✓ | API の鍵。権限を絞った制限付きの鍵（`rk_`）を勧め、必要な権限を docs に書く（**要検証**）。`sk_` も受ける |
 | `payments_stripe_webhook_secret` | ✓ | webhook のエンドポイントの署名の秘密（`whsec_`） |
 | `payments_reconcile_interval` | | 照合の周期（既定 `6h`、`15m`〜`168h`、§4） |
@@ -339,7 +339,7 @@ type MoneyMovement struct {
 
 ### 8. build tag
 
-- `no_payments_stripe` は `internal/adapter/payment/stripe` と `stripe-go` を外し、`payments_provider = stripe` を拒む（[build-tags.md](../reference/build-tags.md) の「Adding a tag」の手順）。`fake` は test だけで使い、本番の binary に入らない。
+- `no_payments_stripe` は `internal/adapter/payment/stripe` と `stripe-go` を外し、`payments = stripe` を拒む（[build-tags.md](../reference/build-tags.md) の「Adding a tag」の手順）。`fake` は test だけで使い、本番の binary に入らない。
 - 代表の組み合わせのうち、self-hosted の組に `no_payments_stripe` を足す（AWS と Google Cloud の組は含めたまま build を確かめる）。
 
 ### この決定を覆す条件
@@ -347,7 +347,7 @@ type MoneyMovement struct {
 - 見回しの 1 ページに `latest_invoice` を展開できず、支払いの失敗をスナップショットに入れられないと分かったら（#920）、見回しは状態と期間だけを直し、支払いの失敗は 1 の変わったものに任せる。
 - Subscription Schedule で期間の終わりの変更を組めないと分かったら（#920）、P2（顧客ポータルの `subscription_update` の `schedule_at_period_end`）に変え、ポータルの設定をプランに合わせて同期する。
 - 再デプロイなしに管理画面から鍵を設定したいという要望が多ければ、S2（秘密を `Sealer` で暗号化して DB に持つ）を別の ADR で検討する。
-- 2 つめの事業者が要るときは、同じ契約テストを通す adapter を足し、`payments_provider` の値と各表の `provider` の enum に足す。
+- 2 つめの事業者が要るときは、同じ契約テストを通す adapter を足し、`payments` の値と各表の `provider` の enum に足す。
 
 ## Consequences（影響）
 
@@ -363,7 +363,7 @@ type MoneyMovement struct {
   - 鍵と webhook の秘密をデプロイの設定に置くので、Stripe を有効にするには再デプロイが要る。webhook のエンドポイントの登録は運営者の手作業になる。
   - webhook の受け口が匿名で叩ける経路を 1 つ増やす。署名の検証の前に読む本文を 1 MiB に限り、ADR-0019 §5 のレート制限の対象にする。
 - 後続で必要になる作業（Epic #925）
-  - #919（ポート・webhook・照合）: §1 のポートと型と失敗の種類、`pkg/testkit.PaymentProviderContract`、`internal/adapter/payment/fake`、`internal/interface/payments` の `POST /payments/webhooks/{provider}`（本文の上限・レート制限・受信の記録と outbox）、ジョブ `supporters.payment_event` と `supporters.payment_reconcile`（4 段・カーソル・要求の上限・続きのジョブ・手動）、`payments_reconcile_interval`・`payments_reconcile_max_requests` の設定、受信の記録の掃除、§4 の 2 つの表と `schema/<dialect>.sql`・sqlc、`payments_provider` の設定、`GET /admin/payment_status`・`POST /admin/payment_reconciles` と管理画面の状態の表示、overview §3 のポートの表と data-model の所有の表
+  - #919（ポート・webhook・照合）: §1 のポートと型と失敗の種類、`pkg/testkit.PaymentProviderContract`、`internal/adapter/payment/fake`、`internal/interface/payments` の `POST /payments/webhooks/{provider}`（本文の上限・レート制限・受信の記録と outbox）、ジョブ `supporters.apply_payment_event` と `supporters.reconcile_payments`（4 段・カーソル・要求の上限・続きのジョブ・手動）、`payments_reconcile_interval`・`payments_reconcile_max_requests` の設定、受信の記録の掃除、§4 の 2 つの表と `schema/<dialect>.sql`・sqlc、`payments` の設定、`GET /admin/payment_status`・`POST /admin/payment_reconciles` と管理画面の状態の表示、overview §3 のポートの表と data-model の所有の表
   - #920（`stripe` adapter）: §2 の adapter（プランと価格・Checkout・顧客ポータルの設定・プランの変更と Subscription Schedule・解約・balance transaction の写し・`ListSubscriptions`（`latest_invoice` の展開）と `ListChanges`（events）・要求の速さの制御・最低額の表・レポートのタイムゾーン）、§3 の標準ライブラリの検証器、§7 の URL のホストの確かめ、`payments_stripe_secret_key`・`payments_stripe_webhook_secret` の設定と `make config-docs`、`no_payments_stripe` と build-tags.md、`stripe-go` の go.mod と `make go-licenses`、docs（ダッシュボードの設定、制限付きの鍵の権限、登録するイベント、Stripe CLI でのローカルの試し方、テストモード、PCI の範囲）
   - #924（決定者）: §6 の 4 の筋書きをテストモードで確かめ、要検証の項目（Subscription Schedule、アーカイブした Price での更新、`subscription_data.metadata`、Account のタイムゾーン、制限付きの鍵の権限、最低額）の結果を issue に書く
 

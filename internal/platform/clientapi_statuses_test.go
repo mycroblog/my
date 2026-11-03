@@ -27,12 +27,13 @@ import (
 // statusesClient sends client API requests as the users of a real App, checking every response
 // against the spec.
 type statusesClient struct {
-	t      *testing.T
-	app    *platform.App
-	h      http.Handler
-	spec   *apitest.Spec
-	tokens map[string]string // access token by username
-	ids    map[string]string // account ID by username
+	t       *testing.T
+	app     *platform.App
+	h       http.Handler
+	spec    *apitest.Spec
+	tokens  map[string]string // access token by username
+	ids     map[string]string // account ID by username
+	userIDs map[string]string // user ID by username
 }
 
 func newStatusesClient(t *testing.T, users ...string) *statusesClient {
@@ -55,7 +56,7 @@ func newStatusesClientWith(t *testing.T, env map[string]string, opts platform.Ap
 		t.Fatalf("NewApp: %v", err)
 	}
 	t.Cleanup(func() { _ = app.Close() })
-	c := &statusesClient{t: t, app: app, h: app.Handler(), spec: apitest.Load(t), tokens: map[string]string{}, ids: map[string]string{}}
+	c := &statusesClient{t: t, app: app, h: app.Handler(), spec: apitest.Load(t), tokens: map[string]string{}, ids: map[string]string{}, userIDs: map[string]string{}}
 	ctx := t.Context()
 	verifier := strings.Repeat("v", 43)
 	redirect := webOrigin + platform.WebClientCallbackPath
@@ -84,7 +85,7 @@ func newStatusesClientWith(t *testing.T, env map[string]string, opts platform.Ap
 		if err != nil {
 			t.Fatal(err)
 		}
-		c.tokens[name], c.ids[name] = tokens.AccessToken, reg.AccountID
+		c.tokens[name], c.ids[name], c.userIDs[name] = tokens.AccessToken, reg.AccountID, reg.User.ID
 	}
 	return c
 }
@@ -120,7 +121,7 @@ func (c *statusesClient) do(user, method, path string, body any, out any) *http.
 func (c *statusesClient) post(user string, body map[string]any) clientapi.Status {
 	c.t.Helper()
 	var s clientapi.Status
-	if res := c.do(user, http.MethodPost, "/statuses", body, &s); res.StatusCode != http.StatusOK {
+	if res := c.do(user, http.MethodPost, "/statuses", body, &s); res.StatusCode != http.StatusCreated {
 		c.t.Fatalf("POST /statuses %v as %s = %d", body, user, res.StatusCode)
 	}
 	return s
@@ -274,8 +275,8 @@ func TestStatusesThroughTheAPI(t *testing.T) {
 	if res := c.do("alice", http.MethodPost, "/statuses/"+root.Id+"/pin", nil, &st); res.StatusCode != http.StatusOK || st.Pinned == nil || !*st.Pinned {
 		t.Errorf("pin = %d %+v", res.StatusCode, st)
 	}
-	if res := c.do("bob", http.MethodPost, "/statuses/"+root.Id+"/pin", nil, nil); res.StatusCode != http.StatusUnprocessableEntity {
-		t.Errorf("pin of another account's status = %d, want 422", res.StatusCode)
+	if res := c.do("bob", http.MethodPost, "/statuses/"+root.Id+"/pin", nil, nil); res.StatusCode != http.StatusForbidden {
+		t.Errorf("pin of another account's status = %d, want 403", res.StatusCode)
 	}
 	var page clientapi.StatusPage
 	if res := c.do("bob", http.MethodGet, "/bookmarks", nil, &page); res.StatusCode != http.StatusOK || len(page.Items) != 1 || page.Items[0].Id != root.Id {
