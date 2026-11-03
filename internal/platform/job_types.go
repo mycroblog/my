@@ -44,6 +44,7 @@ var jobTypes = []string{
 	"identity.build_export",
 	"identity.closure_email",
 	"identity.closure_email_fanout",
+	"identity.deactivation_email",
 	"identity.expire_exports",
 	"identity.expire_imports",
 	"identity.password_notice_email",

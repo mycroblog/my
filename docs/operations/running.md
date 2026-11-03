@@ -361,7 +361,7 @@ Two common layouts, with the number of processes of your choosing:
 | Layout | Processes |
 | --- | --- |
 | Keep deliveries from delaying the rest | `worker_job_types = federation.deliver` for the deliveries, and `worker_job_types_except = federation.deliver` for everything else. Add processes to the first group during a burst. |
-| Keep email and notifications quick | `worker_job_types = identity.verification_email,identity.password_reset_email,identity.password_notice_email,identity.closure_email,notification.email,notification.moderator_email,notification.supporter_email,notification.push,notification.post_subscribers,instance.notify_announcement,voice.notify_started` for these, and a worker without a setting for everything, which also helps with these types when it is free. |
+| Keep email and notifications quick | `worker_job_types = identity.verification_email,identity.password_reset_email,identity.password_notice_email,identity.closure_email,identity.deactivation_email,notification.email,notification.moderator_email,notification.supporter_email,notification.push,notification.post_subscribers,instance.notify_announcement,voice.notify_started` for these, and a worker without a setting for everything, which also helps with these types when it is free. |
 
 A prefix such as `identity.*` is the code module that owns the types, not a kind of work. `identity.*` also takes data exports, imports, and expiry jobs, and it misses `instance.notify_announcement` and `voice.notify_started`, so a layout for one kind of work names each type.
 
