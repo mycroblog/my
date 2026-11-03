@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -298,7 +299,8 @@ func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) err
 	if !ok {
 		return fmt.Errorf("%w: no inbox for %s", ErrDropActivity, act.Actor)
 	}
-	request := federation.ActivityDocument{ID: act.ID, Type: federation.ActivityQuoteRequest, Actor: act.Actor, Object: quoted, Instrument: quoting}
+	request := federation.NewActivityDocument(act.ID, federation.ActivityQuoteRequest, act.Actor, time.Time{}, federation.Audience{}, quoted).Embedded()
+	request.Instrument = quoting
 	typ, result := federation.ActivityReject, federation.IRI("")
 	if accepted {
 		typ, result = federation.ActivityAccept, federation.IRI(appcontent.QuoteAuthorizationURI(h.d.Recorder.Host, auth.ID))
@@ -315,7 +317,7 @@ func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) err
 			return err
 		}
 		actor := federation.IRI(appaccount.ActorURI(h.d.Recorder.Host, st.AuthorAccountID))
-		doc := federation.NewActivityDocument(out.ActivityURI, typ, actor, out.CreatedAt, federation.Audience{To: []federation.IRI{requester}}, request.Embedded())
+		doc := federation.NewActivityDocument(out.ActivityURI, typ, actor, out.CreatedAt, federation.Audience{To: []federation.IRI{requester}}, request)
 		doc.Result = result
 		return h.store(ctx, tx, out, doc, inbox)
 	})
