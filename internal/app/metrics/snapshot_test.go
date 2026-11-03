@@ -253,7 +253,7 @@ func (w *gaugeWriter) WriteGauges(context.Context) error {
 var start = time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
 
 var want = map[string]float64{
-	"my.queue.ready{my.job.type=federation.deliver}":        4,
+	"my.queue.ready{my.job.type=federation.deliver}":      4,
 	"my.queue.ready{my.job.type=media.process}":           1,
 	"my.queue.ready{my.job.type=other}":                   2,
 	"my.queue.oldest_ready_age":                           90,
