@@ -5918,7 +5918,9 @@ export interface paths {
          *     a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
          *     mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
          *     the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
-         *     `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+         *     `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
+         *     A local account whose roles do not rank below the user's, the user's own included, is a
+         *     403 `/api/v1/problems/target-outranks-actor`. Needs the
          *     `manage_accounts` permission.
          */
         post: operations["liftAdminAccountEmailSuppression"];
@@ -6115,7 +6117,9 @@ export interface paths {
          *     `decision_reason`. Deciding a decided appeal the same way again changes nothing and
          *     keeps the first reason; deciding it the other way is a 409
          *     `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-         *     U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+         *     U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+         *     A local account whose roles do not rank below the user's, the user's own included, is a
+         *     403 `/api/v1/problems/target-outranks-actor`. Needs the
          *     `manage_accounts` permission.
          */
         post: operations["overturnAppeal"];
@@ -6140,7 +6144,9 @@ export interface paths {
          *     `decision_reason`. Deciding a decided appeal the same way again changes nothing and
          *     keeps the first reason; deciding it the other way is a 409
          *     `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-         *     U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+         *     U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+         *     A local account whose roles do not rank below the user's, the user's own included, is a
+         *     403 `/api/v1/problems/target-outranks-actor`. Needs the
          *     `manage_accounts` permission.
          */
         post: operations["upholdAppeal"];

@@ -281,6 +281,8 @@ func (s *Server) LiftAdminAccountEmailSuppression(ctx context.Context, req LiftA
 	err = s.o.AccountAdmin.LiftEmailSuppression(ctx, req.Id, v.UserID)
 	l := s.Localizer(ctx)
 	switch {
+	case errors.Is(err, appidentity.ErrTargetOutranksActor):
+		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
 	case errors.Is(err, appaccount.ErrNotFound):
 		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	case errors.Is(err, appidentity.ErrNotLocalAccount):

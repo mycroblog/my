@@ -81,6 +81,7 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"RecordsLifecycleEvents", accountRecordsLifecycle},
 		{"ExecutesScheduledDeletions", accountExecutesDeletions},
 		{"DeletesAccountsAtTheOwnersRequest", accountDeletesAtTheOwnersRequest},
+		{"KeepsOneAdministratorInConcurrentDeletions", accountKeepsOneAdministratorInConcurrentDeletions},
 		{"BuildsAndExpiresDataExports", exportsBuildAndExpireArchives},
 		{"ErasesDataExportsWithTheAccount", exportsAreErasedWithTheAccount},
 		{"RequestsOneDataExportAtATime", exportsAreRequestedOneAtATime},
