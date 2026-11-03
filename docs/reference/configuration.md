@@ -59,6 +59,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`role`](#role) | `MY_ROLE` | `all` | no | no |
 | [`worker_job_types`](#worker_job_types) | `MY_WORKER_JOB_TYPES` | none | no | no |
 | [`worker_job_types_except`](#worker_job_types_except) | `MY_WORKER_JOB_TYPES_EXCEPT` | none | no | no |
+| [`worker_job_concurrency`](#worker_job_concurrency) | `MY_WORKER_JOB_CONCURRENCY` | `1` | no | no |
 | [`listen`](#listen) | `MY_LISTEN` | `:8080` | no | no |
 | [`trusted_proxies`](#trusted_proxies) | `MY_TRUSTED_PROXIES` | none | no | no |
 | [`trusted_proxy_header`](#trusted_proxy_header) | `MY_TRUSTED_PROXY_HEADER` | `x-forwarded-for` | no | no |
@@ -315,6 +316,14 @@ Comma-separated job types that this process does not run, written like `worker_j
 
 - Environment variable: `MY_WORKER_JOB_TYPES_EXCEPT`
 - Default: none
+- Required: no
+
+### `worker_job_concurrency`
+
+How many jobs this process runs at once, from 1 to 128. Raise it for jobs that mostly wait on other servers, usually together with `worker_job_types`. With `db = postgres` it must be below the pool maximum (`pool_max_conns` of `database_url`, by default the greater of 4 and the CPU count), or the server does not start. With `db = sqlite` or `libsql`, a value above 32 logs a warning. A value of 2 or more needs `queue = db` and `role = all` or `worker`.
+
+- Environment variable: `MY_WORKER_JOB_CONCURRENCY`
+- Default: `1`
 - Required: no
 
 ### `listen`

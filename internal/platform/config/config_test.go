@@ -874,6 +874,26 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{"worker_job_types_except (MY_WORKER_JOB_TYPES_EXCEPT): works only with queue = db, not inline"},
 		},
 		{
+			name: "worker job concurrency out of range",
+			env:  with(minimal(), "MY_WORKER_JOB_CONCURRENCY", "129"),
+			want: []string{"worker_job_concurrency (MY_WORKER_JOB_CONCURRENCY): must be a whole number from 1 to 128"},
+		},
+		{
+			name: "worker job concurrency of zero",
+			env:  with(minimal(), "MY_WORKER_JOB_CONCURRENCY", "0"),
+			want: []string{"worker_job_concurrency (MY_WORKER_JOB_CONCURRENCY): must be a whole number from 1 to 128"},
+		},
+		{
+			name: "worker job concurrency on the web role",
+			env:  with(minimal(), "MY_WORKER_JOB_CONCURRENCY", "2", "MY_ROLE", "web"),
+			want: []string{"worker_job_concurrency (MY_WORKER_JOB_CONCURRENCY): above 1 needs a process that runs jobs, role = all or worker, not web"},
+		},
+		{
+			name: "worker job concurrency on the inline queue",
+			env:  with(minimal(), "MY_WORKER_JOB_CONCURRENCY", "2", "MY_QUEUE", "inline"),
+			want: []string{"worker_job_concurrency (MY_WORKER_JOB_CONCURRENCY): above 1 works only with queue = db, not inline"},
+		},
+		{
 			name: "inline queue with a split role",
 			env:  with(minimal(), "MY_QUEUE", "inline", "MY_ROLE", "worker"),
 			want: []string{"queue (MY_QUEUE): inline runs jobs in the enqueuing process and requires role = all, not worker"},

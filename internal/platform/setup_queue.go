@@ -45,7 +45,8 @@ func (a *App) setUpQueue(cfg *config.Config) error {
 	if a.Runner == nil {
 		// The adapter operations of ADR-0056 §1; the inline queue runs the jobs in Enqueue.
 		a.Jobs = sysmetrics.Jobs(a.Jobs, a.Meter, "queue."+cfg.Queue)
-		a.Runner = queue.NewPullRunner(sysmetrics.Source(a.source, a.Meter, "queue."+cfg.Queue), a.Handlers, runnerOpts)
+		a.runnerSource = sysmetrics.Source(a.source, a.Meter, "queue."+cfg.Queue)
+		a.Runner = queue.NewPullRunner(a.runnerSource, a.Handlers, runnerOpts)
 		a.runJobs = a.Runner.RunUntil
 	}
 	a.Scheduler = queue.NewScheduler(a.Jobs, a.Clock, a.Logger)
@@ -81,8 +82,32 @@ func (a *App) setUpWorkerJobTypes(cfg *config.Config) error {
 		return fmt.Errorf("worker_job_types: %w", err)
 	}
 	a.skippedJobTypes = skip
-	a.Runner = queue.NewPullRunner(sysmetrics.Source(a.dbQueue.OnlyTypes(run), a.Meter, "queue."+cfg.Queue), a.Handlers, a.runnerOptions())
+	a.runnerSource = sysmetrics.Source(a.dbQueue.OnlyTypes(run), a.Meter, "queue."+cfg.Queue)
+	a.Runner = queue.NewPullRunner(a.runnerSource, a.Handlers, a.runnerOptions())
 	a.runJobs = a.Runner.RunUntil
+	return nil
+}
+
+// sqliteJobConcurrencyWarning is the worker_job_concurrency above which a database without a pool
+// logs a warning: SQLite writes one at a time, and the throughput fell at 128 (ADR-0140 §4).
+const sqliteJobConcurrencyWarning = 32
+
+// setUpWorkerJobConcurrency makes the worker role run worker_job_concurrency jobs at once
+// (ADR-0140), after setUpWorkerJobTypes chose the runner's source. A process that does not poll the
+// table has nothing to check: the settings refuse more than one there.
+func (a *App) setUpWorkerJobConcurrency(cfg *config.Config) error {
+	n := cfg.WorkerJobConcurrency
+	if n == 0 || cfg.Role == config.RoleWeb || a.runnerSource == nil {
+		return nil
+	}
+	// A slot waits for a connection to claim and to record, and a handler that takes a second one
+	// while holding a transaction stalls until its deadline when the slots reach the maximum.
+	if a.dbPoolMax > 0 && n >= a.dbPoolMax {
+		return fmt.Errorf("worker_job_concurrency = %d must be below the %d connections of the database's pool: raise pool_max_conns in database_url or lower the setting", n, a.dbPoolMax)
+	}
+	if n > 1 {
+		a.runJobs = queue.NewSlotRunner(a.runnerSource, a.Handlers, a.runnerOptions(), n).RunUntil
+	}
 	return nil
 }
 

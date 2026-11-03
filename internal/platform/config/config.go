@@ -81,6 +81,9 @@ type Config struct {
 	// most one of them set (ADR-0138).
 	WorkerJobTypes       []string
 	WorkerJobTypesExcept []string
+	// WorkerJobConcurrency is how many jobs this process runs at once (ADR-0140); 0 when the
+	// setting is not given, which runs one and checks nothing against the database's pool.
+	WorkerJobConcurrency int
 	QueueSQSQueueURL     string
 	QueueSQSEventsPath   string
 	QueueSQSEventsBudget time.Duration
@@ -335,6 +338,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("queue", c.Queue),
 		slog.String("worker_job_types", strings.Join(c.WorkerJobTypes, ",")),
 		slog.String("worker_job_types_except", strings.Join(c.WorkerJobTypesExcept, ",")),
+		slog.Int("worker_job_concurrency", c.WorkerJobConcurrency),
 		slog.String("queue_cloudtasks_queue", c.QueueCloudTasksQueue),
 		slog.String("queue_cloudtasks_url", c.QueueCloudTasksURL),
 		slog.String("queue_cloudtasks_service_account", c.QueueCloudTasksServiceAccount),

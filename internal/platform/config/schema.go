@@ -194,6 +194,13 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.WorkerJobTypesExcept = splitJobTypePatterns(v) },
 	},
 	{
+		key:    "worker_job_concurrency",
+		defDoc: "`1`",
+		doc:    "How many jobs this process runs at once, from 1 to 128. Raise it for jobs that mostly wait on other servers, usually together with `worker_job_types`. With `db = postgres` it must be below the pool maximum (`pool_max_conns` of `database_url`, by default the greater of 4 and the CPU count), or the server does not start. With `db = sqlite` or `libsql`, a value above 32 logs a warning. A value of 2 or more needs `queue = db` and `role = all` or `worker`.",
+		check:  checkWorkerJobConcurrency,
+		set:    func(c *Config, v string) { c.WorkerJobConcurrency, _ = strconv.Atoi(v) },
+	},
+	{
 		key:   "listen",
 		doc:   "TCP address the HTTP server listens on, as `host:port`.",
 		def:   ":8080",
@@ -1446,6 +1453,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	}
 	issues = append(issues, wakerQueueChecks(vals, present)...)
 	issues = append(issues, workerJobTypeChecks(vals)...)
+	issues = append(issues, workerJobConcurrencyChecks(vals)...)
 	return issues
 }
 

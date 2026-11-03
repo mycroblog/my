@@ -297,7 +297,7 @@ my job delete <id> [<id>...] # remove without running
 
 ### Splitting workers by job type
 
-By default every worker runs every job type, in the order the jobs fell due, one job at a time per process. A burst of deliveries then delays email and notifications, and any worker you add shares its time among all of them. With `queue = db` you can give some types their own workers:
+By default every worker runs every job type, in the order the jobs fell due, one job at a time per process (see [Running several jobs at once](#running-several-jobs-at-once)). A burst of deliveries then delays email and notifications, and any worker you add shares its time among all of them. With `queue = db` you can give some types their own workers:
 
 - [`worker_job_types`](../reference/configuration.md#worker_job_types): this process runs only these types.
 - [`worker_job_types_except`](../reference/configuration.md#worker_job_types_except): this process runs every type but these.
@@ -343,6 +343,26 @@ max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
 ```
 
 The admin jobs page shows the same wait per type. A worker with one of the settings also leaves alone a job whose type has no handler at all (it counts under `other` in the metric), so with no worker without a setting, such a job waits instead of becoming a dead job.
+
+### Running several jobs at once
+
+[`worker_job_concurrency`](../reference/configuration.md#worker_job_concurrency) sets how many jobs a process runs at once, from 1 to 128. It works with `queue = db`; with Cloud Tasks and SQS the platform decides it. The default is one job at a time, and a setting of 1 behaves the same.
+
+Raise it for jobs that spend their time waiting on other servers, such as `federation.deliver`. Those use little memory and few database connections per job, so one process does the work of many: in a local test where a job only waited 200 ms for a response, one process with 32 slots matched 32 processes with one slot each, using a small part of the memory. Those jobs did nothing else, so measure your own instance. Pair it with `worker_job_types`, and give each kind of job a process with its own number.
+
+Keep these limits in mind:
+
+- **Database connections**: a job needs a connection to be claimed, for its own work, and to record its result. With `db = postgres` the setting must be below the pool maximum, or the server does not start. The maximum is `pool_max_conns` in `database_url`, by default the greater of 4 and the CPU count, so one vCPU allows 3 until you raise it. Check that your database or connection pooler accepts the connections of all your processes.
+- **SQLite and libSQL**: they write one transaction at a time. Above 32 the server logs a warning, and in a local test SQLite ran slower at 128 than at 32.
+- **CPU-heavy jobs**: slots share one process's CPU and memory. `media.process` waits for its turn at a limit of half the CPUs by default, and the wait counts against the job's 5-minute lease, so a process full of `media.process` can run past the lease and start over. Give such jobs a process with few slots.
+- **One server at a time**: a process makes at most 8 connections to any one host, so one process delivers to a single server no faster than 8 connections allow, however many slots it has. Where most deliveries go to a few large servers, more processes help where more slots do not.
+- **A stuck server holds slots**: slots waiting on a slow server are not free for other jobs, so keep deliveries apart from email and notifications.
+- **Deploys use attempts**: when the server stops, jobs still running after `ShutdownTimeout` (25 seconds by default) are cancelled, and each cancelled job uses one attempt. The more slots run slow jobs, the more attempts each deploy uses. A cancelled job whose result is not recorded in time waits for its lease to expire before it runs again.
+- **A crash takes every slot with it**: if the process runs out of memory, all its jobs wait for their leases to expire.
+
+To decide whether to raise it, read `my.job.wait` per `my.job.type`: if jobs of a type wait for long while `my.job.duration` is mostly time spent waiting on other servers and CPU and memory stay low, more slots should help. If waits stay high after raising it, look at database connections and the host limit above before raising it again.
+
+While no job is due, one slot polls and the others wait, so an idle process costs the database what a one-job process costs.
 
 ### Cloud Tasks
 
