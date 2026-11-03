@@ -368,6 +368,7 @@ export const auditActions = [
   "link_card_domain_fetch_stopped",
   "link_card_domain_images_stopped",
   "link_card_domain_rule_removed",
+  "instance_marked_available",
 ] as const satisfies readonly AuditAction[];
 
 /** The kinds of target of an audited operation, in the order of the filter. */

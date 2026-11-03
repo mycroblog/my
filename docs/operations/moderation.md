@@ -334,7 +334,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | --- | --- |
 | `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_cancelled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts) |
 | `status` | `status_refetch_queued` (refetch of a remote post; the target name is the post URI) |
-| `domain` | `domain_action_issued` and `domain_action_lifted` (issuing and lifting a domain action), `domain_statuses_refetch_queued` (refetch of posts of the domain's accounts) |
+| `domain` | `domain_action_issued` and `domain_action_lifted` (issuing and lifting a domain action), `domain_statuses_refetch_queued` (refetch of posts of the domain's accounts), `instance_marked_available` (clearing the failures of a server) |
 | `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added` (assigning, unassigning, resolving and reopening a report, and adding a note) |
 | `user` | `registration_approved`, `registration_rejected` (registration review) |
 | `setting` | `setting_changed` (instance settings), `text_changed` (instance texts) |

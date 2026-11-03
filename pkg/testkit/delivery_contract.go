@@ -24,9 +24,11 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/kernel"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
+	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
 // This file holds the cases of FederationRepositoryContract that cover one delivery
@@ -85,7 +87,7 @@ func newDeliveryEnv(t *testing.T, e *fedEnv) *deliveryEnv {
 	}
 	d.proofs.keys[d.actor] = appfederation.ProofKey{VerificationMethod: e.uri(d.actor) + "#ed25519-key", PrivateKey: proof}
 	appfederation.RegisterHealthProjectors(e.projectors, appfederation.HealthProjectorDeps{Repository: e.h.Federation, IDs: e.ids})
-	d.health = appfederation.NewHealth(appfederation.HealthDeps{UnitOfWork: e.h.UnitOfWork, Repository: e.h.Federation, Clock: e.clock})
+	d.health = appfederation.NewHealth(appfederation.HealthDeps{UnitOfWork: e.h.UnitOfWork, Repository: e.h.Federation, Clock: e.clock, IDs: e.ids})
 	d.deliverer = appfederation.NewDeliverer(appfederation.DeliverDeps{
 		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Federation,
 		Client: appfederation.NewSignedHTTPClient(d.net, deliverySigner{}, NewKeyValueStore(e.clock), e.clock),
@@ -924,7 +926,12 @@ func fedListsServersForOperators(t *testing.T, e *fedEnv) {
 
 	// An operator clears an unavailable server, and the failure days of an available one.
 	e.clock.Advance(time.Hour)
-	h, err := d.health.MarkAvailable(ctx, "a.example")
+	var audited []moderation.AuditEntry
+	e.projectors.Register(appmoderation.EventAuditRecorded, func(_ context.Context, _ uow.Tx, ev uow.Event) error {
+		audited = append(audited, ev.(appmoderation.AuditRecorded).Entry)
+		return nil
+	})
+	h, err := d.health.MarkAvailable(ctx, "a.example", NamedID("operator"))
 	if err != nil || h.State != federation.InstanceAvailable || h.FailureDays != 0 || h.LastFailureDay != "" || !h.Since.Equal(e.clock.Now()) {
 		t.Fatalf("MarkAvailable(a.example) = %+v, %v", h, err)
 	}
@@ -932,8 +939,24 @@ func fedListsServersForOperators(t *testing.T, e *fedEnv) {
 		evs[0].Kind != federation.MarkedAvailable || evs[0].Reason != federation.ReasonOperator {
 		t.Errorf("newest event of a.example = %+v, %v; want marked_available (operator)", evs, err)
 	}
-	if h, err := d.health.MarkAvailable(ctx, "b.example"); err != nil || h.State != federation.InstanceAvailable || h.FailureDays != 0 {
+	if len(audited) != 1 || audited[0].Action != moderation.AuditInstanceMarkedAvailable || audited[0].TargetKind != moderation.AuditTargetDomain ||
+		audited[0].TargetID != "a.example" || audited[0].ActorUserID != NamedID("operator") || audited[0].Validate() != nil {
+		t.Errorf("audit entries of the clearing = %+v", audited)
+	}
+	if h, err := d.health.MarkAvailable(ctx, "b.example", NamedID("operator")); err != nil || h.State != federation.InstanceAvailable || h.FailureDays != 0 {
 		t.Errorf("MarkAvailable(b.example) = %+v, %v", h, err)
+	}
+	if len(audited) != 2 || audited[1].TargetID != "b.example" {
+		t.Errorf("audit entries after clearing the failure days of b.example = %+v", audited)
+	}
+	if h, err := d.health.MarkAvailable(ctx, "b.example", NamedID("operator")); err != nil || h.FailureDays != 0 {
+		t.Errorf("MarkAvailable(b.example) again = %+v, %v", h, err)
+	}
+	if _, err := d.health.MarkAvailable(ctx, "unknown.example", NamedID("operator")); err != nil {
+		t.Errorf("MarkAvailable(unknown.example) = %v", err)
+	}
+	if len(audited) != 2 {
+		t.Errorf("audit entries of clearings with nothing to clear = %+v, want none", audited[2:])
 	}
 	if evs := d.events(t, "b.example"); len(evs) != 0 {
 		t.Errorf("events of b.example = %+v, want none for a server that was available", evs)

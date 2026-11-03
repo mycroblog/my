@@ -6030,8 +6030,9 @@ paths:
       summary: Mark a remote server available
       description: |
         Clears the failure days of the server and, when it is unavailable, marks it available
-        again with the reason `operator`, so that deliveries to it resume. A server that is
-        already available without failures stays as it is. Needs the `manage_domains`
+        again with the reason `operator`, so that deliveries to it resume; the operation is
+        audited as `instance_marked_available`. A server that is already available without
+        failures stays as it is, and nothing is audited. Needs the `manage_domains`
         permission.
       tags:
         - admin-moderation
@@ -8039,9 +8040,10 @@ paths:
       description: |
         An account as the moderators see it (FR-714): its state, the restrictions of its own
         actions, and, for a local account, its registration, whether its email address is
-        verified, and its roles, with its newest 20 actions and reports. The email address and
-        the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-        a 404. Needs the `manage_accounts` permission.
+        verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+        `manage_reports` permission, its newest 20 reports. The email address and the IP
+        addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+        Needs the `manage_accounts` permission.
       tags:
         - admin-moderation
       security:
@@ -8489,7 +8491,8 @@ paths:
       description: |
         Approves a pending registration, so that its user can sign in, with an optional note
         for the moderators; the decision is audited. Deciding a decided registration changes
-        nothing and keeps its decision. A user without a registration is a 404. From the
+        nothing and keeps its decision. The answer on a decided registration has no email address:
+        only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
         announcement of the closure of the service on, a pending registration is not approved: a
         409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
         the `manage_accounts` permission.
@@ -8517,7 +8520,9 @@ paths:
       description: |
         Rejects a pending registration, so that its user cannot sign in, with an optional note
         for the moderators; the decision is audited. Deciding a decided registration changes
-        nothing and keeps its decision. A user without a registration is a 404. Needs the
+        nothing and keeps its decision. The answer on a decided registration has no email address:
+        only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+        A user without a registration is a 404. Needs the
         `manage_accounts` permission.
       tags:
         - admin-moderation
@@ -11637,7 +11642,6 @@ components:
           required:
             - roles
             - actions
-            - reports
           properties:
             registration:
               $ref: '#/components/schemas/AdminAccountRegistration'
@@ -11669,7 +11673,9 @@ components:
               items:
                 $ref: '#/components/schemas/AdminAccountAction'
             reports:
-              description: The newest 20 reports of the account, newest first.
+              description: |
+                The newest 20 reports of the account, newest first; omitted unless the viewer also has
+                the `manage_reports` permission.
               type: array
               items:
                 $ref: '#/components/schemas/AdminReport'
@@ -11733,6 +11739,11 @@ components:
           format: date-time
         reason:
           description: Why the applicant wants to join; omitted when not asked or not given.
+          type: string
+        decision_note:
+          description: |
+            The moderators' note on the decision, as plain text; omitted while the registration is
+            pending and when the decision has no note.
           type: string
         invite_id:
           $ref: '#/components/schemas/Id'
@@ -12367,7 +12378,8 @@ components:
         a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
         suppression of the primary email address of the account's user), `account_moved` (a limited
         local account moved to another local account, which does not inherit the limit). On a `domain`:
-        `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+        `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+        cleared the failures of the server). On a `report`: `report_assigned`,
         `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
         `user` (a registration):
         `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -12521,6 +12533,7 @@ components:
         - link_card_domain_fetch_stopped
         - link_card_domain_images_stopped
         - link_card_domain_rule_removed
+        - instance_marked_available
     AdminAuditActorKind:
       description: |
         Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -12578,8 +12591,9 @@ components:
         target_exists:
           description: |
             Whether the target is still there to look at. It is `false` for an account, a report,
-            an appeal, or a sign-up block that is gone (erased past its retention), and for a
-            role, a custom emoji, a webhook, or a relay that was deleted, which only `target_label`
+            an appeal, or a sign-up block that is gone (erased past its retention), for a role, a
+            login provider, a custom emoji, a custom emoji request, a webhook, or a relay that was
+            deleted, and for a link card domain whose rule was removed, which only `target_label`
             names now. It is `true` for the other kinds of targets, which are never removed.
           type: boolean
         source_event_id:
@@ -13707,8 +13721,6 @@ components:
         - user_id
         - state
         - since
-        - email
-        - email_verified
         - submitted_at
       properties:
         user_id:
@@ -13727,11 +13739,18 @@ components:
           type: string
           format: date-time
         email:
-          description: The user's primary email address; empty when there is none.
+          description: |
+            The user's primary email address, shown only while the registration is pending, for its
+            review; omitted when the user has none and once the registration is decided.
           type: string
         email_verified:
-          description: Whether the user confirmed the email address.
+          description: Whether the user confirmed the email address; present together with `email`.
           type: boolean
+        decision_note:
+          description: |
+            The moderators' note on the decision, as plain text; omitted while the registration is
+            pending and when the decision has no note.
+          type: string
         reason:
           description: Why the user wants to join, as plain text; omitted when they gave none.
           type: string
@@ -20380,7 +20399,7 @@ components:
       type: object
       properties:
         note:
-          description: A note for the moderators, as plain text; omitted or empty for none.
+          description: A note for the moderators, as plain text, which the registration shows as `decision_note`; omitted or empty for none.
           type: string
           maxLength: 1000
     RegistrationState:

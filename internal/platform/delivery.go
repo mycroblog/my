@@ -17,7 +17,7 @@ func (a *App) setUpDelivery(repo federation.Repository) error {
 		return err
 	}
 	federation.RegisterHealthProjectors(a.Projectors, federation.HealthProjectorDeps{Repository: repo, IDs: a.IDs})
-	a.InstanceHealth = federation.NewHealth(federation.HealthDeps{UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock})
+	a.InstanceHealth = federation.NewHealth(federation.HealthDeps{UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs})
 	a.Deliverer = federation.NewDeliverer(federation.DeliverDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo,
 		Client: federation.NewSignedHTTPClient(a.HTTPClient, httpsig.New(), a.KV, a.Clock),
