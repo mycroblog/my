@@ -2,7 +2,7 @@
 
 | テーブル | カラム | 一意 | インデックス |
 | --- | --- | --- | --- |
-| `jobs`（`queue/db`） | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `run_at`, `locked_by`（NULL 可）, `locked_until`（NULL 可）, `last_error`（NULL 可）, `created_at` | `(idempotency_key)` | `(run_at)`, `(ordering_key, run_at)` |
+| `jobs`（`queue/db`） | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `run_at`, `locked_by`（NULL 可）, `locked_until`（NULL 可）, `last_error`（NULL 可）, `created_at` | `(idempotency_key)` | `(run_at)`, `(type, run_at, id)`（種類を選ぶワーカーの claim、ADR-0138）, `(ordering_key, run_at)` |
 | `dead_jobs` | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `last_error`, `created_at`, `failed_at` | — | `(failed_at)` |
 | `job_attempts`（イベント） | `job_id`, `attempt`, `job_type`, `outcome`（`enum(retry, dead)`）, `error`（`text`、2,000 バイトまで）, `worker`, `started_at`, `finished_at` | PK `(job_id, attempt, finished_at)` | `(finished_at)` |
 | `kv_entries`（`kv/db`） | `namespace`, `key`, `value`（`bytes`）, `expires_at`（NULL 可 = 無期限） | PK `(namespace, key)` | `(expires_at)` |

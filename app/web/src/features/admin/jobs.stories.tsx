@@ -78,6 +78,7 @@ const queue: Schemas["AdminQueue"] = {
     { state: "dead", type: "federation.deliver", count: 1 },
     { state: "dead", type: "kv.cleanup", count: 1 },
   ],
+  waits: [{ type: "federation.deliver", oldest_ready_at: ago(40 / 60) }],
 };
 
 const busy = [

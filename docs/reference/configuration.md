@@ -57,6 +57,8 @@ An instance setting that has never been set reads as its default, which is defin
 | [`maintenance_retry_after`](#maintenance_retry_after) | `MY_MAINTENANCE_RETRY_AFTER` | `600` | no | no |
 | [`web_origin`](#web_origin) | `MY_WEB_ORIGIN` | `https://{host}` | no | no |
 | [`role`](#role) | `MY_ROLE` | `all` | no | no |
+| [`worker_job_types`](#worker_job_types) | `MY_WORKER_JOB_TYPES` | none | no | no |
+| [`worker_job_types_except`](#worker_job_types_except) | `MY_WORKER_JOB_TYPES_EXCEPT` | none | no | no |
 | [`listen`](#listen) | `MY_LISTEN` | `:8080` | no | no |
 | [`trusted_proxies`](#trusted_proxies) | `MY_TRUSTED_PROXIES` | none | no | no |
 | [`trusted_proxy_header`](#trusted_proxy_header) | `MY_TRUSTED_PROXY_HEADER` | `x-forwarded-for` | no | no |
@@ -298,6 +300,22 @@ What this process runs.
 | `all` | yes | HTTP server and job worker in one process. |
 | `web` | yes | HTTP server only. |
 | `worker` | yes | Job worker only; the HTTP server answers only the health checks (docs/operations/running.md). |
+
+### `worker_job_types`
+
+Comma-separated job types that this process runs, each a name such as `federation.deliver` or a prefix such as `federation.*`; the others wait for another worker. A name or prefix that matches no job type fails the start. Needs `queue = db` and `role = all` or `worker`, and excludes `worker_job_types_except`. Empty runs every type (docs/operations/running.md).
+
+- Environment variable: `MY_WORKER_JOB_TYPES`
+- Default: none
+- Required: no
+
+### `worker_job_types_except`
+
+Comma-separated job types that this process does not run, written like `worker_job_types`. Types that a later release adds are run. Needs `queue = db` and `role = all` or `worker`, and excludes `worker_job_types`. Empty runs every type (docs/operations/running.md).
+
+- Environment variable: `MY_WORKER_JOB_TYPES_EXCEPT`
+- Default: none
+- Required: no
 
 ### `listen`
 

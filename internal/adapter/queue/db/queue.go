@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -46,6 +47,7 @@ func (o Options) check() {
 type store interface {
 	insertJob(ctx context.Context, tx uow.Tx, j queue.Job) error
 	claim(ctx context.Context, tx uow.Tx, worker string, now, until time.Time) (queue.Job, bool, error)
+	claimOfTypes(ctx context.Context, tx uow.Tx, types []string, worker string, now, until time.Time) (queue.Job, bool, error)
 	deleteClaimed(ctx context.Context, tx uow.Tx, id, worker string, attempt int) (int64, error)
 	release(ctx context.Context, tx uow.Tx, id, worker string, attempt, newAttempt int, runAt time.Time, lastErr string) (int64, error)
 	insertDeadFromClaim(ctx context.Context, tx uow.Tx, id, worker string, attempt int, lastErr string, failedAt time.Time) (int64, error)
@@ -199,6 +201,35 @@ func (q *Queue) Claim(ctx context.Context, worker string, now time.Time, lease t
 	})
 	if err != nil {
 		return queue.Job{}, false, fmt.Errorf("queue/db: claim: %w", err)
+	}
+	return j, ok, nil
+}
+
+// OnlyTypes returns a view of q whose Claim takes only jobs of the given types (ADR-0138 §2),
+// for a worker that runs some of the types. Everything else is q's. An ordering key still holds
+// a job back whatever the type of the earlier job.
+func (q *Queue) OnlyTypes(types []string) queue.Source {
+	return typedSource{Queue: q, types: slices.Clone(types)}
+}
+
+type typedSource struct {
+	*Queue
+	types []string
+}
+
+// Claim implements queue.Source.
+func (s typedSource) Claim(ctx context.Context, worker string, now time.Time, lease time.Duration) (queue.Job, bool, error) {
+	var (
+		j  queue.Job
+		ok bool
+	)
+	err := s.db.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		j, ok, err = s.st.claimOfTypes(ctx, tx, s.types, worker, now, now.Add(lease))
+		return err
+	})
+	if err != nil {
+		return queue.Job{}, false, fmt.Errorf("queue/db: claim of types: %w", err)
 	}
 	return j, ok, nil
 }

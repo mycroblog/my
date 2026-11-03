@@ -238,7 +238,9 @@ flowchart TD
 | 4 | `content.fetch_link_card` | リモートの投稿にも広がる。外部への HTTP で、ホストごとの上限で `Postpone` する |
 | 5 | `media.process` | 件数は少ないが 1 件が重い見込み。ほかの種別と分けたくなる候補 |
 
-ワーカーはプロセスごとに 1 度に 1 ジョブなので、遅い `federation.deliver` が続くと、同じプロセスの通知やメールの開始が遅れます。種別で優先する仕組みはありません。
+ワーカーはプロセスごとに 1 度に 1 ジョブなので、遅い `federation.deliver` が続くと、同じプロセスの通知やメールの開始が遅れます。種別で優先する仕組みはなく、ワーカーを種別で分けて対処します。
+
+`queue = db` では、`worker_job_types` と `worker_job_types_except` で種別ごとにワーカーを分けられます（[ADR-0138](../adr/0138-worker-job-selection.md)）。分けるときの順序キーの制約は[順序キー](#順序キー)の表のとおりで、同じキーを持つ種別は同じワーカーの組に置きます。外部のキューの構成では分けられません。
 
 ### 確かめ方
 
@@ -250,7 +252,7 @@ flowchart TD
 | 種別ごとのワーカー時間の比率 | `sum by (my_job_type) (rate(my_job_duration_seconds_sum[1h]))` |
 | 必要な同時実行数の目安 | 上の式の合計。1 秒あたりのジョブの実行時間の合計が、同時に動いているジョブの数の平均になる |
 | 待たされている種別 | `my.job.wait` の種別ごとの分位数 |
-| 溜まっている種別 | `my.queue.ready`（種別ごと）、`my.queue.oldest_ready_age` |
+| 溜まっている種別 | `my.queue.ready`、`my.queue.oldest_ready_age`（どちらも種別ごと） |
 | 失敗の多い種別 | `my.job.duration` の `my.outcome = retry` |
 
 `my.job.duration` は実行した分だけ増えるので、まだ動いていないジョブは `my.queue.ready` と `my.job.wait` で見ます。

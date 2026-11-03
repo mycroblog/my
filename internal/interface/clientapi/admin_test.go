@@ -240,6 +240,10 @@ func newAdminEnvWithQueue(t *testing.T) (*authEnv, *fakeHealth, *fakeDeadJobs, *
 				{State: queue.JobStateDead, Type: "kv.cleanup", Count: 1},
 			},
 			OldestReadyAt: adminNow.Add(-10 * time.Minute),
+			OldestReadyByType: map[string]time.Time{
+				"kv.cleanup":         adminNow.Add(-time.Minute),
+				"federation.deliver": adminNow.Add(-10 * time.Minute),
+			},
 		},
 	}
 	attempts := &fakeAttempts{records: []queue.Attempt{
@@ -431,6 +435,10 @@ func TestGetAdminQueue(t *testing.T) {
 	if res.StatusCode != http.StatusOK || got.Adapter != "db" || !got.PendingListing || len(got.Counts) != 5 ||
 		got.OldestReadyAt == nil || !got.OldestReadyAt.Equal(adminNow.Add(-10*time.Minute)) {
 		t.Fatalf("queue = %d %+v", res.StatusCode, got)
+	}
+	if len(got.Waits) != 2 || got.Waits[0].Type != "federation.deliver" || !got.Waits[0].OldestReadyAt.Equal(adminNow.Add(-10*time.Minute)) ||
+		got.Waits[1].Type != "kv.cleanup" {
+		t.Errorf("waits = %+v", got.Waits)
 	}
 	if c := got.Counts[3]; c.State != clientapi.AdminJobStateDead || c.Type != "federation.deliver" || c.Count != 2 {
 		t.Errorf("dead count = %+v", c)

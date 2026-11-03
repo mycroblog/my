@@ -347,6 +347,58 @@ func TestWorkerRoleServesOnlyHealthChecks(t *testing.T) {
 	}
 }
 
+func TestWorkerJobTypes(t *testing.T) {
+	t.Parallel()
+	run := func(t *testing.T, env map[string]string) bool {
+		t.Helper()
+		env["MY_DATABASE_URL"] = newDatabase(t, true)
+		a, err := platform.NewApp(t.Context(), loadConfig(t, env), platform.AppOptions{})
+		if err != nil {
+			t.Fatalf("NewApp: %v", err)
+		}
+		t.Cleanup(func() { _ = a.Close() })
+		ran := false
+		a.Handlers.Register("test.selected", func(context.Context, queue.Job) queue.Result {
+			ran = true
+			return queue.Done()
+		})
+		if err := a.Jobs.Enqueue(t.Context(), queue.NewJob{Type: "test.selected"}); err != nil {
+			t.Fatalf("Enqueue: %v", err)
+		}
+		if _, err := a.Runner.RunOnce(t.Context()); err != nil {
+			t.Fatalf("RunOnce: %v", err)
+		}
+		return ran
+	}
+	t.Run("a worker without a selection runs every type", func(t *testing.T) {
+		if !run(t, map[string]string{"MY_ROLE": "worker"}) {
+			t.Error("the job did not run")
+		}
+	})
+	t.Run("a worker runs only its selection", func(t *testing.T) {
+		if run(t, map[string]string{"MY_ROLE": "worker", "MY_WORKER_JOB_TYPES": "federation.*"}) {
+			t.Error("the job of another type ran")
+		}
+	})
+}
+
+func TestWorkerJobTypesThatMatchNothingFailTheStart(t *testing.T) {
+	t.Parallel()
+	for _, env := range []map[string]string{
+		{"MY_WORKER_JOB_TYPES": "federation.delivr"},
+		{"MY_WORKER_JOB_TYPES_EXCEPT": "nothing.*"},
+	} {
+		env["MY_DATABASE_URL"] = newDatabase(t, true)
+		a, err := platform.NewApp(t.Context(), loadConfig(t, env), platform.AppOptions{})
+		if err == nil {
+			_ = a.Close()
+			t.Errorf("NewApp with %v succeeded", env)
+		} else if !strings.Contains(err.Error(), "no job type matches") {
+			t.Errorf("NewApp with %v: %v", env, err)
+		}
+	}
+}
+
 func TestPanicIsAProblem(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_ROLE": "web"})

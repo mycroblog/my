@@ -63,6 +63,14 @@ func QueueBacklogContract(t *testing.T, newHarness QueueFactory) {
 	if !maps.Equal(b.Ready, want) || !b.OldestReadyAt.Equal(contractStart) || b.Dead != 1 {
 		t.Fatalf("Backlog = %+v, want Ready %v, OldestReadyAt %v, Dead 1", b, want, contractStart)
 	}
+	if len(b.OldestReadyByType) != len(want) {
+		t.Fatalf("OldestReadyByType = %v, want the types of %v", b.OldestReadyByType, want)
+	}
+	for jobType := range want {
+		if !b.OldestReadyByType[jobType].Equal(contractStart) {
+			t.Errorf("OldestReadyByType[%s] = %v, want %v", jobType, b.OldestReadyByType[jobType], contractStart)
+		}
+	}
 
 	// Once the lease expires, the held job is ready again.
 	clock.Advance(2 * time.Minute)

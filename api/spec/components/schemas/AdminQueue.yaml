@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: The state of the job queue (ADR-0064).
 type: object
-required: [adapter, pending_listing, counts]
+required: [adapter, pending_listing, counts, waits]
 properties:
   adapter:
     description: The queue the server runs, the `queue` setting (`db`, `inline`, `sqs`, `cloudtasks`).
@@ -16,6 +16,13 @@ properties:
     type: array
     items:
       $ref: ./AdminJobCount.yaml
+  waits:
+    description: |
+      How long each type with due jobs that no worker holds has kept a job waiting, by type.
+      Empty without `pending_listing`.
+    type: array
+    items:
+      $ref: ./AdminJobWait.yaml
   oldest_ready_at:
     description: |
       The earliest `run_at` among the due jobs that no worker holds: how long the queue

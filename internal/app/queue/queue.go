@@ -234,6 +234,8 @@ type Backlog struct {
 	Ready map[string]int64
 	// OldestReadyAt is the earliest due time among the ready jobs; zero when none is ready.
 	OldestReadyAt time.Time
+	// OldestReadyByType is the earliest due time among the ready jobs of each type with some.
+	OldestReadyByType map[string]time.Time
 	// Dead counts the dead jobs, as DeadJobs lists them.
 	Dead int64
 }

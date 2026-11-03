@@ -568,7 +568,7 @@ export const handlers = [
   ),
   // operationIds getAdminQueue, listAdminJobs, listAdminJobAttempts, retryAdminJob: a database queue without jobs.
   http.get(`${apiBase}/admin/queue`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json({ adapter: "db", pending_listing: true, counts: [] })),
+    withViewer(request, () => HttpResponse.json({ adapter: "db", pending_listing: true, counts: [], waits: [] })),
   ),
   http.get(`${apiBase}/admin/jobs`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
   http.get(`${apiBase}/admin/jobs/:id/attempts`, ({ request }) =>

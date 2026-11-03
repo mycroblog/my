@@ -182,6 +182,18 @@ var schema = []field{
 		set: func(c *Config, v string) { c.Role = Role(v) },
 	},
 	{
+		key:   "worker_job_types",
+		doc:   "Comma-separated job types that this process runs, each a name such as `federation.deliver` or a prefix such as `federation.*`; the others wait for another worker. A name or prefix that matches no job type fails the start. Needs `queue = db` and `role = all` or `worker`, and excludes `worker_job_types_except`. Empty runs every type (docs/operations/running.md).",
+		check: checkJobTypePatterns,
+		set:   func(c *Config, v string) { c.WorkerJobTypes = splitJobTypePatterns(v) },
+	},
+	{
+		key:   "worker_job_types_except",
+		doc:   "Comma-separated job types that this process does not run, written like `worker_job_types`. Types that a later release adds are run. Needs `queue = db` and `role = all` or `worker`, and excludes `worker_job_types`. Empty runs every type (docs/operations/running.md).",
+		check: checkJobTypePatterns,
+		set:   func(c *Config, v string) { c.WorkerJobTypesExcept = splitJobTypePatterns(v) },
+	},
+	{
 		key:   "listen",
 		doc:   "TCP address the HTTP server listens on, as `host:port`.",
 		def:   ":8080",
@@ -1433,6 +1445,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 		issues = append(issues, Issue{Key: "queue", Message: fmt.Sprintf("inline runs jobs in the enqueuing process and requires role = all, not %s", vals["role"])})
 	}
 	issues = append(issues, wakerQueueChecks(vals, present)...)
+	issues = append(issues, workerJobTypeChecks(vals)...)
 	return issues
 }
 

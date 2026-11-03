@@ -481,12 +481,18 @@ func (q *Queue) SummarizeJobs(_ context.Context, now time.Time) (queue.JobSummar
 		typ   string
 	}
 	counts := map[key]int64{}
-	var s queue.JobSummary
+	s := queue.JobSummary{OldestReadyByType: map[string]time.Time{}}
 	for _, e := range q.jobs {
 		state := queue.StateAt(now, e.job.Attempt, e.lockedUntil)
 		counts[key{state, e.job.Type}]++
-		if state != queue.JobStateRunning && !e.job.RunAt.After(now) && (s.OldestReadyAt.IsZero() || e.job.RunAt.Before(s.OldestReadyAt)) {
+		if state == queue.JobStateRunning || e.job.RunAt.After(now) {
+			continue
+		}
+		if s.OldestReadyAt.IsZero() || e.job.RunAt.Before(s.OldestReadyAt) {
 			s.OldestReadyAt = e.job.RunAt
+		}
+		if at, ok := s.OldestReadyByType[e.job.Type]; !ok || e.job.RunAt.Before(at) {
+			s.OldestReadyByType[e.job.Type] = e.job.RunAt
 		}
 	}
 	for _, d := range q.dead {
