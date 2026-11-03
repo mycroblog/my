@@ -4,7 +4,7 @@ post:
   x-first-party-only: true
   summary: Send the authenticated user a new verification email
   description: |
-    Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+    Sends a new verification email to the user's primary email address,
     such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
     following its link shows that the address works and lifts the suppression. Earlier links
     keep working until they expire. The email is queued and sent in the background, so a 202

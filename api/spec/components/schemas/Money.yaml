@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+  An amount of money: a decimal string in the major unit with the digits of
   its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 type: object
 required: [amount, currency]

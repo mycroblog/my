@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 name: limit
 in: query
-description: The maximum number of results of a prefix search for the autocomplete (ADR-0092).
+description: The maximum number of results of a prefix search for the autocomplete.
 required: false
 schema:
   type: integer

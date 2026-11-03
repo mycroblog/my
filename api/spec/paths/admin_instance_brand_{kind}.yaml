@@ -14,7 +14,7 @@ put:
     `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
     the PNGs show the same picture as the SVG.
 
-    The revision and the change are kept (`instance_brand_revisions`, the audit log's
+    The revision and the change are kept (the audit log's
     `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
     revision stay at their URLs. Needs the `manage_settings` permission.
   tags: [admin-server]

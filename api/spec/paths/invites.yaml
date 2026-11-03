@@ -4,7 +4,7 @@ get:
   x-first-party-only: true
   summary: List the user's own invites
   description: |
-    The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+    The invites that the user created as a member, newest first, with how they
     have been used, and what the user may do: whether they may create an invite now
     (`can_create`), the caps of the instance settings, and how many usable invites they hold.
     A user who may no longer create invites still lists and revokes the ones they made; an
@@ -34,7 +34,7 @@ post:
   summary: Create an invite of the user's own
   description: |
     Creates an invite with a new random code that people use to sign up while the
-    registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+    registration mode is `open`, `approval`, or `invite`. In `approval` mode a
     person who signs up with it is approved at once. The user may create one when the
     instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
     their account is neither suspended nor limited, their registration is approved, and the

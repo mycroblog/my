@@ -3,7 +3,7 @@ get:
   operationId: listBillingImports
   summary: List the state of the billing imports
   description: |
-    The state of the imports of every cloud provider of `billing_sources` (ADR-0068), in its
+    The state of the imports of every cloud provider of `billing_sources`, in its
     order: the last attempt and its failure, the last success, the billed requests of the UTC
     day and month with their caps, the bytes billed this month, and the billing months of the
     last year with imported costs, each an estimate, final, or corrected, with its totals. The

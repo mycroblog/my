@@ -3,7 +3,7 @@ get:
   operationId: getAdminAccount
   summary: Get the details of an account
   description: |
-    An account as the moderators see it (FR-714): its state, the restrictions of its own
+    An account as the moderators see it: its state, the restrictions of its own
     actions, and, for a local account, its registration, whether its email address is
     verified, and its roles, with its newest 20 actions and, for a viewer who also has the
     `manage_reports` permission, its newest 20 reports. The email address and the IP

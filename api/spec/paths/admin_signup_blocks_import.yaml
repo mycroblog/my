@@ -3,7 +3,7 @@ post:
   operationId: importSignupBlocks
   summary: Block sign-ups from a list
   description: |
-    Adds a block on sign-ups (FR-719) for each value of a list, such as a public list of
+    Adds a block on sign-ups for each value of a list, such as a public list of
     disposable email domains, all with the same kind, severity, comment, and duration. The
     list has one value per line in any form that `createSignupBlock` takes, or a CSV row
     whose first field is the value; blank lines and lines starting with `#` are ignored.

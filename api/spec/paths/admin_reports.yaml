@@ -3,7 +3,7 @@ get:
   operationId: listReports
   summary: List the reports
   description: |
-    The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+    The reports in the moderators' queue, newest first unless `order` is `oldest`.
     Needs the `manage_reports` permission.
   tags: [admin-moderation]
   security:

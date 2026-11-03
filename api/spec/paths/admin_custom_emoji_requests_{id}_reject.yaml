@@ -6,7 +6,7 @@ post:
   summary: Reject a custom emoji request
   description: |
     Rejects a pending request, with an optional reason that the requester sees, which frees
-    its shortcode (ADR-0070 §2). The rejection is recorded in the audit log, and the requester
+    its shortcode. The rejection is recorded in the audit log, and the requester
     is notified. A reason longer than 500 characters is a 422 with the reason
     `invalid_reason`; a request that is not pending is a 409
     `/api/v1/problems/custom-emoji-request-conflict` (`not_pending`). An unknown request is a

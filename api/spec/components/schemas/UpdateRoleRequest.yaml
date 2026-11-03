@@ -14,7 +14,7 @@ properties:
       $ref: ./Permission.yaml
   badge:
     description: |
-      The new badge of the role (ADR-0071). Its holders keep their choice to show it.
+      The new badge of the role. Its holders keep their choice to show it.
     $ref: ./RoleBadge.yaml
   remove_badge:
     description: |

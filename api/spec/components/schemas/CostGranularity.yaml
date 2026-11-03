@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
   The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-  years, cut by date (ADR-0067 §5).
+  years, cut by date.
 type: string
 enum: [week, month, year]

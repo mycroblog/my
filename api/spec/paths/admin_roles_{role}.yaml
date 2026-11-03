@@ -11,7 +11,7 @@ patch:
     `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
     `moderator` takes a new position and permissions like any other role. A change that would
     break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
-    hides it from every holder's profile (ADR-0071). A role, or a new position, above every
+    hides it from every holder's profile. A role, or a new position, above every
     role of the viewer is a 403. A position, permissions, or badge that break a rule, or
     adding or removing a permission that the viewer's roles do not grant, is a 422
     `/api/v1/problems/invalid-role` whose `reason` says which. An unknown role is a 404.

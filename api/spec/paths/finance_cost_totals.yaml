@@ -3,7 +3,7 @@ get:
   operationId: getFinanceCostTotals
   summary: Total the costs by period for the finance viewers
   description: |
-    The totals of the instance's costs for the holders of `view_finance` (ADR-0070 §5). It
+    The totals of the instance's costs for the holders of `view_finance`. It
     takes the query of `GET /admin/cost_totals` and always answers its totals, their breakdown
     by provider, category, and currency, and the rules that cut the periods. Each period adds
     `items`, the amount of each cost item and each service of the imported costs, only while

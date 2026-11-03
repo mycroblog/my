@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   The income totals over the periods from the one that holds `from` to the one that holds
-  `to`, oldest first (ADR-0073 §9). `plans`, the number of members of each supporter plan
+  `to`, oldest first. `plans`, the number of members of each supporter plan
   now, is present only where the plans are shown. No answer carries individual payments, the
   subscribers, the amounts of each plan, or the gross and the fees.
 type: object

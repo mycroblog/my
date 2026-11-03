@@ -3,7 +3,7 @@ post:
   operationId: importDomainBlocks
   summary: Import the chosen rows of a Mastodon domain block CSV
   description: |
-    Issues the domain actions of each block (FR-706), as the preview names them: the kinds
+    Issues the domain actions of each block, as the preview names them: the kinds
     of the block that no action in effect on the domain or a parent domain has already. The
     actions last until they are lifted, carry the block's public comment and obfuscation
     and the request's private note, and are audited like actions issued one at a time. A

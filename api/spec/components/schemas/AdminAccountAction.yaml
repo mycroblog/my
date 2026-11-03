@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: A moderation action on an account (FR-703).
+description: A moderation action on an account.
 type: object
 required: [id, account_id, kind, reason_category, issuer, notify_target, state, issued_at]
 properties:

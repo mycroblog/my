@@ -7,7 +7,7 @@ description: |
   attachment has none.
 
   A file of a remote status is always `ready`: the instance does not process it, so it has
-  no `variants`; `url` and `preview_url` are its media proxy URLs (federation.md §9),
+  no `variants`; `url` and `preview_url` are its media proxy URLs,
   `remote_url` its URL on the remote server, and `meta`, `blurhash`, and `type` what the
   remote server declared.
 type: object

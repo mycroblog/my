@@ -4,7 +4,7 @@ get:
   summary: List the supporter plans
   description: |
     The supporter plans that take subscriptions, by rank, with their monthly and yearly
-    prices (ADR-0072 §18). A 404 while the supporter program is disabled
+    prices. A 404 while the supporter program is disabled
     (`Instance.supporters_enabled`).
   tags: [instance]
   security: []

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  The body of a message that a webhook receives (ADR-0060, Standard Webhooks), posted as
+  The body of a message that a webhook receives (Standard Webhooks), posted as
   `application/json` with the headers `webhook-id`, `webhook-timestamp`, and
   `webhook-signature`. `data` is what the admin API answers for the object of the event,
   presented in the transaction of the event: `AdminReport` for `report.*`,
@@ -9,8 +9,7 @@ description: |
   for `appeal.created`, `AdminDomainAction` for `domain_moderation_action.*`,
   `WebhookCustomEmoji` for `custom_emoji.*`, `ErrorGroup` for `error_group.*`,
   `WebhookStatus` for `status.created`, and
-  `WebhookTest` for `webhook.test`. No operation returns it; docs/reference/webhooks.md
-  describes it.
+  `WebhookTest` for `webhook.test`. No operation returns it.
 type: object
 required: [type, timestamp, data]
 properties:

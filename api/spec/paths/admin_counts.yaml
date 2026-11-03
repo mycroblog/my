@@ -5,7 +5,7 @@ get:
   description: |
     The number of open reports (with the `manage_reports` permission), and of registrations
     that await approval and appeals that await a decision (with the `manage_accounts`
-    permission), for the badges of the admin menu (FR-712). A count whose permission the user's roles lack is omitted, so a
+    permission), for the badges of the admin menu. A count whose permission the user's roles lack is omitted, so a
     user without either gets an empty object.
   tags: [admin-moderation]
   security:

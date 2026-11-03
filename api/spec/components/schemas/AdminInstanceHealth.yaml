@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: Whether deliveries go to a remote server (federation.md §7.3).
+description: Whether deliveries go to a remote server.
 type: object
 required: [domain, state, failure_days]
 properties:

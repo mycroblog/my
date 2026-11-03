@@ -5,7 +5,7 @@ post:
   summary: Delete the authenticated user's account
   description: |
     Deletes the user's own account at once, after checking the user's current `password`
-    or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
+    or a `passkey` of the user; a user without a password confirms with a passkey.
     The account and its posts disappear, every session and token of the user ends, and the
     other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
     undone, and the username is never reused. The only administrator of the instance gets a

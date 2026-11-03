@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A custom emoji that a text uses (FR-111, ADR-0051 §4). The text has it as `:shortcode:`.
+  A custom emoji that a text uses. The text has it as `:shortcode:`.
   An emoji that is disabled or deleted, or whose images come from a domain whose media the
-  instance rejects (FR-702), is not listed, and its `:shortcode:` stays text. Clients show
+  instance rejects, is not listed, and its `:shortcode:` stays text. Clients show
   `static_url` when animations should not play (`prefers-reduced-motion`), and `url`
   otherwise.
 type: object
