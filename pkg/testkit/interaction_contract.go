@@ -630,8 +630,8 @@ func interactionBookmarksAndPins(t *testing.T, e *interactionEnv) {
 		t.Errorf("FindBookmark after Unbookmark = %v, want ErrNotFound", err)
 	}
 
-	if err := e.svc.Pin(ctx, reader, s.ID); !errors.Is(err, content.ErrNotPinnable) {
-		t.Errorf("Pin(someone else's) = %v, want ErrNotPinnable", err)
+	if err := e.svc.Pin(ctx, reader, s.ID); !errors.Is(err, appcontent.ErrNotAuthor) {
+		t.Errorf("Pin(someone else's) = %v, want ErrNotAuthor", err)
 	}
 	if err := e.svc.Pin(ctx, author, e.post(t, author, content.VisibilityDirect).ID); !errors.Is(err, content.ErrNotPinnable) {
 		t.Errorf("Pin(direct) = %v, want ErrNotPinnable", err)

@@ -10,7 +10,7 @@ export const handlers = [
     withViewer(request, () => HttpResponse.json(statusPage([timelineStatusFixture]))),
   ),
   http.get(`${apiBase}/timelines/local`, () => HttpResponse.json(statusPage([timelineStatusFixture]))),
-  http.get(`${apiBase}/timelines/public`, () =>
+  http.get(`${apiBase}/timelines/federated`, () =>
     HttpResponse.json(statusPage([timelineStatusFixture, remoteStatusFixture])),
   ),
   http.get(`${apiBase}/timelines/tag/:hashtag`, () => HttpResponse.json(statusPage([timelineStatusFixture]))),

@@ -6,7 +6,10 @@ get:
   summary: Get the thread around a status
   description: |
     The ancestors and descendants of a status that the viewer may see. A status that the
-    viewer may not see is a 404, the same as a missing one.
+    viewer may not see is a 404, the same as a missing one. For a remote status, any request,
+    an anonymous one included, may start fetching the rest of its thread from other servers;
+    a thread is fetched once at a time, 20 levels deep and at most 100 documents, so the
+    answer may grow on a later request.
   tags: [statuses]
   security:
     - {}

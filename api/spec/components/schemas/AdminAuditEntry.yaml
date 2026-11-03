@@ -23,9 +23,11 @@ properties:
     $ref: ./AdminAuditTargetKind.yaml
   target_id:
     description: |
-      The target: the ID of an account, a report, an appeal, a user, a role, a rule, a
-      sign-up block, a custom emoji, a webhook, or an invite, the domain of a domain action,
-      or the key of a setting or a text.
+      The target: the ID of an account, a status, a report, an appeal, a user, a role, a rule,
+      a sign-up block, a custom emoji or a request for one, a webhook, an announcement, an
+      invite, a relay, a cost item, a supporter plan or subscription, an OAuth client, a voice
+      room, or a login provider; the domain of a domain action or a link card rule; the host of
+      a denied OAuth client; the source of a billing import; or the key of a setting or a text.
     type: string
   target_label:
     description: |
@@ -43,9 +45,8 @@ properties:
     type: boolean
   source_event_id:
     description: |
-      The ID of the record of the operation (the domain action, the assignment, the
-      resolution, the reopening, the note, the decision, the revision), which holds its
-      reasons and notes; omitted when the operation has none.
+      An opaque ID that relates the entries of one operation; omitted when the operation has
+      no record of its own.
     type: string
   occurred_at:
     type: string

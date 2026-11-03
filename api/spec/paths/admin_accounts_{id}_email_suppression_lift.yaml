@@ -11,7 +11,7 @@ post:
     A local account whose roles do not rank below the user's, the user's own included, is a
     403 `/api/v1/problems/target-outranks-actor`. Needs the
     `manage_accounts` permission.
-  tags: [admin-server]
+  tags: [admin-moderation]
   security:
     - oauth2: ["admin:write"]
   parameters:

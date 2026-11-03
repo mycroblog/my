@@ -65,6 +65,7 @@ func CustomEmojiRepositoryContract(t *testing.T, newHarness CustomEmojiFactory) 
 		{"ReservesTheShortcodesOfPendingRequests", requestReservesShortcodes},
 		{"LimitsCreatorsToTheirOwnEmoji", requestLimitsCreatorsToTheirOwn},
 		{"LapsesImageRequestsWithTheirEmoji", requestLapsesWithItsEmoji},
+		{"RebuildsPendingRequests", requestRebuildsPendingRequests},
 		{"RequestLapsesWithItsRequester", requestLapsesWithItsRequester},
 		{"AppliesTheLimitOfTheCreators", requestAppliesTheLimit},
 	}

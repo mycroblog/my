@@ -328,7 +328,7 @@ export const handlers = [
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
   http.get(`${apiBase}/follow_requests`, ({ request }) => withViewer(request, () => HttpResponse.json({ items: [] }))),
-  http.post(`${apiBase}/follow_requests/:id/authorize`, ({ request, params }) =>
+  http.post(`${apiBase}/follow_requests/:id/accept`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json({ ...relationshipFixture(String(params["id"])), followed_by: true })),
   ),
   http.post(`${apiBase}/follow_requests/:id/reject`, ({ request, params }) =>

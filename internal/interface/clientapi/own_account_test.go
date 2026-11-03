@@ -176,7 +176,7 @@ func TestChangePassword(t *testing.T) {
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Type != clientapi.ProblemTypeWrongPassword {
 		t.Errorf("wrong password = %d %+v, want 422 wrong-password", res.StatusCode, p)
 	}
-	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"current_password":"secret","new_password":"short"}`)
+	res = e.sendJSON(t, http.MethodPost, "/accounts/password", "write", `{"current_password":"secret","new_password":"short","x":"invalid-on-purpose"}`)
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "new_password") {
 		t.Errorf("short new password = %d %+v, want 422 on new_password", res.StatusCode, p)
 	}

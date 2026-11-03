@@ -101,9 +101,7 @@ that already matches the schema is left unchanged, so running it again is safe.
 Apply the schema before starting a new release's server; "my serve" never
 applies it. db = sqlite and db = postgres are supported.
 
-On PostgreSQL it first runs the bootstrap SQL (CREATE EXTENSION IF NOT EXISTS
-pg_trgm), so the role needs the privilege to create that extension or the
-extension must exist. It builds the schema to compare with in a temporary
+On PostgreSQL it builds the schema to compare with in a temporary
 schema of the database, which it drops at the end, also on failure; when the
 role may not create a schema there, set database_dev_url to another database
 where it may. Runs against one database take turns: a second run waits for the

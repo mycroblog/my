@@ -161,7 +161,7 @@ func TestSupporterProgram(t *testing.T) {
 		t.Errorf("the provider's subscription after the deletion: %s", s.Status)
 	}
 
-	e.want(e.do(http.MethodPost, "/admin/supporter_plans/"+created.Id+"/retire", admin.token, nil, nil), http.StatusNoContent, "retire")
+	e.want(e.do(http.MethodPost, "/admin/supporter_plans/"+created.Id+"/retire", admin.token, nil, nil), http.StatusOK, "retire")
 	res = e.do(http.MethodPost, "/admin/supporter_plans/"+created.Id+"/retire", admin.token, nil, nil)
 	if typ := e.want(res, http.StatusConflict, "retire again"); typ != clientapi.ProblemTypeSupporterPlanRetired {
 		t.Errorf("problem %s", typ)

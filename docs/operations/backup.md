@@ -209,8 +209,7 @@ The server image runs as the user `65532`, which must own the files of the volum
 
 Restore into a new, empty database prepared as for a new instance, but without applying the schema: the dump contains it.
 
-1. Create the role and the database. The dump creates the `pg_trgm` extension, which the database owner may create
-   (see [With `my schema apply`](database.md#with-my-schema-apply)).
+1. Create the role and the database.
 2. Restore the dump. As a superuser, the restored tables keep their owner (the role must exist); as the database owner, add `--no-owner`.
 
    ```sh

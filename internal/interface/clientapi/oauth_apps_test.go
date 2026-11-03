@@ -230,7 +230,7 @@ func TestOAuthAppChanges(t *testing.T) {
 		t.Errorf("update with a first-party-only scope = %d %+v, want a 422 naming scope", res.StatusCode, p)
 	}
 
-	res = e.send(t, http.MethodPost, "/oauth_apps/"+id+"/secret", "write", "")
+	res = e.send(t, http.MethodPost, "/oauth_apps/"+id+"/rotate_secret", "write", "")
 	if s := decodeJSON[clientapi.OAuthAppSecret](t, res); res.StatusCode != http.StatusOK || s.ClientSecret != appidentity.ClientSecretPrefix+"rotated" {
 		t.Errorf("rotate = %d %+v, want the new secret", res.StatusCode, s)
 	}
@@ -261,7 +261,7 @@ func TestOAuthAppChanges(t *testing.T) {
 	f.disabled = true
 	pub := decodeJSON[clientapi.OAuthAppCreated](t, e.sendJSON(t, http.MethodPost, "/oauth_apps", "write",
 		`{"name":"Script","redirect_uris":["http://127.0.0.1/cb"],"scope":"read","client_type":"public"}`))
-	res = e.send(t, http.MethodPost, "/oauth_apps/"+pub.App.Id+"/secret", "write", "")
+	res = e.send(t, http.MethodPost, "/oauth_apps/"+pub.App.Id+"/rotate_secret", "write", "")
 	if p := decodeProblem(t, res); res.StatusCode != http.StatusConflict || p.Type != clientapi.ProblemTypePublicOAuthApp {
 		t.Errorf("rotate a public app = %d %+v, want 409", res.StatusCode, p)
 	}

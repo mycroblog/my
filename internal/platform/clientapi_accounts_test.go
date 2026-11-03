@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/account"
@@ -102,7 +103,12 @@ func (e *accountsEnv) want(res *http.Response, status int, what string) string {
 func (e *accountsEnv) relate(action string, from testUser, to testUser, body any) clientapi.Relationship {
 	e.t.Helper()
 	var r clientapi.Relationship
-	e.want(e.do(http.MethodPost, "/accounts/"+to.id+"/"+action, from.token, body, &r), http.StatusOK, action)
+	// An action on a relation is a POST on its path, and its undoing a DELETE there.
+	method := http.MethodPost
+	if rel, undoing := strings.CutPrefix(action, "un"); undoing {
+		method, action = http.MethodDelete, rel
+	}
+	e.want(e.do(method, "/accounts/"+to.id+"/"+action, from.token, body, &r), http.StatusOK, action)
 	if r.Id != to.id {
 		e.t.Fatalf("%s: relationship of %s, want %s", action, r.Id, to.id)
 	}
@@ -205,7 +211,7 @@ func TestClientAPIAccounts(t *testing.T) {
 		t.Errorf("bob's relationship with alice = %+v", rs)
 	}
 	var r clientapi.Relationship
-	e.want(e.do(http.MethodPost, "/follow_requests/"+alice.id+"/authorize", bob.token, nil, &r), http.StatusOK, "authorize")
+	e.want(e.do(http.MethodPost, "/follow_requests/"+alice.id+"/accept", bob.token, nil, &r), http.StatusOK, "authorize")
 	if !set(r.FollowedBy) || set(r.RequestedBy) || r.Id != alice.id {
 		t.Errorf("authorize = %+v, want followed by alice", r)
 	}
@@ -297,9 +303,10 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id, alice.token, nil, nil), http.StatusNotFound, "get blocker")
 	e.want(e.do(http.MethodGet, "/accounts/lookup?acct=carol", alice.token, nil, nil), http.StatusNotFound, "lookup blocker")
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id+"/followers", alice.token, nil, nil), http.StatusNotFound, "blocker's followers")
-	for _, action := range []string{"follow", "unfollow", "mute"} {
+	for _, action := range []string{"follow", "mute"} {
 		e.want(e.do(http.MethodPost, "/accounts/"+carol.id+"/"+action, alice.token, nil, nil), http.StatusNotFound, action+" blocker")
 	}
+	e.want(e.do(http.MethodDelete, "/accounts/"+carol.id+"/follow", alice.token, nil, nil), http.StatusNotFound, "unfollow blocker")
 	if rs := e.relationships(alice, carol.id, dave.id); len(rs) != 1 || rs[0].Id != dave.id {
 		t.Errorf("alice's relationships = %+v, want dave's only", rs)
 	}

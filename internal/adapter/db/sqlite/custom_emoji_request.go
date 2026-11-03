@@ -190,3 +190,15 @@ func (r *CustomEmojiRepository) BlankCustomEmojiRequester(ctx context.Context, t
 	}
 	return wrap(q.BlankCustomEmojiRequester(ctx, toNullString(userID)), "blank custom emoji requester")
 }
+
+// RebuildCustomEmojiPendingRequests implements content.CustomEmojiRequestRepository.
+func (r *CustomEmojiRepository) RebuildCustomEmojiPendingRequests(ctx context.Context, tx uow.Tx) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	if err := q.DeleteAllCustomEmojiPendingRequests(ctx); err != nil {
+		return wrap(err, "delete custom emoji pending requests")
+	}
+	return wrap(q.RebuildCustomEmojiPendingRequests(ctx), "rebuild custom emoji pending requests")
+}

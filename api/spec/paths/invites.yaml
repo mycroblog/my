@@ -50,7 +50,7 @@ post:
   security:
     - oauth2: ["write:accounts"]
   requestBody:
-    required: true
+    required: false
     content:
       application/json:
         schema:

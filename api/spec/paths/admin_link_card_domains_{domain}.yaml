@@ -24,3 +24,42 @@ delete:
       description: The domain has no rule.
     default:
       $ref: ../components/responses/Problem.yaml
+put:
+  operationId: setLinkCardDomainRule
+  summary: Set the rule of a domain for the link card crawler
+  description: |
+    Records the rule of a domain, replacing the rule it has, and records the change in the
+    audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+    link cards: federation and other remote media follow the domain actions. A domain that is
+    not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+    422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - name: domain
+      in: path
+      required: true
+      description: The domain, a host without a scheme, path, or port; it also covers its subdomains.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 253
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/SetLinkCardDomainRuleRequest.yaml
+  responses:
+    "200":
+      description: The rule.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/LinkCardDomainRule.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

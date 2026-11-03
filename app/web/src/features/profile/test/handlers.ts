@@ -55,6 +55,13 @@ export const handlers = [
       ? problem(404, "about:blank", "Not Found")
       : HttpResponse.json(relationshipFixture(String(params["id"]), after));
   }),
+  http.delete(`${apiBase}/accounts/:id/:relation`, ({ request, params }) => {
+    if (!authorized(request)) return unauthenticated(request);
+    const after = relationshipAfter[`un${String(params["relation"])}`];
+    return after === undefined
+      ? problem(404, "about:blank", "Not Found")
+      : HttpResponse.json(relationshipFixture(String(params["id"]), after));
+  }),
   http.get(`${apiBase}/accounts/:id/statuses`, ({ params, request }) =>
     new URL(request.url).searchParams.get("pinned") === "true"
       ? HttpResponse.json(statusPage([]))

@@ -179,7 +179,7 @@ async function firstPage(api: Api, timeline: StreamedTimeline): Promise<StatusPa
       case "local":
         return api.fetch.GET("/timelines/local", {});
       case "public":
-        return api.fetch.GET("/timelines/public", {});
+        return api.fetch.GET("/timelines/federated", {});
     }
   })();
   if (data === undefined) throw new ApiError(error);
