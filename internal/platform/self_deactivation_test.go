@@ -651,7 +651,7 @@ func TestSelfDeactivationAndModeration(t *testing.T) {
 
 	// A suspension and its lift while deactivated send nothing, and the posts stay hidden.
 	var a clientapi.AdminAccountAction
-	if res := e.do("mod", http.MethodPost, "/admin/accounts/"+aliceID+"/actions", map[string]any{"kind": "suspend"}, &a); res.StatusCode != http.StatusOK {
+	if res := e.do("mod", http.MethodPost, "/admin/accounts/"+aliceID+"/actions", map[string]any{"kind": "suspend"}, &a); res.StatusCode != http.StatusCreated {
 		t.Fatalf("suspend = %d", res.StatusCode)
 	}
 	wantUpdates("the suspension while deactivated", 0)
@@ -672,7 +672,7 @@ func TestSelfDeactivationAndModeration(t *testing.T) {
 
 	// A suspension in effect stays after the reactivation, which sends nothing either; the lift
 	// shows the account again.
-	if res := e.do("mod", http.MethodPost, "/admin/accounts/"+aliceID+"/actions", map[string]any{"kind": "suspend"}, &a); res.StatusCode != http.StatusOK {
+	if res := e.do("mod", http.MethodPost, "/admin/accounts/"+aliceID+"/actions", map[string]any{"kind": "suspend"}, &a); res.StatusCode != http.StatusCreated {
 		t.Fatalf("suspend = %d", res.StatusCode)
 	}
 	wantUpdates("the second suspension", 0)
@@ -714,7 +714,7 @@ func TestSelfDeactivationAndModeration(t *testing.T) {
 	e.freshToken("mod")
 	e.deactivate("alice")
 	e.network.taken()
-	if res := e.do("mod", http.MethodPost, "/admin/accounts/"+aliceID+"/actions", map[string]any{"kind": "ban"}, nil); res.StatusCode != http.StatusOK {
+	if res := e.do("mod", http.MethodPost, "/admin/accounts/"+aliceID+"/actions", map[string]any{"kind": "ban"}, nil); res.StatusCode != http.StatusCreated {
 		t.Fatalf("ban = %d", res.StatusCode)
 	}
 	if err := e.app.Identity.ReactivateOwnAccount(ctx, aliceUser); !errorsIsNotDeactivated(err) {

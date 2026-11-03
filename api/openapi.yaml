@@ -20242,6 +20242,8 @@ components:
         - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
         - `/api/v1/problems/wrong-password` (422): the password given to confirm the operation is
           not the user's current password.
+        - `/api/v1/problems/deactivation-refused` (409): the user's own account cannot be deactivated
+          now; the detail says why.
         - `/api/v1/problems/export-in-progress` (409): another data export of the user is being
           built. Wait for it to end.
         - `/api/v1/problems/export-not-ready` (409): the data export has no archive to download:
