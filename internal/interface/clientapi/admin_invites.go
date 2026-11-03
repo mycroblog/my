@@ -163,7 +163,7 @@ func (s *Server) CreateInvite(ctx context.Context, req CreateInviteRequestObject
 	if err != nil {
 		return nil, err
 	}
-	return CreateInvite200JSONResponse{resp}, nil
+	return CreateInvite201JSONResponse{resp}, nil
 }
 
 // RevokeInvite serves POST /api/v1/admin/invites/{id}/revoke.

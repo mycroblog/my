@@ -90,7 +90,7 @@ func TestCopyRemoteCustomEmoji(t *testing.T) {
 	blobcat := remote("blobcat", "mastodon.example")
 
 	var copied clientapi.AdminCustomEmoji
-	if code := api(http.MethodPost, "/admin/custom_emojis/"+blobcat+"/copy", nil, &copied); code != http.StatusOK {
+	if code := api(http.MethodPost, "/admin/custom_emojis/"+blobcat+"/copy", nil, &copied); code != http.StatusCreated {
 		t.Fatalf("POST copy = %d", code)
 	}
 	if !copied.Local || copied.Id == blobcat || copied.Shortcode != "blobcat" || copied.Domain != nil || !copied.Enabled || !copied.VisibleInPicker ||

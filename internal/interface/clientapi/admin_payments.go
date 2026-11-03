@@ -95,5 +95,5 @@ func (s *Server) RunPaymentReconcile(ctx context.Context, _ RunPaymentReconcileR
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: reconcile with the payment provider: %w", err)
 	}
-	return RunPaymentReconcile204Response{}, nil
+	return RunPaymentReconcile202Response{}, nil
 }

@@ -26,7 +26,7 @@ func TestPublicCostTotals(t *testing.T) {
 	e.want(e.do(http.MethodPost, "/admin/cost_items", admin.token, map[string]any{
 		"schedule": "months", "interval": 1, "starts_on": "2025-01-01", "name": "tokyo-vm-7", "provider": "Cloud",
 		"category": "compute", "memo": "bucket-secret", "price": map[string]string{"amount": "10.00", "currency": "USD"},
-	}, nil), http.StatusOK, "POST /admin/cost_items")
+	}, nil), http.StatusCreated, "POST /admin/cost_items")
 	r, err := e.app.Identity.RegisterLocalUser(t.Context(), identity.RegisterInput{Username: "bob", Password: "correct horse battery staple"})
 	if err != nil {
 		t.Fatal(err)

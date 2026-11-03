@@ -21,7 +21,7 @@ post:
         schema:
           $ref: ../components/schemas/IssueOAuthAppTokenRequest.yaml
   responses:
-    "200":
+    "201":
       description: The tokens.
       headers:
         Cache-Control:

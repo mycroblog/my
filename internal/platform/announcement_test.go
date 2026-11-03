@@ -105,7 +105,7 @@ func TestAnnouncements(t *testing.T) {
 	var draft clientapi.AdminAnnouncement
 	if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{
 		"title": "  Maintenance on Sunday ", "text": "# Maintenance\n\nOn **Sunday**. <script>alert(1)</script>",
-	}, &draft); code != http.StatusOK || draft.State != clientapi.AdminAnnouncementStateDraft || draft.PublishedAt != nil ||
+	}, &draft); code != http.StatusCreated || draft.State != clientapi.AdminAnnouncementStateDraft || draft.PublishedAt != nil ||
 		draft.Title != "Maintenance on Sunday" {
 		t.Fatalf("POST /admin/announcements = %d %+v", code, draft)
 	}

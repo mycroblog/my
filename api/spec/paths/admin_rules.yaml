@@ -47,7 +47,7 @@ post:
         schema:
           $ref: ../components/schemas/InstanceRuleInput.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminRule.yaml
     default:
       $ref: ../components/responses/Problem.yaml

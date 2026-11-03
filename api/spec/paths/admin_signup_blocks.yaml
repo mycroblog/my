@@ -59,7 +59,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateSignupBlockRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminSignupBlock.yaml
     default:
       $ref: ../components/responses/Problem.yaml

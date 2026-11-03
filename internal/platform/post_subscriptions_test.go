@@ -65,7 +65,7 @@ func TestPostSubscriptionsThroughAPI(t *testing.T) {
 	post := func(visibility string) string {
 		t.Helper()
 		var st clientapi.Status
-		e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{"text": "news", "visibility": visibility}, &st), http.StatusOK, "post "+visibility)
+		e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{"text": "news", "visibility": visibility}, &st), http.StatusCreated, "post "+visibility)
 		drain()
 		return st.Id
 	}

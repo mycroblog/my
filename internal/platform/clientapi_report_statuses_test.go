@@ -23,7 +23,7 @@ func TestReportedStatusesThroughTheAPI(t *testing.T) {
 	var report clientapi.Report
 	if res := c.do("alice", http.MethodPost, "/reports", map[string]any{
 		"account_id": c.ids["bob"], "status_ids": []string{private.Id, direct.Id}, "category": "spam",
-	}, &report); res.StatusCode != http.StatusOK {
+	}, &report); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /reports = %d", res.StatusCode)
 	}
 	// The visibility policy still hides them from carol everywhere else.

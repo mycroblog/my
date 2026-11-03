@@ -31,7 +31,7 @@ func TestClientAPIAccountActions(t *testing.T) {
 	issue := func(kind string) clientapi.AdminAccountAction {
 		t.Helper()
 		var a clientapi.AdminAccountAction
-		e.want(e.do(http.MethodPost, "/admin/accounts/"+alice.id+"/actions", mod.token, map[string]any{"kind": kind, "public_reason": "rules"}, &a), http.StatusOK, "issue "+kind)
+		e.want(e.do(http.MethodPost, "/admin/accounts/"+alice.id+"/actions", mod.token, map[string]any{"kind": kind, "public_reason": "rules"}, &a), http.StatusCreated, "issue "+kind)
 		if a.Kind != clientapi.AdminAccountActionKind(kind) || a.State != clientapi.AdminAccountActionStateActive || a.AccountId != alice.id {
 			t.Fatalf("issued %s = %+v", kind, a)
 		}
@@ -50,7 +50,7 @@ func TestClientAPIAccountActions(t *testing.T) {
 		return e.do(http.MethodPost, "/statuses", who.token, map[string]any{"text": "hello", "visibility": visibility}, nil)
 	}
 	var bobs clientapi.Status
-	e.want(e.do(http.MethodPost, "/statuses", bob.token, map[string]any{"text": "hi", "visibility": "public"}, &bobs), http.StatusOK, "bob posts")
+	e.want(e.do(http.MethodPost, "/statuses", bob.token, map[string]any{"text": "hi", "visibility": "public"}, &bobs), http.StatusCreated, "bob posts")
 
 	// A user whose roles lack manage_accounts may not act on accounts.
 	if typ := e.want(e.do(http.MethodPost, "/admin/accounts/"+bob.id+"/actions", alice.token, map[string]any{"kind": "suspend"}, nil), http.StatusForbidden, "issue by alice"); typ != clientapi.ProblemTypeInsufficientScope && typ != clientapi.ProblemTypeMissingPermission {
@@ -61,7 +61,7 @@ func TestClientAPIAccountActions(t *testing.T) {
 	a := issue("restrict_posting")
 	e.want(post(alice, "public"), http.StatusForbidden, "post while restricted")
 	lift(a)
-	e.want(post(alice, "public"), http.StatusOK, "post after the lift")
+	e.want(post(alice, "public"), http.StatusCreated, "post after the lift")
 
 	// restrict_interaction: no following, favouriting, or replying until lifted.
 	a = issue("restrict_interaction")
@@ -69,7 +69,7 @@ func TestClientAPIAccountActions(t *testing.T) {
 	e.want(e.do(http.MethodPost, "/statuses/"+bobs.Id+"/favourite", alice.token, nil, nil), http.StatusForbidden, "favourite while restricted")
 	e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{"text": "re", "visibility": "public", "in_reply_to_id": bobs.Id}, nil),
 		http.StatusForbidden, "reply while restricted")
-	e.want(post(alice, "public"), http.StatusOK, "post while interaction is restricted")
+	e.want(post(alice, "public"), http.StatusCreated, "post while interaction is restricted")
 	lift(a)
 	e.relate("follow", alice, bob, nil)
 	e.want(e.do(http.MethodPost, "/statuses/"+bobs.Id+"/favourite", alice.token, nil, nil), http.StatusOK, "favourite after the lift")
@@ -77,7 +77,7 @@ func TestClientAPIAccountActions(t *testing.T) {
 	// limit: new posts are followers-only.
 	a = issue("limit")
 	var limited clientapi.Status
-	e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{"text": "hello", "visibility": "public"}, &limited), http.StatusOK, "post while limited")
+	e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{"text": "hello", "visibility": "public"}, &limited), http.StatusCreated, "post while limited")
 	if limited.Visibility != clientapi.VisibilityPrivate {
 		t.Errorf("visibility while limited = %s, want private", limited.Visibility)
 	}

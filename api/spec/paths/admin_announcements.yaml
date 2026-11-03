@@ -42,7 +42,7 @@ post:
         schema:
           $ref: ../components/schemas/AdminAnnouncementCreateRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminAnnouncement.yaml
     default:
       $ref: ../components/responses/Problem.yaml
