@@ -112,9 +112,9 @@ func (e *accountsEnv) relate(action string, from testUser, to testUser, body any
 func (e *accountsEnv) relationships(of testUser, ids ...string) []clientapi.Relationship {
 	e.t.Helper()
 	q := url.Values{"id": ids}
-	var rs []clientapi.Relationship
+	var rs clientapi.RelationshipList
 	e.want(e.do(http.MethodGet, "/accounts/relationships?"+q.Encode(), of.token, nil, &rs), http.StatusOK, "relationships")
-	return rs
+	return rs.Items
 }
 
 func (e *accountsEnv) page(path, token string) clientapi.AccountPage {
@@ -198,8 +198,8 @@ func TestClientAPIAccounts(t *testing.T) {
 	if r := e.relate("follow", alice, bob, nil); set(r.Following) || !set(r.Requested) {
 		t.Errorf("follow locked again = %+v, want still requested", r)
 	}
-	if p := e.page("/follow_requests", bob.token); !slices.Equal(ids(p.Accounts), []string{alice.id}) || p.NextCursor != nil {
-		t.Errorf("bob's follow requests = %v", ids(p.Accounts))
+	if p := e.page("/follow_requests", bob.token); !slices.Equal(ids(p.Items), []string{alice.id}) || p.NextCursor != nil {
+		t.Errorf("bob's follow requests = %v", ids(p.Items))
 	}
 	if rs := e.relationships(bob, alice.id); len(rs) != 1 || !set(rs[0].RequestedBy) || set(rs[0].FollowedBy) {
 		t.Errorf("bob's relationship with alice = %+v", rs)
@@ -237,15 +237,15 @@ func TestClientAPIAccounts(t *testing.T) {
 
 	// Keyset paging: newest follow first, next_cursor only while more follow.
 	first := e.page("/accounts/"+carol.id+"/followers?limit=1", "")
-	if !slices.Equal(ids(first.Accounts), []string{bob.id}) || first.NextCursor == nil {
-		t.Fatalf("first page = %v, %v", ids(first.Accounts), first.NextCursor)
+	if !slices.Equal(ids(first.Items), []string{bob.id}) || first.NextCursor == nil {
+		t.Fatalf("first page = %v, %v", ids(first.Items), first.NextCursor)
 	}
 	second := e.page("/accounts/"+carol.id+"/followers?limit=1&cursor="+url.QueryEscape(*first.NextCursor), "")
-	if !slices.Equal(ids(second.Accounts), []string{alice.id}) || second.NextCursor != nil {
-		t.Errorf("second page = %v, %v", ids(second.Accounts), second.NextCursor)
+	if !slices.Equal(ids(second.Items), []string{alice.id}) || second.NextCursor != nil {
+		t.Errorf("second page = %v, %v", ids(second.Items), second.NextCursor)
 	}
-	if p := e.page("/accounts/"+alice.id+"/following", alice.token); !slices.Equal(ids(p.Accounts), []string{carol.id, bob.id}) {
-		t.Errorf("alice follows %v", ids(p.Accounts))
+	if p := e.page("/accounts/"+alice.id+"/following", alice.token); !slices.Equal(ids(p.Items), []string{carol.id, bob.id}) {
+		t.Errorf("alice follows %v", ids(p.Items))
 	}
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id+"/followers?cursor=%21%21", "", nil, nil), http.StatusBadRequest, "invalid cursor")
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id+"/followers?limit=41", "", nil, nil), http.StatusBadRequest, "limit too large")
@@ -258,8 +258,8 @@ func TestClientAPIAccounts(t *testing.T) {
 	if r := e.relate("unfollow", alice, carol, nil); set(r.Following) {
 		t.Errorf("unfollow = %+v", r)
 	}
-	if p := e.page("/accounts/"+alice.id+"/following", ""); len(p.Accounts) != 0 {
-		t.Errorf("alice still follows %v", ids(p.Accounts))
+	if p := e.page("/accounts/"+alice.id+"/following", ""); len(p.Items) != 0 {
+		t.Errorf("alice still follows %v", ids(p.Items))
 	}
 
 	// Deactivated accounts are not found and leave the lists.
@@ -269,8 +269,8 @@ func TestClientAPIAccounts(t *testing.T) {
 		t.Fatal(err)
 	}
 	e.want(e.do(http.MethodGet, "/accounts/"+bob.id, "", nil, nil), http.StatusNotFound, "deactivated account")
-	if p := e.page("/accounts/"+carol.id+"/followers", ""); len(p.Accounts) != 0 {
-		t.Errorf("carol's followers = %v, want the deactivated bob left out", ids(p.Accounts))
+	if p := e.page("/accounts/"+carol.id+"/followers", ""); len(p.Items) != 0 {
+		t.Errorf("carol's followers = %v, want the deactivated bob left out", ids(p.Items))
 	}
 }
 
@@ -303,26 +303,26 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	if rs := e.relationships(alice, carol.id, dave.id); len(rs) != 1 || rs[0].Id != dave.id {
 		t.Errorf("alice's relationships = %+v, want dave's only", rs)
 	}
-	if p := e.page("/accounts/"+dave.id+"/followers", alice.token); !slices.Equal(ids(p.Accounts), []string{alice.id}) {
-		t.Errorf("dave's followers as alice = %v, want carol left out", ids(p.Accounts))
+	if p := e.page("/accounts/"+dave.id+"/followers", alice.token); !slices.Equal(ids(p.Items), []string{alice.id}) {
+		t.Errorf("dave's followers as alice = %v, want carol left out", ids(p.Items))
 	}
-	if p := e.page("/accounts/"+dave.id+"/followers", ""); !slices.Equal(ids(p.Accounts), []string{carol.id, alice.id}) {
-		t.Errorf("dave's followers = %v", ids(p.Accounts))
+	if p := e.page("/accounts/"+dave.id+"/followers", ""); !slices.Equal(ids(p.Items), []string{carol.id, alice.id}) {
+		t.Errorf("dave's followers = %v", ids(p.Items))
 	}
 	// Carol still sees alice, and cannot follow her while blocking her.
 	e.want(e.do(http.MethodGet, "/accounts/"+alice.id, carol.token, nil, nil), http.StatusOK, "blocker gets blocked")
 	if typ := e.want(e.do(http.MethodPost, "/accounts/"+alice.id+"/follow", carol.token, nil, nil), http.StatusConflict, "follow blocked"); typ != clientapi.ProblemTypeBlocking {
 		t.Errorf("follow blocked type = %s", typ)
 	}
-	if p := e.page("/blocks", carol.token); !slices.Equal(ids(p.Accounts), []string{alice.id}) {
-		t.Errorf("carol's blocks = %v", ids(p.Accounts))
+	if p := e.page("/blocks", carol.token); !slices.Equal(ids(p.Items), []string{alice.id}) {
+		t.Errorf("carol's blocks = %v", ids(p.Items))
 	}
 	if r := e.relate("unblock", carol, alice, nil); set(r.Blocking) || set(r.FollowedBy) {
 		t.Errorf("unblock = %+v, want no block and the follow still ended", r)
 	}
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id, alice.token, nil, nil), http.StatusOK, "get after unblock")
-	if p := e.page("/blocks", carol.token); len(p.Accounts) != 0 {
-		t.Errorf("carol's blocks after unblock = %v", ids(p.Accounts))
+	if p := e.page("/blocks", carol.token); len(p.Items) != 0 {
+		t.Errorf("carol's blocks after unblock = %v", ids(p.Items))
 	}
 
 	// Mutes, with and without notifications and an expiry.
@@ -335,13 +335,13 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	e.want(e.do(http.MethodPost, "/accounts/"+dave.id+"/mute", alice.token, map[string]int{"duration": -1}, nil), http.StatusBadRequest, "negative duration")
 	var mutes clientapi.MutePage
 	e.want(e.do(http.MethodGet, "/mutes?limit=1", alice.token, nil, &mutes), http.StatusOK, "mutes")
-	if len(mutes.Mutes) != 1 || mutes.Mutes[0].Account.Id != dave.id || !mutes.Mutes[0].Notifications || mutes.Mutes[0].ExpiresAt != nil || mutes.NextCursor == nil {
+	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != dave.id || !mutes.Items[0].Notifications || mutes.Items[0].ExpiresAt != nil || mutes.NextCursor == nil {
 		t.Fatalf("first mutes page = %+v", mutes)
 	}
 	cursor := *mutes.NextCursor
 	mutes = clientapi.MutePage{}
 	e.want(e.do(http.MethodGet, "/mutes?limit=1&cursor="+url.QueryEscape(cursor), alice.token, nil, &mutes), http.StatusOK, "mutes page 2")
-	if len(mutes.Mutes) != 1 || mutes.Mutes[0].Account.Id != carol.id || mutes.Mutes[0].Notifications || mutes.Mutes[0].ExpiresAt == nil || mutes.NextCursor != nil {
+	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != carol.id || mutes.Items[0].Notifications || mutes.Items[0].ExpiresAt == nil || mutes.NextCursor != nil {
 		t.Errorf("second mutes page = %+v", mutes)
 	}
 	if r := e.relate("unmute", alice, carol, nil); set(r.Muting) {
@@ -349,7 +349,7 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	}
 	mutes = clientapi.MutePage{}
 	e.want(e.do(http.MethodGet, "/mutes", alice.token, nil, &mutes), http.StatusOK, "mutes after unmute")
-	if len(mutes.Mutes) != 1 || mutes.Mutes[0].Account.Id != dave.id {
+	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != dave.id {
 		t.Errorf("mutes after unmute = %+v", mutes)
 	}
 }
@@ -379,18 +379,18 @@ func TestClientAPIDomainMutes(t *testing.T) {
 
 	var page clientapi.DomainMutePage
 	e.want(e.do(http.MethodGet, "/domain_mutes?limit=2", alice.token, nil, &page), http.StatusOK, "domain mutes")
-	if len(page.DomainMutes) != 2 || page.DomainMutes[0].Domain != "a.example" || page.DomainMutes[1].Domain != "remote.example" || page.NextCursor == nil {
+	if len(page.Items) != 2 || page.Items[0].Domain != "a.example" || page.Items[1].Domain != "remote.example" || page.NextCursor == nil {
 		t.Fatalf("first page = %+v", page)
 	}
 	cursor := *page.NextCursor
 	page = clientapi.DomainMutePage{}
 	e.want(e.do(http.MethodGet, "/domain_mutes?limit=2&cursor="+url.QueryEscape(cursor), alice.token, nil, &page), http.StatusOK, "domain mutes page 2")
-	if len(page.DomainMutes) != 1 || page.DomainMutes[0].Domain != "xn--r8jz45g.xn--zckzah" || page.NextCursor != nil {
+	if len(page.Items) != 1 || page.Items[0].Domain != "xn--r8jz45g.xn--zckzah" || page.NextCursor != nil {
 		t.Errorf("second page = %+v", page)
 	}
 	page = clientapi.DomainMutePage{}
 	e.want(e.do(http.MethodGet, "/domain_mutes", bob.token, nil, &page), http.StatusOK, "bob's domain mutes")
-	if len(page.DomainMutes) != 0 {
+	if len(page.Items) != 0 {
 		t.Errorf("bob's domain mutes = %+v", page)
 	}
 
@@ -400,7 +400,7 @@ func TestClientAPIDomainMutes(t *testing.T) {
 	}
 	page = clientapi.DomainMutePage{}
 	e.want(e.do(http.MethodGet, "/domain_mutes", alice.token, nil, &page), http.StatusOK, "domain mutes after unmute")
-	if len(page.DomainMutes) != 2 || page.DomainMutes[1].Domain != "xn--r8jz45g.xn--zckzah" {
+	if len(page.Items) != 2 || page.Items[1].Domain != "xn--r8jz45g.xn--zckzah" {
 		t.Errorf("domain mutes after unmute = %+v", page)
 	}
 	e.want(e.do(http.MethodGet, "/domain_mutes", "", nil, nil), http.StatusUnauthorized, "anonymous")

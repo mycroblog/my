@@ -53,10 +53,11 @@ func TestSearchAccounts(t *testing.T) {
 	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "private, max-age=30" {
 		t.Fatalf("search = %d (Cache-Control %q)", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
-	var got []clientapi.Account
-	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+	var list clientapi.AccountList
+	if err := json.NewDecoder(res.Body).Decode(&list); err != nil {
 		t.Fatal(err)
 	}
+	got := list.Items
 	// The unknown account is left out.
 	if len(got) != 1 || got[0].Id != aliceAccountID {
 		t.Errorf("search = %+v, want alice", got)

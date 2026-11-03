@@ -60,10 +60,11 @@ func TestSearchTags(t *testing.T) {
 	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "private, max-age=30" {
 		t.Fatalf("search = %d (Cache-Control %q)", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
-	var got []clientapi.TagSuggestion
-	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+	var list clientapi.TagSuggestionList
+	if err := json.NewDecoder(res.Body).Decode(&list); err != nil {
 		t.Fatal(err)
 	}
+	got := list.Items
 	want := []clientapi.TagSuggestion{{Name: "Cat", StatusesCount: 1}, {Name: "cats", StatusesCount: 3}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("search = %+v, want %+v", got, want)
@@ -78,8 +79,8 @@ func TestSearchTags(t *testing.T) {
 	// Without a search, nothing is found.
 	e = newAuthEnv(t, nil)
 	res = e.get(t, "/tags/search?q=ca", token)
-	var none []clientapi.TagSuggestion
-	if err := json.NewDecoder(res.Body).Decode(&none); err != nil || res.StatusCode != http.StatusOK || none == nil || len(none) != 0 {
+	var none clientapi.TagSuggestionList
+	if err := json.NewDecoder(res.Body).Decode(&none); err != nil || res.StatusCode != http.StatusOK || none.Items == nil || len(none.Items) != 0 {
 		t.Errorf("search without a TagSearch = %d %v %v, want 200 []", res.StatusCode, none, err)
 	}
 }

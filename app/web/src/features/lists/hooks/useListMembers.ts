@@ -62,7 +62,7 @@ export function useListMembers(list: List): ListMembers {
   }
   return {
     status: "done",
-    members: query.data.pages.flatMap((page) => page.accounts),
+    members: query.data.pages.flatMap((page) => page.items),
     hasMore: query.hasNextPage,
     loadMore: () => {
       if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();

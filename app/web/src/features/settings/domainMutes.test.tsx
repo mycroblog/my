@@ -20,7 +20,7 @@ function useMutedDomains(initial: string[]) {
   server.use(
     http.get(`${apiBase}/domain_mutes`, () =>
       HttpResponse.json({
-        domain_mutes: domains.map((domain): Schemas["DomainMute"] => ({ domain, created_at: "2026-10-21T09:30:00Z" })),
+        items: domains.map((domain): Schemas["DomainMute"] => ({ domain, created_at: "2026-10-21T09:30:00Z" })),
       } satisfies Schemas["DomainMutePage"]),
     ),
     http.post(`${apiBase}/domain_mutes`, async ({ request }) => {
@@ -114,7 +114,7 @@ describe("muted domains", () => {
 
   test("a domain the server refuses says why and stays in the field", async () => {
     server.use(
-      http.get(`${apiBase}/domain_mutes`, () => HttpResponse.json({ domain_mutes: [] })),
+      http.get(`${apiBase}/domain_mutes`, () => HttpResponse.json({ items: [] })),
       http.post(`${apiBase}/domain_mutes`, () =>
         HttpResponse.json(
           { type: "about:blank", title: "Unprocessable", status: 422, detail: "domain is not a valid value." },

@@ -199,7 +199,7 @@ func (s *Server) GetRelationships(ctx context.Context, req GetRelationshipsReque
 		out = append(out, newRelationship(v.Scope, r, notify))
 	}
 	cache := cacheNoStore
-	return GetRelationships200JSONResponse{Body: out, Headers: GetRelationships200ResponseHeaders{CacheControl: &cache}}, nil
+	return GetRelationships200JSONResponse{Body: RelationshipList{Items: out}, Headers: GetRelationships200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // FollowAccount serves POST /api/v1/accounts/{id}/follow.

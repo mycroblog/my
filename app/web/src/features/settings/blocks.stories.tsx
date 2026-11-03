@@ -19,7 +19,7 @@ import { listedAccounts } from "./test/storyFixtures";
 /** GET /blocks answering `accounts`, with a next page when `more`. */
 function blocking(accounts: Schemas["Account"][], more = false) {
   return http.get(`${apiBase}/blocks`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json(more ? { accounts, next_cursor: "next" } : { accounts })),
+    withViewer(request, () => HttpResponse.json(more ? { accounts, next_cursor: "next" } : { items: accounts })),
   );
 }
 

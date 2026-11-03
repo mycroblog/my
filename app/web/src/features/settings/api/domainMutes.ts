@@ -82,7 +82,7 @@ export function removeDomainMute(queryClient: QueryClient, api: Api, domain: str
         ...data,
         pages: data.pages.map((page) => ({
           ...page,
-          domain_mutes: page.domain_mutes.filter((mute) => mute.domain !== domain),
+          items: page.items.filter((mute) => mute.domain !== domain),
         })),
       },
   );

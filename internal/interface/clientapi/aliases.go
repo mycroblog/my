@@ -132,9 +132,9 @@ func (s *Server) aliasList(ctx context.Context, accountID string) (AccountAliasL
 	if err != nil {
 		return AccountAliasListJSONResponse{}, err
 	}
-	list := AccountAliasList{Aliases: make([]AccountAlias, len(aliases))}
+	list := AccountAliasList{Items: make([]AccountAlias, len(aliases))}
 	for i, al := range aliases {
-		list.Aliases[i] = AccountAlias{Uri: al.URI, CreatedAt: al.AddedAt}
+		list.Items[i] = AccountAlias{Uri: al.URI, CreatedAt: al.AddedAt}
 		a, err := s.o.Accounts.FindByURI(ctx, al.URI)
 		switch {
 		case errors.Is(err, appaccount.ErrNotFound):
@@ -147,7 +147,7 @@ func (s *Server) aliasList(ctx context.Context, accountID string) (AccountAliasL
 			if h.Domain != account.LocalDomain {
 				acct += "@" + h.Domain
 			}
-			list.Aliases[i].Acct = &acct
+			list.Items[i].Acct = &acct
 		}
 	}
 	cache := cacheNoStore

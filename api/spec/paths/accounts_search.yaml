@@ -49,8 +49,6 @@ get:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: ../components/schemas/Account.yaml
+            $ref: ../components/schemas/AccountList.yaml
     default:
       $ref: ../components/responses/Problem.yaml

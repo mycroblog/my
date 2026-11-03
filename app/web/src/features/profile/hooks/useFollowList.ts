@@ -61,7 +61,7 @@ export function useFollowList(id: string, list: FollowList): FollowListState {
   // React Compiler derives the rows again only when the pages change (web-client/README.md R4), so the profile texts
   // are parsed once per page.
   const items = query.data.pages
-    .flatMap((page) => page.accounts)
+    .flatMap((page) => page.items)
     .map((account) => ({
       id: account.id,
       name: nameOf(account),

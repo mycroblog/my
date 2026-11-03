@@ -36,9 +36,9 @@ async function openDialog(context: Context) {
 /** The viewer follows Bob. */
 const following = http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
   withViewer(request, () =>
-    HttpResponse.json(
-      new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id, { following: true })),
-    ),
+    HttpResponse.json({
+      items: new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id, { following: true })),
+    }),
   ),
 );
 

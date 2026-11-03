@@ -31,7 +31,7 @@ func (s *Server) ListAccountSuggestions(ctx context.Context, req ListAccountSugg
 	cache := cacheNoStore
 	out := []AccountSuggestion{}
 	if s.o.AccountSuggestions == nil {
-		return ListAccountSuggestions200JSONResponse{Body: out, Headers: ListAccountSuggestions200ResponseHeaders{CacheControl: &cache}}, nil
+		return ListAccountSuggestions200JSONResponse{Body: AccountSuggestionList{Items: out}, Headers: ListAccountSuggestions200ResponseHeaders{CacheControl: &cache}}, nil
 	}
 	suggestions, err := s.o.AccountSuggestions.Suggest(ctx, v.AccountID, limit)
 	if err != nil {
@@ -50,5 +50,5 @@ func (s *Server) ListAccountSuggestions(ctx context.Context, req ListAccountSugg
 	for _, a := range accounts {
 		out = append(out, AccountSuggestion{Source: AccountSuggestionSource(sources[a.Id]), Account: a})
 	}
-	return ListAccountSuggestions200JSONResponse{Body: out, Headers: ListAccountSuggestions200ResponseHeaders{CacheControl: &cache}}, nil
+	return ListAccountSuggestions200JSONResponse{Body: AccountSuggestionList{Items: out}, Headers: ListAccountSuggestions200ResponseHeaders{CacheControl: &cache}}, nil
 }

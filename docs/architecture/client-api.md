@@ -63,6 +63,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - ID は UUIDv7 の文字列で、`#/components/schemas/Id` を参照します（`x-go-type: string` により Go では `string`）。
 - 一覧はキーセットページングです。クエリで `#/components/parameters/Cursor` と `#/components/parameters/Limit` を受け、
   応答は `allOf` で `#/components/schemas/PageInfo` を含めて `next_cursor` を返し、要素の配列は `items` に入れます。最後のページでは `next_cursor` を省きます。
+  ページングしない一覧も、配列をそのまま返さず、`items` を持つオブジェクトで返します。
 - カーソルは不透明な文字列です。クライアントは解釈せずにそのまま返します。
   ハンドラは `limit` より 1 件多く読み、次のページがあるときだけ `next_cursor` を返します。
   アカウントの一覧のカーソルは、ページの最後の項目の位置（フォロー ID・ブロック ID・ミュートの作成時刻と対象）を base64url にしたものです（`Server.parsePage`）。

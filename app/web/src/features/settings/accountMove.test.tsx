@@ -32,7 +32,7 @@ function aliasesServer(initial: Alias[]) {
   const added: string[] = [];
   const removed: string[] = [];
   server.use(
-    http.get(`${apiBase}/accounts/aliases`, () => HttpResponse.json({ aliases })),
+    http.get(`${apiBase}/accounts/aliases`, () => HttpResponse.json({ items: aliases })),
     http.post(`${apiBase}/accounts/aliases`, async ({ request }) => {
       const { acct } = (await request.json()) as Schemas["AddAccountAliasRequest"];
       added.push(acct);
@@ -46,13 +46,13 @@ function aliasesServer(initial: Alias[]) {
           created_at: "2026-10-20T09:00:00Z",
         },
       ];
-      return HttpResponse.json({ aliases });
+      return HttpResponse.json({ items: aliases });
     }),
     http.post(`${apiBase}/accounts/aliases/remove`, async ({ request }) => {
       const { uri } = (await request.json()) as Schemas["RemoveAccountAliasRequest"];
       removed.push(uri);
       aliases = aliases.filter((alias) => alias.uri !== uri);
-      return HttpResponse.json({ aliases });
+      return HttpResponse.json({ items: aliases });
     }),
   );
   return { added, removed };

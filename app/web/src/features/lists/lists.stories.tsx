@@ -74,7 +74,7 @@ export const Members: Story = {
       handlers: [
         lists(someLists),
         http.get(`${apiBase}/lists/:id/accounts`, () =>
-          HttpResponse.json({ accounts: [otherAccountFixture, remoteAccountFixture] }),
+          HttpResponse.json({ items: [otherAccountFixture, remoteAccountFixture] }),
         ),
       ],
     },

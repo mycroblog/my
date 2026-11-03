@@ -35,8 +35,6 @@ get:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: ../components/schemas/AccountSuggestion.yaml
+            $ref: ../components/schemas/AccountSuggestionList.yaml
     default:
       $ref: ../components/responses/Problem.yaml

@@ -83,7 +83,7 @@ describe("an unblock from the settings", () => {
     let blocked = true;
     server.use(
       resumableSession(),
-      http.get(`${apiBase}/blocks`, () => HttpResponse.json({ accounts: blocked ? [otherAccountFixture] : [] })),
+      http.get(`${apiBase}/blocks`, () => HttpResponse.json({ items: blocked ? [otherAccountFixture] : [] })),
       http.post(`${apiBase}/accounts/:id/unblock`, ({ params }) => {
         blocked = false;
         return HttpResponse.json(relationshipFixture(String(params["id"])));

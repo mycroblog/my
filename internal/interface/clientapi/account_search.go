@@ -56,5 +56,5 @@ func (s *Server) SearchAccounts(ctx context.Context, req SearchAccountsRequestOb
 		accounts = []Account{}
 	}
 	cache := cacheSearch
-	return SearchAccounts200JSONResponse{Body: accounts, Headers: SearchAccounts200ResponseHeaders{CacheControl: &cache}}, nil
+	return SearchAccounts200JSONResponse{Body: AccountList{Items: accounts}, Headers: SearchAccounts200ResponseHeaders{CacheControl: &cache}}, nil
 }

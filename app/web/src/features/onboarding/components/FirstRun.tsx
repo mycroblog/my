@@ -182,9 +182,9 @@ function Suggestions() {
     );
   } else {
     content =
-      query.data.length === 0 ? null : (
+      query.data.items.length === 0 ? null : (
         <Stack as="ul" divided border="y">
-          {query.data.map((suggestion) => (
+          {query.data.items.map((suggestion) => (
             <Box as="li" key={suggestion.account.id}>
               <AccountFollowItem account={suggestion.account} badge={<ReasonBadge suggestion={suggestion} />} />
             </Box>

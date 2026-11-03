@@ -77,20 +77,22 @@ async function signedInServer(page: Page) {
   await page.route("**/api/v1/accounts/lookup*", (route) => route.fulfill(json(bob)));
   await page.route("**/api/v1/accounts/relationships*", (route) =>
     route.fulfill(
-      json([
-        {
-          id: bob.id,
-          following: false,
-          requested: false,
-          followed_by: false,
-          requested_by: false,
-          show_boosts: true,
-          notify: false,
-          blocking: false,
-          muting: false,
-          muting_notifications: false,
-        },
-      ]),
+      json({
+        items: [
+          {
+            id: bob.id,
+            following: false,
+            requested: false,
+            followed_by: false,
+            requested_by: false,
+            show_boosts: true,
+            notify: false,
+            blocking: false,
+            muting: false,
+            muting_notifications: false,
+          },
+        ],
+      }),
     ),
   );
   await page.route(`**/api/v1/accounts/${bob.id}/statuses*`, (route) =>

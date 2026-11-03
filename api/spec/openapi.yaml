@@ -965,6 +965,14 @@ components:
       $ref: ./components/schemas/AccountAlias.yaml
     AccountAliasList:
       $ref: ./components/schemas/AccountAliasList.yaml
+    AccountList:
+      $ref: ./components/schemas/AccountList.yaml
+    AccountSuggestionList:
+      $ref: ./components/schemas/AccountSuggestionList.yaml
+    RelationshipList:
+      $ref: ./components/schemas/RelationshipList.yaml
+    TagSuggestionList:
+      $ref: ./components/schemas/TagSuggestionList.yaml
     AccountBadge:
       $ref: ./components/schemas/AccountBadge.yaml
     AccountMove:
