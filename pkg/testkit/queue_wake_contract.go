@@ -479,7 +479,9 @@ func wakeSignalsCarryType(t *testing.T, newHarness QueueWakeFactory) {
 		}
 	}
 
-	f.h.Queue.Enqueue(t.Context(), queue.NewJob{Type: "testkit.a"}) //nolint:errcheck // the signal is what counts
+	if err := f.h.Queue.Enqueue(t.Context(), queue.NewJob{Type: "testkit.a"}); err != nil {
+		t.Fatalf("Enqueue: %v", err)
+	}
 	wantType("Enqueue", "testkit.a")
 
 	err := f.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {

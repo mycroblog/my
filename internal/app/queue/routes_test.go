@@ -11,11 +11,10 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/queue"
-	"github.com/mycroblog/my/pkg/testkit"
 )
 
 func TestWakeRouterChoosesTheMostSpecificRoute(t *testing.T) {
-	fallback, prefix, longer, exact := &testkit.Waker{}, &testkit.Waker{}, &testkit.Waker{}, &testkit.Waker{}
+	fallback, prefix, longer, exact := &recordingWaker{}, &recordingWaker{}, &recordingWaker{}, &recordingWaker{}
 	router := queue.NewWakeRouter(fallback, []queue.WakeRoute{
 		{Pattern: "federation.*", Waker: prefix},
 		{Pattern: "federation.deliver", Waker: exact},
@@ -33,7 +32,7 @@ func TestWakeRouterChoosesTheMostSpecificRoute(t *testing.T) {
 	}
 	for _, tc := range []struct {
 		name  string
-		waker *testkit.Waker
+		waker *recordingWaker
 		want  []string
 	}{
 		{"the name wins over the prefix", exact, []string{"1"}},
@@ -42,7 +41,7 @@ func TestWakeRouterChoosesTheMostSpecificRoute(t *testing.T) {
 		{"no route and no type", fallback, []string{"4", "5"}},
 	} {
 		var got []string
-		for _, w := range tc.waker.Take() {
+		for _, w := range tc.waker.wakes {
 			got = append(got, w.JobID)
 		}
 		if !slices.Equal(got, tc.want) {
@@ -54,25 +53,25 @@ func TestWakeRouterChoosesTheMostSpecificRoute(t *testing.T) {
 // A signal whose queue fails stays on that queue: it is not sent to another, and the other routes
 // still get theirs. The sweep sends it again.
 func TestWakeRouterDoesNotOverflowToAnotherQueue(t *testing.T) {
-	fallback, routed := &testkit.Waker{}, &testkit.Waker{}
+	fallback, routed := &recordingWaker{}, &recordingWaker{}
 	router := queue.NewWakeRouter(fallback, []queue.WakeRoute{{Pattern: "federation.*", Waker: routed}})
 	down := errors.New("the queue is down")
-	routed.Fail(down)
+	routed.err = down
 	err := router.Wake(t.Context(), []queue.Wake{{JobID: "1", Type: "federation.deliver"}, {JobID: "2", Type: "media.process"}})
 	if !errors.Is(err, down) {
 		t.Fatalf("Wake = %v, want the error of the route", err)
 	}
-	got := fallback.Take()
+	got := fallback.wakes
 	if len(got) != 1 || got[0].JobID != "2" {
 		t.Errorf("default queue got %v, want only its own signal", got)
 	}
 }
 
 func TestWakeRouterTypesOfRoutes(t *testing.T) {
-	router := queue.NewWakeRouter(&testkit.Waker{}, []queue.WakeRoute{
-		{Pattern: "federation.*", Waker: &testkit.Waker{}},
-		{Pattern: "federation.deliver", Waker: &testkit.Waker{}},
-		{Pattern: "media.*", Waker: &testkit.Waker{}},
+	router := queue.NewWakeRouter(&recordingWaker{}, []queue.WakeRoute{
+		{Pattern: "federation.*", Waker: &recordingWaker{}},
+		{Pattern: "federation.deliver", Waker: &recordingWaker{}},
+		{Pattern: "media.*", Waker: &recordingWaker{}},
 	})
 	groups, err := router.TypesOfRoutes([]string{"media.process", "federation.inbox", "federation.deliver", "federation.fanout", "notification.push"})
 	if err != nil {
@@ -123,8 +122,8 @@ func (f *routedFinder) NextJob(context.Context, string) (queue.Wake, bool, error
 }
 
 func TestWakeSweeperReadsEachRouteApart(t *testing.T) {
-	clock := testkit.NewClock(time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC))
-	fallback, routed := &testkit.Waker{}, &testkit.Waker{}
+	clock := &stepClock{now: time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC)}
+	fallback, routed := &recordingWaker{}, &recordingWaker{}
 	router := queue.NewWakeRouter(fallback, []queue.WakeRoute{{Pattern: "federation.*", Waker: routed}})
 	finder := &routedFinder{
 		of:     map[string][]queue.Wake{"federation.deliver": {{JobID: "1", Type: "federation.deliver"}}},
@@ -143,17 +142,17 @@ func TestWakeSweeperReadsEachRouteApart(t *testing.T) {
 	if !slices.Equal(finder.limits, []int{7, 7}) {
 		t.Errorf("limits = %v, want a batch per route", finder.limits)
 	}
-	if got := routed.Take(); len(got) != 1 || got[0].JobID != "1" || !got[0].At.Equal(clock.Now()) {
+	if got := routed.wakes; len(got) != 1 || got[0].JobID != "1" || !got[0].At.Equal(clock.Now()) {
 		t.Errorf("the route got %+v", got)
 	}
-	if got := fallback.Take(); len(got) != 1 || got[0].JobID != "2" {
+	if got := fallback.wakes; len(got) != 1 || got[0].JobID != "2" {
 		t.Errorf("the default queue got %+v", got)
 	}
 }
 
 func TestWakeSweeperKeepsGoingAfterAFailedRoute(t *testing.T) {
-	clock := testkit.NewClock(time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC))
-	waker := &testkit.Waker{}
+	clock := &stepClock{now: time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC)}
+	waker := &recordingWaker{}
 	finder := &routedFinder{failOn: "a", of: map[string][]queue.Wake{"b": {{JobID: "1", Type: "b"}}}}
 	sweeper := queue.NewWakeSweeper(queue.WakeSweepDeps{Finder: finder, Waker: waker, Clock: clock})
 	sweeper.UseRoutes([][]string{{"a"}, {"b"}})
@@ -168,9 +167,9 @@ func TestWakeSweeperKeepsGoingAfterAFailedRoute(t *testing.T) {
 
 // Without routes the sweep reads as it always did.
 func TestWakeSweeperWithoutRoutesReadsAllJobs(t *testing.T) {
-	clock := testkit.NewClock(time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC))
+	clock := &stepClock{now: time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC)}
 	finder := &routedFinder{}
-	sweeper := queue.NewWakeSweeper(queue.WakeSweepDeps{Finder: finder, Waker: &testkit.Waker{}, Clock: clock})
+	sweeper := queue.NewWakeSweeper(queue.WakeSweepDeps{Finder: finder, Waker: &recordingWaker{}, Clock: clock})
 	if _, err := sweeper.Sweep(t.Context()); err != nil {
 		t.Fatalf("Sweep: %v", err)
 	}
