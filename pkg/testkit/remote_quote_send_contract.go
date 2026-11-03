@@ -200,6 +200,18 @@ func remoteQuotesLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 		}
 	}
 
+	// The author's own local-visibility post is left out in the same way, with no authorization.
+	ownLocal, err := e.quotePost(t, author, localOnly.ID, content.VisibilityPublic)
+	if err != nil {
+		t.Fatalf("quote of the author's own local-visibility post = %v", err)
+	}
+	if s := e.quoteState(t, ownLocal.ID); s.Approval != content.QuoteApprovalAccepted || s.AuthorizationURI != "" {
+		t.Errorf("state of a quote of the author's own local-visibility post = %+v, want accepted without an authorization", s)
+	}
+	if raw := string(mustJSON(t, e.noteOf(t, ownLocal))); strings.Contains(raw, localOnly.URI) || strings.Contains(raw, "quote-inline") {
+		t.Errorf("the Note of a quote of the author's own local-visibility post names it: %s", raw)
+	}
+
 	// The author's own post, also a followers-only one in a followers-only post, needs no
 	// QuoteAuthorization.
 	private := e.localPost(t, author, content.VisibilityPrivate)
