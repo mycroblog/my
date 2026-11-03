@@ -182,6 +182,9 @@ func (s *Server) GetAdminAccount(ctx context.Context, req GetAdminAccountRequest
 		if app.Reason != "" {
 			reg.Reason = &app.Reason
 		}
+		if d.DecisionNote != "" {
+			reg.DecisionNote = &d.DecisionNote
+		}
 		if app.InviteID != "" {
 			reg.InviteId = &app.InviteID
 		}
@@ -204,12 +207,20 @@ func (s *Server) GetAdminAccount(ctx context.Context, req GetAdminAccountRequest
 	if out.Actions, err = s.newAdminAccountActions(ctx, actions); err != nil {
 		return nil, err
 	}
-	reports, err := s.o.AccountReports.RecentReportsOf(ctx, req.Id, appidentity.AccountDetailHistory)
-	if err != nil {
-		return nil, fmt.Errorf("clientapi: the reports of account %s: %w", req.Id, err)
-	}
-	if out.Reports, err = s.newAdminReports(ctx, reports); err != nil {
+	// The reports hold what the report operations gate behind manage_reports: the comment and the
+	// reporter. manage_accounts alone does not show them.
+	if p, err := s.requirePermission(ctx, identity.PermManageReports); err != nil {
 		return nil, err
+	} else if p == nil {
+		reports, err := s.o.AccountReports.RecentReportsOf(ctx, req.Id, appidentity.AccountDetailHistory)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: the reports of account %s: %w", req.Id, err)
+		}
+		presented, err := s.newAdminReports(ctx, reports)
+		if err != nil {
+			return nil, err
+		}
+		out.Reports = &presented
 	}
 	cache := cacheNoStore
 	return GetAdminAccount200JSONResponse{Body: out, Headers: GetAdminAccount200ResponseHeaders{CacheControl: &cache}}, nil
@@ -281,6 +292,8 @@ func (s *Server) LiftAdminAccountEmailSuppression(ctx context.Context, req LiftA
 	err = s.o.AccountAdmin.LiftEmailSuppression(ctx, req.Id, v.UserID)
 	l := s.Localizer(ctx)
 	switch {
+	case errors.Is(err, appidentity.ErrTargetOutranksActor):
+		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
 	case errors.Is(err, appaccount.ErrNotFound):
 		return LiftAdminAccountEmailSuppressiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	case errors.Is(err, appidentity.ErrNotLocalAccount):

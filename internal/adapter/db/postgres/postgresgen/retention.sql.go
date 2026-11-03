@@ -12,6 +12,65 @@ import (
 	"time"
 )
 
+const deleteHandleVerificationsBefore = `-- name: DeleteHandleVerificationsBefore :execrows
+DELETE FROM remote_account_handle_verifications
+WHERE id IN (
+  SELECT v.id FROM remote_account_handle_verifications v
+  WHERE v.id < $1::uuid AND v.checked_at < $2
+    AND EXISTS (SELECT 1 FROM remote_account_handle_verifications n WHERE n.account_id = v.account_id AND n.id > v.id)
+  ORDER BY v.id LIMIT $3
+)
+`
+
+type DeleteHandleVerificationsBeforeParams struct {
+	IDBefore      string
+	CheckedBefore time.Time
+	BatchLimit    int32
+}
+
+// DeleteHandleVerificationsBefore removes at most @batch_limit handle checks made before
+// @checked_before, except the newest of each account, which rebuilds account_handles. @id_before
+// (the UUIDv7 floor of @checked_before) bounds the scan of the primary key.
+func (q *Queries) DeleteHandleVerificationsBefore(ctx context.Context, arg DeleteHandleVerificationsBeforeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteHandleVerificationsBefore, arg.IDBefore, arg.CheckedBefore, arg.BatchLimit)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteRetentionDeletionsBefore = `-- name: DeleteRetentionDeletionsBefore :execrows
+DELETE FROM status_deletions
+WHERE status_id IN (
+  SELECT d.status_id FROM status_deletions d
+  WHERE d.origin = 'retention' AND d.deleted_at < $1
+    AND NOT EXISTS (SELECT 1 FROM statuses s WHERE s.id = d.status_id)
+    AND NOT EXISTS (SELECT 1 FROM boosts b WHERE b.status_id = d.status_id)
+    AND NOT EXISTS (SELECT 1 FROM favourites f WHERE f.status_id = d.status_id)
+    AND NOT EXISTS (SELECT 1 FROM reactions r WHERE r.status_id = d.status_id)
+    AND NOT EXISTS (SELECT 1 FROM bookmarks m WHERE m.status_id = d.status_id)
+    AND NOT EXISTS (SELECT 1 FROM status_pins p WHERE p.status_id = d.status_id)
+  ORDER BY d.deleted_at, d.status_id LIMIT $2
+)
+`
+
+type DeleteRetentionDeletionsBeforeParams struct {
+	DeletedBefore time.Time
+	BatchLimit    int32
+}
+
+// DeleteRetentionDeletionsBefore removes at most @batch_limit deletions by retention recorded
+// before @deleted_before, the oldest first. A row stays while the status's row does, or while a
+// boost, favourite, reaction, bookmark, or pin names the status: the readers and the projection
+// rebuilds of those tell from it that the status is gone.
+func (q *Queries) DeleteRetentionDeletionsBefore(ctx context.Context, arg DeleteRetentionDeletionsBeforeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteRetentionDeletionsBefore, arg.DeletedBefore, arg.BatchLimit)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const insertRelayedStatus = `-- name: InsertRelayedStatus :exec
 INSERT INTO relayed_statuses (status_id, relay_id, received_at) VALUES ($1, $2, $3)
 ON CONFLICT (status_id) DO NOTHING

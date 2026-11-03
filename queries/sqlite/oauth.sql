@@ -167,7 +167,8 @@ ON CONFLICT (token_id) DO NOTHING;
 
 -- ListUnusedDynamicOAuthClients returns the IDs of the dynamically registered clients that have no
 -- deletion and are unused (ADR-0090 section 1), oldest first: no authorization code was exchanged
--- and the client was registered before unredeemed_before, or it has no token that was issued after
+-- and the client was registered before unredeemed_before but not before records_kept_since (the
+-- exchanged codes of an older client may be purged, so that it can no longer tell), or it has no token that was issued after
 -- idle_before, whose family was used after idle_before (oauth_token_family_last_used), or that is
 -- still usable at now.
 -- name: ListUnusedDynamicOAuthClients :many
@@ -175,7 +176,7 @@ SELECT c.id FROM oauth_clients c
 WHERE c.registration = 'dynamic'
   AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id)
   AND (
-    (c.created_at < sqlc.arg(unredeemed_before) AND NOT EXISTS (
+    (c.created_at < sqlc.arg(unredeemed_before) AND c.created_at >= sqlc.arg(records_kept_since) AND NOT EXISTS (
       SELECT 1 FROM oauth_authorization_codes a
       JOIN oauth_authorization_code_redemptions r ON r.code_hash = a.code_hash
       WHERE a.oauth_client_id = c.id))

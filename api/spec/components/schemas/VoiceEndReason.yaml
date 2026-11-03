@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Why a voice chat room ended: `host` the host ended it, `empty` nobody was left in it,
+  `host_disconnected` the host lost the connection and nobody took over, `host_ineligible` the
+  host may no longer host, `moderator` a moderator ended it, `time_limit` it reached the limit
+  of its duration, and `disabled` the voice chat was turned off.
+type: string
+enum: [host, empty, host_disconnected, host_ineligible, moderator, time_limit, disabled]

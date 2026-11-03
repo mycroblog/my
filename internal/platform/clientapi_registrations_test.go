@@ -61,7 +61,7 @@ func TestRegistrationReviewThroughTheAPI(t *testing.T) {
 	}
 	d := first.Items[0]
 	if d.UserId != dave.User.ID || d.State != clientapi.RegistrationStatePending || d.Reason == nil || *d.Reason != "I like ducks." ||
-		d.Username == nil || *d.Username != "dave" || d.AccountId == nil || *d.AccountId != dave.AccountID || d.Email != "dave@example.com" {
+		d.Username == nil || *d.Username != "dave" || d.AccountId == nil || *d.AccountId != dave.AccountID || d.Email == nil || *d.Email != "dave@example.com" {
 		t.Errorf("first registration = %+v, want dave's", d)
 	}
 	var second clientapi.AdminRegistrationPage

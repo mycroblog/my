@@ -595,6 +595,10 @@
     "defaultMessage": "Link card images stopped",
     "description": "Kind of an audited operation: an administrator set a rule by which the link card crawler fetches no images from a domain."
   },
+  "admin.audit_log.action.instance_marked_available": {
+    "defaultMessage": "Server marked available",
+    "description": "Kind of an audited operation: an operator cleared the delivery failures of a remote server, so that deliveries to it resume."
+  },
   "admin.audit_log.action.link_card_domain_rule_removed": {
     "defaultMessage": "Link card rule removed",
     "description": "Kind of an audited operation: an administrator removed the rule of the link card crawler on a domain."

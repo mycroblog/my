@@ -128,3 +128,38 @@ func TestMigrationRunsAgain(t *testing.T) {
 		t.Errorf("after running a cancelled move dan follows alice = %q, bob = %q", following(dan, alice), following(dan, bob))
 	}
 }
+
+// TestQuoteRequestAnswerAudience checks the QuoteRequest embedded in the answer to it: its
+// audiences are empty lists, not null.
+func TestQuoteRequestAnswerAudience(t *testing.T) {
+	t.Parallel()
+	network := &relayNet{docs: map[string][]byte{}}
+	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline"}, platform.AppOptions{HTTPClient: network}, "alice")
+	dave := newRemoteActor(t, network, "https://remote.example/users/dave", "Person", "https://remote.example/users/dave/inbox")
+	st := c.post("alice", map[string]any{"text": "quote me", "visibility": "public"})
+	network.taken() // the post's own deliveries
+
+	activity := map[string]any{
+		"id": dave.id + "/activities/quote", "type": "QuoteRequest", "actor": dave.id,
+		"object": "https://example.test/ap/objects/" + st.Id, "instrument": dave.id + "/statuses/1",
+	}
+	if code := inboxCode(t, c, dave, activity); code != http.StatusAccepted {
+		t.Fatalf("QuoteRequest = %d", code)
+	}
+	posts := network.taken()[dave.id+"/inbox"]
+	if len(posts) != 1 || posts[0]["type"] != "Accept" {
+		t.Fatalf("sent = %v, want an Accept", posts)
+	}
+	request, ok := posts[0]["object"].(map[string]any)
+	if !ok || request["type"] != "QuoteRequest" || request["id"] != activity["id"] || request["instrument"] != activity["instrument"] {
+		t.Fatalf("the Accept's object = %v", posts[0]["object"])
+	}
+	if _, ok := request["@context"]; ok {
+		t.Errorf("the embedded QuoteRequest has a context: %v", request)
+	}
+	for _, field := range []string{"to", "cc"} {
+		if got, ok := request[field].([]any); !ok || len(got) != 0 {
+			t.Errorf("the embedded QuoteRequest's %s = %v, want an empty list", field, request[field])
+		}
+	}
+}

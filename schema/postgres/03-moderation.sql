@@ -243,7 +243,8 @@ CREATE TABLE audit_log_entries (
     'service_closure_announced', 'service_closure_withdrawn', 'service_closure_closed', 'service_closure_delivery_completed',
     'voice_room_ended', 'login_provider_created', 'login_provider_updated', 'login_provider_deleted',
     'login_provider_enabled', 'login_provider_disabled', 'login_provider_secret_rotated',
-    'link_card_domain_fetch_stopped', 'link_card_domain_images_stopped', 'link_card_domain_rule_removed'
+    'link_card_domain_fetch_stopped', 'link_card_domain_images_stopped', 'link_card_domain_rule_removed',
+    'instance_marked_available'
   )),
   target_kind text NOT NULL CHECK (target_kind IN (
     'account', 'status', 'domain', 'report', 'appeal', 'user', 'role', 'setting', 'rule',

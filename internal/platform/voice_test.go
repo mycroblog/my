@@ -306,7 +306,7 @@ func TestVoiceParticipantsThroughAPI(t *testing.T) {
 	if len(got.Participants) != 2 || !got.Participants[1].HandRaised {
 		t.Errorf("after raising a hand = %+v", got.Participants)
 	}
-	e.want(e.do(http.MethodPost, room+"/participants/"+bob.id+"/grant", alice.token, nil, nil), http.StatusOK, "grant")
+	e.want(e.do(http.MethodPost, room+"/participants/"+bob.id+"/speaking_permission", alice.token, nil, nil), http.StatusOK, "grant")
 	e.want(e.do(http.MethodPost, room+"/speaker", bob.token, nil, &got), http.StatusOK, "speak after the grant")
 	if got.Participants[1].Role != clientapi.VoiceRoleSpeaker || got.Participants[1].HandRaised {
 		t.Errorf("after speaking = %+v", got.Participants[1])
@@ -347,6 +347,18 @@ func TestVoiceParticipantsThroughAPI(t *testing.T) {
 	}
 	e.want(e.do(http.MethodGet, room, bob.token, nil, nil), http.StatusNotFound, "get by the blocked participant")
 	e.want(e.do(http.MethodDelete, room+"/participants/"+carol.id, alice.token, nil, nil), http.StatusUnprocessableEntity, "remove a co-host")
+	// Removing a participant answers the room without them, as the other operations do.
+	e.want(e.do(http.MethodDelete, room+"/participants/"+carol.id+"/cohost", alice.token, nil, nil), http.StatusOK, "no longer a co-host")
+	var afterRemoval clientapi.VoiceRoom
+	e.want(e.do(http.MethodDelete, room+"/participants/"+carol.id, alice.token, nil, &afterRemoval), http.StatusOK, "remove a participant")
+	if afterRemoval.Id == "" {
+		t.Errorf("the answer to a removal = %+v, want the room", afterRemoval)
+	}
+	for _, p := range afterRemoval.Participants {
+		if p.Account.Id == carol.id {
+			t.Errorf("the removed participant is still in the room: %+v", afterRemoval.Participants)
+		}
+	}
 }
 
 // postSora posts body to an endpoint of Sora's webhooks with Basic authentication and returns

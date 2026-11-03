@@ -1303,6 +1303,16 @@ func (q *Queries) EraseTOTPRecoveryCodes(ctx context.Context, userID string) err
 	return err
 }
 
+const eraseTokenFamilyLastUsed = `-- name: EraseTokenFamilyLastUsed :exec
+DELETE FROM oauth_token_family_last_used WHERE family_id IN (
+  SELECT t.family_id FROM oauth_access_tokens t WHERE t.user_id = ?1)
+`
+
+func (q *Queries) EraseTokenFamilyLastUsed(ctx context.Context, userID string) error {
+	_, err := q.db.ExecContext(ctx, eraseTokenFamilyLastUsed, userID)
+	return err
+}
+
 const eraseUserExternalIdentities = `-- name: EraseUserExternalIdentities :exec
 DELETE FROM user_external_identities WHERE user_id = ?1
 `

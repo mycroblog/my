@@ -312,7 +312,8 @@ func (s *Service) CountPendingAppeals(ctx context.Context) (int64, error) {
 // ErrUnsupportedAction. Deciding a decided appeal the same way again records nothing; deciding it
 // otherwise fails with ErrAppealDecided. An unknown appeal fails with ErrNotFound, and an
 // unknown decision or an invalid reason with moderation.ErrInvalidAppeal (with a
-// *moderation.TextError for the reason). byUserID is the moderator, "" for the CLI.
+// *moderation.TextError for the reason). byUserID is the moderator, "" for the CLI, who fails with
+// ErrTargetOutranksActor when not ranking above the account's user.
 func (s *Service) DecideAppeal(ctx context.Context, appealID string, decision moderation.AppealDecisionKind, publicReason, byUserID string) (AppealView, error) {
 	now := kernel.Normalize(s.d.Clock.Now())
 	d := moderation.AppealDecision{AppealID: appealID, Decision: decision, PublicReason: publicReason, DecidedByUserID: byUserID, DecidedAt: now}
@@ -324,6 +325,15 @@ func (s *Service) DecideAppeal(ctx context.Context, appealID string, decision mo
 	rec, err := repo.FindAppeal(ctx, appealID)
 	if err != nil {
 		return AppealView{}, err
+	}
+	switch target, err := s.d.Accounts.FindByID(ctx, rec.Appeal.AccountID); {
+	case errors.Is(err, appaccount.ErrNotFound):
+	case err != nil:
+		return AppealView{}, err
+	default:
+		if err := s.checkRank(ctx, byUserID, target); err != nil {
+			return AppealView{}, err
+		}
 	}
 	label, err := s.accountLabel(ctx, rec.Appeal.AccountID)
 	if err != nil {

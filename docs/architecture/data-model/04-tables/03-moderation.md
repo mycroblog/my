@@ -139,6 +139,7 @@
   | `status_refetch_queued` | `status` | `statuses.id` | 投稿の URI | なし（元の記録を持たない操作） |
   | `account_statuses_refetch_queued` | `account` | `accounts.id` | リモートのアカウントのハンドル | なし（元の記録を持たない操作） |
   | `domain_statuses_refetch_queued` | `domain` | ドメイン | ドメイン | なし（元の記録を持たない操作） |
+  | `instance_marked_available` | `domain` | ドメイン | ドメイン | なし（空き状況のイベントの行は指さない） |
   | `billing_import_queued` | `billing_source` | 取り込み元（`aws`・`gcp`） | 事業者の名前（`AWS`） | なし（元の記録を持たない操作） |
   | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_canceled` | `cost_item` | `cost_items.id` | 項目の名前（変更は変更後の名前） | `cost_items.id` / `cost_item_label_revisions.id` / `cost_item_price_revisions.id` / `cost_item_end_changes.id` / `cost_item_cancellations.id` |
   | `supporter_program_enabled`, `supporter_program_disabled` | `supporter_program` | `supporter_program_changes.id` | 決済の事業者の名前（`stripe`・`payjp`） | `supporter_program_changes.id` |
