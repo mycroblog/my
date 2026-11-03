@@ -84,6 +84,46 @@ const (
 
 const notAnEvent = "account.updated"
 `,
+	"internal/app/queue/handler.go": `package queue
+
+const JobPurge = "queue.purge"
+
+func (r *Registry) Register(jobType string, h Handler) { r.RegisterWithPolicy(jobType, h, Policy{}) }
+
+func (p *Purger) RegisterJobs(h *Registry, s *Scheduler) {
+	h.Register(JobPurge, p.run)
+	s.Add(Schedule{Name: JobPurge, Every: time.Hour})
+}
+`,
+	"internal/app/instance/jobs.go": `package instance
+
+const JobClosure = "instance.closure"
+`,
+	"internal/app/federation/jobs.go": `package federation
+
+import (
+	appinstance "x/internal/app/instance"
+	"x/internal/app/queue"
+)
+
+const (
+	JobDeliver    = "federation.deliver"
+	JobUnlisted   = "federation.unlisted"
+	JobSourceless = "federation.sourceless"
+)
+
+func (d *D) RegisterJobs(r *queue.Registry, p *Projectors, s *queue.Scheduler, src Source) {
+	r.RegisterWithPolicy(JobDeliver, d.run, policy)
+	r.Register(JobUnlisted, d.run)
+	r.Register(appinstance.JobClosure, d.run)
+	r.Register(someVariable, d.run)
+	p.Register(EventCreated, d.project)
+	p.Register(appinstance.EventClosed, d.project)
+	s.Add(queue.Schedule{Name: JobDeliver, Every: time.Hour})
+	s.Add(queue.Schedule{Name: JobSourceless + "." + src.Name(), Every: time.Hour})
+}
+`,
+	"docs/reference/jobs.md":                  "# Jobs\n\n| `federation.deliver` | `queue.purge` | `instance.closure` |\n\n## Periodic jobs\n\n| `queue.purge` |\n\n## Other\n\n`federation.deliver`, `federation.sourceless`\n",
 	"internal/platform/adapters_no_sqlite.go": "//go:build no_sqlite\n\npackage platform\n",
 	"internal/platform/adapters_no_valkey.go": "// SPDX\n\n//go:build no_valkey && !linux\n\npackage platform\n",
 	"internal/platform/adapters_live_test.go": "//go:build federationlive\n\npackage platform\n",
@@ -134,6 +174,9 @@ func TestInventoryCollects(t *testing.T) {
 		"webhook-events": {"report.created", "status.created"},
 		"build-tags":     {"no_sqlite", "no_valkey"},
 		"tasks":          {"check", "db:up", "go:test"},
+		"job-types": {"federation.deliver", "federation.unlisted", "instance.closure", "queue.purge",
+			"<unresolved someVariable>"},
+		"job-schedules": {"federation.deliver", "federation.sourceless", "queue.purge"},
 	}
 	for _, inv := range inventories {
 		items, err := inv.collect(root, files)
@@ -166,6 +209,10 @@ func TestInventory(t *testing.T) {
 		"the metric my.queue.lost (internal/app/queue/metrics.go:5)",
 		"the webhook event type status.created (internal/domain/webhook/webhook.go:7)",
 		"the build tag no_valkey (internal/platform/adapters_no_valkey.go:3)",
+		"the job type federation.unlisted (internal/app/federation/jobs.go:",
+		"the job type <unresolved someVariable> (internal/app/federation/jobs.go:",
+		"the periodic job federation.deliver (internal/app/federation/jobs.go:",
+		"the periodic job federation.sourceless (internal/app/federation/jobs.go:",
 	}
 	msgs := messages(got)
 	if len(msgs) != len(want) {
@@ -183,6 +230,8 @@ func TestInventory(t *testing.T) {
 		"metrics":        {"my.queue.lost", "my.gone"},
 		"webhook-events": {"status.created"},
 		"build-tags":     {"no_valkey"},
+		"job-types":      {"federation.unlisted", "<unresolved someVariable>"},
+		"job-schedules":  {"federation.deliver", "federation.sourceless"},
 		"bogus":          {"x"},
 	}
 	got, err = Inventory(root, files, c)
@@ -201,6 +250,15 @@ func TestInventory(t *testing.T) {
 	for i, w := range want {
 		if !strings.Contains(msgs[i], w) {
 			t.Errorf("finding %d = %q, want it to contain %q", i, msgs[i], w)
+		}
+	}
+}
+
+func TestSectionMentions(t *testing.T) {
+	mentioned := sectionMentions(periodicJobsHeading)([]string{"`before`\n\n## Periodic jobs\n\n| `in.it` |\n\n## Other\n\n`after`\n"})
+	for name, want := range map[string]bool{"in.it": true, "before": false, "after": false} {
+		if got := mentioned(name); got != want {
+			t.Errorf("mentioned(%q) = %v, want %v", name, got, want)
 		}
 	}
 }
