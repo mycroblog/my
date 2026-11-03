@@ -15,15 +15,15 @@ import (
 const countActiveLocalUsersWithoutLoginProvider = `-- name: CountActiveLocalUsersWithoutLoginProvider :one
 SELECT COUNT(*) FROM local_accounts la
 LEFT JOIN account_lifecycle_states s ON s.account_id = la.account_id
-WHERE (s.state IS NULL OR s.state = 'active')
+WHERE (s.state IS NULL OR s.state IN ('active', 'deactivated'))
   AND NOT EXISTS (
     SELECT 1 FROM user_external_identities u
     WHERE u.user_id = la.user_id AND u.provider_id = ANY($1::uuid[])
   )
 `
 
-// CountActiveLocalUsersWithoutLoginProvider counts the users whose local account is active and who
-// have no current link to one of the providers.
+// CountActiveLocalUsersWithoutLoginProvider counts the users whose local account is active, or
+// deactivated and able to come back, and who have no current link to one of the providers.
 func (q *Queries) CountActiveLocalUsersWithoutLoginProvider(ctx context.Context, providerIds []string) (int64, error) {
 	row := q.db.QueryRow(ctx, countActiveLocalUsersWithoutLoginProvider, providerIds)
 	var count int64

@@ -659,6 +659,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/deactivation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get what deactivating the authenticated user's account would do now
+         * @description The date the account would be deleted if the user deactivated it now, and why it cannot
+         *     be deactivated now, if so. It changes nothing.
+         */
+        get: operations["getDeactivationPreview"];
+        put?: never;
+        /**
+         * Deactivate the authenticated user's account
+         * @description Deactivates the user's own account, after checking the user's current `password`, a
+         *     `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+         *     login provider. The account and its posts are hidden from everyone, every session and
+         *     token of the user ends, and the other servers get an `Update` of the actor marked
+         *     `suspended`. Where the server sends mail, one email states the date of the deletion.
+         *
+         *     The user signs in again to reactivate it, on a page of the server, within 30 days;
+         *     after that the account is deleted, and the other servers get a `Delete` of the actor.
+         *     While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+         *     emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+         *     hours after its reactivation.
+         *
+         *     A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+         *     `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+         *     `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+         *     `/api/v1/problems/passkey-confirmation-expired` or
+         *     `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+         *     now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+         *     keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+         *     review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
+         *     5 attempts per account are accepted every hour.
+         */
+        post: operations["deactivateOwnAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/delete": {
         parameters: {
             query?: never;
@@ -8207,12 +8252,12 @@ export interface components {
         };
         /**
          * @description The state of an account, the first that applies: `deleted` (deleted here or on its
-         *     server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-         *     and `pending` (the registration of a local account), `limited` (a `limit`), and
+         *     server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+         *     `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
          *     `active`.
          * @enum {string}
          */
-        AdminAccountState: "active" | "pending" | "rejected" | "limited" | "disabled" | "suspended" | "deleted";
+        AdminAccountState: "active" | "pending" | "rejected" | "limited" | "disabled" | "deactivated" | "suspended" | "deleted";
         /** @description An announcement with its Markdown text and its state. */
         AdminAnnouncement: {
             id: components["schemas"]["Id"];
@@ -10128,11 +10173,11 @@ export interface components {
         /**
          * @description An operation that the user confirms: registering a passkey (`passkey_registration`),
          *     changing or setting the password (`password_change`), removing it (`password_removal`),
-         *     deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+         *     deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
          *     account at a login provider (`link`).
          * @enum {string}
          */
-        ConfirmedOperation: "passkey_registration" | "password_change" | "password_removal" | "account_deletion" | "account_move" | "link";
+        ConfirmedOperation: "passkey_registration" | "password_change" | "password_removal" | "account_deletion" | "account_deactivation" | "account_move" | "link";
         /** @description The local custom emoji that a copy of a remote one becomes. */
         CopyCustomEmojiRequest: {
             /**
@@ -10816,6 +10861,48 @@ export interface components {
         DecideAppealRequest: {
             /** @description Shown to the user who appealed, as plain text. */
             public_reason?: string;
+        };
+        /** @description The deactivation of the user's own account. */
+        Deactivation: {
+            /**
+             * Format: date-time
+             * @description When the account is deleted unless the user reactivates it first.
+             */
+            deletion_due_at: string;
+        };
+        /** @description What deactivating the user's own account would do now. */
+        DeactivationPreview: {
+            /**
+             * Format: date-time
+             * @description When the account would be deleted if it were deactivated now.
+             */
+            deletion_due_at: string;
+            /**
+             * @description Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+             *     logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+             *     deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+             *     (`registration_pending`), a paid subscription goes on (`paid_subscription`), or it was
+             *     reactivated less than 24 hours ago (`recently_reactivated`).
+             * @enum {string}
+             */
+            refusal?: "login_restricted" | "deletion_scheduled" | "already_deactivated" | "moved" | "registration_pending" | "paid_subscription" | "recently_reactivated";
+            /**
+             * Format: date-time
+             * @description When the account can be deactivated again, for `recently_reactivated`.
+             */
+            available_at?: string;
+        };
+        /**
+         * @description The confirmation of the deactivation of the user's own account: `password`,
+         *     `two_factor_code`, `passkey`, or `external_confirmation`.
+         */
+        DeactivateOwnAccountRequest: {
+            /** @description The user's current password. */
+            password?: string;
+            /** @description A code of the user's authenticator app, or a recovery code. */
+            two_factor_code?: string;
+            passkey?: components["schemas"]["PasskeyAssertion"];
+            external_confirmation?: components["schemas"]["ExternalConfirmationToken"];
         };
         /**
          * @description The confirmation of the deletion of the user's own account: `password`, `passkey`, or
@@ -15977,6 +16064,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SupporterListing"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getDeactivationPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What deactivating the account would do now. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeactivationPreview"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    deactivateOwnAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeactivateOwnAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description The account is deactivated, and its sessions and tokens have ended. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deactivation"];
                 };
             };
             default: components["responses"]["Problem"];

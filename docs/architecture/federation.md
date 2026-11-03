@@ -378,7 +378,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `account.profile_revised`（ローカルのプロフィールの 2 版目以降。最初の版はアカウントの作成で、まだだれもフォローしていない） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `account.aliases_changed`（ローカルのアカウントの別名の追加・削除。ADR-0089。連合の向きが `publish` を通すときだけ積む） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `account.lifecycle_event_recorded`（ローカルのアカウントの `deleted`） | `Delete`（Actor の `id`） | リモートフォロワーの inbox + 既知の shared inbox（[data-model §8](data-model/08-deletion-and-purge.md#8-削除と消去)） |
-| `moderation.account_suspension_changed`（ローカルのアカウントの凍結と、その終わり。§11.1） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
+| `moderation.account_suspension_changed`（ローカルのアカウントの凍結と、その終わり。§11.1。本人が無効化している間は積まない） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
+| `account.lifecycle_event_recorded`（ローカルのアカウントの `deactivated` / `reactivated`。§11.2。凍結している間は積まない） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
 | `account.moved`（ローカルのアカウントが自分で移転したとき。`initiated_by = self`。ADR-0089） | `movedTo` 付きの `Update`（Actor の文書）、続けて `Move`（`object_type = move`、`object_id` は `account_moves.id`。`actor` と `object` はこちらの Actor、`target` は移転先の Actor、`to` はこちらの `followers`、`id` は `/ap/activities/{uuid}`） | リモートフォロワーの inbox（shared inbox に集約） |
 | `account.move_cancelled`（ローカルのアカウントの移転の取り消し） | `Update`（Actor の文書。`movedTo` なし） | リモートフォロワーの inbox |
 | `moderation.report_filed`（`forwarded` の通報だけ。§11） | `Flag`（主体はインスタンス Actor） | 通報されたアカウントの inbox |
@@ -689,6 +690,24 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   ドメインの `suspend` で切るフォローの `FollowTerminated` は `Unannounced` で、何も積みません（配送も止まっています）。
 - 処分を解除しても、切ったフォローは戻しません。
 - 受信した Actor の `suspended: true` は、リモートのアカウントの表示に出すだけで、このサーバーの処分にはしません。
+
+### 11.2 本人による無効化
+
+本人による無効化（[ADR-0145](../adr/0145-self-deactivation.md)）は、処分ではありませんが、連合では凍結と同じ文書で表します。
+
+| 契機 | 送るもの | 宛先 |
+| --- | --- | --- |
+| `deactivated` | `Update(Actor)`（`suspended: true`、プロフィールを空にする） | `Delete`（Actor）と同じ（§7.2） |
+| `reactivated` | `Update(Actor)`（元のプロフィール） | 同上 |
+| 30 日後の `deleted` | `Delete`（Actor）。§7.1 のアカウント削除と同じ経路 | 同上 |
+
+- Actor の GET は `federation.ActorDocument.Suspend` の文書を返し、`id`・コレクション・inbox・鍵を残します。WebFinger と `/@name` のリダイレクトは答えます。コレクションと投稿の GET は `404` です（`410` にしない）。投稿ごとの `Delete` は送りません。
+- アカウントが「見えない」状態は、無効化と凍結のどちらかが続く間は変わらないので、片方の変化だけでは何も送りません。`deactivated` と `reactivated` の projector は凍結を、`moderation.account_suspension_changed` の projector は無効化を、同じトランザクションで確かめます。
+- 個人の inbox は受け付けます（`202`）。受信の扱いは次のとおりです。shared inbox も同じです。
+  - 新しい `Follow` は `Reject` し、記録しません（`FollowRefusals`）。戻っても復元しません。すでにあるフォローか申請について届き直した `Follow` は、何も答えずに落とします。`Reject` を返すと、相手のサーバーで関係が切れるためです。
+  - `Undo(Follow)`・`Accept`・`Reject` と Actor についての活動は、処理します。
+  - `Create` の `Mention` と宛先からこの人を除きます。宛先がこの人だけの `direct` の投稿は保存しません。ほかの人に見える投稿は残ります。
+  - `Like`（`_misskey_reaction` を含む）と `Announce` は数として記録し、通知しません。
 
 ## 12. テスト
 

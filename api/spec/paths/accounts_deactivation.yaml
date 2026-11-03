@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getDeactivationPreview
+  x-first-party-only: true
+  summary: Get what deactivating the authenticated user's account would do now
+  description: |
+    The date the account would be deleted if the user deactivated it now, and why it cannot
+    be deactivated now, if so. It changes nothing.
+  tags: [accounts]
+  security:
+    - oauth2: ["read:accounts"]
+  responses:
+    "200":
+      description: What deactivating the account would do now.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/DeactivationPreview.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: deactivateOwnAccount
+  x-first-party-only: true
+  summary: Deactivate the authenticated user's account
+  description: |
+    Deactivates the user's own account, after checking the user's current `password`, a
+    `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+    login provider. The account and its posts are hidden from everyone, every session and
+    token of the user ends, and the other servers get an `Update` of the actor marked
+    `suspended`. Where the server sends mail, one email states the date of the deletion.
+
+    The user signs in again to reactivate it, on a page of the server, within 30 days;
+    after that the account is deleted, and the other servers get a `Delete` of the actor.
+    While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+    emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+    hours after its reactivation.
+
+    A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+    `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+    `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+    `/api/v1/problems/passkey-confirmation-expired` or
+    `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+    now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+    keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+    review, a paid subscription goes on, or it was reactivated less than 24 hours ago. At most
+    5 attempts per account are accepted every hour.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/DeactivateOwnAccountRequest.yaml
+  responses:
+    "200":
+      description: The account is deactivated, and its sessions and tokens have ended.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Deactivation.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

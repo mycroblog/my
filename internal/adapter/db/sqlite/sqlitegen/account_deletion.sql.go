@@ -11,6 +11,63 @@ import (
 	"context"
 )
 
+const findLatestReactivation = `-- name: FindLatestReactivation :one
+SELECT occurred_at FROM account_lifecycle_events
+WHERE account_id = ? AND kind = 'reactivated'
+ORDER BY occurred_at DESC
+LIMIT 1
+`
+
+// FindLatestReactivation returns when an account was last reactivated (ADR-0145 section 8).
+func (q *Queries) FindLatestReactivation(ctx context.Context, accountID string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, findLatestReactivation, accountID)
+	var occurred_at int64
+	err := row.Scan(&occurred_at)
+	return occurred_at, err
+}
+
+const listDueDeactivations = `-- name: ListDueDeactivations :many
+SELECT account_id, state, since, deletion_due_at FROM account_lifecycle_states
+WHERE state = 'deactivated' AND since <= CAST(?1 AS INTEGER)
+ORDER BY since, account_id
+LIMIT ?2
+`
+
+type ListDueDeactivationsParams struct {
+	Cutoff int64
+	Lim    int64
+}
+
+// ListDueDeactivations returns up to lim accounts whose owner deactivated them at or before cutoff,
+// longest deactivated first (ADR-0145 section 2).
+func (q *Queries) ListDueDeactivations(ctx context.Context, arg ListDueDeactivationsParams) ([]AccountLifecycleState, error) {
+	rows, err := q.db.QueryContext(ctx, listDueDeactivations, arg.Cutoff, arg.Lim)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AccountLifecycleState{}
+	for rows.Next() {
+		var i AccountLifecycleState
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.State,
+			&i.Since,
+			&i.DeletionDueAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDueDeletions = `-- name: ListDueDeletions :many
 
 

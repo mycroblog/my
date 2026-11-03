@@ -55,6 +55,12 @@ func (s *Service) DeletedAccounts(ctx context.Context, before string, limit int)
 	return s.d.Repository.ListAccountIDsInLifecycleState(ctx, account.StateDeleted, before, limit)
 }
 
+// DeactivatedAccounts returns up to limit accounts that their owners deactivated, newest first, by
+// ID, whose ID is below before ("" for the first page).
+func (s *Service) DeactivatedAccounts(ctx context.Context, before string, limit int) ([]string, error) {
+	return s.d.Repository.ListAccountIDsInLifecycleState(ctx, account.StateDeactivated, before, limit)
+}
+
 // NormalizeUsername returns the form in which usernames compare: lowercase.
 func NormalizeUsername(username string) string { return account.NormalizeUsername(username) }
 

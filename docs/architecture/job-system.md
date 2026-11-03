@@ -176,7 +176,7 @@ flowchart TD
 ```mermaid
 flowchart TD
   self["本人の削除（すぐ実行）"] -- "1" --> fanout
-  sched["毎時の周期"] --> exec["account.execute_deletions<br/>期限の来た予定、1 回最大 100"]
+  sched["毎時の周期"] --> exec["account.execute_deletions<br/>期限の来た予定と無効化、それぞれ 1 回最大 100"]
   exec -- "削除したアカウントごとに 1" --> fanout["federation.fanout<br/>Delete: フォロワー → 共有 inbox"]
   fanout -- "次のバッチ" --> fanout
   fanout -- "フォロワーの inbox と既知のすべての共有 inbox" --> deliver["federation.deliver"]
@@ -184,7 +184,7 @@ flowchart TD
   erase -- "続きがあれば 1" --> erase
 ```
 
-- 本人の削除は同じトランザクションで `Delete` を送り始めます。BAN などの予定は `account.execute_deletions` が拾います。
+- 本人の削除は同じトランザクションで `Delete` を送り始めます。BAN の予定と、30 日を過ぎた本人の無効化は `account.execute_deletions` が拾います。
 - アカウントの削除では投稿ごとの `Delete` を送りません（`ByAccountErasure`）。配送は actor の `Delete` です。
 - `Delete` の配送は既知のサーバーの数まで広がります。予定の削除が重なると、1 時間に `100 × 既知の共有 inbox の数` まで増える計算です（理論上の上限で、実際の数は推定できていません）。
 - 消去は `account.erase_deleted` の中で閉じ、配送を増やしません。
@@ -221,6 +221,7 @@ flowchart TD
 | 通話の参加者の確認 | `voice.check_account`、`voice.check_block`、`voice.check_hosts` | アカウント・ブロックの変更ごとに 1、ロールの変更で開いている全ルーム |
 | 通報・登録の申請など | 通知 → `notification.push`、`notification.moderator_email` | その種類を受け取る権限を持つ人の数 |
 | パスワードの変更・削除 | `identity.password_notice_email` | 1 |
+| 本人による無効化 | `identity.deactivation_email`、`federation.fanout` → `federation.deliver` | メール 1 通と、`Delete` と同じ宛先への `Update` |
 | ドメインの凍結 | `moderation.sever_domain` | ローカルの全アカウントを読む（[§3.6](#36-広いジョブの分割)） |
 | インポート | `identity.process_import` → フォローごとの `federation.fanout` → `federation.deliver` | 1 回 20 項目 |
 | 投稿の取り直し | `federation.refetch_statuses` → `federation.refetch_status` | 100 件ごと |

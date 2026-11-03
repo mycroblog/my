@@ -63,6 +63,38 @@
     "defaultMessage": "[{reason,select,not_pending{Ŧħḗḗ řḗḗɋŭŭḗḗşŧ ẇȧȧş ȧȧŀřḗḗȧȧḓẏ ȧȧƥƥřǿǿṽḗḗḓ, řḗḗĵḗḗƈŧḗḗḓ, ǿǿř ẇīŧħḓřȧȧẇƞ.} other{Ŧħḗḗ řḗḗɋŭŭḗḗşŧ ƈȧȧƞƞǿǿŧ ƀḗḗ ḓḗḗƈīḓḗḗḓ ȧȧş īŧ īş.} requester_cannot_create{Ŧħḗḗ řḗḗɋŭŭḗḗşŧḗḗř ƈȧȧƞ ƞǿǿ ŀǿǿƞɠḗḗř ƈřḗḗȧȧŧḗḗ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī. Řḗḗĵḗḗƈŧ ŧħḗḗ řḗḗɋŭŭḗḗşŧ īƞşŧḗḗȧȧḓ.} shortcode_taken{Ȧ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī ǿǿƒ ŧħīş şḗḗřṽḗḗř ȧȧŀřḗḗȧȧḓẏ ħȧȧş ŧħīş şħǿǿřŧƈǿǿḓḗḗ. Řḗḗĵḗḗƈŧ ŧħḗḗ řḗḗɋŭŭḗḗşŧ īƞşŧḗḗȧȧḓ.}}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.deactivation.already_deactivated": {
+    "defaultMessage": "[Ŧħīş ȧȧƈƈǿǿŭŭƞŧ īş ḓḗḗȧȧƈŧīṽȧȧŧḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.deletion_scheduled": {
+    "defaultMessage": "[Ŧħīş ȧȧƈƈǿǿŭŭƞŧ īş ẇȧȧīŧīƞɠ ŧǿǿ ƀḗḗ ḓḗḗŀḗḗŧḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.login_restricted": {
+    "defaultMessage": "[Ȧ ḿǿǿḓḗḗřȧȧŧīǿǿƞ ȧȧƈŧīǿǿƞ ķḗḗḗḗƥş ŧħīş ȧȧƈƈǿǿŭŭƞŧ ƒřǿǿḿ şīɠƞīƞɠ īƞ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.moved": {
+    "defaultMessage": "[Ŧħīş ȧȧƈƈǿǿŭŭƞŧ ḿǿǿṽḗḗḓ ŧǿǿ ȧȧƞǿǿŧħḗḗř ȧȧƈƈǿǿŭŭƞŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.paid_subscription": {
+    "defaultMessage": "[Ƈȧȧƞƈḗḗŀ ẏǿǿŭŭř şŭŭƥƥǿǿřŧḗḗř şŭŭƀşƈřīƥŧīǿǿƞ ƒīřşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.recently_reactivated": {
+    "defaultMessage": "[Ŧħīş ȧȧƈƈǿǿŭŭƞŧ ẇȧȧş řḗḗȧȧƈŧīṽȧȧŧḗḗḓ ŀḗḗşş ŧħȧȧƞ 24 ħǿǿŭŭřş ȧȧɠǿǿ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.refused": {
+    "defaultMessage": "[Ŧħīş ȧȧƈƈǿǿŭŭƞŧ ƈȧȧƞƞǿǿŧ ƀḗḗ ḓḗḗȧȧƈŧīṽȧȧŧḗḗḓ ƞǿǿẇ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.deactivation.registration_pending": {
+    "defaultMessage": "[Ŧħḗḗ řḗḗɠīşŧřȧȧŧīǿǿƞ ǿǿƒ ŧħīş ȧȧƈƈǿǿŭŭƞŧ īş ẇȧȧīŧīƞɠ ƒǿǿř řḗḗṽīḗḗẇ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.domain_mutes.too_many": {
     "defaultMessage": "[Ẏǿǿŭŭ ȧȧŀřḗḗȧȧḓẏ ḿŭŭŧḗḗ ŧħḗḗ ḿǿǿşŧ ḓǿǿḿȧȧīƞş ȧȧŀŀǿǿẇḗḗḓ. Ŭƞḿŭŭŧḗḗ ǿǿƞḗḗ ƒīřşŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."

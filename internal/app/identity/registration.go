@@ -604,18 +604,24 @@ type Access struct {
 	// AccountActive is true when that account is active: not deactivated, scheduled for
 	// deletion, or deleted.
 	AccountActive bool
-	// DeletionDueAt is when the account is deleted while its deletion is scheduled; nil
-	// otherwise.
+	// DeletionDueAt is when the account is deleted while its deletion is scheduled or it is
+	// deactivated; nil otherwise.
 	DeletionDueAt *time.Time
+	// Deactivated is true when the account's owner deactivated it: the user can only reactivate
+	// or delete it, on the status page (ADR-0145 §4).
+	Deactivated bool
+	// DeletionDate is DeletionDueAt of a deactivated account as the user reads it; "" otherwise.
+	DeletionDate string
 	// LoginRestricted is true when moderation forbids the account to log in and use the app
 	// (disable_login, suspend, ban).
 	LoginRestricted bool
 }
 
 // Allowed reports whether the user may use the app: approved, verified when that is required,
-// and not restricted from logging in.
+// not restricted from logging in, and not deactivated.
 func (a Access) Allowed() bool {
-	return a.Registration == identity.RegistrationApproved && (a.EmailVerified || !a.EmailVerificationRequired) && !a.LoginRestricted
+	return a.Registration == identity.RegistrationApproved && (a.EmailVerified || !a.EmailVerificationRequired) &&
+		!a.LoginRestricted && !a.Deactivated
 }
 
 // AwaitingVerification reports whether the user must still confirm their email address.
@@ -654,6 +660,15 @@ func (s *Service) UserAccess(ctx context.Context, userID string) (Access, error)
 	out.AccountID, out.AccountActive = life.AccountID, life.Active()
 	if life.DeletionScheduled() {
 		out.DeletionDueAt = life.DeletionDueAt
+	}
+	if life.Deactivated() {
+		due := life.DeactivationDueAt()
+		out.Deactivated, out.DeletionDueAt = true, &due
+		prefs, err := s.d.Repository.FindPreferences(ctx, userID)
+		if err != nil && !errors.Is(err, ErrNotFound) {
+			return Access{}, err
+		}
+		out.DeletionDate = DeletionDateText(due, prefs.TimeZone)
 	}
 	if out.LoginRestricted, err = s.loginRestricted(ctx, life.AccountID); err != nil {
 		return Access{}, err

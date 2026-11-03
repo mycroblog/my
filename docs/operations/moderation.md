@@ -91,7 +91,30 @@ In the admin API: `POST /api/v1/admin/accounts/{id}/actions` (the body has `kind
   (for `ban`, the number of days until the account is deleted), and they can appeal from that page ([appeals](#appeals)). The authorization endpoint (`/oauth/authorize`) answers with `403` and issues no token.
   A user under `ban` can sign in until the account is deleted, and the deletion revokes that session too. A user whose own deletion is scheduled, and an account that has been disabled, cannot sign in even on the sign-in page.
 
-### Appeals
+### Accounts that their owners deactivated
+
+A user can deactivate their own account from the account settings, after entering their password or a
+two-factor code again, or confirming with a passkey (a user with none of these signs in again at a linked
+login provider). The account is not a moderation action and moderators cannot deactivate anyone:
+
+- The profile and posts are hidden from everyone but moderators, and other servers receive an `Update` of the
+  actor marked `suspended`, so they may show the account as suspended. Every session and token of the user ends.
+  Where the server sends mail, one email states the date of the deletion; no other email is sent before it.
+- Nothing reaches the account: mentions and direct messages are dropped, no notifications, emails, or Web Push are
+  made, and new followers are refused. Favourites and boosts are counted. Existing follows stay.
+- The user signs in to a server page, which shows the date of the deletion and lets them reactivate or delete the
+  account. Reactivating brings everything back. The next deactivation has to wait 24 hours.
+- Thirty days after the deactivation, the hourly job deletes the account. A reactivation after that date is refused
+  even if the job has not run yet. The username is not released.
+
+Moderators see the state `deactivated` in the account list (`state=deactivated`), and can still read reports about
+the account and act on it. A moderation action does not change the date of the deletion, except a `ban`, which
+replaces it with its own: from then on the user cannot reactivate. A suspension sends nothing to other servers while the
+account is deactivated, and it stays in effect after the user reactivates. A user cannot deactivate an account while
+moderation keeps it from signing in, while its deletion is scheduled, after it moved, while its registration waits
+for review, or while a paid subscription is still running (including one set to end at the end of its period).
+
+## Appeals
 
 A local user can appeal an action against them.
 A moderator reviews the appeal and either upholds it (`uphold`) or overturns it (`overturn`).

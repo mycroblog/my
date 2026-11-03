@@ -1197,6 +1197,104 @@ func (l *Localizer) ServerAuthStatusAppealTextInvalid(max float64) string {
 	return l.format("server:auth.status.appeal_text_invalid", map[string]any{"max": max})
 }
 
+// ServerAuthStatusDeactivated formats "server:auth.status.deactivated". Explains to a signed-in user that they deactivated their account and what that means.
+//
+//	en: You deactivated this account, so it is hidden from everyone and nothing reaches it.
+func (l *Localizer) ServerAuthStatusDeactivated() string {
+	return l.format("server:auth.status.deactivated", nil)
+}
+
+// ServerAuthStatusDeactivatedDelete formats "server:auth.status.deactivated_delete". Label of the button that deletes a deactivated account.
+//
+//	en: Delete account
+func (l *Localizer) ServerAuthStatusDeactivatedDelete() string {
+	return l.format("server:auth.status.deactivated_delete", nil)
+}
+
+// ServerAuthStatusDeactivatedDeleteHeading formats "server:auth.status.deactivated_delete_heading". Heading of the form that deletes a deactivated account at once.
+//
+//	en: Delete it now
+func (l *Localizer) ServerAuthStatusDeactivatedDeleteHeading() string {
+	return l.format("server:auth.status.deactivated_delete_heading", nil)
+}
+
+// ServerAuthStatusDeactivatedDeleteHint formats "server:auth.status.deactivated_delete_hint". Hint of the form that deletes a deactivated account.
+//
+//	en: This cannot be undone. Your posts and account disappear, and your username is never used again.
+func (l *Localizer) ServerAuthStatusDeactivatedDeleteHint() string {
+	return l.format("server:auth.status.deactivated_delete_hint", nil)
+}
+
+// ServerAuthStatusDeactivatedDeletion formats "server:auth.status.deactivated_deletion". States when the deactivated account is deleted. {date} is the date and time with its time zone, such as 2026-12-03 09:00 (UTC).
+//
+//	en: It will be deleted on {date} unless you reactivate it.
+func (l *Localizer) ServerAuthStatusDeactivatedDeletion(date string) string {
+	return l.format("server:auth.status.deactivated_deletion", map[string]any{"date": date})
+}
+
+// ServerAuthStatusDeactivatedExpired formats "server:auth.status.deactivated_expired". Alert when a user tries to reactivate an account after the date of its deletion.
+//
+//	en: The date to reactivate this account has passed, and it is being deleted.
+func (l *Localizer) ServerAuthStatusDeactivatedExpired() string {
+	return l.format("server:auth.status.deactivated_expired", nil)
+}
+
+// ServerAuthStatusDeactivatedPasswordLabel formats "server:auth.status.deactivated_password_label". Label of the field that confirms the deletion of a deactivated account.
+//
+//	en: Current password
+func (l *Localizer) ServerAuthStatusDeactivatedPasswordLabel() string {
+	return l.format("server:auth.status.deactivated_password_label", nil)
+}
+
+// ServerAuthStatusDeactivatedReactivate formats "server:auth.status.deactivated_reactivate". Label of the button that brings back a deactivated account.
+//
+//	en: Reactivate your account
+func (l *Localizer) ServerAuthStatusDeactivatedReactivate() string {
+	return l.format("server:auth.status.deactivated_reactivate", nil)
+}
+
+// ServerAuthStatusDeactivatedReactivateHint formats "server:auth.status.deactivated_reactivate_hint". Hint under the button that brings back a deactivated account.
+//
+//	en: Your posts, follows, and followers are as you left them. What was sent to you in the meantime does not arrive, and apps must be authorized again.
+func (l *Localizer) ServerAuthStatusDeactivatedReactivateHint() string {
+	return l.format("server:auth.status.deactivated_reactivate_hint", nil)
+}
+
+// ServerAuthStatusDeactivatedSignInAgain formats "server:auth.status.deactivated_sign_in_again". Alert when a user without a password deletes a deactivated account in a session that started too long ago.
+//
+//	en: To confirm the deletion, sign out and sign in again, then delete the account.
+func (l *Localizer) ServerAuthStatusDeactivatedSignInAgain() string {
+	return l.format("server:auth.status.deactivated_sign_in_again", nil)
+}
+
+// ServerAuthStatusDeactivatedTitle formats "server:auth.status.deactivated_title". Title of the page that a user who deactivated their account sees after signing in.
+//
+//	en: Your account is deactivated
+func (l *Localizer) ServerAuthStatusDeactivatedTitle() string {
+	return l.format("server:auth.status.deactivated_title", nil)
+}
+
+// ServerAuthStatusDeactivatedWrongPassword formats "server:auth.status.deactivated_wrong_password". Alert when the password that confirms the deletion of a deactivated account is wrong.
+//
+//	en: The password is not correct.
+func (l *Localizer) ServerAuthStatusDeactivatedWrongPassword() string {
+	return l.format("server:auth.status.deactivated_wrong_password", nil)
+}
+
+// ServerAuthStatusDeleted formats "server:auth.status.deleted". Message of the page after a user deleted their deactivated account.
+//
+//	en: Your account and your posts are gone, and other servers have been told.
+func (l *Localizer) ServerAuthStatusDeleted() string {
+	return l.format("server:auth.status.deleted", nil)
+}
+
+// ServerAuthStatusDeletedTitle formats "server:auth.status.deleted_title". Title of the page after a user deleted their deactivated account.
+//
+//	en: Your account is deleted
+func (l *Localizer) ServerAuthStatusDeletedTitle() string {
+	return l.format("server:auth.status.deleted_title", nil)
+}
+
 // ServerAuthStatusPending formats "server:auth.status.pending". Explains that a moderator has not yet approved the registration and that the app cannot be used until then.
 //
 //	en: Your registration is waiting for a moderator's approval. You can sign in, but you can use the app only after it is approved.
@@ -1552,6 +1650,62 @@ func (l *Localizer) ServerErrorsCustomEmojiRequestConflict() string {
 //	en: {reason, select, not_pending {The request was already approved, rejected, or withdrawn.} requester_cannot_create {The requester can no longer create custom emoji. Reject the request instead.} shortcode_taken {A custom emoji of this server already has this shortcode. Reject the request instead.} other {The request cannot be decided as it is.}}
 func (l *Localizer) ServerErrorsCustomEmojiRequestConflictDetail(reason string) string {
 	return l.format("server:errors.custom_emoji_request_conflict_detail", map[string]any{"reason": reason})
+}
+
+// ServerErrorsDeactivationAlreadyDeactivated formats "server:errors.deactivation.already_deactivated". API error detail: the account cannot be deactivated because it is deactivated already.
+//
+//	en: This account is deactivated.
+func (l *Localizer) ServerErrorsDeactivationAlreadyDeactivated() string {
+	return l.format("server:errors.deactivation.already_deactivated", nil)
+}
+
+// ServerErrorsDeactivationDeletionScheduled formats "server:errors.deactivation.deletion_scheduled". API error detail: the account cannot be deactivated because its deletion is scheduled.
+//
+//	en: This account is waiting to be deleted.
+func (l *Localizer) ServerErrorsDeactivationDeletionScheduled() string {
+	return l.format("server:errors.deactivation.deletion_scheduled", nil)
+}
+
+// ServerErrorsDeactivationLoginRestricted formats "server:errors.deactivation.login_restricted". API error detail: the account cannot be deactivated because a moderation action disables its login.
+//
+//	en: A moderation action keeps this account from signing in.
+func (l *Localizer) ServerErrorsDeactivationLoginRestricted() string {
+	return l.format("server:errors.deactivation.login_restricted", nil)
+}
+
+// ServerErrorsDeactivationMoved formats "server:errors.deactivation.moved". API error detail: the account cannot be deactivated because it moved to another account.
+//
+//	en: This account moved to another account.
+func (l *Localizer) ServerErrorsDeactivationMoved() string {
+	return l.format("server:errors.deactivation.moved", nil)
+}
+
+// ServerErrorsDeactivationPaidSubscription formats "server:errors.deactivation.paid_subscription". API error detail: the account cannot be deactivated while a paid supporter subscription goes on.
+//
+//	en: Cancel your supporter subscription first.
+func (l *Localizer) ServerErrorsDeactivationPaidSubscription() string {
+	return l.format("server:errors.deactivation.paid_subscription", nil)
+}
+
+// ServerErrorsDeactivationRecentlyReactivated formats "server:errors.deactivation.recently_reactivated". API error detail: the account cannot be deactivated until 24 hours after its last reactivation.
+//
+//	en: This account was reactivated less than 24 hours ago.
+func (l *Localizer) ServerErrorsDeactivationRecentlyReactivated() string {
+	return l.format("server:errors.deactivation.recently_reactivated", nil)
+}
+
+// ServerErrorsDeactivationRefused formats "server:errors.deactivation.refused". API error title for HTTP 409 when the user cannot deactivate their own account now; the detail says why.
+//
+//	en: This account cannot be deactivated now.
+func (l *Localizer) ServerErrorsDeactivationRefused() string {
+	return l.format("server:errors.deactivation.refused", nil)
+}
+
+// ServerErrorsDeactivationRegistrationPending formats "server:errors.deactivation.registration_pending". API error detail: the account cannot be deactivated because its registration waits for review.
+//
+//	en: The registration of this account is waiting for review.
+func (l *Localizer) ServerErrorsDeactivationRegistrationPending() string {
+	return l.format("server:errors.deactivation.registration_pending", nil)
 }
 
 // ServerErrorsDomainMutesTooMany formats "server:errors.domain_mutes.too_many". API error title for HTTP 422 when the user mutes another domain beyond the limit of muted domains.
@@ -2688,6 +2842,36 @@ func (l *Localizer) ServerHealthUnavailable() string {
 	return l.format("server:health.unavailable", nil)
 }
 
+// ServerMailAccountDeactivatedBodyArgs holds the arguments of ServerMailAccountDeactivatedBody, passed by name.
+//
+//exhaustruct:enforce
+type ServerMailAccountDeactivatedBodyArgs struct {
+	_        struct{} // forces keyed fields
+	Date     string
+	Instance string
+}
+
+// ServerMailAccountDeactivatedBody formats "server:mail.account_deactivated.body". First paragraph of the email that tells a user their account is deactivated. {instance} is the server's display name, or its domain name when it has none. {date} is the date and time of the deletion with its time zone, such as 2026-12-03 09:00 (UTC).
+//
+//	en: Your account on {instance} is deactivated. It will be deleted on {date} unless you reactivate it before then.
+func (l *Localizer) ServerMailAccountDeactivatedBody(args ServerMailAccountDeactivatedBodyArgs) string {
+	return l.format("server:mail.account_deactivated.body", map[string]any{"date": args.Date, "instance": args.Instance})
+}
+
+// ServerMailAccountDeactivatedDetail formats "server:mail.account_deactivated.detail". Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them.
+//
+//	en: To reactivate it, sign in. We will not email you about this again before the deletion. If you did not do this, sign in, reactivate the account, and change your password.
+func (l *Localizer) ServerMailAccountDeactivatedDetail() string {
+	return l.format("server:mail.account_deactivated.detail", nil)
+}
+
+// ServerMailAccountDeactivatedSubject formats "server:mail.account_deactivated.subject". Subject of the one email that tells a user their account is deactivated. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: Your account on {instance} is deactivated
+func (l *Localizer) ServerMailAccountDeactivatedSubject(instance string) string {
+	return l.format("server:mail.account_deactivated.subject", map[string]any{"instance": instance})
+}
+
 // ServerMailActionOpenNotification formats "server:mail.action.open_notification". Label of the link in the email of a notification that opens the page of the notification in the web client: the post, the profile, or the notifications.
 //
 //	en: Open
@@ -2707,6 +2891,13 @@ func (l *Localizer) ServerMailActionOpenNotifications() string {
 //	en: Set a new password
 func (l *Localizer) ServerMailActionSetNewPassword() string {
 	return l.format("server:mail.action.set_new_password", nil)
+}
+
+// ServerMailActionSignIn formats "server:mail.action.sign_in". Label of the link in an email that opens the sign-in page.
+//
+//	en: Sign in
+func (l *Localizer) ServerMailActionSignIn() string {
+	return l.format("server:mail.action.sign_in", nil)
 }
 
 // ServerMailAdminAccountMovedBody formats "server:mail.admin_account_moved.body". Paragraph of the email to a moderator about an account with a limit that moved to another account. It never names the accounts. {instance} is the server's display name, or its domain name when it has none.

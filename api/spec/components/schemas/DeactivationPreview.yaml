@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+description: What deactivating the user's own account would do now.
+type: object
+required: [deletion_due_at]
+properties:
+  deletion_due_at:
+    description: When the account would be deleted if it were deactivated now.
+    type: string
+    format: date-time
+  refusal:
+    description: |
+      Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+      logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+      deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+      (`registration_pending`), a paid subscription goes on (`paid_subscription`), or it was
+      reactivated less than 24 hours ago (`recently_reactivated`).
+    type: string
+    enum:
+      - login_restricted
+      - deletion_scheduled
+      - already_deactivated
+      - moved
+      - registration_pending
+      - paid_subscription
+      - recently_reactivated
+  available_at:
+    description: When the account can be deactivated again, for `recently_reactivated`.
+    type: string
+    format: date-time

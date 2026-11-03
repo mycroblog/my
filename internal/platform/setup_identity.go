@@ -32,7 +32,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		FanOutSize: a.fanOutSize,
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs,
 		Passwords: identity.NewPasswordHasher(identity.DefaultArgon2Params, 0), Accounts: a.Accounts,
-		Logins: a.AccountPolicy, RateLimiter: a.RateLimiter,
+		Logins: a.AccountPolicy, RateLimiter: a.RateLimiter, Subscriptions: liveSubscriptions{a},
 		// TOTP secrets are sealed like actor keys (ADR-0019 §6); sign-in challenges live in the KV store.
 		Sealer: a.Sealer, KV: a.KV,
 		// Passkeys sign in instead of the password (FR-004); their ceremonies' state is sealed too.
@@ -137,4 +137,16 @@ func (a *App) loginProviderDomainRestricted(ctx context.Context, host string) (b
 	}
 	rs, err := a.ModerationPolicy.DomainRestrictions(ctx, canonical)
 	return len(rs) > 0, err
+}
+
+// liveSubscriptions implements identity.LiveSubscriptions on the supporters module, which is built
+// after the identity module; a server without the program has no subscriptions.
+type liveSubscriptions struct{ a *App }
+
+// HasLiveSubscription implements identity.LiveSubscriptions.
+func (l liveSubscriptions) HasLiveSubscription(ctx context.Context, userID string) (bool, error) {
+	if l.a.Supporters == nil {
+		return false, nil
+	}
+	return l.a.Supporters.HasLiveSubscription(ctx, userID)
 }

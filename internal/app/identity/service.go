@@ -30,6 +30,9 @@ type Deps struct {
 	// Logins keeps the accounts that moderation forbids to log in from signing in and from
 	// using their tokens; nil forbids nobody.
 	Logins LoginPolicy
+	// Subscriptions tells the users with a live subscription to a supporter plan, who cannot
+	// deactivate their accounts (ADR-0145 §1); nil means that none has one.
+	Subscriptions LiveSubscriptions
 	// DefaultLocale returns the instance's default locale, which a new user gets unless the
 	// registration names one. It is called once per registration, before the transaction, so a
 	// change of the instance setting applies to the next registration. Nil or an empty result

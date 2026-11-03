@@ -85,6 +85,17 @@ func (f *fakeOwnAccount) DeleteOwnAccount(_ context.Context, userID string, c ap
 	return nil
 }
 
+func (f *fakeOwnAccount) PreviewDeactivation(context.Context, string) (appidentity.DeactivationPreview, error) {
+	return appidentity.DeactivationPreview{DeletionDueAt: time.Date(2026, 12, 3, 9, 0, 0, 0, time.UTC)}, nil
+}
+
+func (f *fakeOwnAccount) DeactivateOwnAccount(_ context.Context, _ string, c appidentity.Confirmation) (time.Time, error) {
+	if err := f.confirm(c); err != nil {
+		return time.Time{}, err
+	}
+	return time.Date(2026, 12, 3, 9, 0, 0, 0, time.UTC), nil
+}
+
 // fakeExports keeps the exports in memory, newest first; a ready export's archive is its ID.
 type fakeExports struct {
 	now     time.Time

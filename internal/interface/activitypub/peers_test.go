@@ -216,7 +216,8 @@ func TestHiddenAccountsAreNeverListed(t *testing.T) {
 	s := newServer(t, accountDomain)
 	var visible []string
 	for id := range s.accounts.actors {
-		if s.get(t, "/ap/actors/"+id, acceptMastodon).Code == http.StatusOK {
+		// A deactivated actor answers with an emptied document, and is listed nowhere either.
+		if id != gwenID && s.get(t, "/ap/actors/"+id, acceptMastodon).Code == http.StatusOK {
 			visible = append(visible, id)
 		}
 	}

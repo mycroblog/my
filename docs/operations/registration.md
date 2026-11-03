@@ -49,7 +49,7 @@ my instance set registration_mode invite
 
 ## When a user can use the app
 
-Users who are waiting for approval, were rejected, or have not confirmed their email address can still sign in on the sign-in page.
+Users who are waiting for approval, were rejected, or have not confirmed their email address can still sign in on the sign-in page. So can users who deactivated their own account, until the date of its deletion: they see that date there, and can reactivate or delete the account ([moderation](moderation.md#accounts-that-their-owners-deactivated)).
 After signing in, they see what they are waiting for (a moderator's approval, or confirmation of the email address), or that their registration was not approved, and they cannot go further.
 Only approved users can use the app (the OAuth authorization and token issuance of the client API), and on setups that require email confirmation, only those who have confirmed their email address.
 

@@ -258,19 +258,22 @@ func (e AdminAccountRestriction) Valid() bool {
 
 // Defines values for AdminAccountState.
 const (
-	AdminAccountStateActive    AdminAccountState = "active"
-	AdminAccountStateDeleted   AdminAccountState = "deleted"
-	AdminAccountStateDisabled  AdminAccountState = "disabled"
-	AdminAccountStateLimited   AdminAccountState = "limited"
-	AdminAccountStatePending   AdminAccountState = "pending"
-	AdminAccountStateRejected  AdminAccountState = "rejected"
-	AdminAccountStateSuspended AdminAccountState = "suspended"
+	AdminAccountStateActive      AdminAccountState = "active"
+	AdminAccountStateDeactivated AdminAccountState = "deactivated"
+	AdminAccountStateDeleted     AdminAccountState = "deleted"
+	AdminAccountStateDisabled    AdminAccountState = "disabled"
+	AdminAccountStateLimited     AdminAccountState = "limited"
+	AdminAccountStatePending     AdminAccountState = "pending"
+	AdminAccountStateRejected    AdminAccountState = "rejected"
+	AdminAccountStateSuspended   AdminAccountState = "suspended"
 )
 
 // Valid indicates whether the value is a known member of the AdminAccountState enum.
 func (e AdminAccountState) Valid() bool {
 	switch e {
 	case AdminAccountStateActive:
+		return true
+	case AdminAccountStateDeactivated:
 		return true
 	case AdminAccountStateDeleted:
 		return true
@@ -1503,6 +1506,7 @@ func (e ClientErrorReportKind) Valid() bool {
 
 // Defines values for ConfirmedOperation.
 const (
+	ConfirmedOperationAccountDeactivation ConfirmedOperation = "account_deactivation"
 	ConfirmedOperationAccountDeletion     ConfirmedOperation = "account_deletion"
 	ConfirmedOperationAccountMove         ConfirmedOperation = "account_move"
 	ConfirmedOperationLink                ConfirmedOperation = "link"
@@ -1514,6 +1518,8 @@ const (
 // Valid indicates whether the value is a known member of the ConfirmedOperation enum.
 func (e ConfirmedOperation) Valid() bool {
 	switch e {
+	case ConfirmedOperationAccountDeactivation:
+		return true
 	case ConfirmedOperationAccountDeletion:
 		return true
 	case ConfirmedOperationAccountMove:
@@ -1864,6 +1870,39 @@ func (e DataImportSkippedReason) Valid() bool {
 	case DataImportSkippedReasonDuplicate:
 		return true
 	case DataImportSkippedReasonInvalid:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeactivationPreviewRefusal.
+const (
+	DeactivationPreviewRefusalAlreadyDeactivated  DeactivationPreviewRefusal = "already_deactivated"
+	DeactivationPreviewRefusalDeletionScheduled   DeactivationPreviewRefusal = "deletion_scheduled"
+	DeactivationPreviewRefusalLoginRestricted     DeactivationPreviewRefusal = "login_restricted"
+	DeactivationPreviewRefusalMoved               DeactivationPreviewRefusal = "moved"
+	DeactivationPreviewRefusalPaidSubscription    DeactivationPreviewRefusal = "paid_subscription"
+	DeactivationPreviewRefusalRecentlyReactivated DeactivationPreviewRefusal = "recently_reactivated"
+	DeactivationPreviewRefusalRegistrationPending DeactivationPreviewRefusal = "registration_pending"
+)
+
+// Valid indicates whether the value is a known member of the DeactivationPreviewRefusal enum.
+func (e DeactivationPreviewRefusal) Valid() bool {
+	switch e {
+	case DeactivationPreviewRefusalAlreadyDeactivated:
+		return true
+	case DeactivationPreviewRefusalDeletionScheduled:
+		return true
+	case DeactivationPreviewRefusalLoginRestricted:
+		return true
+	case DeactivationPreviewRefusalMoved:
+		return true
+	case DeactivationPreviewRefusalPaidSubscription:
+		return true
+	case DeactivationPreviewRefusalRecentlyReactivated:
+		return true
+	case DeactivationPreviewRefusalRegistrationPending:
 		return true
 	default:
 		return false
@@ -4411,8 +4450,8 @@ type AdminAccount struct {
 	Restrictions []AdminAccountRestriction `json:"restrictions"`
 
 	// State The state of an account, the first that applies: `deleted` (deleted here or on its
-	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-	// and `pending` (the registration of a local account), `limited` (a `limit`), and
+	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+	// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 	// `active`.
 	State AdminAccountState `json:"state"`
 }
@@ -4547,8 +4586,8 @@ type AdminAccountDetail struct {
 	Roles []string `json:"roles"`
 
 	// State The state of an account, the first that applies: `deleted` (deleted here or on its
-	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-	// and `pending` (the registration of a local account), `limited` (a `limit`), and
+	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+	// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 	// `active`.
 	State AdminAccountState `json:"state"`
 
@@ -4651,8 +4690,8 @@ type AdminAccountSignIn struct {
 }
 
 // AdminAccountState The state of an account, the first that applies: `deleted` (deleted here or on its
-// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-// and `pending` (the registration of a local account), `limited` (a `limit`), and
+// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 // `active`.
 type AdminAccountState string
 
@@ -7180,7 +7219,7 @@ type CloseServiceRequest struct {
 
 // ConfirmedOperation An operation that the user confirms: registering a passkey (`passkey_registration`),
 // changing or setting the password (`password_change`), removing it (`password_removal`),
-// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+// deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
 // account at a login provider (`link`).
 type ConfirmedOperation string
 
@@ -8163,6 +8202,52 @@ type DataImportSkipped struct {
 // `duplicate`: an earlier line names the same account, post, or domain.
 type DataImportSkippedReason string
 
+// DeactivateOwnAccountRequest The confirmation of the deactivation of the user's own account: `password`,
+// `two_factor_code`, `passkey`, or `external_confirmation`.
+type DeactivateOwnAccountRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
+	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+
+	// Password The user's current password.
+	Password *string `json:"password,omitempty"`
+
+	// TwoFactorCode A code of the user's authenticator app, or a recovery code.
+	TwoFactorCode *string `json:"two_factor_code,omitempty"`
+}
+
+// Deactivation The deactivation of the user's own account.
+type Deactivation struct {
+	// DeletionDueAt When the account is deleted unless the user reactivates it first.
+	DeletionDueAt time.Time `json:"deletion_due_at"`
+}
+
+// DeactivationPreview What deactivating the user's own account would do now.
+type DeactivationPreview struct {
+	// AvailableAt When the account can be deactivated again, for `recently_reactivated`.
+	AvailableAt *time.Time `json:"available_at,omitempty"`
+
+	// DeletionDueAt When the account would be deleted if it were deactivated now.
+	DeletionDueAt time.Time `json:"deletion_due_at"`
+
+	// Refusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+	// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+	// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+	// (`registration_pending`), a paid subscription goes on (`paid_subscription`), or it was
+	// reactivated less than 24 hours ago (`recently_reactivated`).
+	Refusal *DeactivationPreviewRefusal `json:"refusal,omitempty"`
+}
+
+// DeactivationPreviewRefusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+// (`registration_pending`), a paid subscription goes on (`paid_subscription`), or it was
+// reactivated less than 24 hours ago (`recently_reactivated`).
+type DeactivationPreviewRefusal string
+
 // DecideAppealRequest The moderators' explanation of a decision on an appeal.
 type DecideAppealRequest struct {
 	// PublicReason Shown to the user who appealed, as plain text.
@@ -8537,7 +8622,7 @@ type ExternalAuthorizationStart struct {
 type ExternalConfirmationRequest struct {
 	// Operation An operation that the user confirms: registering a passkey (`passkey_registration`),
 	// changing or setting the password (`password_change`), removing it (`password_removal`),
-	// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+	// deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
 	// account at a login provider (`link`).
 	Operation ConfirmedOperation `json:"operation"`
 
@@ -14138,6 +14223,9 @@ type AddAccountAliasJSONRequestBody = AddAccountAliasRequest
 // RemoveAccountAliasJSONRequestBody defines body for RemoveAccountAlias for application/json ContentType.
 type RemoveAccountAliasJSONRequestBody = RemoveAccountAliasRequest
 
+// DeactivateOwnAccountJSONRequestBody defines body for DeactivateOwnAccount for application/json ContentType.
+type DeactivateOwnAccountJSONRequestBody = DeactivateOwnAccountRequest
+
 // DeleteOwnAccountJSONRequestBody defines body for DeleteOwnAccount for application/json ContentType.
 type DeleteOwnAccountJSONRequestBody = DeleteOwnAccountRequest
 
@@ -14455,6 +14543,12 @@ type ServerInterface interface {
 	// RemoveAccountAlias Remove an alias of the authenticated user
 	// (POST /accounts/aliases/remove)
 	RemoveAccountAlias(w http.ResponseWriter, r *http.Request)
+	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
+	// (GET /accounts/deactivation)
+	GetDeactivationPreview(w http.ResponseWriter, r *http.Request)
+	// DeactivateOwnAccount Deactivate the authenticated user's account
+	// (POST /accounts/deactivation)
+	DeactivateOwnAccount(w http.ResponseWriter, r *http.Request)
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(w http.ResponseWriter, r *http.Request)
@@ -15552,6 +15646,34 @@ func (siw *ServerInterfaceWrapper) RemoveAccountAlias(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RemoveAccountAlias(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDeactivationPreview operation middleware
+func (siw *ServerInterfaceWrapper) GetDeactivationPreview(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDeactivationPreview(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeactivateOwnAccount operation middleware
+func (siw *ServerInterfaceWrapper) DeactivateOwnAccount(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeactivateOwnAccount(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25738,6 +25860,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/preferences/notifications", wrapper.UpdateNotificationSettings)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.GetSupporterListing)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.UpdateSupporterListing)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/deactivation", wrapper.GetDeactivationPreview)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/deactivation", wrapper.DeactivateOwnAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/delete", wrapper.DeleteOwnAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/move", wrapper.MoveOwnAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/move/cancel", wrapper.CancelOwnAccountMove)
@@ -26657,6 +26781,119 @@ type RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response RemoveAccountAliasdefaultApplicationProblemPlusJSONResponse) VisitRemoveAccountAliasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeactivationPreviewRequestObject struct {
+}
+
+type GetDeactivationPreviewResponseObject interface {
+	VisitGetDeactivationPreviewResponse(w http.ResponseWriter) error
+}
+
+type GetDeactivationPreview200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetDeactivationPreview200JSONResponse struct {
+	Body    DeactivationPreview
+	Headers GetDeactivationPreview200ResponseHeaders
+}
+
+func (response GetDeactivationPreview200JSONResponse) VisitGetDeactivationPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDeactivationPreviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetDeactivationPreviewdefaultApplicationProblemPlusJSONResponse) VisitGetDeactivationPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeactivateOwnAccountRequestObject struct {
+	Body *DeactivateOwnAccountJSONRequestBody
+}
+
+type DeactivateOwnAccountResponseObject interface {
+	VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error
+}
+
+type DeactivateOwnAccount200JSONResponse Deactivation
+
+func (response DeactivateOwnAccount200JSONResponse) VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse) VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -47426,6 +47663,12 @@ type StrictServerInterface interface {
 	// RemoveAccountAlias Remove an alias of the authenticated user
 	// (POST /accounts/aliases/remove)
 	RemoveAccountAlias(ctx context.Context, request RemoveAccountAliasRequestObject) (RemoveAccountAliasResponseObject, error)
+	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
+	// (GET /accounts/deactivation)
+	GetDeactivationPreview(ctx context.Context, request GetDeactivationPreviewRequestObject) (GetDeactivationPreviewResponseObject, error)
+	// DeactivateOwnAccount Deactivate the authenticated user's account
+	// (POST /accounts/deactivation)
+	DeactivateOwnAccount(ctx context.Context, request DeactivateOwnAccountRequestObject) (DeactivateOwnAccountResponseObject, error)
 	// DeleteOwnAccount Delete the authenticated user's account
 	// (POST /accounts/delete)
 	DeleteOwnAccount(ctx context.Context, request DeleteOwnAccountRequestObject) (DeleteOwnAccountResponseObject, error)
@@ -48599,6 +48842,61 @@ func (sh *strictHandler) RemoveAccountAlias(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RemoveAccountAliasResponseObject); ok {
 		if err := validResponse.VisitRemoveAccountAliasResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDeactivationPreview operation middleware
+func (sh *strictHandler) GetDeactivationPreview(w http.ResponseWriter, r *http.Request) {
+	var request GetDeactivationPreviewRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDeactivationPreview(ctx, request.(GetDeactivationPreviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDeactivationPreview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDeactivationPreviewResponseObject); ok {
+		if err := validResponse.VisitGetDeactivationPreviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeactivateOwnAccount operation middleware
+func (sh *strictHandler) DeactivateOwnAccount(w http.ResponseWriter, r *http.Request) {
+	var request DeactivateOwnAccountRequestObject
+
+	var body DeactivateOwnAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeactivateOwnAccount(ctx, request.(DeactivateOwnAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeactivateOwnAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeactivateOwnAccountResponseObject); ok {
+		if err := validResponse.VisitDeactivateOwnAccountResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

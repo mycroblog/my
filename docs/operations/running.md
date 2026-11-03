@@ -580,7 +580,7 @@ A process whose `role` is `web` or `all` answers these endpoints, which other Fe
 | `GET /@{username}/status/{uuid}` | For an ActivityPub `Accept`, a 302 to the `id` (`/ap/objects/{uuid}`) of the post if a signed-out visitor can see it, and 404 if not. Otherwise the web client's HTML |
 
 - The instance Actor's handle is `{account_domain}@{account_domain}` (the same form as Mastodon).
-- An account that does not exist or cannot be shown (suspended, deleted, or remote) always gets the same 404 (`Cache-Control: no-store`).
+- An account that does not exist or cannot be shown (suspended, deactivated, deleted, or remote) always gets the same 404 (`Cache-Control: no-store`).
 - Anonymous responses carry `Cache-Control: public, max-age=60`. Responses that vary by `Accept` carry `Vary: Accept`.
   For a CDN that cannot handle `Vary: Accept`, exclude `/ap/*` and `/@*` from caching.
 

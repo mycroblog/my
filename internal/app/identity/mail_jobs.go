@@ -72,11 +72,12 @@ type passwordNoticeEmail struct {
 
 // RegisterMailJobs registers the handlers of the identity module's emails on reg: the
 // verification and the reset emails with queue.TransactionalMailPolicy, the notices of password
-// changes with the runner's default policy.
+// changes and of a deactivation with the runner's default policy.
 func (s *Service) RegisterMailJobs(reg *queue.JobHandlerRegistry) {
 	reg.RegisterWithPolicy(JobVerificationEmail, mailHandler(s.sendVerificationEmail), queue.TransactionalMailPolicy)
 	reg.RegisterWithPolicy(JobPasswordResetEmail, mailHandler(s.sendPasswordResetEmail), queue.TransactionalMailPolicy)
 	reg.Register(JobPasswordNoticeEmail, mailHandler(s.sendPasswordNoticeEmail))
+	reg.Register(JobDeactivationEmail, mailHandler(s.sendDeactivationEmail))
 }
 
 // mailHandler returns the handler of a job whose payload is a T and that send runs: a payload
