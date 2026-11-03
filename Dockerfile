@@ -17,7 +17,7 @@ FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aa
 # once on the build host's platform. The build reads generated files that are not committed (ADR-0081):
 # the client pseudo-locales from tools/i18n and the theme token list of @my/ui are generated first, and
 # the Vite plugin generates the route tree.
-FROM --platform=$BUILDPLATFORM node:26.12.1-trixie-slim@sha256:1653c74b30c27b26f68c2d21279be12139d2ba723e3a682c425ec4bfb6070422 AS web
+FROM --platform=$BUILDPLATFORM node:26.12.1-trixie-slim@sha256:94816674c62774da0d099a947bf4613b9e1972a2733abd0d0cd80e795f8411d0 AS web
 # The SBOM of a released image covers this stage too: its npm packages reach the image only through the Go embed.
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
