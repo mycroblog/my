@@ -121,7 +121,7 @@ async function serveApi(page: Page): Promise<void> {
     const url = new URL(request.url());
     const path = url.pathname.replace("/api/v1", "");
     const method = request.method();
-    if (path === "/accounts/verify_credentials") return json(route, alice);
+    if (path === "/accounts/verify_credentials") return json(route, { ...alice, permissions: [] });
     if (path === "/instance") {
       return json(route, {
         domain: "my.example",

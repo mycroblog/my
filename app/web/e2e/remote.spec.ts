@@ -133,7 +133,7 @@ async function serveApi(page: Page, { fetching = false } = {}): Promise<{ status
   await page.route("**/api/v1/**", async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname.replace("/api/v1", "");
-    if (path === "/accounts/verify_credentials") return json(route, alice);
+    if (path === "/accounts/verify_credentials") return json(route, { ...alice, permissions: [] });
     if (path === "/instance") {
       return json(route, {
         domain: "my.example",

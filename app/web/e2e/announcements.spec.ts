@@ -188,7 +188,7 @@ test.describe("announcements", () => {
       return null;
     });
     await page.goto("/home");
-    const panel = page.getByRole("complementary", { name: new RegExp(`^${message("announcements.title")}`, "u") });
+    const panel = page.getByRole("complementary", { name: message("announcements.title") });
     const title = panel.getByRole("link", { name: new RegExp(`^${unread.title}`, "u") });
     await expect(title).toBeVisible();
     await expect(panel.getByRole("link", { name: read.title })).toBeVisible();
