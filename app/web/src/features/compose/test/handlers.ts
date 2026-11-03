@@ -14,14 +14,16 @@ export function accountSearchHandler(accounts: Schemas["Account"][], onQuery?: (
   return http.get(`${apiBase}/accounts/search`, ({ request }) =>
     withViewer(request, () => {
       onQuery?.(new URL(request.url).searchParams.get("q") ?? "");
-      return HttpResponse.json(accounts);
+      return HttpResponse.json({ items: accounts });
     }),
   );
 }
 
 /** GET /tags/search answering `tags` whatever the query. */
 export function tagSearchHandler(tags: Schemas["TagSuggestion"][]) {
-  return http.get(`${apiBase}/tags/search`, ({ request }) => withViewer(request, () => HttpResponse.json(tags)));
+  return http.get(`${apiBase}/tags/search`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: tags })),
+  );
 }
 
 export const handlers = [

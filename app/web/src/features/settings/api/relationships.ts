@@ -108,7 +108,7 @@ export function removeFromList(queryClient: QueryClient, api: Api, change: ListC
             ...data,
             pages: data.pages.map((page) => ({
               ...page,
-              accounts: page.accounts.filter((account) => account.id !== id),
+              items: page.items.filter((account) => account.id !== id),
             })),
           },
       );
@@ -119,7 +119,7 @@ export function removeFromList(queryClient: QueryClient, api: Api, change: ListC
         (data) =>
           data && {
             ...data,
-            pages: data.pages.map((page) => ({ ...page, mutes: page.mutes.filter((mute) => mute.account.id !== id) })),
+            pages: data.pages.map((page) => ({ ...page, items: page.items.filter((mute) => mute.account.id !== id) })),
           },
       );
       return;
@@ -132,7 +132,7 @@ export function removeFromList(queryClient: QueryClient, api: Api, change: ListC
             ...data,
             pages: data.pages.map((page) => ({
               ...page,
-              accounts: page.accounts.filter((account) => account.id !== id),
+              items: page.items.filter((account) => account.id !== id),
             })),
           },
       );

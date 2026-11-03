@@ -1102,7 +1102,7 @@ describe("blocks, mutes and follow requests", () => {
     let blocked = [bob, carol];
     const unblocked: string[] = [];
     server.use(
-      http.get(`${apiBase}/blocks`, () => HttpResponse.json({ accounts: blocked })),
+      http.get(`${apiBase}/blocks`, () => HttpResponse.json({ items: blocked })),
       http.post(`${apiBase}/accounts/:id/unblock`, ({ params }) => {
         const id = String(params["id"]);
         unblocked.push(id);
@@ -1131,9 +1131,9 @@ describe("blocks, mutes and follow requests", () => {
     server.use(
       http.get(`${apiBase}/mutes`, ({ request }) =>
         new URL(request.url).searchParams.get("cursor") === "next"
-          ? HttpResponse.json({ mutes: [{ account: carol, notifications: false }] })
+          ? HttpResponse.json({ items: [{ account: carol, notifications: false }] })
           : HttpResponse.json({
-              mutes: [{ account: bob, notifications: true, expires_at: "2026-11-01T09:30:00Z" }],
+              items: [{ account: bob, notifications: true, expires_at: "2026-11-01T09:30:00Z" }],
               next_cursor: "next",
             }),
       ),
@@ -1159,7 +1159,7 @@ describe("blocks, mutes and follow requests", () => {
       http.get(`${apiBase}/accounts/verify_credentials`, () =>
         HttpResponse.json({ ...viewerFixture, follow_requests_count: pending.length }),
       ),
-      http.get(`${apiBase}/follow_requests`, () => HttpResponse.json({ accounts: pending })),
+      http.get(`${apiBase}/follow_requests`, () => HttpResponse.json({ items: pending })),
       http.post(`${apiBase}/follow_requests/:id/authorize`, ({ params }) => {
         answered.push(`accept ${String(params["id"])}`);
         answer(String(params["id"]));
@@ -1189,7 +1189,7 @@ describe("blocks, mutes and follow requests", () => {
 
   test("a failed action keeps the account and says why", async () => {
     server.use(
-      http.get(`${apiBase}/blocks`, () => HttpResponse.json({ accounts: [bob] })),
+      http.get(`${apiBase}/blocks`, () => HttpResponse.json({ items: [bob] })),
       http.post(`${apiBase}/accounts/:id/unblock`, () => problem(404, "about:blank", "Not found")),
     );
     const { user } = await renderApp({ path: "/settings/blocks" });

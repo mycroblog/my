@@ -4445,7 +4445,7 @@ type AccountAlias struct {
 
 // AccountAliasList The aliases of the user, oldest first; at most 5.
 type AccountAliasList struct {
-	Aliases []AccountAlias `json:"aliases"`
+	Items []AccountAlias `json:"items"`
 }
 
 // AccountBadge A badge that the account shows on its profile (ADR-0071): the badge of a role that the
@@ -4476,6 +4476,11 @@ type AccountFieldSource struct {
 	Value string `json:"value"`
 }
 
+// AccountList The accounts, best match first.
+type AccountList struct {
+	Items []Account `json:"items"`
+}
+
 // AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
 // `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
 // its posts stay where they are.
@@ -4500,7 +4505,7 @@ type AccountMoveOutcome string
 
 // AccountPage A page of accounts.
 type AccountPage struct {
-	Accounts []Account `json:"accounts"`
+	Items []Account `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -4549,6 +4554,11 @@ type AccountSuggestion struct {
 // AccountSuggestionSource Why the account is suggested: `featured` when the administrators feature it,
 // `recently_active` when it posted recently.
 type AccountSuggestionSource string
+
+// AccountSuggestionList The suggested accounts.
+type AccountSuggestionList struct {
+	Items []AccountSuggestion `json:"items"`
+}
 
 // AddAccountAliasRequest The account to add as an alias.
 type AddAccountAliasRequest struct {
@@ -8455,7 +8465,7 @@ type DomainMute struct {
 
 // DomainMutePage A page of domain mutes.
 type DomainMutePage struct {
-	DomainMutes []DomainMute `json:"domain_mutes"`
+	Items []DomainMute `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -10148,7 +10158,7 @@ type MuteDomainRequest struct {
 
 // MutePage A page of mutes.
 type MutePage struct {
-	Mutes []MutedAccount `json:"mutes"`
+	Items []MutedAccount `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -11516,6 +11526,11 @@ type Relationship struct {
 	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
+// RelationshipList The relationships, in the order of the request.
+type RelationshipList struct {
+	Items []Relationship `json:"items"`
+}
+
 // RelationshipSeverance The follows that a `relationships_severed` tells of: the user lost them when the
 // moderators suspended a server (`domain_suspension`, `domain` is the server) or a remote
 // account (`account_suspension`, the notification's `account` is the account). Both
@@ -12474,6 +12489,11 @@ type TagSuggestion struct {
 
 	// StatusesCount How many posts of visibility `public`, `local`, or `unlisted` carry the hashtag now.
 	StatusesCount int64 `json:"statuses_count"`
+}
+
+// TagSuggestionList The tags that match.
+type TagSuggestionList struct {
+	Items []TagSuggestion `json:"items"`
 }
 
 // ThemeError One reason a theme cannot be saved. `code` is `unknown_token`, `duplicate_token`,
@@ -27303,7 +27323,7 @@ type GetRelationships200ResponseHeaders struct {
 }
 
 type GetRelationships200JSONResponse struct {
-	Body    []Relationship
+	Body    RelationshipList
 	Headers GetRelationships200ResponseHeaders
 }
 
@@ -27365,7 +27385,7 @@ type SearchAccounts200ResponseHeaders struct {
 }
 
 type SearchAccounts200JSONResponse struct {
-	Body    []Account
+	Body    AccountList
 	Headers SearchAccounts200ResponseHeaders
 }
 
@@ -27427,7 +27447,7 @@ type ListAccountSuggestions200ResponseHeaders struct {
 }
 
 type ListAccountSuggestions200JSONResponse struct {
-	Body    []AccountSuggestion
+	Body    AccountSuggestionList
 	Headers ListAccountSuggestions200ResponseHeaders
 }
 
@@ -45329,7 +45349,7 @@ type SearchTags200ResponseHeaders struct {
 }
 
 type SearchTags200JSONResponse struct {
-	Body    []TagSuggestion
+	Body    TagSuggestionList
 	Headers SearchTags200ResponseHeaders
 }
 

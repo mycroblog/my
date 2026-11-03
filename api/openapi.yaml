@@ -2389,9 +2389,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Relationship'
+                $ref: '#/components/schemas/RelationshipList'
         default:
           $ref: '#/components/responses/Problem'
   /accounts/search:
@@ -2447,9 +2445,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Account'
+                $ref: '#/components/schemas/AccountList'
         default:
           $ref: '#/components/responses/Problem'
   /accounts/suggestions:
@@ -2491,9 +2487,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AccountSuggestion'
+                $ref: '#/components/schemas/AccountSuggestionList'
         default:
           $ref: '#/components/responses/Problem'
   /accounts/{id}:
@@ -4152,9 +4146,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TagSuggestion'
+                $ref: '#/components/schemas/TagSuggestionList'
         default:
           $ref: '#/components/responses/Problem'
   /timelines/home:
@@ -11358,13 +11350,53 @@ components:
       description: The aliases of the user, oldest first; at most 5.
       type: object
       required:
-        - aliases
+        - items
       properties:
-        aliases:
+        items:
           type: array
           maxItems: 5
           items:
             $ref: '#/components/schemas/AccountAlias'
+    AccountList:
+      description: The accounts, best match first.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+    AccountSuggestionList:
+      description: The suggested accounts.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountSuggestion'
+    RelationshipList:
+      description: The relationships, in the order of the request.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Relationship'
+    TagSuggestionList:
+      description: The tags that match.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TagSuggestion'
     AccountBadge:
       description: |
         A badge that the account shows on its profile (ADR-0071): the badge of a role that the
@@ -11426,9 +11458,9 @@ components:
         - $ref: '#/components/schemas/PageInfo'
         - type: object
           required:
-            - accounts
+            - items
           properties:
-            accounts:
+            items:
               type: array
               items:
                 $ref: '#/components/schemas/Account'
@@ -16865,9 +16897,9 @@ components:
         - $ref: '#/components/schemas/PageInfo'
         - type: object
           required:
-            - domain_mutes
+            - items
           properties:
-            domain_mutes:
+            items:
               type: array
               items:
                 $ref: '#/components/schemas/DomainMute'
@@ -18770,9 +18802,9 @@ components:
         - $ref: '#/components/schemas/PageInfo'
         - type: object
           required:
-            - mutes
+            - items
           properties:
-            mutes:
+            items:
               type: array
               items:
                 $ref: '#/components/schemas/MutedAccount'

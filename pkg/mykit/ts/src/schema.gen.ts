@@ -7743,7 +7743,23 @@ export interface components {
         };
         /** @description The aliases of the user, oldest first; at most 5. */
         AccountAliasList: {
-            aliases: components["schemas"]["AccountAlias"][];
+            items: components["schemas"]["AccountAlias"][];
+        };
+        /** @description The accounts, best match first. */
+        AccountList: {
+            items: components["schemas"]["Account"][];
+        };
+        /** @description The suggested accounts. */
+        AccountSuggestionList: {
+            items: components["schemas"]["AccountSuggestion"][];
+        };
+        /** @description The relationships, in the order of the request. */
+        RelationshipList: {
+            items: components["schemas"]["Relationship"][];
+        };
+        /** @description The tags that match. */
+        TagSuggestionList: {
+            items: components["schemas"]["TagSuggestion"][];
         };
         /**
          * @description A badge that the account shows on its profile (ADR-0071): the badge of a role that the
@@ -7783,7 +7799,7 @@ export interface components {
         };
         /** @description A page of accounts. */
         AccountPage: components["schemas"]["PageInfo"] & {
-            accounts: components["schemas"]["Account"][];
+            items: components["schemas"]["Account"][];
         };
         /** @description The profile as the user typed it, for editing. */
         AccountSource: {
@@ -10948,7 +10964,7 @@ export interface components {
         };
         /** @description A page of domain mutes. */
         DomainMutePage: components["schemas"]["PageInfo"] & {
-            domain_mutes: components["schemas"]["DomainMute"][];
+            items: components["schemas"]["DomainMute"][];
         };
         /** @description The new content of a status. */
         EditStatusRequest: {
@@ -12122,7 +12138,7 @@ export interface components {
         };
         /** @description A page of mutes. */
         MutePage: components["schemas"]["PageInfo"] & {
-            mutes: components["schemas"]["MutedAccount"][];
+            items: components["schemas"]["MutedAccount"][];
         };
         /** @description An account that the viewer mutes, with the mute's settings. */
         MutedAccount: {
@@ -17023,7 +17039,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Relationship"][];
+                    "application/json": components["schemas"]["RelationshipList"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -17054,7 +17070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Account"][];
+                    "application/json": components["schemas"]["AccountList"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -17080,7 +17096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountSuggestion"][];
+                    "application/json": components["schemas"]["AccountSuggestionList"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -18512,7 +18528,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TagSuggestion"][];
+                    "application/json": components["schemas"]["TagSuggestionList"];
                 };
             };
             default: components["responses"]["Problem"];

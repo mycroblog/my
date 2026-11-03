@@ -579,7 +579,7 @@ describe("hints before posting", () => {
     server.use(
       http.get(`${apiBase}/accounts/relationships`, () => {
         asked = true;
-        return HttpResponse.json([{ ...relationshipFixture(remoteAccountFixture.id), followed_by: true }]);
+        return HttpResponse.json({ items: [{ ...relationshipFixture(remoteAccountFixture.id), followed_by: true }] });
       }),
     );
     const { user } = await renderApp();

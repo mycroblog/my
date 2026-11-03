@@ -107,7 +107,7 @@ async function signedInServer(page: Page) {
     route.fulfill(json({ access_token: "e2e-token", token_type: "Bearer", expires_in: 3600 })),
   );
   await page.route("**/api/v1/accounts/verify_credentials", (route) => route.fulfill(json(alice)));
-  await page.route("**/api/v1/accounts/relationships*", (route) => route.fulfill(json([relationship])));
+  await page.route("**/api/v1/accounts/relationships*", (route) => route.fulfill(json({ items: [relationship] })));
   await page.route(`**/api/v1/accounts/${bob.id}/follow`, (route) => {
     follows.push(bob.id);
     relationship = { ...relationship, following: true };

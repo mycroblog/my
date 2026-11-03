@@ -99,8 +99,8 @@ func TestPostSubscriptionsThroughAPI(t *testing.T) {
 	}
 	var subs clientapi.AccountPage
 	e.want(e.do(http.MethodGet, "/subscriptions", bob.token, nil, &subs), http.StatusOK, "subscriptions of bob")
-	if len(subs.Accounts) != 1 || subs.Accounts[0].Id != alice.id {
-		t.Errorf("subscriptions of bob = %+v, want alice", subs.Accounts)
+	if len(subs.Items) != 1 || subs.Items[0].Id != alice.id {
+		t.Errorf("subscriptions of bob = %+v, want alice", subs.Items)
 	}
 
 	// A remote account: 422 without a follow and while the follow awaits its server; the notify of

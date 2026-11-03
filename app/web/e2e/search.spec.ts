@@ -123,7 +123,7 @@ async function serveApi(page: Page) {
       if (acct === `@${carol.acct}` || acct === carol.acct) return json(route, carol);
       return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
     }
-    if (path === "/accounts/relationships") return json(route, [relationship]);
+    if (path === "/accounts/relationships") return json(route, { items: [relationship] });
     if (path === `/accounts/${carol.id}/follow` && route.request().method() === "POST") {
       changes.push("follow");
       relationship = { ...relationship, requested: true };

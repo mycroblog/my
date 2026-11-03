@@ -908,9 +908,11 @@ describe("the notifications page", () => {
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a2", unread_count: 0 });
     server.use(
       http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
-        HttpResponse.json(
-          new URL(request.url).searchParams.getAll("id").map((id) => relationshipFixture(id, { followed_by: true })),
-        ),
+        HttpResponse.json({
+          items: new URL(request.url).searchParams
+            .getAll("id")
+            .map((id) => relationshipFixture(id, { followed_by: true })),
+        }),
       ),
     );
     const { user, router } = await renderApp({ path: "/notifications?filter=follows" });

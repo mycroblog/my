@@ -291,13 +291,13 @@ async function signedInServer(
         return json(route, { rows: notificationRows });
       }
       case "GET /blocks":
-        return json(route, { accounts: [bob] });
+        return json(route, { items: [bob] });
       case "GET /mutes":
-        return json(route, { mutes: [{ account: bob, notifications: true }] });
+        return json(route, { items: [{ account: bob, notifications: true }] });
       case "GET /domain_mutes":
         // A long domain, and one in IDNA A-labels that the page shows with its U-labels too.
         return json(route, {
-          domain_mutes: [
+          items: [
             {
               domain: "a-very-long-subdomain-name-for-the-narrowest-screens.spam.example",
               created_at: "2026-10-17T10:00:00Z",
@@ -306,7 +306,7 @@ async function signedInServer(
           ],
         });
       case "GET /follow_requests":
-        return json(route, { accounts: [bob] });
+        return json(route, { items: [bob] });
       case "GET /exports":
         return json(route, {
           items: [

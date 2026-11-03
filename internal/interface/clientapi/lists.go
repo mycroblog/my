@@ -211,7 +211,7 @@ func (s *Server) ListListAccounts(ctx context.Context, req ListListAccountsReque
 	if err != nil {
 		return nil, err
 	}
-	page := AccountPage{Accounts: accounts}
+	page := AccountPage{Items: accounts}
 	if last >= 0 {
 		page.NextCursor = encodeCursor(ids[last])
 	}

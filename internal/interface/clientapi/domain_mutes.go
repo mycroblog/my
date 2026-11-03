@@ -37,9 +37,9 @@ func (s *Server) ListDomainMutes(ctx context.Context, req ListDomainMutesRequest
 		return nil, err
 	}
 	mutes, last := trim(mutes, q.limit)
-	page := DomainMutePage{DomainMutes: make([]DomainMute, len(mutes))}
+	page := DomainMutePage{Items: make([]DomainMute, len(mutes))}
 	for i, m := range mutes {
-		page.DomainMutes[i] = newDomainMute(m)
+		page.Items[i] = newDomainMute(m)
 	}
 	if last >= 0 {
 		page.NextCursor = encodeCursor(mutes[last].Domain)

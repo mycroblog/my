@@ -32,8 +32,6 @@ get:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: ../components/schemas/Relationship.yaml
+            $ref: ../components/schemas/RelationshipList.yaml
     default:
       $ref: ../components/responses/Problem.yaml

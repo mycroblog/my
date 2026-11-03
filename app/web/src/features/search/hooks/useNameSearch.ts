@@ -55,5 +55,5 @@ export function useNameSearch(text: string, enabled: boolean): NameSearch {
   if (!enabled || next === null) return { status: "idle" };
   if (result.isError) return { status: "error", message: errorMessage(result.error) };
   if (result.data === undefined) return { status: "loading" };
-  return { status: "done", accounts: result.data };
+  return { status: "done", accounts: result.data.items };
 }

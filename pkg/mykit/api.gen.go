@@ -4443,7 +4443,7 @@ type AccountAlias struct {
 
 // AccountAliasList The aliases of the user, oldest first; at most 5.
 type AccountAliasList struct {
-	Aliases []AccountAlias `json:"aliases"`
+	Items []AccountAlias `json:"items"`
 }
 
 // AccountBadge A badge that the account shows on its profile (ADR-0071): the badge of a role that the
@@ -4474,6 +4474,11 @@ type AccountFieldSource struct {
 	Value string `json:"value"`
 }
 
+// AccountList The accounts, best match first.
+type AccountList struct {
+	Items []Account `json:"items"`
+}
+
 // AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
 // `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
 // its posts stay where they are.
@@ -4498,7 +4503,7 @@ type AccountMoveOutcome string
 
 // AccountPage A page of accounts.
 type AccountPage struct {
-	Accounts []Account `json:"accounts"`
+	Items []Account `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -4547,6 +4552,11 @@ type AccountSuggestion struct {
 // AccountSuggestionSource Why the account is suggested: `featured` when the administrators feature it,
 // `recently_active` when it posted recently.
 type AccountSuggestionSource string
+
+// AccountSuggestionList The suggested accounts.
+type AccountSuggestionList struct {
+	Items []AccountSuggestion `json:"items"`
+}
 
 // AddAccountAliasRequest The account to add as an alias.
 type AddAccountAliasRequest struct {
@@ -8456,7 +8466,7 @@ type DomainMute struct {
 
 // DomainMutePage A page of domain mutes.
 type DomainMutePage struct {
-	DomainMutes []DomainMute `json:"domain_mutes"`
+	Items []DomainMute `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -10150,7 +10160,7 @@ type MuteDomainRequest struct {
 
 // MutePage A page of mutes.
 type MutePage struct {
-	Mutes []MutedAccount `json:"mutes"`
+	Items []MutedAccount `json:"items"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
@@ -11519,6 +11529,11 @@ type Relationship struct {
 	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
+// RelationshipList The relationships, in the order of the request.
+type RelationshipList struct {
+	Items []Relationship `json:"items"`
+}
+
 // RelationshipSeverance The follows that a `relationships_severed` tells of: the user lost them when the
 // moderators suspended a server (`domain_suspension`, `domain` is the server) or a remote
 // account (`account_suspension`, the notification's `account` is the account). Both
@@ -12480,6 +12495,11 @@ type TagSuggestion struct {
 
 	// StatusesCount How many posts of visibility `public`, `local`, or `unlisted` carry the hashtag now.
 	StatusesCount int64 `json:"statuses_count"`
+}
+
+// TagSuggestionList The tags that match.
+type TagSuggestionList struct {
+	Items []TagSuggestion `json:"items"`
 }
 
 // ThemeError One reason a theme cannot be saved. `code` is `unknown_token`, `duplicate_token`,
@@ -53793,7 +53813,7 @@ type GetRelationshipsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]Relationship
+	JSON200 *RelationshipList
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers200 the parsed response headers for an HTTP 200 response
@@ -53803,7 +53823,7 @@ type GetRelationshipsResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r GetRelationshipsResponse) GetJSON200() *[]Relationship {
+func (r GetRelationshipsResponse) GetJSON200() *RelationshipList {
 	return r.JSON200
 }
 
@@ -53858,7 +53878,7 @@ type SearchAccountsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]Account
+	JSON200 *AccountList
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers200 the parsed response headers for an HTTP 200 response
@@ -53868,7 +53888,7 @@ type SearchAccountsResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r SearchAccountsResponse) GetJSON200() *[]Account {
+func (r SearchAccountsResponse) GetJSON200() *AccountList {
 	return r.JSON200
 }
 
@@ -53923,7 +53943,7 @@ type ListAccountSuggestionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]AccountSuggestion
+	JSON200 *AccountSuggestionList
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers200 the parsed response headers for an HTTP 200 response
@@ -53933,7 +53953,7 @@ type ListAccountSuggestionsResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListAccountSuggestionsResponse) GetJSON200() *[]AccountSuggestion {
+func (r ListAccountSuggestionsResponse) GetJSON200() *AccountSuggestionList {
 	return r.JSON200
 }
 
@@ -73410,7 +73430,7 @@ type SearchTagsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]TagSuggestion
+	JSON200 *TagSuggestionList
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers200 the parsed response headers for an HTTP 200 response
@@ -73420,7 +73440,7 @@ type SearchTagsResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r SearchTagsResponse) GetJSON200() *[]TagSuggestion {
+func (r SearchTagsResponse) GetJSON200() *TagSuggestionList {
 	return r.JSON200
 }
 
@@ -85364,7 +85384,7 @@ func ParseGetRelationshipsResponse(rsp *http.Response) (*GetRelationshipsRespons
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []Relationship
+		var dest RelationshipList
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -85441,7 +85461,7 @@ func ParseSearchAccountsResponse(rsp *http.Response) (*SearchAccountsResponse, e
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []Account
+		var dest AccountList
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -85518,7 +85538,7 @@ func ParseListAccountSuggestionsResponse(rsp *http.Response) (*ListAccountSugges
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []AccountSuggestion
+		var dest AccountSuggestionList
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -108908,7 +108928,7 @@ func ParseSearchTagsResponse(rsp *http.Response) (*SearchTagsResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []TagSuggestion
+		var dest TagSuggestionList
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

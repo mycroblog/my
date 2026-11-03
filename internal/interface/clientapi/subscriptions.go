@@ -157,7 +157,7 @@ func (s *Server) ListSubscriptions(ctx context.Context, req ListSubscriptionsReq
 	if err != nil {
 		return nil, err
 	}
-	page := AccountPage{Accounts: accounts}
+	page := AccountPage{Items: accounts}
 	if last >= 0 {
 		page.NextCursor = encodeSubscriptionCursor(subs[last])
 	}

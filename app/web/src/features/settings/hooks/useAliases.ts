@@ -26,7 +26,7 @@ export function aliasName(alias: AccountAlias): string {
 /** The aliases, oldest first, which the route has loaded. */
 export function useAliasList(): readonly AccountAlias[] {
   const api = useApi();
-  return useSuspenseQuery(aliasesQueryOptions(api)).data.aliases;
+  return useSuspenseQuery(aliasesQueryOptions(api)).data.items;
 }
 
 /** Removing an alias from its row. */
@@ -89,7 +89,7 @@ export function useAddAliasForm(): AddAliasForm {
     onSuccess: (list) => {
       cacheAliases(api, queryClient, list);
       // The alias the user added is the newest, and the list is oldest first.
-      const added = list.aliases.at(-1);
+      const added = list.items.at(-1);
       setAcct("");
       setStatus(
         added === undefined ? undefined : t("client:account_move.aliases.added", { name: isolate(aliasName(added)) }),

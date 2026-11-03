@@ -21,7 +21,7 @@ import {
 /** GET /accounts/search answering `accounts`. */
 function nameSearch(accounts: Schemas["Account"][]) {
   return http.get(`${apiBase}/accounts/search`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json(accounts)),
+    withViewer(request, () => HttpResponse.json({ items: accounts })),
   );
 }
 
