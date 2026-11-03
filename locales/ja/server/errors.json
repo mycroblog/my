@@ -439,6 +439,10 @@
     "defaultMessage": "リアルタイム更新は現在利用できません。しばらくしてからやり直してください。",
     "description": "Title of the HTTP 503 API error when the server is shutting down and accepts no new real-time update streams."
   },
+  "errors.target_outranks_actor": {
+    "defaultMessage": "このアカウントのロールはあなたより下位ではないため、この操作はできません。",
+    "description": "API error title for HTTP 403 when a staff member moderates, reveals the private data of, or recovers the sign-in of an account whose role is higher than or equal to theirs, their own account included."
+  },
   "errors.too_long": {
     "defaultMessage": "{max, plural, other {{name} は # 文字以内にしてください。}}",
     "description": "Detail of an API error (HTTP 422) when a text property of the request body is too long. {name} is the property name, e.g. display_name (not translated); {max} is the limit in characters."
@@ -566,6 +570,10 @@
   "errors.list_members.too_many": {
     "defaultMessage": "このリストに入れられる人数の上限に達しています。先に誰かをリストから外してください。",
     "description": "API error title for HTTP 422 when the user adds another account to a list beyond the limit of members of a list."
+  },
+  "errors.last_administrator": {
+    "defaultMessage": "このサーバーの管理者はこのアカウントだけです。先に別のユーザーを管理者にしてください。",
+    "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
   },
   "errors.list_members.not_followed": {
     "defaultMessage": "リストに追加できるのはフォロー中のアカウントだけです。",

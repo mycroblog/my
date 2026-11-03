@@ -367,7 +367,8 @@ func (s *Service) dropChallenge(ctx context.Context, key string) {
 // byUserID ("" for the CLI), for a user who lost their authenticator and recovery codes, and
 // records it in the audit log (two_factor_disabled) in the same transaction. It fails with
 // account.ErrNotFound for an unknown account, ErrNotLocalAccount for an account without a user,
-// and ErrTwoFactorNotEnabled when the user has none.
+// ErrTargetOutranksActor when byUserID does not rank above the account's user, and
+// ErrTwoFactorNotEnabled when the user has none.
 func (s *AccountAdmin) DisableTwoFactor(ctx context.Context, accountID, byUserID string) error {
 	actor, err := s.d.Accounts.FindByID(ctx, accountID)
 	if err != nil {
@@ -375,6 +376,9 @@ func (s *AccountAdmin) DisableTwoFactor(ctx context.Context, accountID, byUserID
 	}
 	if actor.Local == nil || actor.Local.UserID == "" {
 		return ErrNotLocalAccount
+	}
+	if err := checkActOn(ctx, s.d.Repository, byUserID, actor.Local.UserID); err != nil {
+		return err
 	}
 	e, err := s.d.Repository.FindActiveTOTPEnrollment(ctx, actor.Local.UserID)
 	if errors.Is(err, ErrNotFound) {

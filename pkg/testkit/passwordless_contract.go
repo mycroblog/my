@@ -91,6 +91,12 @@ func passwordlessConfirmsWithAPasskey(t *testing.T, e *accountEnv) {
 	if err := e.identity.DeleteOwnAccount(ctx, userID, e.confirmWithPasskey(t, userID, stranger)); !errors.Is(err, appidentity.ErrInvalidPasskey) {
 		t.Errorf("DeleteOwnAccount(unknown passkey) = %v, want ErrInvalidPasskey", err)
 	}
+	// The last administrator cannot delete their account.
+	if _, err := e.identity.CreateAdmin(ctx, appidentity.CreateAdminInput{
+		Username: "other", Email: "other@example.com", Password: "a brand new password",
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if err := e.identity.DeleteOwnAccount(ctx, userID, e.confirmWithPasskey(t, userID, phone)); err != nil {
 		t.Errorf("DeleteOwnAccount(passkey) = %v", err)
 	}

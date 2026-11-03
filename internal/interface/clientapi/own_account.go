@@ -198,6 +198,9 @@ func (s *Server) DeleteOwnAccount(ctx context.Context, req DeleteOwnAccountReque
 		return DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
 	}
 	err = s.o.OwnAccount.DeleteOwnAccount(ctx, v.UserID, c)
+	if errors.Is(err, appidentity.ErrLastAdmin) {
+		return DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse(s.lastAdministrator(ctx)), nil
+	}
 	if p := s.passkeyProblem(ctx, err); p != nil {
 		return DeleteOwnAccountdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}

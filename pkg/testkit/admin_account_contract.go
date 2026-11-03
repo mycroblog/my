@@ -295,8 +295,24 @@ func adminAccountDetails(t *testing.T, e *adminAccountEnv) {
 	}
 }
 
+// staff returns a user who ranks above every other user of e: a new administrator, while carol
+// loses the role that CreateAdmin gave her.
+func (e *adminAccountEnv) staff(t *testing.T) string {
+	t.Helper()
+	ctx := t.Context()
+	u, err := e.identity.CreateAdmin(ctx, appidentity.CreateAdminInput{Username: "staff", Email: "staff@example.com", Password: adminAccountPassword})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.identity.RevokeRole(ctx, appidentity.RoleChangeInput{UserID: e.carolUser, RoleKey: identity.RoleAdmin}); err != nil {
+		t.Fatal(err)
+	}
+	return u.User.ID
+}
+
 func adminAccountReveals(t *testing.T, e *adminAccountEnv) {
 	ctx := t.Context()
+	staff := e.staff(t)
 	audit := func() []moderation.AuditEntry {
 		t.Helper()
 		got, err := e.mod.AuditLog(ctx, appmoderation.AuditQuery{Action: moderation.AuditRevealedPrivateData}, 10)
@@ -310,7 +326,7 @@ func adminAccountReveals(t *testing.T, e *adminAccountEnv) {
 	}
 
 	e.clock.Advance(time.Second)
-	carol, err := e.admin.Reveal(ctx, e.carol, NamedID("mod-user"))
+	carol, err := e.admin.Reveal(ctx, e.carol, staff)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -334,7 +350,7 @@ func adminAccountReveals(t *testing.T, e *adminAccountEnv) {
 	if len(entries) != 1 {
 		t.Fatalf("audit log = %+v, want one entry", entries)
 	}
-	if g := entries[0]; g.ActorKind != moderation.AuditActorUser || g.ActorUserID != NamedID("mod-user") || g.TargetKind != moderation.AuditTargetAccount ||
+	if g := entries[0]; g.ActorKind != moderation.AuditActorUser || g.ActorUserID != staff || g.TargetKind != moderation.AuditTargetAccount ||
 		g.TargetID != e.carol || g.TargetLabel != "@carol" || g.SourceEventID != "" || !g.OccurredAt.Equal(e.clock.Now()) {
 		t.Errorf("entry = %+v", g)
 	}
@@ -357,11 +373,11 @@ func adminAccountReveals(t *testing.T, e *adminAccountEnv) {
 		t.Fatal(err)
 	}
 	for _, id := range []string{e.alfred, instance.Account.ID} {
-		if _, err := e.admin.Reveal(ctx, id, NamedID("mod-user")); !errors.Is(err, appidentity.ErrNotLocalAccount) {
+		if _, err := e.admin.Reveal(ctx, id, staff); !errors.Is(err, appidentity.ErrNotLocalAccount) {
 			t.Errorf("Reveal(%s) = %v, want ErrNotLocalAccount", id, err)
 		}
 	}
-	if _, err := e.admin.Reveal(ctx, e.ids.NewID(), NamedID("mod-user")); !errors.Is(err, appaccount.ErrNotFound) {
+	if _, err := e.admin.Reveal(ctx, e.ids.NewID(), staff); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("Reveal(unknown) = %v, want ErrNotFound", err)
 	}
 	if entries := audit(); len(entries) != 2 {
@@ -371,18 +387,19 @@ func adminAccountReveals(t *testing.T, e *adminAccountEnv) {
 
 func adminAccountDisablesTwoFactor(t *testing.T, e *adminAccountEnv) {
 	ctx := t.Context()
-	if err := e.admin.DisableTwoFactor(ctx, e.alice, NamedID("mod-user")); !errors.Is(err, appidentity.ErrTwoFactorNotEnabled) {
+	staff := e.staff(t)
+	if err := e.admin.DisableTwoFactor(ctx, e.alice, staff); !errors.Is(err, appidentity.ErrTwoFactorNotEnabled) {
 		t.Errorf("DisableTwoFactor(without TOTP) = %v, want ErrTwoFactorNotEnabled", err)
 	}
-	if err := e.admin.DisableTwoFactor(ctx, e.alfred, NamedID("mod-user")); !errors.Is(err, appidentity.ErrNotLocalAccount) {
+	if err := e.admin.DisableTwoFactor(ctx, e.alfred, staff); !errors.Is(err, appidentity.ErrNotLocalAccount) {
 		t.Errorf("DisableTwoFactor(remote) = %v, want ErrNotLocalAccount", err)
 	}
-	if err := e.admin.DisableTwoFactor(ctx, e.ids.NewID(), NamedID("mod-user")); !errors.Is(err, appaccount.ErrNotFound) {
+	if err := e.admin.DisableTwoFactor(ctx, e.ids.NewID(), staff); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("DisableTwoFactor(unknown) = %v, want ErrNotFound", err)
 	}
 	e.enableTOTP(t, appidentity.Registration{User: identity.User{ID: e.aliceUser}, AccountID: e.alice})
 	e.clock.Advance(time.Second)
-	if err := e.admin.DisableTwoFactor(ctx, e.alice, NamedID("mod-user")); err != nil {
+	if err := e.admin.DisableTwoFactor(ctx, e.alice, staff); err != nil {
 		t.Fatalf("DisableTwoFactor = %v", err)
 	}
 	if st, err := e.identity.TwoFactorStatus(ctx, e.aliceUser); err != nil || st.Enabled {
@@ -392,7 +409,7 @@ func adminAccountDisablesTwoFactor(t *testing.T, e *adminAccountEnv) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 1 || got[0].ActorUserID != NamedID("mod-user") || got[0].TargetKind != moderation.AuditTargetAccount ||
+	if len(got) != 1 || got[0].ActorUserID != staff || got[0].TargetKind != moderation.AuditTargetAccount ||
 		got[0].TargetID != e.alice || got[0].TargetLabel != "@alice" || !got[0].OccurredAt.Equal(e.clock.Now()) {
 		t.Errorf("audit log = %+v, want one two_factor_disabled entry on @alice", got)
 	}
