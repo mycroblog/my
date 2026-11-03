@@ -30,6 +30,9 @@ type RegistrationRepository interface {
 	// is pending, and reports whether it did.
 	TransitionPendingRegistrationState(ctx context.Context, tx uow.Tx, s identity.UserRegistrationState) (bool, error)
 	FindRegistrationApplication(ctx context.Context, userID string) (identity.RegistrationApplication, error)
+	// RegistrationDecisionNote returns the note of the decision on an application, "" when it
+	// has no decision or the decision has no note.
+	RegistrationDecisionNote(ctx context.Context, applicationID string) (string, error)
 	FindRegistrationState(ctx context.Context, userID string) (identity.UserRegistrationState, error)
 	// ListRegistrations returns the users in a registration state with their applications,
 	// longest in the state first, after the position after (all of them for the zero
@@ -97,6 +100,9 @@ type RegistrationEntry struct {
 	// it is gone.
 	AccountID string
 	Username  string
+	// DecisionNote is the note of the decision on the registration, "" without one. Registration
+	// reads it; a pending registration has none.
+	DecisionNote string
 }
 
 // Errors of the registration use cases.
@@ -723,6 +729,9 @@ func (s *Service) Registration(ctx context.Context, userID string) (Registration
 		return RegistrationEntry{}, err
 	}
 	if e.AccountID, e.Username, err = s.localAccountOf(ctx, userID); err != nil {
+		return RegistrationEntry{}, err
+	}
+	if e.DecisionNote, err = s.d.Repository.RegistrationDecisionNote(ctx, app.ID); err != nil {
 		return RegistrationEntry{}, err
 	}
 	return e, nil

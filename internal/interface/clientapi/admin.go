@@ -57,7 +57,7 @@ type InstanceHealth interface {
 	Find(ctx context.Context, domain string) (federation.InstanceHealth, error)
 	List(ctx context.Context, state federation.InstanceState, after string, limit int) ([]federation.InstanceHealth, error)
 	Events(ctx context.Context, domain, before string, limit int) ([]federation.AvailabilityEvent, error)
-	MarkAvailable(ctx context.Context, domain string) (federation.InstanceHealth, error)
+	MarkAvailable(ctx context.Context, domain, byUserID string) (federation.InstanceHealth, error)
 }
 
 // requirePermission returns the 403 problem of a viewer whose roles do not grant p, or nil when
@@ -188,7 +188,11 @@ func (s *Server) MarkInstanceAvailable(ctx context.Context, req MarkInstanceAvai
 	} else if p != nil {
 		return MarkInstanceAvailabledefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	h, err := s.o.InstanceHealth.MarkAvailable(ctx, normalizeDomain(req.Domain))
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	h, err := s.o.InstanceHealth.MarkAvailable(ctx, normalizeDomain(req.Domain), v.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: mark %s available: %w", req.Domain, err)
 	}

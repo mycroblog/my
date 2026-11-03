@@ -919,25 +919,26 @@ SELECT c.id FROM oauth_clients c
 WHERE c.registration = 'dynamic'
   AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id)
   AND (
-    (c.created_at < ?1 AND NOT EXISTS (
+    (c.created_at < ?1 AND c.created_at >= ?2 AND NOT EXISTS (
       SELECT 1 FROM oauth_authorization_codes a
       JOIN oauth_authorization_code_redemptions r ON r.code_hash = a.code_hash
       WHERE a.oauth_client_id = c.id))
     OR
-    (c.created_at < ?2 AND NOT EXISTS (
+    (c.created_at < ?3 AND NOT EXISTS (
       SELECT 1 FROM oauth_access_tokens t
       WHERE t.oauth_client_id = c.id
-        AND (t.issued_at >= ?2
-          OR EXISTS (SELECT 1 FROM oauth_token_family_last_used u WHERE u.family_id = t.family_id AND u.last_used_at >= ?2)
-          OR ((t.expires_at > ?3 OR t.refresh_expires_at > ?3)
+        AND (t.issued_at >= ?3
+          OR EXISTS (SELECT 1 FROM oauth_token_family_last_used u WHERE u.family_id = t.family_id AND u.last_used_at >= ?3)
+          OR ((t.expires_at > ?4 OR t.refresh_expires_at > ?4)
             AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id)))))
   )
 ORDER BY c.created_at, c.id
-LIMIT ?4
+LIMIT ?5
 `
 
 type ListUnusedDynamicOAuthClientsParams struct {
 	UnredeemedBefore int64
+	RecordsKeptSince int64
 	IdleBefore       int64
 	Now              int64
 	BatchLimit       int64
@@ -945,12 +946,14 @@ type ListUnusedDynamicOAuthClientsParams struct {
 
 // ListUnusedDynamicOAuthClients returns the IDs of the dynamically registered clients that have no
 // deletion and are unused (ADR-0090 section 1), oldest first: no authorization code was exchanged
-// and the client was registered before unredeemed_before, or it has no token that was issued after
+// and the client was registered before unredeemed_before but not before records_kept_since (the
+// exchanged codes of an older client may be purged, so that it can no longer tell), or it has no token that was issued after
 // idle_before, whose family was used after idle_before (oauth_token_family_last_used), or that is
 // still usable at now.
 func (q *Queries) ListUnusedDynamicOAuthClients(ctx context.Context, arg ListUnusedDynamicOAuthClientsParams) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, listUnusedDynamicOAuthClients,
 		arg.UnredeemedBefore,
+		arg.RecordsKeptSince,
 		arg.IdleBefore,
 		arg.Now,
 		arg.BatchLimit,

@@ -351,6 +351,10 @@ const (
 	AuditLinkCardDomainFetchStopped  AuditAction = "link_card_domain_fetch_stopped"
 	AuditLinkCardDomainImagesStopped AuditAction = "link_card_domain_images_stopped"
 	AuditLinkCardDomainRuleRemoved   AuditAction = "link_card_domain_rule_removed"
+	// AuditInstanceMarkedAvailable: an operator cleared the failures of a remote server, so that
+	// deliveries to it resume. The event of the health is its own record, which the entry does not
+	// point at.
+	AuditInstanceMarkedAvailable AuditAction = "instance_marked_available"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -453,6 +457,7 @@ var auditActions = []struct {
 	{AuditLinkCardDomainFetchStopped, AuditTargetLinkCardDomain},
 	{AuditLinkCardDomainImagesStopped, AuditTargetLinkCardDomain},
 	{AuditLinkCardDomainRuleRemoved, AuditTargetLinkCardDomain},
+	{AuditInstanceMarkedAvailable, AuditTargetDomain},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

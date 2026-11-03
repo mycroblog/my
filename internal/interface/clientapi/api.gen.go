@@ -347,6 +347,7 @@ const (
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionInstanceMarkedAvailable         AdminAuditAction = "instance_marked_available"
 	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
 	AdminAuditActionLinkCardDomainFetchStopped      AdminAuditAction = "link_card_domain_fetch_stopped"
@@ -478,6 +479,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
+		return true
+	case AdminAuditActionInstanceMarkedAvailable:
 		return true
 	case AdminAuditActionInviteCreated:
 		return true
@@ -4743,8 +4746,9 @@ type AdminAccountDetail struct {
 	// `approved`. Omitted for a remote account.
 	RegistrationState *AdminAccountRegistrationState `json:"registration_state,omitempty"`
 
-	// Reports The newest 20 reports of the account, newest first.
-	Reports []AdminReport `json:"reports"`
+	// Reports The newest 20 reports of the account, newest first; omitted unless the viewer also has
+	// the `manage_reports` permission.
+	Reports *[]AdminReport `json:"reports,omitempty"`
 
 	// Restrictions What the account's own actions take away now (data-model §5.2), in a fixed order.
 	// The domain actions on its domain are listed apart.
@@ -4818,6 +4822,10 @@ type AdminAccountPrivateData struct {
 
 // AdminAccountRegistration The registration application of a local account.
 type AdminAccountRegistration struct {
+	// DecisionNote The moderators' note on the decision, as plain text; omitted while the registration is
+	// pending and when the decision has no note.
+	DecisionNote *string `json:"decision_note,omitempty"`
+
 	// Invite The invite that a local account signed up with, and who created it, which invited the user.
 	Invite *AdminAccountInvite `json:"invite,omitempty"`
 
@@ -4990,7 +4998,8 @@ type AdminAppealPage struct {
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 // suppression of the primary email address of the account's user), `account_moved` (a limited
 // local account moved to another local account, which does not inherit the limit). On a `domain`:
-// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+// cleared the failures of the server). On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 // `user` (a registration):
 // `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -5064,7 +5073,8 @@ type AdminAuditEntry struct {
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 	// suppression of the primary email address of the account's user), `account_moved` (a limited
 	// local account moved to another local account, which does not inherit the limit). On a `domain`:
-	// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+	// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+	// cleared the failures of the server). On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 	// `user` (a registration):
 	// `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -5147,8 +5157,9 @@ type AdminAuditEntry struct {
 	SourceEventId *string `json:"source_event_id,omitempty"`
 
 	// TargetExists Whether the target is still there to look at. It is `false` for an account, a report,
-	// an appeal, or a sign-up block that is gone (erased past its retention), and for a
-	// role, a custom emoji, a webhook, or a relay that was deleted, which only `target_label`
+	// an appeal, or a sign-up block that is gone (erased past its retention), for a role, a
+	// login provider, a custom emoji, a custom emoji request, a webhook, or a relay that was
+	// deleted, and for a link card domain whose rule was removed, which only `target_label`
 	// names now. It is `true` for the other kinds of targets, which are never removed.
 	TargetExists bool `json:"target_exists"`
 
@@ -5867,11 +5878,16 @@ type AdminRegistration struct {
 	// AccountId The user's local account; omitted when it is gone.
 	AccountId *Id `json:"account_id,omitempty"`
 
-	// Email The user's primary email address; empty when there is none.
-	Email string `json:"email"`
+	// DecisionNote The moderators' note on the decision, as plain text; omitted while the registration is
+	// pending and when the decision has no note.
+	DecisionNote *string `json:"decision_note,omitempty"`
 
-	// EmailVerified Whether the user confirmed the email address.
-	EmailVerified bool `json:"email_verified"`
+	// Email The user's primary email address, shown only while the registration is pending, for its
+	// review; omitted when the user has none and once the registration is decided.
+	Email *string `json:"email,omitempty"`
+
+	// EmailVerified Whether the user confirmed the email address; present together with `email`.
+	EmailVerified *bool `json:"email_verified,omitempty"`
 
 	// InviteId The invite the user signed up with; omitted for none.
 	InviteId *Id `json:"invite_id,omitempty"`
@@ -11515,7 +11531,7 @@ type RecoveryCodes struct {
 
 // RegistrationDecisionRequest A moderator's decision on a registration.
 type RegistrationDecisionRequest struct {
-	// Note A note for the moderators, as plain text; omitted or empty for none.
+	// Note A note for the moderators, as plain text, which the registration shows as `decision_note`; omitted or empty for none.
 	Note *string `json:"note,omitempty"`
 }
 

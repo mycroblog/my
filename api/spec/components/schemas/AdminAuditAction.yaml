@@ -8,7 +8,8 @@ description: |
   a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
   suppression of the primary email address of the account's user), `account_moved` (a limited
   local account moved to another local account, which does not inherit the limit). On a `domain`:
-  `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+  `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+  cleared the failures of the server). On a `report`: `report_assigned`,
   `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
   `user` (a registration):
   `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -162,3 +163,4 @@ enum:
   - link_card_domain_fetch_stopped
   - link_card_domain_images_stopped
   - link_card_domain_rule_removed
+  - instance_marked_available

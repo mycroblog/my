@@ -140,6 +140,8 @@ type AdminAccountDetail struct {
 	AdminAccount
 	// Application is the user's registration application; nil without one.
 	Application *identity.RegistrationApplication
+	// DecisionNote is the note of the decision on the application, "" without one.
+	DecisionNote string
 	// Invite is the invite the user signed up with, whose creator invited them (ADR-0108 §5);
 	// nil without one.
 	Invite *identity.Invite
@@ -503,6 +505,9 @@ func (s *AccountAdmin) Detail(ctx context.Context, accountID string) (AdminAccou
 	switch {
 	case err == nil:
 		out.Application = &app
+		if out.DecisionNote, err = repo.RegistrationDecisionNote(ctx, app.ID); err != nil {
+			return AdminAccountDetail{}, err
+		}
 	case !errors.Is(err, ErrNotFound):
 		return AdminAccountDetail{}, err
 	}
