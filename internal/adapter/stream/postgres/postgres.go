@@ -25,6 +25,7 @@ import (
 	"sync"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -41,6 +42,8 @@ const ListenerApplicationName = "my stream listener"
 type Options struct {
 	// Pool sends the payloads. Required.
 	Pool *pgxpool.Pool
+	// Exec runs the statement that sends a payload; empty means Pool's.
+	Exec func(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 	// ListenURL is the connection string of the listening connections, in any form pgx accepts
 	// (the stream_postgres_url setting). Empty means the connection settings of Pool. It must not
 	// go through a pooler in transaction mode.
@@ -54,7 +57,7 @@ type Options struct {
 
 // Bus is a stream.Bus on PostgreSQL LISTEN / NOTIFY. It is safe for concurrent use.
 type Bus struct {
-	pool     *pgxpool.Pool
+	exec     func(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 	listen   *pgx.ConnConfig
 	channel  string
 	reporter kernel.ErrorReporter
@@ -85,12 +88,16 @@ func New(o Options) (*Bus, error) {
 	if channel == "" {
 		channel = DefaultChannel
 	}
-	return &Bus{pool: o.Pool, listen: cfg, channel: channel, reporter: o.Reporter}, nil
+	exec := o.Exec
+	if exec == nil {
+		exec = o.Pool.Exec
+	}
+	return &Bus{exec: exec, listen: cfg, channel: channel, reporter: o.Reporter}, nil
 }
 
 // Send implements stream.Bus.
 func (b *Bus) Send(ctx context.Context, payload []byte) error {
-	if _, err := b.pool.Exec(ctx, "SELECT pg_notify($1, $2)", b.channel, string(payload)); err != nil {
+	if _, err := b.exec(ctx, "SELECT pg_notify($1, $2)", b.channel, string(payload)); err != nil {
 		return fmt.Errorf("stream/postgres: notify: %w", err)
 	}
 	return nil

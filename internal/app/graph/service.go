@@ -40,6 +40,8 @@ type InteractionPolicy interface {
 // follow needs approval). *appaccount.Service implements it.
 type Accounts interface {
 	FindByID(ctx context.Context, id string) (appaccount.Actor, error)
+	// MoveState returns the move in force of an account; appaccount.ErrNotFound when it has none.
+	MoveState(ctx context.Context, accountID string) (appaccount.MoveState, error)
 }
 
 // Deps are the ports and settings a Service uses.

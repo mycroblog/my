@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -26,7 +27,10 @@ import (
 // DB is a PostgreSQL connection pool. It implements uow.UnitOfWork.
 type DB struct {
 	pool *pgxpool.Pool
-	opts uow.Options
+	// conns uses the pool with the bound on waiting for a connection; everything but the
+	// statistics and the configuration goes through it.
+	conns *connections
+	opts  uow.Options
 	// tx is the transaction that the reads of a copy made by in run in, nil for the pool.
 	tx pgx.Tx
 	// tracer records the spans of the transactions and, through the pool's QueryTracer, of
@@ -56,8 +60,14 @@ func Open(ctx context.Context, url string, opts uow.Options) (*DB, error) {
 		pool.Close()
 		return nil, fmt.Errorf("postgres: open: %w", err)
 	}
-	return &DB{pool: pool, opts: opts, tracer: ref}, nil
+	return &DB{pool: pool, conns: &connections{pool: pool}, opts: opts, tracer: ref}, nil
 }
+
+// SetAcquireTimeout bounds how long a statement or a transaction waits for a connection of the
+// pool (database_acquire_timeout); 0 means no bound. Call it before using the database. Once the
+// bound passes, the wait fails with an error wrapping kernel.ErrDatabaseBusy. It does not bound
+// what runs on the connection.
+func (d *DB) SetAcquireTimeout(wait time.Duration) { d.conns.wait = wait }
 
 // SetTracer records a span of every transaction attempt and every query on the pool, of the
 // repositories and of the adapters that share it, on t (ADR-0063 §1).
@@ -66,9 +76,15 @@ func (d *DB) SetTracer(t kernel.Tracer) { d.tracer.set(t) }
 // Close closes every connection of the pool.
 func (d *DB) Close() { d.pool.Close() }
 
-// Pool returns the connection pool, for the adapters that share the database's connections
-// (stream/postgres sends its notifications on it).
+// Pool returns the connection pool, for what reads its configuration (stream/postgres connects its
+// listener with the same settings).
 func (d *DB) Pool() *pgxpool.Pool { return d.pool }
+
+// Exec runs a statement outside a transaction, for the adapters that share the database's
+// connections (stream/postgres sends its notifications with it).
+func (d *DB) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+	return d.conns.Exec(ctx, sql, args...)
+}
 
 // Ready reports whether the database is reachable and its schema is applied, for the
 // readiness check. The schema counts as applied when every table that schema/postgres
@@ -76,7 +92,7 @@ func (d *DB) Pool() *pgxpool.Pool { return d.pool }
 // (ADR-0023), so a missing table means the schema was never applied or is out of date.
 func (d *DB) Ready(ctx context.Context) error {
 	want := schema.Tables(schema.Postgres)
-	rows, err := d.pool.Query(ctx,
+	rows, err := d.conns.Query(ctx,
 		"SELECT table_name::text FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = ANY($1)", want)
 	if err != nil {
 		return fmt.Errorf("postgres: ready: %w", err)
@@ -115,7 +131,7 @@ func (d *DB) Tx(ctx context.Context, fn func(tx uow.Tx) error) error {
 func (d *DB) attempt(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
 	sctx, span := dbtrace.StartTx(ctx, d.tracer.get(), dbtrace.SystemPostgreSQL)
 	defer func() { dbtrace.End(span, err) }()
-	pgTx, err := d.pool.BeginTx(sctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	pgTx, err := d.conns.BeginTx(sctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return fmt.Errorf("postgres: begin: %w", err)
 	}

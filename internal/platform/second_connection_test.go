@@ -19,6 +19,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite"
 	"github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
@@ -133,4 +134,71 @@ func TestOneConnectionIsEnough(t *testing.T) {
 		t.Error("no notification came of the follow, the favourite, the boost, or the mention")
 	}
 	do(http.MethodPost, "/admin/accounts/"+bob.id+"/actions", alice.token, map[string]any{"kind": "suspend"}, nil)
+}
+
+// TestDatabaseAcquireTimeoutAnswers503 fills a pool of one connection: requests that wait out
+// database_acquire_timeout answer 503 with Retry-After on the client API and on the surfaces that
+// answer a bare status, and work again once the connection is free.
+func TestDatabaseAcquireTimeoutAnswers503(t *testing.T) {
+	dbURL, err := url.Parse(newPostgresDatabase(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := dbURL.Query()
+	q.Set("pool_max_conns", "1")
+	dbURL.RawQuery = q.Encode()
+	cfg := loadConfig(t, map[string]string{
+		"MY_DB": "postgres", "MY_DATABASE_URL": dbURL.String(), "MY_WEB_ORIGIN": webOrigin,
+		"MY_DATABASE_ACQUIRE_TIMEOUT": "200ms",
+	})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	admin, err := app.Identity.CreateAdmin(t.Context(), identity.CreateAdminInput{
+		Username: "alice", Email: "alice@example.com", Password: "correct horse battery staple",
+	})
+	if err != nil {
+		t.Fatalf("CreateAdmin: %v", err)
+	}
+	token := issueTokens(t, app, admin.User.ID, "").AccessToken
+	h := app.Handler()
+	get := func(path string, header map[string]string) *http.Response {
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
+		req.RemoteAddr = "192.0.2.1:1234"
+		for k, v := range header {
+			req.Header.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec.Result()
+	}
+	bearer := map[string]string{"Authorization": "Bearer " + token}
+	webfinger := "/.well-known/webfinger?resource=acct:alice@" + cfg.AccountDomain
+
+	held, done, finished := make(chan struct{}), make(chan struct{}), make(chan error, 1)
+	go func() {
+		finished <- app.UnitOfWork.Tx(context.Background(), func(uow.Tx) error {
+			close(held)
+			<-done
+			return nil
+		})
+	}()
+	<-held
+	for name, res := range map[string]*http.Response{
+		"client API": get("/api/v1/notifications", bearer),
+		"webfinger":  get(webfinger, nil),
+	} {
+		if res.StatusCode != http.StatusServiceUnavailable || res.Header.Get("Retry-After") != "5" {
+			t.Errorf("%s while the pool is full = %d, Retry-After %q; want 503 and 5", name, res.StatusCode, res.Header.Get("Retry-After"))
+		}
+	}
+	close(done)
+	if err := <-finished; err != nil {
+		t.Fatal(err)
+	}
+	if res := get("/api/v1/notifications", bearer); res.StatusCode != http.StatusOK {
+		t.Errorf("client API once free = %d", res.StatusCode)
+	}
 }

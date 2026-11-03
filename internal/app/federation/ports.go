@@ -30,6 +30,9 @@ type Repository interface {
 	// InsertOutboundDocument stores the body of an outbound activity unless it has one, and
 	// reports whether it did: the first body stays.
 	InsertOutboundDocument(ctx context.Context, tx uow.Tx, outboundActivityID string, document []byte, builtAt time.Time) (bool, error)
+	// InsertReceivedActivityAnswer records in tx that this server answers the received activity
+	// activityURI, and reports whether it did: false when it has answered it before.
+	InsertReceivedActivityAnswer(ctx context.Context, tx uow.Tx, activityURI federation.IRI, at time.Time) (bool, error)
 	// InsertDelivery adds an inbox to an outbound activity unless it has it, and reports whether
 	// it did.
 	InsertDelivery(ctx context.Context, tx uow.Tx, d federation.Delivery) (bool, error)

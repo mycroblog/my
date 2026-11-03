@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/uow"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
@@ -58,6 +59,7 @@ func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 		{"FailsWithoutAGrant", roomsNoGrant, ""},
 		{"AdmitsOnWhatCommitted", roomsAdmission, ""},
 		{"KeepsTheNewerSession", roomsNewerSession, ""},
+		{"RunsItsJobsAgain", roomsJobsAgain, ""},
 		{"LeavesAClaimToItsEvaluation", roomsClaimedElsewhere, ""},
 		{"KeepsTheNewerSessionOnTheMediaPath", roomsNewerMediaSession, voice.TransportLiveKit},
 		{"StreamsTheRoom", roomsStream, ""},
@@ -826,6 +828,94 @@ func roomsSweep(t *testing.T, e *roomsEnv) {
 	}
 	if applied != 1 {
 		t.Errorf("close jobs = %d, want 1", applied)
+	}
+}
+
+// roomsJobsAgain runs the jobs of a room again after later changes, as `my job retry` of a dead
+// job does: the room as it is now decides, not what the job says.
+func roomsJobsAgain(t *testing.T, e *roomsEnv) {
+	ctx := t.Context()
+	lastApply := func() queue.Job {
+		t.Helper()
+		results := e.jobs.Results()
+		for i := len(results) - 1; i >= 0; i-- {
+			if results[i].Job.Type == appvoice.JobApply {
+				return results[i].Job
+			}
+		}
+		t.Fatal("no voice.apply ran")
+		return queue.Job{}
+	}
+	host, listener, guest := e.account(true), e.account(false), e.account(false)
+	r := e.open(t, host, appvoice.SettingsInput{}).Room.ID
+	openJob := lastApply()
+	session := e.join(t, listener, r).Session
+	e.join(t, guest, r)
+
+	// A grant of the right to speak run again after it was taken away takes it away.
+	if _, err := e.svc.Grant(ctx, host, r, listener); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.Speak(ctx, listener, r); err != nil {
+		t.Fatal(err)
+	}
+	grantJob := lastApply()
+	allowed, revoked := "speak:"+session+":true", "speak:"+session+":false"
+	if e.transport.count(allowed) != 1 {
+		t.Fatalf("calls of %s = %d, want 1", allowed, e.transport.count(allowed))
+	}
+	e.svc.Apply(ctx, grantJob)
+	if e.transport.count(allowed) != 2 {
+		t.Errorf("after running the grant again, calls of %s = %d, want 2", allowed, e.transport.count(allowed))
+	}
+	if _, err := e.svc.Listen(ctx, listener, r); err != nil {
+		t.Fatal(err)
+	}
+	before := e.transport.count(revoked)
+	e.svc.Apply(ctx, grantJob)
+	if e.transport.count(allowed) != 2 || e.transport.count(revoked) != before+1 {
+		t.Errorf("after the right was taken away, calls of %s = %d, %s = %d, want 2, %d",
+			allowed, e.transport.count(allowed), revoked, e.transport.count(revoked), before+1)
+	}
+
+	// A check of a block that is in force takes the account out once, and one of a block that
+	// was lifted takes nobody out.
+	if err := e.svc.CheckBlock(ctx, host, guest); err != nil {
+		t.Fatal(err)
+	}
+	e.wantParticipant(t, r, guest, true)
+	e.members.set(func() { e.members.blocks[[2]string{host, guest}] = true })
+	for range 2 {
+		if err := e.svc.CheckBlock(ctx, host, guest); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.wantParticipant(t, r, guest, false)
+
+	// A check of a room's host does nothing to an eligible host, however often it runs.
+	for range 2 {
+		if err := e.svc.CheckHosts(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if err := e.svc.CheckAccount(ctx, host); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.wantParticipant(t, r, host, true)
+
+	// Opening a room that ended meanwhile opens nothing.
+	opens := e.transport.count("open:" + r)
+	e.svc.Apply(ctx, openJob)
+	if got := e.transport.count("open:" + r); got != opens+1 {
+		t.Errorf("open calls of an open room run again = %d, want %d", got, opens+1)
+	}
+	if err := e.svc.End(ctx, host, r); err != nil {
+		t.Fatal(err)
+	}
+	opens = e.transport.count("open:" + r)
+	e.svc.Apply(ctx, openJob)
+	if got := e.transport.count("open:" + r); got != opens {
+		t.Errorf("open calls of an ended room run again = %d, want %d", got, opens)
 	}
 }
 

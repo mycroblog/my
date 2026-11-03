@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"strconv"
 	"sync"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -159,8 +160,15 @@ func (s *Server) requestError(w http.ResponseWriter, r *http.Request, err error)
 }
 
 // responseError answers an error that a handler returned, or a response that cannot be
-// written, with a 500 problem that reveals nothing about the error.
+// written, with a 500 problem that reveals nothing about the error, or a 503 with Retry-After when
+// the database had no free connection in time.
 func (s *Server) responseError(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, kernel.ErrDatabaseBusy) {
+		s.o.Logger.WarnContext(r.Context(), "client api request found the database busy", slog.Any("error", err))
+		w.Header().Set("Retry-After", strconv.Itoa(int(kernel.DatabaseBusyRetryAfter.Seconds())))
+		s.writeProblem(w, r, http.StatusServiceUnavailable, ProblemTypeBlank, s.localizer(r).ServerErrorsServiceUnavailable(), "")
+		return
+	}
 	s.o.Logger.ErrorContext(r.Context(), "client api handler failed", slog.Any("error", err))
 	if s.o.ErrorReporter != nil {
 		s.o.ErrorReporter.Report(r.Context(), kernel.NewErrorEvent(err, "")) // the reporter names the route

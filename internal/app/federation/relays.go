@@ -724,6 +724,10 @@ func (r *Relays) ReceiveFollow(ctx context.Context, in *InboxActivity, instance 
 	}
 	now := kernel.Normalize(r.d.Clock.Now())
 	return r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		first, err := r.rec.firstAnswer(ctx, tx, in.Received.ActivityURI, now)
+		if err != nil || !first {
+			return err
+		}
 		return r.send(ctx, tx, federation.OutboundActivity{
 			Type: t, ActorAccountID: instance.Account.ID, ObjectKind: federation.OutboundRelay, ObjectID: objectID, CreatedAt: now,
 		}, func(act federation.OutboundActivity) federation.ActivityDocument {

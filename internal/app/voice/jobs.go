@@ -61,7 +61,8 @@ type applyPayload struct {
 	Account string `json:"account,omitempty"`
 	// Participation names the participation whose current session applyMute mutes.
 	Participation string `json:"participation,omitempty"`
-	// Speak is whether the session of applySpeak may publish audio.
+	// Speak is whether the session of applySpeak may publish audio when the change committed. The
+	// job applies the participant's role when it runs; it stays so that jobs in the queue decode.
 	Speak bool `json:"speak,omitempty"`
 	// By is the account that muted the session of applyMute.
 	By string `json:"by,omitempty"`
@@ -97,15 +98,27 @@ func (s *Service) Apply(ctx context.Context, j queue.Job) queue.Result {
 	var err error
 	switch p.Op {
 	case applyOpen:
-		err = t.Open(ctx, room)
+		// A room that ended meanwhile stays closed, when a dead job runs again.
+		err = s.reopen(ctx, room)
 	case applySpeak:
+		// The room is the source of truth: a job that runs after a later change, as a dead job
+		// that runs again does, applies the participant's role now, and nothing to a session that
+		// is gone.
+		speaker, live, lerr := s.liveParticipant(ctx, p.Room, p.Session)
+		if lerr != nil {
+			return queue.Retry(0, lerr)
+		}
+		if !live {
+			return queue.Done()
+		}
+		speak := speaker.Role == voice.RoleSpeaker
 		var reconnect bool
-		reconnect, err = t.SetSpeaking(ctx, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak)
+		reconnect, err = t.SetSpeaking(ctx, room, Session{ID: p.Session, AccountID: p.Account}, speak)
 		if err == nil {
 			// The client of the session connects again with a new grant, which its stream
 			// sends (grant, ADR-0101 §2). A transport may report it only on the first call, so
 			// a retry after a failed send sends it still.
-			err = s.reconnect(ctx, j.ID, room, Session{ID: p.Session, AccountID: p.Account}, p.Speak, reconnect)
+			err = s.reconnect(ctx, j.ID, room, Session{ID: p.Session, AccountID: p.Account}, speak, reconnect)
 		}
 	case applyMute:
 		session := p.Session

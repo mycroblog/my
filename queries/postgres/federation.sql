@@ -240,6 +240,21 @@ WHERE state = 'unavailable' OR failure_days > 0 GROUP BY state;
 SELECT domain, state, since, failure_days, last_failure_day FROM instance_health WHERE domain = @domain
 FOR UPDATE;
 
+-- InsertReceivedActivityAnswer inserts nothing when the activity has been answered.
+-- name: InsertReceivedActivityAnswer :execrows
+INSERT INTO received_activity_answers (activity_uri, answered_at)
+VALUES (@activity_uri, @answered_at)
+ON CONFLICT (activity_uri) DO NOTHING;
+
+-- DeleteReceivedActivityAnswersBefore removes at most @batch_limit records of answers made before
+-- @answered_before.
+-- name: DeleteReceivedActivityAnswersBefore :execrows
+DELETE FROM received_activity_answers
+WHERE activity_uri IN (
+  SELECT a.activity_uri FROM received_activity_answers a
+  WHERE a.answered_at < @answered_before ORDER BY a.answered_at LIMIT @batch_limit
+);
+
 -- InsertRemoteFollowTombstone inserts nothing when the Undo is already recorded.
 -- name: InsertRemoteFollowTombstone :execrows
 INSERT INTO remote_follow_tombstones (activity_uri, actor_uri, object_uri, received_at)

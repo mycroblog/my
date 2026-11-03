@@ -31,7 +31,7 @@ func (d *DB) reader() *postgresgen.Queries {
 	if d.tx != nil {
 		return postgresgen.New(d.tx)
 	}
-	return postgresgen.New(d.pool)
+	return postgresgen.New(d.conns)
 }
 
 // in returns a copy of d whose reads run in tx, for the repositories' read methods that take a
@@ -42,7 +42,7 @@ func (d *DB) in(tx uow.Tx) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DB{pool: d.pool, opts: d.opts, tx: pgTx, tracer: d.tracer}, nil
+	return &DB{pool: d.pool, conns: d.conns, opts: d.opts, tx: pgTx, tracer: d.tracer}, nil
 }
 
 // Timestamps read back from timestamptz are in the session's time zone; the domain uses UTC.

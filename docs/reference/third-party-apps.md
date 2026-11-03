@@ -165,6 +165,7 @@ The endpoints for registering and authorizing apps are limited as well: user app
 An administrator may also cap a single client across all its users (the setting `oauth_client_rate_limits`, see the [configuration reference](configuration.md)).
 The numbers belong to the server and the operator, so read them from the responses instead of hard-coding them.
 
+- A request answered `503 Service Unavailable` with a `Retry-After` header found the server busy. Wait that long before retrying.
 - A request over a limit is answered `429 Too Many Requests` with a `Retry-After` header (in seconds). Wait that long before retrying; back off if it happens again.
   The OAuth endpoints answer an OAuth error body (`temporarily_unavailable`); `/api/v1` answers a problem document.
 - Responses of the API also carry `RateLimit-Policy` and `RateLimit` fields

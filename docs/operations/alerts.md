@@ -416,7 +416,7 @@ Fix:
 
 ### MyDBPoolWaiting
 
-Work waits for a free database connection, or gave up waiting (timeouts are PostgreSQL only). Follow [MyDBPoolSaturated](#mydbpoolsaturated);
+Work waits for a free database connection, or gave up waiting after [`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) (timeouts are PostgreSQL only): requests answer `503`, and jobs run again later. Follow [MyDBPoolSaturated](#mydbpoolsaturated);
 also check that the database itself is not at its connection limit.
 
 ### MyDatabaseStorageLarge

@@ -4,6 +4,7 @@ package sqlite
 
 import (
 	"context"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/db/sqlite/sqlitegen"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
@@ -22,6 +23,26 @@ func (r *FederationRepository) InsertRemoteFollowTombstone(ctx context.Context, 
 		ReceivedAt: toMillis(t.ReceivedAt),
 	})
 	return n == 1, wrap(err, "insert remote follow tombstone")
+}
+
+// InsertReceivedActivityAnswer implements federation.Repository.
+func (r *FederationRepository) InsertReceivedActivityAnswer(ctx context.Context, tx uow.Tx, activityURI federation.IRI, at time.Time) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertReceivedActivityAnswer(ctx, sqlitegen.InsertReceivedActivityAnswerParams{ActivityUri: string(activityURI), AnsweredAt: toMillis(at)})
+	return n == 1, wrap(err, "insert received activity answer")
+}
+
+// DeleteReceivedActivityAnswersBefore implements federation.PurgeRepository.
+func (r *FederationRepository) DeleteReceivedActivityAnswersBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteReceivedActivityAnswersBefore(ctx, sqlitegen.DeleteReceivedActivityAnswersBeforeParams{AnsweredBefore: toMillis(t), BatchLimit: int64(limit)})
+	return n, wrap(err, "delete received activity answers")
 }
 
 // LiveRemoteFollowTombstone implements federation.InboxRepository.
