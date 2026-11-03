@@ -94,7 +94,8 @@ CREATE TABLE status_revision_emojis (
 -- The purge of unreferenced remote custom emoji looks up the references to an emoji.
 CREATE INDEX status_revision_emojis_emoji_id ON status_revision_emojis (emoji_id);
 
--- Event: the deletion of a status. It outlives the purge as the tombstone of the URI.
+-- Event: the deletion of a status. It outlives the purge as the tombstone of the URI, except a
+-- deletion by retention, which is no tombstone and goes after 30 days once nothing names the status.
 CREATE TABLE status_deletions (
   status_id TEXT NOT NULL PRIMARY KEY,
   uri TEXT NOT NULL,
@@ -107,6 +108,7 @@ CREATE INDEX status_deletions_uri ON status_deletions (uri);
 -- A deletion other than by retention keeps its URI from coming back, so there is at most one.
 -- A remote status deleted by retention may be fetched again and deleted again (ADR-0034).
 CREATE UNIQUE INDEX status_deletions_tombstone_uri ON status_deletions (uri) WHERE origin <> 'retention';
+CREATE INDEX status_deletions_retention ON status_deletions (deleted_at) WHERE origin = 'retention';
 
 -- Resource: a hashtag, unique by its normalized name. name_normalized compares byte by byte (the
 -- default BINARY), so that the prefix search of hashtags (ADR-0092 §1) reads the range

@@ -4,7 +4,9 @@ package testkit
 
 import (
 	"errors"
+	"fmt"
 	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -49,6 +51,7 @@ func AdminAccountContract(t *testing.T, newHarness AdminAccountFactory) {
 		{"SearchesAccounts", adminAccountSearches},
 		{"ShowsTheDetails", adminAccountDetails},
 		{"RevealsAndAudits", adminAccountReveals},
+		{"KeepsOneAdministratorInRaces", adminAccountKeepsOneAdministratorInRaces},
 		{"DisablesTwoFactorAndAudits", adminAccountDisablesTwoFactor},
 		{"LiftsEmailSuppressionsAndAudits", adminAccountLiftsEmailSuppressions},
 	}
@@ -308,6 +311,73 @@ func (e *adminAccountEnv) staff(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return u.User.ID
+}
+
+// adminAccountKeepsOneAdministratorInRaces races two of the paths that remove an administrator, each
+// on another of the only two administrators who can sign in: exactly one succeeds in every round, and
+// the other is told that the one it would remove is the last. carol, the suspended administrator of
+// the environment, never counts.
+func adminAccountKeepsOneAdministratorInRaces(t *testing.T, e *adminAccountEnv) {
+	ctx := t.Context()
+	const password = "correct horse battery staple"
+	policy := appmoderation.NewAccountPolicy(e.h.Moderation, e.accounts, e.clock)
+	ids := e.newIdentityWith(func(d *appidentity.Deps) { d.Logins, d.LoginsTx = policy, policy })
+	mod := appmoderation.NewService(appmoderation.Deps{
+		UnitOfWork: e.h.UnitOfWork, Repository: e.h.Moderation, Accounts: e.accounts, Clock: e.clock, IDs: e.ids,
+		Lifecycles: e.accounts, Ranks: ids,
+	})
+	type admin struct{ user, account string }
+	create := func(name string) admin {
+		t.Helper()
+		r, err := ids.CreateAdmin(ctx, appidentity.CreateAdminInput{Username: name, Email: name + "@example.com", Password: password})
+		if err != nil {
+			t.Fatalf("CreateAdmin(%s) = %v", name, err)
+		}
+		return admin{r.User.ID, r.AccountID}
+	}
+	remove := map[string]func(a admin) error{
+		"delete": func(a admin) error {
+			return ids.DeleteOwnAccount(ctx, a.user, appidentity.Confirmation{Password: password})
+		},
+		"revoke": func(a admin) error {
+			_, err := ids.RevokeRole(ctx, appidentity.RoleChangeInput{UserID: a.user, RoleKey: identity.RoleAdmin})
+			return err
+		},
+		"suspend": func(a admin) error {
+			_, err := mod.IssueAccountAction(ctx, appmoderation.AccountActionInput{
+				TargetAccountID: a.account, Kind: moderation.ActionSuspend, ReasonCategory: moderation.CategoryOther,
+			})
+			return err
+		},
+	}
+	isLast := func(err error) bool {
+		return errors.Is(err, appidentity.ErrLastAdmin) || errors.Is(err, appmoderation.ErrLastAdministrator)
+	}
+	survivor := create("root")
+	round := 0
+	for range 4 {
+		for _, pair := range [][2]string{
+			{"delete", "delete"}, {"revoke", "revoke"}, {"suspend", "suspend"},
+			{"delete", "revoke"}, {"revoke", "suspend"}, {"suspend", "delete"},
+		} {
+			round++
+			admins := [2]admin{survivor, create(fmt.Sprintf("second%d", round))}
+			var errs [2]error
+			var wg sync.WaitGroup
+			for i := range admins {
+				wg.Go(func() { errs[i] = remove[pair[i]](admins[i]) })
+			}
+			wg.Wait()
+			switch {
+			case errs[0] == nil && isLast(errs[1]):
+				survivor = admins[1]
+			case errs[1] == nil && isLast(errs[0]):
+				survivor = admins[0]
+			default:
+				t.Fatalf("round %d, %v: %v, %v; want one success and one refusal", round, pair, errs[0], errs[1])
+			}
+		}
+	}
 }
 
 func adminAccountReveals(t *testing.T, e *adminAccountEnv) {

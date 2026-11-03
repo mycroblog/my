@@ -38,6 +38,8 @@ type RoleRepository interface {
 	InsertRoleRevocation(ctx context.Context, tx uow.Tx, r identity.RoleRevocation) error
 	// ListRoleHolderIDs returns the users who hold the role now, by ID.
 	ListRoleHolderIDs(ctx context.Context, roleID string) ([]string, error)
+	// ListRoleHolderIDsTx is ListRoleHolderIDs read inside tx.
+	ListRoleHolderIDsTx(ctx context.Context, tx uow.Tx, roleID string) ([]string, error)
 	// RolePermissions returns inside tx the permissions of the role, in the order of
 	// identity.AllPermissions.
 	RolePermissions(ctx context.Context, tx uow.Tx, roleID string) ([]identity.Permission, error)
@@ -158,14 +160,11 @@ func (s *Service) GrantRole(ctx context.Context, in RoleChangeInput) (bool, erro
 // RevokeRole revokes a role from a user and reports whether it changed anything: revoking a
 // role that the user does not hold does nothing and records nothing. It fails with ErrNotFound
 // for an unknown user or role, with ErrRoleOutranksActor when the role is above every role of
-// in.ByUserID, with ErrLastAdmin when the user is the last administrator (IsLastAdministrator)
-// or the only holder of the admin role, and with ErrRoleManagedByPlan for the role of a supporter plan.
+// in.ByUserID, with ErrLastAdmin when the user is the last administrator (IsLastAdministratorTx),
+// and with ErrRoleManagedByPlan for the role of a supporter plan.
 func (s *Service) RevokeRole(ctx context.Context, in RoleChangeInput) (bool, error) {
 	c, err := s.prepareRoleChange(ctx, in)
 	if err != nil {
-		return false, err
-	}
-	if err := s.refuseLastAdministrator(ctx, in.RoleKey, in.UserID); err != nil {
 		return false, err
 	}
 	changed := false
@@ -186,12 +185,8 @@ func (s *Service) RevokeRole(ctx context.Context, in RoleChangeInput) (bool, err
 			return err
 		}
 		if role.Key == identity.RoleAdmin {
-			n, err := s.d.Repository.CountRoleHolders(ctx, tx, role.ID)
-			if err != nil {
+			if err := s.refuseLastAdministratorTx(ctx, tx, in.UserID); err != nil {
 				return err
-			}
-			if n <= 1 {
-				return ErrLastAdmin
 			}
 		}
 		r := identity.RoleRevocation{GrantID: grantID, RevokedByUserID: in.ByUserID, RevokedAt: c.at}

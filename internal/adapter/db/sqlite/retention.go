@@ -219,3 +219,89 @@ func (r *AccountRepository) PrunePastProfiles(ctx context.Context, tx uow.Tx, ac
 	}
 	return nil
 }
+
+// DeleteSupersededStatusCreates implements federation.PurgeRepository.
+func (r *FederationRepository) DeleteSupersededStatusCreates(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	ids, err := q.ListSupersededStatusCreates(ctx, sqlitegen.ListSupersededStatusCreatesParams{CreatedBefore: toMillis(t), BatchLimit: int64(limit)})
+	if err != nil {
+		return 0, wrap(err, "list superseded status creates")
+	}
+	return int64(len(ids)), deleteOutboundActivities(ctx, q, ids)
+}
+
+// DeleteExpiredOutboundActivities implements federation.PurgeRepository.
+func (r *FederationRepository) DeleteExpiredOutboundActivities(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	ids, err := q.ListExpiredOutboundActivities(ctx, sqlitegen.ListExpiredOutboundActivitiesParams{CreatedBefore: toMillis(t), BatchLimit: int64(limit)})
+	if err != nil {
+		return 0, wrap(err, "list expired outbound activities")
+	}
+	return int64(len(ids)), deleteOutboundActivities(ctx, q, ids)
+}
+
+// deleteOutboundActivities deletes activities with their children, children first.
+func deleteOutboundActivities(ctx context.Context, q *sqlitegen.Queries, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	list, err := jsonList(ids)
+	if err != nil {
+		return err
+	}
+	return runSteps(ctx, list, "delete outbound activities",
+		q.DeleteAttemptsOfOutboundActivities, q.DeleteDeliveriesOfOutboundActivities,
+		q.DeleteDocumentsOfOutboundActivities, q.DeleteCompletionsOfOutboundActivities, q.DeleteOutboundActivities)
+}
+
+// DeleteNodeInfoObservationsBefore implements federation.PurgeRepository.
+func (r *FederationRepository) DeleteNodeInfoObservationsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteNodeInfoObservationsBefore(ctx, sqlitegen.DeleteNodeInfoObservationsBeforeParams{
+		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), ObservedBefore: toMillis(t), BatchLimit: int64(limit),
+	})
+	return n, wrap(err, "delete nodeinfo observations")
+}
+
+// DeleteAvailabilityEventsBefore implements federation.PurgeRepository.
+func (r *FederationRepository) DeleteAvailabilityEventsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteAvailabilityEventsBefore(ctx, sqlitegen.DeleteAvailabilityEventsBeforeParams{
+		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), OccurredBefore: toMillis(t), BatchLimit: int64(limit),
+	})
+	return n, wrap(err, "delete availability events")
+}
+
+// DeleteRetentionDeletionsBefore implements content.RetentionRepository.
+func (r *StatusRepository) DeleteRetentionDeletionsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteRetentionDeletionsBefore(ctx, sqlitegen.DeleteRetentionDeletionsBeforeParams{DeletedBefore: toMillis(t), BatchLimit: int64(limit)})
+	return n, wrap(err, "delete retention deletions")
+}
+
+// DeleteHandleVerificationsBefore implements account.ProfilePruneRepository.
+func (r *AccountRepository) DeleteHandleVerificationsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.DeleteHandleVerificationsBefore(ctx, sqlitegen.DeleteHandleVerificationsBeforeParams{
+		IDBefore: kernel.UUIDv7Floor(t.Add(time.Millisecond)), CheckedBefore: toMillis(t), BatchLimit: int64(limit),
+	})
+	return n, wrap(err, "delete handle verifications")
+}

@@ -32,7 +32,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		FanOutSize: a.fanOutSize,
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs,
 		Passwords: identity.NewPasswordHasher(identity.DefaultArgon2Params, 0), Accounts: a.Accounts,
-		Logins: a.AccountPolicy, RateLimiter: a.RateLimiter, Subscriptions: liveSubscriptions{a},
+		Logins: a.AccountPolicy, LoginsTx: a.AccountPolicy, RateLimiter: a.RateLimiter, Subscriptions: liveSubscriptions{a},
 		// TOTP secrets are sealed like actor keys (ADR-0019 §6); sign-in challenges live in the KV store.
 		Sealer: a.Sealer, KV: a.KV,
 		// Passkeys sign in instead of the password (FR-004); their ceremonies' state is sealed too.

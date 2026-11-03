@@ -67,6 +67,13 @@ func (p *AccountPolicy) OwnRestrictionsTx(ctx context.Context, tx uow.Tx, accoun
 	return p.repo.AccountRestrictionsInEffectTx(ctx, tx, accountID, p.clock.Now())
 }
 
+// LoginRestrictedTx reports whether an account's own actions forbid it to log in as LoginRestricted
+// does, read in tx.
+func (p *AccountPolicy) LoginRestrictedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
+	rs, err := p.OwnRestrictionsTx(ctx, tx, accountID)
+	return slices.Contains(rs, moderation.RestrictLogin), err
+}
+
 // RejectsMediaTx reports whether the media of a domain are rejected as RejectsMedia does, read
 // in tx.
 func (p *FederationPolicy) RejectsMediaTx(ctx context.Context, tx uow.Tx, domain string) (bool, error) {

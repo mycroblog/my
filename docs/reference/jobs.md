@@ -50,7 +50,7 @@ A job type can also be registered or do its work only with some settings; **Need
 | `federation.refresh_actors` | Walks the stale remote actors in batches and refreshes those that local accounts follow. | Schedule | Default | Next run |
 | `federation.observe_instance` | Reads the NodeInfo of a server seen for the first time. | A document from a new server being stored | Default. A server without NodeInfo ends the job. | Safe |
 | `federation.probe_instances` | Fetches the NodeInfo of unavailable servers, 50 at a time, and marks those that answer as available again. | Schedule | Default | Next run |
-| `federation.purge` | Deletes the inbox and delivery records past their retention. | Schedule | Default | Next run |
+| `federation.purge` | Deletes the inbox and delivery records past their retention: most after 30 days (the first delivery of a post stays until 30 days after the post or its author is deleted), and what is known about other servers after 90 days. | Schedule | Default | Next run |
 
 ## Posts, media, and link cards
 
@@ -63,7 +63,7 @@ A job type can also be registered or do its work only with some settings; **Need
 | `content.fetch_link_card` | Fetches the card of the URL a post links. A busy host, or a host that answers 429 or 503, postpones the job without counting as a failure. A `robots.txt` that cannot be read retries an hour later. Details are in [Link previews](../operations/link-previews.md). | A post created or revised, after a delay for a remote post | Default, for failures of this server's stores | Safe |
 | `content.cleanup_link_cards` | Deletes the cards no post refers to and the images no card uses. | Schedule | Default | Next run |
 | `content.auto_delete_statuses` | Deletes local posts past their authors' automatic deletion policies, as their authors would. | Schedule, then itself for the next batch | Default | Next run |
-| `content.purge_remote_statuses` | Deletes remote posts past their retention, in batches. | Schedule, then itself | Default | Next run |
+| `content.purge_remote_statuses` | Deletes remote posts past their retention, in batches, and after 30 days the records of those deletions that no interaction still needs. | Schedule, then itself | Default | Next run |
 | `content.purge_relayed_statuses` | Deletes the posts that only relays brought in past their retention, in batches. | Schedule, then itself | Default | Next run |
 | `content.purge_remote_emojis` | Deletes the remote custom emoji nothing refers to, in batches. | Schedule, then itself | Default | Next run |
 
@@ -73,7 +73,7 @@ A job type can also be registered or do its work only with some settings; **Need
 | --- | --- | --- | --- | --- |
 | `account.execute_deletions` | Deletes the accounts whose scheduled deletion is due, from a ban or from the owner's request, and the accounts that their owners deactivated 30 days ago. An account that came back, or whose deletion was cancelled meanwhile, is left alone. | Schedule | Default | Next run |
 | `account.erase_deleted` | Erases the data of deleted accounts, local and remote, in bounded batches. | Schedule, then itself | Default | Next run |
-| `account.prune_remote_profiles` | Shrinks the profile history of remote accounts that nothing local relates to, in batches. | Schedule, then itself | Default | Next run |
+| `account.prune_remote_profiles` | Shrinks the profile history of remote accounts that nothing local relates to, in batches, and deletes checks of remote handles after 90 days, keeping the newest of each account. | Schedule, then itself | Default | Next run |
 | `graph.cleanup_mutes` | Deletes the mutes that have expired. | Schedule | Default | Next run |
 | `graph.migrate_follows` | Moves one page of the relationships of a moved account, waiting 10 seconds between pages to spread its deliveries. | An account move being recorded | Default. A step whose data is gone is dead at once. | Safe. It does nothing once the move is cancelled or replaced. While the move is in force, a run much later also moves the accounts that follow, block, or mute the account by then. |
 | `identity.process_import` | Carries out one batch of a user's data import and records each item's result. An item that keeps failing is recorded as failed after 5 tries, and the import goes on. | A user's import, then itself | Default | Safe |

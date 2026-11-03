@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -51,14 +52,61 @@ func (s *Service) MayActOn(ctx context.Context, byUserID, targetUserID string) (
 	return mayActOn(ctx, s.d.Repository, byUserID, targetUserID)
 }
 
-// refuseLastAdministrator fails with ErrLastAdmin when taking the role with roleKey from userID
-// would leave no active administrator. The count inside the transaction of a revocation guards
-// against a concurrent one; this adds the holders who have left, whom that count includes.
-func (s *Service) refuseLastAdministrator(ctx context.Context, roleKey, userID string) error {
-	if roleKey != identity.RoleAdmin {
-		return nil
+// IsLastAdministratorTx locks the admin role and reports, in tx, whether userID holds it and no other
+// holder can sign in: their account is deleted, or moderation keeps them from signing in. Every path
+// that removes an administrator (a moderation action, a role change, deleting the account) calls it
+// in its transaction before the removal, so such paths run one at a time and each sees what the one
+// before it committed. An instance without the built-in roles has no administrator to protect.
+func (s *Service) IsLastAdministratorTx(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
+	role, err := s.d.Repository.LockRole(ctx, tx, identity.RoleAdmin)
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
 	}
-	last, err := s.IsLastAdministrator(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	holders, err := s.d.Repository.ListRoleHolderIDsTx(ctx, tx, role.ID)
+	if err != nil {
+		return false, err
+	}
+	if !slices.Contains(holders, userID) {
+		return false, nil
+	}
+	for _, holder := range holders {
+		if holder == userID {
+			continue
+		}
+		can, err := s.canSignInTx(ctx, tx, holder)
+		if err != nil {
+			return false, err
+		}
+		if can {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+// canSignInTx reports, in tx, whether the account of userID is active and moderation does not keep it
+// from signing in.
+func (s *Service) canSignInTx(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
+	st, err := s.d.Accounts.UserLifecycleTx(ctx, tx, userID)
+	if errors.Is(err, account.ErrNotFound) {
+		return false, nil
+	}
+	if err != nil || !st.Active() {
+		return false, err
+	}
+	if s.d.LoginsTx == nil {
+		return true, nil
+	}
+	restricted, err := s.d.LoginsTx.LoginRestrictedTx(ctx, tx, st.AccountID)
+	return !restricted, err
+}
+
+// refuseLastAdministratorTx fails with ErrLastAdmin when IsLastAdministratorTx.
+func (s *Service) refuseLastAdministratorTx(ctx context.Context, tx uow.Tx, userID string) error {
+	last, err := s.IsLastAdministratorTx(ctx, tx, userID)
 	if err != nil {
 		return err
 	}
@@ -66,86 +114,4 @@ func (s *Service) refuseLastAdministrator(ctx context.Context, roleKey, userID s
 		return ErrLastAdmin
 	}
 	return nil
-}
-
-// otherAdministrators returns the holders of the admin role other than userID whom moderation does
-// not keep from signing in, and whether userID holds the role. An instance without the built-in
-// roles has no administrator to protect.
-func (s *Service) otherAdministrators(ctx context.Context, userID string) (others []string, holds bool, err error) {
-	holders, err := s.RoleHolders(ctx, identity.RoleAdmin)
-	if errors.Is(err, ErrNotFound) {
-		return nil, false, nil
-	}
-	if err != nil {
-		return nil, false, err
-	}
-	for _, holder := range holders {
-		if holder == userID {
-			holds = true
-			continue
-		}
-		la, err := s.d.Accounts.LocalAccountOfUser(ctx, holder)
-		if errors.Is(err, account.ErrNotFound) {
-			continue
-		}
-		if err != nil {
-			return nil, false, err
-		}
-		restricted, err := s.loginRestricted(ctx, la.AccountID)
-		if err != nil {
-			return nil, false, err
-		}
-		if !restricted {
-			others = append(others, holder)
-		}
-	}
-	return others, holds, nil
-}
-
-// IsLastAdministrator reports whether userID holds the admin role and no other holder can sign in:
-// their account is deleted or moderation keeps them from signing in, so that the instance has no
-// administrator left without userID.
-func (s *Service) IsLastAdministrator(ctx context.Context, userID string) (bool, error) {
-	others, holds, err := s.otherAdministrators(ctx, userID)
-	if err != nil || !holds {
-		return false, err
-	}
-	for _, holder := range others {
-		st, err := s.d.Accounts.UserLifecycle(ctx, holder)
-		if err != nil && !errors.Is(err, account.ErrNotFound) {
-			return false, err
-		}
-		if err == nil && st.Active() {
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-// guardLastAdministrator returns the guard of the deletion of userID's account: it locks the admin
-// role, so that two administrators who delete their accounts at once take turns and the second one
-// sees the first one's deletion, and fails with ErrLastAdmin when no other administrator is left.
-func (s *Service) guardLastAdministrator(ctx context.Context, userID string) (func(tx uow.Tx) error, error) {
-	others, holds, err := s.otherAdministrators(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	if !holds {
-		return nil, nil
-	}
-	return func(tx uow.Tx) error {
-		if _, err := s.d.Repository.LockRole(ctx, tx, identity.RoleAdmin); err != nil {
-			return err
-		}
-		for _, holder := range others {
-			st, err := s.d.Accounts.UserLifecycleTx(ctx, tx, holder)
-			if err != nil && !errors.Is(err, account.ErrNotFound) {
-				return err
-			}
-			if err == nil && st.Active() {
-				return nil
-			}
-		}
-		return ErrLastAdmin
-	}, nil
 }
