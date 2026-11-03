@@ -320,7 +320,7 @@ func adminEmojiUsage(w io.Writer) {
   my admin emoji delete [-config <file>] <emoji id>
   my admin emoji requests list|approve|reject ...   (see my admin emoji requests -h)
 
-The custom emoji of this instance (ADR-0051), which posts and profiles use as
+The custom emoji of this instance, which posts and profiles use as
 :shortcode:, and those of other servers that posts and profiles brought in.
 
 create registers a local emoji with an image: a PNG, a GIF, or a WebP of at most
@@ -345,6 +345,6 @@ Every operation is recorded in the audit log as the CLI's, as the same operation
 of the admin screen and the admin API (/api/v1/admin/custom_emojis) is.
 
 requests reviews the requests of the users whose roles grant
-create_custom_emojis (ADR-0070).
+create_custom_emojis.
 `)
 }

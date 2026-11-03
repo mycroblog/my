@@ -19,7 +19,7 @@ func TestLoginProvidersOnlyCommands(t *testing.T) {
 	if code != 0 || !strings.Contains(stdout, "set login_providers_only = true") || !strings.Contains(stdout, "no login provider is enabled, so it does not apply") {
 		t.Errorf("set without a provider = %d %q %q", code, stdout, stderr)
 	}
-	code, stdout, stderr = runLoginProviderCmd(t, "s3cret-client-secret\n", "add", "-kind", "oidc", "-name", "Example SSO", "-issuer", "https://sso.example", "-client-id", "my-client")
+	code, stdout, stderr = runLoginProviderCmd(t, "s3cret-client-secret\n", "create", "-kind", "oidc", "-name", "Example SSO", "-issuer", "https://sso.example", "-client-id", "my-client")
 	m := addedLoginProvider.FindStringSubmatch(strings.SplitAfterN(stdout, "\n", 3)[0] + strings.SplitAfterN(stdout, "\n", 3)[1])
 	if code != 0 || m == nil || !strings.Contains(stdout, "sign-in is limited to 1 login provider(s); 1 active user(s) have no link") {
 		t.Fatalf("add under the setting = %d %q %q", code, stdout, stderr)

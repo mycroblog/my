@@ -77,3 +77,43 @@ func TestRunningGuideLayoutNamesRealJobTypes(t *testing.T) {
 		}
 	}
 }
+
+// TestJobTypesAreTheRegisteredOnes keeps the static list equal to the handlers, on a server with
+// the settings that add types and on one without them. Only stream.sweep and metrics.snapshot need
+// an outside service.
+func TestJobTypesAreTheRegisteredOnes(t *testing.T) {
+	full := everyJobType(t)
+	want := append(slices.Clone(full), "stream.sweep", "metrics.snapshot")
+	slices.Sort(want)
+	got := platform.JobTypes()
+	for _, typ := range got {
+		if !slices.Contains(want, typ) {
+			t.Errorf("JobTypes has %s, which no handler serves", typ)
+		}
+	}
+	for _, typ := range want {
+		if !slices.Contains(got, typ) {
+			t.Errorf("JobTypes misses %s", typ)
+		}
+	}
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	for _, tc := range []struct {
+		patterns string
+		errors   int
+	}{
+		{"federation.deliver,federation.*", 0},
+		{"federation.delivr", 1},
+		{"notification.email", 1}, // mail = none registers no such type
+	} {
+		c := *cfg
+		c.WorkerJobTypes = strings.Split(tc.patterns, ",")
+		if got := platform.JobTypeFindings(&c); len(got) != tc.errors {
+			t.Errorf("JobTypeFindings(%s) = %v, want %d", tc.patterns, got, tc.errors)
+		}
+	}
+}

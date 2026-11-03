@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The steps of publishing the container image (docs/operations/releasing.md, "The container image"): release.yml pushes
+# The steps of publishing the container image (docs/agents/releasing.md, "The container image"): release.yml pushes
 # the image by digest for the draft, and release-image.yml tags that digest when the release is published.
 #
 #   scripts/release-image.sh tags VERSION [--roll-back]     the image tags of VERSION, one per line, given the image tags

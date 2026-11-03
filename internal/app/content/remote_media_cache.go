@@ -40,6 +40,10 @@ type ProxySettings struct {
 	// CacheTTL is remote_media_cache_ttl_seconds: how long a copy is kept, and the max-age of the
 	// proxy's responses.
 	CacheTTL time.Duration
+	// MaxCacheSize bounds the total size of the cache in bytes; zero means
+	// DefaultRemoteMediaCacheMaxSize. The cleanup deletes the least recently accessed copies
+	// over it.
+	MaxCacheSize int64
 }
 
 const (
@@ -276,11 +280,19 @@ func (p *MediaProxy) CleanupCache(ctx context.Context) (int, error) {
 		}
 	}
 
+	settings, err := p.d.Settings(ctx)
+	if err != nil {
+		return deleted, err
+	}
+	maxSize := settings.MaxCacheSize
+	if maxSize <= 0 {
+		maxSize = DefaultRemoteMediaCacheMaxSize
+	}
 	size, err := p.d.Repository.RemoteMediaCacheSize(ctx)
 	if err != nil {
 		return deleted, err
 	}
-	for batch := 0; size > p.d.MaxCacheSize && batch < cleanupMaxBatches; batch++ {
+	for batch := 0; size > maxSize && batch < cleanupMaxBatches; batch++ {
 		entries, err := p.d.Repository.ListLeastRecentlyAccessedRemoteMediaCache(ctx, cleanupBatch)
 		if err != nil {
 			return deleted, err
@@ -289,7 +301,7 @@ func (p *MediaProxy) CleanupCache(ctx context.Context) (int, error) {
 			break
 		}
 		for _, e := range entries {
-			if size <= p.d.MaxCacheSize {
+			if size <= maxSize {
 				break
 			}
 			ok, err := p.evict(ctx, e)

@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -123,9 +124,7 @@ type Config struct {
 	// RemoteCustomEmojiMaxBytes bounds the image of a remote custom emoji that the media proxy
 	// serves.
 	RemoteCustomEmojiMaxBytes int64
-	// RemoteMediaCacheMaxBytes bounds the total size of the remote media cache.
-	RemoteMediaCacheMaxBytes int64
-	KV                       string
+	KV                        string
 	// ValkeyURL, ValkeyTLSCAFile, and ValkeyKeyPrefix configure the Valkey server of kv = valkey.
 	ValkeyURL       string
 	ValkeyTLSCAFile string
@@ -184,13 +183,7 @@ type Config struct {
 	// ADR-0118 §3).
 	PushAllowedHosts    []string
 	PushAllowedPrefixes []netip.Prefix
-	// RemoteStatusRetention is how long an unreferenced remote post is kept after its publication;
-	// RemoteStatusMaxRetention bounds how long any remote post is kept, zero for no bound (ADR-0034).
-	RemoteStatusRetention    time.Duration
-	RemoteStatusMaxRetention time.Duration
-	// RelayStatusRetention is how long a remote post that only a relay brought in is kept, and
-	// RelayIngestHourlyLimit how many activities each relay may bring in per hour (ADR-0061).
-	RelayStatusRetention   time.Duration
+	// RelayIngestHourlyLimit is how many activities each relay may bring in per hour (ADR-0061).
 	RelayIngestHourlyLimit int
 	// BillingSources are the providers whose usage charges are imported (billing_sources,
 	// ADR-0068), and the AWS caps bound the billed requests by UTC day and month (§4).
@@ -275,9 +268,6 @@ type Config struct {
 	// without a usable token may go unused, before the clean-up deletes it (ADR-0090 §1).
 	DynamicClientUnredeemedTTL time.Duration
 	DynamicClientIdleTTL       time.Duration
-	// OAuthClientRateLimits caps the client API requests per 5 minutes of the OAuth clients
-	// named by their public client_id, across all their users (ADR-0090 §7).
-	OAuthClientRateLimits map[string]int64
 	// MetricsExporter is the Meter adapter (ADR-0055 §2); MetricsListen is the address of the
 	// scrape of prometheus, and the EMF fields configure emf.
 	MetricsExporter      string
@@ -345,7 +335,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("queue", c.Queue),
 		slog.String("worker_job_types", strings.Join(c.WorkerJobTypes, ",")),
 		slog.String("worker_job_types_except", strings.Join(c.WorkerJobTypesExcept, ",")),
-		slog.Int("worker_job_concurrency", c.WorkerJobConcurrency),
+		slog.Int("worker_job_concurrency", max(c.WorkerJobConcurrency, 1)),
 		slog.String("queue_cloudtasks_queue", c.QueueCloudTasksQueue),
 		slog.String("queue_cloudtasks_url", c.QueueCloudTasksURL),
 		slog.String("queue_cloudtasks_service_account", c.QueueCloudTasksServiceAccount),
@@ -375,7 +365,6 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("media_max_audio_duration", c.MediaMaxAudioDuration),
 		slog.Int64("custom_emoji_max_bytes", c.CustomEmojiMaxBytes),
 		slog.Int64("remote_custom_emoji_max_bytes", c.RemoteCustomEmojiMaxBytes),
-		slog.Int64("remote_media_cache_max_bytes", c.RemoteMediaCacheMaxBytes),
 		slog.String("kv", c.KV),
 		slog.String("valkey_url", redact(c.ValkeyURL != "")),
 		slog.String("valkey_tls_ca_file", c.ValkeyTLSCAFile),
@@ -411,9 +400,6 @@ func (c *Config) LogValue() slog.Value {
 		slog.Any("webhook_allowed_destinations", append(slices.Clone(c.WebhookAllowedHosts), prefixStrings(c.WebhookAllowedPrefixes)...)),
 		slog.Any("login_provider_allowed_destinations", append(slices.Clone(c.LoginProviderAllowedHosts), prefixStrings(c.LoginProviderAllowedPrefixes)...)),
 		slog.Any("push_allowed_destinations", append(slices.Clone(c.PushAllowedHosts), prefixStrings(c.PushAllowedPrefixes)...)),
-		slog.Duration("remote_status_retention", c.RemoteStatusRetention),
-		slog.Duration("remote_status_max_retention", c.RemoteStatusMaxRetention),
-		slog.Duration("relay_status_retention", c.RelayStatusRetention),
 		slog.Int("relay_max_activities_per_hour", c.RelayIngestHourlyLimit),
 		slog.Any("billing_sources", c.BillingSources),
 		slog.Int("billing_aws_max_requests_per_day", c.BillingAWSMaxRequestsPerDay),
@@ -469,7 +455,6 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("job_attempt_retention", c.JobAttemptRetention),
 		slog.Duration("dynamic_client_unredeemed_retention", c.DynamicClientUnredeemedTTL),
 		slog.Duration("dynamic_client_idle_retention", c.DynamicClientIdleTTL),
-		slog.Any("oauth_client_rate_limits", c.OAuthClientRateLimits),
 		slog.String("metrics_exporter", c.MetricsExporter),
 		slog.String("metrics_listen", c.MetricsListen),
 		slog.String("metrics_emf_namespace", c.MetricsEMFNamespace),
@@ -716,6 +701,9 @@ func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 	if cfg.AccountDomain == "" {
 		cfg.AccountDomain = cfg.Host
 	}
+	if cfg.ErrorsEnvironment == "" {
+		cfg.ErrorsEnvironment = cfg.Profile
+	}
 	if cfg.WebOrigin == "" {
 		cfg.WebOrigin = "https://" + cfg.Host
 	}
@@ -768,11 +756,15 @@ func resolve(f *field, src Source, file map[string]any) (string, Origin, []Issue
 		return v, OriginEnv, nil
 	}
 	if inFile {
-		s, ok := fileVal.(string)
-		if !ok {
-			return "", OriginFile, []Issue{{Key: f.key, Message: fmt.Sprintf("must be a string in the config file, got %T", fileVal)}}
+		switch v := fileVal.(type) {
+		case string:
+			return v, OriginFile, nil
+		case int64:
+			return strconv.FormatInt(v, 10), OriginFile, nil
+		case bool:
+			return strconv.FormatBool(v), OriginFile, nil
 		}
-		return s, OriginFile, nil
+		return "", OriginFile, []Issue{{Key: f.key, Message: fmt.Sprintf("must be a string, a whole number, or a boolean in the config file, got %T", fileVal)}}
 	}
 	if f.def != "" {
 		return f.def, OriginDefault, nil
@@ -782,12 +774,8 @@ func resolve(f *field, src Source, file map[string]any) (string, Origin, []Issue
 
 func validate(f *field, v string) error {
 	if len(f.choices) > 0 {
-		i := slices.IndexFunc(f.choices, func(c choice) bool { return c.value == v })
-		if i < 0 {
-			return fmt.Errorf("unknown value %q; want one of %s", v, strings.Join(v0Values(f), ", "))
-		}
-		if !f.choices[i].inV0 {
-			return fmt.Errorf("%q is not available in v0; want one of %s", v, strings.Join(v0Values(f), ", "))
+		if !slices.ContainsFunc(f.choices, func(c choice) bool { return c.value == v }) {
+			return fmt.Errorf("unknown value %q; want one of %s", v, strings.Join(allowedValues(f), ", "))
 		}
 		if tag, ok := excludedValues[f.key][v]; ok {
 			return excludedError(v, tag)
@@ -814,10 +802,10 @@ func redactSecret(msg, v string) string {
 	return msg
 }
 
-func v0Values(f *field) []string {
+func allowedValues(f *field) []string {
 	var vs []string
 	for _, c := range f.choices {
-		if _, testOnly := testOnlyValues[f.key][c.value]; c.inV0 && !testOnly {
+		if _, testOnly := testOnlyValues[f.key][c.value]; !testOnly {
 			vs = append(vs, c.value)
 		}
 	}

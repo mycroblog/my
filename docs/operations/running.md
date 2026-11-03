@@ -108,7 +108,7 @@ Where to run it:
 - **Cloud Run**: use the `ghcr.io` image directly. A deployment resolves the tag to a digest.
 - **AWS (ECS, EKS)**: copy the image to Amazon ECR, or use an ECR pull through cache, which needs ghcr.io credentials.
 - **AWS Lambda**: the image does not run as it is. Lambda needs a single-architecture image in ECR with a runtime interface client.
-- **A smaller image**: `scripts/task.sh docker:build GO_TAGS=...` builds one with fewer adapters ([build tags](../reference/build-tags.md)). It is your own build, so it is not covered by the checks below.
+- **A smaller image**: `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` in a checkout builds one with fewer adapters ([build tags](../reference/build-tags.md)). It is your own build, so it is not covered by the checks below.
 
 ### Verify an image
 
@@ -329,6 +329,7 @@ A job whose handler decided it failed for good, and a job that used up its retri
 my job list                  # newest failures first: ID, type, run count, time of failure, last error (-limit sets the count, default 50)
 my job retry <id> [<id>...]  # reset the attempt count and put the job back in the queue to run immediately
 my job delete <id> [<id>...] # remove without running
+my job types                 # print every job type of this release
 ```
 
 - If a job with the same idempotency key is already waiting, that job stands in for the retried one. Job handlers are idempotent, so putting the same job back any number of times is safe.
@@ -343,7 +344,7 @@ By default every worker runs every job type, in the order the jobs fell due, one
 - [`worker_job_types`](../reference/configuration.md#worker_job_types): this process runs only these types.
 - [`worker_job_types_except`](../reference/configuration.md#worker_job_types_except): this process runs every type but these.
 
-Each is a comma-separated list of [job types](../reference/jobs.md), written as a name (`federation.deliver`) or a prefix (`federation.*`). Set them per process, for example with `MY_WORKER_JOB_TYPES`. You cannot set both on one process. A name or prefix that matches no job type stops the start, which also catches a type that a release renamed, or a type that exists only with a setting you have not set. They do not work with `role = web`, or with `queue = sqs`, `cloudtasks`, or `inline`, where the start fails too: there a signal names the job to run, so a process cannot choose its jobs.
+Each is a comma-separated list of [job types](../reference/jobs.md) (`my job types` prints them; `my config check` refuses a name that matches none), written as a name (`federation.deliver`) or a prefix (`federation.*`). Set them per process, for example with `MY_WORKER_JOB_TYPES`. You cannot set both on one process. A name or prefix that matches no job type stops the start, which also catches a type that a release renamed, or a type that exists only with a setting you have not set. They do not work with `role = web`, or with `queue = sqs`, `cloudtasks`, or `inline`, where the start fails too: there a signal names the job to run, so a process cannot choose its jobs.
 
 At the start, a process with one of the settings logs the types it skips. It cannot see the settings of the other processes, so **make sure that some process runs every type**, or those jobs wait forever. Periodic cleanup and email are job types too. Every process still starts the periodic jobs; which process runs them depends on these settings.
 
@@ -360,7 +361,7 @@ Two common layouts, with the number of processes of your choosing:
 | Layout | Processes |
 | --- | --- |
 | Keep deliveries from delaying the rest | `worker_job_types = federation.deliver` for the deliveries, and `worker_job_types_except = federation.deliver` for everything else. Add processes to the first group during a burst. |
-| Keep email and notifications quick | `worker_job_types = identity.verification_email,identity.password_reset_email,identity.password_notice_email,identity.closure_email,notification.email,notification.moderator_email,notification.supporter_email,notification.push,notification.post_subscribers,instance.notify_announcement,voice.notify_started` for these, and a worker without a setting for everything, which also helps with these types when it is free. |
+| Keep email and notifications quick | `worker_job_types = identity.verification_email,identity.password_reset_email,identity.password_notice_email,identity.closure_email,identity.deactivation_email,notification.email,notification.moderator_email,notification.supporter_email,notification.push,notification.post_subscribers,instance.notify_announcement,voice.notify_started` for these, and a worker without a setting for everything, which also helps with these types when it is free. |
 
 A prefix such as `identity.*` is the code module that owns the types, not a kind of work. `identity.*` also takes data exports, imports, and expiry jobs, and it misses `instance.notify_announcement` and `voice.notify_started`, so a layout for one kind of work names each type.
 
@@ -573,7 +574,7 @@ So a queue that cannot keep up gets up to 500 duplicate signals a minute. They d
 - Readiness also requires that the database holds the configured `host` and `account_domain`, or that the process could record them.
 - **Schema applied** means every table that the files in `schema/<dialect>/` declare with `CREATE TABLE` exists
   (SQLite is checked through `sqlite_schema`, PostgreSQL through the connection's `current_schema()`). `my schema apply` applies the whole schema, so a missing table means the schema is not applied or is older than the binary.
-  Column and index differences are not checked; `scripts/task.sh db:check` detects differences.
+  Column and index differences are not checked; `my schema apply -dry-run` prints what would change.
 
 ## Security headers
 
@@ -602,7 +603,7 @@ A process whose `role` is `web` or `all` serves the web client embedded in the b
 - The shell is served after ActivityPub content negotiation. Requesting a shell path with an ActivityPub `Accept` returns 404 (post pages redirect, as described below).
   The shell always carries `Vary: Accept`. When you put a CDN in front, include the kind of `Accept` (ActivityPub or HTML) in the cache key, or exclude the shell, `/ap/*` and `/@*` from caching.
   Serve only `/assets/*` from the CDN.
-- A binary built without the web client (a plain `go build` that skips `scripts/task.sh go:bin`) logs a warning at start-up and serves a shell without scripts.
+- A binary built without the web client (a plain `go build`, without building the client first) logs a warning at start-up and serves a shell without scripts.
 
 ## Federation endpoints
 

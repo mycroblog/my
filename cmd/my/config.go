@@ -78,7 +78,7 @@ func runConfig(args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintln(stdout, "configuration OK")
 		return 0
 	}
-	findings := config.Readiness(cfg)
+	findings := append(platform.JobTypeFindings(cfg), config.Readiness(cfg)...)
 	if *inst {
 		findings = append(findings, instanceFindings(context.Background(), cfg)...)
 	}
@@ -101,6 +101,9 @@ func instanceFindings(ctx context.Context, cfg *config.Config) []config.Finding 
 	var mismatch *instance.DomainMismatchError
 	if errors.As(err, &mismatch) {
 		return []config.Finding{{Severity: config.SeverityError, Message: mismatch.Error()}}
+	}
+	if errors.Is(err, platform.ErrWorkerJobConcurrency) {
+		return []config.Finding{{Severity: config.SeverityError, Key: "worker_job_concurrency", Message: err.Error()}}
 	}
 	if err != nil {
 		return []config.Finding{warn("the instance settings were not checked: %v", err)}
@@ -145,7 +148,7 @@ func instanceFindings(ctx context.Context, cfg *config.Config) []config.Finding 
 		return append(findings, warn("the instance settings were not checked: %v", err))
 	}
 	if len(rules) == 0 {
-		findings = append(findings, warn("the server has no rules; add them with `my instance rule add`"))
+		findings = append(findings, warn("the server has no rules; add them with `my instance rule create`"))
 	}
 	return findings
 }
@@ -167,8 +170,8 @@ start without refusing to start.
 With -instance it also opens the database and warns about the instance
 settings that are not set: the name, short description, terms, privacy policy,
 contacts, and rules.
-With -maintenance it checks only the settings that the maintenance mode reads
-(ADR-0084), leaving the adapters' settings unread.
+With -maintenance it checks only the settings that the maintenance mode reads,
+leaving the adapters' settings unread.
 
 vapid-key generates a key pair for Web Push and prints the private key, the
 value of MY_VAPID_PRIVATE_KEY, and the public key that browsers subscribe with.

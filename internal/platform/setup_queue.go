@@ -4,6 +4,7 @@ package platform
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -88,6 +89,10 @@ func (a *App) setUpWorkerJobTypes(cfg *config.Config) error {
 	return nil
 }
 
+// ErrWorkerJobConcurrency is the failure of a worker_job_concurrency that the database's pool
+// cannot serve.
+var ErrWorkerJobConcurrency = errors.New("worker_job_concurrency is too high for the database's pool")
+
 // sqliteJobConcurrencyWarning is the worker_job_concurrency above which a database without a pool
 // logs a warning: SQLite writes one at a time, and the throughput fell at 128 (ADR-0140 §4).
 const sqliteJobConcurrencyWarning = 32
@@ -103,7 +108,7 @@ func (a *App) setUpWorkerJobConcurrency(cfg *config.Config) error {
 	// A slot waits for a connection to claim and to record, and a handler that takes a second one
 	// while holding a transaction stalls until its deadline when the slots reach the maximum.
 	if a.dbPoolMax > 0 && n >= a.dbPoolMax {
-		return fmt.Errorf("worker_job_concurrency = %d must be below the %d connections of the database's pool: raise pool_max_conns in database_url or lower the setting", n, a.dbPoolMax)
+		return fmt.Errorf("%w: %d must be below the %d connections of the pool: raise pool_max_conns in database_url or lower the setting", ErrWorkerJobConcurrency, n, a.dbPoolMax)
 	}
 	if n > 1 {
 		a.runJobs = queue.NewSlotRunner(a.runnerSource, a.Handlers, a.runnerOptions(), n).RunUntil

@@ -12,15 +12,27 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // runJob implements `my job <subcommand>` (FR-801): list the dead jobs of the database queue,
 // run them again, or delete them. The admin API and the web client list and retry them too.
 func runJob(args []string, stdout, stderr io.Writer) int {
-	sub, code := dispatch("job", args, []string{"list", "retry", "delete"}, stderr, jobUsage)
+	sub, code := dispatch("job", args, []string{"list", "retry", "delete", "types"}, stderr, jobUsage)
 	if code >= 0 {
 		return code
+	}
+	if sub == "types" {
+		if len(args) > 1 {
+			_, _ = fmt.Fprintf(stderr, "my job types: want 0 arguments, got %d\n\n", len(args)-1)
+			jobUsage(stderr)
+			return 2
+		}
+		for _, t := range platform.JobTypes() {
+			_, _ = fmt.Fprintln(stdout, t)
+		}
+		return 0
 	}
 	name := "my job " + sub
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
@@ -109,14 +121,16 @@ func jobUsage(w io.Writer) {
   my job list [-config <file>] [-limit <n>]
   my job retry [-config <file>] <id>...
   my job delete [-config <file>] <id>...
+  my job types
 
 Dead jobs are the jobs of the database queue (queue = db) that failed for good or
-used up their attempts (ADR-0004). list shows them, most recently failed first,
+used up their attempts. list shows them, most recently failed first,
 with their type, number of runs, failure time, and last error. retry enqueues
 each named dead job again with a fresh attempt count, to run now; when a job
 with the same idempotency key is pending, that job stands in for it. delete
 removes each named dead job without running it. Dead jobs that nobody retries
-are deleted after dead_job_retention (FR-803). The exit code is 1 when any ID
-names no dead job; the other IDs are still handled.
+are deleted after dead_job_retention. The exit code is 1 when any ID
+names no dead job; the other IDs are still handled. types prints every job type
+of this release, the names that worker_job_types and the queue routes take.
 `)
 }

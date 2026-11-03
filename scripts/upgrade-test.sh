@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
-# The upgrade test of the release gate (docs/operations/releasing.md, "The upgrade test"): for each dialect, make a
+# The upgrade test of the release gate (docs/agents/releasing.md, "The upgrade test"): for each dialect, make a
 # database with the images of the previous release PREVIOUS (a tag), fill it through that release's server (two local
 # accounts, posts, a local follow, and a follow request to an account of remote.test, which the server fetches), then
 # upgrade it with the server image of the working tree in the order that deploy/docker/compose.yaml runs (my db upgrade

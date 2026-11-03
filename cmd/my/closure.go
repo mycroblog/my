@@ -231,7 +231,7 @@ func adminClosureUsage(w io.Writer) {
   my admin closure close [-confirm-domain <domain>] [-config <file>]
   my admin closure export-html -out <dir> [-lang en,ja] [-config <file>]
 
-The closure of the service (FR-808, FR-809, ADR-0088, docs/operations/service-closure.md).
+The closure of the service (docs/operations/service-closure.md).
 
 announce announces that the server closes at -closes-at, or changes the dates of
 the announcement in effect. The users may export their data until -export-until

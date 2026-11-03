@@ -5,7 +5,6 @@ package queue
 import (
 	"context"
 	"errors"
-	"fmt"
 	"slices"
 	"strings"
 )
@@ -79,14 +78,12 @@ func (r *WakeRouter) Wake(ctx context.Context, wakes []Wake) error {
 // receives, each sorted, for the sweep of the route. A pattern that matches no registered type is
 // an error, to catch a typo or a type that a release renamed at startup.
 func (r *WakeRouter) TypesOfRoutes(registered []string) ([][]string, error) {
-	var unknown []string
-	for _, route := range r.routes {
-		if !slices.ContainsFunc(registered, func(t string) bool { return matchesJobType(route.Pattern, t) }) {
-			unknown = append(unknown, route.Pattern)
-		}
+	patterns := make([]string, len(r.routes))
+	for i, route := range r.routes {
+		patterns[i] = route.Pattern
 	}
-	if len(unknown) > 0 {
-		return nil, fmt.Errorf("queue: no job type matches %s", strings.Join(unknown, ", "))
+	if err := CheckJobTypePatterns(registered, patterns); err != nil {
+		return nil, err
 	}
 	groups := make([][]string, len(r.routes))
 	for _, t := range slices.Sorted(slices.Values(registered)) {

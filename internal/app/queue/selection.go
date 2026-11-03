@@ -22,21 +22,16 @@ func SelectJobTypes(registered, include, except []string) (run, skip []string, e
 	if len(patterns) == 0 {
 		patterns = except
 	}
+	if err := CheckJobTypePatterns(registered, patterns); err != nil {
+		return nil, nil, err
+	}
 	matched := make(map[string]bool, len(registered))
-	var unknown []string
 	for _, p := range patterns {
-		found := false
 		for _, t := range registered {
 			if matchesJobType(p, t) {
-				matched[t], found = true, true
+				matched[t] = true
 			}
 		}
-		if !found {
-			unknown = append(unknown, p)
-		}
-	}
-	if len(unknown) > 0 {
-		return nil, nil, fmt.Errorf("queue: no job type matches %s", strings.Join(unknown, ", "))
 	}
 	for _, t := range slices.Sorted(slices.Values(registered)) {
 		if matched[t] == (len(include) > 0) {
@@ -56,4 +51,18 @@ func matchesJobType(pattern, jobType string) bool {
 		return strings.HasPrefix(jobType, prefix)
 	}
 	return pattern == jobType
+}
+
+// CheckJobTypePatterns returns an error that names the patterns that match no registered job type.
+func CheckJobTypePatterns(registered, patterns []string) error {
+	var unknown []string
+	for _, p := range patterns {
+		if !slices.ContainsFunc(registered, func(t string) bool { return matchesJobType(p, t) }) {
+			unknown = append(unknown, p)
+		}
+	}
+	if len(unknown) > 0 {
+		return fmt.Errorf("queue: no job type matches %s", strings.Join(unknown, ", "))
+	}
+	return nil
 }

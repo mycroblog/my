@@ -122,7 +122,7 @@
 
 - ADR-0034 の「取り込む `Create`」の条件に「`receive` が `true` の `accepted` のリレーから届いた `public` の投稿（上限と処分の判定を通ったもの）」を加える。`Announce` の対象の取得の条件にも、主体が `accepted` のリレーであることを加える。
 - リレー経由でだけ取り込んだ投稿は、`content` の `relayed_statuses` に記録する。
-  消去ジョブ `content.purge_remote_statuses` は、`relayed_statuses` にあり、ローカルからの参照が無く、作者をローカルのアカウントがフォローしていない投稿を、公開から **7 日**（設定 `relay_status_retention`）で消す（`origin = retention`）。それ以外は ADR-0034 の 90 日のまま。
+  消去ジョブ `content.purge_remote_statuses` は、`relayed_statuses` にあり、ローカルからの参照が無く、作者をローカルのアカウントがフォローしていない投稿を、公開から **7 日**（設定 `relay_status_retention_days`）で消す（`origin = retention`）。それ以外は ADR-0034 の 90 日のまま。
 - 脱退しても、取り込んだ投稿はすぐには消さない（保持期間で消える）。
 
 ### データモデル（ADR-0020）
@@ -141,7 +141,7 @@
 
 - 管理 API: `GET /api/v1/admin/relays`（状態つきの一覧）、`POST /api/v1/admin/relays`（登録して参加。`protocol`・`url`・`receive`）、`POST /api/v1/admin/relays/{id}/follow`（参加し直す）、`POST /api/v1/admin/relays/{id}/unfollow`（脱退）、`DELETE /api/v1/admin/relays/{id}`（`left` / `rejected` の登録の削除）。
 - 権限は `manage_settings`。リレー用の権限は分けない。
-- CLI: `my admin relay add|follow|unfollow|remove|list`。
+- CLI: `my admin relay create|follow|unfollow|remove|list`。
 - 管理画面: リレーの一覧（方式・URL・状態・受信の有無・直近 24 時間の取り込み件数と上限で捨てた件数）と、登録・参加・脱退・削除の操作。
 - 監査ログ（ADR-0037）: 登録・参加・脱退・削除を `target_kind = relay` で記録する。`Accept` / `Reject` の受信は `actor_kind = remote` で記録する。
 
@@ -178,7 +178,7 @@
   3. 受信の `relay_id`、上限と処分の判定、リレーの `Announce`、`relayed_statuses` と保持期間
   4. 管理画面（Web クライアント）
   5. federation.md・data-model.md・docs/operations の更新と、federation-live への Activity-Relay の場面の追加
-  6. 設定 `relay_max_activities_per_hour`・`relay_status_retention` と、取り込み・破棄の件数のメトリクス（ADR-0055 サービスメトリクスの可観測性、#645）
+  6. 設定 `relay_max_activities_per_hour`・`relay_status_retention_days` と、取り込み・破棄の件数のメトリクス（ADR-0055 サービスメトリクスの可観測性、#645）
 
 ## Pros and Cons of the Options（詳細比較・任意）
 

@@ -104,8 +104,8 @@ func adminAppealUsage(w io.Writer) {
   my admin appeal uphold [-reason <text>] [-config <file>] <appeal id>
   my admin appeal overturn [-reason <text>] [-config <file>] <appeal id>
 
-The appeals that local users made of the moderation actions on their accounts
-(FR-707). list shows them newest first. uphold keeps the action; overturn lifts
+The appeals that local users made of the moderation actions on their accounts.
+list shows them newest first. uphold keeps the action; overturn lifts
 it at once (the posts that delete_statuses deleted stay deleted); overturning a
 ban, appealed within the 30 days before the account's deletion, also cancels
 that deletion, and fails once the account is deleted. -reason is

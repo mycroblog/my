@@ -19,7 +19,7 @@ import (
 // (ADR-0061, FR-724). The CLI acts as no user: what it does is recorded in the audit log as the
 // command line's.
 func runAdminRelay(args []string, stdout, stderr io.Writer) int {
-	sub, code := dispatch("admin relay", args, []string{"add", "follow", "unfollow", "remove", "list"}, stderr, adminRelayUsage)
+	sub, code := dispatch("admin relay", args, []string{"create", "follow", "unfollow", "remove", "list"}, stderr, adminRelayUsage)
 	if code >= 0 || len(args) == 0 {
 		return max(code, 0)
 	}
@@ -32,7 +32,7 @@ func runAdminRelay(args []string, stdout, stderr io.Writer) int {
 		nargs = 0
 	}
 	c, code := parseSubcommand("my admin relay "+sub, args[1:], nargs, stderr, adminRelayUsage, func(fs *flag.FlagSet) {
-		if sub == "add" {
+		if sub == "create" {
 			fs.StringVar(&protocol, "protocol", "", "mastodon (the URL is the relay's inbox) or litepub (the URL is its actor); detected when omitted")
 			fs.BoolVar(&sendOnly, "send-only", false, "send public posts to the relay without taking in what it relays")
 		}
@@ -60,12 +60,12 @@ func runAdminRelay(args []string, stdout, stderr io.Writer) int {
 		if vs, err = app.Relays.List(ctx); err == nil {
 			err = printRelays(stdout, vs)
 		}
-	case "add":
+	case "create":
 		v, err = app.Relays.Add(ctx, appfederation.RelayInput{
 			Protocol: federation.RelayProtocol(protocol), URL: c.fs.Arg(0), Receive: !sendOnly,
 		}, "")
 		if err == nil {
-			_, _ = fmt.Fprintf(stdout, "added %s relay %s (relay %s, inbox %s); its Follow is sent\n", v.Relay.Protocol, v.Relay.URL, v.Relay.ID, v.Relay.InboxURL)
+			_, _ = fmt.Fprintf(stdout, "created %s relay %s (relay %s, inbox %s); its Follow is sent\n", v.Relay.Protocol, v.Relay.URL, v.Relay.ID, v.Relay.InboxURL)
 		}
 	case "follow":
 		if v, err = app.Relays.Follow(ctx, c.fs.Arg(0), ""); err == nil {
@@ -119,22 +119,22 @@ func printRelays(w io.Writer, vs []appfederation.RelayView) error {
 func adminRelayUsage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `Usage:
   my admin relay list [-config <file>]
-  my admin relay add [-protocol mastodon|litepub] [-send-only] [-config <file>] <url>
+  my admin relay create [-protocol mastodon|litepub] [-send-only] [-config <file>] <url>
   my admin relay follow [-config <file>] <relay id>
   my admin relay unfollow [-config <file>] <relay id>
   my admin relay remove [-config <file>] <relay id>
 
-The relays the instance joins (ADR-0061). A relay passes the public posts of the
+The relays the instance joins. A relay passes the public posts of the
 servers that join it to the others.
 
-add registers a relay and sends the instance actor's Follow; the relay is
+create registers a relay and sends the instance actor's Follow; the relay is
 pending until it accepts or rejects it. <url> is the relay's inbox for a
 mastodon relay (pub-relay, Activity-Relay) and its actor for a litepub one
 (Pleroma and Akkoma's relays); without -protocol, a URL that serves an actor is
 a litepub relay and any other a mastodon one. Only public posts go to a relay,
 with a linked data signature, and the public posts it relays are fetched from
 their origin into the federated and hashtag timelines, up to
-relay_max_activities_per_hour per hour, and kept for relay_status_retention.
+relay_max_activities_per_hour per hour, and kept for relay_status_retention_days.
 -send-only takes in nothing from the relay.
 
 unfollow leaves a pending or accepted relay with the Undo of its Follow, and

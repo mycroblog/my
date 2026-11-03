@@ -104,6 +104,9 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
   except the contributor document `commands.md`, and user-facing text such as CLI help): no links to or citations of ADRs, `docs/requirements/`, `docs/architecture/`, or
   GitHub issues and PRs (`ADR-0001`, `FR-101`, `#123`). Link only the other user and operator documents a reader needs.
   Contributor documents may cite the ADR a rule comes from.
+- **User and operator documents hold nothing only a developer of `my` needs**: how the project releases, CI jobs, pull
+  requests, repository tasks, and how to add to the code go in a contributor document (`CONTRIBUTING.md`, `docs/agents/`,
+  `docs/reference/commands.md`). `maintainer-terms` in [docs/lint.yaml](docs/lint.yaml) lists the words that give it away.
 - `scripts/task.sh docs:rules` (`agentkit docs lint`, part of `docs:check`) enforces these rules, that relative links and
   their `#anchors` resolve, and that `docs/README.md` links every file of `docs/operations/` and `docs/reference/`.
   [docs/lint.yaml](docs/lint.yaml) names the files each rule covers and the files not yet converted; that list only

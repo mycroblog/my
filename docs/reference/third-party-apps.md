@@ -171,7 +171,7 @@ A request without enough scope gets `403` with `WWW-Authenticate: Bearer error="
 
 The API is rate limited per account, across all of a user's apps, and anonymous requests per IP address.
 The endpoints for registering and authorizing apps are limited as well: user app registration, dynamic registration, `/oauth/token`, and the fetch of metadata documents.
-An administrator may also cap a single client across all its users (the setting `oauth_client_rate_limits`, see the [configuration reference](configuration.md)).
+An administrator may also cap a single client across all its users (the instance setting `oauth_client_rate_limits`, see [instance settings](../operations/instance-settings.md)).
 The numbers belong to the server and the operator, so read them from the responses instead of hard-coding them.
 
 - A request answered `503 Service Unavailable` with a `Retry-After` header found the server busy. Wait that long before retrying.

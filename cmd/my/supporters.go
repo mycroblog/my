@@ -173,7 +173,7 @@ func adminSupportersUsage(w io.Writer) {
   my admin supporters subscriptions [-plan <id>] [-state <state>] [-before <id>] [-limit <n>] [-config <file>]
   my admin supporters cancel [-config <file>] <subscription id>
 
-The supporter program (ADR-0072): paid plans that local users subscribe to on the
+The supporter program: paid plans that local users subscribe to on the
 web client, through the payment provider of payments.
 
 status shows whether the program is enabled and what enabling it needs. enable

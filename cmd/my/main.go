@@ -107,21 +107,23 @@ func usage(w io.Writer) {
 Commands:
   admin     Create an administrator, moderate domains, handle reports,
             manage roles, and block sign-ups
-            (my admin create|account|domain|report|audit|role|signup-block)
+            (my admin create|account|appeal|audit|closure|domain|emoji|
+            federation|refetch|relay|report|retention|role|signup-block|
+            supporters; my admin -help)
   config    Check the configuration and generate the Web Push key
             (my config check|vapid-key)
   db        Run the data upgrade steps of a release upgrade, check before
             applying its schema, or back up a SQLite database
             (my db upgrade [-check]|backup)
   instance  Read and change the instance settings and rules
-            (my instance list|get|set|history|rule)
+            (my instance list|get|set|history|rule|theme|brand)
   invite    Manage invite codes (my invite create|list|revoke)
-  job       List, retry, and delete the dead jobs (my job list|retry|delete)
+  job       List, retry, and delete the dead jobs (my job list|retry|delete|types)
   kek       Count the stored secrets by key-encryption key and re-wrap them
             after a rotation (my kek status|rewrap)
   login-provider
             Set up the external providers that users sign in with
-            (my login-provider list|add|set|rotate-secret|enable|disable|delete)
+            (my login-provider list|create|set|rotate-secret|enable|disable|delete)
   maintenance
             Write the maintenance page as static HTML (my maintenance export)
   projection

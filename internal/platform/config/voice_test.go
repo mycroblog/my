@@ -341,14 +341,14 @@ func TestConfigKeyNames(t *testing.T) {
 	}
 }
 
-// TestNoLimitIsSpelledZero accepts 0 for no limit in every duration limit, and a retry delay as a
-// Go duration like the other time settings.
+// TestNoLimitIsSpelledZero accepts 0 for no limit in a duration limit, and a retry delay as a Go
+// duration like the other time settings.
 func TestNoLimitIsSpelledZero(t *testing.T) {
-	cfg, _, err := Load(source(with(minimal(), "MY_REMOTE_STATUS_MAX_RETENTION", "0", "MY_VOICE_MAX_ROOM_DURATION", "0", "MY_MAINTENANCE_RETRY_AFTER", "10m"), nil))
+	cfg, _, err := Load(source(with(minimal(), "MY_VOICE_MAX_ROOM_DURATION", "0", "MY_MAINTENANCE_RETRY_AFTER", "10m"), nil))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.RemoteStatusMaxRetention != 0 || cfg.VoiceMaxRoomDuration != 0 || cfg.MaintenanceRetryAfter != 10*time.Minute {
-		t.Errorf("limits = %v, %v, retry after = %v", cfg.RemoteStatusMaxRetention, cfg.VoiceMaxRoomDuration, cfg.MaintenanceRetryAfter)
+	if cfg.VoiceMaxRoomDuration != 0 || cfg.MaintenanceRetryAfter != 10*time.Minute {
+		t.Errorf("limit = %v, retry after = %v", cfg.VoiceMaxRoomDuration, cfg.MaintenanceRetryAfter)
 	}
 }

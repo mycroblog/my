@@ -160,7 +160,7 @@ C の 2 段階:
   - `deploy/docker/compose.yaml` の更新の順序（check → schema → upgrade → my）と `scripts/docker-smoke.sh` での前の版からの更新の検査
   - 設定の検査で、消えた・名前の変わったキーをエラーにする（今の挙動を確かめてから）
   - 文書: `docs/operations/database.md` に「更新する」節（バックアップ、上の手順、戻し方）を足し、「作り直す」を開発・検証用と明記する。
-    FR-801 の文言、`schema/README.md` の変更の分類、`docs/operations/releasing.md` のリリースノートの 2 節、ADR-0023 への追記、ADR-0012 の Status
+    FR-801 の文言、`schema/README.md` の変更の分類、`docs/agents/releasing.md` のリリースノートの 2 節、ADR-0023 への追記、ADR-0012 の Status
   - リリースの関門（`release.yml`）で、1 つ前のマイナー版のスキーマとデータからの更新を実際に試す検査（スローな検査に入れるか）
 
 ## Pros and Cons of the Options（詳細比較・任意）

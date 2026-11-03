@@ -10,7 +10,7 @@ before you need one. Upgrades take a backup too; [Upgrading](database.md#upgradi
 | The database | the SQLite file (`database_url`) or the PostgreSQL database | [SQLite](#sqlite) or [PostgreSQL](#postgresql) | everything: accounts, posts, follows, settings |
 | The media | the directory `blob_fs_dir` of the `fs` blob store, or the bucket `blob_s3_bucket` of the `s3` blob store or `blob_gcs_bucket` of the `gcs` blob store | [Media](#media) or [Media in a bucket](#media-in-a-bucket) | the uploaded images, videos, and audio files, and the cached remote files |
 | The KEK | wherever you keep `MY_KEK` or the file of `MY_KEK_FILE` (never in the database) | [The KEK](key-management.md#back-it-up), separately from the database | every actor's private key and with it the actor's identity in the fediverse, and the other secrets the database stores |
-| The configuration | the environment variables, the configuration file (`MY_CONFIG_FILE`), the secrets (`MY_VAPID_PRIVATE_KEY`, mail and payment keys), `.env` with Compose | copy them with your deployment files | nothing in the data, but the instance cannot start the same way; changing `host` breaks every federated URL |
+| The configuration | the environment variables, the configuration file (`MY_CONFIG`), the secrets (`MY_VAPID_PRIVATE_KEY`, mail and payment keys), `.env` with Compose | copy them with your deployment files | nothing in the data, but the instance cannot start the same way; changing `host` breaks every federated URL |
 
 What does not need a backup:
 
@@ -287,7 +287,3 @@ backups are taken (at least every few months):
 4. Go through [Starting and checking](#starting-and-checking): sign in, posts and media, and the `publicKey` of a few actors compared with the live instance.
 5. Start it once without the KEK and once with a different one, and check that it fails as [Without the right KEK](#without-the-right-kek) describes.
 6. Note how long each step took: that is how long a real restore keeps the instance down.
-
-From the repository, `scripts/task.sh docker:restore-drill` runs the same drill on Docker Compose for SQLite and PostgreSQL:
-it fills an instance, backs it up while it runs, removes every container and volume, restores into new ones,
-and checks the sign-in, the posts and media, the follows, the actors' keys, a signed delivery to another server, and the failures without the KEK.

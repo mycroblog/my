@@ -5,14 +5,13 @@
 The server reads each setting from these sources, highest precedence first:
 
 1. The environment variable `MY_<KEY>` (the key in upper case).
-2. The TOML file named by `MY_CONFIG` (or `my config check -config <path>`), with the keys below at the top level.
+2. The TOML file named by `MY_CONFIG` (or `my config check -config <path>`), with the keys below at the top level. A value may be a string, a whole number, or a boolean; `mail_smtp_port = 587` and `mail_smtp_port = "587"` mean the same.
 3. The default.
 
 Secrets are read only from the environment: either the variable itself or `<NAME>_FILE`, the path of a file that holds the value
 (trailing newlines are removed), for Docker and Kubernetes secrets. Setting a secret in the TOML file is an error.
 
 Adapters are always selected by an explicit key; nothing is inferred from a URL scheme.
-Values marked "not in v0" are planned but not shipped in v0, and are rejected.
 A binary built with a build tag that leaves an adapter out rejects the values that select it ([build tags](build-tags.md)).
 
 `my config check` validates the configuration and lists every problem at once; the server refuses to start on any of them.
@@ -24,6 +23,9 @@ the error names the new key, or tells why the setting was removed ([renamed and 
 An unknown key in the config file is an error too. An environment variable that starts with `MY_` but sets nothing
 is ignored with a warning, in the log of `my serve` and in the output of `my config check`, because the platform may add such variables:
 Kubernetes adds `MY_SERVICE_HOST`, `MY_PORT` and the like for a Service named `my`, and those are ignored without a warning.
+
+A Kubernetes Service named `my-mail-smtp` is the exception: the variable `MY_MAIL_SMTP_PORT=tcp://...` that it adds is the name of a setting, so the value fails its check and the server does not start.
+Rename the Service, or set `enableServiceLinks: false` on the pod.
 
 In the `production` profile, `my config check` then checks that the valid settings suit a production instance:
 errors, such as a `host` that other servers cannot reach or a `kek` that is not random, make it exit 1, and warnings, such as `mail = none`, do not.
@@ -98,7 +100,6 @@ An instance setting that has never been set reads as its default, which is defin
 | [`media_max_audio_duration`](#media_max_audio_duration) | `MY_MEDIA_MAX_AUDIO_DURATION` | `10m` | no | no |
 | [`custom_emoji_max_bytes`](#custom_emoji_max_bytes) | `MY_CUSTOM_EMOJI_MAX_BYTES` | `262144` | no | no |
 | [`remote_custom_emoji_max_bytes`](#remote_custom_emoji_max_bytes) | `MY_REMOTE_CUSTOM_EMOJI_MAX_BYTES` | `1048576` | no | no |
-| [`remote_media_cache_max_bytes`](#remote_media_cache_max_bytes) | `MY_REMOTE_MEDIA_CACHE_MAX_BYTES` | `1073741824` | no | no |
 | [`kv`](#kv) | `MY_KV` | `db` | no | no |
 | [`valkey_url`](#valkey_url) | `MY_VALKEY_URL` | none | when `kv = valkey` or `stream = valkey` | yes |
 | [`valkey_tls_ca_file`](#valkey_tls_ca_file) | `MY_VALKEY_TLS_CA_FILE` | none | no | no |
@@ -134,9 +135,6 @@ An instance setting that has never been set reads as its default, which is defin
 | [`webhook_allowed_destinations`](#webhook_allowed_destinations) | `MY_WEBHOOK_ALLOWED_DESTINATIONS` | none | no | no |
 | [`login_provider_allowed_destinations`](#login_provider_allowed_destinations) | `MY_LOGIN_PROVIDER_ALLOWED_DESTINATIONS` | none | no | no |
 | [`push_allowed_destinations`](#push_allowed_destinations) | `MY_PUSH_ALLOWED_DESTINATIONS` | none | no | no |
-| [`remote_status_retention`](#remote_status_retention) | `MY_REMOTE_STATUS_RETENTION` | `2160h` | no | no |
-| [`remote_status_max_retention`](#remote_status_max_retention) | `MY_REMOTE_STATUS_MAX_RETENTION` | none | no | no |
-| [`relay_status_retention`](#relay_status_retention) | `MY_RELAY_STATUS_RETENTION` | `168h` | no | no |
 | [`relay_max_activities_per_hour`](#relay_max_activities_per_hour) | `MY_RELAY_MAX_ACTIVITIES_PER_HOUR` | `1000` | no | no |
 | [`billing_sources`](#billing_sources) | `MY_BILLING_SOURCES` | none | no | no |
 | [`billing_aws_max_requests_per_day`](#billing_aws_max_requests_per_day) | `MY_BILLING_AWS_MAX_REQUESTS_PER_DAY` | `4` | no | no |
@@ -192,7 +190,6 @@ An instance setting that has never been set reads as its default, which is defin
 | [`job_attempt_retention`](#job_attempt_retention) | `MY_JOB_ATTEMPT_RETENTION` | `720h` | no | no |
 | [`dynamic_client_unredeemed_retention`](#dynamic_client_unredeemed_retention) | `MY_DYNAMIC_CLIENT_UNREDEEMED_RETENTION` | `24h` | no | no |
 | [`dynamic_client_idle_retention`](#dynamic_client_idle_retention) | `MY_DYNAMIC_CLIENT_IDLE_RETENTION` | `2160h` | no | no |
-| [`oauth_client_rate_limits`](#oauth_client_rate_limits) | `MY_OAUTH_CLIENT_RATE_LIMITS` | none | no | no |
 | [`metrics_exporter`](#metrics_exporter) | `MY_METRICS_EXPORTER` | `none` | no | no |
 | [`metrics_listen`](#metrics_listen) | `MY_METRICS_LISTEN` | `127.0.0.1:9464` | no | no |
 | [`metrics_emf_namespace`](#metrics_emf_namespace) | `MY_METRICS_EMF_NAMESPACE` | `my` | no | no |
@@ -202,7 +199,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`traces_flush`](#traces_flush) | `MY_TRACES_FLUSH` | `batch` | no | no |
 | [`errors_exporter`](#errors_exporter) | `MY_ERRORS_EXPORTER` | `none` | no | no |
 | [`errors_sentry_dsn`](#errors_sentry_dsn) | `MY_ERRORS_SENTRY_DSN` | none | when `errors_exporter` is `sentry` | yes |
-| [`errors_environment`](#errors_environment) | `MY_ERRORS_ENVIRONMENT` | `production` | no | no |
+| [`errors_environment`](#errors_environment) | `MY_ERRORS_ENVIRONMENT` | the value of `profile` | no | no |
 
 ## Settings
 
@@ -246,10 +243,10 @@ Starts `my serve` in the maintenance mode, also set by `my serve -maintenance`. 
 - Default: `false`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `false` | yes | Normal operation. |
-| `true` | yes | Maintenance mode. |
+| Value | Description |
+| --- | --- |
+| `false` | Normal operation. |
+| `true` | Maintenance mode. |
 
 ### `maintenance_server_name`
 
@@ -299,11 +296,11 @@ What this process runs.
 - Default: `all`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `all` | yes | HTTP server and job worker in one process. |
-| `web` | yes | HTTP server only. |
-| `worker` | yes | Job worker only; the HTTP server answers only the health checks (docs/operations/running.md). |
+| Value | Description |
+| --- | --- |
+| `all` | HTTP server and job worker in one process. |
+| `web` | HTTP server only. |
+| `worker` | Job worker only; the HTTP server answers only the health checks (docs/operations/running.md). |
 
 ### `worker_job_types`
 
@@ -353,10 +350,10 @@ Forwarding header that the `trusted_proxies` append the client IP to. Only this 
 - Default: `x-forwarded-for`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `x-forwarded-for` | yes | `X-Forwarded-For`, which nginx, Caddy, Traefik, Google Cloud load balancers and Cloud Run, and AWS Application Load Balancers append to. |
-| `forwarded` | yes | The `for` parameters of `Forwarded` (RFC 7239). |
+| Value | Description |
+| --- | --- |
+| `x-forwarded-for` | `X-Forwarded-For`, which nginx, Caddy, Traefik, Google Cloud load balancers and Cloud Run, and AWS Application Load Balancers append to. |
+| `forwarded` | The `for` parameters of `Forwarded` (RFC 7239). |
 
 ### `database`
 
@@ -366,11 +363,11 @@ Database adapter. The adapter is never inferred from `database_url`.
 - Default: `sqlite`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `sqlite` | yes | Local SQLite file (`modernc.org/sqlite`). The build tag `no_sqlite` leaves it out. |
-| `libsql` | yes | libSQL / Turso. |
-| `postgres` | yes | PostgreSQL and compatible services (`pgx/v5`). The build tag `no_postgres` leaves it out. |
+| Value | Description |
+| --- | --- |
+| `sqlite` | Local SQLite file (`modernc.org/sqlite`). The build tag `no_sqlite` leaves it out. |
+| `libsql` | libSQL / Turso. |
+| `postgres` | PostgreSQL and compatible services (`pgx/v5`). The build tag `no_postgres` leaves it out. |
 
 ### `database_url`
 
@@ -404,12 +401,12 @@ Job queue adapter.
 - Default: `db`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `db` | yes | Queue table in the database. |
-| `inline` | yes | Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`. |
-| `sqs` | yes | The queue table in the database (`database = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: the Lambda Web Adapter passes the SQS events to `queue_sqs_events_path`, whose records run the jobs and, for the tick message that EventBridge Scheduler sends every minute, the periodic jobs (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out. |
-| `cloudtasks` | yes | The queue table in the database (`database = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md). |
+| Value | Description |
+| --- | --- |
+| `db` | Queue table in the database. |
+| `inline` | Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`. |
+| `sqs` | The queue table in the database (`database = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: the Lambda Web Adapter passes the SQS events to `queue_sqs_events_path`, whose records run the jobs and, for the tick message that EventBridge Scheduler sends every minute, the periodic jobs (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out. |
+| `cloudtasks` | The queue table in the database (`database = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md). |
 
 ### `queue_sqs_routes`
 
@@ -499,11 +496,11 @@ Blob storage adapter for media.
 - Default: `fs`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `fs` | yes | Local file system. |
-| `s3` | yes | S3-compatible object storage (Amazon S3, Cloudflare R2, the XML API of Google Cloud Storage, MinIO, Garage): `blob_s3_bucket` and the other `blob_s3_` settings. The build tag `no_s3` leaves it out. |
-| `gcs` | yes | Google Cloud Storage through its JSON API, with Application Default Credentials (the service account of Cloud Run or of the instance), so that no key is kept: `blob_gcs_bucket`. The build tag `no_gcs` leaves it out. |
+| Value | Description |
+| --- | --- |
+| `fs` | Local file system. |
+| `s3` | S3-compatible object storage (Amazon S3, Cloudflare R2, the XML API of Google Cloud Storage, MinIO, Garage): `blob_s3_bucket` and the other `blob_s3_` settings. The build tag `no_s3` leaves it out. |
+| `gcs` | Google Cloud Storage through its JSON API, with Application Default Credentials (the service account of Cloud Run or of the instance), so that no key is kept: `blob_gcs_bucket`. The build tag `no_gcs` leaves it out. |
 
 ### `media`
 
@@ -513,11 +510,11 @@ Media processor adapter.
 - Default: `native`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `native` | yes | Pure Go image processing. |
-| `vips` | yes | libvips; needs a cgo build with the adapter's build tag. |
-| `none` | yes | No processing except EXIF removal. |
+| Value | Description |
+| --- | --- |
+| `native` | Pure Go image processing. |
+| `vips` | libvips; needs a cgo build with the adapter's build tag. |
+| `none` | No processing except EXIF removal. |
 
 ### `blob_fs_dir`
 
@@ -559,10 +556,10 @@ How `blob = s3` addresses the bucket.
 - Default: `false`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `false` | yes | In the host name (`https://<bucket>.<endpoint>/<key>`), as Amazon S3, R2, and Cloud Storage take it. |
-| `true` | yes | In the path (`https://<endpoint>/<bucket>/<key>`), for MinIO and other servers without a host name per bucket. |
+| Value | Description |
+| --- | --- |
+| `false` | In the host name (`https://<bucket>.<endpoint>/<key>`), as Amazon S3, R2, and Cloud Storage take it. |
+| `true` | In the path (`https://<endpoint>/<bucket>/<key>`), for MinIO and other servers without a host name per bucket. |
 
 ### `blob_s3_access_key_id`
 
@@ -668,14 +665,6 @@ Largest image in bytes of a remote custom emoji that the media proxy serves; the
 - Default: `1048576`
 - Required: no
 
-### `remote_media_cache_max_bytes`
-
-Size limit in bytes of the copies of remote media that the media proxy keeps when the instance setting `remote_media_policy` is `avatars` or `all`. The hourly cleanup deletes the expired copies, then the least recently accessed ones over this limit.
-
-- Environment variable: `MY_REMOTE_MEDIA_CACHE_MAX_BYTES`
-- Default: `1073741824`
-- Required: no
-
 ### `kv`
 
 Key-value store adapter for caches and rate limits.
@@ -684,11 +673,11 @@ Key-value store adapter for caches and rate limits.
 - Default: `db`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `db` | yes | Table in the database. |
-| `memory` | yes | In-process memory; limits are per process. |
-| `valkey` | yes | Valkey or another server that speaks the Redis protocol (`valkey_url`); entries are shared by every process on the server. The build tag `no_valkey` leaves it out. |
+| Value | Description |
+| --- | --- |
+| `db` | Table in the database. |
+| `memory` | In-process memory; limits are per process. |
+| `valkey` | Valkey or another server that speaks the Redis protocol (`valkey_url`); entries are shared by every process on the server. The build tag `no_valkey` leaves it out. |
 
 ### `valkey_url`
 
@@ -722,13 +711,13 @@ Broker that carries the signals of the real-time updates (`GET /api/v1/streaming
 - Default: `hub`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `hub` | yes | In-process only; for one process with `role = all` (SQLite, or one PostgreSQL server process). |
-| `postgres` | yes | PostgreSQL `LISTEN` / `NOTIFY` on the database of `database_url` (or `stream_postgres_url`). Requires `database = postgres`. The build tag `no_postgres` leaves it out. |
-| `valkey` | yes | Valkey Pub/Sub on `valkey_url`, with the channel `{valkey_key_prefix}stream`. The build tag `no_valkey` leaves it out. |
-| `sns` | yes | An Amazon SNS standard topic (`stream_sns_topic_arn`) that fans out to one SQS queue per listening process (`stream_sns_queue_prefix`); credentials and settings from the AWS SDK's default chain. The build tag `no_sns` leaves it out. |
-| `pubsub` | yes | A Google Cloud Pub/Sub topic (`stream_pubsub_topic`) with one subscription per listening process (`stream_pubsub_subscription_prefix`); Application Default Credentials, or the emulator at `PUBSUB_EMULATOR_HOST`. The build tag `no_pubsub` leaves it out. |
+| Value | Description |
+| --- | --- |
+| `hub` | In-process only; for one process with `role = all` (SQLite, or one PostgreSQL server process). |
+| `postgres` | PostgreSQL `LISTEN` / `NOTIFY` on the database of `database_url` (or `stream_postgres_url`). Requires `database = postgres`. The build tag `no_postgres` leaves it out. |
+| `valkey` | Valkey Pub/Sub on `valkey_url`, with the channel `{valkey_key_prefix}stream`. The build tag `no_valkey` leaves it out. |
+| `sns` | An Amazon SNS standard topic (`stream_sns_topic_arn`) that fans out to one SQS queue per listening process (`stream_sns_queue_prefix`); credentials and settings from the AWS SDK's default chain. The build tag `no_sns` leaves it out. |
+| `pubsub` | A Google Cloud Pub/Sub topic (`stream_pubsub_topic`) with one subscription per listening process (`stream_pubsub_subscription_prefix`); Application Default Credentials, or the emulator at `PUBSUB_EMULATOR_HOST`. The build tag `no_pubsub` leaves it out. |
 
 ### `stream_postgres_url`
 
@@ -778,11 +767,11 @@ Key manager adapter that encrypts actor private keys.
 - Default: `local`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `local` | yes | Uses the key-encryption key from `kek`. |
-| `gcpkms` | yes | Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out (docs/operations/key-management.md). |
-| `awskms` | yes | AWS KMS: the symmetric key of `kms_key` encrypts the data-encryption keys, with the credentials and region of the AWS SDK's default chain. The build tag `no_awskms` leaves it out (docs/operations/key-management.md). |
+| Value | Description |
+| --- | --- |
+| `local` | Uses the key-encryption key from `kek`. |
+| `gcpkms` | Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out (docs/operations/key-management.md). |
+| `awskms` | AWS KMS: the symmetric key of `kms_key` encrypts the data-encryption keys, with the credentials and region of the AWS SDK's default chain. The build tag `no_awskms` leaves it out (docs/operations/key-management.md). |
 
 ### `kek`
 
@@ -840,11 +829,11 @@ Mailer adapter for verification emails. With `none`, no email reaches users, so 
 - Default: `none`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `none` | yes | Sends nothing and logs each message's category; for instances without email. With `profile = development` it logs the whole message, including its links. |
-| `smtp` | yes | SMTP submission with mandatory STARTTLS (`mail_smtp_host`, `mail_smtp_port`, `mail_smtp_username`, `mail_smtp_password`). |
-| `ses` | yes | The Amazon SES v2 API (`mail_ses_region`, `mail_ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out. |
+| Value | Description |
+| --- | --- |
+| `none` | Sends nothing and logs each message's category; for instances without email. With `profile = development` it logs the whole message, including its links. |
+| `smtp` | SMTP submission with mandatory STARTTLS (`mail_smtp_host`, `mail_smtp_port`, `mail_smtp_username`, `mail_smtp_password`). |
+| `ses` | The Amazon SES v2 API (`mail_ses_region`, `mail_ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out. |
 
 ### `mail_from`
 
@@ -918,12 +907,12 @@ CAPTCHA service that the sign-in and registration forms check. The service recei
 - Default: `none`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `none` | yes | No CAPTCHA; nothing is sent to a third party. |
-| `turnstile` | yes | Cloudflare Turnstile. |
-| `hcaptcha` | yes | hCaptcha. |
-| `recaptcha` | yes | Google reCAPTCHA v2 with the checkbox (not v3 or Enterprise). |
+| Value | Description |
+| --- | --- |
+| `none` | No CAPTCHA; nothing is sent to a third party. |
+| `turnstile` | Cloudflare Turnstile. |
+| `hcaptcha` | hCaptcha. |
+| `recaptcha` | Google reCAPTCHA v2 with the checkbox (not v3 or Enterprise). |
 
 ### `captcha_site_key`
 
@@ -957,10 +946,10 @@ Whether this is a production instance. Settings that weaken a security default f
 - Default: `production`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `production` | yes | A production instance. |
-| `development` | yes | A development or test instance. |
+| Value | Description |
+| --- | --- |
+| `production` | A production instance. |
+| `development` | A development or test instance. |
 
 ### `http_allow_private_networks`
 
@@ -970,10 +959,10 @@ Lets outbound HTTP (federation, media, link previews) reach loopback, private, a
 - Default: `false`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `false` | yes | Only public `https` destinations on ports 443 and 80. |
-| `true` | yes | Every destination; requires `profile = development`. |
+| Value | Description |
+| --- | --- |
+| `false` | Only public `https` destinations on ports 443 and 80. |
+| `true` | Every destination; requires `profile = development`. |
 
 ### `webhook_allowed_destinations`
 
@@ -997,30 +986,6 @@ For development only: destinations on loopback or a private network that the Web
 
 - Environment variable: `MY_PUSH_ALLOWED_DESTINATIONS`
 - Default: none
-- Required: no
-
-### `remote_status_retention`
-
-How long a remote post is kept after its publication when nothing on this instance refers to it (a local reply, boost, favourite, bookmark, notification, or a thread with a local post); the hourly purge then deletes it. A Go duration such as `2160h` (90 days).
-
-- Environment variable: `MY_REMOTE_STATUS_RETENTION`
-- Default: `2160h`
-- Required: no
-
-### `remote_status_max_retention`
-
-The longest a remote post is kept after its publication, even when this instance refers to it; the hourly purge then deletes it, while local accounts' replies, boosts, favourites, and bookmarks stay and show it as deleted. A Go duration such as `8760h` (365 days); `0` or empty keeps referred posts without limit.
-
-- Environment variable: `MY_REMOTE_STATUS_MAX_RETENTION`
-- Default: none
-- Required: no
-
-### `relay_status_retention`
-
-How long a remote post that only a relay brought in is kept after its publication when nothing on this instance refers to it and no local account follows its author; the hourly purge then deletes it. A Go duration such as `168h` (7 days).
-
-- Environment variable: `MY_RELAY_STATUS_RETENTION`
-- Default: `168h`
 - Required: no
 
 ### `relay_max_activities_per_hour`
@@ -1063,10 +1028,10 @@ Cost Explorer metric that the imports of `billing_sources = aws` record.
 - Default: `NetUnblendedCost`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `NetUnblendedCost` | yes | The cost after the discounts (Savings Plans, Reserved Instances, private pricing), the closest to the invoice. |
-| `UnblendedCost` | yes | The cost before the discounts. |
+| Value | Description |
+| --- | --- |
+| `NetUnblendedCost` | The cost after the discounts (Savings Plans, Reserved Instances, private pricing), the closest to the invoice. |
+| `UnblendedCost` | The cost before the discounts. |
 
 ### `billing_aws_filter`
 
@@ -1076,11 +1041,11 @@ Which costs of the AWS account the imports of `billing_sources = aws` take. The 
 - Default: `none`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `none` | yes | Every cost that the credentials can see: the account's own, or, from the management account of an organization, every member account's. |
-| `linked_account` | yes | The costs of the member accounts of `billing_aws_linked_accounts` (the `LINKED_ACCOUNT` dimension). |
-| `tag` | yes | The costs of the resources that carry the cost allocation tag `billing_aws_tag`, which must be activated in the Billing console first. |
+| Value | Description |
+| --- | --- |
+| `none` | Every cost that the credentials can see: the account's own, or, from the management account of an organization, every member account's. |
+| `linked_account` | The costs of the member accounts of `billing_aws_linked_accounts` (the `LINKED_ACCOUNT` dimension). |
+| `tag` | The costs of the resources that carry the cost allocation tag `billing_aws_tag`, which must be activated in the Billing console first. |
 
 ### `billing_aws_tag`
 
@@ -1114,10 +1079,10 @@ How the imports of `billing_sources = gcp` read the Google Cloud usage charges. 
 - Default: `bigquery`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `bigquery` | yes | Sum the standard usage cost export of Cloud Billing to BigQuery (`billing_gcp_table`) with one query a day, within the free tier of BigQuery (docs/operations/billing-import.md). |
-| `budget` | yes | Read the notifications of a monthly Cloud Billing budget from a Pub/Sub pull subscription (`billing_gcp_budget_subscription`) once a day: the budget's estimated total of each month, one line named after the budget, without the services, the charge types, or the export's days (docs/operations/billing-import.md). A simple way for an operator without the BigQuery export; free within the free tier of Pub/Sub. |
+| Value | Description |
+| --- | --- |
+| `bigquery` | Sum the standard usage cost export of Cloud Billing to BigQuery (`billing_gcp_table`) with one query a day, within the free tier of BigQuery (docs/operations/billing-import.md). |
+| `budget` | Read the notifications of a monthly Cloud Billing budget from a Pub/Sub pull subscription (`billing_gcp_budget_subscription`) once a day: the budget's estimated total of each month, one line named after the budget, without the services, the charge types, or the export's days (docs/operations/billing-import.md). A simple way for an operator without the BigQuery export; free within the free tier of Pub/Sub. |
 
 ### `billing_gcp_table`
 
@@ -1175,12 +1140,12 @@ The payment provider of the supporters: local users subscribe to paid plans on i
 - Default: `none`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `none` | yes | No payments: the webhook endpoint and the reconciliation do not run. |
-| `stripe` | yes | Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` (docs/operations/payments-stripe.md). The build tag `no_payments_stripe` leaves it out. |
-| `payjp` | yes | PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out. |
-| `fake` | yes | Test builds only: a stand-in provider for end-to-end tests and demonstrations that keeps its side in the server's memory and serves its own checkout page, where paying records the subscription as paid without any money moving. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it (docs/reference/build-tags.md). It needs no other setting. |
+| Value | Description |
+| --- | --- |
+| `none` | No payments: the webhook endpoint and the reconciliation do not run. |
+| `stripe` | Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` (docs/operations/payments-stripe.md). The build tag `no_payments_stripe` leaves it out. |
+| `payjp` | PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` (docs/operations/payments-payjp.md). JPY only. The build tag `no_payments_payjp` leaves it out. |
+| `fake` | Test builds only: a stand-in provider for end-to-end tests and demonstrations that keeps its side in the server's memory and serves its own checkout page, where paying records the subscription as paid without any money moving. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it (docs/reference/build-tags.md). It needs no other setting. |
 
 ### `payments_stripe_secret_key`
 
@@ -1246,12 +1211,12 @@ How the voice chat rooms connect their participants. With `off`, the voice chat 
 - Default: `off`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `off` | yes | No voice chat. |
-| `p2p` | yes | The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect. |
-| `livekit` | yes | A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`. The build tag `no_voice_livekit` leaves it out. |
-| `sora` | yes | A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_sora_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. The build tag `no_voice_sora` leaves it out. |
+| Value | Description |
+| --- | --- |
+| `off` | No voice chat. |
+| `p2p` | The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect. |
+| `livekit` | A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`. The build tag `no_voice_livekit` leaves it out. |
+| `sora` | A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_sora_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. The build tag `no_voice_sora` leaves it out. |
 
 ### `voice_p2p_max_participants`
 
@@ -1301,11 +1266,11 @@ The TURN server that relays the audio of `voice = p2p` between browsers that can
 - Default: `none`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `none` | yes | No TURN server: browsers behind strict NATs or firewalls may not connect. |
-| `coturn` | yes | A coturn server at `voice_turn_coturn_urls`, with its `static-auth-secret` in `voice_turn_coturn_secret`. |
-| `cloudflare` | yes | Cloudflare's TURN service, with `voice_turn_cloudflare_key_id` and `voice_turn_cloudflare_api_token`; the server asks it for the credentials of each participant. |
+| Value | Description |
+| --- | --- |
+| `none` | No TURN server: browsers behind strict NATs or firewalls may not connect. |
+| `coturn` | A coturn server at `voice_turn_coturn_urls`, with its `static-auth-secret` in `voice_turn_coturn_secret`. |
+| `cloudflare` | Cloudflare's TURN service, with `voice_turn_cloudflare_key_id` and `voice_turn_cloudflare_api_token`; the server asks it for the credentials of each participant. |
 
 ### `voice_turn_coturn_urls`
 
@@ -1355,10 +1320,10 @@ Which connections the browsers of `voice = p2p` make. `voice = livekit` and `voi
 - Default: `all`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `all` | yes | Direct connections where possible and the TURN server otherwise; the participants of a room may learn each other's IP addresses. |
-| `relay` | yes | Only through the TURN server, which hides the participants' IP addresses from each other; needs `voice_turn`. |
+| Value | Description |
+| --- | --- |
+| `all` | Direct connections where possible and the TURN server otherwise; the participants of a room may learn each other's IP addresses. |
+| `relay` | Only through the TURN server, which hides the participants' IP addresses from each other; needs `voice_turn`. |
 
 ### `voice_livekit_url`
 
@@ -1400,10 +1365,10 @@ Where the Sora server of `voice = sora` runs.
 - Default: none
 - Required: when `voice = sora`
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `self_hosted` | yes | A Sora server of the operator: its API behind a reverse proxy with authentication at `voice_sora_api_url`, and its webhooks with Basic authentication (`voice_sora_webhook_username`, `voice_sora_webhook_password`). |
-| `cloud` | yes | Sora Cloud, with `voice_sora_cloud_project_id` and `voice_sora_cloud_api_key`. |
+| Value | Description |
+| --- | --- |
+| `self_hosted` | A Sora server of the operator: its API behind a reverse proxy with authentication at `voice_sora_api_url`, and its webhooks with Basic authentication (`voice_sora_webhook_username`, `voice_sora_webhook_password`). |
+| `cloud` | Sora Cloud, with `voice_sora_cloud_project_id` and `voice_sora_cloud_api_key`. |
 
 ### `voice_sora_signaling_urls`
 
@@ -1509,14 +1474,6 @@ How long a dynamically registered OAuth client without a usable token may go unu
 - Default: `2160h`
 - Required: no
 
-### `oauth_client_rate_limits`
-
-Caps on the client API requests of OAuth clients, for an administrator to hold back a client that overloads the server. A comma-separated list of `client_id=requests`: the requests that all the users of the client together may make in 5 minutes, on top of the per-account limit, such as `https://app.example/client.json=3000`. A client that is not listed is not limited. Over its cap, a request is answered `429` with `Retry-After`.
-
-- Environment variable: `MY_OAUTH_CLIENT_RATE_LIMITS`
-- Default: none
-- Required: no
-
 ### `metrics_exporter`
 
 Where the service metrics go: the request, federation, delivery, job, and stream metrics, named after the OpenTelemetry semantic conventions or with the prefix `my.`. Labels never carry a remote domain, an account, a URL, or a client IP.
@@ -1525,12 +1482,12 @@ Where the service metrics go: the request, federation, delivery, job, and stream
 - Default: `none`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `none` | yes | No metrics; measuring costs next to nothing. On Cloud Run the platform's metrics and log-based metrics stand in for them. |
-| `prometheus` | yes | The Prometheus text format at `GET /metrics` on `metrics_listen`, a listener of its own, for a Prometheus-compatible server (and KEDA) to scrape; for self-hosted instances. The build tag `no_otel` leaves it out. |
-| `otlp` | yes | OTLP over HTTP (protobuf) to an OpenTelemetry Collector, configured by the standard environment variables `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`), `OTEL_EXPORTER_OTLP_HEADERS`, and `OTEL_METRIC_EXPORT_INTERVAL` (default 60 seconds). The build tag `no_otel` leaves it out. |
-| `emf` | yes | CloudWatch Embedded Metric Format lines, which CloudWatch Logs turns into metrics; for AWS Lambda. The log line that ends each request and job carries its duration metrics, and the other measurements are written on standard output, one line per label set, at the end of each request and job. Requests in progress and open streams are not written. |
+| Value | Description |
+| --- | --- |
+| `none` | No metrics; measuring costs next to nothing. On Cloud Run the platform's metrics and log-based metrics stand in for them. |
+| `prometheus` | The Prometheus text format at `GET /metrics` on `metrics_listen`, a listener of its own, for a Prometheus-compatible server (and KEDA) to scrape; for self-hosted instances. The build tag `no_otel` leaves it out. |
+| `otlp` | OTLP over HTTP (protobuf) to an OpenTelemetry Collector, configured by the standard environment variables `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`), `OTEL_EXPORTER_OTLP_HEADERS`, and `OTEL_METRIC_EXPORT_INTERVAL` (default 60 seconds). The build tag `no_otel` leaves it out. |
+| `emf` | CloudWatch Embedded Metric Format lines, which CloudWatch Logs turns into metrics; for AWS Lambda. The log line that ends each request and job carries its duration metrics, and the other measurements are written on standard output, one line per label set, at the end of each request and job. Requests in progress and open streams are not written. |
 
 ### `metrics_listen`
 
@@ -1564,10 +1521,10 @@ Where the distributed traces go: the spans of the HTTP requests, the job runs (e
 - Default: `none`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `none` | yes | No spans; tracing costs next to nothing. The log lines still carry `trace_id` and `span_id` of a `traceparent` from `trusted_proxies`, which correlates them with the platform's traces (Cloud Run). |
-| `otlp` | yes | OTLP over HTTP (protobuf, gzip) to an OpenTelemetry Collector or another receiver, configured by the standard environment variables `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) and `OTEL_EXPORTER_OTLP_HEADERS`. The server does not authenticate to Cloud Trace or X-Ray itself: send to a collector next to it, which does (docs/operations/running.md). The build tag `no_otel` leaves it out. |
+| Value | Description |
+| --- | --- |
+| `none` | No spans; tracing costs next to nothing. The log lines still carry `trace_id` and `span_id` of a `traceparent` from `trusted_proxies`, which correlates them with the platform's traces (Cloud Run). |
+| `otlp` | OTLP over HTTP (protobuf, gzip) to an OpenTelemetry Collector or another receiver, configured by the standard environment variables `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) and `OTEL_EXPORTER_OTLP_HEADERS`. The server does not authenticate to Cloud Trace or X-Ray itself: send to a collector next to it, which does (docs/operations/running.md). The build tag `no_otel` leaves it out. |
 
 ### `traces_sample_ratio`
 
@@ -1585,10 +1542,10 @@ When the spans of `traces_exporter = otlp` are sent.
 - Default: `batch`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `batch` | yes | In batches, every few seconds, in the background; for processes that keep running (self-hosted). |
-| `unit` | yes | Also at the end of every recorded HTTP request and job, before it returns, to a collector on the same host; for the platforms that throttle or freeze an idle instance (Cloud Run with request-based billing, AWS Lambda). A request that is not recorded sends nothing. |
+| Value | Description |
+| --- | --- |
+| `batch` | In batches, every few seconds, in the background; for processes that keep running (self-hosted). |
+| `unit` | Also at the end of every recorded HTTP request and job, before it returns, to a collector on the same host; for the platforms that throttle or freeze an idle instance (Cloud Run with request-based billing, AWS Lambda). A request that is not recorded sends nothing. |
 
 ### `errors_exporter`
 
@@ -1598,11 +1555,11 @@ Where the error reports also go: the panics, the errors behind a 5xx response or
 - Default: `none`
 - Required: no
 
-| Value | In v0 | Description |
-| --- | --- | --- |
-| `none` | yes | Only the log line and the error groups in the database. |
-| `sentry` | yes | Also to a Sentry-compatible service at `errors_sentry_dsn`: Sentry (hosted or self-hosted), GlitchTip, or Datadog Error Tracking. |
-| `otlp` | yes | Also as OpenTelemetry log records of exceptions (event name `exception`) over OTLP/HTTP (protobuf, gzip), to the endpoint of the standard environment variables `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) with `OTEL_EXPORTER_OTLP_HEADERS`. Whether the receiving backend groups them as errors depends on the backend; for Sentry, GlitchTip, and Datadog use `sentry`. The build tag `no_otel` leaves it out. |
+| Value | Description |
+| --- | --- |
+| `none` | Only the log line and the error groups in the database. |
+| `sentry` | Also to a Sentry-compatible service at `errors_sentry_dsn`: Sentry (hosted or self-hosted), GlitchTip, or Datadog Error Tracking. |
+| `otlp` | Also as OpenTelemetry log records of exceptions (event name `exception`) over OTLP/HTTP (protobuf, gzip), to the endpoint of the standard environment variables `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) with `OTEL_EXPORTER_OTLP_HEADERS`. Whether the receiving backend groups them as errors depends on the backend; for Sentry, GlitchTip, and Datadog use `sentry`. The build tag `no_otel` leaves it out. |
 
 ### `errors_sentry_dsn`
 
@@ -1617,7 +1574,7 @@ DSN of the project that receives the error reports of `errors_exporter = sentry`
 Name of the environment that every error report carries, such as `staging`, to tell the reports of several deployments apart: up to 64 letters, digits, dots, hyphens, and underscores.
 
 - Environment variable: `MY_ERRORS_ENVIRONMENT`
-- Default: `production`
+- Default: the value of `profile`
 - Required: no
 
 ## Renamed and removed settings

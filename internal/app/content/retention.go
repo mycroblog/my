@@ -22,7 +22,7 @@ const (
 	// FR-803). Its payload is the cursor of the run (none for the first job of a run).
 	JobPurgeRemoteStatuses = "content.purge_remote_statuses"
 	// DefaultRemoteStatusRetention is how long a remote status that nothing local refers to is
-	// kept after its publication (the remote_status_retention setting).
+	// kept after its publication (the remote_status_retention_days setting).
 	DefaultRemoteStatusRetention = 90 * 24 * time.Hour
 	// RetentionInterval is the period of the purge's schedule.
 	RetentionInterval = time.Hour
@@ -94,14 +94,21 @@ type RetentionDeps struct {
 	// Jobs enqueues the next job of a run, outside any transaction.
 	Jobs  queue.JobQueue
 	Clock kernel.Clock
-	// Period is how long an unreferenced remote status is kept after its publication; zero
-	// means DefaultRemoteStatusRetention.
-	Period time.Duration
-	// MaxPeriod is how long any remote status is kept after its publication; zero keeps the
-	// referenced ones without limit.
-	MaxPeriod time.Duration
+	// Periods returns the current periods of the purge (the instance settings
+	// remote_status_retention_days and remote_status_max_retention_days), read per run.
+	Periods func(ctx context.Context) (RetentionPeriods, error)
 	// Batch is the number of statuses per transaction; zero means RetentionBatch.
 	Batch int
+}
+
+// RetentionPeriods are how long remote statuses are kept after their publication.
+type RetentionPeriods struct {
+	// Period is how long an unreferenced remote status is kept; zero means
+	// DefaultRemoteStatusRetention.
+	Period time.Duration
+	// MaxPeriod is how long any remote status is kept; zero keeps the referenced ones without
+	// limit.
+	MaxPeriod time.Duration
 }
 
 // Retention purges the remote statuses past their retention (ADR-0034). A remote status
@@ -118,12 +125,6 @@ type Retention struct{ d RetentionDeps }
 
 // NewRetention returns the retention purge on d.
 func NewRetention(d RetentionDeps) *Retention {
-	if d.Period <= 0 {
-		d.Period = DefaultRemoteStatusRetention
-	}
-	if d.MaxPeriod < 0 {
-		d.MaxPeriod = 0
-	}
 	if d.Batch <= 0 {
 		d.Batch = RetentionBatch
 	}
@@ -175,9 +176,16 @@ func (r *Retention) Run(ctx context.Context, after string) (next string, purged 
 			return after, 0, err
 		}
 	}
-	q := PurgeQuery{After: after, UnreferencedBefore: now.Add(-r.d.Period), Limit: r.d.Batch}
-	if r.d.MaxPeriod > 0 {
-		q.Before = now.Add(-r.d.MaxPeriod)
+	periods, err := r.d.Periods(ctx)
+	if err != nil {
+		return after, 0, fmt.Errorf("content: retention periods: %w", err)
+	}
+	if periods.Period <= 0 {
+		periods.Period = DefaultRemoteStatusRetention
+	}
+	q := PurgeQuery{After: after, UnreferencedBefore: now.Add(-periods.Period), Limit: r.d.Batch}
+	if periods.MaxPeriod > 0 {
+		q.Before = now.Add(-periods.MaxPeriod)
 	}
 	for range retentionMaxBatches {
 		var (

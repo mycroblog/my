@@ -20,14 +20,13 @@ func Reference() string {
 The server reads each setting from these sources, highest precedence first:
 
 1. The environment variable ` + "`" + EnvPrefix + "<KEY>`" + ` (the key in upper case).
-2. The TOML file named by ` + "`" + EnvConfigFile + "`" + ` (or ` + "`my config check -config <path>`" + `), with the keys below at the top level.
+2. The TOML file named by ` + "`" + EnvConfigFile + "`" + ` (or ` + "`my config check -config <path>`" + `), with the keys below at the top level. A value may be a string, a whole number, or a boolean; ` + "`mail_smtp_port = 587`" + ` and ` + "`mail_smtp_port = \"587\"`" + ` mean the same.
 3. The default.
 
 Secrets are read only from the environment: either the variable itself or ` + "`<NAME>_FILE`" + `, the path of a file that holds the value
 (trailing newlines are removed), for Docker and Kubernetes secrets. Setting a secret in the TOML file is an error.
 
 Adapters are always selected by an explicit key; nothing is inferred from a URL scheme.
-Values marked "not in v0" are planned but not shipped in v0, and are rejected.
 A binary built with a build tag that leaves an adapter out rejects the values that select it ([build tags](build-tags.md)).
 
 ` + "`my config check`" + ` validates the configuration and lists every problem at once; the server refuses to start on any of them.
@@ -39,6 +38,9 @@ the error names the new key, or tells why the setting was removed ([renamed and 
 An unknown key in the config file is an error too. An environment variable that starts with ` + "`" + EnvPrefix + "`" + ` but sets nothing
 is ignored with a warning, in the log of ` + "`my serve`" + ` and in the output of ` + "`my config check`" + `, because the platform may add such variables:
 Kubernetes adds ` + "`" + EnvPrefix + "SERVICE_HOST`, `" + EnvPrefix + "PORT`" + ` and the like for a Service named ` + "`my`" + `, and those are ignored without a warning.
+
+A Kubernetes Service named ` + "`my-mail-smtp`" + ` is the exception: the variable ` + "`" + EnvPrefix + "MAIL_SMTP_PORT=tcp://...`" + ` that it adds is the name of a setting, so the value fails its check and the server does not start.
+Rename the Service, or set ` + "`enableServiceLinks: false`" + ` on the pod.
 
 In the ` + "`production`" + ` profile, ` + "`my config check`" + ` then checks that the valid settings suit a production instance:
 errors, such as a ` + "`host`" + ` that other servers cannot reach or a ` + "`kek`" + ` that is not random, make it exit 1, and warnings, such as ` + "`mail = none`" + `, do not.
@@ -77,13 +79,9 @@ An instance setting that has never been set reads as its default, which is defin
 		}
 		fmt.Fprintf(&b, "\n- Default: %s\n- Required: %s\n", defaultCell(f), requiredCell(f))
 		if len(f.choices) > 0 {
-			b.WriteString("\n| Value | In v0 | Description |\n| --- | --- | --- |\n")
+			b.WriteString("\n| Value | Description |\n| --- | --- |\n")
 			for _, c := range f.choices {
-				inV0 := "yes"
-				if !c.inV0 {
-					inV0 = "not in v0"
-				}
-				fmt.Fprintf(&b, "| `%s` | %s | %s |\n", c.value, inV0, c.doc)
+				fmt.Fprintf(&b, "| `%s` | %s |\n", c.value, c.doc)
 			}
 		}
 	}

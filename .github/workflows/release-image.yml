@@ -6,7 +6,7 @@ name: Release image
 # A failure before the tagging leaves no tag; the last check, the anonymous pull, fails until the package is public.
 #
 # Run it again by hand after a failure, which changes nothing that is already right, or to move X.Y back to an earlier
-# patch when the latest one proved faulty (docs/operations/releasing.md, "The container image"):
+# patch when the latest one proved faulty (docs/agents/releasing.md, "The container image"):
 #
 #   gh workflow run release-image.yml --ref main -f version=v0.1.4 [-f roll_back=true]
 on:
@@ -102,7 +102,7 @@ jobs:
           mkdir -p "$DOCKER_CONFIG"
           for tag in $TAGS; do
             if ! docker pull -q "ghcr.io/mycroblog/my:$tag" > /dev/null; then
-              echo "::error::Anonymous pull of ghcr.io/mycroblog/my:$tag failed. Make the package public (docs/operations/releasing.md) and run this workflow again."
+              echo "::error::Anonymous pull of ghcr.io/mycroblog/my:$tag failed. Make the package public (docs/agents/releasing.md) and run this workflow again."
               exit 1
             fi
             have="$(scripts/release-image.sh digest "ghcr.io/mycroblog/my:$tag")"

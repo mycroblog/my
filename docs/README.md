@@ -24,7 +24,6 @@
 - [Search engines and AI crawlers (robots.txt, noindex, opting out of AI)](operations/crawlers.md)
 - [Server webhooks](operations/webhooks.md)
 - [Federation relays](operations/relays.md)
-- [Releasing](operations/releasing.md)
 - [Importing cloud usage costs (AWS Cost Explorer, Google Cloud's BigQuery export)](operations/billing-import.md)
 - [Supporter payments with Stripe](operations/payments-stripe.md)
 - [Supporter payments with PAY.JP](operations/payments-payjp.md)
@@ -34,7 +33,7 @@
 ## Reference
 
 - [Configuration reference](reference/configuration.md) (generated from the configuration schema)
-- [Build tags](reference/build-tags.md) (the tags that leave adapters out of the binary, and how they are checked)
+- [Build tags](reference/build-tags.md) (the tags that leave adapters out of the binary, and the sets that are checked)
 - [Jobs](reference/jobs.md) (every job type and periodic job: what it does, what starts it, how it retries, and whether to run it again by hand)
 - [Commands](reference/commands.md) (the go-task tasks and the pinned toolchain)
 - [Webhook reference](reference/webhooks.md) (the headers, signatures, events, and bodies a receiver gets)
@@ -47,6 +46,7 @@
 - [Instructions for coding agents](../AGENTS.md)
 - [Working on an issue (playbook)](agents/workflow.md)
 - [Writing an ADR (playbook)](agents/writing-adrs.md)
+- [Releasing (playbook)](agents/releasing.md)
 
 ## Design (in Japanese)
 

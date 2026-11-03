@@ -16,7 +16,7 @@ import (
 	"unicode"
 )
 
-// The bounds of the model's input (docs/operations/releasing.md, "Release notes"). Above maxSummariesBytes, the PRs
+// The bounds of the model's input (docs/agents/releasing.md, "Release notes"). Above maxSummariesBytes, the PRs
 // whose titles are marked ! come first and then the newest; every other PR goes in by its title alone. Above
 // maxTitlesBytes, the oldest titles and then the oldest issues are left out. The check still accepts every merged PR,
 // and the draft says what was left out.
