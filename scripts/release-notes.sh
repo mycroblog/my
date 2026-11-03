@@ -11,6 +11,9 @@
 #                                                       release.yml's input of that name: pre-releases only.
 #   scripts/release-notes.sh skeleton VERSION           Print the sections with a request to write them by hand,
 #                                                       for when the draft fails after the release's tags exist.
+#   scripts/release-notes.sh fit NOTES GENERATED        Print the file NOTES and then the file GENERATED, GitHub's
+#                                                       generated list of changes, cut by whole lines to fit a
+#                                                       Release's body, keeping its Full Changelog line.
 #
 # The previous release is the one the upgrade test starts from: scripts/previous-minor.sh, which ignores pre-releases
 # and the libraries' tags. A patch of the first minor version has none, so it is compared with the latest release.
@@ -51,6 +54,31 @@ breaking_commits() {
       printf '%s\t%s\t%s\n' "$sha" "$subject" "$(git diff-tree --no-commit-id --name-only -r "$sha" | paste -sd ,)"
     fi
   done < <(git log --no-merges --format='%h%x09%s' "$1..HEAD")
+}
+
+# A Release's body takes at most 125,000 characters. The count is in bytes here, which are never fewer than characters.
+BODY_LIMIT="${RELEASE_NOTES_BODY_LIMIT:-125000}"
+
+cmd_fit() {
+  [ $# -eq 2 ] || die "usage: fit NOTES GENERATED"
+  local cut="_The list of changes is cut at the limit of a Release's notes; the Full Changelog below has every change._"
+  local room=$((BODY_LIMIT - $(wc -c < "$1") - ${#cut} - 8))
+  [ "$room" -ge 0 ] || die "the notes alone are over the limit of $BODY_LIMIT"
+  cat "$1"
+  echo
+  LC_ALL=C awk -v room="$room" -v cut="$cut" '
+    /^\*\*Full Changelog\*\*/ { changelog = $0; next }
+    { lines[++n] = $0 }
+    END {
+      room -= length(changelog) + 1
+      for (i = 1; i <= n; i++) {
+        room -= length(lines[i]) + 1
+        if (room < 0) { print ""; print cut; print ""; break }
+        print lines[i]
+      }
+      if (changelog != "") print changelog
+    }
+  ' "$2"
 }
 
 cmd_draft() {
@@ -103,5 +131,6 @@ shift
 case "$command" in
   draft) cmd_draft "$@" ;;
   skeleton) cmd_skeleton "$@" ;;
+  fit) cmd_fit "$@" ;;
   *) die "unknown command: $command" ;;
 esac

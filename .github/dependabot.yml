@@ -73,9 +73,12 @@ updates:
       actions-security:
         applies-to: security-updates
         patterns: ["*"]
-  # The Go, Node.js, and Bun image tags in the Dockerfile must match .tool-versions (scripts/task.sh docker:dockerfile-check).
+  # The Go, Node.js, and Bun image tags in the Dockerfile must match .tool-versions (scripts/task.sh docker:dockerfile-check),
+  # so they are raised by hand and their versions are ignored below; Dependabot raises the digests of the FROM lines.
   - package-ecosystem: docker
-    directory: /
+    directories:
+      - /
+      - /pkg/mybot/examples
     schedule:
       interval: weekly
     cooldown:
@@ -88,3 +91,10 @@ updates:
       docker-security:
         applies-to: security-updates
         patterns: ["*"]
+    ignore:
+      - dependency-name: golang
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
+      - dependency-name: node
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
+      - dependency-name: oven/bun
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
