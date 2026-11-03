@@ -65,7 +65,7 @@ async function operatorServer(page: Page) {
     name: appName,
     registration: "user",
     confidential: false,
-    scope: "read write",
+    scopes: ["read", "write"],
     owner: operator,
     owner_deleted: false,
     disabled,

@@ -59,7 +59,7 @@ func newErrorGroup(sm appdiagnostics.Summary) ErrorGroup {
 		days = &sm.DayCounts
 	}
 	return ErrorGroup{
-		Id: g.ID, Fingerprint: g.Fingerprint, State: ErrorGroupState(h.State), StateSince: h.Since,
+		Id: g.ID, Fingerprint: g.Fingerprint, State: ErrorGroupState(h.State), StateChangedAt: h.Since,
 		ResolvedVersion: optText(h.ResolvedVersion), Source: ErrorGroupSource(g.Source), Kind: ErrorGroupKind(g.Kind),
 		Where: g.Where, Type: g.ErrorType, Message: g.Message, Count24h: sm.CountDay, Count7d: sm.CountWeek, DailyCounts: days,
 		FirstSeenAt: g.FirstSeenAt, LastSeenAt: sm.LastSeenAt, FirstVersion: g.FirstVersion, LastVersion: sm.LastVersion,
@@ -156,7 +156,7 @@ func (s *Server) GetErrorGroup(ctx context.Context, req GetErrorGroupRequestObje
 func (s *Server) errorGroupDetail(ctx context.Context, sm appdiagnostics.Summary) (ErrorGroupDetail, error) {
 	g := newErrorGroup(sm)
 	d := ErrorGroupDetail{
-		Id: g.Id, Fingerprint: g.Fingerprint, State: g.State, StateSince: g.StateSince, ResolvedVersion: g.ResolvedVersion,
+		Id: g.Id, Fingerprint: g.Fingerprint, State: g.State, StateChangedAt: g.StateChangedAt, ResolvedVersion: g.ResolvedVersion,
 		Source: g.Source, Kind: g.Kind, Where: g.Where, Type: g.Type, Message: g.Message, Count24h: g.Count24h, Count7d: g.Count7d,
 		FirstSeenAt: g.FirstSeenAt, LastSeenAt: g.LastSeenAt, FirstVersion: g.FirstVersion, LastVersion: g.LastVersion,
 		HourlyCounts: []ErrorGroupHourCount{}, Events: []ErrorGroupEvent{},

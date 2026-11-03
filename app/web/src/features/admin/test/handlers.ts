@@ -137,7 +137,7 @@ export function webhookFixture(id: string, overrides: Partial<Schemas["AdminWebh
     state_reason: "admin",
     state_changed_at: "2026-10-20T00:00:00Z",
     created_at: "2026-10-20T00:00:00Z",
-    updated_at: "2026-10-20T00:00:00Z",
+    revised_at: "2026-10-20T00:00:00Z",
     ...overrides,
   };
 }
@@ -164,7 +164,7 @@ export function loginProviderFixture(
     callback_url: `https://my.example/auth/external/${id}/callback`,
     linked_users: 0,
     created_at: "2026-10-20T00:00:00Z",
-    updated_at: "2026-10-20T00:00:00Z",
+    revised_at: "2026-10-20T00:00:00Z",
     ...overrides,
   };
 }
@@ -215,7 +215,7 @@ export function oauthClientFixture(
     name: "Tootle",
     registration: "user",
     confidential: false,
-    scope: "read write",
+    scopes: ["read", "write"],
     owner_deleted: false,
     disabled: false,
     created_at: "2026-10-22T00:00:00Z",
@@ -244,7 +244,7 @@ export function adminAnnouncementFixture(
     content: "<p>Maintenance on <strong>Sunday</strong>.</p>",
     state: "draft",
     created_at: "2026-10-21T00:00:00Z",
-    updated_at: "2026-10-21T00:00:00Z",
+    revised_at: "2026-10-21T00:00:00Z",
     ...overrides,
   };
 }
@@ -362,7 +362,7 @@ export function errorGroupFixture(id: string, overrides: Partial<Schemas["ErrorG
     id,
     fingerprint: "0123456789abcdef0123456789abcdef",
     state: "open",
-    state_since: "2026-10-20T00:00:00Z",
+    state_changed_at: "2026-10-20T00:00:00Z",
     source: "server",
     kind: "panic",
     where: "client_api GET /api/v1/statuses/{id}",

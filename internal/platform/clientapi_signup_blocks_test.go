@@ -49,7 +49,7 @@ func TestSignupBlocksThroughTheAPI(t *testing.T) {
 	}
 
 	domain := add(map[string]any{"kind": "email_domain", "value": "例え.jp", "severity": "reject", "comment": "spam wave"}, http.StatusCreated)
-	if domain.Value != "xn--r8jz45g.jp" || domain.State != clientapi.AdminSignupBlockStateActive || domain.Comment == nil || *domain.Comment != "spam wave" {
+	if domain.Value != "xn--r8jz45g.jp" || domain.State != clientapi.ModerationActionStateActive || domain.Comment == nil || *domain.Comment != "spam wave" {
 		t.Errorf("domain block = %+v", domain)
 	}
 	ip := add(map[string]any{"kind": "ip_range", "value": "192.0.2.7/24", "severity": "require_approval", "expires_in": 3600}, http.StatusCreated)
@@ -75,7 +75,7 @@ func TestSignupBlocksThroughTheAPI(t *testing.T) {
 	// A lifted block no longer matches; the username of the refused sign-up was never taken.
 	var lifted clientapi.AdminSignupBlock
 	if res := c.do("carol", http.MethodPost, "/admin/signup_blocks/"+domain.Id+"/lift", nil, &lifted); res.StatusCode != http.StatusOK ||
-		lifted.State != clientapi.AdminSignupBlockStateLifted || lifted.LiftedAt == nil {
+		lifted.State != clientapi.ModerationActionStateLifted || lifted.LiftedAt == nil {
 		t.Errorf("lift = %d %+v, want lifted", res.StatusCode, lifted)
 	}
 	if _, err := signUp("dave", "dave@mx.xn--r8jz45g.jp", ""); err != nil {

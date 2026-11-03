@@ -26,7 +26,7 @@ function muting(mutes: Schemas["MutedAccount"][], more = false) {
 /** Ten muted accounts: some with their notifications, some until a date. */
 const tenMutes: Schemas["MutedAccount"][] = listedAccounts.map((account, i) => ({
   account,
-  notifications: i % 2 === 0,
+  hide_notifications: i % 2 === 0,
   ...(i % 3 === 0 ? { expires_at: `2026-11-${String(i + 1).padStart(2, "0")}T00:00:00Z` } : {}),
 }));
 

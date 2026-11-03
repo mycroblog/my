@@ -234,7 +234,7 @@ function ClientRow({ client, actions }: { client: OAuthClient; actions: OAuthApp
       </TableCell>
       <TableCell wrap="anywhere">
         <Text size="sm" mono dir="ltr">
-          {client.scope}
+          {client.scopes.join(" ")}
         </Text>
       </TableCell>
       <TableCell>

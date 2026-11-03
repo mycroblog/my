@@ -180,7 +180,7 @@ func TestCreateListAndLiftAccountActions(t *testing.T) {
 	if res.StatusCode != http.StatusCreated || res.Header.Get("Cache-Control") != "no-store" {
 		t.Fatalf("create = %d (%s)", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
-	if got.AccountId != bobAccountID || got.Kind != clientapi.AdminAccountActionKindSuspend || got.State != clientapi.AdminAccountActionStateActive ||
+	if got.AccountId != bobAccountID || got.Kind != clientapi.AdminAccountActionKindSuspend || got.State != clientapi.ModerationActionStateActive ||
 		got.ReasonCategory != clientapi.AdminAccountActionCategorySpam || got.Issuer != clientapi.AdminAccountActionIssuerModerator ||
 		!got.NotifyTarget || got.PublicReason == nil || *got.PublicReason != "spam" || got.PrivateNote == nil ||
 		got.ReportId == nil || *got.ReportId != reportOne || got.IssuedByAccountId == nil || *got.IssuedByAccountId != aliceAccountID ||
@@ -209,16 +209,16 @@ func TestCreateListAndLiftAccountActions(t *testing.T) {
 
 	res = e.sendJSON(t, http.MethodPost, "/admin/account_actions/"+login.Id+"/lift", "admin", `{"reason":"appealed"}`)
 	lifted := decodeJSON[clientapi.AdminAccountAction](t, res)
-	if res.StatusCode != http.StatusOK || lifted.State != clientapi.AdminAccountActionStateLifted || lifted.LiftedAt == nil ||
+	if res.StatusCode != http.StatusOK || lifted.State != clientapi.ModerationActionStateLifted || lifted.LiftedAt == nil ||
 		lifted.LiftReason == nil || *lifted.LiftReason != "appealed" {
 		t.Errorf("lift = %d %+v", res.StatusCode, lifted)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/admin/account_actions/"+got.Id+"/lift", "admin", "")
-	if l := decodeJSON[clientapi.AdminAccountAction](t, res); res.StatusCode != http.StatusOK || l.LiftReason != nil || l.State != clientapi.AdminAccountActionStateLifted {
+	if l := decodeJSON[clientapi.AdminAccountAction](t, res); res.StatusCode != http.StatusOK || l.LiftReason != nil || l.State != clientapi.ModerationActionStateLifted {
 		t.Errorf("lift without a body = %d %+v", res.StatusCode, l)
 	}
 	res = e.sendJSON(t, http.MethodGet, "/admin/account_actions/"+login.Id, "admin-read", "")
-	if again := decodeJSON[clientapi.AdminAccountAction](t, res); again.State != clientapi.AdminAccountActionStateLifted {
+	if again := decodeJSON[clientapi.AdminAccountAction](t, res); again.State != clientapi.ModerationActionStateLifted {
 		t.Errorf("get = %+v", again)
 	}
 

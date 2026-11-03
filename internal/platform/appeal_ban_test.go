@@ -74,7 +74,7 @@ func TestBanAppealsThroughTheCompositionRoot(t *testing.T) {
 	var decided clientapi.AdminAppeal
 	e.want(e.do(http.MethodPost, "/admin/appeals/"+v.Appeal.ID+"/overturn", mod.token, map[string]any{"public_reason": "Our mistake."}, &decided),
 		http.StatusOK, "overturn the ban's appeal")
-	if decided.State != clientapi.ModerationAppealStateOverturned || decided.Action.State != clientapi.AdminAccountActionStateLifted {
+	if decided.State != clientapi.ModerationAppealStateOverturned || decided.Action.State != clientapi.ModerationActionStateLifted {
 		t.Errorf("overturned = %+v, want the ban lifted", decided)
 	}
 	actor, err := app.Accounts.FindByID(ctx, alice.id)

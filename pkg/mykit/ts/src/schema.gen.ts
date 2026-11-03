@@ -7764,9 +7764,9 @@ export interface components {
             /** @description The metadata fields as typed, in the order of the account's `fields`. */
             fields: components["schemas"]["AccountFieldSource"][];
             /** @description The media file of the avatar; omitted when there is none. */
-            avatar_media_id?: string;
+            avatar_media_id?: components["schemas"]["Id"];
             /** @description The media file of the header image; omitted when there is none. */
-            header_media_id?: string;
+            header_media_id?: components["schemas"]["Id"];
         };
         /** @description A page of the statuses of an account. */
         AccountStatusPage: components["schemas"]["StatusPage"] & {
@@ -7808,7 +7808,11 @@ export interface components {
              *     The domain actions on its domain are listed apart.
              */
             restrictions: components["schemas"]["AdminAccountRestriction"][];
-            registration_state?: components["schemas"]["AdminAccountRegistrationState"];
+            /**
+             * @description Where the registration of a local account stands; a user made with the command line is
+             *     `approved`. Omitted for a remote account.
+             */
+            registration_state?: components["schemas"]["RegistrationState"];
         };
         /** @description A moderation action on an account (FR-703). */
         AdminAccountAction: {
@@ -7835,7 +7839,7 @@ export interface components {
             issued_by_account_id?: components["schemas"]["Id"];
             /** @description Whether the account is told of the action. */
             notify_target: boolean;
-            state: components["schemas"]["AdminAccountActionState"];
+            state: components["schemas"]["ModerationActionState"];
             /** Format: date-time */
             issued_at: string;
             /**
@@ -7875,12 +7879,6 @@ export interface components {
         AdminAccountActionPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminAccountAction"][];
         };
-        /**
-         * @description `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-         *     lifted it.
-         * @enum {string}
-         */
-        AdminAccountActionState: "active" | "expired" | "lifted";
         /** @description The details of an account (FR-714). */
         AdminAccountDetail: components["schemas"]["AdminAccount"] & {
             registration?: components["schemas"]["AdminAccountRegistration"];
@@ -8027,7 +8025,7 @@ export interface components {
              * Format: date-time
              * @description When the settings last changed.
              */
-            updated_at: string;
+            revised_at: string;
         };
         /** @description The login providers, newest first. */
         AdminLoginProviderList: {
@@ -8178,14 +8176,8 @@ export interface components {
              * Format: date-time
              * @description When the failure that started the suppression happened.
              */
-            since: string;
+            state_changed_at: string;
         };
-        /**
-         * @description Where the registration of a local account stands; a user made with the command line is
-         *     `approved`. Omitted for a remote account.
-         * @enum {string}
-         */
-        AdminAccountRegistrationState: "pending" | "approved" | "rejected";
         /**
          * @description A capability that an action takes away (data-model §5.2). `login`: logging in and the
          *     API. `post`: posting, replying, boosting, quoting, editing. `interact`: following, favouriting,
@@ -8245,7 +8237,7 @@ export interface components {
              * Format: date-time
              * @description When its text or window last changed.
              */
-            updated_at: string;
+            revised_at: string;
         };
         /** @description A new announcement, with its title, its text, and its window. */
         AdminAnnouncementCreateRequest: {
@@ -8587,7 +8579,7 @@ export interface components {
             private_note?: string;
             /** @description Whether a public list of the domain actions hides part of the domain. */
             obfuscate: boolean;
-            state: components["schemas"]["AdminDomainActionState"];
+            state: components["schemas"]["ModerationActionState"];
             /** Format: date-time */
             issued_at: string;
             /**
@@ -8613,12 +8605,6 @@ export interface components {
         AdminDomainActionPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminDomainAction"][];
         };
-        /**
-         * @description `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-         *     lifted it.
-         * @enum {string}
-         */
-        AdminDomainActionState: "active" | "expired" | "lifted";
         /**
          * @description A week, month, or year of the income totals as the administrators see it: the `gross`, the
          *     provider's `fee`, and the `net` (gross less fee) of each currency, sorted by currency code,
@@ -8653,7 +8639,7 @@ export interface components {
              * Format: date-time
              * @description When the server entered its state; omitted for a server without failures.
              */
-            since?: string;
+            state_changed_at?: string;
             /** @description The number of distinct UTC days of the latest run of failed deliveries. */
             failure_days: number;
             /**
@@ -8740,8 +8726,8 @@ export interface components {
             registration: components["schemas"]["OAuthClientRegistration"];
             /** @description Whether the client has a secret (a confidential client) or not (a public client). */
             confidential: boolean;
-            /** @description The most that the client may be granted, as space-separated scopes. */
-            scope: string;
+            /** @description The most that the client may be granted. */
+            scopes: string[];
             /**
              * @description The account of the user who registered the client; omitted for the other routes and
              *     when that account is deleted (`owner_deleted`).
@@ -9107,7 +9093,7 @@ export interface components {
              * Format: date-time
              * @description When the registration entered its state.
              */
-            since: string;
+            state_changed_at: string;
             /**
              * @description The user's primary email address, shown only while the registration is pending, for its
              *     review; omitted when the user has none and once the registration is decided.
@@ -9176,8 +9162,7 @@ export interface components {
              *     made on this server.
              */
             uri?: string;
-            /** @enum {string} */
-            category: "spam" | "legal" | "violation" | "other";
+            category: components["schemas"]["ReportCategory"];
             /** @description The reporter's comment as plain text, up to 5,000 characters. */
             comment: string;
             /** @description Whether the report was forwarded to the target's server. */
@@ -9459,7 +9444,7 @@ export interface components {
             comment?: string;
             /** @description The ban the block was made from; omitted for a block added on its own. */
             moderation_action_id?: components["schemas"]["Id"];
-            state: components["schemas"]["AdminSignupBlockState"];
+            state: components["schemas"]["ModerationActionState"];
             /** Format: date-time */
             created_at: string;
             /**
@@ -9490,12 +9475,6 @@ export interface components {
          * @enum {string}
          */
         AdminSignupBlockSeverity: "reject" | "require_approval";
-        /**
-         * @description `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-         *     lifted it.
-         * @enum {string}
-         */
-        AdminSignupBlockState: "active" | "expired" | "lifted";
         /**
          * @description A supporter plan as the administrators see it (ADR-0072 §3). The yearly price is the
          *     monthly one × 12, discounted by `annual_discount_percent`, rounded down. A plan takes
@@ -9847,7 +9826,7 @@ export interface components {
              * Format: date-time
              * @description When the URL, the description, or the events last changed.
              */
-            updated_at: string;
+            revised_at: string;
         };
         /** @description The last attempt of a delivery. */
         AdminWebhookAttempt: {
@@ -9956,7 +9935,7 @@ export interface components {
              * Format: date-time
              * @description When its text or window last changed.
              */
-            updated_at: string;
+            revised_at: string;
             /** @description Whether the user has marked it read. */
             read: boolean;
             /**
@@ -10969,7 +10948,7 @@ export interface components {
              * Format: date-time
              * @description When the group entered its state; its first occurrence while it has always been open.
              */
-            state_since: string;
+            state_changed_at: string;
             /** @description The version of the server that a `resolved` group was resolved with; omitted for the other states. */
             resolved_version?: string;
             source: components["schemas"]["ErrorGroupSource"];
@@ -12024,7 +12003,7 @@ export interface components {
             public_reason?: string;
             /** @description The posts that an action on posts acted on; empty for an action on the whole account. */
             status_ids: components["schemas"]["Id"][];
-            state: components["schemas"]["AdminAccountActionState"];
+            state: components["schemas"]["ModerationActionState"];
             /** Format: date-time */
             issued_at: string;
             /**
@@ -12100,7 +12079,7 @@ export interface components {
              * @description Also hide the account's notifications.
              * @default true
              */
-            notifications: boolean;
+            hide_notifications: boolean;
             /**
              * @description How long the mute lasts, in seconds; 0 mutes until unmuted.
              * @default 0
@@ -12120,7 +12099,7 @@ export interface components {
         MutedAccount: {
             account: components["schemas"]["Account"];
             /** @description Whether the mute also hides the account's notifications. */
-            notifications: boolean;
+            hide_notifications: boolean;
             /**
              * Format: date-time
              * @description When the mute ends; left out for a mute until unmuted.
@@ -13381,6 +13360,12 @@ export interface components {
             voice_room_id?: components["schemas"]["Id"];
             state: components["schemas"]["ReportState"];
         };
+        /**
+         * @description `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
+         *     lifted it.
+         * @enum {string}
+         */
+        ModerationActionState: "active" | "expired" | "lifted";
         /**
          * @description Why the account is reported. `spam`: spam or unwanted promotion. `legal`: content that
          *     is illegal. `violation`: it breaks the instance rules that `rule_ids` cite. `other`:
@@ -22134,7 +22119,7 @@ export interface operations {
                  * @description A provider to count as if it were enabled, for the question of what enabling it would do.
                  *     A new provider needs none: nobody links to it yet.
                  */
-                provider_id?: string;
+                provider_id?: components["schemas"]["Id"];
             };
             header?: never;
             path?: never;

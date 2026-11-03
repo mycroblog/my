@@ -242,7 +242,7 @@ func TestSearchAdminAccounts(t *testing.T) {
 	alice := page.Items[0]
 	if alice.Id != aliceAccountID || !alice.Local || alice.Account.Username != "alice" ||
 		alice.State != clientapi.AdminAccountStateLimited || alice.RegistrationState == nil ||
-		*alice.RegistrationState != clientapi.AdminAccountRegistrationStateApproved ||
+		*alice.RegistrationState != clientapi.RegistrationStateApproved ||
 		!slices.Equal(alice.Restrictions, []clientapi.AdminAccountRestriction{
 			clientapi.AdminAccountRestrictionVisibilityCeilingPrivate, clientapi.AdminAccountRestrictionPublicDiscovery,
 		}) {
@@ -279,7 +279,7 @@ func TestGetAdminAccount(t *testing.T) {
 		d.Registration == nil || d.Registration.Reason == nil || *d.Registration.Reason != "hi" || !d.Registration.StateChangedAt.Equal(adminNow) ||
 		len(d.Actions) != 1 || d.Actions[0].Kind != clientapi.AdminAccountActionKindLimit ||
 		d.TwoFactorEnabled == nil || !*d.TwoFactorEnabled ||
-		d.EmailSuppression == nil || d.EmailSuppression.Kind != clientapi.EmailSuppressionKindHardBounce || !d.EmailSuppression.Since.Equal(adminNow.Add(-time.Minute)) {
+		d.EmailSuppression == nil || d.EmailSuppression.Kind != clientapi.EmailSuppressionKindHardBounce || !d.EmailSuppression.StateChangedAt.Equal(adminNow.Add(-time.Minute)) {
 		t.Errorf("alice = %d %+v", res.StatusCode, d)
 	}
 	// The invite the user signed up with, and who created it.

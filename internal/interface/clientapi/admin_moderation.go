@@ -63,7 +63,7 @@ func newAdminDomainAction(v appmoderation.DomainActionView) AdminDomainAction {
 	a := v.Action
 	out := AdminDomainAction{
 		Id: a.ID, Domain: a.Domain, Kind: AdminDomainActionKind(a.Kind), Obfuscate: a.Obfuscate,
-		State: AdminDomainActionState(v.State), IssuedAt: a.IssuedAt.UTC(),
+		State: ModerationActionState(v.State), IssuedAt: a.IssuedAt.UTC(),
 	}
 	if a.PublicComment != "" {
 		out.PublicComment = &a.PublicComment
@@ -274,7 +274,7 @@ func (s *Server) newAdminReportsWith(ctx context.Context, reads presentReads, re
 	for _, rec := range recs {
 		r, st := rec.Report, rec.Status
 		item := AdminReport{
-			Id: r.ID, Category: AdminReportCategory(r.Category), Comment: r.Comment, Forwarded: r.Forwarded,
+			Id: r.ID, Category: ReportCategory(r.Category), Comment: r.Comment, Forwarded: r.Forwarded,
 			FiledAt: r.FiledAt.UTC(), State: AdminReportState(st.State), StateChangedAt: st.Since.UTC(),
 			ReporterAccountId: r.ReporterAccountID, ReporterAccount: accounts[r.ReporterAccountID],
 			TargetAccountId: r.TargetAccountID, TargetAccount: accounts[r.TargetAccountID],

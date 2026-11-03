@@ -278,7 +278,7 @@ func (s *Server) ListMutes(ctx context.Context, req ListMutesRequestObject) (Lis
 		return nil, err
 	}
 	for i, m := range shown {
-		page.Items = append(page.Items, MutedAccount{Account: accounts[i], Notifications: m.HideNotifications, ExpiresAt: m.ExpiresAt})
+		page.Items = append(page.Items, MutedAccount{Account: accounts[i], HideNotifications: m.HideNotifications, ExpiresAt: m.ExpiresAt})
 	}
 	if last >= 0 {
 		page.NextCursor = encodeMuteCursor(mutes[last])
