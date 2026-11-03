@@ -5,11 +5,13 @@
 // and scripts/release-notes-test.sh tests the two together. It has a main of its own, outside agentkit, so that the
 // release job compiles only this and its YAML parser.
 //
-// It writes three files to -out: sections.md (Upgrading, Breaking changes, API changes), mykit.md, and mybot.md (the
-// text that goes in each library's section).
+// It writes four files to -out: sections.md (Upgrading, Breaking changes, API changes), mykit.md, and mybot.md (the
+// text that goes in each library's section), and required.json (the facts that the prose must name, for
+// tools/agentkit/cmd/releaseprose).
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -28,6 +30,7 @@ const (
 )
 
 // maxItems caps each list: a GitHub Release body holds 125,000 characters, and the tags exist by the time it is created.
+// required.json has no cap: the prose must name every item, also those past it.
 const maxItems = 100
 
 type options struct {
@@ -77,7 +80,11 @@ func run(o options) error {
 		}
 		d = laterRelease(o, old, cur, commits, schema)
 	}
-	for name, text := range map[string]string{"sections.md": d.sections, "mykit.md": d.mykit, "mybot.md": d.mybot} {
+	required, err := json.MarshalIndent(d.required, "", "  ")
+	if err != nil {
+		return err
+	}
+	for name, text := range map[string]string{"sections.md": d.sections, "mykit.md": d.mykit, "mybot.md": d.mybot, "required.json": string(required) + "\n"} {
 		if err := os.WriteFile(filepath.Join(o.outDir, name), []byte(text), 0o600); err != nil {
 			return err
 		}

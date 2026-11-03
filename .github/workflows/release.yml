@@ -3,7 +3,11 @@ name: Release
 # The only way a release is made (ADR-0079): run by hand with a version on the commit to release
 # (`gh workflow run release.yml --ref main -f version=v0.1.0`). It runs the slow suite (slow-suite.yml) on that commit
 # (github.sha) and, only when every job of the suite passed, tags the commit and creates a draft GitHub Release.
-# The decider reviews the draft and publishes it. docs/operations/releasing.md describes the procedure.
+# The decider reads the draft and publishes it. docs/operations/releasing.md describes the procedure.
+#
+# The notes (scripts/release-notes.sh): the release job creates the draft with the facts, derived from the repository.
+# release-notes-prose then asks Claude for the prose and checks it by program, and release-notes-edit puts prose and
+# facts in the draft. A failure of those two jobs leaves the facts in place and stops nothing, as the tags exist by then.
 #
 # The client libraries are released with the server at the same version (ADR-0093 §8, ADR-0094 §1): the release job
 # tags the Go module pkg/mykit as pkg/mykit/vX.Y.Z at the same commit, and pkg/mybot as pkg/mybot/vX.Y.Z at a commit
@@ -97,6 +101,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      facts: ${{ steps.draft.outputs.facts }}
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -112,6 +118,7 @@ jobs:
           go-version-file: .tool-versions
           cache: false
       - name: Tag the commit and the libraries, and create a draft release
+        id: draft
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -155,21 +162,145 @@ jobs:
           done
           prerelease=()
           if [[ "$VERSION" == *-* ]]; then prerelease=(--prerelease); fi
-          # The draft of the sections (scripts/release-notes.sh) comes before the generated list of changes; the
-          # decider reviews it and fills in what a script cannot before publishing the release. The tags exist by now
-          # and the suite took hours, so a failure of the draft only leaves the sections for the decider to write.
-          if ! scripts/release-notes.sh draft "$VERSION" "$PREVIOUS" > "$RUNNER_TEMP/notes.md"; then
+          # The facts of the notes (scripts/release-notes.sh) make the draft; the job release-notes-prose adds the prose.
+          # The tags exist by now and the suite took hours, so a failure here only leaves the sections for the decider
+          # to write, with no facts for the prose to start from.
+          notes="$RUNNER_TEMP/notes"
+          if scripts/release-notes.sh facts "$VERSION" "$PREVIOUS" "$notes"; then
+            echo "facts=true" >> "$GITHUB_OUTPUT"
+          else
             echo "::warning::scripts/release-notes.sh failed: the draft has no generated sections."
-            echo "The release notes' draft failed; write its sections by hand." >> "$GITHUB_STEP_SUMMARY"
-            scripts/release-notes.sh skeleton "$VERSION" > "$RUNNER_TEMP/notes.md"
+            echo "The release notes' facts failed; write the sections by hand." >> "$GITHUB_STEP_SUMMARY"
+            mkdir -p "$notes"
+            scripts/release-notes.sh skeleton "$VERSION" "$PREVIOUS" > "$notes/body.md"
           fi
-          # GitHub refuses a body over its limit, which the generated list alone passes for a release with no earlier
-          # one, and the tags exist by now: cut the list to fit.
-          gh api "repos/$GH_REPO/releases/generate-notes" -f tag_name="$VERSION" --jq .body > "$RUNNER_TEMP/generated.md"
-          scripts/release-notes.sh fit "$RUNNER_TEMP/notes.md" "$RUNNER_TEMP/generated.md" > "$RUNNER_TEMP/body.md"
-          gh release create "$VERSION" --draft --verify-tag --notes-file "$RUNNER_TEMP/body.md" \
+          gh release create "$VERSION" --draft --verify-tag --notes-file "$notes/body.md" \
             "${prerelease[@]}" --title "$VERSION"
           echo "Draft release $VERSION created at $SHA." >> "$GITHUB_STEP_SUMMARY"
+      # The facts as they were read before the tags existed: the comparison would change after them.
+      - name: Keep the facts for the prose
+        if: steps.draft.outputs.facts == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-notes-facts
+          path: ${{ runner.temp }}/notes/
+          retention-days: 7
+
+  # Writes the prose of the notes (scripts/release-notes.sh prose). Claude's API is reached by Workload Identity
+  # Federation (ADR-0115) in the environment `release-notes`, as the L4 job of nightly.yml does in its own: only here
+  # and in that job. Only `main` deploys to the environment, so a trial on a branch keeps the facts alone. The job reads
+  # PR and issue text, which is untrusted input, with no permission to write: the model gets no tool, and the output is
+  # an artifact that a program checked and that the next job puts in a draft for the decider to read.
+  #
+  # Nothing here may fail the release: the job holds its failures and the draft keeps the facts. The cost is bounded by
+  # the bounds of the input, three attempts at most, and the spend limit of the Claude Console workspace (ADR-0115).
+  release-notes-prose:
+    needs: [validate, release]
+    if: needs.release.outputs.facts == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    continue-on-error: true
+    environment: release-notes
+    permissions:
+      contents: read
+      id-token: write
+      issues: read
+      pull-requests: read
+    outputs:
+      body: ${{ steps.prose.outputs.body }}
+    steps:
+      # The whole history, for the merged PRs since the previous release.
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .tool-versions
+          cache: false
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .tool-versions
+      - name: Fetch the facts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-notes-facts
+          path: ${{ runner.temp }}/notes
+      - name: Read the merged PRs and the closed issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: scripts/release-notes.sh prs "$RUNNER_TEMP/notes"
+      # The version that claudeModel in tools/agentkit/cmd/releaseprose/claude.go must be known to.
+      - name: Install Claude Code
+        run: npm install --global @anthropic-ai/claude-code@2.1.308
+      # Claude Code exchanges the GitHub OIDC token in ANTHROPIC_IDENTITY_TOKEN_FILE; the step writes the file before
+      # the call and every 2 minutes while it runs, as GitHub's token expires about 5 minutes after it is issued.
+      # The command exits with 0 when the calls fail, and body.md then has the facts alone. No GitHub token is in this
+      # step's environment, and the command passes Claude Code only the ANTHROPIC_ variables.
+      - name: Write the prose
+        id: prose
+        env:
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+          ANTHROPIC_IDENTITY_TOKEN_FILE: ${{ runner.temp }}/anthropic-identity-token
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -o pipefail
+          fetch_token() {
+            curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" |
+              jq -er .value > "$ANTHROPIC_IDENTITY_TOKEN_FILE.next"
+            mv "$ANTHROPIC_IDENTITY_TOKEN_FILE.next" "$ANTHROPIC_IDENTITY_TOKEN_FILE"
+          }
+          fetch_token || echo "::warning::Could not fetch the GitHub OIDC token."
+          ( while sleep 120; do fetch_token || echo "::warning::Could not refresh the GitHub OIDC token."; done ) &
+          refresher=$!
+          trap 'kill "$refresher"' EXIT
+          scripts/release-notes.sh prose "$VERSION" "$RUNNER_TEMP/notes" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "body=true" >> "$GITHUB_OUTPUT"
+      - name: Keep the body
+        if: steps.prose.outputs.body == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-notes-body
+          path: ${{ runner.temp }}/notes/body.md
+          retention-days: 7
+
+  # Puts the body in the draft, apart from the job that holds the identity token. It replaces only a draft that still has
+  # the facts alone, so that a run again never overwrites what the decider edited or published.
+  release-notes-edit:
+    needs: [validate, release-notes-prose]
+    if: needs.release-notes-prose.outputs.body == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: write
+    steps:
+      - name: Fetch the body
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-notes-body
+          path: ${{ runner.temp }}/body
+      - name: Edit the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          current="$(gh release view "$VERSION" --json isDraft,body \
+            --jq 'if .isDraft and (.body | startswith("<!-- release-notes: facts only.")) then "replace" else "keep" end')"
+          if [ "$current" != replace ]; then
+            echo "The draft was edited or published: the prose stays out of it." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh release edit "$VERSION" --notes-file "$RUNNER_TEMP/body/body.md"
 
   image:
     # Pushes the image of the tested commit by digest. No cache: a release is built from the pinned base images and the
