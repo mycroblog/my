@@ -77,6 +77,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
   `state` は承認の状態か、閲覧者に引用先を見せない理由（`QuoteState`）で、`quoted_status` は `accepted`・`legacy` と、閲覧者のミュートの理由（`muted_account`・`blocked_domain`）のときだけ入れます。
   引用は 1 段で、`quoted_status` には `quote` を入れません。引用先の著者などのアカウントの分は、`Server.statusParts` が引用元と一緒に読みます。
   `Status.quotable`（ログインした閲覧者が引用できるか、`content.MayQuote`）と、作者にだけの `Status.quote_policy` も `StatusView` から詰め替えます。
+  公開範囲が `local`・`private`・`direct` の投稿でリモートの投稿を引用すると `422` で、投稿を作りません（[ADR-0144](../adr/0144-federation-differences-uri-quote.md) §4）。
   引用は投稿の作成（`createStatus` の `quoted_status_id` と `quote_policy`）でだけ付け、編集（`editStatus` の `remove_quote`）では外すことしかできません。
   作者は `setStatusQuotePolicy` で引用の許可を変え、`listStatusQuotes` で自分の投稿への引用を一覧し、`revokeStatusQuote` で承認を取り消します。既定の許可は `Preferences.default_quote_policy` です。
   アカウントの投稿の一覧（`listAccountStatuses`）だけは、`StatusPage` に `remote_fetch_started` を加えた `#/components/responses/AccountStatusPage` を返します。
@@ -236,8 +237,10 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
   取り消しは、消えた投稿には何も変えずに 404 を返し、まだある投稿には見えなくても効きます。利用者の名前が消せないまま投稿に残らないようにするためです。見えない投稿の応答は同じ 404 で、投稿の内容を出しません（`Status` を返すと内容が見えてしまいます）。
 - 一次のクライアントだけのスコープ（`admin`・`admin:read`・`admin:write`・`write:supporters`、`identity.FirstPartyOnlyScope`）は、一次でないクライアントの認可要求に含まれたら `invalid_scope` にし、
   広いスコープ（`write`）経由でも一次でないクライアントのトークンには許しません。
-  アカウントの保安の操作（パスワード・二要素認証・パスキー・認可したアプリの一覧と取り消し・アカウントの削除）は spec の操作に `x-first-party-only: true` を書き、スコープにかかわらず一次のクライアントのトークンだけを受けます。
+  アカウントの保安の操作（パスワード・二要素認証・パスキー・認可したアプリの一覧と取り消し・アカウントの削除）と、ADR-0143 の操作（データのエクスポートとインポート・投稿の自動削除の設定の変更とプレビュー・別名の追加と削除・招待・本人の処分の一覧と異議申し立て）は spec の操作に `x-first-party-only: true` を書き、スコープにかかわらず一次のクライアントのトークンだけを受けます。
   それ以外は 403 `/api/v1/problems/first-party-only` です。
+  モデレーターの通知（`notification.ModeratorPermission` に属する種類）は、操作を閉じずに種類で隠します。一次でないトークンには、利用者の権限にかかわらず、一覧・ストリーミング・未読の件数に出さず、Web Push の購読の `alerts` からも除きます。
+- `Relationship` は、トークンのスコープが覆うフィールドだけを返します。`following`・`requested`・`followed_by`・`requested_by`・`show_boosts`・`notify` は `read:follows` か `write:follows`、`blocking` は `read:blocks` か `write:blocks`、`muting`・`muting_notifications` は `read:mutes` か `write:mutes` です。無いフィールドは偽を意味しません。
   クライアントが一次かどうかの判定は `identity.OAuthClient.FirstParty` の 1 か所です。
 - 操作には細かいスコープを書きます（`verifyAccountCredentials` は `read:accounts`）。クライアントは広いスコープでも細かいスコープでも要求できます。
 - スコープを増やすときは、`internal/domain/identity` の定数と `knownScopes`（ソート済み）、spec の `scopes`、同意画面の文言（`server:auth.authorize.scope.*` と `authpages` の `scopeDescriptions`）を同時に変えます。
@@ -289,7 +292,7 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
 | `Bearer` でない、形式が違う、未知・失効・期限切れのトークン | 401 | `/api/v1/problems/invalid-token` | `Bearer error="invalid_token"` |
 | トークンは有効だが利用者がアプリを使えない（承認待ち・却下・メール未確認・停止・削除） | 403 | `/api/v1/problems/account-unavailable` | なし |
 | スコープ不足 | 403 | `/api/v1/problems/insufficient-scope` | `Bearer error="insufficient_scope", scope="<操作のスコープ>"` |
-| アカウントの保安の操作を、一次でないクライアントのトークンで呼んだ | 403 | `/api/v1/problems/first-party-only` | なし |
+| `x-first-party-only` の操作を、一次でないクライアントのトークンで呼んだ | 403 | `/api/v1/problems/first-party-only` | なし |
 | 管理の操作で、利用者のロールに権限がない | 403 | `/api/v1/problems/missing-permission` | なし |
 | レート制限の超過 | 429 | `about:blank` | なし（`Retry-After` を付ける） |
 

@@ -62,7 +62,8 @@ func (h *Handler) webFinger(w http.ResponseWriter, r *http.Request) {
 	h.writeJSON(w, r, typeJRD, doc)
 }
 
-// resolveResource finds the visible local actor that a WebFinger resource names.
+// resolveResource finds the visible local actor that a WebFinger resource names; it fails with
+// errActorGone for a deleted one.
 func (h *Handler) resolveResource(r *http.Request, resource string) (appaccount.Actor, error) {
 	if strings.HasPrefix(resource, "https://") {
 		id, username, ok := parseLocalURI(h.o.Host, resource)
@@ -70,7 +71,7 @@ func (h *Handler) resolveResource(r *http.Request, resource string) (appaccount.
 		case !ok:
 			return appaccount.Actor{}, appaccount.ErrNotFound
 		case id != "":
-			return h.lookupID(r, id)
+			return h.lookupResource(r, id)
 		default:
 			return h.lookupUsername(r, username)
 		}

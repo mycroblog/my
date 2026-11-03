@@ -26,8 +26,8 @@ func (f fakeObjectQuotes) FindQuotePolicy(context.Context, string) (appcontent.S
 	return appcontent.StatusQuotePolicy{}, appcontent.ErrNotFound
 }
 
-func (f fakeObjectQuotes) QuotedPageURL(_ context.Context, uri string) (string, error) {
-	return uri, nil
+func (f fakeObjectQuotes) FederatedQuotePage(_ context.Context, uri string) (string, bool, error) {
+	return uri, true, nil
 }
 
 func (f fakeObjectQuotes) FindQuoteAuthorization(_ context.Context, id string) (appcontent.QuoteAuthorization, error) {
@@ -40,11 +40,15 @@ func (f fakeObjectQuotes) FindQuoteAuthorization(_ context.Context, id string) (
 
 // TestObjectsQuoteAuthorization checks the GET of a QuoteAuthorization of this server
 // (ADR-0069 §1): the approval by the quoted author, a Tombstone with Gone once revoked or once
-// the quoted status is deleted, and ErrNotFound for one that does not exist.
+// the quoted status is deleted, and ErrNotFound for one that does not exist or is of a
+// local-visibility status.
 func TestObjectsQuoteAuthorization(t *testing.T) {
 	w := newObjWorld()
 	quoted := w.post("0192f3b0-0000-7000-8000-0000000000a1", appcontent.VisibilityPublic)
 	gone := w.post("0192f3b0-0000-7000-8000-0000000000a2", appcontent.VisibilityPublic)
+	localOnly := w.post("0192f3b0-0000-7000-8000-0000000000a3", appcontent.VisibilityLocal)
+	localGone := w.post("0192f3b0-0000-7000-8000-0000000000a4", appcontent.VisibilityLocal)
+	w.deleted[localGone.ID] = true
 	w.deleted[gone.ID] = true
 	revokedAt := objNow
 	const quoting = "https://remote.example/notes/1"
@@ -52,6 +56,9 @@ func TestObjectsQuoteAuthorization(t *testing.T) {
 		"0192f3b0-0000-7000-8000-0000000000b1": {ID: "0192f3b0-0000-7000-8000-0000000000b1", QuotingURI: quoting, QuotedStatusID: quoted.ID, CreatedAt: objNow.Add(-time.Minute)},
 		"0192f3b0-0000-7000-8000-0000000000b2": {ID: "0192f3b0-0000-7000-8000-0000000000b2", QuotingURI: quoting, QuotedStatusID: quoted.ID, RevokedAt: &revokedAt},
 		"0192f3b0-0000-7000-8000-0000000000b3": {ID: "0192f3b0-0000-7000-8000-0000000000b3", QuotingURI: quoting, QuotedStatusID: gone.ID},
+		"0192f3b0-0000-7000-8000-0000000000b4": {ID: "0192f3b0-0000-7000-8000-0000000000b4", QuotingURI: quoting, QuotedStatusID: localOnly.ID},
+		"0192f3b0-0000-7000-8000-0000000000b5": {ID: "0192f3b0-0000-7000-8000-0000000000b5", QuotingURI: quoting, QuotedStatusID: localOnly.ID, RevokedAt: &revokedAt},
+		"0192f3b0-0000-7000-8000-0000000000b6": {ID: "0192f3b0-0000-7000-8000-0000000000b6", QuotingURI: quoting, QuotedStatusID: localGone.ID},
 	}
 	o := appfederation.NewObjects(appfederation.ObjectsDeps{
 		Statuses: w, Accounts: w, Graph: w, Timeline: w, Reader: w, Domains: w, Host: objHost, Quotes: fakeObjectQuotes{auths: auths},
@@ -80,7 +87,14 @@ func TestObjectsQuoteAuthorization(t *testing.T) {
 			t.Errorf("QuoteAuthorization(%s) = %+v, %v; want Gone", id, obj, err)
 		}
 	}
-	if _, err := o.QuoteAuthorization(t.Context(), "0192f3b0-0000-7000-8000-0000000000b9"); !errors.Is(err, appfederation.ErrNotFound) {
-		t.Errorf("QuoteAuthorization(missing) = %v, want ErrNotFound", err)
+	for _, id := range []string{
+		"0192f3b0-0000-7000-8000-0000000000b9", // missing
+		"0192f3b0-0000-7000-8000-0000000000b4", // of a local-visibility post
+		"0192f3b0-0000-7000-8000-0000000000b5", // revoked, of a local-visibility post
+		"0192f3b0-0000-7000-8000-0000000000b6", // of a deleted local-visibility post
+	} {
+		if _, err := o.QuoteAuthorization(t.Context(), id); !errors.Is(err, appfederation.ErrNotFound) {
+			t.Errorf("QuoteAuthorization(%s) = %v, want ErrNotFound", id, err)
+		}
 	}
 }

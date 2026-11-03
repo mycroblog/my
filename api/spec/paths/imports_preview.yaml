@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: previewDataImport
+  x-first-party-only: true
   summary: Preview an import of a CSV file
   description: |
     Reads a CSV file as `startDataImport` would and tells what importing it would do,

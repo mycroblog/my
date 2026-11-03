@@ -15,6 +15,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: addAccountAlias
+  x-first-party-only: true
   summary: Add an alias to the authenticated user
   description: |
     Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor

@@ -265,7 +265,7 @@ func (h *Handler) closure(op instance.ClosureOperation, open, closed http.Handle
 	}
 }
 
-// gone answers 410 Gone for a closed server: a GET under /ap/ gets a Tombstone of the requested
+// gone answers 410 Gone for a closed server or a deleted local actor: a GET under /ap/ gets a Tombstone of the requested
 // id, and any other request the error response.
 func (h *Handler) gone(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet || !strings.HasPrefix(r.URL.Path, apPrefix) {
@@ -295,6 +295,10 @@ func (h *Handler) notFound(w http.ResponseWriter, r *http.Request) {
 
 // fail answers a lookup error: 404 for ErrNotFound, otherwise 500 after logging it.
 func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, errActorGone) {
+		h.gone(w, r)
+		return
+	}
 	if errors.Is(err, appaccount.ErrNotFound) || errors.Is(err, appfederation.ErrNotFound) {
 		h.notFound(w, r)
 		return

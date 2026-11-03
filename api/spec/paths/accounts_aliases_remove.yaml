@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: removeAccountAlias
+  x-first-party-only: true
   summary: Remove an alias of the authenticated user
   description: |
     Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a

@@ -627,7 +627,7 @@ func (s *Server) followAccount(w http.ResponseWriter, r *http.Request) {
 		s.follows = append(s.follows, id)
 		s.notifyLocked()
 	}
-	writeJSON(w, mykit.Relationship{Id: id, Following: true, ShowBoosts: true})
+	writeJSON(w, mykit.Relationship{Id: id, Following: new(true), ShowBoosts: new(true)})
 }
 
 // statusLocked is the status id that the server knows, or writes a 404.

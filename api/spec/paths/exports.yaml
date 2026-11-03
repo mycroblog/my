@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listDataExports
+  x-first-party-only: true
   summary: List the authenticated user's data exports
   description: |
     Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -22,6 +23,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: requestDataExport
+  x-first-party-only: true
   summary: Request an archive of the authenticated user's data
   description: |
     Starts building a ZIP archive of the user's data (FR-008): `actor.json` (the actor),

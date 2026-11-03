@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: downloadDataExport
+  x-first-party-only: true
   summary: Download the archive of a data export
   description: |
     Returns the ZIP archive of one of the user's exports. An export that is not `ready` is

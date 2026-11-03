@@ -146,7 +146,7 @@ export function useAuthorActions(post: Status, isMenuOpen: boolean): AuthorActio
         block: {
           label: blocking ? t("client:status.author.unblock", { handle }) : t("client:status.author.block", { handle }),
           isDisabled,
-          isUndo: blocking,
+          isUndo: blocking === true,
           run: () => {
             confirm(blocking ? "unblock" : "block");
           },
