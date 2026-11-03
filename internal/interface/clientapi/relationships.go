@@ -102,14 +102,26 @@ func (s *Server) relate(ctx context.Context, targetID string, change func(v View
 	return s.relateGuarded(ctx, targetID, nil, change)
 }
 
+// relateDespiteBlock is relate for the changes that a user may make to an account that blocks
+// them: blocking it back, and undoing their own block or mute of it. The answer reveals nothing
+// new, because a Relationship never tells that the account blocks the viewer.
+func (s *Server) relateDespiteBlock(ctx context.Context, targetID string, change func(v Viewer) (appgraph.Relationship, error)) (*RelationshipJSONResponse, *problem, error) {
+	return s.relateTo(ctx, targetID, false, nil, change)
+}
+
 // relateGuarded is relate with guard, which runs on the visible account before change and
 // returns the problem that refuses the change, or nil; a nil guard refuses nothing.
 func (s *Server) relateGuarded(ctx context.Context, targetID string, guard func(ctx context.Context, v Viewer, a appaccount.Actor) (*problem, error), change func(v Viewer) (appgraph.Relationship, error)) (*RelationshipJSONResponse, *problem, error) {
+	return s.relateTo(ctx, targetID, true, guard, change)
+}
+
+// relateTo is relateGuarded; blockCheck makes an account that blocks the viewer a 404.
+func (s *Server) relateTo(ctx context.Context, targetID string, blockCheck bool, guard func(ctx context.Context, v Viewer, a appaccount.Actor) (*problem, error), change func(v Viewer) (appgraph.Relationship, error)) (*RelationshipJSONResponse, *problem, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	a, ok, err := s.visibleAccount(ctx, &v, targetID)
+	a, ok, err := s.presentableByID(ctx, &v, targetID, blockCheck)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -299,7 +311,7 @@ func (s *Server) RejectFollowRequest(ctx context.Context, req RejectFollowReques
 
 // BlockAccount serves POST /api/v1/accounts/{id}/block.
 func (s *Server) BlockAccount(ctx context.Context, req BlockAccountRequestObject) (BlockAccountResponseObject, error) {
-	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
+	res, p, err := s.relateDespiteBlock(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.Block(ctx, v.AccountID, req.Id)
 	})
 	switch {
@@ -313,7 +325,7 @@ func (s *Server) BlockAccount(ctx context.Context, req BlockAccountRequestObject
 
 // UnblockAccount serves POST /api/v1/accounts/{id}/unblock.
 func (s *Server) UnblockAccount(ctx context.Context, req UnblockAccountRequestObject) (UnblockAccountResponseObject, error) {
-	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
+	res, p, err := s.relateDespiteBlock(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.Unblock(ctx, v.AccountID, req.Id)
 	})
 	switch {
@@ -353,7 +365,7 @@ func (s *Server) MuteAccount(ctx context.Context, req MuteAccountRequestObject) 
 
 // UnmuteAccount serves POST /api/v1/accounts/{id}/unmute.
 func (s *Server) UnmuteAccount(ctx context.Context, req UnmuteAccountRequestObject) (UnmuteAccountResponseObject, error) {
-	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
+	res, p, err := s.relateDespiteBlock(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.Unmute(ctx, v.AccountID, req.Id)
 	})
 	switch {

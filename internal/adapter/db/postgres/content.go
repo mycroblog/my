@@ -58,7 +58,7 @@ func (r *StatusRepository) InsertLocalStatus(ctx context.Context, tx uow.Tx, ls 
 	err = q.InsertLocalStatus(ctx, postgresgen.InsertLocalStatusParams{
 		StatusID:        ls.StatusID,
 		AuthorAccountID: ls.AuthorAccountID,
-		ClientID:        toNullString(ls.ClientID),
+		OauthClientID:   toNullString(ls.ClientID),
 		IdempotencyKey:  toNullString(ls.IdempotencyKey),
 	})
 	if isUniqueViolation(err, "local_statuses_author_account_id_idempotency_key") {
@@ -732,7 +732,7 @@ func localStatusFrom(row postgresgen.LocalStatus) content.LocalStatus {
 	return content.LocalStatus{
 		StatusID:        row.StatusID,
 		AuthorAccountID: row.AuthorAccountID,
-		ClientID:        fromNullString(row.ClientID),
+		ClientID:        fromNullString(row.OauthClientID),
 		IdempotencyKey:  fromNullString(row.IdempotencyKey),
 	}
 }

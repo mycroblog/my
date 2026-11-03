@@ -5790,7 +5790,8 @@ type AdminReport struct {
 	// StatusIds The IDs of the target's posts that the report points at.
 	StatusIds []Id `json:"status_ids"`
 
-	// TargetAccount The account reported; omitted when the account is gone.
+	// TargetAccount The account reported, even when it is suspended or blocks the reporter; omitted when the
+	// account is gone.
 	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -5862,7 +5863,8 @@ type AdminReportDetail struct {
 	// review. A post that the server no longer has is left out.
 	Statuses []AdminReportStatus `json:"statuses"`
 
-	// TargetAccount The account reported; omitted when the account is gone.
+	// TargetAccount The account reported, even when it is suspended or blocks the reporter; omitted when the
+	// account is gone.
 	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.

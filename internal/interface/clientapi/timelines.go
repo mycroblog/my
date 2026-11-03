@@ -311,7 +311,9 @@ func (s *Server) GetHashtagTimeline(ctx context.Context, req GetHashtagTimelineR
 }
 
 // ListAccountStatuses serves GET /api/v1/accounts/{id}/statuses: the account's profile
-// timeline, or its pinned statuses in one page. An unknown account is a 404. The viewer's
+// timeline, or its pinned statuses in one page. An account that getAccount answers with a 404
+// (unknown, not active, hidden by moderation, the instance actor, or blocking the viewer) is a
+// 404 here too. The viewer's
 // timeline languages do not apply: a profile shows the account in every language. The first
 // page of a logged-in viewer may start fetching the recent posts of a remote account
 // (Options.Outboxes, ADR-0044).
@@ -320,13 +322,12 @@ func (s *Server) ListAccountStatuses(ctx context.Context, req ListAccountStatuse
 	if p := s.plainPageProblem(ctx, req.Params.Cursor, req.Params.Limit); p != nil {
 		return ListAccountStatusesdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	account, err := s.o.Accounts.FindByID(ctx, req.Id)
-	if errors.Is(err, appaccount.ErrNotFound) {
-		l := s.Localizer(ctx)
-		body, headers := s.NewProblem(ctx, http.StatusNotFound, ProblemTypeBlank, l.ServerErrorsNotFound(), "")
-		return ListAccountStatusesdefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusNotFound}, nil
-	} else if err != nil {
+	account, ok, err := s.visibleAccount(ctx, v, req.Id)
+	if err != nil {
 		return nil, err
+	}
+	if !ok {
+		return ListAccountStatusesdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	}
 	params := req.Params
 	if params.Pinned != nil && *params.Pinned {

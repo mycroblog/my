@@ -453,6 +453,9 @@ func (h *StatusHandlers) untombstoned(ctx context.Context, uri, owner federation
 // With opts.parent, the fetch of its parent is enqueued in the same transaction; with opts.relay,
 // it is stored only when it is public, and recorded as relayed.
 func (h *StatusHandlers) store(ctx context.Context, author appaccount.Actor, obj *federation.Object, opts storeOptions) (appcontent.Status, error) {
+	if author.Deleted() {
+		return appcontent.Status{}, fmt.Errorf("%w: the author of %s is deleted", ErrNotTaken, obj.ID)
+	}
 	followers, err := h.followers(ctx, author)
 	if err != nil {
 		return appcontent.Status{}, err

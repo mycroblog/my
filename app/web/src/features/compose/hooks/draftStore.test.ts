@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { beforeEach, describe, expect, test } from "vitest";
 import { composeKey } from "../../../lib/storage";
-import { DraftStore } from "./draftStore";
+import { type AttachmentDraft, type ComposeState, DraftStore, hasUnuploadedAttachment } from "./draftStore";
 
 const key = composeKey("account-1");
 const body = { text: "Hi", visibility: "public" } as const;
@@ -71,4 +71,18 @@ describe("DraftStore", () => {
     sessionStorage.setItem(key.name, "{not json");
     expect(new DraftStore(key).getSnapshot().draft.text).toBe("");
   });
+});
+
+test("a file not yet uploaded, in the draft or the outbox, is what a reload would lose", () => {
+  const attachment = { key: "a", mediaId: null, description: "", previewUrl: "blob:a", error: null };
+  const uploaded = { ...attachment, mediaId: "media-1" };
+  const state = (draft: AttachmentDraft[], sending: AttachmentDraft[] = []) =>
+    ({
+      draft: { attachments: draft },
+      outbox: sending.length === 0 ? [] : [{ draft: { attachments: sending } }],
+    }) as unknown as ComposeState;
+  expect(hasUnuploadedAttachment(state([]))).toBe(false);
+  expect(hasUnuploadedAttachment(state([uploaded], [uploaded]))).toBe(false);
+  expect(hasUnuploadedAttachment(state([attachment]))).toBe(true);
+  expect(hasUnuploadedAttachment(state([], [attachment]))).toBe(true);
 });

@@ -357,6 +357,24 @@ export const signInKey = declareKey<StoredSignIn | null>("my:oauth-pending", {
   userData: false,
 });
 
+/** When a waiting Service Worker was first found (lib/pwa, ADR-0141 §3), in epoch milliseconds; a swap removes it. */
+export const updateSeenKey = declareKey<number | null>("my:update-seen-at", {
+  area: "local",
+  version: 1,
+  defaultValue: null,
+  parse: schemaParser(z.number()),
+  userData: false,
+});
+
+/** The `webClientEpoch` this tab last reloaded for by itself (lib/pwa, ADR-0141 §4). */
+export const requiredReloadKey = declareKey<number | null>("my:required-reload-epoch", {
+  area: "session",
+  version: 1,
+  defaultValue: null,
+  parse: schemaParser(z.number()),
+  userData: false,
+});
+
 /** When this tab last reloaded after a chunk failed to load (lib/pwa), in epoch milliseconds. */
 export const preloadReloadKey = declareKey<number | null>("my:preload-error-reloaded-at", {
   area: "session",

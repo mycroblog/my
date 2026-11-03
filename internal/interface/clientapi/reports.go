@@ -136,7 +136,8 @@ func (s *Server) ListOwnReports(ctx context.Context, req ListOwnReportsRequestOb
 }
 
 // newReports presents the viewer's own reports recs, in order, as the Report schema, with each
-// target account read once. A report whose target account no longer exists is left out.
+// target account read once, whether or not it is suspended or blocks the viewer: the report is
+// about that account. A report whose target account no longer exists is left out.
 func (s *Server) newReports(ctx context.Context, recs []moderation.ReportRecord) ([]Report, error) {
 	targets := map[string]bool{}
 	var actors []appaccount.Actor

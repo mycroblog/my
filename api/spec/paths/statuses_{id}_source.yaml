@@ -4,7 +4,9 @@ parameters:
 get:
   operationId: getStatusSource
   summary: Get the source of the authenticated user's status, for editing it
-  description: Another account's status is a 404, the same as a missing one.
+  description: |
+    Another account's status is a 404, the same as a missing one, and so is a `direct` status
+    without `read:direct`.
   tags: [statuses]
   security:
     - oauth2: ["read:statuses"]

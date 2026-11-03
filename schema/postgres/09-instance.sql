@@ -315,3 +315,17 @@ CREATE TABLE instance_secrets (
   created_at timestamptz NOT NULL
 );
 CREATE UNIQUE INDEX instance_secrets_name ON instance_secrets (name);
+
+-- ---------------------------------------------------------------------------------------------
+-- instance: domains of the instance (data-model §4.9, ADR-0018). Owned by internal/app/instance.
+-- ---------------------------------------------------------------------------------------------
+
+-- Resource: the host and account_domain that this database belongs to, one row written once. The
+-- server refuses to start when the configuration differs, since other servers store ids and
+-- handles made from them.
+CREATE TABLE instance_domains (
+  id integer NOT NULL PRIMARY KEY CHECK (id = 1),
+  host text NOT NULL,
+  account_domain text NOT NULL,
+  recorded_at timestamptz NOT NULL
+);

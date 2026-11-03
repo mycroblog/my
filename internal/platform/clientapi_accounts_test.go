@@ -292,11 +292,12 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	if r := e.relate("block", carol, alice, nil); !r.Blocking {
 		t.Errorf("block again = %+v", r)
 	}
-	// Alice cannot find carol anymore: every endpoint answers as for an unknown account.
+	// Alice cannot find carol anymore: every endpoint answers as for an unknown account, except the
+	// ones for alice's own edges (TestBlockedUserManagesTheirOwnEdges).
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id, alice.token, nil, nil), http.StatusNotFound, "get blocker")
 	e.want(e.do(http.MethodGet, "/accounts/lookup?acct=carol", alice.token, nil, nil), http.StatusNotFound, "lookup blocker")
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id+"/followers", alice.token, nil, nil), http.StatusNotFound, "blocker's followers")
-	for _, action := range []string{"follow", "unfollow", "block", "mute"} {
+	for _, action := range []string{"follow", "unfollow", "mute"} {
 		e.want(e.do(http.MethodPost, "/accounts/"+carol.id+"/"+action, alice.token, nil, nil), http.StatusNotFound, action+" blocker")
 	}
 	if rs := e.relationships(alice, carol.id, dave.id); len(rs) != 1 || rs[0].Id != dave.id {

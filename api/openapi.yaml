@@ -2508,7 +2508,8 @@ paths:
       description: |
         Ends the follows between the viewer and the account in both directions and keeps
         either from following the other until the block is lifted (FR-303). Blocking an
-        account that the viewer already blocks changes nothing. Blocking a remote account
+        account that the viewer already blocks changes nothing, and an account that blocks the
+        viewer can be blocked back. Blocking a remote account
         also sends a Block to its server.
       tags:
         - accounts
@@ -2665,7 +2666,9 @@ paths:
     post:
       operationId: unblockAccount
       summary: Unblock an account
-      description: The follows that the block ended stay ended. Without a block it changes nothing.
+      description: |
+        The follows that the block ended stay ended. Without a block it changes nothing. It also
+        works on an account that blocks the user.
       tags:
         - accounts
       security:
@@ -2699,7 +2702,7 @@ paths:
     post:
       operationId: unmuteAccount
       summary: Unmute an account
-      description: Without a mute it changes nothing.
+      description: Without a mute it changes nothing. It also works on an account that blocks the user.
       tags:
         - accounts
       security:
@@ -3518,7 +3521,8 @@ paths:
         '200':
           description: |
             A page of bookmarked posts. Posts that the user can no longer see are left out, so
-            a page may hold fewer posts than `limit` and still have a `next_cursor`.
+            a page may hold fewer posts than `limit` and still have a `next_cursor`. `direct` posts
+            need `read:direct`.
           headers:
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
@@ -3963,7 +3967,8 @@ paths:
         The statuses that quote a status of the user, newest first, each with its `quote` and
         its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
         out, so a page may hold fewer than `limit` statuses before the last. Another account's
-        status is a 404.
+        status is a 404, and so is the user's own `direct` status without `read:direct`, which
+        also leaves out the `direct` statuses that quote one.
       tags:
         - statuses
       security:
@@ -4010,7 +4015,9 @@ paths:
     get:
       operationId: getStatusSource
       summary: Get the source of the authenticated user's status, for editing it
-      description: Another account's status is a 404, the same as a missing one.
+      description: |
+        Another account's status is a 404, the same as a missing one, and so is a `direct` status
+        without `read:direct`.
       tags:
         - statuses
       security:
@@ -4043,6 +4050,9 @@ paths:
         recent public posts from its server in the background; `remote_fetch_started` tells
         that it did. It does at most once a day per account, for at most 30 accounts per viewer
         in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
+
+        An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+        deleted account, the instance actor, and an account that blocks the viewer.
       tags:
         - timelines
       security:
@@ -4257,7 +4267,9 @@ paths:
         The reports that the user filed, newest first, each with whether it is still open or
         resolved (FR-711). A report reopened by the moderators is open again. It never tells how
         a report was resolved, which actions it led to, the reasons given to the account, or
-        who handles it.
+        who handles it. A report shows its target even when the account is suspended or blocks
+        the user. A report whose target no longer exists is left out, so a page may hold fewer
+        reports than `limit` and still have a `next_cursor`.
       tags:
         - reports
       security:
@@ -10264,7 +10276,14 @@ components:
 
         `read:statuses` does not show posts whose visibility is `direct`, in timelines, in a post's
         thread, or in a post's own response, nor in the posts of a notification; `read:direct` (which
-        `read` grants) does. Sending a `direct` post needs only `write:statuses`.
+        `read` grants) does. The same holds for bookmarks, a post's source, and the posts that quote
+        a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`.
+
+        A write scope reads the post it acts on: the response to an action on a post, such as
+        favouriting it with `write:favourites`, is the whole post. A token without `read:direct`
+        cannot act on a `direct` post: it gets a 404 and nothing changes. It can still take back
+        what the user had on one (a favourite, say), and the answer is the same 404, which shows
+        nothing of the post.
 
         Only the server's own (first-party) clients may hold `admin`, `admin:read`, `admin:write`,
         and `write:supporters`: an authorization request of any other client that asks for one is
@@ -11039,7 +11058,12 @@ components:
           schema:
             $ref: '#/components/schemas/RoleProblem'
     StatusAfterAction:
-      description: The status after the action, as the authenticated user sees it.
+      description: |
+        The status after the action, as the authenticated user sees it. The scope of the action is
+        enough to read this response. A status that is gone is a 404 and nothing changes. A status
+        that the token may not see is a 404 too, which shows nothing of it: an action changes
+        nothing, while an un-action (removing a favourite, boost, reaction, bookmark, or pin) still
+        takes back what the user had on it.
       headers:
         Cache-Control:
           $ref: '#/components/headers/CacheControl'
@@ -13824,7 +13848,9 @@ components:
         target_account_id:
           $ref: '#/components/schemas/Id'
         target_account:
-          description: The account reported; omitted when the account is gone.
+          description: |
+            The account reported, even when it is suspended or blocks the reporter; omitted when the
+            account is gone.
           allOf:
             - $ref: '#/components/schemas/Account'
         status_ids:

@@ -44,7 +44,9 @@ properties:
   target_account_id:
     $ref: ./Id.yaml
   target_account:
-    description: The account reported; omitted when the account is gone.
+    description: |
+      The account reported, even when it is suspended or blocks the reporter; omitted when the
+      account is gone.
     allOf:
       - $ref: ./Account.yaml
   status_ids:

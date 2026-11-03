@@ -15,7 +15,7 @@ import (
 const countOAuthClientsOfOwner = `-- name: CountOAuthClientsOfOwner :one
 SELECT COUNT(*) FROM oauth_clients c
 WHERE c.owner_user_id = ?1
-  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id)
+  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id)
 `
 
 // CountOAuthClientsOfOwner counts the clients a user registered that are not deleted.
@@ -27,16 +27,16 @@ func (q *Queries) CountOAuthClientsOfOwner(ctx context.Context, ownerUserID sql.
 }
 
 const getLatestOAuthClientRevision = `-- name: GetLatestOAuthClientRevision :one
-SELECT id, client_id, name, website, scope, revised_at FROM oauth_client_revisions
-WHERE client_id = ? ORDER BY id DESC LIMIT 1
+SELECT id, oauth_client_id, name, website, scope, revised_at FROM oauth_client_revisions
+WHERE oauth_client_id = ? ORDER BY id DESC LIMIT 1
 `
 
-func (q *Queries) GetLatestOAuthClientRevision(ctx context.Context, clientID string) (OauthClientRevision, error) {
-	row := q.db.QueryRowContext(ctx, getLatestOAuthClientRevision, clientID)
+func (q *Queries) GetLatestOAuthClientRevision(ctx context.Context, oauthClientID string) (OauthClientRevision, error) {
+	row := q.db.QueryRowContext(ctx, getLatestOAuthClientRevision, oauthClientID)
 	var i OauthClientRevision
 	err := row.Scan(
 		&i.ID,
-		&i.ClientID,
+		&i.OauthClientID,
 		&i.Name,
 		&i.Website,
 		&i.Scope,
@@ -46,16 +46,16 @@ func (q *Queries) GetLatestOAuthClientRevision(ctx context.Context, clientID str
 }
 
 const getLatestOAuthClientSecretRotation = `-- name: GetLatestOAuthClientSecretRotation :one
-SELECT id, client_id, secret_hash, rotated_at FROM oauth_client_secret_rotations
-WHERE client_id = ? ORDER BY id DESC LIMIT 1
+SELECT id, oauth_client_id, secret_hash, rotated_at FROM oauth_client_secret_rotations
+WHERE oauth_client_id = ? ORDER BY id DESC LIMIT 1
 `
 
-func (q *Queries) GetLatestOAuthClientSecretRotation(ctx context.Context, clientID string) (OauthClientSecretRotation, error) {
-	row := q.db.QueryRowContext(ctx, getLatestOAuthClientSecretRotation, clientID)
+func (q *Queries) GetLatestOAuthClientSecretRotation(ctx context.Context, oauthClientID string) (OauthClientSecretRotation, error) {
+	row := q.db.QueryRowContext(ctx, getLatestOAuthClientSecretRotation, oauthClientID)
 	var i OauthClientSecretRotation
 	err := row.Scan(
 		&i.ID,
-		&i.ClientID,
+		&i.OauthClientID,
 		&i.SecretHash,
 		&i.RotatedAt,
 	)
@@ -100,22 +100,22 @@ func (q *Queries) InsertOAuthClient(ctx context.Context, arg InsertOAuthClientPa
 }
 
 const insertOAuthClientRevision = `-- name: InsertOAuthClientRevision :exec
-INSERT INTO oauth_client_revisions (id, client_id, name, website, scope, revised_at) VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO oauth_client_revisions (id, oauth_client_id, name, website, scope, revised_at) VALUES (?, ?, ?, ?, ?, ?)
 `
 
 type InsertOAuthClientRevisionParams struct {
-	ID        string
-	ClientID  string
-	Name      string
-	Website   sql.NullString
-	Scope     string
-	RevisedAt int64
+	ID            string
+	OauthClientID string
+	Name          string
+	Website       sql.NullString
+	Scope         string
+	RevisedAt     int64
 }
 
 func (q *Queries) InsertOAuthClientRevision(ctx context.Context, arg InsertOAuthClientRevisionParams) error {
 	_, err := q.db.ExecContext(ctx, insertOAuthClientRevision,
 		arg.ID,
-		arg.ClientID,
+		arg.OauthClientID,
 		arg.Name,
 		arg.Website,
 		arg.Scope,
@@ -125,20 +125,20 @@ func (q *Queries) InsertOAuthClientRevision(ctx context.Context, arg InsertOAuth
 }
 
 const insertOAuthClientSecretRotation = `-- name: InsertOAuthClientSecretRotation :exec
-INSERT INTO oauth_client_secret_rotations (id, client_id, secret_hash, rotated_at) VALUES (?, ?, ?, ?)
+INSERT INTO oauth_client_secret_rotations (id, oauth_client_id, secret_hash, rotated_at) VALUES (?, ?, ?, ?)
 `
 
 type InsertOAuthClientSecretRotationParams struct {
-	ID         string
-	ClientID   string
-	SecretHash []byte
-	RotatedAt  int64
+	ID            string
+	OauthClientID string
+	SecretHash    []byte
+	RotatedAt     int64
 }
 
 func (q *Queries) InsertOAuthClientSecretRotation(ctx context.Context, arg InsertOAuthClientSecretRotationParams) error {
 	_, err := q.db.ExecContext(ctx, insertOAuthClientSecretRotation,
 		arg.ID,
-		arg.ClientID,
+		arg.OauthClientID,
 		arg.SecretHash,
 		arg.RotatedAt,
 	)
@@ -149,7 +149,7 @@ const listOAuthClientsOfOwner = `-- name: ListOAuthClientsOfOwner :many
 SELECT c.id, c.client_id, c.client_secret_hash, c.name, c.website, c.scope, c.registration, c.owner_user_id, c.created_at
 FROM oauth_clients c
 WHERE c.owner_user_id = ?1
-  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id)
+  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id)
 ORDER BY c.id
 `
 
@@ -190,7 +190,7 @@ func (q *Queries) ListOAuthClientsOfOwner(ctx context.Context, ownerUserID sql.N
 const revokeTokensOfOwnedClients = `-- name: RevokeTokensOfOwnedClients :exec
 INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
 SELECT t.id, ?1, ?2 FROM oauth_access_tokens t
-JOIN oauth_clients c ON c.id = t.client_id
+JOIN oauth_clients c ON c.id = t.oauth_client_id
 WHERE c.owner_user_id = ?3
   AND (t.expires_at > ?2 OR t.refresh_expires_at > ?2)
 ON CONFLICT (token_id) DO NOTHING

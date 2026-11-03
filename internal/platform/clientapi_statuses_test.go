@@ -27,12 +27,13 @@ import (
 // statusesClient sends client API requests as the users of a real App, checking every response
 // against the spec.
 type statusesClient struct {
-	t      *testing.T
-	app    *platform.App
-	h      http.Handler
-	spec   *apitest.Spec
-	tokens map[string]string // access token by username
-	ids    map[string]string // account ID by username
+	t       *testing.T
+	app     *platform.App
+	h       http.Handler
+	spec    *apitest.Spec
+	tokens  map[string]string // access token by username
+	ids     map[string]string // account ID by username
+	userIDs map[string]string // user ID by username
 }
 
 func newStatusesClient(t *testing.T, users ...string) *statusesClient {
@@ -55,7 +56,7 @@ func newStatusesClientWith(t *testing.T, env map[string]string, opts platform.Ap
 		t.Fatalf("NewApp: %v", err)
 	}
 	t.Cleanup(func() { _ = app.Close() })
-	c := &statusesClient{t: t, app: app, h: app.Handler(), spec: apitest.Load(t), tokens: map[string]string{}, ids: map[string]string{}}
+	c := &statusesClient{t: t, app: app, h: app.Handler(), spec: apitest.Load(t), tokens: map[string]string{}, ids: map[string]string{}, userIDs: map[string]string{}}
 	ctx := t.Context()
 	verifier := strings.Repeat("v", 43)
 	redirect := webOrigin + platform.WebClientCallbackPath
@@ -84,7 +85,7 @@ func newStatusesClientWith(t *testing.T, env map[string]string, opts platform.Ap
 		if err != nil {
 			t.Fatal(err)
 		}
-		c.tokens[name], c.ids[name] = tokens.AccessToken, reg.AccountID
+		c.tokens[name], c.ids[name], c.userIDs[name] = tokens.AccessToken, reg.AccountID, reg.User.ID
 	}
 	return c
 }

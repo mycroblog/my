@@ -123,7 +123,7 @@ func (s *Server) ReactToStatus(ctx context.Context, req ReactToStatusRequestObje
 
 // UnreactToStatus serves DELETE /api/v1/statuses/{id}/reaction.
 func (s *Server) UnreactToStatus(ctx context.Context, req UnreactToStatusRequestObject) (UnreactToStatusResponseObject, error) {
-	res, p, err := s.act(ctx, req.Id, func(a string) error { return s.o.Interactions.Unreact(ctx, a, req.Id) })
+	res, p, err := s.unact(ctx, req.Id, func(a string) error { return s.o.Interactions.Unreact(ctx, a, req.Id) })
 	if p != nil {
 		return UnreactToStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}

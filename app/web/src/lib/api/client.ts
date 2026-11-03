@@ -33,6 +33,8 @@ import type { AppLocale } from "../locale";
 import { apiErrorFromResponse, MaintenanceError, maintenanceFromResponse, NetworkError } from "../errors";
 import type { Maintenance } from "../maintenance";
 import { isBrowserOffline, reportNetworkFailure, reportResponse } from "../network";
+import { checkServerEpoch } from "../pwa";
+import { webClientEpochHeader } from "../webClientEpoch";
 
 /** What the app's stream gives runStream: everything but the connection, which the Api holds. */
 type EventStreamOptions = Pick<StreamOptions, "signal" | "timeline" | "onOpen" | "onEvent" | "onError">;
@@ -58,12 +60,24 @@ export type CreateApiOptions = {
   locale: Pick<AppLocale, "locale" | "t">;
   /** Whether the server is under maintenance, which the client reports to. */
   maintenance: Maintenance;
+  /** Loads the page again (a required update); `location.reload` by default. */
+  reload?: (() => void) | undefined;
 };
 
-export function createApi({ apiOrigin, session, locale, maintenance }: CreateApiOptions): Api {
+export function createApi({ apiOrigin, session, locale, maintenance, reload }: CreateApiOptions): Api {
   const acceptLanguage = () => locale.locale;
   const fetch = createClient({ server: apiOrigin, tokenSource: session, acceptLanguage, retry: { disabled: true } });
+  // Added last, as openapi-fetch runs onResponse in reverse order: the error middleware throws, and a version that
+  // stopped working may get nothing but errors.
   fetch.use(errorMiddleware(locale, maintenance));
+  fetch.use(
+    epochMiddleware(
+      reload ??
+        (() => {
+          window.location.reload();
+        }),
+    ),
+  );
   return {
     fetch,
     query: createQueryClient(fetch),
@@ -81,6 +95,16 @@ export function createApi({ apiOrigin, session, locale, maintenance }: CreateApi
 /** Whether `error` is the abort of a request (TanStack Query cancelling a query, or a stream that was closed). */
 function isAbort(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
+}
+
+/** Reads the server's `webClientEpoch` from every answer (ADR-0141 §4). */
+function epochMiddleware(reload: () => void): Middleware {
+  return {
+    onResponse({ response }) {
+      checkServerEpoch(response.headers.get(webClientEpochHeader), reload);
+      return undefined;
+    },
+  };
 }
 
 /**

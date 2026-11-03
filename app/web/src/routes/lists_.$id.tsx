@@ -21,7 +21,7 @@ const paramsSchema = z.object({ id: z.string().min(1).max(64) });
  */
 export const Route = createFileRoute("/lists_/$id")({
   // A feed to add to: the shell floats the new-post button over this page (web-client/16-look-states-and-wording.md G4).
-  staticData: { composeButton: true, back: true, backTo: listsPath, timeline: true },
+  staticData: { reloadSafe: true, composeButton: true, back: true, backTo: listsPath, timeline: true },
   params: { parse: (params) => paramsSchema.parse(params) },
   beforeLoad: requireSignIn,
   loader: async ({ context: { queryClient, api }, params: { id } }) => {

@@ -14,7 +14,7 @@ import { PageHeading } from "./-layout/PageHeading";
  * web-client/screens/announcements.md). They are for the users of this server, so it needs a session.
  */
 export const Route = createFileRoute("/announcements")({
-  staticData: { title: "client:announcements.title" },
+  staticData: { reloadSafe: true, title: "client:announcements.title" },
   beforeLoad: requireSignIn,
   loader: async ({ context: { queryClient, api } }) => {
     // A failure does not fail the page: the page shows it in place of the list.

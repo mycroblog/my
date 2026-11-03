@@ -24,7 +24,7 @@ func currentOAuthClient(ctx context.Context, q *postgresgen.Queries, c identity.
 	switch {
 	case err == nil:
 		c = c.Revised(identity.OAuthClientRevision{
-			ID: rev.ID, ClientID: rev.ClientID, Name: rev.Name, Website: fromNullString(rev.Website), Scope: identity.Scope(rev.Scope),
+			ID: rev.ID, ClientID: rev.OauthClientID, Name: rev.Name, Website: fromNullString(rev.Website), Scope: identity.Scope(rev.Scope),
 			RevisedAt: utc(rev.RevisedAt),
 		})
 	case !errors.Is(err, pgx.ErrNoRows):
@@ -34,7 +34,7 @@ func currentOAuthClient(ctx context.Context, q *postgresgen.Queries, c identity.
 	switch {
 	case err == nil:
 		c = c.WithSecret(identity.OAuthClientSecretRotation{
-			ID: rot.ID, ClientID: rot.ClientID, SecretHash: rot.SecretHash, RotatedAt: utc(rot.RotatedAt),
+			ID: rot.ID, ClientID: rot.OauthClientID, SecretHash: rot.SecretHash, RotatedAt: utc(rot.RotatedAt),
 		})
 	case !errors.Is(err, pgx.ErrNoRows):
 		return identity.OAuthClient{}, wrap(err, "get oauth client secret rotation")
@@ -89,7 +89,7 @@ func (r *IdentityRepository) InsertOAuthClientRevision(ctx context.Context, tx u
 		return err
 	}
 	err = q.InsertOAuthClientRevision(ctx, postgresgen.InsertOAuthClientRevisionParams{
-		ID: rev.ID, ClientID: rev.ClientID, Name: rev.Name, Website: toNullString(rev.Website), Scope: string(rev.Scope),
+		ID: rev.ID, OauthClientID: rev.ClientID, Name: rev.Name, Website: toNullString(rev.Website), Scope: string(rev.Scope),
 		RevisedAt: rev.RevisedAt,
 	})
 	return wrap(err, "insert oauth client revision")
@@ -102,7 +102,7 @@ func (r *IdentityRepository) InsertOAuthClientSecretRotation(ctx context.Context
 		return err
 	}
 	err = q.InsertOAuthClientSecretRotation(ctx, postgresgen.InsertOAuthClientSecretRotationParams{
-		ID: rot.ID, ClientID: rot.ClientID, SecretHash: rot.SecretHash, RotatedAt: rot.RotatedAt,
+		ID: rot.ID, OauthClientID: rot.ClientID, SecretHash: rot.SecretHash, RotatedAt: rot.RotatedAt,
 	})
 	return wrap(err, "insert oauth client secret rotation")
 }

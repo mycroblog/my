@@ -65,12 +65,12 @@ func (f *fakeStatuses) SetQuotePolicy(_ context.Context, accountID, id string, p
 	return content.StatusQuotePolicy{StatusID: id, Policy: p}, f.do("quote_policy:"+string(p), accountID, id)
 }
 
-func (f *fakeStatuses) Quotes(_ context.Context, accountID, id, _ string, _ int) (appcontent.QuotesPage, error) {
-	view, err := f.View(context.Background(), appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: accountID}, sampleStatusID)
+func (f *fakeStatuses) Quotes(_ context.Context, v appcontent.Viewer, id, _ string, _ int) (appcontent.QuotesPage, error) {
+	view, err := f.View(context.Background(), v, sampleStatusID)
 	if err != nil {
 		return appcontent.QuotesPage{}, err
 	}
-	return appcontent.QuotesPage{Statuses: []appcontent.StatusView{view}}, f.do("quotes", accountID, id)
+	return appcontent.QuotesPage{Statuses: []appcontent.StatusView{view}}, f.do("quotes", v.AccountID, id)
 }
 
 func (f *fakeStatuses) RevokeQuote(_ context.Context, accountID, quoted, quoting string) error {
@@ -91,6 +91,16 @@ func (f *fakeStatuses) View(_ context.Context, v appcontent.Viewer, id string) (
 	return f.view(v, id)
 }
 
+func (f *fakeStatuses) Visible(ctx context.Context, v appcontent.Viewer, id string) (content.Status, error) {
+	view, err := f.View(ctx, v, id)
+	return view.Status, err
+}
+
+func (f *fakeStatuses) Live(ctx context.Context, id string) error {
+	_, err := f.View(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal}, id)
+	return err
+}
+
 func (f *fakeStatuses) Thread(_ context.Context, v appcontent.Viewer, id string) (appcontent.Thread, error) {
 	view, err := f.View(context.Background(), v, id)
 	if err != nil {
@@ -107,16 +117,16 @@ func (f *fakeStatuses) History(_ context.Context, v appcontent.Viewer, id string
 	return []appcontent.RevisionView{{Revision: view.Revision, Attachments: view.Attachments}}, nil
 }
 
-func (f *fakeStatuses) Source(_ context.Context, accountID, id string) (content.Revision, error) {
-	view, err := f.View(context.Background(), appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: accountID}, id)
+func (f *fakeStatuses) Source(_ context.Context, v appcontent.Viewer, id string) (content.Revision, error) {
+	view, err := f.View(context.Background(), v, id)
 	if err != nil {
 		return content.Revision{}, err
 	}
 	return view.Revision, nil
 }
 
-func (f *fakeStatuses) Bookmarks(_ context.Context, accountID, _ string, limit int) (appcontent.BookmarkPage, error) {
-	view, err := f.View(context.Background(), appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: accountID}, sampleStatusID)
+func (f *fakeStatuses) Bookmarks(_ context.Context, v appcontent.Viewer, _ string, limit int) (appcontent.BookmarkPage, error) {
+	view, err := f.View(context.Background(), v, sampleStatusID)
 	if errors.Is(err, appcontent.ErrNotFound) {
 		return appcontent.BookmarkPage{}, nil
 	}
@@ -451,7 +461,7 @@ func TestStatusProblems(t *testing.T) {
 		{http.MethodPost, "/boost", appcontent.ErrPostingRestricted, "現在、あなたのアカウントは投稿できません。"},
 	}
 	for _, tc := range interactions {
-		e := newStatusEnv(t, &fakeStatuses{interact: func(string, string, string) error { return tc.err }})
+		e := newStatusEnv(t, &fakeStatuses{view: func(v appcontent.Viewer, _ string) (appcontent.StatusView, error) { return sampleView(v), nil }, interact: func(string, string, string) error { return tc.err }})
 		res := e.send(t, tc.method, "/statuses/"+sampleStatusID+tc.path, "write", "")
 		p := decodeProblem(t, res)
 		want := http.StatusUnprocessableEntity
