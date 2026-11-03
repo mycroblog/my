@@ -123,7 +123,7 @@ func TestClientAPIPresentsRemoteStatuses(t *testing.T) {
 	}
 
 	// The operator turns the federated timeline off.
-	if _, err := e.app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingFederatedTimelineAccess, Value: "off"}); err != nil {
+	if _, err := e.app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingFederatedTimelineVisibility, Value: "off"}); err != nil {
 		t.Fatalf("SetSetting: %v", err)
 	}
 	res := e.spec.Serve(t, e.h, httptest.NewRequest(http.MethodGet, clientapi.BasePath+"/timelines/public", nil))

@@ -40,7 +40,7 @@ func TestVoiceSettingsThroughAdminAPI(t *testing.T) {
 	}
 	moderator := issueTokens(t, e.app, r.User.ID, "").AccessToken
 	keys := []clientapi.InstanceSettingKey{
-		clientapi.InstanceSettingKeyVoiceRoomStarters, clientapi.InstanceSettingKeyVoicePublicSummary, clientapi.InstanceSettingKeyRetentionVoiceParticipants,
+		clientapi.InstanceSettingKeyVoiceRoomStarters, clientapi.InstanceSettingKeyVoicePublicSummary, clientapi.InstanceSettingKeyVoiceParticipantsRetentionDays,
 	}
 	read := func() map[clientapi.InstanceSettingKey]clientapi.AdminSetting {
 		t.Helper()
@@ -64,8 +64,8 @@ func TestVoiceSettingsThroughAdminAPI(t *testing.T) {
 	if v := values(got); strings.Join(v, ",") != "permitted,false,90" {
 		t.Errorf("defaults = %v, want permitted, false, 90", v)
 	}
-	if s := got[clientapi.InstanceSettingKeyRetentionVoiceParticipants]; s.Minimum == nil || *s.Minimum != 30 || s.Kind != clientapi.InstanceSettingKindInt {
-		t.Errorf("retention_voice_participants = %+v, want an int of at least 30", s)
+	if s := got[clientapi.InstanceSettingKeyVoiceParticipantsRetentionDays]; s.Minimum == nil || *s.Minimum != 30 || s.Kind != clientapi.InstanceSettingKindInt {
+		t.Errorf("voice_participants_retention_days = %+v, want an int of at least 30", s)
 	}
 	if s := got[clientapi.InstanceSettingKeyVoiceRoomStarters]; s.Choices == nil || strings.Join(*s.Choices, ",") != "everyone,permitted" {
 		t.Errorf("voice_room_starters = %+v, want the choices everyone and permitted", s)
@@ -74,7 +74,7 @@ func TestVoiceSettingsThroughAdminAPI(t *testing.T) {
 	for _, bad := range []map[string]string{
 		{"voice_room_starters": "nobody"},
 		{"voice_public_summary": "yes"},
-		{"retention_voice_participants": "29"},
+		{"voice_participants_retention_days": "29"},
 	} {
 		e.want(e.do(http.MethodPatch, "/admin/settings", admin.token, map[string]any{"values": bad}, nil), http.StatusUnprocessableEntity, "PATCH an invalid value")
 	}
@@ -85,7 +85,7 @@ func TestVoiceSettingsThroughAdminAPI(t *testing.T) {
 	}
 
 	e.want(e.do(http.MethodPatch, "/admin/settings", admin.token, map[string]any{"values": map[string]string{
-		"voice_room_starters": "everyone", "voice_public_summary": "TRUE", "retention_voice_participants": "30",
+		"voice_room_starters": "everyone", "voice_public_summary": "TRUE", "voice_participants_retention_days": "30",
 	}}, nil), http.StatusOK, "PATCH the voice settings")
 	got = read()
 	if v := values(got); strings.Join(v, ",") != "everyone,true,30" {

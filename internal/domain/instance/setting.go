@@ -28,36 +28,36 @@ type SettingKey string
 // Setting keys. Adding one means adding its Definition below and its value to the CHECK
 // constraint of instance_setting_revisions.key in schema/<dialect>/09-instance.sql.
 const (
-	SettingRegistrationMode        SettingKey = "registration_mode"
-	SettingMaxStatusLength         SettingKey = "max_status_length"
-	SettingDefaultLocale           SettingKey = "default_locale"
-	SettingLocalTimelineAccess     SettingKey = "local_timeline_access"
-	SettingFederatedTimelineAccess SettingKey = "federated_timeline_access"
-	SettingPreviewImage            SettingKey = "preview_image"
+	SettingRegistrationMode            SettingKey = "registration_mode"
+	SettingMaxStatusLength             SettingKey = "max_status_length"
+	SettingDefaultLocale               SettingKey = "default_locale"
+	SettingLocalTimelineVisibility     SettingKey = "local_timeline_visibility"
+	SettingFederatedTimelineVisibility SettingKey = "federated_timeline_visibility"
+	SettingPreviewImage                SettingKey = "preview_image"
 	// SettingContactAccount and SettingContactEmail are how people reach the instance's operators,
 	// and SettingThumbnail is the image that represents the instance (its alt text is
 	// TextThumbnailAlt): the about page, GET /instance, and NodeInfo publish them.
-	SettingContactAccount      SettingKey = "contact_account"
-	SettingContactEmail        SettingKey = "contact_email"
-	SettingThumbnail           SettingKey = "thumbnail"
-	SettingRemoteMediaPolicy   SettingKey = "remote_media_policy"
-	SettingRemoteMediaCacheTTL SettingKey = "remote_media_cache_ttl"
-	SettingAuthorizedFetch     SettingKey = "authorized_fetch"
+	SettingContactAccount             SettingKey = "contact_account"
+	SettingContactEmail               SettingKey = "contact_email"
+	SettingThumbnail                  SettingKey = "thumbnail"
+	SettingRemoteMediaPolicy          SettingKey = "remote_media_policy"
+	SettingRemoteMediaCacheTTLSeconds SettingKey = "remote_media_cache_ttl_seconds"
+	SettingAuthorizedFetch            SettingKey = "authorized_fetch"
 	// SettingDomainActionsVisibility and SettingDomainActionsRationaleVisibility decide who
 	// may read the public list of domain actions and their public comments (FR-718).
 	SettingDomainActionsVisibility          SettingKey = "domain_actions_visibility"
 	SettingDomainActionsRationaleVisibility SettingKey = "domain_actions_rationale_visibility"
-	// SettingAppealWindow is how many days after an action on an account the account may
+	// SettingAppealWindowDays is how many days after an action on an account the account may
 	// appeal it (FR-707, ADR-0038).
-	SettingAppealWindow SettingKey = "appeal_window"
+	SettingAppealWindowDays SettingKey = "appeal_window_days"
 	// The retention periods of the moderation records, in days (ADR-0038): the sign-in and
 	// registration origins, the reports after their last resolution, the actions on accounts
 	// and their appeals after the action ended, and the audit log.
-	SettingRetentionSessionOrigins      SettingKey = "retention_session_origins"
-	SettingRetentionRegistrationOrigins SettingKey = "retention_registration_origins"
-	SettingRetentionReports             SettingKey = "retention_reports"
-	SettingRetentionModerationActions   SettingKey = "retention_moderation_actions"
-	SettingRetentionAuditLog            SettingKey = "retention_audit_log"
+	SettingSessionOriginsRetentionDays      SettingKey = "session_origins_retention_days"
+	SettingRegistrationOriginsRetentionDays SettingKey = "registration_origins_retention_days"
+	SettingReportsRetentionDays             SettingKey = "reports_retention_days"
+	SettingModerationActionsRetentionDays   SettingKey = "moderation_actions_retention_days"
+	SettingAuditLogRetentionDays            SettingKey = "audit_log_retention_days"
 	// SettingSearchIndexing, SettingAIUsage, and SettingIndexableDefault are what the instance
 	// states to search engines and AI crawlers, and the indexable default of new accounts
 	// (FR-725, ADR-0057). Unset, they take the deny side.
@@ -67,9 +67,9 @@ const (
 	// SettingSecurityContact is where vulnerabilities are reported (/.well-known/security.txt,
 	// RFC 9116); empty serves no security.txt.
 	SettingSecurityContact SettingKey = "security_contact"
-	// SettingLinkCardsEnabled is whether statuses show the cards of their links, fetched from
+	// SettingLinkCards is whether statuses show the cards of their links, fetched from
 	// the linked pages (FR-117, ADR-0062).
-	SettingLinkCardsEnabled SettingKey = "link_cards_enabled"
+	SettingLinkCards SettingKey = "link_cards"
 	// SettingLinkCardsIgnoreRobotsTxt is whether the fetches of link cards skip robots.txt
 	// (ADR-0131 §4).
 	SettingLinkCardsIgnoreRobotsTxt SettingKey = "link_cards_ignore_robots_txt"
@@ -104,18 +104,18 @@ const (
 	SettingOAuthMetadataDocumentClients SettingKey = "oauth_metadata_document_clients"
 	// SettingVoiceRoomStarters decides who may open voice chat rooms (ADR-0100 §2),
 	// SettingVoicePublicSummary whether the page of a local room shows its summary to visitors
-	// who are not signed in to this server (§9), and SettingRetentionVoiceParticipants how many
+	// who are not signed in to this server (§9), and SettingVoiceParticipantsRetentionDays how many
 	// days the records of the participants of a room are kept after it ended (§13).
-	SettingVoiceRoomStarters          SettingKey = "voice_room_starters"
-	SettingVoicePublicSummary         SettingKey = "voice_public_summary"
-	SettingRetentionVoiceParticipants SettingKey = "retention_voice_participants"
+	SettingVoiceRoomStarters              SettingKey = "voice_room_starters"
+	SettingVoicePublicSummary             SettingKey = "voice_public_summary"
+	SettingVoiceParticipantsRetentionDays SettingKey = "voice_participants_retention_days"
 	// SettingInviteCreators decides who may create invites of their own (ADR-0108 §1), and
 	// SettingMemberInviteMaxActive, SettingMemberInviteMaxUses, and
-	// SettingMemberInviteMaxExpiresIn bound those invites (§2).
-	SettingInviteCreators           SettingKey = "invite_creators"
-	SettingMemberInviteMaxActive    SettingKey = "member_invite_max_active"
-	SettingMemberInviteMaxUses      SettingKey = "member_invite_max_uses"
-	SettingMemberInviteMaxExpiresIn SettingKey = "member_invite_max_expires_in"
+	// SettingMemberInviteMaxLifetimeSeconds bound those invites (§2).
+	SettingInviteCreators                 SettingKey = "invite_creators"
+	SettingMemberInviteMaxActive          SettingKey = "member_invite_max_active"
+	SettingMemberInviteMaxUses            SettingKey = "member_invite_max_uses"
+	SettingMemberInviteMaxLifetimeSeconds SettingKey = "member_invite_max_lifetime_seconds"
 	// SettingPublicCounts decides whether GET /instance/overview, and so the landing page, shows
 	// the number of members, the public posts of the last days, and when the instance started.
 	SettingPublicCounts SettingKey = "public_counts"
@@ -139,19 +139,6 @@ const (
 	RegistrationClosed   RegistrationMode = "closed"   // nobody may sign up
 )
 
-// TimelineAccess is the value of SettingLocalTimelineAccess and SettingFederatedTimelineAccess
-// (FR-202): who may read the timeline.
-type TimelineAccess string
-
-// Timeline access values.
-const (
-	TimelineOff      TimelineAccess = "off"       // nobody: the API is a 404
-	TimelineLoggedIn TimelineAccess = "logged_in" // the instance's logged-in users
-	TimelineEveryone TimelineAccess = "everyone"  // everyone, anonymous visitors included
-)
-
-var timelineAccessChoices = []string{string(TimelineOff), string(TimelineLoggedIn), string(TimelineEveryone)}
-
 // FederationMode is the value of SettingFederationMode (FR-413, ADR-0076). Its values are those
 // of the federation module's mode (federation.Mode), which decides what each one lets through.
 type FederationMode string
@@ -171,28 +158,30 @@ type RemoteMediaPolicy string
 // Remote media policies.
 const (
 	RemoteMediaNone    RemoteMediaPolicy = "none"    // keep nothing; the media proxy relays every file
-	RemoteMediaAvatars RemoteMediaPolicy = "avatars" // keep avatars and headers for remote_media_cache_ttl
-	RemoteMediaAll     RemoteMediaPolicy = "all"     // keep every remote file for remote_media_cache_ttl
+	RemoteMediaAvatars RemoteMediaPolicy = "avatars" // keep avatars and headers for remote_media_cache_ttl_seconds
+	RemoteMediaAll     RemoteMediaPolicy = "all"     // keep every remote file for remote_media_cache_ttl_seconds
 )
 
-// Audience is the value of the settings that decide who may read something public about the
-// instance (SettingDomainActionsVisibility, SettingDomainActionsRationaleVisibility).
+// Audience is the value of the settings that decide who may read something
+// (SettingLocalTimelineVisibility, SettingFederatedTimelineVisibility,
+// SettingDomainActionsVisibility, SettingDomainActionsRationaleVisibility, and
+// SettingSupporterListVisibility).
 type Audience string
 
 // Audiences.
 const (
-	AudienceNone  Audience = "none"  // nobody
-	AudienceUsers Audience = "users" // the instance's logged-in users
-	AudienceAll   Audience = "all"   // everyone, anonymous visitors included
+	AudienceOff      Audience = "off"       // nobody
+	AudienceSignedIn Audience = "signed_in" // the users signed in to this server
+	AudienceEveryone Audience = "everyone"  // everyone, anonymous visitors included
 )
 
 // Allows reports whether a reader may read what a reaches; authenticated is whether the reader
-// is a logged-in user of the instance.
+// is a signed-in user of the instance.
 func (a Audience) Allows(authenticated bool) bool {
-	return a == AudienceAll || (a == AudienceUsers && authenticated)
+	return a == AudienceEveryone || (a == AudienceSignedIn && authenticated)
 }
 
-var audienceChoices = []string{string(AudienceNone), string(AudienceUsers), string(AudienceAll)}
+var audienceChoices = []string{string(AudienceOff), string(AudienceSignedIn), string(AudienceEveryone)}
 
 // FinanceVisibility is the value of SettingFinanceVisibility (ADR-0067 §8): how much of the
 // instance's costs everyone may read. No level publishes the names, memos, or individual payments
@@ -228,17 +217,6 @@ const (
 	IncomePlans   IncomeVisibility = "plans"   // the totals and the number of members of each plan
 )
 
-// SupporterListVisibility is the value of SettingSupporterListVisibility (ADR-0071 §4): who may
-// read the supporter list.
-type SupporterListVisibility string
-
-// Supporter list visibilities.
-const (
-	SupporterListOff      SupporterListVisibility = "off"       // nobody: the API is a 404
-	SupporterListPublic   SupporterListVisibility = "public"    // everyone
-	SupporterListSignedIn SupporterListVisibility = "signed_in" // the users signed in to this server
-)
-
 // VoiceRoomStarters is the value of SettingVoiceRoomStarters (ADR-0100 §2): who may open voice
 // chat rooms among the local users who may host them.
 type VoiceRoomStarters string
@@ -271,7 +249,7 @@ const (
 )
 
 // MemberInviteCaps are the values of SettingMemberInviteMaxActive, SettingMemberInviteMaxUses,
-// and SettingMemberInviteMaxExpiresIn.
+// and SettingMemberInviteMaxLifetimeSeconds.
 type MemberInviteCaps struct {
 	MaxActive    int
 	MaxUses      int
@@ -306,7 +284,7 @@ const (
 	AIDeny         AIUsage = "deny"          // no training, and no use by AI (AI search, assistants, agents)
 )
 
-// Bounds of SettingRemoteMediaCacheTTL, in seconds: a minute to a year.
+// Bounds of SettingRemoteMediaCacheTTLSeconds, in seconds: a minute to a year.
 const (
 	MinRemoteMediaCacheTTL = 60
 	MaxRemoteMediaCacheTTL = 365 * 24 * 60 * 60
@@ -318,7 +296,7 @@ const (
 	MaxMaxStatusLength = 100000
 )
 
-// Bounds and default of SettingAppealWindow, in days (ADR-0038).
+// Bounds and default of SettingAppealWindowDays, in days (ADR-0038).
 const (
 	MinAppealWindow     = 20
 	MaxAppealWindow     = 365
@@ -396,12 +374,12 @@ var definitions = []Definition{
 		Doc: "Initial UI locale of new users, and the locale for visitors whose preferences match no catalog (ADR-0009).",
 	},
 	{
-		Key: SettingLocalTimelineAccess, Kind: KindEnum, Default: string(TimelineEveryone), Choices: timelineAccessChoices,
-		Doc: "Who may read the local timeline: nobody, logged-in users, or everyone (FR-202).",
+		Key: SettingLocalTimelineVisibility, Kind: KindEnum, Default: string(AudienceEveryone), Choices: audienceChoices,
+		Doc: "Who may read the local timeline: nobody, signed-in users, or everyone (FR-202).",
 	},
 	{
-		Key: SettingFederatedTimelineAccess, Kind: KindEnum, Default: string(TimelineEveryone), Choices: timelineAccessChoices,
-		Doc: "Who may read the federated timeline: nobody, logged-in users, or everyone (FR-202).",
+		Key: SettingFederatedTimelineVisibility, Kind: KindEnum, Default: string(AudienceEveryone), Choices: audienceChoices,
+		Doc: "Who may read the federated timeline: nobody, signed-in users, or everyone (FR-202).",
 	},
 	{
 		Key: SettingPreviewImage, Kind: KindMedia, Default: "",
@@ -425,7 +403,7 @@ var definitions = []Definition{
 		Doc:     "Which remote media files the instance keeps a copy of; none relays every file through the media proxy (FR-409, ADR-0005).",
 	},
 	{
-		Key: SettingRemoteMediaCacheTTL, Kind: KindInt, Default: "86400", Min: MinRemoteMediaCacheTTL, Max: MaxRemoteMediaCacheTTL,
+		Key: SettingRemoteMediaCacheTTLSeconds, Kind: KindInt, Default: "86400", Min: MinRemoteMediaCacheTTL, Max: MaxRemoteMediaCacheTTL,
 		Doc: "How long a fetched remote media file may be kept, in seconds: the max-age of the media proxy's responses for the CDN and browsers (FR-409).",
 	},
 	{
@@ -433,35 +411,35 @@ var definitions = []Definition{
 		Doc: "Whether ActivityPub objects, collections, and full actor documents are served only to requests with a verified HTTP signature (authorized fetch, FR-408).",
 	},
 	{
-		Key: SettingDomainActionsVisibility, Kind: KindEnum, Default: string(AudienceNone), Choices: audienceChoices,
-		Doc: "Who may read the list of the limited and suspended domains: nobody, logged-in users, or everyone (FR-718).",
+		Key: SettingDomainActionsVisibility, Kind: KindEnum, Default: string(AudienceOff), Choices: audienceChoices,
+		Doc: "Who may read the list of the limited and suspended domains: nobody, signed-in users, or everyone (FR-718).",
 	},
 	{
-		Key: SettingDomainActionsRationaleVisibility, Kind: KindEnum, Default: string(AudienceNone), Choices: audienceChoices,
-		Doc: "Who may read the public comments of the listed domain actions: nobody, logged-in users, or everyone (FR-718).",
+		Key: SettingDomainActionsRationaleVisibility, Kind: KindEnum, Default: string(AudienceOff), Choices: audienceChoices,
+		Doc: "Who may read the public comments of the listed domain actions: nobody, signed-in users, or everyone (FR-718).",
 	},
 	{
-		Key: SettingAppealWindow, Kind: KindInt, Default: strconv.Itoa(DefaultAppealWindow), Min: MinAppealWindow, Max: MaxAppealWindow,
+		Key: SettingAppealWindowDays, Kind: KindInt, Default: strconv.Itoa(DefaultAppealWindow), Min: MinAppealWindow, Max: MaxAppealWindow,
 		Doc: "How many days after a moderation action a local account may appeal it, once (FR-707, ADR-0038).",
 	},
 	{
-		Key: SettingRetentionSessionOrigins, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionOrigins), Min: MinRetentionOrigins, Max: MaxRetention,
+		Key: SettingSessionOriginsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionOrigins), Min: MinRetentionOrigins, Max: MaxRetention,
 		Doc: "How many days the IP address and User-Agent of a sign-in are kept after the session started (ADR-0038).",
 	},
 	{
-		Key: SettingRetentionRegistrationOrigins, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionOrigins), Min: MinRetentionOrigins, Max: MaxRetention,
+		Key: SettingRegistrationOriginsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionOrigins), Min: MinRetentionOrigins, Max: MaxRetention,
 		Doc: "How many days the IP address of a registration is kept after it (ADR-0038).",
 	},
 	{
-		Key: SettingRetentionReports, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionModeration), Min: MinRetentionModeration, Max: MaxRetention,
+		Key: SettingReportsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionModeration), Min: MinRetentionModeration, Max: MaxRetention,
 		Doc: "How many days a report is kept after its last resolution; a report that an action follows from is kept as long as the action (ADR-0038).",
 	},
 	{
-		Key: SettingRetentionModerationActions, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionModeration), Min: MinRetentionModeration, Max: MaxRetention,
+		Key: SettingModerationActionsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionModeration), Min: MinRetentionModeration, Max: MaxRetention,
 		Doc: "How many days an action on an account and its appeal are kept after the action ended: its lift, expiry, or the decision on its appeal, whichever is last (ADR-0038).",
 	},
 	{
-		Key: SettingRetentionAuditLog, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionAuditLog), Min: MinRetentionAuditLog, Max: MaxRetention,
+		Key: SettingAuditLogRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionAuditLog), Min: MinRetentionAuditLog, Max: MaxRetention,
 		Doc: "How many days an audit log entry is kept (ADR-0037, ADR-0038).",
 	},
 	{
@@ -495,7 +473,7 @@ var definitions = []Definition{
 		Doc: "Whether OAuth clients may use the https URL of a Client ID Metadata Document as their client_id; the server fetches the document instead of a registration (ADR-0090 §1).",
 	},
 	{
-		Key: SettingLinkCardsEnabled, Kind: KindBool, Default: "true",
+		Key: SettingLinkCards, Kind: KindBool, Default: "true",
 		Doc: "Whether statuses show the cards of their links, which the server fetches from the linked pages (FR-117, ADR-0062).",
 	},
 	{
@@ -521,8 +499,8 @@ var definitions = []Definition{
 		Doc:     "How much of the income the holders of the view_finance permission read on /finance: totals (the total of each currency by period) or plans (also the number of members of each plan, never its amounts) (ADR-0070 §5).",
 	},
 	{
-		Key: SettingSupporterListVisibility, Kind: KindEnum, Default: string(SupporterListOff),
-		Choices: []string{string(SupporterListOff), string(SupporterListPublic), string(SupporterListSignedIn)},
+		Key: SettingSupporterListVisibility, Kind: KindEnum, Default: string(AudienceOff),
+		Choices: audienceChoices,
 		Doc:     "Who may read the supporter list (GET /instance/supporters and /about/supporters) of the members of the supporter plans who chose to be listed: off (nobody), public (everyone), or signed_in (the users signed in to this server); it shows their accounts and plans only, never amounts or dates (ADR-0071 §4).",
 	},
 	{
@@ -549,7 +527,7 @@ var definitions = []Definition{
 		Doc: "Whether the page of a voice chat room whose visibility is local shows its name, description, host, and whether it is open to visitors who are not signed in to this server, and in its link preview; its participants are never shown (ADR-0100 §9).",
 	},
 	{
-		Key: SettingRetentionVoiceParticipants, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionVoiceParticipants), Min: MinRetentionVoiceParticipants, Max: MaxRetention,
+		Key: SettingVoiceParticipantsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionVoiceParticipants), Min: MinRetentionVoiceParticipants, Max: MaxRetention,
 		Doc: "How many days the records of who took part in a voice chat room, and as what, are kept after the room ended; the records of a reported room are kept as long as the report (ADR-0100 §13).",
 	},
 	{
@@ -566,7 +544,7 @@ var definitions = []Definition{
 		Doc: "How many people may sign up with one invite that a member creates (ADR-0108 §2).",
 	},
 	{
-		Key: SettingMemberInviteMaxExpiresIn, Kind: KindInt, Default: strconv.Itoa(int(DefaultMemberInviteMaxExpiresIn / time.Second)),
+		Key: SettingMemberInviteMaxLifetimeSeconds, Kind: KindInt, Default: strconv.Itoa(int(DefaultMemberInviteMaxExpiresIn / time.Second)),
 		Min: int(MinMemberInviteMaxExpiresIn / time.Second), Max: int(MaxMemberInviteMaxExpiresIn / time.Second),
 		Doc: "How long, in seconds, an invite that a member creates may work at most (ADR-0108 §2).",
 	},
@@ -862,16 +840,16 @@ func (s Settings) DefaultLocale() string {
 	return v
 }
 
-// LocalTimelineAccess returns the value of SettingLocalTimelineAccess.
-func (s Settings) LocalTimelineAccess() TimelineAccess {
-	v, _ := s.Value(SettingLocalTimelineAccess)
-	return TimelineAccess(v)
+// LocalTimelineVisibility returns the value of SettingLocalTimelineVisibility.
+func (s Settings) LocalTimelineVisibility() Audience {
+	v, _ := s.Value(SettingLocalTimelineVisibility)
+	return Audience(v)
 }
 
-// FederatedTimelineAccess returns the value of SettingFederatedTimelineAccess.
-func (s Settings) FederatedTimelineAccess() TimelineAccess {
-	v, _ := s.Value(SettingFederatedTimelineAccess)
-	return TimelineAccess(v)
+// FederatedTimelineVisibility returns the value of SettingFederatedTimelineVisibility.
+func (s Settings) FederatedTimelineVisibility() Audience {
+	v, _ := s.Value(SettingFederatedTimelineVisibility)
+	return Audience(v)
 }
 
 // PreviewImageMediaID returns the value of SettingPreviewImage, "" when unset.
@@ -904,9 +882,9 @@ func (s Settings) RemoteMediaPolicy() RemoteMediaPolicy {
 	return RemoteMediaPolicy(v)
 }
 
-// RemoteMediaCacheTTL returns the value of SettingRemoteMediaCacheTTL.
+// RemoteMediaCacheTTL returns the value of SettingRemoteMediaCacheTTLSeconds.
 func (s Settings) RemoteMediaCacheTTL() time.Duration {
-	return time.Duration(s.intValue(SettingRemoteMediaCacheTTL)) * time.Second
+	return time.Duration(s.intValue(SettingRemoteMediaCacheTTLSeconds)) * time.Second
 }
 
 // AuthorizedFetch returns the value of SettingAuthorizedFetch.
@@ -931,15 +909,15 @@ func (s Settings) DomainActionsRationaleVisibility() Audience {
 	return Audience(v)
 }
 
-// AppealWindow returns the value of SettingAppealWindow as a duration.
+// AppealWindow returns the value of SettingAppealWindowDays as a duration.
 func (s Settings) AppealWindow() time.Duration {
-	return time.Duration(s.intValue(SettingAppealWindow)) * 24 * time.Hour
+	return time.Duration(s.intValue(SettingAppealWindowDays)) * 24 * time.Hour
 }
 
-// Retention returns the value of a retention setting (SettingRetentionSessionOrigins,
-// SettingRetentionRegistrationOrigins, SettingRetentionReports,
-// SettingRetentionModerationActions, SettingRetentionAuditLog,
-// SettingRetentionVoiceParticipants) as a duration.
+// Retention returns the value of a retention setting (SettingSessionOriginsRetentionDays,
+// SettingRegistrationOriginsRetentionDays, SettingReportsRetentionDays,
+// SettingModerationActionsRetentionDays, SettingAuditLogRetentionDays,
+// SettingVoiceParticipantsRetentionDays) as a duration.
 func (s Settings) Retention(key SettingKey) time.Duration {
 	return time.Duration(s.intValue(key)) * 24 * time.Hour
 }
@@ -1013,14 +991,14 @@ func (s Settings) FinanceViewer() FinanceViewer {
 
 // SupporterListVisibility returns the value of SettingSupporterListVisibility; an unexpected value
 // is off.
-func (s Settings) SupporterListVisibility() SupporterListVisibility {
-	switch v, _ := s.Value(SettingSupporterListVisibility); SupporterListVisibility(v) {
-	case SupporterListPublic:
-		return SupporterListPublic
-	case SupporterListSignedIn:
-		return SupporterListSignedIn
+func (s Settings) SupporterListVisibility() Audience {
+	switch v, _ := s.Value(SettingSupporterListVisibility); Audience(v) {
+	case AudienceEveryone:
+		return AudienceEveryone
+	case AudienceSignedIn:
+		return AudienceSignedIn
 	}
-	return SupporterListOff
+	return AudienceOff
 }
 
 // VoiceRoomStarters returns the value of SettingVoiceRoomStarters; an unexpected value is
@@ -1045,7 +1023,7 @@ func (s Settings) MemberInviteCaps() MemberInviteCaps {
 	return MemberInviteCaps{
 		MaxActive:    s.intValue(SettingMemberInviteMaxActive),
 		MaxUses:      s.intValue(SettingMemberInviteMaxUses),
-		MaxExpiresIn: time.Duration(s.intValue(SettingMemberInviteMaxExpiresIn)) * time.Second,
+		MaxExpiresIn: time.Duration(s.intValue(SettingMemberInviteMaxLifetimeSeconds)) * time.Second,
 	}
 }
 
@@ -1065,8 +1043,8 @@ func (s Settings) FeaturedAccounts() []string {
 // VoicePublicSummary returns the value of SettingVoicePublicSummary.
 func (s Settings) VoicePublicSummary() bool { return s.boolValue(SettingVoicePublicSummary) }
 
-// LinkCardsEnabled returns the value of SettingLinkCardsEnabled.
-func (s Settings) LinkCardsEnabled() bool { return s.boolValue(SettingLinkCardsEnabled) }
+// LinkCardsEnabled returns the value of SettingLinkCards.
+func (s Settings) LinkCardsEnabled() bool { return s.boolValue(SettingLinkCards) }
 
 // LinkCardsIgnoreRobotsTxt returns the value of SettingLinkCardsIgnoreRobotsTxt.
 func (s Settings) LinkCardsIgnoreRobotsTxt() bool {

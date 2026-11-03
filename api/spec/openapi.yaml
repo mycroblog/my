@@ -1538,6 +1538,8 @@ components:
       $ref: ./components/schemas/InstanceDocument.yaml
     InstanceDocumentKind:
       $ref: ./components/schemas/InstanceDocumentKind.yaml
+    InstanceAudience:
+      $ref: ./components/schemas/InstanceAudience.yaml
     InstanceSettingKey:
       $ref: ./components/schemas/InstanceSettingKey.yaml
     InstanceSettingKind:
@@ -1826,8 +1828,6 @@ components:
       $ref: ./components/schemas/SupporterListPage.yaml
     SupporterListPlan:
       $ref: ./components/schemas/SupporterListPlan.yaml
-    SupporterListVisibility:
-      $ref: ./components/schemas/SupporterListVisibility.yaml
     SupporterListing:
       $ref: ./components/schemas/SupporterListing.yaml
     SupporterPlan:
@@ -1860,8 +1860,6 @@ components:
       $ref: ./components/schemas/ThemeProblem.yaml
     ThemeTokenValue:
       $ref: ./components/schemas/ThemeTokenValue.yaml
-    TimelineAccess:
-      $ref: ./components/schemas/TimelineAccess.yaml
     TotpSetup:
       $ref: ./components/schemas/TotpSetup.yaml
     TwoFactor:

@@ -463,7 +463,7 @@ func TestSupporterSubscriptionAndList(t *testing.T) {
 		return page
 	}
 	e.want(e.do(http.MethodGet, "/instance/supporters", "", nil, nil), http.StatusNotFound, "the list while off")
-	setVisibility("public")
+	setVisibility("everyone")
 	if page := list(""); len(page.Items) != 0 || len(page.Plans) != 1 || page.Plans[0].Name != "Supporter" {
 		t.Errorf("nobody is listed before choosing to be: %+v", page)
 	}

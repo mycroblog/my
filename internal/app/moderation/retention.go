@@ -39,7 +39,7 @@ const (
 )
 
 // RetentionPeriods are how long the moderation records are kept (the instance settings
-// retention_reports, retention_moderation_actions, and retention_audit_log).
+// reports_retention_days, moderation_actions_retention_days, and audit_log_retention_days).
 type RetentionPeriods struct {
 	Reports  time.Duration
 	Actions  time.Duration

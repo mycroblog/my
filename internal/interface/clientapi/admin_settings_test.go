@@ -107,9 +107,9 @@ func TestManageInstanceSettings(t *testing.T) {
 		mode.Choices == nil || !slices.Equal(*mode.Choices, []string{"open", "approval", "invite", "closed"}) || mode.Minimum != nil {
 		t.Errorf("registration_mode = %+v, want the default with its choices", mode)
 	}
-	ttl := settingItem(t, list, clientapi.InstanceSettingKeyRemoteMediaCacheTtl)
+	ttl := settingItem(t, list, clientapi.InstanceSettingKeyRemoteMediaCacheTtlSeconds)
 	if ttl.Kind != clientapi.InstanceSettingKindInt || ttl.Minimum == nil || *ttl.Minimum != 60 || ttl.Maximum == nil || *ttl.Maximum != 31536000 || ttl.Choices != nil {
-		t.Errorf("remote_media_cache_ttl = %+v, want its bounds", ttl)
+		t.Errorf("remote_media_cache_ttl_seconds = %+v, want its bounds", ttl)
 	}
 
 	res = e.sendJSON(t, http.MethodPatch, "/admin/settings", "admin",

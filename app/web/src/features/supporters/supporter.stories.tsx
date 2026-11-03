@@ -25,7 +25,7 @@ function owning(own: Schemas["OwnSupporterSubscription"]) {
   );
 }
 
-const program = [programOn("public"), offeringPlans];
+const program = [programOn("everyone"), offeringPlans];
 
 /** A story whose server has the program on, three plans, and the viewer's subscription `own`. */
 function subscribed(own: Schemas["OwnSupporterSubscription"], ...more: RequestHandler[]) {

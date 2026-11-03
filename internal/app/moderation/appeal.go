@@ -60,7 +60,7 @@ type AppealDecided struct {
 func (AppealDecided) EventType() string { return EventAppealDecided }
 
 // AppealWindow reads how long after an action the account may appeal it: the instance setting
-// appeal_window. The composition root implements it on the instance module.
+// appeal_window_days. The composition root implements it on the instance module.
 type AppealWindow interface {
 	AppealWindow(ctx context.Context) (time.Duration, error)
 }

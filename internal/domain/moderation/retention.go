@@ -24,8 +24,8 @@ import (
 //     SignupBlockRetention; one without an end that is not lifted stays while it is in effect,
 //     and a hold on the account whose ban made the block keeps it.
 
-// Default retention periods (the defaults of the instance settings retention_reports,
-// retention_moderation_actions, and retention_audit_log).
+// Default retention periods (the defaults of the instance settings reports_retention_days,
+// moderation_actions_retention_days, and audit_log_retention_days).
 const (
 	DefaultReportRetention   = 365 * 24 * time.Hour
 	DefaultActionRetention   = 365 * 24 * time.Hour

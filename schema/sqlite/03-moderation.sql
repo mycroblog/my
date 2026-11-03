@@ -289,7 +289,7 @@ CREATE UNIQUE INDEX relationship_severances_action_id_account_id ON relationship
 -- ---------------------------------------------------------------------------------------------
 
 -- Resource: a local account's appeal of an action on it, at most one per action, within the
--- appeal window (instance setting appeal_window) from the action.
+-- appeal window (instance setting appeal_window_days) from the action.
 CREATE TABLE moderation_appeals (
   id TEXT NOT NULL PRIMARY KEY,
   action_id TEXT NOT NULL,

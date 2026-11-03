@@ -78,7 +78,7 @@ type OriginRetentionPolicy struct {
 }
 
 // OriginRetention reads the policy of the origin purge at each run: the instance settings
-// retention_session_origins and retention_registration_origins and the retention holds of the
+// session_origins_retention_days and registration_origins_retention_days and the retention holds of the
 // moderation module. The composition root implements it.
 type OriginRetention interface {
 	OriginRetention(ctx context.Context) (OriginRetentionPolicy, error)

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Who may read something public about the instance, the value of the instance settings
+  `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+  `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+  resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+  a 401; `everyone`, everyone, anonymous visitors included.
+type: string
+enum: ["off", signed_in, everyone]

@@ -117,7 +117,7 @@ type ProxyDeps struct {
 	HTTP       kernel.HTTPClient
 	Accounts   AccountDomains
 	Policy     MediaFetchPolicy
-	// Settings returns the current remote_media_policy and remote_media_cache_ttl instance
+	// Settings returns the current remote_media_policy and remote_media_cache_ttl_seconds instance
 	// settings.
 	Settings func(ctx context.Context) (ProxySettings, error)
 	// UnitOfWork, Blobs, and Clock keep the copies of the remote media cache; without Blobs the
@@ -191,8 +191,8 @@ type LinkCardMediaReader interface {
 // the allow list is refused), and its size is bounded: 16 MiB for images and 100 MiB for video
 // and audio (ADR-0019 §1). The image of a custom emoji is further bounded by
 // remote_custom_emoji_max_bytes and limited to PNG, GIF, and WebP (ADR-0051 §2). A CDN in front of the instance caches the responses for
-// remote_media_cache_ttl. Under the remote_media_policy none the instance keeps no copy; under
-// avatars and all it also keeps one in blob storage for remote_media_cache_ttl
+// remote_media_cache_ttl_seconds. Under the remote_media_policy none the instance keeps no copy; under
+// avatars and all it also keeps one in blob storage for remote_media_cache_ttl_seconds
 // (remote_media_cache.go).
 type MediaProxy struct {
 	d ProxyDeps

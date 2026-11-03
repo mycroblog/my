@@ -272,7 +272,7 @@ func TestTimelineStreamAccess(t *testing.T) {
 		t.Errorf("home = %d, want 404", res.StatusCode)
 	}
 	// A timeline turned off is a 404; the other one opens.
-	e.instance.set(instance.CurrentSetting{Key: instance.SettingLocalTimelineAccess, RevisionID: testkit.NamedID("revision-1"), Value: "off"})
+	e.instance.set(instance.CurrentSetting{Key: instance.SettingLocalTimelineVisibility, RevisionID: testkit.NamedID("revision-1"), Value: "off"})
 	res := e.get(t, "/streaming/timelines/local", map[string]string{"Authorization": "Bearer read", "Accept-Language": "ja"})
 	if res.StatusCode != http.StatusNotFound {
 		t.Fatalf("local turned off = %d, want 404", res.StatusCode)
@@ -283,7 +283,7 @@ func TestTimelineStreamAccess(t *testing.T) {
 	_, _, r := e.open(t.Context(), t, "/streaming/timelines/federated", "read")
 
 	// Turning the open timeline off ends its stream at the next heartbeat.
-	e.instance.set(instance.CurrentSetting{Key: instance.SettingFederatedTimelineAccess, RevisionID: testkit.NamedID("revision-2"), Value: "off"})
+	e.instance.set(instance.CurrentSetting{Key: instance.SettingFederatedTimelineVisibility, RevisionID: testkit.NamedID("revision-2"), Value: "off"})
 	waitEnd(t, r)
 	waitReleased(t, e.hub)
 	if got := len(e.entries.called()); got != 0 {

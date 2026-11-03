@@ -1,13 +1,13 @@
 {
-  "admin.settings.audience.all": {
+  "admin.settings.audience.everyone": {
     "defaultMessage": "Everyone",
     "description": "Choice of who may read something: everyone, visitors included."
   },
-  "admin.settings.audience.none": {
+  "admin.settings.audience.off": {
     "defaultMessage": "Nobody",
     "description": "Choice of who may read something: nobody."
   },
-  "admin.settings.audience.users": {
+  "admin.settings.audience.signed_in": {
     "defaultMessage": "Signed-in users",
     "description": "Choice of who may read something: the server's signed-in users."
   },
@@ -123,7 +123,7 @@
     "defaultMessage": "Who may read the public comments",
     "description": "Label of the radio buttons of who may read the public comments of the domain actions."
   },
-  "admin.settings.domain_actions.comments.all": {
+  "admin.settings.domain_actions.comments.everyone": {
     "defaultMessage": "Everyone who may read the list sees the comments.",
     "description": "Description of showing the comments of the domain actions to everyone."
   },
@@ -259,11 +259,11 @@
     "defaultMessage": "The list is not published, and the about page does not link to it.",
     "description": "Description of not publishing the supporter list."
   },
-  "admin.settings.supporter_list.public": {
+  "admin.settings.supporter_list.everyone": {
     "defaultMessage": "Everyone",
     "description": "Choice: everyone may read the supporter list."
   },
-  "admin.settings.supporter_list.public.description": {
+  "admin.settings.supporter_list.everyone.description": {
     "defaultMessage": "Anyone may read the list, signed in or not.",
     "description": "Description of publishing the supporter list to everyone."
   },
@@ -347,11 +347,11 @@
     "defaultMessage": "Where to report vulnerabilities: an https: or mailto: address, such as mailto:security@example.com. The server serves /.well-known/security.txt only while it is set.",
     "description": "Help text of the security contact field."
   },
-  "admin.settings.domain_actions.comments.none": {
+  "admin.settings.domain_actions.comments.off": {
     "defaultMessage": "The comments are not shown.",
     "description": "Description of not showing the comments of the domain actions."
   },
-  "admin.settings.domain_actions.comments.users": {
+  "admin.settings.domain_actions.comments.signed_in": {
     "defaultMessage": "Signed-in users who may read the list see the comments.",
     "description": "Description of showing the comments of the domain actions to signed-in users."
   },
@@ -363,15 +363,15 @@
     "defaultMessage": "Who may read the list",
     "description": "Label of the radio buttons of who may read the list of domain actions."
   },
-  "admin.settings.domain_actions.list.all": {
+  "admin.settings.domain_actions.list.everyone": {
     "defaultMessage": "Anyone sees the list, without signing in.",
     "description": "Description of publishing the list of domain actions to everyone."
   },
-  "admin.settings.domain_actions.list.none": {
+  "admin.settings.domain_actions.list.off": {
     "defaultMessage": "The list is not published.",
     "description": "Description of not publishing the list of domain actions."
   },
-  "admin.settings.domain_actions.list.users": {
+  "admin.settings.domain_actions.list.signed_in": {
     "defaultMessage": "Only the users signed in to this server see the list.",
     "description": "Description of publishing the list of domain actions to signed-in users."
   },
@@ -401,7 +401,7 @@
   },
   "admin.settings.federation.link_cards": {
     "defaultMessage": "Show the cards of links in posts",
-    "description": "Checkbox of the link_cards_enabled setting: whether posts show the cards (title, description, image) of the pages they link to."
+    "description": "Checkbox of the link_cards setting: whether posts show the cards (title, description, image) of the pages they link to."
   },
   "admin.settings.federation.link_cards.description": {
     "defaultMessage": "The server fetches the page of the first link in each post, whoever can see the post, and shows its title, description, and image under it. The linked sites learn when the link was posted, but not by whom.",
@@ -659,11 +659,11 @@
     "defaultMessage": "Visitors who are not signed in can read it too, and the landing page shows a sample of the local timeline.",
     "description": "Description of the choice that lets everyone read a public timeline."
   },
-  "admin.settings.timelines.access.logged_in": {
+  "admin.settings.timelines.access.signed_in": {
     "defaultMessage": "Signed-in users",
     "description": "Choice of who may read a public timeline: only the users signed in to this server."
   },
-  "admin.settings.timelines.access.logged_in.description": {
+  "admin.settings.timelines.access.signed_in.description": {
     "defaultMessage": "Only users signed in to this server can read it. Visitors are asked to sign in.",
     "description": "Description of the choice that lets only signed-in users read a public timeline."
   },
