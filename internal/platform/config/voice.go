@@ -19,7 +19,7 @@ const (
 	maxVoiceP2PMaxParticipants     = 50
 	defaultVoiceP2PMaxParticipants = 10
 	// The limits a media server starts with, so that its cost has a bound before anyone sets them.
-	defaultVoiceMaxParticipants = 50
+	defaultVoiceMaxParticipants = 10
 	defaultVoiceMaxRoomDuration = "4h"
 	defaultVoiceMaxOpenRooms    = 10
 )

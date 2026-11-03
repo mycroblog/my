@@ -68,7 +68,7 @@ ADR-0100 がこの ADR に任せたもの: 設定 `voice` と `off` の振る舞
 | --- | --- | --- |
 | `voice` | `off` / `p2p` / `livekit` / `sora` | `off` |
 | `voice_p2p_max_participants` | P2P のルームの人数の上限（2〜50） | `10` |
-| `voice_sfu_max_participants` | SFU のルームの人数の上限（0 は上限なし） | `50` |
+| `voice_sfu_max_participants` | SFU のルームの人数の上限（0 は上限なし） | `10` |
 | `voice_max_room_duration` | 1 ルームの最長時間（0 は上限なし） | `4h` |
 | `voice_max_open_rooms` | 同時に開けるルームの数（0 は上限なし） | `10` |
 | `voice_stun_urls` | STUN の URL の一覧（`stun:` / `stuns:`） | なし |
