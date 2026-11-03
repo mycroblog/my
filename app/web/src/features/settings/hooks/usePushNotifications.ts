@@ -6,7 +6,7 @@ import { ApiError, errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { saveStateOf } from "./saveState";
 import { shellQueryReader } from "../../../lib/query";
-import { instanceQueryOptions } from "../api/me";
+import { credentialsQueryOptions, instanceQueryOptions } from "../api/me";
 import {
   cachePushSubscription,
   deletePushSubscription,
@@ -15,6 +15,7 @@ import {
   pushSubscriptionQueryOptions,
   savePushSubscription,
 } from "../api/push";
+import { forgetPushPromptDismissed, rememberPushPromptDismissed } from "./pushPromptDismissal";
 
 /** What the notification settings show of Web Push on this device. */
 export type PushNotifications =
@@ -22,12 +23,14 @@ export type PushNotifications =
   | { status: "hidden" }
   /** This browser has no Push API (or no Service Worker), so it cannot receive Web Push. */
   | { status: "unsupported" }
-  /** The user blocked notifications for this site in the browser. */
-  | { status: "denied" }
+  /** The user blocked notifications for this site in the browser; `refused`: in the prompt of a change made here. */
+  | { status: "denied"; refused: boolean }
   | {
       status: "available";
       /** Whether this signed-in app has a subscription: the value being saved while `isPending`. */
       enabled: boolean;
+      /** Whether the server holds a subscription of this signed-in app, as saved; undefined when it could not be read. */
+      subscribed: boolean | undefined;
       /** The types pushed: the value being saved while `isPending`. */
       alerts: readonly NotificationType[];
       setEnabled: (enabled: boolean) => void;
@@ -43,7 +46,7 @@ export type PushNotifications =
     };
 
 /** The parts of the browser that Web Push uses: the Push API and the Notifications API. */
-function pushBrowser(): { container: ServiceWorkerContainer; notifications: typeof Notification } | null {
+export function pushBrowser(): { container: ServiceWorkerContainer; notifications: typeof Notification } | null {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
   if (typeof PushManager === "undefined" || typeof Notification === "undefined") return null;
   return { container: navigator.serviceWorker, notifications: Notification };
@@ -102,7 +105,11 @@ type PushChange =
  * this signed-in app with every type of `offered` (the rows of the notification settings); changing a row registers it
  * again; turning it off deletes the server's subscription and the browser's.
  */
-export function usePushNotifications(offered: readonly NotificationType[]): PushNotifications {
+export function usePushNotifications(
+  offered: readonly NotificationType[],
+  /** Tells that the switch turned it on, in place of reading out the save mark. */
+  onTurnedOn?: () => void,
+): PushNotifications {
   const api = useApi();
   const queryClient = useQueryClient();
   const notice = useNotice();
@@ -114,6 +121,7 @@ export function usePushNotifications(offered: readonly NotificationType[]): Push
     ...pushSubscriptionQueryOptions(api),
     enabled: serverKey !== undefined && browser !== null,
   });
+  const accountId = useQuery(credentialsQueryOptions(api)).data?.id;
   const mutation = useMutation({
     mutationKey: ["put", "/push/subscription"] as const,
     mutationFn: async (change: PushChange): Promise<PushSubscriptionInfo | null> => {
@@ -128,15 +136,23 @@ export function usePushNotifications(offered: readonly NotificationType[]): Push
       const pushSubscription = await browserSubscription(browser.container, serverKey);
       return savePushSubscription(api, subscriptionRequest(pushSubscription, change.alerts));
     },
-    onSuccess: (saved) => {
+    onSuccess: (saved, change) => {
       cachePushSubscription(api, queryClient, saved);
-      notice.inPlace(t("client:settings.saved"));
+      // Whoever turned it on hears of the prompt again when it stops; whoever turned it off said no (ADR-0137 §4).
+      if (accountId !== undefined) {
+        if (change.enabled) forgetPushPromptDismissed(accountId);
+        else rememberPushPromptDismissed(accountId);
+      }
+      if (change.enabled && change.ask && onTurnedOn !== undefined) onTurnedOn();
+      else notice.inPlace(t("client:settings.saved"));
     },
   });
 
   if (serverKey === undefined) return { status: "hidden" };
   if (browser === null) return { status: "unsupported" };
-  if (browser.notifications.permission === "denied") return { status: "denied" };
+  if (browser.notifications.permission === "denied") {
+    return { status: "denied", refused: mutation.isError && mutation.error instanceof PermissionRefused };
+  }
   // The section waits for the subscription of the grant, so that its switch never shows off before it is known.
   if (subscription.isPending) return { status: "hidden" };
 
@@ -157,6 +173,7 @@ export function usePushNotifications(offered: readonly NotificationType[]): Push
   return {
     status: "available",
     enabled,
+    subscribed: subscription.isSuccess ? saved !== null : undefined,
     alerts,
     setEnabled: (on) => {
       mutation.mutate(on ? { enabled: true, alerts: offered, ask: true } : { enabled: false });

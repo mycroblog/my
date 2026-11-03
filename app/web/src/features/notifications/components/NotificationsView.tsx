@@ -3,8 +3,21 @@
 // route (web-client/README.md S3), and the notifications of the selected filter as a feed (Y6). The tabs follow
 // the WAI-ARIA APG tabs pattern with automatic activation (React Aria Tabs); only the selected panel is
 // mounted, and switching tabs keeps focus on the tab (the layout moves focus only when the path changes).
-import { EmptyState, Feed, type NotificationKind, NotificationKindIcon, Tab, TabList, TabPanel, Tabs } from "@my/ui";
+import {
+  EmptyState,
+  Feed,
+  type NotificationKind,
+  NotificationKindIcon,
+  Stack,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+} from "@my/ui";
+import { useRef } from "react";
+import { useSessionStatus } from "../../../lib/auth/SessionProvider";
 import { SignInPrompt } from "../../session";
+import { PushPrompt } from "../../settings";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type NotificationFilter, notificationFilters } from "../api/notifications";
 import { useNotifications } from "../hooks/useNotifications";
@@ -46,27 +59,39 @@ export type NotificationsViewProps = {
 
 export function NotificationsView({ filter, onFilterChange, headingId }: NotificationsViewProps) {
   const t = useT();
+  const signedIn = useSessionStatus() === "signed-in";
+  const tabList = useRef<HTMLDivElement>(null);
   return (
-    <Tabs
-      selectedKey={filter}
-      onSelectionChange={(key) => {
-        if (isFilter(key)) onFilterChange(key);
-      }}
-    >
-      <TabList aria-label={t("client:notifications.filter.label")}>
+    <Stack>
+      {signedIn && (
+        <PushPrompt
+          onGone={() => {
+            // The prompt's buttons go with it: the focus stays in the page, on the tab the list is filtered by.
+            tabList.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
+          }}
+        />
+      )}
+      <Tabs
+        selectedKey={filter}
+        onSelectionChange={(key) => {
+          if (isFilter(key)) onFilterChange(key);
+        }}
+      >
+        <TabList ref={tabList} aria-label={t("client:notifications.filter.label")}>
+          {notificationFilters.map((item) => (
+            <Tab key={item} id={item} icon={<NotificationKindIcon kind={filterKinds[item]} />}>
+              {t(filterLabels[item])}
+            </Tab>
+          ))}
+        </TabList>
+        {/* One panel per tab: React Aria mounts only the selected one, and each keeps the id its tab's aria-controls names. */}
         {notificationFilters.map((item) => (
-          <Tab key={item} id={item} icon={<NotificationKindIcon kind={filterKinds[item]} />}>
-            {t(filterLabels[item])}
-          </Tab>
+          <TabPanel key={item} id={item}>
+            <NotificationList filter={filter} headingId={headingId} />
+          </TabPanel>
         ))}
-      </TabList>
-      {/* One panel per tab: React Aria mounts only the selected one, and each keeps the id its tab's aria-controls names. */}
-      {notificationFilters.map((item) => (
-        <TabPanel key={item} id={item}>
-          <NotificationList filter={filter} headingId={headingId} />
-        </TabPanel>
-      ))}
-    </Tabs>
+      </Tabs>
+    </Stack>
   );
 }
 

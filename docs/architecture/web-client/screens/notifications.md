@@ -1,7 +1,9 @@
 ---
 start: "/home"
 persona: "yuki"
-paths: ["app/web/src/routes/notifications.tsx", "app/web/src/features/notifications/**", "app/ui/src/NotificationKindMark.tsx"]
+paths: ["app/web/src/routes/notifications.tsx", "app/web/src/features/notifications/**", "app/ui/src/NotificationKindMark.tsx", "app/web/src/features/settings/components/PushPrompt.tsx", "app/web/src/features/settings/hooks/usePushPrompt.ts"]
+push: {"案内からこの端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない）": "layla"}
+notes: {"案内からこの端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない）": "Judged by the harness: the server holds the browser's subscription, and the fake push service receives and decrypts the notification of a reply by layla after the task. Not measured: the agent sees neither OS notifications nor the browser's permission prompt (notifications are granted beforehand)."}
 ---
 
 ## 通知（`/notifications`）
@@ -23,14 +25,25 @@ paths: ["app/web/src/routes/notifications.tsx", "app/web/src/features/notificati
 | メンションに返信する | 4 |
 | フォローしてくれた人をフォローし返す | 2 |
 | お気に入りされた自分の投稿を開く | 2 |
+| 案内からこの端末でプッシュ通知を受け取る（ブラウザの許可の確認は数えない） | 2 |
 
 通知を開くのはナビゲーションの「通知」の 1 つ。絞り込みはタブの 1 つが増える。メンションへの返信は、通知の行の「返信」・本文の入力・送信の 3 つが増える。
 フォローし返すのは、行のフォローのボタンの 1 つが増える。投稿を開くのは、行の投稿の引用（リンク）の 1 つが増える。
 
 ### 3. 情報の優先順位とまとまり
 
-画面の `h1`（「通知」）は見た目から隠す（ナビゲーションの今いる項目が示す）。区画の `h2` は持たず、上から次の順に並べる。
+画面の `h1`（「通知」）は見た目から隠す（ナビゲーションの今いる項目が示す）。区画の `h2` はプッシュ通知の案内だけが持ち、上から次の順に並べる。
 
+0. プッシュ通知の案内（条件を満たすときだけ。[ADR-0137](../../../adr/0137-web-push-prompt.md)）: `@my/ui` の `Section` の `band`。見出し・説明（あとから通知の設定でもオンにできること）・「オンにする」「閉じる」。モーダルにせず、一覧の操作を妨げない。
+
+   出すのは次をすべて満たすときだけ。読み込み中と取得の失敗では出さないので、オンの人に一瞬出ることはない。
+   - サーバーが Web Push を送り（`push_server_key`）、ブラウザに Push API と Service Worker がある
+   - サイトの通知をブロックしていない
+   - このログイン（トークンの系列）の購読がないと分かっている
+   - 通知の設定の行を読み込めた（登録する種類がそのすべての行の種類）
+   - このブラウザでこのアカウントが案内を閉じていない（閉じる・設定のスイッチをオフにすると残り、案内かスイッチでオンにすると消える）
+
+   右帯の通知には出さない。
 1. 種類の絞り込みのタブ（すべて・メンション・フォロー・ブースト・お気に入り・新しい投稿）: 各タブは名前の前に、その種類の行の印と同じアイコン（`NotificationKindIcon`。すべては通知のベル）を出し、
    どのタブがどの行を残すかを形でも示す（P3）。アイコンは飾りで、タブの名前は文字が伝える
 2. 通知の一覧（`feed`）: 1 行 1 通知（同じ投稿へのお気に入りとブーストは 1 行にまとめる）。各行は、アバターの角の種類の印（お気に入りの星・ブーストの輪・フォローの人・メンションの `@`・リアクションの顔・引用・投票・運営の盾など）、
@@ -56,8 +69,12 @@ paths: ["app/web/src/routes/notifications.tsx", "app/web/src/features/notificati
 | 投稿の引用を押す | 画面の遷移（投稿の詳細） |
 | お知らせの通知を押す | 画面の遷移（お知らせの一覧のそのお知らせ。見出しにフォーカスが移る） |
 | 一覧の読み込みが失敗する | その場。一覧の位置に `RegionError`（何が起きたか・理由・もう一度試す） |
+| 案内の「閉じる」 | その場。確かめずに案内が消え、選んでいるタブにフォーカスが移る。購読しない。このブラウザでこのアカウントには案内を出さなくなる |
+| 案内の「オンにする」で購読できた | 案内が消え、選んでいるタブにフォーカスが移る。トースト（オンにしたこと。「種類を選ぶ」で通知の設定へ） |
+| 案内の「オンにする」でブラウザの確認を選ばずに閉じた、購読か登録に失敗した | その場。案内に理由を出して残り、もう一度押せる |
+| 案内の「オンにする」でブラウザにブロックされた | その場。案内に理由と「閉じる」だけが残り、「閉じる」にフォーカスが移る。次に画面を開くと出ない |
 
 ### 6. 入口と出口
 
 - 入口: ナビゲーションの「通知」（未読の数のバッジ付き）。Web Push の通知を押したとき。ログインしていないと、ログインの画面へ移り、終えるとここに戻る。
-- 出口: お知らせの通知を押すと、[そのお知らせの画面](announcement.md)。投稿の詳細、プロフィール、投稿のフォーム（返信）、運営の知らせの行き先（アカウントの状態・通報・登録の申請など）。
+- 出口: 案内のトーストの「種類を選ぶ」で[通知の設定](settings-notifications.md)。お知らせの通知を押すと、[そのお知らせの画面](announcement.md)。投稿の詳細、プロフィール、投稿のフォーム（返信）、運営の知らせの行き先（アカウントの状態・通報・登録の申請など）。

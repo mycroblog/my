@@ -675,6 +675,30 @@
     "defaultMessage": "This browser cannot receive push notifications. On iPhone and iPad, add this site to the Home Screen and open it from there.",
     "description": "Shown in the push notification settings when the browser has no Push API."
   },
+  "settings.push_prompt.choose_types": {
+    "defaultMessage": "Choose types",
+    "description": "Action of the toast after the prompt on the notifications page turned on push notifications: opens the notification settings, where the types pushed are chosen."
+  },
+  "settings.push_prompt.close": {
+    "defaultMessage": "Close",
+    "description": "Button of the prompt at the top of the notifications page: closes it without turning on push notifications. It does not come back."
+  },
+  "settings.push_prompt.description": {
+    "defaultMessage": "Notifications reach this device even when the app is closed. You can also turn them on later in the notification settings.",
+    "description": "Text of the prompt at the top of the notifications page, offering to turn on push notifications. Says where to do it after closing the prompt."
+  },
+  "settings.push_prompt.enable": {
+    "defaultMessage": "Turn on",
+    "description": "Button of the prompt at the top of the notifications page: turns on push notifications on this device. The browser may ask for permission."
+  },
+  "settings.push_prompt.enabled": {
+    "defaultMessage": "Push notifications are on for this device.",
+    "description": "Toast after the prompt on the notifications page turned on push notifications."
+  },
+  "settings.push_prompt.title": {
+    "defaultMessage": "Get notifications on this device",
+    "description": "Heading of the prompt at the top of the notifications page, offering to turn on push notifications on this device."
+  },
   "settings.require_media_description.description": {
     "defaultMessage": "Before you post, the post form asks for a description (alt text) of each image, video or audio file without one, so that people who cannot see or hear them can follow your posts.",
     "description": "Help text of the switch that asks for a description of every attachment."

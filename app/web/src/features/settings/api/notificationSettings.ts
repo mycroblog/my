@@ -5,6 +5,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";
+import { isTauriApp } from "../../../lib/platform";
 
 type Schemas = components["schemas"];
 
@@ -16,6 +17,11 @@ export type NotificationSettingChange = Schemas["NotificationSettingsUpdate"]["c
 /** The rows the user gets (GET /preferences/notifications), in the order to show them. */
 export function notificationSettingsQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/preferences/notifications");
+}
+
+/** The rows this client shows of the notification settings: the Tauri app has no supporter features (ADR-0072 §14). */
+export function shownNotificationRows(rows: readonly NotificationSettingRow[]): readonly NotificationSettingRow[] {
+  return rows.filter((row) => row.group !== "supporter" || !isTauriApp());
 }
 
 /**
