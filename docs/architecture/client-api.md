@@ -142,7 +142,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - ADR-0019 §9 のセキュリティヘッダは `platform` が全応答に付けます。
 - CORS は `platform` が `/api/v1` 以下に適用し、設定 `web_origin` のオリジンだけを `Access-Control-Allow-Origin` に返します。
   `Access-Control-Allow-Credentials` は付けません（API は `Authorization: Bearer` だけで認証する）。
-  `Content-Language`・`X-Request-Id`・`WWW-Authenticate`・`Retry-After`・`RateLimit`・`RateLimit-Policy` を `Access-Control-Expose-Headers` で公開します。
+  `Content-Language`・`X-Request-Id`・`WWW-Authenticate`・`Retry-After`・`RateLimit`・`RateLimit-Policy`・`X-Web-Client-Epoch`（すべての応答に付く、Web クライアントの必要な更新の番号。ADR-0141 §4）を `Access-Control-Expose-Headers` で公開します。
 
 ### 2.5 使える OpenAPI 3.1 の部分集合
 
