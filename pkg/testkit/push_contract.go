@@ -343,6 +343,8 @@ func (a *stubPushAudience) GrantActive(_ context.Context, family string) (bool, 
 	return !a.ended[family], nil
 }
 
+func (a *stubPushAudience) Deactivated(context.Context, string) (bool, error) { return false, nil }
+
 func (a *stubPushAudience) Locale(context.Context, string) (string, error) { return "en", nil }
 
 func (a *stubPushAudience) Account(context.Context, string) (appnotification.PushAccount, error) {

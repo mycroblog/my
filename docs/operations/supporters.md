@@ -37,7 +37,7 @@ Once a plan exists, its role can no longer be granted or revoked by hand, and yo
 
 ## Notifications to subscribers
 
-Subscribers are told once about each of the following, by notification, Web Push, and email (to the primary address, in the user's language).
+Subscribers are told once about each of the following, by notification, Web Push, and email (to the primary address, in the user's language). A subscriber whose account is deactivated is told nothing, then or on coming back.
 
 - Payment failure (`supporter_payment_failed`): when the subscription becomes past due (`past_due`). It gives the end of the grace period (in UTC in the email) and a link to the screen where the payment method can be fixed (`/settings/supporter`).
 - End of the subscription (`supporter_subscription_ended`): when a subscription leaves a state with benefits because the grace period ran out, it expired, or it ended with a refund or a chargeback. The message states the reason. An end caused by deleting the account is not announced.

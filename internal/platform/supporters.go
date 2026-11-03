@@ -62,7 +62,7 @@ func (a *App) supporterSync(opts AppOptions) supporters.Syncer {
 // and, unless mail = none, the job that sends them by email. push enqueues their Web Push
 // messages; nil pushes none.
 func (a *App) setUpSupporterNotifications(cfg *config.Config, repo notification.Repository, push *notification.Pusher) {
-	deps := notification.SupporterDeps{Repository: repo, IDs: a.IDs, Push: push}
+	deps := notification.SupporterDeps{Repository: repo, IDs: a.IDs, Accounts: a.Accounts, Push: push}
 	if sendsEmail(cfg) {
 		deps.Outbox = a.Outbox
 		if deps.Outbox == nil {
@@ -84,11 +84,18 @@ type supporterUsers struct{ a *App }
 // SupporterMailbox implements notification.SupporterMailboxes: the primary address and the
 // locale of the user of a local account, unless the suppression of the address stops
 // transactional email (ADR-0086 §5): the supporter emails are transactional, so a complaint
-// does not stop them and a hard bounce does.
+// does not stop them and a hard bounce does. An email queued before its recipient deactivated the
+// account stays unsent (ADR-0145 §6).
 func (u supporterUsers) SupporterMailbox(ctx context.Context, accountID string) (notification.Mailbox, bool, error) {
 	userID, err := moderatorStaff(u).userOf(ctx, accountID)
 	if err != nil || userID == "" {
 		return notification.Mailbox{}, false, err
+	}
+	switch actor, err := u.a.Accounts.FindByID(ctx, accountID); {
+	case err != nil:
+		return notification.Mailbox{}, false, err
+	case actor.Lifecycle.Deactivated():
+		return notification.Mailbox{}, false, nil
 	}
 	user, err := u.SupporterUser(ctx, userID)
 	if errors.Is(err, supporters.ErrNotFound) {

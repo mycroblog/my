@@ -34,11 +34,15 @@ func (s *recordingPushSender) Send(_ context.Context, _ notification.PushSubscri
 
 // stubAudience sees the statuses of visible.
 type stubAudience struct {
-	visible map[string]bool
-	err     error
+	visible     map[string]bool
+	err         error
+	deactivated bool
 }
 
 func (stubAudience) GrantActive(context.Context, string) (bool, error) { return true, nil }
+func (a stubAudience) Deactivated(context.Context, string) (bool, error) {
+	return a.deactivated, nil
+}
 func (stubAudience) Locale(context.Context, string) (string, error)    { return "en", nil }
 func (stubAudience) Account(_ context.Context, id string) (PushAccount, error) {
 	return PushAccount{Acct: id}, nil
@@ -83,6 +87,7 @@ func TestPushRechecksAtSend(t *testing.T) {
 		{"FollowNoLongerListed", follow, stubAudience{}, stubListed{}, 0, false},
 		{"FollowListed", follow, stubAudience{}, stubListed{listed: map[string]bool{notified: true}}, 1, false},
 		{"ListedFails", mention, stubAudience{visible: map[string]bool{statusID: true}}, stubListed{err: failure}, 0, true},
+		{"RecipientDeactivated", mention, stubAudience{deactivated: true, visible: map[string]bool{statusID: true}}, stubListed{listed: map[string]bool{notified: true}}, 0, false},
 		{"VisibilityFails", mention, stubAudience{err: failure}, stubListed{listed: map[string]bool{notified: true}}, 0, true},
 	}
 	for _, tc := range cases {

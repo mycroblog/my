@@ -243,3 +243,87 @@ func TestWebPushOff(t *testing.T) {
 		t.Errorf("PUT = %d, want 404", res.StatusCode)
 	}
 }
+
+// TestWebPushQueuedBeforeDeactivation runs, once the recipient has deactivated the account, a job
+// that a mention queued before it: the message stays unsent (ADR-0145 §6).
+func TestWebPushQueuedBeforeDeactivation(t *testing.T) {
+	t.Parallel()
+	const vapidKey = "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw"
+	service := &pushService{status: http.StatusCreated}
+	cfg := loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_VAPID_PRIVATE_KEY": vapidKey,
+	})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), HTTPClient: service})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	h, spec, ctx := app.Handler(), apitest.Load(t), t.Context()
+	const password = "correct horse battery staple"
+	if _, err := app.Identity.CreateAdmin(ctx, identity.CreateAdminInput{Username: "root", Email: "root@example.com", Password: password}); err != nil {
+		t.Fatal(err)
+	}
+	alice, err := app.Identity.RegisterLocalUser(ctx, identity.RegisterInput{Username: "alice", Password: password, Locale: "en"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bob, err := app.Identity.RegisterLocalUser(ctx, identity.RegisterInput{Username: "bob", Password: password, Locale: "en"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := issueAccessToken(t, app, alice.User.ID, "")
+	send := func(method, path, body string) *http.Response {
+		t.Helper()
+		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		return spec.Serve(t, h, req)
+	}
+	ua, err := ecdh.P256().GenerateKey(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	subscribe := `{"endpoint":"https://push.example.net/send/1","keys":{"p256dh":"` +
+		base64.RawURLEncoding.EncodeToString(ua.PublicKey().Bytes()) + `","auth":"` + base64.RawURLEncoding.EncodeToString([]byte("0123456789abcdef")) +
+		`"},"alerts":["mention"]}`
+	if res := send(http.MethodPut, "/api/v1/push/subscription", subscribe); res.StatusCode != http.StatusOK {
+		t.Fatalf("PUT = %d", res.StatusCode)
+	}
+	drain := func() {
+		t.Helper()
+		for {
+			ran, err := app.Runner.RunOnce(ctx)
+			if err != nil {
+				t.Fatalf("RunOnce: %v", err)
+			}
+			if !ran {
+				return
+			}
+		}
+	}
+	post := func(text string) {
+		t.Helper()
+		if _, err := app.Content.Create(ctx, appcontent.CreateInput{
+			AuthorAccountID: bob.AccountID, TextInput: appcontent.TextInput{Text: text}, Visibility: domcontent.VisibilityPublic,
+		}); err != nil {
+			t.Fatalf("Create: %v", err)
+		}
+	}
+
+	// A mention before: the worker sends it, so the path works.
+	post("@alice before")
+	drain()
+	if n := len(service.sent()); n != 1 {
+		t.Fatalf("%d messages before the deactivation, want 1", n)
+	}
+
+	// A mention queued before the deactivation, which the worker runs after it.
+	post("@alice just before")
+	if res := send(http.MethodPost, "/api/v1/accounts/deactivation", `{"password":"`+password+`"}`); res.StatusCode != http.StatusOK {
+		t.Fatalf("POST /accounts/deactivation = %d", res.StatusCode)
+	}
+	drain()
+	if n := len(service.sent()); n != 1 {
+		t.Errorf("%d messages after the deactivation, want the 1 from before", n)
+	}
+}
