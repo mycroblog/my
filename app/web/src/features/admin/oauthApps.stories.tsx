@@ -14,7 +14,7 @@ const clients: Schemas["AdminOAuthClient"][] = [
     name: "my web",
     client_id: "web",
     registration: "first_party",
-    scope: "read write follow push",
+    scopes: ["read", "write", "follow", "push"],
   }),
   oauthClientFixture("0199f0e0-0000-7000-8000-0000000000a1", {
     owner: accountFixture(2, "dave"),
@@ -24,7 +24,7 @@ const clients: Schemas["AdminOAuthClient"][] = [
     name: "A third-party client with a name long enough to wrap on a phone screen",
     owner_deleted: true,
     confidential: true,
-    scope: "read",
+    scopes: ["read"],
   }),
   oauthClientFixture("0199f0e0-0000-7000-8000-0000000000a3", {
     registration: "metadata_document",

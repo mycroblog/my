@@ -42,10 +42,10 @@ type ClosureAnnouncements interface {
 // Jobs of the service closure notifications.
 const (
 	// JobServiceClosureFanout creates the service_closure notification of every local user.
-	JobServiceClosureFanout = "notification.service_closure_fanout"
+	JobServiceClosureFanout = "notification.closure_fanout"
 	// JobServiceClosureDue creates admin_service_closure_due once the closing date of an
 	// announcement has passed, while it is still in effect.
-	JobServiceClosureDue = "notification.service_closure_due"
+	JobServiceClosureDue = "notification.closure_due"
 )
 
 // closureFanout is the payload of JobServiceClosureFanout.

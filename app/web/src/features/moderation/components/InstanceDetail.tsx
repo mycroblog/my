@@ -66,7 +66,11 @@ function InstanceView({ domain }: InstanceDetailProps) {
               <InstanceStateLabel state={health.state} />
             </DescriptionItem>
             <DescriptionItem term={t("client:admin.instance.since")}>
-              {health.since === undefined ? t("client:admin.instance.none") : <DateTime value={health.since} />}
+              {health.state_changed_at === undefined ? (
+                t("client:admin.instance.none")
+              ) : (
+                <DateTime value={health.state_changed_at} />
+              )}
             </DescriptionItem>
             <DescriptionItem term={t("client:admin.instance.reason")}>
               {latest === undefined ? t("client:admin.instance.none") : t(reasonLabels[latest.reason])}

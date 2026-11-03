@@ -128,7 +128,7 @@ func TestListPendingRegistrations(t *testing.T) {
 	d := page.Items[0]
 	if d.Reason == nil || *d.Reason != "I am dave" || d.Username == nil || *d.Username != "dave" || d.AccountId == nil ||
 		*d.AccountId != testkit.NamedID("account-dave") || d.Email == nil || *d.Email != "dave@example.com" || d.EmailVerified == nil || d.DecisionNote != nil || d.State != clientapi.RegistrationStatePending ||
-		!d.Since.Equal(registrationsNow) || page.Items[1].Reason != nil {
+		!d.StateChangedAt.Equal(registrationsNow) || page.Items[1].Reason != nil {
 		t.Errorf("first page = %+v", page.Items)
 	}
 	res = e.admin(t, http.MethodGet, "/admin/registrations?limit=2&cursor="+*page.NextCursor, "admin-read", nil)

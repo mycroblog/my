@@ -166,7 +166,7 @@ SQLite と libSQL ではプールの最大がないので判定せず、32 を�
 
 | 箇所 | 読むもの | 通る経路 |
 | --- | --- | --- |
-| `notification/projection.go:459`（`:418` から） | `UnsolicitedReachRestricted`（`moderation/account_policy.go`） | **送り元のある通知のすべて**（`account_moved` を除く）。`federation.inbox`、`notification.notify_post_subscribers` などのジョブと、お気に入りなどの HTTP 要求 |
+| `notification/projection.go:459`（`:418` から） | `UnsolicitedReachRestricted`（`moderation/account_policy.go`） | **送り元のある通知のすべて**（`account_moved` を除く）。`federation.inbox`、`notification.post_subscribers` などのジョブと、お気に入りなどの HTTP 要求 |
 | `content/remote_reaction.go:108` | `FindCustomEmojiByShortcode` | `federation.inbox`（他サーバーの絵文字を借りたリアクション） |
 | `content/remote_interaction.go:121` | `FindBoostRetraction` | `federation.inbox`（ブーストの取り消し） |
 | `content/remote_status.go:204`、`:237` | `FindRevision`、`FindDeletionByURI` | `federation.inbox`（投稿の更新と削除） |

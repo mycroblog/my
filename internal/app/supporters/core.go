@@ -32,7 +32,7 @@ const (
 	JobSync = "supporters.sync"
 	// JobDeadlines queues JobSync for the subscriptions whose deadline passed, every
 	// DeadlineInterval.
-	JobDeadlines = "supporters.deadlines"
+	JobDeadlines = "supporters.sync_due"
 	// JobCommand sends a command to the provider for one subscription and applies the snapshot
 	// that follows.
 	JobCommand = "supporters.command"

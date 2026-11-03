@@ -169,7 +169,7 @@ export function WebhookFacts({ webhook }: { webhook: Webhook }) {
         </DescriptionItem>
       )}
       <DescriptionItem term={t("client:admin.webhooks.updated_at")}>
-        <DateTime value={webhook.updated_at} />
+        <DateTime value={webhook.revised_at} />
       </DescriptionItem>
     </DescriptionList>
   );
@@ -221,7 +221,7 @@ function WebhookRow({ webhook, actions }: { webhook: Webhook; actions: WebhookAc
         </Stack>
       </TableCell>
       <TableCell>
-        <DateTime value={webhook.updated_at} />
+        <DateTime value={webhook.revised_at} />
       </TableCell>
       <TableCell>
         <Cluster gap="2" align="center">

@@ -71,9 +71,9 @@ func (s *Server) newAdminAccountsWith(ctx context.Context, reads presentReads, a
 			item.Restrictions = append(item.Restrictions, AdminAccountRestriction(r))
 		}
 		if a.UserID != "" {
-			st := AdminAccountRegistrationState(identity.RegistrationApproved)
+			st := RegistrationState(identity.RegistrationApproved)
 			if a.Registration != nil {
-				st = AdminAccountRegistrationState(a.Registration.State)
+				st = RegistrationState(a.Registration.State)
 			}
 			item.RegistrationState = &st
 		}

@@ -172,7 +172,7 @@ const registration = {
   account_id: "0192f0c4-7a8e-7000-8000-0000000000c2",
   username: "bob",
   state: "pending",
-  since: "2026-10-16T09:00:00Z",
+  state_changed_at: "2026-10-16T09:00:00Z",
   email: "bob.with.a.long.address@birds.example",
   email_verified: true,
   reason: `I would like to post about birds. My blog is at https://birds.example/${"very-long-path-".repeat(6)}end.`,
@@ -246,7 +246,7 @@ const webhook: Schemas["AdminWebhook"] = {
   state_changed_at: "2026-10-20T00:00:00Z",
   failure: { consecutive_failures: 20, first_failed_at: "2026-10-17T00:00:00Z" },
   created_at: "2026-10-16T00:00:00Z",
-  updated_at: "2026-10-16T00:00:00Z",
+  revised_at: "2026-10-16T00:00:00Z",
 };
 
 /** The roles, as GET /admin/roles lists them: the built-in ones, and one with a long key and a badge. */
@@ -320,7 +320,7 @@ const announcement: Schemas["AdminAnnouncement"] = {
   published_at: "2026-10-20T00:00:00Z",
   ends_at: "2026-10-27T00:00:00Z",
   created_at: "2026-10-20T00:00:00Z",
-  updated_at: "2026-10-20T00:00:00Z",
+  revised_at: "2026-10-20T00:00:00Z",
 };
 
 /** A failing delivery of the webhook, as GET /admin/webhooks/{id}/deliveries lists it. */
@@ -341,7 +341,7 @@ const oauthClient: Schemas["AdminOAuthClient"] = {
   name: "A-very-long-named-app-for-testing-that-wraps-at-320-pixels",
   registration: "user",
   confidential: false,
-  scope: "read write",
+  scopes: ["read", "write"],
   owner: target,
   owner_deleted: false,
   disabled: false,
@@ -373,7 +373,7 @@ const loginProvider: Schemas["AdminLoginProvider"] = {
   callback_url: "https://my.example/auth/external/0192f0c4-7a8e-7000-8000-0000000000f2/callback",
   linked_users: 3,
   created_at: "2026-10-22T00:00:00Z",
-  updated_at: "2026-10-22T00:00:00Z",
+  revised_at: "2026-10-22T00:00:00Z",
 };
 
 /** A joined relay on a long domain that a domain action suspends, as GET /admin/relays lists it. */
@@ -395,7 +395,7 @@ const relay: Schemas["AdminRelay"] = {
 const instance = {
   domain: longDomain,
   state: "unavailable",
-  since: "2026-10-10T08:00:00Z",
+  state_changed_at: "2026-10-10T08:00:00Z",
   failure_days: 7,
   last_failure_day: "2026-10-10",
 };
@@ -552,7 +552,7 @@ const errorGroup: Schemas["ErrorGroup"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000000e1",
   fingerprint: "0123456789abcdef0123456789abcdef",
   state: "open",
-  state_since: "2026-10-20T00:00:00Z",
+  state_changed_at: "2026-10-20T00:00:00Z",
   source: "server",
   kind: "panic",
   where: "client_api GET /api/v1/accounts/{id}/statuses/{status_id}/favourited_by",

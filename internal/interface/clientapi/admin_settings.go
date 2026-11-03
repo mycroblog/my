@@ -57,7 +57,7 @@ func (s *Server) GetLoginProvidersOnlyImpact(ctx context.Context, req GetLoginPr
 	}
 	providerID := ""
 	if req.Params.ProviderId != nil {
-		providerID = req.Params.ProviderId.String()
+		providerID = knownID(*req.Params.ProviderId)
 	}
 	impact, err := s.o.SignInLimit.LoginProvidersOnlyImpact(ctx, v.UserID, providerID)
 	if errors.Is(err, appidentity.ErrNotFound) {

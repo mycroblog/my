@@ -8890,8 +8890,7 @@ paths:
             A provider to count as if it were enabled, for the question of what enabling it would do.
             A new provider needs none: nobody links to it yet.
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/Id'
       responses:
         '200':
           description: The count.
@@ -11513,10 +11512,12 @@ components:
             $ref: '#/components/schemas/AccountFieldSource'
         avatar_media_id:
           description: The media file of the avatar; omitted when there is none.
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Id'
         header_media_id:
           description: The media file of the header image; omitted when there is none.
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Id'
     AccountStatusPage:
       description: A page of the statuses of an account.
       allOf:
@@ -11588,7 +11589,11 @@ components:
           items:
             $ref: '#/components/schemas/AdminAccountRestriction'
         registration_state:
-          $ref: '#/components/schemas/AdminAccountRegistrationState'
+          description: |
+            Where the registration of a local account stands; a user made with the command line is
+            `approved`. Omitted for a remote account.
+          allOf:
+            - $ref: '#/components/schemas/RegistrationState'
     AdminAccountAction:
       description: A moderation action on an account (FR-703).
       type: object
@@ -11637,7 +11642,7 @@ components:
           description: Whether the account is told of the action.
           type: boolean
         state:
-          $ref: '#/components/schemas/AdminAccountActionState'
+          $ref: '#/components/schemas/ModerationActionState'
         issued_at:
           type: string
           format: date-time
@@ -11699,15 +11704,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AdminAccountAction'
-    AdminAccountActionState:
-      description: |
-        `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-        lifted it.
-      type: string
-      enum:
-        - active
-        - expired
-        - lifted
     AdminAccountDetail:
       description: The details of an account (FR-714).
       allOf:
@@ -11868,7 +11864,7 @@ components:
         - callback_url
         - linked_users
         - created_at
-        - updated_at
+        - revised_at
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -11935,7 +11931,7 @@ components:
         created_at:
           type: string
           format: date-time
-        updated_at:
+        revised_at:
           description: When the settings last changed.
           type: string
           format: date-time
@@ -12199,26 +12195,17 @@ components:
       type: object
       required:
         - kind
-        - since
+        - state_changed_at
       properties:
         kind:
           type: string
           enum:
             - hard_bounce
             - complaint
-        since:
+        state_changed_at:
           description: When the failure that started the suppression happened.
           type: string
           format: date-time
-    AdminAccountRegistrationState:
-      description: |
-        Where the registration of a local account stands; a user made with the command line is
-        `approved`. Omitted for a remote account.
-      type: string
-      enum:
-        - pending
-        - approved
-        - rejected
     AdminAccountRestriction:
       description: |
         A capability that an action takes away (data-model §5.2). `login`: logging in and the
@@ -12279,7 +12266,7 @@ components:
         - content
         - state
         - created_at
-        - updated_at
+        - revised_at
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -12309,7 +12296,7 @@ components:
         created_at:
           type: string
           format: date-time
-        updated_at:
+        revised_at:
           description: When its text or window last changed.
           type: string
           format: date-time
@@ -12929,7 +12916,7 @@ components:
           description: Whether a public list of the domain actions hides part of the domain.
           type: boolean
         state:
-          $ref: '#/components/schemas/AdminDomainActionState'
+          $ref: '#/components/schemas/ModerationActionState'
         issued_at:
           type: string
           format: date-time
@@ -12966,15 +12953,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AdminDomainAction'
-    AdminDomainActionState:
-      description: |
-        `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-        lifted it.
-      type: string
-      enum:
-        - active
-        - expired
-        - lifted
     AdminIncomePeriodTotal:
       description: |
         A week, month, or year of the income totals as the administrators see it: the `gross`, the
@@ -13051,7 +13029,7 @@ components:
           type: string
         state:
           $ref: '#/components/schemas/AdminInstanceState'
-        since:
+        state_changed_at:
           description: When the server entered its state; omitted for a server without failures.
           type: string
           format: date-time
@@ -13182,7 +13160,7 @@ components:
         - name
         - registration
         - confidential
-        - scope
+        - scopes
         - owner_deleted
         - disabled
         - created_at
@@ -13205,9 +13183,11 @@ components:
         confidential:
           description: Whether the client has a secret (a confidential client) or not (a public client).
           type: boolean
-        scope:
-          description: The most that the client may be granted, as space-separated scopes.
-          type: string
+        scopes:
+          description: The most that the client may be granted.
+          type: array
+          items:
+            type: string
         owner:
           description: |
             The account of the user who registered the client; omitted for the other routes and
@@ -13807,7 +13787,7 @@ components:
       required:
         - user_id
         - state
-        - since
+        - state_changed_at
         - submitted_at
       properties:
         user_id:
@@ -13821,7 +13801,7 @@ components:
           type: string
         state:
           $ref: '#/components/schemas/RegistrationState'
-        since:
+        state_changed_at:
           description: When the registration entered its state.
           type: string
           format: date-time
@@ -13950,12 +13930,7 @@ components:
             made on this server.
           type: string
         category:
-          type: string
-          enum:
-            - spam
-            - legal
-            - violation
-            - other
+          $ref: '#/components/schemas/ReportCategory'
         comment:
           description: The reporter's comment as plain text, up to 5,000 characters.
           type: string
@@ -14441,7 +14416,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/Id'
         state:
-          $ref: '#/components/schemas/AdminSignupBlockState'
+          $ref: '#/components/schemas/ModerationActionState'
         created_at:
           type: string
           format: date-time
@@ -14483,15 +14458,6 @@ components:
       enum:
         - reject
         - require_approval
-    AdminSignupBlockState:
-      description: |
-        `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-        lifted it.
-      type: string
-      enum:
-        - active
-        - expired
-        - lifted
     AdminSupporterPlan:
       description: |
         A supporter plan as the administrators see it (ADR-0072 §3). The yearly price is the
@@ -15055,7 +15021,7 @@ components:
         - state_reason
         - state_changed_at
         - created_at
-        - updated_at
+        - revised_at
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -15082,7 +15048,7 @@ components:
         created_at:
           type: string
           format: date-time
-        updated_at:
+        revised_at:
           description: When the URL, the description, or the events last changed.
           type: string
           format: date-time
@@ -15242,7 +15208,7 @@ components:
         - title
         - content
         - published_at
-        - updated_at
+        - revised_at
         - read
         - ended
       properties:
@@ -15266,7 +15232,7 @@ components:
           description: When it stops showing; omitted when it shows until it is withdrawn.
           type: string
           format: date-time
-        updated_at:
+        revised_at:
           description: When its text or window last changed.
           type: string
           format: date-time
@@ -16998,7 +16964,7 @@ components:
         - id
         - fingerprint
         - state
-        - state_since
+        - state_changed_at
         - source
         - kind
         - where
@@ -17018,7 +16984,7 @@ components:
           type: string
         state:
           $ref: '#/components/schemas/ErrorGroupState'
-        state_since:
+        state_changed_at:
           description: When the group entered its state; its first occurrence while it has always been open.
           type: string
           format: date-time
@@ -18729,7 +18695,7 @@ components:
           items:
             $ref: '#/components/schemas/Id'
         state:
-          $ref: '#/components/schemas/AdminAccountActionState'
+          $ref: '#/components/schemas/ModerationActionState'
         issued_at:
           type: string
           format: date-time
@@ -18834,7 +18800,7 @@ components:
       description: The settings of a mute.
       type: object
       properties:
-        notifications:
+        hide_notifications:
           description: Also hide the account's notifications.
           type: boolean
           default: true
@@ -18872,11 +18838,11 @@ components:
       type: object
       required:
         - account
-        - notifications
+        - hide_notifications
       properties:
         account:
           $ref: '#/components/schemas/Account'
-        notifications:
+        hide_notifications:
           description: Whether the mute also hides the account's notifications.
           type: boolean
         expires_at:
@@ -20749,6 +20715,15 @@ components:
             - $ref: '#/components/schemas/Id'
         state:
           $ref: '#/components/schemas/ReportState'
+    ModerationActionState:
+      description: |
+        `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
+        lifted it.
+      type: string
+      enum:
+        - active
+        - expired
+        - lifted
     ReportCategory:
       description: |
         Why the account is reported. `spam`: spam or unwanted promotion. `legal`: content that

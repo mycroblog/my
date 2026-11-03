@@ -27,7 +27,7 @@ func (s *Server) reportDetailResponse(ctx context.Context, d moderation.ReportDe
 	}
 	r := rs[0]
 	body := AdminReportDetail{
-		AssigneeAccountId: r.AssigneeAccountId, Category: AdminReportDetailCategory(r.Category), Comment: r.Comment,
+		AssigneeAccountId: r.AssigneeAccountId, Category: r.Category, Comment: r.Comment,
 		FiledAt: r.FiledAt, Forwarded: r.Forwarded, Id: r.Id, Outcome: r.Outcome, ReporterAccount: r.ReporterAccount,
 		ReporterAccountId: r.ReporterAccountId, RuleIds: r.RuleIds, State: r.State, StateChangedAt: r.StateChangedAt,
 		StatusIds: r.StatusIds, TargetAccount: r.TargetAccount, TargetAccountId: r.TargetAccountId, Uri: r.Uri,

@@ -20,7 +20,7 @@ properties:
     description: Whether a public list of the domain actions hides part of the domain.
     type: boolean
   state:
-    $ref: ./AdminDomainActionState.yaml
+    $ref: ./ModerationActionState.yaml
   issued_at:
     type: string
     format: date-time

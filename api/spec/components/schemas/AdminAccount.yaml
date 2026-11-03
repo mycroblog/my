@@ -21,4 +21,8 @@ properties:
     items:
       $ref: ./AdminAccountRestriction.yaml
   registration_state:
-    $ref: ./AdminAccountRegistrationState.yaml
+    description: |
+      Where the registration of a local account stands; a user made with the command line is
+      `approved`. Omitted for a remote account.
+    allOf:
+      - $ref: ./RegistrationState.yaml

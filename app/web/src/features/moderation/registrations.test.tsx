@@ -73,7 +73,7 @@ function registrationsServer(
       return HttpResponse.json({
         ...registration,
         state: decided[userId] ?? (decision === "approve" ? "approved" : "rejected"),
-        since: "2026-10-17T00:00:00Z",
+        state_changed_at: "2026-10-17T00:00:00Z",
       });
     });
   server.use(

@@ -349,8 +349,8 @@ func (s *Server) UnblockAccount(ctx context.Context, req UnblockAccountRequestOb
 func (s *Server) MuteAccount(ctx context.Context, req MuteAccountRequestObject) (MuteAccountResponseObject, error) {
 	in := appgraph.MuteInput{HideNotifications: true}
 	if b := req.Body; b != nil {
-		if b.Notifications != nil {
-			in.HideNotifications = *b.Notifications
+		if b.HideNotifications != nil {
+			in.HideNotifications = *b.HideNotifications
 		}
 		if b.Duration != nil {
 			if *b.Duration < 0 || *b.Duration > maxMuteSeconds {

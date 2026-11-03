@@ -13,7 +13,9 @@ properties:
       $ref: ./AccountFieldSource.yaml
   avatar_media_id:
     description: The media file of the avatar; omitted when there is none.
-    type: string
+    allOf:
+      - $ref: ./Id.yaml
   header_media_id:
     description: The media file of the header image; omitted when there is none.
-    type: string
+    allOf:
+      - $ref: ./Id.yaml

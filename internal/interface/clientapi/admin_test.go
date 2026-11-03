@@ -223,7 +223,7 @@ func newAdminEnvWithQueue(t *testing.T) (*authEnv, *fakeHealth, *fakeDeadJobs, *
 	dead := &fakeDeadJobs{dead: []queue.DeadJob{
 		{ID: deadJobC, Type: "federation.deliver", Payload: json.RawMessage(`{"delivery_id":"x"}`), IdempotencyKey: "deliver:x", OrderingKey: "inbox", Attempt: 9, LastError: "502", CreatedAt: failed.Add(-96 * time.Hour), FailedAt: failed},
 		{ID: deadJobB, Type: "federation.deliver", Payload: json.RawMessage(`{}`), Attempt: 1, LastError: "bug", CreatedAt: failed, FailedAt: failed},
-		{ID: deadJobA, Type: "kv.cleanup", Payload: json.RawMessage(`null`), Attempt: 3, LastError: "db down", CreatedAt: failed.Add(-time.Hour), FailedAt: failed.Add(-time.Second)},
+		{ID: deadJobA, Type: "kv.purge_expired", Payload: json.RawMessage(`null`), Attempt: 3, LastError: "db down", CreatedAt: failed.Add(-time.Hour), FailedAt: failed.Add(-time.Second)},
 	}}
 	inspector := &fakeInspector{
 		jobs: []queue.PendingJob{
@@ -231,20 +231,20 @@ func newAdminEnvWithQueue(t *testing.T) (*authEnv, *fakeHealth, *fakeDeadJobs, *
 				RunAt: adminNow.Add(-time.Minute), Worker: "worker-1", LockedUntil: adminNow.Add(4 * time.Minute), CreatedAt: adminNow.Add(-time.Minute)},
 			{ID: jobTwo, Type: "federation.deliver", Payload: json.RawMessage(`{}`), OrderingKey: "inbox", State: queue.JobStateRetrying, Attempt: 2,
 				RunAt: adminNow.Add(time.Minute), LastError: "503", CreatedAt: adminNow.Add(-time.Hour)},
-			{ID: jobThree, Type: "kv.cleanup", Payload: json.RawMessage(`null`), IdempotencyKey: "kv", State: queue.JobStateQueued,
+			{ID: jobThree, Type: "kv.purge_expired", Payload: json.RawMessage(`null`), IdempotencyKey: "kv", State: queue.JobStateQueued,
 				RunAt: adminNow.Add(time.Hour), CreatedAt: adminNow},
 		},
 		summary: queue.JobSummary{
 			Counts: []queue.JobCount{
-				{State: queue.JobStateQueued, Type: "kv.cleanup", Count: 1},
+				{State: queue.JobStateQueued, Type: "kv.purge_expired", Count: 1},
 				{State: queue.JobStateRunning, Type: "federation.deliver", Count: 1},
 				{State: queue.JobStateRetrying, Type: "federation.deliver", Count: 1},
 				{State: queue.JobStateDead, Type: "federation.deliver", Count: 2},
-				{State: queue.JobStateDead, Type: "kv.cleanup", Count: 1},
+				{State: queue.JobStateDead, Type: "kv.purge_expired", Count: 1},
 			},
 			OldestReadyAt: adminNow.Add(-10 * time.Minute),
 			OldestReadyByType: map[string]time.Time{
-				"kv.cleanup":         adminNow.Add(-time.Minute),
+				"kv.purge_expired":   adminNow.Add(-time.Minute),
 				"federation.deliver": adminNow.Add(-10 * time.Minute),
 			},
 		},
@@ -363,7 +363,7 @@ func TestListInstanceHealth(t *testing.T) {
 		t.Fatalf("first page = %+v", page)
 	}
 	a := page.Items[0]
-	if a.State != clientapi.AdminInstanceStateUnavailable || a.FailureDays != 7 || a.Since == nil || !a.Since.Equal(adminNow.Add(-time.Hour)) ||
+	if a.State != clientapi.AdminInstanceStateUnavailable || a.FailureDays != 7 || a.StateChangedAt == nil || !a.StateChangedAt.Equal(adminNow.Add(-time.Hour)) ||
 		a.LastFailureDay == nil || a.LastFailureDay.String() != "2026-10-16" {
 		t.Errorf("a.example = %+v", a)
 	}
@@ -409,7 +409,7 @@ func TestGetInstanceHealth(t *testing.T) {
 	}
 	res = e.admin(t, http.MethodGet, "/admin/instances/healthy.example", "admin-read", nil)
 	got := decodeJSON[clientapi.AdminInstanceHealth](t, res)
-	if got.State != clientapi.AdminInstanceStateAvailable || got.Since != nil || got.LastFailureDay != nil || got.FailureDays != 0 {
+	if got.State != clientapi.AdminInstanceStateAvailable || got.StateChangedAt != nil || got.LastFailureDay != nil || got.FailureDays != 0 {
 		t.Errorf("a server without a row = %+v, want available without since", got)
 	}
 }
@@ -437,7 +437,7 @@ func TestMarkInstanceAvailable(t *testing.T) {
 	res := e.admin(t, http.MethodPost, "/admin/instances/a.example/mark_available", "admin", nil)
 	got := decodeJSON[clientapi.AdminInstanceHealth](t, res)
 	if res.StatusCode != http.StatusOK || got.State != clientapi.AdminInstanceStateAvailable || got.FailureDays != 0 || got.LastFailureDay != nil ||
-		got.Since == nil || !got.Since.Equal(adminNow) {
+		got.StateChangedAt == nil || !got.StateChangedAt.Equal(adminNow) {
 		t.Fatalf("marked = %d %+v", res.StatusCode, got)
 	}
 	if want := []string{userOf(aliceAccountID)}; !slices.Equal(health.markedBy, want) {
@@ -461,7 +461,7 @@ func TestGetAdminQueue(t *testing.T) {
 		t.Fatalf("queue = %d %+v", res.StatusCode, got)
 	}
 	if len(got.Waits) != 2 || got.Waits[0].Type != "federation.deliver" || !got.Waits[0].OldestReadyAt.Equal(adminNow.Add(-10*time.Minute)) ||
-		got.Waits[1].Type != "kv.cleanup" {
+		got.Waits[1].Type != "kv.purge_expired" {
 		t.Errorf("waits = %+v", got.Waits)
 	}
 	if c := got.Counts[3]; c.State != clientapi.AdminJobStateDead || c.Type != "federation.deliver" || c.Count != 2 {
@@ -477,7 +477,7 @@ func TestGetAdminQueue(t *testing.T) {
 func TestAdminQueueWithoutListing(t *testing.T) {
 	e := newAuthEnv(t, func(o *clientapi.Options) {
 		o.Permissions = fakePermissions{userOf(aliceAccountID): identity.AllPermissions()}
-		o.DeadJobs = &fakeDeadJobs{dead: []queue.DeadJob{{ID: deadJobA, Type: "kv.cleanup", Payload: json.RawMessage(`null`), Attempt: 3, LastError: "db down", CreatedAt: adminNow, FailedAt: adminNow}}}
+		o.DeadJobs = &fakeDeadJobs{dead: []queue.DeadJob{{ID: deadJobA, Type: "kv.purge_expired", Payload: json.RawMessage(`null`), Attempt: 3, LastError: "db down", CreatedAt: adminNow, FailedAt: adminNow}}}
 		o.Queue = clientapi.QueueDashboard{Adapter: "sqs"}
 	})
 	e.auth.tokens["admin"] = bearer("admin", aliceAccountID)
@@ -557,9 +557,9 @@ func TestListDeadJobs(t *testing.T) {
 	if rest := decodeJSON[clientapi.AdminJobPage](t, res); len(rest.Items) != 1 || rest.Items[0].Id != deadJobA || rest.NextCursor != nil {
 		t.Errorf("second page = %+v", rest)
 	}
-	res = e.admin(t, http.MethodGet, "/admin/jobs?state=dead&type=kv.cleanup", "admin-read", nil)
+	res = e.admin(t, http.MethodGet, "/admin/jobs?state=dead&type=kv.purge_expired", "admin-read", nil)
 	if got := decodeJSON[clientapi.AdminJobPage](t, res); len(got.Items) != 1 || got.Items[0].Id != deadJobA {
-		t.Errorf("dead kv.cleanup jobs = %+v", got)
+		t.Errorf("dead kv.purge_expired jobs = %+v", got)
 	}
 }
 

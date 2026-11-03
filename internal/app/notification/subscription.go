@@ -309,7 +309,7 @@ func registerSubscriptionProjectors(r *uow.Projectors, d ProjectorDeps) {
 // JobNotifyPostSubscribers notifies the subscribers of the author of a new post (ADR-0123 §2). The
 // first job handles them itself up to the size of a fan-out job, and otherwise enqueues jobs of that
 // size, so that an author with many subscribers repeats only a part when a job runs out of its lease.
-const JobNotifyPostSubscribers = "notification.notify_post_subscribers"
+const JobNotifyPostSubscribers = "notification.post_subscribers"
 
 // postJob is the payload of JobNotifyPostSubscribers.
 type postJob struct {

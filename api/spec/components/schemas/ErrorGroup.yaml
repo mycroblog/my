@@ -9,7 +9,7 @@ required:
   - id
   - fingerprint
   - state
-  - state_since
+  - state_changed_at
   - source
   - kind
   - where
@@ -29,7 +29,7 @@ properties:
     type: string
   state:
     $ref: ./ErrorGroupState.yaml
-  state_since:
+  state_changed_at:
     description: When the group entered its state; its first occurrence while it has always been open.
     type: string
     format: date-time

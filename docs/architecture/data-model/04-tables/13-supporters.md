@@ -10,13 +10,13 @@
 | `payment_reconcile_runs` | イベント | `id`, `provider`, `run_key`（ジョブの冪等キー）, `outcome`（`enum(succeeded, partial, failed)`）, `error_kind`（`enum(none, request_cap, permission, not_found, invalid_request, throttled, unavailable, invalid_signature, stale_signature, mode_mismatch, invalid_response)`）, `changes_until`, `changes_cursor`・`money_cursor`・`sweep_cursor`（`string(255)`。`''` は先頭）, `requests`・`checked_subscriptions`・`corrected_subscriptions`（`int`）, `occurred_at` | 一意 `(provider, run_key)`。`CHECK (outcome = 'succeeded') = (error_kind = 'none')`, `(outcome = 'partial') = (error_kind = 'request_cap')`。インデックス `(provider, occurred_at)` |
 | `payment_checkout_claims` | 現在値 | `provider`, `checkout_id`（`string(255)`。こちらの加入の ID）, `holder`（`uuid`。その投稿）, `claimed_at`, `expires_at` | PK `(provider, checkout_id)`。`CHECK (expires_at > claimed_at)`。インデックス `(expires_at)` |
 
-- webhook の受け口 `POST /payments/webhooks/{provider}` は、本文を 1 MiB まで読み、署名・時刻・モードを `PaymentProvider.ParseWebhook` で確かめ、1 つの短いトランザクションで `payment_webhook_receipts` の行とジョブ `supporters.payment_event`（冪等キー `payment_event:<provider>:<event_id>`、順序のキーは対象のオブジェクト）を書きます。
+- webhook の受け口 `POST /payments/webhooks/{provider}` は、本文を 1 MiB まで読み、署名・時刻・モードを `PaymentProvider.ParseWebhook` で確かめ、1 つの短いトランザクションで `payment_webhook_receipts` の行とジョブ `supporters.apply_payment_event`（冪等キー `payment_event:<provider>:<event_id>`、順序のキーは対象のオブジェクト）を書きます。
   同じイベントの行がもうあれば何も書きません。ジョブはイベントの本文の状態を使わず、事業者からサブスクリプション・申し込み・お金の動きを取り直して `Syncer`（`supporters.sync`）に渡すので、重複・順序の入れ替わり・取りこぼしは同じ扱いになります。
-- 定期ジョブ `supporters.payment_reconcile`（`payments_reconcile_interval` ごと）は、試行ごとに `payment_reconcile_runs` の行を 1 つ足します。最新の `succeeded` か `partial` の行のカーソルから、変わったもの（`changes_until` の 5 分前から）・未完了の申し込み・お金の動き・全件の見回しの 4 段を読み、要求が `payments_reconcile_max_requests` に達した段でカーソルを記録して `partial` で止まり、同じトランザクションで続きのジョブ（冪等キー `continue:<run_id>`、1 分後）を積みます。
+- 定期ジョブ `supporters.reconcile_payments`（`payments_reconcile_interval` ごと）は、試行ごとに `payment_reconcile_runs` の行を 1 つ足します。最新の `succeeded` か `partial` の行のカーソルから、変わったもの（`changes_until` の 5 分前から）・未完了の申し込み・お金の動き・全件の見回しの 4 段を読み、要求が `payments_reconcile_max_requests` に達した段でカーソルを記録して `partial` で止まり、同じトランザクションで続きのジョブ（冪等キー `continue:<run_id>`、1 分後）を積みます。
   見回しのカーソルは最後のページを読むと `''` に戻ります。カーソルは試行ごとの行に残し、上書きする現在値の列を持ちません。事業者の失敗は `failed` として記録し、次の照合は前の `succeeded` か `partial` の行から始めます。
 - 事業者の自前の支払いのページ（ADR-0099 §1）が加入を作るとき、PAY.JP v1 は冪等キーを取らないので、その投稿は 1 つの短いトランザクションで `payment_checkout_claims` の行を取り（行が無いか、`expires_at` を過ぎていれば取れる）、トランザクションの外で事業者を呼び、終われば別のトランザクションで自分の `holder` の行を消します（`supporters.Payments.ClaimCheckout`）。
   取れなかった投稿は少し待って取り直し、取れたら事業者の加入を探すので、複数のレプリカに届いた同じ申し込みの投稿も加入を 1 つだけ作ります。行の期限は 5 分（`supporters.CheckoutClaimHold`）で、事業者を呼ぶのは 3 分まで（`supporters.CheckoutCallBudget`）なので、止まったプロセスの行は期限で次の投稿に引き継がれます。
-- `payment_webhook_receipts` は 45 日を過ぎた行を、`payment_checkout_claims` は期限を過ぎた行を、毎日の定期ジョブ `supporters.payment_receipt_purge` が消します。
+- `payment_webhook_receipts` は 45 日を過ぎた行を、`payment_checkout_claims` は期限を過ぎた行を、毎日の定期ジョブ `supporters.purge_payment_receipts` が消します。
 
 #### サポーターの課金・プラン・加入
 
@@ -51,7 +51,7 @@
   スナップショットには読み始めた時刻を付け、加入の行をロックしたトランザクションで `supporter_subscription_reads` の時刻より前に読んだものは当てません。同時に読んだ古い状態が、先に当てた新しい状態を上書きしないためです。
 - 掲載の選択（`supporter_listings`）は、加入中（`active`・`canceling`・`past_due`）の本人が `PUT /preferences/supporter_listing` で入れ、取り消すと消えます。入れる処理は加入の行をロックして状態を確かめるので、ロールが外れる遷移と入れ違っても加入の終わった人の行は残りません。
   一覧（`GET /instance/supporters`）は、行と加入中の加入の投影と廃止していないプランの投影を結合し、プランの順位の順・載せた新しい順に読みます。
-- 期限は、`pending` が開始から 24 時間（`checkout`）、`active`・`canceling` が期間の終わり（`period_end`）、`past_due` が猶予の終わり（`grace`）です。5 分ごとのジョブ `supporters.deadlines` が期限の来た行に `supporters.sync` を積みます。
+- 期限は、`pending` が開始から 24 時間（`checkout`）、`active`・`canceling` が期間の終わり（`period_end`）、`past_due` が猶予の終わり（`grace`）です。5 分ごとのジョブ `supporters.sync_due` が期限の来た行に `supporters.sync` を積みます。
 - 事業者への命令（すぐ解約・期間の終わりの解約）は、遷移のトランザクションで積むジョブ `supporters.command` がコミットの後に送り、取り直したスナップショットを当てます。全額の返金とチャージバック、アカウントの削除（BAN の予約を含む）、管理者による解約は、こちらの状態を先に終端にしてから事業者をすぐ解約します。凍結は期間の終わりの解約を予約します。
 - プランの作成と、条件の版を足す変更は、同じトランザクションでジョブ `supporters.ensure_prices`（冪等キー `ensure_prices:<版の ID>`）を積みます。ジョブは事業者に月と年の価格を作らせ（`EnsurePlan`）、`supporter_plan_prices` と今の価格、アーカイブを記録します。今の価格は、事業者が今の条件に返した価格で、プランと間隔ごとにアーカイブされていない最新の価格（作った順）と一致します。金額を以前の金額に戻しても新しい価格として記録するので、プランは毎回使える状態になります。既存の加入はもとの価格のまま続きます。
 - 決済画面の行（`supporter_checkouts`）は ADR-0072 §15 の表にない追加で、`pending` の加入の取り直しと定期の照合（`Syncer.OpenCheckouts`）が読みます。

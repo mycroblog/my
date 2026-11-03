@@ -26,7 +26,7 @@ const (
 	JobRefreshActor = "federation.refresh_actor"
 	// JobRefreshActors walks the stale remote actors in batches and refreshes the ones that
 	// local accounts follow.
-	JobRefreshActors = "federation.refresh_actors"
+	JobRefreshActors = "federation.refresh_stale_actors"
 	// JobObserveInstance reads the NodeInfo of a server seen for the first time.
 	JobObserveInstance = "federation.observe_instance"
 	// RefreshActorsEvery is the period of JobRefreshActors.

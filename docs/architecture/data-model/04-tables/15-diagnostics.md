@@ -29,5 +29,5 @@
 - `resolve`・`mute`・`unmute` は、状態の行を読んで `diagnostics.Next` で次の状態を決め、変わるときだけイベントを足して `diagnostics.error_group_state_changed` を発行します（射影が新しい状態を書く）。
   変わる組み合わせは、`resolved` が `open`・`muted` から、`muted` が `open`・`resolved` から、`unmuted` が `muted` から `open` へ、`regressed` が `resolved` から `open` へ、です。
   `resolved` の `version` は、そのときの `error_group_samples.version`（なければ `first_version`）です。
-- 定期のジョブ `diagnostics.prune_error_counts`（24 時間ごと）が、始まりが 90 日より前の時間の `error_group_counts` を 1 文で消します。
+- 定期のジョブ `diagnostics.purge_error_counts`（24 時間ごと）が、始まりが 90 日より前の時間の `error_group_counts` を 1 文で消します。
 - `error_group_states` は各グループの最も新しいイベントから作り直せます: `resolved`・`muted` はそのまま、`unmuted`・`regressed` とイベントのないグループは `open` です（§9）。
