@@ -11,7 +11,9 @@ get:
     decides, in the same way, who gets each action's public comment. The moderators'
     private notes are never listed.
   tags: [instance]
-  security: []
+  security:
+    - {}
+    - oauth2: ["read:accounts"]
   parameters:
     - $ref: ../components/parameters/Cursor.yaml
     - $ref: ../components/parameters/Limit.yaml

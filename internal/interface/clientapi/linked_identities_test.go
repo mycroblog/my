@@ -91,7 +91,7 @@ func TestLinkedIdentities(t *testing.T) {
 		status    int
 	}{
 		{`{"provider_id":"` + linkCorp + `","password":"wrong"}`, clientapi.ProblemTypeWrongPassword, http.StatusUnprocessableEntity},
-		{`{"provider_id":"` + linkCorp + `"}`, clientapi.ProblemTypeBlank, http.StatusBadRequest},
+		{`{"provider_id":"` + linkCorp + `"}`, clientapi.ProblemTypeBlank, http.StatusUnprocessableEntity},
 		{`{"provider_id":"` + linkCorp + `","external_confirmation":"old"}`, clientapi.ProblemTypeExternalConfirmationExpired, http.StatusUnprocessableEntity},
 		{`{"provider_id":"019a0000-0000-7000-8000-0000000000ff","password":"secret"}`, clientapi.ProblemTypeLoginProviderUnavailable, http.StatusUnprocessableEntity},
 	} {
@@ -125,7 +125,7 @@ func TestLinkedIdentities(t *testing.T) {
 
 	// Confirmations.
 	res = e.send(t, http.MethodPost, "/linked_identities/confirmation", "write", `{"provider_id":"`+linkCorp+`","operation":"nothing"}`)
-	if res.StatusCode != http.StatusBadRequest {
+	if res.StatusCode != http.StatusUnprocessableEntity {
 		t.Errorf("confirmation of an unknown operation = %d", res.StatusCode)
 	}
 	res = e.send(t, http.MethodPost, "/linked_identities/confirmation", "write", `{"provider_id":"`+linkCorp+`","operation":"account_deletion","return_to":"/settings/account"}`)

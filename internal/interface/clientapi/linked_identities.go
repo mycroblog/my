@@ -111,7 +111,7 @@ func (s *Server) BeginLinkIdentity(ctx context.Context, req BeginLinkIdentityReq
 	}
 	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password")
 	if !ok {
-		return BeginLinkIdentitydefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
+		return BeginLinkIdentitydefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, param)), nil
 	}
 	intent, err := s.o.LinkedIdentities.BeginExternalLink(ctx, v.UserID, req.Body.ProviderId, c, returnToOf(req.Body.ReturnTo))
 	if p := s.linkedIdentityProblem(ctx, err); p != nil {
@@ -141,7 +141,7 @@ func (s *Server) BeginExternalConfirmation(ctx context.Context, req BeginExterna
 	}
 	op := appidentity.ConfirmedOperation(req.Body.Operation)
 	if !op.Valid() {
-		return BeginExternalConfirmationdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "operation")), nil
+		return BeginExternalConfirmationdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "operation")), nil
 	}
 	intent, err := s.o.LinkedIdentities.BeginExternalConfirmation(ctx, v.UserID, req.Body.ProviderId, op, returnToOf(req.Body.ReturnTo))
 	if p := s.linkedIdentityProblem(ctx, err); p != nil {

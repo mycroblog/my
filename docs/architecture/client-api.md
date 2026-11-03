@@ -66,7 +66,8 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - カーソルは不透明な文字列です。クライアントは解釈せずにそのまま返します。
   ハンドラは `limit` より 1 件多く読み、次のページがあるときだけ `next_cursor` を返します。
   アカウントの一覧のカーソルは、ページの最後の項目の位置（フォロー ID・ブロック ID・ミュートの作成時刻と対象）を base64url にしたものです（`Server.parsePage`）。
-- 生成コードは `minimum` / `maximum` などのスキーマの制約を検査しないので、`limit` やカーソル・本文の値の範囲はハンドラが検査し、外れたら 400 にします（`pageLimit`、`Server.invalidParameter`）。
+- 生成コードは `minimum` / `maximum` などのスキーマの制約を検査しないので、`limit` やカーソルなどのクエリとパスの値はハンドラが検査し、外れたら 400 にします（`pageLimit`、`Server.invalidParameter`）。
+  本文を読めなかったときも 400 です。読めた本文の値を断るとき（未知の enum の値を含む）は 422 にします（`Server.unprocessableValue`）。
 - 見せられない項目（[visibility.md §6](visibility.md#6-アカウントの表示)）を省く一覧では、最後でないページでも `limit` より少ないことがあります。
 - 投稿の一覧は `#/components/responses/StatusPage`（`items` が `#/components/schemas/Status` の配列）を返し、ハンドラは `Server.statuses` で投稿とブーストを詰め替えます（投稿は `Server.newStatus`）。
   ブーストは、ブーストした人の `Status` の `boost` に元の投稿を入れて表します。
@@ -122,7 +123,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - 匿名で取れる公開リソースの GET には `Cache-Control: public, max-age=60` を付けます（spec の `#/components/headers/CacheControl`）。
   利用者ごとに変わる応答には `private` か `no-store` を付けます。問題の応答は `no-store` です。
   匿名でも使える操作にトークン付きで来た要求は利用者のロケールで答えるので、`public` の代わりに `private, max-age=60` を付けます。
-- 閲覧できる範囲をインスタンス設定で選ぶ公開の一覧は、`security: [{}, {oauth2: [...]}]` にして、ハンドラが設定を読んで答えます。誰にも見せない設定では 404、サインインした人だけに見せる設定では、トークンのない要求に 401（`/api/v1/problems/unauthenticated`、`WWW-Authenticate: Bearer`）を返します。
+- 閲覧できる範囲をインスタンス設定で選ぶ公開の一覧は、ハンドラが設定を読んで答えます。サインインした人だけに見せる設定を持つ一覧は `security: [{}, {oauth2: [...]}]` に、持たない一覧（`cost_totals`・`income_totals`）は `security: []` にします。誰にも見せない設定では 404、サインインした人だけに見せる設定では、トークンのない要求に 401（`/api/v1/problems/unauthenticated`、`WWW-Authenticate: Bearer`）を返します。
 
   | 操作 | 設定 | 値（見せない / サインインした人 / 誰にでも） | `Cache-Control` |
   | --- | --- | --- | --- |

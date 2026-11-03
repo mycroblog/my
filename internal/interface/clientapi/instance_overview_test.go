@@ -42,6 +42,19 @@ func newOverviewEnv(t *testing.T, settings ...instance.CurrentSetting) (*authEnv
 	return e, overview
 }
 
+// A public resource takes any token, and answers a request with one privately.
+func TestPublicResourcesWithAToken(t *testing.T) {
+	e, _ := newOverviewEnv(t)
+	e.auth.tokens["statuses"] = bearer("read:statuses", aliceAccountID)
+	res := e.send(t, http.MethodGet, "/instance/overview", "statuses", "")
+	if got := res.Header.Get("Cache-Control"); res.StatusCode != http.StatusOK || got != "private, max-age=60" {
+		t.Errorf("overview with a token = %d, Cache-Control %q", res.StatusCode, got)
+	}
+	if res := e.send(t, http.MethodGet, "/custom_emojis", "statuses", ""); res.StatusCode != http.StatusOK {
+		t.Errorf("custom emoji with a token of another scope = %d, want 200", res.StatusCode)
+	}
+}
+
 func TestGetInstanceOverview(t *testing.T) {
 	e, _ := newOverviewEnv(t)
 	res := e.get(t, "/instance/overview", nil)

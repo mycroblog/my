@@ -84,8 +84,8 @@ export interface paths {
         /**
          * Delete a custom emoji that the user made
          * @description Deletes a local emoji that the user made for good, as `DELETE /admin/custom_emojis/{id}`
-         *     does, which frees a place of the user's limit; a pending request for a new image of it
-         *     lapses. The deletion is recorded in the audit log. An emoji that is not one the user made
+         *     does; the monthly limit counts requests, so the deletion gives no place back. A pending
+         *     request for a new image of it lapses. The deletion is recorded in the audit log. An emoji that is not one the user made
          *     is a 404. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
          */
         delete: operations["deleteOwnCustomEmoji"];
@@ -790,7 +790,7 @@ export interface paths {
          *     `/api/v1/problems/wrong-password`, a passkey that does not verify a 422
          *     `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
          *     `/api/v1/problems/passkey-confirmation-expired`; at most 5 wrong ones per user are
-         *     accepted every hour. A new password that is not 8 to 128 characters is a 400 that
+         *     accepted every hour. A new password that is not 8 to 128 characters is a 422 that
          *     names `new_password`.
          *     An `external_confirmation` from a linked login provider
          *     (`POST /linked_identities/confirmation`) takes the place of the password; an unknown,
@@ -3451,7 +3451,10 @@ export interface paths {
          *     current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
          *     subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
          *     that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
-         *     current plan and interval.
+         *     current plan and interval. An unknown plan is a 404, no subscription a 409
+         *     `/api/v1/problems/supporter-subscription-state`, and an interval that is neither `month`
+         *     nor `year` a 422. While the supporter program is off, the operation answers the 404 or the
+         *     503 `/api/v1/problems/supporters-unavailable` that says what is missing.
          */
         post: operations["changeOwnSupporterSubscription"];
         delete?: never;
@@ -4205,8 +4208,9 @@ export interface paths {
         /**
          * Report an uncaught error of the web client
          * @description Reports an error that the web client did not handle, for the operators of the server. The
-         *     body is at most 16 KiB of `application/json`. The answer is always 204 and never tells
-         *     whether the report was kept: the server ignores a body of another content type or over the
+         *     body is at most 16 KiB of `application/json`. A report that reaches the operation is
+         *     answered 204, which never tells whether it was kept; the limit of requests per client IP
+         *     (429) and an unavailable server (503) answer as for every operation. The server ignores a body of another content type or over the
          *     size, a body it cannot read, and a report whose `stack` has no frame of a script that this
          *     server serves, such as the errors of a browser extension. It keeps at most 10 reports a
          *     minute from each client IP and ignores the rest.
@@ -4220,7 +4224,8 @@ export interface paths {
          *
          *     A report may be sent without an access token, with `navigator.sendBeacon` while the page
          *     is left: the server counts it but never notifies the administrators of a new error from
-         *     it. An access token that is sent must be valid, as for every operation.
+         *     it. Only the token of one of the server's own clients counts as signed in; any other is
+         *     treated as no token. An access token that is sent must be valid, as for every operation.
          */
         post: operations["reportClientError"];
         delete?: never;
@@ -6642,7 +6647,7 @@ export interface paths {
          *     ones, and the audit log's `service_closure_announced`. The announcement shows in
          *     `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
          *     closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
-         *     a 400 that names the parameter; a server that is closed already answers the 409
+         *     a 422 that names the parameter; a server that is closed already answers the 409
          *     `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
          *     answered with `short_notice`. Needs the `manage_service_closure` permission.
          */
@@ -6698,7 +6703,7 @@ export interface paths {
          * @description Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
          *     closure whose `closes_at` has passed can close; before it, without an announcement, or once
          *     closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
-         *     server's domain, or it is a 400 that names it. The closure records `service_closure_closed`
+         *     server's domain, or it is a 422 that names it. The closure records `service_closure_closed`
          *     in the audit log and cancels every supporter subscription that goes on, in the same
          *     transaction. From then on, the client API serves only the users' own data and exports
          *     (`/api/v1/problems/service-closed`). Needs the `manage_service_closure` permission.
@@ -10639,7 +10644,7 @@ export interface components {
         };
         /**
          * @description Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
-         *     underscores. `shortcode_taken`: a local emoji has the shortcode. `invalid_alias`: an
+         *     underscores. `shortcode_taken`: a local emoji has the shortcode, or a pending request reserves it. `invalid_alias`: an
          *     alias breaks the rules of a shortcode, or there are more than 10. `invalid_category`:
          *     the category is longer than 64 characters or not text. `media_not_found`: the media
          *     file is not an upload of the user. `media_not_ready`: it has not finished processing.
@@ -13091,6 +13096,23 @@ export interface components {
          *       each present only when the operator set it: `message`, the administrators' notice in
          *       plain text; `until`, when the maintenance is expected to end (RFC 3339); and
          *       `status_page_url`, the instance's status page.
+         *     - `/api/v1/problems/custom-emoji-request-conflict` (409): a request for a custom emoji
+         *       is not in the state the operation needs, or was decided meanwhile.
+         *     - `/api/v1/problems/email-already-verified` (409): the primary email address is already
+         *       confirmed, so no confirmation mail is sent.
+         *     - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
+         *       suppressed, so there is nothing to lift.
+         *     - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
+         *       `reason` says which.
+         *     - `/api/v1/problems/invalid-role` (422): a role change breaks a rule; `reason` says which.
+         *     - `/api/v1/problems/voice-already-invited` (409): the account is already invited to the room.
+         *     - `/api/v1/problems/voice-cannot-speak` (403): the participant may not speak in the room.
+         *     - `/api/v1/problems/voice-invalid-invitee` (422): the account cannot be invited to the room.
+         *     - `/api/v1/problems/voice-invalid-participant` (422): the account is not a participant that
+         *       the operation can act on.
+         *     - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
+         *       co-hosts of the room.
+         *     - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
          */
         Problem: {
             /**

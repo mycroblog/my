@@ -89,9 +89,9 @@ func (s *Server) instanceClosure(ctx context.Context) (*InstanceClosure, error) 
 func (s *Server) closureProblem(ctx context.Context, err error) (problem, bool) {
 	switch {
 	case errors.Is(err, instance.ErrClosureMessage):
-		return s.invalidParameterResponse(ctx, "message"), true
+		return s.unprocessableValue(ctx, "message"), true
 	case errors.Is(err, instance.ErrClosureSchedule):
-		return s.invalidParameterResponse(ctx, "export_until"), true
+		return s.unprocessableValue(ctx, "export_until"), true
 	case errors.Is(err, instance.ErrClosureTransition):
 		return s.problem(ctx, http.StatusConflict, ProblemTypeServiceClosureState, s.Localizer(ctx).ServerErrorsServiceClosureState(), ""), true
 	}
@@ -224,8 +224,11 @@ func (s *Server) CloseService(ctx context.Context, req CloseServiceRequestObject
 	if err != nil {
 		return nil, err
 	}
-	if req.Body == nil || !strings.EqualFold(strings.TrimSpace(req.Body.ConfirmDomain), s.o.Host) {
+	if req.Body == nil {
 		return CloseServicedefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "confirm_domain")), nil
+	}
+	if !strings.EqualFold(strings.TrimSpace(req.Body.ConfirmDomain), s.o.Host) {
+		return CloseServicedefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "confirm_domain")), nil
 	}
 	c, err := s.o.Closures.CloseService(ctx, v.UserID)
 	if p, ok := s.closureProblem(ctx, err); ok {

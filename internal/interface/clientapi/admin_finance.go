@@ -470,7 +470,7 @@ func (s *Server) GetInstanceCostTotals(ctx context.Context, req GetInstanceCostT
 	if p != nil {
 		return GetInstanceCostTotalsdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	cache := cachePublic
+	cache := publicCache(ctx)
 	return GetInstanceCostTotals200JSONResponse{Body: out, Headers: GetInstanceCostTotals200ResponseHeaders{CacheControl: &cache}}, nil
 }
 

@@ -8,7 +8,7 @@ put:
     ones, and the audit log's `service_closure_announced`. The announcement shows in
     `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
     closes it. A schedule whose `export_until` is before `closes_at`, or a message too long, is
-    a 400 that names the parameter; a server that is closed already answers the 409
+    a 422 that names the parameter; a server that is closed already answers the 409
     `/api/v1/problems/service-closure-state`. A notice of less than 30 days is allowed and
     answered with `short_notice`. Needs the `manage_service_closure` permission.
   tags: [admin-server]

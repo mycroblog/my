@@ -31,8 +31,8 @@ delete:
   summary: Delete a custom emoji that the user made
   description: |
     Deletes a local emoji that the user made for good, as `DELETE /admin/custom_emojis/{id}`
-    does, which frees a place of the user's limit; a pending request for a new image of it
-    lapses. The deletion is recorded in the audit log. An emoji that is not one the user made
+    does; the monthly limit counts requests, so the deletion gives no place back. A pending
+    request for a new image of it lapses. The deletion is recorded in the audit log. An emoji that is not one the user made
     is a 404. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
   tags: [custom-emojis]
   security:
