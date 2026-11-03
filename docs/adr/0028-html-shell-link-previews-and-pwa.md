@@ -1,6 +1,6 @@
 # ADR-0028: Go が HTML の外枠を返し、リンクプレビュー（OGP / X Card）と PWA を両立する
 
-- Status: Accepted（外枠の `GET /@{acct}/{id}` を ADR-0053（投稿の表示用 URL） が置き換える）
+- Status: Accepted（外枠の `GET /@{acct}/{id}` を ADR-0053（投稿の表示用 URL） が、更新の通知の部分を ADR-0141 が置き換える）
 - Date: 2026-10-16
 - Deciders: @rosylilly
 - Issue: #88
