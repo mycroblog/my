@@ -175,7 +175,7 @@ func roomsPurge(t *testing.T, e *roomsEnv) {
 		room := e.open(t, host, appvoice.SettingsInput{Name: "Room"}).Room.ID
 		e.join(t, listener, room)
 		e.join(t, removed, room)
-		if err := e.svc.Remove(ctx, host, room, removed); err != nil {
+		if err := e.remove(ctx, host, room, removed); err != nil {
 			t.Fatal(err)
 		}
 		if err := e.svc.End(ctx, host, room); err != nil {

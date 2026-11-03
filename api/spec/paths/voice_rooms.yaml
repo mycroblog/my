@@ -5,7 +5,7 @@ get:
   description: |
     The open voice chat rooms that the user sees: the rooms where the user follows the host or
     a speaker first, then by the most participants. With `tag`, only the rooms with that
-    hashtag. A 404 while the voice chat is off on the server.
+    hashtag.
   tags: [voice]
   security:
     - oauth2: ["read:voice"]
@@ -39,7 +39,7 @@ post:
     `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
     while as many rooms are open as the server allows, and a 409
     `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
-    leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+    leaves the room the user was in. Invalid settings are a 422.
     With `post`, the user's start post, which links the room, is posted with it: a 422 for a
     room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
     status for a post that cannot be posted. The local followers of the user who see the room

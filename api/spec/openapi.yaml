@@ -105,7 +105,8 @@ tags:
       hand, the operations of the host and the co-hosts on the participants, the
       invitations, and the rooms the user hosted. The operations need
       a `read:voice` or `write:voice` scope, except the summary of a room for the visitors who
-      do not see it, and answer 404 while the voice chat is off on the server.
+      do not see it. Every operation answers 404 while the voice chat is off on the server, and
+      for a room that the user does not see.
   - name: client-errors
     description: The uncaught errors of the web client, which it reports to its own server.
   - name: admin-moderation
@@ -407,8 +408,8 @@ paths:
     $ref: ./paths/voice_rooms_{id}_hand.yaml
   /voice/rooms/{id}/participants/{account_id}:
     $ref: ./paths/voice_rooms_{id}_participants_{account_id}.yaml
-  /voice/rooms/{id}/participants/{account_id}/grant:
-    $ref: ./paths/voice_rooms_{id}_participants_{account_id}_grant.yaml
+  /voice/rooms/{id}/participants/{account_id}/speaking_permission:
+    $ref: ./paths/voice_rooms_{id}_participants_{account_id}_speaking_permission.yaml
   /voice/rooms/{id}/participants/{account_id}/hand:
     $ref: ./paths/voice_rooms_{id}_participants_{account_id}_hand.yaml
   /voice/rooms/{id}/participants/{account_id}/mute:
@@ -1883,6 +1884,8 @@ components:
       $ref: ./components/schemas/UpdateWebhookRequest.yaml
     Visibility:
       $ref: ./components/schemas/Visibility.yaml
+    VoiceEndReason:
+      $ref: ./components/schemas/VoiceEndReason.yaml
     VoiceGrant:
       $ref: ./components/schemas/VoiceGrant.yaml
     VoiceHostChoice:

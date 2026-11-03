@@ -9,7 +9,7 @@ post:
     the room's speakers setting covers, and the users with a permission to speak (a granted
     raised hand, a grant, or an invitation as a speaker) may; a user whom a moderator limited
     needs a permission. A 403 `/api/v1/problems/voice-cannot-speak` for anyone else, who raises a
-    hand instead. A raised hand goes down. A speaker stays one. A 404 while the voice chat is off on the server.
+    hand instead. A raised hand goes down. A speaker stays one.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]
@@ -30,7 +30,7 @@ delete:
   summary: Go back to listening in a voice chat room
   description: |
     Makes the user, a speaker in the room, a listener again. A permission to speak stays, so
-    the user may speak again. A listener stays one. A 404 while the voice chat is off on the server.
+    the user may speak again. A listener stays one.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]

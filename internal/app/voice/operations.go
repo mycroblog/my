@@ -368,10 +368,10 @@ func (s *Service) Mute(ctx context.Context, byAccountID, roomID, accountID strin
 
 // Remove takes accountID out of a room (removed) and bans it from the room, by byAccountID, the
 // host or a co-host (ADR-0100 §5): the account neither sees nor joins the room again. The host
-// and the co-hosts do not remove each other (ErrInvalidParticipant).
-func (s *Service) Remove(ctx context.Context, byAccountID, roomID, accountID string) error {
+// and the co-hosts do not remove each other (ErrInvalidParticipant). It returns the room afterwards.
+func (s *Service) Remove(ctx context.Context, byAccountID, roomID, accountID string) (RoomView, error) {
 	var removed *previous
-	_, err := s.operate(ctx, byAccountID, roomID, accountID, func(tx uow.Tx, p Participant, session string, at time.Time) error {
+	room, err := s.operate(ctx, byAccountID, roomID, accountID, func(tx uow.Tx, p Participant, session string, at time.Time) error {
 		if p.Cohost() {
 			return ErrInvalidParticipant
 		}
@@ -392,10 +392,10 @@ func (s *Service) Remove(ctx context.Context, byAccountID, roomID, accountID str
 		return s.endIfEmptyTx(ctx, tx, roomID, at)
 	})
 	if err != nil {
-		return err
+		return RoomView{}, err
 	}
 	s.forget(ctx, removed)
-	return nil
+	return room, nil
 }
 
 // AssignCohost makes accountID, a participant of a room that byAccountID hosts, a co-host
