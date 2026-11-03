@@ -66,6 +66,15 @@ func (q *Queries) CustomEmojiShortcodeReserved(ctx context.Context, shortcode st
 	return reserved, err
 }
 
+const deleteAllCustomEmojiPendingRequests = `-- name: DeleteAllCustomEmojiPendingRequests :exec
+DELETE FROM custom_emoji_pending_requests
+`
+
+func (q *Queries) DeleteAllCustomEmojiPendingRequests(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteAllCustomEmojiPendingRequests)
+	return err
+}
+
 const deleteCustomEmojiPendingRequest = `-- name: DeleteCustomEmojiPendingRequest :execrows
 DELETE FROM custom_emoji_pending_requests WHERE request_id = ?1
 `
@@ -419,4 +428,20 @@ func (q *Queries) LocalCustomEmojiShortcodeTaken(ctx context.Context, shortcode 
 	var taken int64
 	err := row.Scan(&taken)
 	return taken, err
+}
+
+const rebuildCustomEmojiPendingRequests = `-- name: RebuildCustomEmojiPendingRequests :exec
+INSERT INTO custom_emoji_pending_requests (request_id, requester_user_id, reserved_shortcode, emoji_id)
+SELECT r.id, r.requester_user_id, CASE WHEN r.kind = 'create' THEN r.shortcode END, r.emoji_id
+FROM custom_emoji_requests r
+WHERE r.requester_user_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM custom_emoji_request_outcomes o WHERE o.request_id = r.id)
+`
+
+// RebuildCustomEmojiPendingRequests states the rule of the writes: a request without an outcome is
+// pending, a request to create reserves its shortcode, and a request for an image names its emoji.
+// A request whose requester was erased has an outcome by then.
+func (q *Queries) RebuildCustomEmojiPendingRequests(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, rebuildCustomEmojiPendingRequests)
+	return err
 }
