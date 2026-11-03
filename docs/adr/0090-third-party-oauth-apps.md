@@ -1,6 +1,6 @@
 # ADR-0090: OAuth をサードパーティのアプリに開く
 
-- Status: Accepted
+- Status: Accepted（§4 の一次のクライアントだけの操作に ADR-0143 が加える）
 - Date: 2026-10-23
 - Deciders: @rosylilly
 - Issue: #1038
