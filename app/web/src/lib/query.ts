@@ -70,7 +70,7 @@ export const shellQueryReader = { retry: shellQueryRetry, retryOnMount: false } 
 const postListPaths: ReadonlySet<string> = new Set([
   "/timelines/home",
   "/timelines/local",
-  "/timelines/public",
+  "/timelines/federated",
   "/timelines/tag/{hashtag}",
   "/accounts/{id}/statuses",
   "/statuses/{id}/context",

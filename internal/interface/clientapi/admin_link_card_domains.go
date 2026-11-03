@@ -60,7 +60,7 @@ func (s *Server) ListLinkCardDomainRules(ctx context.Context, _ ListLinkCardDoma
 	return ListLinkCardDomainRules200JSONResponse{Body: list, Headers: ListLinkCardDomainRules200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
-// SetLinkCardDomainRule serves POST /api/v1/admin/link_card_domains.
+// SetLinkCardDomainRule serves PUT /api/v1/admin/link_card_domains/{domain}.
 func (s *Server) SetLinkCardDomainRule(ctx context.Context, req SetLinkCardDomainRuleRequestObject) (SetLinkCardDomainRuleResponseObject, error) {
 	if p, err := s.requireLinkCardDomainRules(ctx); err != nil {
 		return nil, err
@@ -79,9 +79,9 @@ func (s *Server) SetLinkCardDomainRule(ctx context.Context, req SetLinkCardDomai
 	if req.Body == nil {
 		return SetLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "domain")), nil
 	}
-	domain, err := appfederation.CanonicalHost(req.Body.Domain)
-	if err != nil {
-		return unprocessable(l.ServerErrorsInvalidValue("domain"))
+	domain, p := s.linkCardDomain(ctx, req.Domain)
+	if p != nil {
+		return SetLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
 	saved, err := s.o.LinkCardDomainRules.SetLinkCardDomainRule(ctx, instance.LinkCardDomainRule{
 		Domain: domain, Mode: instance.LinkCardDomainMode(req.Body.Mode), Note: deref(req.Body.Note),
@@ -99,6 +99,17 @@ func (s *Server) SetLinkCardDomainRule(ctx context.Context, req SetLinkCardDomai
 	}
 	cache := cacheNoStore
 	return SetLinkCardDomainRule200JSONResponse{Body: newLinkCardDomainRule(saved), Headers: SetLinkCardDomainRule200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// linkCardDomain returns the canonical host of the domain of a path, or the 400 of a value that is
+// not a host.
+func (s *Server) linkCardDomain(ctx context.Context, raw string) (string, *problem) {
+	domain, err := appfederation.CanonicalHost(raw)
+	if err != nil {
+		p := s.invalidParameterResponse(ctx, "domain")
+		return "", &p
+	}
+	return domain, nil
 }
 
 // RemoveLinkCardDomainRule serves DELETE /api/v1/admin/link_card_domains/{domain}.

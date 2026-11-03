@@ -257,8 +257,8 @@ func TestRelays(t *testing.T) {
 		}
 	}
 	var timeline clientapi.StatusPage
-	if res := c.do("alice", http.MethodGet, "/timelines/public", nil, &timeline); res.StatusCode != http.StatusOK {
-		t.Fatalf("GET /timelines/public = %d", res.StatusCode)
+	if res := c.do("alice", http.MethodGet, "/timelines/federated", nil, &timeline); res.StatusCode != http.StatusOK {
+		t.Fatalf("GET /timelines/federated = %d", res.StatusCode)
 	}
 	if !slices.ContainsFunc(timeline.Items, func(s clientapi.Status) bool { return s.Id == st.ID }) {
 		t.Errorf("the federated timeline does not show the relayed post")

@@ -387,7 +387,12 @@ func (s *Server) RetireSupporterPlan(ctx context.Context, req RetireSupporterPla
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: retire supporter plan %s: %w", req.Id, err)
 	}
-	return RetireSupporterPlan204Response{}, nil
+	plan, err := s.o.Supporters.Plan(ctx, req.Id)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the supporter plan %s: %w", req.Id, err)
+	}
+	cache := cacheNoStore
+	return RetireSupporterPlan200JSONResponse{AdminSupporterPlanJSONResponse{Body: newAdminSupporterPlan(plan), Headers: AdminSupporterPlanResponseHeaders{CacheControl: &cache}}}, nil
 }
 
 func (s *Server) newAdminSupporterSubscription(ctx context.Context, sv appsupporters.SubscriptionView) (AdminSupporterSubscription, error) {

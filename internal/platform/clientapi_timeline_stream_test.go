@@ -115,7 +115,7 @@ func TestTimelineStreamsDeliverWhatTheTimelinesList(t *testing.T) {
 		want   []string
 	}{
 		"alice's local":     {alice, "/timelines/local", []string{local, ja, last}},
-		"alice's federated": {alice, "/timelines/public", []string{ja, last}},
+		"alice's federated": {alice, "/timelines/federated", []string{ja, last}},
 		"erin's local":      {erin, "/timelines/local", []string{muted, blocker, local, last}},
 	} {
 		var got []string

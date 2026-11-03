@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 get:
-  operationId: getPublicTimeline
+  operationId: getFederatedTimeline
   summary: Get the federated timeline
   description: |
     The public posts of the instance's accounts and of the remote accounts whose posts the

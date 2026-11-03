@@ -13,7 +13,7 @@ post:
   parameters:
     - $ref: ../components/parameters/SupporterPlanId.yaml
   responses:
-    "204":
-      description: The plan is retired.
+    "200":
+      $ref: ../components/responses/AdminSupporterPlan.yaml
     default:
       $ref: ../components/responses/Problem.yaml

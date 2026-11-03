@@ -116,7 +116,7 @@ async function serveApi(page: Page): Promise<void> {
   let publicRequests = 0;
   await page.route("**/api/v1/instance", (route) => json(route, instance));
   await page.route("**/api/v1/timelines/local*", (route) => json(route, { items: [post] } satisfies StatusPage));
-  await page.route("**/api/v1/timelines/public*", (route) => {
+  await page.route("**/api/v1/timelines/federated*", (route) => {
     if (!offline) publicRequests++;
     return publicRequests === 1
       ? json(route, { type: "about:blank", title: "Service Unavailable", status: 503 }, 503)
@@ -229,7 +229,7 @@ test("the home timeline says that it shows the posts loaded last while offline (
   );
   await page.route("**/api/v1/**", (route) => {
     const path = new URL(route.request().url()).pathname.replace(/^\/api\/v1/, "");
-    if (path === "/instance" || path.startsWith("/timelines/local") || path.startsWith("/timelines/public"))
+    if (path === "/instance" || path.startsWith("/timelines/local") || path.startsWith("/timelines/federated"))
       return route.fallback();
     if (path.startsWith("/timelines/home")) return json(route, { items: [post] } satisfies StatusPage);
     if (path === "/accounts/verify_credentials")

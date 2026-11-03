@@ -231,7 +231,7 @@ func (s *Server) DeleteOAuthApp(ctx context.Context, req DeleteOAuthAppRequestOb
 	return DeleteOAuthApp204Response{}, nil
 }
 
-// RotateOAuthAppSecret serves POST /api/v1/oauth_apps/{id}/secret.
+// RotateOAuthAppSecret serves POST /api/v1/oauth_apps/{id}/rotate_secret.
 func (s *Server) RotateOAuthAppSecret(ctx context.Context, req RotateOAuthAppSecretRequestObject) (RotateOAuthAppSecretResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {

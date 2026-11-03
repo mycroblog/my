@@ -73,7 +73,7 @@
 
 ### 6. API と権限
 
-- `GET /admin/link_card_domains`、`POST /admin/link_card_domains`（ドメインのルールを設定。あれば置き換える）、`DELETE /admin/link_card_domains/{domain}`。ルールのないドメインの削除は何もしない。
+- `GET /admin/link_card_domains`、`PUT /admin/link_card_domains/{domain}`（ドメインのルールを設定。あれば置き換える）、`DELETE /admin/link_card_domains/{domain}`。ルールのないドメインの削除は何もしない。
 - 権限は `manage_settings`（`link_cards_enabled` と同じ、ADR-0058 のサーバー管理）。`manage_domains`（処分）にしない。モデレーションの権限ではなく、サーバーの外への取得の設定なので。
 - 監査の種類は対象 `link_card_domain` に `link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`。
 

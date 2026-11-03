@@ -46,7 +46,7 @@ var publicTimelineStreams = map[string]publicTimelineStream{
 // serveTimelineStream serves GET /api/v1/streaming/timelines/{timeline}: a Server-Sent Events
 // stream of the new posts of the local or the federated timeline (ADR-0127), event update with
 // a Status, for logged-in users only. It sends a post when the REST timeline (GET
-// /timelines/local or /timelines/public) lists it for the viewer at that moment, which
+// /timelines/local or /timelines/federated) lists it for the viewer at that moment, which
 // LocalEntry and PublicEntry decide with the same policy, and nothing is replayed. It is a 404
 // for another timeline and while the instance setting of the timeline is off; every heartbeat
 // checks the setting again, as it checks the access token. It shares the limit of open streams

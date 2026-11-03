@@ -167,6 +167,10 @@ describe("an account on another server", () => {
         // Her server answers the Follow later: until then the follow is a request.
         return HttpResponse.json(relationshipFixture(carol.id, action === "follow" ? { requested: true } : {}));
       }),
+      http.delete(`${apiBase}/accounts/:id/:relation`, ({ params }) => {
+        changes.push(`un${String(params["relation"])}`);
+        return HttpResponse.json(relationshipFixture(carol.id));
+      }),
     );
     return { changes };
   }

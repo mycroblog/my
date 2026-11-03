@@ -11839,9 +11839,6 @@ type SetInstanceTextRequest struct {
 
 // SetLinkCardDomainRuleRequest The rule to set on a domain.
 type SetLinkCardDomainRuleRequest struct {
-	// Domain The domain, a host without a scheme, path, or port; it also covers its subdomains.
-	Domain string `json:"domain"`
-
 	// Mode What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
 	// neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
 	// but no images, and its cards show without their images.
@@ -14296,6 +14293,15 @@ type SearchTagsParams struct {
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// GetFederatedTimelineParams defines parameters for GetFederatedTimeline.
+type GetFederatedTimelineParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // GetHomeTimelineParams defines parameters for GetHomeTimeline.
 type GetHomeTimelineParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -14316,15 +14322,6 @@ type GetListTimelineParams struct {
 
 // GetLocalTimelineParams defines parameters for GetLocalTimeline.
 type GetLocalTimelineParams struct {
-	// Cursor The `next_cursor` of the previous page; omitted for the first page.
-	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
-
-	// Limit The maximum number of items in the page.
-	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// GetPublicTimelineParams defines parameters for GetPublicTimeline.
-type GetPublicTimelineParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -16568,6 +16565,14 @@ type ClientInterface interface {
 	// Corresponds with GET /accounts/{id} (the `GetAccount` operationId).
 	GetAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnblockAccount Unblock an account
+	//
+	// The follows that the block ended stay ended. Without a block it changes nothing. It also
+	// works on an account that blocks the user.
+	//
+	// Corresponds with DELETE /accounts/{id}/block (the `UnblockAccount` operationId).
+	UnblockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BlockAccount Block an account
 	//
 	// Ends the follows between the viewer and the account in both directions and keeps
@@ -16578,6 +16583,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/block (the `BlockAccount` operationId).
 	BlockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnfollowAccount Unfollow an account
+	//
+	// Ends the follow or withdraws the follow request. Without one it changes nothing.
+	//
+	// Corresponds with DELETE /accounts/{id}/follow (the `UnfollowAccount` operationId).
+	UnfollowAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// FollowAccountWithBody Follow an account
 	//
@@ -16637,6 +16649,13 @@ type ClientInterface interface {
 	// Corresponds with GET /accounts/{id}/lists (the `ListAccountLists` operationId).
 	ListAccountLists(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnmuteAccount Unmute an account
+	//
+	// Without a mute it changes nothing. It also works on an account that blocks the user.
+	//
+	// Corresponds with DELETE /accounts/{id}/mute (the `UnmuteAccount` operationId).
+	UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// MuteAccountWithBody Mute an account
 	//
 	// Hides the account's posts, and unless `notifications` is false its notifications,
@@ -16686,6 +16705,14 @@ type ClientInterface interface {
 	// Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
 	ListAccountStatuses(ctx context.Context, id Id, params *ListAccountStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnsubscribeAccount Stop being notified of an account's new posts
+	//
+	// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+	// request that awaits the account's server. Without a subscription it changes nothing.
+	//
+	// Corresponds with DELETE /accounts/{id}/subscribe (the `UnsubscribeAccount` operationId).
+	UnsubscribeAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SubscribeAccount Be notified of an account's new posts
 	//
 	// Subscribes the viewer to the account's new posts: each new post that the viewer may see
@@ -16698,36 +16725,6 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/subscribe (the `SubscribeAccount` operationId).
 	SubscribeAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UnblockAccount Unblock an account
-	//
-	// The follows that the block ended stay ended. Without a block it changes nothing. It also
-	// works on an account that blocks the user.
-	//
-	// Corresponds with POST /accounts/{id}/unblock (the `UnblockAccount` operationId).
-	UnblockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UnfollowAccount Unfollow an account
-	//
-	// Ends the follow or withdraws the follow request. Without one it changes nothing.
-	//
-	// Corresponds with POST /accounts/{id}/unfollow (the `UnfollowAccount` operationId).
-	UnfollowAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UnmuteAccount Unmute an account
-	//
-	// Without a mute it changes nothing. It also works on an account that blocks the user.
-	//
-	// Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
-	UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UnsubscribeAccount Stop being notified of an account's new posts
-	//
-	// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
-	// request that awaits the account's server. Without a subscription it changes nothing.
-	//
-	// Corresponds with POST /accounts/{id}/unsubscribe (the `UnsubscribeAccount` operationId).
-	UnsubscribeAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAccountAction Get a moderation action on an account
 	//
@@ -18072,32 +18069,6 @@ type ClientInterface interface {
 	// Corresponds with GET /admin/link_card_domains (the `ListLinkCardDomainRules` operationId).
 	ListLinkCardDomainRules(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SetLinkCardDomainRuleWithBody Set the rule of a domain for the link card crawler
-	//
-	// Records the rule of a domain, replacing the rule it has, and records the change in the
-	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
-	// link cards: federation and other remote media follow the domain actions. A domain that is
-	// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-	// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
-	//
-	// Takes any type of body and a specified content type.
-	//
-	// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
-	SetLinkCardDomainRuleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
-	//
-	// Records the rule of a domain, replacing the rule it has, and records the change in the
-	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
-	// link cards: federation and other remote media follow the domain actions. A domain that is
-	// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-	// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
-	//
-	// Takes a body of the `application/json` content type.
-	//
-	// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
-	SetLinkCardDomainRule(ctx context.Context, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
 	//
 	// Removes the rule of a domain and records it in the audit log. The cards already kept show
@@ -18107,6 +18078,32 @@ type ClientInterface interface {
 	//
 	// Corresponds with DELETE /admin/link_card_domains/{domain} (the `RemoveLinkCardDomainRule` operationId).
 	RemoveLinkCardDomainRule(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetLinkCardDomainRuleWithBody Set the rule of a domain for the link card crawler
+	//
+	// Records the rule of a domain, replacing the rule it has, and records the change in the
+	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+	// link cards: federation and other remote media follow the domain actions. A domain that is
+	// not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+	// 422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /admin/link_card_domains/{domain} (the `SetLinkCardDomainRule` operationId).
+	SetLinkCardDomainRuleWithBody(ctx context.Context, domain string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
+	//
+	// Records the rule of a domain, replacing the rule it has, and records the change in the
+	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+	// link cards: federation and other remote media follow the domain actions. A domain that is
+	// not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+	// 422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /admin/link_card_domains/{domain} (the `SetLinkCardDomainRule` operationId).
+	SetLinkCardDomainRule(ctx context.Context, domain string, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListAdminLoginProviders List the login providers
 	//
@@ -19586,7 +19583,7 @@ type ClientInterface interface {
 	// Makes the account's pending follow of the viewer active (FR-302). Accepting a follow
 	// that is already active changes nothing; without a follow it is a 404.
 	//
-	// Corresponds with POST /follow_requests/{id}/authorize (the `AcceptFollowRequest` operationId).
+	// Corresponds with POST /follow_requests/{id}/accept (the `AcceptFollowRequest` operationId).
 	AcceptFollowRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RejectFollowRequest Reject a follow request
@@ -20297,7 +20294,7 @@ type ClientInterface interface {
 	// 409 `/api/v1/problems/public-oauth-app`. An unknown or deleted app, or one that another
 	// user registered, is a 404.
 	//
-	// Corresponds with POST /oauth_apps/{id}/secret (the `RotateOAuthAppSecret` operationId).
+	// Corresponds with POST /oauth_apps/{id}/rotate_secret (the `RotateOAuthAppSecret` operationId).
 	RotateOAuthAppSecret(ctx context.Context, id OAuthAppId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// IssueOAuthAppTokenWithBody Issue tokens of an OAuth app to the authenticated user
@@ -21150,6 +21147,17 @@ type ClientInterface interface {
 	// Corresponds with GET /tags/search (the `SearchTags` operationId).
 	SearchTags(ctx context.Context, params *SearchTagsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetFederatedTimeline Get the federated timeline
+	//
+	// The public posts of the instance's accounts and of the remote accounts whose posts the
+	// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
+	// visibilities, `local` ones included, and boosts never appear on it. The instance setting
+	// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
+	// is `logged_in` an anonymous request is a 401.
+	//
+	// Corresponds with GET /timelines/federated (the `GetFederatedTimeline` operationId).
+	GetFederatedTimeline(ctx context.Context, params *GetFederatedTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetHomeTimeline Get the home timeline
 	//
 	// The viewer's own posts and boosts and those of the accounts the viewer follows, newest
@@ -21176,17 +21184,6 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /timelines/local (the `GetLocalTimeline` operationId).
 	GetLocalTimeline(ctx context.Context, params *GetLocalTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetPublicTimeline Get the federated timeline
-	//
-	// The public posts of the instance's accounts and of the remote accounts whose posts the
-	// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
-	// visibilities, `local` ones included, and boosts never appear on it. The instance setting
-	// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-	// is `logged_in` an anonymous request is a 401.
-	//
-	// Corresponds with GET /timelines/public (the `GetPublicTimeline` operationId).
-	GetPublicTimeline(ctx context.Context, params *GetPublicTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHashtagTimeline Get the timeline of a hashtag
 	//
@@ -22347,6 +22344,24 @@ func (c *Client) GetAccount(ctx context.Context, id AccountId, reqEditors ...Req
 	return c.Client.Do(req)
 }
 
+// UnblockAccount Unblock an account
+//
+// The follows that the block ended stay ended. Without a block it changes nothing. It also
+// works on an account that blocks the user.
+//
+// Corresponds with DELETE /accounts/{id}/block (the `UnblockAccount` operationId).
+func (c *Client) UnblockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnblockAccountRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // BlockAccount Block an account
 //
 // Ends the follows between the viewer and the account in both directions and keeps
@@ -22358,6 +22373,23 @@ func (c *Client) GetAccount(ctx context.Context, id AccountId, reqEditors ...Req
 // Corresponds with POST /accounts/{id}/block (the `BlockAccount` operationId).
 func (c *Client) BlockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBlockAccountRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnfollowAccount Unfollow an account
+//
+// Ends the follow or withdraws the follow request. Without one it changes nothing.
+//
+// Corresponds with DELETE /accounts/{id}/follow (the `UnfollowAccount` operationId).
+func (c *Client) UnfollowAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnfollowAccountRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -22476,6 +22508,23 @@ func (c *Client) ListAccountLists(ctx context.Context, id AccountId, reqEditors 
 	return c.Client.Do(req)
 }
 
+// UnmuteAccount Unmute an account
+//
+// Without a mute it changes nothing. It also works on an account that blocks the user.
+//
+// Corresponds with DELETE /accounts/{id}/mute (the `UnmuteAccount` operationId).
+func (c *Client) UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnmuteAccountRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // MuteAccountWithBody Mute an account
 //
 // Hides the account's posts, and unless `notifications` is false its notifications,
@@ -22565,6 +22614,24 @@ func (c *Client) ListAccountStatuses(ctx context.Context, id Id, params *ListAcc
 	return c.Client.Do(req)
 }
 
+// UnsubscribeAccount Stop being notified of an account's new posts
+//
+// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+// request that awaits the account's server. Without a subscription it changes nothing.
+//
+// Corresponds with DELETE /accounts/{id}/subscribe (the `UnsubscribeAccount` operationId).
+func (c *Client) UnsubscribeAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnsubscribeAccountRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // SubscribeAccount Be notified of an account's new posts
 //
 // Subscribes the viewer to the account's new posts: each new post that the viewer may see
@@ -22578,76 +22645,6 @@ func (c *Client) ListAccountStatuses(ctx context.Context, id Id, params *ListAcc
 // Corresponds with POST /accounts/{id}/subscribe (the `SubscribeAccount` operationId).
 func (c *Client) SubscribeAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSubscribeAccountRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// UnblockAccount Unblock an account
-//
-// The follows that the block ended stay ended. Without a block it changes nothing. It also
-// works on an account that blocks the user.
-//
-// Corresponds with POST /accounts/{id}/unblock (the `UnblockAccount` operationId).
-func (c *Client) UnblockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUnblockAccountRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// UnfollowAccount Unfollow an account
-//
-// Ends the follow or withdraws the follow request. Without one it changes nothing.
-//
-// Corresponds with POST /accounts/{id}/unfollow (the `UnfollowAccount` operationId).
-func (c *Client) UnfollowAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUnfollowAccountRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// UnmuteAccount Unmute an account
-//
-// Without a mute it changes nothing. It also works on an account that blocks the user.
-//
-// Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
-func (c *Client) UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUnmuteAccountRequest(c.Server, id)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// UnsubscribeAccount Stop being notified of an account's new posts
-//
-// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
-// request that awaits the account's server. Without a subscription it changes nothing.
-//
-// Corresponds with POST /accounts/{id}/unsubscribe (the `UnsubscribeAccount` operationId).
-func (c *Client) UnsubscribeAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUnsubscribeAccountRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -25051,19 +25048,39 @@ func (c *Client) ListLinkCardDomainRules(ctx context.Context, reqEditors ...Requ
 	return c.Client.Do(req)
 }
 
+// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
+//
+// Removes the rule of a domain and records it in the audit log. The cards already kept show
+// as they did at once; a URL that was not fetched because of the rule gets its card the next
+// time a post needs it, and nothing is fetched again in bulk. A domain without a rule changes
+// nothing. Needs the `manage_settings` permission.
+//
+// Corresponds with DELETE /admin/link_card_domains/{domain} (the `RemoveLinkCardDomainRule` operationId).
+func (c *Client) RemoveLinkCardDomainRule(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveLinkCardDomainRuleRequest(c.Server, domain)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // SetLinkCardDomainRuleWithBody Set the rule of a domain for the link card crawler
 //
 // Records the rule of a domain, replacing the rule it has, and records the change in the
 // audit log. The rule takes effect at once, also on the cards already kept, and bears only on
 // link cards: federation and other remote media follow the domain actions. A domain that is
-// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+// not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+// 422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
 //
 // Takes any type of body and a specified content type.
 //
-// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
-func (c *Client) SetLinkCardDomainRuleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetLinkCardDomainRuleRequestWithBody(c.Server, contentType, body)
+// Corresponds with PUT /admin/link_card_domains/{domain} (the `SetLinkCardDomainRule` operationId).
+func (c *Client) SetLinkCardDomainRuleWithBody(ctx context.Context, domain string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetLinkCardDomainRuleRequestWithBody(c.Server, domain, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -25079,34 +25096,14 @@ func (c *Client) SetLinkCardDomainRuleWithBody(ctx context.Context, contentType 
 // Records the rule of a domain, replacing the rule it has, and records the change in the
 // audit log. The rule takes effect at once, also on the cards already kept, and bears only on
 // link cards: federation and other remote media follow the domain actions. A domain that is
-// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
+// not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+// 422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
 //
 // Takes a body of the `application/json` content type.
 //
-// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
-func (c *Client) SetLinkCardDomainRule(ctx context.Context, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetLinkCardDomainRuleRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
-//
-// Removes the rule of a domain and records it in the audit log. The cards already kept show
-// as they did at once; a URL that was not fetched because of the rule gets its card the next
-// time a post needs it, and nothing is fetched again in bulk. A domain without a rule changes
-// nothing. Needs the `manage_settings` permission.
-//
-// Corresponds with DELETE /admin/link_card_domains/{domain} (the `RemoveLinkCardDomainRule` operationId).
-func (c *Client) RemoveLinkCardDomainRule(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRemoveLinkCardDomainRuleRequest(c.Server, domain)
+// Corresponds with PUT /admin/link_card_domains/{domain} (the `SetLinkCardDomainRule` operationId).
+func (c *Client) SetLinkCardDomainRule(ctx context.Context, domain string, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetLinkCardDomainRuleRequest(c.Server, domain, body)
 	if err != nil {
 		return nil, err
 	}
@@ -27845,7 +27842,7 @@ func (c *Client) ListFollowRequests(ctx context.Context, params *ListFollowReque
 // Makes the account's pending follow of the viewer active (FR-302). Accepting a follow
 // that is already active changes nothing; without a follow it is a 404.
 //
-// Corresponds with POST /follow_requests/{id}/authorize (the `AcceptFollowRequest` operationId).
+// Corresponds with POST /follow_requests/{id}/accept (the `AcceptFollowRequest` operationId).
 func (c *Client) AcceptFollowRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAcceptFollowRequestRequest(c.Server, id)
 	if err != nil {
@@ -29116,7 +29113,7 @@ func (c *Client) UpdateOAuthApp(ctx context.Context, id OAuthAppId, body UpdateO
 // 409 `/api/v1/problems/public-oauth-app`. An unknown or deleted app, or one that another
 // user registered, is a 404.
 //
-// Corresponds with POST /oauth_apps/{id}/secret (the `RotateOAuthAppSecret` operationId).
+// Corresponds with POST /oauth_apps/{id}/rotate_secret (the `RotateOAuthAppSecret` operationId).
 func (c *Client) RotateOAuthAppSecret(ctx context.Context, id OAuthAppId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRotateOAuthAppSecretRequest(c.Server, id)
 	if err != nil {
@@ -30729,6 +30726,27 @@ func (c *Client) SearchTags(ctx context.Context, params *SearchTagsParams, reqEd
 	return c.Client.Do(req)
 }
 
+// GetFederatedTimeline Get the federated timeline
+//
+// The public posts of the instance's accounts and of the remote accounts whose posts the
+// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
+// visibilities, `local` ones included, and boosts never appear on it. The instance setting
+// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
+// is `logged_in` an anonymous request is a 401.
+//
+// Corresponds with GET /timelines/federated (the `GetFederatedTimeline` operationId).
+func (c *Client) GetFederatedTimeline(ctx context.Context, params *GetFederatedTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetFederatedTimelineRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // GetHomeTimeline Get the home timeline
 //
 // The viewer's own posts and boosts and those of the accounts the viewer follows, newest
@@ -30776,27 +30794,6 @@ func (c *Client) GetListTimeline(ctx context.Context, id ListId, params *GetList
 // Corresponds with GET /timelines/local (the `GetLocalTimeline` operationId).
 func (c *Client) GetLocalTimeline(ctx context.Context, params *GetLocalTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetLocalTimelineRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// GetPublicTimeline Get the federated timeline
-//
-// The public posts of the instance's accounts and of the remote accounts whose posts the
-// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
-// visibilities, `local` ones included, and boosts never appear on it. The instance setting
-// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-// is `logged_in` an anonymous request is a 401.
-//
-// Corresponds with GET /timelines/public (the `GetPublicTimeline` operationId).
-func (c *Client) GetPublicTimeline(ctx context.Context, params *GetPublicTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetPublicTimelineRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -32436,6 +32433,40 @@ func NewGetAccountRequest(server string, id AccountId) (*http.Request, error) {
 	return req, nil
 }
 
+// NewUnblockAccountRequest constructs an http.Request for the UnblockAccount method
+func NewUnblockAccountRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/block", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewBlockAccountRequest constructs an http.Request for the BlockAccount method
 func NewBlockAccountRequest(server string, id AccountId) (*http.Request, error) {
 	var err error
@@ -32463,6 +32494,40 @@ func NewBlockAccountRequest(server string, id AccountId) (*http.Request, error) 
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUnfollowAccountRequest constructs an http.Request for the UnfollowAccount method
+func NewUnfollowAccountRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/follow", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -32697,6 +32762,40 @@ func NewListAccountListsRequest(server string, id AccountId) (*http.Request, err
 	return req, nil
 }
 
+// NewUnmuteAccountRequest constructs an http.Request for the UnmuteAccount method
+func NewUnmuteAccountRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/mute", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewMuteAccountRequest calls the generic MuteAccount builder with application/json body
 func NewMuteAccountRequest(server string, id AccountId, body MuteAccountJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -32887,8 +32986,8 @@ func NewListAccountStatusesRequest(server string, id Id, params *ListAccountStat
 	return req, nil
 }
 
-// NewSubscribeAccountRequest constructs an http.Request for the SubscribeAccount method
-func NewSubscribeAccountRequest(server string, id AccountId) (*http.Request, error) {
+// NewUnsubscribeAccountRequest constructs an http.Request for the UnsubscribeAccount method
+func NewUnsubscribeAccountRequest(server string, id AccountId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -32913,7 +33012,7 @@ func NewSubscribeAccountRequest(server string, id AccountId) (*http.Request, err
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -32921,8 +33020,8 @@ func NewSubscribeAccountRequest(server string, id AccountId) (*http.Request, err
 	return req, nil
 }
 
-// NewUnblockAccountRequest constructs an http.Request for the UnblockAccount method
-func NewUnblockAccountRequest(server string, id AccountId) (*http.Request, error) {
+// NewSubscribeAccountRequest constructs an http.Request for the SubscribeAccount method
+func NewSubscribeAccountRequest(server string, id AccountId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -32937,109 +33036,7 @@ func NewUnblockAccountRequest(server string, id AccountId) (*http.Request, error
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/accounts/%s/unblock", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUnfollowAccountRequest constructs an http.Request for the UnfollowAccount method
-func NewUnfollowAccountRequest(server string, id AccountId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/accounts/%s/unfollow", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUnmuteAccountRequest constructs an http.Request for the UnmuteAccount method
-func NewUnmuteAccountRequest(server string, id AccountId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/accounts/%s/unmute", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUnsubscribeAccountRequest constructs an http.Request for the UnsubscribeAccount method
-func NewUnsubscribeAccountRequest(server string, id AccountId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/accounts/%s/unsubscribe", pathParam0)
+	operationPath := fmt.Sprintf("/accounts/%s/subscribe", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -36956,46 +36953,6 @@ func NewListLinkCardDomainRulesRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewSetLinkCardDomainRuleRequest calls the generic SetLinkCardDomainRule builder with application/json body
-func NewSetLinkCardDomainRuleRequest(server string, body SetLinkCardDomainRuleJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewSetLinkCardDomainRuleRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewSetLinkCardDomainRuleRequestWithBody constructs an http.Request for the SetLinkCardDomainRule method, with any body, and a specified content type
-func NewSetLinkCardDomainRuleRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/admin/link_card_domains")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
 // NewRemoveLinkCardDomainRuleRequest constructs an http.Request for the RemoveLinkCardDomainRule method
 func NewRemoveLinkCardDomainRuleRequest(server string, domain string) (*http.Request, error) {
 	var err error
@@ -37026,6 +36983,53 @@ func NewRemoveLinkCardDomainRuleRequest(server string, domain string) (*http.Req
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewSetLinkCardDomainRuleRequest calls the generic SetLinkCardDomainRule builder with application/json body
+func NewSetLinkCardDomainRuleRequest(server string, domain string, body SetLinkCardDomainRuleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetLinkCardDomainRuleRequestWithBody(server, domain, "application/json", bodyReader)
+}
+
+// NewSetLinkCardDomainRuleRequestWithBody constructs an http.Request for the SetLinkCardDomainRule method, with any body, and a specified content type
+func NewSetLinkCardDomainRuleRequestWithBody(server string, domain string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "domain", domain, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/link_card_domains/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -41217,7 +41221,7 @@ func NewAcceptFollowRequestRequest(server string, id AccountId) (*http.Request, 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/follow_requests/%s/authorize", pathParam0)
+	operationPath := fmt.Sprintf("/follow_requests/%s/accept", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -43114,7 +43118,7 @@ func NewRotateOAuthAppSecretRequest(server string, id OAuthAppId) (*http.Request
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/oauth_apps/%s/secret", pathParam0)
+	operationPath := fmt.Sprintf("/oauth_apps/%s/rotate_secret", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -45305,6 +45309,72 @@ func NewSearchTagsRequest(server string, params *SearchTagsParams) (*http.Reques
 	return req, nil
 }
 
+// NewGetFederatedTimelineRequest constructs an http.Request for the GetFederatedTimeline method
+func NewGetFederatedTimelineRequest(server string, params *GetFederatedTimelineParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/timelines/federated")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetHomeTimelineRequest constructs an http.Request for the GetHomeTimeline method
 func NewGetHomeTimelineRequest(server string, params *GetHomeTimelineParams) (*http.Request, error) {
 	var err error
@@ -45454,72 +45524,6 @@ func NewGetLocalTimelineRequest(server string, params *GetLocalTimelineParams) (
 	}
 
 	operationPath := fmt.Sprintf("/timelines/local")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		// queryValues collects non-styled parameters (passthrough, JSON)
-		// that are safe to round-trip through url.Values.Encode().
-		queryValues := queryURL.Query()
-		// rawQueryFragments collects pre-encoded query fragments from
-		// styled parameters, preserving literal commas as delimiters
-		// per the OpenAPI spec (e.g. "color=blue,black,brown").
-		var rawQueryFragments []string
-
-		if params.Cursor != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if params.Limit != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if encoded := queryValues.Encode(); encoded != "" {
-			rawQueryFragments = append(rawQueryFragments, encoded)
-		}
-		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetPublicTimelineRequest constructs an http.Request for the GetPublicTimeline method
-func NewGetPublicTimelineRequest(server string, params *GetPublicTimelineParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/timelines/public")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -47566,6 +47570,16 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /accounts/{id} (the `GetAccount` operationId).
 	GetAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*GetAccountResponse, error)
 
+	// UnblockAccountWithResponse Unblock an account
+	//
+	// The follows that the block ended stay ended. Without a block it changes nothing. It also
+	// works on an account that blocks the user.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /accounts/{id}/block (the `UnblockAccount` operationId).
+	UnblockAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnblockAccountResponse, error)
+
 	// BlockAccountWithResponse Block an account
 	//
 	// Ends the follows between the viewer and the account in both directions and keeps
@@ -47578,6 +47592,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/block (the `BlockAccount` operationId).
 	BlockAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*BlockAccountResponse, error)
+
+	// UnfollowAccountWithResponse Unfollow an account
+	//
+	// Ends the follow or withdraws the follow request. Without one it changes nothing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /accounts/{id}/follow (the `UnfollowAccount` operationId).
+	UnfollowAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnfollowAccountResponse, error)
 
 	// FollowAccountWithBodyWithResponse Follow an account
 	//
@@ -47643,6 +47666,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /accounts/{id}/lists (the `ListAccountLists` operationId).
 	ListAccountListsWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*ListAccountListsResponse, error)
 
+	// UnmuteAccountWithResponse Unmute an account
+	//
+	// Without a mute it changes nothing. It also works on an account that blocks the user.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /accounts/{id}/mute (the `UnmuteAccount` operationId).
+	UnmuteAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnmuteAccountResponse, error)
+
 	// MuteAccountWithBodyWithResponse Mute an account
 	//
 	// Hides the account's posts, and unless `notifications` is false its notifications,
@@ -47696,6 +47728,16 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
 	ListAccountStatusesWithResponse(ctx context.Context, id Id, params *ListAccountStatusesParams, reqEditors ...RequestEditorFn) (*ListAccountStatusesResponse, error)
 
+	// UnsubscribeAccountWithResponse Stop being notified of an account's new posts
+	//
+	// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+	// request that awaits the account's server. Without a subscription it changes nothing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /accounts/{id}/subscribe (the `UnsubscribeAccount` operationId).
+	UnsubscribeAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnsubscribeAccountResponse, error)
+
 	// SubscribeAccountWithResponse Be notified of an account's new posts
 	//
 	// Subscribes the viewer to the account's new posts: each new post that the viewer may see
@@ -47710,44 +47752,6 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/subscribe (the `SubscribeAccount` operationId).
 	SubscribeAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*SubscribeAccountResponse, error)
-
-	// UnblockAccountWithResponse Unblock an account
-	//
-	// The follows that the block ended stay ended. Without a block it changes nothing. It also
-	// works on an account that blocks the user.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /accounts/{id}/unblock (the `UnblockAccount` operationId).
-	UnblockAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnblockAccountResponse, error)
-
-	// UnfollowAccountWithResponse Unfollow an account
-	//
-	// Ends the follow or withdraws the follow request. Without one it changes nothing.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /accounts/{id}/unfollow (the `UnfollowAccount` operationId).
-	UnfollowAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnfollowAccountResponse, error)
-
-	// UnmuteAccountWithResponse Unmute an account
-	//
-	// Without a mute it changes nothing. It also works on an account that blocks the user.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
-	UnmuteAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnmuteAccountResponse, error)
-
-	// UnsubscribeAccountWithResponse Stop being notified of an account's new posts
-	//
-	// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
-	// request that awaits the account's server. Without a subscription it changes nothing.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /accounts/{id}/unsubscribe (the `UnsubscribeAccount` operationId).
-	UnsubscribeAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnsubscribeAccountResponse, error)
 
 	// GetAccountActionWithResponse Get a moderation action on an account
 	//
@@ -49210,32 +49214,6 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /admin/link_card_domains (the `ListLinkCardDomainRules` operationId).
 	ListLinkCardDomainRulesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListLinkCardDomainRulesResponse, error)
 
-	// SetLinkCardDomainRuleWithBodyWithResponse Set the rule of a domain for the link card crawler
-	//
-	// Records the rule of a domain, replacing the rule it has, and records the change in the
-	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
-	// link cards: federation and other remote media follow the domain actions. A domain that is
-	// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-	// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
-	//
-	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
-	SetLinkCardDomainRuleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error)
-
-	// SetLinkCardDomainRuleWithResponse Set the rule of a domain for the link card crawler
-	//
-	// Records the rule of a domain, replacing the rule it has, and records the change in the
-	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
-	// link cards: federation and other remote media follow the domain actions. A domain that is
-	// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-	// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
-	//
-	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
-	SetLinkCardDomainRuleWithResponse(ctx context.Context, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error)
-
 	// RemoveLinkCardDomainRuleWithResponse Remove the rule of a domain for the link card crawler
 	//
 	// Removes the rule of a domain and records it in the audit log. The cards already kept show
@@ -49247,6 +49225,32 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with DELETE /admin/link_card_domains/{domain} (the `RemoveLinkCardDomainRule` operationId).
 	RemoveLinkCardDomainRuleWithResponse(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*RemoveLinkCardDomainRuleResponse, error)
+
+	// SetLinkCardDomainRuleWithBodyWithResponse Set the rule of a domain for the link card crawler
+	//
+	// Records the rule of a domain, replacing the rule it has, and records the change in the
+	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+	// link cards: federation and other remote media follow the domain actions. A domain that is
+	// not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+	// 422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /admin/link_card_domains/{domain} (the `SetLinkCardDomainRule` operationId).
+	SetLinkCardDomainRuleWithBodyWithResponse(ctx context.Context, domain string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error)
+
+	// SetLinkCardDomainRuleWithResponse Set the rule of a domain for the link card crawler
+	//
+	// Records the rule of a domain, replacing the rule it has, and records the change in the
+	// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+	// link cards: federation and other remote media follow the domain actions. A domain that is
+	// not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+	// 422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /admin/link_card_domains/{domain} (the `SetLinkCardDomainRule` operationId).
+	SetLinkCardDomainRuleWithResponse(ctx context.Context, domain string, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error)
 
 	// ListAdminLoginProvidersWithResponse List the login providers
 	//
@@ -50870,7 +50874,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /follow_requests/{id}/authorize (the `AcceptFollowRequest` operationId).
+	// Corresponds with POST /follow_requests/{id}/accept (the `AcceptFollowRequest` operationId).
 	AcceptFollowRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*AcceptFollowRequestResponse, error)
 
 	// RejectFollowRequestWithResponse Reject a follow request
@@ -51643,7 +51647,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
-	// Corresponds with POST /oauth_apps/{id}/secret (the `RotateOAuthAppSecret` operationId).
+	// Corresponds with POST /oauth_apps/{id}/rotate_secret (the `RotateOAuthAppSecret` operationId).
 	RotateOAuthAppSecretWithResponse(ctx context.Context, id OAuthAppId, reqEditors ...RequestEditorFn) (*RotateOAuthAppSecretResponse, error)
 
 	// IssueOAuthAppTokenWithBodyWithResponse Issue tokens of an OAuth app to the authenticated user
@@ -52574,6 +52578,19 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /tags/search (the `SearchTags` operationId).
 	SearchTagsWithResponse(ctx context.Context, params *SearchTagsParams, reqEditors ...RequestEditorFn) (*SearchTagsResponse, error)
 
+	// GetFederatedTimelineWithResponse Get the federated timeline
+	//
+	// The public posts of the instance's accounts and of the remote accounts whose posts the
+	// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
+	// visibilities, `local` ones included, and boosts never appear on it. The instance setting
+	// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
+	// is `logged_in` an anonymous request is a 401.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /timelines/federated (the `GetFederatedTimeline` operationId).
+	GetFederatedTimelineWithResponse(ctx context.Context, params *GetFederatedTimelineParams, reqEditors ...RequestEditorFn) (*GetFederatedTimelineResponse, error)
+
 	// GetHomeTimelineWithResponse Get the home timeline
 	//
 	// The viewer's own posts and boosts and those of the accounts the viewer follows, newest
@@ -52606,19 +52623,6 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /timelines/local (the `GetLocalTimeline` operationId).
 	GetLocalTimelineWithResponse(ctx context.Context, params *GetLocalTimelineParams, reqEditors ...RequestEditorFn) (*GetLocalTimelineResponse, error)
-
-	// GetPublicTimelineWithResponse Get the federated timeline
-	//
-	// The public posts of the instance's accounts and of the remote accounts whose posts the
-	// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
-	// visibilities, `local` ones included, and boosts never appear on it. The instance setting
-	// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-	// is `logged_in` an anonymous request is a 401.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with GET /timelines/public (the `GetPublicTimeline` operationId).
-	GetPublicTimelineWithResponse(ctx context.Context, params *GetPublicTimelineParams, reqEditors ...RequestEditorFn) (*GetPublicTimelineResponse, error)
 
 	// GetHashtagTimelineWithResponse Get the timeline of a hashtag
 	//
@@ -54186,6 +54190,71 @@ func (r GetAccountResponse) ContentType() string {
 	return ""
 }
 
+// UnblockAccountResponse200Headers the declared response headers of an HTTP 200 response for UnblockAccount
+type UnblockAccountResponse200Headers struct {
+	CacheControl *string
+}
+
+// UnblockAccountResponseDefaultHeaders the declared response headers of an HTTP default response for UnblockAccount
+type UnblockAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UnblockAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UnblockAccountResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UnblockAccountResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnblockAccountResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UnblockAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnblockAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnblockAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnblockAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnblockAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // BlockAccountResponse200Headers the declared response headers of an HTTP 200 response for BlockAccount
 type BlockAccountResponse200Headers struct {
 	CacheControl *string
@@ -54245,6 +54314,71 @@ func (r BlockAccountResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BlockAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UnfollowAccountResponse200Headers the declared response headers of an HTTP 200 response for UnfollowAccount
+type UnfollowAccountResponse200Headers struct {
+	CacheControl *string
+}
+
+// UnfollowAccountResponseDefaultHeaders the declared response headers of an HTTP default response for UnfollowAccount
+type UnfollowAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UnfollowAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UnfollowAccountResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UnfollowAccountResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnfollowAccountResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UnfollowAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnfollowAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnfollowAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnfollowAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnfollowAccountResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -54511,6 +54645,71 @@ func (r ListAccountListsResponse) ContentType() string {
 	return ""
 }
 
+// UnmuteAccountResponse200Headers the declared response headers of an HTTP 200 response for UnmuteAccount
+type UnmuteAccountResponse200Headers struct {
+	CacheControl *string
+}
+
+// UnmuteAccountResponseDefaultHeaders the declared response headers of an HTTP default response for UnmuteAccount
+type UnmuteAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UnmuteAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UnmuteAccountResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UnmuteAccountResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnmuteAccountResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UnmuteAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnmuteAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnmuteAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnmuteAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnmuteAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // MuteAccountResponse200Headers the declared response headers of an HTTP 200 response for MuteAccount
 type MuteAccountResponse200Headers struct {
 	CacheControl *string
@@ -54706,266 +54905,6 @@ func (r ListAccountStatusesResponse) ContentType() string {
 	return ""
 }
 
-// SubscribeAccountResponse200Headers the declared response headers of an HTTP 200 response for SubscribeAccount
-type SubscribeAccountResponse200Headers struct {
-	CacheControl *string
-}
-
-// SubscribeAccountResponseDefaultHeaders the declared response headers of an HTTP default response for SubscribeAccount
-type SubscribeAccountResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type SubscribeAccountResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Relationship
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *SubscribeAccountResponse200Headers
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *SubscribeAccountResponseDefaultHeaders
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r SubscribeAccountResponse) GetJSON200() *Relationship {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r SubscribeAccountResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r SubscribeAccountResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r SubscribeAccountResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r SubscribeAccountResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r SubscribeAccountResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// UnblockAccountResponse200Headers the declared response headers of an HTTP 200 response for UnblockAccount
-type UnblockAccountResponse200Headers struct {
-	CacheControl *string
-}
-
-// UnblockAccountResponseDefaultHeaders the declared response headers of an HTTP default response for UnblockAccount
-type UnblockAccountResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type UnblockAccountResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Relationship
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *UnblockAccountResponse200Headers
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *UnblockAccountResponseDefaultHeaders
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r UnblockAccountResponse) GetJSON200() *Relationship {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r UnblockAccountResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r UnblockAccountResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r UnblockAccountResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UnblockAccountResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r UnblockAccountResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// UnfollowAccountResponse200Headers the declared response headers of an HTTP 200 response for UnfollowAccount
-type UnfollowAccountResponse200Headers struct {
-	CacheControl *string
-}
-
-// UnfollowAccountResponseDefaultHeaders the declared response headers of an HTTP default response for UnfollowAccount
-type UnfollowAccountResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type UnfollowAccountResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Relationship
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *UnfollowAccountResponse200Headers
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *UnfollowAccountResponseDefaultHeaders
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r UnfollowAccountResponse) GetJSON200() *Relationship {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r UnfollowAccountResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r UnfollowAccountResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r UnfollowAccountResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UnfollowAccountResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r UnfollowAccountResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// UnmuteAccountResponse200Headers the declared response headers of an HTTP 200 response for UnmuteAccount
-type UnmuteAccountResponse200Headers struct {
-	CacheControl *string
-}
-
-// UnmuteAccountResponseDefaultHeaders the declared response headers of an HTTP default response for UnmuteAccount
-type UnmuteAccountResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type UnmuteAccountResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Relationship
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *UnmuteAccountResponse200Headers
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *UnmuteAccountResponseDefaultHeaders
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r UnmuteAccountResponse) GetJSON200() *Relationship {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r UnmuteAccountResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r UnmuteAccountResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r UnmuteAccountResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UnmuteAccountResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r UnmuteAccountResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
 // UnsubscribeAccountResponse200Headers the declared response headers of an HTTP 200 response for UnsubscribeAccount
 type UnsubscribeAccountResponse200Headers struct {
 	CacheControl *string
@@ -55025,6 +54964,71 @@ func (r UnsubscribeAccountResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UnsubscribeAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// SubscribeAccountResponse200Headers the declared response headers of an HTTP 200 response for SubscribeAccount
+type SubscribeAccountResponse200Headers struct {
+	CacheControl *string
+}
+
+// SubscribeAccountResponseDefaultHeaders the declared response headers of an HTTP default response for SubscribeAccount
+type SubscribeAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SubscribeAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SubscribeAccountResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SubscribeAccountResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SubscribeAccountResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SubscribeAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SubscribeAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SubscribeAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SubscribeAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SubscribeAccountResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -60459,6 +60463,57 @@ func (r ListLinkCardDomainRulesResponse) ContentType() string {
 	return ""
 }
 
+// RemoveLinkCardDomainRuleResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveLinkCardDomainRule
+type RemoveLinkCardDomainRuleResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RemoveLinkCardDomainRuleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RemoveLinkCardDomainRuleResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RemoveLinkCardDomainRuleResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveLinkCardDomainRuleResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveLinkCardDomainRuleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveLinkCardDomainRuleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveLinkCardDomainRuleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // SetLinkCardDomainRuleResponse200Headers the declared response headers of an HTTP 200 response for SetLinkCardDomainRule
 type SetLinkCardDomainRuleResponse200Headers struct {
 	CacheControl *string
@@ -60518,57 +60573,6 @@ func (r SetLinkCardDomainRuleResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SetLinkCardDomainRuleResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// RemoveLinkCardDomainRuleResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveLinkCardDomainRule
-type RemoveLinkCardDomainRuleResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type RemoveLinkCardDomainRuleResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *RemoveLinkCardDomainRuleResponseDefaultHeaders
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r RemoveLinkCardDomainRuleResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r RemoveLinkCardDomainRuleResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r RemoveLinkCardDomainRuleResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r RemoveLinkCardDomainRuleResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r RemoveLinkCardDomainRuleResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -64167,6 +64171,11 @@ func (r UpdateSupporterPlanResponse) ContentType() string {
 	return ""
 }
 
+// RetireSupporterPlanResponse200Headers the declared response headers of an HTTP 200 response for RetireSupporterPlan
+type RetireSupporterPlanResponse200Headers struct {
+	CacheControl *string
+}
+
 // RetireSupporterPlanResponseDefaultHeaders the declared response headers of an HTTP default response for RetireSupporterPlan
 type RetireSupporterPlanResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -64178,10 +64187,19 @@ type RetireSupporterPlanResponseDefaultHeaders struct {
 type RetireSupporterPlanResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminSupporterPlan
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RetireSupporterPlanResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *RetireSupporterPlanResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RetireSupporterPlanResponse) GetJSON200() *AdminSupporterPlan {
+	return r.JSON200
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -73478,6 +73496,71 @@ func (r SearchTagsResponse) ContentType() string {
 	return ""
 }
 
+// GetFederatedTimelineResponse200Headers the declared response headers of an HTTP 200 response for GetFederatedTimeline
+type GetFederatedTimelineResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetFederatedTimelineResponseDefaultHeaders the declared response headers of an HTTP default response for GetFederatedTimeline
+type GetFederatedTimelineResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetFederatedTimelineResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *StatusPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetFederatedTimelineResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetFederatedTimelineResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetFederatedTimelineResponse) GetJSON200() *StatusPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetFederatedTimelineResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetFederatedTimelineResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetFederatedTimelineResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetFederatedTimelineResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetFederatedTimelineResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetHomeTimelineResponse200Headers the declared response headers of an HTTP 200 response for GetHomeTimeline
 type GetHomeTimelineResponse200Headers struct {
 	CacheControl *string
@@ -73667,71 +73750,6 @@ func (r GetLocalTimelineResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetLocalTimelineResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// GetPublicTimelineResponse200Headers the declared response headers of an HTTP 200 response for GetPublicTimeline
-type GetPublicTimelineResponse200Headers struct {
-	CacheControl *string
-}
-
-// GetPublicTimelineResponseDefaultHeaders the declared response headers of an HTTP default response for GetPublicTimeline
-type GetPublicTimelineResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type GetPublicTimelineResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *StatusPage
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *GetPublicTimelineResponse200Headers
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *GetPublicTimelineResponseDefaultHeaders
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r GetPublicTimelineResponse) GetJSON200() *StatusPage {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r GetPublicTimelineResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r GetPublicTimelineResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r GetPublicTimelineResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetPublicTimelineResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r GetPublicTimelineResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -76434,6 +76452,22 @@ func (c *ClientWithResponses) GetAccountWithResponse(ctx context.Context, id Acc
 	return ParseGetAccountResponse(rsp)
 }
 
+// UnblockAccountWithResponse Unblock an account
+//
+// The follows that the block ended stay ended. Without a block it changes nothing. It also
+// works on an account that blocks the user.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /accounts/{id}/block (the `UnblockAccount` operationId).
+func (c *ClientWithResponses) UnblockAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnblockAccountResponse, error) {
+	rsp, err := c.UnblockAccount(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnblockAccountResponse(rsp)
+}
+
 // BlockAccountWithResponse Block an account
 //
 // Ends the follows between the viewer and the account in both directions and keeps
@@ -76451,6 +76485,21 @@ func (c *ClientWithResponses) BlockAccountWithResponse(ctx context.Context, id A
 		return nil, err
 	}
 	return ParseBlockAccountResponse(rsp)
+}
+
+// UnfollowAccountWithResponse Unfollow an account
+//
+// Ends the follow or withdraws the follow request. Without one it changes nothing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /accounts/{id}/follow (the `UnfollowAccount` operationId).
+func (c *ClientWithResponses) UnfollowAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnfollowAccountResponse, error) {
+	rsp, err := c.UnfollowAccount(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnfollowAccountResponse(rsp)
 }
 
 // FollowAccountWithBodyWithResponse Follow an account
@@ -76547,6 +76596,21 @@ func (c *ClientWithResponses) ListAccountListsWithResponse(ctx context.Context, 
 	return ParseListAccountListsResponse(rsp)
 }
 
+// UnmuteAccountWithResponse Unmute an account
+//
+// Without a mute it changes nothing. It also works on an account that blocks the user.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /accounts/{id}/mute (the `UnmuteAccount` operationId).
+func (c *ClientWithResponses) UnmuteAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnmuteAccountResponse, error) {
+	rsp, err := c.UnmuteAccount(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnmuteAccountResponse(rsp)
+}
+
 // MuteAccountWithBodyWithResponse Mute an account
 //
 // Hides the account's posts, and unless `notifications` is false its notifications,
@@ -76624,6 +76688,22 @@ func (c *ClientWithResponses) ListAccountStatusesWithResponse(ctx context.Contex
 	return ParseListAccountStatusesResponse(rsp)
 }
 
+// UnsubscribeAccountWithResponse Stop being notified of an account's new posts
+//
+// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
+// request that awaits the account's server. Without a subscription it changes nothing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /accounts/{id}/subscribe (the `UnsubscribeAccount` operationId).
+func (c *ClientWithResponses) UnsubscribeAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnsubscribeAccountResponse, error) {
+	rsp, err := c.UnsubscribeAccount(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnsubscribeAccountResponse(rsp)
+}
+
 // SubscribeAccountWithResponse Be notified of an account's new posts
 //
 // Subscribes the viewer to the account's new posts: each new post that the viewer may see
@@ -76643,68 +76723,6 @@ func (c *ClientWithResponses) SubscribeAccountWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseSubscribeAccountResponse(rsp)
-}
-
-// UnblockAccountWithResponse Unblock an account
-//
-// The follows that the block ended stay ended. Without a block it changes nothing. It also
-// works on an account that blocks the user.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /accounts/{id}/unblock (the `UnblockAccount` operationId).
-func (c *ClientWithResponses) UnblockAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnblockAccountResponse, error) {
-	rsp, err := c.UnblockAccount(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUnblockAccountResponse(rsp)
-}
-
-// UnfollowAccountWithResponse Unfollow an account
-//
-// Ends the follow or withdraws the follow request. Without one it changes nothing.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /accounts/{id}/unfollow (the `UnfollowAccount` operationId).
-func (c *ClientWithResponses) UnfollowAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnfollowAccountResponse, error) {
-	rsp, err := c.UnfollowAccount(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUnfollowAccountResponse(rsp)
-}
-
-// UnmuteAccountWithResponse Unmute an account
-//
-// Without a mute it changes nothing. It also works on an account that blocks the user.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
-func (c *ClientWithResponses) UnmuteAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnmuteAccountResponse, error) {
-	rsp, err := c.UnmuteAccount(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUnmuteAccountResponse(rsp)
-}
-
-// UnsubscribeAccountWithResponse Stop being notified of an account's new posts
-//
-// Ends the viewer's subscription to the account's new posts, and one asked for with a follow
-// request that awaits the account's server. Without a subscription it changes nothing.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /accounts/{id}/unsubscribe (the `UnsubscribeAccount` operationId).
-func (c *ClientWithResponses) UnsubscribeAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*UnsubscribeAccountResponse, error) {
-	rsp, err := c.UnsubscribeAccount(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUnsubscribeAccountResponse(rsp)
 }
 
 // GetAccountActionWithResponse Get a moderation action on an account
@@ -78798,44 +78816,6 @@ func (c *ClientWithResponses) ListLinkCardDomainRulesWithResponse(ctx context.Co
 	return ParseListLinkCardDomainRulesResponse(rsp)
 }
 
-// SetLinkCardDomainRuleWithBodyWithResponse Set the rule of a domain for the link card crawler
-//
-// Records the rule of a domain, replacing the rule it has, and records the change in the
-// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
-// link cards: federation and other remote media follow the domain actions. A domain that is
-// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
-//
-// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
-func (c *ClientWithResponses) SetLinkCardDomainRuleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error) {
-	rsp, err := c.SetLinkCardDomainRuleWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSetLinkCardDomainRuleResponse(rsp)
-}
-
-// SetLinkCardDomainRuleWithResponse Set the rule of a domain for the link card crawler
-//
-// Records the rule of a domain, replacing the rule it has, and records the change in the
-// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
-// link cards: federation and other remote media follow the domain actions. A domain that is
-// not a host, a note longer than 5,000 characters, or a new rule beyond 1,000 is a 422 naming
-// the property (`domain`, `note`, `rules`). Needs the `manage_settings` permission.
-//
-// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /admin/link_card_domains (the `SetLinkCardDomainRule` operationId).
-func (c *ClientWithResponses) SetLinkCardDomainRuleWithResponse(ctx context.Context, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error) {
-	rsp, err := c.SetLinkCardDomainRule(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSetLinkCardDomainRuleResponse(rsp)
-}
-
 // RemoveLinkCardDomainRuleWithResponse Remove the rule of a domain for the link card crawler
 //
 // Removes the rule of a domain and records it in the audit log. The cards already kept show
@@ -78852,6 +78832,44 @@ func (c *ClientWithResponses) RemoveLinkCardDomainRuleWithResponse(ctx context.C
 		return nil, err
 	}
 	return ParseRemoveLinkCardDomainRuleResponse(rsp)
+}
+
+// SetLinkCardDomainRuleWithBodyWithResponse Set the rule of a domain for the link card crawler
+//
+// Records the rule of a domain, replacing the rule it has, and records the change in the
+// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+// link cards: federation and other remote media follow the domain actions. A domain that is
+// not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+// 422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /admin/link_card_domains/{domain} (the `SetLinkCardDomainRule` operationId).
+func (c *ClientWithResponses) SetLinkCardDomainRuleWithBodyWithResponse(ctx context.Context, domain string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error) {
+	rsp, err := c.SetLinkCardDomainRuleWithBody(ctx, domain, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetLinkCardDomainRuleResponse(rsp)
+}
+
+// SetLinkCardDomainRuleWithResponse Set the rule of a domain for the link card crawler
+//
+// Records the rule of a domain, replacing the rule it has, and records the change in the
+// audit log. The rule takes effect at once, also on the cards already kept, and bears only on
+// link cards: federation and other remote media follow the domain actions. A domain that is
+// not a host is a 400; a note longer than 5,000 characters or a new rule beyond 1,000 is a
+// 422 naming the property (`note`, `rules`). Needs the `manage_settings` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /admin/link_card_domains/{domain} (the `SetLinkCardDomainRule` operationId).
+func (c *ClientWithResponses) SetLinkCardDomainRuleWithResponse(ctx context.Context, domain string, body SetLinkCardDomainRuleJSONRequestBody, reqEditors ...RequestEditorFn) (*SetLinkCardDomainRuleResponse, error) {
+	rsp, err := c.SetLinkCardDomainRule(ctx, domain, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetLinkCardDomainRuleResponse(rsp)
 }
 
 // ListAdminLoginProvidersWithResponse List the login providers
@@ -81226,7 +81244,7 @@ func (c *ClientWithResponses) ListFollowRequestsWithResponse(ctx context.Context
 //
 // Returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /follow_requests/{id}/authorize (the `AcceptFollowRequest` operationId).
+// Corresponds with POST /follow_requests/{id}/accept (the `AcceptFollowRequest` operationId).
 func (c *ClientWithResponses) AcceptFollowRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*AcceptFollowRequestResponse, error) {
 	rsp, err := c.AcceptFollowRequest(ctx, id, reqEditors...)
 	if err != nil {
@@ -82335,7 +82353,7 @@ func (c *ClientWithResponses) UpdateOAuthAppWithResponse(ctx context.Context, id
 //
 // Returns a wrapper object for the known response body format(s).
 //
-// Corresponds with POST /oauth_apps/{id}/secret (the `RotateOAuthAppSecret` operationId).
+// Corresponds with POST /oauth_apps/{id}/rotate_secret (the `RotateOAuthAppSecret` operationId).
 func (c *ClientWithResponses) RotateOAuthAppSecretWithResponse(ctx context.Context, id OAuthAppId, reqEditors ...RequestEditorFn) (*RotateOAuthAppSecretResponse, error) {
 	rsp, err := c.RotateOAuthAppSecret(ctx, id, reqEditors...)
 	if err != nil {
@@ -83722,6 +83740,25 @@ func (c *ClientWithResponses) SearchTagsWithResponse(ctx context.Context, params
 	return ParseSearchTagsResponse(rsp)
 }
 
+// GetFederatedTimelineWithResponse Get the federated timeline
+//
+// The public posts of the instance's accounts and of the remote accounts whose posts the
+// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
+// visibilities, `local` ones included, and boosts never appear on it. The instance setting
+// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
+// is `logged_in` an anonymous request is a 401.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /timelines/federated (the `GetFederatedTimeline` operationId).
+func (c *ClientWithResponses) GetFederatedTimelineWithResponse(ctx context.Context, params *GetFederatedTimelineParams, reqEditors ...RequestEditorFn) (*GetFederatedTimelineResponse, error) {
+	rsp, err := c.GetFederatedTimeline(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetFederatedTimelineResponse(rsp)
+}
+
 // GetHomeTimelineWithResponse Get the home timeline
 //
 // The viewer's own posts and boosts and those of the accounts the viewer follows, newest
@@ -83771,25 +83808,6 @@ func (c *ClientWithResponses) GetLocalTimelineWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseGetLocalTimelineResponse(rsp)
-}
-
-// GetPublicTimelineWithResponse Get the federated timeline
-//
-// The public posts of the instance's accounts and of the remote accounts whose posts the
-// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
-// visibilities, `local` ones included, and boosts never appear on it. The instance setting
-// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-// is `logged_in` an anonymous request is a 401.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with GET /timelines/public (the `GetPublicTimeline` operationId).
-func (c *ClientWithResponses) GetPublicTimelineWithResponse(ctx context.Context, params *GetPublicTimelineParams, reqEditors ...RequestEditorFn) (*GetPublicTimelineResponse, error) {
-	rsp, err := c.GetPublicTimeline(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetPublicTimelineResponse(rsp)
 }
 
 // GetHashtagTimelineWithResponse Get the timeline of a hashtag
@@ -85831,6 +85849,83 @@ func ParseGetAccountResponse(rsp *http.Response) (*GetAccountResponse, error) {
 	return response, nil
 }
 
+// ParseUnblockAccountResponse parses an HTTP response from a UnblockAccountWithResponse call
+func ParseUnblockAccountResponse(rsp *http.Response) (*UnblockAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnblockAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UnblockAccountResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UnblockAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseBlockAccountResponse parses an HTTP response from a BlockAccountWithResponse call
 func ParseBlockAccountResponse(rsp *http.Response) (*BlockAccountResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -85874,6 +85969,83 @@ func ParseBlockAccountResponse(rsp *http.Response) (*BlockAccountResponse, error
 		response.Headers200 = &headers
 	case true:
 		var headers BlockAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUnfollowAccountResponse parses an HTTP response from a UnfollowAccountWithResponse call
+func ParseUnfollowAccountResponse(rsp *http.Response) (*UnfollowAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnfollowAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UnfollowAccountResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UnfollowAccountResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -86216,6 +86388,83 @@ func ParseListAccountListsResponse(rsp *http.Response) (*ListAccountListsRespons
 	return response, nil
 }
 
+// ParseUnmuteAccountResponse parses an HTTP response from a UnmuteAccountWithResponse call
+func ParseUnmuteAccountResponse(rsp *http.Response) (*UnmuteAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnmuteAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UnmuteAccountResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UnmuteAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseMuteAccountResponse parses an HTTP response from a MuteAccountWithResponse call
 func ParseMuteAccountResponse(rsp *http.Response) (*MuteAccountResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -86447,314 +86696,6 @@ func ParseListAccountStatusesResponse(rsp *http.Response) (*ListAccountStatusesR
 	return response, nil
 }
 
-// ParseSubscribeAccountResponse parses an HTTP response from a SubscribeAccountWithResponse call
-func ParseSubscribeAccountResponse(rsp *http.Response) (*SubscribeAccountResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &SubscribeAccountResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Relationship
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case rsp.StatusCode == 200:
-		var headers SubscribeAccountResponse200Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		response.Headers200 = &headers
-	case true:
-		var headers SubscribeAccountResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseUnblockAccountResponse parses an HTTP response from a UnblockAccountWithResponse call
-func ParseUnblockAccountResponse(rsp *http.Response) (*UnblockAccountResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UnblockAccountResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Relationship
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case rsp.StatusCode == 200:
-		var headers UnblockAccountResponse200Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		response.Headers200 = &headers
-	case true:
-		var headers UnblockAccountResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseUnfollowAccountResponse parses an HTTP response from a UnfollowAccountWithResponse call
-func ParseUnfollowAccountResponse(rsp *http.Response) (*UnfollowAccountResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UnfollowAccountResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Relationship
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case rsp.StatusCode == 200:
-		var headers UnfollowAccountResponse200Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		response.Headers200 = &headers
-	case true:
-		var headers UnfollowAccountResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseUnmuteAccountResponse parses an HTTP response from a UnmuteAccountWithResponse call
-func ParseUnmuteAccountResponse(rsp *http.Response) (*UnmuteAccountResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UnmuteAccountResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Relationship
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case rsp.StatusCode == 200:
-		var headers UnmuteAccountResponse200Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		response.Headers200 = &headers
-	case true:
-		var headers UnmuteAccountResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
 // ParseUnsubscribeAccountResponse parses an HTTP response from a UnsubscribeAccountWithResponse call
 func ParseUnsubscribeAccountResponse(rsp *http.Response) (*UnsubscribeAccountResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -86798,6 +86739,83 @@ func ParseUnsubscribeAccountResponse(rsp *http.Response) (*UnsubscribeAccountRes
 		response.Headers200 = &headers
 	case true:
 		var headers UnsubscribeAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseSubscribeAccountResponse parses an HTTP response from a SubscribeAccountWithResponse call
+func ParseSubscribeAccountResponse(rsp *http.Response) (*SubscribeAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SubscribeAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SubscribeAccountResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers SubscribeAccountResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -93361,6 +93379,69 @@ func ParseListLinkCardDomainRulesResponse(rsp *http.Response) (*ListLinkCardDoma
 	return response, nil
 }
 
+// ParseRemoveLinkCardDomainRuleResponse parses an HTTP response from a RemoveLinkCardDomainRuleWithResponse call
+func ParseRemoveLinkCardDomainRuleResponse(rsp *http.Response) (*RemoveLinkCardDomainRuleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveLinkCardDomainRuleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers RemoveLinkCardDomainRuleResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseSetLinkCardDomainRuleResponse parses an HTTP response from a SetLinkCardDomainRuleWithResponse call
 func ParseSetLinkCardDomainRuleResponse(rsp *http.Response) (*SetLinkCardDomainRuleResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -93404,69 +93485,6 @@ func ParseSetLinkCardDomainRuleResponse(rsp *http.Response) (*SetLinkCardDomainR
 		response.Headers200 = &headers
 	case true:
 		var headers SetLinkCardDomainRuleResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseRemoveLinkCardDomainRuleResponse parses an HTTP response from a RemoveLinkCardDomainRuleWithResponse call
-func ParseRemoveLinkCardDomainRuleResponse(rsp *http.Response) (*RemoveLinkCardDomainRuleResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &RemoveLinkCardDomainRuleResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case rsp.StatusCode == 204:
-		break // No content-type
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case true:
-		var headers RemoveLinkCardDomainRuleResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -97863,8 +97881,12 @@ func ParseRetireSupporterPlanResponse(rsp *http.Response) (*RetireSupporterPlanR
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
-		break // No content-type
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminSupporterPlan
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -97876,6 +97898,16 @@ func ParseRetireSupporterPlanResponse(rsp *http.Response) (*RetireSupporterPlanR
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers RetireSupporterPlanResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers RetireSupporterPlanResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -108990,6 +109022,83 @@ func ParseSearchTagsResponse(rsp *http.Response) (*SearchTagsResponse, error) {
 	return response, nil
 }
 
+// ParseGetFederatedTimelineResponse parses an HTTP response from a GetFederatedTimelineWithResponse call
+func ParseGetFederatedTimelineResponse(rsp *http.Response) (*GetFederatedTimelineResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetFederatedTimelineResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StatusPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetFederatedTimelineResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetFederatedTimelineResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseGetHomeTimelineResponse parses an HTTP response from a GetHomeTimelineWithResponse call
 func ParseGetHomeTimelineResponse(rsp *http.Response) (*GetHomeTimelineResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -109187,83 +109296,6 @@ func ParseGetLocalTimelineResponse(rsp *http.Response) (*GetLocalTimelineRespons
 		response.Headers200 = &headers
 	case true:
 		var headers GetLocalTimelineResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseGetPublicTimelineResponse parses an HTTP response from a GetPublicTimelineWithResponse call
-func ParseGetPublicTimelineResponse(rsp *http.Response) (*GetPublicTimelineResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetPublicTimelineResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest StatusPage
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case rsp.StatusCode == 200:
-		var headers GetPublicTimelineResponse200Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		response.Headers200 = &headers
-	case true:
-		var headers GetPublicTimelineResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

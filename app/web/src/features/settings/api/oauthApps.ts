@@ -60,12 +60,12 @@ export function deleteOAuthAppMutation(api: Api) {
   };
 }
 
-/** Gives a confidential app a new secret (POST /oauth_apps/{id}/secret), as the options of useMutation. Returns the secret. */
+/** Gives a confidential app a new secret (POST /oauth_apps/{id}/rotate_secret), as the options of useMutation. Returns the secret. */
 export function rotateOAuthAppSecretMutation(api: Api) {
   return {
-    mutationKey: ["post", "/oauth_apps/{id}/secret"] as const,
+    mutationKey: ["post", "/oauth_apps/{id}/rotate_secret"] as const,
     mutationFn: async (id: string): Promise<string> => {
-      const { data, error } = await api.fetch.POST("/oauth_apps/{id}/secret", { params: { path: { id } } });
+      const { data, error } = await api.fetch.POST("/oauth_apps/{id}/rotate_secret", { params: { path: { id } } });
       if (data === undefined) throw new ApiError(error);
       return data.client_secret;
     },

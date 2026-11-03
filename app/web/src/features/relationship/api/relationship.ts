@@ -92,19 +92,19 @@ export async function changeRelationship(api: Api, id: string, action: Relations
       case "follow":
         return api.fetch.POST("/accounts/{id}/follow", init);
       case "unfollow":
-        return api.fetch.POST("/accounts/{id}/unfollow", init);
+        return api.fetch.DELETE("/accounts/{id}/follow", init);
       case "block":
         return api.fetch.POST("/accounts/{id}/block", init);
       case "unblock":
-        return api.fetch.POST("/accounts/{id}/unblock", init);
+        return api.fetch.DELETE("/accounts/{id}/block", init);
       case "mute":
         return api.fetch.POST("/accounts/{id}/mute", init);
       case "unmute":
-        return api.fetch.POST("/accounts/{id}/unmute", init);
+        return api.fetch.DELETE("/accounts/{id}/mute", init);
       case "subscribe":
         return api.fetch.POST("/accounts/{id}/subscribe", init);
       case "unsubscribe":
-        return api.fetch.POST("/accounts/{id}/unsubscribe", init);
+        return api.fetch.DELETE("/accounts/{id}/subscribe", init);
     }
   })();
   if (data === undefined) throw new ApiError(error);

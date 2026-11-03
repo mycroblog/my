@@ -144,8 +144,9 @@ async function signedInServer(page: Page) {
   await page.route(`**/api/v1/accounts/${bob.id}/followers*`, (route) =>
     route.fulfill(json({ items: [alice, layla, { ...bob, id: "0192f0c4-7a8e-7000-8000-000000000003" }] })),
   );
-  for (const action of ["follow", "unfollow", "mute", "unmute", "block", "unblock", "subscribe", "unsubscribe"]) {
-    await page.route(`**/api/v1/accounts/${bob.id}/${action}`, (route) => {
+  for (const relation of ["follow", "mute", "block", "subscribe"]) {
+    await page.route(`**/api/v1/accounts/${bob.id}/${relation}`, (route) => {
+      const action = route.request().method() === "DELETE" ? `un${relation}` : relation;
       changes.push(action);
       relationship = {
         ...relationship,

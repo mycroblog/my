@@ -49,9 +49,13 @@ function bobServer(relationship: Partial<Relationship> = {}, account: Partial<ty
               ? { muting: true, muting_notifications: true }
               : action === "subscribe"
                 ? { ...relationship, notify: true }
-                : action === "unsubscribe"
-                  ? { ...relationship, notify: false }
-                  : {};
+                : {};
+      return HttpResponse.json(relationshipFixture(String(params["id"]), after));
+    }),
+    http.delete(`${apiBase}/accounts/:id/:relation`, ({ params }) => {
+      const relation = String(params["relation"]);
+      changes.push(`un${relation}`);
+      const after: Partial<Relationship> = relation === "subscribe" ? { ...relationship, notify: false } : {};
       return HttpResponse.json(relationshipFixture(String(params["id"]), after));
     }),
   );

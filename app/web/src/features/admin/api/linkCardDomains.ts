@@ -12,7 +12,7 @@ type Schemas = components["schemas"];
 
 export type LinkCardDomainRule = Schemas["LinkCardDomainRule"];
 export type LinkCardDomainMode = Schemas["LinkCardDomainMode"];
-export type NewLinkCardDomainRule = Schemas["SetLinkCardDomainRuleRequest"];
+export type NewLinkCardDomainRule = Schemas["SetLinkCardDomainRuleRequest"] & { domain: string };
 
 /** The longest note of a rule, in characters (SetLinkCardDomainRuleRequest). */
 export const linkCardDomainNoteLimit = 5000;
@@ -28,12 +28,15 @@ export function linkCardDomainsQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/admin/link_card_domains");
 }
 
-/** Sets the rule of a domain, replacing the one it has (POST /admin/link_card_domains), as the options of useMutation. */
+/** Sets the rule of a domain, replacing the one it has (PUT /admin/link_card_domains/{domain}), as the options of useMutation. */
 export function setLinkCardDomainRuleMutation(api: Api) {
   return {
-    mutationKey: ["post", "/admin/link_card_domains"] as const,
-    mutationFn: async (body: NewLinkCardDomainRule): Promise<LinkCardDomainRule> => {
-      const { data, error } = await api.fetch.POST("/admin/link_card_domains", { body });
+    mutationKey: ["put", "/admin/link_card_domains/{domain}"] as const,
+    mutationFn: async ({ domain, ...body }: NewLinkCardDomainRule): Promise<LinkCardDomainRule> => {
+      const { data, error } = await api.fetch.PUT("/admin/link_card_domains/{domain}", {
+        params: { path: { domain } },
+        body,
+      });
       // The middleware throws an ApiError for every error status; this narrows the type.
       if (data === undefined) throw new ApiError(error);
       return data;

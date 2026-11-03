@@ -42,8 +42,9 @@ func TestBlockedUserManagesTheirOwnEdges(t *testing.T) {
 
 	// An unknown account stays a 404 for the three.
 	const unknown = "/accounts/01890a5d-ac96-774b-bcce-b302099a8057"
-	for _, action := range []string{"/block", "/unblock", "/unmute"} {
-		e.want(e.do(http.MethodPost, unknown+action, alice.token, nil, nil), http.StatusNotFound, action+" unknown")
+	e.want(e.do(http.MethodPost, unknown+"/block", alice.token, nil, nil), http.StatusNotFound, "block unknown")
+	for _, relation := range []string{"/block", "/mute"} {
+		e.want(e.do(http.MethodDelete, unknown+relation, alice.token, nil, nil), http.StatusNotFound, "end "+relation+" of unknown")
 	}
 }
 
