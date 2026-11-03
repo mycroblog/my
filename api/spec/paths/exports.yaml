@@ -26,7 +26,7 @@ post:
   x-first-party-only: true
   summary: Request an archive of the authenticated user's data
   description: |
-    Starts building a ZIP archive of the user's data (FR-008): `actor.json` (the actor),
+    Starts building a ZIP archive of the user's data: `actor.json` (the actor),
     `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
     activities), `moderation.json` (the moderation actions on the account, its appeals, and
     the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,

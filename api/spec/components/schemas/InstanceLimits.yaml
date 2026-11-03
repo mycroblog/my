@@ -10,6 +10,6 @@ properties:
   require_media_description:
     description: |
       Whether every media file attached to a post needs an alternative text (the instance
-      setting `require_media_description`, FR-105). While it is on, a post or an edit with
+      setting `require_media_description`). While it is on, a post or an edit with
       a media file without one is a 422, so clients ask for it before sending.
     type: boolean

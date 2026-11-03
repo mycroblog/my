@@ -3,7 +3,7 @@ post:
   operationId: closeService
   summary: Close the server
   description: |
-    Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+    Closes the server for good: it cannot be undone. Only an announced
     closure whose `closes_at` has passed can close; before it, without an announcement, or once
     closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
     server's domain, or it is a 422 that names it. The closure records `service_closure_closed`

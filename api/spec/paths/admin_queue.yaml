@@ -4,7 +4,7 @@ get:
   summary: Get the state of the job queue
   description: |
     The jobs of the job queue by state and type, when the oldest due job has been waiting
-    since, and what the queue can list (ADR-0064). The database queue and the inline queue
+    since, and what the queue can list. The database queue and the inline queue
     list their pending jobs (`queued`, `running`, `retrying`); the queues of the platforms
     (Cloud Tasks, SQS) do not (`pending_listing` is `false`): then `counts` is empty and the
     backlog is read from the platform's metrics, while `GET /admin/jobs?state=dead` and the

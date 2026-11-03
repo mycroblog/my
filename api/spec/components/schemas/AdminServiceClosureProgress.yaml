@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+  How far the closure's `Delete` of every local actor has gone, in `GET
   /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
   `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
 type: object

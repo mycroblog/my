@@ -4,7 +4,7 @@ post:
   summary: Block an account
   description: |
     Ends the follows between the viewer and the account in both directions and keeps
-    either from following the other until the block is lifted (FR-303). Blocking an
+    either from following the other until the block is lifted. Blocking an
     account that the viewer already blocks changes nothing, and an account that blocks the
     viewer can be blocked back. Blocking a remote account
     also sends a Block to its server.

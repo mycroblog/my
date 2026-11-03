@@ -103,10 +103,10 @@ description: |
     server whose closure is not announced or whose `closes_at` has not come
     (`POST /admin/closure/close`).
   - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
-    stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+    stops new registrations and supporter subscriptions: approving a pending
     registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
     (`POST /supporter/checkout`).
-  - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
+  - `/api/v1/problems/service-closed` (403): the server is closed. A closed
     server serves only the operations with which the users take their data away: their own
     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
@@ -181,8 +181,7 @@ description: |
     account.
   - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
     an administrator. Make another user an administrator first.
-  - `/api/v1/problems/account-moved` (403): the user's account moved to another account
-    (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+  - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
     (`POST /accounts/move/cancel`).
   - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
     `DELETE /sessions/{id}`; signing out ends it.
@@ -195,7 +194,7 @@ description: |
     own, is not found, cannot be fetched from its server, or is suspended here.
   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
     or moved to that account before.
-  - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
+  - `/api/v1/problems/maintenance` (503): the server is under maintenance and
     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
     each present only when the operator set it: `message`, the administrators' notice in

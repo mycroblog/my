@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  The kind of a money movement of the payment provider (ADR-0073 §2): `payment` of a
+  The kind of a money movement of the payment provider: `payment` of a
   subscription, `refund` and `chargeback` of a payment (a negative gross), the
   `chargeback_reversal` that gives a chargeback back, and a `fee` of the provider that
   belongs to no payment (a zero gross and a negative net).

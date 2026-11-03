@@ -3,7 +3,7 @@ get:
   operationId: exportDomainBlocks
   summary: Export the domain actions as Mastodon's domain block CSV
   description: |
-    The domain actions in effect (FR-706) as the CSV that Mastodon's moderation screens
+    The domain actions in effect as the CSV that Mastodon's moderation screens
     import, with the header
     `#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`: one row
     per domain in domain order. `#severity` is `suspend` when a `suspend` is in effect on

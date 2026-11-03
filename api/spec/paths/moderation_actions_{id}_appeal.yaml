@@ -4,7 +4,7 @@ post:
   x-first-party-only: true
   summary: Appeal a moderation action on the authenticated user's account
   description: |
-    Asks the moderators to reconsider an action on the user's own account (FR-707), once
+    Asks the moderators to reconsider an action on the user's own account, once
     per action and until its `appeal_deadline` (the instance's appeal window from the
     action, 180 days by default; for a `ban`, also no later than the deletion of the
     account 30 days after it). The moderators get an `admin_appeal` notification, and

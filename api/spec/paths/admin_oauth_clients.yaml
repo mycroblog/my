@@ -4,7 +4,7 @@ get:
   summary: List the OAuth clients
   description: |
     Every OAuth client that is not deleted, newest first, the server's own and the clients of
-    every other route (ADR-0090 §1). `registration` keeps the clients of one route. Needs the
+    every other route. `registration` keeps the clients of one route. Needs the
     `manage_oauth_apps` permission.
   tags: [admin-server]
   security:

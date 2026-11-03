@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: MIT
 description: |
   A week, month, or year of the totals (`label`: `2026-W17`, `2026-04`, or `2026`): the total
-  of each currency, never converted (ADR-0067 §6), sorted by currency code, and the breakdown
+  of each currency, never converted, sorted by currency code, and the breakdown
   by provider, category, and currency. A currency appears when a cost meets the period, even
   with a zero amount. `estimated` reports that an imported usage charge of a billing month
-  that its provider has not closed meets the period (ADR-0068 §3): its amount may still
+  that its provider has not closed meets the period: its amount may still
   change.
 type: object
 required: [label, starts_on, ends_on, totals, breakdown, estimated]

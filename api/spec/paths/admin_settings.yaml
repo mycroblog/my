@@ -3,7 +3,7 @@ get:
   operationId: listInstanceSettings
   summary: List the instance settings
   description: |
-    Every instance setting (FR-705, docs/operations/instance-settings.md): its current
+    Every instance setting: its current
     value, or its default when it has never been set, with what it accepts. The policies
     that administrators change at run time live here; the deployment configuration does
     not. Needs the `manage_settings` permission.

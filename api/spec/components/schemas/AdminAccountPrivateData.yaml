@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  The email address and the IP addresses of a local account (FR-714). Showing them is
+  The email address and the IP addresses of a local account. Showing them is
   recorded in the audit log.
 type: object
 required: [sign_ins, same_ip_accounts]

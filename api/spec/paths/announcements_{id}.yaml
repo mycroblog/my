@@ -3,7 +3,7 @@ get:
   operationId: getAnnouncement
   summary: Get an announcement
   description: |
-    One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+    One announcement of `listAnnouncementHistory`: a published one whose `published_at`
     has passed, one whose window has ended included (`ended`), with whether the user has read
     it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
   tags: [announcements]

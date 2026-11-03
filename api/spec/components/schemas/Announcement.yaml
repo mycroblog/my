@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: An announcement of the server to every local user (FR-726), as the user sees it.
+description: An announcement of the server to every local user, as the user sees it.
 type: object
 required: [id, title, content, published_at, revised_at, read, ended]
 properties:

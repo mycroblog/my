@@ -15,7 +15,7 @@ put:
   operationId: setSupporterProgram
   summary: Enable or disable the supporter program
   description: |
-    Enables or disables the supporter program (ADR-0072 §2). Enabling it without a payment
+    Enables or disables the supporter program. Enabling it without a payment
     provider in the deployment's configuration or without email is a 409
     `/api/v1/problems/supporters-unavailable`; disabling it while subscriptions go on is a
     409 `/api/v1/problems/live-subscriptions` (retire the plans first). Asking for the state

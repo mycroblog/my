@@ -2,7 +2,7 @@
 description: |
   The income totals as the administrators see them over the periods from the one that holds
   `from` to the one that holds `to`, oldest first, with the number of members of each
-  supporter plan now (ADR-0073 §6).
+  supporter plan now.
 type: object
 required: [granularity, basis, periods, plans, rules]
 properties:

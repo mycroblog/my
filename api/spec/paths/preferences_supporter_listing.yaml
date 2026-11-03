@@ -3,8 +3,7 @@ get:
   operationId: getSupporterListing
   summary: Get whether the authenticated user is on the supporter list
   description: |
-    Whether the user chose to be listed on the supporter list (`GET /instance/supporters`,
-    ADR-0071 §4). Nobody is listed until they choose to be, and the choice ends with the
+    Whether the user chose to be listed on the supporter list (`GET /instance/supporters`). Nobody is listed until they choose to be, and the choice ends with the
     subscription. A 404 for a user who is not a member of a plan (an `active`, `canceling`,
     or `past_due` subscription) and while the program is disabled.
   tags: [preferences]

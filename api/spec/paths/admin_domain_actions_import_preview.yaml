@@ -3,7 +3,7 @@ post:
   operationId: previewDomainBlockImport
   summary: Preview the import of a Mastodon domain block CSV
   description: |
-    Reads a domain block CSV that Mastodon exported (FR-706) and says what importing each
+    Reads a domain block CSV that Mastodon exported and says what importing each
     row would do, without changing anything. A file whose first field is `#domain` has a
     header naming the columns; any other file is a list of domains, one per row, each
     suspended. An empty `#severity` is `suspend`, and a boolean is false when empty, `0`,

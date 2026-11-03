@@ -2,7 +2,7 @@
 post:
   operationId: rejectFollowRequest
   summary: Reject a follow request
-  description: Declines the account's pending follow request (FR-302); without one it is a 404.
+  description: Declines the account's pending follow request; without one it is a 404.
   tags: [accounts]
   security:
     - oauth2: ["write:follows"]

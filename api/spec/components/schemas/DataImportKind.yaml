@@ -2,7 +2,7 @@
 description: |
   What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
   accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-  domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+  domains the user mutes; Mastodon's `blocked_domains.csv` with the header
   `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
   posts the user bookmarked).
 type: string

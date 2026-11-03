@@ -4,7 +4,7 @@ get:
   summary: Total the instance's public costs by period
   description: |
     The totals of the instance's costs that the instance setting `finance_visibility`
-    publishes (FR-903, ADR-0067 §8, §9). It takes the query of `GET /admin/cost_totals` and
+    publishes. It takes the query of `GET /admin/cost_totals` and
     answers the same shape: `private` makes it a 404; `totals` leaves every `breakdown` empty
     and the `rules` without `sources`, which would name the providers; `breakdown` gives the
     breakdown by provider, category, and currency, and the providers' rules. No level returns

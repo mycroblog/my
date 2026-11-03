@@ -3,7 +3,7 @@ get:
   operationId: listIncomeMovements
   summary: List the money movements of the income
   description: |
-    The payment provider's money movements that the income records keep (ADR-0073 §6), newest
+    The payment provider's money movements that the income records keep, newest
     first by the time the provider booked them, narrowed to the dates they fall on and a
     kind, with the subscriber's account of each. Only this operation and the admin screen
     show individual movements and their subscribers. Needs the `manage_finance` permission.

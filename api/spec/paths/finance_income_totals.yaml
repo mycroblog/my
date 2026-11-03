@@ -3,7 +3,7 @@ get:
   operationId: getFinanceIncomeTotals
   summary: Total the income by period for the finance viewers
   description: |
-    The income totals for the holders of `view_finance` (ADR-0073 §6, ADR-0070 §5). It takes
+    The income totals for the holders of `view_finance`. It takes
     the query of `GET /admin/cost_totals` and always answers the net of each currency by
     period with its `balance` against the costs, whatever `income_visibility` and
     `finance_visibility` publish. `plans`, the number of members of each supporter plan now,

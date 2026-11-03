@@ -9,7 +9,7 @@ delete:
     password, two-factor authentication, and the apps the user authorized stay. An ID that is not
     in the user's list is a 404, and the browser that asks is a 409 with the type
     `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
-    call it (ADR-0090 §4).
+    call it.
   tags: [sessions]
   security:
     - oauth2: ["write:accounts"]

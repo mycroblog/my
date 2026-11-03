@@ -5,7 +5,7 @@ get:
   description: |
     The members of the supporter plans who chose to be listed (`PUT
     /preferences/supporter_listing`), by plan in the plans' order and newest first within a
-    plan, with the plans that are not retired for the headings (ADR-0071 §4). Only each
+    plan, with the plans that are not retired for the headings. Only each
     member's account is listed: never an amount, an interval, a date, or a count. Accounts
     that the viewer may not see are left out, so a page may be shorter than `limit`. The
     instance setting `supporter_list_visibility` decides who may read it: `off` makes it a

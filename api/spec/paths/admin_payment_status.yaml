@@ -3,7 +3,7 @@ get:
   operationId: getPaymentStatus
   summary: Get the state of the payment provider
   description: |
-    The payment provider of the deployment's configuration (ADR-0074 §4): its name and mode
+    The payment provider of the deployment's configuration: its name and mode
     (test or live), when it last delivered a webhook, and the last attempt of the
     reconciliation with its failure. `warnings` names the signs of a webhook that is not set
     up right: no delivery is recorded, or the last reconciliation corrected subscriptions

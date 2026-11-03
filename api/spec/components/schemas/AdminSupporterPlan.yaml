@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A supporter plan as the administrators see it (ADR-0072 §3). The yearly price is the
+  A supporter plan as the administrators see it. The yearly price is the
   monthly one × 12, discounted by `annual_discount_percent`, rounded down. A plan takes
   subscriptions while it is public, not retired, and `prices_ready` (the provider has the
   prices of its current terms).

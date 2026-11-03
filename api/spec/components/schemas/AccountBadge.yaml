@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A badge that the account shows on its profile (ADR-0071): the badge of a role that the
+  A badge that the account shows on its profile: the badge of a role that the
   account's user holds and chose to show. Clients show `label` as user content (`dir="auto"`),
   never translated.
 type: object

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+  How the income totals cut the periods and place the payments, to show
   next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
   each money movement on its date in its payment provider's reporting time zone
   (`providers`), and under the `amortized` basis a payment that covers more than

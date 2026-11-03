@@ -6,7 +6,7 @@ patch:
   summary: Change a custom emoji that the user made
   description: |
     Changes the aliases, the category, and the place in the picker of a local emoji that the
-    user made, and keeps the rest (ADR-0070 §3); a new image is a request
+    user made, and keeps the rest; a new image is a request
     (`POST /custom_emoji_requests`). The rules of `PATCH /admin/custom_emojis/{id}` apply, and
     the change is recorded in the audit log. An emoji that is not one the user made is a 404.
     Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).

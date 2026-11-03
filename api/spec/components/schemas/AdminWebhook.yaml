@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A webhook endpoint (ADR-0060). Its secret is never shown again after it is made.
+  A webhook endpoint. Its secret is never shown again after it is made.
 type: object
 required: [id, url, events, state, state_reason, state_changed_at, created_at, revised_at]
 properties:

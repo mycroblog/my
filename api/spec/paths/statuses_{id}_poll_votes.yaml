@@ -5,7 +5,7 @@ post:
   operationId: voteInPoll
   summary: Vote in the poll of a status
   description: |
-    Votes for one or more choices of the poll of a status (FR-112). `poll_id` names the poll
+    Votes for one or more choices of the poll of a status. `poll_id` names the poll
     the user saw: a poll that an edit of the status replaced is a 409. A status without a
     poll, a poll that has ended, a second vote, or choices the poll does not take (none, an
     unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in

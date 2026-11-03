@@ -3,7 +3,7 @@ get:
   operationId: listPendingRegistrations
   summary: List the registrations that await approval
   description: |
-    The sign-ups that wait for a moderator's decision (FR-721), with the reasons their
+    The sign-ups that wait for a moderator's decision, with the reasons their
     applicants gave, longest waiting first. Needs the `manage_accounts` permission.
   tags: [admin-moderation]
   security:

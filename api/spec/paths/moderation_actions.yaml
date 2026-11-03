@@ -4,7 +4,7 @@ get:
   x-first-party-only: true
   summary: List the moderation actions on the authenticated user's account
   description: |
-    The actions that moderators took on the user's own account (FR-715), newest first,
+    The actions that moderators took on the user's own account, newest first,
     lifted and expired ones included unless `active` is set, also those that the user was
     not notified of. Each carries what the moderators chose to tell the user; never their
     private note, the report the action follows from, or who filed it. `kind_label` and

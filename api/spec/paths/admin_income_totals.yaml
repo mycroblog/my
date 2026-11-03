@@ -4,7 +4,7 @@ get:
   summary: Total the income by period
   description: |
     The totals of the payment provider's money movements for each week, month, or year from
-    the one that holds `from` to the one that holds `to` (ADR-0073 §5, §6): the gross, the
+    the one that holds `from` to the one that holds `to`: the gross, the
     provider's fees, and the net of each currency, the balance against the costs of
     `GET /admin/cost_totals` under the same basis, the number of members of each supporter
     plan now, and the rules that cut the periods. The totals are computed on every read. More

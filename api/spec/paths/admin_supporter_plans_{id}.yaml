@@ -3,8 +3,7 @@ patch:
   operationId: updateSupporterPlan
   summary: Change a supporter plan
   description: |
-    Changes a supporter plan's terms and its role's permissions and position (ADR-0072 §3,
-    §5, §9). New prices apply to new subscriptions and changes of plan only. A change that
+    Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that
     breaks a rule is a 422 `/api/v1/problems/invalid-supporter-plan`, a retired plan a 409
     `/api/v1/problems/supporter-plan-retired`, and an unknown plan a 404. Recorded in the
     audit log. Needs the `manage_supporters` permission.
