@@ -6,8 +6,8 @@ get:
     The public posts of the instance's accounts and of the remote accounts whose posts the
     instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
     visibilities, `local` ones included, and boosts never appear on it. The instance setting
-    `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-    is `logged_in` an anonymous request is a 401.
+    `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+    is `signed_in` an anonymous request is a 401.
   tags: [timelines]
   security:
     - {}

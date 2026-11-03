@@ -56,7 +56,7 @@ func TestClientAPIActionsOnStatusesAndBans(t *testing.T) {
 			body["status_ids"] = statusIDs
 		}
 		var a clientapi.AdminAccountAction
-		e.want(e.do(http.MethodPost, "/admin/accounts/"+alice.id+"/actions", mod.token, body, &a), http.StatusOK, "issue "+kind)
+		e.want(e.do(http.MethodPost, "/admin/accounts/"+alice.id+"/actions", mod.token, body, &a), http.StatusCreated, "issue "+kind)
 		return a
 	}
 	lift := func(a clientapi.AdminAccountAction) {
@@ -76,8 +76,8 @@ func TestClientAPIActionsOnStatusesAndBans(t *testing.T) {
 	var pictured, spam clientapi.Status
 	e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{
 		"text": "a picture", "visibility": "public", "media": []map[string]any{{"id": media}},
-	}, &pictured), http.StatusOK, "post with media")
-	e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{"text": "spam", "visibility": "public"}, &spam), http.StatusOK, "post spam")
+	}, &pictured), http.StatusCreated, "post with media")
+	e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{"text": "spam", "visibility": "public"}, &spam), http.StatusCreated, "post spam")
 	sensitive(bob, pictured.Id, false, "before any action")
 
 	// force_sensitive shows every attachment of the account as sensitive until it is lifted.

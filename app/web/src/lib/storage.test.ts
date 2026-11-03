@@ -30,7 +30,7 @@ describe("storage", () => {
   });
 
   test("returns the same value while the stored text is the same (a stable snapshot)", () => {
-    timelinesKey.write({ local: "off", federated: "logged_in" });
+    timelinesKey.write({ local: "off", federated: "signed_in" });
     expect(timelinesKey.read()).toBe(timelinesKey.read());
   });
 

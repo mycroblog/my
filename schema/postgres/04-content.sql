@@ -253,7 +253,7 @@ CREATE INDEX boosts_status_id ON boosts (status_id);
 -- Event: a boost was retracted (Undo Announce). A boost is retracted at most once.
 CREATE TABLE boost_retractions (
   boost_id uuid NOT NULL PRIMARY KEY,
-  origin text NOT NULL CHECK (origin IN ('booster', 'status_deleted', 'moderation', 'remote')),
+  origin text NOT NULL CHECK (origin IN ('booster', 'remote')),
   retracted_at timestamptz NOT NULL
 );
 

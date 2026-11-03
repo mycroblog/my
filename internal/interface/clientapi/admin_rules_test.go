@@ -182,7 +182,7 @@ func TestManageInstanceRules(t *testing.T) {
 	kind := decodeJSON[clientapi.AdminRule](t, res)
 	hint := "No harassment."
 	want := clientapi.AdminRule{Id: kind.Id, Position: 1, CreatedAt: adminNow, RevisedAt: adminNow, Text: "Be kind", Hint: &hint}
-	if res.StatusCode != http.StatusOK || !reflect.DeepEqual(kind, want) {
+	if res.StatusCode != http.StatusCreated || !reflect.DeepEqual(kind, want) {
 		t.Fatalf("create = %d %+v, want %+v", res.StatusCode, kind, want)
 	}
 	if cc := res.Header.Get("Cache-Control"); cc != "no-store" {

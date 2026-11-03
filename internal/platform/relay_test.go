@@ -168,7 +168,7 @@ func TestRelays(t *testing.T) {
 
 	// Register and join the relay at its inbox.
 	var r clientapi.AdminRelay
-	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": "https://relay.example/inbox"}, &r); res.StatusCode != http.StatusOK {
+	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": "https://relay.example/inbox"}, &r); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /admin/relays = %d", res.StatusCode)
 	}
 	if r.Protocol != clientapi.RelayProtocolMastodon || r.State != clientapi.RelayStatePending || !r.Receive || r.InboxUrl != "https://relay.example/inbox" {
@@ -276,7 +276,7 @@ func TestRelays(t *testing.T) {
 		doc["endpoints"] = map[string]any{"sharedInbox": "https://litepub.example/inbox"}
 	})
 	var lr clientapi.AdminRelay
-	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": lite.id}, &lr); res.StatusCode != http.StatusOK {
+	if res := c.do("alice", http.MethodPost, "/admin/relays", map[string]any{"url": lite.id}, &lr); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /admin/relays (litepub) = %d", res.StatusCode)
 	}
 	if lr.Protocol != clientapi.RelayProtocolLitepub || lr.InboxUrl != "https://litepub.example/inbox" {

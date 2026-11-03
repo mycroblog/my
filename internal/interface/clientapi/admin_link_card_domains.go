@@ -15,7 +15,7 @@ import (
 )
 
 // The rules of the link card crawler (FR-117): the admin operations on /admin/link_card_domains
-// (manage_settings, like the link_cards_enabled setting that they refine).
+// (manage_settings, like the link_cards setting that they refine).
 
 // LinkCardDomainRules runs the use cases of the rules. *appinstance.Service implements it.
 type LinkCardDomainRules interface {

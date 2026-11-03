@@ -381,7 +381,7 @@ func TestPublicTimeline(t *testing.T) {
 // timelineAccessEnv is a timeline environment whose instance settings are settings.
 // federatedTimelineForEveryone is an instance whose federated timeline anonymous visitors may read.
 func federatedTimelineForEveryone() *fakeInstance {
-	return &fakeInstance{settings: []instance.CurrentSetting{{Key: instance.SettingFederatedTimelineAccess, RevisionID: testkit.NamedID("revision-1"), Value: "everyone"}}}
+	return &fakeInstance{settings: []instance.CurrentSetting{{Key: instance.SettingFederatedTimelineVisibility, RevisionID: testkit.NamedID("revision-1"), Value: "everyone"}}}
 }
 
 func timelineAccessEnv(t *testing.T, settings ...instance.CurrentSetting) *timelineEnv {
@@ -395,7 +395,7 @@ func timelineAccessEnv(t *testing.T, settings ...instance.CurrentSetting) *timel
 }
 
 func TestPublicTimelineCanBeTurnedOff(t *testing.T) {
-	te := timelineAccessEnv(t, instance.CurrentSetting{Key: instance.SettingFederatedTimelineAccess, RevisionID: testkit.NamedID("revision-1"), Value: "off"})
+	te := timelineAccessEnv(t, instance.CurrentSetting{Key: instance.SettingFederatedTimelineVisibility, RevisionID: testkit.NamedID("revision-1"), Value: "off"})
 	for _, auth := range []map[string]string{{"Accept-Language": "ja"}, {"Accept-Language": "ja", "Authorization": "Bearer read"}} {
 		res := te.get(t, "/timelines/federated", auth)
 		if res.StatusCode != http.StatusNotFound {
@@ -413,7 +413,7 @@ func TestPublicTimelineCanBeTurnedOff(t *testing.T) {
 }
 
 func TestLocalTimelineCanBeTurnedOff(t *testing.T) {
-	te := timelineAccessEnv(t, instance.CurrentSetting{Key: instance.SettingLocalTimelineAccess, RevisionID: testkit.NamedID("revision-1"), Value: "off"})
+	te := timelineAccessEnv(t, instance.CurrentSetting{Key: instance.SettingLocalTimelineVisibility, RevisionID: testkit.NamedID("revision-1"), Value: "off"})
 	for _, auth := range []map[string]string{nil, {"Authorization": "Bearer read"}} {
 		if res := te.get(t, "/timelines/local", auth); res.StatusCode != http.StatusNotFound {
 			t.Errorf("local timeline turned off = %d, want 404", res.StatusCode)
@@ -437,18 +437,18 @@ func TestTimelineDefaults(t *testing.T) {
 	decodePage(t, te.get(t, "/timelines/local", nil))
 }
 
-// TestTimelinesForLoggedInUsers checks the timelines whose access is logged_in: an anonymous
+// TestTimelinesForLoggedInUsers checks the timelines whose access is signed_in: an anonymous
 // request is a 401 that no shared cache keeps, and a logged-in user gets the same page as ever.
 func TestTimelinesForLoggedInUsers(t *testing.T) {
 	for _, tc := range []struct {
 		path, timeline string
 		key            instance.SettingKey
 	}{
-		{"/timelines/local", "local", instance.SettingLocalTimelineAccess},
-		{"/timelines/federated", "public", instance.SettingFederatedTimelineAccess},
+		{"/timelines/local", "local", instance.SettingLocalTimelineVisibility},
+		{"/timelines/federated", "public", instance.SettingFederatedTimelineVisibility},
 	} {
 		t.Run(tc.timeline, func(t *testing.T) {
-			te := timelineAccessEnv(t, instance.CurrentSetting{Key: tc.key, RevisionID: testkit.NamedID("revision-1"), Value: "logged_in"})
+			te := timelineAccessEnv(t, instance.CurrentSetting{Key: tc.key, RevisionID: testkit.NamedID("revision-1"), Value: "signed_in"})
 			res := te.get(t, tc.path, map[string]string{"Accept-Language": "ja"})
 			if res.StatusCode != http.StatusUnauthorized {
 				t.Fatalf("anonymous request = %d, want 401", res.StatusCode)

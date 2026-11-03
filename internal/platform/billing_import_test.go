@@ -69,7 +69,7 @@ func TestBillingImports(t *testing.T) {
 		return res.StatusCode
 	}
 
-	if code := api(http.MethodPost, "/admin/billing_imports/aws/runs", nil); code != http.StatusNoContent {
+	if code := api(http.MethodPost, "/admin/billing_imports/aws/runs", nil); code != http.StatusAccepted {
 		t.Fatalf("POST /admin/billing_imports/aws/runs = %d, want 204", code)
 	}
 	if code := api(http.MethodPost, "/admin/billing_imports/aws/runs", nil); code != http.StatusTooManyRequests {

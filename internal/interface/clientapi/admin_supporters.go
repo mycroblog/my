@@ -314,7 +314,7 @@ func (s *Server) CreateSupporterPlan(ctx context.Context, req CreateSupporterPla
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: create a supporter plan: %w", err)
 	}
-	return CreateSupporterPlan200JSONResponse{adminSupporterPlanResponse(plan)}, nil
+	return CreateSupporterPlan201JSONResponse{adminSupporterPlanResponse(plan)}, nil
 }
 
 // UpdateSupporterPlan serves PATCH /api/v1/admin/supporter_plans/{id}.

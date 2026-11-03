@@ -49,7 +49,7 @@ func TestStaffCannotActOnAHigherOrEqualRank(t *testing.T) {
 
 	e.want(e.do(http.MethodPost, "/admin/roles", root.token, map[string]any{
 		"key": "recovery", "position": 50, "permissions": []string{"manage_login_recovery"},
-	}, nil), http.StatusOK, "create the role")
+	}, nil), http.StatusCreated, "create the role")
 	for _, u := range []testUser{mod, otherMod} {
 		e.setRole(u, domainidentity.RoleModerator)
 	}
@@ -67,8 +67,8 @@ func TestStaffCannotActOnAHigherOrEqualRank(t *testing.T) {
 		ok   int
 	}
 	actions := func(target testUser) string { return "/admin/accounts/" + target.id + "/actions" }
-	warn := op{"warn", actions, map[string]any{"kind": "warn"}, http.StatusOK}
-	ban := op{"ban", actions, map[string]any{"kind": "ban"}, http.StatusOK}
+	warn := op{"warn", actions, map[string]any{"kind": "warn"}, http.StatusCreated}
+	ban := op{"ban", actions, map[string]any{"kind": "ban"}, http.StatusCreated}
 	reveal := op{"reveal", func(target testUser) string { return "/admin/accounts/" + target.id + "/reveal" }, nil, http.StatusOK}
 	resetLink := op{"reset link", func(target testUser) string { return "/admin/accounts/" + target.id + "/password_reset_link" }, nil, http.StatusCreated}
 	twoFactor := op{"disable two-factor", func(target testUser) string { return "/admin/accounts/" + target.id + "/two_factor/disable" }, nil, http.StatusConflict}
@@ -144,7 +144,7 @@ func TestStaffCannotActOnAHigherOrEqualRank(t *testing.T) {
 		t.Errorf("LiftAccountAction by the CLI: %v", err)
 	}
 	var onMember clientapi.AdminAccountAction
-	e.want(e.do(http.MethodPost, actions(secondMember), mod.token, map[string]any{"kind": "limit"}, &onMember), http.StatusOK, "limit a member")
+	e.want(e.do(http.MethodPost, actions(secondMember), mod.token, map[string]any{"kind": "limit"}, &onMember), http.StatusCreated, "limit a member")
 	e.want(e.do(http.MethodPost, "/admin/account_actions/"+onMember.Id+"/lift", mod.token, map[string]any{}, nil), http.StatusOK, "lift on a member")
 	// A local account's reset link from the CLI still works on an admin.
 	if _, err := e.app.Identity.IssuePasswordResetLink(ctx, root.id, ""); err != nil {

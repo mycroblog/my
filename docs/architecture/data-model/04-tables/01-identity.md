@@ -194,7 +194,7 @@
 | --- | --- | --- | --- |
 | `sessions` | リソース | `id`, `user_id`, `token_hash`（`bytes`。Cookie の値の SHA-256）, `created_at`, `expires_at` | 一意 `(token_hash)`。インデックス `(user_id)`（処分による失効）, `(expires_at)`（期限切れの行の消去） |
 | `session_origins` | リソース（子） | `session_id`（PK）, `user_id`, `ip`（NULL 可）, `user_agent`（`string(512)`、NULL 可）, `created_at` | インデックス `(ip)`（同じ IP のアカウントの検索、FR-714）, `(user_id, created_at DESC)`（アカウントの最近のログイン元、FR-714）, `(created_at)`（保持期間による消去）。保持期間（[ADR-0038](../../../adr/0038-moderation-personal-data-retention.md)、既定 180 日）を過ぎた行を消去ジョブが消す |
-| `session_revocations` | イベント | `session_id`（PK）, `reason`（`enum(logout, replaced, password_changed, moderation, expired_cleanup, account_deleted)`）, `revoked_at` | 有効なセッション = 失効イベントが無く `expires_at` を過ぎていないもの。`replaced` は同じブラウザでのログインし直し |
+| `session_revocations` | イベント | `session_id`（PK）, `reason`（`enum(logout, replaced, password_changed, moderation, account_deleted)`）, `revoked_at` | 有効なセッション = 失効イベントが無く `expires_at` を過ぎていないもの。`replaced` は同じブラウザでのログインし直し |
 | `session_activity` | 現在値 | `session_id`（PK）, `last_seen_at` | ログイン時に作り、以後の更新は 1 時間に 1 回に間引く |
 | `oauth_clients` | リソース | `id`, `client_id`, `client_secret_hash`（NULL 可 = 公開クライアント）, `name`, `website`（NULL 可）, `scope`, `registration`（`enum(first_party, user, metadata_document, dynamic)`）, `owner_user_id`（NULL 可）, `created_at` | 一意 `(client_id)`。インデックス `(owner_user_id)`。`registration` は登録の経路で、変わらない。`name`・`website`・`scope`・`client_secret_hash` は登録したときの値 |
 | `oauth_client_disablements` | イベント | `id`, `oauth_client_id`, `disabled_by_user_id`（NULL 可 = CLI）, `disabled_at` | インデックス `(oauth_client_id)`。取り消しのない行があればクライアントは無効 |
@@ -224,7 +224,7 @@
 - ログイン元（`session_origins`）と登録元（`registration_origins`）は、セッション・利用者と同じトランザクションで記録します。
   - IP アドレスは正規形（IPv4 射影の IPv6 は IPv4、ゾーンは外す）で持ち、同じアドレスが同じ文字列になるようにします。IP アドレスとして読めない値は記録しません。
   - IP アドレスも User-Agent も分からないログインは `session_origins` の行を作らず、IP アドレスの分からない登録は `registration_origins` の行を作りません。どちらもログインと登録を妨げません。
-  - 1 時間ごとの消去ジョブ `identity.purge_origins` が、保持期間（インスタンス設定 `retention_session_origins`・`retention_registration_origins`、既定 180 日、§4.9）を過ぎた行を、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。
+  - 1 時間ごとの消去ジョブ `identity.purge_origins` が、保持期間（インスタンス設定 `session_origins_retention_days`・`registration_origins_retention_days`、既定 180 日、§4.9）を過ぎた行を、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。
     保全（§4.3）のあるローカルのアカウントの利用者の行は消しません。期間と保全のある利用者は回ごとに読み直します。セッションと利用者は残ります。
   - IP アドレスとメールアドレスを返すのは、モデレーターのアカウントの管理（FR-714）の「表示」（`identity.AccountAdmin.Reveal`）だけで、呼ぶたびにそのためのトランザクションで監査ログ（`revealed_private_data`）を書き、書けたときだけ返します。
 - アカウントの管理（FR-714）の検索は、モジュールをまたぐ JOIN をしません。条件ごとに 1 つのモジュールが自分のテーブルから ID を新しい順のキーセットで返し（メールアドレス・メールのドメイン・IP アドレス・登録の状態は `identity` が利用者の ID で、処分の制限は `moderation` が `account_restrictions` から、削除は `account` が `account_lifecycle_states` から、それ以外は `account` が `accounts` と `account_handles` から）、`identity.AccountAdmin` が残りの条件をアカウントごとに確かめます。

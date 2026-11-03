@@ -286,7 +286,7 @@ describe("the landing page", () => {
 
   test("does not ask for the recent posts when the local timeline is only for signed-in users", async () => {
     let asked = false;
-    serveInstance({ timelines: { local: "logged_in", federated: "everyone" } });
+    serveInstance({ timelines: { local: "signed_in", federated: "everyone" } });
     server.use(
       http.get(`${apiBase}/timelines/local`, () => {
         asked = true;

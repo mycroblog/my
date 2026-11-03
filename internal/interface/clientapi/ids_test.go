@@ -138,7 +138,7 @@ func TestMalformedReferenceIDs(t *testing.T) {
 			}
 			e := newStatusEnv(t, f)
 			body := `{"text":"hi","visibility":"local","in_reply_to_id":"` + id + `","media":[{"id":"` + id + `"},{"id":"` + sampleMediaID + `"}]}`
-			if res := e.send(t, http.MethodPost, "/statuses", "write", body); res.StatusCode != http.StatusOK {
+			if res := e.send(t, http.MethodPost, "/statuses", "write", body); res.StatusCode != http.StatusCreated {
 				t.Fatalf("POST = %d", res.StatusCode)
 			}
 			if got.InReplyToID != unknown || len(got.Media) != 2 || got.Media[0].MediaID != unknown || got.Media[1].MediaID != sampleMediaID {

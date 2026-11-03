@@ -35,12 +35,12 @@ func (s *Server) registerTimelineStream(r Router) {
 // publicTimelineStream is the timeline of a stream path and the instance setting that opens it.
 type publicTimelineStream struct {
 	timeline stream.Timeline
-	access   func(instance.Settings) instance.TimelineAccess
+	access   func(instance.Settings) instance.Audience
 }
 
 var publicTimelineStreams = map[string]publicTimelineStream{
-	"local":     {stream.TimelineLocal, instance.Settings.LocalTimelineAccess},
-	"federated": {stream.TimelineFederated, instance.Settings.FederatedTimelineAccess},
+	"local":     {stream.TimelineLocal, instance.Settings.LocalTimelineVisibility},
+	"federated": {stream.TimelineFederated, instance.Settings.FederatedTimelineVisibility},
 }
 
 // serveTimelineStream serves GET /api/v1/streaming/timelines/{timeline}: a Server-Sent Events

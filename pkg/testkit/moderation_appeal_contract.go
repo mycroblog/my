@@ -48,7 +48,7 @@ func AppealContract(t *testing.T, newHarness ModerationFactory) {
 	}
 }
 
-// stubAppealWindow stands in for the instance setting appeal_window.
+// stubAppealWindow stands in for the instance setting appeal_window_days.
 type stubAppealWindow struct {
 	mu sync.Mutex
 	d  time.Duration

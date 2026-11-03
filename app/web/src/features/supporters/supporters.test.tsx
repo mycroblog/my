@@ -24,7 +24,7 @@ const gold = supporterPlanFixture(goldId, {
 });
 
 /** The instance with the program enabled, the list published to `list`, and its commerce disclosures. */
-function enabledInstance(list: Schemas["SupporterListVisibility"] = "off") {
+function enabledInstance(list: Schemas["InstanceAudience"] = "off") {
   return http.get(`${apiBase}/instance`, () =>
     HttpResponse.json({
       ...instanceFixture,
@@ -304,7 +304,7 @@ describe("the Tauri app", () => {
 
   test("leaves the plans out of the about page, but links to the supporter list", async () => {
     (globalThis as { isTauri?: unknown }).isTauri = true;
-    server.use(enabledInstance("public"), plansHandler());
+    server.use(enabledInstance("everyone"), plansHandler());
     await renderApp({ path: "/about" });
 
     const section = await screen.findByRole("region", { name: "Supporters" });
@@ -345,7 +345,7 @@ describe("the supporter list", () => {
     const carol = accountFixture(3, "Carol", instanceFixture.domain);
     const dave = accountFixture(4, "Dave", instanceFixture.domain);
     server.use(
-      enabledInstance("public"),
+      enabledInstance("everyone"),
       http.get(`${apiBase}/instance/supporters`, () =>
         HttpResponse.json({
           plans: [
@@ -422,7 +422,7 @@ describe("the choice to be on the supporter list", () => {
 
   test("is not offered to a user who is not a member", async () => {
     server.use(
-      enabledInstance("public"),
+      enabledInstance("everyone"),
       http.get(`${apiBase}/preferences/supporter_listing`, () => problem(404, "about:blank", "Not Found")),
     );
     await renderApp({ path: "/settings/badges" });

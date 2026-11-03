@@ -57,7 +57,7 @@ func TestListAccountStatusesAnswersLikeGetAccount(t *testing.T) {
 	e.setRole(carol, "") // the moderator suspends her below, which needs a lower rank
 
 	for _, u := range []testUser{alice, carol} {
-		e.want(e.do(http.MethodPost, "/statuses", u.token, map[string]any{"text": "hello", "visibility": "public"}, nil), http.StatusOK, "post")
+		e.want(e.do(http.MethodPost, "/statuses", u.token, map[string]any{"text": "hello", "visibility": "public"}, nil), http.StatusCreated, "post")
 	}
 	list := func(of testUser, token, query string, want int) {
 		t.Helper()
@@ -74,7 +74,7 @@ func TestListAccountStatusesAnswersLikeGetAccount(t *testing.T) {
 	// The blocker still sees the account that it blocks.
 	list(bob, alice.token, "", http.StatusOK)
 
-	e.want(e.do(http.MethodPost, "/admin/accounts/"+carol.id+"/actions", mod.token, map[string]any{"kind": "suspend"}, nil), http.StatusOK, "suspend")
+	e.want(e.do(http.MethodPost, "/admin/accounts/"+carol.id+"/actions", mod.token, map[string]any{"kind": "suspend"}, nil), http.StatusCreated, "suspend")
 	for _, token := range []string{"", bob.token} {
 		list(carol, token, "", http.StatusNotFound)
 		list(carol, token, "?pinned=true", http.StatusNotFound)
@@ -93,7 +93,7 @@ func TestReportTargetAsTheReporterAndTheModerators(t *testing.T) {
 	file := func(of testUser) clientapi.Report {
 		t.Helper()
 		var r clientapi.Report
-		e.want(e.do(http.MethodPost, "/reports", bob.token, map[string]any{"account_id": of.id, "category": "spam"}, &r), http.StatusOK, "file a report")
+		e.want(e.do(http.MethodPost, "/reports", bob.token, map[string]any{"account_id": of.id, "category": "spam"}, &r), http.StatusCreated, "file a report")
 		return r
 	}
 	// own returns the report as the reporter's list shows it, failing when it is not listed.
@@ -170,7 +170,7 @@ func TestReportTargetAsTheReporterAndTheModerators(t *testing.T) {
 	e.setRole(suspended, "") // the moderator suspends the account below, which needs a lower rank
 	report := file(suspended)
 	var action clientapi.AdminAccountAction
-	e.want(e.do(http.MethodPost, "/admin/accounts/"+suspended.id+"/actions", mod.token, map[string]any{"kind": "suspend"}, &action), http.StatusOK, "suspend")
+	e.want(e.do(http.MethodPost, "/admin/accounts/"+suspended.id+"/actions", mod.token, map[string]any{"kind": "suspend"}, &action), http.StatusCreated, "suspend")
 	wantHidden(own(report.Id), suspended, "suspended")
 	moderatorSees(report.Id, suspended, "suspended")
 	e.want(e.do(http.MethodPost, "/admin/reports/"+report.Id+"/resolve", mod.token, map[string]any{"outcome": "dismissed"}, nil), http.StatusOK, "resolve")

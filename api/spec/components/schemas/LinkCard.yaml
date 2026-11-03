@@ -5,7 +5,7 @@ description: |
   after the status was posted or received. Omitted from a status with attachments or a
   poll, from a status whose link has no card yet, from a status whose link is on a domain
   where a rule of the crawler stops fetching, and when the instance setting
-  `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+  `link_cards` is off. A card appears after its fetch, so a status read right after
   it was posted may have none.
 
   Clients show the card as one link to `url` and, under a content warning, only once the

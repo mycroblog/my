@@ -106,7 +106,7 @@ func TestReportForwarding(t *testing.T) {
 			"account_id": target, "status_ids": append([]string{}, statusIDs...), "category": "spam",
 			"comment": "Spam, please look", "forward": forward,
 		}, nil)
-		if res.StatusCode != http.StatusOK {
+		if res.StatusCode != http.StatusCreated {
 			t.Fatalf("POST /reports = %d", res.StatusCode)
 		}
 	}

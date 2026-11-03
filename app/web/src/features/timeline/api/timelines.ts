@@ -14,7 +14,7 @@ import type { components } from "@mycroblog/mykit";
 export type Status = components["schemas"]["Status"];
 
 /** Who may read a public timeline: nobody (it is a 404), the signed-in users (a 401 for visitors), or everyone (FR-202). */
-export type TimelineAccess = components["schemas"]["TimelineAccess"];
+export type InstanceAudience = components["schemas"]["InstanceAudience"];
 
 /** A page of a timeline. */
 export type StatusPage = components["schemas"]["StatusPage"];

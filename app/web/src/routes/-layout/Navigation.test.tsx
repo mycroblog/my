@@ -109,7 +109,7 @@ describe("while signed out", () => {
 
   test("leaves out a timeline kept for signed-in users, and asks to sign in at its address", async () => {
     server.use(
-      instanceWith({ local: "logged_in", federated: "everyone" }),
+      instanceWith({ local: "signed_in", federated: "everyone" }),
       http.get(`${apiBase}/timelines/local`, () => problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated")),
     );
     await renderApp({ path: "/local" });
@@ -245,7 +245,7 @@ describe("the timelines' items", () => {
   });
 
   test("offer the timelines kept for signed-in users", async () => {
-    server.use(instanceWith({ local: "logged_in", federated: "logged_in" }));
+    server.use(instanceWith({ local: "signed_in", federated: "signed_in" }));
     await renderApp({ path: "/home" });
     await screen.findByRole("heading", { level: 1, name: "Home" });
 

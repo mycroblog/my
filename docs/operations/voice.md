@@ -226,7 +226,7 @@ Sora is a commercial product of Shiguredo. As checked on 2026-10-26: Sora Cloud 
 ## Ending rooms and records
 
 - A moderator who holds `manage_reports` can end an open room for everyone, even while voice chat is off ([moderation](moderation.md#voice-chat-rooms)).
-- Who took part in a room (participations, speakers and listeners, raised hands, invitations and removals) is kept for `retention_voice_participants` days after the room ends (default 90, at least 30), or as long as a report points at the room. The room's name, description, hosts and how it ended are kept. The audio, the microphone state and reactions are never recorded.
+- Who took part in a room (participations, speakers and listeners, raised hands, invitations and removals) is kept for `voice_participants_retention_days` days after the room ends (default 90, at least 30), or as long as a report points at the room. The room's name, description, hosts and how it ended are kept. The audio, the microphone state and reactions are never recorded.
 - `voice_public_summary` controls whether visitors who cannot join a `local` room see its name and whether it is open, on its page and in its link preview ([instance settings](instance-settings.md)).
 
 ## Notes for users

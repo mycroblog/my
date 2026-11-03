@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The federated timeline through the whole app (web-client/README.md T4): its page with the loading, empty and
-// error states, and its navigation item, which the instance setting federated_timeline_access turns off or keeps for signed-in users
+// error states, and its navigation item, which the instance setting federated_timeline_visibility turns off or keeps for signed-in users
 // (FR-202). The real router and QueryClient, MSW for the client API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { instanceFixture, statusPage, timelineStatusFixture } from "../../test/fixtures";
-import type { TimelineAccess } from "./api/timelines";
+import type { InstanceAudience } from "./api/timelines";
 import { findLoadingRegion } from "../../test/loading";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 
 /** GET /instance with the given public timelines turned on or off. */
-function instanceWith(timelines: { local: TimelineAccess; federated: TimelineAccess }) {
+function instanceWith(timelines: { local: InstanceAudience; federated: InstanceAudience }) {
   return http.get(`${apiBase}/instance`, () => HttpResponse.json({ ...instanceFixture, timelines }));
 }
 
@@ -123,7 +123,7 @@ describe("the federated timeline", () => {
 
   test("asks a visitor to sign in when the server keeps it for signed-in users", async () => {
     server.use(
-      instanceWith({ local: "everyone", federated: "logged_in" }),
+      instanceWith({ local: "everyone", federated: "signed_in" }),
       http.get(`${apiBase}/timelines/federated`, () =>
         problem(401, "/api/v1/problems/unauthenticated", "Unauthenticated"),
       ),

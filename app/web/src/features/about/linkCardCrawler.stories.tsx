@@ -42,7 +42,7 @@ export const SignedIn: Story = { parameters: { screen: { signedIn: true } } };
 export const RobotsTxtIgnored: Story = answering(serving({ link_cards_ignore_robots_txt: true }));
 
 /** The operators turned link cards off: the crawler fetches nothing. */
-export const LinkCardsOff: Story = answering(serving({ link_cards_enabled: false }));
+export const LinkCardsOff: Story = answering(serving({ link_cards: false }));
 
 /** A server that publishes no contact. */
 export const Empty: Story = answering(http.get(`${apiBase}/instance`, () => HttpResponse.json(instanceFixture)));
