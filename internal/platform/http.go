@@ -11,6 +11,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -412,7 +413,9 @@ func validRequestID(id string) bool {
 func (a *App) accessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
+		busyCtx, busy := kernel.WithDatabaseBusyNote(r.Context())
+		r = r.WithContext(busyCtx)
+		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK, databaseBusy: busy}
 		rr := &requestRoute{method: methodLabel(r.Method)}
 		r, endSpan := a.startHTTPSpan(r)
 		if endSpan != nil {
@@ -483,9 +486,16 @@ type responseWriter struct {
 	status      int
 	bytes       int64
 	wroteHeader bool
+	// databaseBusy reports that the request found no free database connection in time. Surfaces
+	// without the error at hand answer 500; this makes it the 503 that it is.
+	databaseBusy func() bool
 }
 
 func (w *responseWriter) WriteHeader(status int) {
+	if !w.wroteHeader && status == http.StatusInternalServerError && w.databaseBusy != nil && w.databaseBusy() {
+		status = http.StatusServiceUnavailable
+		w.Header().Set("Retry-After", strconv.Itoa(int(kernel.DatabaseBusyRetryAfter.Seconds())))
+	}
 	if !w.wroteHeader {
 		w.status, w.wroteHeader = status, true
 	}

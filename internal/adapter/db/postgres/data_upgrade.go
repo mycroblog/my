@@ -39,7 +39,7 @@ func (r *DataUpgradeRepository) Runs(ctx context.Context) ([]dbupgrade.Run, erro
 // schema holds no table or lacks data_upgrade_runs, and nil otherwise.
 func (r *DataUpgradeRepository) missingRecord(ctx context.Context) error {
 	var tables, record int64
-	err := r.db.pool.QueryRow(ctx,
+	err := r.db.conns.QueryRow(ctx,
 		`SELECT count(*), count(*) FILTER (WHERE table_name = 'data_upgrade_runs')
 		FROM information_schema.tables WHERE table_schema = current_schema()`,
 	).Scan(&tables, &record)

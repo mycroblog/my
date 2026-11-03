@@ -364,6 +364,27 @@ To decide whether to raise it, read `my.job.wait` per `my.job.type`: if jobs of 
 
 While no job is due, one slot polls and the others wait, so an idle process costs the database what a one-job process costs.
 
+### Waiting for a database connection
+
+With `db = postgres`, every statement and transaction first waits for a free connection of the process's pool.
+[`database_acquire_timeout`](../reference/configuration.md#database_acquire_timeout) (default `60s`) bounds that wait, and nothing else: a long query or
+transaction that already has its connection runs on, however long it takes. `0` waits without a limit. SQLite and libSQL have no limit on connections to wait for, so setting it there fails at startup.
+
+When the wait runs out:
+
+- A request is answered `503 Service Unavailable` with `Retry-After: 5`.
+- A job runs again 30 seconds later and uses no attempt, so a busy database never turns a job into a dead job.
+- The `db.client.connection.timeouts` metric counts it, and the [`MyDBPoolWaiting`](alerts.md#mydbpoolwaiting) alert fires.
+
+The default is the server's 60-second write timeout: a request that waited longer could not send its answer anyway, so the default fails no request that could still have succeeded.
+Choose a value from how your instance runs:
+
+- **Lower it** to shed load quickly: clients retry after `Retry-After` instead of holding their requests open. Keep it longer than your slowest normal transactions, or a short burst starts answering `503`.
+- **Size the pool first.** A process needs about as many connections as it runs work at once. `pool_max_conns` in `database_url` defaults to the larger of 4 and the CPU count, and all processes together must stay under the database's connection limit.
+  - With [`worker_job_concurrency`](#running-several-jobs-at-once), slots wait for connections too, and the setting must stay below the pool maximum.
+  - On Cloud Run, a service takes 80 concurrent requests per instance by default. With a pool of 4, a burst of slow requests queues here, so raise `pool_max_conns`, lower the service's concurrency, or both.
+- **Frequent `503`s or `db.client.connection.timeouts`** mean the pool is too small or queries got slower; a longer timeout only hides that. Follow [`MyDBPoolSaturated`](alerts.md#mydbpoolsaturated).
+
 ### Cloud Tasks
 
 With `queue = cloudtasks` the jobs stay in the database (`db = postgres` or `libsql`), and Google Cloud Tasks only wakes the server up for each of them:

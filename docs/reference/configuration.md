@@ -65,6 +65,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`trusted_proxy_header`](#trusted_proxy_header) | `MY_TRUSTED_PROXY_HEADER` | `x-forwarded-for` | no | no |
 | [`db`](#db) | `MY_DB` | `sqlite` | no | no |
 | [`database_url`](#database_url) | `MY_DATABASE_URL` | none | yes | yes |
+| [`database_acquire_timeout`](#database_acquire_timeout) | `MY_DATABASE_ACQUIRE_TIMEOUT` | `60s` | no | no |
 | [`database_dev_url`](#database_dev_url) | `MY_DATABASE_DEV_URL` | a temporary schema in the database of `database_url` | no | yes |
 | [`queue`](#queue) | `MY_QUEUE` | `db` | no | no |
 | [`queue_sqs_routes`](#queue_sqs_routes) | `MY_QUEUE_SQS_ROUTES` | none | no | no |
@@ -378,6 +379,14 @@ Connection string passed to the `db` adapter, in that adapter's format.
 - Environment variable: `MY_DATABASE_URL` or `MY_DATABASE_URL_FILE`
 - Default: none
 - Required: yes
+
+### `database_acquire_timeout`
+
+How long a request or a job waits for a free connection of the database's pool before giving up, as a Go duration; `0` waits without a limit. It bounds only the wait, never the query or the transaction that follows. A request that gives up gets a `503` with `Retry-After`, and a job runs again later without using an attempt. Only for `db = postgres`: SQLite and libSQL have no limit on connections to wait for, and setting it fails there. Each process has its own value, so processes of different roles can differ.
+
+- Environment variable: `MY_DATABASE_ACQUIRE_TIMEOUT`
+- Default: `60s`
+- Required: no
 
 ### `database_dev_url`
 

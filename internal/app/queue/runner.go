@@ -78,7 +78,9 @@ type ClaimResult struct {
 
 // Defaults applied to the zero fields of RunnerOptions.
 const (
-	DefaultLease         = 5 * time.Minute
+	DefaultLease = 5 * time.Minute
+	// DatabaseBusyDelay is how long a job that found no free database connection waits.
+	DatabaseBusyDelay    = 30 * time.Second
 	DefaultPollInterval  = time.Second
 	DefaultRecordTimeout = 10 * time.Second
 )
@@ -294,6 +296,11 @@ func (r *PullRunner) runClaimed(ctx context.Context, j Job, now, leaseEnd time.T
 		res = r.call(mctx, handler, j, jobType, leaseEnd)
 	} else {
 		res = Retry(0, fmt.Errorf("%w: %s", ErrNoHandler, j.Type))
+	}
+	if err := res.Err(); err != nil && errors.Is(err, kernel.ErrDatabaseBusy) {
+		// The database was busy, not this job: wait for it without using an attempt.
+		r.opts.Logger.WarnContext(ctx, "job waits for a busy database", slog.String(LabelJobType, jobType), slog.Any("error", err))
+		res = Postpone(DatabaseBusyDelay)
 	}
 	// The record's deadline starts once the handler returned, under the span of the run.
 	cancelRecord()
