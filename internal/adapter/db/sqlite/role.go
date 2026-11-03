@@ -106,6 +106,16 @@ func (r *IdentityRepository) ListRoleHolderIDs(ctx context.Context, roleID strin
 	return ids, wrap(err, "list role holders")
 }
 
+// ListRoleHolderIDsTx implements identity.RoleRepository.
+func (r *IdentityRepository) ListRoleHolderIDsTx(ctx context.Context, tx uow.Tx, roleID string) ([]string, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := q.ListRoleHolderIDs(ctx, roleID)
+	return ids, wrap(err, "list role holders")
+}
+
 // Creating, changing, and deleting roles (FR-720).
 
 // RolePermissions implements identity.RoleRepository.

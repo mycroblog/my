@@ -23,6 +23,11 @@ type LoginPolicy interface {
 	Banned(ctx context.Context, accountID string) (bool, error)
 }
 
+// LoginPolicyTx is LoginPolicy read inside a transaction. *appmoderation.AccountPolicy implements it.
+type LoginPolicyTx interface {
+	LoginRestrictedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error)
+}
+
 // loginRestricted reports whether the policy forbids the account to log in; without a policy,
 // nobody is.
 func (s *Service) loginRestricted(ctx context.Context, accountID string) (bool, error) {
