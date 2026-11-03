@@ -197,18 +197,18 @@
 | `session_revocations` | イベント | `session_id`（PK）, `reason`（`enum(logout, replaced, password_changed, moderation, expired_cleanup, account_deleted)`）, `revoked_at` | 有効なセッション = 失効イベントが無く `expires_at` を過ぎていないもの。`replaced` は同じブラウザでのログインし直し |
 | `session_activity` | 現在値 | `session_id`（PK）, `last_seen_at` | ログイン時に作り、以後の更新は 1 時間に 1 回に間引く |
 | `oauth_clients` | リソース | `id`, `client_id`, `client_secret_hash`（NULL 可 = 公開クライアント）, `name`, `website`（NULL 可）, `scope`, `registration`（`enum(first_party, user, metadata_document, dynamic)`）, `owner_user_id`（NULL 可）, `created_at` | 一意 `(client_id)`。インデックス `(owner_user_id)`。`registration` は登録の経路で、変わらない。`name`・`website`・`scope`・`client_secret_hash` は登録したときの値 |
-| `oauth_client_disablements` | イベント | `id`, `client_id`, `disabled_by_user_id`（NULL 可 = CLI）, `disabled_at` | インデックス `(client_id)`。取り消しのない行があればクライアントは無効 |
+| `oauth_client_disablements` | イベント | `id`, `oauth_client_id`, `disabled_by_user_id`（NULL 可 = CLI）, `disabled_at` | インデックス `(oauth_client_id)`。取り消しのない行があればクライアントは無効 |
 | `oauth_client_disablement_lifts` | イベント | `disablement_id`（PK）, `lifted_by_user_id`（NULL 可 = CLI）, `lifted_at` | 無効化の取り消し |
-| `oauth_client_deletions` | イベント | `client_id`（PK）, `reason`（`enum(owner, unused)`）, `deleted_by_user_id`（NULL 可 = 使われないクライアントの自動の削除）, `deleted_at` | 削除したクライアントは二度と使えない |
-| `oauth_client_revisions` | イベント | `id`, `client_id`, `name`, `website`（NULL 可）, `scope`, `revised_at` | インデックス `(client_id, id)`。登録者による変更。いちばん新しい行がいまの名前・サイト・スコープ |
-| `oauth_client_secret_rotations` | イベント | `id`, `client_id`, `secret_hash`, `rotated_at` | インデックス `(client_id, id)`。シークレットの再発行。いちばん新しい行のシークレットだけが使える |
-| `oauth_client_redirect_uris` | 現在値 | `client_id`, `redirect_uri` | PK `(client_id, redirect_uri)`。完全一致で照合する |
-| `oauth_client_metadata_documents` | 現在値（キャッシュ） | `client_id`（PK）, `client_name`, `client_uri`（無ければ空）, `logo_uri`（無ければ空）, `scope`, `fetched_at`, `expires_at` | 経路が `metadata_document` のクライアントの、最後に取得した Client ID Metadata Document。取得のたびに UPSERT し、`oauth_client_redirect_uris` も文書の `redirect_uris` に置き換える |
+| `oauth_client_deletions` | イベント | `oauth_client_id`（PK）, `reason`（`enum(owner, unused)`）, `deleted_by_user_id`（NULL 可 = 使われないクライアントの自動の削除）, `deleted_at` | 削除したクライアントは二度と使えない |
+| `oauth_client_revisions` | イベント | `id`, `oauth_client_id`, `name`, `website`（NULL 可）, `scope`, `revised_at` | インデックス `(oauth_client_id, id)`。登録者による変更。いちばん新しい行がいまの名前・サイト・スコープ |
+| `oauth_client_secret_rotations` | イベント | `id`, `oauth_client_id`, `secret_hash`, `rotated_at` | インデックス `(oauth_client_id, id)`。シークレットの再発行。いちばん新しい行のシークレットだけが使える |
+| `oauth_client_redirect_uris` | 現在値 | `oauth_client_id`, `redirect_uri` | PK `(oauth_client_id, redirect_uri)`。完全一致で照合する |
+| `oauth_client_metadata_documents` | 現在値（キャッシュ） | `oauth_client_id`（PK）, `client_name`, `client_uri`（無ければ空）, `logo_uri`（無ければ空）, `scope`, `fetched_at`, `expires_at` | 経路が `metadata_document` のクライアントの、最後に取得した Client ID Metadata Document。取得のたびに UPSERT し、`oauth_client_redirect_uris` も文書の `redirect_uris` に置き換える |
 | `oauth_client_host_denials` | イベント | `id`, `host`, `denied_by_user_id`（NULL 可 = CLI）, `denied_at` | インデックス `(host)`。取り消しのない行があれば、そのホストの `client_id` の URL は取得も利用もしない |
 | `oauth_client_host_denial_lifts` | イベント | `denial_id`（PK）, `lifted_by_user_id`（NULL 可 = CLI）, `lifted_at` | ホストの拒否の取り消し |
-| `oauth_authorization_codes` | リソース | `code_hash`（PK）, `client_id`, `user_id`, `redirect_uri`, `scope`, `code_challenge`, `session_id`（NULL 可 = セッションの外で発行）, `issued_at`, `expires_at` | `session_id` は認可した画面のセッション |
+| `oauth_authorization_codes` | リソース | `code_hash`（PK）, `oauth_client_id`, `user_id`, `redirect_uri`, `scope`, `code_challenge`, `session_id`（NULL 可 = セッションの外で発行）, `issued_at`, `expires_at` | `session_id` は認可した画面のセッション |
 | `oauth_authorization_code_redemptions` | イベント | `code_hash`（PK）, `token_id`, `redeemed_at` | 一意 `(token_id)`。`token_id` は交換で発行した系列の最初のトークン |
-| `oauth_access_tokens` | リソース | `id`, `family_id`, `client_id`, `user_id`, `access_token_hash`, `refresh_token_hash`（NULL 可）, `scope`, `rotated_from_token_id`（NULL 可）, `issued_at`, `expires_at`, `refresh_expires_at`（NULL 可） | 一意 `(access_token_hash)`, `(refresh_token_hash)`。インデックス `(family_id)`, `(user_id)`（処分による失効）, `(client_id)`（クライアントの無効化・削除による失効）。`refresh_token_hash` と `refresh_expires_at` は同時に NULL |
+| `oauth_access_tokens` | リソース | `id`, `family_id`, `oauth_client_id`, `user_id`, `access_token_hash`, `refresh_token_hash`（NULL 可）, `scope`, `rotated_from_token_id`（NULL 可）, `issued_at`, `expires_at`, `refresh_expires_at`（NULL 可） | 一意 `(access_token_hash)`, `(refresh_token_hash)`。インデックス `(family_id)`, `(user_id)`（処分による失効）, `(oauth_client_id)`（クライアントの無効化・削除による失効）。`refresh_token_hash` と `refresh_expires_at` は同時に NULL |
 | `oauth_token_revocations` | イベント | `token_id`（PK）, `reason`（`enum(user, rotation, refresh_reuse, code_reuse, password_changed, moderation, account_deleted, client_disabled, client_deleted, session_replaced)`）, `revoked_at` | |
 | `oauth_token_family_last_used` | 現在値 | `family_id`（PK）, `last_used_at` | アクセストークンの認証で、系列ごとに 1 時間に 1 回まで更新する（`KeyValueStore` の名前空間 `oauth_last_used` の `IncrBy` で間引く）。行は系列が使われてから作る |
 
@@ -230,7 +230,7 @@
 - アカウントの管理（FR-714）の検索は、モジュールをまたぐ JOIN をしません。条件ごとに 1 つのモジュールが自分のテーブルから ID を新しい順のキーセットで返し（メールアドレス・メールのドメイン・IP アドレス・登録の状態は `identity` が利用者の ID で、処分の制限は `moderation` が `account_restrictions` から、削除は `account` が `account_lifecycle_states` から、それ以外は `account` が `accounts` と `account_handles` から）、`identity.AccountAdmin` が残りの条件をアカウントごとに確かめます。
   1 ページを埋めるのに読むのは 400 アカウントまでで、埋まらなければ読んだ位置をカーソルにして返します（短い、または空のページにも続きがある）。
 - `scope` は RFC 6749 の scope 文字列（空白区切り・ソート済みの正規形）です。照合は文字列全体で行い、個々のスコープの検索には使わないため、1 カラムで持ちます。
-- `oauth_clients` 以外のテーブルの `client_id` は `oauth_clients.id` を指します。クライアントが送る公開の識別子は `oauth_clients.client_id` です。
+- `oauth_client_id` の列は `oauth_clients.id` を指します（PostgreSQL では `uuid`）。クライアントが送る公開の識別子は `oauth_clients.client_id` で、URL のこともあるので `text` です。
 - 登録の経路（[ADR-0090](../../../adr/0090-third-party-oauth-apps.md) §1）は `first_party`（サーバー自身のクライアント。同意の画面を出さない）・`user`（利用者による登録、`owner_user_id` が登録者）・
   `metadata_document`（Client ID Metadata Document）・`dynamic`（動的クライアント登録、RFC 7591）です。一次のクライアントかどうかはこの経路だけで決めます（`identity.OAuthClient.FirstParty`）。
 - 利用者による登録（ADR-0090 §1・§2、client API の `/api/v1/oauth_apps`）は、`oauth_clients` に `registration` が `user`・`owner_user_id` が登録者の行を作ります。

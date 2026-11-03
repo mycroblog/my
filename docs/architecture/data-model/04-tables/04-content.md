@@ -5,7 +5,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `statuses` | リソース | `id`, `uri`, `url`（NULL 可。リモートの投稿の表示用 URL だけを持ち、ローカルの投稿の表示用 URL は読むときに作る。ADR-0053）, `author_account_id`, `is_local`（`bool`）, `visibility`（`enum(public, local, unlisted, private, direct)`）, `in_reply_to_uri`（NULL 可）, `conversation_uri`（NULL 可）, `published_at` | 一意 `(uri)`。インデックス `(author_account_id, id)`, `(in_reply_to_uri)`, `(conversation_uri, id)`。CHECK `visibility <> 'local' OR is_local` |
-| `local_statuses` | リソース（部分型） | `status_id`（PK）, `author_account_id`, `client_id`（NULL 可）, `idempotency_key`（NULL 可） | 一意 `(author_account_id, idempotency_key)` |
+| `local_statuses` | リソース（部分型） | `status_id`（PK）, `author_account_id`, `oauth_client_id`（NULL 可。`oauth_clients.id`）, `idempotency_key`（NULL 可） | 一意 `(author_account_id, idempotency_key)` |
 | `status_revisions` | イベント（版） | `id`, `status_id`, `seq`（`int`、1 始まり）, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`）, `revised_at` | 一意 `(status_id, seq)` |
 | `status_revision_bodies` | イベント（版の子） | `revision_id`, `language`（`lang`）, `content_html` | PK `(revision_id, language)`。AP の `contentMap` を正規化したもの。`content` だけのものは版の `language` で 1 行（NFR-I18N-5） |
 | `status_revision_sources` | イベント（部分型） | `revision_id`（PK）, `source_text`, `source_format`（`enum(text_plain)`） | ローカル投稿の入力ソース |

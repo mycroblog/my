@@ -12,35 +12,35 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
 SELECT c.id, c.client_id, c.client_secret_hash, c.name, c.website, c.scope, c.registration, c.owner_user_id, c.created_at
 FROM oauth_clients c
 WHERE c.owner_user_id = sqlc.arg(owner_user_id)
-  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id::text)
+  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id)
 ORDER BY c.id;
 
 -- CountOAuthClientsOfOwner counts the clients a user registered that are not deleted.
 -- name: CountOAuthClientsOfOwner :one
 SELECT COUNT(*) FROM oauth_clients c
 WHERE c.owner_user_id = sqlc.arg(owner_user_id)
-  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id::text);
+  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id);
 
 -- name: InsertOAuthClientRevision :exec
-INSERT INTO oauth_client_revisions (id, client_id, name, website, scope, revised_at) VALUES ($1, $2, $3, $4, $5, $6);
+INSERT INTO oauth_client_revisions (id, oauth_client_id, name, website, scope, revised_at) VALUES ($1, $2, $3, $4, $5, $6);
 
 -- name: GetLatestOAuthClientRevision :one
-SELECT id, client_id, name, website, scope, revised_at FROM oauth_client_revisions
-WHERE client_id = $1 ORDER BY id DESC LIMIT 1;
+SELECT id, oauth_client_id, name, website, scope, revised_at FROM oauth_client_revisions
+WHERE oauth_client_id = $1 ORDER BY id DESC LIMIT 1;
 
 -- name: InsertOAuthClientSecretRotation :exec
-INSERT INTO oauth_client_secret_rotations (id, client_id, secret_hash, rotated_at) VALUES ($1, $2, $3, $4);
+INSERT INTO oauth_client_secret_rotations (id, oauth_client_id, secret_hash, rotated_at) VALUES ($1, $2, $3, $4);
 
 -- name: GetLatestOAuthClientSecretRotation :one
-SELECT id, client_id, secret_hash, rotated_at FROM oauth_client_secret_rotations
-WHERE client_id = $1 ORDER BY id DESC LIMIT 1;
+SELECT id, oauth_client_id, secret_hash, rotated_at FROM oauth_client_secret_rotations
+WHERE oauth_client_id = $1 ORDER BY id DESC LIMIT 1;
 
 -- RevokeTokensOfOwnedClients revokes every token of the clients a user registered whose access
 -- or refresh token has not expired at revoked_at and that has no revocation yet.
 -- name: RevokeTokensOfOwnedClients :exec
 INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
 SELECT t.id, sqlc.arg(reason), sqlc.arg(revoked_at) FROM oauth_access_tokens t
-JOIN oauth_clients c ON c.id::text = t.client_id
+JOIN oauth_clients c ON c.id = t.oauth_client_id
 WHERE c.owner_user_id = sqlc.arg(owner_user_id)
   AND (t.expires_at > sqlc.arg(revoked_at) OR t.refresh_expires_at > sqlc.arg(revoked_at))
 ON CONFLICT (token_id) DO NOTHING;

@@ -21,7 +21,7 @@
 
 | 論理型 | 意味 | SQLite 系 | PostgreSQL 系 |
 | --- | --- | --- | --- |
-| `id` | UUIDv7 の正規形文字列（36 文字、小文字） | `TEXT` | `uuid`（16 バイトのバイト順 = 時刻順。[ADR-0078](../../adr/0078-postgres-uuid-columns.md)）。Go では `string`。UUID でない値を持つ列（外部の事業者の ID、`client_id`、監査ログの `target_id`、`emoji_key` など）は `text COLLATE "C"` |
+| `id` | UUIDv7 の正規形文字列（36 文字、小文字） | `TEXT` | `uuid`（16 バイトのバイト順 = 時刻順。[ADR-0078](../../adr/0078-postgres-uuid-columns.md)）。Go では `string`。UUID でない値を持つ列（外部の事業者の ID、公開の `client_id`（`oauth_clients.client_id`、`login_provider_revisions.client_id`）、監査ログの `target_id`、`emoji_key` など）は `text COLLATE "C"` |
 | `string(n)` | 長さ上限つき文字列（上限はアプリで検証） | `TEXT` | `text` |
 | `text` | 長文 | `TEXT` | `text` |
 | `iri` | URL / ActivityPub の IRI（最大 2048 文字を想定） | `TEXT` | `text` |

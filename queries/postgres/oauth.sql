@@ -21,49 +21,49 @@ WHERE id = $1;
 SELECT
   EXISTS (
     SELECT 1 FROM oauth_client_disablements d
-    WHERE d.client_id = c.id::text AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+    WHERE d.oauth_client_id = c.id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
   ) AS disabled,
-  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id::text) AS deleted
+  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id) AS deleted
 FROM oauth_clients c
 WHERE c.id = sqlc.arg(id);
 
 -- InsertOAuthClientDisablementIfEnabled records a disablement unless the client is disabled
 -- already, so that repeating it adds nothing.
 -- name: InsertOAuthClientDisablementIfEnabled :execrows
-INSERT INTO oauth_client_disablements (id, client_id, disabled_by_user_id, disabled_at)
-SELECT sqlc.arg(id)::uuid, sqlc.arg(client_id)::text, sqlc.narg(disabled_by_user_id)::uuid, sqlc.arg(disabled_at)::timestamptz
+INSERT INTO oauth_client_disablements (id, oauth_client_id, disabled_by_user_id, disabled_at)
+SELECT sqlc.arg(id)::uuid, sqlc.arg(oauth_client_id)::uuid, sqlc.narg(disabled_by_user_id)::uuid, sqlc.arg(disabled_at)::timestamptz
 WHERE NOT EXISTS (
     SELECT 1 FROM oauth_client_disablements d
-    WHERE d.client_id = sqlc.arg(client_id)::text AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+    WHERE d.oauth_client_id = sqlc.arg(oauth_client_id)::uuid AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
   );
 
 -- LiftOAuthClientDisablements lifts every disablement of a client that has no lift yet.
 -- name: LiftOAuthClientDisablements :execrows
 INSERT INTO oauth_client_disablement_lifts (disablement_id, lifted_by_user_id, lifted_at)
 SELECT d.id, sqlc.narg(lifted_by_user_id)::uuid, sqlc.arg(lifted_at)::timestamptz FROM oauth_client_disablements d
-WHERE d.client_id = sqlc.arg(client_id)::text
+WHERE d.oauth_client_id = sqlc.arg(oauth_client_id)::uuid
 ON CONFLICT (disablement_id) DO NOTHING;
 
 -- name: InsertOAuthClientDeletionIfAbsent :execrows
-INSERT INTO oauth_client_deletions (client_id, reason, deleted_by_user_id, deleted_at) VALUES ($1, $2, $3, $4)
-ON CONFLICT (client_id) DO NOTHING;
+INSERT INTO oauth_client_deletions (oauth_client_id, reason, deleted_by_user_id, deleted_at) VALUES ($1, $2, $3, $4)
+ON CONFLICT (oauth_client_id) DO NOTHING;
 
 -- name: ListOAuthClientRedirectURIs :many
-SELECT redirect_uri FROM oauth_client_redirect_uris WHERE client_id = $1 ORDER BY redirect_uri;
+SELECT redirect_uri FROM oauth_client_redirect_uris WHERE oauth_client_id = $1 ORDER BY redirect_uri;
 
 -- name: InsertOAuthClientRedirectURIIfAbsent :exec
-INSERT INTO oauth_client_redirect_uris (client_id, redirect_uri) VALUES ($1, $2)
-ON CONFLICT (client_id, redirect_uri) DO NOTHING;
+INSERT INTO oauth_client_redirect_uris (oauth_client_id, redirect_uri) VALUES ($1, $2)
+ON CONFLICT (oauth_client_id, redirect_uri) DO NOTHING;
 
 -- name: DeleteOAuthClientRedirectURI :exec
-DELETE FROM oauth_client_redirect_uris WHERE client_id = $1 AND redirect_uri = $2;
+DELETE FROM oauth_client_redirect_uris WHERE oauth_client_id = $1 AND redirect_uri = $2;
 
 -- name: InsertAuthorizationCode :exec
-INSERT INTO oauth_authorization_codes (code_hash, client_id, user_id, redirect_uri, scope, code_challenge, session_id, issued_at, expires_at)
+INSERT INTO oauth_authorization_codes (code_hash, oauth_client_id, user_id, redirect_uri, scope, code_challenge, session_id, issued_at, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
 
 -- name: GetAuthorizationCode :one
-SELECT code_hash, client_id, user_id, redirect_uri, scope, code_challenge, session_id, issued_at, expires_at
+SELECT code_hash, oauth_client_id, user_id, redirect_uri, scope, code_challenge, session_id, issued_at, expires_at
 FROM oauth_authorization_codes
 WHERE code_hash = $1;
 
@@ -76,35 +76,35 @@ SELECT code_hash, token_id, redeemed_at FROM oauth_authorization_code_redemption
 
 -- name: InsertAccessToken :exec
 INSERT INTO oauth_access_tokens (
-  id, family_id, client_id, user_id, access_token_hash, refresh_token_hash, scope, rotated_from_token_id,
+  id, family_id, oauth_client_id, user_id, access_token_hash, refresh_token_hash, scope, rotated_from_token_id,
   issued_at, expires_at, refresh_expires_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
 
 -- AccessTokenByAccessHash returns a token, whether it has a revocation, and whether its client is disabled
 -- or deleted (ADR-0090 section 1).
 -- name: GetAccessTokenByAccessHash :one
-SELECT t.id, t.family_id, t.client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
+SELECT t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
   t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at,
   EXISTS (SELECT 1 FROM oauth_token_revocations r WHERE r.token_id = t.id) AS revoked,
   EXISTS (
     SELECT 1 FROM oauth_client_disablements d
-    WHERE d.client_id = t.client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+    WHERE d.oauth_client_id = t.oauth_client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
   ) AS client_disabled,
-  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = t.client_id) AS client_deleted
+  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = t.oauth_client_id) AS client_deleted
 FROM oauth_access_tokens t
 WHERE t.access_token_hash = $1;
 
 -- AccessTokenByRefreshHash returns a token, whether it has a revocation, and whether its client is disabled
 -- or deleted (ADR-0090 section 1).
 -- name: GetAccessTokenByRefreshHash :one
-SELECT t.id, t.family_id, t.client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
+SELECT t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
   t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at,
   EXISTS (SELECT 1 FROM oauth_token_revocations r WHERE r.token_id = t.id) AS revoked,
   EXISTS (
     SELECT 1 FROM oauth_client_disablements d
-    WHERE d.client_id = t.client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+    WHERE d.oauth_client_id = t.oauth_client_id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
   ) AS client_disabled,
-  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = t.client_id) AS client_deleted
+  EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = t.oauth_client_id) AS client_deleted
 FROM oauth_access_tokens t
 WHERE t.refresh_token_hash = $1;
 
@@ -166,7 +166,7 @@ SELECT EXISTS (
 -- name: RevokeTokensOfClient :exec
 INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
 SELECT t.id, sqlc.arg(reason)::text, sqlc.arg(revoked_at)::timestamptz FROM oauth_access_tokens t
-WHERE t.client_id = sqlc.arg(client_id)::text
+WHERE t.oauth_client_id = sqlc.arg(oauth_client_id)::uuid
   AND (t.expires_at > sqlc.arg(revoked_at)::timestamptz OR t.refresh_expires_at > sqlc.arg(revoked_at)::timestamptz)
 ON CONFLICT (token_id) DO NOTHING;
 
@@ -178,16 +178,16 @@ ON CONFLICT (token_id) DO NOTHING;
 -- name: ListUnusedDynamicOAuthClients :many
 SELECT c.id FROM oauth_clients c
 WHERE c.registration = 'dynamic'
-  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id::text)
+  AND NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id)
   AND (
     (c.created_at < sqlc.arg(unredeemed_before)::timestamptz AND NOT EXISTS (
       SELECT 1 FROM oauth_authorization_codes a
       JOIN oauth_authorization_code_redemptions r ON r.code_hash = a.code_hash
-      WHERE a.client_id = c.id::text))
+      WHERE a.oauth_client_id = c.id))
     OR
     (c.created_at < sqlc.arg(idle_before)::timestamptz AND NOT EXISTS (
       SELECT 1 FROM oauth_access_tokens t
-      WHERE t.client_id = c.id::text
+      WHERE t.oauth_client_id = c.id
         AND (t.issued_at >= sqlc.arg(idle_before)::timestamptz
           OR EXISTS (SELECT 1 FROM oauth_token_family_last_used u WHERE u.family_id = t.family_id AND u.last_used_at >= sqlc.arg(idle_before)::timestamptz)
           OR ((t.expires_at > sqlc.arg(now)::timestamptz OR t.refresh_expires_at > sqlc.arg(now)::timestamptz)
@@ -198,16 +198,16 @@ LIMIT sqlc.arg(batch_limit)::int;
 
 -- UpsertOAuthClientMetadataDocument stores the last fetch of a client's metadata document.
 -- name: UpsertOAuthClientMetadataDocument :exec
-INSERT INTO oauth_client_metadata_documents (client_id, client_name, client_uri, logo_uri, scope, fetched_at, expires_at)
+INSERT INTO oauth_client_metadata_documents (oauth_client_id, client_name, client_uri, logo_uri, scope, fetched_at, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-ON CONFLICT (client_id) DO UPDATE SET
+ON CONFLICT (oauth_client_id) DO UPDATE SET
   client_name = excluded.client_name, client_uri = excluded.client_uri, logo_uri = excluded.logo_uri,
   scope = excluded.scope, fetched_at = excluded.fetched_at, expires_at = excluded.expires_at;
 
 -- name: GetOAuthClientMetadataDocument :one
-SELECT client_id, client_name, client_uri, logo_uri, scope, fetched_at, expires_at
+SELECT oauth_client_id, client_name, client_uri, logo_uri, scope, fetched_at, expires_at
 FROM oauth_client_metadata_documents
-WHERE client_id = $1;
+WHERE oauth_client_id = $1;
 
 -- InsertOAuthClientHostDenialIfAllowed records a denial unless the host is denied already, so
 -- that repeating it adds nothing.
@@ -239,10 +239,10 @@ SELECT EXISTS (
 SELECT c.id, c.client_id, c.client_secret_hash, c.name, c.website, c.scope, c.registration, c.owner_user_id, c.created_at,
   EXISTS (
     SELECT 1 FROM oauth_client_disablements d
-    WHERE d.client_id = c.id::text AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
+    WHERE d.oauth_client_id = c.id AND NOT EXISTS (SELECT 1 FROM oauth_client_disablement_lifts l WHERE l.disablement_id = d.id)
   ) AS disabled
 FROM oauth_clients c
-WHERE NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.client_id = c.id::text)
+WHERE NOT EXISTS (SELECT 1 FROM oauth_client_deletions x WHERE x.oauth_client_id = c.id)
   AND (sqlc.narg(registration)::text IS NULL OR c.registration = sqlc.narg(registration)::text)
   AND (sqlc.narg(before)::uuid IS NULL OR c.id < sqlc.narg(before)::uuid)
 ORDER BY c.id DESC
@@ -279,7 +279,7 @@ SELECT t.family_id, t.scope AS token_scope,
   u.last_used_at,
   c.id, c.client_id, c.client_secret_hash, c.name, c.website, c.scope, c.registration, c.owner_user_id, c.created_at
 FROM oauth_access_tokens t
-JOIN oauth_clients c ON c.id::text = t.client_id
+JOIN oauth_clients c ON c.id = t.oauth_client_id
 LEFT JOIN oauth_token_family_last_used u ON u.family_id = t.family_id
 WHERE t.user_id = sqlc.arg(user_id)
   AND (t.expires_at > sqlc.arg(now)::timestamptz OR t.refresh_expires_at > sqlc.arg(now)::timestamptz)
@@ -291,7 +291,7 @@ ORDER BY t.family_id;
 -- name: RevokeTokensOfUserAndClient :execrows
 INSERT INTO oauth_token_revocations (token_id, reason, revoked_at)
 SELECT t.id, sqlc.arg(reason)::text, sqlc.arg(revoked_at)::timestamptz FROM oauth_access_tokens t
-WHERE t.user_id = sqlc.arg(user_id) AND t.client_id = sqlc.arg(client_id)::text
+WHERE t.user_id = sqlc.arg(user_id) AND t.oauth_client_id = sqlc.arg(oauth_client_id)::uuid
 ON CONFLICT (token_id) DO NOTHING;
 
 -- ListBrowserSessions returns the sessions of a user that are a signed-in browser at now
@@ -309,7 +309,7 @@ WHERE s.user_id = sqlc.arg(user_id)
       SELECT 1 FROM oauth_authorization_codes c
       JOIN oauth_authorization_code_redemptions r ON r.code_hash = c.code_hash
       JOIN oauth_access_tokens t ON t.family_id = r.token_id
-      JOIN oauth_clients cl ON cl.id::text = t.client_id
+      JOIN oauth_clients cl ON cl.id = t.oauth_client_id
       WHERE c.session_id = s.id AND cl.registration = 'first_party'
         AND (t.expires_at > sqlc.arg(now)::timestamptz OR t.refresh_expires_at > sqlc.arg(now)::timestamptz)
         AND NOT EXISTS (SELECT 1 FROM oauth_token_revocations v WHERE v.token_id = t.id)
@@ -323,7 +323,7 @@ ORDER BY s.created_at DESC, s.id;
 -- name: ListBrowserSessionFamilies :many
 SELECT DISTINCT c.session_id, t.family_id, u.last_used_at
 FROM oauth_access_tokens t
-JOIN oauth_clients cl ON cl.id::text = t.client_id
+JOIN oauth_clients cl ON cl.id = t.oauth_client_id
 JOIN oauth_authorization_code_redemptions r ON r.token_id = t.family_id
 JOIN oauth_authorization_codes c ON c.code_hash = r.code_hash
 LEFT JOIN oauth_token_family_last_used u ON u.family_id = t.family_id
@@ -340,6 +340,6 @@ SELECT t.id, sqlc.arg(reason)::text, sqlc.arg(revoked_at)::timestamptz
 FROM oauth_authorization_codes c
 JOIN oauth_authorization_code_redemptions r ON r.code_hash = c.code_hash
 JOIN oauth_access_tokens t ON t.family_id = r.token_id
-JOIN oauth_clients cl ON cl.id::text = t.client_id
+JOIN oauth_clients cl ON cl.id = t.oauth_client_id
 WHERE c.session_id = sqlc.arg(session_id) AND cl.registration = 'first_party'
 ON CONFLICT (token_id) DO NOTHING;
