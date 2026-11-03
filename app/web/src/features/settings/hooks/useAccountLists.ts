@@ -11,6 +11,7 @@ import { useViewer } from "../../session";
 import {
   type Account,
   accountActionMutation,
+  endRelationMutation,
   blocksQueryOptions,
   cacheListChange,
   followRequestsQueryOptions,
@@ -106,7 +107,7 @@ export function useBlocks(): { list: AccountList<Account>; unblock: AccountActio
   const t = useT();
   const query = useSuspenseInfiniteQuery(blocksQueryOptions(api));
   const unblock = useMutation({
-    ...accountActionMutation(api, "/accounts/{id}/unblock"),
+    ...endRelationMutation(api, "/accounts/{id}/block"),
     onSuccess: useCacheListChange("unblock"),
   });
   return {
@@ -128,7 +129,7 @@ export function useMutes(): { list: AccountList<MutedAccount>; unmute: AccountAc
   const t = useT();
   const query = useSuspenseInfiniteQuery(mutesQueryOptions(api));
   const unmute = useMutation({
-    ...accountActionMutation(api, "/accounts/{id}/unmute"),
+    ...endRelationMutation(api, "/accounts/{id}/mute"),
     onSuccess: useCacheListChange("unmute"),
   });
   return {
@@ -151,7 +152,7 @@ export function useFollowRequests(): { list: AccountList<Account>; accept: Accou
   const query = useSuspenseInfiniteQuery(followRequestsQueryOptions(api));
   // The viewer has one more follower.
   const accept = useMutation({
-    ...accountActionMutation(api, "/follow_requests/{id}/authorize"),
+    ...accountActionMutation(api, "/follow_requests/{id}/accept"),
     onSuccess: useCacheListChange("accept"),
   });
   const reject = useMutation({

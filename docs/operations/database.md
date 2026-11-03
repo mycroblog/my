@@ -29,11 +29,8 @@ my schema apply            # run them
   A database that already matches the schema is left unchanged (`ok: the database matches the schema; nothing to apply`).
 - A plan that drops a table or a column is refused, and nothing runs, unless `-allow-destructive` is given. Pass it only
   when the release notes call for it, after a backup. Rebuilding a SQLite table to change it does not count as a drop.
-- On PostgreSQL it first runs the bootstrap SQL (`CREATE EXTENSION IF NOT EXISTS pg_trgm`), so the role of `database_url`
-  needs the privilege to create that extension, or the extension must exist already. The owner of the database has it, since
-  PostgreSQL trusts `pg_trgm`. It builds the schema it compares
-  with in a temporary schema of the same database and drops it at the end, also on failure; the role needs the privilege
-  to create a schema there. Where it has none, set `database_dev_url` to another database where it has
+- On PostgreSQL it builds the schema it compares with in a temporary schema of the same database and drops it at the end,
+  also on failure; the role needs the privilege to create a schema there. Where it has none, set `database_dev_url` to another database where it has
   ([`database_dev_url`](../reference/configuration.md#database_dev_url)). Runs against one database wait for each other, so two at once both succeed.
 - It supports `database = sqlite` and `database = postgres`, and exits with `1` when it applied nothing because of an error or a refused drop.
 

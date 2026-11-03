@@ -3,9 +3,9 @@ get:
   operationId: lookupAccount
   summary: Look up or resolve an account by its handle or URL
   description: |
-    Finds `username` (a local account), `username@domain`, or the `https` URL of an actor
-    (its `uri`, or a profile page that serves the actor) among the accounts that the instance
-    knows. A leading `@` of a handle is ignored. An account that blocks the viewer, is
+    Finds `username` (a local account), `username@domain`, or the `https` or `http` URL of an actor
+    among the accounts that the instance knows: its `uri` always, and a profile page that serves
+    the actor only with `resolve`, which fetches it. A leading `@` of a handle is ignored. An account that blocks the viewer, is
     deactivated, or is deleted is a 404, the same as an unknown one.
 
     With `resolve=true`, a remote account that the instance does not know yet is fetched
@@ -25,7 +25,7 @@ get:
     - name: acct
       in: query
       required: true
-      description: The handle, `username` or `username@domain`, or the `https` URL of an actor.
+      description: The handle, `username` or `username@domain`, or the `https` or `http` URL of an actor.
       schema:
         type: string
         minLength: 1

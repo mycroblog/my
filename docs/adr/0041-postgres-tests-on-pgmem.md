@@ -14,7 +14,7 @@ PostgreSQL を使うテスト（`internal/adapter/db/postgres`、`internal/adapt
 pgmem（MIT）は、PostgreSQL 18.3（PGlite のフォーク）を WebAssembly にし、wasm2go で Go に変換したもの。
 テストのプロセスの中で、本物のサーバーとしてメモリ上で動く。spike #453 で確かめたことは次のとおり。
 
-- 4 つのパッケージの全テストが、テストの変更なしで通る。スキーマ（`pg_trgm` を含む）、`FOR UPDATE` / `SKIP LOCKED`、advisory lock、
+- 4 つのパッケージの全テストが、テストの変更なしで通る。スキーマ、`FOR UPDATE` / `SKIP LOCKED`、advisory lock、
   READ COMMITTED、デッドロック検出（40P01）も含む
 - CI の `go test ./...` は 129 秒から 52〜59 秒になる。`db/postgres` だけなら 114 秒から 23〜28 秒になる
 - `CGO_ENABLED=0` で動き、本番のバイナリには入らない

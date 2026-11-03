@@ -259,19 +259,19 @@ func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settin
 	}
 }
 
-// GetPublicTimeline serves GET /api/v1/timelines/public: the public posts of local and remote
+// GetFederatedTimeline serves GET /api/v1/timelines/federated: the public posts of local and remote
 // accounts. It is a 404 while the instance setting federated_timeline_visibility is off, and a 401
 // for anonymous requests while it is signed_in (FR-202).
-func (s *Server) GetPublicTimeline(ctx context.Context, req GetPublicTimelineRequestObject) (GetPublicTimelineResponseObject, error) {
+func (s *Server) GetFederatedTimeline(ctx context.Context, req GetFederatedTimelineRequestObject) (GetFederatedTimelineResponseObject, error) {
 	denied, err := s.timelineDenied(ctx, instance.Settings.FederatedTimelineVisibility)
 	if err != nil {
 		return nil, err
 	} else if denied != nil {
-		return GetPublicTimelinedefaultApplicationProblemPlusJSONResponse(*denied), nil
+		return GetFederatedTimelinedefaultApplicationProblemPlusJSONResponse(*denied), nil
 	}
 	cv, v := timelineViewer(ctx)
 	if p := s.plainPageProblem(ctx, req.Params.Cursor, req.Params.Limit); p != nil {
-		return GetPublicTimelinedefaultApplicationProblemPlusJSONResponse(*p), nil
+		return GetFederatedTimelinedefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
 	q, err := s.timelineQuery(ctx, v, req.Params.Cursor, req.Params.Limit, true)
 	if err != nil {
@@ -282,7 +282,7 @@ func (s *Server) GetPublicTimeline(ctx context.Context, req GetPublicTimelineReq
 		return nil, err
 	}
 	res, err := s.statusPage(ctx, v, entryItems(p.Entries), p.Next)
-	return GetPublicTimeline200JSONResponse{res}, err
+	return GetFederatedTimeline200JSONResponse{res}, err
 }
 
 // GetHashtagTimeline serves GET /api/v1/timelines/tag/{hashtag}. A hashtag that no status used

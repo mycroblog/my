@@ -275,8 +275,8 @@ func TestStatusesThroughTheAPI(t *testing.T) {
 	if res := c.do("alice", http.MethodPost, "/statuses/"+root.Id+"/pin", nil, &st); res.StatusCode != http.StatusOK || st.Pinned == nil || !*st.Pinned {
 		t.Errorf("pin = %d %+v", res.StatusCode, st)
 	}
-	if res := c.do("bob", http.MethodPost, "/statuses/"+root.Id+"/pin", nil, nil); res.StatusCode != http.StatusUnprocessableEntity {
-		t.Errorf("pin of another account's status = %d, want 422", res.StatusCode)
+	if res := c.do("bob", http.MethodPost, "/statuses/"+root.Id+"/pin", nil, nil); res.StatusCode != http.StatusForbidden {
+		t.Errorf("pin of another account's status = %d, want 403", res.StatusCode)
 	}
 	var page clientapi.StatusPage
 	if res := c.do("bob", http.MethodGet, "/bookmarks", nil, &page); res.StatusCode != http.StatusOK || len(page.Items) != 1 || page.Items[0].Id != root.Id {

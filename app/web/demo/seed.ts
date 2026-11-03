@@ -348,7 +348,7 @@ class Seeder {
         const follower = await this.account(f.follower);
         await (
           await this.api(f.followee)
-        ).POST("/follow_requests/{id}/authorize", { params: { path: { id: follower.id } } });
+        ).POST("/follow_requests/{id}/accept", { params: { path: { id: follower.id } } });
       }
     }
   }

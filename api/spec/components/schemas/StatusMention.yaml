@@ -11,16 +11,6 @@ properties:
   acct:
     description: The username for local accounts, `username@domain` for remote ones.
     type: string
-  domain:
-    description: |
-      The domain of the account: the domain of its handle, which for local accounts is the
-      instance's account domain, or the host of its `uri` when a remote account has no
-      confirmed handle.
-    type: string
-  uri:
-    description: The ActivityPub id of the account's actor, on the server it belongs to.
-    type: string
-    format: uri
   url:
     description: The account's profile page.
     type: string

@@ -58,7 +58,7 @@ function PublicPending() {
 
 /**
  * A 404 is the instance setting that turns the federated timeline off, and a 401 the one that keeps it for
- * signed-in users (api/openapi.yaml, getPublicTimeline), reached from an old link, a bookmark, or a shared address: it says
+ * signed-in users (api/openapi.yaml, getFederatedTimeline), reached from an old link, a bookmark, or a shared address: it says
  * so, with the way to sign in for the latter, instead of offering to try again.
  */
 function PublicError(props: ErrorComponentProps) {

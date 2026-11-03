@@ -6,7 +6,7 @@ properties:
   id:
     $ref: ./Id.yaml
   title:
-    description: The heading, in plain text; empty for an announcement without one.
+    description: The heading, in plain text.
     type: string
   text:
     description: The text, in Markdown.

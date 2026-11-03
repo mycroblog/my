@@ -67,7 +67,7 @@ This is an IETF working-group draft
 Use this for a bot, an integration, or a script that you run yourself. A signed-in user registers the app in **Settings → Your apps**
 (or with `POST /api/v1/oauth_apps`, scope `write:accounts`): a name, the site URL, redirect URIs, the most scope the app may ask for, and the type.
 
-- A **public** app has no secret. A **confidential** app gets a `client_secret`, shown **once**, when the app is registered or its secret reissued (`POST /api/v1/oauth_apps/{id}/secret`);
+- A **public** app has no secret. A **confidential** app gets a `client_secret`, shown **once**, when the app is registered or its secret reissued (`POST /api/v1/oauth_apps/{id}/rotate_secret`);
   reissuing invalidates the old secret at once. Only a hash is stored.
 - A confidential client authenticates at the token endpoint with `client_secret_basic` or `client_secret_post`. **PKCE is required for it too.**
 - The owner can edit and delete the app. A user keeps at most 25 apps, and registering is rate limited.

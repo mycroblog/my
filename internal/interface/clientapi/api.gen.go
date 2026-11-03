@@ -4326,7 +4326,8 @@ type AIUsage string
 
 // Account An account, as clients show it (FR-006).
 type Account struct {
-	// Acct The username for local accounts, `username@domain` for remote ones.
+	// Acct The username for local accounts, `username@domain` for remote ones; empty for a remote
+	// account without a confirmed handle.
 	Acct string `json:"acct"`
 
 	// Avatar The avatar image, square; omitted when the account has none, or its image is not
@@ -4397,7 +4398,7 @@ type Account struct {
 	// one the page its actor declares (`url`), or its `uri` when it declares none.
 	Url string `json:"url"`
 
-	// Username The username, without the domain.
+	// Username The username, without the domain; empty for a remote account without a confirmed handle.
 	Username string `json:"username"`
 
 	// VoiceRoom The open voice chat room where the account is the host or a speaker, when the user sees
@@ -4789,7 +4790,7 @@ type AdminAccountRegistration struct {
 type AdminAccountRegistrationState string
 
 // AdminAccountRestriction A capability that an action takes away (data-model §5.2). `login`: logging in and the
-// API. `post`: posting, replying, boosting, editing. `interact`: following, favouriting,
+// API. `post`: posting, replying, boosting, quoting, editing. `interact`: following, favouriting,
 // boosting, voting. `visibility_ceiling_private`: posts are followers-only.
 // `public_discovery`: posts stay off the public timelines and search.
 // `unsolicited_reach`: notifications reach followers only. `media_sensitive`: media shows
@@ -4840,7 +4841,7 @@ type AdminAnnouncement struct {
 	// Text The text, in Markdown.
 	Text string `json:"text"`
 
-	// Title The heading, in plain text; empty for an announcement without one.
+	// Title The heading, in plain text.
 	Title string `json:"title"`
 
 	// UpdatedAt When its text or window last changed.
@@ -4994,7 +4995,7 @@ type AdminAppealPage struct {
 // the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
 // `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
 // the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-// `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+// `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
 // (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
 // and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
 // name.
@@ -5069,7 +5070,7 @@ type AdminAuditEntry struct {
 	// the service or a change of its dates, `service_closure_withdrawn`, its withdrawal,
 	// `service_closure_closed`, the closure of the server, and `service_closure_delivery_completed`,
 	// the end of the delivery of the closure's `Delete` by the server; the ID and the label are
-	// `service_closure`. On a `login_provider`: `login_provider_created`, `login_provider_updated`
+	// `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
 	// (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
 	// and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
 	// name.
@@ -5093,9 +5094,8 @@ type AdminAuditEntry struct {
 	Id         Id        `json:"id"`
 	OccurredAt time.Time `json:"occurred_at"`
 
-	// SourceEventId The ID of the record of the operation (the domain action, the assignment, the
-	// resolution, the reopening, the note, the decision, the revision), which holds its
-	// reasons and notes; omitted when the operation has none.
+	// SourceEventId An opaque ID that relates the entries of one operation; omitted when the operation has
+	// no record of its own.
 	SourceEventId *string `json:"source_event_id,omitempty"`
 
 	// TargetExists Whether the target is still there to look at. It is `false` for an account, a report,
@@ -5105,9 +5105,11 @@ type AdminAuditEntry struct {
 	// names now. It is `true` for the other kinds of targets, which are never removed.
 	TargetExists bool `json:"target_exists"`
 
-	// TargetId The target: the ID of an account, a report, an appeal, a user, a role, a rule, a
-	// sign-up block, a custom emoji, a webhook, or an invite, the domain of a domain action,
-	// or the key of a setting or a text.
+	// TargetId The target: the ID of an account, a status, a report, an appeal, a user, a role, a rule,
+	// a sign-up block, a custom emoji or a request for one, a webhook, an announcement, an
+	// invite, a relay, a cost item, a supporter plan or subscription, an OAuth client, a voice
+	// room, or a login provider; the domain of a domain action or a link card rule; the host of
+	// a denied OAuth client; the source of a billing import; or the key of a setting or a text.
 	TargetId string `json:"target_id"`
 
 	// TargetKind The kind of what an audited operation acted on.
@@ -6178,7 +6180,9 @@ type AdminRole struct {
 
 	// Permissions The permissions that the role grants, in the order of `Permission`.
 	Permissions []Permission `json:"permissions"`
-	Position    int          `json:"position"`
+
+	// Position The rank of the role, from 0 to 999, and 1000 for `admin`.
+	Position int `json:"position"`
 }
 
 // AdminRoleList Roles, highest position first.
@@ -6908,7 +6912,7 @@ type AppealModerationActionRequest struct {
 }
 
 // AuthorizedApp An app the authenticated user authorized: the user's grants of one OAuth client that still
-// work. The name, the website and the logo are what the app says about itself; `registration`,
+// work. The name and the website are what the app says about itself; `registration`,
 // `client_id` and `registered_by` are what the server knows (ADR-0090 §3).
 type AuthorizedApp struct {
 	// AuthorizedAt When the user first authorized the app (the oldest of its working grants).
@@ -7917,7 +7921,8 @@ type CreateWebhookRequest struct {
 
 // CredentialAccount The authenticated user's own account, with what only its owner sees.
 type CredentialAccount struct {
-	// Acct The username for local accounts, `username@domain` for remote ones.
+	// Acct The username for local accounts, `username@domain` for remote ones; empty for a remote
+	// account without a confirmed handle.
 	Acct string `json:"acct"`
 
 	// AiOptOut Whether the account's pages state that AI may neither train on nor use them
@@ -8027,7 +8032,7 @@ type CredentialAccount struct {
 	// one the page its actor declares (`url`), or its `uri` when it declares none.
 	Url string `json:"url"`
 
-	// Username The username, without the domain.
+	// Username The username, without the domain; empty for a remote account without a confirmed handle.
 	Username string `json:"username"`
 
 	// VoiceRoom The open voice chat room where the account is the host or a speaker, when the user sees
@@ -8875,7 +8880,7 @@ type ImportSignupBlocksRequest struct {
 	Severity AdminSignupBlockSeverity `json:"severity"`
 
 	// Text The list: one value per line, or a CSV row whose first field is the value; blank
-	// lines and lines starting with `#` are ignored. At most 10,000 values.
+	// lines and lines starting with `#` are ignored. At most 10,000 values; the request body is at most 1 MiB, past which the answer is 413.
 	Text string `json:"text"`
 }
 
@@ -11105,7 +11110,7 @@ type Preferences struct {
 
 // PreviewDomainBlockImportRequest A domain block CSV to preview.
 type PreviewDomainBlockImportRequest struct {
-	// Csv The file's text, with a header or as a list of domains; at most 5,000 rows.
+	// Csv The file's text, with a header or as a list of domains; at most 5,000 rows, and the request body at most 1 MiB, past which the answer is 413.
 	Csv string `json:"csv"`
 }
 
@@ -11219,7 +11224,7 @@ type PreviewDomainBlockImportRequest struct {
 //     server serves only the operations with which the users take their data away: their own
 //     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
 //     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
-//     (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, and
+//     (`/sessions`, `/authorized_apps`), `GET /instance`, `GET /instance/health`, `GET /instance/documents`, `POST /client_errors`, and
 //     the administrators' operations that follow the closure (`/admin/closure`, `/admin/queue`,
 //     `/admin/jobs`). Every other operation, the streaming endpoint included, is refused with
 //     this problem; signing in and resetting a password stay available outside the client API.
@@ -11827,9 +11832,6 @@ type SetInstanceTextRequest struct {
 
 // SetLinkCardDomainRuleRequest The rule to set on a domain.
 type SetLinkCardDomainRuleRequest struct {
-	// Domain The domain, a host without a scheme, path, or port; it also covers its subdomains.
-	Domain string `json:"domain"`
-
 	// Mode What the crawler of link cards does not do on the domain of a rule. `no_fetch`: it fetches
 	// neither pages nor images, and the cards of its pages are hidden. `no_images`: it fetches pages
 	// but no images, and its cards show without their images.
@@ -12092,18 +12094,10 @@ type StatusMention struct {
 	// Acct The username for local accounts, `username@domain` for remote ones.
 	Acct string `json:"acct"`
 
-	// Domain The domain of the account: the domain of its handle, which for local accounts is the
-	// instance's account domain, or the host of its `uri` when a remote account has no
-	// confirmed handle.
-	Domain *string `json:"domain,omitempty"`
-
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
-
-	// Uri The ActivityPub id of the account's actor, on the server it belongs to.
-	Uri *string `json:"uri,omitempty"`
 
 	// Url The account's profile page.
 	Url string `json:"url"`
@@ -13596,7 +13590,7 @@ type StatusAfterAction = Status
 
 // LookupAccountParams defines parameters for LookupAccount.
 type LookupAccountParams struct {
-	// Acct The handle, `username` or `username@domain`, or the `https` URL of an actor.
+	// Acct The handle, `username` or `username@domain`, or the `https` or `http` URL of an actor.
 	Acct string `form:"acct" json:"acct"`
 
 	// Resolve Fetch a remote account that the instance does not know yet.
@@ -14270,6 +14264,15 @@ type SearchTagsParams struct {
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// GetFederatedTimelineParams defines parameters for GetFederatedTimeline.
+type GetFederatedTimelineParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // GetHomeTimelineParams defines parameters for GetHomeTimeline.
 type GetHomeTimelineParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -14290,15 +14293,6 @@ type GetListTimelineParams struct {
 
 // GetLocalTimelineParams defines parameters for GetLocalTimeline.
 type GetLocalTimelineParams struct {
-	// Cursor The `next_cursor` of the previous page; omitted for the first page.
-	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
-
-	// Limit The maximum number of items in the page.
-	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// GetPublicTimelineParams defines parameters for GetPublicTimeline.
-type GetPublicTimelineParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -14719,9 +14713,15 @@ type ServerInterface interface {
 	// GetAccount Get an account
 	// (GET /accounts/{id})
 	GetAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	// UnblockAccount Unblock an account
+	// (DELETE /accounts/{id}/block)
+	UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// BlockAccount Block an account
 	// (POST /accounts/{id}/block)
 	BlockAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	// UnfollowAccount Unfollow an account
+	// (DELETE /accounts/{id}/follow)
+	UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// FollowAccount Follow an account
 	// (POST /accounts/{id}/follow)
 	FollowAccount(w http.ResponseWriter, r *http.Request, id AccountId)
@@ -14734,6 +14734,9 @@ type ServerInterface interface {
 	// ListAccountLists List the user's lists that have an account
 	// (GET /accounts/{id}/lists)
 	ListAccountLists(w http.ResponseWriter, r *http.Request, id AccountId)
+	// UnmuteAccount Unmute an account
+	// (DELETE /accounts/{id}/mute)
+	UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
@@ -14743,21 +14746,12 @@ type ServerInterface interface {
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(w http.ResponseWriter, r *http.Request, id Id, params ListAccountStatusesParams)
+	// UnsubscribeAccount Stop being notified of an account's new posts
+	// (DELETE /accounts/{id}/subscribe)
+	UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// SubscribeAccount Be notified of an account's new posts
 	// (POST /accounts/{id}/subscribe)
 	SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId)
-	// UnblockAccount Unblock an account
-	// (POST /accounts/{id}/unblock)
-	UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId)
-	// UnfollowAccount Unfollow an account
-	// (POST /accounts/{id}/unfollow)
-	UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId)
-	// UnmuteAccount Unmute an account
-	// (POST /accounts/{id}/unmute)
-	UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
-	// UnsubscribeAccount Stop being notified of an account's new posts
-	// (POST /accounts/{id}/unsubscribe)
-	UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId)
 	// GetAccountAction Get a moderation action on an account
 	// (GET /admin/account_actions/{id})
 	GetAccountAction(w http.ResponseWriter, r *http.Request, id AccountActionId)
@@ -15007,12 +15001,12 @@ type ServerInterface interface {
 	// ListLinkCardDomainRules List the rules of the link card crawler
 	// (GET /admin/link_card_domains)
 	ListLinkCardDomainRules(w http.ResponseWriter, r *http.Request)
-	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
-	// (POST /admin/link_card_domains)
-	SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request)
 	// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
 	// (DELETE /admin/link_card_domains/{domain})
 	RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string)
+	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
+	// (PUT /admin/link_card_domains/{domain})
+	SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string)
 	// ListAdminLoginProviders List the login providers
 	// (GET /admin/login_providers)
 	ListAdminLoginProviders(w http.ResponseWriter, r *http.Request)
@@ -15308,7 +15302,7 @@ type ServerInterface interface {
 	// (GET /follow_requests)
 	ListFollowRequests(w http.ResponseWriter, r *http.Request, params ListFollowRequestsParams)
 	// AcceptFollowRequest Accept a follow request
-	// (POST /follow_requests/{id}/authorize)
+	// (POST /follow_requests/{id}/accept)
 	AcceptFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId)
 	// RejectFollowRequest Reject a follow request
 	// (POST /follow_requests/{id}/reject)
@@ -15440,7 +15434,7 @@ type ServerInterface interface {
 	// (PATCH /oauth_apps/{id})
 	UpdateOAuthApp(w http.ResponseWriter, r *http.Request, id OAuthAppId)
 	// RotateOAuthAppSecret Issue a new secret to a confidential OAuth app
-	// (POST /oauth_apps/{id}/secret)
+	// (POST /oauth_apps/{id}/rotate_secret)
 	RotateOAuthAppSecret(w http.ResponseWriter, r *http.Request, id OAuthAppId)
 	// IssueOAuthAppToken Issue tokens of an OAuth app to the authenticated user
 	// (POST /oauth_apps/{id}/tokens)
@@ -15613,6 +15607,9 @@ type ServerInterface interface {
 	// SearchTags Search hashtags by prefix
 	// (GET /tags/search)
 	SearchTags(w http.ResponseWriter, r *http.Request, params SearchTagsParams)
+	// GetFederatedTimeline Get the federated timeline
+	// (GET /timelines/federated)
+	GetFederatedTimeline(w http.ResponseWriter, r *http.Request, params GetFederatedTimelineParams)
 	// GetHomeTimeline Get the home timeline
 	// (GET /timelines/home)
 	GetHomeTimeline(w http.ResponseWriter, r *http.Request, params GetHomeTimelineParams)
@@ -15622,9 +15619,6 @@ type ServerInterface interface {
 	// GetLocalTimeline Get the local timeline
 	// (GET /timelines/local)
 	GetLocalTimeline(w http.ResponseWriter, r *http.Request, params GetLocalTimelineParams)
-	// GetPublicTimeline Get the federated timeline
-	// (GET /timelines/public)
-	GetPublicTimeline(w http.ResponseWriter, r *http.Request, params GetPublicTimelineParams)
 	// GetHashtagTimeline Get the timeline of a hashtag
 	// (GET /timelines/tag/{hashtag})
 	GetHashtagTimeline(w http.ResponseWriter, r *http.Request, hashtag string, params GetHashtagTimelineParams)
@@ -16093,6 +16087,32 @@ func (siw *ServerInterfaceWrapper) GetAccount(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// UnblockAccount operation middleware
+func (siw *ServerInterfaceWrapper) UnblockAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnblockAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // BlockAccount operation middleware
 func (siw *ServerInterfaceWrapper) BlockAccount(w http.ResponseWriter, r *http.Request) {
 
@@ -16110,6 +16130,32 @@ func (siw *ServerInterfaceWrapper) BlockAccount(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.BlockAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnfollowAccount operation middleware
+func (siw *ServerInterfaceWrapper) UnfollowAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnfollowAccount(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -16281,6 +16327,32 @@ func (siw *ServerInterfaceWrapper) ListAccountLists(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// UnmuteAccount operation middleware
+func (siw *ServerInterfaceWrapper) UnmuteAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnmuteAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // MuteAccount operation middleware
 func (siw *ServerInterfaceWrapper) MuteAccount(w http.ResponseWriter, r *http.Request) {
 
@@ -16427,110 +16499,6 @@ func (siw *ServerInterfaceWrapper) ListAccountStatuses(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
-// SubscribeAccount operation middleware
-func (siw *ServerInterfaceWrapper) SubscribeAccount(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id AccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SubscribeAccount(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnblockAccount operation middleware
-func (siw *ServerInterfaceWrapper) UnblockAccount(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id AccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnblockAccount(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnfollowAccount operation middleware
-func (siw *ServerInterfaceWrapper) UnfollowAccount(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id AccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnfollowAccount(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnmuteAccount operation middleware
-func (siw *ServerInterfaceWrapper) UnmuteAccount(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id AccountId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnmuteAccount(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // UnsubscribeAccount operation middleware
 func (siw *ServerInterfaceWrapper) UnsubscribeAccount(w http.ResponseWriter, r *http.Request) {
 
@@ -16548,6 +16516,32 @@ func (siw *ServerInterfaceWrapper) UnsubscribeAccount(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UnsubscribeAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SubscribeAccount operation middleware
+func (siw *ServerInterfaceWrapper) SubscribeAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SubscribeAccount(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -19263,20 +19257,6 @@ func (siw *ServerInterfaceWrapper) ListLinkCardDomainRules(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
-// SetLinkCardDomainRule operation middleware
-func (siw *ServerInterfaceWrapper) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetLinkCardDomainRule(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // RemoveLinkCardDomainRule operation middleware
 func (siw *ServerInterfaceWrapper) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
 
@@ -19294,6 +19274,32 @@ func (siw *ServerInterfaceWrapper) RemoveLinkCardDomainRule(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RemoveLinkCardDomainRule(w, r, domain)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetLinkCardDomainRule operation middleware
+func (siw *ServerInterfaceWrapper) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "domain" -------------
+	var domain string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "domain", r.PathValue("domain"), &domain, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domain", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetLinkCardDomainRule(w, r, domain)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -24565,6 +24571,52 @@ func (siw *ServerInterfaceWrapper) SearchTags(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// GetFederatedTimeline operation middleware
+func (siw *ServerInterfaceWrapper) GetFederatedTimeline(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFederatedTimelineParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetFederatedTimeline(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHomeTimeline operation middleware
 func (siw *ServerInterfaceWrapper) GetHomeTimeline(w http.ResponseWriter, r *http.Request) {
 
@@ -24703,52 +24755,6 @@ func (siw *ServerInterfaceWrapper) GetLocalTimeline(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetLocalTimeline(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetPublicTimeline operation middleware
-func (siw *ServerInterfaceWrapper) GetPublicTimeline(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetPublicTimelineParams
-
-	// ------------- Optional query parameter "cursor" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPublicTimeline(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25998,29 +26004,29 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/oauth_apps/{id}", wrapper.DeleteOAuthApp)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/oauth_apps/{id}", wrapper.GetOAuthApp)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/oauth_apps/{id}", wrapper.UpdateOAuthApp)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/oauth_apps/{id}/secret", wrapper.RotateOAuthAppSecret)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/oauth_apps/{id}/rotate_secret", wrapper.RotateOAuthAppSecret)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/oauth_apps/{id}/tokens", wrapper.IssueOAuthAppToken)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/lookup", wrapper.LookupAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/relationships", wrapper.GetRelationships)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/search", wrapper.SearchAccounts)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/suggestions", wrapper.ListAccountSuggestions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}", wrapper.GetAccount)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/block", wrapper.UnblockAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/block", wrapper.BlockAccount)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/follow", wrapper.UnfollowAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/follow", wrapper.FollowAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/followers", wrapper.ListAccountFollowers)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/following", wrapper.ListAccountFollowing)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/lists", wrapper.ListAccountLists)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.UnmuteAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.MuteAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/remove_from_followers", wrapper.RemoveAccountFromFollowers)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unblock", wrapper.UnblockAccount)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unfollow", wrapper.UnfollowAccount)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unmute", wrapper.UnmuteAccount)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.UnsubscribeAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.SubscribeAccount)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unsubscribe", wrapper.UnsubscribeAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/subscriptions", wrapper.ListSubscriptions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/blocks", wrapper.ListBlocks)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/follow_requests", wrapper.ListFollowRequests)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/follow_requests/{id}/authorize", wrapper.AcceptFollowRequest)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/follow_requests/{id}/accept", wrapper.AcceptFollowRequest)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/follow_requests/{id}/reject", wrapper.RejectFollowRequest)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/mutes", wrapper.ListMutes)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/domain_mutes", wrapper.ListDomainMutes)
@@ -26073,7 +26079,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/tags/search", wrapper.SearchTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/home", wrapper.GetHomeTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/local", wrapper.GetLocalTimeline)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/public", wrapper.GetPublicTimeline)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/federated", wrapper.GetFederatedTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/tag/{hashtag}", wrapper.GetHashtagTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/list/{id}", wrapper.GetListTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports", wrapper.ListOwnReports)
@@ -26262,8 +26268,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/webhooks/{id}/deliveries", wrapper.ListWebhookDeliveries)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/webhooks/{id}/deliveries/{delivery_id}/redeliver", wrapper.RedeliverWebhookDelivery)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/link_card_domains", wrapper.ListLinkCardDomainRules)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/link_card_domains", wrapper.SetLinkCardDomainRule)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/link_card_domains/{domain}", wrapper.RemoveLinkCardDomainRule)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/link_card_domains/{domain}", wrapper.SetLinkCardDomainRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/relays", wrapper.ListAdminRelays)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/relays", wrapper.CreateRelay)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/relays/{id}", wrapper.DeleteRelay)
@@ -27656,6 +27662,61 @@ func (response GetAccountdefaultApplicationProblemPlusJSONResponse) VisitGetAcco
 	return err
 }
 
+type UnblockAccountRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type UnblockAccountResponseObject interface {
+	VisitUnblockAccountResponse(w http.ResponseWriter) error
+}
+
+type UnblockAccount200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response UnblockAccount200JSONResponse) VisitUnblockAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnblockAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UnblockAccountdefaultApplicationProblemPlusJSONResponse) VisitUnblockAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type BlockAccountRequestObject struct {
 	Id AccountId `json:"id"`
 }
@@ -27688,6 +27749,61 @@ type BlockAccountdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response BlockAccountdefaultApplicationProblemPlusJSONResponse) VisitBlockAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnfollowAccountRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type UnfollowAccountResponseObject interface {
+	VisitUnfollowAccountResponse(w http.ResponseWriter) error
+}
+
+type UnfollowAccount200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response UnfollowAccount200JSONResponse) VisitUnfollowAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnfollowAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UnfollowAccountdefaultApplicationProblemPlusJSONResponse) VisitUnfollowAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -27934,6 +28050,61 @@ func (response ListAccountListsdefaultApplicationProblemPlusJSONResponse) VisitL
 	return err
 }
 
+type UnmuteAccountRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type UnmuteAccountResponseObject interface {
+	VisitUnmuteAccountResponse(w http.ResponseWriter) error
+}
+
+type UnmuteAccount200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response UnmuteAccount200JSONResponse) VisitUnmuteAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnmuteAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UnmuteAccountdefaultApplicationProblemPlusJSONResponse) VisitUnmuteAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type MuteAccountRequestObject struct {
 	Id   AccountId `json:"id"`
 	Body *MuteAccountJSONRequestBody
@@ -28101,226 +28272,6 @@ func (response ListAccountStatusesdefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
-type SubscribeAccountRequestObject struct {
-	Id AccountId `json:"id"`
-}
-
-type SubscribeAccountResponseObject interface {
-	VisitSubscribeAccountResponse(w http.ResponseWriter) error
-}
-
-type SubscribeAccount200JSONResponse struct{ RelationshipJSONResponse }
-
-func (response SubscribeAccount200JSONResponse) VisitSubscribeAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SubscribeAccountdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response SubscribeAccountdefaultApplicationProblemPlusJSONResponse) VisitSubscribeAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnblockAccountRequestObject struct {
-	Id AccountId `json:"id"`
-}
-
-type UnblockAccountResponseObject interface {
-	VisitUnblockAccountResponse(w http.ResponseWriter) error
-}
-
-type UnblockAccount200JSONResponse struct{ RelationshipJSONResponse }
-
-func (response UnblockAccount200JSONResponse) VisitUnblockAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnblockAccountdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response UnblockAccountdefaultApplicationProblemPlusJSONResponse) VisitUnblockAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnfollowAccountRequestObject struct {
-	Id AccountId `json:"id"`
-}
-
-type UnfollowAccountResponseObject interface {
-	VisitUnfollowAccountResponse(w http.ResponseWriter) error
-}
-
-type UnfollowAccount200JSONResponse struct{ RelationshipJSONResponse }
-
-func (response UnfollowAccount200JSONResponse) VisitUnfollowAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnfollowAccountdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response UnfollowAccountdefaultApplicationProblemPlusJSONResponse) VisitUnfollowAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnmuteAccountRequestObject struct {
-	Id AccountId `json:"id"`
-}
-
-type UnmuteAccountResponseObject interface {
-	VisitUnmuteAccountResponse(w http.ResponseWriter) error
-}
-
-type UnmuteAccount200JSONResponse struct{ RelationshipJSONResponse }
-
-func (response UnmuteAccount200JSONResponse) VisitUnmuteAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UnmuteAccountdefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response UnmuteAccountdefaultApplicationProblemPlusJSONResponse) VisitUnmuteAccountResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type UnsubscribeAccountRequestObject struct {
 	Id AccountId `json:"id"`
 }
@@ -28353,6 +28304,61 @@ type UnsubscribeAccountdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UnsubscribeAccountdefaultApplicationProblemPlusJSONResponse) VisitUnsubscribeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubscribeAccountRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type SubscribeAccountResponseObject interface {
+	VisitSubscribeAccountResponse(w http.ResponseWriter) error
+}
+
+type SubscribeAccount200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response SubscribeAccount200JSONResponse) VisitSubscribeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubscribeAccountdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SubscribeAccountdefaultApplicationProblemPlusJSONResponse) VisitSubscribeAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -33368,8 +33374,55 @@ func (response ListLinkCardDomainRulesdefaultApplicationProblemPlusJSONResponse)
 	return err
 }
 
+type RemoveLinkCardDomainRuleRequestObject struct {
+	Domain string `json:"domain"`
+}
+
+type RemoveLinkCardDomainRuleResponseObject interface {
+	VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error
+}
+
+type RemoveLinkCardDomainRule204Response struct {
+}
+
+func (response RemoveLinkCardDomainRule204Response) VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse) VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SetLinkCardDomainRuleRequestObject struct {
-	Body *SetLinkCardDomainRuleJSONRequestBody
+	Domain string `json:"domain"`
+	Body   *SetLinkCardDomainRuleJSONRequestBody
 }
 
 type SetLinkCardDomainRuleResponseObject interface {
@@ -33407,52 +33460,6 @@ type SetLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response SetLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse) VisitSetLinkCardDomainRuleResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RemoveLinkCardDomainRuleRequestObject struct {
-	Domain string `json:"domain"`
-}
-
-type RemoveLinkCardDomainRuleResponseObject interface {
-	VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error
-}
-
-type RemoveLinkCardDomainRule204Response struct {
-}
-
-func (response RemoveLinkCardDomainRule204Response) VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
-}
-
-type RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response RemoveLinkCardDomainRuledefaultApplicationProblemPlusJSONResponse) VisitRemoveLinkCardDomainRuleResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -36748,12 +36755,21 @@ type RetireSupporterPlanResponseObject interface {
 	VisitRetireSupporterPlanResponse(w http.ResponseWriter) error
 }
 
-type RetireSupporterPlan204Response struct {
-}
+type RetireSupporterPlan200JSONResponse struct{ AdminSupporterPlanJSONResponse }
 
-func (response RetireSupporterPlan204Response) VisitRetireSupporterPlanResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
+func (response RetireSupporterPlan200JSONResponse) VisitRetireSupporterPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type RetireSupporterPlandefaultApplicationProblemPlusJSONResponse struct {
@@ -42189,15 +42205,25 @@ type CreatePasskeyResponseObject interface {
 	VisitCreatePasskeyResponse(w http.ResponseWriter) error
 }
 
-type CreatePasskey201JSONResponse Passkey
+type CreatePasskey201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type CreatePasskey201JSONResponse struct {
+	Body    Passkey
+	Headers CreatePasskey201ResponseHeaders
+}
 
 func (response CreatePasskey201JSONResponse) VisitCreatePasskeyResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
@@ -45380,6 +45406,61 @@ func (response SearchTagsdefaultApplicationProblemPlusJSONResponse) VisitSearchT
 	return err
 }
 
+type GetFederatedTimelineRequestObject struct {
+	Params GetFederatedTimelineParams
+}
+
+type GetFederatedTimelineResponseObject interface {
+	VisitGetFederatedTimelineResponse(w http.ResponseWriter) error
+}
+
+type GetFederatedTimeline200JSONResponse struct{ StatusPageJSONResponse }
+
+func (response GetFederatedTimeline200JSONResponse) VisitGetFederatedTimelineResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetFederatedTimelinedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetFederatedTimelinedefaultApplicationProblemPlusJSONResponse) VisitGetFederatedTimelineResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetHomeTimelineRequestObject struct {
 	Params GetHomeTimelineParams
 }
@@ -45523,61 +45604,6 @@ type GetLocalTimelinedefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GetLocalTimelinedefaultApplicationProblemPlusJSONResponse) VisitGetLocalTimelineResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetPublicTimelineRequestObject struct {
-	Params GetPublicTimelineParams
-}
-
-type GetPublicTimelineResponseObject interface {
-	VisitGetPublicTimelineResponse(w http.ResponseWriter) error
-}
-
-type GetPublicTimeline200JSONResponse struct{ StatusPageJSONResponse }
-
-func (response GetPublicTimeline200JSONResponse) VisitGetPublicTimelineResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetPublicTimelinedefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response GetPublicTimelinedefaultApplicationProblemPlusJSONResponse) VisitGetPublicTimelineResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -47706,9 +47732,15 @@ type StrictServerInterface interface {
 	// GetAccount Get an account
 	// (GET /accounts/{id})
 	GetAccount(ctx context.Context, request GetAccountRequestObject) (GetAccountResponseObject, error)
+	// UnblockAccount Unblock an account
+	// (DELETE /accounts/{id}/block)
+	UnblockAccount(ctx context.Context, request UnblockAccountRequestObject) (UnblockAccountResponseObject, error)
 	// BlockAccount Block an account
 	// (POST /accounts/{id}/block)
 	BlockAccount(ctx context.Context, request BlockAccountRequestObject) (BlockAccountResponseObject, error)
+	// UnfollowAccount Unfollow an account
+	// (DELETE /accounts/{id}/follow)
+	UnfollowAccount(ctx context.Context, request UnfollowAccountRequestObject) (UnfollowAccountResponseObject, error)
 	// FollowAccount Follow an account
 	// (POST /accounts/{id}/follow)
 	FollowAccount(ctx context.Context, request FollowAccountRequestObject) (FollowAccountResponseObject, error)
@@ -47721,6 +47753,9 @@ type StrictServerInterface interface {
 	// ListAccountLists List the user's lists that have an account
 	// (GET /accounts/{id}/lists)
 	ListAccountLists(ctx context.Context, request ListAccountListsRequestObject) (ListAccountListsResponseObject, error)
+	// UnmuteAccount Unmute an account
+	// (DELETE /accounts/{id}/mute)
+	UnmuteAccount(ctx context.Context, request UnmuteAccountRequestObject) (UnmuteAccountResponseObject, error)
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(ctx context.Context, request MuteAccountRequestObject) (MuteAccountResponseObject, error)
@@ -47730,21 +47765,12 @@ type StrictServerInterface interface {
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(ctx context.Context, request ListAccountStatusesRequestObject) (ListAccountStatusesResponseObject, error)
+	// UnsubscribeAccount Stop being notified of an account's new posts
+	// (DELETE /accounts/{id}/subscribe)
+	UnsubscribeAccount(ctx context.Context, request UnsubscribeAccountRequestObject) (UnsubscribeAccountResponseObject, error)
 	// SubscribeAccount Be notified of an account's new posts
 	// (POST /accounts/{id}/subscribe)
 	SubscribeAccount(ctx context.Context, request SubscribeAccountRequestObject) (SubscribeAccountResponseObject, error)
-	// UnblockAccount Unblock an account
-	// (POST /accounts/{id}/unblock)
-	UnblockAccount(ctx context.Context, request UnblockAccountRequestObject) (UnblockAccountResponseObject, error)
-	// UnfollowAccount Unfollow an account
-	// (POST /accounts/{id}/unfollow)
-	UnfollowAccount(ctx context.Context, request UnfollowAccountRequestObject) (UnfollowAccountResponseObject, error)
-	// UnmuteAccount Unmute an account
-	// (POST /accounts/{id}/unmute)
-	UnmuteAccount(ctx context.Context, request UnmuteAccountRequestObject) (UnmuteAccountResponseObject, error)
-	// UnsubscribeAccount Stop being notified of an account's new posts
-	// (POST /accounts/{id}/unsubscribe)
-	UnsubscribeAccount(ctx context.Context, request UnsubscribeAccountRequestObject) (UnsubscribeAccountResponseObject, error)
 	// GetAccountAction Get a moderation action on an account
 	// (GET /admin/account_actions/{id})
 	GetAccountAction(ctx context.Context, request GetAccountActionRequestObject) (GetAccountActionResponseObject, error)
@@ -47994,12 +48020,12 @@ type StrictServerInterface interface {
 	// ListLinkCardDomainRules List the rules of the link card crawler
 	// (GET /admin/link_card_domains)
 	ListLinkCardDomainRules(ctx context.Context, request ListLinkCardDomainRulesRequestObject) (ListLinkCardDomainRulesResponseObject, error)
-	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
-	// (POST /admin/link_card_domains)
-	SetLinkCardDomainRule(ctx context.Context, request SetLinkCardDomainRuleRequestObject) (SetLinkCardDomainRuleResponseObject, error)
 	// RemoveLinkCardDomainRule Remove the rule of a domain for the link card crawler
 	// (DELETE /admin/link_card_domains/{domain})
 	RemoveLinkCardDomainRule(ctx context.Context, request RemoveLinkCardDomainRuleRequestObject) (RemoveLinkCardDomainRuleResponseObject, error)
+	// SetLinkCardDomainRule Set the rule of a domain for the link card crawler
+	// (PUT /admin/link_card_domains/{domain})
+	SetLinkCardDomainRule(ctx context.Context, request SetLinkCardDomainRuleRequestObject) (SetLinkCardDomainRuleResponseObject, error)
 	// ListAdminLoginProviders List the login providers
 	// (GET /admin/login_providers)
 	ListAdminLoginProviders(ctx context.Context, request ListAdminLoginProvidersRequestObject) (ListAdminLoginProvidersResponseObject, error)
@@ -48295,7 +48321,7 @@ type StrictServerInterface interface {
 	// (GET /follow_requests)
 	ListFollowRequests(ctx context.Context, request ListFollowRequestsRequestObject) (ListFollowRequestsResponseObject, error)
 	// AcceptFollowRequest Accept a follow request
-	// (POST /follow_requests/{id}/authorize)
+	// (POST /follow_requests/{id}/accept)
 	AcceptFollowRequest(ctx context.Context, request AcceptFollowRequestRequestObject) (AcceptFollowRequestResponseObject, error)
 	// RejectFollowRequest Reject a follow request
 	// (POST /follow_requests/{id}/reject)
@@ -48427,7 +48453,7 @@ type StrictServerInterface interface {
 	// (PATCH /oauth_apps/{id})
 	UpdateOAuthApp(ctx context.Context, request UpdateOAuthAppRequestObject) (UpdateOAuthAppResponseObject, error)
 	// RotateOAuthAppSecret Issue a new secret to a confidential OAuth app
-	// (POST /oauth_apps/{id}/secret)
+	// (POST /oauth_apps/{id}/rotate_secret)
 	RotateOAuthAppSecret(ctx context.Context, request RotateOAuthAppSecretRequestObject) (RotateOAuthAppSecretResponseObject, error)
 	// IssueOAuthAppToken Issue tokens of an OAuth app to the authenticated user
 	// (POST /oauth_apps/{id}/tokens)
@@ -48600,6 +48626,9 @@ type StrictServerInterface interface {
 	// SearchTags Search hashtags by prefix
 	// (GET /tags/search)
 	SearchTags(ctx context.Context, request SearchTagsRequestObject) (SearchTagsResponseObject, error)
+	// GetFederatedTimeline Get the federated timeline
+	// (GET /timelines/federated)
+	GetFederatedTimeline(ctx context.Context, request GetFederatedTimelineRequestObject) (GetFederatedTimelineResponseObject, error)
 	// GetHomeTimeline Get the home timeline
 	// (GET /timelines/home)
 	GetHomeTimeline(ctx context.Context, request GetHomeTimelineRequestObject) (GetHomeTimelineResponseObject, error)
@@ -48609,9 +48638,6 @@ type StrictServerInterface interface {
 	// GetLocalTimeline Get the local timeline
 	// (GET /timelines/local)
 	GetLocalTimeline(ctx context.Context, request GetLocalTimelineRequestObject) (GetLocalTimelineResponseObject, error)
-	// GetPublicTimeline Get the federated timeline
-	// (GET /timelines/public)
-	GetPublicTimeline(ctx context.Context, request GetPublicTimelineRequestObject) (GetPublicTimelineResponseObject, error)
 	// GetHashtagTimeline Get the timeline of a hashtag
 	// (GET /timelines/tag/{hashtag})
 	GetHashtagTimeline(ctx context.Context, request GetHashtagTimelineRequestObject) (GetHashtagTimelineResponseObject, error)
@@ -49225,6 +49251,32 @@ func (sh *strictHandler) GetAccount(w http.ResponseWriter, r *http.Request, id A
 	}
 }
 
+// UnblockAccount operation middleware
+func (sh *strictHandler) UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request UnblockAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnblockAccount(ctx, request.(UnblockAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnblockAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnblockAccountResponseObject); ok {
+		if err := validResponse.VisitUnblockAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // BlockAccount operation middleware
 func (sh *strictHandler) BlockAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
 	var request BlockAccountRequestObject
@@ -49244,6 +49296,32 @@ func (sh *strictHandler) BlockAccount(w http.ResponseWriter, r *http.Request, id
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(BlockAccountResponseObject); ok {
 		if err := validResponse.VisitBlockAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnfollowAccount operation middleware
+func (sh *strictHandler) UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request UnfollowAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnfollowAccount(ctx, request.(UnfollowAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnfollowAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnfollowAccountResponseObject); ok {
+		if err := validResponse.VisitUnfollowAccountResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -49367,6 +49445,32 @@ func (sh *strictHandler) ListAccountLists(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// UnmuteAccount operation middleware
+func (sh *strictHandler) UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request UnmuteAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnmuteAccount(ctx, request.(UnmuteAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnmuteAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnmuteAccountResponseObject); ok {
+		if err := validResponse.VisitUnmuteAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // MuteAccount operation middleware
 func (sh *strictHandler) MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
 	var request MuteAccountRequestObject
@@ -49456,110 +49560,6 @@ func (sh *strictHandler) ListAccountStatuses(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// SubscribeAccount operation middleware
-func (sh *strictHandler) SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
-	var request SubscribeAccountRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.SubscribeAccount(ctx, request.(SubscribeAccountRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "SubscribeAccount")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(SubscribeAccountResponseObject); ok {
-		if err := validResponse.VisitSubscribeAccountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UnblockAccount operation middleware
-func (sh *strictHandler) UnblockAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
-	var request UnblockAccountRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UnblockAccount(ctx, request.(UnblockAccountRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UnblockAccount")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UnblockAccountResponseObject); ok {
-		if err := validResponse.VisitUnblockAccountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UnfollowAccount operation middleware
-func (sh *strictHandler) UnfollowAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
-	var request UnfollowAccountRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UnfollowAccount(ctx, request.(UnfollowAccountRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UnfollowAccount")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UnfollowAccountResponseObject); ok {
-		if err := validResponse.VisitUnfollowAccountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UnmuteAccount operation middleware
-func (sh *strictHandler) UnmuteAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
-	var request UnmuteAccountRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UnmuteAccount(ctx, request.(UnmuteAccountRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UnmuteAccount")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UnmuteAccountResponseObject); ok {
-		if err := validResponse.VisitUnmuteAccountResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // UnsubscribeAccount operation middleware
 func (sh *strictHandler) UnsubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
 	var request UnsubscribeAccountRequestObject
@@ -49579,6 +49579,32 @@ func (sh *strictHandler) UnsubscribeAccount(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UnsubscribeAccountResponseObject); ok {
 		if err := validResponse.VisitUnsubscribeAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SubscribeAccount operation middleware
+func (sh *strictHandler) SubscribeAccount(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request SubscribeAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SubscribeAccount(ctx, request.(SubscribeAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SubscribeAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SubscribeAccountResponseObject); ok {
+		if err := validResponse.VisitSubscribeAccountResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -51738,10 +51764,13 @@ func (sh *strictHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
 
 	var body CreateInviteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
 	}
-	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateInvite(ctx, request.(CreateInviteRequestObject))
@@ -51892,9 +51921,37 @@ func (sh *strictHandler) ListLinkCardDomainRules(w http.ResponseWriter, r *http.
 	}
 }
 
+// RemoveLinkCardDomainRule operation middleware
+func (sh *strictHandler) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string) {
+	var request RemoveLinkCardDomainRuleRequestObject
+
+	request.Domain = domain
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveLinkCardDomainRule(ctx, request.(RemoveLinkCardDomainRuleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveLinkCardDomainRule")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveLinkCardDomainRuleResponseObject); ok {
+		if err := validResponse.VisitRemoveLinkCardDomainRuleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SetLinkCardDomainRule operation middleware
-func (sh *strictHandler) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string) {
 	var request SetLinkCardDomainRuleRequestObject
+
+	request.Domain = domain
 
 	var body SetLinkCardDomainRuleJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -51916,32 +51973,6 @@ func (sh *strictHandler) SetLinkCardDomainRule(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetLinkCardDomainRuleResponseObject); ok {
 		if err := validResponse.VisitSetLinkCardDomainRuleResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// RemoveLinkCardDomainRule operation middleware
-func (sh *strictHandler) RemoveLinkCardDomainRule(w http.ResponseWriter, r *http.Request, domain string) {
-	var request RemoveLinkCardDomainRuleRequestObject
-
-	request.Domain = domain
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RemoveLinkCardDomainRule(ctx, request.(RemoveLinkCardDomainRuleRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RemoveLinkCardDomainRule")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RemoveLinkCardDomainRuleResponseObject); ok {
-		if err := validResponse.VisitRemoveLinkCardDomainRuleResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -55033,10 +55064,13 @@ func (sh *strictHandler) CreateOwnInvite(w http.ResponseWriter, r *http.Request)
 
 	var body CreateOwnInviteJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
 	}
-	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateOwnInvite(ctx, request.(CreateOwnInviteRequestObject))
@@ -57423,6 +57457,32 @@ func (sh *strictHandler) SearchTags(w http.ResponseWriter, r *http.Request, para
 	}
 }
 
+// GetFederatedTimeline operation middleware
+func (sh *strictHandler) GetFederatedTimeline(w http.ResponseWriter, r *http.Request, params GetFederatedTimelineParams) {
+	var request GetFederatedTimelineRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetFederatedTimeline(ctx, request.(GetFederatedTimelineRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetFederatedTimeline")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetFederatedTimelineResponseObject); ok {
+		if err := validResponse.VisitGetFederatedTimelineResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetHomeTimeline operation middleware
 func (sh *strictHandler) GetHomeTimeline(w http.ResponseWriter, r *http.Request, params GetHomeTimelineParams) {
 	var request GetHomeTimelineRequestObject
@@ -57495,32 +57555,6 @@ func (sh *strictHandler) GetLocalTimeline(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetLocalTimelineResponseObject); ok {
 		if err := validResponse.VisitGetLocalTimelineResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetPublicTimeline operation middleware
-func (sh *strictHandler) GetPublicTimeline(w http.ResponseWriter, r *http.Request, params GetPublicTimelineParams) {
-	var request GetPublicTimelineRequestObject
-
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetPublicTimeline(ctx, request.(GetPublicTimelineRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetPublicTimeline")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetPublicTimelineResponseObject); ok {
-		if err := validResponse.VisitGetPublicTimelineResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
