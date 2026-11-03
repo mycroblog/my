@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  The poll of a status (FR-112); omitted when the status has none. The counts of a poll of
+  The poll of a status; omitted when the status has none. The counts of a poll of
   another server are those its server last reported. A poll whose author hides the votes of
   each option until it ends leaves out `votes_count` of its options until then. `voted` and
   `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.

@@ -89,7 +89,7 @@ type Options struct {
 	// tokens, authenticates the calls of the API, and verifies the webhooks.
 	CloudProjectID string
 	CloudAPIKey    string
-	// JoinSecret signs the join values of the grants (voice_join_secret).
+	// JoinSecret signs the join values of the grants (voice_sora_join_secret).
 	JoinSecret string
 	// HTTPClient calls the API: the operator configured the server, which may be on a private
 	// address, so it is the adapter's own client rather than the SSRF-guarded kernel.HTTPClient

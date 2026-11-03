@@ -58,9 +58,16 @@ func (s moderatorStaff) PermissionHolders(ctx context.Context, tx uow.Tx, p doma
 	if err != nil {
 		return nil, err
 	}
-	out := make([]notification.StaffMember, len(holders))
-	for i, h := range holders {
-		out[i] = notification.StaffMember{AccountID: h.AccountID}
+	out := make([]notification.StaffMember, 0, len(holders))
+	for _, h := range holders {
+		// Nothing reaches a deactivated account (ADR-0145 §6).
+		deactivated, err := s.a.Accounts.DeactivatedTx(ctx, tx, h.AccountID)
+		if err != nil {
+			return nil, err
+		}
+		if !deactivated {
+			out = append(out, notification.StaffMember{AccountID: h.AccountID})
+		}
 	}
 	return out, nil
 }
@@ -107,6 +114,13 @@ func (m notificationMailboxes) Mailbox(ctx context.Context, accountID string) (n
 	userID, err := moderatorStaff(m).userOf(ctx, accountID)
 	if err != nil || userID == "" {
 		return notification.Mailbox{}, false, err
+	}
+	// An email queued before its recipient deactivated the account stays unsent (ADR-0145 §6).
+	switch actor, err := m.a.Accounts.FindByID(ctx, accountID); {
+	case err != nil:
+		return notification.Mailbox{}, false, err
+	case actor.Lifecycle.Deactivated():
+		return notification.Mailbox{}, false, nil
 	}
 	box, ok, err := m.a.Identity.NotificationMailbox(ctx, userID)
 	return notification.Mailbox{EmailAddressID: box.EmailAddressID, Address: box.Address, Locale: box.Locale}, ok, err

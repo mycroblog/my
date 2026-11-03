@@ -3,7 +3,7 @@ get:
   operationId: getAdminTheme
   summary: Read the instance theme
   description: |
-    The current theme of the web client (ADR-0059, FR-605): the overridden design tokens and the
+    The current theme of the web client: the overridden design tokens and the
     custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
     `manage_settings` permission.
   tags: [admin-server]
@@ -22,7 +22,7 @@ put:
     pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
     few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
     their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-    change are kept (`instance_theme_revisions`, the audit log's `setting_changed` of `theme`).
+    change are kept (the audit log's `setting_changed` of `theme`).
 
     The overridable tokens are the web client's design tokens except the primitive palette
     (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`

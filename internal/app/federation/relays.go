@@ -39,7 +39,7 @@ var (
 )
 
 // DefaultRelayIngestHourlyLimit is how many activities a relay may bring in per hour
-// (relay_ingest_hourly_limit), and DefaultRelayStatusRetention how long a post only a relay
+// (relay_max_activities_per_hour), and DefaultRelayStatusRetention how long a post only a relay
 // brought in is kept (relay_status_retention_days).
 const (
 	DefaultRelayIngestHourlyLimit = 1000
@@ -47,7 +47,7 @@ const (
 )
 
 // KV namespaces of the relays: the activities each relay brought in, per hour (UTC), whose
-// first relay_ingest_hourly_limit are taken in and the rest dropped.
+// first relay_max_activities_per_hour are taken in and the rest dropped.
 const (
 	RelayIngestNamespace = "federation.relay_ingest"
 	relayCountTTL        = 25 * time.Hour
@@ -139,7 +139,7 @@ type RelaysDeps struct {
 	IDs   kernel.IDGenerator
 	// Host is the serving domain of the activity URIs (ADR-0018).
 	Host string
-	// HourlyLimit is relay_ingest_hourly_limit; zero means DefaultRelayIngestHourlyLimit.
+	// HourlyLimit is relay_max_activities_per_hour; zero means DefaultRelayIngestHourlyLimit.
 	HourlyLimit int
 	Logger      *slog.Logger
 	// Meter records my.relay.activities; nil records nothing.

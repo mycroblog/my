@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  The status that a status quotes (FR-114, ADR-0069). Quotes are shown one level deep:
+  The status that a status quotes. Quotes are shown one level deep:
   `quoted_status` has no `quote` of its own, and clients link to it instead.
 type: object
 required: [state]

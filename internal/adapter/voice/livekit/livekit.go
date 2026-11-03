@@ -58,7 +58,7 @@ type Options struct {
 	// APIKey and APISecret sign the tokens and verify the webhooks.
 	APIKey    string
 	APISecret string
-	// MaxParticipants bounds a room (voice_max_participants); 0 for no limit.
+	// MaxParticipants bounds a room (voice_sfu_max_participants); 0 for no limit.
 	MaxParticipants int
 	// HTTPClient calls the API: the operator configured the server, which may be on a private
 	// address, so it is the adapter's own client rather than the SSRF-guarded kernel.HTTPClient

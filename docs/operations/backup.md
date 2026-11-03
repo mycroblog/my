@@ -49,7 +49,7 @@ switch to the [maintenance mode](maintenance.md) first: in the maintenance mode 
 `my db backup <file>` writes a consistent copy of the SQLite database to a new file while the server keeps running.
 The copy holds every write committed before the command started, including those still in the `-wal` file, and none after.
 It is a single file, smaller than the original because free pages are left out. The command refuses a file that already exists,
-and works only with `db = sqlite`.
+and works only with `database = sqlite`.
 
 ```sh
 my db backup /backup/my-$(date +%Y%m%d%H%M).db

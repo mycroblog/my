@@ -21,7 +21,7 @@ import (
 // give after SIGTERM.
 const DefaultShutdownTimeout = 25 * time.Second
 
-// DefaultJobStopTimeout is how long Serve waits, after ShutdownTimeout cancelled the job in
+// DefaultJobStopTimeout is how long Serve waits, after ShutdownTimeout canceled the job in
 // progress, for the job runner to return before Serve abandons it.
 const DefaultJobStopTimeout = 3 * time.Second
 
@@ -33,7 +33,7 @@ type ServeOptions struct {
 	MetricsListener net.Listener
 	// ShutdownTimeout bounds the graceful shutdown; the default is DefaultShutdownTimeout.
 	ShutdownTimeout time.Duration
-	// JobStopTimeout bounds the wait for the job runner after ShutdownTimeout cancelled its
+	// JobStopTimeout bounds the wait for the job runner after ShutdownTimeout canceled its
 	// job; the default is DefaultJobStopTimeout.
 	JobStopTimeout time.Duration
 	// DomainsRetry is how often a process that could not verify its domains at the start tries

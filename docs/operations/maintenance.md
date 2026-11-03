@@ -27,7 +27,7 @@ Whatever the `role`, it serves HTTP only: no jobs, no periodic jobs, no stream b
 | Anything else (pages, the web client, its assets, form posts) | `503` | The maintenance page, or the problem when `Accept` asks for JSON |
 
 Every response has `Retry-After` and `Cache-Control: no-store`. `Retry-After` counts the seconds to `maintenance_until` while it is ahead
-(at most 86,400), and is `maintenance_retry_after` (default 600) otherwise.
+(at most 86,400), and is `maintenance_retry_after` (a Go duration, default `10m`) otherwise.
 
 The page and the problem show:
 

@@ -31,7 +31,7 @@ properties:
     type: string
     format: uri
   status_page_url:
-    description: The https address of the instance's status page, on a service apart from the server (ADR-0085). Absent when the operator has not set one.
+    description: The https address of the instance's status page, on a service apart from the server. Absent when the operator has not set one.
     type: string
     format: uri
   limits:

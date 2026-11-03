@@ -42,7 +42,7 @@ func TestVoiceStreamsAcrossProcesses(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			env := map[string]string{
-				"MY_DB": "postgres", "MY_DATABASE_URL": newPostgresDatabase(t), "MY_WEB_ORIGIN": webOrigin,
+				"MY_DATABASE": "postgres", "MY_DATABASE_URL": newPostgresDatabase(t), "MY_WEB_ORIGIN": webOrigin,
 				"MY_VOICE": "p2p", "MY_VOICE_STUN_URLS": "stun:stun.example.org",
 			}
 			for k, v := range tt.env {

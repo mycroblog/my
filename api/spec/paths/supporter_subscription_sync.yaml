@@ -5,7 +5,7 @@ post:
   description: |
     What the web client sends when the payment provider's checkout or portal returns to it:
     it queues a re-read of the user's subscription from the provider, without waiting for its
-    webhook (ADR-0072 §6), and answers the subscription as it is now. Read it again to see the
+    webhook, and answers the subscription as it is now. Read it again to see the
     result. A 404 while the program is disabled.
   tags: [supporters]
   security:

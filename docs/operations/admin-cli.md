@@ -4,7 +4,7 @@ A guide for operators: how to create the first administrator, manage roles from 
 
 ## Prerequisites
 
-- The configuration (`host`, `db`, `database_url`, `kek`, and so on) is set as the [configuration reference](../reference/configuration.md) describes. `my config check` verifies it.
+- The configuration (`host`, `database`, `database_url`, `kek`, and so on) is set as the [configuration reference](../reference/configuration.md) describes. `my config check` verifies it.
 - The schema is applied to the database (`my schema apply`; see [database.md](database.md)).
 - `host` and `account_domain` are final. The first command that uses the database records them, and every later command refuses to run when the configuration differs (see [Settings you cannot change later](production-checklist.md#settings-you-cannot-change-later)).
 

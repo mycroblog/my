@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   A request of a holder of `create_custom_emojis` for a new local custom emoji, or for a new
-  image of one they made, which a holder of `manage_custom_emojis` approves or rejects
-  (ADR-0070 §2). A request is not an emoji: no picker, post, reaction, or other server shows
+  image of one they made, which a holder of `manage_custom_emojis` approves or rejects. A request is not an emoji: no picker, post, reaction, or other server shows
   its image until it is approved.
 type: object
 required: [id, kind, state, shortcode, created_at]

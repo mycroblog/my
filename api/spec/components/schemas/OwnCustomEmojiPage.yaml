@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A page of the custom emoji that the user made, with what the user used of their monthly limit
-  (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+  A page of the custom emoji that the user made, with what the user used of their monthly limit: `used` counts the requests to create an emoji that the user submitted this UTC
   calendar month and that are approved or pending (deleting an emoji does not lower it),
   `pending` is the part of `used` that the pending requests take, `limit` is how many they may
   submit in a month, absent for no limit, and `resets_at` is when the count resets.

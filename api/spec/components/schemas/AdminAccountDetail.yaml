@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: The details of an account (FR-714).
+description: The details of an account.
 allOf:
   - $ref: ./AdminAccount.yaml
   - type: object

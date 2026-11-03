@@ -92,7 +92,7 @@ var maintenanceKeys = map[string]bool{
 }
 
 // schemaApplyKeys are the settings LoadSchemaApply reads.
-var schemaApplyKeys = map[string]bool{"db": true, "database_url": true, "database_dev_url": true}
+var schemaApplyKeys = map[string]bool{"database": true, "database_url": true, "database_dev_url": true}
 
 // env returns the environment variable that sets f.
 func (f *field) env() string { return EnvPrefix + strings.ToUpper(f.key) }
@@ -168,13 +168,10 @@ var schema = []field{
 	},
 	{
 		key:   "maintenance_retry_after",
-		doc:   "Seconds of the `Retry-After` of the maintenance responses when `maintenance_until` is unset or past, from 1 to 86,400.",
-		def:   "600",
+		doc:   "The `Retry-After` of the maintenance responses when `maintenance_until` is unset or past, a Go duration from `1s` to `24h`.",
+		def:   "10m",
 		check: checkRetryAfter,
-		set: func(c *Config, v string) {
-			n, _ := strconv.Atoi(v)
-			c.MaintenanceRetryAfter = time.Duration(n) * time.Second
-		},
+		set:   func(c *Config, v string) { c.MaintenanceRetryAfter, _ = time.ParseDuration(v) },
 	},
 	{
 		key:    "web_origin",
@@ -209,7 +206,7 @@ var schema = []field{
 	{
 		key:    "worker_job_concurrency",
 		defDoc: "`1`",
-		doc:    "How many jobs this process runs at once, from 1 to 128. Raise it for jobs that mostly wait on other servers, usually together with `worker_job_types`. With `db = postgres` it must be below the pool maximum (`pool_max_conns` of `database_url`, by default the greater of 4 and the CPU count), or the server does not start. With `db = sqlite` or `libsql`, a value above 32 logs a warning. A value of 2 or more needs `queue = db` and `role = all` or `worker`.",
+		doc:    "How many jobs this process runs at once, from 1 to 128. Raise it for jobs that mostly wait on other servers, usually together with `worker_job_types`. With `database = postgres` it must be below the pool maximum (`pool_max_conns` of `database_url`, by default the greater of 4 and the CPU count), or the server does not start. With `database = sqlite` or `libsql`, a value above 32 logs a warning. A value of 2 or more needs `queue = db` and `role = all` or `worker`.",
 		check:  checkWorkerJobConcurrency,
 		set:    func(c *Config, v string) { c.WorkerJobConcurrency, _ = strconv.Atoi(v) },
 	},
@@ -237,7 +234,7 @@ var schema = []field{
 		set: func(c *Config, v string) { c.TrustedProxyHeader = v },
 	},
 	{
-		key: "db",
+		key: "database",
 		doc: "Database adapter. The adapter is never inferred from `database_url`.",
 		def: "sqlite",
 		choices: []choice{
@@ -249,7 +246,7 @@ var schema = []field{
 	},
 	{
 		key:      "database_url",
-		doc:      "Connection string passed to the `db` adapter, in that adapter's format.",
+		doc:      "Connection string passed to the `database` adapter, in that adapter's format.",
 		required: true,
 		secret:   true,
 		set:      func(c *Config, v string) { c.DatabaseURL = v },
@@ -257,14 +254,14 @@ var schema = []field{
 	{
 		key:    "database_acquire_timeout",
 		defDoc: "`60s`",
-		doc:    "How long a request or a job waits for a free connection of the database's pool before giving up, as a Go duration; `0` waits without a limit. It bounds only the wait, never the query or the transaction that follows. A request that gives up gets a `503` with `Retry-After`, and a job runs again later without using an attempt. Only for `db = postgres`: SQLite and libSQL have no limit on connections to wait for, and setting it fails there. Each process has its own value, so processes of different roles can differ.",
+		doc:    "How long a request or a job waits for a free connection of the database's pool before giving up, as a Go duration; `0` waits without a limit. It bounds only the wait, never the query or the transaction that follows. A request that gives up gets a `503` with `Retry-After`, and a job runs again later without using an attempt. Only for `database = postgres`: SQLite and libSQL have no limit on connections to wait for, and setting it fails there. Each process has its own value, so processes of different roles can differ.",
 		check:  checkAcquireTimeout,
 		set:    func(c *Config, v string) { c.DatabaseAcquireTimeout, _ = time.ParseDuration(v) },
 	},
 	{
 		key:    "database_dev_url",
 		defDoc: "a temporary schema in the database of `database_url`",
-		doc:    "Connection string of the dev database that `my schema apply` builds the desired schema in, for `db = postgres`, in the format of `database_url`. Each run creates a temporary schema there and drops it at the end. Set it when the role of `database_url` may not create a schema in its database; the role of this URL needs that privilege. The server itself never uses it.",
+		doc:    "Connection string of the dev database that `my schema apply` builds the desired schema in, for `database = postgres`, in the format of `database_url`. Each run creates a temporary schema there and drops it at the end. Set it when the role of `database_url` may not create a schema in its database; the role of this URL needs that privilege. The server itself never uses it.",
 		secret: true,
 		set:    func(c *Config, v string) { c.DatabaseDevURL = v },
 	},
@@ -275,8 +272,8 @@ var schema = []field{
 		choices: []choice{
 			{value: "db", inV0: true, doc: "Queue table in the database."},
 			{value: "inline", inV0: true, doc: "Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`."},
-			{value: "sqs", inV0: true, doc: "The queue table in the database (`db = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: the Lambda Web Adapter passes the SQS events to `queue_sqs_events_path`, whose records run the jobs and, for the tick message that EventBridge Scheduler sends every minute, the periodic jobs (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out."},
-			{value: "cloudtasks", inV0: true, doc: "The queue table in the database (`db = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md)."},
+			{value: "sqs", inV0: true, doc: "The queue table in the database (`database = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: the Lambda Web Adapter passes the SQS events to `queue_sqs_events_path`, whose records run the jobs and, for the tick message that EventBridge Scheduler sends every minute, the periodic jobs (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out."},
+			{value: "cloudtasks", inV0: true, doc: "The queue table in the database (`database = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md)."},
 		},
 		set: func(c *Config, v string) { c.Queue = v },
 	},
@@ -455,7 +452,7 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.MediaMaxImagePixels, _ = strconv.ParseInt(v, 10, 64) },
 	},
 	{
-		key:   "media_unattached_ttl",
+		key:   "media_unattached_retention",
 		doc:   "How long an upload may stay unattached to any post or profile before the hourly cleanup deletes it, as a Go duration such as `24h`.",
 		def:   "24h",
 		check: checkPositiveDuration,
@@ -534,9 +531,9 @@ var schema = []field{
 		def: "hub",
 		choices: []choice{
 			{value: "hub", inV0: true, doc: "In-process only; for one process with `role = all` (SQLite, or one PostgreSQL server process)."},
-			{value: "postgres", inV0: true, doc: "PostgreSQL `LISTEN` / `NOTIFY` on the database of `database_url` (or `stream_postgres_url`). Requires `db = postgres`. The build tag `no_postgres` leaves it out."},
+			{value: "postgres", inV0: true, doc: "PostgreSQL `LISTEN` / `NOTIFY` on the database of `database_url` (or `stream_postgres_url`). Requires `database = postgres`. The build tag `no_postgres` leaves it out."},
 			{value: "valkey", inV0: true, doc: "Valkey Pub/Sub on `valkey_url`, with the channel `{valkey_key_prefix}stream`. The build tag `no_valkey` leaves it out."},
-			{value: "sns", inV0: true, doc: "An Amazon SNS standard topic (`stream_sns_topic_arn`) that fans out to one SQS queue per listening process (`stream_sqs_queue_prefix`); credentials and settings from the AWS SDK's default chain. The build tag `no_sns` leaves it out."},
+			{value: "sns", inV0: true, doc: "An Amazon SNS standard topic (`stream_sns_topic_arn`) that fans out to one SQS queue per listening process (`stream_sns_queue_prefix`); credentials and settings from the AWS SDK's default chain. The build tag `no_sns` leaves it out."},
 			{value: "pubsub", inV0: true, doc: "A Google Cloud Pub/Sub topic (`stream_pubsub_topic`) with one subscription per listening process (`stream_pubsub_subscription_prefix`); Application Default Credentials, or the emulator at `PUBSUB_EMULATOR_HOST`. The build tag `no_pubsub` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Stream = v },
@@ -556,7 +553,7 @@ var schema = []field{
 		set:          func(c *Config, v string) { c.StreamSNSTopicARN = v },
 	},
 	{
-		key:          "stream_sqs_queue_prefix",
+		key:          "stream_sns_queue_prefix",
 		doc:          "Start of the names of the per-process SQS queues of `stream = sns`, `{prefix}-{process id}-{n}`: at most 40 letters, digits, hyphens, and underscores. The `stream.sweep` job deletes the queues under it that ended processes left behind, so it belongs to one instance.",
 		requiredWhen: "when `stream = sns`",
 		check:        checkSQSQueuePrefix,
@@ -646,8 +643,8 @@ var schema = []field{
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "Sends nothing and logs each message's category; for instances without email. With `profile = development` it logs the whole message, including its links."},
-			{value: "smtp", inV0: true, doc: "SMTP submission with mandatory STARTTLS (`smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`)."},
-			{value: "ses", inV0: true, doc: "The Amazon SES v2 API (`ses_region`, `ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out."},
+			{value: "smtp", inV0: true, doc: "SMTP submission with mandatory STARTTLS (`mail_smtp_host`, `mail_smtp_port`, `mail_smtp_username`, `mail_smtp_password`)."},
+			{value: "ses", inV0: true, doc: "The Amazon SES v2 API (`mail_ses_region`, `mail_ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Mail = v },
 	},
@@ -659,14 +656,14 @@ var schema = []field{
 		set:          func(c *Config, v string) { c.MailFrom = v },
 	},
 	{
-		key:          "smtp_host",
+		key:          "mail_smtp_host",
 		doc:          "Host name of the SMTP server. The server must offer STARTTLS with a certificate valid for this name; the connection is refused otherwise.",
 		requiredWhen: "when `mail = smtp`",
 		check:        checkHostName,
 		set:          func(c *Config, v string) { c.SMTPHost = v },
 	},
 	{
-		key:   "smtp_port",
+		key:   "mail_smtp_port",
 		doc:   "TCP port of the SMTP server (submission).",
 		def:   "587",
 		check: checkPort,
@@ -675,30 +672,30 @@ var schema = []field{
 		},
 	},
 	{
-		key: "smtp_username",
+		key: "mail_smtp_username",
 		doc: "User name for SMTP AUTH PLAIN, sent only after STARTTLS. Leave it empty for a server that needs no authentication.",
 		set: func(c *Config, v string) { c.SMTPUsername = v },
 	},
 	{
-		key:    "smtp_password",
+		key:    "mail_smtp_password",
 		doc:    "Password for SMTP AUTH PLAIN.",
 		secret: true,
 		set:    func(c *Config, v string) { c.SMTPPassword = v },
 	},
 	{
-		key:   "ses_region",
+		key:   "mail_ses_region",
 		doc:   "AWS region of the SES endpoint of `mail = ses`, such as `eu-west-1`: the region where the identity of `mail_from` is verified. Empty takes the region of the AWS SDK's default chain (`AWS_REGION`).",
 		check: checkAWSRegion,
 		set:   func(c *Config, v string) { c.SESRegion = v },
 	},
 	{
-		key:   "ses_configuration_set",
+		key:   "mail_ses_configuration_set",
 		doc:   "Name of the SES configuration set that `mail = ses` applies to every message, for its event destinations such as the SNS topic of the bounces and complaints (docs/operations/email.md). Empty sends without one.",
 		check: checkSESConfigurationSet,
 		set:   func(c *Config, v string) { c.SESConfigurationSet = v },
 	},
 	{
-		key: "ses_sns_topic_arn",
+		key: "mail_ses_sns_topic_arn",
 		doc: "ARN of the SNS topic that SES publishes the bounces and complaints to, `arn:aws:sns:<region>:<account>:<topic>`, with the topic attribute `SignatureVersion` set to `2` (docs/operations/email.md). " +
 			"Setting it opens `POST /mail/events/ses` for the topic's HTTPS subscription, which records the permanent bounces and the complaints as suppressions; empty answers `404` there.",
 		check: checkSESSNSTopicARN,
@@ -786,7 +783,7 @@ var schema = []field{
 		},
 	},
 	{
-		key:   "relay_ingest_hourly_limit",
+		key:   "relay_max_activities_per_hour",
 		doc:   "How many activities each relay may bring in per hour. The ones over it are dropped before their posts are fetched, and counted in `my.relay.activities` and on the relays screen. It bounds the fetches, rows, and jobs that a relay costs.",
 		def:   "1000",
 		check: checkPositiveInt,
@@ -919,7 +916,7 @@ var schema = []field{
 		set:          func(c *Config, v string) { c.BillingGCPBudgetSubscription = strings.TrimSpace(v) },
 	},
 	{
-		key: "payments_provider",
+		key: "payments",
 		doc: "The payment provider of the supporters: local users subscribe to paid plans on its hosted checkout (PAY.JP: the server's own checkout page), and the roles of the plans follow the state of their payments. Only one provider is active on a server; switching to another one needs the subscribers to subscribe again. The provider calls `POST /payments/webhooks/{provider}` (signed or carrying the account's token, at most 1 MiB, recorded once per event), and a reconciliation reads its lists every `payments_reconcile_interval`. Card details never reach the server. An administrator still enables the supporters and sets up the plans on the admin screen.",
 		def: "none",
 		choices: []choice{
@@ -932,9 +929,9 @@ var schema = []field{
 	},
 	{
 		key:          "payments_stripe_secret_key",
-		doc:          "The API key of the Stripe account of `payments_provider = stripe`: a restricted key (`rk_test_` / `rk_live_`) with the permissions of docs/operations/payments-stripe.md, or a secret key (`sk_test_` / `sk_live_`). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key).",
+		doc:          "The API key of the Stripe account of `payments = stripe`: a restricted key (`rk_test_` / `rk_live_`) with the permissions of docs/operations/payments-stripe.md, or a secret key (`sk_test_` / `sk_live_`). Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key).",
 		secret:       true,
-		requiredWhen: "when `payments_provider = stripe`",
+		requiredWhen: "when `payments = stripe`",
 		check:        checkStripeSecretKey,
 		set:          func(c *Config, v string) { c.PaymentsStripeSecretKey = v },
 	},
@@ -942,22 +939,22 @@ var schema = []field{
 		key:          "payments_stripe_webhook_secret",
 		doc:          "The signing secret (`whsec_`) of the webhook endpoint `https://<domain>/payments/webhooks/stripe` that the operator registers on Stripe's dashboard, or of `stripe listen` for local tests. While a secret is rolled, Stripe signs with the old and the new one, so one is enough.",
 		secret:       true,
-		requiredWhen: "when `payments_provider = stripe`",
+		requiredWhen: "when `payments = stripe`",
 		check:        checkStripeWebhookSecret,
 		set:          func(c *Config, v string) { c.PaymentsStripeWebhookSecret = v },
 	},
 	{
 		key:          "payments_payjp_secret_key",
-		doc:          "The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments_provider = payjp`. Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key). The server also signs the URLs of its checkout and card pages with a key derived from it, so a new secret key ends the pages open at the time.",
+		doc:          "The secret key (`sk_test_` / `sk_live_`) of the PAY.JP account of `payments = payjp`. Its prefix sets the mode: a test key charges nothing, and the webhook endpoint refuses live events with it (and test events with a live key). The server also signs the URLs of its checkout and card pages with a key derived from it, so a new secret key ends the pages open at the time.",
 		secret:       true,
-		requiredWhen: "when `payments_provider = payjp`",
+		requiredWhen: "when `payments = payjp`",
 		check:        checkPayjpSecretKey,
 		set:          func(c *Config, v string) { c.PaymentsPayjpSecretKey = v },
 	},
 	{
 		key:          "payments_payjp_public_key",
-		doc:          "The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments_provider = payjp`, of the mode of `payments_payjp_secret_key`, which the server's checkout and card pages give payjp.js.",
-		requiredWhen: "when `payments_provider = payjp`",
+		doc:          "The public key (`pk_test_` / `pk_live_`) of the PAY.JP account of `payments = payjp`, of the mode of `payments_payjp_secret_key`, which the server's checkout and card pages give payjp.js.",
+		requiredWhen: "when `payments = payjp`",
 		check:        checkPayjpPublicKey,
 		set:          func(c *Config, v string) { c.PaymentsPayjpPublicKey = v },
 	},
@@ -965,20 +962,20 @@ var schema = []field{
 		key:          "payments_payjp_webhook_token",
 		doc:          "The webhook token (`whook_`) of the PAY.JP account in the mode of `payments_payjp_secret_key`, which PAY.JP sends in `X-Payjp-Webhook-Token` to `https://<domain>/payments/webhooks/payjp`. Test and live mode have different tokens.",
 		secret:       true,
-		requiredWhen: "when `payments_provider = payjp`",
+		requiredWhen: "when `payments = payjp`",
 		check:        checkPayjpWebhookToken,
 		set:          func(c *Config, v string) { c.PaymentsPayjpWebhookToken = v },
 	},
 	{
 		key:   "payments_reconcile_interval",
-		doc:   "How often the reconciliation with `payments_provider` runs: it reads the provider's changes since the previous run, the checkouts in progress, the money movements, and a sweep of every subscription, and corrects what the webhooks missed. A Go duration from `15m` to `168h`; raise it, or `payments_reconcile_max_requests`, when the runs often stop at the cap.",
+		doc:   "How often the reconciliation with `payments` runs: it reads the provider's changes since the previous run, the checkouts in progress, the money movements, and a sweep of every subscription, and corrects what the webhooks missed. A Go duration from `15m` to `168h`; raise it, or `payments_reconcile_max_requests`, when the runs often stop at the cap.",
 		def:   "6h",
 		check: checkReconcileInterval,
 		set:   func(c *Config, v string) { c.PaymentsReconcileInterval, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "payments_reconcile_max_requests",
-		doc:   "How many requests one reconciliation sends to `payments_provider`, a page of a list counting as one. A run that reaches it records where it stopped and a continuation picks up the rest a minute later. The provider's adapter also keeps the requests within its rate limits.",
+		doc:   "How many requests one reconciliation sends to `payments`, a page of a list counting as one. A run that reaches it records where it stopped and a continuation picks up the rest a minute later. The provider's adapter also keeps the requests within its rate limits.",
 		def:   strconv.Itoa(supporters.DefaultReconcileMaxRequests),
 		check: checkPositiveInt,
 		set:   func(c *Config, v string) { c.PaymentsReconcileMaxRequests, _ = strconv.Atoi(v) },
@@ -991,7 +988,7 @@ var schema = []field{
 			{value: "off", inV0: true, doc: "No voice chat."},
 			{value: "p2p", inV0: true, doc: "The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect."},
 			{value: "livekit", inV0: true, doc: "A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`. The build tag `no_voice_livekit` leaves it out."},
-			{value: "sora", inV0: true, doc: "A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. The build tag `no_voice_sora` leaves it out."},
+			{value: "sora", inV0: true, doc: "A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_sora_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. The build tag `no_voice_sora` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.Voice = v },
 	},
@@ -1003,7 +1000,7 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.VoiceP2PMaxParticipants, _ = strconv.Atoi(v) },
 	},
 	{
-		key:   "voice_max_participants",
+		key:   "voice_sfu_max_participants",
 		doc:   "How many people a room of `voice = livekit` or `voice = sora` holds; one more is refused. `0` sets no limit.",
 		def:   strconv.Itoa(defaultVoiceMaxParticipants),
 		check: checkNonNegativeInt,
@@ -1035,20 +1032,20 @@ var schema = []field{
 		def: "none",
 		choices: []choice{
 			{value: "none", inV0: true, doc: "No TURN server: browsers behind strict NATs or firewalls may not connect."},
-			{value: "coturn", inV0: true, doc: "A coturn server at `voice_turn_urls`, with its `static-auth-secret` in `voice_turn_secret`."},
+			{value: "coturn", inV0: true, doc: "A coturn server at `voice_turn_coturn_urls`, with its `static-auth-secret` in `voice_turn_coturn_secret`."},
 			{value: "cloudflare", inV0: true, doc: "Cloudflare's TURN service, with `voice_turn_cloudflare_key_id` and `voice_turn_cloudflare_api_token`; the server asks it for the credentials of each participant."},
 		},
 		set: func(c *Config, v string) { c.VoiceTURN = v },
 	},
 	{
-		key:          "voice_turn_urls",
+		key:          "voice_turn_coturn_urls",
 		doc:          "The URLs of the coturn server of `voice_turn = coturn`, comma-separated `turn:` or `turns:` URLs such as `turn:turn.example.org:3478?transport=udp, turns:turn.example.org:5349`.",
 		requiredWhen: "when `voice = p2p` and `voice_turn = coturn`",
 		check:        checkVoiceURLs("turn", "turns"),
 		set:          func(c *Config, v string) { c.VoiceTURNURLs = splitList(v) },
 	},
 	{
-		key:          "voice_turn_secret",
+		key:          "voice_turn_coturn_secret",
 		doc:          "The `static-auth-secret` of the coturn server of `voice_turn = coturn`, which signs the short-lived credentials that the server gives the participants.",
 		secret:       true,
 		requiredWhen: "when `voice = p2p` and `voice_turn = coturn`",
@@ -1185,7 +1182,7 @@ var schema = []field{
 		set:          func(c *Config, v string) { c.VoiceSoraCloudAPIKey = v },
 	},
 	{
-		key:          "voice_join_secret",
+		key:          "voice_sora_join_secret",
 		doc:          "The secret that signs the values with which the participants of `voice = sora` join a room, which the Sora server sends back for the server to authorize each connection. A random string of at least 32 bytes, such as the output of `openssl rand -base64 32`.",
 		secret:       true,
 		requiredWhen: "when `voice = sora`",
@@ -1207,14 +1204,14 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.JobAttemptRetention, _ = time.ParseDuration(v) },
 	},
 	{
-		key:   "dynamic_client_unredeemed_ttl",
-		doc:   "How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`) may wait for the exchange of its first authorization code: the hourly clean-up deletes a client that is older than this and had no code exchanged. From 30 days on, `dynamic_client_idle_ttl` decides instead, because exchanged codes are purged by then. A Go duration such as `24h`.",
+		key:   "dynamic_client_unredeemed_retention",
+		doc:   "How long a dynamically registered OAuth client (RFC 7591, `POST /oauth/register`) may wait for the exchange of its first authorization code: the hourly clean-up deletes a client that is older than this and had no code exchanged. From 30 days on, `dynamic_client_idle_retention` decides instead, because exchanged codes are purged by then. A Go duration such as `24h`.",
 		def:   "24h",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.DynamicClientUnredeemedTTL, _ = time.ParseDuration(v) },
 	},
 	{
-		key:   "dynamic_client_idle_ttl",
+		key:   "dynamic_client_idle_retention",
 		doc:   "How long a dynamically registered OAuth client without a usable token may go unused before the hourly clean-up deletes it. Until the last use of a token is recorded, the time the client's newest token was issued stands for it. A Go duration such as `2160h` (90 days).",
 		def:   "2160h",
 		check: checkPositiveDuration,
@@ -1366,11 +1363,11 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	} else if vals["stream"] == "valkey" && !present["valkey_url"] {
 		issues = append(issues, Issue{Key: "valkey_url", Missing: true, Message: "required when stream is valkey"})
 	}
-	if db, ok := vals["db"]; ok && vals["stream"] == "postgres" && db != "postgres" {
-		issues = append(issues, Issue{Key: "stream", Message: "postgres requires db = postgres, not " + db})
+	if db, ok := vals["database"]; ok && vals["stream"] == "postgres" && db != "postgres" {
+		issues = append(issues, Issue{Key: "stream", Message: "postgres requires database = postgres, not " + db})
 	}
 	if vals["stream"] == "sns" {
-		for _, k := range []string{"stream_sns_topic_arn", "stream_sqs_queue_prefix"} {
+		for _, k := range []string{"stream_sns_topic_arn", "stream_sns_queue_prefix"} {
 			if !present[k] {
 				issues = append(issues, Issue{Key: k, Missing: true, Message: "required when stream is sns"})
 			}
@@ -1389,8 +1386,8 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if mail, ok := vals["mail"]; ok && mail != "none" && !present["mail_from"] {
 		issues = append(issues, Issue{Key: "mail_from", Missing: true, Message: "required when mail is not none"})
 	}
-	if vals["mail"] == "smtp" && !present["smtp_host"] {
-		issues = append(issues, Issue{Key: "smtp_host", Missing: true, Message: "required when mail is smtp"})
+	if vals["mail"] == "smtp" && !present["mail_smtp_host"] {
+		issues = append(issues, Issue{Key: "mail_smtp_host", Missing: true, Message: "required when mail is smtp"})
 	}
 	if captcha, ok := vals["captcha"]; ok && captcha != "none" {
 		for _, k := range []string{"captcha_site_key", "captcha_secret_key"} {
@@ -1399,17 +1396,17 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 			}
 		}
 	}
-	if vals["payments_provider"] == "stripe" {
+	if vals["payments"] == "stripe" {
 		for _, k := range []string{"payments_stripe_secret_key", "payments_stripe_webhook_secret"} {
 			if !present[k] {
-				issues = append(issues, Issue{Key: k, Missing: true, Message: "required when payments_provider is stripe"})
+				issues = append(issues, Issue{Key: k, Missing: true, Message: "required when payments is stripe"})
 			}
 		}
 	}
-	if vals["payments_provider"] == "payjp" {
+	if vals["payments"] == "payjp" {
 		for _, k := range []string{"payments_payjp_secret_key", "payments_payjp_public_key", "payments_payjp_webhook_token"} {
 			if !present[k] {
-				issues = append(issues, Issue{Key: k, Missing: true, Message: "required when payments_provider is payjp"})
+				issues = append(issues, Issue{Key: k, Missing: true, Message: "required when payments is payjp"})
 			}
 		}
 		sk, pk := vals["payments_payjp_secret_key"], vals["payments_payjp_public_key"]
@@ -1433,8 +1430,8 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if slices.Contains(splitList(vals["billing_sources"]), "gcp") && vals["billing_gcp_method"] == "budget" && !present["billing_gcp_budget_subscription"] {
 		issues = append(issues, Issue{Key: "billing_gcp_budget_subscription", Missing: true, Message: "required when billing_sources includes gcp and billing_gcp_method is budget"})
 	}
-	if vals["payments_provider"] == "fake" && vals["profile"] != "development" {
-		issues = append(issues, Issue{Key: "payments_provider", Message: "fake is refused in the production profile: it records payments as paid without any money moving; set profile = development"})
+	if vals["payments"] == "fake" && vals["profile"] != "development" {
+		issues = append(issues, Issue{Key: "payments", Message: "fake is refused in the production profile: it records payments as paid without any money moving; set profile = development"})
 	}
 	if vals["http_allow_private_networks"] == "true" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "http_allow_private_networks", Message: "true is refused in the production profile; set profile = development"})
@@ -1605,10 +1602,10 @@ func checkAcquireTimeout(v string) error {
 }
 
 // databaseAcquireTimeoutChecks refuses database_acquire_timeout where nothing can wait for a
-// connection: only the pool of db = postgres has a limit that a process reaches.
+// connection: only the pool of database = postgres has a limit that a process reaches.
 func databaseAcquireTimeoutChecks(vals map[string]string, present map[string]bool) []Issue {
-	if db := cmp.Or(vals["db"], "sqlite"); present["database_acquire_timeout"] && db != "postgres" {
-		return []Issue{{Key: "database_acquire_timeout", Message: "works only with db = postgres, not " + db + ", which has no limit on connections to wait for"}}
+	if db := cmp.Or(vals["database"], "sqlite"); present["database_acquire_timeout"] && db != "postgres" {
+		return []Issue{{Key: "database_acquire_timeout", Message: "works only with database = postgres, not " + db + ", which has no limit on connections to wait for"}}
 	}
 	return nil
 }
@@ -1704,8 +1701,8 @@ func checkStatusPageURL(v string) error {
 // MaxMaintenanceMessage is the most characters maintenance_message may have (ADR-0084 §2).
 const MaxMaintenanceMessage = 2000
 
-// MaxRetryAfter is the most seconds a maintenance response asks clients to wait (ADR-0084 §3).
-const MaxRetryAfter = 86400
+// MaxRetryAfter is the longest a maintenance response asks clients to wait (ADR-0084 §3).
+const MaxRetryAfter = 24 * time.Hour
 
 func checkMaintenanceServerName(v string) error {
 	if strings.TrimSpace(v) == "" || utf8.RuneCountInString(v) > 200 || strings.ContainsFunc(v, unicode.IsControl) {
@@ -1729,9 +1726,9 @@ func checkRFC3339(v string) error {
 }
 
 func checkRetryAfter(v string) error {
-	n, err := strconv.Atoi(v)
-	if err != nil || n < 1 || n > MaxRetryAfter {
-		return fmt.Errorf("must be a whole number of seconds from 1 to %d", MaxRetryAfter)
+	d, err := time.ParseDuration(v)
+	if err != nil || d < time.Second || d > MaxRetryAfter {
+		return errors.New("must be a Go duration from 1s to 24h, for example 10m")
 	}
 	return nil
 }

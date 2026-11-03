@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
-  `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+  `account` moved to `target`. Only the user's follows of the moved account move;
   its posts stay where they are.
 type: object
 properties:

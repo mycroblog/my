@@ -3,8 +3,7 @@ get:
   operationId: listRoles
   summary: List the roles
   description: |
-    The roles of the instance, highest position first, with the permissions they grant
-    (FR-720). Every instance has `admin` (position 1000, every permission, never changed)
+    The roles of the instance, highest position first, with the permissions they grant. Every instance has `admin` (position 1000, every permission, never changed)
     and `moderator` (position 100 with `manage_reports`, `manage_accounts`, and
     `view_audit` until an administrator changes them). Needs the `manage_roles` permission.
   tags: [admin-server]

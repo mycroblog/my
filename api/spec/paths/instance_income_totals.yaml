@@ -3,8 +3,7 @@ get:
   operationId: getInstanceIncomeTotals
   summary: Total the instance's public income by period
   description: |
-    The net income that the instance setting `income_visibility` publishes (FR-917,
-    ADR-0073 §7, §9). It takes the query of `GET /admin/cost_totals`: `private` makes it a
+    The net income that the instance setting `income_visibility` publishes. It takes the query of `GET /admin/cost_totals`: `private` makes it a
     404; `totals` gives the net of each currency by period; `plans` adds `plans`, the number
     of members of each supporter plan now. Each period carries `balance`, the net less the
     costs, only while `finance_visibility` is not `private` either, since the balance would

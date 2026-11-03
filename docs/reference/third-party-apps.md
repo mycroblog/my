@@ -93,7 +93,7 @@ curl -X POST https://my.example/oauth/register \
   RFC 7592 (reading, updating, deleting a registration) is not supported. To change an app, register again.
 - CORS allows any origin, because the endpoint takes no credentials. It answers `403` (`access_denied`) when registration is turned off.
 - A client that never exchanges an authorization code within a day (by default), or has had no usable token and no use for 90 days (by default), is deleted by a periodic job.
-  Register again if your `client_id` stops working (`dynamic_client_unredeemed_ttl` and `dynamic_client_idle_ttl` in the [configuration reference](configuration.md)).
+  Register again if your `client_id` stops working (`dynamic_client_unredeemed_retention` and `dynamic_client_idle_retention` in the [configuration reference](configuration.md)).
 
 ## Authorization
 

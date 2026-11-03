@@ -164,7 +164,7 @@ func newRemoteStatusEnv(t *testing.T, newHarness RemoteStatusFactory) *remoteSta
 	if h.Quotes != nil {
 		appcontent.RegisterQuoteProjectors(captured.Projectors, h.Quotes)
 	}
-	apptimeline.RegisterProjectors(captured.Projectors, h.Timeline)
+	apptimeline.RegisterProjectors(captured.Projectors, h.Timeline, nil)
 	appnotification.RegisterProjectors(captured.Projectors, appnotification.ProjectorDeps{
 		Repository: h.Notifications, Accounts: ae.accounts, Relationships: e.graph, IDs: ae.ids,
 	})

@@ -54,13 +54,17 @@ func (a *App) setUpAnnouncementNotifications(repo notification.Repository, push 
 }
 
 // announcementRecipients pages the local accounts of users, as the service closure
-// notifications do, and leaves out the suspended and the deleted ones.
+// notifications do, and leaves out the suspended, the deleted, and the deactivated ones.
 type announcementRecipients struct{ closureRecipients }
 
 // Notifiable implements notification.AnnouncementRecipients.
 func (r announcementRecipients) Notifiable(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
 	deleted, err := r.a.Accounts.DeletedTx(ctx, tx, accountID)
 	if err != nil || deleted {
+		return false, err
+	}
+	deactivated, err := r.a.Accounts.DeactivatedTx(ctx, tx, accountID)
+	if err != nil || deactivated {
 		return false, err
 	}
 	suspended, err := r.a.AccountPolicy.SuspendedTx(ctx, tx, accountID)
@@ -90,7 +94,15 @@ func (r closureRecipients) LocalUserAccountIDs(ctx context.Context, after string
 	}
 	out := make([]string, 0, len(ids))
 	for _, id := range ids {
-		if id != actor.Account.ID {
+		if id == actor.Account.ID {
+			continue
+		}
+		// Nothing reaches a deactivated account (ADR-0145 §6).
+		a, err := r.a.Accounts.FindByID(ctx, id)
+		if err != nil {
+			return nil, "", err
+		}
+		if !a.Lifecycle.Deactivated() {
 			out = append(out, id)
 		}
 	}

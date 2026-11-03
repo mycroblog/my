@@ -123,7 +123,7 @@ var queuePrefixRe = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 type Options struct {
 	// TopicARN is the ARN of the SNS standard topic (config stream_sns_topic_arn). Required.
 	TopicARN string
-	// QueuePrefix starts the name of every queue of the Bus (config stream_sqs_queue_prefix):
+	// QueuePrefix starts the name of every queue of the Bus (config stream_sns_queue_prefix):
 	// at most MaxQueuePrefix letters, digits, hyphens, and underscores. The sweep deletes the
 	// queues of ended processes under it, so it belongs to one instance. Required.
 	QueuePrefix string

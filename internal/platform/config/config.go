@@ -84,7 +84,7 @@ type Config struct {
 	// WorkerJobConcurrency is how many jobs this process runs at once (ADR-0140); 0 when the
 	// setting is not given, which runs one and checks nothing against the database's pool.
 	WorkerJobConcurrency int
-	// DatabaseAcquireTimeout bounds the wait for a connection of the pool of db = postgres; 0
+	// DatabaseAcquireTimeout bounds the wait for a connection of the pool of database = postgres; 0
 	// waits without a limit.
 	DatabaseAcquireTimeout time.Duration
 	// QueueSQSRoutes and QueueCloudTasksRoutes send the wake-up signals of some job types to their
@@ -182,9 +182,7 @@ type Config struct {
 	// ADR-0118 §3).
 	PushAllowedHosts    []string
 	PushAllowedPrefixes []netip.Prefix
-	// RelayStatusRetention is how long a remote post that only a relay brought in is kept, and
-	// RelayIngestHourlyLimit how many activities each relay may bring in per hour (ADR-0061).
-	RelayStatusRetention   time.Duration
+	// RelayIngestHourlyLimit is how many activities each relay may bring in per hour (ADR-0061).
 	RelayIngestHourlyLimit int
 	// BillingSources are the providers whose usage charges are imported (billing_sources,
 	// ADR-0068), and the AWS caps bound the billed requests by UTC day and month (§4).
@@ -214,11 +212,11 @@ type Config struct {
 	// reconciliation with it (§4).
 	PaymentsProvider string
 	// PaymentsStripeSecretKey and PaymentsStripeWebhookSecret are the API key and the webhook
-	// endpoint's signing secret of payments_provider = stripe (ADR-0074 §5).
+	// endpoint's signing secret of payments = stripe (ADR-0074 §5).
 	PaymentsStripeSecretKey     string
 	PaymentsStripeWebhookSecret string
 	// PaymentsPayjpSecretKey, PaymentsPayjpPublicKey, and PaymentsPayjpWebhookToken are the keys
-	// and the webhook token of payments_provider = payjp (ADR-0099 §7).
+	// and the webhook token of payments = payjp (ADR-0099 §7).
 	PaymentsPayjpSecretKey       string
 	PaymentsPayjpPublicKey       string
 	PaymentsPayjpWebhookToken    string
@@ -269,9 +267,6 @@ type Config struct {
 	// without a usable token may go unused, before the clean-up deletes it (ADR-0090 §1).
 	DynamicClientUnredeemedTTL time.Duration
 	DynamicClientIdleTTL       time.Duration
-	// OAuthClientRateLimits caps the client API requests per 5 minutes of the OAuth clients
-	// named by their public client_id, across all their users (ADR-0090 §7).
-	OAuthClientRateLimits map[string]int64
 	// MetricsExporter is the Meter adapter (ADR-0055 §2); MetricsListen is the address of the
 	// scrape of prometheus, and the EMF fields configure emf.
 	MetricsExporter      string
@@ -333,7 +328,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("listen", c.Listen),
 		slog.Any("trusted_proxies", c.TrustedProxies),
 		slog.String("trusted_proxy_header", c.TrustedProxyHeader),
-		slog.String("db", c.DB),
+		slog.String("database", c.DB),
 		slog.String("database_url", redact(c.DatabaseURL != "")),
 		slog.String("database_dev_url", redact(c.DatabaseDevURL != "")),
 		slog.String("queue", c.Queue),
@@ -363,7 +358,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.Int64("media_max_image_bytes", c.MediaMaxImageBytes),
 		slog.Int("media_max_image_side", c.MediaMaxImageSide),
 		slog.Int64("media_max_image_pixels", c.MediaMaxImagePixels),
-		slog.Duration("media_unattached_ttl", c.MediaUnattachedTTL),
+		slog.Duration("media_unattached_retention", c.MediaUnattachedTTL),
 		slog.Int64("media_max_av_bytes", c.MediaMaxAVBytes),
 		slog.Duration("media_max_video_duration", c.MediaMaxVideoDuration),
 		slog.Duration("media_max_audio_duration", c.MediaMaxAudioDuration),
@@ -376,7 +371,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("stream", c.Stream),
 		slog.String("stream_postgres_url", redact(c.StreamPostgresURL != "")),
 		slog.String("stream_sns_topic_arn", c.StreamSNSTopicARN),
-		slog.String("stream_sqs_queue_prefix", c.StreamSQSQueuePrefix),
+		slog.String("stream_sns_queue_prefix", c.StreamSQSQueuePrefix),
 		slog.String("stream_pubsub_topic", c.StreamPubSubTopic),
 		slog.String("stream_pubsub_subscription_prefix", c.StreamPubSubSubscriptionPrefix),
 		slog.String("key_manager", c.KeyManager),
@@ -388,13 +383,13 @@ func (c *Config) LogValue() slog.Value {
 		slog.Int("kms_dek_cache_entries", c.DEKCacheEntries),
 		slog.String("mail", c.Mail),
 		slog.String("mail_from", c.MailFrom),
-		slog.String("smtp_host", c.SMTPHost),
-		slog.Int("smtp_port", c.SMTPPort),
-		slog.String("smtp_username", c.SMTPUsername),
-		slog.String("smtp_password", redact(c.SMTPPassword != "")),
-		slog.String("ses_region", c.SESRegion),
-		slog.String("ses_configuration_set", c.SESConfigurationSet),
-		slog.String("ses_sns_topic_arn", c.SESSNSTopicARN),
+		slog.String("mail_smtp_host", c.SMTPHost),
+		slog.Int("mail_smtp_port", c.SMTPPort),
+		slog.String("mail_smtp_username", c.SMTPUsername),
+		slog.String("mail_smtp_password", redact(c.SMTPPassword != "")),
+		slog.String("mail_ses_region", c.SESRegion),
+		slog.String("mail_ses_configuration_set", c.SESConfigurationSet),
+		slog.String("mail_ses_sns_topic_arn", c.SESSNSTopicARN),
 		slog.String("captcha", c.Captcha),
 		slog.String("captcha_site_key", c.CaptchaSiteKey),
 		slog.String("captcha_secret_key", redact(c.CaptchaSecretKey != "")),
@@ -404,7 +399,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.Any("webhook_allowed_destinations", append(slices.Clone(c.WebhookAllowedHosts), prefixStrings(c.WebhookAllowedPrefixes)...)),
 		slog.Any("login_provider_allowed_destinations", append(slices.Clone(c.LoginProviderAllowedHosts), prefixStrings(c.LoginProviderAllowedPrefixes)...)),
 		slog.Any("push_allowed_destinations", append(slices.Clone(c.PushAllowedHosts), prefixStrings(c.PushAllowedPrefixes)...)),
-		slog.Int("relay_ingest_hourly_limit", c.RelayIngestHourlyLimit),
+		slog.Int("relay_max_activities_per_hour", c.RelayIngestHourlyLimit),
 		slog.Any("billing_sources", c.BillingSources),
 		slog.Int("billing_aws_max_requests_per_day", c.BillingAWSMaxRequestsPerDay),
 		slog.Int("billing_aws_max_requests_per_month", c.BillingAWSMaxRequestsPerMonth),
@@ -420,7 +415,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("billing_gcp_label", c.BillingGCPLabel),
 		slog.Int64("billing_gcp_max_bytes_billed", c.BillingGCPMaxBytesBilled),
 		slog.String("billing_gcp_budget_subscription", c.BillingGCPBudgetSubscription),
-		slog.String("payments_provider", c.PaymentsProvider),
+		slog.String("payments", c.PaymentsProvider),
 		slog.String("payments_stripe_secret_key", redact(c.PaymentsStripeSecretKey != "")),
 		slog.String("payments_stripe_webhook_secret", redact(c.PaymentsStripeWebhookSecret != "")),
 		slog.String("payments_payjp_secret_key", redact(c.PaymentsPayjpSecretKey != "")),
@@ -430,13 +425,13 @@ func (c *Config) LogValue() slog.Value {
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
 		slog.String("voice", c.Voice),
 		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
-		slog.Int("voice_max_participants", c.VoiceMaxParticipants),
+		slog.Int("voice_sfu_max_participants", c.VoiceMaxParticipants),
 		slog.Duration("voice_max_room_duration", c.VoiceMaxRoomDuration),
 		slog.Int("voice_max_open_rooms", c.VoiceMaxOpenRooms),
 		slog.Any("voice_stun_urls", c.VoiceSTUNURLs),
 		slog.String("voice_turn", c.VoiceTURN),
-		slog.Any("voice_turn_urls", c.VoiceTURNURLs),
-		slog.String("voice_turn_secret", redact(c.VoiceTURNSecret != "")),
+		slog.Any("voice_turn_coturn_urls", c.VoiceTURNURLs),
+		slog.String("voice_turn_coturn_secret", redact(c.VoiceTURNSecret != "")),
 		slog.String("voice_turn_cloudflare_key_id", c.VoiceTURNCloudflareKeyID),
 		slog.String("voice_turn_cloudflare_api_token", redact(c.VoiceTURNCloudflareAPIToken != "")),
 		slog.Duration("voice_turn_credential_ttl", c.VoiceTURNCredentialTTL),
@@ -454,11 +449,11 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("voice_sora_webhook_password", redact(c.VoiceSoraWebhookPassword != "")),
 		slog.String("voice_sora_cloud_project_id", c.VoiceSoraCloudProjectID),
 		slog.String("voice_sora_cloud_api_key", redact(c.VoiceSoraCloudAPIKey != "")),
-		slog.String("voice_join_secret", redact(c.VoiceJoinSecret != "")),
+		slog.String("voice_sora_join_secret", redact(c.VoiceJoinSecret != "")),
 		slog.Duration("dead_job_retention", c.DeadJobRetention),
 		slog.Duration("job_attempt_retention", c.JobAttemptRetention),
-		slog.Duration("dynamic_client_unredeemed_ttl", c.DynamicClientUnredeemedTTL),
-		slog.Duration("dynamic_client_idle_ttl", c.DynamicClientIdleTTL),
+		slog.Duration("dynamic_client_unredeemed_retention", c.DynamicClientUnredeemedTTL),
+		slog.Duration("dynamic_client_idle_retention", c.DynamicClientIdleTTL),
 		slog.String("metrics_exporter", c.MetricsExporter),
 		slog.String("metrics_listen", c.MetricsListen),
 		slog.String("metrics_emf_namespace", c.MetricsEMFNamespace),
@@ -564,7 +559,7 @@ func Load(src Source) (*Config, []Setting, error) { return load(src, nil) }
 // unreachable still starts. The settings it does not read are absent from the returned list.
 func LoadMaintenance(src Source) (*Config, []Setting, error) { return load(src, maintenanceKeys) }
 
-// LoadSchemaApply is Load for `my schema apply`: it reads and validates only db, database_url,
+// LoadSchemaApply is Load for `my schema apply`: it reads and validates only database, database_url,
 // and database_dev_url, so that the one-off job that applies the schema needs nothing but the
 // database's settings. The settings it does not read are absent from the returned list.
 func LoadSchemaApply(src Source) (*Config, []Setting, error) { return load(src, schemaApplyKeys) }

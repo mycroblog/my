@@ -7,7 +7,7 @@ get:
     One entry per client for which the user holds a grant that still works, most recently used
     first (an app without a recorded use after those with one, newest authorization first). A
     revoked or expired grant is not listed. The server's own web client is listed too
-    (`first_party`). Only the server's own clients may call it (ADR-0090 §4).
+    (`first_party`). Only the server's own clients may call it.
   tags: [authorized_apps]
   security:
     - oauth2: ["read:accounts"]

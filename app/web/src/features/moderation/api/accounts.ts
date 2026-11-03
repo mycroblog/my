@@ -33,6 +33,7 @@ export const adminAccountStates = [
   "disabled",
   "suspended",
   "deleted",
+  "deactivated",
 ] as const satisfies readonly AdminAccountState[];
 
 /** Where the accounts of a search are: on this server or on others. */

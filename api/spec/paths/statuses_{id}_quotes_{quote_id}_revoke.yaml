@@ -11,7 +11,7 @@ post:
   operationId: revokeStatusQuote
   summary: Revoke the approval of a quote of the authenticated user's status
   description: |
-    Withdraws this server's approval of the quote (ADR-0069 §3): the quote shows the quoted
+    Withdraws this server's approval of the quote: the quote shows the quoted
     status no more, and the quoting server is told. A quote without this server's approval
     (from software without approvals, or of the user's own status) is a 404, as is one revoked
     already.

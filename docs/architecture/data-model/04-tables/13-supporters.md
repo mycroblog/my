@@ -8,7 +8,7 @@
 | --- | --- | --- | --- |
 | `payment_webhook_receipts` | イベント | `id`, `provider`（`enum(stripe, payjp, fake)`）, `event_id`（`string(255)`）, `event_type`（`string(100)`）, `object_id`（`string(255)`）, `received_at` | 一意 `(provider, event_id)`。インデックス `(provider, received_at)`, `(received_at)`。本文は持たない |
 | `payment_reconcile_runs` | イベント | `id`, `provider`, `run_key`（ジョブの冪等キー）, `outcome`（`enum(succeeded, partial, failed)`）, `error_kind`（`enum(none, request_cap, permission, not_found, invalid_request, throttled, unavailable, invalid_signature, stale_signature, mode_mismatch, invalid_response)`）, `changes_until`, `changes_cursor`・`money_cursor`・`sweep_cursor`（`string(255)`。`''` は先頭）, `requests`・`checked_subscriptions`・`corrected_subscriptions`（`int`）, `occurred_at` | 一意 `(provider, run_key)`。`CHECK (outcome = 'succeeded') = (error_kind = 'none')`, `(outcome = 'partial') = (error_kind = 'request_cap')`。インデックス `(provider, occurred_at)` |
-| `payment_checkout_claims` | 現在値 | `provider`, `checkout_id`（`string(255)`。こちらの加入の ID）, `holder`（`uuid`。その投稿）, `claimed_at`, `expires_at` | PK `(provider, checkout_id)`。`CHECK (expires_at > claimed_at)`。インデックス `(expires_at)` |
+| `payment_checkout_claims` | 現在値 | `provider`, `provider_checkout_id`（`string(255)`。こちらの加入の ID）, `holder`（`uuid`。その投稿）, `claimed_at`, `expires_at` | PK `(provider, provider_checkout_id)`。`CHECK (expires_at > claimed_at)`。インデックス `(expires_at)` |
 
 - webhook の受け口 `POST /payments/webhooks/{provider}` は、本文を 1 MiB まで読み、署名・時刻・モードを `PaymentProvider.ParseWebhook` で確かめ、1 つの短いトランザクションで `payment_webhook_receipts` の行とジョブ `supporters.apply_payment_event`（冪等キー `payment_event:<provider>:<event_id>`、順序のキーは対象のオブジェクト）を書きます。
   同じイベントの行がもうあれば何も書きません。ジョブはイベントの本文の状態を使わず、事業者からサブスクリプション・申し込み・お金の動きを取り直して `Syncer`（`supporters.sync`）に渡すので、重複・順序の入れ替わり・取りこぼしは同じ扱いになります。
@@ -36,12 +36,12 @@
 | `supporter_subscriptions` | リソース | `id`（事業者に載せるこちらの ID）, `user_id`, `plan_id`, `price_id`（開始のとき）, `provider`, `created_at` | |
 | `supporter_checkouts` | イベント | `id`, `subscription_id`, `provider`, `provider_checkout_id`, `expires_at`, `created_at` | 一意 `(provider, provider_checkout_id)`。インデックス `(subscription_id, id DESC)`, `(provider, expires_at)` |
 | `supporter_subscription_links` | イベント | `subscription_id`（PK）, `provider`, `provider_subscription_id`, `linked_at` | 一意 `(provider, provider_subscription_id)` |
-| `supporter_subscription_transitions` | イベント（版） | `id`, `subscription_id`, `state`（`enum(pending, active, canceling, past_due, lapsed, expired, revoked, abandoned)`）, `plan_id`, `price_id`, `period_ends_at`（`pending`・`abandoned` だけ NULL）, `reason`（`enum(started, synced, grace_expired, reversed, plan_retired, account_closed, account_suspended, staff, service_closed)`）, `occurred_at` | インデックス `(subscription_id, id DESC)` |
+| `supporter_subscription_transitions` | イベント（版） | `id`, `subscription_id`, `state`（`enum(pending, active, canceling, past_due, lapsed, expired, revoked, abandoned)`）, `plan_id`, `price_id`, `period_ends_at`（NULL 可。`pending`・`abandoned` だけ NULL）, `reason`（`enum(started, synced, grace_expired, reversed, plan_retired, account_closed, account_suspended, staff, service_closed)`）, `occurred_at` | インデックス `(subscription_id, id DESC)` |
 | `supporter_grace_periods` | イベント | `transition_id`（PK。`past_due` の遷移）, `failed_at`, `ends_at`（`failed_at` + 7 日） | |
 | `supporter_scheduled_changes` | イベント | `transition_id`（PK）, `price_id`, `effective_at` | 行がなければ予約なし |
-| `supporter_subscription_reversals` | イベント | `id`, `subscription_id`, `kind`（`enum(full_refund, partial_refund, chargeback)`）, `provider`, `provider_reversal_id`, `occurred_at` | 一意 `(provider, provider_reversal_id)` |
+| `supporter_subscription_reversals` | イベント | `id`, `subscription_id`, `kind`（`enum(full_refund, partial_refund, chargeback)`）, `provider`, `provider_reversal_id`, `occurred_at` | 一意 `(provider, provider_reversal_id)`。インデックス `(subscription_id)` |
 | `supporter_subscription_heads` | 投影 | `subscription_id`（PK）, `transition_id`, `user_id`, `plan_id`, `state` | インデックス `(plan_id, state)`, `(user_id)` |
-| `supporter_live_subscriptions` | 投影 | `user_id`（PK）, `subscription_id` | 終端でない加入だけ。利用者ごとに 1 つ |
+| `supporter_live_subscriptions` | 投影 | `user_id`（PK）, `subscription_id` | 終端でない加入だけ。利用者ごとに 1 つ。一意 `(subscription_id)` |
 | `supporter_subscription_deadlines` | 投影 | `subscription_id`（PK）, `kind`（`enum(checkout, period_end, grace)`）, `due_at` | インデックス `(due_at)` |
 | `supporter_subscription_reads` | 現在値 | `subscription_id`（PK）, `read_at` | 当てた最新のスナップショットを事業者から読み始めた時刻 |
 | `supporter_listings` | 現在値 | `user_id`（PK）, `created_at` | 参加者の一覧に出る選択（ADR-0071 §6） |

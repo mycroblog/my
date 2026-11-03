@@ -208,19 +208,22 @@ func (e AdminAccountRestriction) Valid() bool {
 
 // Defines values for AdminAccountState.
 const (
-	AdminAccountStateActive    AdminAccountState = "active"
-	AdminAccountStateDeleted   AdminAccountState = "deleted"
-	AdminAccountStateDisabled  AdminAccountState = "disabled"
-	AdminAccountStateLimited   AdminAccountState = "limited"
-	AdminAccountStatePending   AdminAccountState = "pending"
-	AdminAccountStateRejected  AdminAccountState = "rejected"
-	AdminAccountStateSuspended AdminAccountState = "suspended"
+	AdminAccountStateActive      AdminAccountState = "active"
+	AdminAccountStateDeactivated AdminAccountState = "deactivated"
+	AdminAccountStateDeleted     AdminAccountState = "deleted"
+	AdminAccountStateDisabled    AdminAccountState = "disabled"
+	AdminAccountStateLimited     AdminAccountState = "limited"
+	AdminAccountStatePending     AdminAccountState = "pending"
+	AdminAccountStateRejected    AdminAccountState = "rejected"
+	AdminAccountStateSuspended   AdminAccountState = "suspended"
 )
 
 // Valid indicates whether the value is a known member of the AdminAccountState enum.
 func (e AdminAccountState) Valid() bool {
 	switch e {
 	case AdminAccountStateActive:
+		return true
+	case AdminAccountStateDeactivated:
 		return true
 	case AdminAccountStateDeleted:
 		return true
@@ -264,7 +267,7 @@ func (e AdminAnnouncementState) Valid() bool {
 const (
 	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
 	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
-	AdminAuditActionAccountDeletionCancelled        AdminAuditAction = "account_deletion_cancelled"
+	AdminAuditActionAccountDeletionCanceled         AdminAuditAction = "account_deletion_canceled"
 	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
@@ -367,7 +370,7 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionAccountActionLifted:
 		return true
-	case AdminAuditActionAccountDeletionCancelled:
+	case AdminAuditActionAccountDeletionCanceled:
 		return true
 	case AdminAuditActionAccountMoved:
 		return true
@@ -1399,6 +1402,7 @@ func (e ClientErrorReportKind) Valid() bool {
 
 // Defines values for ConfirmedOperation.
 const (
+	ConfirmedOperationAccountDeactivation ConfirmedOperation = "account_deactivation"
 	ConfirmedOperationAccountDeletion     ConfirmedOperation = "account_deletion"
 	ConfirmedOperationAccountMove         ConfirmedOperation = "account_move"
 	ConfirmedOperationLink                ConfirmedOperation = "link"
@@ -1410,6 +1414,8 @@ const (
 // Valid indicates whether the value is a known member of the ConfirmedOperation enum.
 func (e ConfirmedOperation) Valid() bool {
 	switch e {
+	case ConfirmedOperationAccountDeactivation:
+		return true
 	case ConfirmedOperationAccountDeletion:
 		return true
 	case ConfirmedOperationAccountMove:
@@ -1760,6 +1766,42 @@ func (e DataImportSkippedReason) Valid() bool {
 	case DataImportSkippedReasonDuplicate:
 		return true
 	case DataImportSkippedReasonInvalid:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DeactivationPreviewRefusal.
+const (
+	DeactivationPreviewRefusalAlreadyDeactivated  DeactivationPreviewRefusal = "already_deactivated"
+	DeactivationPreviewRefusalDeletionScheduled   DeactivationPreviewRefusal = "deletion_scheduled"
+	DeactivationPreviewRefusalLastAdministrator   DeactivationPreviewRefusal = "last_administrator"
+	DeactivationPreviewRefusalLoginRestricted     DeactivationPreviewRefusal = "login_restricted"
+	DeactivationPreviewRefusalMoved               DeactivationPreviewRefusal = "moved"
+	DeactivationPreviewRefusalPaidSubscription    DeactivationPreviewRefusal = "paid_subscription"
+	DeactivationPreviewRefusalRecentlyReactivated DeactivationPreviewRefusal = "recently_reactivated"
+	DeactivationPreviewRefusalRegistrationPending DeactivationPreviewRefusal = "registration_pending"
+)
+
+// Valid indicates whether the value is a known member of the DeactivationPreviewRefusal enum.
+func (e DeactivationPreviewRefusal) Valid() bool {
+	switch e {
+	case DeactivationPreviewRefusalAlreadyDeactivated:
+		return true
+	case DeactivationPreviewRefusalDeletionScheduled:
+		return true
+	case DeactivationPreviewRefusalLastAdministrator:
+		return true
+	case DeactivationPreviewRefusalLoginRestricted:
+		return true
+	case DeactivationPreviewRefusalMoved:
+		return true
+	case DeactivationPreviewRefusalPaidSubscription:
+		return true
+	case DeactivationPreviewRefusalRecentlyReactivated:
+		return true
+	case DeactivationPreviewRefusalRegistrationPending:
 		return true
 	default:
 		return false
@@ -4223,13 +4265,13 @@ func (e ListReportsParamsOrder) Valid() bool {
 	}
 }
 
-// AIUsage What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
+// AIUsage What the instance states to AI crawlers (the instance setting `ai_usage`).
 // `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
 // and no use by AI search, assistants, and agents. An account can opt out of what the
 // instance allows (`ai_opt_out`), never the reverse.
 type AIUsage string
 
-// Account An account, as clients show it (FR-006).
+// Account An account, as clients show it.
 type Account struct {
 	// Acct The username for local accounts, `username@domain` for remote ones; empty for a remote
 	// account without a confirmed handle.
@@ -4240,7 +4282,7 @@ type Account struct {
 	// remote account, every size is its media proxy URL.
 	Avatar *MediaVariants `json:"avatar,omitempty"`
 
-	// Badges The role badges that the account shows on its profile, highest role first (ADR-0071).
+	// Badges The role badges that the account shows on its profile, highest role first.
 	// Filled on the account's own endpoints (`getAccount`, `lookupAccount`,
 	// `verifyAccountCredentials`) only, and empty where accounts are listed or embedded (posts,
 	// notifications, lists of accounts) and for remote accounts. Badges are never federated.
@@ -4260,8 +4302,7 @@ type Account struct {
 	// confirmed handle.
 	Domain string `json:"domain"`
 
-	// Emojis The custom emoji of the display name, the note, and the fields' names and values
-	// (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+	// Emojis The custom emoji of the display name, the note, and the fields' names and values. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text.
 	Emojis []CustomEmoji `json:"emojis"`
 
@@ -4287,7 +4328,7 @@ type Account struct {
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
-	// Moved The account that the account moved to (ADR-0089), when it moved: clients show that it
+	// Moved The account that the account moved to, when it moved: clients show that it
 	// moved, with a link to this one. Present on the account's own endpoints, where
 	// `followers_count` is, and without a `moved` of its own (moves are not followed in
 	// chains).
@@ -4311,7 +4352,7 @@ type Account struct {
 	VoiceRoom *VoiceRoomEntry `json:"voice_room,omitempty"`
 }
 
-// AccountAlias An account that the user moves from (ADR-0089, FR-009): the user's actor names it in
+// AccountAlias An account that the user moves from: the user's actor names it in
 // `alsoKnownAs`, which lets it move its followers to the user. An alias alone changes nothing.
 type AccountAlias struct {
 	// Acct The handle of the alias, `username` for a local account and `username@domain` for a
@@ -4330,11 +4371,11 @@ type AccountAliasList struct {
 	Items []AccountAlias `json:"items"`
 }
 
-// AccountBadge A badge that the account shows on its profile (ADR-0071): the badge of a role that the
+// AccountBadge A badge that the account shows on its profile: the badge of a role that the
 // account's user holds and chose to show. Clients show `label` as user content (`dir="auto"`),
 // never translated.
 type AccountBadge struct {
-	// Color The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+	// Color The color of a role badge: the name of a pair of the web client's design tokens
 	// for its background and its text, which keep their contrast in the light and the dark theme.
 	// Server themes do not change them. The color is decoration; the badge's `label` carries its
 	// meaning.
@@ -4364,7 +4405,7 @@ type AccountList struct {
 }
 
 // AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
-// `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+// `account` moved to `target`. Only the user's follows of the moved account move;
 // its posts stay where they are.
 type AccountMove struct {
 	// Outcome What became of the user's follow of the moved account, for an `account_moved` only:
@@ -4417,7 +4458,7 @@ type AccountStatusPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 
 	// RemoteFetchStarted `true` when this request started fetching the remote account's recent public
-	// posts from its server (ADR-0044). The fetch runs in the background; read the
+	// posts from its server. The fetch runs in the background; read the
 	// first page again a few seconds later to see what it stored. Absent otherwise,
 	// including when a fetch started in the last day.
 	RemoteFetchStarted *bool `json:"remote_fetch_started,omitempty"`
@@ -4425,7 +4466,7 @@ type AccountStatusPage struct {
 
 // AccountSuggestion An account suggested to follow, with why it is suggested.
 type AccountSuggestion struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Source Why the account is suggested: `featured` when the administrators feature it,
@@ -4449,9 +4490,9 @@ type AddAccountAliasRequest struct {
 	Acct string `json:"acct"`
 }
 
-// AdminAccount An account as the moderators see it (FR-714). It never includes an email or IP address.
+// AdminAccount An account as the moderators see it. It never includes an email or IP address.
 type AdminAccount struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -4466,18 +4507,18 @@ type AdminAccount struct {
 	// `approved`. Omitted for a remote account.
 	RegistrationState *RegistrationState `json:"registration_state,omitempty"`
 
-	// Restrictions What the account's own actions take away now (data-model §5.2), in a fixed order.
+	// Restrictions What the account's own actions take away now, in a fixed order.
 	// The domain actions on its domain are listed apart.
 	Restrictions []AdminAccountRestriction `json:"restrictions"`
 
 	// State The state of an account, the first that applies: `deleted` (deleted here or on its
-	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-	// and `pending` (the registration of a local account), `limited` (a `limit`), and
+	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+	// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 	// `active`.
 	State AdminAccountState `json:"state"`
 }
 
-// AdminAccountAction A moderation action on an account (FR-703).
+// AdminAccountAction A moderation action on an account.
 type AdminAccountAction struct {
 	// AccountId The account the action is on.
 	AccountId Id `json:"account_id"`
@@ -4558,9 +4599,9 @@ type AdminAccountActionPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminAccountDetail The details of an account (FR-714).
+// AdminAccountDetail The details of an account.
 type AdminAccountDetail struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Actions The newest 20 actions on the account, newest first.
@@ -4594,7 +4635,7 @@ type AdminAccountDetail struct {
 	// the `manage_reports` permission.
 	Reports *[]AdminReport `json:"reports,omitempty"`
 
-	// Restrictions What the account's own actions take away now (data-model §5.2), in a fixed order.
+	// Restrictions What the account's own actions take away now, in a fixed order.
 	// The domain actions on its domain are listed apart.
 	Restrictions []AdminAccountRestriction `json:"restrictions"`
 
@@ -4602,8 +4643,8 @@ type AdminAccountDetail struct {
 	Roles []string `json:"roles"`
 
 	// State The state of an account, the first that applies: `deleted` (deleted here or on its
-	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-	// and `pending` (the registration of a local account), `limited` (a `limit`), and
+	// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+	// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 	// `active`.
 	State AdminAccountState `json:"state"`
 
@@ -4640,7 +4681,7 @@ type AdminAccountPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminAccountPrivateData The email address and the IP addresses of a local account (FR-714). Showing them is
+// AdminAccountPrivateData The email address and the IP addresses of a local account. Showing them is
 // recorded in the audit log.
 type AdminAccountPrivateData struct {
 	// Email The primary email address; omitted when there is none.
@@ -4686,7 +4727,7 @@ type AdminAccountRegistration struct {
 	SubmittedAt    time.Time `json:"submitted_at"`
 }
 
-// AdminAccountRestriction A capability that an action takes away (data-model §5.2). `login`: logging in and the
+// AdminAccountRestriction A capability that an action takes away. `login`: logging in and the
 // API. `post`: posting, replying, boosting, quoting, editing. `interact`: following, favouriting,
 // boosting, voting. `visibility_ceiling_private`: posts are followers-only.
 // `public_discovery`: posts stay off the public timelines and search.
@@ -4706,8 +4747,8 @@ type AdminAccountSignIn struct {
 }
 
 // AdminAccountState The state of an account, the first that applies: `deleted` (deleted here or on its
-// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`), `rejected`
-// and `pending` (the registration of a local account), `limited` (a `limit`), and
+// server), `suspended` (a `suspend` or `ban`), `disabled` (a `disable_login`),
+// `deactivated` (by its owner), `rejected` and `pending` (the registration of a local account), `limited` (a `limit`), and
 // `active`.
 type AdminAccountState string
 
@@ -4795,7 +4836,7 @@ type AdminAppeal struct {
 	// AccountId The account that appealed, which the action is on.
 	AccountId Id `json:"account_id"`
 
-	// Action A moderation action on an account (FR-703).
+	// Action A moderation action on an account.
 	Action AdminAccountAction `json:"action"`
 
 	// DecidedAt When a moderator decided the appeal; omitted while pending.
@@ -4831,7 +4872,7 @@ type AdminAppealPage struct {
 }
 
 // AdminAuditAction The kind of an audited operation, each on one kind of target. On an `account`:
-// `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 // `revealed_private_data` (a moderator was shown the account's email address and IP
 // addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -4851,7 +4892,7 @@ type AdminAppealPage struct {
 // `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 // an `appeal`:
 // `appeal_upheld`, `appeal_overturned` (which also records the action's
-// `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -4903,10 +4944,10 @@ type AdminAuditAction string
 // `remote`: another server.
 type AdminAuditActorKind string
 
-// AdminAuditEntry One operation of a moderator or an administrator (FR-704).
+// AdminAuditEntry One operation of a moderator or an administrator.
 type AdminAuditEntry struct {
 	// Action The kind of an audited operation, each on one kind of target. On an `account`:
-	// `account_action_issued`, `account_action_lifted`, `account_deletion_cancelled`,
+	// `account_action_issued`, `account_action_lifted`, `account_deletion_canceled`,
 	// `revealed_private_data` (a moderator was shown the account's email address and IP
 	// addresses), `two_factor_disabled` (an administrator removed the account's two-factor
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
@@ -4926,7 +4967,7 @@ type AdminAuditEntry struct {
 	// `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 	// an `appeal`:
 	// `appeal_upheld`, `appeal_overturned` (which also records the action's
-	// `account_action_lifted`, and for a `ban` the `account_deletion_cancelled` on the
+	// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),
@@ -5113,7 +5154,7 @@ type AdminCounts struct {
 	PendingRegistrations *int64 `json:"pending_registrations,omitempty"`
 }
 
-// AdminCustomEmoji A custom emoji as the administrators manage it (ADR-0051 §4): a local one, or a remote
+// AdminCustomEmoji A custom emoji as the administrators manage it: a local one, or a remote
 // one recorded from the posts and profiles of another server.
 type AdminCustomEmoji struct {
 	// Aliases The other names of a local emoji that the picker finds it by.
@@ -5125,7 +5166,7 @@ type AdminCustomEmoji struct {
 	// CreatedAt When the emoji was registered or first seen.
 	CreatedAt time.Time `json:"created_at"`
 
-	// CreatedBy The account of the user who made a local emoji (ADR-0070 §7): the requester of an
+	// CreatedBy The account of the user who made a local emoji: the requester of an
 	// approved request, or the administrator who registered or copied it. Absent for an emoji
 	// made with the CLI, a remote one, and one whose creator's account is deleted
 	// (`created_by_deleted`).
@@ -5195,7 +5236,7 @@ type AdminCustomEmojiRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Kind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+	// Kind What a custom emoji request asks for: `create` a new local custom emoji,
 	// or `image` a new image of a local emoji that the requester made.
 	Kind CustomEmojiRequestKind `json:"kind"`
 
@@ -5230,7 +5271,7 @@ type AdminCustomEmojiRequestPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminDomainAction A moderation action on a remote domain and its subdomains (FR-702).
+// AdminDomainAction A moderation action on a remote domain and its subdomains.
 type AdminDomainAction struct {
 	// Domain The domain, in IDNA A-labels.
 	Domain string `json:"domain"`
@@ -5287,7 +5328,7 @@ type AdminDomainActionPage struct {
 type AdminIncomePeriodTotal struct {
 	Balance []Money `json:"balance"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn CalendarDate `json:"ends_on"`
 	Fee    []Money      `json:"fee"`
@@ -5295,16 +5336,16 @@ type AdminIncomePeriodTotal struct {
 	Label  string       `json:"label"`
 	Net    []Money      `json:"net"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
 
 // AdminIncomeTotals The income totals as the administrators see them over the periods from the one that holds
 // `from` to the one that holds `to`, oldest first, with the number of members of each
-// supporter plan now (ADR-0073 §6).
+// supporter plan now.
 type AdminIncomeTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -5312,12 +5353,12 @@ type AdminIncomeTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity          `json:"granularity"`
 	Periods     []AdminIncomePeriodTotal `json:"periods"`
 	Plans       []IncomePlanCount        `json:"plans"`
 
-	// Rules How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+	// Rules How the income totals cut the periods and place the payments, to show
 	// next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
 	// each money movement on its date in its payment provider's reporting time zone
 	// (`providers`), and under the `amortized` basis a payment that covers more than
@@ -5327,7 +5368,7 @@ type AdminIncomeTotals struct {
 	Rules IncomeTotalsRules `json:"rules"`
 }
 
-// AdminInstanceHealth Whether deliveries go to a remote server (federation.md §7.3).
+// AdminInstanceHealth Whether deliveries go to a remote server.
 type AdminInstanceHealth struct {
 	Domain string `json:"domain"`
 
@@ -5634,7 +5675,7 @@ type AdminOAuthClient struct {
 	// OwnerDeleted Whether a user registered the client whose account no longer exists.
 	OwnerDeleted bool `json:"owner_deleted"`
 
-	// Registration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+	// Registration The route by which an OAuth client was registered: `first_party` is one of the
 	// server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
 	// client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
 	// that registered itself (RFC 7591).
@@ -5683,7 +5724,7 @@ type AdminOAuthClientPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminPasswordResetLink A password reset link that an administrator issued for a local account (FR-002). It is
+// AdminPasswordResetLink A password reset link that an administrator issued for a local account. It is
 // shown once.
 type AdminPasswordResetLink struct {
 	// ExpiresAt When the link stops working.
@@ -5697,7 +5738,7 @@ type AdminPasswordResetLink struct {
 	Url string `json:"url"`
 }
 
-// AdminQueue The state of the job queue (ADR-0064).
+// AdminQueue The state of the job queue.
 type AdminQueue struct {
 	// Adapter The queue the server runs, the `queue` setting (`db`, `inline`, `sqs`, `cloudtasks`).
 	Adapter string `json:"adapter"`
@@ -5718,7 +5759,7 @@ type AdminQueue struct {
 	Waits []AdminJobWait `json:"waits"`
 }
 
-// AdminRegistration A user's registration as the moderators review it (FR-721).
+// AdminRegistration A user's registration as the moderators review it.
 type AdminRegistration struct {
 	// AccountId The user's local account; omitted when it is gone.
 	AccountId *Id `json:"account_id,omitempty"`
@@ -5767,7 +5808,7 @@ type AdminRegistrationPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// AdminRelay A relay that the instance joins or joined (ADR-0061).
+// AdminRelay A relay that the instance joins or joined.
 type AdminRelay struct {
 	// ActorUri The relay's actor, which accepted the `Follow`; omitted unless `accepted`.
 	ActorUri  *string   `json:"actor_uri,omitempty"`
@@ -5778,7 +5819,7 @@ type AdminRelay struct {
 	DomainSuspended bool `json:"domain_suspended"`
 
 	// DroppedLastDay The activities it brought in during the last 24 hours that were dropped over the
-	// hourly limit (`relay_ingest_hourly_limit`).
+	// hourly limit (`relay_max_activities_per_hour`).
 	DroppedLastDay int `json:"dropped_last_day"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -5789,7 +5830,7 @@ type AdminRelay struct {
 	// InboxUrl Where the public posts are delivered.
 	InboxUrl string `json:"inbox_url"`
 
-	// Protocol How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
+	// Protocol How a relay is joined. `mastodon`: at its inbox, by a `Follow` of the Public
 	// collection. `litepub`: at its actor, by a `Follow` of the actor.
 	Protocol RelayProtocol `json:"protocol"`
 
@@ -5815,7 +5856,7 @@ type AdminRelayList struct {
 	Items []AdminRelay `json:"items"`
 }
 
-// AdminReport A report of an account to the moderators (FR-701).
+// AdminReport A report of an account to the moderators.
 type AdminReport struct {
 	// AssigneeAccountId The account of the moderator who handles the report; omitted when nobody does.
 	AssigneeAccountId *Id `json:"assignee_account_id,omitempty"`
@@ -6058,7 +6099,7 @@ type AdminReportVoiceRoom struct {
 	Revisions []AdminVoiceRoomRevision `json:"revisions"`
 }
 
-// AdminRole A role (FR-720): a named set of permissions. A higher position outranks a lower one;
+// AdminRole A role: a named set of permissions. A higher position outranks a lower one;
 // a user may grant, revoke, create, change, and delete only the roles at or below their
 // highest one, and give or take only the permissions they hold.
 type AdminRole struct {
@@ -6085,7 +6126,7 @@ type AdminRoleList struct {
 	Items []AdminRole `json:"items"`
 }
 
-// AdminRule A rule of the instance (FR-705). Its ID stays the same across revisions, so reports keep
+// AdminRule A rule of the instance. Its ID stays the same across revisions, so reports keep
 // citing it.
 type AdminRule struct {
 	CreatedAt time.Time `json:"created_at"`
@@ -6123,7 +6164,7 @@ type AdminSameIpAccounts struct {
 	Ip       string         `json:"ip"`
 }
 
-// AdminServiceClosure The service closure as its administrators see it (ADR-0088 §1).
+// AdminServiceClosure The service closure as its administrators see it.
 type AdminServiceClosure struct {
 	// AnnouncedAt When the announcement in effect, or its latest change of the dates, was made; omitted for `none`.
 	AnnouncedAt *time.Time `json:"announced_at,omitempty"`
@@ -6140,7 +6181,7 @@ type AdminServiceClosure struct {
 	// Message The operator's message to the users; omitted when there is none.
 	Message *string `json:"message,omitempty"`
 
-	// Progress How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+	// Progress How far the closure's `Delete` of every local actor has gone, in `GET
 	// /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
 	// `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
 	Progress *AdminServiceClosureProgress `json:"progress,omitempty"`
@@ -6150,7 +6191,7 @@ type AdminServiceClosure struct {
 	// time to export their data and move their accounts. A short notice is allowed.
 	ShortNotice bool `json:"short_notice"`
 
-	// State Where the server is in its closure (ADR-0088 §1):
+	// State Where the server is in its closure:
 	//
 	// - `none`: no closure is announced.
 	// - `announced`: the closure is announced; the server runs as before until it closes.
@@ -6160,7 +6201,7 @@ type AdminServiceClosure struct {
 	State ServiceClosureState `json:"state"`
 }
 
-// AdminServiceClosureCheck What the administrator reviews before closing the server (ADR-0088 §1, §4, §5). The admin
+// AdminServiceClosureCheck What the administrator reviews before closing the server. The admin
 // screen and the CLI show it with the confirmation of the closure.
 type AdminServiceClosureCheck struct {
 	// DeliveryInboxes The shared inboxes known to the server, which each `Delete` goes to.
@@ -6175,12 +6216,11 @@ type AdminServiceClosureCheck struct {
 	// LocalAccounts The local accounts of users that are not deleted, each of which the closure sends a `Delete` of.
 	LocalAccounts int `json:"local_accounts"`
 
-	// PendingMigrations The account migrations (the sending of a `Move` and the jobs that move the followers,
-	// ADR-0089) that have not ended. They should end before the closure delivers its `Delete`;
+	// PendingMigrations The account migrations (the sending of a `Move` and the jobs that move the followers) that have not ended. They should end before the closure delivers its `Delete`;
 	// the admin screen and the CLI warn while it is not 0.
 	PendingMigrations int `json:"pending_migrations"`
 
-	// RetentionHolds The accounts under a retention hold (ADR-0038). While it is not 0, the operator exports
+	// RetentionHolds The accounts under a retention hold. While it is not 0, the operator exports
 	// their records with the CLI before discarding the data of the closed server.
 	RetentionHolds int `json:"retention_holds"`
 }
@@ -6203,7 +6243,7 @@ type AdminServiceClosureDeliveries struct {
 	Succeeded int `json:"succeeded"`
 }
 
-// AdminServiceClosureProgress How far the closure's `Delete` of every local actor has gone (ADR-0088 §3), in `GET
+// AdminServiceClosureProgress How far the closure's `Delete` of every local actor has gone, in `GET
 // /api/v1/admin/closure` once the server is closed. The deliveries go on while the workers run;
 // `delivery_completed` is recorded when no fan-out is left and every delivery has ended.
 type AdminServiceClosureProgress struct {
@@ -6226,7 +6266,7 @@ type AdminSetting struct {
 	// Default The value of the setting while it has never been set.
 	Default string `json:"default"`
 
-	// Key The key of an instance setting (docs/operations/instance-settings.md). New keys may be
+	// Key The key of an instance setting. New keys may be
 	// added; clients show the ones they know.
 	Key InstanceSettingKey `json:"key"`
 
@@ -6258,7 +6298,7 @@ type AdminSettingList struct {
 	Items []AdminSetting `json:"items"`
 }
 
-// AdminSignupBlock A block on sign-ups from the registration page (FR-719).
+// AdminSignupBlock A block on sign-ups from the registration page.
 type AdminSignupBlock struct {
 	// Comment The moderators' comment; omitted when there is none.
 	Comment   *string   `json:"comment,omitempty"`
@@ -6314,7 +6354,7 @@ type AdminSignupBlockPage struct {
 // for a moderator, whatever the registration mode.
 type AdminSignupBlockSeverity string
 
-// AdminSupporterPlan A supporter plan as the administrators see it (ADR-0072 §3). The yearly price is the
+// AdminSupporterPlan A supporter plan as the administrators see it. The yearly price is the
 // monthly one × 12, discounted by `annual_discount_percent`, rounded down. A plan takes
 // subscriptions while it is public, not retired, and `prices_ready` (the provider has the
 // prices of its current terms).
@@ -6334,7 +6374,7 @@ type AdminSupporterPlan struct {
 	// Members The subscriptions that hold the role (active, canceling, or past due).
 	Members int `json:"members"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice Money  `json:"monthly_price"`
 	Name         string `json:"name"`
@@ -6353,7 +6393,7 @@ type AdminSupporterPlan struct {
 	// its subscriptions go on.
 	Visibility SupporterPlanVisibility `json:"visibility"`
 
-	// YearlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// YearlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	YearlyPrice Money `json:"yearly_price"`
 }
@@ -6370,7 +6410,7 @@ type AdminSupporterPlanCreateRequest struct {
 	// EmojiLimit How many custom emoji the members may create each month (UTC), 0 to 10,000.
 	EmojiLimit int `json:"emoji_limit"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice Money `json:"monthly_price"`
 
@@ -6414,7 +6454,7 @@ type AdminSupporterPlanUpdateRequest struct {
 	Description           *string `json:"description,omitempty"`
 	EmojiLimit            *int    `json:"emoji_limit,omitempty"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice    *Money        `json:"monthly_price,omitempty"`
 	Name            *string       `json:"name,omitempty"`
@@ -6427,7 +6467,7 @@ type AdminSupporterPlanUpdateRequest struct {
 	Visibility *SupporterPlanVisibility `json:"visibility,omitempty"`
 }
 
-// AdminSupporterProgram The supporter program (ADR-0072 §2). It is disabled by default; enabling it needs a
+// AdminSupporterProgram The supporter program. It is disabled by default; enabling it needs a
 // payment provider in the deployment's configuration (`configured_provider`) and a server
 // that sends email (`sends_email`). `warnings` lists what an administrator should look at.
 type AdminSupporterProgram struct {
@@ -6485,7 +6525,7 @@ type AdminSupporterSubscription struct {
 	PlanId   Id     `json:"plan_id"`
 	PlanName string `json:"plan_name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 
@@ -6498,7 +6538,7 @@ type AdminSupporterSubscription struct {
 	ScheduledPlanId *Id       `json:"scheduled_plan_id,omitempty"`
 	StartedAt       time.Time `json:"started_at"`
 
-	// State The state of a subscription (ADR-0072 §7). `pending`: started, not paid yet. `active`:
+	// State The state of a subscription. `pending`: started, not paid yet. `active`:
 	// paid. `canceling`: canceled at the end of the period. `past_due`: a payment failed less
 	// than 7 days ago. `lapsed`: a payment failed more than 7 days ago, or the subscription is
 	// paused. `expired`: ended. `revoked`: a full refund or a chargeback. `abandoned`: ended
@@ -6607,7 +6647,7 @@ type AdminVoiceRoomRevision struct {
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
 
-// AdminWebhook A webhook endpoint (ADR-0060). Its secret is never shown again after it is made.
+// AdminWebhook A webhook endpoint. Its secret is never shown again after it is made.
 type AdminWebhook struct {
 	CreatedAt time.Time `json:"created_at"`
 
@@ -6669,7 +6709,7 @@ type AdminWebhookCreated struct {
 	// Standard Webhooks libraries take it. It is shown only now.
 	Secret string `json:"secret"`
 
-	// Webhook A webhook endpoint (ADR-0060). Its secret is never shown again after it is made.
+	// Webhook A webhook endpoint. Its secret is never shown again after it is made.
 	Webhook AdminWebhook `json:"webhook"`
 }
 
@@ -6752,7 +6792,7 @@ type AnnounceServiceClosureRequest struct {
 	Message *string `json:"message,omitempty"`
 }
 
-// Announcement An announcement of the server to every local user (FR-726), as the user sees it.
+// Announcement An announcement of the server to every local user, as the user sees it.
 type Announcement struct {
 	// Content The text as an HTML fragment, sanitized (paragraphs, emphasis, lists, quotes, code,
 	// headings from `h2`, and `http`, `https`, and `mailto` links).
@@ -6805,7 +6845,7 @@ type AppealModerationActionRequest struct {
 
 // AuthorizedApp An app the authenticated user authorized: the user's grants of one OAuth client that still
 // work. The name and the website are what the app says about itself; `registration`,
-// `client_id` and `registered_by` are what the server knows (ADR-0090 §3).
+// `client_id` and `registered_by` are what the server knows.
 type AuthorizedApp struct {
 	// AuthorizedAt When the user first authorized the app (the oldest of its working grants).
 	AuthorizedAt time.Time `json:"authorized_at"`
@@ -6854,7 +6894,7 @@ type AuthorizedAppList struct {
 	Items []AuthorizedApp `json:"items"`
 }
 
-// AutoDeletePolicy The authenticated user's automatic deletion of their own old posts (FR-118). A post is
+// AutoDeletePolicy The authenticated user's automatic deletion of their own old posts. A post is
 // deleted once it was published more than `min_age_days` days ago, unless one of the
 // exceptions (the `keep_` properties) keeps it.
 type AutoDeletePolicy struct {
@@ -6903,10 +6943,10 @@ type AutoDeletePreview struct {
 }
 
 // BadgeChoice A role that the authenticated user holds and that has a badge, with whether the user shows
-// the badge on their profile (ADR-0071). A badge is hidden until the user shows it; losing the
+// the badge on their profile. A badge is hidden until the user shows it; losing the
 // role or its badge hides it again.
 type BadgeChoice struct {
-	// Color The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+	// Color The color of a role badge: the name of a pair of the web client's design tokens
 	// for its background and its text, which keep their contrast in the light and the dark theme.
 	// Server themes do not change them. The color is decoration; the badge's `label` carries its
 	// meaning.
@@ -6929,13 +6969,13 @@ type BadgeChoiceList struct {
 	Items []BadgeChoice `json:"items"`
 }
 
-// BadgeColor The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+// BadgeColor The color of a role badge: the name of a pair of the web client's design tokens
 // for its background and its text, which keep their contrast in the light and the dark theme.
 // Server themes do not change them. The color is decoration; the badge's `label` carries its
 // meaning.
 type BadgeColor string
 
-// BillingImport The state of the imports of a billing source (ADR-0068 §9).
+// BillingImport The state of the imports of a billing source.
 type BillingImport struct {
 	// BytesBilledThisMonth The BigQuery bytes billed this UTC month; 0 for the other sources.
 	BytesBilledThisMonth int64 `json:"bytes_billed_this_month"`
@@ -6954,7 +6994,7 @@ type BillingImport struct {
 	// omitted for a source without caps.
 	MaxRequestsPerMonth *int `json:"max_requests_per_month,omitempty"`
 
-	// Method How the source reads the provider's data (ADR-0068 §1, §7): `cost_explorer` (AWS Cost
+	// Method How the source reads the provider's data: `cost_explorer` (AWS Cost
 	// Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 	// bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 	// `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
@@ -6981,7 +7021,7 @@ type BillingImport struct {
 	TimeZone string `json:"time_zone"`
 }
 
-// BillingImportMethod How the source reads the provider's data (ADR-0068 §1, §7): `cost_explorer` (AWS Cost
+// BillingImportMethod How the source reads the provider's data: `cost_explorer` (AWS Cost
 // Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 // bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 // `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
@@ -7195,7 +7235,7 @@ type BrowserSessionList struct {
 	Items []BrowserSession `json:"items"`
 }
 
-// CalendarDate A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+// CalendarDate A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 // of a payment on a card statement or an invoice.
 type CalendarDate = string
 
@@ -7253,7 +7293,7 @@ type CloseServiceRequest struct {
 
 // ConfirmedOperation An operation that the user confirms: registering a passkey (`passkey_registration`),
 // changing or setting the password (`password_change`), removing it (`password_removal`),
-// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+// deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
 // account at a login provider (`link`).
 type ConfirmedOperation string
 
@@ -7264,7 +7304,7 @@ type CopyCustomEmojiRequest struct {
 	Shortcode *string `json:"shortcode,omitempty"`
 }
 
-// CostBasis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+// CostBasis How the totals place a payment. `amortized` (the default) spreads each
 // payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 // more weeks) by day over the days up to the next payment, with the cumulative rounding;
 // the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -7274,35 +7314,35 @@ type CostBasis string
 // CostBreakdownLine The amount of a provider, category, and currency in a period. The costs group by the provider
 // in NFKC and lower case, so `ConoHa`, `conoha`, and `ＣｏｎｏＨａ` share a line.
 type CostBreakdownLine struct {
-	// Amount An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Amount An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Amount Money `json:"amount"`
 
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category CostCategory `json:"category"`
 
-	// Provider The provider as entered (ADR-0098), one spelling for every line of the same grouped provider
+	// Provider The provider as entered, one spelling for every line of the same grouped provider
 	// in the period: the provider of the cost item whose current label was revised last among the
 	// items with payments in the period (the larger revision ID on a tie), or, for a provider of
 	// imported costs only, the import's provider name (`AWS`, `Google Cloud`).
 	Provider string `json:"provider"`
 }
 
-// CostCategory The fixed category of a cost (ADR-0067 §2); clients translate its name.
+// CostCategory The fixed category of a cost; clients translate its name.
 type CostCategory string
 
 // CostGranularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-// years, cut by date (ADR-0067 §5).
+// years, cut by date.
 type CostGranularity string
 
-// CostItem A cost of the instance that is not canceled (ADR-0067 §2), with its current label and end
+// CostItem A cost of the instance that is not canceled, with its current label and end
 // and every price revision. Never published: the public totals carry no item.
 type CostItem struct {
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category  CostCategory `json:"category"`
 	CreatedAt time.Time    `json:"created_at"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn *CalendarDate `json:"ends_on,omitempty"`
 
@@ -7326,12 +7366,12 @@ type CostItem struct {
 	// Provider Who is paid, as written; the breakdown groups it in NFKC and lower case.
 	Provider string `json:"provider"`
 
-	// Schedule The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+	// Schedule The unit of a cost item's payment schedule: `once` (one payment on the start
 	// date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
 	// monthly payment on a day that a month does not have falls on the month's last day.
 	Schedule CostSchedule `json:"schedule"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
@@ -7340,10 +7380,10 @@ type CostItem struct {
 // item and record a new one. `ends_on` is the last date a payment can fall on, omitted for
 // no end; `price` is the price of every payment from the start date, 0 or more.
 type CostItemCreateRequest struct {
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category CostCategory `json:"category"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn *CalendarDate `json:"ends_on,omitempty"`
 
@@ -7356,19 +7396,19 @@ type CostItemCreateRequest struct {
 	// Name 1 to 100 characters without control characters.
 	Name string `json:"name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 
 	// Provider 1 to 100 characters without control characters.
 	Provider string `json:"provider"`
 
-	// Schedule The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+	// Schedule The unit of a cost item's payment schedule: `once` (one payment on the start
 	// date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
 	// monthly payment on a day that a month does not have falls on the month's last day.
 	Schedule CostSchedule `json:"schedule"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
@@ -7377,14 +7417,14 @@ type CostItemCreateRequest struct {
 // after the start date, and omitted for no end. The last payment before it still covers the
 // days up to the next payment date.
 type CostItemEndRequest struct {
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn *CalendarDate `json:"ends_on,omitempty"`
 }
 
 // CostItemLabelRequest A change of a cost item's label; an omitted property keeps its value.
 type CostItemLabelRequest struct {
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category *CostCategory `json:"category,omitempty"`
 
 	// Memo The note; empty removes it.
@@ -7402,21 +7442,21 @@ type CostItemPage struct {
 }
 
 // CostPeriodTotal A week, month, or year of the totals (`label`: `2026-W17`, `2026-04`, or `2026`): the total
-// of each currency, never converted (ADR-0067 §6), sorted by currency code, and the breakdown
+// of each currency, never converted, sorted by currency code, and the breakdown
 // by provider, category, and currency. A currency appears when a cost meets the period, even
 // with a zero amount. `estimated` reports that an imported usage charge of a billing month
-// that its provider has not closed meets the period (ADR-0068 §3): its amount may still
+// that its provider has not closed meets the period: its amount may still
 // change.
 type CostPeriodTotal struct {
 	Breakdown []CostBreakdownLine `json:"breakdown"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn    CalendarDate `json:"ends_on"`
 	Estimated bool         `json:"estimated"`
 	Label     string       `json:"label"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 	Totals   []Money      `json:"totals"`
@@ -7425,11 +7465,11 @@ type CostPeriodTotal struct {
 // CostPriceRevision A price of a cost item for its payments on or after `effective_on`, until a later
 // revision; of revisions with the same date, the last recorded wins.
 type CostPriceRevision struct {
-	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EffectiveOn CalendarDate `json:"effective_on"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price     Money     `json:"price"`
 	RevisedAt time.Time `json:"revised_at"`
@@ -7439,16 +7479,16 @@ type CostPriceRevision struct {
 // a cut, or the correction of a mistake (`effective_on` = the start date corrects every
 // payment).
 type CostPriceRevisionRequest struct {
-	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EffectiveOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EffectiveOn CalendarDate `json:"effective_on"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 }
 
-// CostSchedule The unit of a cost item's payment schedule (ADR-0067 §3): `once` (one payment on the start
+// CostSchedule The unit of a cost item's payment schedule: `once` (one payment on the start
 // date), or every `interval` `weeks`, `months`, or `years`, counted from the start date. A
 // monthly payment on a day that a month does not have falls on the month's last day.
 type CostSchedule string
@@ -7466,7 +7506,7 @@ type CostSourceRule struct {
 // CostTotals The totals of the instance's costs over the periods from the one that holds `from` to the
 // one that holds `to`, oldest first.
 type CostTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -7474,17 +7514,17 @@ type CostTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity   `json:"granularity"`
 	Periods     []CostPeriodTotal `json:"periods"`
 
-	// Rules How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
+	// Rules How the totals cut the periods, to show next to them: by calendar date
 	// without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's
 	// billing months in its own time zone (`billing_sources`, in its order).
 	Rules CostTotalsRules `json:"rules"`
 }
 
-// CostTotalsRules How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
+// CostTotalsRules How the totals cut the periods, to show next to them: by calendar date
 // without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's
 // billing months in its own time zone (`billing_sources`, in its order).
 type CostTotalsRules struct {
@@ -7498,7 +7538,7 @@ type CostTotalsRulesWeekStart string
 // CreateAccountActionRequest A moderation action to take on an account.
 type CreateAccountActionRequest struct {
 	// BlockEmail Whether a `ban` also blocks sign-ups with the email address of the account's user (a
-	// `reject` sign-up block of kind `email_hash`, FR-719); only a `ban` of a local
+	// `reject` sign-up block of kind `email_hash`); only a `ban` of a local
 	// account takes it, and a user without an email address is a 422. Omitted, nothing is
 	// blocked.
 	BlockEmail *bool `json:"block_email,omitempty"`
@@ -7673,7 +7713,7 @@ type CreatePasskeyRequest struct {
 
 // CreateRelayRequest A relay to register and join.
 type CreateRelayRequest struct {
-	// Protocol How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
+	// Protocol How a relay is joined. `mastodon`: at its inbox, by a `Follow` of the Public
 	// collection. `litepub`: at its actor, by a `Follow` of the actor.
 	Protocol *RelayProtocol `json:"protocol,omitempty"`
 
@@ -7767,17 +7807,17 @@ type CreateStatusRequest struct {
 	// Media The media to attach, in order.
 	Media *StatusMediaInput `json:"media,omitempty"`
 
-	// Poll A poll of a new status (FR-112). It ends `expires_in` seconds after the status is
+	// Poll A poll of a new status. It ends `expires_in` seconds after the status is
 	// posted; the author and the users who voted are notified then.
 	Poll *PollInput `json:"poll,omitempty"`
 
 	// QuotePolicy Who may quote the new status; the user's `default_quote_policy` when left out.
 	QuotePolicy *QuotePolicy `json:"quote_policy,omitempty"`
 
-	// QuotedStatusId The status to quote (FR-114, ADR-0069). It must be one the user may see and may quote
+	// QuotedStatusId The status to quote. It must be one the user may see and may quote
 	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
 	// `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
-	// is created (ADR-0144 §4). Quoting a
+	// is created. Quoting a
 	// remote status while the instance does not send posts out (`Instance.federation.mode`
 	// `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
 	QuotedStatusId *Id `json:"quoted_status_id,omitempty"`
@@ -7791,7 +7831,7 @@ type CreateStatusRequest struct {
 	// Text The plain text; the server links mentions, hashtags, and URLs.
 	Text StatusText `json:"text"`
 
-	// Visibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// Visibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -7818,8 +7858,7 @@ type CredentialAccount struct {
 	// account without a confirmed handle.
 	Acct string `json:"acct"`
 
-	// AiOptOut Whether the account's pages state that AI may neither train on nor use them
-	// (FR-412, ADR-0057), whatever the instance's `ai_usage`. The statement is made by the
+	// AiOptOut Whether the account's pages state that AI may neither train on nor use them, whatever the instance's `ai_usage`. The statement is made by the
 	// pages of this instance only; other servers and the media files do not carry it.
 	AiOptOut bool `json:"ai_opt_out"`
 
@@ -7828,7 +7867,7 @@ type CredentialAccount struct {
 	// remote account, every size is its media proxy URL.
 	Avatar *MediaVariants `json:"avatar,omitempty"`
 
-	// Badges The role badges that the account shows on its profile, highest role first (ADR-0071).
+	// Badges The role badges that the account shows on its profile, highest role first.
 	// Filled on the account's own endpoints (`getAccount`, `lookupAccount`,
 	// `verifyAccountCredentials`) only, and empty where accounts are listed or embedded (posts,
 	// notifications, lists of accounts) and for remote accounts. Badges are never federated.
@@ -7841,7 +7880,7 @@ type CredentialAccount struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// Discoverable Whether the account is suggested to others and found by the middle of its names in
-	// the account search (FR-307, FR-308); when `false`, the search finds it only by its
+	// the account search; when `false`, the search finds it only by its
 	// whole username. New accounts are discoverable.
 	Discoverable bool `json:"discoverable"`
 
@@ -7853,8 +7892,7 @@ type CredentialAccount struct {
 	// confirmed handle.
 	Domain string `json:"domain"`
 
-	// Emojis The custom emoji of the display name, the note, and the fields' names and values
-	// (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+	// Emojis The custom emoji of the display name, the note, and the fields' names and values. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text.
 	Emojis []CustomEmoji `json:"emojis"`
 
@@ -7885,13 +7923,13 @@ type CredentialAccount struct {
 
 	// Indexable Whether the account's profile and public posts may be indexed for search: by this
 	// instance's search and, when the instance's `search_indexing` is `allow`, by search
-	// engines (FR-412, ADR-0057). New accounts take the instance's default.
+	// engines. New accounts take the instance's default.
 	Indexable bool `json:"indexable"`
 
 	// Locked Whether follow requests need the account's approval.
 	Locked bool `json:"locked"`
 
-	// Moved The account that the account moved to (ADR-0089), when it moved: clients show that it
+	// Moved The account that the account moved to, when it moved: clients show that it
 	// moved, with a link to this one. Present on the account's own endpoints, where
 	// `followers_count` is, and without a `moved` of its own (moves are not followed in
 	// chains).
@@ -7905,7 +7943,7 @@ type CredentialAccount struct {
 	// the permission of each admin operation regardless.
 	Permissions []Permission `json:"permissions"`
 
-	// Posting What the account's current moderation restrictions let it post (data-model/05-states-and-policies.md §5.4). The
+	// Posting What the account's current moderation restrictions let it post. The
 	// server applies the same policy when it posts: a status asked for with a visibility that is
 	// not in `visibilities` gets `visibility_ceiling` instead.
 	Posting PostingLimits `json:"posting"`
@@ -7936,9 +7974,9 @@ type CredentialAccount struct {
 // Cursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 type Cursor = string
 
-// CustomEmoji A custom emoji that a text uses (FR-111, ADR-0051 §4). The text has it as `:shortcode:`.
+// CustomEmoji A custom emoji that a text uses. The text has it as `:shortcode:`.
 // An emoji that is disabled or deleted, or whose images come from a domain whose media the
-// instance rejects (FR-702), is not listed, and its `:shortcode:` stays text. Clients show
+// instance rejects, is not listed, and its `:shortcode:` stays text. Clients show
 // `static_url` when animations should not play (`prefers-reduced-motion`), and `url`
 // otherwise.
 type CustomEmoji struct {
@@ -8005,8 +8043,7 @@ type CustomEmojiProblem struct {
 type CustomEmojiProblemReason string
 
 // CustomEmojiRequest A request of a holder of `create_custom_emojis` for a new local custom emoji, or for a new
-// image of one they made, which a holder of `manage_custom_emojis` approves or rejects
-// (ADR-0070 §2). A request is not an emoji: no picker, post, reaction, or other server shows
+// image of one they made, which a holder of `manage_custom_emojis` approves or rejects. A request is not an emoji: no picker, post, reaction, or other server shows
 // its image until it is approved.
 type CustomEmojiRequest struct {
 	// CreatedAt When the request was made.
@@ -8025,7 +8062,7 @@ type CustomEmojiRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Kind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+	// Kind What a custom emoji request asks for: `create` a new local custom emoji,
 	// or `image` a new image of a local emoji that the requester made.
 	Kind CustomEmojiRequestKind `json:"kind"`
 
@@ -8055,7 +8092,7 @@ type CustomEmojiRequest struct {
 // emoji has the shortcode of the request. The last two can only be rejected.
 type CustomEmojiRequestConflictReason string
 
-// CustomEmojiRequestKind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+// CustomEmojiRequestKind What a custom emoji request asks for: `create` a new local custom emoji,
 // or `image` a new image of a local emoji that the requester made.
 type CustomEmojiRequestKind string
 
@@ -8149,7 +8186,7 @@ type DataImport struct {
 
 	// Kind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
 	// accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-	// domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+	// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
 	// `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
 	// posts the user bookmarked).
 	Kind DataImportKind `json:"kind"`
@@ -8173,7 +8210,7 @@ type DataImportState string
 
 // DataImportKind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
 // accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-// domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
 // `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
 // posts the user bookmarked).
 type DataImportKind string
@@ -8207,7 +8244,7 @@ type DataImportPreview struct {
 type DataImportRequest struct {
 	// Kind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
 	// accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-	// domains the user mutes, FR-304; Mastodon's `blocked_domains.csv` with the header
+	// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
 	// `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
 	// posts the user bookmarked).
 	Kind DataImportKind `json:"kind"`
@@ -8238,6 +8275,54 @@ type DataImportSkipped struct {
 // domain mutes, no domain).
 // `duplicate`: an earlier line names the same account, post, or domain.
 type DataImportSkippedReason string
+
+// DeactivateOwnAccountRequest The confirmation of the deactivation of the user's own account: `password`,
+// `two_factor_code`, `passkey`, or `external_confirmation`.
+type DeactivateOwnAccountRequest struct {
+	// ExternalConfirmation The `external_confirmation` token of a re-authentication with a linked login provider
+	// (`POST /linked_identities/confirmation`) for this operation, in place of the password.
+	ExternalConfirmation *ExternalConfirmationToken `json:"external_confirmation,omitempty"`
+
+	// Passkey The browser's answer to a confirmation with a passkey, which confirms an operation.
+	Passkey *PasskeyAssertion `json:"passkey,omitempty"`
+
+	// Password The user's current password.
+	Password *string `json:"password,omitempty"`
+
+	// TwoFactorCode A code of the user's authenticator app, or a recovery code.
+	TwoFactorCode *string `json:"two_factor_code,omitempty"`
+}
+
+// Deactivation The deactivation of the user's own account.
+type Deactivation struct {
+	// DeletionDueAt When the account is deleted unless the user reactivates it first.
+	DeletionDueAt time.Time `json:"deletion_due_at"`
+}
+
+// DeactivationPreview What deactivating the user's own account would do now.
+type DeactivationPreview struct {
+	// AvailableAt When the account can be deactivated again, for `recently_reactivated`.
+	AvailableAt *time.Time `json:"available_at,omitempty"`
+
+	// DeletionDueAt When the account would be deleted if it were deactivated now.
+	DeletionDueAt time.Time `json:"deletion_due_at"`
+
+	// Refusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+	// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+	// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+	// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+	// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+	// ago (`recently_reactivated`).
+	Refusal *DeactivationPreviewRefusal `json:"refusal,omitempty"`
+}
+
+// DeactivationPreviewRefusal Why the account cannot be deactivated now; absent when it can: moderation keeps it from
+// logging in (`login_restricted`), its deletion is scheduled (`deletion_scheduled`), it is
+// deactivated (`already_deactivated`), it moved (`moved`), its registration waits for review
+// (`registration_pending`), a paid subscription goes on (`paid_subscription`), no other
+// administrator can sign in (`last_administrator`), or it was reactivated less than 24 hours
+// ago (`recently_reactivated`).
+type DeactivationPreviewRefusal string
 
 // DecideAppealRequest The moderators' explanation of a decision on an appeal.
 type DecideAppealRequest struct {
@@ -8361,7 +8446,7 @@ type EditStatusRequest struct {
 	// Media The media to attach, in order.
 	Media *StatusMediaInput `json:"media,omitempty"`
 
-	// RemoveQuote Takes the status's quote away for good (ADR-0069 §3). A status keeps the status it
+	// RemoveQuote Takes the status's quote away for good. A status keeps the status it
 	// quotes otherwise: an edit cannot change it.
 	RemoveQuote *bool `json:"remove_quote,omitempty"`
 
@@ -8375,7 +8460,7 @@ type EditStatusRequest struct {
 	Text StatusText `json:"text"`
 }
 
-// EmailSuppression The suppression of the primary email address (ADR-0086 §5): the server stops sending to it
+// EmailSuppression The suppression of the primary email address: the server stops sending to it
 // after a hard bounce or a complaint. A `hard_bounce` (the address does not exist or refuses
 // email) stops every email but the verification email that the user asks for; verifying the
 // address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
@@ -8399,7 +8484,7 @@ type EnableTotpRequest struct {
 	SetupToken string `json:"setup_token"`
 }
 
-// ErrorGroup An error group (ADR-0103 §7, §8): the reported errors of one fingerprint, with its state,
+// ErrorGroup An error group: the reported errors of one fingerprint, with its state,
 // what its first occurrence told about the error, and how often it happened. The text is
 // scrubbed of URLs, email addresses, handles, IP addresses, and IDs. The webhook events
 // `error_group.created` and `error_group.regressed` carry it as their `data`.
@@ -8443,7 +8528,7 @@ type ErrorGroup struct {
 	// Source What reported the errors of a group, the server or the web client.
 	Source ErrorGroupSource `json:"source"`
 
-	// State The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+	// State The state of an error group: `open` (new, unmuted, or regressed),
 	// `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 	// it to `open`), or `muted` (it notifies nobody until it is unmuted).
 	State ErrorGroupState `json:"state"`
@@ -8510,7 +8595,7 @@ type ErrorGroupDetail struct {
 	// Source What reported the errors of a group, the server or the web client.
 	Source ErrorGroupSource `json:"source"`
 
-	// State The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+	// State The state of an error group: `open` (new, unmuted, or regressed),
 	// `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 	// it to `open`), or `muted` (it notifies nobody until it is unmuted).
 	State ErrorGroupState `json:"state"`
@@ -8598,7 +8683,7 @@ type ErrorGroupSampleRole string
 // ErrorGroupSource What reported the errors of a group, the server or the web client.
 type ErrorGroupSource string
 
-// ErrorGroupState The state of an error group (ADR-0103 §7): `open` (new, unmuted, or regressed),
+// ErrorGroupState The state of an error group: `open` (new, unmuted, or regressed),
 // `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 // it to `open`), or `muted` (it notifies nobody until it is unmuted).
 type ErrorGroupState string
@@ -8616,7 +8701,7 @@ type ExternalAuthorizationStart struct {
 type ExternalConfirmationRequest struct {
 	// Operation An operation that the user confirms: registering a passkey (`passkey_registration`),
 	// changing or setting the password (`password_change`), removing it (`password_removal`),
-	// deleting the account (`account_deletion`), moving it (`account_move`), and linking an
+	// deleting the account (`account_deletion`), deactivating it (`account_deactivation`), moving it (`account_move`), and linking an
 	// account at a login provider (`link`).
 	Operation ConfirmedOperation `json:"operation"`
 
@@ -8642,11 +8727,11 @@ type ExternalConfirmationToken = string
 // `memo` is the item's memo, present only while the instance shows the memos and the item has
 // one (an imported cost has none).
 type FinanceCostItemLine struct {
-	// Amount An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Amount An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Amount Money `json:"amount"`
 
-	// Category The fixed category of a cost (ADR-0067 §2); clients translate its name.
+	// Category The fixed category of a cost; clients translate its name.
 	Category CostCategory `json:"category"`
 	Memo     *string      `json:"memo,omitempty"`
 	Name     *string      `json:"name,omitempty"`
@@ -8660,14 +8745,14 @@ type FinanceCostItemLine struct {
 type FinanceCostPeriodTotal struct {
 	Breakdown []CostBreakdownLine `json:"breakdown"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn    CalendarDate          `json:"ends_on"`
 	Estimated bool                  `json:"estimated"`
 	Items     []FinanceCostItemLine `json:"items"`
 	Label     string                `json:"label"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 	Totals   []Money      `json:"totals"`
@@ -8675,9 +8760,9 @@ type FinanceCostPeriodTotal struct {
 
 // FinanceCostTotals The totals of the instance's costs as the holders of `view_finance` read them over the
 // periods from the one that holds `from` to the one that holds `to`, oldest first, and the
-// instance settings that decide what they read (ADR-0070 §5).
+// instance settings that decide what they read.
 type FinanceCostTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -8685,17 +8770,17 @@ type FinanceCostTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity          `json:"granularity"`
 	Periods     []FinanceCostPeriodTotal `json:"periods"`
 
-	// Rules How the totals cut the periods (ADR-0067 §5), to show next to them: by calendar date
+	// Rules How the totals cut the periods, to show next to them: by calendar date
 	// without a time zone, weeks from `week_start` (ISO 8601), and each imported provider's
 	// billing months in its own time zone (`billing_sources`, in its order).
 	Rules CostTotalsRules `json:"rules"`
 
 	// Viewer What the holders of `view_finance` read of the instance's finances beyond the totals and
-	// their breakdown (the instance settings of ADR-0070 §5): `item_names`
+	// their breakdown, by instance settings: `item_names`
 	// (`finance_viewer_item_names`) shows the names of the cost items and the services of the
 	// imported costs, `item_memos` (`finance_viewer_item_memos`) the memos of the cost items, and
 	// `income` (`finance_viewer_income`) the income as totals only or with the number of members
@@ -8704,20 +8789,20 @@ type FinanceCostTotals struct {
 }
 
 // FinanceViewerIncome How much of the income the holders of `view_finance` read (the instance setting
-// `finance_viewer_income`, ADR-0070 §5). `totals`: the total of each currency by period;
+// `finance_viewer_income`). `totals`: the total of each currency by period;
 // `plans`: also the number of members of each plan. No value shows the amounts of each plan or
 // who paid.
 type FinanceViewerIncome string
 
 // FinanceViewerSettings What the holders of `view_finance` read of the instance's finances beyond the totals and
-// their breakdown (the instance settings of ADR-0070 §5): `item_names`
+// their breakdown, by instance settings: `item_names`
 // (`finance_viewer_item_names`) shows the names of the cost items and the services of the
 // imported costs, `item_memos` (`finance_viewer_item_memos`) the memos of the cost items, and
 // `income` (`finance_viewer_income`) the income as totals only or with the number of members
 // of each plan.
 type FinanceViewerSettings struct {
 	// Income How much of the income the holders of `view_finance` read (the instance setting
-	// `finance_viewer_income`, ADR-0070 §5). `totals`: the total of each currency by period;
+	// `finance_viewer_income`). `totals`: the total of each currency by period;
 	// `plans`: also the number of members of each plan. No value shows the amounts of each plan or
 	// who paid.
 	Income    FinanceViewerIncome `json:"income"`
@@ -8726,7 +8811,7 @@ type FinanceViewerSettings struct {
 }
 
 // FinanceVisibility How much of the instance's costs everyone may read (the instance setting
-// `finance_visibility`, FR-903, ADR-0067 §8). `private`: nothing, and
+// `finance_visibility`). `private`: nothing, and
 // `GET /instance/cost_totals` is a 404; `totals`: the total of each currency by period;
 // `breakdown`: the totals and their breakdown by provider and category. No level publishes
 // the names, memos, or individual payments of the cost items.
@@ -8779,13 +8864,13 @@ type ImportSignupBlocksRequest struct {
 	Text string `json:"text"`
 }
 
-// IncomeKind The kind of a money movement of the payment provider (ADR-0073 §2): `payment` of a
+// IncomeKind The kind of a money movement of the payment provider: `payment` of a
 // subscription, `refund` and `chargeback` of a payment (a negative gross), the
 // `chargeback_reversal` that gives a chargeback back, and a `fee` of the provider that
 // belongs to no payment (a zero gross and a negative net).
 type IncomeKind string
 
-// IncomeMovement A money movement of the payment provider as the income records keep it (ADR-0073 §2, §6):
+// IncomeMovement A money movement of the payment provider as the income records keep it:
 // recorded once its amounts are final, and never edited. `occurred_on` is `occurred_at` as a
 // date in the provider's reporting time zone. A payment carries the billing period it pays
 // for (`covers_starts_on` to `covers_ends_on`) when it has one; a refund, a chargeback, or a
@@ -8798,19 +8883,19 @@ type IncomeMovement struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	AccountId *Id `json:"account_id,omitempty"`
 
-	// CoversEndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// CoversEndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	CoversEndsOn *CalendarDate `json:"covers_ends_on,omitempty"`
 
-	// CoversStartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// CoversStartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	CoversStartsOn *CalendarDate `json:"covers_starts_on,omitempty"`
 
-	// Fee An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Fee An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Fee Money `json:"fee"`
 
-	// Gross An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Gross An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Gross Money `json:"gross"`
 
@@ -8819,18 +8904,18 @@ type IncomeMovement struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Kind The kind of a money movement of the payment provider (ADR-0073 §2): `payment` of a
+	// Kind The kind of a money movement of the payment provider: `payment` of a
 	// subscription, `refund` and `chargeback` of a payment (a negative gross), the
 	// `chargeback_reversal` that gives a chargeback back, and a `fee` of the provider that
 	// belongs to no payment (a zero gross and a negative net).
 	Kind IncomeKind `json:"kind"`
 
-	// Net An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Net An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Net        Money     `json:"net"`
 	OccurredAt time.Time `json:"occurred_at"`
 
-	// OccurredOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// OccurredOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	OccurredOn       CalendarDate `json:"occurred_on"`
 	ParentProviderId *string      `json:"parent_provider_id,omitempty"`
@@ -8863,18 +8948,18 @@ type IncomeMovementPage struct {
 type IncomePeriodTotal struct {
 	Balance *[]Money `json:"balance,omitempty"`
 
-	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	EndsOn CalendarDate `json:"ends_on"`
 	Label  string       `json:"label"`
 	Net    []Money      `json:"net"`
 
-	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone (ADR-0067 §5), such as the day
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
 	StartsOn CalendarDate `json:"starts_on"`
 }
 
-// IncomePlanCount The number of members of a supporter plan now (ADR-0073 §7): the subscriptions that hold
+// IncomePlanCount The number of members of a supporter plan now: the subscriptions that hold
 // the plan's role (active, canceling, or past due within the grace period). A retired plan
 // appears while it has members. Never the plan's amounts.
 type IncomePlanCount struct {
@@ -8888,19 +8973,18 @@ type IncomePlanCount struct {
 }
 
 // IncomeProviderRule The IANA time zone (`UTC`, `Asia/Tokyo`) in which a payment provider's money movements fall
-// on their dates: the provider's reporting time zone, or `UTC` when it could not be read
-// (ADR-0073 §3).
+// on their dates: the provider's reporting time zone, or `UTC` when it could not be read.
 type IncomeProviderRule struct {
 	Provider string `json:"provider"`
 	TimeZone string `json:"time_zone"`
 }
 
 // IncomeTotals The income totals over the periods from the one that holds `from` to the one that holds
-// `to`, oldest first (ADR-0073 §9). `plans`, the number of members of each supporter plan
+// `to`, oldest first. `plans`, the number of members of each supporter plan
 // now, is present only where the plans are shown. No answer carries individual payments, the
 // subscribers, the amounts of each plan, or the gross and the fees.
 type IncomeTotals struct {
-	// Basis How the totals place a payment (ADR-0067 §4). `amortized` (the default) spreads each
+	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
 	// more weeks) by day over the days up to the next payment, with the cumulative rounding;
 	// the other payments stay on their dates. `cash` places every payment on its date. Imported
@@ -8908,12 +8992,12 @@ type IncomeTotals struct {
 	Basis CostBasis `json:"basis"`
 
 	// Granularity The periods of the totals: ISO 8601 weeks (Monday to Sunday), calendar months, or calendar
-	// years, cut by date (ADR-0067 §5).
+	// years, cut by date.
 	Granularity CostGranularity     `json:"granularity"`
 	Periods     []IncomePeriodTotal `json:"periods"`
 	Plans       *[]IncomePlanCount  `json:"plans,omitempty"`
 
-	// Rules How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+	// Rules How the income totals cut the periods and place the payments, to show
 	// next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
 	// each money movement on its date in its payment provider's reporting time zone
 	// (`providers`), and under the `amortized` basis a payment that covers more than
@@ -8923,7 +9007,7 @@ type IncomeTotals struct {
 	Rules IncomeTotalsRules `json:"rules"`
 }
 
-// IncomeTotalsRules How the income totals cut the periods and place the payments (ADR-0073 §3, §5), to show
+// IncomeTotalsRules How the income totals cut the periods and place the payments, to show
 // next to them: by calendar date without a time zone, weeks from `week_start` (ISO 8601),
 // each money movement on its date in its payment provider's reporting time zone
 // (`providers`), and under the `amortized` basis a payment that covers more than
@@ -8940,7 +9024,7 @@ type IncomeTotalsRules struct {
 type IncomeTotalsRulesWeekStart string
 
 // IncomeVisibility How much of the instance's income everyone may read (the instance setting
-// `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:
+// `income_visibility`), apart from `finance_visibility`. `private`:
 // nothing, and `GET /instance/income_totals` is a 404; `totals`: the net income of each
 // currency by period; `plans`: also the number of members of each supporter plan now. No
 // level publishes individual payments, the subscribers, the amounts of each plan, or the
@@ -8949,13 +9033,13 @@ type IncomeVisibility string
 
 // Instance Public information about the instance.
 type Instance struct {
-	// AiUsage What the instance states to AI crawlers (the instance setting `ai_usage`, FR-725, ADR-0057).
+	// AiUsage What the instance states to AI crawlers (the instance setting `ai_usage`).
 	// `allow`: no reservation; `deny_training`: no training of AI models; `deny`: no training
 	// and no use by AI search, assistants, and agents. An account can opt out of what the
 	// instance allows (`ai_opt_out`), never the reverse.
 	AiUsage AIUsage `json:"ai_usage"`
 
-	// Closure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+	// Closure The closure of the service, present while a closure is announced and after
 	// the server closes; absent when none is announced. Clients show it on every screen with the
 	// way to export the data and to move the account.
 	Closure *InstanceClosure `json:"closure,omitempty"`
@@ -8975,12 +9059,12 @@ type Instance struct {
 	// Domain The domain that serves the instance.
 	Domain string `json:"domain"`
 
-	// Federation How the instance federates with other servers (FR-413), so that clients offer only the
+	// Federation How the instance federates with other servers, so that clients offer only the
 	// operations on remote accounts and posts that can work.
 	Federation InstanceFederation `json:"federation"`
 
 	// FinanceVisibility How much of the instance's costs everyone may read (the instance setting
-	// `finance_visibility`, FR-903, ADR-0067 §8). `private`: nothing, and
+	// `finance_visibility`). `private`: nothing, and
 	// `GET /instance/cost_totals` is a 404; `totals`: the total of each currency by period;
 	// `breakdown`: the totals and their breakdown by provider and category. No level publishes
 	// the names, memos, or individual payments of the cost items.
@@ -8996,7 +9080,7 @@ type Instance struct {
 	Icon *InstanceBrandImage `json:"icon,omitempty"`
 
 	// IncomeVisibility How much of the instance's income everyone may read (the instance setting
-	// `income_visibility`, FR-917, ADR-0073 §7), apart from `finance_visibility`. `private`:
+	// `income_visibility`), apart from `finance_visibility`. `private`:
 	// nothing, and `GET /instance/income_totals` is a 404; `totals`: the net income of each
 	// currency by period; `plans`: also the number of members of each supporter plan now. No
 	// level publishes individual payments, the subscribers, the amounts of each plan, or the
@@ -9057,7 +9141,7 @@ type Instance struct {
 	Rules []InstanceRule `json:"rules"`
 
 	// SearchIndexing Whether the instance lets search engines index its pages (the instance setting
-	// `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
+	// `search_indexing`). `allow`: the profiles and public posts of the accounts
 	// that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
 	// the reverse.
 	SearchIndexing SearchIndexing `json:"search_indexing"`
@@ -9073,7 +9157,7 @@ type Instance struct {
 	// SourceUrl Where users get the source code of the running server (AGPL-3.0 section 13), as an https URL to read it at or a mailto URI to request it by email.
 	SourceUrl string `json:"source_url"`
 
-	// StatusPageUrl The https address of the instance's status page, on a service apart from the server (ADR-0085). Absent when the operator has not set one.
+	// StatusPageUrl The https address of the instance's status page, on a service apart from the server. Absent when the operator has not set one.
 	StatusPageUrl *string `json:"status_page_url,omitempty"`
 
 	// SupporterListVisibility Who may read something public about the instance, the value of the instance settings
@@ -9092,7 +9176,7 @@ type Instance struct {
 	// so that clients do not link to it.
 	TermsUrl *string `json:"terms_url,omitempty"`
 
-	// Theme The instance's theme (ADR-0059), for clients that do not load the server's HTML shell: the
+	// Theme The instance's theme, for clients that do not load the server's HTML shell: the
 	// stylesheet to apply and the overridden tokens. `Instance.theme` omits it when the
 	// instance has no theme.
 	Theme *InstanceTheme `json:"theme,omitempty"`
@@ -9101,7 +9185,7 @@ type Instance struct {
 	// variant of the media file. Omitted when there is none, or while the file is processing.
 	Thumbnail *InstanceThumbnail `json:"thumbnail,omitempty"`
 
-	// Timelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
+	// Timelines Who may read the public timelines the instance serves: `local` is the instance
 	// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
 	// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
 	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
@@ -9150,7 +9234,7 @@ type InstanceBrandImage struct {
 	Width int `json:"width"`
 }
 
-// InstanceClosure The closure of the service (FR-808, ADR-0088), present while a closure is announced and after
+// InstanceClosure The closure of the service, present while a closure is announced and after
 // the server closes; absent when none is announced. Clients show it on every screen with the
 // way to export the data and to move the account.
 type InstanceClosure struct {
@@ -9163,7 +9247,7 @@ type InstanceClosure struct {
 	// Message The operator's message to the users, as plain text; omitted when there is none.
 	Message *string `json:"message,omitempty"`
 
-	// State Where the server is in its closure (ADR-0088 §1):
+	// State Where the server is in its closure:
 	//
 	// - `none`: no closure is announced.
 	// - `announced`: the closure is announced; the server runs as before until it closes.
@@ -9225,7 +9309,7 @@ type InstanceDocument struct {
 // (`terms`, `privacy_policy`, `commerce_disclosure`).
 type InstanceDocumentKind string
 
-// InstanceDomainAction A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly (FR-718).
+// InstanceDomainAction A moderation action in effect on a remote domain and its subdomains, as the instance lists it publicly.
 type InstanceDomainAction struct {
 	// Comment The public reason for the action; omitted when there is none or the viewer may not read it.
 	Comment *string `json:"comment,omitempty"`
@@ -9254,7 +9338,7 @@ type InstanceDomainActionPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// InstanceFederation How the instance federates with other servers (FR-413), so that clients offer only the
+// InstanceFederation How the instance federates with other servers, so that clients offer only the
 // operations on remote accounts and posts that can work.
 type InstanceFederation struct {
 	// Mode The direction the instance federates in (the instance setting `federation_mode`):
@@ -9294,7 +9378,7 @@ type InstanceLimits struct {
 	MaxPostCharacters int `json:"max_post_characters"`
 
 	// RequireMediaDescription Whether every media file attached to a post needs an alternative text (the instance
-	// setting `require_media_description`, FR-105). While it is on, a post or an edit with
+	// setting `require_media_description`). While it is on, a post or an edit with
 	// a media file without one is a 422, so clients ask for it before sending.
 	RequireMediaDescription bool `json:"require_media_description"`
 }
@@ -9324,7 +9408,7 @@ type InstanceRegistrations struct {
 // none of them lets new users sign up.
 type InstanceRegistrationsMode string
 
-// InstanceRule A rule of the instance (FR-705). Its text and hint hold one value each, written in any
+// InstanceRule A rule of the instance. Its text and hint hold one value each, written in any
 // language and the same in every locale. Reports cite it by `id`.
 type InstanceRule struct {
 	// Hint An explanation of the rule, as plain text; omitted when there is none.
@@ -9349,7 +9433,7 @@ type InstanceRuleInput struct {
 	Text string `json:"text"`
 }
 
-// InstanceSettingKey The key of an instance setting (docs/operations/instance-settings.md). New keys may be
+// InstanceSettingKey The key of an instance setting. New keys may be
 // added; clients show the ones they know.
 type InstanceSettingKey string
 
@@ -9369,7 +9453,7 @@ type InstanceSettingKind string
 // (Markdown, shown at `/about/commerce`; the server does not vouch for what they say).
 type InstanceTextKey string
 
-// InstanceTheme The instance's theme (ADR-0059), for clients that do not load the server's HTML shell: the
+// InstanceTheme The instance's theme, for clients that do not load the server's HTML shell: the
 // stylesheet to apply and the overridden tokens. `Instance.theme` omits it when the
 // instance has no theme.
 type InstanceTheme struct {
@@ -9388,7 +9472,7 @@ type InstanceThumbnail struct {
 	Width  int     `json:"width"`
 }
 
-// InstanceTimelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
+// InstanceTimelines Who may read the public timelines the instance serves: `local` is the instance
 // setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
 // setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
 // timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
@@ -9424,7 +9508,7 @@ type LiftAccountActionRequest struct {
 	Reason *string `json:"reason,omitempty"`
 }
 
-// LinkCard The card of the first link in a status (ADR-0062): the title, description, and image
+// LinkCard The card of the first link in a status: the title, description, and image
 // that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
 // after the status was posted or received. Omitted from a status with attachments or a
 // poll, from a status whose link has no card yet, from a status whose link is on a domain
@@ -9734,7 +9818,7 @@ type MediaAnimatedVariants struct {
 // attachment has none.
 //
 // A file of a remote status is always `ready`: the instance does not process it, so it has
-// no `variants`; `url` and `preview_url` are its media proxy URLs (federation.md §9),
+// no `variants`; `url` and `preview_url` are its media proxy URLs,
 // `remote_url` its URL on the remote server, and `meta`, `blurhash`, and `type` what the
 // remote server declared.
 type MediaAttachment struct {
@@ -9913,7 +9997,7 @@ type MemberInviteLimits struct {
 	MaxUses int `json:"max_uses"`
 }
 
-// ModerationAction A moderation action on the authenticated user's own account (FR-715, NFR-MOD-6), as the
+// ModerationAction A moderation action on the authenticated user's own account, as the
 // user sees it. It never carries the moderators' private note, the report the action
 // follows from, or who filed the report or issued the action.
 type ModerationAction struct {
@@ -10008,7 +10092,7 @@ type ModerationAppeal struct {
 // `overturned` lifted it.
 type ModerationAppealState string
 
-// Money An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+// Money An amount of money: a decimal string in the major unit with the digits of
 // its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 type Money struct {
 	Amount   string `json:"amount"`
@@ -10065,7 +10149,7 @@ type MutePage struct {
 
 // MutedAccount An account that the viewer mutes, with the mute's settings.
 type MutedAccount struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// ExpiresAt When the mute ends; left out for a mute until unmuted.
@@ -10083,7 +10167,7 @@ type NewCustomEmojiRequest struct {
 	// EmojiId For `image`, the emoji whose image the request replaces.
 	EmojiId *Id `json:"emoji_id,omitempty"`
 
-	// Kind What a custom emoji request asks for (ADR-0070 §2, §3): `create` a new local custom emoji,
+	// Kind What a custom emoji request asks for: `create` a new local custom emoji,
 	// or `image` a new image of a local emoji that the requester made.
 	Kind CustomEmojiRequestKind `json:"kind"`
 
@@ -10098,11 +10182,11 @@ type NewCustomEmojiRequest struct {
 
 // Notification A notification of something that happened to the authenticated user.
 type Notification struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account *Account `json:"account,omitempty"`
 
 	// AccountMove The move that an `account_moved` or an `admin_account_moved` tells of: the notification's
-	// `account` moved to `target` (ADR-0089). Only the user's follows of the moved account move;
+	// `account` moved to `target`. Only the user's follows of the moved account move;
 	// its posts stay where they are.
 	AccountMove *AccountMove `json:"account_move,omitempty"`
 
@@ -10148,7 +10232,7 @@ type Notification struct {
 	ReportId *Id `json:"report_id,omitempty"`
 
 	// ServiceClosure What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
-	// tells of the closure of the service (ADR-0088). `change` is what the event of a
+	// tells of the closure of the service. `change` is what the event of a
 	// `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
 	// changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
 	// for the other types. `closes_at` and `export_until` are the dates of the announcement that the
@@ -10453,7 +10537,7 @@ type NotificationSettingsUpdateChangesChannel string
 // announcement is withdrawn or its window ends.
 type NotificationType string
 
-// OAuthApp An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
+// OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
 // it gets no first-party-only scope and calls no account security operation.
 type OAuthApp struct {
 	// ClientId The public identifier that the app sends as `client_id`.
@@ -10499,7 +10583,7 @@ type OAuthAppClientType string
 
 // OAuthAppCreated A new OAuth app, with the secret of a confidential app.
 type OAuthAppCreated struct {
-	// App An OAuth app that the authenticated user registered (ADR-0090). Like every third-party app,
+	// App An OAuth app that the authenticated user registered. Like every third-party app,
 	// it gets no first-party-only scope and calls no account security operation.
 	App OAuthApp `json:"app"`
 
@@ -10538,13 +10622,13 @@ type OAuthAppToken struct {
 // OAuthAppTokenTokenType defines model for OAuthAppToken.TokenType.
 type OAuthAppTokenTokenType string
 
-// OAuthClientRegistration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
+// OAuthClientRegistration The route by which an OAuth client was registered: `first_party` is one of the
 // server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
 // client whose `client_id` is the URL of a Client ID Metadata Document, and `dynamic` a client
 // that registered itself (RFC 7591).
 type OAuthClientRegistration string
 
-// OwnCustomEmoji A local custom emoji that the user made (ADR-0070 §3).
+// OwnCustomEmoji A local custom emoji that the user made.
 type OwnCustomEmoji struct {
 	// Aliases The other names that the picker finds the emoji by.
 	Aliases []string `json:"aliases"`
@@ -10580,8 +10664,7 @@ type OwnCustomEmoji struct {
 	VisibleInPicker bool `json:"visible_in_picker"`
 }
 
-// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their monthly limit
-// (ADR-0124): `used` counts the requests to create an emoji that the user submitted this UTC
+// OwnCustomEmojiPage A page of the custom emoji that the user made, with what the user used of their monthly limit: `used` counts the requests to create an emoji that the user submitted this UTC
 // calendar month and that are approved or pending (deleting an emoji does not lower it),
 // `pending` is the part of `used` that the pending requests take, `limit` is how many they may
 // submit in a month, absent for no limit, and `resets_at` is when the count resets.
@@ -10658,7 +10741,7 @@ type OwnInvitePage struct {
 
 // OwnSupporterSubscription The authenticated user's subscription that goes on, and whether they may subscribe.
 type OwnSupporterSubscription struct {
-	// IneligibleReason Why the user may not subscribe to a supporter plan (ADR-0072 §6): `not_local`, not a user
+	// IneligibleReason Why the user may not subscribe to a supporter plan: `not_local`, not a user
 	// of this server; `email_unverified`, the primary email address is not verified;
 	// `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
 	// the user may subscribe.
@@ -10791,7 +10874,7 @@ type PaymentReconcileRunErrorKind string
 // continuation takes over; `failed` when the provider failed.
 type PaymentReconcileRunOutcome string
 
-// PaymentStatus The state of the payment provider (ADR-0074 §4).
+// PaymentStatus The state of the payment provider.
 type PaymentStatus struct {
 	// LastReconcile The last attempt of the reconciliation with the payment provider; omitted before the first.
 	LastReconcile *PaymentReconcileRun `json:"last_reconcile,omitempty"`
@@ -10804,7 +10887,7 @@ type PaymentStatus struct {
 	// credentials.
 	Mode PaymentStatusMode `json:"mode"`
 
-	// Provider The provider of `payments_provider` (`stripe`, `payjp`).
+	// Provider The provider of `payments` (`stripe`, `payjp`).
 	Provider string `json:"provider"`
 
 	// TimeZone The IANA time zone of the provider's reports (`UTC`), in which the income is dated.
@@ -10835,27 +10918,27 @@ type PaymentStatusWarnings string
 // server's announcements to every local user. `manage_finance`: the instance's costs and
 // the state of the billing imports (only the built-in admin role by default). `view_finance`:
 // reading the totals of the instance's costs on `GET /finance/cost_totals`, a member
-// permission outside the staff's areas (ADR-0070). `manage_supporters`: the supporter program, its plans, and their
+// permission outside the staff's areas. `manage_supporters`: the supporter program, its plans, and their
 // subscriptions (only the built-in admin role by default). `create_custom_emojis`: requesting
 // new local custom emoji, which a holder of `manage_custom_emojis` approves, and changing and
 // deleting the ones the user made, on `/custom_emoji_requests` and `/custom_emojis/mine`, a
-// member permission (ADR-0070). `manage_oauth_apps`: all the OAuth clients, disabling them,
+// member permission. `manage_oauth_apps`: all the OAuth clients, disabling them,
 // and denying the hosts of Client ID Metadata Documents on `/admin/oauth_clients` and
-// `/admin/oauth_client_host_denials` (ADR-0090). `manage_service_closure`: announcing the closure
+// `/admin/oauth_client_host_denials`. `manage_service_closure`: announcing the closure
 // of the service, changing its dates, and withdrawing it on `/admin/closure` (only the built-in
-// admin role by default, ADR-0088). `start_voice_rooms`: opening voice chat rooms while the
+// admin role by default). `start_voice_rooms`: opening voice chat rooms while the
 // instance setting `voice_room_starters` is `permitted`, a member permission (only the
-// built-in admin role by default, ADR-0100). `manage_errors`: the error groups of the server
+// built-in admin role by default). `manage_errors`: the error groups of the server
 // and the web client on `/admin/error_groups`, their `admin_error_group` notifications, and
-// the webhook events `error_group.*` (only the built-in admin role by default, ADR-0103).
+// the webhook events `error_group.*` (only the built-in admin role by default).
 // `manage_login_providers`: the external identity providers that users sign in with (only the
-// built-in admin role by default, ADR-0106). `create_invites`: creating, listing, and revoking
+// built-in admin role by default). `create_invites`: creating, listing, and revoking
 // invites of one's own on `/invites` while the instance setting `invite_creators` is
-// `permitted`, a member permission (only the built-in admin role by default, ADR-0108). The
+// `permitted`, a member permission (only the built-in admin role by default). The
 // others guard no client API operation yet.
 type Permission string
 
-// PickerCustomEmoji A local custom emoji that the picker offers (ADR-0051 §4). Picking it inserts
+// PickerCustomEmoji A local custom emoji that the picker offers. Picking it inserts
 // `:shortcode:` into the text.
 type PickerCustomEmoji struct {
 	// Aliases Other names that a search of the picker finds the emoji by.
@@ -10879,7 +10962,7 @@ type PickerCustomEmojiList struct {
 	Items []PickerCustomEmoji `json:"items"`
 }
 
-// Poll The poll of a status (FR-112); omitted when the status has none. The counts of a poll of
+// Poll The poll of a status; omitted when the status has none. The counts of a poll of
 // another server are those its server last reported. A poll whose author hides the votes of
 // each option until it ends leaves out `votes_count` of its options until then. `voted` and
 // `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.
@@ -10915,7 +10998,7 @@ type Poll struct {
 	VotesCount int `json:"votes_count"`
 }
 
-// PollInput A poll of a new status (FR-112). It ends `expires_in` seconds after the status is
+// PollInput A poll of a new status. It ends `expires_in` seconds after the status is
 // posted; the author and the users who voted are notified then.
 type PollInput struct {
 	// ExpiresIn How long the poll takes votes, in seconds (5 minutes to 30 days).
@@ -10941,7 +11024,7 @@ type PollOption struct {
 	VotesCount *int `json:"votes_count,omitempty"`
 }
 
-// PostingLimits What the account's current moderation restrictions let it post (data-model/05-states-and-policies.md §5.4). The
+// PostingLimits What the account's current moderation restrictions let it post. The
 // server applies the same policy when it posts: a status asked for with a visibility that is
 // not in `visibilities` gets `visibility_ceiling` instead.
 type PostingLimits struct {
@@ -10949,7 +11032,7 @@ type PostingLimits struct {
 	// narrowest; every visibility while the account is not restricted.
 	Visibilities []Visibility `json:"visibilities"`
 
-	// VisibilityCeiling Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// VisibilityCeiling Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -10964,7 +11047,7 @@ type Preferences struct {
 	// DefaultQuotePolicy Who may quote the user's new statuses that name no `quote_policy`.
 	DefaultQuotePolicy QuotePolicy `json:"default_quote_policy"`
 
-	// DefaultVisibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// DefaultVisibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -11002,7 +11085,7 @@ type Preferences struct {
 	TimeZoneFollowsBrowser bool `json:"time_zone_follows_browser"`
 
 	// TimelineAutoInsert Whether the web client inserts new timeline posts without asking, instead of offering them
-	// behind a "show new posts" button (ADR-0077). On for a new user; the same on every device.
+	// behind a "show new posts" button. On for a new user; the same on every device.
 	TimelineAutoInsert bool `json:"timeline_auto_insert"`
 
 	// TimelineLanguages The languages that timelines show, sorted; empty shows every language.
@@ -11062,6 +11145,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
 //   - `/api/v1/problems/wrong-password` (422): the password given to confirm the operation is
 //     not the user's current password.
+//   - `/api/v1/problems/deactivation-refused` (409): the user's own account cannot be deactivated
+//     now; the detail says why.
 //   - `/api/v1/problems/export-in-progress` (409): another data export of the user is being
 //     built. Wait for it to end.
 //   - `/api/v1/problems/export-not-ready` (409): the data export has no archive to download:
@@ -11118,10 +11203,10 @@ type PreviewDomainBlockImportRequest struct {
 //     server whose closure is not announced or whose `closes_at` has not come
 //     (`POST /admin/closure/close`).
 //   - `/api/v1/problems/service-closing` (409): the closure of the service is announced, which
-//     stops new registrations and supporter subscriptions (ADR-0088 §2): approving a pending
+//     stops new registrations and supporter subscriptions: approving a pending
 //     registration (`/admin/registrations/{user_id}/approve`) or starting a supporter checkout
 //     (`POST /supporter/checkout`).
-//   - `/api/v1/problems/service-closed` (403): the server is closed (ADR-0088 §2). A closed
+//   - `/api/v1/problems/service-closed` (403): the server is closed. A closed
 //     server serves only the operations with which the users take their data away: their own
 //     account and preferences (`verify_credentials`, `/preferences`, `/accounts/password`,
 //     `/two_factor`, `/passkeys` read), the exports (`/exports`, `/csv_exports`), their sessions
@@ -11196,8 +11281,7 @@ type PreviewDomainBlockImportRequest struct {
 //     account.
 //   - `/api/v1/problems/last-administrator` (409): the operation would leave the instance without
 //     an administrator. Make another user an administrator first.
-//   - `/api/v1/problems/account-moved` (403): the user's account moved to another account
-//     (ADR-0089), so it cannot post, boost, react, follow, or vote. Cancel the move first
+//   - `/api/v1/problems/account-moved` (403): the user's account moved to another account, so it cannot post, boost, react, follow, or vote. Cancel the move first
 //     (`POST /accounts/move/cancel`).
 //   - `/api/v1/problems/current-session` (409): the browser that asks cannot sign itself out through
 //     `DELETE /sessions/{id}`; signing out ends it.
@@ -11210,7 +11294,7 @@ type PreviewDomainBlockImportRequest struct {
 //     own, is not found, cannot be fetched from its server, or is suspended here.
 //   - `/api/v1/problems/move-too-soon` (422): the user's account moved less than 30 days ago,
 //     or moved to that account before.
-//   - `/api/v1/problems/maintenance` (503): the server is under maintenance (ADR-0084) and
+//   - `/api/v1/problems/maintenance` (503): the server is under maintenance and
 //     answers every operation with this problem and `Retry-After`. Keep the tokens, show the
 //     maintenance, and retry after `Retry-After`. Its members besides the standard ones,
 //     each present only when the operator set it: `message`, the administrators' notice in
@@ -11311,13 +11395,13 @@ type QrCode struct {
 	Size int `json:"size"`
 }
 
-// QuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
+// QuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
 // the author's followers, `nobody` the author alone. A followers-only status is quoted only
 // by its author, in a followers-only or direct status, and a direct one by nobody, whatever
 // its policy.
 type QuotePolicy string
 
-// QuoteState The state of a quote as the viewer sees it (ADR-0069), with the values of Mastodon's
+// QuoteState The state of a quote as the viewer sees it, with the values of Mastodon's
 // `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and
 // behind the reason for `muted_account` and `blocked_domain`:
 //
@@ -11487,7 +11571,7 @@ type RelayProblem struct {
 // `accepted` relay, leaving or deleting one that is not).
 type RelayProblemReason string
 
-// RelayProtocol How a relay is joined (ADR-0061). `mastodon`: at its inbox, by a `Follow` of the Public
+// RelayProtocol How a relay is joined. `mastodon`: at its inbox, by a `Follow` of the Public
 // collection. `litepub`: at its actor, by a `Follow` of the actor.
 type RelayProtocol string
 
@@ -11583,11 +11667,11 @@ type ResolveReportRequest struct {
 // such a path.
 type ReturnTo = string
 
-// RoleBadge The badge of a role (ADR-0071), which its holders may show on their profile. The label is
+// RoleBadge The badge of a role, which its holders may show on their profile. The label is
 // the staff's own text, the same in every locale: clients show it as user content
 // (`dir="auto"`), never translated.
 type RoleBadge struct {
-	// Color The color of a role badge (ADR-0071): the name of a pair of the web client's design tokens
+	// Color The color of a role badge: the name of a pair of the web client's design tokens
 	// for its background and its text, which keep their contrast in the light and the dark theme.
 	// Server themes do not change them. The color is decoration; the badge's `label` carries its
 	// meaning.
@@ -11657,28 +11741,28 @@ type SanitizeBrandRequest struct {
 }
 
 // SearchIndexing Whether the instance lets search engines index its pages (the instance setting
-// `search_indexing`, FR-725, ADR-0057). `allow`: the profiles and public posts of the accounts
+// `search_indexing`). `allow`: the profiles and public posts of the accounts
 // that are `indexable`; `deny`: no page. An account can deny what the instance allows, never
 // the reverse.
 type SearchIndexing string
 
-// ServerHealth The health of the server (ADR-0085 §1). The values are fixed, machine-readable words, never
+// ServerHealth The health of the server. The values are fixed, machine-readable words, never
 // localized.
 type ServerHealth struct {
 	// CheckedAt When this process last checked the database; absent during the maintenance mode.
 	CheckedAt *time.Time `json:"checked_at,omitempty"`
 
 	// Status `ok` while the server is healthy, `unavailable` while the database is unreachable or its
-	// schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+	// schema is not applied, `maintenance` during the maintenance mode.
 	Status ServerHealthStatus `json:"status"`
 }
 
 // ServerHealthStatus `ok` while the server is healthy, `unavailable` while the database is unreachable or its
-// schema is not applied, `maintenance` during the maintenance mode (ADR-0084).
+// schema is not applied, `maintenance` during the maintenance mode.
 type ServerHealthStatus string
 
 // ServiceClosureNotice What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
-// tells of the closure of the service (ADR-0088). `change` is what the event of a
+// tells of the closure of the service. `change` is what the event of a
 // `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
 // changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
 // for the other types. `closes_at` and `export_until` are the dates of the announcement that the
@@ -11696,7 +11780,7 @@ type ServiceClosureNotice struct {
 // ServiceClosureNoticeChange defines model for ServiceClosureNotice.Change.
 type ServiceClosureNoticeChange string
 
-// ServiceClosureState Where the server is in its closure (ADR-0088 §1):
+// ServiceClosureState Where the server is in its closure:
 //
 //   - `none`: no closure is announced.
 //   - `announced`: the closure is announced; the server runs as before until it closes.
@@ -11747,7 +11831,7 @@ type SetLinkCardDomainRuleRequest struct {
 
 // SetQuotePolicyRequest Who may quote the status from now on. Approvals given before stay.
 type SetQuotePolicyRequest struct {
-	// QuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
+	// QuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
 	// the author's followers, `nobody` the author alone. A followers-only status is quoted only
 	// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
 	// its policy.
@@ -11801,7 +11885,7 @@ type SpoilerText = string
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
 type Status struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Bookmarked Whether the authenticated user bookmarked the status.
@@ -11824,7 +11908,7 @@ type Status struct {
 	// BoostsCount The number of boosts.
 	BoostsCount int `json:"boosts_count"`
 
-	// Card The card of the first link in a status (ADR-0062): the title, description, and image
+	// Card The card of the first link in a status: the title, description, and image
 	// that the linked page declares (Open Graph, X Card, and JSON-LD), fetched by the server
 	// after the status was posted or received. Omitted from a status with attachments or a
 	// poll, from a status whose link has no card yet, from a status whose link is on a domain
@@ -11838,7 +11922,7 @@ type Status struct {
 	Card *LinkCard `json:"card,omitempty"`
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-	// remote status is what the server's sanitizer kept of the received document (ADR-0019 §2).
+	// remote status is what the server's sanitizer kept of the received document.
 	Content string `json:"content"`
 
 	// CreatedAt When the status was posted.
@@ -11847,8 +11931,7 @@ type Status struct {
 	// EditedAt When the status was last edited; omitted when it never was.
 	EditedAt *time.Time `json:"edited_at,omitempty"`
 
-	// Emojis The custom emoji of the text, the content warning, and the poll's choices
-	// (ADR-0051). Clients show each `:shortcode:` of those texts that is in this list as its
+	// Emojis The custom emoji of the text, the content warning, and the poll's choices. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text. Empty for a boost, whose emoji are those of `boost`.
 	Emojis []CustomEmoji `json:"emojis"`
 
@@ -11890,7 +11973,7 @@ type Status struct {
 	// Pinned Whether the status is pinned to the author's profile; given only to the author.
 	Pinned *bool `json:"pinned,omitempty"`
 
-	// Poll The poll of a status (FR-112); omitted when the status has none. The counts of a poll of
+	// Poll The poll of a status; omitted when the status has none. The counts of a poll of
 	// another server are those its server last reported. A poll whose author hides the votes of
 	// each option until it ends leaves out `votes_count` of its options until then. `voted` and
 	// `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.
@@ -11931,7 +12014,7 @@ type Status struct {
 	// when it has none.
 	Url *string `json:"url,omitempty"`
 
-	// Visibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// Visibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -12019,7 +12102,7 @@ type StatusPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// StatusQuote The status that a status quotes (FR-114, ADR-0069). Quotes are shown one level deep:
+// StatusQuote The status that a status quotes. Quotes are shown one level deep:
 // `quoted_status` has no `quote` of its own, and clients link to it instead.
 type StatusQuote struct {
 	// QuotedStatus A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
@@ -12033,7 +12116,7 @@ type StatusQuote struct {
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
 	QuotedStatus *Status `json:"quoted_status,omitempty"`
 
-	// State The state of a quote as the viewer sees it (ADR-0069), with the values of Mastodon's
+	// State The state of a quote as the viewer sees it, with the values of Mastodon's
 	// `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and
 	// behind the reason for `muted_account` and `blocked_domain`:
 	//
@@ -12086,7 +12169,7 @@ type StatusReactionPage struct {
 
 // StatusReactor One emoji reaction to a status, with the account that reacted.
 type StatusReactor struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// CreatedAt When the account reacted.
@@ -12145,7 +12228,7 @@ type SupporterCheckout struct {
 // it. `canceled`: it was canceled, or it ended at the payment provider.
 type SupporterEndReason string
 
-// SupporterIneligibleReason Why the user may not subscribe to a supporter plan (ADR-0072 §6): `not_local`, not a user
+// SupporterIneligibleReason Why the user may not subscribe to a supporter plan: `not_local`, not a user
 // of this server; `email_unverified`, the primary email address is not verified;
 // `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
 // the user may subscribe.
@@ -12156,7 +12239,7 @@ type SupporterInterval string
 
 // SupporterListEntry A member on the supporter list.
 type SupporterListEntry struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// PlanId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -12202,7 +12285,7 @@ type SupporterPlan struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// MonthlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// MonthlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	MonthlyPrice Money  `json:"monthly_price"`
 	Name         string `json:"name"`
@@ -12210,7 +12293,7 @@ type SupporterPlan struct {
 	// Rank A higher rank is a higher plan, which includes everything of the lower ones.
 	Rank int `json:"rank"`
 
-	// YearlyPrice An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// YearlyPrice An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	YearlyPrice Money `json:"yearly_price"`
 }
@@ -12307,7 +12390,7 @@ type SupporterScheduledChange struct {
 	PlanId   Id     `json:"plan_id"`
 	PlanName string `json:"plan_name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 }
@@ -12346,7 +12429,7 @@ type SupporterSubscription struct {
 	PlanId   Id     `json:"plan_id"`
 	PlanName string `json:"plan_name"`
 
-	// Price An amount of money (ADR-0067 §9): a decimal string in the major unit with the digits of
+	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`
 
@@ -12354,7 +12437,7 @@ type SupporterSubscription struct {
 	ScheduledChange *SupporterScheduledChange `json:"scheduled_change,omitempty"`
 	StartedAt       time.Time                 `json:"started_at"`
 
-	// State The state of a subscription (ADR-0072 §7). `pending`: started, not paid yet. `active`:
+	// State The state of a subscription. `pending`: started, not paid yet. `active`:
 	// paid. `canceling`: canceled at the end of the period. `past_due`: a payment failed less
 	// than 7 days ago. `lapsed`: a payment failed more than 7 days ago, or the subscription is
 	// paused. `expired`: ended. `revoked`: a full refund or a chargeback. `abandoned`: ended
@@ -12362,14 +12445,14 @@ type SupporterSubscription struct {
 	State SupporterSubscriptionState `json:"state"`
 }
 
-// SupporterSubscriptionState The state of a subscription (ADR-0072 §7). `pending`: started, not paid yet. `active`:
+// SupporterSubscriptionState The state of a subscription. `pending`: started, not paid yet. `active`:
 // paid. `canceling`: canceled at the end of the period. `past_due`: a payment failed less
 // than 7 days ago. `lapsed`: a payment failed more than 7 days ago, or the subscription is
 // paused. `expired`: ended. `revoked`: a full refund or a chargeback. `abandoned`: ended
 // before its first payment. The role is held while `active`, `canceling`, or `past_due`.
 type SupporterSubscriptionState string
 
-// TagSuggestion A hashtag that the prefix search of hashtags found (ADR-0092).
+// TagSuggestion A hashtag that the prefix search of hashtags found.
 type TagSuggestion struct {
 	// Name The hashtag as first written on this server, without `#`.
 	Name string `json:"name"`
@@ -12480,7 +12563,7 @@ type UpdateBadgeChoiceRequest struct {
 
 // UpdateCredentialsRequest A change of the profile; properties left out keep their current values.
 type UpdateCredentialsRequest struct {
-	// AiOptOut Whether the account's pages state that AI may neither train on nor use them (FR-412).
+	// AiOptOut Whether the account's pages state that AI may neither train on nor use them.
 	AiOptOut *bool `json:"ai_opt_out,omitempty"`
 
 	// AvatarMediaId The ID of a processed image that the user uploaded, to become the avatar; empty
@@ -12491,7 +12574,7 @@ type UpdateCredentialsRequest struct {
 	Bot *bool `json:"bot,omitempty"`
 
 	// Discoverable Whether the account is suggested to others and found by the middle of its names in the
-	// account search (FR-307, FR-308); when `false`, the search finds it only by its whole
+	// account search; when `false`, the search finds it only by its whole
 	// username. New accounts are discoverable.
 	Discoverable *bool `json:"discoverable,omitempty"`
 
@@ -12505,7 +12588,7 @@ type UpdateCredentialsRequest struct {
 	// empty removes the header image.
 	HeaderMediaId *string `json:"header_media_id,omitempty"`
 
-	// Indexable Whether the account's profile and public posts may be indexed for search (FR-412).
+	// Indexable Whether the account's profile and public posts may be indexed for search.
 	Indexable *bool `json:"indexable,omitempty"`
 
 	// Locked Whether follow requests need the user's approval.
@@ -12602,13 +12685,13 @@ type UpdatePreferencesRequest struct {
 	// DefaultPostLanguage The language of new posts that name none; `und` for undetermined.
 	DefaultPostLanguage *string `json:"default_post_language,omitempty"`
 
-	// DefaultQuotePolicy Who may quote a status (FR-114, ADR-0069): `public` anyone who may see it, `followers`
+	// DefaultQuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
 	// the author's followers, `nobody` the author alone. A followers-only status is quoted only
 	// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
 	// its policy.
 	DefaultQuotePolicy *QuotePolicy `json:"default_quote_policy,omitempty"`
 
-	// DefaultVisibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+	// DefaultVisibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
 	// accounts.
@@ -12641,7 +12724,7 @@ type UpdatePreferencesRequest struct {
 
 // UpdateRoleRequest The changes to a role; what is omitted stays.
 type UpdateRoleRequest struct {
-	// Badge The new badge of the role (ADR-0071). Its holders keep their choice to show it.
+	// Badge The new badge of the role. Its holders keep their choice to show it.
 	Badge *RoleBadge `json:"badge,omitempty"`
 
 	// Permissions The new permissions of the role, each once; empty removes them all.
@@ -12663,7 +12746,7 @@ type UpdateWebhookRequest struct {
 	Url         *string             `json:"url,omitempty"`
 }
 
-// Visibility Who may see a status (ADR-0017): `public` everyone, listed on public timelines;
+// Visibility Who may see a status: `public` everyone, listed on public timelines;
 // `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
 // public timelines; `private` followers and mentioned accounts; `direct` mentioned
 // accounts.
@@ -12743,7 +12826,7 @@ type VoiceRoom struct {
 	// Hashtags The hashtags of the room, without the `#`, as the host typed them.
 	Hashtags []string `json:"hashtags"`
 
-	// Host An account, as clients show it (FR-006).
+	// Host An account, as clients show it.
 	Host Account `json:"host"`
 
 	// Icon The emoji that a voice chat room shows before its name: a Unicode emoji, or a custom emoji
@@ -12846,7 +12929,7 @@ type VoiceRoomIcon struct {
 // VoiceRoomInvitation An invitation to a voice chat room. The invited user sees the room until the invitation is
 // revoked; an invitation as a speaker also lets the user speak without asking.
 type VoiceRoomInvitation struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
@@ -12911,7 +12994,7 @@ type VoiceRoomPage struct {
 
 // VoiceRoomParticipant A participant of a voice chat room.
 type VoiceRoomParticipant struct {
-	// Account An account, as clients show it (FR-006).
+	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
 	// Blocked Whether the user blocks the participant or the participant blocks the user.
@@ -12979,7 +13062,7 @@ type VoiceRoomSummary struct {
 	// Description The description of the room, empty for none.
 	Description *string `json:"description,omitempty"`
 
-	// Host An account, as clients show it (FR-006).
+	// Host An account, as clients show it.
 	Host *Account `json:"host,omitempty"`
 
 	// Icon The icon of the room; present only with `name`, and omitted when the room has none.
@@ -13162,7 +13245,7 @@ type WebhookCustomEmoji struct {
 	// CreatedAt When the emoji was registered or first seen.
 	CreatedAt time.Time `json:"created_at"`
 
-	// CreatedBy The account of the user who made a local emoji (ADR-0070 §7): the requester of an
+	// CreatedBy The account of the user who made a local emoji: the requester of an
 	// approved request, or the administrator who registered or copied it. Absent for an emoji
 	// made with the CLI, a remote one, and one whose creator's account is deleted
 	// (`created_by_deleted`).
@@ -13211,7 +13294,7 @@ type WebhookCustomEmoji struct {
 	VisibleInPicker bool `json:"visible_in_picker"`
 }
 
-// WebhookEventType An event that a webhook subscribes to (ADR-0060). Subscribing needs, besides
+// WebhookEventType An event that a webhook subscribes to. Subscribing needs, besides
 // `manage_webhooks`, `manage_reports` for `report.*`; `manage_accounts` for
 // `registration.pending`, `account.*`, `moderation_action.*`, and `appeal.created`;
 // `manage_domains` for `domain_moderation_action.*`; `manage_custom_emojis` for
@@ -13230,7 +13313,7 @@ type WebhookCustomEmoji struct {
 // seen is sent when a report with one comes, unless it is muted by then.
 type WebhookEventType string
 
-// WebhookMessage The body of a message that a webhook receives (ADR-0060, Standard Webhooks), posted as
+// WebhookMessage The body of a message that a webhook receives (Standard Webhooks), posted as
 // `application/json` with the headers `webhook-id`, `webhook-timestamp`, and
 // `webhook-signature`. `data` is what the admin API answers for the object of the event,
 // presented in the transaction of the event: `AdminReport` for `report.*`,
@@ -13239,8 +13322,7 @@ type WebhookEventType string
 // for `appeal.created`, `AdminDomainAction` for `domain_moderation_action.*`,
 // `WebhookCustomEmoji` for `custom_emoji.*`, `ErrorGroup` for `error_group.*`,
 // `WebhookStatus` for `status.created`, and
-// `WebhookTest` for `webhook.test`. No operation returns it; docs/reference/webhooks.md
-// describes it.
+// `WebhookTest` for `webhook.test`. No operation returns it.
 type WebhookMessage struct {
 	Data map[string]interface{} `json:"data"`
 
@@ -13481,7 +13563,7 @@ type VoiceRoomId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type WebhookId = Id
 
-// AccountProfile An account, as clients show it (FR-006).
+// AccountProfile An account, as clients show it.
 type AccountProfile = Account
 
 // StatusAfterAction A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
@@ -13516,7 +13598,7 @@ type SearchAccountsParams struct {
 	// characters after a leading `@`, which is ignored. Anything else is a 400.
 	Q string `form:"q" json:"q"`
 
-	// Limit The maximum number of results of a prefix search for the autocomplete (ADR-0092).
+	// Limit The maximum number of results of a prefix search for the autocomplete.
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
@@ -14167,7 +14249,7 @@ type SearchTagsParams struct {
 	// Anything else is a 400.
 	Q string `form:"q" json:"q"`
 
-	// Limit The maximum number of results of a prefix search for the autocomplete (ADR-0092).
+	// Limit The maximum number of results of a prefix search for the autocomplete.
 	Limit *SearchLimit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
@@ -14260,6 +14342,9 @@ type AddAccountAliasJSONRequestBody = AddAccountAliasRequest
 
 // RemoveAccountAliasJSONRequestBody defines body for RemoveAccountAlias for application/json ContentType.
 type RemoveAccountAliasJSONRequestBody = RemoveAccountAliasRequest
+
+// DeactivateOwnAccountJSONRequestBody defines body for DeactivateOwnAccount for application/json ContentType.
+type DeactivateOwnAccountJSONRequestBody = DeactivateOwnAccountRequest
 
 // DeleteOwnAccountJSONRequestBody defines body for DeleteOwnAccount for application/json ContentType.
 type DeleteOwnAccountJSONRequestBody = DeleteOwnAccountRequest
@@ -16025,7 +16110,7 @@ type ClientInterface interface {
 
 	// ListAccountAliases List the authenticated user's aliases
 	//
-	// The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+	// The accounts that the user moves from, which the user's actor names in
 	// `alsoKnownAs`, oldest first.
 	//
 	// Corresponds with GET /accounts/aliases (the `ListAccountAliases` operationId).
@@ -16033,7 +16118,7 @@ type ClientInterface interface {
 
 	// AddAccountAliasWithBody Add an alias to the authenticated user
 	//
-	// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+	// Adds the account that the user moves from as an alias: the user's actor
 	// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
 	// actor's `Update` goes to the user's followers as a profile change does. An alias alone
 	// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
@@ -16054,7 +16139,7 @@ type ClientInterface interface {
 
 	// AddAccountAlias Add an alias to the authenticated user
 	//
-	// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+	// Adds the account that the user moves from as an alias: the user's actor
 	// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
 	// actor's `Update` goes to the user's followers as a profile change does. An alias alone
 	// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
@@ -16075,7 +16160,7 @@ type ClientInterface interface {
 
 	// RemoveAccountAliasWithBody Remove an alias of the authenticated user
 	//
-	// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+	// Removes an alias; the actor's `Update` goes to the user's followers as a
 	// profile change does. Removing an alias that the user does not have changes nothing.
 	//
 	// Takes any type of body and a specified content type.
@@ -16085,7 +16170,7 @@ type ClientInterface interface {
 
 	// RemoveAccountAlias Remove an alias of the authenticated user
 	//
-	// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+	// Removes an alias; the actor's `Update` goes to the user's followers as a
 	// profile change does. Removing an alias that the user does not have changes nothing.
 	//
 	// Takes a body of the `application/json` content type.
@@ -16093,10 +16178,76 @@ type ClientInterface interface {
 	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
 	RemoveAccountAlias(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
+	//
+	// The date the account would be deleted if the user deactivated it now, and why it cannot
+	// be deactivated now, if so. It changes nothing.
+	//
+	// Corresponds with GET /accounts/deactivation (the `GetDeactivationPreview` operationId).
+	GetDeactivationPreview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeactivateOwnAccountWithBody Deactivate the authenticated user's account
+	//
+	// Deactivates the user's own account, after checking the user's current `password`, a
+	// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+	// login provider. The account and its posts are hidden from everyone, every session and
+	// token of the user ends, and the other servers get an `Update` of the actor marked
+	// `suspended`. Where the server sends mail, one email states the date of the deletion.
+	//
+	// The user signs in again to reactivate it, on a page of the server, within 30 days;
+	// after that the account is deleted, and the other servers get a `Delete` of the actor.
+	// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+	// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+	// hours after its reactivation.
+	//
+	// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+	// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired` or
+	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+	DeactivateOwnAccountWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeactivateOwnAccount Deactivate the authenticated user's account
+	//
+	// Deactivates the user's own account, after checking the user's current `password`, a
+	// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+	// login provider. The account and its posts are hidden from everyone, every session and
+	// token of the user ends, and the other servers get an `Update` of the actor marked
+	// `suspended`. Where the server sends mail, one email states the date of the deletion.
+	//
+	// The user signs in again to reactivate it, on a page of the server, within 30 days;
+	// after that the account is deleted, and the other servers get a `Delete` of the actor.
+	// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+	// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+	// hours after its reactivation.
+	//
+	// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+	// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired` or
+	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+	DeactivateOwnAccount(ctx context.Context, body DeactivateOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteOwnAccountWithBody Delete the authenticated user's account
 	//
 	// Deletes the user's own account at once, after checking the user's current `password`
-	// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
+	// or a `passkey` of the user; a user without a password confirms with a passkey.
 	// The account and its posts disappear, every session and token of the user ends, and the
 	// other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
 	// undone, and the username is never reused. The only administrator of the instance gets a
@@ -16118,7 +16269,7 @@ type ClientInterface interface {
 	// DeleteOwnAccount Delete the authenticated user's account
 	//
 	// Deletes the user's own account at once, after checking the user's current `password`
-	// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
+	// or a `passkey` of the user; a user without a password confirms with a passkey.
 	// The account and its posts disappear, every session and token of the user ends, and the
 	// other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
 	// undone, and the username is never reused. The only administrator of the instance gets a
@@ -16139,7 +16290,7 @@ type ClientInterface interface {
 
 	// ResendVerificationEmail Send the authenticated user a new verification email
 	//
-	// Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+	// Sends a new verification email to the user's primary email address,
 	// such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
 	// following its link shows that the address works and lifts the suppression. Earlier links
 	// keep working until they expire. The email is queued and sent in the background, so a 202
@@ -16159,7 +16310,7 @@ type ClientInterface interface {
 	// deactivated, or is deleted is a 404, the same as an unknown one.
 	//
 	// With `resolve=true`, a remote account that the instance does not know yet is fetched
-	// from its server (FR-305): a handle through WebFinger, a URL directly. Only accounts
+	// from its server: a handle through WebFinger, a URL directly. Only accounts
 	// whose handle WebFinger confirms are returned; a handle or URL that does not lead to one
 	// is a 404. Resolving needs an access token (anonymous requests get the 401 of
 	// `/api/v1/problems/unauthenticated`) and is limited to 30 fetches per account every
@@ -16173,7 +16324,7 @@ type ClientInterface interface {
 
 	// MoveOwnAccountWithBody Move the authenticated user's account to another account
 	//
-	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// Moves the user's account to the account `target_account_id`, after
 	// checking the user's current `password` or a `passkey` of the user; a user without a
 	// password confirms with a passkey. Find the target's ID with
 	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
@@ -16185,7 +16336,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before. An account that may not
+	// move was canceled, or for a target the account moved to before. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -16211,7 +16362,7 @@ type ClientInterface interface {
 
 	// MoveOwnAccount Move the authenticated user's account to another account
 	//
-	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// Moves the user's account to the account `target_account_id`, after
 	// checking the user's current `password` or a `passkey` of the user; a user without a
 	// password confirms with a passkey. Find the target's ID with
 	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
@@ -16223,7 +16374,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before. An account that may not
+	// move was canceled, or for a target the account moved to before. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -16249,10 +16400,10 @@ type ClientInterface interface {
 
 	// CancelOwnAccountMove Cancel the move of the authenticated user's account
 	//
-	// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+	// Cancels the move of the user's account: the account no longer names the target,
 	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 	// its actor without `movedTo`. The followers that moved stay with the target, and the next
-	// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+	// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 	// `/api/v1/problems/account-not-moved`.
 	//
 	// Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
@@ -16260,8 +16411,7 @@ type ClientInterface interface {
 
 	// GetPasswordStatus Get whether the authenticated user has a password
 	//
-	// Whether the user signs in with a password, or with passkeys only after removing it
-	// (FR-004).
+	// Whether the user signs in with a password, or with passkeys only after removing it.
 	//
 	// Corresponds with GET /accounts/password (the `GetPasswordStatus` operationId).
 	GetPasswordStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -16272,7 +16422,7 @@ type ClientInterface interface {
 	// (`login_providers_only` of `GET /instance`), it is a 403
 	// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 	// Replaces the user's password with `new_password` after checking `current_password` or
-	// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
+	// a `passkey` of the user; a user without a password sets one with a passkey.
 	// Every other session and grant of the user ends: the user is signed out of the server's
 	// sign-in pages and of every app but the one that makes the request, whose tokens keep
 	// working. Passkeys and two-factor authentication stay as they are, and the user is told
@@ -16298,7 +16448,7 @@ type ClientInterface interface {
 	// (`login_providers_only` of `GET /instance`), it is a 403
 	// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 	// Replaces the user's password with `new_password` after checking `current_password` or
-	// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
+	// a `passkey` of the user; a user without a password sets one with a passkey.
 	// Every other session and grant of the user ends: the user is signed out of the server's
 	// sign-in pages and of every app but the one that makes the request, whose tokens keep
 	// working. Passkeys and two-factor authentication stay as they are, and the user is told
@@ -16321,8 +16471,7 @@ type ClientInterface interface {
 	// RemovePasswordWithBody Remove the authenticated user's password
 	//
 	// Removes the password of a user who has a passkey or a linked account, after checking a
-	// `passkey` of the user or an `external_confirmation` from a linked login provider
-	// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
+	// `passkey` of the user or an `external_confirmation` from a linked login provider: from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 	// authentication still enters a code after one. A password reset link or
 	// `POST /accounts/password` with a passkey sets a password again. Every other session and
 	// grant of the user ends, as a change of the password does, and the user is told by email
@@ -16343,8 +16492,7 @@ type ClientInterface interface {
 	// RemovePassword Remove the authenticated user's password
 	//
 	// Removes the password of a user who has a passkey or a linked account, after checking a
-	// `passkey` of the user or an `external_confirmation` from a linked login provider
-	// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
+	// `passkey` of the user or an `external_confirmation` from a linked login provider: from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 	// authentication still enters a code after one. A password reset link or
 	// `POST /accounts/password` with a passkey sets a password again. Every other session and
 	// grant of the user ends, as a change of the password does, and the user is told by email
@@ -16376,8 +16524,7 @@ type ClientInterface interface {
 	//
 	// The accounts whose username, `username@domain`, or a word of the display name starts
 	// with `q`, and the accounts of this server whose username or display name contains `q`,
-	// for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
-	// ADR-0092). The search covers the local accounts and the remote accounts that the
+	// for the autocomplete of mentions and the account search. The search covers the local accounts and the remote accounts that the
 	// instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
 	// (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
 	// `resolve=true`).
@@ -16400,7 +16547,7 @@ type ClientInterface interface {
 
 	// ListAccountSuggestions Suggest accounts to follow
 	//
-	// Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+	// Accounts of this server for the viewer to follow: first the accounts that the
 	// administrators feature (the instance setting `featured_accounts`), in the order they gave,
 	// then the accounts that published a public or local post in the last 30 days, the one that
 	// posted last first. Each account comes once.
@@ -16460,7 +16607,7 @@ type ClientInterface interface {
 	// BlockAccount Block an account
 	//
 	// Ends the follows between the viewer and the account in both directions and keeps
-	// either from following the other until the block is lifted (FR-303). Blocking an
+	// either from following the other until the block is lifted. Blocking an
 	// account that the viewer already blocks changes nothing, and an account that blocks the
 	// viewer can be blocked back. Blocking a remote account
 	// also sends a Block to its server.
@@ -16478,7 +16625,7 @@ type ClientInterface interface {
 	// FollowAccountWithBody Follow an account
 	//
 	// Follows the account at once, or sends a follow request when the account is locked:
-	// then `requested` is true until the account accepts it (FR-301, FR-302). Following an
+	// then `requested` is true until the account accepts it. Following an
 	// account that the viewer already follows or has requested to follow changes only the
 	// preferences in the body. Following an account that the viewer blocks is a 409
 	// `/api/v1/problems/blocking`. A follow of an account on another server is a request
@@ -16495,7 +16642,7 @@ type ClientInterface interface {
 	// FollowAccount Follow an account
 	//
 	// Follows the account at once, or sends a follow request when the account is locked:
-	// then `requested` is true until the account accepts it (FR-301, FR-302). Following an
+	// then `requested` is true until the account accepts it. Following an
 	// account that the viewer already follows or has requested to follow changes only the
 	// preferences in the body. Following an account that the viewer blocks is a 409
 	// `/api/v1/problems/blocking`. A follow of an account on another server is a request
@@ -16543,7 +16690,7 @@ type ClientInterface interface {
 	// MuteAccountWithBody Mute an account
 	//
 	// Hides the account's posts, and unless `notifications` is false its notifications,
-	// from the viewer (FR-303). Muting an account that the viewer already mutes replaces the
+	// from the viewer. Muting an account that the viewer already mutes replaces the
 	// settings and the expiry.
 	//
 	// Takes any type of body and a specified content type.
@@ -16554,7 +16701,7 @@ type ClientInterface interface {
 	// MuteAccount Mute an account
 	//
 	// Hides the account's posts, and unless `notifications` is false its notifications,
-	// from the viewer (FR-303). Muting an account that the viewer already mutes replaces the
+	// from the viewer. Muting an account that the viewer already mutes replaces the
 	// settings and the expiry.
 	//
 	// Takes a body of the `application/json` content type.
@@ -16650,7 +16797,7 @@ type ClientInterface interface {
 
 	// ListAdminAccounts Search the accounts
 	//
-	// The local and remote accounts (FR-714), newest first, without the instance actor:
+	// The local and remote accounts, newest first, without the instance actor:
 	// those whose handle's username starts with `username` (case-insensitively; a remote
 	// account whose handle is not verified has none), on a `domain`, local or remote
 	// (`origin`), in a `state`, and, for local accounts, of a primary email address (`email`,
@@ -16668,7 +16815,7 @@ type ClientInterface interface {
 
 	// GetAdminAccount Get the details of an account
 	//
-	// An account as the moderators see it (FR-714): its state, the restrictions of its own
+	// An account as the moderators see it: its state, the restrictions of its own
 	// actions, and, for a local account, its registration, whether its email address is
 	// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
 	// `manage_reports` permission, its newest 20 reports. The email address and the IP
@@ -16680,7 +16827,7 @@ type ClientInterface interface {
 
 	// ListAccountActions List the moderation actions on an account
 	//
-	// The actions that moderators took on an account (FR-703), newest first, lifted and
+	// The actions that moderators took on an account, newest first, lifted and
 	// expired ones included unless `active` is set. An unknown account is a 404. Needs the
 	// `manage_accounts` permission.
 	//
@@ -16689,7 +16836,7 @@ type ClientInterface interface {
 
 	// CreateAccountActionWithBody Take a moderation action on an account
 	//
-	// Records an action on an account (FR-703), in effect at once and until it expires or is
+	// Records an action on an account, in effect at once and until it expires or is
 	// lifted; several actions on one account add up. On a local account: `warn` only tells
 	// the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
 	// past ones included, followers-only and keeps them off the public timelines;
@@ -16721,7 +16868,7 @@ type ClientInterface interface {
 
 	// CreateAccountAction Take a moderation action on an account
 	//
-	// Records an action on an account (FR-703), in effect at once and until it expires or is
+	// Records an action on an account, in effect at once and until it expires or is
 	// lifted; several actions on one account add up. On a local account: `warn` only tells
 	// the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
 	// past ones included, followers-only and keeps them off the public timelines;
@@ -16754,7 +16901,7 @@ type ClientInterface interface {
 	// LiftAdminAccountEmailSuppression Lift the suppression of the email address of a local account
 	//
 	// Lets the server send email again to the primary address of a local account's user, which
-	// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+	// a hard bounce or a complaint suppressed, such as after the user fixed their
 	// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
 	// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
 	// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
@@ -16769,7 +16916,7 @@ type ClientInterface interface {
 	//
 	// Issues a link that sets a new password for a local account's user, for an
 	// administrator to hand to the user, such as when the server sends no email or the
-	// email does not arrive (FR-002). The link works once, for an hour, and stops working
+	// email does not arrive. The link works once, for an hour, and stops working
 	// when the password changes otherwise; only its hash is stored, so this response is the
 	// only place it is shown. It is recorded in the audit log as `password_reset_link_issued`.
 	// Whoever holds the link can set the password: confirm who the user is through another
@@ -16795,10 +16942,9 @@ type ClientInterface interface {
 	// RevealAdminAccount Show the email address and the IP addresses of a local account
 	//
 	// The primary email address of a local account, where it registered and its newest 20
-	// sign-ins came from, and up to 20 other accounts per IP address that used the same one
-	// (FR-714). Each call is recorded in the audit log as `revealed_private_data` before
+	// sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
 	// anything is returned; it changes nothing else. IP addresses are kept for the retention
-	// of the sign-in and registration origins only (ADR-0038). A remote account or the
+	// of the sign-in and registration origins only. A remote account or the
 	// instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
 	// user's, the user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
@@ -16843,7 +16989,7 @@ type ClientInterface interface {
 	// DisableAdminAccountTwoFactor Remove the two-factor authentication of a local account
 	//
 	// Ends the TOTP enrollment of a local account's user, who lost their authenticator app
-	// and recovery codes, so that they sign in with the password alone (FR-005). It is
+	// and recovery codes, so that they sign in with the password alone. It is
 	// recorded in the audit log as `two_factor_disabled`. A remote account or the instance
 	// actor is a 422 naming `id`, an account without two-factor authentication a 409
 	// `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
@@ -16855,7 +17001,7 @@ type ClientInterface interface {
 
 	// ListAdminAnnouncements List the announcements
 	//
-	// Every announcement, drafts and withdrawn ones included, newest first (FR-726). The
+	// Every announcement, drafts and withdrawn ones included, newest first. The
 	// list is not paginated. Needs the `manage_announcements` permission.
 	//
 	// Corresponds with GET /admin/announcements (the `ListAdminAnnouncements` operationId).
@@ -16951,7 +17097,7 @@ type ClientInterface interface {
 
 	// ListAppeals List the appeals of moderation actions
 	//
-	// The appeals that local users made of the actions on their accounts (FR-707), newest
+	// The appeals that local users made of the actions on their accounts, newest
 	// first, each with its action. Needs the `manage_accounts` permission.
 	//
 	// Corresponds with GET /admin/appeals (the `ListAppeals` operationId).
@@ -17038,7 +17184,7 @@ type ClientInterface interface {
 
 	// ListAuditLog List the audit log
 	//
-	// The operations of the moderators and administrators (FR-704), newest first: who did
+	// The operations of the moderators and administrators, newest first: who did
 	// what to which target and when. Each entry keeps the target's display name as it was
 	// (`target_label`), so it stays readable after the target is gone; the reasons and notes
 	// stay with the operation itself (`source_event_id`). The audit log cannot be changed or
@@ -17050,7 +17196,7 @@ type ClientInterface interface {
 
 	// ListBillingImports List the state of the billing imports
 	//
-	// The state of the imports of every cloud provider of `billing_sources` (ADR-0068), in its
+	// The state of the imports of every cloud provider of `billing_sources`, in its
 	// order: the last attempt and its failure, the last success, the billed requests of the UTC
 	// day and month with their caps, the bytes billed this month, and the billing months of the
 	// last year with imported costs, each an estimate, final, or corrected, with its totals. The
@@ -17061,7 +17207,7 @@ type ClientInterface interface {
 
 	// RunBillingImport Import a provider's usage charges now
 	//
-	// Queues an import of the billing source now, besides the daily one (ADR-0068 §2). Its
+	// Queues an import of the billing source now, besides the daily one. Its
 	// billed requests count toward the caps like the others. One import per source and UTC
 	// hour: another request in the hour after its import ran is a 429. A source that
 	// `billing_sources` does not enable is a 404. The request is recorded in the audit log.
@@ -17072,16 +17218,16 @@ type ClientInterface interface {
 
 	// GetAdminServiceClosure Read the service closure
 	//
-	// The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+	// The state of the closure of the service with the schedule in effect,
 	// and whether its notice is short; once the server is closed, the progress of the closure's
-	// `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
+	// `Delete`s. Needs the `manage_service_closure` permission.
 	//
 	// Corresponds with GET /admin/closure (the `GetAdminServiceClosure` operationId).
 	GetAdminServiceClosure(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// WithdrawServiceClosure Withdraw the announcement of the closure
 	//
-	// Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+	// Withdraws the announcement in effect: the server runs on as before, and the
 	// audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
 	// server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
 	// `manage_service_closure` permission.
@@ -17091,7 +17237,7 @@ type ClientInterface interface {
 
 	// AnnounceServiceClosureWithBody Announce the closure of the service
 	//
-	// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+	// Announces that the server closes at `closes_at`, or changes the dates
 	// of the announcement in effect. Each call records a new announcement, kept with the earlier
 	// ones, and the audit log's `service_closure_announced`. The announcement shows in
 	// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
@@ -17107,7 +17253,7 @@ type ClientInterface interface {
 
 	// AnnounceServiceClosure Announce the closure of the service
 	//
-	// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+	// Announces that the server closes at `closes_at`, or changes the dates
 	// of the announcement in effect. Each call records a new announcement, kept with the earlier
 	// ones, and the audit log's `service_closure_announced`. The announcement shows in
 	// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
@@ -17123,7 +17269,7 @@ type ClientInterface interface {
 
 	// GetAdminServiceClosureCheck Check the server before its closure
 	//
-	// What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+	// What the closure of the server would end: the estimate of the `Delete`
 	// deliveries, the supporter subscriptions that it cancels, the account migrations that have
 	// not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
 	// permission.
@@ -17133,7 +17279,7 @@ type ClientInterface interface {
 
 	// CloseServiceWithBody Close the server
 	//
-	// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+	// Closes the server for good: it cannot be undone. Only an announced
 	// closure whose `closes_at` has passed can close; before it, without an announcement, or once
 	// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
 	// server's domain, or it is a 422 that names it. The closure records `service_closure_closed`
@@ -17148,7 +17294,7 @@ type ClientInterface interface {
 
 	// CloseService Close the server
 	//
-	// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+	// Closes the server for good: it cannot be undone. Only an announced
 	// closure whose `closes_at` has passed can close; before it, without an announcement, or once
 	// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
 	// server's domain, or it is a 422 that names it. The closure records `service_closure_closed`
@@ -17163,7 +17309,7 @@ type ClientInterface interface {
 
 	// ListCostItems List the cost items
 	//
-	// The instance's cost items that are not canceled, newest first (ADR-0067, FR-901).
+	// The instance's cost items that are not canceled, newest first.
 	// Needs the `manage_finance` permission.
 	//
 	// Corresponds with GET /admin/cost_items (the `ListCostItems` operationId).
@@ -17172,7 +17318,7 @@ type ClientInterface interface {
 	// CreateCostItemWithBody Record a cost item
 	//
 	// Records a cost of the instance: once, or every N weeks, months, or years from the start
-	// date (ADR-0067 §3). A value the server rejects is a 422 naming it: `interval` outside 1
+	// date. A value the server rejects is a 422 naming it: `interval` outside 1
 	// to 99 (1 for `once`), an invalid date, `ends_on` before `starts_on`, an empty or too long
 	// `name` or `provider`, a too long `memo`, an unknown currency, a negative amount, or an
 	// amount with more digits than its currency (`price`). Recorded in the audit log.
@@ -17186,7 +17332,7 @@ type ClientInterface interface {
 	// CreateCostItem Record a cost item
 	//
 	// Records a cost of the instance: once, or every N weeks, months, or years from the start
-	// date (ADR-0067 §3). A value the server rejects is a 422 naming it: `interval` outside 1
+	// date. A value the server rejects is a 422 naming it: `interval` outside 1
 	// to 99 (1 for `once`), an invalid date, `ends_on` before `starts_on`, an empty or too long
 	// `name` or `provider`, a too long `memo`, an unknown currency, a negative amount, or an
 	// amount with more digits than its currency (`price`). Recorded in the audit log.
@@ -17284,7 +17430,7 @@ type ClientInterface interface {
 	// GetCostTotals Total the costs by period
 	//
 	// The totals of the cost items and the imported usage charges for each week, month, or
-	// year from the one that holds `from` to the one that holds `to` (ADR-0067 §4, §5), by
+	// year from the one that holds `from` to the one that holds `to`, by
 	// currency and broken down by provider and category, with the rules that cut the periods.
 	// The totals are computed on every read. More than 104 weeks, 60 months, or 20 years, and
 	// `to` before `from`, are a 422 naming `to`. Needs the `manage_finance` permission.
@@ -17296,7 +17442,7 @@ type ClientInterface interface {
 	//
 	// The number of open reports (with the `manage_reports` permission), and of registrations
 	// that await approval and appeals that await a decision (with the `manage_accounts`
-	// permission), for the badges of the admin menu (FR-712). A count whose permission the user's roles lack is omitted, so a
+	// permission), for the badges of the admin menu. A count whose permission the user's roles lack is omitted, so a
 	// user without either gets an empty object.
 	//
 	// Corresponds with GET /admin/counts (the `GetAdminCounts` operationId).
@@ -17304,7 +17450,7 @@ type ClientInterface interface {
 
 	// ListAdminCustomEmojiRequests List the custom emoji requests
 	//
-	// The custom emoji requests of the holders of `create_custom_emojis` (ADR-0070 §6), newest
+	// The custom emoji requests of the holders of `create_custom_emojis`, newest
 	// first, with their requesters: the pending ones unless `state` names another state. Needs the `manage_custom_emojis` permission.
 	//
 	// Corresponds with GET /admin/custom_emoji_requests (the `ListAdminCustomEmojiRequests` operationId).
@@ -17312,7 +17458,7 @@ type ClientInterface interface {
 
 	// ApproveCustomEmojiRequest Approve a custom emoji request
 	//
-	// Approves a pending request (ADR-0070 §2): a `create` request makes the local emoji,
+	// Approves a pending request: a `create` request makes the local emoji,
 	// without a category, in the picker, and enabled, whose creator is the requester; an `image`
 	// request gives the emoji the requested image. The image is copied as an upload of the
 	// instance. The approval and the emoji's registration or new image are recorded in the
@@ -17328,7 +17474,7 @@ type ClientInterface interface {
 	// RejectCustomEmojiRequestWithBody Reject a custom emoji request
 	//
 	// Rejects a pending request, with an optional reason that the requester sees, which frees
-	// its shortcode (ADR-0070 §2). The rejection is recorded in the audit log, and the requester
+	// its shortcode. The rejection is recorded in the audit log, and the requester
 	// is notified. A reason longer than 500 characters is a 422 with the reason
 	// `invalid_reason`; a request that is not pending is a 409
 	// `/api/v1/problems/custom-emoji-request-conflict` (`not_pending`). An unknown request is a
@@ -17342,7 +17488,7 @@ type ClientInterface interface {
 	// RejectCustomEmojiRequest Reject a custom emoji request
 	//
 	// Rejects a pending request, with an optional reason that the requester sees, which frees
-	// its shortcode (ADR-0070 §2). The rejection is recorded in the audit log, and the requester
+	// its shortcode. The rejection is recorded in the audit log, and the requester
 	// is notified. A reason longer than 500 characters is a 422 with the reason
 	// `invalid_reason`; a request that is not pending is a 409
 	// `/api/v1/problems/custom-emoji-request-conflict` (`not_pending`). An unknown request is a
@@ -17355,7 +17501,7 @@ type ClientInterface interface {
 
 	// ListAdminCustomEmojis List the custom emoji
 	//
-	// The custom emoji, local and remote, newest first (ADR-0051 §4). `local` keeps the
+	// The custom emoji, local and remote, newest first. `local` keeps the
 	// emoji of this instance (`true`) or of other servers (`false`); `domain` keeps those of
 	// one remote domain; `shortcode` keeps those whose shortcode contains it, ignoring case.
 	// Needs the `manage_custom_emojis` permission.
@@ -17503,7 +17649,7 @@ type ClientInterface interface {
 
 	// ListDomainActions List the moderation actions on domains
 	//
-	// The actions that moderators took on remote domains (FR-702), newest first, lifted and
+	// The actions that moderators took on remote domains, newest first, lifted and
 	// expired ones included unless `active` is set. Needs the `manage_domains` permission.
 	//
 	// Corresponds with GET /admin/domain_actions (the `ListDomainActions` operationId).
@@ -17511,7 +17657,7 @@ type ClientInterface interface {
 
 	// CreateDomainActionWithBody Take a moderation action on a domain
 	//
-	// Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+	// Records an action on a remote domain and its subdomains, in effect at once and
 	// until it expires or is lifted. A `suspend` stops every delivery to the domain, every
 	// fetch from it, and every activity received from it, and hides its accounts and posts
 	// from the timelines; `limit` keeps its posts off the public timelines and its accounts
@@ -17529,7 +17675,7 @@ type ClientInterface interface {
 
 	// CreateDomainAction Take a moderation action on a domain
 	//
-	// Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+	// Records an action on a remote domain and its subdomains, in effect at once and
 	// until it expires or is lifted. A `suspend` stops every delivery to the domain, every
 	// fetch from it, and every activity received from it, and hides its accounts and posts
 	// from the timelines; `limit` keeps its posts off the public timelines and its accounts
@@ -17547,7 +17693,7 @@ type ClientInterface interface {
 
 	// ExportDomainBlocks Export the domain actions as Mastodon's domain block CSV
 	//
-	// The domain actions in effect (FR-706) as the CSV that Mastodon's moderation screens
+	// The domain actions in effect as the CSV that Mastodon's moderation screens
 	// import, with the header
 	// `#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`: one row
 	// per domain in domain order. `#severity` is `suspend` when a `suspend` is in effect on
@@ -17562,7 +17708,7 @@ type ClientInterface interface {
 
 	// ImportDomainBlocksWithBody Import the chosen rows of a Mastodon domain block CSV
 	//
-	// Issues the domain actions of each block (FR-706), as the preview names them: the kinds
+	// Issues the domain actions of each block, as the preview names them: the kinds
 	// of the block that no action in effect on the domain or a parent domain has already. The
 	// actions last until they are lifted, carry the block's public comment and obfuscation
 	// and the request's private note, and are audited like actions issued one at a time. A
@@ -17579,7 +17725,7 @@ type ClientInterface interface {
 
 	// ImportDomainBlocks Import the chosen rows of a Mastodon domain block CSV
 	//
-	// Issues the domain actions of each block (FR-706), as the preview names them: the kinds
+	// Issues the domain actions of each block, as the preview names them: the kinds
 	// of the block that no action in effect on the domain or a parent domain has already. The
 	// actions last until they are lifted, carry the block's public comment and obfuscation
 	// and the request's private note, and are audited like actions issued one at a time. A
@@ -17596,7 +17742,7 @@ type ClientInterface interface {
 
 	// PreviewDomainBlockImportWithBody Preview the import of a Mastodon domain block CSV
 	//
-	// Reads a domain block CSV that Mastodon exported (FR-706) and says what importing each
+	// Reads a domain block CSV that Mastodon exported and says what importing each
 	// row would do, without changing anything. A file whose first field is `#domain` has a
 	// header naming the columns; any other file is a list of domains, one per row, each
 	// suspended. An empty `#severity` is `suspend`, and a boolean is false when empty, `0`,
@@ -17612,7 +17758,7 @@ type ClientInterface interface {
 
 	// PreviewDomainBlockImport Preview the import of a Mastodon domain block CSV
 	//
-	// Reads a domain block CSV that Mastodon exported (FR-706) and says what importing each
+	// Reads a domain block CSV that Mastodon exported and says what importing each
 	// row would do, without changing anything. A file whose first field is `#domain` has a
 	// header naming the columns; any other file is a list of domains, one per row, each
 	// suspended. An empty `#severity` is `suspend`, and a boolean is false when empty, `0`,
@@ -17644,7 +17790,7 @@ type ClientInterface interface {
 
 	// ListErrorGroups List the error groups
 	//
-	// The groups of the errors that the server and the web client reported (ADR-0103 §8), the
+	// The groups of the errors that the server and the web client reported, the
 	// most recently seen first, with their occurrences of the last 24 hours and 7 days. `state`
 	// and `source` keep the groups of that state and source. Needs the `manage_errors`
 	// permission.
@@ -17684,7 +17830,7 @@ type ClientInterface interface {
 
 	// ListIncomeMovements List the money movements of the income
 	//
-	// The payment provider's money movements that the income records keep (ADR-0073 §6), newest
+	// The payment provider's money movements that the income records keep, newest
 	// first by the time the provider booked them, narrowed to the dates they fall on and a
 	// kind, with the subscriber's account of each. Only this operation and the admin screen
 	// show individual movements and their subscribers. Needs the `manage_finance` permission.
@@ -17695,7 +17841,7 @@ type ClientInterface interface {
 	// GetIncomeTotals Total the income by period
 	//
 	// The totals of the payment provider's money movements for each week, month, or year from
-	// the one that holds `from` to the one that holds `to` (ADR-0073 §5, §6): the gross, the
+	// the one that holds `from` to the one that holds `to`: the gross, the
 	// provider's fees, and the net of each currency, the balance against the costs of
 	// `GET /admin/cost_totals` under the same basis, the number of members of each supporter
 	// plan now, and the rules that cut the periods. The totals are computed on every read. More
@@ -17753,7 +17899,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
 	// the PNGs show the same picture as the SVG.
 	//
-	// The revision and the change are kept (`instance_brand_revisions`, the audit log's
+	// The revision and the change are kept (the audit log's
 	// `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
 	// revision stay at their URLs. Needs the `manage_settings` permission.
 	//
@@ -17764,7 +17910,7 @@ type ClientInterface interface {
 
 	// ListInstanceTexts List the instance texts
 	//
-	// The current text of every key that has one (FR-705): the name, the descriptions, the
+	// The current text of every key that has one: the name, the descriptions, the
 	// terms of service, the privacy policy, the commerce disclosure, and the alternative texts of the preview image and
 	// the thumbnail, by key. Each holds one value, shown as it is in every locale. Cleared
 	// texts are not listed. The list is not paginated. Needs the `manage_settings` permission.
@@ -17777,7 +17923,7 @@ type ClientInterface interface {
 	// Records a revision of the text of `key`, which becomes its current text in every locale:
 	// the administrator writes it once, in any language, and readers of every locale see the
 	// same value. An empty `body` clears the text. The revision and the change are kept
-	// (`instance_text_revisions`, the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
+	// (the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
 	// sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
 	// `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
 	// the other texts are plain text. The display name (`name`) names the instance to people
@@ -17800,7 +17946,7 @@ type ClientInterface interface {
 	// Records a revision of the text of `key`, which becomes its current text in every locale:
 	// the administrator writes it once, in any language, and readers of every locale see the
 	// same value. An empty `body` clears the text. The revision and the change are kept
-	// (`instance_text_revisions`, the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
+	// (the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
 	// sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
 	// `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
 	// the other texts are plain text. The display name (`name`) names the instance to people
@@ -17870,7 +18016,7 @@ type ClientInterface interface {
 	// ListInvites List the invites
 	//
 	// The invites that let people sign up while the registration mode is `open`, `approval`,
-	// or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+	// or `invite`, newest first, with how they have been used and who
 	// created them: the staff's and the members' own invites. Needs the `manage_invites`
 	// permission.
 	//
@@ -18114,7 +18260,7 @@ type ClientInterface interface {
 
 	// ListOAuthClientHostDenials List the denied hosts of client metadata documents
 	//
-	// The hosts whose Client ID Metadata Documents are denied (ADR-0090 §1), newest denial
+	// The hosts whose Client ID Metadata Documents are denied, newest denial
 	// first. Needs the `manage_oauth_apps` permission.
 	//
 	// Corresponds with GET /admin/oauth_client_host_denials (the `ListOAuthClientHostDenials` operationId).
@@ -18161,7 +18307,7 @@ type ClientInterface interface {
 	// ListAdminOAuthClients List the OAuth clients
 	//
 	// Every OAuth client that is not deleted, newest first, the server's own and the clients of
-	// every other route (ADR-0090 §1). `registration` keeps the clients of one route. Needs the
+	// every other route. `registration` keeps the clients of one route. Needs the
 	// `manage_oauth_apps` permission.
 	//
 	// Corresponds with GET /admin/oauth_clients (the `ListAdminOAuthClients` operationId).
@@ -18170,8 +18316,7 @@ type ClientInterface interface {
 	// DisableOAuthClient Disable an OAuth client
 	//
 	// Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-	// its authorization requests, token exchanges and refreshes until the disablement is lifted
-	// (ADR-0090 §1). Disabling a disabled client revokes its tokens again and records nothing
+	// its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
 	// new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
 	// is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_oauth_apps` permission.
@@ -18191,8 +18336,7 @@ type ClientInterface interface {
 
 	// RunPaymentReconcile Reconcile with the payment provider now
 	//
-	// Queues a reconciliation with the payment provider now, besides the periodic one
-	// (ADR-0074 §4). Its requests count toward `payments_reconcile_max_requests` like the
+	// Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
 	// others. One per UTC hour: another request in the hour after its reconciliation ran is a
 	// 429. A deployment without a payment provider is a 404. The request is recorded in the
 	// audit log. Needs the `manage_supporters` permission.
@@ -18202,7 +18346,7 @@ type ClientInterface interface {
 
 	// GetPaymentStatus Get the state of the payment provider
 	//
-	// The payment provider of the deployment's configuration (ADR-0074 §4): its name and mode
+	// The payment provider of the deployment's configuration: its name and mode
 	// (test or live), when it last delivered a webhook, and the last attempt of the
 	// reconciliation with its failure. `warnings` names the signs of a webhook that is not set
 	// up right: no delivery is recorded, or the last reconciliation corrected subscriptions
@@ -18215,7 +18359,7 @@ type ClientInterface interface {
 	// GetAdminQueue Get the state of the job queue
 	//
 	// The jobs of the job queue by state and type, when the oldest due job has been waiting
-	// since, and what the queue can list (ADR-0064). The database queue and the inline queue
+	// since, and what the queue can list. The database queue and the inline queue
 	// list their pending jobs (`queued`, `running`, `retrying`); the queues of the platforms
 	// (Cloud Tasks, SQS) do not (`pending_listing` is `false`): then `counts` is empty and the
 	// backlog is read from the platform's metrics, while `GET /admin/jobs?state=dead` and the
@@ -18228,7 +18372,7 @@ type ClientInterface interface {
 
 	// ListPendingRegistrations List the registrations that await approval
 	//
-	// The sign-ups that wait for a moderator's decision (FR-721), with the reasons their
+	// The sign-ups that wait for a moderator's decision, with the reasons their
 	// applicants gave, longest waiting first. Needs the `manage_accounts` permission.
 	//
 	// Corresponds with GET /admin/registrations (the `ListPendingRegistrations` operationId).
@@ -18294,7 +18438,7 @@ type ClientInterface interface {
 
 	// ListAdminRelays List the relays
 	//
-	// The relays that the instance joins or joined (ADR-0061), in registration order, with
+	// The relays that the instance joins or joined, in registration order, with
 	// the state of the membership and what each brought in during the last 24 hours. Needs the
 	// `manage_settings` permission.
 	//
@@ -18367,7 +18511,7 @@ type ClientInterface interface {
 
 	// ListReports List the reports
 	//
-	// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+	// The reports in the moderators' queue, newest first unless `order` is `oldest`.
 	// Needs the `manage_reports` permission.
 	//
 	// Corresponds with GET /admin/reports (the `ListReports` operationId).
@@ -18391,7 +18535,7 @@ type ClientInterface interface {
 
 	// AddReportNoteWithBody Write a note on a report
 	//
-	// Adds an internal note to the report (FR-710). Notes are shown to the moderators only,
+	// Adds an internal note to the report. Notes are shown to the moderators only,
 	// never to the target or the reporter, and cannot be edited or removed. An unknown ID is
 	// a 404. Needs the `manage_reports` permission.
 	//
@@ -18402,7 +18546,7 @@ type ClientInterface interface {
 
 	// AddReportNote Write a note on a report
 	//
-	// Adds an internal note to the report (FR-710). Notes are shown to the moderators only,
+	// Adds an internal note to the report. Notes are shown to the moderators only,
 	// never to the target or the reporter, and cannot be edited or removed. An unknown ID is
 	// a 404. Needs the `manage_reports` permission.
 	//
@@ -18450,8 +18594,7 @@ type ClientInterface interface {
 
 	// ListRoles List the roles
 	//
-	// The roles of the instance, highest position first, with the permissions they grant
-	// (FR-720). Every instance has `admin` (position 1000, every permission, never changed)
+	// The roles of the instance, highest position first, with the permissions they grant. Every instance has `admin` (position 1000, every permission, never changed)
 	// and `moderator` (position 100 with `manage_reports`, `manage_accounts`, and
 	// `view_audit` until an administrator changes them). Needs the `manage_roles` permission.
 	//
@@ -18504,7 +18647,7 @@ type ClientInterface interface {
 	// `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
 	// `moderator` takes a new position and permissions like any other role. A change that would
 	// break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
-	// hides it from every holder's profile (ADR-0071). A role, or a new position, above every
+	// hides it from every holder's profile. A role, or a new position, above every
 	// role of the viewer is a 403. A position, permissions, or badge that break a rule, or
 	// adding or removing a permission that the viewer's roles do not grant, is a 422
 	// `/api/v1/problems/invalid-role` whose `reason` says which. An unknown role is a 404.
@@ -18523,7 +18666,7 @@ type ClientInterface interface {
 	// `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
 	// `moderator` takes a new position and permissions like any other role. A change that would
 	// break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
-	// hides it from every holder's profile (ADR-0071). A role, or a new position, above every
+	// hides it from every holder's profile. A role, or a new position, above every
 	// role of the viewer is a 403. A position, permissions, or badge that break a rule, or
 	// adding or removing a permission that the viewer's roles do not grant, is a 422
 	// `/api/v1/problems/invalid-role` whose `reason` says which. An unknown role is a 404.
@@ -18536,7 +18679,7 @@ type ClientInterface interface {
 
 	// ListInstanceRules List the instance rules
 	//
-	// Every rule (FR-705): the rules in effect by position, followed, when
+	// Every rule: the rules in effect by position, followed, when
 	// `include_retired` is set, by the retired ones. The list is not paginated; at most 100
 	// rules are in effect. Needs the `manage_rules` permission.
 	//
@@ -18630,7 +18773,7 @@ type ClientInterface interface {
 
 	// ListInstanceSettings List the instance settings
 	//
-	// Every instance setting (FR-705, docs/operations/instance-settings.md): its current
+	// Every instance setting: its current
 	// value, or its default when it has never been set, with what it accepts. The policies
 	// that administrators change at run time live here; the deployment configuration does
 	// not. Needs the `manage_settings` permission.
@@ -18682,7 +18825,7 @@ type ClientInterface interface {
 
 	// ListSignupBlocks List the sign-up blocks
 	//
-	// The blocks on sign-ups from the registration page (FR-719), newest first, lifted and
+	// The blocks on sign-ups from the registration page, newest first, lifted and
 	// expired ones included unless `active` is set. Needs the `manage_accounts` permission.
 	//
 	// Corresponds with GET /admin/signup_blocks (the `ListSignupBlocks` operationId).
@@ -18690,7 +18833,7 @@ type ClientInterface interface {
 
 	// CreateSignupBlockWithBody Block sign-ups
 	//
-	// Records a block on sign-ups from the registration page (FR-719), in effect at once and
+	// Records a block on sign-ups from the registration page, in effect at once and
 	// until it expires or is lifted; the block is audited. A sign-up whose email address or
 	// client address it matches is refused (`reject`) or starts pending for a moderator
 	// whatever the registration mode (`require_approval`); the page does not tell the
@@ -18708,7 +18851,7 @@ type ClientInterface interface {
 
 	// CreateSignupBlock Block sign-ups
 	//
-	// Records a block on sign-ups from the registration page (FR-719), in effect at once and
+	// Records a block on sign-ups from the registration page, in effect at once and
 	// until it expires or is lifted; the block is audited. A sign-up whose email address or
 	// client address it matches is refused (`reject`) or starts pending for a moderator
 	// whatever the registration mode (`require_approval`); the page does not tell the
@@ -18726,7 +18869,7 @@ type ClientInterface interface {
 
 	// ImportSignupBlocksWithBody Block sign-ups from a list
 	//
-	// Adds a block on sign-ups (FR-719) for each value of a list, such as a public list of
+	// Adds a block on sign-ups for each value of a list, such as a public list of
 	// disposable email domains, all with the same kind, severity, comment, and duration. The
 	// list has one value per line in any form that `createSignupBlock` takes, or a CSV row
 	// whose first field is the value; blank lines and lines starting with `#` are ignored.
@@ -18746,7 +18889,7 @@ type ClientInterface interface {
 
 	// ImportSignupBlocks Block sign-ups from a list
 	//
-	// Adds a block on sign-ups (FR-719) for each value of a list, such as a public list of
+	// Adds a block on sign-ups for each value of a list, such as a public list of
 	// disposable email domains, all with the same kind, severity, comment, and duration. The
 	// list has one value per line in any form that `createSignupBlock` takes, or a CSV row
 	// whose first field is the value; blank lines and lines starting with `#` are ignored.
@@ -18781,7 +18924,7 @@ type ClientInterface interface {
 
 	// RefetchStatus Refetch a remote post from its origin
 	//
-	// Queues a fetch of the remote post from its server (FR-407). The job records what the
+	// Queues a fetch of the remote post from its server. The job records what the
 	// server serves now, as a received `Update` would: a newer revision, the counts of its
 	// poll, or, when the server answers 410 Gone or serves a `Tombstone`, the post's
 	// deletion. A post that cannot be fetched is left as it is. An unknown or deleted post is
@@ -18800,8 +18943,7 @@ type ClientInterface interface {
 
 	// CreateSupporterPlanWithBody Create a supporter plan
 	//
-	// Creates a supporter plan on a role, which then only the plan's subscriptions grant
-	// (ADR-0072 §3, §5). The prices are made at the payment provider after the answer; the
+	// Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the
 	// plan takes subscriptions once `prices_ready`. A plan that breaks a rule is a 422
 	// `/api/v1/problems/invalid-supporter-plan`, an unknown role a 404, and a server without a
 	// payment provider a 409 `/api/v1/problems/supporters-unavailable`. Recorded in the audit
@@ -18814,8 +18956,7 @@ type ClientInterface interface {
 
 	// CreateSupporterPlan Create a supporter plan
 	//
-	// Creates a supporter plan on a role, which then only the plan's subscriptions grant
-	// (ADR-0072 §3, §5). The prices are made at the payment provider after the answer; the
+	// Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the
 	// plan takes subscriptions once `prices_ready`. A plan that breaks a rule is a 422
 	// `/api/v1/problems/invalid-supporter-plan`, an unknown role a 404, and a server without a
 	// payment provider a 409 `/api/v1/problems/supporters-unavailable`. Recorded in the audit
@@ -18828,8 +18969,7 @@ type ClientInterface interface {
 
 	// UpdateSupporterPlanWithBody Change a supporter plan
 	//
-	// Changes a supporter plan's terms and its role's permissions and position (ADR-0072 §3,
-	// §5, §9). New prices apply to new subscriptions and changes of plan only. A change that
+	// Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that
 	// breaks a rule is a 422 `/api/v1/problems/invalid-supporter-plan`, a retired plan a 409
 	// `/api/v1/problems/supporter-plan-retired`, and an unknown plan a 404. Recorded in the
 	// audit log. Needs the `manage_supporters` permission.
@@ -18841,8 +18981,7 @@ type ClientInterface interface {
 
 	// UpdateSupporterPlan Change a supporter plan
 	//
-	// Changes a supporter plan's terms and its role's permissions and position (ADR-0072 §3,
-	// §5, §9). New prices apply to new subscriptions and changes of plan only. A change that
+	// Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that
 	// breaks a rule is a 422 `/api/v1/problems/invalid-supporter-plan`, a retired plan a 409
 	// `/api/v1/problems/supporter-plan-retired`, and an unknown plan a 404. Recorded in the
 	// audit log. Needs the `manage_supporters` permission.
@@ -18854,7 +18993,7 @@ type ClientInterface interface {
 
 	// RetireSupporterPlan Retire a supporter plan
 	//
-	// Retires a supporter plan for good (ADR-0072 §9): it takes no subscriptions any more, and
+	// Retires a supporter plan for good: it takes no subscriptions any more, and
 	// every subscription of it ends at the end of its period (a pending one at once). A
 	// retired plan is a 409 `/api/v1/problems/supporter-plan-retired`, and an unknown one a
 	// 404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -18871,7 +19010,7 @@ type ClientInterface interface {
 
 	// SetSupporterProgramWithBody Enable or disable the supporter program
 	//
-	// Enables or disables the supporter program (ADR-0072 §2). Enabling it without a payment
+	// Enables or disables the supporter program. Enabling it without a payment
 	// provider in the deployment's configuration or without email is a 409
 	// `/api/v1/problems/supporters-unavailable`; disabling it while subscriptions go on is a
 	// 409 `/api/v1/problems/live-subscriptions` (retire the plans first). Asking for the state
@@ -18885,7 +19024,7 @@ type ClientInterface interface {
 
 	// SetSupporterProgram Enable or disable the supporter program
 	//
-	// Enables or disables the supporter program (ADR-0072 §2). Enabling it without a payment
+	// Enables or disables the supporter program. Enabling it without a payment
 	// provider in the deployment's configuration or without email is a 409
 	// `/api/v1/problems/supporters-unavailable`; disabling it while subscriptions go on is a
 	// 409 `/api/v1/problems/live-subscriptions` (retire the plans first). Asking for the state
@@ -18907,7 +19046,7 @@ type ClientInterface interface {
 
 	// CancelSupporterSubscription Cancel a subscription at once
 	//
-	// Ends a subscription at once, without a refund (ADR-0072 §10): the role goes now, and the
+	// Ends a subscription at once, without a refund: the role goes now, and the
 	// payment provider stops billing. A refund is the operator's to make at the provider. A
 	// subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 	// unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -18917,7 +19056,7 @@ type ClientInterface interface {
 
 	// GetAdminTheme Read the instance theme
 	//
-	// The current theme of the web client (ADR-0059, FR-605): the overridden design tokens and the
+	// The current theme of the web client: the overridden design tokens and the
 	// custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
 	// `manage_settings` permission.
 	//
@@ -18930,7 +19069,7 @@ type ClientInterface interface {
 	// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
 	// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
 	// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-	// change are kept (`instance_theme_revisions`, the audit log's `setting_changed` of `theme`).
+	// change are kept (the audit log's `setting_changed` of `theme`).
 	//
 	// The overridable tokens are the web client's design tokens except the primitive palette
 	// (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
@@ -18958,7 +19097,7 @@ type ClientInterface interface {
 	// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
 	// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
 	// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-	// change are kept (`instance_theme_revisions`, the audit log's `setting_changed` of `theme`).
+	// change are kept (the audit log's `setting_changed` of `theme`).
 	//
 	// The overridable tokens are the web client's design tokens except the primitive palette
 	// (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
@@ -19006,7 +19145,7 @@ type ClientInterface interface {
 
 	// ListAdminWebhooks List the webhooks
 	//
-	// The webhook endpoints of the instance that are not deleted, newest first (ADR-0060).
+	// The webhook endpoints of the instance that are not deleted, newest first.
 	// Needs the `manage_webhooks` permission.
 	//
 	// Corresponds with GET /admin/webhooks (the `ListAdminWebhooks` operationId).
@@ -19015,7 +19154,7 @@ type ClientInterface interface {
 	// CreateWebhookWithBody Set up a webhook
 	//
 	// Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes
-	// to, signed with Standard Webhooks v1 (`docs/reference/webhooks.md`). The answer carries
+	// to, signed with Standard Webhooks v1. The answer carries
 	// its secret, which is shown only now. The user needs the permission of every event
 	// besides `manage_webhooks` (`WebhookEventType`). A URL, a description, or events that
 	// break a rule, or an event whose permission the user lacks, is a 422
@@ -19032,7 +19171,7 @@ type ClientInterface interface {
 	// CreateWebhook Set up a webhook
 	//
 	// Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes
-	// to, signed with Standard Webhooks v1 (`docs/reference/webhooks.md`). The answer carries
+	// to, signed with Standard Webhooks v1. The answer carries
 	// its secret, which is shown only now. The user needs the permission of every event
 	// besides `manage_webhooks` (`WebhookEventType`). A URL, a description, or events that
 	// break a rule, or an event whose permission the user lacks, is a 422
@@ -19146,7 +19285,7 @@ type ClientInterface interface {
 
 	// ListAnnouncements List the announcements
 	//
-	// The server's announcements that every local user sees now (FR-726): published, and
+	// The server's announcements that every local user sees now: published, and
 	// within their window. The ones whose `published_at` is the latest come first, each with
 	// whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
 	// through the past ones too.
@@ -19156,7 +19295,7 @@ type ClientInterface interface {
 
 	// ListAnnouncementHistory List the announcements, past ones included
 	//
-	// The server's announcements that have started to show to the local users (FR-726): the
+	// The server's announcements that have started to show to the local users: the
 	// published ones whose `published_at` has passed, those whose window has ended included
 	// (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
 	// first, each with whether the user has read it. Only the announcements that show now can be
@@ -19167,7 +19306,7 @@ type ClientInterface interface {
 
 	// GetAnnouncement Get an announcement
 	//
-	// One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+	// One announcement of `listAnnouncementHistory`: a published one whose `published_at`
 	// has passed, one whose window has ended included (`ended`), with whether the user has read
 	// it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
 	//
@@ -19188,7 +19327,7 @@ type ClientInterface interface {
 	// One entry per client for which the user holds a grant that still works, most recently used
 	// first (an app without a recorded use after those with one, newest authorization first). A
 	// revoked or expired grant is not listed. The server's own web client is listed too
-	// (`first_party`). Only the server's own clients may call it (ADR-0090 §4).
+	// (`first_party`). Only the server's own clients may call it.
 	//
 	// Corresponds with GET /authorized_apps (the `ListAuthorizedApps` operationId).
 	ListAuthorizedApps(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -19198,7 +19337,7 @@ type ClientInterface interface {
 	// Revokes every grant of the app that the user holds, so that its access and refresh tokens
 	// stop working at once (the next request with one is a 401). Revoking the server's own web
 	// client signs the user out of every browser, this one included. An app the user holds no
-	// working grant of is a 404. Only the server's own clients may call it (ADR-0090 §4).
+	// working grant of is a 404. Only the server's own clients may call it.
 	//
 	// Corresponds with DELETE /authorized_apps/{id} (the `RevokeAuthorizedApp` operationId).
 	RevokeAuthorizedApp(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -19218,7 +19357,7 @@ type ClientInterface interface {
 	// ExportCsv Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
 	//
 	// Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
-	// Mastodon and this server import (FR-008): `following` is `following_accounts.csv`
+	// Mastodon and this server import: `following` is `following_accounts.csv`
 	// (`Account address,Show boosts,Notify on new posts,Languages`, the active follows),
 	// `blocks` is `blocked_accounts.csv` (one address per line), `mutes` is
 	// `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
@@ -19234,7 +19373,7 @@ type ClientInterface interface {
 
 	// ListCustomEmojiRequests List the user's custom emoji requests
 	//
-	// The user's requests for new custom emoji and new images of their own (ADR-0070 §6),
+	// The user's requests for new custom emoji and new images of their own,
 	// newest first, in every state. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 	//
 	// Corresponds with GET /custom_emoji_requests (the `ListCustomEmojiRequests` operationId).
@@ -19243,8 +19382,7 @@ type ClientInterface interface {
 	// CreateCustomEmojiRequestWithBody Request a custom emoji or a new image of one
 	//
 	// Requests a new local custom emoji (`create`) or a new image of a local emoji that the user
-	// made (`image`), which a holder of `manage_custom_emojis` approves or rejects (ADR-0070 §2,
-	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
+	// made (`image`), which a holder of `manage_custom_emojis` approves or rejects. Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
 	// pending request reserves, a `create` request once the approved and pending `create`
@@ -19265,8 +19403,7 @@ type ClientInterface interface {
 	// CreateCustomEmojiRequest Request a custom emoji or a new image of one
 	//
 	// Requests a new local custom emoji (`create`) or a new image of a local emoji that the user
-	// made (`image`), which a holder of `manage_custom_emojis` approves or rejects (ADR-0070 §2,
-	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
+	// made (`image`), which a holder of `manage_custom_emojis` approves or rejects. Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
 	// pending request reserves, a `create` request once the approved and pending `create`
@@ -19296,7 +19433,7 @@ type ClientInterface interface {
 
 	// ListCustomEmojis List the custom emoji of the picker
 	//
-	// The custom emoji of the instance that the picker offers (FR-111, ADR-0051 §4): every
+	// The custom emoji of the instance that the picker offers: every
 	// enabled local emoji that is not hidden from the picker, by category (those without one
 	// first) and shortcode. A text can use every enabled local emoji, hidden or not. The list
 	// is not paginated.
@@ -19306,10 +19443,10 @@ type ClientInterface interface {
 
 	// ListOwnCustomEmojis List the custom emoji that the user made
 	//
-	// The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
+	// The local custom emoji that the user made, newest first, with what the user
 	// used of their monthly limit: the approved and pending requests to create an emoji that they
 	// submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
-	// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+	// limit, and when the count resets. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 	//
 	// Corresponds with GET /custom_emojis/mine (the `ListOwnCustomEmojis` operationId).
 	ListOwnCustomEmojis(ctx context.Context, params *ListOwnCustomEmojisParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -19327,7 +19464,7 @@ type ClientInterface interface {
 	// UpdateOwnCustomEmojiWithBody Change a custom emoji that the user made
 	//
 	// Changes the aliases, the category, and the place in the picker of a local emoji that the
-	// user made, and keeps the rest (ADR-0070 §3); a new image is a request
+	// user made, and keeps the rest; a new image is a request
 	// (`POST /custom_emoji_requests`). The rules of `PATCH /admin/custom_emojis/{id}` apply, and
 	// the change is recorded in the audit log. An emoji that is not one the user made is a 404.
 	// Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
@@ -19340,7 +19477,7 @@ type ClientInterface interface {
 	// UpdateOwnCustomEmoji Change a custom emoji that the user made
 	//
 	// Changes the aliases, the category, and the place in the picker of a local emoji that the
-	// user made, and keeps the rest (ADR-0070 §3); a new image is a request
+	// user made, and keeps the rest; a new image is a request
 	// (`POST /custom_emoji_requests`). The rules of `PATCH /admin/custom_emojis/{id}` apply, and
 	// the change is recorded in the audit log. An emoji that is not one the user made is a 404.
 	// Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
@@ -19360,7 +19497,7 @@ type ClientInterface interface {
 	// MuteDomainWithBody Mute a domain
 	//
 	// Hides the posts of a remote domain and of its subdomains from the viewer's timelines
-	// other than home, their boosts from home, and their notifications (FR-304). The accounts
+	// other than home, their boosts from home, and their notifications. The accounts
 	// of the domain that the viewer follows stay on the home timeline. Nothing is sent to the
 	// domain. Muting a domain that the viewer already mutes changes nothing. The domain is
 	// normalized (IDNA A-labels in lower case, without a trailing dot); one that is not a
@@ -19375,7 +19512,7 @@ type ClientInterface interface {
 	// MuteDomain Mute a domain
 	//
 	// Hides the posts of a remote domain and of its subdomains from the viewer's timelines
-	// other than home, their boosts from home, and their notifications (FR-304). The accounts
+	// other than home, their boosts from home, and their notifications. The accounts
 	// of the domain that the viewer follows stay on the home timeline. Nothing is sent to the
 	// domain. Muting a domain that the viewer already mutes changes nothing. The domain is
 	// normalized (IDNA A-labels in lower case, without a trailing dot); one that is not a
@@ -19404,7 +19541,7 @@ type ClientInterface interface {
 
 	// RequestDataExport Request an archive of the authenticated user's data
 	//
-	// Starts building a ZIP archive of the user's data (FR-008): `actor.json` (the actor),
+	// Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 	// `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 	// activities), `moderation.json` (the moderation actions on the account, its appeals, and
 	// the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
@@ -19426,7 +19563,7 @@ type ClientInterface interface {
 
 	// GetFinanceCostTotals Total the costs by period for the finance viewers
 	//
-	// The totals of the instance's costs for the holders of `view_finance` (ADR-0070 §5). It
+	// The totals of the instance's costs for the holders of `view_finance`. It
 	// takes the query of `GET /admin/cost_totals` and always answers its totals, their breakdown
 	// by provider, category, and currency, and the rules that cut the periods. Each period adds
 	// `items`, the amount of each cost item and each service of the imported costs, only while
@@ -19444,7 +19581,7 @@ type ClientInterface interface {
 
 	// GetFinanceIncomeTotals Total the income by period for the finance viewers
 	//
-	// The income totals for the holders of `view_finance` (ADR-0073 §6, ADR-0070 §5). It takes
+	// The income totals for the holders of `view_finance`. It takes
 	// the query of `GET /admin/cost_totals` and always answers the net of each currency by
 	// period with its `balance` against the costs, whatever `income_visibility` and
 	// `finance_visibility` publish. `plans`, the number of members of each supporter plan now,
@@ -19468,7 +19605,7 @@ type ClientInterface interface {
 
 	// AcceptFollowRequest Accept a follow request
 	//
-	// Makes the account's pending follow of the viewer active (FR-302). Accepting a follow
+	// Makes the account's pending follow of the viewer active. Accepting a follow
 	// that is already active changes nothing; without a follow it is a 404.
 	//
 	// Corresponds with POST /follow_requests/{id}/accept (the `AcceptFollowRequest` operationId).
@@ -19476,7 +19613,7 @@ type ClientInterface interface {
 
 	// RejectFollowRequest Reject a follow request
 	//
-	// Declines the account's pending follow request (FR-302); without one it is a 404.
+	// Declines the account's pending follow request; without one it is a 404.
 	//
 	// Corresponds with POST /follow_requests/{id}/reject (the `RejectFollowRequest` operationId).
 	RejectFollowRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -19491,7 +19628,7 @@ type ClientInterface interface {
 
 	// StartDataImportWithBody Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
 	//
-	// Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
+	// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
 	// entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 	// `overwrite` also removes what the user has of `kind` that the file does not list. The
 	// server carries the import out in the background: it resolves remote accounts and posts
@@ -19508,7 +19645,7 @@ type ClientInterface interface {
 
 	// StartDataImport Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
 	//
-	// Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
+	// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
 	// entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 	// `overwrite` also removes what the user has of `kind` that the file does not list. The
 	// server carries the import out in the background: it resolves remote accounts and posts
@@ -19561,7 +19698,7 @@ type ClientInterface interface {
 	// GetInstanceCostTotals Total the instance's public costs by period
 	//
 	// The totals of the instance's costs that the instance setting `finance_visibility`
-	// publishes (FR-903, ADR-0067 §8, §9). It takes the query of `GET /admin/cost_totals` and
+	// publishes. It takes the query of `GET /admin/cost_totals` and
 	// answers the same shape: `private` makes it a 404; `totals` leaves every `breakdown` empty
 	// and the `rules` without `sources`, which would name the providers; `breakdown` gives the
 	// breakdown by provider, category, and currency, and the providers' rules. No level returns
@@ -19588,8 +19725,7 @@ type ClientInterface interface {
 
 	// ListInstanceDomainActions List the domains that the instance moderates
 	//
-	// The moderation actions in effect on remote domains that the instance lists publicly
-	// (FR-718): `limit` and `suspend`, one item per action, newest first. The instance
+	// The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
 	// setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
 	// `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
 	// token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
@@ -19602,24 +19738,23 @@ type ClientInterface interface {
 	// GetServerHealth Get the health of the server
 	//
 	// Whether the server can serve requests, for uptime monitors, status pages, and clients that
-	// tell a server outage from their own network (ADR-0085 §1). The check is the readiness
+	// tell a server outage from their own network. The check is the readiness
 	// check's: the database is reachable and its schema is applied. Each process caches the
 	// result for 60 seconds and runs one check for concurrent requests, so the database is
 	// checked at most once a minute however often the endpoint is called. The endpoint takes no
 	// access token and counts against no rate limit.
 	//
 	// The body holds only the fixed words of `status`, never the reason of a failure. During the
-	// maintenance mode (ADR-0084) the answer is a 503 with `Retry-After` and
+	// maintenance mode the answer is a 503 with `Retry-After` and
 	// `{"status":"maintenance"}`, without touching the database. Uptime monitors tell the
-	// maintenance from an outage by the body (ADR-0085 §4).
+	// maintenance from an outage by the body.
 	//
 	// Corresponds with GET /instance/health (the `GetServerHealth` operationId).
 	GetServerHealth(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetInstanceIncomeTotals Total the instance's public income by period
 	//
-	// The net income that the instance setting `income_visibility` publishes (FR-917,
-	// ADR-0073 §7, §9). It takes the query of `GET /admin/cost_totals`: `private` makes it a
+	// The net income that the instance setting `income_visibility` publishes. It takes the query of `GET /admin/cost_totals`: `private` makes it a
 	// 404; `totals` gives the net of each currency by period; `plans` adds `plans`, the number
 	// of members of each supporter plan now. Each period carries `balance`, the net less the
 	// costs, only while `finance_visibility` is not `private` either, since the balance would
@@ -19646,7 +19781,7 @@ type ClientInterface interface {
 	// ListSupporterPlans List the supporter plans
 	//
 	// The supporter plans that take subscriptions, by rank, with their monthly and yearly
-	// prices (ADR-0072 §18). A 404 while the supporter program is disabled
+	// prices. A 404 while the supporter program is disabled
 	// (`Instance.supporters_enabled`).
 	//
 	// Corresponds with GET /instance/supporter_plans (the `ListSupporterPlans` operationId).
@@ -19656,7 +19791,7 @@ type ClientInterface interface {
 	//
 	// The members of the supporter plans who chose to be listed (`PUT
 	// /preferences/supporter_listing`), by plan in the plans' order and newest first within a
-	// plan, with the plans that are not retired for the headings (ADR-0071 §4). Only each
+	// plan, with the plans that are not retired for the headings. Only each
 	// member's account is listed: never an amount, an interval, a date, or a count. Accounts
 	// that the viewer may not see are left out, so a page may be shorter than `limit`. The
 	// instance setting `supporter_list_visibility` decides who may read it: `off` makes it a
@@ -19669,7 +19804,7 @@ type ClientInterface interface {
 
 	// ListOwnInvites List the user's own invites
 	//
-	// The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+	// The invites that the user created as a member, newest first, with how they
 	// have been used, and what the user may do: whether they may create an invite now
 	// (`can_create`), the caps of the instance settings, and how many usable invites they hold.
 	// A user who may no longer create invites still lists and revokes the ones they made; an
@@ -19682,7 +19817,7 @@ type ClientInterface interface {
 	// CreateOwnInviteWithBody Create an invite of the user's own
 	//
 	// Creates an invite with a new random code that people use to sign up while the
-	// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+	// registration mode is `open`, `approval`, or `invite`. In `approval` mode a
 	// person who signs up with it is approved at once. The user may create one when the
 	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 	// their account is neither suspended nor limited, their registration is approved, and the
@@ -19703,7 +19838,7 @@ type ClientInterface interface {
 	// CreateOwnInvite Create an invite of the user's own
 	//
 	// Creates an invite with a new random code that people use to sign up while the
-	// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+	// registration mode is `open`, `approval`, or `invite`. In `approval` mode a
 	// person who signs up with it is approved at once. The user may create one when the
 	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 	// their account is neither suspended nor limited, their registration is approved, and the
@@ -19990,7 +20125,7 @@ type ClientInterface interface {
 
 	// ListOwnModerationActions List the moderation actions on the authenticated user's account
 	//
-	// The actions that moderators took on the user's own account (FR-715), newest first,
+	// The actions that moderators took on the user's own account, newest first,
 	// lifted and expired ones included unless `active` is set, also those that the user was
 	// not notified of. Each carries what the moderators chose to tell the user; never their
 	// private note, the report the action follows from, or who filed it. `kind_label` and
@@ -20001,7 +20136,7 @@ type ClientInterface interface {
 
 	// AppealModerationActionWithBody Appeal a moderation action on the authenticated user's account
 	//
-	// Asks the moderators to reconsider an action on the user's own account (FR-707), once
+	// Asks the moderators to reconsider an action on the user's own account, once
 	// per action and until its `appeal_deadline` (the instance's appeal window from the
 	// action, 180 days by default; for a `ban`, also no later than the deletion of the
 	// account 30 days after it). The moderators get an `admin_appeal` notification, and
@@ -20019,7 +20154,7 @@ type ClientInterface interface {
 
 	// AppealModerationAction Appeal a moderation action on the authenticated user's account
 	//
-	// Asks the moderators to reconsider an action on the user's own account (FR-707), once
+	// Asks the moderators to reconsider an action on the user's own account, once
 	// per action and until its `appeal_deadline` (the instance's appeal window from the
 	// action, 180 days by default; for a `ban`, also no later than the deletion of the
 	// account 30 days after it). The moderators get an `admin_appeal` notification, and
@@ -20103,7 +20238,7 @@ type ClientInterface interface {
 	// CreateOAuthAppWithBody Register an OAuth app
 	//
 	// Registers a public or confidential app of the user for a bot, a script, or a client of
-	// their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+	// their own. A confidential app's `client_secret` is in this response only.
 	// Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
 	// may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
 	// stops working while the user cannot use the server (suspended or deleted).
@@ -20122,7 +20257,7 @@ type ClientInterface interface {
 	// CreateOAuthApp Register an OAuth app
 	//
 	// Registers a public or confidential app of the user for a bot, a script, or a client of
-	// their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+	// their own. A confidential app's `client_secret` is in this response only.
 	// Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
 	// may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
 	// stops working while the user cannot use the server (suspended or deleted).
@@ -20191,7 +20326,7 @@ type ClientInterface interface {
 	// IssueOAuthAppTokenWithBody Issue tokens of an OAuth app to the authenticated user
 	//
 	// Issues an access token and a refresh token of the app for the user's own account,
-	// without the consent screen and a redirect (ADR-0090 §2): the usual pair with the usual
+	// without the consent screen and a redirect: the usual pair with the usual
 	// lifetimes, refreshed and revoked at the token endpoints as any other. A scope beyond the
 	// app's is a 422 naming `scope`, and an app that an administrator disabled a 409
 	// `/api/v1/problems/oauth-app-disabled`. An unknown or deleted app, or one that another
@@ -20205,7 +20340,7 @@ type ClientInterface interface {
 	// IssueOAuthAppToken Issue tokens of an OAuth app to the authenticated user
 	//
 	// Issues an access token and a refresh token of the app for the user's own account,
-	// without the consent screen and a redirect (ADR-0090 §2): the usual pair with the usual
+	// without the consent screen and a redirect: the usual pair with the usual
 	// lifetimes, refreshed and revoked at the token endpoints as any other. A scope beyond the
 	// app's is a 422 naming `scope`, and an app that an administrator disabled a 409
 	// `/api/v1/problems/oauth-app-disabled`. An unknown or deleted app, or one that another
@@ -20354,7 +20489,7 @@ type ClientInterface interface {
 
 	// GetAutoDeletePolicy Get the authenticated user's automatic deletion of old posts
 	//
-	// The policy that deletes the user's own posts some days after their publication (FR-118).
+	// The policy that deletes the user's own posts some days after their publication.
 	// A user who has never saved one gets the default policy, which is disabled.
 	//
 	// Corresponds with GET /preferences/auto_delete (the `GetAutoDeletePolicy` operationId).
@@ -20419,7 +20554,7 @@ type ClientInterface interface {
 	// ListBadgeChoices List the badges that the authenticated user may show
 	//
 	// The roles that the user holds and that have a badge, highest position first, with whether
-	// the user shows each badge on their profile (ADR-0071). Every badge is hidden until the user
+	// the user shows each badge on their profile. Every badge is hidden until the user
 	// shows it.
 	//
 	// Corresponds with GET /preferences/badges (the `ListBadgeChoices` operationId).
@@ -20427,7 +20562,7 @@ type ClientInterface interface {
 
 	// UpdateBadgeChoiceWithBody Show or hide the badge of a role on the authenticated user's profile
 	//
-	// Shows or hides the badge of a role that the user holds on their profile (ADR-0071). The
+	// Shows or hides the badge of a role that the user holds on their profile. The
 	// badge appears in `Account.badges` of the user's own account endpoints only, never on
 	// posts, in lists of accounts, or to other servers. A role that the user does not hold, or
 	// that has no badge, is a 404.
@@ -20439,7 +20574,7 @@ type ClientInterface interface {
 
 	// UpdateBadgeChoice Show or hide the badge of a role on the authenticated user's profile
 	//
-	// Shows or hides the badge of a role that the user holds on their profile (ADR-0071). The
+	// Shows or hides the badge of a role that the user holds on their profile. The
 	// badge appears in `Account.badges` of the user's own account endpoints only, never on
 	// posts, in lists of accounts, or to other servers. A role that the user does not hold, or
 	// that has no badge, is a 404.
@@ -20479,8 +20614,7 @@ type ClientInterface interface {
 
 	// GetSupporterListing Get whether the authenticated user is on the supporter list
 	//
-	// Whether the user chose to be listed on the supporter list (`GET /instance/supporters`,
-	// ADR-0071 §4). Nobody is listed until they choose to be, and the choice ends with the
+	// Whether the user chose to be listed on the supporter list (`GET /instance/supporters`). Nobody is listed until they choose to be, and the choice ends with the
 	// subscription. A 404 for a user who is not a member of a plan (an `active`, `canceling`,
 	// or `past_due` subscription) and while the program is disabled.
 	//
@@ -20558,7 +20692,7 @@ type ClientInterface interface {
 	// ListOwnReports List the reports that the authenticated user filed
 	//
 	// The reports that the user filed, newest first, each with whether it is still open or
-	// resolved (FR-711). A report reopened by the moderators is open again. It never tells how
+	// resolved. A report reopened by the moderators is open again. It never tells how
 	// a report was resolved, which actions it led to, the reasons given to the account, or
 	// who handles it. A report stays listed when the user may no longer see its target (the
 	// account is suspended, deleted, or blocks the user), without `target_account`. A report
@@ -20570,7 +20704,7 @@ type ClientInterface interface {
 
 	// CreateReportWithBody Report an account
 	//
-	// Reports an account, and optionally some of its posts, to the moderators (FR-701). The
+	// Reports an account, and optionally some of its posts, to the moderators. The
 	// report waits, open, in the moderators' queue; nothing tells the account of it, and
 	// nothing that the account can read names the reporter. 422 when the account does not
 	// exist or is the user's own (`account_id`), when a post is not the account's or the
@@ -20585,7 +20719,7 @@ type ClientInterface interface {
 
 	// CreateReport Report an account
 	//
-	// Reports an account, and optionally some of its posts, to the moderators (FR-701). The
+	// Reports an account, and optionally some of its posts, to the moderators. The
 	// report waits, open, in the moderators' queue; nothing tells the account of it, and
 	// nothing that the account can read names the reporter. 422 when the account does not
 	// exist or is the user's own (`account_id`), when a post is not the account's or the
@@ -20603,7 +20737,7 @@ type ClientInterface interface {
 	// One entry per browser session that still works or from which a grant of the server's own web
 	// client still works, the browser that asks first, then the most recently used first. The apps
 	// the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
-	// may call it (ADR-0090 §4).
+	// may call it.
 	//
 	// Corresponds with GET /sessions (the `ListSessions` operationId).
 	ListSessions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20611,8 +20745,7 @@ type ClientInterface interface {
 	// RevokeOtherSessions Sign out every browser but the one that asks
 	//
 	// Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
-	// succeeds when there is no other browser. Only the server's own clients may call it
-	// (ADR-0090 §4).
+	// succeeds when there is no other browser. Only the server's own clients may call it.
 	//
 	// Corresponds with POST /sessions/revoke_others (the `RevokeOtherSessions` operationId).
 	RevokeOtherSessions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20624,7 +20757,7 @@ type ClientInterface interface {
 	// password, two-factor authentication, and the apps the user authorized stay. An ID that is not
 	// in the user's list is a 404, and the browser that asks is a 409 with the type
 	// `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
-	// call it (ADR-0090 §4).
+	// call it.
 	//
 	// Corresponds with DELETE /sessions/{id} (the `RevokeSession` operationId).
 	RevokeSession(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20635,7 +20768,7 @@ type ClientInterface interface {
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
-	// poll outside the limits of `PollInput` is a 422 (FR-112).
+	// poll outside the limits of `PollInput` is a 422.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -20648,7 +20781,7 @@ type ClientInterface interface {
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
-	// poll outside the limits of `PollInput` is a 422 (FR-112).
+	// poll outside the limits of `PollInput` is a 422.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -20771,7 +20904,7 @@ type ClientInterface interface {
 
 	// VoteInPollWithBody Vote in the poll of a status
 	//
-	// Votes for one or more choices of the poll of a status (FR-112). `poll_id` names the poll
+	// Votes for one or more choices of the poll of a status. `poll_id` names the poll
 	// the user saw: a poll that an edit of the status replaced is a 409. A status without a
 	// poll, a poll that has ended, a second vote, or choices the poll does not take (none, an
 	// unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
@@ -20785,7 +20918,7 @@ type ClientInterface interface {
 
 	// VoteInPoll Vote in the poll of a status
 	//
-	// Votes for one or more choices of the poll of a status (FR-112). `poll_id` names the poll
+	// Votes for one or more choices of the poll of a status. `poll_id` names the poll
 	// the user saw: a poll that an edit of the status replaced is a 409. A status without a
 	// poll, a poll that has ended, a second vote, or choices the poll does not take (none, an
 	// unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
@@ -20799,7 +20932,7 @@ type ClientInterface interface {
 
 	// SetStatusQuotePolicyWithBody Change who may quote the authenticated user's status
 	//
-	// Changes the `quote_policy` of a status of the user (ADR-0069 §1); the approvals given
+	// Changes the `quote_policy` of a status of the user; the approvals given
 	// before stay, and each is revoked on its own. Another account's status is a 403 when the
 	// user may see it and a 404 otherwise.
 	//
@@ -20810,7 +20943,7 @@ type ClientInterface interface {
 
 	// SetStatusQuotePolicy Change who may quote the authenticated user's status
 	//
-	// Changes the `quote_policy` of a status of the user (ADR-0069 §1); the approvals given
+	// Changes the `quote_policy` of a status of the user; the approvals given
 	// before stay, and each is revoked on its own. Another account's status is a 403 when the
 	// user may see it and a 404 otherwise.
 	//
@@ -20822,7 +20955,7 @@ type ClientInterface interface {
 	// ListStatusQuotes List the statuses that quote the authenticated user's status
 	//
 	// The statuses that quote a status of the user, newest first, each with its `quote` and
-	// its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
+	// its state. Statuses the user may not see, and quotes taken away, are left
 	// out, so a page may hold fewer than `limit` statuses before the last. Another account's
 	// status is a 404, and so is the user's own `direct` status without `read:direct`, which
 	// also leaves out the `direct` statuses that quote one.
@@ -20832,7 +20965,7 @@ type ClientInterface interface {
 
 	// RevokeStatusQuote Revoke the approval of a quote of the authenticated user's status
 	//
-	// Withdraws this server's approval of the quote (ADR-0069 §3): the quote shows the quoted
+	// Withdraws this server's approval of the quote: the quote shows the quoted
 	// status no more, and the quoting server is told. A quote without this server's approval
 	// (from software without approvals, or of the user's own status) is a 404, as is one revoked
 	// already.
@@ -20903,8 +21036,7 @@ type ClientInterface interface {
 	// StartSupporterCheckoutWithBody Start a subscription to a supporter plan
 	//
 	// Starts a subscription to a plan at an interval and returns the payment provider's hosted
-	// checkout, which the client opens in the same tab; no card details reach this server
-	// (ADR-0072 §6, ADR-0074). The checkout returns to `/settings/supporter` of the web client.
+	// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
 	// Starting again while the subscription is `pending` makes a new checkout of the same
 	// subscription. Only a local user with a verified primary address and without another
 	// subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
@@ -20921,8 +21053,7 @@ type ClientInterface interface {
 	// StartSupporterCheckout Start a subscription to a supporter plan
 	//
 	// Starts a subscription to a plan at an interval and returns the payment provider's hosted
-	// checkout, which the client opens in the same tab; no card details reach this server
-	// (ADR-0072 §6, ADR-0074). The checkout returns to `/settings/supporter` of the web client.
+	// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
 	// Starting again while the subscription is `pending` makes a new checkout of the same
 	// subscription. Only a local user with a verified primary address and without another
 	// subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
@@ -20939,7 +21070,7 @@ type ClientInterface interface {
 	// OpenSupporterPortal Open the payment provider's portal of the authenticated user
 	//
 	// The payment provider's portal of the user's payment methods and invoices, which returns
-	// to `/settings/supporter` of the web client (ADR-0072 §8). Plans change on this server, not in
+	// to `/settings/supporter` of the web client. Plans change on this server, not in
 	// the portal. A 409 `/api/v1/problems/subscription-ended` for a user whom the provider does not
 	// know.
 	//
@@ -20949,7 +21080,7 @@ type ClientInterface interface {
 	// GetOwnSupporterSubscription Get the authenticated user's supporter subscription
 	//
 	// The user's subscription that goes on (any state but `expired`, `revoked`, and
-	// `abandoned`), and why the user cannot subscribe when they cannot (ADR-0072 §6, §18). A 404
+	// `abandoned`), and why the user cannot subscribe when they cannot. A 404
 	// while the supporter program is disabled (`Instance.supporters_enabled`).
 	//
 	// Corresponds with GET /supporter/subscription (the `GetOwnSupporterSubscription` operationId).
@@ -20958,7 +21089,7 @@ type ClientInterface interface {
 	// CancelOwnSupporterSubscription Cancel the authenticated user's subscription at the end of its period
 	//
 	// Cancels an `active` or `past_due` subscription at the end of its period: the plan's role
-	// stays until then (`canceling`, ADR-0072 §7). A 409
+	// stays until then (`canceling`). A 409
 	// `/api/v1/problems/supporter-subscription-state` in another state.
 	//
 	// Corresponds with POST /supporter/subscription/cancel (the `CancelOwnSupporterSubscription` operationId).
@@ -20967,7 +21098,7 @@ type ClientInterface interface {
 	// CancelOwnSupporterScheduledChange Withdraw the scheduled change of the authenticated user's subscription
 	//
 	// Withdraws the change to a lower plan or to the monthly price that waits for the end of
-	// the period (ADR-0072 §8); the subscription renews at its current plan and interval. A 409
+	// the period; the subscription renews at its current plan and interval. A 409
 	// `/api/v1/problems/supporter-subscription-state` without a scheduled change.
 	//
 	// Corresponds with POST /supporter/subscription/cancel_scheduled_change (the `CancelOwnSupporterScheduledChange` operationId).
@@ -20975,7 +21106,7 @@ type ClientInterface interface {
 
 	// ChangeOwnSupporterSubscriptionWithBody Change the plan or the interval of the authenticated user's subscription
 	//
-	// Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+	// Changes an `active` subscription to another plan or interval: to a higher
 	// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
 	// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
 	// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
@@ -20993,7 +21124,7 @@ type ClientInterface interface {
 
 	// ChangeOwnSupporterSubscription Change the plan or the interval of the authenticated user's subscription
 	//
-	// Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+	// Changes an `active` subscription to another plan or interval: to a higher
 	// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
 	// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
 	// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
@@ -21021,7 +21152,7 @@ type ClientInterface interface {
 	//
 	// What the web client sends when the payment provider's checkout or portal returns to it:
 	// it queues a re-read of the user's subscription from the provider, without waiting for its
-	// webhook (ADR-0072 §6), and answers the subscription as it is now. Read it again to see the
+	// webhook, and answers the subscription as it is now. Read it again to see the
 	// result. A 404 while the program is disabled.
 	//
 	// Corresponds with POST /supporter/subscription/sync (the `SyncOwnSupporterSubscription` operationId).
@@ -21030,7 +21161,7 @@ type ClientInterface interface {
 	// SearchTags Search hashtags by prefix
 	//
 	// The hashtags whose name starts with `q`, for the autocomplete of hashtags in the compose
-	// form and the hashtag search (FR-119, FR-306, ADR-0092). `q` and the names are compared
+	// form and the hashtag search. `q` and the names are compared
 	// under NFKC and lowercase.
 	//
 	// Only the hashtags that a post of visibility `public`, `local`, or `unlisted` carries now
@@ -21044,7 +21175,7 @@ type ClientInterface interface {
 	// GetFederatedTimeline Get the federated timeline
 	//
 	// The public posts of the instance's accounts and of the remote accounts whose posts the
-	// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
+	// instance holds, newest first, in the viewer's timeline languages. Posts of other
 	// visibilities, `local` ones included, and boosts never appear on it. The instance setting
 	// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 	// is `signed_in` an anonymous request is a 401.
@@ -21580,7 +21711,7 @@ type ClientInterface interface {
 
 // ListAccountAliases List the authenticated user's aliases
 //
-// The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+// The accounts that the user moves from, which the user's actor names in
 // `alsoKnownAs`, oldest first.
 //
 // Corresponds with GET /accounts/aliases (the `ListAccountAliases` operationId).
@@ -21598,7 +21729,7 @@ func (c *Client) ListAccountAliases(ctx context.Context, reqEditors ...RequestEd
 
 // AddAccountAliasWithBody Add an alias to the authenticated user
 //
-// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+// Adds the account that the user moves from as an alias: the user's actor
 // names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
 // actor's `Update` goes to the user's followers as a profile change does. An alias alone
 // changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
@@ -21629,7 +21760,7 @@ func (c *Client) AddAccountAliasWithBody(ctx context.Context, contentType string
 
 // AddAccountAlias Add an alias to the authenticated user
 //
-// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+// Adds the account that the user moves from as an alias: the user's actor
 // names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
 // actor's `Update` goes to the user's followers as a profile change does. An alias alone
 // changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
@@ -21660,7 +21791,7 @@ func (c *Client) AddAccountAlias(ctx context.Context, body AddAccountAliasJSONRe
 
 // RemoveAccountAliasWithBody Remove an alias of the authenticated user
 //
-// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+// Removes an alias; the actor's `Update` goes to the user's followers as a
 // profile change does. Removing an alias that the user does not have changes nothing.
 //
 // Takes any type of body and a specified content type.
@@ -21680,7 +21811,7 @@ func (c *Client) RemoveAccountAliasWithBody(ctx context.Context, contentType str
 
 // RemoveAccountAlias Remove an alias of the authenticated user
 //
-// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+// Removes an alias; the actor's `Update` goes to the user's followers as a
 // profile change does. Removing an alias that the user does not have changes nothing.
 //
 // Takes a body of the `application/json` content type.
@@ -21698,10 +21829,106 @@ func (c *Client) RemoveAccountAlias(ctx context.Context, body RemoveAccountAlias
 	return c.Client.Do(req)
 }
 
+// GetDeactivationPreview Get what deactivating the authenticated user's account would do now
+//
+// The date the account would be deleted if the user deactivated it now, and why it cannot
+// be deactivated now, if so. It changes nothing.
+//
+// Corresponds with GET /accounts/deactivation (the `GetDeactivationPreview` operationId).
+func (c *Client) GetDeactivationPreview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDeactivationPreviewRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeactivateOwnAccountWithBody Deactivate the authenticated user's account
+//
+// Deactivates the user's own account, after checking the user's current `password`, a
+// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+// login provider. The account and its posts are hidden from everyone, every session and
+// token of the user ends, and the other servers get an `Update` of the actor marked
+// `suspended`. Where the server sends mail, one email states the date of the deletion.
+//
+// The user signs in again to reactivate it, on a page of the server, within 30 days;
+// after that the account is deleted, and the other servers get a `Delete` of the actor.
+// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+// hours after its reactivation.
+//
+// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired` or
+// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+func (c *Client) DeactivateOwnAccountWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeactivateOwnAccountRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeactivateOwnAccount Deactivate the authenticated user's account
+//
+// Deactivates the user's own account, after checking the user's current `password`, a
+// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+// login provider. The account and its posts are hidden from everyone, every session and
+// token of the user ends, and the other servers get an `Update` of the actor marked
+// `suspended`. Where the server sends mail, one email states the date of the deletion.
+//
+// The user signs in again to reactivate it, on a page of the server, within 30 days;
+// after that the account is deleted, and the other servers get a `Delete` of the actor.
+// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+// hours after its reactivation.
+//
+// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired` or
+// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+func (c *Client) DeactivateOwnAccount(ctx context.Context, body DeactivateOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeactivateOwnAccountRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // DeleteOwnAccountWithBody Delete the authenticated user's account
 //
 // Deletes the user's own account at once, after checking the user's current `password`
-// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
+// or a `passkey` of the user; a user without a password confirms with a passkey.
 // The account and its posts disappear, every session and token of the user ends, and the
 // other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
 // undone, and the username is never reused. The only administrator of the instance gets a
@@ -21733,7 +21960,7 @@ func (c *Client) DeleteOwnAccountWithBody(ctx context.Context, contentType strin
 // DeleteOwnAccount Delete the authenticated user's account
 //
 // Deletes the user's own account at once, after checking the user's current `password`
-// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
+// or a `passkey` of the user; a user without a password confirms with a passkey.
 // The account and its posts disappear, every session and token of the user ends, and the
 // other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
 // undone, and the username is never reused. The only administrator of the instance gets a
@@ -21764,7 +21991,7 @@ func (c *Client) DeleteOwnAccount(ctx context.Context, body DeleteOwnAccountJSON
 
 // ResendVerificationEmail Send the authenticated user a new verification email
 //
-// Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+// Sends a new verification email to the user's primary email address,
 // such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
 // following its link shows that the address works and lifts the suppression. Earlier links
 // keep working until they expire. The email is queued and sent in the background, so a 202
@@ -21794,7 +22021,7 @@ func (c *Client) ResendVerificationEmail(ctx context.Context, reqEditors ...Requ
 // deactivated, or is deleted is a 404, the same as an unknown one.
 //
 // With `resolve=true`, a remote account that the instance does not know yet is fetched
-// from its server (FR-305): a handle through WebFinger, a URL directly. Only accounts
+// from its server: a handle through WebFinger, a URL directly. Only accounts
 // whose handle WebFinger confirms are returned; a handle or URL that does not lead to one
 // is a 404. Resolving needs an access token (anonymous requests get the 401 of
 // `/api/v1/problems/unauthenticated`) and is limited to 30 fetches per account every
@@ -21818,7 +22045,7 @@ func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams,
 
 // MoveOwnAccountWithBody Move the authenticated user's account to another account
 //
-// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// Moves the user's account to the account `target_account_id`, after
 // checking the user's current `password` or a `passkey` of the user; a user without a
 // password confirms with a passkey. Find the target's ID with
 // `GET /accounts/lookup?resolve=true`; it may be an account of this server.
@@ -21830,7 +22057,7 @@ func (c *Client) LookupAccount(ctx context.Context, params *LookupAccountParams,
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before. An account that may not
+// move was canceled, or for a target the account moved to before. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -21866,7 +22093,7 @@ func (c *Client) MoveOwnAccountWithBody(ctx context.Context, contentType string,
 
 // MoveOwnAccount Move the authenticated user's account to another account
 //
-// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// Moves the user's account to the account `target_account_id`, after
 // checking the user's current `password` or a `passkey` of the user; a user without a
 // password confirms with a passkey. Find the target's ID with
 // `GET /accounts/lookup?resolve=true`; it may be an account of this server.
@@ -21878,7 +22105,7 @@ func (c *Client) MoveOwnAccountWithBody(ctx context.Context, contentType string,
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before. An account that may not
+// move was canceled, or for a target the account moved to before. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -21914,10 +22141,10 @@ func (c *Client) MoveOwnAccount(ctx context.Context, body MoveOwnAccountJSONRequ
 
 // CancelOwnAccountMove Cancel the move of the authenticated user's account
 //
-// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+// Cancels the move of the user's account: the account no longer names the target,
 // can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 // its actor without `movedTo`. The followers that moved stay with the target, and the next
-// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 // `/api/v1/problems/account-not-moved`.
 //
 // Corresponds with POST /accounts/move/cancel (the `CancelOwnAccountMove` operationId).
@@ -21935,8 +22162,7 @@ func (c *Client) CancelOwnAccountMove(ctx context.Context, reqEditors ...Request
 
 // GetPasswordStatus Get whether the authenticated user has a password
 //
-// Whether the user signs in with a password, or with passkeys only after removing it
-// (FR-004).
+// Whether the user signs in with a password, or with passkeys only after removing it.
 //
 // Corresponds with GET /accounts/password (the `GetPasswordStatus` operationId).
 func (c *Client) GetPasswordStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -21957,7 +22183,7 @@ func (c *Client) GetPasswordStatus(ctx context.Context, reqEditors ...RequestEdi
 // (`login_providers_only` of `GET /instance`), it is a 403
 // `/api/v1/problems/login-providers-only`: a new password could not sign in.
 // Replaces the user's password with `new_password` after checking `current_password` or
-// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
+// a `passkey` of the user; a user without a password sets one with a passkey.
 // Every other session and grant of the user ends: the user is signed out of the server's
 // sign-in pages and of every app but the one that makes the request, whose tokens keep
 // working. Passkeys and two-factor authentication stay as they are, and the user is told
@@ -21993,7 +22219,7 @@ func (c *Client) ChangePasswordWithBody(ctx context.Context, contentType string,
 // (`login_providers_only` of `GET /instance`), it is a 403
 // `/api/v1/problems/login-providers-only`: a new password could not sign in.
 // Replaces the user's password with `new_password` after checking `current_password` or
-// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
+// a `passkey` of the user; a user without a password sets one with a passkey.
 // Every other session and grant of the user ends: the user is signed out of the server's
 // sign-in pages and of every app but the one that makes the request, whose tokens keep
 // working. Passkeys and two-factor authentication stay as they are, and the user is told
@@ -22026,8 +22252,7 @@ func (c *Client) ChangePassword(ctx context.Context, body ChangePasswordJSONRequ
 // RemovePasswordWithBody Remove the authenticated user's password
 //
 // Removes the password of a user who has a passkey or a linked account, after checking a
-// `passkey` of the user or an `external_confirmation` from a linked login provider
-// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
+// `passkey` of the user or an `external_confirmation` from a linked login provider: from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 // authentication still enters a code after one. A password reset link or
 // `POST /accounts/password` with a passkey sets a password again. Every other session and
 // grant of the user ends, as a change of the password does, and the user is told by email
@@ -22058,8 +22283,7 @@ func (c *Client) RemovePasswordWithBody(ctx context.Context, contentType string,
 // RemovePassword Remove the authenticated user's password
 //
 // Removes the password of a user who has a passkey or a linked account, after checking a
-// `passkey` of the user or an `external_confirmation` from a linked login provider
-// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
+// `passkey` of the user or an `external_confirmation` from a linked login provider: from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 // authentication still enters a code after one. A password reset link or
 // `POST /accounts/password` with a passkey sets a password again. Every other session and
 // grant of the user ends, as a change of the password does, and the user is told by email
@@ -22111,8 +22335,7 @@ func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsP
 //
 // The accounts whose username, `username@domain`, or a word of the display name starts
 // with `q`, and the accounts of this server whose username or display name contains `q`,
-// for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
-// ADR-0092). The search covers the local accounts and the remote accounts that the
+// for the autocomplete of mentions and the account search. The search covers the local accounts and the remote accounts that the
 // instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
 // (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
 // `resolve=true`).
@@ -22145,7 +22368,7 @@ func (c *Client) SearchAccounts(ctx context.Context, params *SearchAccountsParam
 
 // ListAccountSuggestions Suggest accounts to follow
 //
-// Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+// Accounts of this server for the viewer to follow: first the accounts that the
 // administrators feature (the instance setting `featured_accounts`), in the order they gave,
 // then the accounts that published a public or local post in the last 30 days, the one that
 // posted last first. Each account comes once.
@@ -22265,7 +22488,7 @@ func (c *Client) UnblockAccount(ctx context.Context, id AccountId, reqEditors ..
 // BlockAccount Block an account
 //
 // Ends the follows between the viewer and the account in both directions and keeps
-// either from following the other until the block is lifted (FR-303). Blocking an
+// either from following the other until the block is lifted. Blocking an
 // account that the viewer already blocks changes nothing, and an account that blocks the
 // viewer can be blocked back. Blocking a remote account
 // also sends a Block to its server.
@@ -22303,7 +22526,7 @@ func (c *Client) UnfollowAccount(ctx context.Context, id AccountId, reqEditors .
 // FollowAccountWithBody Follow an account
 //
 // Follows the account at once, or sends a follow request when the account is locked:
-// then `requested` is true until the account accepts it (FR-301, FR-302). Following an
+// then `requested` is true until the account accepts it. Following an
 // account that the viewer already follows or has requested to follow changes only the
 // preferences in the body. Following an account that the viewer blocks is a 409
 // `/api/v1/problems/blocking`. A follow of an account on another server is a request
@@ -22330,7 +22553,7 @@ func (c *Client) FollowAccountWithBody(ctx context.Context, id AccountId, conten
 // FollowAccount Follow an account
 //
 // Follows the account at once, or sends a follow request when the account is locked:
-// then `requested` is true until the account accepts it (FR-301, FR-302). Following an
+// then `requested` is true until the account accepts it. Following an
 // account that the viewer already follows or has requested to follow changes only the
 // preferences in the body. Following an account that the viewer blocks is a 409
 // `/api/v1/problems/blocking`. A follow of an account on another server is a request
@@ -22428,7 +22651,7 @@ func (c *Client) UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...
 // MuteAccountWithBody Mute an account
 //
 // Hides the account's posts, and unless `notifications` is false its notifications,
-// from the viewer (FR-303). Muting an account that the viewer already mutes replaces the
+// from the viewer. Muting an account that the viewer already mutes replaces the
 // settings and the expiry.
 //
 // Takes any type of body and a specified content type.
@@ -22449,7 +22672,7 @@ func (c *Client) MuteAccountWithBody(ctx context.Context, id AccountId, contentT
 // MuteAccount Mute an account
 //
 // Hides the account's posts, and unless `notifications` is false its notifications,
-// from the viewer (FR-303). Muting an account that the viewer already mutes replaces the
+// from the viewer. Muting an account that the viewer already mutes replaces the
 // settings and the expiry.
 //
 // Takes a body of the `application/json` content type.
@@ -22625,7 +22848,7 @@ func (c *Client) LiftAccountAction(ctx context.Context, id AccountActionId, body
 
 // ListAdminAccounts Search the accounts
 //
-// The local and remote accounts (FR-714), newest first, without the instance actor:
+// The local and remote accounts, newest first, without the instance actor:
 // those whose handle's username starts with `username` (case-insensitively; a remote
 // account whose handle is not verified has none), on a `domain`, local or remote
 // (`origin`), in a `state`, and, for local accounts, of a primary email address (`email`,
@@ -22653,7 +22876,7 @@ func (c *Client) ListAdminAccounts(ctx context.Context, params *ListAdminAccount
 
 // GetAdminAccount Get the details of an account
 //
-// An account as the moderators see it (FR-714): its state, the restrictions of its own
+// An account as the moderators see it: its state, the restrictions of its own
 // actions, and, for a local account, its registration, whether its email address is
 // verified, and its roles, with its newest 20 actions and, for a viewer who also has the
 // `manage_reports` permission, its newest 20 reports. The email address and the IP
@@ -22675,7 +22898,7 @@ func (c *Client) GetAdminAccount(ctx context.Context, id AdminAccountId, reqEdit
 
 // ListAccountActions List the moderation actions on an account
 //
-// The actions that moderators took on an account (FR-703), newest first, lifted and
+// The actions that moderators took on an account, newest first, lifted and
 // expired ones included unless `active` is set. An unknown account is a 404. Needs the
 // `manage_accounts` permission.
 //
@@ -22694,7 +22917,7 @@ func (c *Client) ListAccountActions(ctx context.Context, id AdminAccountId, para
 
 // CreateAccountActionWithBody Take a moderation action on an account
 //
-// Records an action on an account (FR-703), in effect at once and until it expires or is
+// Records an action on an account, in effect at once and until it expires or is
 // lifted; several actions on one account add up. On a local account: `warn` only tells
 // the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
 // past ones included, followers-only and keeps them off the public timelines;
@@ -22736,7 +22959,7 @@ func (c *Client) CreateAccountActionWithBody(ctx context.Context, id AdminAccoun
 
 // CreateAccountAction Take a moderation action on an account
 //
-// Records an action on an account (FR-703), in effect at once and until it expires or is
+// Records an action on an account, in effect at once and until it expires or is
 // lifted; several actions on one account add up. On a local account: `warn` only tells
 // the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
 // past ones included, followers-only and keeps them off the public timelines;
@@ -22779,7 +23002,7 @@ func (c *Client) CreateAccountAction(ctx context.Context, id AdminAccountId, bod
 // LiftAdminAccountEmailSuppression Lift the suppression of the email address of a local account
 //
 // Lets the server send email again to the primary address of a local account's user, which
-// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+// a hard bounce or a complaint suppressed, such as after the user fixed their
 // mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
 // the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
 // `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
@@ -22804,7 +23027,7 @@ func (c *Client) LiftAdminAccountEmailSuppression(ctx context.Context, id AdminA
 //
 // Issues a link that sets a new password for a local account's user, for an
 // administrator to hand to the user, such as when the server sends no email or the
-// email does not arrive (FR-002). The link works once, for an hour, and stops working
+// email does not arrive. The link works once, for an hour, and stops working
 // when the password changes otherwise; only its hash is stored, so this response is the
 // only place it is shown. It is recorded in the audit log as `password_reset_link_issued`.
 // Whoever holds the link can set the password: confirm who the user is through another
@@ -22850,10 +23073,9 @@ func (c *Client) RefetchAccountStatuses(ctx context.Context, id Id, reqEditors .
 // RevealAdminAccount Show the email address and the IP addresses of a local account
 //
 // The primary email address of a local account, where it registered and its newest 20
-// sign-ins came from, and up to 20 other accounts per IP address that used the same one
-// (FR-714). Each call is recorded in the audit log as `revealed_private_data` before
+// sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
 // anything is returned; it changes nothing else. IP addresses are kept for the retention
-// of the sign-in and registration origins only (ADR-0038). A remote account or the
+// of the sign-in and registration origins only. A remote account or the
 // instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
 // user's, the user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
@@ -22938,7 +23160,7 @@ func (c *Client) GrantAccountRole(ctx context.Context, id AdminAccountId, role R
 // DisableAdminAccountTwoFactor Remove the two-factor authentication of a local account
 //
 // Ends the TOTP enrollment of a local account's user, who lost their authenticator app
-// and recovery codes, so that they sign in with the password alone (FR-005). It is
+// and recovery codes, so that they sign in with the password alone. It is
 // recorded in the audit log as `two_factor_disabled`. A remote account or the instance
 // actor is a 422 naming `id`, an account without two-factor authentication a 409
 // `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
@@ -22960,7 +23182,7 @@ func (c *Client) DisableAdminAccountTwoFactor(ctx context.Context, id AdminAccou
 
 // ListAdminAnnouncements List the announcements
 //
-// Every announcement, drafts and withdrawn ones included, newest first (FR-726). The
+// Every announcement, drafts and withdrawn ones included, newest first. The
 // list is not paginated. Needs the `manage_announcements` permission.
 //
 // Corresponds with GET /admin/announcements (the `ListAdminAnnouncements` operationId).
@@ -23136,7 +23358,7 @@ func (c *Client) WithdrawAdminAnnouncement(ctx context.Context, id AnnouncementI
 
 // ListAppeals List the appeals of moderation actions
 //
-// The appeals that local users made of the actions on their accounts (FR-707), newest
+// The appeals that local users made of the actions on their accounts, newest
 // first, each with its action. Needs the `manage_accounts` permission.
 //
 // Corresponds with GET /admin/appeals (the `ListAppeals` operationId).
@@ -23283,7 +23505,7 @@ func (c *Client) UpholdAppeal(ctx context.Context, id AppealId, body UpholdAppea
 
 // ListAuditLog List the audit log
 //
-// The operations of the moderators and administrators (FR-704), newest first: who did
+// The operations of the moderators and administrators, newest first: who did
 // what to which target and when. Each entry keeps the target's display name as it was
 // (`target_label`), so it stays readable after the target is gone; the reasons and notes
 // stay with the operation itself (`source_event_id`). The audit log cannot be changed or
@@ -23305,7 +23527,7 @@ func (c *Client) ListAuditLog(ctx context.Context, params *ListAuditLogParams, r
 
 // ListBillingImports List the state of the billing imports
 //
-// The state of the imports of every cloud provider of `billing_sources` (ADR-0068), in its
+// The state of the imports of every cloud provider of `billing_sources`, in its
 // order: the last attempt and its failure, the last success, the billed requests of the UTC
 // day and month with their caps, the bytes billed this month, and the billing months of the
 // last year with imported costs, each an estimate, final, or corrected, with its totals. The
@@ -23326,7 +23548,7 @@ func (c *Client) ListBillingImports(ctx context.Context, reqEditors ...RequestEd
 
 // RunBillingImport Import a provider's usage charges now
 //
-// Queues an import of the billing source now, besides the daily one (ADR-0068 §2). Its
+// Queues an import of the billing source now, besides the daily one. Its
 // billed requests count toward the caps like the others. One import per source and UTC
 // hour: another request in the hour after its import ran is a 429. A source that
 // `billing_sources` does not enable is a 404. The request is recorded in the audit log.
@@ -23347,9 +23569,9 @@ func (c *Client) RunBillingImport(ctx context.Context, source BillingSourceName,
 
 // GetAdminServiceClosure Read the service closure
 //
-// The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+// The state of the closure of the service with the schedule in effect,
 // and whether its notice is short; once the server is closed, the progress of the closure's
-// `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
+// `Delete`s. Needs the `manage_service_closure` permission.
 //
 // Corresponds with GET /admin/closure (the `GetAdminServiceClosure` operationId).
 func (c *Client) GetAdminServiceClosure(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -23366,7 +23588,7 @@ func (c *Client) GetAdminServiceClosure(ctx context.Context, reqEditors ...Reque
 
 // WithdrawServiceClosure Withdraw the announcement of the closure
 //
-// Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+// Withdraws the announcement in effect: the server runs on as before, and the
 // audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
 // server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
 // `manage_service_closure` permission.
@@ -23386,7 +23608,7 @@ func (c *Client) WithdrawServiceClosure(ctx context.Context, reqEditors ...Reque
 
 // AnnounceServiceClosureWithBody Announce the closure of the service
 //
-// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+// Announces that the server closes at `closes_at`, or changes the dates
 // of the announcement in effect. Each call records a new announcement, kept with the earlier
 // ones, and the audit log's `service_closure_announced`. The announcement shows in
 // `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
@@ -23412,7 +23634,7 @@ func (c *Client) AnnounceServiceClosureWithBody(ctx context.Context, contentType
 
 // AnnounceServiceClosure Announce the closure of the service
 //
-// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+// Announces that the server closes at `closes_at`, or changes the dates
 // of the announcement in effect. Each call records a new announcement, kept with the earlier
 // ones, and the audit log's `service_closure_announced`. The announcement shows in
 // `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
@@ -23438,7 +23660,7 @@ func (c *Client) AnnounceServiceClosure(ctx context.Context, body AnnounceServic
 
 // GetAdminServiceClosureCheck Check the server before its closure
 //
-// What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+// What the closure of the server would end: the estimate of the `Delete`
 // deliveries, the supporter subscriptions that it cancels, the account migrations that have
 // not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
 // permission.
@@ -23458,7 +23680,7 @@ func (c *Client) GetAdminServiceClosureCheck(ctx context.Context, reqEditors ...
 
 // CloseServiceWithBody Close the server
 //
-// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+// Closes the server for good: it cannot be undone. Only an announced
 // closure whose `closes_at` has passed can close; before it, without an announcement, or once
 // closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
 // server's domain, or it is a 422 that names it. The closure records `service_closure_closed`
@@ -23483,7 +23705,7 @@ func (c *Client) CloseServiceWithBody(ctx context.Context, contentType string, b
 
 // CloseService Close the server
 //
-// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+// Closes the server for good: it cannot be undone. Only an announced
 // closure whose `closes_at` has passed can close; before it, without an announcement, or once
 // closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
 // server's domain, or it is a 422 that names it. The closure records `service_closure_closed`
@@ -23508,7 +23730,7 @@ func (c *Client) CloseService(ctx context.Context, body CloseServiceJSONRequestB
 
 // ListCostItems List the cost items
 //
-// The instance's cost items that are not canceled, newest first (ADR-0067, FR-901).
+// The instance's cost items that are not canceled, newest first.
 // Needs the `manage_finance` permission.
 //
 // Corresponds with GET /admin/cost_items (the `ListCostItems` operationId).
@@ -23527,7 +23749,7 @@ func (c *Client) ListCostItems(ctx context.Context, params *ListCostItemsParams,
 // CreateCostItemWithBody Record a cost item
 //
 // Records a cost of the instance: once, or every N weeks, months, or years from the start
-// date (ADR-0067 §3). A value the server rejects is a 422 naming it: `interval` outside 1
+// date. A value the server rejects is a 422 naming it: `interval` outside 1
 // to 99 (1 for `once`), an invalid date, `ends_on` before `starts_on`, an empty or too long
 // `name` or `provider`, a too long `memo`, an unknown currency, a negative amount, or an
 // amount with more digits than its currency (`price`). Recorded in the audit log.
@@ -23551,7 +23773,7 @@ func (c *Client) CreateCostItemWithBody(ctx context.Context, contentType string,
 // CreateCostItem Record a cost item
 //
 // Records a cost of the instance: once, or every N weeks, months, or years from the start
-// date (ADR-0067 §3). A value the server rejects is a 422 naming it: `interval` outside 1
+// date. A value the server rejects is a 422 naming it: `interval` outside 1
 // to 99 (1 for `once`), an invalid date, `ends_on` before `starts_on`, an empty or too long
 // `name` or `provider`, a too long `memo`, an unknown currency, a negative amount, or an
 // amount with more digits than its currency (`price`). Recorded in the audit log.
@@ -23739,7 +23961,7 @@ func (c *Client) ReviseCostItemPrice(ctx context.Context, id CostItemId, body Re
 // GetCostTotals Total the costs by period
 //
 // The totals of the cost items and the imported usage charges for each week, month, or
-// year from the one that holds `from` to the one that holds `to` (ADR-0067 §4, §5), by
+// year from the one that holds `from` to the one that holds `to`, by
 // currency and broken down by provider and category, with the rules that cut the periods.
 // The totals are computed on every read. More than 104 weeks, 60 months, or 20 years, and
 // `to` before `from`, are a 422 naming `to`. Needs the `manage_finance` permission.
@@ -23761,7 +23983,7 @@ func (c *Client) GetCostTotals(ctx context.Context, params *GetCostTotalsParams,
 //
 // The number of open reports (with the `manage_reports` permission), and of registrations
 // that await approval and appeals that await a decision (with the `manage_accounts`
-// permission), for the badges of the admin menu (FR-712). A count whose permission the user's roles lack is omitted, so a
+// permission), for the badges of the admin menu. A count whose permission the user's roles lack is omitted, so a
 // user without either gets an empty object.
 //
 // Corresponds with GET /admin/counts (the `GetAdminCounts` operationId).
@@ -23779,7 +24001,7 @@ func (c *Client) GetAdminCounts(ctx context.Context, reqEditors ...RequestEditor
 
 // ListAdminCustomEmojiRequests List the custom emoji requests
 //
-// The custom emoji requests of the holders of `create_custom_emojis` (ADR-0070 §6), newest
+// The custom emoji requests of the holders of `create_custom_emojis`, newest
 // first, with their requesters: the pending ones unless `state` names another state. Needs the `manage_custom_emojis` permission.
 //
 // Corresponds with GET /admin/custom_emoji_requests (the `ListAdminCustomEmojiRequests` operationId).
@@ -23797,7 +24019,7 @@ func (c *Client) ListAdminCustomEmojiRequests(ctx context.Context, params *ListA
 
 // ApproveCustomEmojiRequest Approve a custom emoji request
 //
-// Approves a pending request (ADR-0070 §2): a `create` request makes the local emoji,
+// Approves a pending request: a `create` request makes the local emoji,
 // without a category, in the picker, and enabled, whose creator is the requester; an `image`
 // request gives the emoji the requested image. The image is copied as an upload of the
 // instance. The approval and the emoji's registration or new image are recorded in the
@@ -23823,7 +24045,7 @@ func (c *Client) ApproveCustomEmojiRequest(ctx context.Context, id CustomEmojiRe
 // RejectCustomEmojiRequestWithBody Reject a custom emoji request
 //
 // Rejects a pending request, with an optional reason that the requester sees, which frees
-// its shortcode (ADR-0070 §2). The rejection is recorded in the audit log, and the requester
+// its shortcode. The rejection is recorded in the audit log, and the requester
 // is notified. A reason longer than 500 characters is a 422 with the reason
 // `invalid_reason`; a request that is not pending is a 409
 // `/api/v1/problems/custom-emoji-request-conflict` (`not_pending`). An unknown request is a
@@ -23847,7 +24069,7 @@ func (c *Client) RejectCustomEmojiRequestWithBody(ctx context.Context, id Custom
 // RejectCustomEmojiRequest Reject a custom emoji request
 //
 // Rejects a pending request, with an optional reason that the requester sees, which frees
-// its shortcode (ADR-0070 §2). The rejection is recorded in the audit log, and the requester
+// its shortcode. The rejection is recorded in the audit log, and the requester
 // is notified. A reason longer than 500 characters is a 422 with the reason
 // `invalid_reason`; a request that is not pending is a 409
 // `/api/v1/problems/custom-emoji-request-conflict` (`not_pending`). An unknown request is a
@@ -23870,7 +24092,7 @@ func (c *Client) RejectCustomEmojiRequest(ctx context.Context, id CustomEmojiReq
 
 // ListAdminCustomEmojis List the custom emoji
 //
-// The custom emoji, local and remote, newest first (ADR-0051 §4). `local` keeps the
+// The custom emoji, local and remote, newest first. `local` keeps the
 // emoji of this instance (`true`) or of other servers (`false`); `domain` keeps those of
 // one remote domain; `shortcode` keeps those whose shortcode contains it, ignoring case.
 // Needs the `manage_custom_emojis` permission.
@@ -24128,7 +24350,7 @@ func (c *Client) ReplaceCustomEmojiImage(ctx context.Context, id CustomEmojiId, 
 
 // ListDomainActions List the moderation actions on domains
 //
-// The actions that moderators took on remote domains (FR-702), newest first, lifted and
+// The actions that moderators took on remote domains, newest first, lifted and
 // expired ones included unless `active` is set. Needs the `manage_domains` permission.
 //
 // Corresponds with GET /admin/domain_actions (the `ListDomainActions` operationId).
@@ -24146,7 +24368,7 @@ func (c *Client) ListDomainActions(ctx context.Context, params *ListDomainAction
 
 // CreateDomainActionWithBody Take a moderation action on a domain
 //
-// Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+// Records an action on a remote domain and its subdomains, in effect at once and
 // until it expires or is lifted. A `suspend` stops every delivery to the domain, every
 // fetch from it, and every activity received from it, and hides its accounts and posts
 // from the timelines; `limit` keeps its posts off the public timelines and its accounts
@@ -24174,7 +24396,7 @@ func (c *Client) CreateDomainActionWithBody(ctx context.Context, contentType str
 
 // CreateDomainAction Take a moderation action on a domain
 //
-// Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+// Records an action on a remote domain and its subdomains, in effect at once and
 // until it expires or is lifted. A `suspend` stops every delivery to the domain, every
 // fetch from it, and every activity received from it, and hides its accounts and posts
 // from the timelines; `limit` keeps its posts off the public timelines and its accounts
@@ -24202,7 +24424,7 @@ func (c *Client) CreateDomainAction(ctx context.Context, body CreateDomainAction
 
 // ExportDomainBlocks Export the domain actions as Mastodon's domain block CSV
 //
-// The domain actions in effect (FR-706) as the CSV that Mastodon's moderation screens
+// The domain actions in effect as the CSV that Mastodon's moderation screens
 // import, with the header
 // `#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`: one row
 // per domain in domain order. `#severity` is `suspend` when a `suspend` is in effect on
@@ -24227,7 +24449,7 @@ func (c *Client) ExportDomainBlocks(ctx context.Context, reqEditors ...RequestEd
 
 // ImportDomainBlocksWithBody Import the chosen rows of a Mastodon domain block CSV
 //
-// Issues the domain actions of each block (FR-706), as the preview names them: the kinds
+// Issues the domain actions of each block, as the preview names them: the kinds
 // of the block that no action in effect on the domain or a parent domain has already. The
 // actions last until they are lifted, carry the block's public comment and obfuscation
 // and the request's private note, and are audited like actions issued one at a time. A
@@ -24254,7 +24476,7 @@ func (c *Client) ImportDomainBlocksWithBody(ctx context.Context, contentType str
 
 // ImportDomainBlocks Import the chosen rows of a Mastodon domain block CSV
 //
-// Issues the domain actions of each block (FR-706), as the preview names them: the kinds
+// Issues the domain actions of each block, as the preview names them: the kinds
 // of the block that no action in effect on the domain or a parent domain has already. The
 // actions last until they are lifted, carry the block's public comment and obfuscation
 // and the request's private note, and are audited like actions issued one at a time. A
@@ -24281,7 +24503,7 @@ func (c *Client) ImportDomainBlocks(ctx context.Context, body ImportDomainBlocks
 
 // PreviewDomainBlockImportWithBody Preview the import of a Mastodon domain block CSV
 //
-// Reads a domain block CSV that Mastodon exported (FR-706) and says what importing each
+// Reads a domain block CSV that Mastodon exported and says what importing each
 // row would do, without changing anything. A file whose first field is `#domain` has a
 // header naming the columns; any other file is a list of domains, one per row, each
 // suspended. An empty `#severity` is `suspend`, and a boolean is false when empty, `0`,
@@ -24307,7 +24529,7 @@ func (c *Client) PreviewDomainBlockImportWithBody(ctx context.Context, contentTy
 
 // PreviewDomainBlockImport Preview the import of a Mastodon domain block CSV
 //
-// Reads a domain block CSV that Mastodon exported (FR-706) and says what importing each
+// Reads a domain block CSV that Mastodon exported and says what importing each
 // row would do, without changing anything. A file whose first field is `#domain` has a
 // header naming the columns; any other file is a list of domains, one per row, each
 // suspended. An empty `#severity` is `suspend`, and a boolean is false when empty, `0`,
@@ -24369,7 +24591,7 @@ func (c *Client) LiftDomainAction(ctx context.Context, id DomainActionId, reqEdi
 
 // ListErrorGroups List the error groups
 //
-// The groups of the errors that the server and the web client reported (ADR-0103 §8), the
+// The groups of the errors that the server and the web client reported, the
 // most recently seen first, with their occurrences of the last 24 hours and 7 days. `state`
 // and `source` keep the groups of that state and source. Needs the `manage_errors`
 // permission.
@@ -24459,7 +24681,7 @@ func (c *Client) UnmuteErrorGroup(ctx context.Context, id ErrorGroupId, reqEdito
 
 // ListIncomeMovements List the money movements of the income
 //
-// The payment provider's money movements that the income records keep (ADR-0073 §6), newest
+// The payment provider's money movements that the income records keep, newest
 // first by the time the provider booked them, narrowed to the dates they fall on and a
 // kind, with the subscriber's account of each. Only this operation and the admin screen
 // show individual movements and their subscribers. Needs the `manage_finance` permission.
@@ -24480,7 +24702,7 @@ func (c *Client) ListIncomeMovements(ctx context.Context, params *ListIncomeMove
 // GetIncomeTotals Total the income by period
 //
 // The totals of the payment provider's money movements for each week, month, or year from
-// the one that holds `from` to the one that holds `to` (ADR-0073 §5, §6): the gross, the
+// the one that holds `from` to the one that holds `to`: the gross, the
 // provider's fees, and the net of each currency, the balance against the costs of
 // `GET /admin/cost_totals` under the same basis, the number of members of each supporter
 // plan now, and the rules that cut the periods. The totals are computed on every read. More
@@ -24578,7 +24800,7 @@ func (c *Client) ClearAdminBrand(ctx context.Context, kind BrandKind, reqEditors
 // `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
 // the PNGs show the same picture as the SVG.
 //
-// The revision and the change are kept (`instance_brand_revisions`, the audit log's
+// The revision and the change are kept (the audit log's
 // `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
 // revision stay at their URLs. Needs the `manage_settings` permission.
 //
@@ -24599,7 +24821,7 @@ func (c *Client) SetAdminBrandWithBody(ctx context.Context, kind BrandKind, cont
 
 // ListInstanceTexts List the instance texts
 //
-// The current text of every key that has one (FR-705): the name, the descriptions, the
+// The current text of every key that has one: the name, the descriptions, the
 // terms of service, the privacy policy, the commerce disclosure, and the alternative texts of the preview image and
 // the thumbnail, by key. Each holds one value, shown as it is in every locale. Cleared
 // texts are not listed. The list is not paginated. Needs the `manage_settings` permission.
@@ -24622,7 +24844,7 @@ func (c *Client) ListInstanceTexts(ctx context.Context, reqEditors ...RequestEdi
 // Records a revision of the text of `key`, which becomes its current text in every locale:
 // the administrator writes it once, in any language, and readers of every locale see the
 // same value. An empty `body` clears the text. The revision and the change are kept
-// (`instance_text_revisions`, the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
+// (the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
 // sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
 // `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
 // the other texts are plain text. The display name (`name`) names the instance to people
@@ -24655,7 +24877,7 @@ func (c *Client) SetInstanceTextWithBody(ctx context.Context, key InstanceTextKe
 // Records a revision of the text of `key`, which becomes its current text in every locale:
 // the administrator writes it once, in any language, and readers of every locale see the
 // same value. An empty `body` clears the text. The revision and the change are kept
-// (`instance_text_revisions`, the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
+// (the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
 // sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
 // `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
 // the other texts are plain text. The display name (`name`) names the instance to people
@@ -24785,7 +25007,7 @@ func (c *Client) RefetchInstanceStatuses(ctx context.Context, domain InstanceDom
 // ListInvites List the invites
 //
 // The invites that let people sign up while the registration mode is `open`, `approval`,
-// or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+// or `invite`, newest first, with how they have been used and who
 // created them: the staff's and the members' own invites. Needs the `manage_invites`
 // permission.
 //
@@ -25249,7 +25471,7 @@ func (c *Client) RotateLoginProviderSecret(ctx context.Context, id LoginProvider
 
 // ListOAuthClientHostDenials List the denied hosts of client metadata documents
 //
-// The hosts whose Client ID Metadata Documents are denied (ADR-0090 §1), newest denial
+// The hosts whose Client ID Metadata Documents are denied, newest denial
 // first. Needs the `manage_oauth_apps` permission.
 //
 // Corresponds with GET /admin/oauth_client_host_denials (the `ListOAuthClientHostDenials` operationId).
@@ -25336,7 +25558,7 @@ func (c *Client) AllowOAuthClientHost(ctx context.Context, host OAuthClientHost,
 // ListAdminOAuthClients List the OAuth clients
 //
 // Every OAuth client that is not deleted, newest first, the server's own and the clients of
-// every other route (ADR-0090 §1). `registration` keeps the clients of one route. Needs the
+// every other route. `registration` keeps the clients of one route. Needs the
 // `manage_oauth_apps` permission.
 //
 // Corresponds with GET /admin/oauth_clients (the `ListAdminOAuthClients` operationId).
@@ -25355,8 +25577,7 @@ func (c *Client) ListAdminOAuthClients(ctx context.Context, params *ListAdminOAu
 // DisableOAuthClient Disable an OAuth client
 //
 // Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-// its authorization requests, token exchanges and refreshes until the disablement is lifted
-// (ADR-0090 §1). Disabling a disabled client revokes its tokens again and records nothing
+// its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
 // new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
 // is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_oauth_apps` permission.
@@ -25396,8 +25617,7 @@ func (c *Client) EnableOAuthClient(ctx context.Context, id OAuthClientId, reqEdi
 
 // RunPaymentReconcile Reconcile with the payment provider now
 //
-// Queues a reconciliation with the payment provider now, besides the periodic one
-// (ADR-0074 §4). Its requests count toward `payments_reconcile_max_requests` like the
+// Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
 // others. One per UTC hour: another request in the hour after its reconciliation ran is a
 // 429. A deployment without a payment provider is a 404. The request is recorded in the
 // audit log. Needs the `manage_supporters` permission.
@@ -25417,7 +25637,7 @@ func (c *Client) RunPaymentReconcile(ctx context.Context, reqEditors ...RequestE
 
 // GetPaymentStatus Get the state of the payment provider
 //
-// The payment provider of the deployment's configuration (ADR-0074 §4): its name and mode
+// The payment provider of the deployment's configuration: its name and mode
 // (test or live), when it last delivered a webhook, and the last attempt of the
 // reconciliation with its failure. `warnings` names the signs of a webhook that is not set
 // up right: no delivery is recorded, or the last reconciliation corrected subscriptions
@@ -25440,7 +25660,7 @@ func (c *Client) GetPaymentStatus(ctx context.Context, reqEditors ...RequestEdit
 // GetAdminQueue Get the state of the job queue
 //
 // The jobs of the job queue by state and type, when the oldest due job has been waiting
-// since, and what the queue can list (ADR-0064). The database queue and the inline queue
+// since, and what the queue can list. The database queue and the inline queue
 // list their pending jobs (`queued`, `running`, `retrying`); the queues of the platforms
 // (Cloud Tasks, SQS) do not (`pending_listing` is `false`): then `counts` is empty and the
 // backlog is read from the platform's metrics, while `GET /admin/jobs?state=dead` and the
@@ -25463,7 +25683,7 @@ func (c *Client) GetAdminQueue(ctx context.Context, reqEditors ...RequestEditorF
 
 // ListPendingRegistrations List the registrations that await approval
 //
-// The sign-ups that wait for a moderator's decision (FR-721), with the reasons their
+// The sign-ups that wait for a moderator's decision, with the reasons their
 // applicants gave, longest waiting first. Needs the `manage_accounts` permission.
 //
 // Corresponds with GET /admin/registrations (the `ListPendingRegistrations` operationId).
@@ -25579,7 +25799,7 @@ func (c *Client) RejectRegistration(ctx context.Context, userId RegistrationUser
 
 // ListAdminRelays List the relays
 //
-// The relays that the instance joins or joined (ADR-0061), in registration order, with
+// The relays that the instance joins or joined, in registration order, with
 // the state of the membership and what each brought in during the last 24 hours. Needs the
 // `manage_settings` permission.
 //
@@ -25712,7 +25932,7 @@ func (c *Client) UnfollowRelay(ctx context.Context, id RelayId, reqEditors ...Re
 
 // ListReports List the reports
 //
-// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+// The reports in the moderators' queue, newest first unless `order` is `oldest`.
 // Needs the `manage_reports` permission.
 //
 // Corresponds with GET /admin/reports (the `ListReports` operationId).
@@ -25766,7 +25986,7 @@ func (c *Client) AssignReportToSelf(ctx context.Context, id ReportId, reqEditors
 
 // AddReportNoteWithBody Write a note on a report
 //
-// Adds an internal note to the report (FR-710). Notes are shown to the moderators only,
+// Adds an internal note to the report. Notes are shown to the moderators only,
 // never to the target or the reporter, and cannot be edited or removed. An unknown ID is
 // a 404. Needs the `manage_reports` permission.
 //
@@ -25787,7 +26007,7 @@ func (c *Client) AddReportNoteWithBody(ctx context.Context, id ReportId, content
 
 // AddReportNote Write a note on a report
 //
-// Adds an internal note to the report (FR-710). Notes are shown to the moderators only,
+// Adds an internal note to the report. Notes are shown to the moderators only,
 // never to the target or the reporter, and cannot be edited or removed. An unknown ID is
 // a 404. Needs the `manage_reports` permission.
 //
@@ -25885,8 +26105,7 @@ func (c *Client) UnassignReport(ctx context.Context, id ReportId, reqEditors ...
 
 // ListRoles List the roles
 //
-// The roles of the instance, highest position first, with the permissions they grant
-// (FR-720). Every instance has `admin` (position 1000, every permission, never changed)
+// The roles of the instance, highest position first, with the permissions they grant. Every instance has `admin` (position 1000, every permission, never changed)
 // and `moderator` (position 100 with `manage_reports`, `manage_accounts`, and
 // `view_audit` until an administrator changes them). Needs the `manage_roles` permission.
 //
@@ -25979,7 +26198,7 @@ func (c *Client) DeleteRole(ctx context.Context, role RoleKey, reqEditors ...Req
 // `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
 // `moderator` takes a new position and permissions like any other role. A change that would
 // break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
-// hides it from every holder's profile (ADR-0071). A role, or a new position, above every
+// hides it from every holder's profile. A role, or a new position, above every
 // role of the viewer is a 403. A position, permissions, or badge that break a rule, or
 // adding or removing a permission that the viewer's roles do not grant, is a 422
 // `/api/v1/problems/invalid-role` whose `reason` says which. An unknown role is a 404.
@@ -26008,7 +26227,7 @@ func (c *Client) UpdateRoleWithBody(ctx context.Context, role RoleKey, contentTy
 // `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
 // `moderator` takes a new position and permissions like any other role. A change that would
 // break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
-// hides it from every holder's profile (ADR-0071). A role, or a new position, above every
+// hides it from every holder's profile. A role, or a new position, above every
 // role of the viewer is a 403. A position, permissions, or badge that break a rule, or
 // adding or removing a permission that the viewer's roles do not grant, is a 422
 // `/api/v1/problems/invalid-role` whose `reason` says which. An unknown role is a 404.
@@ -26031,7 +26250,7 @@ func (c *Client) UpdateRole(ctx context.Context, role RoleKey, body UpdateRoleJS
 
 // ListInstanceRules List the instance rules
 //
-// Every rule (FR-705): the rules in effect by position, followed, when
+// Every rule: the rules in effect by position, followed, when
 // `include_retired` is set, by the retired ones. The list is not paginated; at most 100
 // rules are in effect. Needs the `manage_rules` permission.
 //
@@ -26215,7 +26434,7 @@ func (c *Client) RetireInstanceRule(ctx context.Context, id RuleId, reqEditors .
 
 // ListInstanceSettings List the instance settings
 //
-// Every instance setting (FR-705, docs/operations/instance-settings.md): its current
+// Every instance setting: its current
 // value, or its default when it has never been set, with what it accepts. The policies
 // that administrators change at run time live here; the deployment configuration does
 // not. Needs the `manage_settings` permission.
@@ -26307,7 +26526,7 @@ func (c *Client) GetLoginProvidersOnlyImpact(ctx context.Context, params *GetLog
 
 // ListSignupBlocks List the sign-up blocks
 //
-// The blocks on sign-ups from the registration page (FR-719), newest first, lifted and
+// The blocks on sign-ups from the registration page, newest first, lifted and
 // expired ones included unless `active` is set. Needs the `manage_accounts` permission.
 //
 // Corresponds with GET /admin/signup_blocks (the `ListSignupBlocks` operationId).
@@ -26325,7 +26544,7 @@ func (c *Client) ListSignupBlocks(ctx context.Context, params *ListSignupBlocksP
 
 // CreateSignupBlockWithBody Block sign-ups
 //
-// Records a block on sign-ups from the registration page (FR-719), in effect at once and
+// Records a block on sign-ups from the registration page, in effect at once and
 // until it expires or is lifted; the block is audited. A sign-up whose email address or
 // client address it matches is refused (`reject`) or starts pending for a moderator
 // whatever the registration mode (`require_approval`); the page does not tell the
@@ -26353,7 +26572,7 @@ func (c *Client) CreateSignupBlockWithBody(ctx context.Context, contentType stri
 
 // CreateSignupBlock Block sign-ups
 //
-// Records a block on sign-ups from the registration page (FR-719), in effect at once and
+// Records a block on sign-ups from the registration page, in effect at once and
 // until it expires or is lifted; the block is audited. A sign-up whose email address or
 // client address it matches is refused (`reject`) or starts pending for a moderator
 // whatever the registration mode (`require_approval`); the page does not tell the
@@ -26381,7 +26600,7 @@ func (c *Client) CreateSignupBlock(ctx context.Context, body CreateSignupBlockJS
 
 // ImportSignupBlocksWithBody Block sign-ups from a list
 //
-// Adds a block on sign-ups (FR-719) for each value of a list, such as a public list of
+// Adds a block on sign-ups for each value of a list, such as a public list of
 // disposable email domains, all with the same kind, severity, comment, and duration. The
 // list has one value per line in any form that `createSignupBlock` takes, or a CSV row
 // whose first field is the value; blank lines and lines starting with `#` are ignored.
@@ -26411,7 +26630,7 @@ func (c *Client) ImportSignupBlocksWithBody(ctx context.Context, contentType str
 
 // ImportSignupBlocks Block sign-ups from a list
 //
-// Adds a block on sign-ups (FR-719) for each value of a list, such as a public list of
+// Adds a block on sign-ups for each value of a list, such as a public list of
 // disposable email domains, all with the same kind, severity, comment, and duration. The
 // list has one value per line in any form that `createSignupBlock` takes, or a CSV row
 // whose first field is the value; blank lines and lines starting with `#` are ignored.
@@ -26476,7 +26695,7 @@ func (c *Client) LiftSignupBlock(ctx context.Context, id SignupBlockId, reqEdito
 
 // RefetchStatus Refetch a remote post from its origin
 //
-// Queues a fetch of the remote post from its server (FR-407). The job records what the
+// Queues a fetch of the remote post from its server. The job records what the
 // server serves now, as a received `Update` would: a newer revision, the counts of its
 // poll, or, when the server answers 410 Gone or serves a `Tombstone`, the post's
 // deletion. A post that cannot be fetched is left as it is. An unknown or deleted post is
@@ -26515,8 +26734,7 @@ func (c *Client) ListAdminSupporterPlans(ctx context.Context, reqEditors ...Requ
 
 // CreateSupporterPlanWithBody Create a supporter plan
 //
-// Creates a supporter plan on a role, which then only the plan's subscriptions grant
-// (ADR-0072 §3, §5). The prices are made at the payment provider after the answer; the
+// Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the
 // plan takes subscriptions once `prices_ready`. A plan that breaks a rule is a 422
 // `/api/v1/problems/invalid-supporter-plan`, an unknown role a 404, and a server without a
 // payment provider a 409 `/api/v1/problems/supporters-unavailable`. Recorded in the audit
@@ -26539,8 +26757,7 @@ func (c *Client) CreateSupporterPlanWithBody(ctx context.Context, contentType st
 
 // CreateSupporterPlan Create a supporter plan
 //
-// Creates a supporter plan on a role, which then only the plan's subscriptions grant
-// (ADR-0072 §3, §5). The prices are made at the payment provider after the answer; the
+// Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the
 // plan takes subscriptions once `prices_ready`. A plan that breaks a rule is a 422
 // `/api/v1/problems/invalid-supporter-plan`, an unknown role a 404, and a server without a
 // payment provider a 409 `/api/v1/problems/supporters-unavailable`. Recorded in the audit
@@ -26563,8 +26780,7 @@ func (c *Client) CreateSupporterPlan(ctx context.Context, body CreateSupporterPl
 
 // UpdateSupporterPlanWithBody Change a supporter plan
 //
-// Changes a supporter plan's terms and its role's permissions and position (ADR-0072 §3,
-// §5, §9). New prices apply to new subscriptions and changes of plan only. A change that
+// Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that
 // breaks a rule is a 422 `/api/v1/problems/invalid-supporter-plan`, a retired plan a 409
 // `/api/v1/problems/supporter-plan-retired`, and an unknown plan a 404. Recorded in the
 // audit log. Needs the `manage_supporters` permission.
@@ -26586,8 +26802,7 @@ func (c *Client) UpdateSupporterPlanWithBody(ctx context.Context, id SupporterPl
 
 // UpdateSupporterPlan Change a supporter plan
 //
-// Changes a supporter plan's terms and its role's permissions and position (ADR-0072 §3,
-// §5, §9). New prices apply to new subscriptions and changes of plan only. A change that
+// Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that
 // breaks a rule is a 422 `/api/v1/problems/invalid-supporter-plan`, a retired plan a 409
 // `/api/v1/problems/supporter-plan-retired`, and an unknown plan a 404. Recorded in the
 // audit log. Needs the `manage_supporters` permission.
@@ -26609,7 +26824,7 @@ func (c *Client) UpdateSupporterPlan(ctx context.Context, id SupporterPlanId, bo
 
 // RetireSupporterPlan Retire a supporter plan
 //
-// Retires a supporter plan for good (ADR-0072 §9): it takes no subscriptions any more, and
+// Retires a supporter plan for good: it takes no subscriptions any more, and
 // every subscription of it ends at the end of its period (a pending one at once). A
 // retired plan is a 409 `/api/v1/problems/supporter-plan-retired`, and an unknown one a
 // 404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -26646,7 +26861,7 @@ func (c *Client) GetSupporterProgram(ctx context.Context, reqEditors ...RequestE
 
 // SetSupporterProgramWithBody Enable or disable the supporter program
 //
-// Enables or disables the supporter program (ADR-0072 §2). Enabling it without a payment
+// Enables or disables the supporter program. Enabling it without a payment
 // provider in the deployment's configuration or without email is a 409
 // `/api/v1/problems/supporters-unavailable`; disabling it while subscriptions go on is a
 // 409 `/api/v1/problems/live-subscriptions` (retire the plans first). Asking for the state
@@ -26670,7 +26885,7 @@ func (c *Client) SetSupporterProgramWithBody(ctx context.Context, contentType st
 
 // SetSupporterProgram Enable or disable the supporter program
 //
-// Enables or disables the supporter program (ADR-0072 §2). Enabling it without a payment
+// Enables or disables the supporter program. Enabling it without a payment
 // provider in the deployment's configuration or without email is a 409
 // `/api/v1/problems/supporters-unavailable`; disabling it while subscriptions go on is a
 // 409 `/api/v1/problems/live-subscriptions` (retire the plans first). Asking for the state
@@ -26712,7 +26927,7 @@ func (c *Client) ListSupporterSubscriptions(ctx context.Context, params *ListSup
 
 // CancelSupporterSubscription Cancel a subscription at once
 //
-// Ends a subscription at once, without a refund (ADR-0072 §10): the role goes now, and the
+// Ends a subscription at once, without a refund: the role goes now, and the
 // payment provider stops billing. A refund is the operator's to make at the provider. A
 // subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 // unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -26732,7 +26947,7 @@ func (c *Client) CancelSupporterSubscription(ctx context.Context, id SupporterSu
 
 // GetAdminTheme Read the instance theme
 //
-// The current theme of the web client (ADR-0059, FR-605): the overridden design tokens and the
+// The current theme of the web client: the overridden design tokens and the
 // custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
 // `manage_settings` permission.
 //
@@ -26755,7 +26970,7 @@ func (c *Client) GetAdminTheme(ctx context.Context, reqEditors ...RequestEditorF
 // pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
 // few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
 // their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-// change are kept (`instance_theme_revisions`, the audit log's `setting_changed` of `theme`).
+// change are kept (the audit log's `setting_changed` of `theme`).
 //
 // The overridable tokens are the web client's design tokens except the primitive palette
 // (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
@@ -26793,7 +27008,7 @@ func (c *Client) SetAdminThemeWithBody(ctx context.Context, contentType string, 
 // pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
 // few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
 // their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-// change are kept (`instance_theme_revisions`, the audit log's `setting_changed` of `theme`).
+// change are kept (the audit log's `setting_changed` of `theme`).
 //
 // The overridable tokens are the web client's design tokens except the primitive palette
 // (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
@@ -26871,7 +27086,7 @@ func (c *Client) EndVoiceRoomAsModerator(ctx context.Context, id VoiceRoomId, bo
 
 // ListAdminWebhooks List the webhooks
 //
-// The webhook endpoints of the instance that are not deleted, newest first (ADR-0060).
+// The webhook endpoints of the instance that are not deleted, newest first.
 // Needs the `manage_webhooks` permission.
 //
 // Corresponds with GET /admin/webhooks (the `ListAdminWebhooks` operationId).
@@ -26890,7 +27105,7 @@ func (c *Client) ListAdminWebhooks(ctx context.Context, reqEditors ...RequestEdi
 // CreateWebhookWithBody Set up a webhook
 //
 // Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes
-// to, signed with Standard Webhooks v1 (`docs/reference/webhooks.md`). The answer carries
+// to, signed with Standard Webhooks v1. The answer carries
 // its secret, which is shown only now. The user needs the permission of every event
 // besides `manage_webhooks` (`WebhookEventType`). A URL, a description, or events that
 // break a rule, or an event whose permission the user lacks, is a 422
@@ -26917,7 +27132,7 @@ func (c *Client) CreateWebhookWithBody(ctx context.Context, contentType string, 
 // CreateWebhook Set up a webhook
 //
 // Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes
-// to, signed with Standard Webhooks v1 (`docs/reference/webhooks.md`). The answer carries
+// to, signed with Standard Webhooks v1. The answer carries
 // its secret, which is shown only now. The user needs the permission of every event
 // besides `manage_webhooks` (`WebhookEventType`). A URL, a description, or events that
 // break a rule, or an event whose permission the user lacks, is a 422
@@ -27141,7 +27356,7 @@ func (c *Client) TestWebhook(ctx context.Context, id WebhookId, reqEditors ...Re
 
 // ListAnnouncements List the announcements
 //
-// The server's announcements that every local user sees now (FR-726): published, and
+// The server's announcements that every local user sees now: published, and
 // within their window. The ones whose `published_at` is the latest come first, each with
 // whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
 // through the past ones too.
@@ -27161,7 +27376,7 @@ func (c *Client) ListAnnouncements(ctx context.Context, reqEditors ...RequestEdi
 
 // ListAnnouncementHistory List the announcements, past ones included
 //
-// The server's announcements that have started to show to the local users (FR-726): the
+// The server's announcements that have started to show to the local users: the
 // published ones whose `published_at` has passed, those whose window has ended included
 // (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
 // first, each with whether the user has read it. Only the announcements that show now can be
@@ -27182,7 +27397,7 @@ func (c *Client) ListAnnouncementHistory(ctx context.Context, params *ListAnnoun
 
 // GetAnnouncement Get an announcement
 //
-// One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+// One announcement of `listAnnouncementHistory`: a published one whose `published_at`
 // has passed, one whose window has ended included (`ended`), with whether the user has read
 // it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
 //
@@ -27223,7 +27438,7 @@ func (c *Client) MarkAnnouncementRead(ctx context.Context, id AnnouncementId, re
 // One entry per client for which the user holds a grant that still works, most recently used
 // first (an app without a recorded use after those with one, newest authorization first). A
 // revoked or expired grant is not listed. The server's own web client is listed too
-// (`first_party`). Only the server's own clients may call it (ADR-0090 §4).
+// (`first_party`). Only the server's own clients may call it.
 //
 // Corresponds with GET /authorized_apps (the `ListAuthorizedApps` operationId).
 func (c *Client) ListAuthorizedApps(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -27243,7 +27458,7 @@ func (c *Client) ListAuthorizedApps(ctx context.Context, reqEditors ...RequestEd
 // Revokes every grant of the app that the user holds, so that its access and refresh tokens
 // stop working at once (the next request with one is a 401). Revoking the server's own web
 // client signs the user out of every browser, this one included. An app the user holds no
-// working grant of is a 404. Only the server's own clients may call it (ADR-0090 §4).
+// working grant of is a 404. Only the server's own clients may call it.
 //
 // Corresponds with DELETE /authorized_apps/{id} (the `RevokeAuthorizedApp` operationId).
 func (c *Client) RevokeAuthorizedApp(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -27293,7 +27508,7 @@ func (c *Client) ListBookmarks(ctx context.Context, params *ListBookmarksParams,
 // ExportCsv Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
 //
 // Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
-// Mastodon and this server import (FR-008): `following` is `following_accounts.csv`
+// Mastodon and this server import: `following` is `following_accounts.csv`
 // (`Account address,Show boosts,Notify on new posts,Languages`, the active follows),
 // `blocks` is `blocked_accounts.csv` (one address per line), `mutes` is
 // `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
@@ -27319,7 +27534,7 @@ func (c *Client) ExportCsv(ctx context.Context, kind DataImportKind, reqEditors 
 
 // ListCustomEmojiRequests List the user's custom emoji requests
 //
-// The user's requests for new custom emoji and new images of their own (ADR-0070 §6),
+// The user's requests for new custom emoji and new images of their own,
 // newest first, in every state. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 //
 // Corresponds with GET /custom_emoji_requests (the `ListCustomEmojiRequests` operationId).
@@ -27338,8 +27553,7 @@ func (c *Client) ListCustomEmojiRequests(ctx context.Context, params *ListCustom
 // CreateCustomEmojiRequestWithBody Request a custom emoji or a new image of one
 //
 // Requests a new local custom emoji (`create`) or a new image of a local emoji that the user
-// made (`image`), which a holder of `manage_custom_emojis` approves or rejects (ADR-0070 §2,
-// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
+// made (`image`), which a holder of `manage_custom_emojis` approves or rejects. Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
 // pending request reserves, a `create` request once the approved and pending `create`
@@ -27370,8 +27584,7 @@ func (c *Client) CreateCustomEmojiRequestWithBody(ctx context.Context, contentTy
 // CreateCustomEmojiRequest Request a custom emoji or a new image of one
 //
 // Requests a new local custom emoji (`create`) or a new image of a local emoji that the user
-// made (`image`), which a holder of `manage_custom_emojis` approves or rejects (ADR-0070 §2,
-// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
+// made (`image`), which a holder of `manage_custom_emojis` approves or rejects. Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
 // pending request reserves, a `create` request once the approved and pending `create`
@@ -27421,7 +27634,7 @@ func (c *Client) WithdrawCustomEmojiRequest(ctx context.Context, id CustomEmojiR
 
 // ListCustomEmojis List the custom emoji of the picker
 //
-// The custom emoji of the instance that the picker offers (FR-111, ADR-0051 §4): every
+// The custom emoji of the instance that the picker offers: every
 // enabled local emoji that is not hidden from the picker, by category (those without one
 // first) and shortcode. A text can use every enabled local emoji, hidden or not. The list
 // is not paginated.
@@ -27441,10 +27654,10 @@ func (c *Client) ListCustomEmojis(ctx context.Context, reqEditors ...RequestEdit
 
 // ListOwnCustomEmojis List the custom emoji that the user made
 //
-// The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
+// The local custom emoji that the user made, newest first, with what the user
 // used of their monthly limit: the approved and pending requests to create an emoji that they
 // submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
-// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+// limit, and when the count resets. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 //
 // Corresponds with GET /custom_emojis/mine (the `ListOwnCustomEmojis` operationId).
 func (c *Client) ListOwnCustomEmojis(ctx context.Context, params *ListOwnCustomEmojisParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -27482,7 +27695,7 @@ func (c *Client) DeleteOwnCustomEmoji(ctx context.Context, id CustomEmojiId, req
 // UpdateOwnCustomEmojiWithBody Change a custom emoji that the user made
 //
 // Changes the aliases, the category, and the place in the picker of a local emoji that the
-// user made, and keeps the rest (ADR-0070 §3); a new image is a request
+// user made, and keeps the rest; a new image is a request
 // (`POST /custom_emoji_requests`). The rules of `PATCH /admin/custom_emojis/{id}` apply, and
 // the change is recorded in the audit log. An emoji that is not one the user made is a 404.
 // Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
@@ -27505,7 +27718,7 @@ func (c *Client) UpdateOwnCustomEmojiWithBody(ctx context.Context, id CustomEmoj
 // UpdateOwnCustomEmoji Change a custom emoji that the user made
 //
 // Changes the aliases, the category, and the place in the picker of a local emoji that the
-// user made, and keeps the rest (ADR-0070 §3); a new image is a request
+// user made, and keeps the rest; a new image is a request
 // (`POST /custom_emoji_requests`). The rules of `PATCH /admin/custom_emojis/{id}` apply, and
 // the change is recorded in the audit log. An emoji that is not one the user made is a 404.
 // Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
@@ -27545,7 +27758,7 @@ func (c *Client) ListDomainMutes(ctx context.Context, params *ListDomainMutesPar
 // MuteDomainWithBody Mute a domain
 //
 // Hides the posts of a remote domain and of its subdomains from the viewer's timelines
-// other than home, their boosts from home, and their notifications (FR-304). The accounts
+// other than home, their boosts from home, and their notifications. The accounts
 // of the domain that the viewer follows stay on the home timeline. Nothing is sent to the
 // domain. Muting a domain that the viewer already mutes changes nothing. The domain is
 // normalized (IDNA A-labels in lower case, without a trailing dot); one that is not a
@@ -27570,7 +27783,7 @@ func (c *Client) MuteDomainWithBody(ctx context.Context, contentType string, bod
 // MuteDomain Mute a domain
 //
 // Hides the posts of a remote domain and of its subdomains from the viewer's timelines
-// other than home, their boosts from home, and their notifications (FR-304). The accounts
+// other than home, their boosts from home, and their notifications. The accounts
 // of the domain that the viewer follows stay on the home timeline. Nothing is sent to the
 // domain. Muting a domain that the viewer already mutes changes nothing. The domain is
 // normalized (IDNA A-labels in lower case, without a trailing dot); one that is not a
@@ -27629,7 +27842,7 @@ func (c *Client) ListDataExports(ctx context.Context, reqEditors ...RequestEdito
 
 // RequestDataExport Request an archive of the authenticated user's data
 //
-// Starts building a ZIP archive of the user's data (FR-008): `actor.json` (the actor),
+// Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 // `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 // activities), `moderation.json` (the moderation actions on the account, its appeals, and
 // the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
@@ -27671,7 +27884,7 @@ func (c *Client) DownloadDataExport(ctx context.Context, id Id, reqEditors ...Re
 
 // GetFinanceCostTotals Total the costs by period for the finance viewers
 //
-// The totals of the instance's costs for the holders of `view_finance` (ADR-0070 §5). It
+// The totals of the instance's costs for the holders of `view_finance`. It
 // takes the query of `GET /admin/cost_totals` and always answers its totals, their breakdown
 // by provider, category, and currency, and the rules that cut the periods. Each period adds
 // `items`, the amount of each cost item and each service of the imported costs, only while
@@ -27699,7 +27912,7 @@ func (c *Client) GetFinanceCostTotals(ctx context.Context, params *GetFinanceCos
 
 // GetFinanceIncomeTotals Total the income by period for the finance viewers
 //
-// The income totals for the holders of `view_finance` (ADR-0073 §6, ADR-0070 §5). It takes
+// The income totals for the holders of `view_finance`. It takes
 // the query of `GET /admin/cost_totals` and always answers the net of each currency by
 // period with its `balance` against the costs, whatever `income_visibility` and
 // `finance_visibility` publish. `plans`, the number of members of each supporter plan now,
@@ -27743,7 +27956,7 @@ func (c *Client) ListFollowRequests(ctx context.Context, params *ListFollowReque
 
 // AcceptFollowRequest Accept a follow request
 //
-// Makes the account's pending follow of the viewer active (FR-302). Accepting a follow
+// Makes the account's pending follow of the viewer active. Accepting a follow
 // that is already active changes nothing; without a follow it is a 404.
 //
 // Corresponds with POST /follow_requests/{id}/accept (the `AcceptFollowRequest` operationId).
@@ -27761,7 +27974,7 @@ func (c *Client) AcceptFollowRequest(ctx context.Context, id AccountId, reqEdito
 
 // RejectFollowRequest Reject a follow request
 //
-// Declines the account's pending follow request (FR-302); without one it is a 404.
+// Declines the account's pending follow request; without one it is a 404.
 //
 // Corresponds with POST /follow_requests/{id}/reject (the `RejectFollowRequest` operationId).
 func (c *Client) RejectFollowRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -27796,7 +28009,7 @@ func (c *Client) ListDataImports(ctx context.Context, reqEditors ...RequestEdito
 
 // StartDataImportWithBody Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
 //
-// Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
+// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
 // entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 // `overwrite` also removes what the user has of `kind` that the file does not list. The
 // server carries the import out in the background: it resolves remote accounts and posts
@@ -27823,7 +28036,7 @@ func (c *Client) StartDataImportWithBody(ctx context.Context, contentType string
 
 // StartDataImport Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
 //
-// Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
+// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
 // entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 // `overwrite` also removes what the user has of `kind` that the file does not list. The
 // server carries the import out in the background: it resolves remote accounts and posts
@@ -27916,7 +28129,7 @@ func (c *Client) GetInstance(ctx context.Context, reqEditors ...RequestEditorFn)
 // GetInstanceCostTotals Total the instance's public costs by period
 //
 // The totals of the instance's costs that the instance setting `finance_visibility`
-// publishes (FR-903, ADR-0067 §8, §9). It takes the query of `GET /admin/cost_totals` and
+// publishes. It takes the query of `GET /admin/cost_totals` and
 // answers the same shape: `private` makes it a 404; `totals` leaves every `breakdown` empty
 // and the `rules` without `sources`, which would name the providers; `breakdown` gives the
 // breakdown by provider, category, and currency, and the providers' rules. No level returns
@@ -27963,8 +28176,7 @@ func (c *Client) GetInstanceDocument(ctx context.Context, kind InstanceDocumentK
 
 // ListInstanceDomainActions List the domains that the instance moderates
 //
-// The moderation actions in effect on remote domains that the instance lists publicly
-// (FR-718): `limit` and `suspend`, one item per action, newest first. The instance
+// The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
 // setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
 // `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
 // token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
@@ -27987,16 +28199,16 @@ func (c *Client) ListInstanceDomainActions(ctx context.Context, params *ListInst
 // GetServerHealth Get the health of the server
 //
 // Whether the server can serve requests, for uptime monitors, status pages, and clients that
-// tell a server outage from their own network (ADR-0085 §1). The check is the readiness
+// tell a server outage from their own network. The check is the readiness
 // check's: the database is reachable and its schema is applied. Each process caches the
 // result for 60 seconds and runs one check for concurrent requests, so the database is
 // checked at most once a minute however often the endpoint is called. The endpoint takes no
 // access token and counts against no rate limit.
 //
 // The body holds only the fixed words of `status`, never the reason of a failure. During the
-// maintenance mode (ADR-0084) the answer is a 503 with `Retry-After` and
+// maintenance mode the answer is a 503 with `Retry-After` and
 // `{"status":"maintenance"}`, without touching the database. Uptime monitors tell the
-// maintenance from an outage by the body (ADR-0085 §4).
+// maintenance from an outage by the body.
 //
 // Corresponds with GET /instance/health (the `GetServerHealth` operationId).
 func (c *Client) GetServerHealth(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -28013,8 +28225,7 @@ func (c *Client) GetServerHealth(ctx context.Context, reqEditors ...RequestEdito
 
 // GetInstanceIncomeTotals Total the instance's public income by period
 //
-// The net income that the instance setting `income_visibility` publishes (FR-917,
-// ADR-0073 §7, §9). It takes the query of `GET /admin/cost_totals`: `private` makes it a
+// The net income that the instance setting `income_visibility` publishes. It takes the query of `GET /admin/cost_totals`: `private` makes it a
 // 404; `totals` gives the net of each currency by period; `plans` adds `plans`, the number
 // of members of each supporter plan now. Each period carries `balance`, the net less the
 // costs, only while `finance_visibility` is not `private` either, since the balance would
@@ -28061,7 +28272,7 @@ func (c *Client) GetInstanceOverview(ctx context.Context, reqEditors ...RequestE
 // ListSupporterPlans List the supporter plans
 //
 // The supporter plans that take subscriptions, by rank, with their monthly and yearly
-// prices (ADR-0072 §18). A 404 while the supporter program is disabled
+// prices. A 404 while the supporter program is disabled
 // (`Instance.supporters_enabled`).
 //
 // Corresponds with GET /instance/supporter_plans (the `ListSupporterPlans` operationId).
@@ -28081,7 +28292,7 @@ func (c *Client) ListSupporterPlans(ctx context.Context, reqEditors ...RequestEd
 //
 // The members of the supporter plans who chose to be listed (`PUT
 // /preferences/supporter_listing`), by plan in the plans' order and newest first within a
-// plan, with the plans that are not retired for the headings (ADR-0071 §4). Only each
+// plan, with the plans that are not retired for the headings. Only each
 // member's account is listed: never an amount, an interval, a date, or a count. Accounts
 // that the viewer may not see are left out, so a page may be shorter than `limit`. The
 // instance setting `supporter_list_visibility` decides who may read it: `off` makes it a
@@ -28104,7 +28315,7 @@ func (c *Client) ListInstanceSupporters(ctx context.Context, params *ListInstanc
 
 // ListOwnInvites List the user's own invites
 //
-// The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+// The invites that the user created as a member, newest first, with how they
 // have been used, and what the user may do: whether they may create an invite now
 // (`can_create`), the caps of the instance settings, and how many usable invites they hold.
 // A user who may no longer create invites still lists and revokes the ones they made; an
@@ -28127,7 +28338,7 @@ func (c *Client) ListOwnInvites(ctx context.Context, params *ListOwnInvitesParam
 // CreateOwnInviteWithBody Create an invite of the user's own
 //
 // Creates an invite with a new random code that people use to sign up while the
-// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+// registration mode is `open`, `approval`, or `invite`. In `approval` mode a
 // person who signs up with it is approved at once. The user may create one when the
 // instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 // their account is neither suspended nor limited, their registration is approved, and the
@@ -28158,7 +28369,7 @@ func (c *Client) CreateOwnInviteWithBody(ctx context.Context, contentType string
 // CreateOwnInvite Create an invite of the user's own
 //
 // Creates an invite with a new random code that people use to sign up while the
-// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+// registration mode is `open`, `approval`, or `invite`. In `approval` mode a
 // person who signs up with it is approved at once. The user may create one when the
 // instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 // their account is neither suspended nor limited, their registration is approved, and the
@@ -28665,7 +28876,7 @@ func (c *Client) UpdateMedia(ctx context.Context, id Id, body UpdateMediaJSONReq
 
 // ListOwnModerationActions List the moderation actions on the authenticated user's account
 //
-// The actions that moderators took on the user's own account (FR-715), newest first,
+// The actions that moderators took on the user's own account, newest first,
 // lifted and expired ones included unless `active` is set, also those that the user was
 // not notified of. Each carries what the moderators chose to tell the user; never their
 // private note, the report the action follows from, or who filed it. `kind_label` and
@@ -28686,7 +28897,7 @@ func (c *Client) ListOwnModerationActions(ctx context.Context, params *ListOwnMo
 
 // AppealModerationActionWithBody Appeal a moderation action on the authenticated user's account
 //
-// Asks the moderators to reconsider an action on the user's own account (FR-707), once
+// Asks the moderators to reconsider an action on the user's own account, once
 // per action and until its `appeal_deadline` (the instance's appeal window from the
 // action, 180 days by default; for a `ban`, also no later than the deletion of the
 // account 30 days after it). The moderators get an `admin_appeal` notification, and
@@ -28714,7 +28925,7 @@ func (c *Client) AppealModerationActionWithBody(ctx context.Context, id Id, cont
 
 // AppealModerationAction Appeal a moderation action on the authenticated user's account
 //
-// Asks the moderators to reconsider an action on the user's own account (FR-707), once
+// Asks the moderators to reconsider an action on the user's own account, once
 // per action and until its `appeal_deadline` (the instance's appeal window from the
 // action, 180 days by default; for a `ban`, also no later than the deletion of the
 // account 30 days after it). The moderators get an `admin_appeal` notification, and
@@ -28878,7 +29089,7 @@ func (c *Client) ListOAuthApps(ctx context.Context, reqEditors ...RequestEditorF
 // CreateOAuthAppWithBody Register an OAuth app
 //
 // Registers a public or confidential app of the user for a bot, a script, or a client of
-// their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+// their own. A confidential app's `client_secret` is in this response only.
 // Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
 // may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
 // stops working while the user cannot use the server (suspended or deleted).
@@ -28907,7 +29118,7 @@ func (c *Client) CreateOAuthAppWithBody(ctx context.Context, contentType string,
 // CreateOAuthApp Register an OAuth app
 //
 // Registers a public or confidential app of the user for a bot, a script, or a client of
-// their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+// their own. A confidential app's `client_secret` is in this response only.
 // Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
 // may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
 // stops working while the user cannot use the server (suspended or deleted).
@@ -29036,7 +29247,7 @@ func (c *Client) RotateOAuthAppSecret(ctx context.Context, id OAuthAppId, reqEdi
 // IssueOAuthAppTokenWithBody Issue tokens of an OAuth app to the authenticated user
 //
 // Issues an access token and a refresh token of the app for the user's own account,
-// without the consent screen and a redirect (ADR-0090 §2): the usual pair with the usual
+// without the consent screen and a redirect: the usual pair with the usual
 // lifetimes, refreshed and revoked at the token endpoints as any other. A scope beyond the
 // app's is a 422 naming `scope`, and an app that an administrator disabled a 409
 // `/api/v1/problems/oauth-app-disabled`. An unknown or deleted app, or one that another
@@ -29060,7 +29271,7 @@ func (c *Client) IssueOAuthAppTokenWithBody(ctx context.Context, id OAuthAppId, 
 // IssueOAuthAppToken Issue tokens of an OAuth app to the authenticated user
 //
 // Issues an access token and a refresh token of the app for the user's own account,
-// without the consent screen and a redirect (ADR-0090 §2): the usual pair with the usual
+// without the consent screen and a redirect: the usual pair with the usual
 // lifetimes, refreshed and revoked at the token endpoints as any other. A scope beyond the
 // app's is a 422 naming `scope`, and an app that an administrator disabled a 409
 // `/api/v1/problems/oauth-app-disabled`. An unknown or deleted app, or one that another
@@ -29319,7 +29530,7 @@ func (c *Client) UpdatePreferences(ctx context.Context, body UpdatePreferencesJS
 
 // GetAutoDeletePolicy Get the authenticated user's automatic deletion of old posts
 //
-// The policy that deletes the user's own posts some days after their publication (FR-118).
+// The policy that deletes the user's own posts some days after their publication.
 // A user who has never saved one gets the default policy, which is disabled.
 //
 // Corresponds with GET /preferences/auto_delete (the `GetAutoDeletePolicy` operationId).
@@ -29434,7 +29645,7 @@ func (c *Client) PreviewAutoDeletePolicy(ctx context.Context, body PreviewAutoDe
 // ListBadgeChoices List the badges that the authenticated user may show
 //
 // The roles that the user holds and that have a badge, highest position first, with whether
-// the user shows each badge on their profile (ADR-0071). Every badge is hidden until the user
+// the user shows each badge on their profile. Every badge is hidden until the user
 // shows it.
 //
 // Corresponds with GET /preferences/badges (the `ListBadgeChoices` operationId).
@@ -29452,7 +29663,7 @@ func (c *Client) ListBadgeChoices(ctx context.Context, reqEditors ...RequestEdit
 
 // UpdateBadgeChoiceWithBody Show or hide the badge of a role on the authenticated user's profile
 //
-// Shows or hides the badge of a role that the user holds on their profile (ADR-0071). The
+// Shows or hides the badge of a role that the user holds on their profile. The
 // badge appears in `Account.badges` of the user's own account endpoints only, never on
 // posts, in lists of accounts, or to other servers. A role that the user does not hold, or
 // that has no badge, is a 404.
@@ -29474,7 +29685,7 @@ func (c *Client) UpdateBadgeChoiceWithBody(ctx context.Context, roleId BadgeRole
 
 // UpdateBadgeChoice Show or hide the badge of a role on the authenticated user's profile
 //
-// Shows or hides the badge of a role that the user holds on their profile (ADR-0071). The
+// Shows or hides the badge of a role that the user holds on their profile. The
 // badge appears in `Account.badges` of the user's own account endpoints only, never on
 // posts, in lists of accounts, or to other servers. A role that the user does not hold, or
 // that has no badge, is a 404.
@@ -29554,8 +29765,7 @@ func (c *Client) UpdateNotificationSettings(ctx context.Context, body UpdateNoti
 
 // GetSupporterListing Get whether the authenticated user is on the supporter list
 //
-// Whether the user chose to be listed on the supporter list (`GET /instance/supporters`,
-// ADR-0071 §4). Nobody is listed until they choose to be, and the choice ends with the
+// Whether the user chose to be listed on the supporter list (`GET /instance/supporters`). Nobody is listed until they choose to be, and the choice ends with the
 // subscription. A 404 for a user who is not a member of a plan (an `active`, `canceling`,
 // or `past_due` subscription) and while the program is disabled.
 //
@@ -29703,7 +29913,7 @@ func (c *Client) PutPushSubscription(ctx context.Context, body PutPushSubscripti
 // ListOwnReports List the reports that the authenticated user filed
 //
 // The reports that the user filed, newest first, each with whether it is still open or
-// resolved (FR-711). A report reopened by the moderators is open again. It never tells how
+// resolved. A report reopened by the moderators is open again. It never tells how
 // a report was resolved, which actions it led to, the reasons given to the account, or
 // who handles it. A report stays listed when the user may no longer see its target (the
 // account is suspended, deleted, or blocks the user), without `target_account`. A report
@@ -29725,7 +29935,7 @@ func (c *Client) ListOwnReports(ctx context.Context, params *ListOwnReportsParam
 
 // CreateReportWithBody Report an account
 //
-// Reports an account, and optionally some of its posts, to the moderators (FR-701). The
+// Reports an account, and optionally some of its posts, to the moderators. The
 // report waits, open, in the moderators' queue; nothing tells the account of it, and
 // nothing that the account can read names the reporter. 422 when the account does not
 // exist or is the user's own (`account_id`), when a post is not the account's or the
@@ -29750,7 +29960,7 @@ func (c *Client) CreateReportWithBody(ctx context.Context, contentType string, b
 
 // CreateReport Report an account
 //
-// Reports an account, and optionally some of its posts, to the moderators (FR-701). The
+// Reports an account, and optionally some of its posts, to the moderators. The
 // report waits, open, in the moderators' queue; nothing tells the account of it, and
 // nothing that the account can read names the reporter. 422 when the account does not
 // exist or is the user's own (`account_id`), when a post is not the account's or the
@@ -29778,7 +29988,7 @@ func (c *Client) CreateReport(ctx context.Context, body CreateReportJSONRequestB
 // One entry per browser session that still works or from which a grant of the server's own web
 // client still works, the browser that asks first, then the most recently used first. The apps
 // the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
-// may call it (ADR-0090 §4).
+// may call it.
 //
 // Corresponds with GET /sessions (the `ListSessions` operationId).
 func (c *Client) ListSessions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -29796,8 +30006,7 @@ func (c *Client) ListSessions(ctx context.Context, reqEditors ...RequestEditorFn
 // RevokeOtherSessions Sign out every browser but the one that asks
 //
 // Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
-// succeeds when there is no other browser. Only the server's own clients may call it
-// (ADR-0090 §4).
+// succeeds when there is no other browser. Only the server's own clients may call it.
 //
 // Corresponds with POST /sessions/revoke_others (the `RevokeOtherSessions` operationId).
 func (c *Client) RevokeOtherSessions(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -29819,7 +30028,7 @@ func (c *Client) RevokeOtherSessions(ctx context.Context, reqEditors ...RequestE
 // password, two-factor authentication, and the apps the user authorized stay. An ID that is not
 // in the user's list is a 404, and the browser that asks is a 409 with the type
 // `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
-// call it (ADR-0090 §4).
+// call it.
 //
 // Corresponds with DELETE /sessions/{id} (the `RevokeSession` operationId).
 func (c *Client) RevokeSession(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -29840,7 +30049,7 @@ func (c *Client) RevokeSession(ctx context.Context, id Id, reqEditors ...Request
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
-// poll outside the limits of `PollInput` is a 422 (FR-112).
+// poll outside the limits of `PollInput` is a 422.
 //
 // Takes any type of body and a specified content type.
 //
@@ -29863,7 +30072,7 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
-// poll outside the limits of `PollInput` is a 422 (FR-112).
+// poll outside the limits of `PollInput` is a 422.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -30136,7 +30345,7 @@ func (c *Client) PinStatus(ctx context.Context, id StatusId, reqEditors ...Reque
 
 // VoteInPollWithBody Vote in the poll of a status
 //
-// Votes for one or more choices of the poll of a status (FR-112). `poll_id` names the poll
+// Votes for one or more choices of the poll of a status. `poll_id` names the poll
 // the user saw: a poll that an edit of the status replaced is a 409. A status without a
 // poll, a poll that has ended, a second vote, or choices the poll does not take (none, an
 // unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
@@ -30160,7 +30369,7 @@ func (c *Client) VoteInPollWithBody(ctx context.Context, id StatusId, contentTyp
 
 // VoteInPoll Vote in the poll of a status
 //
-// Votes for one or more choices of the poll of a status (FR-112). `poll_id` names the poll
+// Votes for one or more choices of the poll of a status. `poll_id` names the poll
 // the user saw: a poll that an edit of the status replaced is a 409. A status without a
 // poll, a poll that has ended, a second vote, or choices the poll does not take (none, an
 // unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
@@ -30184,7 +30393,7 @@ func (c *Client) VoteInPoll(ctx context.Context, id StatusId, body VoteInPollJSO
 
 // SetStatusQuotePolicyWithBody Change who may quote the authenticated user's status
 //
-// Changes the `quote_policy` of a status of the user (ADR-0069 §1); the approvals given
+// Changes the `quote_policy` of a status of the user; the approvals given
 // before stay, and each is revoked on its own. Another account's status is a 403 when the
 // user may see it and a 404 otherwise.
 //
@@ -30205,7 +30414,7 @@ func (c *Client) SetStatusQuotePolicyWithBody(ctx context.Context, id StatusId, 
 
 // SetStatusQuotePolicy Change who may quote the authenticated user's status
 //
-// Changes the `quote_policy` of a status of the user (ADR-0069 §1); the approvals given
+// Changes the `quote_policy` of a status of the user; the approvals given
 // before stay, and each is revoked on its own. Another account's status is a 403 when the
 // user may see it and a 404 otherwise.
 //
@@ -30227,7 +30436,7 @@ func (c *Client) SetStatusQuotePolicy(ctx context.Context, id StatusId, body Set
 // ListStatusQuotes List the statuses that quote the authenticated user's status
 //
 // The statuses that quote a status of the user, newest first, each with its `quote` and
-// its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
+// its state. Statuses the user may not see, and quotes taken away, are left
 // out, so a page may hold fewer than `limit` statuses before the last. Another account's
 // status is a 404, and so is the user's own `direct` status without `read:direct`, which
 // also leaves out the `direct` statuses that quote one.
@@ -30247,7 +30456,7 @@ func (c *Client) ListStatusQuotes(ctx context.Context, id StatusId, params *List
 
 // RevokeStatusQuote Revoke the approval of a quote of the authenticated user's status
 //
-// Withdraws this server's approval of the quote (ADR-0069 §3): the quote shows the quoted
+// Withdraws this server's approval of the quote: the quote shows the quoted
 // status no more, and the quoting server is told. A quote without this server's approval
 // (from software without approvals, or of the user's own status) is a 404, as is one revoked
 // already.
@@ -30388,8 +30597,7 @@ func (c *Client) ListSubscriptions(ctx context.Context, params *ListSubscription
 // StartSupporterCheckoutWithBody Start a subscription to a supporter plan
 //
 // Starts a subscription to a plan at an interval and returns the payment provider's hosted
-// checkout, which the client opens in the same tab; no card details reach this server
-// (ADR-0072 §6, ADR-0074). The checkout returns to `/settings/supporter` of the web client.
+// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
 // Starting again while the subscription is `pending` makes a new checkout of the same
 // subscription. Only a local user with a verified primary address and without another
 // subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
@@ -30416,8 +30624,7 @@ func (c *Client) StartSupporterCheckoutWithBody(ctx context.Context, contentType
 // StartSupporterCheckout Start a subscription to a supporter plan
 //
 // Starts a subscription to a plan at an interval and returns the payment provider's hosted
-// checkout, which the client opens in the same tab; no card details reach this server
-// (ADR-0072 §6, ADR-0074). The checkout returns to `/settings/supporter` of the web client.
+// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
 // Starting again while the subscription is `pending` makes a new checkout of the same
 // subscription. Only a local user with a verified primary address and without another
 // subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
@@ -30444,7 +30651,7 @@ func (c *Client) StartSupporterCheckout(ctx context.Context, body StartSupporter
 // OpenSupporterPortal Open the payment provider's portal of the authenticated user
 //
 // The payment provider's portal of the user's payment methods and invoices, which returns
-// to `/settings/supporter` of the web client (ADR-0072 §8). Plans change on this server, not in
+// to `/settings/supporter` of the web client. Plans change on this server, not in
 // the portal. A 409 `/api/v1/problems/subscription-ended` for a user whom the provider does not
 // know.
 //
@@ -30464,7 +30671,7 @@ func (c *Client) OpenSupporterPortal(ctx context.Context, reqEditors ...RequestE
 // GetOwnSupporterSubscription Get the authenticated user's supporter subscription
 //
 // The user's subscription that goes on (any state but `expired`, `revoked`, and
-// `abandoned`), and why the user cannot subscribe when they cannot (ADR-0072 §6, §18). A 404
+// `abandoned`), and why the user cannot subscribe when they cannot. A 404
 // while the supporter program is disabled (`Instance.supporters_enabled`).
 //
 // Corresponds with GET /supporter/subscription (the `GetOwnSupporterSubscription` operationId).
@@ -30483,7 +30690,7 @@ func (c *Client) GetOwnSupporterSubscription(ctx context.Context, reqEditors ...
 // CancelOwnSupporterSubscription Cancel the authenticated user's subscription at the end of its period
 //
 // Cancels an `active` or `past_due` subscription at the end of its period: the plan's role
-// stays until then (`canceling`, ADR-0072 §7). A 409
+// stays until then (`canceling`). A 409
 // `/api/v1/problems/supporter-subscription-state` in another state.
 //
 // Corresponds with POST /supporter/subscription/cancel (the `CancelOwnSupporterSubscription` operationId).
@@ -30502,7 +30709,7 @@ func (c *Client) CancelOwnSupporterSubscription(ctx context.Context, reqEditors 
 // CancelOwnSupporterScheduledChange Withdraw the scheduled change of the authenticated user's subscription
 //
 // Withdraws the change to a lower plan or to the monthly price that waits for the end of
-// the period (ADR-0072 §8); the subscription renews at its current plan and interval. A 409
+// the period; the subscription renews at its current plan and interval. A 409
 // `/api/v1/problems/supporter-subscription-state` without a scheduled change.
 //
 // Corresponds with POST /supporter/subscription/cancel_scheduled_change (the `CancelOwnSupporterScheduledChange` operationId).
@@ -30520,7 +30727,7 @@ func (c *Client) CancelOwnSupporterScheduledChange(ctx context.Context, reqEdito
 
 // ChangeOwnSupporterSubscriptionWithBody Change the plan or the interval of the authenticated user's subscription
 //
-// Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+// Changes an `active` subscription to another plan or interval: to a higher
 // plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
 // or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
 // current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
@@ -30548,7 +30755,7 @@ func (c *Client) ChangeOwnSupporterSubscriptionWithBody(ctx context.Context, con
 
 // ChangeOwnSupporterSubscription Change the plan or the interval of the authenticated user's subscription
 //
-// Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+// Changes an `active` subscription to another plan or interval: to a higher
 // plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
 // or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
 // current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
@@ -30596,7 +30803,7 @@ func (c *Client) ResumeOwnSupporterSubscription(ctx context.Context, reqEditors 
 //
 // What the web client sends when the payment provider's checkout or portal returns to it:
 // it queues a re-read of the user's subscription from the provider, without waiting for its
-// webhook (ADR-0072 §6), and answers the subscription as it is now. Read it again to see the
+// webhook, and answers the subscription as it is now. Read it again to see the
 // result. A 404 while the program is disabled.
 //
 // Corresponds with POST /supporter/subscription/sync (the `SyncOwnSupporterSubscription` operationId).
@@ -30615,7 +30822,7 @@ func (c *Client) SyncOwnSupporterSubscription(ctx context.Context, reqEditors ..
 // SearchTags Search hashtags by prefix
 //
 // The hashtags whose name starts with `q`, for the autocomplete of hashtags in the compose
-// form and the hashtag search (FR-119, FR-306, ADR-0092). `q` and the names are compared
+// form and the hashtag search. `q` and the names are compared
 // under NFKC and lowercase.
 //
 // Only the hashtags that a post of visibility `public`, `local`, or `unlisted` carries now
@@ -30639,7 +30846,7 @@ func (c *Client) SearchTags(ctx context.Context, params *SearchTagsParams, reqEd
 // GetFederatedTimeline Get the federated timeline
 //
 // The public posts of the instance's accounts and of the remote accounts whose posts the
-// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
+// instance holds, newest first, in the viewer's timeline languages. Posts of other
 // visibilities, `local` ones included, and boosts never appear on it. The instance setting
 // `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 // is `signed_in` an anonymous request is a 401.
@@ -31750,6 +31957,73 @@ func NewRemoveAccountAliasRequestWithBody(server string, contentType string, bod
 	}
 
 	operationPath := fmt.Sprintf("/accounts/aliases/remove")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetDeactivationPreviewRequest constructs an http.Request for the GetDeactivationPreview method
+func NewGetDeactivationPreviewRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/deactivation")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeactivateOwnAccountRequest calls the generic DeactivateOwnAccount builder with application/json body
+func NewDeactivateOwnAccountRequest(server string, body DeactivateOwnAccountJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDeactivateOwnAccountRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewDeactivateOwnAccountRequestWithBody constructs an http.Request for the DeactivateOwnAccount method, with any body, and a specified content type
+func NewDeactivateOwnAccountRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/deactivation")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -47042,7 +47316,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAccountAliasesWithResponse List the authenticated user's aliases
 	//
-	// The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+	// The accounts that the user moves from, which the user's actor names in
 	// `alsoKnownAs`, oldest first.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47052,7 +47326,7 @@ type ClientWithResponsesInterface interface {
 
 	// AddAccountAliasWithBodyWithResponse Add an alias to the authenticated user
 	//
-	// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+	// Adds the account that the user moves from as an alias: the user's actor
 	// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
 	// actor's `Update` goes to the user's followers as a profile change does. An alias alone
 	// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
@@ -47073,7 +47347,7 @@ type ClientWithResponsesInterface interface {
 
 	// AddAccountAliasWithResponse Add an alias to the authenticated user
 	//
-	// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+	// Adds the account that the user moves from as an alias: the user's actor
 	// names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
 	// actor's `Update` goes to the user's followers as a profile change does. An alias alone
 	// changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
@@ -47094,7 +47368,7 @@ type ClientWithResponsesInterface interface {
 
 	// RemoveAccountAliasWithBodyWithResponse Remove an alias of the authenticated user
 	//
-	// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+	// Removes an alias; the actor's `Update` goes to the user's followers as a
 	// profile change does. Removing an alias that the user does not have changes nothing.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -47104,7 +47378,7 @@ type ClientWithResponsesInterface interface {
 
 	// RemoveAccountAliasWithResponse Remove an alias of the authenticated user
 	//
-	// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+	// Removes an alias; the actor's `Update` goes to the user's followers as a
 	// profile change does. Removing an alias that the user does not have changes nothing.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -47112,10 +47386,78 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /accounts/aliases/remove (the `RemoveAccountAlias` operationId).
 	RemoveAccountAliasWithResponse(ctx context.Context, body RemoveAccountAliasJSONRequestBody, reqEditors ...RequestEditorFn) (*RemoveAccountAliasResponse, error)
 
+	// GetDeactivationPreviewWithResponse Get what deactivating the authenticated user's account would do now
+	//
+	// The date the account would be deleted if the user deactivated it now, and why it cannot
+	// be deactivated now, if so. It changes nothing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /accounts/deactivation (the `GetDeactivationPreview` operationId).
+	GetDeactivationPreviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDeactivationPreviewResponse, error)
+
+	// DeactivateOwnAccountWithBodyWithResponse Deactivate the authenticated user's account
+	//
+	// Deactivates the user's own account, after checking the user's current `password`, a
+	// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+	// login provider. The account and its posts are hidden from everyone, every session and
+	// token of the user ends, and the other servers get an `Update` of the actor marked
+	// `suspended`. Where the server sends mail, one email states the date of the deletion.
+	//
+	// The user signs in again to reactivate it, on a page of the server, within 30 days;
+	// after that the account is deleted, and the other servers get a `Delete` of the actor.
+	// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+	// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+	// hours after its reactivation.
+	//
+	// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+	// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired` or
+	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+	DeactivateOwnAccountWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeactivateOwnAccountResponse, error)
+
+	// DeactivateOwnAccountWithResponse Deactivate the authenticated user's account
+	//
+	// Deactivates the user's own account, after checking the user's current `password`, a
+	// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+	// login provider. The account and its posts are hidden from everyone, every session and
+	// token of the user ends, and the other servers get an `Update` of the actor marked
+	// `suspended`. Where the server sends mail, one email states the date of the deletion.
+	//
+	// The user signs in again to reactivate it, on a page of the server, within 30 days;
+	// after that the account is deleted, and the other servers get a `Delete` of the actor.
+	// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+	// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+	// hours after its reactivation.
+	//
+	// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+	// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+	// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+	// `/api/v1/problems/passkey-confirmation-expired` or
+	// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+	// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+	// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+	// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+	// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+	DeactivateOwnAccountWithResponse(ctx context.Context, body DeactivateOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*DeactivateOwnAccountResponse, error)
+
 	// DeleteOwnAccountWithBodyWithResponse Delete the authenticated user's account
 	//
 	// Deletes the user's own account at once, after checking the user's current `password`
-	// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
+	// or a `passkey` of the user; a user without a password confirms with a passkey.
 	// The account and its posts disappear, every session and token of the user ends, and the
 	// other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
 	// undone, and the username is never reused. The only administrator of the instance gets a
@@ -47137,7 +47479,7 @@ type ClientWithResponsesInterface interface {
 	// DeleteOwnAccountWithResponse Delete the authenticated user's account
 	//
 	// Deletes the user's own account at once, after checking the user's current `password`
-	// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
+	// or a `passkey` of the user; a user without a password confirms with a passkey.
 	// The account and its posts disappear, every session and token of the user ends, and the
 	// other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
 	// undone, and the username is never reused. The only administrator of the instance gets a
@@ -47158,7 +47500,7 @@ type ClientWithResponsesInterface interface {
 
 	// ResendVerificationEmailWithResponse Send the authenticated user a new verification email
 	//
-	// Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+	// Sends a new verification email to the user's primary email address,
 	// such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
 	// following its link shows that the address works and lifts the suppression. Earlier links
 	// keep working until they expire. The email is queued and sent in the background, so a 202
@@ -47180,7 +47522,7 @@ type ClientWithResponsesInterface interface {
 	// deactivated, or is deleted is a 404, the same as an unknown one.
 	//
 	// With `resolve=true`, a remote account that the instance does not know yet is fetched
-	// from its server (FR-305): a handle through WebFinger, a URL directly. Only accounts
+	// from its server: a handle through WebFinger, a URL directly. Only accounts
 	// whose handle WebFinger confirms are returned; a handle or URL that does not lead to one
 	// is a 404. Resolving needs an access token (anonymous requests get the 401 of
 	// `/api/v1/problems/unauthenticated`) and is limited to 30 fetches per account every
@@ -47196,7 +47538,7 @@ type ClientWithResponsesInterface interface {
 
 	// MoveOwnAccountWithBodyWithResponse Move the authenticated user's account to another account
 	//
-	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// Moves the user's account to the account `target_account_id`, after
 	// checking the user's current `password` or a `passkey` of the user; a user without a
 	// password confirms with a passkey. Find the target's ID with
 	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
@@ -47208,7 +47550,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before. An account that may not
+	// move was canceled, or for a target the account moved to before. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -47234,7 +47576,7 @@ type ClientWithResponsesInterface interface {
 
 	// MoveOwnAccountWithResponse Move the authenticated user's account to another account
 	//
-	// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+	// Moves the user's account to the account `target_account_id`, after
 	// checking the user's current `password` or a `passkey` of the user; a user without a
 	// password confirms with a passkey. Find the target's ID with
 	// `GET /accounts/lookup?resolve=true`; it may be an account of this server.
@@ -47246,7 +47588,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 	// cannot be fetched, or is suspended here (it or its server), and
 	// `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-	// move was cancelled, or for a target the account moved to before. An account that may not
+	// move was canceled, or for a target the account moved to before. An account that may not
 	// move (under a moderation action that stops it, say) is a 403
 	// `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 	// hour for the user, past which the answer is 429.
@@ -47272,10 +47614,10 @@ type ClientWithResponsesInterface interface {
 
 	// CancelOwnAccountMoveWithResponse Cancel the move of the authenticated user's account
 	//
-	// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+	// Cancels the move of the user's account: the account no longer names the target,
 	// can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 	// its actor without `movedTo`. The followers that moved stay with the target, and the next
-	// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+	// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 	// `/api/v1/problems/account-not-moved`.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47285,8 +47627,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetPasswordStatusWithResponse Get whether the authenticated user has a password
 	//
-	// Whether the user signs in with a password, or with passkeys only after removing it
-	// (FR-004).
+	// Whether the user signs in with a password, or with passkeys only after removing it.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -47299,7 +47640,7 @@ type ClientWithResponsesInterface interface {
 	// (`login_providers_only` of `GET /instance`), it is a 403
 	// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 	// Replaces the user's password with `new_password` after checking `current_password` or
-	// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
+	// a `passkey` of the user; a user without a password sets one with a passkey.
 	// Every other session and grant of the user ends: the user is signed out of the server's
 	// sign-in pages and of every app but the one that makes the request, whose tokens keep
 	// working. Passkeys and two-factor authentication stay as they are, and the user is told
@@ -47325,7 +47666,7 @@ type ClientWithResponsesInterface interface {
 	// (`login_providers_only` of `GET /instance`), it is a 403
 	// `/api/v1/problems/login-providers-only`: a new password could not sign in.
 	// Replaces the user's password with `new_password` after checking `current_password` or
-	// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
+	// a `passkey` of the user; a user without a password sets one with a passkey.
 	// Every other session and grant of the user ends: the user is signed out of the server's
 	// sign-in pages and of every app but the one that makes the request, whose tokens keep
 	// working. Passkeys and two-factor authentication stay as they are, and the user is told
@@ -47348,8 +47689,7 @@ type ClientWithResponsesInterface interface {
 	// RemovePasswordWithBodyWithResponse Remove the authenticated user's password
 	//
 	// Removes the password of a user who has a passkey or a linked account, after checking a
-	// `passkey` of the user or an `external_confirmation` from a linked login provider
-	// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
+	// `passkey` of the user or an `external_confirmation` from a linked login provider: from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 	// authentication still enters a code after one. A password reset link or
 	// `POST /accounts/password` with a passkey sets a password again. Every other session and
 	// grant of the user ends, as a change of the password does, and the user is told by email
@@ -47370,8 +47710,7 @@ type ClientWithResponsesInterface interface {
 	// RemovePasswordWithResponse Remove the authenticated user's password
 	//
 	// Removes the password of a user who has a passkey or a linked account, after checking a
-	// `passkey` of the user or an `external_confirmation` from a linked login provider
-	// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
+	// `passkey` of the user or an `external_confirmation` from a linked login provider: from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 	// authentication still enters a code after one. A password reset link or
 	// `POST /accounts/password` with a passkey sets a password again. Every other session and
 	// grant of the user ends, as a change of the password does, and the user is told by email
@@ -47405,8 +47744,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// The accounts whose username, `username@domain`, or a word of the display name starts
 	// with `q`, and the accounts of this server whose username or display name contains `q`,
-	// for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
-	// ADR-0092). The search covers the local accounts and the remote accounts that the
+	// for the autocomplete of mentions and the account search. The search covers the local accounts and the remote accounts that the
 	// instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
 	// (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
 	// `resolve=true`).
@@ -47431,7 +47769,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAccountSuggestionsWithResponse Suggest accounts to follow
 	//
-	// Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+	// Accounts of this server for the viewer to follow: first the accounts that the
 	// administrators feature (the instance setting `featured_accounts`), in the order they gave,
 	// then the accounts that published a public or local post in the last 30 days, the one that
 	// posted last first. Each account comes once.
@@ -47499,7 +47837,7 @@ type ClientWithResponsesInterface interface {
 	// BlockAccountWithResponse Block an account
 	//
 	// Ends the follows between the viewer and the account in both directions and keeps
-	// either from following the other until the block is lifted (FR-303). Blocking an
+	// either from following the other until the block is lifted. Blocking an
 	// account that the viewer already blocks changes nothing, and an account that blocks the
 	// viewer can be blocked back. Blocking a remote account
 	// also sends a Block to its server.
@@ -47521,7 +47859,7 @@ type ClientWithResponsesInterface interface {
 	// FollowAccountWithBodyWithResponse Follow an account
 	//
 	// Follows the account at once, or sends a follow request when the account is locked:
-	// then `requested` is true until the account accepts it (FR-301, FR-302). Following an
+	// then `requested` is true until the account accepts it. Following an
 	// account that the viewer already follows or has requested to follow changes only the
 	// preferences in the body. Following an account that the viewer blocks is a 409
 	// `/api/v1/problems/blocking`. A follow of an account on another server is a request
@@ -47538,7 +47876,7 @@ type ClientWithResponsesInterface interface {
 	// FollowAccountWithResponse Follow an account
 	//
 	// Follows the account at once, or sends a follow request when the account is locked:
-	// then `requested` is true until the account accepts it (FR-301, FR-302). Following an
+	// then `requested` is true until the account accepts it. Following an
 	// account that the viewer already follows or has requested to follow changes only the
 	// preferences in the body. Following an account that the viewer blocks is a 409
 	// `/api/v1/problems/blocking`. A follow of an account on another server is a request
@@ -47594,7 +47932,7 @@ type ClientWithResponsesInterface interface {
 	// MuteAccountWithBodyWithResponse Mute an account
 	//
 	// Hides the account's posts, and unless `notifications` is false its notifications,
-	// from the viewer (FR-303). Muting an account that the viewer already mutes replaces the
+	// from the viewer. Muting an account that the viewer already mutes replaces the
 	// settings and the expiry.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -47605,7 +47943,7 @@ type ClientWithResponsesInterface interface {
 	// MuteAccountWithResponse Mute an account
 	//
 	// Hides the account's posts, and unless `notifications` is false its notifications,
-	// from the viewer (FR-303). Muting an account that the viewer already mutes replaces the
+	// from the viewer. Muting an account that the viewer already mutes replaces the
 	// settings and the expiry.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -47711,7 +48049,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAdminAccountsWithResponse Search the accounts
 	//
-	// The local and remote accounts (FR-714), newest first, without the instance actor:
+	// The local and remote accounts, newest first, without the instance actor:
 	// those whose handle's username starts with `username` (case-insensitively; a remote
 	// account whose handle is not verified has none), on a `domain`, local or remote
 	// (`origin`), in a `state`, and, for local accounts, of a primary email address (`email`,
@@ -47731,7 +48069,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetAdminAccountWithResponse Get the details of an account
 	//
-	// An account as the moderators see it (FR-714): its state, the restrictions of its own
+	// An account as the moderators see it: its state, the restrictions of its own
 	// actions, and, for a local account, its registration, whether its email address is
 	// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
 	// `manage_reports` permission, its newest 20 reports. The email address and the IP
@@ -47745,7 +48083,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAccountActionsWithResponse List the moderation actions on an account
 	//
-	// The actions that moderators took on an account (FR-703), newest first, lifted and
+	// The actions that moderators took on an account, newest first, lifted and
 	// expired ones included unless `active` is set. An unknown account is a 404. Needs the
 	// `manage_accounts` permission.
 	//
@@ -47756,7 +48094,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateAccountActionWithBodyWithResponse Take a moderation action on an account
 	//
-	// Records an action on an account (FR-703), in effect at once and until it expires or is
+	// Records an action on an account, in effect at once and until it expires or is
 	// lifted; several actions on one account add up. On a local account: `warn` only tells
 	// the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
 	// past ones included, followers-only and keeps them off the public timelines;
@@ -47788,7 +48126,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateAccountActionWithResponse Take a moderation action on an account
 	//
-	// Records an action on an account (FR-703), in effect at once and until it expires or is
+	// Records an action on an account, in effect at once and until it expires or is
 	// lifted; several actions on one account add up. On a local account: `warn` only tells
 	// the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
 	// past ones included, followers-only and keeps them off the public timelines;
@@ -47821,7 +48159,7 @@ type ClientWithResponsesInterface interface {
 	// LiftAdminAccountEmailSuppressionWithResponse Lift the suppression of the email address of a local account
 	//
 	// Lets the server send email again to the primary address of a local account's user, which
-	// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+	// a hard bounce or a complaint suppressed, such as after the user fixed their
 	// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
 	// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
 	// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
@@ -47838,7 +48176,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Issues a link that sets a new password for a local account's user, for an
 	// administrator to hand to the user, such as when the server sends no email or the
-	// email does not arrive (FR-002). The link works once, for an hour, and stops working
+	// email does not arrive. The link works once, for an hour, and stops working
 	// when the password changes otherwise; only its hash is stored, so this response is the
 	// only place it is shown. It is recorded in the audit log as `password_reset_link_issued`.
 	// Whoever holds the link can set the password: confirm who the user is through another
@@ -47868,10 +48206,9 @@ type ClientWithResponsesInterface interface {
 	// RevealAdminAccountWithResponse Show the email address and the IP addresses of a local account
 	//
 	// The primary email address of a local account, where it registered and its newest 20
-	// sign-ins came from, and up to 20 other accounts per IP address that used the same one
-	// (FR-714). Each call is recorded in the audit log as `revealed_private_data` before
+	// sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
 	// anything is returned; it changes nothing else. IP addresses are kept for the retention
-	// of the sign-in and registration origins only (ADR-0038). A remote account or the
+	// of the sign-in and registration origins only. A remote account or the
 	// instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
 	// user's, the user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
@@ -47924,7 +48261,7 @@ type ClientWithResponsesInterface interface {
 	// DisableAdminAccountTwoFactorWithResponse Remove the two-factor authentication of a local account
 	//
 	// Ends the TOTP enrollment of a local account's user, who lost their authenticator app
-	// and recovery codes, so that they sign in with the password alone (FR-005). It is
+	// and recovery codes, so that they sign in with the password alone. It is
 	// recorded in the audit log as `two_factor_disabled`. A remote account or the instance
 	// actor is a 422 naming `id`, an account without two-factor authentication a 409
 	// `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
@@ -47938,7 +48275,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAdminAnnouncementsWithResponse List the announcements
 	//
-	// Every announcement, drafts and withdrawn ones included, newest first (FR-726). The
+	// Every announcement, drafts and withdrawn ones included, newest first. The
 	// list is not paginated. Needs the `manage_announcements` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -48042,7 +48379,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAppealsWithResponse List the appeals of moderation actions
 	//
-	// The appeals that local users made of the actions on their accounts (FR-707), newest
+	// The appeals that local users made of the actions on their accounts, newest
 	// first, each with its action. Needs the `manage_accounts` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -48133,7 +48470,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAuditLogWithResponse List the audit log
 	//
-	// The operations of the moderators and administrators (FR-704), newest first: who did
+	// The operations of the moderators and administrators, newest first: who did
 	// what to which target and when. Each entry keeps the target's display name as it was
 	// (`target_label`), so it stays readable after the target is gone; the reasons and notes
 	// stay with the operation itself (`source_event_id`). The audit log cannot be changed or
@@ -48147,7 +48484,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListBillingImportsWithResponse List the state of the billing imports
 	//
-	// The state of the imports of every cloud provider of `billing_sources` (ADR-0068), in its
+	// The state of the imports of every cloud provider of `billing_sources`, in its
 	// order: the last attempt and its failure, the last success, the billed requests of the UTC
 	// day and month with their caps, the bytes billed this month, and the billing months of the
 	// last year with imported costs, each an estimate, final, or corrected, with its totals. The
@@ -48160,7 +48497,7 @@ type ClientWithResponsesInterface interface {
 
 	// RunBillingImportWithResponse Import a provider's usage charges now
 	//
-	// Queues an import of the billing source now, besides the daily one (ADR-0068 §2). Its
+	// Queues an import of the billing source now, besides the daily one. Its
 	// billed requests count toward the caps like the others. One import per source and UTC
 	// hour: another request in the hour after its import ran is a 429. A source that
 	// `billing_sources` does not enable is a 404. The request is recorded in the audit log.
@@ -48173,9 +48510,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetAdminServiceClosureWithResponse Read the service closure
 	//
-	// The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+	// The state of the closure of the service with the schedule in effect,
 	// and whether its notice is short; once the server is closed, the progress of the closure's
-	// `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
+	// `Delete`s. Needs the `manage_service_closure` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -48184,7 +48521,7 @@ type ClientWithResponsesInterface interface {
 
 	// WithdrawServiceClosureWithResponse Withdraw the announcement of the closure
 	//
-	// Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+	// Withdraws the announcement in effect: the server runs on as before, and the
 	// audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
 	// server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
 	// `manage_service_closure` permission.
@@ -48196,7 +48533,7 @@ type ClientWithResponsesInterface interface {
 
 	// AnnounceServiceClosureWithBodyWithResponse Announce the closure of the service
 	//
-	// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+	// Announces that the server closes at `closes_at`, or changes the dates
 	// of the announcement in effect. Each call records a new announcement, kept with the earlier
 	// ones, and the audit log's `service_closure_announced`. The announcement shows in
 	// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
@@ -48212,7 +48549,7 @@ type ClientWithResponsesInterface interface {
 
 	// AnnounceServiceClosureWithResponse Announce the closure of the service
 	//
-	// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+	// Announces that the server closes at `closes_at`, or changes the dates
 	// of the announcement in effect. Each call records a new announcement, kept with the earlier
 	// ones, and the audit log's `service_closure_announced`. The announcement shows in
 	// `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
@@ -48228,7 +48565,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetAdminServiceClosureCheckWithResponse Check the server before its closure
 	//
-	// What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+	// What the closure of the server would end: the estimate of the `Delete`
 	// deliveries, the supporter subscriptions that it cancels, the account migrations that have
 	// not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
 	// permission.
@@ -48240,7 +48577,7 @@ type ClientWithResponsesInterface interface {
 
 	// CloseServiceWithBodyWithResponse Close the server
 	//
-	// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+	// Closes the server for good: it cannot be undone. Only an announced
 	// closure whose `closes_at` has passed can close; before it, without an announcement, or once
 	// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
 	// server's domain, or it is a 422 that names it. The closure records `service_closure_closed`
@@ -48255,7 +48592,7 @@ type ClientWithResponsesInterface interface {
 
 	// CloseServiceWithResponse Close the server
 	//
-	// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+	// Closes the server for good: it cannot be undone. Only an announced
 	// closure whose `closes_at` has passed can close; before it, without an announcement, or once
 	// closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
 	// server's domain, or it is a 422 that names it. The closure records `service_closure_closed`
@@ -48270,7 +48607,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListCostItemsWithResponse List the cost items
 	//
-	// The instance's cost items that are not canceled, newest first (ADR-0067, FR-901).
+	// The instance's cost items that are not canceled, newest first.
 	// Needs the `manage_finance` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -48281,7 +48618,7 @@ type ClientWithResponsesInterface interface {
 	// CreateCostItemWithBodyWithResponse Record a cost item
 	//
 	// Records a cost of the instance: once, or every N weeks, months, or years from the start
-	// date (ADR-0067 §3). A value the server rejects is a 422 naming it: `interval` outside 1
+	// date. A value the server rejects is a 422 naming it: `interval` outside 1
 	// to 99 (1 for `once`), an invalid date, `ends_on` before `starts_on`, an empty or too long
 	// `name` or `provider`, a too long `memo`, an unknown currency, a negative amount, or an
 	// amount with more digits than its currency (`price`). Recorded in the audit log.
@@ -48295,7 +48632,7 @@ type ClientWithResponsesInterface interface {
 	// CreateCostItemWithResponse Record a cost item
 	//
 	// Records a cost of the instance: once, or every N weeks, months, or years from the start
-	// date (ADR-0067 §3). A value the server rejects is a 422 naming it: `interval` outside 1
+	// date. A value the server rejects is a 422 naming it: `interval` outside 1
 	// to 99 (1 for `once`), an invalid date, `ends_on` before `starts_on`, an empty or too long
 	// `name` or `provider`, a too long `memo`, an unknown currency, a negative amount, or an
 	// amount with more digits than its currency (`price`). Recorded in the audit log.
@@ -48397,7 +48734,7 @@ type ClientWithResponsesInterface interface {
 	// GetCostTotalsWithResponse Total the costs by period
 	//
 	// The totals of the cost items and the imported usage charges for each week, month, or
-	// year from the one that holds `from` to the one that holds `to` (ADR-0067 §4, §5), by
+	// year from the one that holds `from` to the one that holds `to`, by
 	// currency and broken down by provider and category, with the rules that cut the periods.
 	// The totals are computed on every read. More than 104 weeks, 60 months, or 20 years, and
 	// `to` before `from`, are a 422 naming `to`. Needs the `manage_finance` permission.
@@ -48411,7 +48748,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// The number of open reports (with the `manage_reports` permission), and of registrations
 	// that await approval and appeals that await a decision (with the `manage_accounts`
-	// permission), for the badges of the admin menu (FR-712). A count whose permission the user's roles lack is omitted, so a
+	// permission), for the badges of the admin menu. A count whose permission the user's roles lack is omitted, so a
 	// user without either gets an empty object.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -48421,7 +48758,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAdminCustomEmojiRequestsWithResponse List the custom emoji requests
 	//
-	// The custom emoji requests of the holders of `create_custom_emojis` (ADR-0070 §6), newest
+	// The custom emoji requests of the holders of `create_custom_emojis`, newest
 	// first, with their requesters: the pending ones unless `state` names another state. Needs the `manage_custom_emojis` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -48431,7 +48768,7 @@ type ClientWithResponsesInterface interface {
 
 	// ApproveCustomEmojiRequestWithResponse Approve a custom emoji request
 	//
-	// Approves a pending request (ADR-0070 §2): a `create` request makes the local emoji,
+	// Approves a pending request: a `create` request makes the local emoji,
 	// without a category, in the picker, and enabled, whose creator is the requester; an `image`
 	// request gives the emoji the requested image. The image is copied as an upload of the
 	// instance. The approval and the emoji's registration or new image are recorded in the
@@ -48449,7 +48786,7 @@ type ClientWithResponsesInterface interface {
 	// RejectCustomEmojiRequestWithBodyWithResponse Reject a custom emoji request
 	//
 	// Rejects a pending request, with an optional reason that the requester sees, which frees
-	// its shortcode (ADR-0070 §2). The rejection is recorded in the audit log, and the requester
+	// its shortcode. The rejection is recorded in the audit log, and the requester
 	// is notified. A reason longer than 500 characters is a 422 with the reason
 	// `invalid_reason`; a request that is not pending is a 409
 	// `/api/v1/problems/custom-emoji-request-conflict` (`not_pending`). An unknown request is a
@@ -48463,7 +48800,7 @@ type ClientWithResponsesInterface interface {
 	// RejectCustomEmojiRequestWithResponse Reject a custom emoji request
 	//
 	// Rejects a pending request, with an optional reason that the requester sees, which frees
-	// its shortcode (ADR-0070 §2). The rejection is recorded in the audit log, and the requester
+	// its shortcode. The rejection is recorded in the audit log, and the requester
 	// is notified. A reason longer than 500 characters is a 422 with the reason
 	// `invalid_reason`; a request that is not pending is a 409
 	// `/api/v1/problems/custom-emoji-request-conflict` (`not_pending`). An unknown request is a
@@ -48476,7 +48813,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAdminCustomEmojisWithResponse List the custom emoji
 	//
-	// The custom emoji, local and remote, newest first (ADR-0051 §4). `local` keeps the
+	// The custom emoji, local and remote, newest first. `local` keeps the
 	// emoji of this instance (`true`) or of other servers (`false`); `domain` keeps those of
 	// one remote domain; `shortcode` keeps those whose shortcode contains it, ignoring case.
 	// Needs the `manage_custom_emojis` permission.
@@ -48630,7 +48967,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListDomainActionsWithResponse List the moderation actions on domains
 	//
-	// The actions that moderators took on remote domains (FR-702), newest first, lifted and
+	// The actions that moderators took on remote domains, newest first, lifted and
 	// expired ones included unless `active` is set. Needs the `manage_domains` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -48640,7 +48977,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateDomainActionWithBodyWithResponse Take a moderation action on a domain
 	//
-	// Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+	// Records an action on a remote domain and its subdomains, in effect at once and
 	// until it expires or is lifted. A `suspend` stops every delivery to the domain, every
 	// fetch from it, and every activity received from it, and hides its accounts and posts
 	// from the timelines; `limit` keeps its posts off the public timelines and its accounts
@@ -48658,7 +48995,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateDomainActionWithResponse Take a moderation action on a domain
 	//
-	// Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+	// Records an action on a remote domain and its subdomains, in effect at once and
 	// until it expires or is lifted. A `suspend` stops every delivery to the domain, every
 	// fetch from it, and every activity received from it, and hides its accounts and posts
 	// from the timelines; `limit` keeps its posts off the public timelines and its accounts
@@ -48676,7 +49013,7 @@ type ClientWithResponsesInterface interface {
 
 	// ExportDomainBlocksWithResponse Export the domain actions as Mastodon's domain block CSV
 	//
-	// The domain actions in effect (FR-706) as the CSV that Mastodon's moderation screens
+	// The domain actions in effect as the CSV that Mastodon's moderation screens
 	// import, with the header
 	// `#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`: one row
 	// per domain in domain order. `#severity` is `suspend` when a `suspend` is in effect on
@@ -48693,7 +49030,7 @@ type ClientWithResponsesInterface interface {
 
 	// ImportDomainBlocksWithBodyWithResponse Import the chosen rows of a Mastodon domain block CSV
 	//
-	// Issues the domain actions of each block (FR-706), as the preview names them: the kinds
+	// Issues the domain actions of each block, as the preview names them: the kinds
 	// of the block that no action in effect on the domain or a parent domain has already. The
 	// actions last until they are lifted, carry the block's public comment and obfuscation
 	// and the request's private note, and are audited like actions issued one at a time. A
@@ -48710,7 +49047,7 @@ type ClientWithResponsesInterface interface {
 
 	// ImportDomainBlocksWithResponse Import the chosen rows of a Mastodon domain block CSV
 	//
-	// Issues the domain actions of each block (FR-706), as the preview names them: the kinds
+	// Issues the domain actions of each block, as the preview names them: the kinds
 	// of the block that no action in effect on the domain or a parent domain has already. The
 	// actions last until they are lifted, carry the block's public comment and obfuscation
 	// and the request's private note, and are audited like actions issued one at a time. A
@@ -48727,7 +49064,7 @@ type ClientWithResponsesInterface interface {
 
 	// PreviewDomainBlockImportWithBodyWithResponse Preview the import of a Mastodon domain block CSV
 	//
-	// Reads a domain block CSV that Mastodon exported (FR-706) and says what importing each
+	// Reads a domain block CSV that Mastodon exported and says what importing each
 	// row would do, without changing anything. A file whose first field is `#domain` has a
 	// header naming the columns; any other file is a list of domains, one per row, each
 	// suspended. An empty `#severity` is `suspend`, and a boolean is false when empty, `0`,
@@ -48743,7 +49080,7 @@ type ClientWithResponsesInterface interface {
 
 	// PreviewDomainBlockImportWithResponse Preview the import of a Mastodon domain block CSV
 	//
-	// Reads a domain block CSV that Mastodon exported (FR-706) and says what importing each
+	// Reads a domain block CSV that Mastodon exported and says what importing each
 	// row would do, without changing anything. A file whose first field is `#domain` has a
 	// header naming the columns; any other file is a list of domains, one per row, each
 	// suspended. An empty `#severity` is `suspend`, and a boolean is false when empty, `0`,
@@ -48779,7 +49116,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListErrorGroupsWithResponse List the error groups
 	//
-	// The groups of the errors that the server and the web client reported (ADR-0103 §8), the
+	// The groups of the errors that the server and the web client reported, the
 	// most recently seen first, with their occurrences of the last 24 hours and 7 days. `state`
 	// and `source` keep the groups of that state and source. Needs the `manage_errors`
 	// permission.
@@ -48829,7 +49166,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListIncomeMovementsWithResponse List the money movements of the income
 	//
-	// The payment provider's money movements that the income records keep (ADR-0073 §6), newest
+	// The payment provider's money movements that the income records keep, newest
 	// first by the time the provider booked them, narrowed to the dates they fall on and a
 	// kind, with the subscriber's account of each. Only this operation and the admin screen
 	// show individual movements and their subscribers. Needs the `manage_finance` permission.
@@ -48842,7 +49179,7 @@ type ClientWithResponsesInterface interface {
 	// GetIncomeTotalsWithResponse Total the income by period
 	//
 	// The totals of the payment provider's money movements for each week, month, or year from
-	// the one that holds `from` to the one that holds `to` (ADR-0073 §5, §6): the gross, the
+	// the one that holds `from` to the one that holds `to`: the gross, the
 	// provider's fees, and the net of each currency, the balance against the costs of
 	// `GET /admin/cost_totals` under the same basis, the number of members of each supporter
 	// plan now, and the rules that cut the periods. The totals are computed on every read. More
@@ -48906,7 +49243,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
 	// the PNGs show the same picture as the SVG.
 	//
-	// The revision and the change are kept (`instance_brand_revisions`, the audit log's
+	// The revision and the change are kept (the audit log's
 	// `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
 	// revision stay at their URLs. Needs the `manage_settings` permission.
 	//
@@ -48917,7 +49254,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListInstanceTextsWithResponse List the instance texts
 	//
-	// The current text of every key that has one (FR-705): the name, the descriptions, the
+	// The current text of every key that has one: the name, the descriptions, the
 	// terms of service, the privacy policy, the commerce disclosure, and the alternative texts of the preview image and
 	// the thumbnail, by key. Each holds one value, shown as it is in every locale. Cleared
 	// texts are not listed. The list is not paginated. Needs the `manage_settings` permission.
@@ -48932,7 +49269,7 @@ type ClientWithResponsesInterface interface {
 	// Records a revision of the text of `key`, which becomes its current text in every locale:
 	// the administrator writes it once, in any language, and readers of every locale see the
 	// same value. An empty `body` clears the text. The revision and the change are kept
-	// (`instance_text_revisions`, the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
+	// (the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
 	// sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
 	// `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
 	// the other texts are plain text. The display name (`name`) names the instance to people
@@ -48955,7 +49292,7 @@ type ClientWithResponsesInterface interface {
 	// Records a revision of the text of `key`, which becomes its current text in every locale:
 	// the administrator writes it once, in any language, and readers of every locale see the
 	// same value. An empty `body` clears the text. The revision and the change are kept
-	// (`instance_text_revisions`, the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
+	// (the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
 	// sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
 	// `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
 	// the other texts are plain text. The display name (`name`) names the instance to people
@@ -49035,7 +49372,7 @@ type ClientWithResponsesInterface interface {
 	// ListInvitesWithResponse List the invites
 	//
 	// The invites that let people sign up while the registration mode is `open`, `approval`,
-	// or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+	// or `invite`, newest first, with how they have been used and who
 	// created them: the staff's and the members' own invites. Needs the `manage_invites`
 	// permission.
 	//
@@ -49303,7 +49640,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListOAuthClientHostDenialsWithResponse List the denied hosts of client metadata documents
 	//
-	// The hosts whose Client ID Metadata Documents are denied (ADR-0090 §1), newest denial
+	// The hosts whose Client ID Metadata Documents are denied, newest denial
 	// first. Needs the `manage_oauth_apps` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -49354,7 +49691,7 @@ type ClientWithResponsesInterface interface {
 	// ListAdminOAuthClientsWithResponse List the OAuth clients
 	//
 	// Every OAuth client that is not deleted, newest first, the server's own and the clients of
-	// every other route (ADR-0090 §1). `registration` keeps the clients of one route. Needs the
+	// every other route. `registration` keeps the clients of one route. Needs the
 	// `manage_oauth_apps` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -49365,8 +49702,7 @@ type ClientWithResponsesInterface interface {
 	// DisableOAuthClientWithResponse Disable an OAuth client
 	//
 	// Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-	// its authorization requests, token exchanges and refreshes until the disablement is lifted
-	// (ADR-0090 §1). Disabling a disabled client revokes its tokens again and records nothing
+	// its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
 	// new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
 	// is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_oauth_apps` permission.
@@ -49390,8 +49726,7 @@ type ClientWithResponsesInterface interface {
 
 	// RunPaymentReconcileWithResponse Reconcile with the payment provider now
 	//
-	// Queues a reconciliation with the payment provider now, besides the periodic one
-	// (ADR-0074 §4). Its requests count toward `payments_reconcile_max_requests` like the
+	// Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
 	// others. One per UTC hour: another request in the hour after its reconciliation ran is a
 	// 429. A deployment without a payment provider is a 404. The request is recorded in the
 	// audit log. Needs the `manage_supporters` permission.
@@ -49403,7 +49738,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetPaymentStatusWithResponse Get the state of the payment provider
 	//
-	// The payment provider of the deployment's configuration (ADR-0074 §4): its name and mode
+	// The payment provider of the deployment's configuration: its name and mode
 	// (test or live), when it last delivered a webhook, and the last attempt of the
 	// reconciliation with its failure. `warnings` names the signs of a webhook that is not set
 	// up right: no delivery is recorded, or the last reconciliation corrected subscriptions
@@ -49418,7 +49753,7 @@ type ClientWithResponsesInterface interface {
 	// GetAdminQueueWithResponse Get the state of the job queue
 	//
 	// The jobs of the job queue by state and type, when the oldest due job has been waiting
-	// since, and what the queue can list (ADR-0064). The database queue and the inline queue
+	// since, and what the queue can list. The database queue and the inline queue
 	// list their pending jobs (`queued`, `running`, `retrying`); the queues of the platforms
 	// (Cloud Tasks, SQS) do not (`pending_listing` is `false`): then `counts` is empty and the
 	// backlog is read from the platform's metrics, while `GET /admin/jobs?state=dead` and the
@@ -49433,7 +49768,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListPendingRegistrationsWithResponse List the registrations that await approval
 	//
-	// The sign-ups that wait for a moderator's decision (FR-721), with the reasons their
+	// The sign-ups that wait for a moderator's decision, with the reasons their
 	// applicants gave, longest waiting first. Needs the `manage_accounts` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -49501,7 +49836,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAdminRelaysWithResponse List the relays
 	//
-	// The relays that the instance joins or joined (ADR-0061), in registration order, with
+	// The relays that the instance joins or joined, in registration order, with
 	// the state of the membership and what each brought in during the last 24 hours. Needs the
 	// `manage_settings` permission.
 	//
@@ -49582,7 +49917,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListReportsWithResponse List the reports
 	//
-	// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+	// The reports in the moderators' queue, newest first unless `order` is `oldest`.
 	// Needs the `manage_reports` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -49612,7 +49947,7 @@ type ClientWithResponsesInterface interface {
 
 	// AddReportNoteWithBodyWithResponse Write a note on a report
 	//
-	// Adds an internal note to the report (FR-710). Notes are shown to the moderators only,
+	// Adds an internal note to the report. Notes are shown to the moderators only,
 	// never to the target or the reporter, and cannot be edited or removed. An unknown ID is
 	// a 404. Needs the `manage_reports` permission.
 	//
@@ -49623,7 +49958,7 @@ type ClientWithResponsesInterface interface {
 
 	// AddReportNoteWithResponse Write a note on a report
 	//
-	// Adds an internal note to the report (FR-710). Notes are shown to the moderators only,
+	// Adds an internal note to the report. Notes are shown to the moderators only,
 	// never to the target or the reporter, and cannot be edited or removed. An unknown ID is
 	// a 404. Needs the `manage_reports` permission.
 	//
@@ -49675,8 +50010,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListRolesWithResponse List the roles
 	//
-	// The roles of the instance, highest position first, with the permissions they grant
-	// (FR-720). Every instance has `admin` (position 1000, every permission, never changed)
+	// The roles of the instance, highest position first, with the permissions they grant. Every instance has `admin` (position 1000, every permission, never changed)
 	// and `moderator` (position 100 with `manage_reports`, `manage_accounts`, and
 	// `view_audit` until an administrator changes them). Needs the `manage_roles` permission.
 	//
@@ -49733,7 +50067,7 @@ type ClientWithResponsesInterface interface {
 	// `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
 	// `moderator` takes a new position and permissions like any other role. A change that would
 	// break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
-	// hides it from every holder's profile (ADR-0071). A role, or a new position, above every
+	// hides it from every holder's profile. A role, or a new position, above every
 	// role of the viewer is a 403. A position, permissions, or badge that break a rule, or
 	// adding or removing a permission that the viewer's roles do not grant, is a 422
 	// `/api/v1/problems/invalid-role` whose `reason` says which. An unknown role is a 404.
@@ -49752,7 +50086,7 @@ type ClientWithResponsesInterface interface {
 	// `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
 	// `moderator` takes a new position and permissions like any other role. A change that would
 	// break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
-	// hides it from every holder's profile (ADR-0071). A role, or a new position, above every
+	// hides it from every holder's profile. A role, or a new position, above every
 	// role of the viewer is a 403. A position, permissions, or badge that break a rule, or
 	// adding or removing a permission that the viewer's roles do not grant, is a 422
 	// `/api/v1/problems/invalid-role` whose `reason` says which. An unknown role is a 404.
@@ -49765,7 +50099,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListInstanceRulesWithResponse List the instance rules
 	//
-	// Every rule (FR-705): the rules in effect by position, followed, when
+	// Every rule: the rules in effect by position, followed, when
 	// `include_retired` is set, by the retired ones. The list is not paginated; at most 100
 	// rules are in effect. Needs the `manage_rules` permission.
 	//
@@ -49865,7 +50199,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListInstanceSettingsWithResponse List the instance settings
 	//
-	// Every instance setting (FR-705, docs/operations/instance-settings.md): its current
+	// Every instance setting: its current
 	// value, or its default when it has never been set, with what it accepts. The policies
 	// that administrators change at run time live here; the deployment configuration does
 	// not. Needs the `manage_settings` permission.
@@ -49921,7 +50255,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListSignupBlocksWithResponse List the sign-up blocks
 	//
-	// The blocks on sign-ups from the registration page (FR-719), newest first, lifted and
+	// The blocks on sign-ups from the registration page, newest first, lifted and
 	// expired ones included unless `active` is set. Needs the `manage_accounts` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -49931,7 +50265,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateSignupBlockWithBodyWithResponse Block sign-ups
 	//
-	// Records a block on sign-ups from the registration page (FR-719), in effect at once and
+	// Records a block on sign-ups from the registration page, in effect at once and
 	// until it expires or is lifted; the block is audited. A sign-up whose email address or
 	// client address it matches is refused (`reject`) or starts pending for a moderator
 	// whatever the registration mode (`require_approval`); the page does not tell the
@@ -49949,7 +50283,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateSignupBlockWithResponse Block sign-ups
 	//
-	// Records a block on sign-ups from the registration page (FR-719), in effect at once and
+	// Records a block on sign-ups from the registration page, in effect at once and
 	// until it expires or is lifted; the block is audited. A sign-up whose email address or
 	// client address it matches is refused (`reject`) or starts pending for a moderator
 	// whatever the registration mode (`require_approval`); the page does not tell the
@@ -49967,7 +50301,7 @@ type ClientWithResponsesInterface interface {
 
 	// ImportSignupBlocksWithBodyWithResponse Block sign-ups from a list
 	//
-	// Adds a block on sign-ups (FR-719) for each value of a list, such as a public list of
+	// Adds a block on sign-ups for each value of a list, such as a public list of
 	// disposable email domains, all with the same kind, severity, comment, and duration. The
 	// list has one value per line in any form that `createSignupBlock` takes, or a CSV row
 	// whose first field is the value; blank lines and lines starting with `#` are ignored.
@@ -49987,7 +50321,7 @@ type ClientWithResponsesInterface interface {
 
 	// ImportSignupBlocksWithResponse Block sign-ups from a list
 	//
-	// Adds a block on sign-ups (FR-719) for each value of a list, such as a public list of
+	// Adds a block on sign-ups for each value of a list, such as a public list of
 	// disposable email domains, all with the same kind, severity, comment, and duration. The
 	// list has one value per line in any form that `createSignupBlock` takes, or a CSV row
 	// whose first field is the value; blank lines and lines starting with `#` are ignored.
@@ -50026,7 +50360,7 @@ type ClientWithResponsesInterface interface {
 
 	// RefetchStatusWithResponse Refetch a remote post from its origin
 	//
-	// Queues a fetch of the remote post from its server (FR-407). The job records what the
+	// Queues a fetch of the remote post from its server. The job records what the
 	// server serves now, as a received `Update` would: a newer revision, the counts of its
 	// poll, or, when the server answers 410 Gone or serves a `Tombstone`, the post's
 	// deletion. A post that cannot be fetched is left as it is. An unknown or deleted post is
@@ -50049,8 +50383,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateSupporterPlanWithBodyWithResponse Create a supporter plan
 	//
-	// Creates a supporter plan on a role, which then only the plan's subscriptions grant
-	// (ADR-0072 §3, §5). The prices are made at the payment provider after the answer; the
+	// Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the
 	// plan takes subscriptions once `prices_ready`. A plan that breaks a rule is a 422
 	// `/api/v1/problems/invalid-supporter-plan`, an unknown role a 404, and a server without a
 	// payment provider a 409 `/api/v1/problems/supporters-unavailable`. Recorded in the audit
@@ -50063,8 +50396,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateSupporterPlanWithResponse Create a supporter plan
 	//
-	// Creates a supporter plan on a role, which then only the plan's subscriptions grant
-	// (ADR-0072 §3, §5). The prices are made at the payment provider after the answer; the
+	// Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the
 	// plan takes subscriptions once `prices_ready`. A plan that breaks a rule is a 422
 	// `/api/v1/problems/invalid-supporter-plan`, an unknown role a 404, and a server without a
 	// payment provider a 409 `/api/v1/problems/supporters-unavailable`. Recorded in the audit
@@ -50077,8 +50409,7 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateSupporterPlanWithBodyWithResponse Change a supporter plan
 	//
-	// Changes a supporter plan's terms and its role's permissions and position (ADR-0072 §3,
-	// §5, §9). New prices apply to new subscriptions and changes of plan only. A change that
+	// Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that
 	// breaks a rule is a 422 `/api/v1/problems/invalid-supporter-plan`, a retired plan a 409
 	// `/api/v1/problems/supporter-plan-retired`, and an unknown plan a 404. Recorded in the
 	// audit log. Needs the `manage_supporters` permission.
@@ -50090,8 +50421,7 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateSupporterPlanWithResponse Change a supporter plan
 	//
-	// Changes a supporter plan's terms and its role's permissions and position (ADR-0072 §3,
-	// §5, §9). New prices apply to new subscriptions and changes of plan only. A change that
+	// Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that
 	// breaks a rule is a 422 `/api/v1/problems/invalid-supporter-plan`, a retired plan a 409
 	// `/api/v1/problems/supporter-plan-retired`, and an unknown plan a 404. Recorded in the
 	// audit log. Needs the `manage_supporters` permission.
@@ -50103,7 +50433,7 @@ type ClientWithResponsesInterface interface {
 
 	// RetireSupporterPlanWithResponse Retire a supporter plan
 	//
-	// Retires a supporter plan for good (ADR-0072 §9): it takes no subscriptions any more, and
+	// Retires a supporter plan for good: it takes no subscriptions any more, and
 	// every subscription of it ends at the end of its period (a pending one at once). A
 	// retired plan is a 409 `/api/v1/problems/supporter-plan-retired`, and an unknown one a
 	// 404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -50124,7 +50454,7 @@ type ClientWithResponsesInterface interface {
 
 	// SetSupporterProgramWithBodyWithResponse Enable or disable the supporter program
 	//
-	// Enables or disables the supporter program (ADR-0072 §2). Enabling it without a payment
+	// Enables or disables the supporter program. Enabling it without a payment
 	// provider in the deployment's configuration or without email is a 409
 	// `/api/v1/problems/supporters-unavailable`; disabling it while subscriptions go on is a
 	// 409 `/api/v1/problems/live-subscriptions` (retire the plans first). Asking for the state
@@ -50138,7 +50468,7 @@ type ClientWithResponsesInterface interface {
 
 	// SetSupporterProgramWithResponse Enable or disable the supporter program
 	//
-	// Enables or disables the supporter program (ADR-0072 §2). Enabling it without a payment
+	// Enables or disables the supporter program. Enabling it without a payment
 	// provider in the deployment's configuration or without email is a 409
 	// `/api/v1/problems/supporters-unavailable`; disabling it while subscriptions go on is a
 	// 409 `/api/v1/problems/live-subscriptions` (retire the plans first). Asking for the state
@@ -50162,7 +50492,7 @@ type ClientWithResponsesInterface interface {
 
 	// CancelSupporterSubscriptionWithResponse Cancel a subscription at once
 	//
-	// Ends a subscription at once, without a refund (ADR-0072 §10): the role goes now, and the
+	// Ends a subscription at once, without a refund: the role goes now, and the
 	// payment provider stops billing. A refund is the operator's to make at the provider. A
 	// subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 	// unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -50174,7 +50504,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetAdminThemeWithResponse Read the instance theme
 	//
-	// The current theme of the web client (ADR-0059, FR-605): the overridden design tokens and the
+	// The current theme of the web client: the overridden design tokens and the
 	// custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
 	// `manage_settings` permission.
 	//
@@ -50189,7 +50519,7 @@ type ClientWithResponsesInterface interface {
 	// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
 	// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
 	// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-	// change are kept (`instance_theme_revisions`, the audit log's `setting_changed` of `theme`).
+	// change are kept (the audit log's `setting_changed` of `theme`).
 	//
 	// The overridable tokens are the web client's design tokens except the primitive palette
 	// (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
@@ -50217,7 +50547,7 @@ type ClientWithResponsesInterface interface {
 	// pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
 	// few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
 	// their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-	// change are kept (`instance_theme_revisions`, the audit log's `setting_changed` of `theme`).
+	// change are kept (the audit log's `setting_changed` of `theme`).
 	//
 	// The overridable tokens are the web client's design tokens except the primitive palette
 	// (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
@@ -50265,7 +50595,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAdminWebhooksWithResponse List the webhooks
 	//
-	// The webhook endpoints of the instance that are not deleted, newest first (ADR-0060).
+	// The webhook endpoints of the instance that are not deleted, newest first.
 	// Needs the `manage_webhooks` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -50276,7 +50606,7 @@ type ClientWithResponsesInterface interface {
 	// CreateWebhookWithBodyWithResponse Set up a webhook
 	//
 	// Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes
-	// to, signed with Standard Webhooks v1 (`docs/reference/webhooks.md`). The answer carries
+	// to, signed with Standard Webhooks v1. The answer carries
 	// its secret, which is shown only now. The user needs the permission of every event
 	// besides `manage_webhooks` (`WebhookEventType`). A URL, a description, or events that
 	// break a rule, or an event whose permission the user lacks, is a 422
@@ -50293,7 +50623,7 @@ type ClientWithResponsesInterface interface {
 	// CreateWebhookWithResponse Set up a webhook
 	//
 	// Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes
-	// to, signed with Standard Webhooks v1 (`docs/reference/webhooks.md`). The answer carries
+	// to, signed with Standard Webhooks v1. The answer carries
 	// its secret, which is shown only now. The user needs the permission of every event
 	// besides `manage_webhooks` (`WebhookEventType`). A URL, a description, or events that
 	// break a rule, or an event whose permission the user lacks, is a 422
@@ -50423,7 +50753,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAnnouncementsWithResponse List the announcements
 	//
-	// The server's announcements that every local user sees now (FR-726): published, and
+	// The server's announcements that every local user sees now: published, and
 	// within their window. The ones whose `published_at` is the latest come first, each with
 	// whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
 	// through the past ones too.
@@ -50435,7 +50765,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListAnnouncementHistoryWithResponse List the announcements, past ones included
 	//
-	// The server's announcements that have started to show to the local users (FR-726): the
+	// The server's announcements that have started to show to the local users: the
 	// published ones whose `published_at` has passed, those whose window has ended included
 	// (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
 	// first, each with whether the user has read it. Only the announcements that show now can be
@@ -50448,7 +50778,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetAnnouncementWithResponse Get an announcement
 	//
-	// One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+	// One announcement of `listAnnouncementHistory`: a published one whose `published_at`
 	// has passed, one whose window has ended included (`ended`), with whether the user has read
 	// it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
 	//
@@ -50473,7 +50803,7 @@ type ClientWithResponsesInterface interface {
 	// One entry per client for which the user holds a grant that still works, most recently used
 	// first (an app without a recorded use after those with one, newest authorization first). A
 	// revoked or expired grant is not listed. The server's own web client is listed too
-	// (`first_party`). Only the server's own clients may call it (ADR-0090 §4).
+	// (`first_party`). Only the server's own clients may call it.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -50485,7 +50815,7 @@ type ClientWithResponsesInterface interface {
 	// Revokes every grant of the app that the user holds, so that its access and refresh tokens
 	// stop working at once (the next request with one is a 401). Revoking the server's own web
 	// client signs the user out of every browser, this one included. An app the user holds no
-	// working grant of is a 404. Only the server's own clients may call it (ADR-0090 §4).
+	// working grant of is a 404. Only the server's own clients may call it.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -50511,7 +50841,7 @@ type ClientWithResponsesInterface interface {
 	// ExportCsvWithResponse Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
 	//
 	// Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
-	// Mastodon and this server import (FR-008): `following` is `following_accounts.csv`
+	// Mastodon and this server import: `following` is `following_accounts.csv`
 	// (`Account address,Show boosts,Notify on new posts,Languages`, the active follows),
 	// `blocks` is `blocked_accounts.csv` (one address per line), `mutes` is
 	// `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
@@ -50529,7 +50859,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListCustomEmojiRequestsWithResponse List the user's custom emoji requests
 	//
-	// The user's requests for new custom emoji and new images of their own (ADR-0070 §6),
+	// The user's requests for new custom emoji and new images of their own,
 	// newest first, in every state. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -50540,8 +50870,7 @@ type ClientWithResponsesInterface interface {
 	// CreateCustomEmojiRequestWithBodyWithResponse Request a custom emoji or a new image of one
 	//
 	// Requests a new local custom emoji (`create`) or a new image of a local emoji that the user
-	// made (`image`), which a holder of `manage_custom_emojis` approves or rejects (ADR-0070 §2,
-	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
+	// made (`image`), which a holder of `manage_custom_emojis` approves or rejects. Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
 	// pending request reserves, a `create` request once the approved and pending `create`
@@ -50562,8 +50891,7 @@ type ClientWithResponsesInterface interface {
 	// CreateCustomEmojiRequestWithResponse Request a custom emoji or a new image of one
 	//
 	// Requests a new local custom emoji (`create`) or a new image of a local emoji that the user
-	// made (`image`), which a holder of `manage_custom_emojis` approves or rejects (ADR-0070 §2,
-	// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
+	// made (`image`), which a holder of `manage_custom_emojis` approves or rejects. Until then, the request is no emoji: nothing shows its image. A pending `create`
 	// request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 	// A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
 	// pending request reserves, a `create` request once the approved and pending `create`
@@ -50595,7 +50923,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListCustomEmojisWithResponse List the custom emoji of the picker
 	//
-	// The custom emoji of the instance that the picker offers (FR-111, ADR-0051 §4): every
+	// The custom emoji of the instance that the picker offers: every
 	// enabled local emoji that is not hidden from the picker, by category (those without one
 	// first) and shortcode. A text can use every enabled local emoji, hidden or not. The list
 	// is not paginated.
@@ -50607,10 +50935,10 @@ type ClientWithResponsesInterface interface {
 
 	// ListOwnCustomEmojisWithResponse List the custom emoji that the user made
 	//
-	// The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
+	// The local custom emoji that the user made, newest first, with what the user
 	// used of their monthly limit: the approved and pending requests to create an emoji that they
 	// submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
-	// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+	// limit, and when the count resets. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -50632,7 +50960,7 @@ type ClientWithResponsesInterface interface {
 	// UpdateOwnCustomEmojiWithBodyWithResponse Change a custom emoji that the user made
 	//
 	// Changes the aliases, the category, and the place in the picker of a local emoji that the
-	// user made, and keeps the rest (ADR-0070 §3); a new image is a request
+	// user made, and keeps the rest; a new image is a request
 	// (`POST /custom_emoji_requests`). The rules of `PATCH /admin/custom_emojis/{id}` apply, and
 	// the change is recorded in the audit log. An emoji that is not one the user made is a 404.
 	// Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
@@ -50645,7 +50973,7 @@ type ClientWithResponsesInterface interface {
 	// UpdateOwnCustomEmojiWithResponse Change a custom emoji that the user made
 	//
 	// Changes the aliases, the category, and the place in the picker of a local emoji that the
-	// user made, and keeps the rest (ADR-0070 §3); a new image is a request
+	// user made, and keeps the rest; a new image is a request
 	// (`POST /custom_emoji_requests`). The rules of `PATCH /admin/custom_emojis/{id}` apply, and
 	// the change is recorded in the audit log. An emoji that is not one the user made is a 404.
 	// Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
@@ -50667,7 +50995,7 @@ type ClientWithResponsesInterface interface {
 	// MuteDomainWithBodyWithResponse Mute a domain
 	//
 	// Hides the posts of a remote domain and of its subdomains from the viewer's timelines
-	// other than home, their boosts from home, and their notifications (FR-304). The accounts
+	// other than home, their boosts from home, and their notifications. The accounts
 	// of the domain that the viewer follows stay on the home timeline. Nothing is sent to the
 	// domain. Muting a domain that the viewer already mutes changes nothing. The domain is
 	// normalized (IDNA A-labels in lower case, without a trailing dot); one that is not a
@@ -50682,7 +51010,7 @@ type ClientWithResponsesInterface interface {
 	// MuteDomainWithResponse Mute a domain
 	//
 	// Hides the posts of a remote domain and of its subdomains from the viewer's timelines
-	// other than home, their boosts from home, and their notifications (FR-304). The accounts
+	// other than home, their boosts from home, and their notifications. The accounts
 	// of the domain that the viewer follows stay on the home timeline. Nothing is sent to the
 	// domain. Muting a domain that the viewer already mutes changes nothing. The domain is
 	// normalized (IDNA A-labels in lower case, without a trailing dot); one that is not a
@@ -50715,7 +51043,7 @@ type ClientWithResponsesInterface interface {
 
 	// RequestDataExportWithResponse Request an archive of the authenticated user's data
 	//
-	// Starts building a ZIP archive of the user's data (FR-008): `actor.json` (the actor),
+	// Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 	// `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 	// activities), `moderation.json` (the moderation actions on the account, its appeals, and
 	// the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
@@ -50741,7 +51069,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetFinanceCostTotalsWithResponse Total the costs by period for the finance viewers
 	//
-	// The totals of the instance's costs for the holders of `view_finance` (ADR-0070 §5). It
+	// The totals of the instance's costs for the holders of `view_finance`. It
 	// takes the query of `GET /admin/cost_totals` and always answers its totals, their breakdown
 	// by provider, category, and currency, and the rules that cut the periods. Each period adds
 	// `items`, the amount of each cost item and each service of the imported costs, only while
@@ -50761,7 +51089,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetFinanceIncomeTotalsWithResponse Total the income by period for the finance viewers
 	//
-	// The income totals for the holders of `view_finance` (ADR-0073 §6, ADR-0070 §5). It takes
+	// The income totals for the holders of `view_finance`. It takes
 	// the query of `GET /admin/cost_totals` and always answers the net of each currency by
 	// period with its `balance` against the costs, whatever `income_visibility` and
 	// `finance_visibility` publish. `plans`, the number of members of each supporter plan now,
@@ -50789,7 +51117,7 @@ type ClientWithResponsesInterface interface {
 
 	// AcceptFollowRequestWithResponse Accept a follow request
 	//
-	// Makes the account's pending follow of the viewer active (FR-302). Accepting a follow
+	// Makes the account's pending follow of the viewer active. Accepting a follow
 	// that is already active changes nothing; without a follow it is a 404.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -50799,7 +51127,7 @@ type ClientWithResponsesInterface interface {
 
 	// RejectFollowRequestWithResponse Reject a follow request
 	//
-	// Declines the account's pending follow request (FR-302); without one it is a 404.
+	// Declines the account's pending follow request; without one it is a 404.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -50818,7 +51146,7 @@ type ClientWithResponsesInterface interface {
 
 	// StartDataImportWithBodyWithResponse Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
 	//
-	// Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
+	// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
 	// entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 	// `overwrite` also removes what the user has of `kind` that the file does not list. The
 	// server carries the import out in the background: it resolves remote accounts and posts
@@ -50835,7 +51163,7 @@ type ClientWithResponsesInterface interface {
 
 	// StartDataImportWithResponse Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
 	//
-	// Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
+	// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
 	// entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 	// `overwrite` also removes what the user has of `kind` that the file does not list. The
 	// server carries the import out in the background: it resolves remote accounts and posts
@@ -50890,7 +51218,7 @@ type ClientWithResponsesInterface interface {
 	// GetInstanceCostTotalsWithResponse Total the instance's public costs by period
 	//
 	// The totals of the instance's costs that the instance setting `finance_visibility`
-	// publishes (FR-903, ADR-0067 §8, §9). It takes the query of `GET /admin/cost_totals` and
+	// publishes. It takes the query of `GET /admin/cost_totals` and
 	// answers the same shape: `private` makes it a 404; `totals` leaves every `breakdown` empty
 	// and the `rules` without `sources`, which would name the providers; `breakdown` gives the
 	// breakdown by provider, category, and currency, and the providers' rules. No level returns
@@ -50921,8 +51249,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListInstanceDomainActionsWithResponse List the domains that the instance moderates
 	//
-	// The moderation actions in effect on remote domains that the instance lists publicly
-	// (FR-718): `limit` and `suspend`, one item per action, newest first. The instance
+	// The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
 	// setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
 	// `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
 	// token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
@@ -50937,16 +51264,16 @@ type ClientWithResponsesInterface interface {
 	// GetServerHealthWithResponse Get the health of the server
 	//
 	// Whether the server can serve requests, for uptime monitors, status pages, and clients that
-	// tell a server outage from their own network (ADR-0085 §1). The check is the readiness
+	// tell a server outage from their own network. The check is the readiness
 	// check's: the database is reachable and its schema is applied. Each process caches the
 	// result for 60 seconds and runs one check for concurrent requests, so the database is
 	// checked at most once a minute however often the endpoint is called. The endpoint takes no
 	// access token and counts against no rate limit.
 	//
 	// The body holds only the fixed words of `status`, never the reason of a failure. During the
-	// maintenance mode (ADR-0084) the answer is a 503 with `Retry-After` and
+	// maintenance mode the answer is a 503 with `Retry-After` and
 	// `{"status":"maintenance"}`, without touching the database. Uptime monitors tell the
-	// maintenance from an outage by the body (ADR-0085 §4).
+	// maintenance from an outage by the body.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -50955,8 +51282,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetInstanceIncomeTotalsWithResponse Total the instance's public income by period
 	//
-	// The net income that the instance setting `income_visibility` publishes (FR-917,
-	// ADR-0073 §7, §9). It takes the query of `GET /admin/cost_totals`: `private` makes it a
+	// The net income that the instance setting `income_visibility` publishes. It takes the query of `GET /admin/cost_totals`: `private` makes it a
 	// 404; `totals` gives the net of each currency by period; `plans` adds `plans`, the number
 	// of members of each supporter plan now. Each period carries `balance`, the net less the
 	// costs, only while `finance_visibility` is not `private` either, since the balance would
@@ -50987,7 +51313,7 @@ type ClientWithResponsesInterface interface {
 	// ListSupporterPlansWithResponse List the supporter plans
 	//
 	// The supporter plans that take subscriptions, by rank, with their monthly and yearly
-	// prices (ADR-0072 §18). A 404 while the supporter program is disabled
+	// prices. A 404 while the supporter program is disabled
 	// (`Instance.supporters_enabled`).
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -50999,7 +51325,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// The members of the supporter plans who chose to be listed (`PUT
 	// /preferences/supporter_listing`), by plan in the plans' order and newest first within a
-	// plan, with the plans that are not retired for the headings (ADR-0071 §4). Only each
+	// plan, with the plans that are not retired for the headings. Only each
 	// member's account is listed: never an amount, an interval, a date, or a count. Accounts
 	// that the viewer may not see are left out, so a page may be shorter than `limit`. The
 	// instance setting `supporter_list_visibility` decides who may read it: `off` makes it a
@@ -51014,7 +51340,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListOwnInvitesWithResponse List the user's own invites
 	//
-	// The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+	// The invites that the user created as a member, newest first, with how they
 	// have been used, and what the user may do: whether they may create an invite now
 	// (`can_create`), the caps of the instance settings, and how many usable invites they hold.
 	// A user who may no longer create invites still lists and revokes the ones they made; an
@@ -51029,7 +51355,7 @@ type ClientWithResponsesInterface interface {
 	// CreateOwnInviteWithBodyWithResponse Create an invite of the user's own
 	//
 	// Creates an invite with a new random code that people use to sign up while the
-	// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+	// registration mode is `open`, `approval`, or `invite`. In `approval` mode a
 	// person who signs up with it is approved at once. The user may create one when the
 	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 	// their account is neither suspended nor limited, their registration is approved, and the
@@ -51050,7 +51376,7 @@ type ClientWithResponsesInterface interface {
 	// CreateOwnInviteWithResponse Create an invite of the user's own
 	//
 	// Creates an invite with a new random code that people use to sign up while the
-	// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+	// registration mode is `open`, `approval`, or `invite`. In `approval` mode a
 	// person who signs up with it is approved at once. The user may create one when the
 	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 	// their account is neither suspended nor limited, their registration is approved, and the
@@ -51357,7 +51683,7 @@ type ClientWithResponsesInterface interface {
 
 	// ListOwnModerationActionsWithResponse List the moderation actions on the authenticated user's account
 	//
-	// The actions that moderators took on the user's own account (FR-715), newest first,
+	// The actions that moderators took on the user's own account, newest first,
 	// lifted and expired ones included unless `active` is set, also those that the user was
 	// not notified of. Each carries what the moderators chose to tell the user; never their
 	// private note, the report the action follows from, or who filed it. `kind_label` and
@@ -51370,7 +51696,7 @@ type ClientWithResponsesInterface interface {
 
 	// AppealModerationActionWithBodyWithResponse Appeal a moderation action on the authenticated user's account
 	//
-	// Asks the moderators to reconsider an action on the user's own account (FR-707), once
+	// Asks the moderators to reconsider an action on the user's own account, once
 	// per action and until its `appeal_deadline` (the instance's appeal window from the
 	// action, 180 days by default; for a `ban`, also no later than the deletion of the
 	// account 30 days after it). The moderators get an `admin_appeal` notification, and
@@ -51388,7 +51714,7 @@ type ClientWithResponsesInterface interface {
 
 	// AppealModerationActionWithResponse Appeal a moderation action on the authenticated user's account
 	//
-	// Asks the moderators to reconsider an action on the user's own account (FR-707), once
+	// Asks the moderators to reconsider an action on the user's own account, once
 	// per action and until its `appeal_deadline` (the instance's appeal window from the
 	// action, 180 days by default; for a `ban`, also no later than the deletion of the
 	// account 30 days after it). The moderators get an `admin_appeal` notification, and
@@ -51482,7 +51808,7 @@ type ClientWithResponsesInterface interface {
 	// CreateOAuthAppWithBodyWithResponse Register an OAuth app
 	//
 	// Registers a public or confidential app of the user for a bot, a script, or a client of
-	// their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+	// their own. A confidential app's `client_secret` is in this response only.
 	// Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
 	// may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
 	// stops working while the user cannot use the server (suspended or deleted).
@@ -51501,7 +51827,7 @@ type ClientWithResponsesInterface interface {
 	// CreateOAuthAppWithResponse Register an OAuth app
 	//
 	// Registers a public or confidential app of the user for a bot, a script, or a client of
-	// their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+	// their own. A confidential app's `client_secret` is in this response only.
 	// Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
 	// may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
 	// stops working while the user cannot use the server (suspended or deleted).
@@ -51576,7 +51902,7 @@ type ClientWithResponsesInterface interface {
 	// IssueOAuthAppTokenWithBodyWithResponse Issue tokens of an OAuth app to the authenticated user
 	//
 	// Issues an access token and a refresh token of the app for the user's own account,
-	// without the consent screen and a redirect (ADR-0090 §2): the usual pair with the usual
+	// without the consent screen and a redirect: the usual pair with the usual
 	// lifetimes, refreshed and revoked at the token endpoints as any other. A scope beyond the
 	// app's is a 422 naming `scope`, and an app that an administrator disabled a 409
 	// `/api/v1/problems/oauth-app-disabled`. An unknown or deleted app, or one that another
@@ -51590,7 +51916,7 @@ type ClientWithResponsesInterface interface {
 	// IssueOAuthAppTokenWithResponse Issue tokens of an OAuth app to the authenticated user
 	//
 	// Issues an access token and a refresh token of the app for the user's own account,
-	// without the consent screen and a redirect (ADR-0090 §2): the usual pair with the usual
+	// without the consent screen and a redirect: the usual pair with the usual
 	// lifetimes, refreshed and revoked at the token endpoints as any other. A scope beyond the
 	// app's is a 422 naming `scope`, and an app that an administrator disabled a 409
 	// `/api/v1/problems/oauth-app-disabled`. An unknown or deleted app, or one that another
@@ -51747,7 +52073,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetAutoDeletePolicyWithResponse Get the authenticated user's automatic deletion of old posts
 	//
-	// The policy that deletes the user's own posts some days after their publication (FR-118).
+	// The policy that deletes the user's own posts some days after their publication.
 	// A user who has never saved one gets the default policy, which is disabled.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -51814,7 +52140,7 @@ type ClientWithResponsesInterface interface {
 	// ListBadgeChoicesWithResponse List the badges that the authenticated user may show
 	//
 	// The roles that the user holds and that have a badge, highest position first, with whether
-	// the user shows each badge on their profile (ADR-0071). Every badge is hidden until the user
+	// the user shows each badge on their profile. Every badge is hidden until the user
 	// shows it.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -51824,7 +52150,7 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateBadgeChoiceWithBodyWithResponse Show or hide the badge of a role on the authenticated user's profile
 	//
-	// Shows or hides the badge of a role that the user holds on their profile (ADR-0071). The
+	// Shows or hides the badge of a role that the user holds on their profile. The
 	// badge appears in `Account.badges` of the user's own account endpoints only, never on
 	// posts, in lists of accounts, or to other servers. A role that the user does not hold, or
 	// that has no badge, is a 404.
@@ -51836,7 +52162,7 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateBadgeChoiceWithResponse Show or hide the badge of a role on the authenticated user's profile
 	//
-	// Shows or hides the badge of a role that the user holds on their profile (ADR-0071). The
+	// Shows or hides the badge of a role that the user holds on their profile. The
 	// badge appears in `Account.badges` of the user's own account endpoints only, never on
 	// posts, in lists of accounts, or to other servers. A role that the user does not hold, or
 	// that has no badge, is a 404.
@@ -51878,8 +52204,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetSupporterListingWithResponse Get whether the authenticated user is on the supporter list
 	//
-	// Whether the user chose to be listed on the supporter list (`GET /instance/supporters`,
-	// ADR-0071 §4). Nobody is listed until they choose to be, and the choice ends with the
+	// Whether the user chose to be listed on the supporter list (`GET /instance/supporters`). Nobody is listed until they choose to be, and the choice ends with the
 	// subscription. A 404 for a user who is not a member of a plan (an `active`, `canceling`,
 	// or `past_due` subscription) and while the program is disabled.
 	//
@@ -51963,7 +52288,7 @@ type ClientWithResponsesInterface interface {
 	// ListOwnReportsWithResponse List the reports that the authenticated user filed
 	//
 	// The reports that the user filed, newest first, each with whether it is still open or
-	// resolved (FR-711). A report reopened by the moderators is open again. It never tells how
+	// resolved. A report reopened by the moderators is open again. It never tells how
 	// a report was resolved, which actions it led to, the reasons given to the account, or
 	// who handles it. A report stays listed when the user may no longer see its target (the
 	// account is suspended, deleted, or blocks the user), without `target_account`. A report
@@ -51977,7 +52302,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateReportWithBodyWithResponse Report an account
 	//
-	// Reports an account, and optionally some of its posts, to the moderators (FR-701). The
+	// Reports an account, and optionally some of its posts, to the moderators. The
 	// report waits, open, in the moderators' queue; nothing tells the account of it, and
 	// nothing that the account can read names the reporter. 422 when the account does not
 	// exist or is the user's own (`account_id`), when a post is not the account's or the
@@ -51992,7 +52317,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateReportWithResponse Report an account
 	//
-	// Reports an account, and optionally some of its posts, to the moderators (FR-701). The
+	// Reports an account, and optionally some of its posts, to the moderators. The
 	// report waits, open, in the moderators' queue; nothing tells the account of it, and
 	// nothing that the account can read names the reporter. 422 when the account does not
 	// exist or is the user's own (`account_id`), when a post is not the account's or the
@@ -52010,7 +52335,7 @@ type ClientWithResponsesInterface interface {
 	// One entry per browser session that still works or from which a grant of the server's own web
 	// client still works, the browser that asks first, then the most recently used first. The apps
 	// the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
-	// may call it (ADR-0090 §4).
+	// may call it.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52020,8 +52345,7 @@ type ClientWithResponsesInterface interface {
 	// RevokeOtherSessionsWithResponse Sign out every browser but the one that asks
 	//
 	// Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
-	// succeeds when there is no other browser. Only the server's own clients may call it
-	// (ADR-0090 §4).
+	// succeeds when there is no other browser. Only the server's own clients may call it.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52035,7 +52359,7 @@ type ClientWithResponsesInterface interface {
 	// password, two-factor authentication, and the apps the user authorized stay. An ID that is not
 	// in the user's list is a 404, and the browser that asks is a 409 with the type
 	// `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
-	// call it (ADR-0090 §4).
+	// call it.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52048,7 +52372,7 @@ type ClientWithResponsesInterface interface {
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
-	// poll outside the limits of `PollInput` is a 422 (FR-112).
+	// poll outside the limits of `PollInput` is a 422.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52061,7 +52385,7 @@ type ClientWithResponsesInterface interface {
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
-	// poll outside the limits of `PollInput` is a 422 (FR-112).
+	// poll outside the limits of `PollInput` is a 422.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52208,7 +52532,7 @@ type ClientWithResponsesInterface interface {
 
 	// VoteInPollWithBodyWithResponse Vote in the poll of a status
 	//
-	// Votes for one or more choices of the poll of a status (FR-112). `poll_id` names the poll
+	// Votes for one or more choices of the poll of a status. `poll_id` names the poll
 	// the user saw: a poll that an edit of the status replaced is a 409. A status without a
 	// poll, a poll that has ended, a second vote, or choices the poll does not take (none, an
 	// unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
@@ -52222,7 +52546,7 @@ type ClientWithResponsesInterface interface {
 
 	// VoteInPollWithResponse Vote in the poll of a status
 	//
-	// Votes for one or more choices of the poll of a status (FR-112). `poll_id` names the poll
+	// Votes for one or more choices of the poll of a status. `poll_id` names the poll
 	// the user saw: a poll that an edit of the status replaced is a 409. A status without a
 	// poll, a poll that has ended, a second vote, or choices the poll does not take (none, an
 	// unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
@@ -52236,7 +52560,7 @@ type ClientWithResponsesInterface interface {
 
 	// SetStatusQuotePolicyWithBodyWithResponse Change who may quote the authenticated user's status
 	//
-	// Changes the `quote_policy` of a status of the user (ADR-0069 §1); the approvals given
+	// Changes the `quote_policy` of a status of the user; the approvals given
 	// before stay, and each is revoked on its own. Another account's status is a 403 when the
 	// user may see it and a 404 otherwise.
 	//
@@ -52247,7 +52571,7 @@ type ClientWithResponsesInterface interface {
 
 	// SetStatusQuotePolicyWithResponse Change who may quote the authenticated user's status
 	//
-	// Changes the `quote_policy` of a status of the user (ADR-0069 §1); the approvals given
+	// Changes the `quote_policy` of a status of the user; the approvals given
 	// before stay, and each is revoked on its own. Another account's status is a 403 when the
 	// user may see it and a 404 otherwise.
 	//
@@ -52259,7 +52583,7 @@ type ClientWithResponsesInterface interface {
 	// ListStatusQuotesWithResponse List the statuses that quote the authenticated user's status
 	//
 	// The statuses that quote a status of the user, newest first, each with its `quote` and
-	// its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
+	// its state. Statuses the user may not see, and quotes taken away, are left
 	// out, so a page may hold fewer than `limit` statuses before the last. Another account's
 	// status is a 404, and so is the user's own `direct` status without `read:direct`, which
 	// also leaves out the `direct` statuses that quote one.
@@ -52271,7 +52595,7 @@ type ClientWithResponsesInterface interface {
 
 	// RevokeStatusQuoteWithResponse Revoke the approval of a quote of the authenticated user's status
 	//
-	// Withdraws this server's approval of the quote (ADR-0069 §3): the quote shows the quoted
+	// Withdraws this server's approval of the quote: the quote shows the quoted
 	// status no more, and the quoting server is told. A quote without this server's approval
 	// (from software without approvals, or of the user's own status) is a 404, as is one revoked
 	// already.
@@ -52352,8 +52676,7 @@ type ClientWithResponsesInterface interface {
 	// StartSupporterCheckoutWithBodyWithResponse Start a subscription to a supporter plan
 	//
 	// Starts a subscription to a plan at an interval and returns the payment provider's hosted
-	// checkout, which the client opens in the same tab; no card details reach this server
-	// (ADR-0072 §6, ADR-0074). The checkout returns to `/settings/supporter` of the web client.
+	// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
 	// Starting again while the subscription is `pending` makes a new checkout of the same
 	// subscription. Only a local user with a verified primary address and without another
 	// subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
@@ -52370,8 +52693,7 @@ type ClientWithResponsesInterface interface {
 	// StartSupporterCheckoutWithResponse Start a subscription to a supporter plan
 	//
 	// Starts a subscription to a plan at an interval and returns the payment provider's hosted
-	// checkout, which the client opens in the same tab; no card details reach this server
-	// (ADR-0072 §6, ADR-0074). The checkout returns to `/settings/supporter` of the web client.
+	// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
 	// Starting again while the subscription is `pending` makes a new checkout of the same
 	// subscription. Only a local user with a verified primary address and without another
 	// subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
@@ -52388,7 +52710,7 @@ type ClientWithResponsesInterface interface {
 	// OpenSupporterPortalWithResponse Open the payment provider's portal of the authenticated user
 	//
 	// The payment provider's portal of the user's payment methods and invoices, which returns
-	// to `/settings/supporter` of the web client (ADR-0072 §8). Plans change on this server, not in
+	// to `/settings/supporter` of the web client. Plans change on this server, not in
 	// the portal. A 409 `/api/v1/problems/subscription-ended` for a user whom the provider does not
 	// know.
 	//
@@ -52400,7 +52722,7 @@ type ClientWithResponsesInterface interface {
 	// GetOwnSupporterSubscriptionWithResponse Get the authenticated user's supporter subscription
 	//
 	// The user's subscription that goes on (any state but `expired`, `revoked`, and
-	// `abandoned`), and why the user cannot subscribe when they cannot (ADR-0072 §6, §18). A 404
+	// `abandoned`), and why the user cannot subscribe when they cannot. A 404
 	// while the supporter program is disabled (`Instance.supporters_enabled`).
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -52411,7 +52733,7 @@ type ClientWithResponsesInterface interface {
 	// CancelOwnSupporterSubscriptionWithResponse Cancel the authenticated user's subscription at the end of its period
 	//
 	// Cancels an `active` or `past_due` subscription at the end of its period: the plan's role
-	// stays until then (`canceling`, ADR-0072 §7). A 409
+	// stays until then (`canceling`). A 409
 	// `/api/v1/problems/supporter-subscription-state` in another state.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -52422,7 +52744,7 @@ type ClientWithResponsesInterface interface {
 	// CancelOwnSupporterScheduledChangeWithResponse Withdraw the scheduled change of the authenticated user's subscription
 	//
 	// Withdraws the change to a lower plan or to the monthly price that waits for the end of
-	// the period (ADR-0072 §8); the subscription renews at its current plan and interval. A 409
+	// the period; the subscription renews at its current plan and interval. A 409
 	// `/api/v1/problems/supporter-subscription-state` without a scheduled change.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -52432,7 +52754,7 @@ type ClientWithResponsesInterface interface {
 
 	// ChangeOwnSupporterSubscriptionWithBodyWithResponse Change the plan or the interval of the authenticated user's subscription
 	//
-	// Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+	// Changes an `active` subscription to another plan or interval: to a higher
 	// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
 	// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
 	// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
@@ -52450,7 +52772,7 @@ type ClientWithResponsesInterface interface {
 
 	// ChangeOwnSupporterSubscriptionWithResponse Change the plan or the interval of the authenticated user's subscription
 	//
-	// Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+	// Changes an `active` subscription to another plan or interval: to a higher
 	// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
 	// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
 	// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
@@ -52480,7 +52802,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// What the web client sends when the payment provider's checkout or portal returns to it:
 	// it queues a re-read of the user's subscription from the provider, without waiting for its
-	// webhook (ADR-0072 §6), and answers the subscription as it is now. Read it again to see the
+	// webhook, and answers the subscription as it is now. Read it again to see the
 	// result. A 404 while the program is disabled.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -52491,7 +52813,7 @@ type ClientWithResponsesInterface interface {
 	// SearchTagsWithResponse Search hashtags by prefix
 	//
 	// The hashtags whose name starts with `q`, for the autocomplete of hashtags in the compose
-	// form and the hashtag search (FR-119, FR-306, ADR-0092). `q` and the names are compared
+	// form and the hashtag search. `q` and the names are compared
 	// under NFKC and lowercase.
 	//
 	// Only the hashtags that a post of visibility `public`, `local`, or `unlisted` carries now
@@ -52507,7 +52829,7 @@ type ClientWithResponsesInterface interface {
 	// GetFederatedTimelineWithResponse Get the federated timeline
 	//
 	// The public posts of the instance's accounts and of the remote accounts whose posts the
-	// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
+	// instance holds, newest first, in the viewer's timeline languages. Posts of other
 	// visibilities, `local` ones included, and boosts never appear on it. The instance setting
 	// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 	// is `signed_in` an anonymous request is a 401.
@@ -53284,6 +53606,129 @@ func (r RemoveAccountAliasResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RemoveAccountAliasResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetDeactivationPreviewResponse200Headers the declared response headers of an HTTP 200 response for GetDeactivationPreview
+type GetDeactivationPreviewResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetDeactivationPreviewResponseDefaultHeaders the declared response headers of an HTTP default response for GetDeactivationPreview
+type GetDeactivationPreviewResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetDeactivationPreviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DeactivationPreview
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetDeactivationPreviewResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetDeactivationPreviewResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetDeactivationPreviewResponse) GetJSON200() *DeactivationPreview {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetDeactivationPreviewResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetDeactivationPreviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDeactivationPreviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDeactivationPreviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetDeactivationPreviewResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DeactivateOwnAccountResponseDefaultHeaders the declared response headers of an HTTP default response for DeactivateOwnAccount
+type DeactivateOwnAccountResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeactivateOwnAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Deactivation
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeactivateOwnAccountResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DeactivateOwnAccountResponse) GetJSON200() *Deactivation {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeactivateOwnAccountResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeactivateOwnAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeactivateOwnAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeactivateOwnAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeactivateOwnAccountResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -75803,7 +76248,7 @@ func (r GetVoiceRoomSummaryResponse) ContentType() string {
 
 // ListAccountAliasesWithResponse List the authenticated user's aliases
 //
-// The accounts that the user moves from (ADR-0089, FR-009), which the user's actor names in
+// The accounts that the user moves from, which the user's actor names in
 // `alsoKnownAs`, oldest first.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -75819,7 +76264,7 @@ func (c *ClientWithResponses) ListAccountAliasesWithResponse(ctx context.Context
 
 // AddAccountAliasWithBodyWithResponse Add an alias to the authenticated user
 //
-// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+// Adds the account that the user moves from as an alias: the user's actor
 // names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
 // actor's `Update` goes to the user's followers as a profile change does. An alias alone
 // changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
@@ -75846,7 +76291,7 @@ func (c *ClientWithResponses) AddAccountAliasWithBodyWithResponse(ctx context.Co
 
 // AddAccountAliasWithResponse Add an alias to the authenticated user
 //
-// Adds the account that the user moves from as an alias (ADR-0089, FR-009): the user's actor
+// Adds the account that the user moves from as an alias: the user's actor
 // names it in `alsoKnownAs`, which lets that account move its followers to the user, and the
 // actor's `Update` goes to the user's followers as a profile change does. An alias alone
 // changes nothing else. `acct` is a handle or a URL, resolved to the account's actor as
@@ -75873,7 +76318,7 @@ func (c *ClientWithResponses) AddAccountAliasWithResponse(ctx context.Context, b
 
 // RemoveAccountAliasWithBodyWithResponse Remove an alias of the authenticated user
 //
-// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+// Removes an alias; the actor's `Update` goes to the user's followers as a
 // profile change does. Removing an alias that the user does not have changes nothing.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -75889,7 +76334,7 @@ func (c *ClientWithResponses) RemoveAccountAliasWithBodyWithResponse(ctx context
 
 // RemoveAccountAliasWithResponse Remove an alias of the authenticated user
 //
-// Removes an alias (ADR-0089, FR-009); the actor's `Update` goes to the user's followers as a
+// Removes an alias; the actor's `Update` goes to the user's followers as a
 // profile change does. Removing an alias that the user does not have changes nothing.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -75903,10 +76348,96 @@ func (c *ClientWithResponses) RemoveAccountAliasWithResponse(ctx context.Context
 	return ParseRemoveAccountAliasResponse(rsp)
 }
 
+// GetDeactivationPreviewWithResponse Get what deactivating the authenticated user's account would do now
+//
+// The date the account would be deleted if the user deactivated it now, and why it cannot
+// be deactivated now, if so. It changes nothing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /accounts/deactivation (the `GetDeactivationPreview` operationId).
+func (c *ClientWithResponses) GetDeactivationPreviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetDeactivationPreviewResponse, error) {
+	rsp, err := c.GetDeactivationPreview(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDeactivationPreviewResponse(rsp)
+}
+
+// DeactivateOwnAccountWithBodyWithResponse Deactivate the authenticated user's account
+//
+// Deactivates the user's own account, after checking the user's current `password`, a
+// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+// login provider. The account and its posts are hidden from everyone, every session and
+// token of the user ends, and the other servers get an `Update` of the actor marked
+// `suspended`. Where the server sends mail, one email states the date of the deletion.
+//
+// The user signs in again to reactivate it, on a page of the server, within 30 days;
+// after that the account is deleted, and the other servers get a `Delete` of the actor.
+// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+// hours after its reactivation.
+//
+// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired` or
+// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+func (c *ClientWithResponses) DeactivateOwnAccountWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeactivateOwnAccountResponse, error) {
+	rsp, err := c.DeactivateOwnAccountWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeactivateOwnAccountResponse(rsp)
+}
+
+// DeactivateOwnAccountWithResponse Deactivate the authenticated user's account
+//
+// Deactivates the user's own account, after checking the user's current `password`, a
+// `two_factor_code`, a `passkey` of the user, or an `external_confirmation` from a linked
+// login provider. The account and its posts are hidden from everyone, every session and
+// token of the user ends, and the other servers get an `Update` of the actor marked
+// `suspended`. Where the server sends mail, one email states the date of the deletion.
+//
+// The user signs in again to reactivate it, on a page of the server, within 30 days;
+// after that the account is deleted, and the other servers get a `Delete` of the actor.
+// While it is deactivated, nothing reaches it: mentions, direct messages, notifications,
+// emails, Web Push, and new followers. A deactivated account can be deactivated again 24
+// hours after its reactivation.
+//
+// A wrong password is a 422 `/api/v1/problems/wrong-password`, a wrong code a 422
+// `/api/v1/problems/invalid-two-factor-code`, a passkey that does not verify a 422
+// `/api/v1/problems/invalid-passkey`, and an expired confirmation a 422
+// `/api/v1/problems/passkey-confirmation-expired` or
+// `/api/v1/problems/external-confirmation-expired`. An account that cannot be deactivated
+// now is a 409 `/api/v1/problems/deactivation-refused`, whose detail says why: moderation
+// keeps it from logging in, its deletion is scheduled, it moved, its registration waits for
+// review, a paid subscription goes on, no other administrator can sign in, or it was reactivated
+// less than 24 hours ago. At most 5 attempts per account are accepted every hour.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /accounts/deactivation (the `DeactivateOwnAccount` operationId).
+func (c *ClientWithResponses) DeactivateOwnAccountWithResponse(ctx context.Context, body DeactivateOwnAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*DeactivateOwnAccountResponse, error) {
+	rsp, err := c.DeactivateOwnAccount(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeactivateOwnAccountResponse(rsp)
+}
+
 // DeleteOwnAccountWithBodyWithResponse Delete the authenticated user's account
 //
 // Deletes the user's own account at once, after checking the user's current `password`
-// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
+// or a `passkey` of the user; a user without a password confirms with a passkey.
 // The account and its posts disappear, every session and token of the user ends, and the
 // other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
 // undone, and the username is never reused. The only administrator of the instance gets a
@@ -75934,7 +76465,7 @@ func (c *ClientWithResponses) DeleteOwnAccountWithBodyWithResponse(ctx context.C
 // DeleteOwnAccountWithResponse Delete the authenticated user's account
 //
 // Deletes the user's own account at once, after checking the user's current `password`
-// or a `passkey` of the user (FR-008); a user without a password confirms with a passkey.
+// or a `passkey` of the user; a user without a password confirms with a passkey.
 // The account and its posts disappear, every session and token of the user ends, and the
 // other servers get a `Delete` of the actor; the data is erased 7 days later. It cannot be
 // undone, and the username is never reused. The only administrator of the instance gets a
@@ -75961,7 +76492,7 @@ func (c *ClientWithResponses) DeleteOwnAccountWithResponse(ctx context.Context, 
 
 // ResendVerificationEmailWithResponse Send the authenticated user a new verification email
 //
-// Sends a new verification email to the user's primary email address (FR-002, ADR-0086 §5),
+// Sends a new verification email to the user's primary email address,
 // such as after a `hard_bounce` suppressed the address (`Preferences.email_suppression`):
 // following its link shows that the address works and lifts the suppression. Earlier links
 // keep working until they expire. The email is queued and sent in the background, so a 202
@@ -75989,7 +76520,7 @@ func (c *ClientWithResponses) ResendVerificationEmailWithResponse(ctx context.Co
 // deactivated, or is deleted is a 404, the same as an unknown one.
 //
 // With `resolve=true`, a remote account that the instance does not know yet is fetched
-// from its server (FR-305): a handle through WebFinger, a URL directly. Only accounts
+// from its server: a handle through WebFinger, a URL directly. Only accounts
 // whose handle WebFinger confirms are returned; a handle or URL that does not lead to one
 // is a 404. Resolving needs an access token (anonymous requests get the 401 of
 // `/api/v1/problems/unauthenticated`) and is limited to 30 fetches per account every
@@ -76011,7 +76542,7 @@ func (c *ClientWithResponses) LookupAccountWithResponse(ctx context.Context, par
 
 // MoveOwnAccountWithBodyWithResponse Move the authenticated user's account to another account
 //
-// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// Moves the user's account to the account `target_account_id`, after
 // checking the user's current `password` or a `passkey` of the user; a user without a
 // password confirms with a passkey. Find the target's ID with
 // `GET /accounts/lookup?resolve=true`; it may be an account of this server.
@@ -76023,7 +76554,7 @@ func (c *ClientWithResponses) LookupAccountWithResponse(ctx context.Context, par
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before. An account that may not
+// move was canceled, or for a target the account moved to before. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -76055,7 +76586,7 @@ func (c *ClientWithResponses) MoveOwnAccountWithBodyWithResponse(ctx context.Con
 
 // MoveOwnAccountWithResponse Move the authenticated user's account to another account
 //
-// Moves the user's account to the account `target_account_id` (FR-009, ADR-0089), after
+// Moves the user's account to the account `target_account_id`, after
 // checking the user's current `password` or a `passkey` of the user; a user without a
 // password confirms with a passkey. Find the target's ID with
 // `GET /accounts/lookup?resolve=true`; it may be an account of this server.
@@ -76067,7 +76598,7 @@ func (c *ClientWithResponses) MoveOwnAccountWithBodyWithResponse(ctx context.Con
 // `/api/v1/problems/move-target-unavailable` when the target is this account, is not found,
 // cannot be fetched, or is suspended here (it or its server), and
 // `/api/v1/problems/move-too-soon` within 30 days of the account's last move, also when that
-// move was cancelled, or for a target the account moved to before. An account that may not
+// move was canceled, or for a target the account moved to before. An account that may not
 // move (under a moderation action that stops it, say) is a 403
 // `/api/v1/problems/account-unavailable`. A wrong confirmation counts towards a limit of 5 an
 // hour for the user, past which the answer is 429.
@@ -76099,10 +76630,10 @@ func (c *ClientWithResponses) MoveOwnAccountWithResponse(ctx context.Context, bo
 
 // CancelOwnAccountMoveWithResponse Cancel the move of the authenticated user's account
 //
-// Cancels the move of the user's account (ADR-0089): the account no longer names the target,
+// Cancels the move of the user's account: the account no longer names the target,
 // can post, boost, react, follow, and vote again, and the other servers get an `Update` of
 // its actor without `movedTo`. The followers that moved stay with the target, and the next
-// move still waits 30 days from the cancelled one. An account that has not moved gets a 409
+// move still waits 30 days from the canceled one. An account that has not moved gets a 409
 // `/api/v1/problems/account-not-moved`.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -76118,8 +76649,7 @@ func (c *ClientWithResponses) CancelOwnAccountMoveWithResponse(ctx context.Conte
 
 // GetPasswordStatusWithResponse Get whether the authenticated user has a password
 //
-// Whether the user signs in with a password, or with passkeys only after removing it
-// (FR-004).
+// Whether the user signs in with a password, or with passkeys only after removing it.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -76138,7 +76668,7 @@ func (c *ClientWithResponses) GetPasswordStatusWithResponse(ctx context.Context,
 // (`login_providers_only` of `GET /instance`), it is a 403
 // `/api/v1/problems/login-providers-only`: a new password could not sign in.
 // Replaces the user's password with `new_password` after checking `current_password` or
-// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
+// a `passkey` of the user; a user without a password sets one with a passkey.
 // Every other session and grant of the user ends: the user is signed out of the server's
 // sign-in pages and of every app but the one that makes the request, whose tokens keep
 // working. Passkeys and two-factor authentication stay as they are, and the user is told
@@ -76170,7 +76700,7 @@ func (c *ClientWithResponses) ChangePasswordWithBodyWithResponse(ctx context.Con
 // (`login_providers_only` of `GET /instance`), it is a 403
 // `/api/v1/problems/login-providers-only`: a new password could not sign in.
 // Replaces the user's password with `new_password` after checking `current_password` or
-// a `passkey` of the user (FR-002); a user without a password sets one with a passkey.
+// a `passkey` of the user; a user without a password sets one with a passkey.
 // Every other session and grant of the user ends: the user is signed out of the server's
 // sign-in pages and of every app but the one that makes the request, whose tokens keep
 // working. Passkeys and two-factor authentication stay as they are, and the user is told
@@ -76199,8 +76729,7 @@ func (c *ClientWithResponses) ChangePasswordWithResponse(ctx context.Context, bo
 // RemovePasswordWithBodyWithResponse Remove the authenticated user's password
 //
 // Removes the password of a user who has a passkey or a linked account, after checking a
-// `passkey` of the user or an `external_confirmation` from a linked login provider
-// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
+// `passkey` of the user or an `external_confirmation` from a linked login provider: from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 // authentication still enters a code after one. A password reset link or
 // `POST /accounts/password` with a passkey sets a password again. Every other session and
 // grant of the user ends, as a change of the password does, and the user is told by email
@@ -76227,8 +76756,7 @@ func (c *ClientWithResponses) RemovePasswordWithBodyWithResponse(ctx context.Con
 // RemovePasswordWithResponse Remove the authenticated user's password
 //
 // Removes the password of a user who has a passkey or a linked account, after checking a
-// `passkey` of the user or an `external_confirmation` from a linked login provider
-// (FR-004): from then on only the passkeys and the linked accounts sign in, and a user with two-factor
+// `passkey` of the user or an `external_confirmation` from a linked login provider: from then on only the passkeys and the linked accounts sign in, and a user with two-factor
 // authentication still enters a code after one. A password reset link or
 // `POST /accounts/password` with a passkey sets a password again. Every other session and
 // grant of the user ends, as a change of the password does, and the user is told by email
@@ -76274,8 +76802,7 @@ func (c *ClientWithResponses) GetRelationshipsWithResponse(ctx context.Context, 
 //
 // The accounts whose username, `username@domain`, or a word of the display name starts
 // with `q`, and the accounts of this server whose username or display name contains `q`,
-// for the autocomplete of mentions and the account search (FR-119, FR-306, FR-307,
-// ADR-0092). The search covers the local accounts and the remote accounts that the
+// for the autocomplete of mentions and the account search. The search covers the local accounts and the remote accounts that the
 // instance knows with a handle WebFinger confirmed; it fetches nothing from other servers
 // (look an unknown `username@domain` up with `GET /api/v1/accounts/lookup` and
 // `resolve=true`).
@@ -76306,7 +76833,7 @@ func (c *ClientWithResponses) SearchAccountsWithResponse(ctx context.Context, pa
 
 // ListAccountSuggestionsWithResponse Suggest accounts to follow
 //
-// Accounts of this server for the viewer to follow (FR-308): first the accounts that the
+// Accounts of this server for the viewer to follow: first the accounts that the
 // administrators feature (the instance setting `featured_accounts`), in the order they gave,
 // then the accounts that published a public or local post in the last 30 days, the one that
 // posted last first. Each account comes once.
@@ -76410,7 +76937,7 @@ func (c *ClientWithResponses) UnblockAccountWithResponse(ctx context.Context, id
 // BlockAccountWithResponse Block an account
 //
 // Ends the follows between the viewer and the account in both directions and keeps
-// either from following the other until the block is lifted (FR-303). Blocking an
+// either from following the other until the block is lifted. Blocking an
 // account that the viewer already blocks changes nothing, and an account that blocks the
 // viewer can be blocked back. Blocking a remote account
 // also sends a Block to its server.
@@ -76444,7 +76971,7 @@ func (c *ClientWithResponses) UnfollowAccountWithResponse(ctx context.Context, i
 // FollowAccountWithBodyWithResponse Follow an account
 //
 // Follows the account at once, or sends a follow request when the account is locked:
-// then `requested` is true until the account accepts it (FR-301, FR-302). Following an
+// then `requested` is true until the account accepts it. Following an
 // account that the viewer already follows or has requested to follow changes only the
 // preferences in the body. Following an account that the viewer blocks is a 409
 // `/api/v1/problems/blocking`. A follow of an account on another server is a request
@@ -76467,7 +76994,7 @@ func (c *ClientWithResponses) FollowAccountWithBodyWithResponse(ctx context.Cont
 // FollowAccountWithResponse Follow an account
 //
 // Follows the account at once, or sends a follow request when the account is locked:
-// then `requested` is true until the account accepts it (FR-301, FR-302). Following an
+// then `requested` is true until the account accepts it. Following an
 // account that the viewer already follows or has requested to follow changes only the
 // preferences in the body. Following an account that the viewer blocks is a 409
 // `/api/v1/problems/blocking`. A follow of an account on another server is a request
@@ -76553,7 +77080,7 @@ func (c *ClientWithResponses) UnmuteAccountWithResponse(ctx context.Context, id 
 // MuteAccountWithBodyWithResponse Mute an account
 //
 // Hides the account's posts, and unless `notifications` is false its notifications,
-// from the viewer (FR-303). Muting an account that the viewer already mutes replaces the
+// from the viewer. Muting an account that the viewer already mutes replaces the
 // settings and the expiry.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -76570,7 +77097,7 @@ func (c *ClientWithResponses) MuteAccountWithBodyWithResponse(ctx context.Contex
 // MuteAccountWithResponse Mute an account
 //
 // Hides the account's posts, and unless `notifications` is false its notifications,
-// from the viewer (FR-303). Muting an account that the viewer already mutes replaces the
+// from the viewer. Muting an account that the viewer already mutes replaces the
 // settings and the expiry.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -76724,7 +77251,7 @@ func (c *ClientWithResponses) LiftAccountActionWithResponse(ctx context.Context,
 
 // ListAdminAccountsWithResponse Search the accounts
 //
-// The local and remote accounts (FR-714), newest first, without the instance actor:
+// The local and remote accounts, newest first, without the instance actor:
 // those whose handle's username starts with `username` (case-insensitively; a remote
 // account whose handle is not verified has none), on a `domain`, local or remote
 // (`origin`), in a `state`, and, for local accounts, of a primary email address (`email`,
@@ -76750,7 +77277,7 @@ func (c *ClientWithResponses) ListAdminAccountsWithResponse(ctx context.Context,
 
 // GetAdminAccountWithResponse Get the details of an account
 //
-// An account as the moderators see it (FR-714): its state, the restrictions of its own
+// An account as the moderators see it: its state, the restrictions of its own
 // actions, and, for a local account, its registration, whether its email address is
 // verified, and its roles, with its newest 20 actions and, for a viewer who also has the
 // `manage_reports` permission, its newest 20 reports. The email address and the IP
@@ -76770,7 +77297,7 @@ func (c *ClientWithResponses) GetAdminAccountWithResponse(ctx context.Context, i
 
 // ListAccountActionsWithResponse List the moderation actions on an account
 //
-// The actions that moderators took on an account (FR-703), newest first, lifted and
+// The actions that moderators took on an account, newest first, lifted and
 // expired ones included unless `active` is set. An unknown account is a 404. Needs the
 // `manage_accounts` permission.
 //
@@ -76787,7 +77314,7 @@ func (c *ClientWithResponses) ListAccountActionsWithResponse(ctx context.Context
 
 // CreateAccountActionWithBodyWithResponse Take a moderation action on an account
 //
-// Records an action on an account (FR-703), in effect at once and until it expires or is
+// Records an action on an account, in effect at once and until it expires or is
 // lifted; several actions on one account add up. On a local account: `warn` only tells
 // the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
 // past ones included, followers-only and keeps them off the public timelines;
@@ -76825,7 +77352,7 @@ func (c *ClientWithResponses) CreateAccountActionWithBodyWithResponse(ctx contex
 
 // CreateAccountActionWithResponse Take a moderation action on an account
 //
-// Records an action on an account (FR-703), in effect at once and until it expires or is
+// Records an action on an account, in effect at once and until it expires or is
 // lifted; several actions on one account add up. On a local account: `warn` only tells
 // the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
 // past ones included, followers-only and keeps them off the public timelines;
@@ -76864,7 +77391,7 @@ func (c *ClientWithResponses) CreateAccountActionWithResponse(ctx context.Contex
 // LiftAdminAccountEmailSuppressionWithResponse Lift the suppression of the email address of a local account
 //
 // Lets the server send email again to the primary address of a local account's user, which
-// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
+// a hard bounce or a complaint suppressed, such as after the user fixed their
 // mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
 // the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
 // `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
@@ -76887,7 +77414,7 @@ func (c *ClientWithResponses) LiftAdminAccountEmailSuppressionWithResponse(ctx c
 //
 // Issues a link that sets a new password for a local account's user, for an
 // administrator to hand to the user, such as when the server sends no email or the
-// email does not arrive (FR-002). The link works once, for an hour, and stops working
+// email does not arrive. The link works once, for an hour, and stops working
 // when the password changes otherwise; only its hash is stored, so this response is the
 // only place it is shown. It is recorded in the audit log as `password_reset_link_issued`.
 // Whoever holds the link can set the password: confirm who the user is through another
@@ -76929,10 +77456,9 @@ func (c *ClientWithResponses) RefetchAccountStatusesWithResponse(ctx context.Con
 // RevealAdminAccountWithResponse Show the email address and the IP addresses of a local account
 //
 // The primary email address of a local account, where it registered and its newest 20
-// sign-ins came from, and up to 20 other accounts per IP address that used the same one
-// (FR-714). Each call is recorded in the audit log as `revealed_private_data` before
+// sign-ins came from, and up to 20 other accounts per IP address that used the same one. Each call is recorded in the audit log as `revealed_private_data` before
 // anything is returned; it changes nothing else. IP addresses are kept for the retention
-// of the sign-in and registration origins only (ADR-0038). A remote account or the
+// of the sign-in and registration origins only. A remote account or the
 // instance actor is a 422 naming `id`. An unknown account is a 404. A local account whose roles do not rank below the
 // user's, the user's own included, is a 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
@@ -77009,7 +77535,7 @@ func (c *ClientWithResponses) GrantAccountRoleWithResponse(ctx context.Context, 
 // DisableAdminAccountTwoFactorWithResponse Remove the two-factor authentication of a local account
 //
 // Ends the TOTP enrollment of a local account's user, who lost their authenticator app
-// and recovery codes, so that they sign in with the password alone (FR-005). It is
+// and recovery codes, so that they sign in with the password alone. It is
 // recorded in the audit log as `two_factor_disabled`. A remote account or the instance
 // actor is a 422 naming `id`, an account without two-factor authentication a 409
 // `/api/v1/problems/two-factor-not-enabled`, and an unknown account a 404. A local account whose roles do not rank below the user's, the user's own included, is a
@@ -77029,7 +77555,7 @@ func (c *ClientWithResponses) DisableAdminAccountTwoFactorWithResponse(ctx conte
 
 // ListAdminAnnouncementsWithResponse List the announcements
 //
-// Every announcement, drafts and withdrawn ones included, newest first (FR-726). The
+// Every announcement, drafts and withdrawn ones included, newest first. The
 // list is not paginated. Needs the `manage_announcements` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -77181,7 +77707,7 @@ func (c *ClientWithResponses) WithdrawAdminAnnouncementWithResponse(ctx context.
 
 // ListAppealsWithResponse List the appeals of moderation actions
 //
-// The appeals that local users made of the actions on their accounts (FR-707), newest
+// The appeals that local users made of the actions on their accounts, newest
 // first, each with its action. Needs the `manage_accounts` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -77308,7 +77834,7 @@ func (c *ClientWithResponses) UpholdAppealWithResponse(ctx context.Context, id A
 
 // ListAuditLogWithResponse List the audit log
 //
-// The operations of the moderators and administrators (FR-704), newest first: who did
+// The operations of the moderators and administrators, newest first: who did
 // what to which target and when. Each entry keeps the target's display name as it was
 // (`target_label`), so it stays readable after the target is gone; the reasons and notes
 // stay with the operation itself (`source_event_id`). The audit log cannot be changed or
@@ -77328,7 +77854,7 @@ func (c *ClientWithResponses) ListAuditLogWithResponse(ctx context.Context, para
 
 // ListBillingImportsWithResponse List the state of the billing imports
 //
-// The state of the imports of every cloud provider of `billing_sources` (ADR-0068), in its
+// The state of the imports of every cloud provider of `billing_sources`, in its
 // order: the last attempt and its failure, the last success, the billed requests of the UTC
 // day and month with their caps, the bytes billed this month, and the billing months of the
 // last year with imported costs, each an estimate, final, or corrected, with its totals. The
@@ -77347,7 +77873,7 @@ func (c *ClientWithResponses) ListBillingImportsWithResponse(ctx context.Context
 
 // RunBillingImportWithResponse Import a provider's usage charges now
 //
-// Queues an import of the billing source now, besides the daily one (ADR-0068 §2). Its
+// Queues an import of the billing source now, besides the daily one. Its
 // billed requests count toward the caps like the others. One import per source and UTC
 // hour: another request in the hour after its import ran is a 429. A source that
 // `billing_sources` does not enable is a 404. The request is recorded in the audit log.
@@ -77366,9 +77892,9 @@ func (c *ClientWithResponses) RunBillingImportWithResponse(ctx context.Context, 
 
 // GetAdminServiceClosureWithResponse Read the service closure
 //
-// The state of the closure of the service (FR-808, ADR-0088 §1) with the schedule in effect,
+// The state of the closure of the service with the schedule in effect,
 // and whether its notice is short; once the server is closed, the progress of the closure's
-// `Delete`s (ADR-0088 §3). Needs the `manage_service_closure` permission.
+// `Delete`s. Needs the `manage_service_closure` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -77383,7 +77909,7 @@ func (c *ClientWithResponses) GetAdminServiceClosureWithResponse(ctx context.Con
 
 // WithdrawServiceClosureWithResponse Withdraw the announcement of the closure
 //
-// Withdraws the announcement in effect (ADR-0088 §1): the server runs on as before, and the
+// Withdraws the announcement in effect: the server runs on as before, and the
 // audit log records `service_closure_withdrawn`. Without an announcement in effect, or once the
 // server is closed, it is the 409 `/api/v1/problems/service-closure-state`. Needs the
 // `manage_service_closure` permission.
@@ -77401,7 +77927,7 @@ func (c *ClientWithResponses) WithdrawServiceClosureWithResponse(ctx context.Con
 
 // AnnounceServiceClosureWithBodyWithResponse Announce the closure of the service
 //
-// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+// Announces that the server closes at `closes_at`, or changes the dates
 // of the announcement in effect. Each call records a new announcement, kept with the earlier
 // ones, and the audit log's `service_closure_announced`. The announcement shows in
 // `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
@@ -77423,7 +77949,7 @@ func (c *ClientWithResponses) AnnounceServiceClosureWithBodyWithResponse(ctx con
 
 // AnnounceServiceClosureWithResponse Announce the closure of the service
 //
-// Announces that the server closes at `closes_at` (FR-808, ADR-0088 §1), or changes the dates
+// Announces that the server closes at `closes_at`, or changes the dates
 // of the announcement in effect. Each call records a new announcement, kept with the earlier
 // ones, and the audit log's `service_closure_announced`. The announcement shows in
 // `Instance.closure` and NodeInfo at once; the server keeps running until an administrator
@@ -77445,7 +77971,7 @@ func (c *ClientWithResponses) AnnounceServiceClosureWithResponse(ctx context.Con
 
 // GetAdminServiceClosureCheckWithResponse Check the server before its closure
 //
-// What the closure of the server would end (FR-809, ADR-0088 §1): the estimate of the `Delete`
+// What the closure of the server would end: the estimate of the `Delete`
 // deliveries, the supporter subscriptions that it cancels, the account migrations that have
 // not ended, and the accounts under a retention hold. Needs the `manage_service_closure`
 // permission.
@@ -77463,7 +77989,7 @@ func (c *ClientWithResponses) GetAdminServiceClosureCheckWithResponse(ctx contex
 
 // CloseServiceWithBodyWithResponse Close the server
 //
-// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+// Closes the server for good: it cannot be undone. Only an announced
 // closure whose `closes_at` has passed can close; before it, without an announcement, or once
 // closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
 // server's domain, or it is a 422 that names it. The closure records `service_closure_closed`
@@ -77484,7 +78010,7 @@ func (c *ClientWithResponses) CloseServiceWithBodyWithResponse(ctx context.Conte
 
 // CloseServiceWithResponse Close the server
 //
-// Closes the server for good (FR-809, ADR-0088 §1, §2): it cannot be undone. Only an announced
+// Closes the server for good: it cannot be undone. Only an announced
 // closure whose `closes_at` has passed can close; before it, without an announcement, or once
 // closed, it is the 409 `/api/v1/problems/service-closure-state`. `confirm_domain` must be the
 // server's domain, or it is a 422 that names it. The closure records `service_closure_closed`
@@ -77505,7 +78031,7 @@ func (c *ClientWithResponses) CloseServiceWithResponse(ctx context.Context, body
 
 // ListCostItemsWithResponse List the cost items
 //
-// The instance's cost items that are not canceled, newest first (ADR-0067, FR-901).
+// The instance's cost items that are not canceled, newest first.
 // Needs the `manage_finance` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -77522,7 +78048,7 @@ func (c *ClientWithResponses) ListCostItemsWithResponse(ctx context.Context, par
 // CreateCostItemWithBodyWithResponse Record a cost item
 //
 // Records a cost of the instance: once, or every N weeks, months, or years from the start
-// date (ADR-0067 §3). A value the server rejects is a 422 naming it: `interval` outside 1
+// date. A value the server rejects is a 422 naming it: `interval` outside 1
 // to 99 (1 for `once`), an invalid date, `ends_on` before `starts_on`, an empty or too long
 // `name` or `provider`, a too long `memo`, an unknown currency, a negative amount, or an
 // amount with more digits than its currency (`price`). Recorded in the audit log.
@@ -77542,7 +78068,7 @@ func (c *ClientWithResponses) CreateCostItemWithBodyWithResponse(ctx context.Con
 // CreateCostItemWithResponse Record a cost item
 //
 // Records a cost of the instance: once, or every N weeks, months, or years from the start
-// date (ADR-0067 §3). A value the server rejects is a 422 naming it: `interval` outside 1
+// date. A value the server rejects is a 422 naming it: `interval` outside 1
 // to 99 (1 for `once`), an invalid date, `ends_on` before `starts_on`, an empty or too long
 // `name` or `provider`, a too long `memo`, an unknown currency, a negative amount, or an
 // amount with more digits than its currency (`price`). Recorded in the audit log.
@@ -77698,7 +78224,7 @@ func (c *ClientWithResponses) ReviseCostItemPriceWithResponse(ctx context.Contex
 // GetCostTotalsWithResponse Total the costs by period
 //
 // The totals of the cost items and the imported usage charges for each week, month, or
-// year from the one that holds `from` to the one that holds `to` (ADR-0067 §4, §5), by
+// year from the one that holds `from` to the one that holds `to`, by
 // currency and broken down by provider and category, with the rules that cut the periods.
 // The totals are computed on every read. More than 104 weeks, 60 months, or 20 years, and
 // `to` before `from`, are a 422 naming `to`. Needs the `manage_finance` permission.
@@ -77718,7 +78244,7 @@ func (c *ClientWithResponses) GetCostTotalsWithResponse(ctx context.Context, par
 //
 // The number of open reports (with the `manage_reports` permission), and of registrations
 // that await approval and appeals that await a decision (with the `manage_accounts`
-// permission), for the badges of the admin menu (FR-712). A count whose permission the user's roles lack is omitted, so a
+// permission), for the badges of the admin menu. A count whose permission the user's roles lack is omitted, so a
 // user without either gets an empty object.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -77734,7 +78260,7 @@ func (c *ClientWithResponses) GetAdminCountsWithResponse(ctx context.Context, re
 
 // ListAdminCustomEmojiRequestsWithResponse List the custom emoji requests
 //
-// The custom emoji requests of the holders of `create_custom_emojis` (ADR-0070 §6), newest
+// The custom emoji requests of the holders of `create_custom_emojis`, newest
 // first, with their requesters: the pending ones unless `state` names another state. Needs the `manage_custom_emojis` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -77750,7 +78276,7 @@ func (c *ClientWithResponses) ListAdminCustomEmojiRequestsWithResponse(ctx conte
 
 // ApproveCustomEmojiRequestWithResponse Approve a custom emoji request
 //
-// Approves a pending request (ADR-0070 §2): a `create` request makes the local emoji,
+// Approves a pending request: a `create` request makes the local emoji,
 // without a category, in the picker, and enabled, whose creator is the requester; an `image`
 // request gives the emoji the requested image. The image is copied as an upload of the
 // instance. The approval and the emoji's registration or new image are recorded in the
@@ -77774,7 +78300,7 @@ func (c *ClientWithResponses) ApproveCustomEmojiRequestWithResponse(ctx context.
 // RejectCustomEmojiRequestWithBodyWithResponse Reject a custom emoji request
 //
 // Rejects a pending request, with an optional reason that the requester sees, which frees
-// its shortcode (ADR-0070 §2). The rejection is recorded in the audit log, and the requester
+// its shortcode. The rejection is recorded in the audit log, and the requester
 // is notified. A reason longer than 500 characters is a 422 with the reason
 // `invalid_reason`; a request that is not pending is a 409
 // `/api/v1/problems/custom-emoji-request-conflict` (`not_pending`). An unknown request is a
@@ -77794,7 +78320,7 @@ func (c *ClientWithResponses) RejectCustomEmojiRequestWithBodyWithResponse(ctx c
 // RejectCustomEmojiRequestWithResponse Reject a custom emoji request
 //
 // Rejects a pending request, with an optional reason that the requester sees, which frees
-// its shortcode (ADR-0070 §2). The rejection is recorded in the audit log, and the requester
+// its shortcode. The rejection is recorded in the audit log, and the requester
 // is notified. A reason longer than 500 characters is a 422 with the reason
 // `invalid_reason`; a request that is not pending is a 409
 // `/api/v1/problems/custom-emoji-request-conflict` (`not_pending`). An unknown request is a
@@ -77813,7 +78339,7 @@ func (c *ClientWithResponses) RejectCustomEmojiRequestWithResponse(ctx context.C
 
 // ListAdminCustomEmojisWithResponse List the custom emoji
 //
-// The custom emoji, local and remote, newest first (ADR-0051 §4). `local` keeps the
+// The custom emoji, local and remote, newest first. `local` keeps the
 // emoji of this instance (`true`) or of other servers (`false`); `domain` keeps those of
 // one remote domain; `shortcode` keeps those whose shortcode contains it, ignoring case.
 // Needs the `manage_custom_emojis` permission.
@@ -78033,7 +78559,7 @@ func (c *ClientWithResponses) ReplaceCustomEmojiImageWithResponse(ctx context.Co
 
 // ListDomainActionsWithResponse List the moderation actions on domains
 //
-// The actions that moderators took on remote domains (FR-702), newest first, lifted and
+// The actions that moderators took on remote domains, newest first, lifted and
 // expired ones included unless `active` is set. Needs the `manage_domains` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -78049,7 +78575,7 @@ func (c *ClientWithResponses) ListDomainActionsWithResponse(ctx context.Context,
 
 // CreateDomainActionWithBodyWithResponse Take a moderation action on a domain
 //
-// Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+// Records an action on a remote domain and its subdomains, in effect at once and
 // until it expires or is lifted. A `suspend` stops every delivery to the domain, every
 // fetch from it, and every activity received from it, and hides its accounts and posts
 // from the timelines; `limit` keeps its posts off the public timelines and its accounts
@@ -78073,7 +78599,7 @@ func (c *ClientWithResponses) CreateDomainActionWithBodyWithResponse(ctx context
 
 // CreateDomainActionWithResponse Take a moderation action on a domain
 //
-// Records an action on a remote domain and its subdomains (FR-702), in effect at once and
+// Records an action on a remote domain and its subdomains, in effect at once and
 // until it expires or is lifted. A `suspend` stops every delivery to the domain, every
 // fetch from it, and every activity received from it, and hides its accounts and posts
 // from the timelines; `limit` keeps its posts off the public timelines and its accounts
@@ -78097,7 +78623,7 @@ func (c *ClientWithResponses) CreateDomainActionWithResponse(ctx context.Context
 
 // ExportDomainBlocksWithResponse Export the domain actions as Mastodon's domain block CSV
 //
-// The domain actions in effect (FR-706) as the CSV that Mastodon's moderation screens
+// The domain actions in effect as the CSV that Mastodon's moderation screens
 // import, with the header
 // `#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate`: one row
 // per domain in domain order. `#severity` is `suspend` when a `suspend` is in effect on
@@ -78120,7 +78646,7 @@ func (c *ClientWithResponses) ExportDomainBlocksWithResponse(ctx context.Context
 
 // ImportDomainBlocksWithBodyWithResponse Import the chosen rows of a Mastodon domain block CSV
 //
-// Issues the domain actions of each block (FR-706), as the preview names them: the kinds
+// Issues the domain actions of each block, as the preview names them: the kinds
 // of the block that no action in effect on the domain or a parent domain has already. The
 // actions last until they are lifted, carry the block's public comment and obfuscation
 // and the request's private note, and are audited like actions issued one at a time. A
@@ -78143,7 +78669,7 @@ func (c *ClientWithResponses) ImportDomainBlocksWithBodyWithResponse(ctx context
 
 // ImportDomainBlocksWithResponse Import the chosen rows of a Mastodon domain block CSV
 //
-// Issues the domain actions of each block (FR-706), as the preview names them: the kinds
+// Issues the domain actions of each block, as the preview names them: the kinds
 // of the block that no action in effect on the domain or a parent domain has already. The
 // actions last until they are lifted, carry the block's public comment and obfuscation
 // and the request's private note, and are audited like actions issued one at a time. A
@@ -78166,7 +78692,7 @@ func (c *ClientWithResponses) ImportDomainBlocksWithResponse(ctx context.Context
 
 // PreviewDomainBlockImportWithBodyWithResponse Preview the import of a Mastodon domain block CSV
 //
-// Reads a domain block CSV that Mastodon exported (FR-706) and says what importing each
+// Reads a domain block CSV that Mastodon exported and says what importing each
 // row would do, without changing anything. A file whose first field is `#domain` has a
 // header naming the columns; any other file is a list of domains, one per row, each
 // suspended. An empty `#severity` is `suspend`, and a boolean is false when empty, `0`,
@@ -78188,7 +78714,7 @@ func (c *ClientWithResponses) PreviewDomainBlockImportWithBodyWithResponse(ctx c
 
 // PreviewDomainBlockImportWithResponse Preview the import of a Mastodon domain block CSV
 //
-// Reads a domain block CSV that Mastodon exported (FR-706) and says what importing each
+// Reads a domain block CSV that Mastodon exported and says what importing each
 // row would do, without changing anything. A file whose first field is `#domain` has a
 // header naming the columns; any other file is a list of domains, one per row, each
 // suspended. An empty `#severity` is `suspend`, and a boolean is false when empty, `0`,
@@ -78242,7 +78768,7 @@ func (c *ClientWithResponses) LiftDomainActionWithResponse(ctx context.Context, 
 
 // ListErrorGroupsWithResponse List the error groups
 //
-// The groups of the errors that the server and the web client reported (ADR-0103 §8), the
+// The groups of the errors that the server and the web client reported, the
 // most recently seen first, with their occurrences of the last 24 hours and 7 days. `state`
 // and `source` keep the groups of that state and source. Needs the `manage_errors`
 // permission.
@@ -78322,7 +78848,7 @@ func (c *ClientWithResponses) UnmuteErrorGroupWithResponse(ctx context.Context, 
 
 // ListIncomeMovementsWithResponse List the money movements of the income
 //
-// The payment provider's money movements that the income records keep (ADR-0073 §6), newest
+// The payment provider's money movements that the income records keep, newest
 // first by the time the provider booked them, narrowed to the dates they fall on and a
 // kind, with the subscriber's account of each. Only this operation and the admin screen
 // show individual movements and their subscribers. Needs the `manage_finance` permission.
@@ -78341,7 +78867,7 @@ func (c *ClientWithResponses) ListIncomeMovementsWithResponse(ctx context.Contex
 // GetIncomeTotalsWithResponse Total the income by period
 //
 // The totals of the payment provider's money movements for each week, month, or year from
-// the one that holds `from` to the one that holds `to` (ADR-0073 §5, §6): the gross, the
+// the one that holds `from` to the one that holds `to`: the gross, the
 // provider's fees, and the net of each currency, the balance against the costs of
 // `GET /admin/cost_totals` under the same basis, the number of members of each supporter
 // plan now, and the rules that cut the periods. The totals are computed on every read. More
@@ -78429,7 +78955,7 @@ func (c *ClientWithResponses) ClearAdminBrandWithResponse(ctx context.Context, k
 // `/api/v1/problems/invalid-brand` names it in `brand_error`. The server does not check that
 // the PNGs show the same picture as the SVG.
 //
-// The revision and the change are kept (`instance_brand_revisions`, the audit log's
+// The revision and the change are kept (the audit log's
 // `setting_changed` of `brand_icon`, `brand_logo`, or `brand_logo_dark`); the files of every
 // revision stay at their URLs. Needs the `manage_settings` permission.
 //
@@ -78446,7 +78972,7 @@ func (c *ClientWithResponses) SetAdminBrandWithBodyWithResponse(ctx context.Cont
 
 // ListInstanceTextsWithResponse List the instance texts
 //
-// The current text of every key that has one (FR-705): the name, the descriptions, the
+// The current text of every key that has one: the name, the descriptions, the
 // terms of service, the privacy policy, the commerce disclosure, and the alternative texts of the preview image and
 // the thumbnail, by key. Each holds one value, shown as it is in every locale. Cleared
 // texts are not listed. The list is not paginated. Needs the `manage_settings` permission.
@@ -78467,7 +78993,7 @@ func (c *ClientWithResponses) ListInstanceTextsWithResponse(ctx context.Context,
 // Records a revision of the text of `key`, which becomes its current text in every locale:
 // the administrator writes it once, in any language, and readers of every locale see the
 // same value. An empty `body` clears the text. The revision and the change are kept
-// (`instance_text_revisions`, the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
+// (the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
 // sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
 // `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
 // the other texts are plain text. The display name (`name`) names the instance to people
@@ -78496,7 +79022,7 @@ func (c *ClientWithResponses) SetInstanceTextWithBodyWithResponse(ctx context.Co
 // Records a revision of the text of `key`, which becomes its current text in every locale:
 // the administrator writes it once, in any language, and readers of every locale see the
 // same value. An empty `body` clears the text. The revision and the change are kept
-// (`instance_text_revisions`, the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
+// (the audit log's `text_changed`). The terms of service, the commerce disclosure, and the privacy policy are Markdown, which the server renders and
 // sanitizes for the web client's pages of them (`GET /instance/documents/{kind}`, linked from
 // `Instance.terms_url`, `Instance.privacy_policy_url` and `Instance.commerce_disclosure_url`);
 // the other texts are plain text. The display name (`name`) names the instance to people
@@ -78612,7 +79138,7 @@ func (c *ClientWithResponses) RefetchInstanceStatusesWithResponse(ctx context.Co
 // ListInvitesWithResponse List the invites
 //
 // The invites that let people sign up while the registration mode is `open`, `approval`,
-// or `invite` (FR-001, ADR-0108), newest first, with how they have been used and who
+// or `invite`, newest first, with how they have been used and who
 // created them: the staff's and the members' own invites. Needs the `manage_invites`
 // permission.
 //
@@ -79012,7 +79538,7 @@ func (c *ClientWithResponses) RotateLoginProviderSecretWithResponse(ctx context.
 
 // ListOAuthClientHostDenialsWithResponse List the denied hosts of client metadata documents
 //
-// The hosts whose Client ID Metadata Documents are denied (ADR-0090 §1), newest denial
+// The hosts whose Client ID Metadata Documents are denied, newest denial
 // first. Needs the `manage_oauth_apps` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -79087,7 +79613,7 @@ func (c *ClientWithResponses) AllowOAuthClientHostWithResponse(ctx context.Conte
 // ListAdminOAuthClientsWithResponse List the OAuth clients
 //
 // Every OAuth client that is not deleted, newest first, the server's own and the clients of
-// every other route (ADR-0090 §1). `registration` keeps the clients of one route. Needs the
+// every other route. `registration` keeps the clients of one route. Needs the
 // `manage_oauth_apps` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -79104,8 +79630,7 @@ func (c *ClientWithResponses) ListAdminOAuthClientsWithResponse(ctx context.Cont
 // DisableOAuthClientWithResponse Disable an OAuth client
 //
 // Revokes every token of the client at once (with the reason `client_disabled`) and refuses
-// its authorization requests, token exchanges and refreshes until the disablement is lifted
-// (ADR-0090 §1). Disabling a disabled client revokes its tokens again and records nothing
+// its authorization requests, token exchanges and refreshes until the disablement is lifted. Disabling a disabled client revokes its tokens again and records nothing
 // new. One of the server's own clients (`registration` `first_party`) cannot be disabled: it
 // is a 422. The disablement is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_oauth_apps` permission.
@@ -79141,8 +79666,7 @@ func (c *ClientWithResponses) EnableOAuthClientWithResponse(ctx context.Context,
 
 // RunPaymentReconcileWithResponse Reconcile with the payment provider now
 //
-// Queues a reconciliation with the payment provider now, besides the periodic one
-// (ADR-0074 §4). Its requests count toward `payments_reconcile_max_requests` like the
+// Queues a reconciliation with the payment provider now, besides the periodic one. Its requests count toward `payments_reconcile_max_requests` like the
 // others. One per UTC hour: another request in the hour after its reconciliation ran is a
 // 429. A deployment without a payment provider is a 404. The request is recorded in the
 // audit log. Needs the `manage_supporters` permission.
@@ -79160,7 +79684,7 @@ func (c *ClientWithResponses) RunPaymentReconcileWithResponse(ctx context.Contex
 
 // GetPaymentStatusWithResponse Get the state of the payment provider
 //
-// The payment provider of the deployment's configuration (ADR-0074 §4): its name and mode
+// The payment provider of the deployment's configuration: its name and mode
 // (test or live), when it last delivered a webhook, and the last attempt of the
 // reconciliation with its failure. `warnings` names the signs of a webhook that is not set
 // up right: no delivery is recorded, or the last reconciliation corrected subscriptions
@@ -79181,7 +79705,7 @@ func (c *ClientWithResponses) GetPaymentStatusWithResponse(ctx context.Context, 
 // GetAdminQueueWithResponse Get the state of the job queue
 //
 // The jobs of the job queue by state and type, when the oldest due job has been waiting
-// since, and what the queue can list (ADR-0064). The database queue and the inline queue
+// since, and what the queue can list. The database queue and the inline queue
 // list their pending jobs (`queued`, `running`, `retrying`); the queues of the platforms
 // (Cloud Tasks, SQS) do not (`pending_listing` is `false`): then `counts` is empty and the
 // backlog is read from the platform's metrics, while `GET /admin/jobs?state=dead` and the
@@ -79202,7 +79726,7 @@ func (c *ClientWithResponses) GetAdminQueueWithResponse(ctx context.Context, req
 
 // ListPendingRegistrationsWithResponse List the registrations that await approval
 //
-// The sign-ups that wait for a moderator's decision (FR-721), with the reasons their
+// The sign-ups that wait for a moderator's decision, with the reasons their
 // applicants gave, longest waiting first. Needs the `manage_accounts` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -79300,7 +79824,7 @@ func (c *ClientWithResponses) RejectRegistrationWithResponse(ctx context.Context
 
 // ListAdminRelaysWithResponse List the relays
 //
-// The relays that the instance joins or joined (ADR-0061), in registration order, with
+// The relays that the instance joins or joined, in registration order, with
 // the state of the membership and what each brought in during the last 24 hours. Needs the
 // `manage_settings` permission.
 //
@@ -79417,7 +79941,7 @@ func (c *ClientWithResponses) UnfollowRelayWithResponse(ctx context.Context, id 
 
 // ListReportsWithResponse List the reports
 //
-// The reports in the moderators' queue (FR-701), newest first unless `order` is `oldest`.
+// The reports in the moderators' queue, newest first unless `order` is `oldest`.
 // Needs the `manage_reports` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -79465,7 +79989,7 @@ func (c *ClientWithResponses) AssignReportToSelfWithResponse(ctx context.Context
 
 // AddReportNoteWithBodyWithResponse Write a note on a report
 //
-// Adds an internal note to the report (FR-710). Notes are shown to the moderators only,
+// Adds an internal note to the report. Notes are shown to the moderators only,
 // never to the target or the reporter, and cannot be edited or removed. An unknown ID is
 // a 404. Needs the `manage_reports` permission.
 //
@@ -79482,7 +80006,7 @@ func (c *ClientWithResponses) AddReportNoteWithBodyWithResponse(ctx context.Cont
 
 // AddReportNoteWithResponse Write a note on a report
 //
-// Adds an internal note to the report (FR-710). Notes are shown to the moderators only,
+// Adds an internal note to the report. Notes are shown to the moderators only,
 // never to the target or the reporter, and cannot be edited or removed. An unknown ID is
 // a 404. Needs the `manage_reports` permission.
 //
@@ -79564,8 +80088,7 @@ func (c *ClientWithResponses) UnassignReportWithResponse(ctx context.Context, id
 
 // ListRolesWithResponse List the roles
 //
-// The roles of the instance, highest position first, with the permissions they grant
-// (FR-720). Every instance has `admin` (position 1000, every permission, never changed)
+// The roles of the instance, highest position first, with the permissions they grant. Every instance has `admin` (position 1000, every permission, never changed)
 // and `moderator` (position 100 with `manage_reports`, `manage_accounts`, and
 // `view_audit` until an administrator changes them). Needs the `manage_roles` permission.
 //
@@ -79646,7 +80169,7 @@ func (c *ClientWithResponses) DeleteRoleWithResponse(ctx context.Context, role R
 // `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
 // `moderator` takes a new position and permissions like any other role. A change that would
 // break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
-// hides it from every holder's profile (ADR-0071). A role, or a new position, above every
+// hides it from every holder's profile. A role, or a new position, above every
 // role of the viewer is a 403. A position, permissions, or badge that break a rule, or
 // adding or removing a permission that the viewer's roles do not grant, is a 422
 // `/api/v1/problems/invalid-role` whose `reason` says which. An unknown role is a 404.
@@ -79671,7 +80194,7 @@ func (c *ClientWithResponses) UpdateRoleWithBodyWithResponse(ctx context.Context
 // `admin` changes only its badge (a new position or permissions is a 422 `builtin`);
 // `moderator` takes a new position and permissions like any other role. A change that would
 // break a role that a supporter plan grants is a 409 `/api/v1/problems/breaks-supporter-roles`. Removing the badge
-// hides it from every holder's profile (ADR-0071). A role, or a new position, above every
+// hides it from every holder's profile. A role, or a new position, above every
 // role of the viewer is a 403. A position, permissions, or badge that break a rule, or
 // adding or removing a permission that the viewer's roles do not grant, is a 422
 // `/api/v1/problems/invalid-role` whose `reason` says which. An unknown role is a 404.
@@ -79690,7 +80213,7 @@ func (c *ClientWithResponses) UpdateRoleWithResponse(ctx context.Context, role R
 
 // ListInstanceRulesWithResponse List the instance rules
 //
-// Every rule (FR-705): the rules in effect by position, followed, when
+// Every rule: the rules in effect by position, followed, when
 // `include_retired` is set, by the retired ones. The list is not paginated; at most 100
 // rules are in effect. Needs the `manage_rules` permission.
 //
@@ -79844,7 +80367,7 @@ func (c *ClientWithResponses) RetireInstanceRuleWithResponse(ctx context.Context
 
 // ListInstanceSettingsWithResponse List the instance settings
 //
-// Every instance setting (FR-705, docs/operations/instance-settings.md): its current
+// Every instance setting: its current
 // value, or its default when it has never been set, with what it accepts. The policies
 // that administrators change at run time live here; the deployment configuration does
 // not. Needs the `manage_settings` permission.
@@ -79924,7 +80447,7 @@ func (c *ClientWithResponses) GetLoginProvidersOnlyImpactWithResponse(ctx contex
 
 // ListSignupBlocksWithResponse List the sign-up blocks
 //
-// The blocks on sign-ups from the registration page (FR-719), newest first, lifted and
+// The blocks on sign-ups from the registration page, newest first, lifted and
 // expired ones included unless `active` is set. Needs the `manage_accounts` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -79940,7 +80463,7 @@ func (c *ClientWithResponses) ListSignupBlocksWithResponse(ctx context.Context, 
 
 // CreateSignupBlockWithBodyWithResponse Block sign-ups
 //
-// Records a block on sign-ups from the registration page (FR-719), in effect at once and
+// Records a block on sign-ups from the registration page, in effect at once and
 // until it expires or is lifted; the block is audited. A sign-up whose email address or
 // client address it matches is refused (`reject`) or starts pending for a moderator
 // whatever the registration mode (`require_approval`); the page does not tell the
@@ -79964,7 +80487,7 @@ func (c *ClientWithResponses) CreateSignupBlockWithBodyWithResponse(ctx context.
 
 // CreateSignupBlockWithResponse Block sign-ups
 //
-// Records a block on sign-ups from the registration page (FR-719), in effect at once and
+// Records a block on sign-ups from the registration page, in effect at once and
 // until it expires or is lifted; the block is audited. A sign-up whose email address or
 // client address it matches is refused (`reject`) or starts pending for a moderator
 // whatever the registration mode (`require_approval`); the page does not tell the
@@ -79988,7 +80511,7 @@ func (c *ClientWithResponses) CreateSignupBlockWithResponse(ctx context.Context,
 
 // ImportSignupBlocksWithBodyWithResponse Block sign-ups from a list
 //
-// Adds a block on sign-ups (FR-719) for each value of a list, such as a public list of
+// Adds a block on sign-ups for each value of a list, such as a public list of
 // disposable email domains, all with the same kind, severity, comment, and duration. The
 // list has one value per line in any form that `createSignupBlock` takes, or a CSV row
 // whose first field is the value; blank lines and lines starting with `#` are ignored.
@@ -80014,7 +80537,7 @@ func (c *ClientWithResponses) ImportSignupBlocksWithBodyWithResponse(ctx context
 
 // ImportSignupBlocksWithResponse Block sign-ups from a list
 //
-// Adds a block on sign-ups (FR-719) for each value of a list, such as a public list of
+// Adds a block on sign-ups for each value of a list, such as a public list of
 // disposable email domains, all with the same kind, severity, comment, and duration. The
 // list has one value per line in any form that `createSignupBlock` takes, or a CSV row
 // whose first field is the value; blank lines and lines starting with `#` are ignored.
@@ -80071,7 +80594,7 @@ func (c *ClientWithResponses) LiftSignupBlockWithResponse(ctx context.Context, i
 
 // RefetchStatusWithResponse Refetch a remote post from its origin
 //
-// Queues a fetch of the remote post from its server (FR-407). The job records what the
+// Queues a fetch of the remote post from its server. The job records what the
 // server serves now, as a received `Update` would: a newer revision, the counts of its
 // poll, or, when the server answers 410 Gone or serves a `Tombstone`, the post's
 // deletion. A post that cannot be fetched is left as it is. An unknown or deleted post is
@@ -80106,8 +80629,7 @@ func (c *ClientWithResponses) ListAdminSupporterPlansWithResponse(ctx context.Co
 
 // CreateSupporterPlanWithBodyWithResponse Create a supporter plan
 //
-// Creates a supporter plan on a role, which then only the plan's subscriptions grant
-// (ADR-0072 §3, §5). The prices are made at the payment provider after the answer; the
+// Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the
 // plan takes subscriptions once `prices_ready`. A plan that breaks a rule is a 422
 // `/api/v1/problems/invalid-supporter-plan`, an unknown role a 404, and a server without a
 // payment provider a 409 `/api/v1/problems/supporters-unavailable`. Recorded in the audit
@@ -80126,8 +80648,7 @@ func (c *ClientWithResponses) CreateSupporterPlanWithBodyWithResponse(ctx contex
 
 // CreateSupporterPlanWithResponse Create a supporter plan
 //
-// Creates a supporter plan on a role, which then only the plan's subscriptions grant
-// (ADR-0072 §3, §5). The prices are made at the payment provider after the answer; the
+// Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the
 // plan takes subscriptions once `prices_ready`. A plan that breaks a rule is a 422
 // `/api/v1/problems/invalid-supporter-plan`, an unknown role a 404, and a server without a
 // payment provider a 409 `/api/v1/problems/supporters-unavailable`. Recorded in the audit
@@ -80146,8 +80667,7 @@ func (c *ClientWithResponses) CreateSupporterPlanWithResponse(ctx context.Contex
 
 // UpdateSupporterPlanWithBodyWithResponse Change a supporter plan
 //
-// Changes a supporter plan's terms and its role's permissions and position (ADR-0072 §3,
-// §5, §9). New prices apply to new subscriptions and changes of plan only. A change that
+// Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that
 // breaks a rule is a 422 `/api/v1/problems/invalid-supporter-plan`, a retired plan a 409
 // `/api/v1/problems/supporter-plan-retired`, and an unknown plan a 404. Recorded in the
 // audit log. Needs the `manage_supporters` permission.
@@ -80165,8 +80685,7 @@ func (c *ClientWithResponses) UpdateSupporterPlanWithBodyWithResponse(ctx contex
 
 // UpdateSupporterPlanWithResponse Change a supporter plan
 //
-// Changes a supporter plan's terms and its role's permissions and position (ADR-0072 §3,
-// §5, §9). New prices apply to new subscriptions and changes of plan only. A change that
+// Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that
 // breaks a rule is a 422 `/api/v1/problems/invalid-supporter-plan`, a retired plan a 409
 // `/api/v1/problems/supporter-plan-retired`, and an unknown plan a 404. Recorded in the
 // audit log. Needs the `manage_supporters` permission.
@@ -80184,7 +80703,7 @@ func (c *ClientWithResponses) UpdateSupporterPlanWithResponse(ctx context.Contex
 
 // RetireSupporterPlanWithResponse Retire a supporter plan
 //
-// Retires a supporter plan for good (ADR-0072 §9): it takes no subscriptions any more, and
+// Retires a supporter plan for good: it takes no subscriptions any more, and
 // every subscription of it ends at the end of its period (a pending one at once). A
 // retired plan is a 409 `/api/v1/problems/supporter-plan-retired`, and an unknown one a
 // 404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -80217,7 +80736,7 @@ func (c *ClientWithResponses) GetSupporterProgramWithResponse(ctx context.Contex
 
 // SetSupporterProgramWithBodyWithResponse Enable or disable the supporter program
 //
-// Enables or disables the supporter program (ADR-0072 §2). Enabling it without a payment
+// Enables or disables the supporter program. Enabling it without a payment
 // provider in the deployment's configuration or without email is a 409
 // `/api/v1/problems/supporters-unavailable`; disabling it while subscriptions go on is a
 // 409 `/api/v1/problems/live-subscriptions` (retire the plans first). Asking for the state
@@ -80237,7 +80756,7 @@ func (c *ClientWithResponses) SetSupporterProgramWithBodyWithResponse(ctx contex
 
 // SetSupporterProgramWithResponse Enable or disable the supporter program
 //
-// Enables or disables the supporter program (ADR-0072 §2). Enabling it without a payment
+// Enables or disables the supporter program. Enabling it without a payment
 // provider in the deployment's configuration or without email is a 409
 // `/api/v1/problems/supporters-unavailable`; disabling it while subscriptions go on is a
 // 409 `/api/v1/problems/live-subscriptions` (retire the plans first). Asking for the state
@@ -80273,7 +80792,7 @@ func (c *ClientWithResponses) ListSupporterSubscriptionsWithResponse(ctx context
 
 // CancelSupporterSubscriptionWithResponse Cancel a subscription at once
 //
-// Ends a subscription at once, without a refund (ADR-0072 §10): the role goes now, and the
+// Ends a subscription at once, without a refund: the role goes now, and the
 // payment provider stops billing. A refund is the operator's to make at the provider. A
 // subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 // unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
@@ -80291,7 +80810,7 @@ func (c *ClientWithResponses) CancelSupporterSubscriptionWithResponse(ctx contex
 
 // GetAdminThemeWithResponse Read the instance theme
 //
-// The current theme of the web client (ADR-0059, FR-605): the overridden design tokens and the
+// The current theme of the web client: the overridden design tokens and the
 // custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
 // `manage_settings` permission.
 //
@@ -80312,7 +80831,7 @@ func (c *ClientWithResponses) GetAdminThemeWithResponse(ctx context.Context, req
 // pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
 // few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
 // their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-// change are kept (`instance_theme_revisions`, the audit log's `setting_changed` of `theme`).
+// change are kept (the audit log's `setting_changed` of `theme`).
 //
 // The overridable tokens are the web client's design tokens except the primitive palette
 // (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
@@ -80346,7 +80865,7 @@ func (c *ClientWithResponses) SetAdminThemeWithBodyWithResponse(ctx context.Cont
 // pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
 // few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
 // their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-// change are kept (`instance_theme_revisions`, the audit log's `setting_changed` of `theme`).
+// change are kept (the audit log's `setting_changed` of `theme`).
 //
 // The overridable tokens are the web client's design tokens except the primitive palette
 // (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
@@ -80412,7 +80931,7 @@ func (c *ClientWithResponses) EndVoiceRoomAsModeratorWithResponse(ctx context.Co
 
 // ListAdminWebhooksWithResponse List the webhooks
 //
-// The webhook endpoints of the instance that are not deleted, newest first (ADR-0060).
+// The webhook endpoints of the instance that are not deleted, newest first.
 // Needs the `manage_webhooks` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -80429,7 +80948,7 @@ func (c *ClientWithResponses) ListAdminWebhooksWithResponse(ctx context.Context,
 // CreateWebhookWithBodyWithResponse Set up a webhook
 //
 // Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes
-// to, signed with Standard Webhooks v1 (`docs/reference/webhooks.md`). The answer carries
+// to, signed with Standard Webhooks v1. The answer carries
 // its secret, which is shown only now. The user needs the permission of every event
 // besides `manage_webhooks` (`WebhookEventType`). A URL, a description, or events that
 // break a rule, or an event whose permission the user lacks, is a 422
@@ -80452,7 +80971,7 @@ func (c *ClientWithResponses) CreateWebhookWithBodyWithResponse(ctx context.Cont
 // CreateWebhookWithResponse Set up a webhook
 //
 // Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes
-// to, signed with Standard Webhooks v1 (`docs/reference/webhooks.md`). The answer carries
+// to, signed with Standard Webhooks v1. The answer carries
 // its secret, which is shown only now. The user needs the permission of every event
 // besides `manage_webhooks` (`WebhookEventType`). A URL, a description, or events that
 // break a rule, or an event whose permission the user lacks, is a 422
@@ -80648,7 +81167,7 @@ func (c *ClientWithResponses) TestWebhookWithResponse(ctx context.Context, id We
 
 // ListAnnouncementsWithResponse List the announcements
 //
-// The server's announcements that every local user sees now (FR-726): published, and
+// The server's announcements that every local user sees now: published, and
 // within their window. The ones whose `published_at` is the latest come first, each with
 // whether the user has read it. The list is not paginated; `listAnnouncementHistory` pages
 // through the past ones too.
@@ -80666,7 +81185,7 @@ func (c *ClientWithResponses) ListAnnouncementsWithResponse(ctx context.Context,
 
 // ListAnnouncementHistoryWithResponse List the announcements, past ones included
 //
-// The server's announcements that have started to show to the local users (FR-726): the
+// The server's announcements that have started to show to the local users: the
 // published ones whose `published_at` has passed, those whose window has ended included
 // (`ended`), and the withdrawn ones left out. The ones whose `published_at` is the latest come
 // first, each with whether the user has read it. Only the announcements that show now can be
@@ -80685,7 +81204,7 @@ func (c *ClientWithResponses) ListAnnouncementHistoryWithResponse(ctx context.Co
 
 // GetAnnouncementWithResponse Get an announcement
 //
-// One announcement of `listAnnouncementHistory` (FR-726): a published one whose `published_at`
+// One announcement of `listAnnouncementHistory`: a published one whose `published_at`
 // has passed, one whose window has ended included (`ended`), with whether the user has read
 // it. A draft, a withdrawn one, one that has not started to show, or an unknown ID is a 404.
 //
@@ -80722,7 +81241,7 @@ func (c *ClientWithResponses) MarkAnnouncementReadWithResponse(ctx context.Conte
 // One entry per client for which the user holds a grant that still works, most recently used
 // first (an app without a recorded use after those with one, newest authorization first). A
 // revoked or expired grant is not listed. The server's own web client is listed too
-// (`first_party`). Only the server's own clients may call it (ADR-0090 §4).
+// (`first_party`). Only the server's own clients may call it.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -80740,7 +81259,7 @@ func (c *ClientWithResponses) ListAuthorizedAppsWithResponse(ctx context.Context
 // Revokes every grant of the app that the user holds, so that its access and refresh tokens
 // stop working at once (the next request with one is a 401). Revoking the server's own web
 // client signs the user out of every browser, this one included. An app the user holds no
-// working grant of is a 404. Only the server's own clients may call it (ADR-0090 §4).
+// working grant of is a 404. Only the server's own clients may call it.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -80784,7 +81303,7 @@ func (c *ClientWithResponses) ListBookmarksWithResponse(ctx context.Context, par
 // ExportCsvWithResponse Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
 //
 // Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
-// Mastodon and this server import (FR-008): `following` is `following_accounts.csv`
+// Mastodon and this server import: `following` is `following_accounts.csv`
 // (`Account address,Show boosts,Notify on new posts,Languages`, the active follows),
 // `blocks` is `blocked_accounts.csv` (one address per line), `mutes` is
 // `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
@@ -80808,7 +81327,7 @@ func (c *ClientWithResponses) ExportCsvWithResponse(ctx context.Context, kind Da
 
 // ListCustomEmojiRequestsWithResponse List the user's custom emoji requests
 //
-// The user's requests for new custom emoji and new images of their own (ADR-0070 §6),
+// The user's requests for new custom emoji and new images of their own,
 // newest first, in every state. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 //
 // Returns a wrapper object for the known response body format(s).
@@ -80825,8 +81344,7 @@ func (c *ClientWithResponses) ListCustomEmojiRequestsWithResponse(ctx context.Co
 // CreateCustomEmojiRequestWithBodyWithResponse Request a custom emoji or a new image of one
 //
 // Requests a new local custom emoji (`create`) or a new image of a local emoji that the user
-// made (`image`), which a holder of `manage_custom_emojis` approves or rejects (ADR-0070 §2,
-// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
+// made (`image`), which a holder of `manage_custom_emojis` approves or rejects. Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
 // pending request reserves, a `create` request once the approved and pending `create`
@@ -80853,8 +81371,7 @@ func (c *ClientWithResponses) CreateCustomEmojiRequestWithBodyWithResponse(ctx c
 // CreateCustomEmojiRequestWithResponse Request a custom emoji or a new image of one
 //
 // Requests a new local custom emoji (`create`) or a new image of a local emoji that the user
-// made (`image`), which a holder of `manage_custom_emojis` approves or rejects (ADR-0070 §2,
-// §3). Until then, the request is no emoji: nothing shows its image. A pending `create`
+// made (`image`), which a holder of `manage_custom_emojis` approves or rejects. Until then, the request is no emoji: nothing shows its image. A pending `create`
 // request reserves its shortcode. The image follows the rules of `POST /admin/custom_emojis`.
 // A shortcode or an image that breaks the rules, a shortcode that a local emoji has or a
 // pending request reserves, a `create` request once the approved and pending `create`
@@ -80898,7 +81415,7 @@ func (c *ClientWithResponses) WithdrawCustomEmojiRequestWithResponse(ctx context
 
 // ListCustomEmojisWithResponse List the custom emoji of the picker
 //
-// The custom emoji of the instance that the picker offers (FR-111, ADR-0051 §4): every
+// The custom emoji of the instance that the picker offers: every
 // enabled local emoji that is not hidden from the picker, by category (those without one
 // first) and shortcode. A text can use every enabled local emoji, hidden or not. The list
 // is not paginated.
@@ -80916,10 +81433,10 @@ func (c *ClientWithResponses) ListCustomEmojisWithResponse(ctx context.Context, 
 
 // ListOwnCustomEmojisWithResponse List the custom emoji that the user made
 //
-// The local custom emoji that the user made (ADR-0070 §6), newest first, with what the user
+// The local custom emoji that the user made, newest first, with what the user
 // used of their monthly limit: the approved and pending requests to create an emoji that they
 // submitted this month (UTC), the limit, which a supporter plan sets and which is absent for no
-// limit, and when the count resets (ADR-0124). Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
+// limit, and when the count resets. Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -80953,7 +81470,7 @@ func (c *ClientWithResponses) DeleteOwnCustomEmojiWithResponse(ctx context.Conte
 // UpdateOwnCustomEmojiWithBodyWithResponse Change a custom emoji that the user made
 //
 // Changes the aliases, the category, and the place in the picker of a local emoji that the
-// user made, and keeps the rest (ADR-0070 §3); a new image is a request
+// user made, and keeps the rest; a new image is a request
 // (`POST /custom_emoji_requests`). The rules of `PATCH /admin/custom_emojis/{id}` apply, and
 // the change is recorded in the audit log. An emoji that is not one the user made is a 404.
 // Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
@@ -80972,7 +81489,7 @@ func (c *ClientWithResponses) UpdateOwnCustomEmojiWithBodyWithResponse(ctx conte
 // UpdateOwnCustomEmojiWithResponse Change a custom emoji that the user made
 //
 // Changes the aliases, the category, and the place in the picker of a local emoji that the
-// user made, and keeps the rest (ADR-0070 §3); a new image is a request
+// user made, and keeps the rest; a new image is a request
 // (`POST /custom_emoji_requests`). The rules of `PATCH /admin/custom_emojis/{id}` apply, and
 // the change is recorded in the audit log. An emoji that is not one the user made is a 404.
 // Needs the `create_custom_emojis` permission (a 403 `/api/v1/problems/missing-permission` otherwise).
@@ -81006,7 +81523,7 @@ func (c *ClientWithResponses) ListDomainMutesWithResponse(ctx context.Context, p
 // MuteDomainWithBodyWithResponse Mute a domain
 //
 // Hides the posts of a remote domain and of its subdomains from the viewer's timelines
-// other than home, their boosts from home, and their notifications (FR-304). The accounts
+// other than home, their boosts from home, and their notifications. The accounts
 // of the domain that the viewer follows stay on the home timeline. Nothing is sent to the
 // domain. Muting a domain that the viewer already mutes changes nothing. The domain is
 // normalized (IDNA A-labels in lower case, without a trailing dot); one that is not a
@@ -81027,7 +81544,7 @@ func (c *ClientWithResponses) MuteDomainWithBodyWithResponse(ctx context.Context
 // MuteDomainWithResponse Mute a domain
 //
 // Hides the posts of a remote domain and of its subdomains from the viewer's timelines
-// other than home, their boosts from home, and their notifications (FR-304). The accounts
+// other than home, their boosts from home, and their notifications. The accounts
 // of the domain that the viewer follows stay on the home timeline. Nothing is sent to the
 // domain. Muting a domain that the viewer already mutes changes nothing. The domain is
 // normalized (IDNA A-labels in lower case, without a trailing dot); one that is not a
@@ -81078,7 +81595,7 @@ func (c *ClientWithResponses) ListDataExportsWithResponse(ctx context.Context, r
 
 // RequestDataExportWithResponse Request an archive of the authenticated user's data
 //
-// Starts building a ZIP archive of the user's data (FR-008): `actor.json` (the actor),
+// Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 // `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 // activities), `moderation.json` (the moderation actions on the account, its appeals, and
 // the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
@@ -81116,7 +81633,7 @@ func (c *ClientWithResponses) DownloadDataExportWithResponse(ctx context.Context
 
 // GetFinanceCostTotalsWithResponse Total the costs by period for the finance viewers
 //
-// The totals of the instance's costs for the holders of `view_finance` (ADR-0070 §5). It
+// The totals of the instance's costs for the holders of `view_finance`. It
 // takes the query of `GET /admin/cost_totals` and always answers its totals, their breakdown
 // by provider, category, and currency, and the rules that cut the periods. Each period adds
 // `items`, the amount of each cost item and each service of the imported costs, only while
@@ -81142,7 +81659,7 @@ func (c *ClientWithResponses) GetFinanceCostTotalsWithResponse(ctx context.Conte
 
 // GetFinanceIncomeTotalsWithResponse Total the income by period for the finance viewers
 //
-// The income totals for the holders of `view_finance` (ADR-0073 §6, ADR-0070 §5). It takes
+// The income totals for the holders of `view_finance`. It takes
 // the query of `GET /admin/cost_totals` and always answers the net of each currency by
 // period with its `balance` against the costs, whatever `income_visibility` and
 // `finance_visibility` publish. `plans`, the number of members of each supporter plan now,
@@ -81182,7 +81699,7 @@ func (c *ClientWithResponses) ListFollowRequestsWithResponse(ctx context.Context
 
 // AcceptFollowRequestWithResponse Accept a follow request
 //
-// Makes the account's pending follow of the viewer active (FR-302). Accepting a follow
+// Makes the account's pending follow of the viewer active. Accepting a follow
 // that is already active changes nothing; without a follow it is a 404.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -81198,7 +81715,7 @@ func (c *ClientWithResponses) AcceptFollowRequestWithResponse(ctx context.Contex
 
 // RejectFollowRequestWithResponse Reject a follow request
 //
-// Declines the account's pending follow request (FR-302); without one it is a 404.
+// Declines the account's pending follow request; without one it is a 404.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -81229,7 +81746,7 @@ func (c *ClientWithResponses) ListDataImportsWithResponse(ctx context.Context, r
 
 // StartDataImportWithBodyWithResponse Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
 //
-// Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
+// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
 // entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 // `overwrite` also removes what the user has of `kind` that the file does not list. The
 // server carries the import out in the background: it resolves remote accounts and posts
@@ -81252,7 +81769,7 @@ func (c *ClientWithResponses) StartDataImportWithBodyWithResponse(ctx context.Co
 
 // StartDataImportWithResponse Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
 //
-// Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
+// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
 // entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 // `overwrite` also removes what the user has of `kind` that the file does not list. The
 // server carries the import out in the background: it resolves remote accounts and posts
@@ -81331,7 +81848,7 @@ func (c *ClientWithResponses) GetInstanceWithResponse(ctx context.Context, reqEd
 // GetInstanceCostTotalsWithResponse Total the instance's public costs by period
 //
 // The totals of the instance's costs that the instance setting `finance_visibility`
-// publishes (FR-903, ADR-0067 §8, §9). It takes the query of `GET /admin/cost_totals` and
+// publishes. It takes the query of `GET /admin/cost_totals` and
 // answers the same shape: `private` makes it a 404; `totals` leaves every `breakdown` empty
 // and the `rules` without `sources`, which would name the providers; `breakdown` gives the
 // breakdown by provider, category, and currency, and the providers' rules. No level returns
@@ -81374,8 +81891,7 @@ func (c *ClientWithResponses) GetInstanceDocumentWithResponse(ctx context.Contex
 
 // ListInstanceDomainActionsWithResponse List the domains that the instance moderates
 //
-// The moderation actions in effect on remote domains that the instance lists publicly
-// (FR-718): `limit` and `suspend`, one item per action, newest first. The instance
+// The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
 // setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
 // `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
 // token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`
@@ -81396,16 +81912,16 @@ func (c *ClientWithResponses) ListInstanceDomainActionsWithResponse(ctx context.
 // GetServerHealthWithResponse Get the health of the server
 //
 // Whether the server can serve requests, for uptime monitors, status pages, and clients that
-// tell a server outage from their own network (ADR-0085 §1). The check is the readiness
+// tell a server outage from their own network. The check is the readiness
 // check's: the database is reachable and its schema is applied. Each process caches the
 // result for 60 seconds and runs one check for concurrent requests, so the database is
 // checked at most once a minute however often the endpoint is called. The endpoint takes no
 // access token and counts against no rate limit.
 //
 // The body holds only the fixed words of `status`, never the reason of a failure. During the
-// maintenance mode (ADR-0084) the answer is a 503 with `Retry-After` and
+// maintenance mode the answer is a 503 with `Retry-After` and
 // `{"status":"maintenance"}`, without touching the database. Uptime monitors tell the
-// maintenance from an outage by the body (ADR-0085 §4).
+// maintenance from an outage by the body.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -81420,8 +81936,7 @@ func (c *ClientWithResponses) GetServerHealthWithResponse(ctx context.Context, r
 
 // GetInstanceIncomeTotalsWithResponse Total the instance's public income by period
 //
-// The net income that the instance setting `income_visibility` publishes (FR-917,
-// ADR-0073 §7, §9). It takes the query of `GET /admin/cost_totals`: `private` makes it a
+// The net income that the instance setting `income_visibility` publishes. It takes the query of `GET /admin/cost_totals`: `private` makes it a
 // 404; `totals` gives the net of each currency by period; `plans` adds `plans`, the number
 // of members of each supporter plan now. Each period carries `balance`, the net less the
 // costs, only while `finance_visibility` is not `private` either, since the balance would
@@ -81464,7 +81979,7 @@ func (c *ClientWithResponses) GetInstanceOverviewWithResponse(ctx context.Contex
 // ListSupporterPlansWithResponse List the supporter plans
 //
 // The supporter plans that take subscriptions, by rank, with their monthly and yearly
-// prices (ADR-0072 §18). A 404 while the supporter program is disabled
+// prices. A 404 while the supporter program is disabled
 // (`Instance.supporters_enabled`).
 //
 // Returns a wrapper object for the known response body format(s).
@@ -81482,7 +81997,7 @@ func (c *ClientWithResponses) ListSupporterPlansWithResponse(ctx context.Context
 //
 // The members of the supporter plans who chose to be listed (`PUT
 // /preferences/supporter_listing`), by plan in the plans' order and newest first within a
-// plan, with the plans that are not retired for the headings (ADR-0071 §4). Only each
+// plan, with the plans that are not retired for the headings. Only each
 // member's account is listed: never an amount, an interval, a date, or a count. Accounts
 // that the viewer may not see are left out, so a page may be shorter than `limit`. The
 // instance setting `supporter_list_visibility` decides who may read it: `off` makes it a
@@ -81503,7 +82018,7 @@ func (c *ClientWithResponses) ListInstanceSupportersWithResponse(ctx context.Con
 
 // ListOwnInvitesWithResponse List the user's own invites
 //
-// The invites that the user created as a member (ADR-0108 §5), newest first, with how they
+// The invites that the user created as a member, newest first, with how they
 // have been used, and what the user may do: whether they may create an invite now
 // (`can_create`), the caps of the instance settings, and how many usable invites they hold.
 // A user who may no longer create invites still lists and revokes the ones they made; an
@@ -81524,7 +82039,7 @@ func (c *ClientWithResponses) ListOwnInvitesWithResponse(ctx context.Context, pa
 // CreateOwnInviteWithBodyWithResponse Create an invite of the user's own
 //
 // Creates an invite with a new random code that people use to sign up while the
-// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+// registration mode is `open`, `approval`, or `invite`. In `approval` mode a
 // person who signs up with it is approved at once. The user may create one when the
 // instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 // their account is neither suspended nor limited, their registration is approved, and the
@@ -81551,7 +82066,7 @@ func (c *ClientWithResponses) CreateOwnInviteWithBodyWithResponse(ctx context.Co
 // CreateOwnInviteWithResponse Create an invite of the user's own
 //
 // Creates an invite with a new random code that people use to sign up while the
-// registration mode is `open`, `approval`, or `invite` (ADR-0108). In `approval` mode a
+// registration mode is `open`, `approval`, or `invite`. In `approval` mode a
 // person who signs up with it is approved at once. The user may create one when the
 // instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 // their account is neither suspended nor limited, their registration is approved, and the
@@ -81990,7 +82505,7 @@ func (c *ClientWithResponses) UpdateMediaWithResponse(ctx context.Context, id Id
 
 // ListOwnModerationActionsWithResponse List the moderation actions on the authenticated user's account
 //
-// The actions that moderators took on the user's own account (FR-715), newest first,
+// The actions that moderators took on the user's own account, newest first,
 // lifted and expired ones included unless `active` is set, also those that the user was
 // not notified of. Each carries what the moderators chose to tell the user; never their
 // private note, the report the action follows from, or who filed it. `kind_label` and
@@ -82009,7 +82524,7 @@ func (c *ClientWithResponses) ListOwnModerationActionsWithResponse(ctx context.C
 
 // AppealModerationActionWithBodyWithResponse Appeal a moderation action on the authenticated user's account
 //
-// Asks the moderators to reconsider an action on the user's own account (FR-707), once
+// Asks the moderators to reconsider an action on the user's own account, once
 // per action and until its `appeal_deadline` (the instance's appeal window from the
 // action, 180 days by default; for a `ban`, also no later than the deletion of the
 // account 30 days after it). The moderators get an `admin_appeal` notification, and
@@ -82033,7 +82548,7 @@ func (c *ClientWithResponses) AppealModerationActionWithBodyWithResponse(ctx con
 
 // AppealModerationActionWithResponse Appeal a moderation action on the authenticated user's account
 //
-// Asks the moderators to reconsider an action on the user's own account (FR-707), once
+// Asks the moderators to reconsider an action on the user's own account, once
 // per action and until its `appeal_deadline` (the instance's appeal window from the
 // action, 180 days by default; for a `ban`, also no later than the deletion of the
 // account 30 days after it). The moderators get an `admin_appeal` notification, and
@@ -82175,7 +82690,7 @@ func (c *ClientWithResponses) ListOAuthAppsWithResponse(ctx context.Context, req
 // CreateOAuthAppWithBodyWithResponse Register an OAuth app
 //
 // Registers a public or confidential app of the user for a bot, a script, or a client of
-// their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+// their own. A confidential app's `client_secret` is in this response only.
 // Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
 // may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
 // stops working while the user cannot use the server (suspended or deleted).
@@ -82200,7 +82715,7 @@ func (c *ClientWithResponses) CreateOAuthAppWithBodyWithResponse(ctx context.Con
 // CreateOAuthAppWithResponse Register an OAuth app
 //
 // Registers a public or confidential app of the user for a bot, a script, or a client of
-// their own (ADR-0090). A confidential app's `client_secret` is in this response only.
+// their own. A confidential app's `client_secret` is in this response only.
 // Other users authorize the app at `/oauth/authorize` as any third-party app, and the user
 // may issue its tokens to their own account with `POST /oauth_apps/{id}/tokens`. The app
 // stops working while the user cannot use the server (suspended or deleted).
@@ -82311,7 +82826,7 @@ func (c *ClientWithResponses) RotateOAuthAppSecretWithResponse(ctx context.Conte
 // IssueOAuthAppTokenWithBodyWithResponse Issue tokens of an OAuth app to the authenticated user
 //
 // Issues an access token and a refresh token of the app for the user's own account,
-// without the consent screen and a redirect (ADR-0090 §2): the usual pair with the usual
+// without the consent screen and a redirect: the usual pair with the usual
 // lifetimes, refreshed and revoked at the token endpoints as any other. A scope beyond the
 // app's is a 422 naming `scope`, and an app that an administrator disabled a 409
 // `/api/v1/problems/oauth-app-disabled`. An unknown or deleted app, or one that another
@@ -82331,7 +82846,7 @@ func (c *ClientWithResponses) IssueOAuthAppTokenWithBodyWithResponse(ctx context
 // IssueOAuthAppTokenWithResponse Issue tokens of an OAuth app to the authenticated user
 //
 // Issues an access token and a refresh token of the app for the user's own account,
-// without the consent screen and a redirect (ADR-0090 §2): the usual pair with the usual
+// without the consent screen and a redirect: the usual pair with the usual
 // lifetimes, refreshed and revoked at the token endpoints as any other. A scope beyond the
 // app's is a 422 naming `scope`, and an app that an administrator disabled a 409
 // `/api/v1/problems/oauth-app-disabled`. An unknown or deleted app, or one that another
@@ -82554,7 +83069,7 @@ func (c *ClientWithResponses) UpdatePreferencesWithResponse(ctx context.Context,
 
 // GetAutoDeletePolicyWithResponse Get the authenticated user's automatic deletion of old posts
 //
-// The policy that deletes the user's own posts some days after their publication (FR-118).
+// The policy that deletes the user's own posts some days after their publication.
 // A user who has never saved one gets the default policy, which is disabled.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -82651,7 +83166,7 @@ func (c *ClientWithResponses) PreviewAutoDeletePolicyWithResponse(ctx context.Co
 // ListBadgeChoicesWithResponse List the badges that the authenticated user may show
 //
 // The roles that the user holds and that have a badge, highest position first, with whether
-// the user shows each badge on their profile (ADR-0071). Every badge is hidden until the user
+// the user shows each badge on their profile. Every badge is hidden until the user
 // shows it.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -82667,7 +83182,7 @@ func (c *ClientWithResponses) ListBadgeChoicesWithResponse(ctx context.Context, 
 
 // UpdateBadgeChoiceWithBodyWithResponse Show or hide the badge of a role on the authenticated user's profile
 //
-// Shows or hides the badge of a role that the user holds on their profile (ADR-0071). The
+// Shows or hides the badge of a role that the user holds on their profile. The
 // badge appears in `Account.badges` of the user's own account endpoints only, never on
 // posts, in lists of accounts, or to other servers. A role that the user does not hold, or
 // that has no badge, is a 404.
@@ -82685,7 +83200,7 @@ func (c *ClientWithResponses) UpdateBadgeChoiceWithBodyWithResponse(ctx context.
 
 // UpdateBadgeChoiceWithResponse Show or hide the badge of a role on the authenticated user's profile
 //
-// Shows or hides the badge of a role that the user holds on their profile (ADR-0071). The
+// Shows or hides the badge of a role that the user holds on their profile. The
 // badge appears in `Account.badges` of the user's own account endpoints only, never on
 // posts, in lists of accounts, or to other servers. A role that the user does not hold, or
 // that has no badge, is a 404.
@@ -82751,8 +83266,7 @@ func (c *ClientWithResponses) UpdateNotificationSettingsWithResponse(ctx context
 
 // GetSupporterListingWithResponse Get whether the authenticated user is on the supporter list
 //
-// Whether the user chose to be listed on the supporter list (`GET /instance/supporters`,
-// ADR-0071 §4). Nobody is listed until they choose to be, and the choice ends with the
+// Whether the user chose to be listed on the supporter list (`GET /instance/supporters`). Nobody is listed until they choose to be, and the choice ends with the
 // subscription. A 404 for a user who is not a member of a plan (an `active`, `canceling`,
 // or `past_due` subscription) and while the program is disabled.
 //
@@ -82878,7 +83392,7 @@ func (c *ClientWithResponses) PutPushSubscriptionWithResponse(ctx context.Contex
 // ListOwnReportsWithResponse List the reports that the authenticated user filed
 //
 // The reports that the user filed, newest first, each with whether it is still open or
-// resolved (FR-711). A report reopened by the moderators is open again. It never tells how
+// resolved. A report reopened by the moderators is open again. It never tells how
 // a report was resolved, which actions it led to, the reasons given to the account, or
 // who handles it. A report stays listed when the user may no longer see its target (the
 // account is suspended, deleted, or blocks the user), without `target_account`. A report
@@ -82898,7 +83412,7 @@ func (c *ClientWithResponses) ListOwnReportsWithResponse(ctx context.Context, pa
 
 // CreateReportWithBodyWithResponse Report an account
 //
-// Reports an account, and optionally some of its posts, to the moderators (FR-701). The
+// Reports an account, and optionally some of its posts, to the moderators. The
 // report waits, open, in the moderators' queue; nothing tells the account of it, and
 // nothing that the account can read names the reporter. 422 when the account does not
 // exist or is the user's own (`account_id`), when a post is not the account's or the
@@ -82919,7 +83433,7 @@ func (c *ClientWithResponses) CreateReportWithBodyWithResponse(ctx context.Conte
 
 // CreateReportWithResponse Report an account
 //
-// Reports an account, and optionally some of its posts, to the moderators (FR-701). The
+// Reports an account, and optionally some of its posts, to the moderators. The
 // report waits, open, in the moderators' queue; nothing tells the account of it, and
 // nothing that the account can read names the reporter. 422 when the account does not
 // exist or is the user's own (`account_id`), when a post is not the account's or the
@@ -82943,7 +83457,7 @@ func (c *ClientWithResponses) CreateReportWithResponse(ctx context.Context, body
 // One entry per browser session that still works or from which a grant of the server's own web
 // client still works, the browser that asks first, then the most recently used first. The apps
 // the user authorized are not listed here (`/authorized_apps`). Only the server's own clients
-// may call it (ADR-0090 §4).
+// may call it.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -82959,8 +83473,7 @@ func (c *ClientWithResponses) ListSessionsWithResponse(ctx context.Context, reqE
 // RevokeOtherSessionsWithResponse Sign out every browser but the one that asks
 //
 // Does for every other browser of the list what `DELETE /sessions/{id}` does for one, and
-// succeeds when there is no other browser. Only the server's own clients may call it
-// (ADR-0090 §4).
+// succeeds when there is no other browser. Only the server's own clients may call it.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -82980,7 +83493,7 @@ func (c *ClientWithResponses) RevokeOtherSessionsWithResponse(ctx context.Contex
 // password, two-factor authentication, and the apps the user authorized stay. An ID that is not
 // in the user's list is a 404, and the browser that asks is a 409 with the type
 // `/api/v1/problems/current-session`: signing out ends it. Only the server's own clients may
-// call it (ADR-0090 §4).
+// call it.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -82999,7 +83512,7 @@ func (c *ClientWithResponses) RevokeSessionWithResponse(ctx context.Context, id 
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
-// poll outside the limits of `PollInput` is a 422 (FR-112).
+// poll outside the limits of `PollInput` is a 422.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83018,7 +83531,7 @@ func (c *ClientWithResponses) CreateStatusWithBodyWithResponse(ctx context.Conte
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
-// poll outside the limits of `PollInput` is a 422 (FR-112).
+// poll outside the limits of `PollInput` is a 422.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83255,7 +83768,7 @@ func (c *ClientWithResponses) PinStatusWithResponse(ctx context.Context, id Stat
 
 // VoteInPollWithBodyWithResponse Vote in the poll of a status
 //
-// Votes for one or more choices of the poll of a status (FR-112). `poll_id` names the poll
+// Votes for one or more choices of the poll of a status. `poll_id` names the poll
 // the user saw: a poll that an edit of the status replaced is a 409. A status without a
 // poll, a poll that has ended, a second vote, or choices the poll does not take (none, an
 // unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
@@ -83275,7 +83788,7 @@ func (c *ClientWithResponses) VoteInPollWithBodyWithResponse(ctx context.Context
 
 // VoteInPollWithResponse Vote in the poll of a status
 //
-// Votes for one or more choices of the poll of a status (FR-112). `poll_id` names the poll
+// Votes for one or more choices of the poll of a status. `poll_id` names the poll
 // the user saw: a poll that an edit of the status replaced is a 409. A status without a
 // poll, a poll that has ended, a second vote, or choices the poll does not take (none, an
 // unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
@@ -83295,7 +83808,7 @@ func (c *ClientWithResponses) VoteInPollWithResponse(ctx context.Context, id Sta
 
 // SetStatusQuotePolicyWithBodyWithResponse Change who may quote the authenticated user's status
 //
-// Changes the `quote_policy` of a status of the user (ADR-0069 §1); the approvals given
+// Changes the `quote_policy` of a status of the user; the approvals given
 // before stay, and each is revoked on its own. Another account's status is a 403 when the
 // user may see it and a 404 otherwise.
 //
@@ -83312,7 +83825,7 @@ func (c *ClientWithResponses) SetStatusQuotePolicyWithBodyWithResponse(ctx conte
 
 // SetStatusQuotePolicyWithResponse Change who may quote the authenticated user's status
 //
-// Changes the `quote_policy` of a status of the user (ADR-0069 §1); the approvals given
+// Changes the `quote_policy` of a status of the user; the approvals given
 // before stay, and each is revoked on its own. Another account's status is a 403 when the
 // user may see it and a 404 otherwise.
 //
@@ -83330,7 +83843,7 @@ func (c *ClientWithResponses) SetStatusQuotePolicyWithResponse(ctx context.Conte
 // ListStatusQuotesWithResponse List the statuses that quote the authenticated user's status
 //
 // The statuses that quote a status of the user, newest first, each with its `quote` and
-// its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
+// its state. Statuses the user may not see, and quotes taken away, are left
 // out, so a page may hold fewer than `limit` statuses before the last. Another account's
 // status is a 404, and so is the user's own `direct` status without `read:direct`, which
 // also leaves out the `direct` statuses that quote one.
@@ -83348,7 +83861,7 @@ func (c *ClientWithResponses) ListStatusQuotesWithResponse(ctx context.Context, 
 
 // RevokeStatusQuoteWithResponse Revoke the approval of a quote of the authenticated user's status
 //
-// Withdraws this server's approval of the quote (ADR-0069 §3): the quote shows the quoted
+// Withdraws this server's approval of the quote: the quote shows the quoted
 // status no more, and the quoting server is told. A quote without this server's approval
 // (from software without approvals, or of the user's own status) is a 404, as is one revoked
 // already.
@@ -83471,8 +83984,7 @@ func (c *ClientWithResponses) ListSubscriptionsWithResponse(ctx context.Context,
 // StartSupporterCheckoutWithBodyWithResponse Start a subscription to a supporter plan
 //
 // Starts a subscription to a plan at an interval and returns the payment provider's hosted
-// checkout, which the client opens in the same tab; no card details reach this server
-// (ADR-0072 §6, ADR-0074). The checkout returns to `/settings/supporter` of the web client.
+// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
 // Starting again while the subscription is `pending` makes a new checkout of the same
 // subscription. Only a local user with a verified primary address and without another
 // subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
@@ -83495,8 +84007,7 @@ func (c *ClientWithResponses) StartSupporterCheckoutWithBodyWithResponse(ctx con
 // StartSupporterCheckoutWithResponse Start a subscription to a supporter plan
 //
 // Starts a subscription to a plan at an interval and returns the payment provider's hosted
-// checkout, which the client opens in the same tab; no card details reach this server
-// (ADR-0072 §6, ADR-0074). The checkout returns to `/settings/supporter` of the web client.
+// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
 // Starting again while the subscription is `pending` makes a new checkout of the same
 // subscription. Only a local user with a verified primary address and without another
 // subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
@@ -83519,7 +84030,7 @@ func (c *ClientWithResponses) StartSupporterCheckoutWithResponse(ctx context.Con
 // OpenSupporterPortalWithResponse Open the payment provider's portal of the authenticated user
 //
 // The payment provider's portal of the user's payment methods and invoices, which returns
-// to `/settings/supporter` of the web client (ADR-0072 §8). Plans change on this server, not in
+// to `/settings/supporter` of the web client. Plans change on this server, not in
 // the portal. A 409 `/api/v1/problems/subscription-ended` for a user whom the provider does not
 // know.
 //
@@ -83537,7 +84048,7 @@ func (c *ClientWithResponses) OpenSupporterPortalWithResponse(ctx context.Contex
 // GetOwnSupporterSubscriptionWithResponse Get the authenticated user's supporter subscription
 //
 // The user's subscription that goes on (any state but `expired`, `revoked`, and
-// `abandoned`), and why the user cannot subscribe when they cannot (ADR-0072 §6, §18). A 404
+// `abandoned`), and why the user cannot subscribe when they cannot. A 404
 // while the supporter program is disabled (`Instance.supporters_enabled`).
 //
 // Returns a wrapper object for the known response body format(s).
@@ -83554,7 +84065,7 @@ func (c *ClientWithResponses) GetOwnSupporterSubscriptionWithResponse(ctx contex
 // CancelOwnSupporterSubscriptionWithResponse Cancel the authenticated user's subscription at the end of its period
 //
 // Cancels an `active` or `past_due` subscription at the end of its period: the plan's role
-// stays until then (`canceling`, ADR-0072 §7). A 409
+// stays until then (`canceling`). A 409
 // `/api/v1/problems/supporter-subscription-state` in another state.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -83571,7 +84082,7 @@ func (c *ClientWithResponses) CancelOwnSupporterSubscriptionWithResponse(ctx con
 // CancelOwnSupporterScheduledChangeWithResponse Withdraw the scheduled change of the authenticated user's subscription
 //
 // Withdraws the change to a lower plan or to the monthly price that waits for the end of
-// the period (ADR-0072 §8); the subscription renews at its current plan and interval. A 409
+// the period; the subscription renews at its current plan and interval. A 409
 // `/api/v1/problems/supporter-subscription-state` without a scheduled change.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -83587,7 +84098,7 @@ func (c *ClientWithResponses) CancelOwnSupporterScheduledChangeWithResponse(ctx 
 
 // ChangeOwnSupporterSubscriptionWithBodyWithResponse Change the plan or the interval of the authenticated user's subscription
 //
-// Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+// Changes an `active` subscription to another plan or interval: to a higher
 // plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
 // or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
 // current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
@@ -83611,7 +84122,7 @@ func (c *ClientWithResponses) ChangeOwnSupporterSubscriptionWithBodyWithResponse
 
 // ChangeOwnSupporterSubscriptionWithResponse Change the plan or the interval of the authenticated user's subscription
 //
-// Changes an `active` subscription to another plan or interval (ADR-0072 §8): to a higher
+// Changes an `active` subscription to another plan or interval: to a higher
 // plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
 // or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
 // current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
@@ -83653,7 +84164,7 @@ func (c *ClientWithResponses) ResumeOwnSupporterSubscriptionWithResponse(ctx con
 //
 // What the web client sends when the payment provider's checkout or portal returns to it:
 // it queues a re-read of the user's subscription from the provider, without waiting for its
-// webhook (ADR-0072 §6), and answers the subscription as it is now. Read it again to see the
+// webhook, and answers the subscription as it is now. Read it again to see the
 // result. A 404 while the program is disabled.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -83670,7 +84181,7 @@ func (c *ClientWithResponses) SyncOwnSupporterSubscriptionWithResponse(ctx conte
 // SearchTagsWithResponse Search hashtags by prefix
 //
 // The hashtags whose name starts with `q`, for the autocomplete of hashtags in the compose
-// form and the hashtag search (FR-119, FR-306, ADR-0092). `q` and the names are compared
+// form and the hashtag search. `q` and the names are compared
 // under NFKC and lowercase.
 //
 // Only the hashtags that a post of visibility `public`, `local`, or `unlisted` carries now
@@ -83692,7 +84203,7 @@ func (c *ClientWithResponses) SearchTagsWithResponse(ctx context.Context, params
 // GetFederatedTimelineWithResponse Get the federated timeline
 //
 // The public posts of the instance's accounts and of the remote accounts whose posts the
-// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
+// instance holds, newest first, in the viewer's timeline languages. Posts of other
 // visibilities, `local` ones included, and boosts never appear on it. The instance setting
 // `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
 // is `signed_in` an anonymous request is a 401.
@@ -84770,6 +85281,150 @@ func ParseRemoveAccountAliasResponse(rsp *http.Response) (*RemoveAccountAliasRes
 		response.Headers200 = &headers
 	case true:
 		var headers RemoveAccountAliasResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetDeactivationPreviewResponse parses an HTTP response from a GetDeactivationPreviewWithResponse call
+func ParseGetDeactivationPreviewResponse(rsp *http.Response) (*GetDeactivationPreviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDeactivationPreviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DeactivationPreview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetDeactivationPreviewResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetDeactivationPreviewResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDeactivateOwnAccountResponse parses an HTTP response from a DeactivateOwnAccountWithResponse call
+func ParseDeactivateOwnAccountResponse(rsp *http.Response) (*DeactivateOwnAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeactivateOwnAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Deactivation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers DeactivateOwnAccountResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

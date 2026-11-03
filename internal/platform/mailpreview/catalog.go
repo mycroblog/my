@@ -121,6 +121,9 @@ func Catalog() []Entry {
 				sampleBaseURL+appidentity.PathResetPassword+"?token="+sampleToken))
 		}},
 	}
+	entries = append(entries, Entry{JobType: appidentity.JobDeactivationEmail, Draft: func(s Sample) (kernel.MailDraft, bool) {
+		return always(appidentity.DeactivationEmailDraft(s.identityWording(), sampleTo, "2026-12-03 09:00 (UTC)", sampleBaseURL+appidentity.PathSignIn))
+	}})
 	for _, n := range []appidentity.PasswordNotice{appidentity.PasswordChanged, appidentity.PasswordRemoved} {
 		entries = append(entries, Entry{JobType: appidentity.JobPasswordNoticeEmail, Variant: string(n), Draft: func(s Sample) (kernel.MailDraft, bool) {
 			return appidentity.PasswordNoticeEmailDraft(s.identityWording(), sampleTo, n, sampleBaseURL+appidentity.PathForgotPassword)

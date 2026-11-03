@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/kernel"
 )
@@ -32,15 +33,21 @@ func (h *Handler) sharedInbox(w http.ResponseWriter, r *http.Request) {
 	h.receive(w, r)
 }
 
-// actorInbox serves POST /ap/actors/{id}/inbox: the inbox of an active local actor, 404 for any
-// other id. Every inbox records the activity the same way; who it is for is in its addressing.
+// actorInbox serves POST /ap/actors/{id}/inbox: the inbox of an active local actor, or of one that
+// its owner deactivated, whose Follows must be answered and whose senders must keep delivering
+// their Undos (ADR-0145 §6); 404 for any other id. Every inbox records the activity the same way;
+// who it is for is in its addressing.
 func (h *Handler) actorInbox(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if !kernel.ValidID(id) {
 		h.notFound(w, r)
 		return
 	}
-	if _, err := findVisible(h.o.Accounts.FindByID(r.Context(), id)); err != nil {
+	a, err := h.o.Accounts.FindByID(r.Context(), id)
+	if err == nil && !answers(a) {
+		err = appaccount.ErrNotFound
+	}
+	if err != nil {
 		h.fail(w, r, err)
 		return
 	}

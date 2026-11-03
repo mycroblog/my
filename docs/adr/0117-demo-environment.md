@@ -75,13 +75,13 @@
 
 - **タグの意味**: `no_*` が adapter を外すのに対し、`e2e_fakes` は試験のための fake を**足す**。既定のビルド（タグなし）にも、`no_*` だけのビルドにも fake は入らない。
   今足すのは決済の fake だけで、後で fake を足すときも同じタグと §2 の確かめに入れる。
-- **組み立て**: `internal/platform/adapters_payments_fake.go`（`//go:build e2e_fakes`）だけが `internal/adapter/payment/fake` を import し、`payments_provider = fake` の adapter に登録する。
-  設定の側（`internal/platform/config`）も、`fake` をこのタグのビルドでだけ選択肢に加える。タグのないビルドで `payments_provider = fake` を設定すると、ほかの外したタグと同じく起動の前の検査で拒む。
+- **組み立て**: `internal/platform/adapters_payments_fake.go`（`//go:build e2e_fakes`）だけが `internal/adapter/payment/fake` を import し、`payments = fake` の adapter に登録する。
+  設定の側（`internal/platform/config`）も、`fake` をこのタグのビルドでだけ選択肢に加える。タグのないビルドで `payments = fake` を設定すると、ほかの外したタグと同じく起動の前の検査で拒む。
 - **申し込みの画面**: fake は ADR-0099 §1 の `PageServer` を実装し、PAY.JP と同じく自分のオリジンの `/payments/pages/fake/` に短命のページを出す。
   ページはプランと金額、「試験用のビルドの決済で、お金は動かない」の表示、「支払う」「失敗させる」「取り消す」の操作を持つ。「支払う」は fake の側に加入と確定した支払い（`Final`）を記録して `SuccessURL` へ送る。
   `Mode()` は `test` を返すので、画面は ADR-0074 §5 のテストのモードの表示を出す。事業者の側の状態はプロセスのメモリにだけある（§4 の、起動のたびに作り直す環境の前提）。
 - **本番に入れない確かめ**（判断基準 1）。どれか一つが破れても残りが止める:
-  1. **実行時**: `payments_provider = fake` は `profile = development` でなければ起動を拒む。起動のときに、試験用のビルドであることを警告のログに出す。
+  1. **実行時**: `payments = fake` は `profile = development` でなければ起動を拒む。起動のときに、試験用のビルドであることを警告のログに出す。
   2. **静的な検査**: `scripts/go-build-tags.sh`（`scripts/task.sh go:build-tags`、`go:check` の一部）は、タグのない `cmd/my` と代表の組み合わせのどれもが `internal/adapter/payment/fake` に依存しないことを確かめる。
   3. **コンテナのイメージ**: `Dockerfile` は `GO_TAGS` に `e2e_fakes` があればビルドを失敗させる。イメージは試験用のビルドを作らない。
   4. **リリース**: 公開する binary とイメージを作るジョブは、成果物の Go のビルド情報（`go version -m` の `build -tags=`。Go 1.27.3 で確かめた）に `e2e_fakes` がないことを確かめるスクリプトを通す。
@@ -95,11 +95,11 @@
 | 項目 | 値 |
 | --- | --- |
 | `profile` | `development` |
-| `db`・`blob` | `sqlite`（起動のたびに新しいファイル）・`fs` |
-| `mail` | `smtp` で Mailpit へ（`smtp_host = localhost`、`smtp_port = 1025`、下の「メール」） |
+| `database`・`blob` | `sqlite`（起動のたびに新しいファイル）・`fs` |
+| `mail` | `smtp` で Mailpit へ（`mail_smtp_host = localhost`、`mail_smtp_port = 1025`、下の「メール」） |
 | `federation_mode`（インスタンスの設定） | `off`（ADR-0076。外へ配送も取得もしない） |
 | `voice` | `p2p`（STUN・TURN なし。同じマシンのブラウザどうしで繋がる） |
-| `payments_provider` | `fake`（§2） |
+| `payments` | `fake`（§2） |
 | Web Push・CAPTCHA・外部 IdP・エラーと計測の送り先 | 設定しない（無効） |
 
 **メール（M2）**:

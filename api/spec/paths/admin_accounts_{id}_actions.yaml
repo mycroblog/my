@@ -3,7 +3,7 @@ get:
   operationId: listAccountActions
   summary: List the moderation actions on an account
   description: |
-    The actions that moderators took on an account (FR-703), newest first, lifted and
+    The actions that moderators took on an account, newest first, lifted and
     expired ones included unless `active` is set. An unknown account is a 404. Needs the
     `manage_accounts` permission.
   tags: [admin-moderation]
@@ -35,7 +35,7 @@ post:
   operationId: createAccountAction
   summary: Take a moderation action on an account
   description: |
-    Records an action on an account (FR-703), in effect at once and until it expires or is
+    Records an action on an account, in effect at once and until it expires or is
     lifted; several actions on one account add up. On a local account: `warn` only tells
     the account; `force_sensitive` shows its media as sensitive; `limit` makes its posts,
     past ones included, followers-only and keeps them off the public timelines;

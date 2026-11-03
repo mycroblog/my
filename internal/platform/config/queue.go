@@ -52,8 +52,8 @@ func wakerQueueChecks(vals map[string]string, present map[string]bool) []Issue {
 			issues = append(issues, Issue{Key: k, Missing: true, Message: "required when queue is " + q})
 		}
 	}
-	if db := cmp.Or(vals["db"], "sqlite"); db != "postgres" && db != "libsql" {
-		issues = append(issues, Issue{Key: "queue", Message: q + " keeps the jobs in the database and requires db = postgres or libsql, not " + db})
+	if db := cmp.Or(vals["database"], "sqlite"); db != "postgres" && db != "libsql" {
+		issues = append(issues, Issue{Key: "queue", Message: q + " keeps the jobs in the database and requires database = postgres or libsql, not " + db})
 	}
 	if kv := cmp.Or(vals["kv"], "db"); kv != "db" && kv != "valkey" {
 		issues = append(issues, Issue{Key: "queue", Message: q + " claims the periods of the periodic jobs in the KV and requires kv = db or valkey, not " + kv})

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
-  tells of the closure of the service (ADR-0088). `change` is what the event of a
+  tells of the closure of the service. `change` is what the event of a
   `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
   changed), or `withdrawn` (the announcement was withdrawn; the server goes on); it is omitted
   for the other types. `closes_at` and `export_until` are the dates of the announcement that the

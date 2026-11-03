@@ -3,7 +3,7 @@ post:
   operationId: refetchStatus
   summary: Refetch a remote post from its origin
   description: |
-    Queues a fetch of the remote post from its server (FR-407). The job records what the
+    Queues a fetch of the remote post from its server. The job records what the
     server serves now, as a received `Update` would: a newer revision, the counts of its
     poll, or, when the server answers 410 Gone or serves a `Tombstone`, the post's
     deletion. A post that cannot be fetched is left as it is. An unknown or deleted post is

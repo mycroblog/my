@@ -97,6 +97,16 @@ func (p *AccountPolicy) SuspendedTx(ctx context.Context, tx uow.Tx, accountID st
 	return moderation.FederationSuspended(rows, p.clock.Now()), nil
 }
 
+// AccountEffectsTx returns inside tx the restrictions that an account's own actions have in effect
+// at the policy's now, each with its end, as moderation.account_restrictions_changed carries them.
+func (p *AccountPolicy) AccountEffectsTx(ctx context.Context, tx uow.Tx, accountID string) ([]Effect, error) {
+	rows, err := p.repo.AccountRestrictionRows(ctx, tx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	return moderation.Merge(rows, p.clock.Now()), nil
+}
+
 // UnsolicitedReachRestrictedTx is UnsolicitedReachRestricted inside tx.
 func (p *AccountPolicy) UnsolicitedReachRestrictedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
 	now := p.clock.Now()

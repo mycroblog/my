@@ -2578,5 +2578,121 @@
   "settings.password.login_providers_only": {
     "defaultMessage": "このサーバーはログインプロバイダーでのみログインできるため、パスワードの設定や変更はここではできません。今のパスワードは、アカウントの変更の確認には引き続き使えます。",
     "description": "On the password settings page while the instance limits sign-in to login providers."
+  },
+  "settings.account.deactivate.title": {
+    "defaultMessage": "アカウントを無効化する",
+    "description": "Heading of the part of the account page that deactivates the user's account."
+  },
+  "settings.account.deactivate.description": {
+    "defaultMessage": "何も失わずに離れられます。30 日のあいだ、プロフィールと投稿はだれにも見えません。30 日以内にログインして再有効化すれば、投稿・フォロー・フォロワーは元のままです。30 日を過ぎるとアカウントは削除されます。",
+    "description": "What deactivating the account does."
+  },
+  "settings.account.deactivate.effects": {
+    "defaultMessage": "無効化の間は何も届きません。メンションと DM は失われ、新しいフォロワーは断られます。ほかのサーバーでは、アカウントが凍結されたように見えることがあります。すべての端末からログアウトし、アプリは認可し直しになります。",
+    "description": "What the user gives up while the account is deactivated, including that other servers may show it as suspended."
+  },
+  "settings.account.deactivate.open": {
+    "defaultMessage": "アカウントを無効化…",
+    "description": "Button that opens the dialog that deactivates the user's account."
+  },
+  "settings.account.deactivate.confirm.title": {
+    "defaultMessage": "アカウントを無効化しますか？",
+    "description": "Title of the dialog that deactivates the user's account."
+  },
+  "settings.account.deactivate.confirm.deletion": {
+    "defaultMessage": "{date} までにログインして再有効化しないと、削除されます。",
+    "description": "Sentence of the deactivation dialog with the date of the deletion. {date} is a formatted date and time."
+  },
+  "settings.account.deactivate.confirm.password": {
+    "defaultMessage": "確認のため、パスワードを入力してください。",
+    "description": "Asks for the password in the deactivation dialog."
+  },
+  "settings.account.deactivate.confirm.passkey": {
+    "defaultMessage": "パスキーで確認します。",
+    "description": "Tells that a passkey confirms the deactivation."
+  },
+  "settings.account.deactivate.confirm.external": {
+    "defaultMessage": "連携したアカウントでのログインで確認します。",
+    "description": "Tells that the sign-in at a linked provider confirms the deactivation."
+  },
+  "settings.account.deactivate.confirm.code": {
+    "defaultMessage": "確認のため、認証アプリのコードかリカバリーコードを入力してください。",
+    "description": "Asks for a code of the second factor in the deactivation dialog."
+  },
+  "settings.account.deactivate.password": {
+    "defaultMessage": "現在のパスワード",
+    "description": "Label of the field with the password in the deactivation dialog."
+  },
+  "settings.account.deactivate.password.required": {
+    "defaultMessage": "パスワードを入力してください。",
+    "description": "Error of the empty password field in the deactivation dialog."
+  },
+  "settings.account.deactivate.code": {
+    "defaultMessage": "認証コード",
+    "description": "Label of the field with the code in the deactivation dialog."
+  },
+  "settings.account.deactivate.code.required": {
+    "defaultMessage": "コードを入力してください。",
+    "description": "Error of the empty code field in the deactivation dialog."
+  },
+  "settings.account.deactivate.use_code": {
+    "defaultMessage": "代わりに認証コードを使う",
+    "description": "Button in the deactivation dialog that confirms with a code in place of the password or the passkey."
+  },
+  "settings.account.deactivate.use_sign_in": {
+    "defaultMessage": "別の方法で確認する",
+    "description": "Button in the deactivation dialog that goes back from the code to the password, the passkey, or the linked account."
+  },
+  "settings.account.deactivate.confirm": {
+    "defaultMessage": "無効化する",
+    "description": "Button of the dialog that deactivates the account."
+  },
+  "settings.account.deactivate.cancel": {
+    "defaultMessage": "アカウントを無効化しない",
+    "description": "Button that closes the deactivation dialog without deactivating."
+  },
+  "settings.account.deactivate.wrong_password": {
+    "defaultMessage": "パスワードが正しくありません。",
+    "description": "Error in the deactivation dialog."
+  },
+  "settings.account.deactivate.wrong_code": {
+    "defaultMessage": "コードが正しくありません。",
+    "description": "Error in the deactivation dialog."
+  },
+  "settings.account.deactivate.refused.login_restricted": {
+    "defaultMessage": "モデレーションの処分でログインできないため、無効化できません。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.deletion_scheduled": {
+    "defaultMessage": "削除を待っているため、無効化できません。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.already_deactivated": {
+    "defaultMessage": "このアカウントはすでに無効化されています。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.moved": {
+    "defaultMessage": "別のアカウントへ移転したため、無効化できません。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.registration_pending": {
+    "defaultMessage": "登録の審査を待っているため、無効化できません。",
+    "description": "Why the account cannot be deactivated."
+  },
+  "settings.account.deactivate.refused.paid_subscription": {
+    "defaultMessage": "サポーターの登録が続いています。先に解約してください。登録が終わると無効化できます。",
+    "description": "Why the account cannot be deactivated, followed by a link to the subscription."
+  },
+  "settings.account.deactivate.refused.subscription_link": {
+    "defaultMessage": "登録を管理する",
+    "description": "Link from the refused deactivation to the page of the supporter subscription."
+  },
+  "settings.account.deactivate.refused.recently_reactivated": {
+    "defaultMessage": "最近再有効化したばかりです。{date} からもう一度無効化できます。",
+    "description": "Why the account cannot be deactivated. {date} is a formatted date and time, 24 hours after the reactivation."
+  },
+  "settings.account.deactivate.refused.last_administrator": {
+    "defaultMessage": "ログインできる管理者はこのアカウントだけなので、無効化できません。先にほかの人を管理者にしてください。",
+    "description": "Why the account cannot be deactivated."
   }
 }

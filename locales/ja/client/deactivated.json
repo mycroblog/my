@@ -1,0 +1,18 @@
+{
+  "deactivated.title": {
+    "defaultMessage": "アカウントを無効化しました",
+    "description": "Title of the page after a user deactivated their account."
+  },
+  "deactivated.deletion": {
+    "defaultMessage": "{date} に削除されます。",
+    "description": "The date of the deletion on the page after a user deactivated their account. {date} is a formatted date and time."
+  },
+  "deactivated.description": {
+    "defaultMessage": "それまでにログインすれば再有効化できます。再有効化するまで、アカウントはだれにも見えず、何も届きません。",
+    "description": "What to do after deactivating the account."
+  },
+  "deactivated.sign_in": {
+    "defaultMessage": "ログイン",
+    "description": "Link to the sign-in page on the page after a user deactivated their account."
+  }
+}

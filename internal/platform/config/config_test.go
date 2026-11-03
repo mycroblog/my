@@ -93,7 +93,7 @@ source_url = "https://git.example.org/fork/my"
 web_origin = "http://localhost:5173"
 role = "web"
 queue = "db"
-db = "postgres"
+database = "postgres"
 listen = "127.0.0.1:9000"
 `},
 			want: Config{
@@ -171,8 +171,8 @@ listen = "127.0.0.1:9000"
 		},
 		{
 			name: "smtp mailer",
-			env: with(minimal(), "MY_MAIL", "smtp", "MY_MAIL_FROM", "noreply@social.example.org", "MY_SMTP_HOST", "smtp.example.org",
-				"MY_SMTP_PORT", "2525", "MY_SMTP_USERNAME", "mailer", "MY_SMTP_PASSWORD", "hunter3"),
+			env: with(minimal(), "MY_MAIL", "smtp", "MY_MAIL_FROM", "noreply@social.example.org", "MY_MAIL_SMTP_HOST", "smtp.example.org",
+				"MY_MAIL_SMTP_PORT", "2525", "MY_MAIL_SMTP_USERNAME", "mailer", "MY_MAIL_SMTP_PASSWORD", "hunter3"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
 				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:", Stream: "hub",
@@ -331,7 +331,7 @@ listen = "127.0.0.1:9000"
 		{
 			name: "stream on SNS",
 			env: with(minimal(), "MY_ROLE", "web", "MY_STREAM", "sns",
-				"MY_STREAM_SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:123456789012:my-stream", "MY_STREAM_SQS_QUEUE_PREFIX", "my-stream"),
+				"MY_STREAM_SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:123456789012:my-stream", "MY_STREAM_SNS_QUEUE_PREFIX", "my-stream"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleWeb, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
 				DB: "sqlite", DatabaseURL: "file:my.db", Queue: "db", Blob: "fs", Media: "native", KV: "db", ValkeyKeyPrefix: "my:",
@@ -362,7 +362,7 @@ listen = "127.0.0.1:9000"
 		},
 		{
 			name: "queue on Cloud Tasks with the defaults",
-			env: with(minimal(), "MY_DB", "postgres", "MY_DATABASE_URL", "postgres://db:5432/my", "MY_QUEUE", "cloudtasks",
+			env: with(minimal(), "MY_DATABASE", "postgres", "MY_DATABASE_URL", "postgres://db:5432/my", "MY_QUEUE", "cloudtasks",
 				"MY_QUEUE_CLOUDTASKS_QUEUE", "projects/my-project/locations/asia-northeast1/queues/my-jobs",
 				"MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT", "my-tasks@my-project.iam.gserviceaccount.com"),
 			want: Config{
@@ -381,7 +381,7 @@ listen = "127.0.0.1:9000"
 		},
 		{
 			name: "stream on PostgreSQL with a direct connection",
-			env: with(minimal(), "MY_DB", "postgres", "MY_DATABASE_URL", "postgres://pooler:6543/my", "MY_STREAM", "postgres",
+			env: with(minimal(), "MY_DATABASE", "postgres", "MY_DATABASE_URL", "postgres://pooler:6543/my", "MY_STREAM", "postgres",
 				"MY_STREAM_POSTGRES_URL", "postgres://db:5432/my"),
 			want: Config{
 				Host: "social.example.org", AccountDomain: "social.example.org", SourceURL: DefaultSourceURL, WebOrigin: "https://social.example.org", Role: RoleAll, Listen: ":8080", MaintenanceRetryAfter: 10 * time.Minute,
@@ -435,7 +435,7 @@ func TestLoadInvalid(t *testing.T) {
 				"MY_WEB_ORIGIN", "http://localhost:5173/",
 				"MY_ROLE", "both",
 				"MY_LISTEN", "8080",
-				"MY_DB", "mysql",
+				"MY_DATABASE", "mysql",
 				"MY_KEK", "c2hvcnQ=",
 			),
 			want: []string{
@@ -445,7 +445,7 @@ func TestLoadInvalid(t *testing.T) {
 				"web_origin (MY_WEB_ORIGIN): must be an origin: http or https, a host, and an optional port, without path or trailing slash",
 				`role (MY_ROLE): unknown value "both"; want one of all, web, worker`,
 				"listen (MY_LISTEN): must be host:port, for example :8080 or 127.0.0.1:8080",
-				`db (MY_DB): unknown value "mysql"; want one of sqlite, libsql, postgres`,
+				`database (MY_DATABASE): unknown value "mysql"; want one of sqlite, libsql, postgres`,
 				"kek (MY_KEK): must decode to 32 bytes, got 5",
 			},
 		},
@@ -517,23 +517,23 @@ func TestLoadInvalid(t *testing.T) {
 		{
 			name: "stream postgres without db postgres",
 			env:  with(minimal(), "MY_STREAM", "postgres"),
-			want: []string{"stream (MY_STREAM): postgres requires db = postgres, not sqlite"},
+			want: []string{"stream (MY_STREAM): postgres requires database = postgres, not sqlite"},
 		},
 		{
 			name: "stream sns without its topic and queues",
 			env:  with(minimal(), "MY_STREAM", "sns"),
 			want: []string{
 				"stream_sns_topic_arn (MY_STREAM_SNS_TOPIC_ARN): required when stream is sns",
-				"stream_sqs_queue_prefix (MY_STREAM_SQS_QUEUE_PREFIX): required when stream is sns",
+				"stream_sns_queue_prefix (MY_STREAM_SNS_QUEUE_PREFIX): required when stream is sns",
 			},
 		},
 		{
 			name: "malformed stream sns settings",
 			env: with(minimal(), "MY_STREAM", "sns",
-				"MY_STREAM_SNS_TOPIC_ARN", "arn:aws:sqs:us-east-1:123456789012:my-stream", "MY_STREAM_SQS_QUEUE_PREFIX", "my.stream"),
+				"MY_STREAM_SNS_TOPIC_ARN", "arn:aws:sqs:us-east-1:123456789012:my-stream", "MY_STREAM_SNS_QUEUE_PREFIX", "my.stream"),
 			want: []string{
 				`stream_sns_topic_arn (MY_STREAM_SNS_TOPIC_ARN): not the ARN of an SNS topic`,
-				`stream_sqs_queue_prefix (MY_STREAM_SQS_QUEUE_PREFIX): not 1 to 40 letters`,
+				`stream_sns_queue_prefix (MY_STREAM_SNS_QUEUE_PREFIX): not 1 to 40 letters`,
 			},
 		},
 		{
@@ -559,7 +559,7 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{
 				"queue_cloudtasks_queue (MY_QUEUE_CLOUDTASKS_QUEUE): required when queue is cloudtasks",
 				"queue_cloudtasks_service_account (MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT): required when queue is cloudtasks",
-				"queue (MY_QUEUE): cloudtasks keeps the jobs in the database and requires db = postgres or libsql, not sqlite",
+				"queue (MY_QUEUE): cloudtasks keeps the jobs in the database and requires database = postgres or libsql, not sqlite",
 				"queue (MY_QUEUE): cloudtasks claims the periods of the periodic jobs in the KV and requires kv = db or valkey, not memory",
 			},
 		},
@@ -568,19 +568,19 @@ func TestLoadInvalid(t *testing.T) {
 			env:  with(minimal(), "MY_QUEUE", "sqs", "MY_KV", "memory"),
 			want: []string{
 				"queue_sqs_queue_url (MY_QUEUE_SQS_QUEUE_URL): required when queue is sqs",
-				"queue (MY_QUEUE): sqs keeps the jobs in the database and requires db = postgres or libsql, not sqlite",
+				"queue (MY_QUEUE): sqs keeps the jobs in the database and requires database = postgres or libsql, not sqlite",
 				"queue (MY_QUEUE): sqs claims the periods of the periodic jobs in the KV and requires kv = db or valkey, not memory",
 			},
 		},
 		{
 			name: "queue sqs on a FIFO queue",
-			env: with(minimal(), "MY_DB", "postgres", "MY_QUEUE", "sqs",
+			env: with(minimal(), "MY_DATABASE", "postgres", "MY_QUEUE", "sqs",
 				"MY_QUEUE_SQS_QUEUE_URL", "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs.fifo"),
 			want: []string{"queue_sqs_queue_url (MY_QUEUE_SQS_QUEUE_URL): must be a standard queue, not a FIFO queue"},
 		},
 		{
 			name: "malformed queue sqs events settings",
-			env: with(minimal(), "MY_DB", "postgres", "MY_QUEUE", "sqs",
+			env: with(minimal(), "MY_DATABASE", "postgres", "MY_QUEUE", "sqs",
 				"MY_QUEUE_SQS_QUEUE_URL", "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs",
 				"MY_QUEUE_SQS_EVENTS_PATH", "events/", "MY_QUEUE_SQS_EVENTS_BUDGET", "5m"),
 			want: []string{
@@ -590,7 +590,7 @@ func TestLoadInvalid(t *testing.T) {
 		},
 		{
 			name: "malformed queue cloudtasks settings",
-			env: with(minimal(), "MY_DB", "postgres", "MY_QUEUE", "cloudtasks",
+			env: with(minimal(), "MY_DATABASE", "postgres", "MY_QUEUE", "cloudtasks",
 				"MY_QUEUE_CLOUDTASKS_QUEUE", "my-jobs", "MY_QUEUE_CLOUDTASKS_URL", "https://my.example/_internal/jobs",
 				"MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT", "Tasks <tasks@my-project.iam.gserviceaccount.com>",
 				"MY_QUEUE_CLOUDTASKS_DISPATCH_DEADLINE", "5m"),
@@ -623,11 +623,11 @@ func TestLoadInvalid(t *testing.T) {
 		},
 		{
 			name: "media limits",
-			env:  with(minimal(), "MY_MEDIA_MAX_IMAGE_BYTES", "0", "MY_MEDIA_MAX_IMAGE_SIDE", "big", "MY_MEDIA_UNATTACHED_TTL", "1 day"),
+			env:  with(minimal(), "MY_MEDIA_MAX_IMAGE_BYTES", "0", "MY_MEDIA_MAX_IMAGE_SIDE", "big", "MY_MEDIA_UNATTACHED_RETENTION", "1 day"),
 			want: []string{
 				"media_max_image_bytes (MY_MEDIA_MAX_IMAGE_BYTES): must be a whole number from 1 to 2147483647",
 				"media_max_image_side (MY_MEDIA_MAX_IMAGE_SIDE): must be a whole number from 1 to 2147483647",
-				"media_unattached_ttl (MY_MEDIA_UNATTACHED_TTL): must be a positive Go duration, for example 24h or 90m",
+				"media_unattached_retention (MY_MEDIA_UNATTACHED_RETENTION): must be a positive Go duration, for example 24h or 90m",
 			},
 		},
 		{
@@ -773,16 +773,16 @@ func TestLoadInvalid(t *testing.T) {
 			env:  with(minimal(), "MY_MAIL", "smtp"),
 			want: []string{
 				"mail_from (MY_MAIL_FROM): required when mail is not none",
-				"smtp_host (MY_SMTP_HOST): required when mail is smtp",
+				"mail_smtp_host (MY_MAIL_SMTP_HOST): required when mail is smtp",
 			},
 		},
 		{
 			name: "malformed mail settings",
-			env:  with(minimal(), "MY_MAIL", "smtp", "MY_MAIL_FROM", "My <noreply@example.org>", "MY_SMTP_HOST", "smtp.example.org:587", "MY_SMTP_PORT", "0"),
+			env:  with(minimal(), "MY_MAIL", "smtp", "MY_MAIL_FROM", "My <noreply@example.org>", "MY_MAIL_SMTP_HOST", "smtp.example.org:587", "MY_MAIL_SMTP_PORT", "0"),
 			want: []string{
 				"mail_from (MY_MAIL_FROM): must be a bare email address such as noreply@example.com",
-				"smtp_host (MY_SMTP_HOST): must be a host name or an IP address, without scheme or port",
-				`smtp_port (MY_SMTP_PORT): port "0" must be a number from 1 to 65535`,
+				"mail_smtp_host (MY_MAIL_SMTP_HOST): must be a host name or an IP address, without scheme or port",
+				`mail_smtp_port (MY_MAIL_SMTP_PORT): port "0" must be a number from 1 to 65535`,
 			},
 		},
 		{
@@ -795,15 +795,15 @@ func TestLoadInvalid(t *testing.T) {
 		},
 		{
 			name: "stripe without keys",
-			env:  with(minimal(), "MY_PAYMENTS_PROVIDER", "stripe"),
+			env:  with(minimal(), "MY_PAYMENTS", "stripe"),
 			want: []string{
-				"payments_stripe_secret_key (MY_PAYMENTS_STRIPE_SECRET_KEY): required when payments_provider is stripe",
-				"payments_stripe_webhook_secret (MY_PAYMENTS_STRIPE_WEBHOOK_SECRET): required when payments_provider is stripe",
+				"payments_stripe_secret_key (MY_PAYMENTS_STRIPE_SECRET_KEY): required when payments is stripe",
+				"payments_stripe_webhook_secret (MY_PAYMENTS_STRIPE_WEBHOOK_SECRET): required when payments is stripe",
 			},
 		},
 		{
 			name: "stripe with a publishable key and a bare secret",
-			env: with(with(with(minimal(), "MY_PAYMENTS_PROVIDER", "stripe"),
+			env: with(with(with(minimal(), "MY_PAYMENTS", "stripe"),
 				"MY_PAYMENTS_STRIPE_SECRET_KEY", "pk_live_abc"), "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_"),
 			want: []string{
 				"payments_stripe_secret_key (MY_PAYMENTS_STRIPE_SECRET_KEY): must be a Stripe secret key",
@@ -812,16 +812,16 @@ func TestLoadInvalid(t *testing.T) {
 		},
 		{
 			name: "payjp without keys",
-			env:  with(minimal(), "MY_PAYMENTS_PROVIDER", "payjp"),
+			env:  with(minimal(), "MY_PAYMENTS", "payjp"),
 			want: []string{
-				"payments_payjp_secret_key (MY_PAYMENTS_PAYJP_SECRET_KEY): required when payments_provider is payjp",
-				"payments_payjp_public_key (MY_PAYMENTS_PAYJP_PUBLIC_KEY): required when payments_provider is payjp",
-				"payments_payjp_webhook_token (MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN): required when payments_provider is payjp",
+				"payments_payjp_secret_key (MY_PAYMENTS_PAYJP_SECRET_KEY): required when payments is payjp",
+				"payments_payjp_public_key (MY_PAYMENTS_PAYJP_PUBLIC_KEY): required when payments is payjp",
+				"payments_payjp_webhook_token (MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN): required when payments is payjp",
 			},
 		},
 		{
 			name: "payjp with swapped keys and a bare token",
-			env: with(with(with(with(minimal(), "MY_PAYMENTS_PROVIDER", "payjp"),
+			env: with(with(with(with(minimal(), "MY_PAYMENTS", "payjp"),
 				"MY_PAYMENTS_PAYJP_SECRET_KEY", "pk_test_abc"), "MY_PAYMENTS_PAYJP_PUBLIC_KEY", "sk_test_abc"), "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN", "whook_"),
 			want: []string{
 				"payments_payjp_secret_key (MY_PAYMENTS_PAYJP_SECRET_KEY): must be a PAY.JP secret key",
@@ -831,7 +831,7 @@ func TestLoadInvalid(t *testing.T) {
 		},
 		{
 			name: "payjp keys of two modes",
-			env: with(with(with(with(minimal(), "MY_PAYMENTS_PROVIDER", "payjp"),
+			env: with(with(with(with(minimal(), "MY_PAYMENTS", "payjp"),
 				"MY_PAYMENTS_PAYJP_SECRET_KEY", "sk_live_abc"), "MY_PAYMENTS_PAYJP_PUBLIC_KEY", "pk_test_abc"), "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN", "whook_abc"),
 			want: []string{"payments_payjp_public_key (MY_PAYMENTS_PAYJP_PUBLIC_KEY): must be of the mode of payments_payjp_secret_key"},
 		},
@@ -880,18 +880,18 @@ func TestLoadInvalid(t *testing.T) {
 		},
 		{
 			name: "database acquire timeout that is not a duration",
-			env:  with(minimal(), "MY_DB", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "soon"),
+			env:  with(minimal(), "MY_DATABASE", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "soon"),
 			want: []string{"database_acquire_timeout (MY_DATABASE_ACQUIRE_TIMEOUT): must be a Go duration of 0 or more, for example 60s; 0 waits without a limit"},
 		},
 		{
 			name: "negative database acquire timeout",
-			env:  with(minimal(), "MY_DB", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "-1s"),
+			env:  with(minimal(), "MY_DATABASE", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "-1s"),
 			want: []string{"database_acquire_timeout (MY_DATABASE_ACQUIRE_TIMEOUT): must be a Go duration of 0 or more, for example 60s; 0 waits without a limit"},
 		},
 		{
 			name: "database acquire timeout on SQLite",
 			env:  with(minimal(), "MY_DATABASE_ACQUIRE_TIMEOUT", "5s"),
-			want: []string{"database_acquire_timeout (MY_DATABASE_ACQUIRE_TIMEOUT): works only with db = postgres, not sqlite, which has no limit on connections to wait for"},
+			want: []string{"database_acquire_timeout (MY_DATABASE_ACQUIRE_TIMEOUT): works only with database = postgres, not sqlite, which has no limit on connections to wait for"},
 		},
 		{
 			name: "worker job concurrency of zero",
@@ -1065,16 +1065,16 @@ func skipExcluded(t *testing.T, env map[string]string) {
 }
 
 func TestLoadSettingsRedactSecrets(t *testing.T) {
-	_, settings, err := Load(source(with(minimal(), "MY_KEK_PREVIOUS", testKEK1, "MY_SMTP_PASSWORD", "hunter3",
+	_, settings, err := Load(source(with(minimal(), "MY_KEK_PREVIOUS", testKEK1, "MY_MAIL_SMTP_PASSWORD", "hunter3",
 		"MY_CAPTCHA", "turnstile", "MY_CAPTCHA_SITE_KEY", "site", "MY_CAPTCHA_SECRET_KEY", "0x5eCrE7",
 		"MY_VAPID_PRIVATE_KEY", "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw",
 		"MY_KV", "valkey", "MY_VALKEY_URL", "valkey://user:pass@cache:6379/0",
 		"MY_STREAM_POSTGRES_URL", "postgres://user:pass@db/my", "MY_DATABASE_DEV_URL", "postgres://user:pass@db/my_dev",
-		"MY_PAYMENTS_PROVIDER", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", "rk_test_abc", "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc",
+		"MY_PAYMENTS", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", "rk_test_abc", "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc",
 		"MY_PAYMENTS_PAYJP_SECRET_KEY", "sk_test_abc", "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN", "whook_abc",
-		"MY_VOICE_TURN_SECRET", "turn", "MY_VOICE_TURN_CLOUDFLARE_API_TOKEN", "token", "MY_VOICE_LIVEKIT_API_SECRET", "lk",
+		"MY_VOICE_TURN_COTURN_SECRET", "turn", "MY_VOICE_TURN_CLOUDFLARE_API_TOKEN", "token", "MY_VOICE_LIVEKIT_API_SECRET", "lk",
 		"MY_VOICE_SORA_API_HEADER_VALUE", "Basic abc", "MY_VOICE_SORA_WEBHOOK_PASSWORD", "pw", "MY_VOICE_SORA_CLOUD_API_KEY", "key",
-		"MY_VOICE_JOIN_SECRET", "0123456789abcdef0123456789abcdef", "MY_ERRORS_SENTRY_DSN", "https://key@o0.ingest.sentry.io/1",
+		"MY_VOICE_SORA_JOIN_SECRET", "0123456789abcdef0123456789abcdef", "MY_ERRORS_SENTRY_DSN", "https://key@o0.ingest.sentry.io/1",
 		"MY_BLOB_S3_ACCESS_KEY_ID", "AKIAEXAMPLE", "MY_BLOB_S3_SECRET_ACCESS_KEY", "s3cr3t"), nil))
 	if err != nil {
 		t.Fatal(err)
@@ -1205,7 +1205,7 @@ func TestSourceURL(t *testing.T) {
 }
 
 func TestConfigLogValueRedactsSecrets(t *testing.T) {
-	cfg, _, err := Load(source(with(minimal(), "MY_DATABASE_URL", "postgres://user:hunter2@db/my", "MY_KEK_PREVIOUS", testKEK1, "MY_SMTP_PASSWORD", "hunter3",
+	cfg, _, err := Load(source(with(minimal(), "MY_DATABASE_URL", "postgres://user:hunter2@db/my", "MY_KEK_PREVIOUS", testKEK1, "MY_MAIL_SMTP_PASSWORD", "hunter3",
 		"MY_CAPTCHA", "hcaptcha", "MY_CAPTCHA_SITE_KEY", "site", "MY_CAPTCHA_SECRET_KEY", "0x5eCrE7",
 		"MY_KV", "valkey", "MY_VALKEY_URL", "valkey://user:pass@cache:6379/0",
 		"MY_STREAM_POSTGRES_URL", "postgres://user:pass@db/my"), nil))
@@ -1307,9 +1307,9 @@ func TestDatabaseAcquireTimeout(t *testing.T) {
 		want time.Duration
 	}{
 		{"nothing to wait for on SQLite", minimal(), 0},
-		{"default on PostgreSQL", with(minimal(), "MY_DB", "postgres"), 60 * time.Second},
-		{"set", with(minimal(), "MY_DB", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "5s"), 5 * time.Second},
-		{"zero waits without a limit", with(minimal(), "MY_DB", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "0s"), 0},
+		{"default on PostgreSQL", with(minimal(), "MY_DATABASE", "postgres"), 60 * time.Second},
+		{"set", with(minimal(), "MY_DATABASE", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "5s"), 5 * time.Second},
+		{"zero waits without a limit", with(minimal(), "MY_DATABASE", "postgres", "MY_DATABASE_ACQUIRE_TIMEOUT", "0s"), 0},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			cfg, _, err := Load(source(tc.env, nil))

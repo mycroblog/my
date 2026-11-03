@@ -309,7 +309,7 @@ func mediaRejectsBrokenAV(t *testing.T, p media.Processor) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := p.Remux(ctx, mp4, media.AVLimits{}); err == nil || media.Rejected(err) {
-		t.Errorf("Remux with a cancelled context = %v, want the context's error", err)
+		t.Errorf("Remux with a canceled context = %v, want the context's error", err)
 	}
 }
 

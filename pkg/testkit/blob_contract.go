@@ -24,7 +24,7 @@ type BlobStoreFactory func(t *testing.T) blob.Store
 // of others, the longest keys and segments), long media types, atomic writes (a failed Put
 // keeps the previous blob; concurrent readers never see a partial blob; concurrent writes and
 // deletes never pair one blob's content with another's media type), rejection of every key
-// that could escape the store, cancelled contexts, and public URLs.
+// that could escape the store, canceled contexts, and public URLs.
 func BlobStoreContract(t *testing.T, newStore BlobStoreFactory) {
 	t.Helper()
 	cases := []struct {
@@ -45,7 +45,7 @@ func BlobStoreContract(t *testing.T, newStore BlobStoreFactory) {
 		{"KeepsContentAndTypeTogetherUnderConcurrentPuts", blobConcurrentPutsStayConsistent},
 		{"KeepsContentAndTypeTogetherWhenPutRacesDelete", blobPutRacingDeleteStaysConsistent},
 		{"RejectsInvalidKeys", blobRejectsInvalidKeys},
-		{"StopsOnCancelledContext", blobStopsOnCancelledContext},
+		{"StopsOnCanceledContext", blobStopsOnCanceledContext},
 		{"BuildsPublicURLs", blobBuildsPublicURLs},
 	}
 	for _, tc := range cases {
@@ -402,14 +402,14 @@ func blobRejectsInvalidKeys(t *testing.T, s blob.Store) {
 	}
 }
 
-func blobStopsOnCancelledContext(t *testing.T, s blob.Store) {
+func blobStopsOnCanceledContext(t *testing.T, s blob.Store) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := s.Put(ctx, "k", strings.NewReader("x"), blob.PutOptions{}); err == nil {
-		t.Error("Put with a cancelled context succeeded")
+		t.Error("Put with a canceled context succeeded")
 	}
 	if _, err := s.Head(t.Context(), "k"); !errors.Is(err, blob.ErrNotFound) {
-		t.Errorf("Head after cancelled Put: %v, want ErrNotFound", err)
+		t.Errorf("Head after canceled Put: %v, want ErrNotFound", err)
 	}
 }
 

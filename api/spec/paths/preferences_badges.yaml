@@ -4,7 +4,7 @@ get:
   summary: List the badges that the authenticated user may show
   description: |
     The roles that the user holds and that have a badge, highest position first, with whether
-    the user shows each badge on their profile (ADR-0071). Every badge is hidden until the user
+    the user shows each badge on their profile. Every badge is hidden until the user
     shows it.
   tags: [preferences]
   security:

@@ -348,6 +348,12 @@ export const handlers = [
         }),
     ),
   ),
+  http.get(`${apiBase}/accounts/deactivation`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ deletion_due_at: "2026-12-03T09:00:00Z" })),
+  ),
+  http.post(`${apiBase}/accounts/deactivation`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ deletion_due_at: "2026-12-03T09:00:00Z" })),
+  ),
   http.post(`${apiBase}/accounts/delete`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),

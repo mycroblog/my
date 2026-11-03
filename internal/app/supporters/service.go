@@ -77,7 +77,7 @@ type Deps struct {
 	Roles      Roles
 	Users      Users
 	Accounts   Accounts
-	// Provider is the configured payment provider; nil with payments_provider = none, which
+	// Provider is the configured payment provider; nil with payments = none, which
 	// keeps the program disabled.
 	Provider PaymentProvider
 	// SendsEmail reports that the server sends email (mail is not none), which enabling the
@@ -126,7 +126,7 @@ func (s *Service) providerName() string {
 var (
 	// ErrDisabled: the program is disabled; its plans and subscriptions do not show.
 	ErrDisabled = errors.New("supporters: the supporter program is disabled")
-	// ErrNoProvider: no payment provider is configured (payments_provider = none).
+	// ErrNoProvider: no payment provider is configured (payments = none).
 	ErrNoProvider = errors.New("supporters: no payment provider is configured")
 	// ErrNoMail: the server sends no email, so nobody can verify an address.
 	ErrNoMail = errors.New("supporters: the server sends no email")
@@ -143,7 +143,7 @@ type Program struct {
 	Provider string
 	// ChangedAt is when it was last enabled or disabled; zero for never.
 	ChangedAt time.Time
-	// ConfiguredProvider is the provider of payments_provider, "" for none.
+	// ConfiguredProvider is the provider of payments, "" for none.
 	ConfiguredProvider string
 	// SendsEmail reports that the server sends email.
 	SendsEmail bool

@@ -184,7 +184,7 @@ type InsertWebhookDeliveryAttemptParams struct {
 	ID          string
 	DeliveryID  string
 	Outcome     string
-	StatusCode  *int64
+	StatusCode  *int32
 	DurationMs  int64
 	AttemptedAt time.Time
 }
@@ -425,7 +425,7 @@ type ListWebhookDeliveriesRow struct {
 	Succeeded       bool
 	LastID          *string
 	LastOutcome     *string
-	LastStatusCode  *int64
+	LastStatusCode  *int32
 	LastDurationMs  *int64
 	LastAttemptedAt *time.Time
 }

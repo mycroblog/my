@@ -7,8 +7,8 @@ The adapters that need nothing beyond the standard library and the packages the 
 
 | Tag | Leaves out | Settings it rejects |
 | --- | --- | --- |
-| `no_sqlite` | The SQLite database (`modernc.org/sqlite`), the queue and key-value store kept in it, and `my schema apply` for SQLite (Atlas's SQLite driver) | `db = sqlite` |
-| `no_postgres` | The PostgreSQL database (`pgx/v5`), the queue and key-value store kept in it, the `LISTEN` / `NOTIFY` broker, and `my schema apply` for PostgreSQL (Atlas's PostgreSQL driver) | `db = postgres`, `stream = postgres` |
+| `no_sqlite` | The SQLite database (`modernc.org/sqlite`), the queue and key-value store kept in it, and `my schema apply` for SQLite (Atlas's SQLite driver) | `database = sqlite` |
+| `no_postgres` | The PostgreSQL database (`pgx/v5`), the queue and key-value store kept in it, the `LISTEN` / `NOTIFY` broker, and `my schema apply` for PostgreSQL (Atlas's PostgreSQL driver) | `database = postgres`, `stream = postgres` |
 | `no_valkey` | The Valkey client (`valkey-go`): the key-value store and the broker on `valkey_url` | `kv = valkey`, `stream = valkey` |
 | `no_sns` | The Amazon SNS / SQS broker (AWS SDK); with `no_sqs`, the AWS SDK for Amazon SQS too | `stream = sns` |
 | `no_ses` | The Amazon SES mailer (AWS SDK) | `mail = ses` |
@@ -21,8 +21,8 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_sqs` | The Amazon SQS queue; with `no_sns`, the AWS SDK for Amazon SQS too | `queue = sqs` |
 | `no_billing_aws` | The import of the AWS usage charges (AWS Cost Explorer SDK) | `billing_sources = aws` |
 | `no_billing_gcp` | The import of the Google Cloud usage charges (BigQuery REST client; with `no_pubsub`, the Pub/Sub client library of `billing_gcp_method = budget`) | `billing_sources = gcp` |
-| `no_payments_stripe` | The Stripe adapter of the supporters' payments (`stripe-go`) | `payments_provider = stripe` |
-| `no_payments_payjp` | The PAY.JP adapter of the supporters' payments and its checkout and card pages (no third-party library) | `payments_provider = payjp` |
+| `no_payments_stripe` | The Stripe adapter of the supporters' payments (`stripe-go`) | `payments = stripe` |
+| `no_payments_payjp` | The PAY.JP adapter of the supporters' payments and its checkout and card pages (no third-party library) | `payments = payjp` |
 | `no_voice_livekit` | The LiveKit adapter of the voice chat and the endpoint of its events (no third-party library) | `voice = livekit` |
 | `no_voice_sora` | The Sora adapter of the voice chat and the endpoints of its auth, event, and session webhooks (no third-party library) | `voice = sora` |
 | `no_otel` | The OpenTelemetry SDK and its Prometheus and OTLP exporters, of the metrics, the traces, and the error reports | `metrics_exporter = prometheus`, `metrics_exporter = otlp`, `traces_exporter = otlp`, `errors_exporter = otlp` |
@@ -37,24 +37,24 @@ released binary or image has it. Never run a test build for real users.
 
 | Tag | Adds | Settings it allows |
 | --- | --- | --- |
-| `e2e_fakes` | The fake payment provider: its state lives in the server's memory, and its own checkout page under `/payments/pages/fake/` offers to pay, to make the payment fail, or to cancel. Paying records the subscription and its payment as paid without any money moving. The command `my dev push-service`, a fake Web Push service ([below](#the-fake-push-service)). | `payments_provider = fake`, with `profile = development` only |
+| `e2e_fakes` | The fake payment provider: its state lives in the server's memory, and its own checkout page under `/payments/pages/fake/` offers to pay, to make the payment fail, or to cancel. Paying records the subscription and its payment as paid without any money moving. The command `my dev push-service`, a fake Web Push service ([below](#the-fake-push-service)). | `payments = fake`, with `profile = development` only |
 
 ```sh
 scripts/task.sh go:bin GO_TAGS=e2e_fakes
-MY_PROFILE=development MY_PAYMENTS_PROVIDER=fake bin/my serve
+MY_PROFILE=development MY_PAYMENTS=fake bin/my serve
 ```
 
 A fake that records payments as paid would give anyone a supporter's role without paying, so four checks keep the
 fakes out of production; each one stops them on its own when another one is bypassed:
 
-- **At start.** A binary without the tag rejects `payments_provider = fake` like a left-out adapter:
+- **At start.** A binary without the tag rejects `payments = fake` like a left-out adapter:
 
   ```text
-  payments_provider (MY_PAYMENTS_PROVIDER): "fake" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it (docs/reference/build-tags.md)
+  payments (MY_PAYMENTS): "fake" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it (docs/reference/build-tags.md)
   ```
 
   A binary without the tag has no `my dev` command (`my: unknown command "dev"`). A test build refuses
-  `payments_provider = fake` and `my dev push-service` unless `profile = development`, and both log a warning at start
+  `payments = fake` and `my dev push-service` unless `profile = development`, and both log a warning at start
   that it is a test build.
 - **The build check.** `scripts/task.sh go:build-tags` fails when `cmd/my` without the tag (with no tags, or with any
   representative set of `no_*` tags) depends on a fake. Only files with the constraint `//go:build e2e_fakes` import
@@ -111,7 +111,7 @@ The binary validates the configuration at start ([configuration reference](confi
 `my serve` reject a setting whose adapter the build left out, naming the tag:
 
 ```text
-db (MY_DB): "postgres" is not in this build: the build tag no_postgres left its adapter out (docs/reference/build-tags.md)
+database (MY_DATABASE): "postgres" is not in this build: the build tag no_postgres left its adapter out (docs/reference/build-tags.md)
 ```
 
 ## Checks

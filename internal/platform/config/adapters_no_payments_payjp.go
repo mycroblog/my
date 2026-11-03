@@ -4,4 +4,4 @@
 
 package config
 
-func init() { exclude("no_payments_payjp", "payments_provider", "payjp") }
+func init() { exclude("no_payments_payjp", "payments", "payjp") }

@@ -24,7 +24,7 @@ func sqsConfig(t *testing.T) *config.Config {
 	t.Helper()
 	// queue = sqs needs a shared database; the test runs it on SQLite all the same.
 	cfg := loadConfig(t, map[string]string{
-		"MY_DB": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_QUEUE": "sqs",
+		"MY_DATABASE": "postgres", "MY_DATABASE_URL": "postgres://unused/my", "MY_QUEUE": "sqs",
 		"MY_QUEUE_SQS_QUEUE_URL": "https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-jobs",
 	})
 	cfg.DB, cfg.DatabaseURL = "sqlite", "file:"+newDatabase(t, true)

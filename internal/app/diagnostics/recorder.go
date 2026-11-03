@@ -26,7 +26,7 @@ const (
 	// next flush.
 	maxSeen    = 10000
 	maxPending = 10000
-	// abortGrace is how long Close waits for the goroutine after it cancelled the write in
+	// abortGrace is how long Close waits for the goroutine after it canceled the write in
 	// flight, because the deadline of its caller ended first.
 	abortGrace = time.Second
 )
@@ -257,7 +257,7 @@ func (r *Recorder) writeFirst(f firstReport) {
 }
 
 // Close writes what the Recorder holds and stops its goroutine, waiting until ctx ends at most
-// (platform.ErrorSinkCloser). When ctx ends first, the write in flight is cancelled and awaited
+// (platform.ErrorSinkCloser). When ctx ends first, the write in flight is canceled and awaited
 // for a short grace, so that nothing is written after Close returns. The reports after it are
 // dropped.
 func (r *Recorder) Close(ctx context.Context) error {

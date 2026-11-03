@@ -4,7 +4,7 @@ get:
   summary: Total the costs by period
   description: |
     The totals of the cost items and the imported usage charges for each week, month, or
-    year from the one that holds `from` to the one that holds `to` (ADR-0067 §4, §5), by
+    year from the one that holds `from` to the one that holds `to`, by
     currency and broken down by provider and category, with the rules that cut the periods.
     The totals are computed on every read. More than 104 weeks, 60 months, or 20 years, and
     `to` before `from`, are a 422 naming `to`. Needs the `manage_finance` permission.

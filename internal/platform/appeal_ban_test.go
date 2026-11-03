@@ -93,8 +93,8 @@ func TestBanAppealsThroughTheCompositionRoot(t *testing.T) {
 	for _, en := range audit.Items {
 		actions = append(actions, en.Action)
 	}
-	if len(actions) < 3 || actions[0] != clientapi.AdminAuditActionAccountActionLifted || actions[1] != clientapi.AdminAuditActionAccountDeletionCancelled {
-		t.Errorf("audit log of alice = %v, want the lift after the cancelled deletion", actions)
+	if len(actions) < 3 || actions[0] != clientapi.AdminAuditActionAccountActionLifted || actions[1] != clientapi.AdminAuditActionAccountDeletionCanceled {
+		t.Errorf("audit log of alice = %v, want the lift after the canceled deletion", actions)
 	}
 
 	// Once the account is deleted, its ban is not appealed.

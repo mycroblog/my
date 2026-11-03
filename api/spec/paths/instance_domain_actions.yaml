@@ -3,8 +3,7 @@ get:
   operationId: listInstanceDomainActions
   summary: List the domains that the instance moderates
   description: |
-    The moderation actions in effect on remote domains that the instance lists publicly
-    (FR-718): `limit` and `suspend`, one item per action, newest first. The instance
+    The moderation actions in effect on remote domains that the instance lists publicly: `limit` and `suspend`, one item per action, newest first. The instance
     setting `domain_actions_visibility` decides who may read it: `none` makes it a 404,
     `users` a 401 `/api/v1/problems/unauthenticated` for a request without an access
     token, and `all` serves everyone. The setting `domain_actions_rationale_visibility`

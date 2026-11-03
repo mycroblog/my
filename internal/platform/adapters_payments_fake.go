@@ -21,7 +21,7 @@ import (
 
 func init() { paymentProviderAdapters["fake"] = newFakePaymentProvider }
 
-// newFakePaymentProvider returns the PaymentProvider of payments_provider = fake: the fake with
+// newFakePaymentProvider returns the PaymentProvider of payments = fake: the fake with
 // its own checkout page, whose state lives in this process only. Like the configuration's
 // check, it refuses any profile but development, so that the fake never records payments as
 // paid on a production instance.
@@ -29,6 +29,6 @@ func newFakePaymentProvider(ctx context.Context, cfg *config.Config, logger *slo
 	if cfg.Profile != "development" {
 		return nil, errors.New("fake needs profile = development: it records payments as paid without any money moving")
 	}
-	logger.WarnContext(ctx, "this is a test build (build tag e2e_fakes): payments_provider = fake records payments as paid without any money moving")
+	logger.WarnContext(ctx, "this is a test build (build tag e2e_fakes): payments = fake records payments as paid without any money moving")
 	return paymentfake.NewPages(paymentfake.Options{}), nil
 }

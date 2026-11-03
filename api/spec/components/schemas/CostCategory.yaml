@@ -1,4 +1,4 @@
 # SPDX-License-Identifier: MIT
-description: The fixed category of a cost (ADR-0067 §2); clients translate its name.
+description: The fixed category of a cost; clients translate its name.
 type: string
 enum: [compute, database, storage, network, domain, email, software, other]

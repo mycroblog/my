@@ -12,7 +12,7 @@ const (
 	LifecycleDeactivated       LifecycleKind = "deactivated"
 	LifecycleReactivated       LifecycleKind = "reactivated"
 	LifecycleDeletionScheduled LifecycleKind = "deletion_scheduled"
-	LifecycleDeletionCancelled LifecycleKind = "deletion_cancelled"
+	LifecycleDeletionCanceled  LifecycleKind = "deletion_canceled"
 	LifecycleDeleted           LifecycleKind = "deleted"
 	LifecycleRemoteDeleted     LifecycleKind = "remote_deleted"
 )
@@ -50,6 +50,13 @@ const (
 	StateDeleted           LifecycleStateName = "deleted"
 )
 
+// A self-deactivated account is deleted DeactivationPeriod after it was deactivated, and a
+// deactivation waits DeactivationGap after the previous reactivation (ADR-0145 §2, §8).
+const (
+	DeactivationPeriod = 30 * 24 * time.Hour
+	DeactivationGap    = 24 * time.Hour
+)
+
 // LifecycleState is the current lifecycle state of an account (the account_lifecycle_states
 // projection). An account without lifecycle events is active; its zero Since means
 // "since it was created".
@@ -67,6 +74,20 @@ func (s LifecycleState) Active() bool { return s.State == StateActive }
 // DeletionScheduled reports whether the account is waiting for its scheduled deletion.
 func (s LifecycleState) DeletionScheduled() bool { return s.State == StateDeletionScheduled }
 
+// Deactivated reports whether the account's owner deactivated it and has not come back
+// (ADR-0145). The state says nothing of the deadline; DeactivationExpired does.
+func (s LifecycleState) Deactivated() bool { return s.State == StateDeactivated }
+
+// DeactivationDueAt returns when a deactivated account is deleted, DeactivationPeriod after its
+// state began.
+func (s LifecycleState) DeactivationDueAt() time.Time { return s.Since.Add(DeactivationPeriod) }
+
+// DeactivationExpired reports whether the account is deactivated and its deadline has passed at
+// now, also before the deletion job records the deletion: from then on it cannot come back.
+func (s LifecycleState) DeactivationExpired(now time.Time) bool {
+	return s.Deactivated() && !now.Before(s.DeactivationDueAt())
+}
+
 // InitialLifecycleState is the state of an account before its first lifecycle event.
 func InitialLifecycleState(accountID string) LifecycleState {
 	return LifecycleState{AccountID: accountID, State: StateActive}
@@ -83,7 +104,7 @@ func (s LifecycleState) Apply(e LifecycleEvent) LifecycleState {
 	switch e.Kind {
 	case LifecycleDeactivated:
 		next.State = StateDeactivated
-	case LifecycleReactivated, LifecycleDeletionCancelled:
+	case LifecycleReactivated, LifecycleDeletionCanceled:
 		next.State = StateActive
 	case LifecycleDeletionScheduled:
 		next.State = StateDeletionScheduled

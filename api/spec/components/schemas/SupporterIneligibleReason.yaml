@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  Why the user may not subscribe to a supporter plan (ADR-0072 §6): `not_local`, not a user
+  Why the user may not subscribe to a supporter plan: `not_local`, not a user
   of this server; `email_unverified`, the primary email address is not verified;
   `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
   the user may subscribe.
