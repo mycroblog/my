@@ -411,3 +411,79 @@ func deactivationStatusPageDelete(t *testing.T, e *accountEnv) {
 		t.Fatalf("DeleteDeactivatedAccount(new session) = %v", err)
 	}
 }
+
+// deactivationConfirmedByACode checks the confirmation with a TOTP code: a valid one deactivates,
+// and a code that was used already does not, since this path ends in a deletion.
+func deactivationConfirmedByACode(t *testing.T, e *accountEnv) {
+	ctx := t.Context()
+	reg := e.sessionUser(t)
+	e.otherAdmin(t)
+	totp := e.enableTOTP(t, reg)
+
+	used := totp.code(e)
+	if _, err := e.identity.RegenerateRecoveryCodes(ctx, reg.User.ID, used); err != nil {
+		t.Fatalf("RegenerateRecoveryCodes = %v", err)
+	}
+	if _, err := e.identity.DeactivateOwnAccount(ctx, reg.User.ID, appidentity.Confirmation{TwoFactorCode: used}); !errors.Is(err, appidentity.ErrInvalidSecondFactor) {
+		t.Fatalf("DeactivateOwnAccount(a used code) = %v, want ErrInvalidSecondFactor", err)
+	}
+	if s := e.lifecycleOf(t, reg.AccountID); !s.Active() {
+		t.Fatalf("state after the used code = %+v, want active", s)
+	}
+
+	due, err := e.identity.DeactivateOwnAccount(ctx, reg.User.ID, appidentity.Confirmation{TwoFactorCode: totp.code(e)})
+	if err != nil {
+		t.Fatalf("DeactivateOwnAccount(a valid code) = %v", err)
+	}
+	s := e.lifecycleOf(t, reg.AccountID)
+	if !s.Deactivated() || !due.Equal(s.DeactivationDueAt()) {
+		t.Errorf("state = %+v, due = %v; want deactivated with that date", s, due)
+	}
+}
+
+// deactivationConfirmedByAPasskey checks the confirmation with a passkey: another user's passkey
+// does not confirm, a confirmation works once, and a user without a password confirms with one.
+func deactivationConfirmedByAPasskey(t *testing.T, e *accountEnv) {
+	ctx := t.Context()
+	reg := e.sessionUser(t)
+	e.otherAdmin(t)
+	own, _ := e.registerPasskey(t, reg.User.ID, "laptop")
+	other, err := e.identity.CreateAdmin(ctx, appidentity.CreateAdminInput{Username: "other", Email: "other@example.com", Password: sessionPassword})
+	if err != nil {
+		t.Fatalf("CreateAdmin = %v", err)
+	}
+	foreign, _ := e.registerPasskey(t, other.User.ID, "theirs")
+
+	if _, err := e.identity.DeactivateOwnAccount(ctx, reg.User.ID, e.confirmWithPasskey(t, reg.User.ID, foreign)); !errors.Is(err, appidentity.ErrInvalidPasskey) {
+		t.Fatalf("DeactivateOwnAccount(the passkey of another user) = %v, want ErrInvalidPasskey", err)
+	}
+	if s := e.lifecycleOf(t, reg.AccountID); !s.Active() {
+		t.Fatalf("state after the wrong passkey = %+v, want active", s)
+	}
+
+	confirmed := e.confirmWithPasskey(t, reg.User.ID, own)
+	if _, err := e.identity.DeactivateOwnAccount(ctx, reg.User.ID, confirmed); err != nil {
+		t.Fatalf("DeactivateOwnAccount(a passkey) = %v", err)
+	}
+	if s := e.lifecycleOf(t, reg.AccountID); !s.Deactivated() {
+		t.Fatalf("state = %+v, want deactivated", s)
+	}
+	if err := e.identity.ReactivateOwnAccount(ctx, reg.User.ID); err != nil {
+		t.Fatalf("ReactivateOwnAccount = %v", err)
+	}
+	e.clock.Advance(account.DeactivationGap)
+	if _, err := e.identity.DeactivateOwnAccount(ctx, reg.User.ID, confirmed); !errors.Is(err, appidentity.ErrPasskeyConfirmationExpired) {
+		t.Fatalf("DeactivateOwnAccount(a used confirmation) = %v, want ErrPasskeyConfirmationExpired", err)
+	}
+
+	// Without a password, the passkey is what confirms.
+	if err := e.identity.RemovePassword(ctx, appidentity.RemovePasswordInput{UserID: other.User.ID, Passkey: e.confirmWithPasskey(t, other.User.ID, foreign).Passkey}); err != nil {
+		t.Fatalf("RemovePassword = %v", err)
+	}
+	if _, err := e.identity.DeactivateOwnAccount(ctx, other.User.ID, deactivationConfirmed); !errors.Is(err, appidentity.ErrWrongPassword) {
+		t.Fatalf("DeactivateOwnAccount(a password, without one) = %v, want ErrWrongPassword", err)
+	}
+	if _, err := e.identity.DeactivateOwnAccount(ctx, other.User.ID, e.confirmWithPasskey(t, other.User.ID, foreign)); err != nil {
+		t.Fatalf("DeactivateOwnAccount(a passkey, without a password) = %v", err)
+	}
+}
