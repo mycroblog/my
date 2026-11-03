@@ -3,6 +3,7 @@
 package platform_test
 
 import (
+	"encoding/json"
 	"html"
 	"log/slog"
 	"net/http"
@@ -25,6 +26,70 @@ import (
 // profile of the host shows the room to the viewers who see it; the summary of the room and its
 // page show the name, the host, and the description only with voice_public_summary, and only
 // that it ended and its name after its end; and the history lists the rooms the user hosted.
+// TestVoiceStartPostNeedsWriteStatuses opens rooms with the tokens of a third-party app: write:voice
+// opens a room, and publishes a start post only together with write:statuses.
+func TestVoiceStartPostNeedsWriteStatuses(t *testing.T) {
+	t.Parallel()
+	c := newStatusesClientWith(t, map[string]string{"MY_VOICE": "p2p", "MY_VOICE_STUN_URLS": "stun:stun.example.org"}, platform.AppOptions{}, "alice")
+	voiceOnly := c.appToken("alice", "write:voice")
+	both := c.appToken("alice", "write:voice write:statuses")
+	broad := c.appToken("alice", "write")
+	statuses := func() int {
+		t.Helper()
+		var page clientapi.AccountStatusPage
+		if res := c.do("alice", http.MethodGet, "/accounts/"+c.ids["alice"]+"/statuses", nil, &page); res.StatusCode != http.StatusOK {
+			t.Fatalf("GET statuses = %d", res.StatusCode)
+		}
+		return len(page.Items)
+	}
+	// open opens a room as user and ends one that opens, so that the next one can open.
+	open := func(user string, post bool) *http.Response {
+		t.Helper()
+		body := map[string]any{"name": "Talk"}
+		if post {
+			body["post"] = map[string]any{"text": "Come and talk"}
+		}
+		var join clientapi.VoiceRoomJoin
+		res := c.do(user, http.MethodPost, "/voice/rooms", body, &join)
+		if res.StatusCode == http.StatusCreated {
+			if end := c.do("alice", http.MethodDelete, "/voice/rooms/"+join.Room.Id, nil, nil); end.StatusCode/100 != 2 {
+				t.Fatalf("end the room = %d", end.StatusCode)
+			}
+		}
+		return res
+	}
+
+	res := open(voiceOnly, true)
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("a start post with write:voice = %d, want 403", res.StatusCode)
+	}
+	var p clientapi.Problem
+	if err := json.NewDecoder(res.Body).Decode(&p); err != nil || p.Type != clientapi.ProblemTypeInsufficientScope {
+		t.Errorf("problem = %+v, %v; want insufficient-scope", p, err)
+	}
+	// An empty post is a post too: its link is published.
+	if res := c.do(voiceOnly, http.MethodPost, "/voice/rooms", map[string]any{"name": "Talk", "post": map[string]any{}}, nil); res.StatusCode != http.StatusForbidden {
+		t.Errorf("an empty start post with write:voice = %d, want 403", res.StatusCode)
+	}
+	if n := statuses(); n != 0 {
+		t.Errorf("statuses after refused start posts = %d, want 0", n)
+	}
+	if res := open(voiceOnly, false); res.StatusCode != http.StatusCreated {
+		t.Errorf("a room without a post with write:voice = %d, want 201", res.StatusCode)
+	}
+	if n := statuses(); n != 0 {
+		t.Errorf("statuses after a room without a post = %d, want 0", n)
+	}
+	for _, user := range []string{both, broad} {
+		if res := open(user, true); res.StatusCode != http.StatusCreated {
+			t.Errorf("a start post as %q = %d, want 201", user, res.StatusCode)
+		}
+	}
+	if n := statuses(); n != 2 {
+		t.Errorf("statuses after the allowed start posts = %d, want 2", n)
+	}
+}
+
 func TestVoiceSurfacesThroughAPI(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{

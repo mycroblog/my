@@ -38,7 +38,7 @@ type VoiceParticipants interface {
 	Revoke(ctx context.Context, byAccountID, roomID, accountID string) (appvoice.RoomView, error)
 	Dismiss(ctx context.Context, byAccountID, roomID, accountID string) (appvoice.RoomView, error)
 	Mute(ctx context.Context, byAccountID, roomID, accountID string) error
-	Remove(ctx context.Context, byAccountID, roomID, accountID string) error
+	Remove(ctx context.Context, byAccountID, roomID, accountID string) (appvoice.RoomView, error)
 	AssignCohost(ctx context.Context, byAccountID, roomID, accountID string) (appvoice.RoomView, error)
 	RemoveCohost(ctx context.Context, byAccountID, roomID, accountID string) (appvoice.RoomView, error)
 	Invite(ctx context.Context, byAccountID, roomID, accountID string, role voice.Role) (appvoice.Invitation, error)
@@ -143,14 +143,16 @@ func (s *Server) LowerVoiceHand(ctx context.Context, req LowerVoiceHandRequestOb
 
 // RemoveVoiceParticipant serves DELETE /api/v1/voice/rooms/{id}/participants/{account_id}.
 func (s *Server) RemoveVoiceParticipant(ctx context.Context, req RemoveVoiceParticipantRequestObject) (RemoveVoiceParticipantResponseObject, error) {
-	p, err := s.voiceOperation(ctx, func(r VoiceRooms, me string) error { return r.Remove(ctx, me, req.Id, knownID(req.AccountId)) })
-	if p != nil || err != nil {
+	out, p, err := s.voiceRoomChange(ctx, func(r VoiceRooms, me string) (appvoice.RoomView, error) {
+		return r.Remove(ctx, me, req.Id, knownID(req.AccountId))
+	})
+	if out == nil {
 		return respond[RemoveVoiceParticipantdefaultApplicationProblemPlusJSONResponse](p, err)
 	}
-	return RemoveVoiceParticipant204Response{}, nil
+	return RemoveVoiceParticipant200JSONResponse{Body: *out, Headers: RemoveVoiceParticipant200ResponseHeaders{CacheControl: voiceCache()}}, nil
 }
 
-// GrantVoiceSpeaking serves POST /api/v1/voice/rooms/{id}/participants/{account_id}/grant.
+// GrantVoiceSpeaking serves POST /api/v1/voice/rooms/{id}/participants/{account_id}/speaking_permission.
 func (s *Server) GrantVoiceSpeaking(ctx context.Context, req GrantVoiceSpeakingRequestObject) (GrantVoiceSpeakingResponseObject, error) {
 	out, p, err := s.voiceRoomChange(ctx, func(r VoiceRooms, me string) (appvoice.RoomView, error) {
 		return r.Grant(ctx, me, req.Id, knownID(req.AccountId))
@@ -161,7 +163,7 @@ func (s *Server) GrantVoiceSpeaking(ctx context.Context, req GrantVoiceSpeakingR
 	return GrantVoiceSpeaking200JSONResponse{Body: *out, Headers: GrantVoiceSpeaking200ResponseHeaders{CacheControl: voiceCache()}}, nil
 }
 
-// RevokeVoiceSpeaking serves DELETE /api/v1/voice/rooms/{id}/participants/{account_id}/grant.
+// RevokeVoiceSpeaking serves DELETE /api/v1/voice/rooms/{id}/participants/{account_id}/speaking_permission.
 func (s *Server) RevokeVoiceSpeaking(ctx context.Context, req RevokeVoiceSpeakingRequestObject) (RevokeVoiceSpeakingResponseObject, error) {
 	out, p, err := s.voiceRoomChange(ctx, func(r VoiceRooms, me string) (appvoice.RoomView, error) {
 		return r.Revoke(ctx, me, req.Id, knownID(req.AccountId))

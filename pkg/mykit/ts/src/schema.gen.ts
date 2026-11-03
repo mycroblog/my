@@ -3559,7 +3559,7 @@ export interface paths {
          * List the open voice chat rooms
          * @description The open voice chat rooms that the user sees: the rooms where the user follows the host or
          *     a speaker first, then by the most participants. With `tag`, only the rooms with that
-         *     hashtag. A 404 while the voice chat is off on the server.
+         *     hashtag.
          */
         get: operations["listVoiceRooms"];
         put?: never;
@@ -3571,7 +3571,7 @@ export interface paths {
          *     `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
          *     while as many rooms are open as the server allows, and a 409
          *     `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
-         *     leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+         *     leaves the room the user was in. Invalid settings are a 422.
          *     With `post`, the user's start post, which links the room, is posted with it: a 422 for a
          *     room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
          *     status for a post that cannot be posted. The local followers of the user who see the room
@@ -3597,7 +3597,7 @@ export interface paths {
         /**
          * Get a voice chat room
          * @description An open room that the user sees. A room that ended or that the user does not see is a
-         *     404. A 404 while the voice chat is off on the server.
+         *     404.
          */
         get: operations["getVoiceRoom"];
         put?: never;
@@ -3605,7 +3605,7 @@ export interface paths {
         /**
          * End a voice chat room
          * @description Ends a room that the user hosts, for every participant. A 403
-         *     `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+         *     `/api/v1/problems/voice-not-host` for a user who is not the host.
          */
         delete: operations["endVoiceRoom"];
         options?: never;
@@ -3614,7 +3614,7 @@ export interface paths {
          * Change the settings of a voice chat room
          * @description Changes the settings of a room that the user hosts. The participants stay whatever the new
          *     settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
-         *     for invalid settings. A 404 while the voice chat is off on the server.
+         *     for invalid settings.
          */
         patch: operations["updateVoiceRoom"];
         trace?: never;
@@ -3638,7 +3638,7 @@ export interface paths {
          *     session is disconnected. Joining leaves the room the user was in; the host of an open room
          *     leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
          *     `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
-         *     allows. A 404 while the voice chat is off on the server.
+         *     allows.
          */
         post: operations["joinVoiceRoom"];
         /**
@@ -3647,7 +3647,7 @@ export interface paths {
          *     next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
          *     409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
          *     `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-         *     ends when nobody is left in it. A 404 while the voice chat is off on the server.
+         *     ends when nobody is left in it.
          */
         delete: operations["leaveVoiceRoom"];
         options?: never;
@@ -3673,7 +3673,7 @@ export interface paths {
          *     without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
          *     minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
          *     session that is not the user's current session in the room is a 404: the client joins
-         *     again. A 404 while the voice chat is off on the server.
+         *     again.
          */
         post: operations["sendVoiceHeartbeat"];
         delete?: never;
@@ -3699,7 +3699,7 @@ export interface paths {
          * @description Makes a participant who may host rooms the host of a room that the user hosts; the user
          *     stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
          *     and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
-         *     over. A 404 while the voice chat is off on the server.
+         *     over.
          */
         post: operations["handOverVoiceRoom"];
         delete?: never;
@@ -3726,13 +3726,13 @@ export interface paths {
          *     the room's speakers setting covers, and the users with a permission to speak (a granted
          *     raised hand, a grant, or an invitation as a speaker) may; a user whom a moderator limited
          *     needs a permission. A 403 `/api/v1/problems/voice-cannot-speak` for anyone else, who raises a
-         *     hand instead. A raised hand goes down. A speaker stays one. A 404 while the voice chat is off on the server.
+         *     hand instead. A raised hand goes down. A speaker stays one.
          */
         post: operations["becomeVoiceSpeaker"];
         /**
          * Go back to listening in a voice chat room
          * @description Makes the user, a speaker in the room, a listener again. A permission to speak stays, so
-         *     the user may speak again. A listener stays one. A 404 while the voice chat is off on the server.
+         *     the user may speak again. A listener stays one.
          */
         delete: operations["becomeVoiceListener"];
         options?: never;
@@ -3755,12 +3755,12 @@ export interface paths {
         /**
          * Raise a hand in a voice chat room
          * @description Asks the host and the co-hosts for a permission to speak. A raised hand stays up, and a
-         *     speaker raises none. A 404 while the voice chat is off on the server.
+         *     speaker raises none.
          */
         post: operations["raiseVoiceHand"];
         /**
          * Lower a hand in a voice chat room
-         * @description Withdraws the user's request to speak. A hand that is down stays down. A 404 while the voice chat is off on the server.
+         * @description Withdraws the user's request to speak. A hand that is down stays down.
          */
         delete: operations["lowerVoiceHand"];
         options?: never;
@@ -3787,7 +3787,7 @@ export interface paths {
          * Remove a participant from a voice chat room
          * @description Takes a participant out of the room, by the host or a co-host, and bans the account from
          *     the room: it neither sees nor joins the room again. The host and the co-hosts do not remove
-         *     each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host. A 404 while the voice chat is off on the server.
+         *     each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host.
          */
         delete: operations["removeVoiceParticipant"];
         options?: never;
@@ -3795,7 +3795,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/voice/rooms/{id}/participants/{account_id}/grant": {
+    "/voice/rooms/{id}/participants/{account_id}/speaking_permission": {
         parameters: {
             query?: never;
             header?: never;
@@ -3813,13 +3813,13 @@ export interface paths {
          * Let a participant of a voice chat room speak
          * @description Gives a participant a permission to speak, by the host or a co-host, with or without a
          *     raised hand: a raised hand is granted, and the participant then becomes a speaker. The
-         *     permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+         *     permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
          */
         post: operations["grantVoiceSpeaking"];
         /**
          * Stop a participant of a voice chat room from speaking
          * @description Makes a speaker a listener again, by the host or a co-host, and takes back the
-         *     participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+         *     participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
          */
         delete: operations["revokeVoiceSpeaking"];
         options?: never;
@@ -3845,7 +3845,7 @@ export interface paths {
         /**
          * Dismiss the raised hand of a participant of a voice chat room
          * @description Turns down a participant's request to speak, by the host or a co-host. A hand that is down
-         *     stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+         *     stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
          */
         delete: operations["dismissVoiceHand"];
         options?: never;
@@ -3870,7 +3870,7 @@ export interface paths {
         /**
          * Mute a participant of a voice chat room
          * @description Turns the microphone of a participant off, by the host or a co-host. The participant may
-         *     turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+         *     turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
          */
         post: operations["muteVoiceParticipant"];
         delete?: never;
@@ -3900,13 +3900,13 @@ export interface paths {
          *     way, with the new co-host leave the room. A co-host stays a co-host while the participation
          *     lasts: one who leaves and joins again is a participant until the host makes them a co-host
          *     again. A 403 `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or one
-         *     in a block relation with the host. A 404 while the voice chat is off on the server.
+         *     in a block relation with the host.
          */
         post: operations["assignVoiceCohost"];
         /**
          * Stop a participant of a voice chat room being a co-host
          * @description Makes a co-host a participant without the role of a co-host, by the host. A 403
-         *     `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+         *     `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
          */
         delete: operations["removeVoiceCohost"];
         options?: never;
@@ -3927,7 +3927,7 @@ export interface paths {
         /**
          * List the invitations of a voice chat room
          * @description Lists the invitations of the room that were not revoked, oldest first, for the host and
-         *     the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+         *     the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
          */
         get: operations["listVoiceInvitations"];
         put?: never;
@@ -3939,7 +3939,7 @@ export interface paths {
          *     also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
          *     a local, active user, is the host or the user, is in a block relation with the host or a
          *     co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
-         *     with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+         *     with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
          */
         post: operations["inviteToVoiceRoom"];
         delete?: never;
@@ -3968,7 +3968,7 @@ export interface paths {
          * @description Revokes the invitation of a user, by the host or a co-host: the user no longer sees the
          *     room unless in it, and the permission to speak of an invitation as a speaker goes too; a
          *     participant stays in the room as a speaker or a listener. A 404 for a user without an
-         *     invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+         *     invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
          */
         delete: operations["revokeVoiceInvitation"];
         options?: never;
@@ -4019,8 +4019,7 @@ export interface paths {
          *
          *     When the stream ends otherwise, open it again with the same session; the first `state`
          *     brings the room up to date, and nothing is replayed. While the server cannot receive the
-         *     events (it is shutting down) the answer is 503 with `Retry-After`. A 404 while the voice
-         *     chat is off on the server.
+         *     events (it is shutting down) the answer is 503 with `Retry-After`.
          */
         get: operations["streamVoiceRoom"];
         put?: never;
@@ -4056,7 +4055,6 @@ export interface paths {
          *     A session sends at most 20 signals each second; past it the answer is 429 with
          *     `Retry-After`. A signal that its receiver's stream does not take within 30 seconds is
          *     lost; restart ICE. A session that is not the user's current session in the room is a 404.
-         *     A 404 while the voice chat is off on the server.
          */
         post: operations["sendVoiceSignal"];
         delete?: never;
@@ -4083,7 +4081,7 @@ export interface paths {
          *     streams; the server records nothing. Only a speaker turns it on (403
          *     `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
          *     turning it on lifts the mute. A session that is not the user's current session in the room
-         *     is a 404. A 404 while the voice chat is off on the server.
+         *     is a 404.
          */
         post: operations["setVoiceMic"];
         delete?: never;
@@ -4110,7 +4108,7 @@ export interface paths {
          *     servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
          *     servers on its connections, and restarts ICE. A session that is not the user's current
          *     session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
-         *     server cannot give a grant now. A 404 while the voice chat is off on the server.
+         *     server cannot give a grant now.
          */
         post: operations["refreshVoiceGrant"];
         delete?: never;
@@ -4184,8 +4182,7 @@ export interface paths {
         /**
          * List the voice chat rooms the user hosted
          * @description The rooms that the user hosted at some time, from opening them or from taking them over,
-         *     newest first, with when each opened and ended and why it ended. A 404 while the voice chat
-         *     is off on the server.
+         *     newest first, with when each opened and ended and why it ended.
          */
         get: operations["listVoiceHistory"];
         put?: never;
@@ -5932,7 +5929,9 @@ export interface paths {
          *     a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
          *     mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
          *     the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
-         *     `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+         *     `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
+         *     A local account whose roles do not rank below the user's, the user's own included, is a
+         *     403 `/api/v1/problems/target-outranks-actor`. Needs the
          *     `manage_accounts` permission.
          */
         post: operations["liftAdminAccountEmailSuppression"];
@@ -6129,7 +6128,9 @@ export interface paths {
          *     `decision_reason`. Deciding a decided appeal the same way again changes nothing and
          *     keeps the first reason; deciding it the other way is a 409
          *     `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-         *     U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+         *     U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+         *     A local account whose roles do not rank below the user's, the user's own included, is a
+         *     403 `/api/v1/problems/target-outranks-actor`. Needs the
          *     `manage_accounts` permission.
          */
         post: operations["overturnAppeal"];
@@ -6154,7 +6155,9 @@ export interface paths {
          *     `decision_reason`. Deciding a decided appeal the same way again changes nothing and
          *     keeps the first reason; deciding it the other way is a 409
          *     `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-         *     U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+         *     U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+         *     A local account whose roles do not rank below the user's, the user's own included, is a
+         *     403 `/api/v1/problems/target-outranks-actor`. Needs the
          *     `manage_accounts` permission.
          */
         post: operations["upholdAppeal"];
@@ -9287,11 +9290,8 @@ export interface components {
              * @description When the room ended; omitted while it is open.
              */
             ended_at?: string;
-            /**
-             * @description Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
-             *     `moderator`, `time_limit`, `disabled`); omitted while it is open.
-             */
-            end_reason?: string;
+            /** @description Why the room ended; omitted while it is open. */
+            end_reason?: components["schemas"]["VoiceEndReason"];
             /** @description Who ended the room; omitted for an automatic end and while it is open. */
             ended_by_account_id?: components["schemas"]["Id"];
             /** @description The reason that a moderator gave for ending the room; omitted for none. */
@@ -9331,8 +9331,9 @@ export interface components {
             /**
              * @description Why the account left (`left`, `moved`, `disconnected`, `removed`, `blocked`,
              *     `suspended`, `room_ended`); omitted while it takes part.
+             * @enum {string}
              */
-            leave_reason?: string;
+            leave_reason?: "left" | "moved" | "disconnected" | "removed" | "blocked" | "suspended" | "room_ended";
         };
         /**
          * @description A revision of the settings of a voice chat room. The name and the description are empty
@@ -11090,8 +11091,11 @@ export interface components {
             trace_id?: string;
             /** @description The version of the server of the occurrence. */
             version: string;
-            /** @description The role of the process that reported it (`all`, `web`, `worker`, or `stream`); the web client reports have the role of the server that received them. */
-            role: string;
+            /**
+             * @description The role of the process that reported it; the web client reports have the role of the server that received them.
+             * @enum {string}
+             */
+            role: "all" | "web" | "worker";
             /** Format: date-time */
             occurred_at: string;
         };
@@ -14193,12 +14197,21 @@ export interface components {
          */
         Visibility: "public" | "local" | "unlisted" | "private" | "direct";
         /**
+         * @description Why a voice chat room ended: `host` the host ended it, `empty` nobody was left in it,
+         *     `host_disconnected` the host lost the connection and nobody took over, `host_ineligible` the
+         *     host may no longer host, `moderator` a moderator ended it, `time_limit` it reached the limit
+         *     of its duration, and `disabled` the voice chat was turned off.
+         * @enum {string}
+         */
+        VoiceEndReason: "host" | "empty" | "host_disconnected" | "host_ineligible" | "moderator" | "time_limit" | "disabled";
+        /**
          * @description What the client of a session needs to connect to the audio of a room. `kind` is the method
          *     of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
          *     `expires_at`.
          */
         VoiceGrant: {
-            kind: string;
+            /** @enum {string} */
+            kind: "p2p" | "livekit" | "sora";
             /** @description The endpoint of the media server; omitted for `p2p`. */
             url?: string;
             /** @description The access token of the media server; omitted for `p2p`. */
@@ -14322,11 +14335,8 @@ export interface components {
              * @description When the room ended; omitted while it is open.
              */
             ended_at?: string;
-            /**
-             * @description Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
-             *     `moderator`, `time_limit`, `disabled`); omitted while it is open.
-             */
-            end_reason?: string;
+            /** @description Why the room ended; omitted while it is open. */
+            end_reason?: components["schemas"]["VoiceEndReason"];
         };
         /** @description A page of the voice chat rooms that the user hosted, newest first. */
         VoiceRoomHistoryPage: components["schemas"]["PageInfo"] & {
@@ -14395,7 +14405,9 @@ export interface components {
             description?: string;
             /** @description Up to 5 hashtags, with or without the `#`, each one a hashtag as in a post. */
             hashtags?: string[];
+            /** @description Who sees the room; `local` when omitted. */
             visibility?: components["schemas"]["VoiceRoomVisibility"];
+            /** @description Who may become a speaker without asking; `manual` when omitted. */
             speakers?: components["schemas"]["VoiceRoomSpeakers"];
             post?: components["schemas"]["VoiceStartPost"];
         };
@@ -14455,8 +14467,9 @@ export interface components {
             session: string;
         };
         /**
-         * @description The post that the host writes when opening a voice chat room. The link of the room is
-         *     appended to the text on a line of its own. The post is the host's own: `local` for a room of
+         * @description The post that the host writes when opening a voice chat room. Asking for one needs the
+         *     `write:statuses` scope besides `write:voice`, or the request is a 403
+         *     `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
          *     the `local` visibility and `private` for a room of the `followers` visibility, federated like
          *     any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
          *     visibility has no start post.
@@ -14498,12 +14511,13 @@ export interface components {
         /**
          * @description The data of the `removed`, `replaced`, and `ended` events of a voice chat room stream, after
          *     which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
-         *     `moved`, `disconnected`, `removed`, `blocked`, `suspended`), the one of `replaced` is
+         *     `moved`, `disconnected`, `removed`, `blocked`, `suspended`, `room_ended`), the one of `replaced` is
          *     `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
          *     `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
          */
         VoiceStreamEnd: {
-            reason: string;
+            /** @enum {string} */
+            reason: "left" | "moved" | "disconnected" | "removed" | "blocked" | "suspended" | "room_ended" | "replaced" | "host" | "empty" | "host_disconnected" | "host_ineligible" | "moderator" | "time_limit" | "disabled";
         };
         /** @description The data of a `grant` event of a voice chat room stream. */
         VoiceStreamGrant: {
@@ -19386,12 +19400,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The participant left the room. */
-            204: {
+            /** @description The room after the removal. */
+            200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VoiceRoom"];
+                };
             };
             default: components["responses"]["Problem"];
         };
