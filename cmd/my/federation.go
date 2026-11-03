@@ -52,7 +52,7 @@ func adminFederationUsage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `Usage:
   my admin federation sever -direction in|out|both [-config <file>]
 
-The follows between the local accounts and the remote ones (ADR-0076).
+The follows between the local accounts and the remote ones.
 
 sever ends every pending or active follow with a remote account in the direction
 given: in ends the remote accounts' follows of local ones, out the local accounts'

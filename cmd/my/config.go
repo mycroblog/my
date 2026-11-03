@@ -148,7 +148,7 @@ func instanceFindings(ctx context.Context, cfg *config.Config) []config.Finding 
 		return append(findings, warn("the instance settings were not checked: %v", err))
 	}
 	if len(rules) == 0 {
-		findings = append(findings, warn("the server has no rules; add them with `my instance rule add`"))
+		findings = append(findings, warn("the server has no rules; add them with `my instance rule create`"))
 	}
 	return findings
 }
@@ -170,8 +170,8 @@ start without refusing to start.
 With -instance it also opens the database and warns about the instance
 settings that are not set: the name, short description, terms, privacy policy,
 contacts, and rules.
-With -maintenance it checks only the settings that the maintenance mode reads
-(ADR-0084), leaving the adapters' settings unread.
+With -maintenance it checks only the settings that the maintenance mode reads,
+leaving the adapters' settings unread.
 
 vapid-key generates a key pair for Web Push and prints the private key, the
 value of MY_VAPID_PRIVATE_KEY, and the public key that browsers subscribe with.

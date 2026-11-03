@@ -29,7 +29,7 @@ func TestUsageNamesEveryCommand(t *testing.T) {
 	admin := text(adminUsage)
 	for _, want := range []string{
 		"domain list|issue|lift|export|import", "report list|show|assign|unassign|resolve|note|reopen",
-		"emoji create|list|update|replace-image|enable|disable|copy|delete|requests", "signup-block add|import|list|lift",
+		"emoji create|list|update|replace-image|enable|disable|copy|delete|requests", "signup-block create|import|list|lift",
 	} {
 		if !strings.Contains(admin, want) {
 			t.Errorf("my admin -help does not name %s", want)

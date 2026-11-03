@@ -132,7 +132,7 @@ func adminEmojiRequestsUsage(w io.Writer) {
   my admin emoji requests approve [-config <file>] <request id>
   my admin emoji requests reject [-reason <text>] [-config <file>] <request id>
 
-The requests of the users whose roles grant create_custom_emojis (ADR-0070): a
+The requests of the users whose roles grant create_custom_emojis: a
 request for a new local custom emoji (kind create) or for a new image of one the
 requester made (kind image). A request is no emoji until it is approved.
 

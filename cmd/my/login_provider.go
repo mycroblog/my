@@ -24,15 +24,15 @@ import (
 // maxClientSecretInput bounds the line read for a client secret: well above a valid one.
 const maxClientSecretInput = 4 * identity.MaxLoginProviderClientSecret
 
-// loginProviderFlags are the settings flags of `my login-provider add` and `set`.
+// loginProviderFlags are the settings flags of `my login-provider create` and `set`.
 type loginProviderFlags struct {
 	kind, name, issuer, clientID string
 	scopes, claims, orgs, guilds stringList
 	allowSignup, allowLink       bool
 }
 
-func (f *loginProviderFlags) define(fs *flag.FlagSet, add bool) {
-	if add {
+func (f *loginProviderFlags) define(fs *flag.FlagSet, create bool) {
+	if create {
 		fs.StringVar(&f.kind, "kind", "", "oidc, github, mastodon, or discord (required)")
 	}
 	fs.StringVar(&f.name, "name", "", "the display name")
@@ -91,21 +91,21 @@ func (f *loginProviderFlags) apply(s *identity.LoginProviderSettings, set map[st
 // runLoginProvider implements `my login-provider <subcommand>`: the external login providers,
 // through the same operations as the admin API, for the first setup before an administrator
 // can reach the administration screens. The CLI acts as no user: its operations are audited as
-// the CLI's. stdin supplies the client secret of add and rotate-secret.
+// the CLI's. stdin supplies the client secret of create and rotate-secret.
 func runLoginProvider(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	subs := []string{"add", "list", "set", "rotate-secret", "enable", "disable", "delete"}
+	subs := []string{"create", "list", "set", "rotate-secret", "enable", "disable", "delete"}
 	sub, code := dispatch("login-provider", args, subs, stderr, loginProviderUsage)
 	if code >= 0 {
 		return code
 	}
 	var f loginProviderFlags
 	nargs := 1
-	if sub == "add" || sub == "list" {
+	if sub == "create" || sub == "list" {
 		nargs = 0
 	}
 	c, code := parseSubcommand("my login-provider "+sub, args[1:], nargs, stderr, loginProviderUsage, func(fs *flag.FlagSet) {
-		if sub == "add" || sub == "set" {
-			f.define(fs, sub == "add")
+		if sub == "create" || sub == "set" {
+			f.define(fs, sub == "create")
 		}
 	})
 	if code >= 0 {
@@ -114,7 +114,7 @@ func runLoginProvider(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 	set := map[string]bool{}
 	c.fs.Visit(func(fl *flag.Flag) { set[fl.Name] = true })
 	settings := identity.NewLoginProviderSettings(identity.LoginProviderKind(f.kind))
-	if sub == "add" {
+	if sub == "create" {
 		for _, required := range []string{"kind", "name", "client-id"} {
 			// A mastodon provider without a client ID registers a client at its server.
 			if !set[required] && (required != "client-id" || settings.Kind != identity.LoginProviderMastodon) {
@@ -132,7 +132,7 @@ func runLoginProvider(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 		return 2
 	}
 	var secret string
-	if sub == "rotate-secret" || sub == "add" && settings.ClientID != "" {
+	if sub == "rotate-secret" || sub == "create" && settings.ClientID != "" {
 		var err error
 		if secret, err = readClientSecret(stdin, stderr); err != nil {
 			_, _ = fmt.Fprintf(stderr, "%s: %v\n", c.name, err)
@@ -159,9 +159,9 @@ func runLoginProvider(args []string, stdin io.Reader, stdout, stderr io.Writer) 
 		if vs, err = app.Identity.ListLoginProviders(ctx); err == nil {
 			err = printLoginProviders(stdout, app, vs)
 		}
-	case "add":
+	case "create":
 		if v, err = app.Identity.CreateLoginProvider(ctx, settings, secret, ""); err == nil {
-			_, _ = fmt.Fprintf(stdout, "added %s login provider %s (%s)\n", v.Provider.Settings.Kind, v.Provider.ID, v.Provider.Settings.DisplayName)
+			_, _ = fmt.Fprintf(stdout, "created %s login provider %s (%s)\n", v.Provider.Settings.Kind, v.Provider.ID, v.Provider.Settings.DisplayName)
 			_, _ = fmt.Fprintf(stdout, "callback URL: %s\n", loginProviderCallbackURL(app, v.Provider.ID))
 			printImpact = true
 		}
@@ -270,7 +270,7 @@ func printLoginProviders(w io.Writer, app *platform.App, vs []appidentity.LoginP
 func loginProviderUsage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `Usage:
   my login-provider list [-config <file>]
-  my login-provider add -kind oidc|github|mastodon|discord -name <name> [-client-id <id>]
+  my login-provider create -kind oidc|github|mastodon|discord -name <name> [-client-id <id>]
                         [-issuer <url or domain>] [-scope <scope>]... [-claim <claim>=<value>]...
                         [-org <organization>]... [-guild <id>]... [-allow-signup] [-allow-link=false] [-config <file>]
   my login-provider set [-name <name>] [-issuer <url or domain>] [-client-id <id>] [-scope <scope>]...
@@ -288,14 +288,14 @@ with. The same settings are on the administration screens.
   github    github.com; no -issuer
   discord   discord.com; no -issuer
   mastodon  one Mastodon server (4.3 or later); -issuer is its domain or
-            https://<domain>. Without -client-id, add registers a client at
+            https://<domain>. Without -client-id, create registers a client at
             the server itself; give -client-id and the secret of a client
             registered there when the server does not let others register.
             set does not move it to another server.
 
-add sets up an enabled provider and prints its callback URL, which you register
+create sets up an enabled provider and prints its callback URL, which you register
 at the provider as the redirect URI. -client-id is required but for mastodon.
-add with -client-id and rotate-secret read the client secret that the provider
+create with -client-id and rotate-secret read the client secret that the provider
 gave from standard input (the first line), or prompt for it in a terminal; it
 is never shown again.
 

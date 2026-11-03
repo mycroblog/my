@@ -186,7 +186,7 @@ func adminRoleUsage(w io.Writer) {
   my admin role grant [-config <file>] <username> <role>
   my admin role revoke [-config <file>] <username> <role>
 
-The roles of local users (FR-720). list shows every role, highest position
+The roles of local users. list shows every role, highest position
 first, with the permissions it grants (moderation and server administration
 apart) and the users who hold it, or with -user
 the roles of one user. grant and revoke change one role of one user; the

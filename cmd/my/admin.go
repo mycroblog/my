@@ -210,12 +210,12 @@ func adminUsage(w io.Writer) {
        my admin emoji create|list|update|replace-image|enable|disable|copy|delete|requests ...   (my admin emoji -help)
        my admin federation sever ...   (my admin federation -help)
        my admin refetch status|account|domain ...   (my admin refetch -help)
-       my admin relay add|follow|unfollow|remove|list ...   (my admin relay -help)
+       my admin relay create|follow|unfollow|remove|list ...   (my admin relay -help)
        my admin report list|show|assign|unassign|resolve|note|reopen ...   (my admin report -help)
        my admin audit list ...   (my admin audit -help)
        my admin retention hold|release|list ...   (my admin retention -help)
        my admin role list|grant|revoke ...   (my admin role -help)
-       my admin signup-block add|import|list|lift ...   (my admin signup-block -help)
+       my admin signup-block create|import|list|lift ...   (my admin signup-block -help)
        my admin supporters status|enable|disable|plans|subscriptions|cancel ...   (my admin supporters -help)
 
 my admin account, my admin domain, my admin report, and my admin appeal moderate

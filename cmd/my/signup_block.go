@@ -28,7 +28,7 @@ func runAdminSignupBlock(args []string, stdin io.Reader, stdout, stderr io.Write
 		adminSignupBlockUsage(stderr)
 		return 2
 	}
-	sub, code := dispatch("admin signup-block", args, []string{"add", "import", "list", "lift"}, stderr, adminSignupBlockUsage)
+	sub, code := dispatch("admin signup-block", args, []string{"create", "import", "list", "lift"}, stderr, adminSignupBlockUsage)
 	if code >= 0 {
 		return code
 	}
@@ -49,7 +49,7 @@ func runAdminSignupBlock(args []string, stdin io.Reader, stdout, stderr io.Write
 			fs.BoolVar(&active, "active", false, "show only the blocks in effect now")
 			fs.StringVar(&before, "before", "", "show the blocks older than this block ID")
 			fs.IntVar(&limit, "limit", limit, "number of blocks to show, newest first")
-		case "add", "import":
+		case "create", "import":
 			fs.StringVar(&kind, "kind", "", "email_domain, email_hash, or ip_range (required)")
 			fs.StringVar(&severity, "severity", string(moderation.SignupReject), "reject or require_approval")
 			fs.StringVar(&comment, "comment", "", "a note for the moderators")
@@ -59,7 +59,7 @@ func runAdminSignupBlock(args []string, stdin io.Reader, stdout, stderr io.Write
 	if code >= 0 {
 		return code
 	}
-	if (sub == "add" || sub == "import") && kind == "" {
+	if (sub == "create" || sub == "import") && kind == "" {
 		_, _ = fmt.Fprintf(stderr, "%s: -kind is required\n", c.name)
 		return 2
 	}
@@ -89,14 +89,14 @@ func runAdminSignupBlock(args []string, stdin io.Reader, stdout, stderr io.Write
 		if vs, err = app.Moderation.SignupBlocks(ctx, f, limit); err == nil {
 			err = printSignupBlocks(stdout, vs)
 		}
-	case "add":
+	case "create":
 		var b moderation.SignupBlock
 		b, err = app.Moderation.AddSignupBlock(ctx, appmoderation.SignupBlockInput{
 			Kind: moderation.SignupBlockKind(kind), Value: c.fs.Arg(0), Severity: moderation.SignupBlockSeverity(severity),
 			Comment: comment, Duration: duration,
 		})
 		if err == nil {
-			_, _ = fmt.Fprintf(stdout, "added %s block on %s %s (block %s, %s)\n", b.Severity, b.Kind, b.Value, b.ID, describeExpiry(b.ExpiresAt))
+			_, _ = fmt.Fprintf(stdout, "created %s block on %s %s (block %s, %s)\n", b.Severity, b.Kind, b.Value, b.ID, describeExpiry(b.ExpiresAt))
 		}
 	case "import":
 		var res appmoderation.SignupBlockImportResult
@@ -146,7 +146,7 @@ func readSignupBlockList(path string, stdin io.Reader) (string, error) {
 }
 
 func printSignupBlockImport(w io.Writer, res appmoderation.SignupBlockImportResult) {
-	_, _ = fmt.Fprintf(w, "added %d sign-up block(s), skipped %d line(s)\n", res.Added, len(res.Skipped))
+	_, _ = fmt.Fprintf(w, "created %d sign-up block(s), skipped %d line(s)\n", res.Added, len(res.Skipped))
 	for _, s := range res.Skipped {
 		_, _ = fmt.Fprintf(w, "line %d: %s: %s\n", s.Line, s.Reason, oneLine(s.Value))
 	}
@@ -176,13 +176,13 @@ func printSignupBlocks(w io.Writer, vs []appmoderation.SignupBlockView) error {
 func adminSignupBlockUsage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `Usage:
   my admin signup-block list [-kind <kind>] [-active] [-before <id>] [-limit <n>] [-config <file>]
-  my admin signup-block add -kind <kind> [-severity reject|require_approval] [-comment <text>]
+  my admin signup-block create -kind <kind> [-severity reject|require_approval] [-comment <text>]
                             [-duration <d>] [-config <file>] <value>
   my admin signup-block import -kind <kind> [-severity reject|require_approval] [-comment <text>]
                                [-duration <d>] [-config <file>] <file | ->
   my admin signup-block lift [-config <file>] <block id>
 
-Blocks on sign-ups from the registration page (FR-719), in effect at once:
+Blocks on sign-ups from the registration page, in effect at once:
 
   email_domain  the domain of the email address and its subdomains; <value> is a
                 domain such as spam.example (U-labels such as 例え.jp are

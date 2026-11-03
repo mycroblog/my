@@ -8,14 +8,14 @@ import (
 	"testing"
 )
 
-var addedRelay = regexp.MustCompile(`^added mastodon relay https://relay\.example/inbox \(relay (\S+), inbox https://relay\.example/inbox\); its Follow is sent\n$`)
+var addedRelay = regexp.MustCompile(`^created mastodon relay https://relay\.example/inbox \(relay (\S+), inbox https://relay\.example/inbox\); its Follow is sent\n$`)
 
 func TestAdminRelayCommands(t *testing.T) {
 	newAdminEnv(t)
-	code, stdout, stderr := runCmd(t, adminCmd, "relay", "add", "-protocol", "mastodon", "https://relay.example/inbox")
+	code, stdout, stderr := runCmd(t, adminCmd, "relay", "create", "-protocol", "mastodon", "https://relay.example/inbox")
 	m := addedRelay.FindStringSubmatch(stdout)
 	if code != 0 || m == nil {
-		t.Fatalf("relay add = %d %q %q", code, stdout, stderr)
+		t.Fatalf("relay create = %d %q %q", code, stdout, stderr)
 	}
 	id := m[1]
 	if code, stdout, _ = runCmd(t, adminCmd, "relay", "list"); code != 0 ||
@@ -35,9 +35,9 @@ func TestAdminRelayCommands(t *testing.T) {
 	}{
 		{[]string{"relay", "remove", id}, 1, "leave it before removing it"},
 		{[]string{"relay", "follow", id}, 1, "leave it before joining it again"},
-		{[]string{"relay", "add", "-protocol", "mastodon", "https://relay.example/inbox"}, 1, "already registered"},
-		{[]string{"relay", "add", "-protocol", "mastodon", "http://relay.example/inbox"}, 1, "https"},
-		{[]string{"relay", "add", "-protocol", "pleroma", "https://relay.example/inbox"}, 2, "-protocol must be"},
+		{[]string{"relay", "create", "-protocol", "mastodon", "https://relay.example/inbox"}, 1, "already registered"},
+		{[]string{"relay", "create", "-protocol", "mastodon", "http://relay.example/inbox"}, 1, "https"},
+		{[]string{"relay", "create", "-protocol", "pleroma", "https://relay.example/inbox"}, 2, "-protocol must be"},
 		{[]string{"relay", "unfollow", "01890a5d-ac96-774b-bcce-b302099a0000"}, 1, "no relay has the ID"},
 		{[]string{"relay", "remove"}, 2, "want 1 argument(s)"},
 		{[]string{"relay", "burn"}, 2, `unknown subcommand "burn"`},

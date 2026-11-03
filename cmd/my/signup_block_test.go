@@ -11,19 +11,19 @@ import (
 	"testing"
 )
 
-var addedBlock = regexp.MustCompile(`^added reject block on email_domain xn--r8jz45g\.jp \(block (\S+), never expires\)\n$`)
+var addedBlock = regexp.MustCompile(`^created reject block on email_domain xn--r8jz45g\.jp \(block (\S+), never expires\)\n$`)
 
 func TestAdminSignupBlockCommands(t *testing.T) {
 	newAdminEnv(t)
-	code, stdout, stderr := runCmd(t, adminCmd, "signup-block", "add", "-kind", "email_domain", "-comment", "spam\nwave", "例え.JP")
+	code, stdout, stderr := runCmd(t, adminCmd, "signup-block", "create", "-kind", "email_domain", "-comment", "spam\nwave", "例え.JP")
 	m := addedBlock.FindStringSubmatch(stdout)
 	if code != 0 || m == nil {
-		t.Fatalf("signup-block add = %d %q %q", code, stdout, stderr)
+		t.Fatalf("signup-block create = %d %q %q", code, stdout, stderr)
 	}
 	id := m[1]
-	if code, stdout, _ = runCmd(t, adminCmd, "signup-block", "add", "-kind", "ip_range", "-severity", "require_approval", "-duration", "24h", "192.0.2.9/24"); code != 0 ||
-		!strings.Contains(stdout, "added require_approval block on ip_range 192.0.2.0/24") || !strings.Contains(stdout, "expires 20") {
-		t.Errorf("signup-block add ip_range = %d %q", code, stdout)
+	if code, stdout, _ = runCmd(t, adminCmd, "signup-block", "create", "-kind", "ip_range", "-severity", "require_approval", "-duration", "24h", "192.0.2.9/24"); code != 0 ||
+		!strings.Contains(stdout, "created require_approval block on ip_range 192.0.2.0/24") || !strings.Contains(stdout, "expires 20") {
+		t.Errorf("signup-block create ip_range = %d %q", code, stdout)
 	}
 	if code, stdout, _ = runCmd(t, adminCmd, "signup-block", "list"); code != 0 ||
 		!regexp.MustCompile(id+` +email_domain +xn--r8jz45g\.jp +reject +active +\S+ +- +cli +- +spam wave`).MatchString(stdout) ||
@@ -44,9 +44,9 @@ func TestAdminSignupBlockCommands(t *testing.T) {
 		code int
 		want string
 	}{
-		{[]string{"signup-block", "add", "-kind", "ip_range", "spam.example"}, 1, "invalid sign-up block"},
-		{[]string{"signup-block", "add", "-kind", "ip_range", "-severity", "maybe", "192.0.2.0/24"}, 1, `severity "maybe"`},
-		{[]string{"signup-block", "add", "spam.example"}, 2, "-kind is required"},
+		{[]string{"signup-block", "create", "-kind", "ip_range", "spam.example"}, 1, "invalid sign-up block"},
+		{[]string{"signup-block", "create", "-kind", "ip_range", "-severity", "maybe", "192.0.2.0/24"}, 1, `severity "maybe"`},
+		{[]string{"signup-block", "create", "spam.example"}, 2, "-kind is required"},
 		{[]string{"signup-block", "lift", "01890a5d-ac96-774b-bcce-b302099a0000"}, 1, "no sign-up block has the ID"},
 		{[]string{"signup-block", "lift"}, 2, "want 1 argument(s)"},
 		{[]string{"signup-block", "list", "-kind", "email"}, 1, "invalid query"},
@@ -66,7 +66,7 @@ func TestAdminSignupBlockImport(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, stdout, stderr := runCmd(t, adminCmd, "signup-block", "import", "-kind", "email_domain", "-comment", "disposable", list)
-	want := "added 2 sign-up block(s), skipped 2 line(s)\nline 4: invalid: 192.0.2.1\nline 5: duplicate: SPAM.example\n"
+	want := "created 2 sign-up block(s), skipped 2 line(s)\nline 4: invalid: 192.0.2.1\nline 5: duplicate: SPAM.example\n"
 	if code != 0 || stdout != want {
 		t.Fatalf("signup-block import = %d %q %q; want %q", code, stdout, stderr, want)
 	}
@@ -77,7 +77,7 @@ func TestAdminSignupBlockImport(t *testing.T) {
 	// stdin supplies the list given as "-"; what is already blocked is skipped.
 	var out, errOut bytes.Buffer
 	code = runAdmin([]string{"signup-block", "import", "-kind", "email_domain", "-"}, strings.NewReader("spam.example\nnew.example\n"), &out, &errOut)
-	if want := "added 1 sign-up block(s), skipped 1 line(s)\nline 1: already_blocked: spam.example\n"; code != 0 || out.String() != want {
+	if want := "created 1 sign-up block(s), skipped 1 line(s)\nline 1: already_blocked: spam.example\n"; code != 0 || out.String() != want {
 		t.Errorf("signup-block import - = %d %q %q; want %q", code, out.String(), errOut.String(), want)
 	}
 	for _, tc := range []struct {

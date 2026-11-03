@@ -94,7 +94,7 @@ func adminRefetchUsage(w io.Writer) {
   my admin refetch account [-config <file>] <@username@domain or account id>
   my admin refetch domain [-config <file>] <domain>
 
-Queues the refetch of stored remote posts from their servers (FR-407). Each
+Queues the refetch of stored remote posts from their servers. Each
 post is fetched again with the rules of every fetch (signed by the instance
 actor, never from a suspended or unavailable server) and recorded as a received
 Update would be: a newer revision, the counts of its poll, or its deletion when

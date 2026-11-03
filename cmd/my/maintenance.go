@@ -211,7 +211,7 @@ func parseLocales(name, langs string, bundle *i18n.Bundle, stderr io.Writer) ([]
 func maintenanceUsage(w io.Writer) {
 	_, _ = fmt.Fprint(w, `Usage: my maintenance export -out <dir> [-lang en,ja] [-config <file>] [-offline]
 
-export writes the maintenance page of the maintenance mode (ADR-0084) as static,
+export writes the maintenance page of the maintenance mode as static,
 self-contained HTML for a load balancer, CDN, or reverse proxy to serve while
 my serve cannot run: <dir>/<locale>.html for each locale of -lang, and
 <dir>/index.html with every locale one after another, for the front ends that

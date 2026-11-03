@@ -242,7 +242,13 @@ class Seeder {
     const existing = body((await api.GET("/admin/rules")).data).items.map((r) => r.text);
     for (const rule of rules) {
       if (existing.includes(rule.text)) continue;
-      this.#o.runMy(["instance", "rule", "add", ...(rule.hint === undefined ? [] : ["-hint", rule.hint]), rule.text]);
+      this.#o.runMy([
+        "instance",
+        "rule",
+        "create",
+        ...(rule.hint === undefined ? [] : ["-hint", rule.hint]),
+        rule.text,
+      ]);
     }
   }
 
