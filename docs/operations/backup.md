@@ -182,6 +182,8 @@ with your deployment files, without the KEK.
 
 ## Restoring
 
+A backup holds the `host` and `account_domain` of its instance. Start the restored database with the same values: with others, the server refuses to start.
+
 Restore into an empty environment (a new machine, new volumes, or a new database), in this order: the database, the media (the directory or the bucket),
 then the configuration with **the same KEK** (and the same `kek_previous`) that was in use when the backup was taken. Then start the server as usual.
 

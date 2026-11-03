@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync/atomic"
 
 	"golang.org/x/sync/singleflight"
 
@@ -276,8 +277,11 @@ type App struct {
 	// Scheduler's own ticks; nil without a waker.
 	trigger *queue.Trigger
 	// ready reports whether the database is reachable and its schema applied.
-	ready  func(ctx context.Context) error
-	closer func() error
+	ready func(ctx context.Context) error
+	// domainsVerified is set once the database has the domains of the configuration; see
+	// verifyDomains.
+	domainsVerified atomic.Bool
+	closer          func() error
 	// dbSize measures the database for the metrics snapshot.
 	dbSize metrics.DatabaseSizer
 	// closeBlobs releases the blob store.
@@ -387,11 +391,16 @@ type AppOptions struct {
 	FanOutSize int
 	// RouteWaker stands in for the client of a queue of the routes of ADR-0139. Tests only.
 	RouteWaker func(config.QueueRoute) queue.Waker
+	// CheckDomainsOnly keeps NewApp from recording host and account_domain on a database that has
+	// none, for the commands that change nothing. A mismatch still fails.
+	CheckDomainsOnly bool
 }
 
 // NewApp connects the adapters that cfg selects and builds the application services on them.
 // It does not apply the database schema (Atlas does, ADR-0023) and succeeds without it; the
-// readiness check reports a missing schema. Close the App to release its connections.
+// readiness check reports a missing schema. It fails with a *instance.DomainMismatchError when
+// the database belongs to another host or account_domain (ADR-0018). Close the App to release
+// its connections.
 //
 // Each module is set up in setup_<module>.go. The modules register their projectors in the
 // order of the calls below, which is the order the projectors run in, so the order is that of
@@ -480,6 +489,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 
 	a.setUpAccount(cfg, repos.accounts)
 	a.setUpInstance(repos.instances)
+	if err := a.verifyDomainsAtStart(ctx, opts.CheckDomainsOnly); err != nil {
+		return nil, err
+	}
 	// Moderation needs only the account module; the modules below read its restrictions.
 	a.setUpModeration(repos.mods)
 	if err := a.setUpIdentity(cfg, repos.identities); err != nil {
@@ -719,13 +731,17 @@ func (a *App) newKMSKeyManager(ctx context.Context, kind, key string, previous [
 }
 
 // Ready reports whether the App can serve requests: the database is reachable, every table
-// of its schema file exists, and it recorded every data upgrade step of this release
-// (`my db upgrade`), and the Valkey server, when the App uses one, answers.
+// of its schema file exists, it belongs to the configured domains, and it recorded every data
+// upgrade step of this release (`my db upgrade`), and the Valkey server, when the App uses one,
+// answers.
 func (a *App) Ready(ctx context.Context) error {
 	if a.ready == nil {
 		return errors.New("no database")
 	}
 	if err := a.ready(ctx); err != nil {
+		return err
+	}
+	if err := a.verifyDomains(ctx); err != nil {
 		return err
 	}
 	if a.DataUpgrades != nil {

@@ -97,7 +97,11 @@ func instanceFindings(ctx context.Context, cfg *config.Config) []config.Finding 
 	warn := func(format string, args ...any) config.Finding {
 		return config.Finding{Severity: config.SeverityWarning, Message: fmt.Sprintf(format, args...)}
 	}
-	app, err := platform.NewApp(ctx, cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
+	app, err := platform.NewApp(ctx, cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), CheckDomainsOnly: true})
+	var mismatch *instance.DomainMismatchError
+	if errors.As(err, &mismatch) {
+		return []config.Finding{{Severity: config.SeverityError, Message: mismatch.Error()}}
+	}
 	if err != nil {
 		return []config.Finding{warn("the instance settings were not checked: %v", err)}
 	}

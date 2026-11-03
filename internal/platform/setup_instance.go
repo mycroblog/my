@@ -6,10 +6,12 @@ import (
 	"context"
 	"errors"
 	"io"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/markdown"
 	"github.com/mycroblog/my/internal/app/blob"
 	"github.com/mycroblog/my/internal/app/instance"
+	domaininstance "github.com/mycroblog/my/internal/domain/instance"
 )
 
 // setUpInstance registers the instance module's projectors and builds its service, which holds
@@ -33,6 +35,71 @@ func (a *App) setUpInstance(repo instance.Repository) {
 		// The secrets of the instance, such as the media proxy's key, are sealed like the actor keys.
 		Sealer: a.Sealer,
 	})
+}
+
+// domainsStartTimeout bounds the check of the domains in NewApp, so that an unreachable database
+// delays the start only this long.
+const domainsStartTimeout = 5 * time.Second
+
+// defaultDomainsRetry is how often Serve tries again when NewApp could not check the domains.
+const defaultDomainsRetry = 5 * time.Second
+
+// verifyDomainsAtStart checks host and account_domain against the database, and unless checkOnly also
+// records them on a database that has none (ADR-0018). Only a mismatch is an error: without a
+// schema or a database the App still starts, and Ready and Serve verify the domains later.
+func (a *App) verifyDomainsAtStart(ctx context.Context, checkOnly bool) error {
+	ctx, cancel := context.WithTimeout(ctx, domainsStartTimeout)
+	defer cancel()
+	var err error
+	if checkOnly {
+		// The App stays unverified: it records nothing, and these commands never call Ready.
+		err = a.Instance.CheckDomains(ctx, a.configuredDomains())
+	} else {
+		err = a.verifyDomains(ctx)
+	}
+	var mismatch *domaininstance.DomainMismatchError
+	if errors.As(err, &mismatch) {
+		return err
+	}
+	return nil
+}
+
+// verifyDomains records or compares the domains unless a call has done so already.
+func (a *App) verifyDomains(ctx context.Context) error {
+	if a.domainsVerified.Load() {
+		return nil
+	}
+	if err := a.Instance.EnsureDomains(ctx, a.configuredDomains()); err != nil {
+		return err
+	}
+	a.domainsVerified.Store(true)
+	return nil
+}
+
+func (a *App) configuredDomains() domaininstance.Domains {
+	return domaininstance.Domains{Host: a.Config.Host, AccountDomain: a.Config.AccountDomain}
+}
+
+// awaitDomains verifies the domains every interval until that succeeds or ctx ends, and returns
+// the mismatch when they differ.
+func (a *App) awaitDomains(ctx context.Context, interval time.Duration) error {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+		}
+		err := a.verifyDomains(ctx)
+		if err == nil {
+			return nil
+		}
+		var mismatch *domaininstance.DomainMismatchError
+		if errors.As(err, &mismatch) {
+			return err
+		}
+	}
 }
 
 // instanceMedia checks the media files of the instance settings with the media use cases.
