@@ -213,9 +213,9 @@ run() {
 	expect "alice's public post" "$(api GET "/statuses/$public_id" "$alice_token")" '.content | contains("upgrade-test public post")'
 	expect "alice's followers-only post" "$(api GET "/statuses/$private_id" "$bob_token")" \
 		'.visibility == "private" and (.content | contains("upgrade-test followers-only post"))'
-	expect "alice's followers" "$(api GET "/accounts/$alice_id/followers" "$alice_token")" '[.accounts[].id] | index($id) != null' --arg id "$bob_id"
+	expect "alice's followers" "$(api GET "/accounts/$alice_id/followers" "$alice_token")" '[.items[].id] | index($id) != null' --arg id "$bob_id"
 	expect "carol is known without fetching" "$(api GET '/accounts/lookup?acct=carol@remote.test' "$alice_token")" '.id == $id' --arg id "$carol"
-	expect "alice's follow of carol" "$(api GET "/accounts/relationships?id=$carol" "$alice_token")" '.[0].following == true or .[0].requested == true'
+	expect "alice's follow of carol" "$(api GET "/accounts/relationships?id=$carol" "$alice_token")" '.items[0].following == true or .items[0].requested == true'
 	expect "a post after the upgrade" "$(api POST /statuses "$bob_token" '{"text": "upgrade-test after the upgrade", "visibility": "public"}')" '.id != null'
 	expect "NodeInfo" "$(curl -fsS "$base/nodeinfo/2.1")" '.usage.users.total == 2 and .usage.localPosts == 3'
 

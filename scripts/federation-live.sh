@@ -156,6 +156,8 @@ wait_ready relay.test /actor
 log "creating alice, frank, ivan, otto, arrive, and leave<peer> @my.test, bob, dave, eve, judy, mod, arrive, and leave @mastodon.test, carol, erin, arrive, and leave @gts.test, and grace, heidi, arrive, and leave @misskey.test"
 printf '%s\n' "$my_password" | "${compose[@]}" exec -T my my admin create -username alice -email alice@my.test >/dev/null
 printf '%s\n' "$my_password" | "${compose[@]}" exec -T my my admin create -username frank -email frank@my.test >/dev/null
+# alice cannot suspend an account of her own rank, so frank is an ordinary user.
+"${compose[@]}" exec -T my my admin role revoke frank admin >/dev/null
 printf '%s\n' "$my_password" | "${compose[@]}" exec -T my my admin create -username ivan -email ivan@my.test >/dev/null
 printf '%s\n' "$my_password" | "${compose[@]}" exec -T my my admin create -username otto -email otto@my.test >/dev/null
 for user in arrive leavemastodon leavegotosocial leavemisskey; do
