@@ -35,6 +35,7 @@
 
 - [Configuration reference](reference/configuration.md) (generated from the configuration schema)
 - [Build tags](reference/build-tags.md) (the tags that leave adapters out of the binary, and how they are checked)
+- [Jobs](reference/jobs.md) (every job type and periodic job: what it does, what starts it, how it retries, and whether to run it again by hand)
 - [Commands](reference/commands.md) (the go-task tasks and the pinned toolchain)
 - [Webhook reference](reference/webhooks.md) (the headers, signatures, events, and bodies a receiver gets)
 - [Building third-party apps](reference/third-party-apps.md) (registering an app, the authorization flow, scopes,

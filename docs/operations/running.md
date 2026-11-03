@@ -269,6 +269,8 @@ For work on the database, key-value store or queue, restart in maintenance mode 
 
 ## The job queue and failed (dead) jobs
 
+[Jobs](../reference/jobs.md) lists every job type: what it does, what starts it, how it retries, and what running it again does.
+
 The admin jobs page (`/admin/jobs`, permission `manage_jobs`) lists the queue's jobs by state (waiting, running, waiting to retry, failed).
 It also shows the count per type and state, when the oldest waiting job is scheduled, each job's last error, key and payload, and the history of unsuccessful attempts (result, error, worker, and start and end time of each attempt).
 The admin API is `GET /api/v1/admin/queue`, `GET /api/v1/admin/jobs?state=&type=`, `GET /api/v1/admin/jobs/{id}/attempts` and `POST /api/v1/admin/jobs/{id}/retry`.

@@ -95,6 +95,8 @@ name that users and operators see and the code defines is mentioned in the docum
 | `webhook-events` | the constants of type `EventType` in `internal/domain/webhook` | a code span of `docs/reference/webhooks.md` |
 | `build-tags` | the `no_*` tags of the `//go:build` lines of the server module | a code span of `docs/reference/build-tags.md` |
 | `tasks` | the tasks with a `desc` (what `scripts/task.sh --list` lists) of `Taskfile.yml` and its includes | a code span of `docs/reference/commands.md` that starts with the name |
+| `job-types` | the first argument of each `Register` and `RegisterWithPolicy` call in `internal/` and `cmd/`, other than the events of the projectors; a constant is resolved through its package, and an argument that cannot be resolved fails the check | a code span of `docs/reference/jobs.md` |
+| `job-schedules` | the `Name` of each `queue.Schedule` literal; of a concatenation, its first part | a code span under `## Periodic jobs` of `docs/reference/jobs.md` |
 
 `inventory.exclude.<inventory>` of `docs/lint.yaml` leaves a name out, with the reason in a comment; an exclusion
 fails once the name is mentioned or no longer defined. `docs/reference/configuration.md` needs no inventory: it is

@@ -66,6 +66,16 @@ var inventories = []inventory{
 		docs:    []string{"docs/reference/commands.md"},
 		collect: tasks, mentions: taskMentions,
 	},
+	{
+		name: "job-types", what: "the job type",
+		docs:    []string{jobsDocument},
+		collect: jobTypes, mentions: codeSpanMentions,
+	},
+	{
+		name: "job-schedules", what: "the periodic job",
+		docs:    []string{jobsDocument},
+		collect: jobSchedules, mentions: sectionMentions(periodicJobsHeading),
+	},
 }
 
 // Inventory checks that every name of each inventory that the code defines is mentioned in the inventory's
@@ -598,6 +608,192 @@ func tasks(root string, _ []string) ([]Item, error) {
 		return nil, err
 	}
 	return out, nil
+}
+
+// --- job types and schedules ---------------------------------------------------------------------------------
+
+const (
+	jobsDocument = "docs/reference/jobs.md"
+	// periodicJobsHeading is the section of jobsDocument that lists the schedules.
+	periodicJobsHeading = "## Periodic jobs"
+	queuePackage        = "internal/app/queue"
+)
+
+// jobCode is the parsed server code that names jobs, with its string constants by directory.
+type jobCode struct {
+	fset   *token.FileSet
+	parsed map[string]*ast.File
+	consts map[string]map[string]string
+}
+
+func parseJobCode(root string, files []string) (*jobCode, error) {
+	keep := func(f string) bool {
+		if !strings.HasPrefix(f, "internal/") && !strings.HasPrefix(f, "cmd/") {
+			return false
+		}
+		b, err := os.ReadFile(filepath.Join(root, f))
+		return err == nil && strings.Contains(string(b), "Job")
+	}
+	fset, parsed, err := goFiles(root, files, keep)
+	if err != nil {
+		return nil, err
+	}
+	c := &jobCode{fset, parsed, map[string]map[string]string{}}
+	for f, af := range parsed {
+		dir := path.Dir(f)
+		for _, d := range af.Decls {
+			gd, ok := d.(*ast.GenDecl)
+			if !ok || gd.Tok != token.CONST {
+				continue
+			}
+			for _, sp := range gd.Specs {
+				vs := sp.(*ast.ValueSpec)
+				for i, n := range vs.Names {
+					if i >= len(vs.Values) {
+						continue
+					}
+					if s, ok := stringLit(vs.Values[i]); ok {
+						if c.consts[dir] == nil {
+							c.consts[dir] = map[string]string{}
+						}
+						c.consts[dir][n.Name] = s
+					}
+				}
+			}
+		}
+	}
+	return c, nil
+}
+
+// resolve returns the string that e names in the file f: a literal, a constant of the file's package, or a
+// constant of an imported package of the server. Of a concatenation, it returns the first part: the name of a
+// schedule per billing source is the job type and the source's name.
+func (c *jobCode) resolve(f string, e ast.Expr) (string, bool) {
+	switch x := e.(type) {
+	case *ast.BasicLit:
+		return stringLit(x)
+	case *ast.Ident:
+		s, ok := c.consts[path.Dir(f)][x.Name]
+		return s, ok
+	case *ast.BinaryExpr:
+		return c.resolve(f, x.X)
+	case *ast.SelectorExpr:
+		id, ok := x.X.(*ast.Ident)
+		if !ok {
+			return "", false
+		}
+		for _, imp := range c.parsed[f].Imports {
+			p, err := strconv.Unquote(imp.Path.Value)
+			if err != nil {
+				continue
+			}
+			alias := path.Base(p)
+			if imp.Name != nil {
+				alias = imp.Name.Name
+			}
+			i := strings.Index(p, "/internal/")
+			if alias == id.Name && i >= 0 {
+				s, ok := c.consts[p[i+1:]][x.Sel.Name]
+				return s, ok
+			}
+		}
+	}
+	return "", false
+}
+
+// named returns the item of what e names in the file f. What cannot be resolved is an item of its own, which no
+// document mentions, so that the check fails instead of passing over it.
+func (c *jobCode) named(f string, e ast.Expr) Item {
+	name, ok := c.resolve(f, e)
+	if !ok {
+		name = "<unresolved " + exprString(e) + ">"
+	}
+	return Item{name, pos(c.fset, e.Pos())}
+}
+
+// isProjectorEvent reports whether the first argument of a Register call is an event of the projectors, which share
+// the method's name with the job handler registry.
+func isProjectorEvent(e ast.Expr) bool {
+	name := exprString(e)
+	if i := strings.LastIndex(name, "."); i >= 0 {
+		name = name[i+1:]
+	}
+	return strings.HasPrefix(strings.ToLower(name), "event")
+}
+
+// jobTypes returns the job types with a handler: the first argument of every call of Register and RegisterWithPolicy
+// in the server's packages, other than the events of the projectors and the registry's own forwarding of its argument.
+func jobTypes(root string, files []string) ([]Item, error) {
+	c, err := parseJobCode(root, files)
+	if err != nil {
+		return nil, err
+	}
+	var out []Item
+	for _, f := range sortedKeys(c.parsed) {
+		ast.Inspect(c.parsed[f], func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok || len(call.Args) < 2 {
+				return true
+			}
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok || (sel.Sel.Name != "Register" && sel.Sel.Name != "RegisterWithPolicy") {
+				return true
+			}
+			arg := call.Args[0]
+			if isProjectorEvent(arg) || (path.Dir(f) == queuePackage && exprString(arg) == "jobType") {
+				return true
+			}
+			out = append(out, c.named(f, arg))
+			return true
+		})
+	}
+	return out, nil
+}
+
+// jobSchedules returns the names of the periodic jobs: the Name of every queue.Schedule literal.
+func jobSchedules(root string, files []string) ([]Item, error) {
+	c, err := parseJobCode(root, files)
+	if err != nil {
+		return nil, err
+	}
+	var out []Item
+	for _, f := range sortedKeys(c.parsed) {
+		ast.Inspect(c.parsed[f], func(n ast.Node) bool {
+			cl, ok := n.(*ast.CompositeLit)
+			if !ok {
+				return true
+			}
+			if t := exprString(cl.Type); t != "queue.Schedule" && (t != "Schedule" || path.Dir(f) != queuePackage) {
+				return true
+			}
+			for _, el := range cl.Elts {
+				if kv, ok := el.(*ast.KeyValueExpr); ok && exprString(kv.Key) == "Name" {
+					out = append(out, c.named(f, kv.Value))
+				}
+			}
+			return true
+		})
+	}
+	return out, nil
+}
+
+// sectionMentions returns whether the section of the documents under heading has a name as a whole code span.
+func sectionMentions(heading string) func(docs []string) func(string) bool {
+	return func(docs []string) func(string) bool {
+		var sections []string
+		for _, text := range docs {
+			in := false
+			for _, line := range strings.Split(text, "\n") {
+				if strings.HasPrefix(line, "## ") {
+					in = strings.TrimSpace(line) == heading
+				}
+				if in {
+					sections = append(sections, line)
+				}
+			}
+		}
+		return codeSpanMentions([]string{strings.Join(sections, "\n")})
+	}
 }
 
 // taskMentions returns whether the text has a code span that starts with the task's name (`docs:adr-new TITLE=...`).

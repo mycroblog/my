@@ -115,8 +115,8 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
   `agentkit check`) lists the documents of the change; the PR's **Documentation** section lists each one as changed, or as
   `- <path>: no change — <reason>` with a reason of three words or more. `agentkit pr open --doc-reason '<path>=<reason>'`
   writes the section, and the PR's preflight (`docs:pr-impact`) fails while a document is neither.
-- **Every user-visible name is documented**: each command of `my`, metric, webhook event type, build tag, and listed task
-  appears in its document (`agentkit docs inventory`, part of `agentkit:check`), or under `inventory.exclude` of
+- **Every user-visible name is documented**: each command of `my`, metric, webhook event type, build tag, listed task, job type, and
+  periodic job appears in its document (`agentkit docs inventory`, part of `agentkit:check`), or under `inventory.exclude` of
   `docs/lint.yaml` with the reason. `docs/reference/configuration.md` is generated (`scripts/task.sh go:config-docs`).
 
 ## Design rules

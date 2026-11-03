@@ -57,8 +57,9 @@ pending:
 
 # The names users and operators see, which the code defines and a document must mention (agentkit docs inventory):
 # the commands of `my` (README.md, docs/operations/, docs/reference/), the metrics (docs/operations/running.md), the
-# webhook event types (docs/reference/webhooks.md), the build tags (docs/reference/build-tags.md), and the tasks that
-# `scripts/task.sh --list` lists (docs/reference/commands.md). Exclude a name here only with the reason in a comment;
+# webhook event types (docs/reference/webhooks.md), the build tags (docs/reference/build-tags.md), the tasks that
+# `scripts/task.sh --list` lists (docs/reference/commands.md), and the job types and periodic jobs
+# (docs/reference/jobs.md). Exclude a name here only with the reason in a comment;
 # the check fails when an excluded name is mentioned after all or no longer defined.
 inventory:
   exclude:
@@ -67,3 +68,5 @@ inventory:
     webhook-events: []
     build-tags: []
     tasks: []
+    job-types: []
+    job-schedules: []
