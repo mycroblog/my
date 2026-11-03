@@ -4408,8 +4408,9 @@ export interface paths {
         /**
          * Mark a remote server available
          * @description Clears the failure days of the server and, when it is unavailable, marks it available
-         *     again with the reason `operator`, so that deliveries to it resume. A server that is
-         *     already available without failures stays as it is. Needs the `manage_domains`
+         *     again with the reason `operator`, so that deliveries to it resume; the operation is
+         *     audited as `instance_marked_available`. A server that is already available without
+         *     failures stays as it is, and nothing is audited. Needs the `manage_domains`
          *     permission.
          */
         post: operations["markInstanceAvailable"];
@@ -5820,9 +5821,10 @@ export interface paths {
          * Get the details of an account
          * @description An account as the moderators see it (FR-714): its state, the restrictions of its own
          *     actions, and, for a local account, its registration, whether its email address is
-         *     verified, and its roles, with its newest 20 actions and reports. The email address and
-         *     the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-         *     a 404. Needs the `manage_accounts` permission.
+         *     verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+         *     `manage_reports` permission, its newest 20 reports. The email address and the IP
+         *     addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+         *     Needs the `manage_accounts` permission.
          */
         get: operations["getAdminAccount"];
         put?: never;
@@ -6196,7 +6198,8 @@ export interface paths {
          * Approve a registration
          * @description Approves a pending registration, so that its user can sign in, with an optional note
          *     for the moderators; the decision is audited. Deciding a decided registration changes
-         *     nothing and keeps its decision. A user without a registration is a 404. From the
+         *     nothing and keeps its decision. The answer on a decided registration has no email address:
+         *     only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
          *     announcement of the closure of the service on, a pending registration is not approved: a
          *     409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
          *     the `manage_accounts` permission.
@@ -6221,7 +6224,9 @@ export interface paths {
          * Reject a registration
          * @description Rejects a pending registration, so that its user cannot sign in, with an optional note
          *     for the moderators; the decision is audited. Deciding a decided registration changes
-         *     nothing and keeps its decision. A user without a registration is a 404. Needs the
+         *     nothing and keeps its decision. The answer on a decided registration has no email address:
+         *     only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+         *     A user without a registration is a 404. Needs the
          *     `manage_accounts` permission.
          */
         post: operations["rejectRegistration"];
@@ -7920,8 +7925,11 @@ export interface components {
             roles: string[];
             /** @description The newest 20 actions on the account, newest first. */
             actions: components["schemas"]["AdminAccountAction"][];
-            /** @description The newest 20 reports of the account, newest first. */
-            reports: components["schemas"]["AdminReport"][];
+            /**
+             * @description The newest 20 reports of the account, newest first; omitted unless the viewer also has
+             *     the `manage_reports` permission.
+             */
+            reports?: components["schemas"]["AdminReport"][];
         };
         /** @description A page of accounts, newest first. */
         AdminAccountPage: components["schemas"]["PageInfo"] & {
@@ -7960,6 +7968,11 @@ export interface components {
             submitted_at: string;
             /** @description Why the applicant wants to join; omitted when not asked or not given. */
             reason?: string;
+            /**
+             * @description The moderators' note on the decision, as plain text; omitted while the registration is
+             *     pending and when the decision has no note.
+             */
+            decision_note?: string;
             invite_id?: components["schemas"]["Id"];
             invite?: components["schemas"]["AdminAccountInvite"];
             /**
@@ -8350,7 +8363,8 @@ export interface components {
          *     a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
          *     suppression of the primary email address of the account's user), `account_moved` (a limited
          *     local account moved to another local account, which does not inherit the limit). On a `domain`:
-         *     `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+         *     `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+         *     cleared the failures of the server). On a `report`: `report_assigned`,
          *     `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
          *     `user` (a registration):
          *     `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -8409,7 +8423,7 @@ export interface components {
          *     name.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_cancelled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -8444,8 +8458,9 @@ export interface components {
             target_label: string;
             /**
              * @description Whether the target is still there to look at. It is `false` for an account, a report,
-             *     an appeal, or a sign-up block that is gone (erased past its retention), and for a
-             *     role, a custom emoji, a webhook, or a relay that was deleted, which only `target_label`
+             *     an appeal, or a sign-up block that is gone (erased past its retention), for a role, a
+             *     login provider, a custom emoji, a custom emoji request, a webhook, or a relay that was
+             *     deleted, and for a link card domain whose rule was removed, which only `target_label`
              *     names now. It is `true` for the other kinds of targets, which are never removed.
              */
             target_exists: boolean;
@@ -9103,10 +9118,18 @@ export interface components {
              * @description When the registration entered its state.
              */
             since: string;
-            /** @description The user's primary email address; empty when there is none. */
-            email: string;
-            /** @description Whether the user confirmed the email address. */
-            email_verified: boolean;
+            /**
+             * @description The user's primary email address, shown only while the registration is pending, for its
+             *     review; omitted when the user has none and once the registration is decided.
+             */
+            email?: string;
+            /** @description Whether the user confirmed the email address; present together with `email`. */
+            email_verified?: boolean;
+            /**
+             * @description The moderators' note on the decision, as plain text; omitted while the registration is
+             *     pending and when the decision has no note.
+             */
+            decision_note?: string;
             /** @description Why the user wants to join, as plain text; omitted when they gave none. */
             reason?: string;
             /** @description The invite the user signed up with; omitted for none. */
@@ -13202,7 +13225,7 @@ export interface components {
         };
         /** @description A moderator's decision on a registration. */
         RegistrationDecisionRequest: {
-            /** @description A note for the moderators, as plain text; omitted or empty for none. */
+            /** @description A note for the moderators, as plain text, which the registration shows as `decision_note`; omitted or empty for none. */
             note?: string;
         };
         /**

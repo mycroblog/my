@@ -36,8 +36,9 @@ properties:
   target_exists:
     description: |
       Whether the target is still there to look at. It is `false` for an account, a report,
-      an appeal, or a sign-up block that is gone (erased past its retention), and for a
-      role, a custom emoji, a webhook, or a relay that was deleted, which only `target_label`
+      an appeal, or a sign-up block that is gone (erased past its retention), for a role, a
+      login provider, a custom emoji, a custom emoji request, a webhook, or a relay that was
+      deleted, and for a link card domain whose rule was removed, which only `target_label`
       names now. It is `true` for the other kinds of targets, which are never removed.
     type: boolean
   source_event_id:

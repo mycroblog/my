@@ -185,9 +185,11 @@ function AccountPage({ id, statusId }: { id: string; statusId: string | undefine
       evidence={
         <>
           <ActionHistory account={account} />
-          <Section surface="card" title={t("client:admin.account.reports.title")}>
-            <AccountReports reports={account.reports} />
-          </Section>
+          {account.reports !== undefined && (
+            <Section surface="card" title={t("client:admin.account.reports.title")}>
+              <AccountReports reports={account.reports} />
+            </Section>
+          )}
           {account.local && canManageRoles && <AccountRoles accountId={account.id} handle={isolate(handle)} />}
           {account.local && account.email_verified !== undefined && (
             <EmailSuppressionSection id={account.id} suppression={account.email_suppression} handle={isolate(handle)} />
@@ -262,6 +264,11 @@ function AccountSummary({ account }: { account: AdminAccountDetail }) {
             <DescriptionItem term={t("client:admin.account.registration.state_changed_at")}>
               <DateTime value={registration.state_changed_at} />
             </DescriptionItem>
+            {registration.decision_note !== undefined && (
+              <DescriptionItem term={t("client:admin.account.registration.decision_note")}>
+                <span dir="auto">{registration.decision_note}</span>
+              </DescriptionItem>
+            )}
             <DescriptionItem term={t("client:admin.account.registration.invite")}>
               {registration.invite === undefined
                 ? registration.invite_id === undefined

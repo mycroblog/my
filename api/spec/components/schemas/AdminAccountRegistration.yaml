@@ -9,6 +9,11 @@ properties:
   reason:
     description: Why the applicant wants to join; omitted when not asked or not given.
     type: string
+  decision_note:
+    description: |
+      The moderators' note on the decision, as plain text; omitted while the registration is
+      pending and when the decision has no note.
+    type: string
   invite_id:
     $ref: ./Id.yaml
   invite:

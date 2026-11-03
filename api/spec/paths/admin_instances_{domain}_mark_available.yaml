@@ -4,8 +4,9 @@ post:
   summary: Mark a remote server available
   description: |
     Clears the failure days of the server and, when it is unavailable, marks it available
-    again with the reason `operator`, so that deliveries to it resume. A server that is
-    already available without failures stays as it is. Needs the `manage_domains`
+    again with the reason `operator`, so that deliveries to it resume; the operation is
+    audited as `instance_marked_available`. A server that is already available without
+    failures stays as it is, and nothing is audited. Needs the `manage_domains`
     permission.
   tags: [admin-moderation]
   security:

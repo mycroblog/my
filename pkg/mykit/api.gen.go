@@ -342,6 +342,7 @@ const (
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionInstanceMarkedAvailable         AdminAuditAction = "instance_marked_available"
 	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
 	AdminAuditActionLinkCardDomainFetchStopped      AdminAuditAction = "link_card_domain_fetch_stopped"
@@ -473,6 +474,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
+		return true
+	case AdminAuditActionInstanceMarkedAvailable:
 		return true
 	case AdminAuditActionInviteCreated:
 		return true
@@ -4534,8 +4537,9 @@ type AdminAccountDetail struct {
 	// `approved`. Omitted for a remote account.
 	RegistrationState *AdminAccountRegistrationState `json:"registration_state,omitempty"`
 
-	// Reports The newest 20 reports of the account, newest first.
-	Reports []AdminReport `json:"reports"`
+	// Reports The newest 20 reports of the account, newest first; omitted unless the viewer also has
+	// the `manage_reports` permission.
+	Reports *[]AdminReport `json:"reports,omitempty"`
 
 	// Restrictions What the account's own actions take away now (data-model §5.2), in a fixed order.
 	// The domain actions on its domain are listed apart.
@@ -4609,6 +4613,10 @@ type AdminAccountPrivateData struct {
 
 // AdminAccountRegistration The registration application of a local account.
 type AdminAccountRegistration struct {
+	// DecisionNote The moderators' note on the decision, as plain text; omitted while the registration is
+	// pending and when the decision has no note.
+	DecisionNote *string `json:"decision_note,omitempty"`
+
 	// Invite The invite that a local account signed up with, and who created it, which invited the user.
 	Invite *AdminAccountInvite `json:"invite,omitempty"`
 
@@ -4781,7 +4789,8 @@ type AdminAppealPage struct {
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 // suppression of the primary email address of the account's user), `account_moved` (a limited
 // local account moved to another local account, which does not inherit the limit). On a `domain`:
-// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+// cleared the failures of the server). On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 // `user` (a registration):
 // `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -4855,7 +4864,8 @@ type AdminAuditEntry struct {
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 	// suppression of the primary email address of the account's user), `account_moved` (a limited
 	// local account moved to another local account, which does not inherit the limit). On a `domain`:
-	// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+	// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+	// cleared the failures of the server). On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 	// `user` (a registration):
 	// `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -4938,8 +4948,9 @@ type AdminAuditEntry struct {
 	SourceEventId *string `json:"source_event_id,omitempty"`
 
 	// TargetExists Whether the target is still there to look at. It is `false` for an account, a report,
-	// an appeal, or a sign-up block that is gone (erased past its retention), and for a
-	// role, a custom emoji, a webhook, or a relay that was deleted, which only `target_label`
+	// an appeal, or a sign-up block that is gone (erased past its retention), for a role, a
+	// login provider, a custom emoji, a custom emoji request, a webhook, or a relay that was
+	// deleted, and for a link card domain whose rule was removed, which only `target_label`
 	// names now. It is `true` for the other kinds of targets, which are never removed.
 	TargetExists bool `json:"target_exists"`
 
@@ -5658,11 +5669,16 @@ type AdminRegistration struct {
 	// AccountId The user's local account; omitted when it is gone.
 	AccountId *Id `json:"account_id,omitempty"`
 
-	// Email The user's primary email address; empty when there is none.
-	Email string `json:"email"`
+	// DecisionNote The moderators' note on the decision, as plain text; omitted while the registration is
+	// pending and when the decision has no note.
+	DecisionNote *string `json:"decision_note,omitempty"`
 
-	// EmailVerified Whether the user confirmed the email address.
-	EmailVerified bool `json:"email_verified"`
+	// Email The user's primary email address, shown only while the registration is pending, for its
+	// review; omitted when the user has none and once the registration is decided.
+	Email *string `json:"email,omitempty"`
+
+	// EmailVerified Whether the user confirmed the email address; present together with `email`.
+	EmailVerified *bool `json:"email_verified,omitempty"`
 
 	// InviteId The invite the user signed up with; omitted for none.
 	InviteId *Id `json:"invite_id,omitempty"`
@@ -11257,7 +11273,7 @@ type RecoveryCodes struct {
 
 // RegistrationDecisionRequest A moderator's decision on a registration.
 type RegistrationDecisionRequest struct {
-	// Note A note for the moderators, as plain text; omitted or empty for none.
+	// Note A note for the moderators, as plain text, which the registration shows as `decision_note`; omitted or empty for none.
 	Note *string `json:"note,omitempty"`
 }
 
@@ -16555,9 +16571,10 @@ type ClientInterface interface {
 	//
 	// An account as the moderators see it (FR-714): its state, the restrictions of its own
 	// actions, and, for a local account, its registration, whether its email address is
-	// verified, and its roles, with its newest 20 actions and reports. The email address and
-	// the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-	// a 404. Needs the `manage_accounts` permission.
+	// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+	// `manage_reports` permission, its newest 20 reports. The email address and the IP
+	// addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+	// Needs the `manage_accounts` permission.
 	//
 	// Corresponds with GET /admin/accounts/{id} (the `GetAdminAccount` operationId).
 	GetAdminAccount(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -17721,8 +17738,9 @@ type ClientInterface interface {
 	// MarkInstanceAvailable Mark a remote server available
 	//
 	// Clears the failure days of the server and, when it is unavailable, marks it available
-	// again with the reason `operator`, so that deliveries to it resume. A server that is
-	// already available without failures stays as it is. Needs the `manage_domains`
+	// again with the reason `operator`, so that deliveries to it resume; the operation is
+	// audited as `instance_marked_available`. A server that is already available without
+	// failures stays as it is, and nothing is audited. Needs the `manage_domains`
 	// permission.
 	//
 	// Corresponds with POST /admin/instances/{domain}/mark_available (the `MarkInstanceAvailable` operationId).
@@ -18110,7 +18128,8 @@ type ClientInterface interface {
 	//
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. From the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
@@ -18124,7 +18143,8 @@ type ClientInterface interface {
 	//
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. From the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
@@ -18138,7 +18158,9 @@ type ClientInterface interface {
 	//
 	// Rejects a pending registration, so that its user cannot sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. Needs the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+	// A user without a registration is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type.
@@ -18150,7 +18172,9 @@ type ClientInterface interface {
 	//
 	// Rejects a pending registration, so that its user cannot sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. Needs the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+	// A user without a registration is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type.
@@ -22501,9 +22525,10 @@ func (c *Client) ListAdminAccounts(ctx context.Context, params *ListAdminAccount
 //
 // An account as the moderators see it (FR-714): its state, the restrictions of its own
 // actions, and, for a local account, its registration, whether its email address is
-// verified, and its roles, with its newest 20 actions and reports. The email address and
-// the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-// a 404. Needs the `manage_accounts` permission.
+// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+// `manage_reports` permission, its newest 20 reports. The email address and the IP
+// addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+// Needs the `manage_accounts` permission.
 //
 // Corresponds with GET /admin/accounts/{id} (the `GetAdminAccount` operationId).
 func (c *Client) GetAdminAccount(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -24577,8 +24602,9 @@ func (c *Client) ListInstanceAvailabilityEvents(ctx context.Context, domain Inst
 // MarkInstanceAvailable Mark a remote server available
 //
 // Clears the failure days of the server and, when it is unavailable, marks it available
-// again with the reason `operator`, so that deliveries to it resume. A server that is
-// already available without failures stays as it is. Needs the `manage_domains`
+// again with the reason `operator`, so that deliveries to it resume; the operation is
+// audited as `instance_marked_available`. A server that is already available without
+// failures stays as it is, and nothing is audited. Needs the `manage_domains`
 // permission.
 //
 // Corresponds with POST /admin/instances/{domain}/mark_available (the `MarkInstanceAvailable` operationId).
@@ -25316,7 +25342,8 @@ func (c *Client) ListPendingRegistrations(ctx context.Context, params *ListPendi
 //
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. From the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
@@ -25340,7 +25367,8 @@ func (c *Client) ApproveRegistrationWithBody(ctx context.Context, userId Registr
 //
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. From the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
@@ -25364,7 +25392,9 @@ func (c *Client) ApproveRegistration(ctx context.Context, userId RegistrationUse
 //
 // Rejects a pending registration, so that its user cannot sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. Needs the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+// A user without a registration is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type.
@@ -25386,7 +25416,9 @@ func (c *Client) RejectRegistrationWithBody(ctx context.Context, userId Registra
 //
 // Rejects a pending registration, so that its user cannot sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. Needs the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+// A user without a registration is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type.
@@ -47533,9 +47565,10 @@ type ClientWithResponsesInterface interface {
 	//
 	// An account as the moderators see it (FR-714): its state, the restrictions of its own
 	// actions, and, for a local account, its registration, whether its email address is
-	// verified, and its roles, with its newest 20 actions and reports. The email address and
-	// the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-	// a 404. Needs the `manage_accounts` permission.
+	// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+	// `manage_reports` permission, its newest 20 reports. The email address and the IP
+	// addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+	// Needs the `manage_accounts` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -48797,8 +48830,9 @@ type ClientWithResponsesInterface interface {
 	// MarkInstanceAvailableWithResponse Mark a remote server available
 	//
 	// Clears the failure days of the server and, when it is unavailable, marks it available
-	// again with the reason `operator`, so that deliveries to it resume. A server that is
-	// already available without failures stays as it is. Needs the `manage_domains`
+	// again with the reason `operator`, so that deliveries to it resume; the operation is
+	// audited as `instance_marked_available`. A server that is already available without
+	// failures stays as it is, and nothing is audited. Needs the `manage_domains`
 	// permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -49232,7 +49266,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. From the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
@@ -49246,7 +49281,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. From the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
@@ -49260,7 +49296,9 @@ type ClientWithResponsesInterface interface {
 	//
 	// Rejects a pending registration, so that its user cannot sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. Needs the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+	// A user without a registration is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -49272,7 +49310,9 @@ type ClientWithResponsesInterface interface {
 	//
 	// Rejects a pending registration, so that its user cannot sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. Needs the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+	// A user without a registration is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -76478,9 +76518,10 @@ func (c *ClientWithResponses) ListAdminAccountsWithResponse(ctx context.Context,
 //
 // An account as the moderators see it (FR-714): its state, the restrictions of its own
 // actions, and, for a local account, its registration, whether its email address is
-// verified, and its roles, with its newest 20 actions and reports. The email address and
-// the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-// a 404. Needs the `manage_accounts` permission.
+// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+// `manage_reports` permission, its newest 20 reports. The email address and the IP
+// addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+// Needs the `manage_accounts` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -78288,8 +78329,9 @@ func (c *ClientWithResponses) ListInstanceAvailabilityEventsWithResponse(ctx con
 // MarkInstanceAvailableWithResponse Mark a remote server available
 //
 // Clears the failure days of the server and, when it is unavailable, marks it available
-// again with the reason `operator`, so that deliveries to it resume. A server that is
-// already available without failures stays as it is. Needs the `manage_domains`
+// again with the reason `operator`, so that deliveries to it resume; the operation is
+// audited as `instance_marked_available`. A server that is already available without
+// failures stays as it is, and nothing is audited. Needs the `manage_domains`
 // permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -78933,7 +78975,8 @@ func (c *ClientWithResponses) ListPendingRegistrationsWithResponse(ctx context.C
 //
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. From the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
@@ -78953,7 +78996,8 @@ func (c *ClientWithResponses) ApproveRegistrationWithBodyWithResponse(ctx contex
 //
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. From the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
@@ -78973,7 +79017,9 @@ func (c *ClientWithResponses) ApproveRegistrationWithResponse(ctx context.Contex
 //
 // Rejects a pending registration, so that its user cannot sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. Needs the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+// A user without a registration is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -78991,7 +79037,9 @@ func (c *ClientWithResponses) RejectRegistrationWithBodyWithResponse(ctx context
 //
 // Rejects a pending registration, so that its user cannot sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. Needs the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+// A user without a registration is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
