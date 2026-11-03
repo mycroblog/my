@@ -854,6 +854,26 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{`captcha (MY_CAPTCHA): unknown value "recaptcha-v3"`},
 		},
 		{
+			name: "worker job types with a bad form",
+			env:  with(minimal(), "MY_WORKER_JOB_TYPES", "federation.deliver, Federation*"),
+			want: []string{`worker_job_types (MY_WORKER_JOB_TYPES): "Federation*" must be a job type such as federation.deliver or a prefix such as federation.*`},
+		},
+		{
+			name: "worker job types together",
+			env:  with(minimal(), "MY_WORKER_JOB_TYPES", "federation.*", "MY_WORKER_JOB_TYPES_EXCEPT", "media.process"),
+			want: []string{"worker_job_types_except (MY_WORKER_JOB_TYPES_EXCEPT): cannot be set together with worker_job_types"},
+		},
+		{
+			name: "worker job types on the web role",
+			env:  with(minimal(), "MY_WORKER_JOB_TYPES", "federation.*", "MY_ROLE", "web"),
+			want: []string{"worker_job_types (MY_WORKER_JOB_TYPES): needs a process that runs jobs, role = all or worker, not web"},
+		},
+		{
+			name: "excluded job types on the inline queue",
+			env:  with(minimal(), "MY_WORKER_JOB_TYPES_EXCEPT", "federation.*", "MY_QUEUE", "inline"),
+			want: []string{"worker_job_types_except (MY_WORKER_JOB_TYPES_EXCEPT): works only with queue = db, not inline"},
+		},
+		{
 			name: "inline queue with a split role",
 			env:  with(minimal(), "MY_QUEUE", "inline", "MY_ROLE", "worker"),
 			want: []string{"queue (MY_QUEUE): inline runs jobs in the enqueuing process and requires role = all, not worker"},

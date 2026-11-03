@@ -20,6 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/keymanager/local"
 	mailnone "github.com/mycroblog/my/internal/adapter/mail/none"
 	mailsmtp "github.com/mycroblog/my/internal/adapter/mail/smtp"
+	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
 	"github.com/mycroblog/my/internal/adapter/system"
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/blob"
@@ -242,6 +243,10 @@ type App struct {
 	FederationSever *federation.Severance
 
 	source queue.Source
+	// dbQueue is the database queue, when the server has one.
+	dbQueue *queuedb.Queue
+	// skippedJobTypes are the job types that worker_job_types leaves to other workers (ADR-0138).
+	skippedJobTypes []string
 	// wakeFinder finds the jobs of the database queue that need a wake-up signal.
 	wakeFinder queue.WakeFinder
 	// waker sends the wake-up signals of an external queue (queue = cloudtasks, ADR-0120), and
@@ -534,6 +539,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpMediaHTTP()
 	a.setUpClientAPI(cfg, opts.Version, opts.ClientAPIAccountLimit)
 	a.registerMetricsSnapshot()
+	if err := a.setUpWorkerJobTypes(cfg); err != nil {
+		return nil, err
+	}
 	return a, nil
 }
 

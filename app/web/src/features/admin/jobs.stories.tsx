@@ -78,6 +78,7 @@ const queue: Schemas["AdminQueue"] = {
     { state: "dead", type: "federation.deliver", count: 1 },
     { state: "dead", type: "kv.cleanup", count: 1 },
   ],
+  waits: [{ type: "federation.deliver", oldest_ready_at: ago(40 / 60) }],
 };
 
 const busy = [
@@ -141,7 +142,12 @@ export const Empty: Story = adminAnswering();
 export const WithoutListing: Story = adminAnswering(
   http.get(`${apiBase}/admin/queue`, ({ request }) =>
     withViewer(request, () =>
-      HttpResponse.json({ adapter: "sqs", pending_listing: false, counts: [] } satisfies Schemas["AdminQueue"]),
+      HttpResponse.json({
+        adapter: "sqs",
+        pending_listing: false,
+        counts: [],
+        waits: [],
+      } satisfies Schemas["AdminQueue"]),
     ),
   ),
 );

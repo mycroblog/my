@@ -65,6 +65,13 @@ func TestSQLiteBacklogContract(t *testing.T) {
 	})
 }
 
+func TestSQLiteTypesContract(t *testing.T) {
+	testkit.QueueTypesContract(t, func(t *testing.T, clock *testkit.Clock) (testkit.QueueHarness, testkit.QueueTypesSource) {
+		h := sqliteHarness(t, clock, filepath.Join(t.TempDir(), "queue.db"), true)
+		return h, h.Queue.(*queuedb.Queue).OnlyTypes
+	})
+}
+
 func TestSQLiteWakeContract(t *testing.T) {
 	testkit.QueueWakeContract(t, func(t *testing.T, clock *testkit.Clock, waker queue.Waker) testkit.QueueWakeHarness {
 		projectors := &uow.Projectors{}

@@ -29,6 +29,7 @@ CREATE TABLE jobs (
 ) STRICT;
 CREATE UNIQUE INDEX jobs_idempotency_key ON jobs (idempotency_key);
 CREATE INDEX jobs_run_at ON jobs (run_at);
+CREATE INDEX jobs_type_run_at_id ON jobs (type, run_at, id);
 CREATE INDEX jobs_ordering_key_run_at ON jobs (ordering_key, run_at);
 
 -- Jobs that failed for good, kept for the admin screen and the CLI to requeue.

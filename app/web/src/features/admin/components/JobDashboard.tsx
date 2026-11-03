@@ -212,6 +212,7 @@ function QueueSummary({ queue }: { queue: JobQueue }) {
                     {intl.formatNumber(stateCount(queue, state, type))}
                   </DescriptionItem>
                 ))}
+                <TypeWait oldestReadyAt={queue.waits.find((wait) => wait.type === type)?.oldest_ready_at} />
               </DescriptionList>
             </Stack>
           ))}
@@ -219,6 +220,13 @@ function QueueSummary({ queue }: { queue: JobQueue }) {
       )}
     </Stack>
   );
+}
+
+/** How long a type keeps a job waiting, which shows a type that no worker runs (ADR-0138 §3). */
+function TypeWait({ oldestReadyAt }: { oldestReadyAt: string | undefined }) {
+  const t = useT();
+  const wait = useJobWait(oldestReadyAt);
+  return <DescriptionItem term={t("client:admin.overview.health.job_wait")}>{wait.value}</DescriptionItem>;
 }
 
 function Jobs({ filter }: { filter: JobFilter }) {

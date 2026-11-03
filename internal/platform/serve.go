@@ -137,6 +137,9 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	// With a push receiver, the requests of the platform's queue run the jobs and those of its
 	// scheduler tick the periodic ones (ADR-0120 §4).
 	if a.Config.Role != config.RoleWeb && a.pushReceiver == nil {
+		if len(a.skippedJobTypes) > 0 {
+			a.Logger.InfoContext(ctx, "this worker skips these job types; another worker has to run them", slog.Any("job_types", a.skippedJobTypes))
+		}
 		goJob(hardCtx, &jobs, "queue.run", a.ErrorReporter, func(ctx context.Context) { _ = a.runJobs(ctx, stopJobs) })
 		if a.Scheduler != nil {
 			goJob(hardCtx, &jobs, "queue.schedule", a.ErrorReporter, func(ctx context.Context) { a.Scheduler.RunUntil(ctx, stopJobs, 0) })

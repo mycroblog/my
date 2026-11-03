@@ -28,6 +28,34 @@ WHERE id = (
 )
 RETURNING id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, last_error, created_at;
 
+-- ClaimJobOfTypes is ClaimJob for a worker that runs only some job types, the JSON array @types
+-- (ADR-0138 section 2): it takes each type's candidate from jobs_type_run_at_id and leases the
+-- earliest of them, so that a backlog of the other types costs nothing. A condition on ClaimJob
+-- would walk that backlog while holding the write lock.
+-- name: ClaimJobOfTypes :one
+UPDATE jobs
+SET locked_by = @worker, locked_until = @locked_until, attempt = attempt + 1
+WHERE id = (
+  SELECT c.id FROM jobs AS c
+  WHERE c.id IN (
+    SELECT (
+      SELECT j.id FROM jobs AS j
+      WHERE j.type = t.value AND j.run_at <= @now AND (j.locked_until IS NULL OR j.locked_until <= @now)
+        AND NOT EXISTS (
+          SELECT 1 FROM jobs AS k
+          WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+            AND (k.locked_until > @now OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+        )
+      ORDER BY j.run_at, j.id
+      LIMIT 1
+    )
+    FROM json_each(@types) AS t
+  )
+  ORDER BY c.run_at, c.id
+  LIMIT 1
+)
+RETURNING id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, last_error, created_at;
+
 -- ClaimJobByID leases the job @id under the conditions of ClaimJob, for a claim by ID (a
 -- wake-up signal, ADR-0120 section 2). The claim reads the job's lease with GetJobLease before
 -- and, when this leases nothing, after it, to tell why.

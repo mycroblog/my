@@ -93,6 +93,8 @@ type JobSummary struct {
 	// OldestReadyAt is the earliest RunAt among the due jobs that no worker holds; zero when
 	// none is.
 	OldestReadyAt time.Time
+	// OldestReadyByType is the same for each type with such a job (ADR-0138 §3).
+	OldestReadyByType map[string]time.Time
 }
 
 // JobInspector reads the jobs a queue holds, for the dashboard (ADR-0064 §3). Only the queues

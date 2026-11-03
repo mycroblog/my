@@ -149,7 +149,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.voice.turn.credentials` | Counter | `my.voice.turn` (`coturn` / `cloudflare`), `my.outcome` (`issued` / `reused` / `failed`). One per TURN credential that a voice chat participant asked for when joining a room or renewing its connection: `reused` means Cloudflare credentials issued earlier for the same connection were returned again, and `failed` means Cloudflare could not be reached or refused, so the participant got an error and could not connect |
 | `my.errors.exported` | Counter | `my.outcome` (`success` / `dropped` / `failed`: one per error report for the service of `errors_exporter`. `dropped` means the report was not sent because 1,000 reports were already waiting or the service asked the server to slow down, and the server waits as long as the service asks before sending again; `failed` means the service could not be reached or refused the report. A report is sent once and never retried, and the reports still waiting 2 seconds into a shutdown are lost) |
 | `my.queue.ready` | Gauge | `my.job.type` (the number of runnable jobs in the database queue) |
-| `my.queue.oldest_ready_age` | Gauge, seconds | None (how long the oldest runnable job in the database queue has waited) |
+| `my.queue.oldest_ready_age` | Gauge, seconds | `my.job.type` (how long the oldest runnable job of each type in the database queue has waited; a type with no runnable job has no value) |
 | `my.queue.dead` | Gauge | None |
 | `my.instance.users`, `my.instance.statuses` | Gauge | None (the local user and post counts, as in NodeInfo) |
 | `my.media.stored_bytes` | Gauge, bytes | `my.media.origin` (`local` / `remote_cache`) |
@@ -272,7 +272,7 @@ For work on the database, key-value store or queue, restart in maintenance mode 
 [Jobs](../reference/jobs.md) lists every job type: what it does, what starts it, how it retries, and what running it again does.
 
 The admin jobs page (`/admin/jobs`, permission `manage_jobs`) lists the queue's jobs by state (waiting, running, waiting to retry, failed).
-It also shows the count per type and state, when the oldest waiting job is scheduled, each job's last error, key and payload, and the history of unsuccessful attempts (result, error, worker, and start and end time of each attempt).
+It also shows the count per type and state, how long each type keeps a job waiting, when the oldest waiting job is scheduled, each job's last error, key and payload, and the history of unsuccessful attempts (result, error, worker, and start and end time of each attempt).
 The admin API is `GET /api/v1/admin/queue`, `GET /api/v1/admin/jobs?state=&type=`, `GET /api/v1/admin/jobs/{id}/attempts` and `POST /api/v1/admin/jobs/{id}/retry`.
 
 - Waiting, running and retry-waiting jobs can be listed only for the queues whose jobs the server holds: `queue = db`, `queue = cloudtasks` and `queue = sqs` (the jobs are in the database too), and `queue = inline`. Failed jobs and the attempt history are in the application database for every queue, so they can always be listed.
@@ -294,6 +294,55 @@ my job delete <id> [<id>...] # remove without running
 - An unknown ID is printed and the command exits with code 1; the other IDs are still processed. Exit code 2 means a usage error.
 - A dead job that nobody retries is removed by the hourly cleanup once `dead_job_retention` (default 30 days; see the [setting](../reference/configuration.md#dead_job_retention)) has passed since the failure.
 - Dead jobs of `queue = inline` live in the server process's memory, so `my job` cannot handle them (exit code 1).
+
+### Splitting workers by job type
+
+By default every worker runs every job type, in the order the jobs fell due, one job at a time per process. A burst of deliveries then delays email and notifications, and any worker you add shares its time among all of them. With `queue = db` you can give some types their own workers:
+
+- [`worker_job_types`](../reference/configuration.md#worker_job_types): this process runs only these types.
+- [`worker_job_types_except`](../reference/configuration.md#worker_job_types_except): this process runs every type but these.
+
+Each is a comma-separated list of [job types](../reference/jobs.md), written as a name (`federation.deliver`) or a prefix (`federation.*`). Set them per process, for example with `MY_WORKER_JOB_TYPES`. You cannot set both on one process. A name or prefix that matches no job type stops the start, which also catches a type that a release renamed, or a type that exists only with a setting you have not set. They do not work with `role = web`, or with `queue = sqs`, `cloudtasks`, or `inline`, where the start fails too: there a signal names the job to run, so a process cannot choose its jobs.
+
+At the start, a process with one of the settings logs the types it skips. It cannot see the settings of the other processes, so **make sure that some process runs every type**, or those jobs wait forever. Periodic cleanup and email are job types too. Every process still starts the periodic jobs; which process runs them depends on these settings.
+
+Decide what to split from the metrics, not from the type names. `my.job.wait` (Prometheus: `my_job_wait_seconds`) shows how long jobs waited by type before they started:
+
+```promql
+histogram_quantile(0.95, sum by (my_job_type, le) (rate(my_job_wait_seconds_bucket[15m])))
+```
+
+`sum by (my_job_type) (rate(my_job_duration_seconds_sum[1h]))` shows the worker time each type uses, which is also about how many processes it needs. A type that uses most of the time and makes the others wait is the one to move.
+
+Two common layouts, with the number of processes of your choosing:
+
+| Layout | Processes |
+| --- | --- |
+| Keep deliveries from delaying the rest | `worker_job_types = federation.deliver` for the deliveries, and `worker_job_types_except = federation.deliver` for everything else. Add processes to the first group during a burst. |
+| Keep email and notifications quick | `worker_job_types = notification.*,identity.*` for these, and a worker without a setting for everything, which also helps with these types when it is free. |
+
+Keep these together, on workers with the same setting. Jobs of one ordering key run in order whatever their type, so if nothing runs the earlier job, the later one waits too, and if the group of the earlier job is backed up, the later job waits for it:
+
+| Types | What they keep in order |
+| --- | --- |
+| `federation.fanout`, `federation.deliver` | The deliveries of a like and its undo |
+| `voice.media_event`, `voice.apply` | The events of one voice room |
+| `supporters.sync`, `supporters.command` | The changes of one subscription |
+
+When you upgrade:
+
+- A process with `worker_job_types` does not run the types a new version adds. Check the release notes and the skipped types in the log. A process with `worker_job_types_except` runs them, which makes it the safer place for everything else.
+- A renamed type stops the start, so read the release notes first.
+
+To roll a split out, start the new workers first, then add the setting to the old ones. To roll it back, remove the setting from one group before you stop the other. Jobs stay in the queue, so nothing is lost, and a type that is run by nobody for a while only waits.
+
+**Detecting a type that nothing runs.** The jobs of such a type wait, so `my.queue.oldest_ready_age` grows for that type, and the alerts `MyQueueBacklog` and `MyQueueStalled` fire on the type that waits longest. To see which one, or to alert per type:
+
+```promql
+max by (my_job_type) (my_queue_oldest_ready_age_seconds) > 1800
+```
+
+The admin jobs page shows the same wait per type. A worker with one of the settings also leaves alone a job whose type has no handler at all (it counts under `other` in the metric), so with no worker without a setting, such a job waits instead of becoming a dead job.
 
 ### Cloud Tasks
 

@@ -7,6 +7,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -70,7 +72,7 @@ func (s *Server) GetAdminQueue(ctx context.Context, _ GetAdminQueueRequestObject
 	} else if p != nil {
 		return GetAdminQueuedefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	body := AdminQueue{Adapter: s.o.Queue.Adapter, PendingListing: s.o.Queue.Inspector != nil, Counts: []AdminJobCount{}}
+	body := AdminQueue{Adapter: s.o.Queue.Adapter, PendingListing: s.o.Queue.Inspector != nil, Counts: []AdminJobCount{}, Waits: []AdminJobWait{}}
 	if s.o.Queue.Inspector != nil {
 		sum, err := s.o.Queue.Inspector.SummarizeJobs(ctx, s.o.Queue.now())
 		if err != nil {
@@ -82,6 +84,9 @@ func (s *Server) GetAdminQueue(ctx context.Context, _ GetAdminQueueRequestObject
 		if !sum.OldestReadyAt.IsZero() {
 			at := sum.OldestReadyAt.UTC()
 			body.OldestReadyAt = &at
+		}
+		for _, t := range slices.Sorted(maps.Keys(sum.OldestReadyByType)) {
+			body.Waits = append(body.Waits, AdminJobWait{Type: t, OldestReadyAt: sum.OldestReadyByType[t].UTC()})
 		}
 	}
 	cache := cacheNoStore

@@ -13,10 +13,13 @@ tests:
     interval: 1m
     input_series:
       # Two processes report the same instance-wide gauge; the oldest job waits a minute longer each minute.
-      - series: my_queue_oldest_ready_age_seconds{job="my", instance="a:9464"}
+      - series: my_queue_oldest_ready_age_seconds{job="my", instance="a:9464", my_job_type="federation.deliver"}
         values: 0+60x40
-      - series: my_queue_oldest_ready_age_seconds{job="my", instance="b:9464"}
+      - series: my_queue_oldest_ready_age_seconds{job="my", instance="b:9464", my_job_type="federation.deliver"}
         values: 0+60x40
+      # Another type waits a moment; the alert follows the type that waits longest.
+      - series: my_queue_oldest_ready_age_seconds{job="my", instance="a:9464", my_job_type="media.process"}
+        values: 0x40
     alert_rule_test:
       - eval_time: 10m
         alertname: MyQueueBacklog

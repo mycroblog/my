@@ -6,6 +6,8 @@ again by hand does. Use this page to read the types on the admin jobs page, in `
 
 The server has 82 job types. 36 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
+A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
+
 ## Reading the tables
 
 **Started by** says what puts the job in the queue. A *schedule* is listed under [Periodic jobs](#periodic-jobs).

@@ -673,6 +673,48 @@ func (q *Queries) PickJob(ctx context.Context, now time.Time) (PickJobRow, error
 	return i, err
 }
 
+const pickJobOfTypes = `-- name: PickJobOfTypes :one
+SELECT c.id, c.ordering_key
+FROM unnest($1::text[]) AS t(type)
+CROSS JOIN LATERAL (
+  SELECT j.id, j.ordering_key, j.run_at FROM jobs AS j
+  WHERE j.type = t.type
+    AND j.run_at <= $2 AND (j.locked_until IS NULL OR j.locked_until <= $2)
+    AND NOT EXISTS (
+      SELECT 1 FROM jobs AS k
+      WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+        AND (k.locked_until > $2 OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+    )
+  ORDER BY j.run_at, j.id
+  LIMIT 1
+  FOR UPDATE SKIP LOCKED
+) AS c
+ORDER BY c.run_at, c.id
+LIMIT 1
+`
+
+type PickJobOfTypesParams struct {
+	Types []string
+	Now   time.Time
+}
+
+type PickJobOfTypesRow struct {
+	ID          string
+	OrderingKey *string
+}
+
+// PickJobOfTypes is PickJob for a worker that runs only some job types (ADR-0138 section 2): it
+// takes each type's candidate from jobs_type_run_at_id and picks the earliest of them, so that a
+// backlog of the other types costs nothing. A condition on PickJob would walk that backlog. The
+// candidates of the other types stay locked until the transaction ends; the other workers skip
+// them.
+func (q *Queries) PickJobOfTypes(ctx context.Context, arg PickJobOfTypesParams) (PickJobOfTypesRow, error) {
+	row := q.db.QueryRow(ctx, pickJobOfTypes, arg.Types, arg.Now)
+	var i PickJobOfTypesRow
+	err := row.Scan(&i.ID, &i.OrderingKey)
+	return i, err
+}
+
 const releaseJob = `-- name: ReleaseJob :execrows
 UPDATE jobs
 SET locked_by = NULL, locked_until = NULL,
