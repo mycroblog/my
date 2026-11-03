@@ -2834,7 +2834,8 @@ export interface paths {
          * @description The statuses that quote a status of the user, newest first, each with its `quote` and
          *     its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
          *     out, so a page may hold fewer than `limit` statuses before the last. Another account's
-         *     status is a 404.
+         *     status is a 404, and so is the user's own `direct` status without `read:direct`, which
+         *     also leaves out the `direct` statuses that quote one.
          */
         get: operations["listStatusQuotes"];
         put?: never;
@@ -2885,7 +2886,8 @@ export interface paths {
         };
         /**
          * Get the source of the authenticated user's status, for editing it
-         * @description Another account's status is a 404, the same as a missing one.
+         * @description Another account's status is a 404, the same as a missing one, and so is a `direct` status
+         *     without `read:direct`.
          */
         get: operations["getStatusSource"];
         put?: never;
@@ -15023,7 +15025,11 @@ export interface components {
                 "application/problem+json": components["schemas"]["RoleProblem"];
             };
         };
-        /** @description The status after the action, as the authenticated user sees it. */
+        /**
+         * @description The status after the action, as the authenticated user sees it. The scope of the action is
+         *     enough to read this response. A status that is gone or that the token may not see is a 404
+         *     and the action changes nothing, an un-action included.
+         */
         StatusAfterAction: {
             headers: {
                 "Cache-Control": components["headers"]["CacheControl"];
@@ -17868,7 +17874,8 @@ export interface operations {
         responses: {
             /**
              * @description A page of bookmarked posts. Posts that the user can no longer see are left out, so
-             *     a page may hold fewer posts than `limit` and still have a `next_cursor`.
+             *     a page may hold fewer posts than `limit` and still have a `next_cursor`. `direct` posts
+             *     need `read:direct`.
              */
             200: {
                 headers: {

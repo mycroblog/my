@@ -12,7 +12,8 @@ get:
     "200":
       description: |
         A page of bookmarked posts. Posts that the user can no longer see are left out, so
-        a page may hold fewer posts than `limit` and still have a `next_cursor`.
+        a page may hold fewer posts than `limit` and still have a `next_cursor`. `direct` posts
+        need `read:direct`.
       headers:
         Cache-Control:
           $ref: ../components/headers/CacheControl.yaml

@@ -47,11 +47,12 @@ type StatusReader interface {
 	View(ctx context.Context, viewer appcontent.Viewer, statusID string) (appcontent.StatusView, error)
 	Thread(ctx context.Context, viewer appcontent.Viewer, statusID string) (appcontent.Thread, error)
 	History(ctx context.Context, viewer appcontent.Viewer, statusID string) ([]appcontent.RevisionView, error)
-	Source(ctx context.Context, accountID, statusID string) (content.Revision, error)
-	Bookmarks(ctx context.Context, accountID, before string, limit int) (appcontent.BookmarkPage, error)
+	Visible(ctx context.Context, viewer appcontent.Viewer, statusID string) (content.Status, error)
+	Source(ctx context.Context, viewer appcontent.Viewer, statusID string) (content.Revision, error)
+	Bookmarks(ctx context.Context, viewer appcontent.Viewer, before string, limit int) (appcontent.BookmarkPage, error)
 	Reactions(ctx context.Context, viewer appcontent.Viewer, statusID, emoji, before string, limit int) (appcontent.ReactedPage, error)
 	ReactionEmoji(ctx context.Context, e appcontent.ReactionEmoji) (appcontent.EmojiView, error)
-	Quotes(ctx context.Context, accountID, statusID, before string, limit int) (appcontent.QuotesPage, error)
+	Quotes(ctx context.Context, viewer appcontent.Viewer, statusID, before string, limit int) (appcontent.QuotesPage, error)
 }
 
 // Interactions runs boosts, favourites, bookmarks, and pins. *appcontent.Interactions
@@ -70,9 +71,6 @@ type Interactions interface {
 	VotePoll(ctx context.Context, accountID, statusID, pollID string, choices []int) ([]content.PollVote, error)
 	RevokeQuote(ctx context.Context, accountID, quotedStatusID, quotingStatusID string) error
 }
-
-// defaultLimit is the page size of collections without a limit parameter.
-const defaultLimit = 20
 
 // contentViewer returns the viewer of ctx for the content module: the authenticated local
 // account, or an anonymous visitor. A token without read:direct does not see direct posts.
@@ -688,7 +686,7 @@ func (s *Server) GetStatusSource(ctx context.Context, req GetStatusSourceRequest
 	if err != nil {
 		return nil, err
 	}
-	rev, err := s.o.StatusReader.Source(ctx, v.AccountID, req.Id)
+	rev, err := s.o.StatusReader.Source(ctx, localContentViewer(v), req.Id)
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {
 			return GetStatusSourcedefaultApplicationProblemPlusJSONResponse(p), nil
@@ -708,14 +706,11 @@ func (s *Server) ListBookmarks(ctx context.Context, req ListBookmarksRequestObje
 	if err != nil {
 		return nil, err
 	}
-	limit := defaultLimit
-	if req.Params.Limit != nil {
-		limit = *req.Params.Limit
+	if p := s.plainPageProblem(ctx, req.Params.Cursor, req.Params.Limit); p != nil {
+		return ListBookmarksdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	if !validCursor(req.Params.Cursor) {
-		return ListBookmarksdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "cursor")), nil
-	}
-	page, err := s.o.StatusReader.Bookmarks(ctx, v.AccountID, deref(req.Params.Cursor), limit)
+	limit, _ := pageLimit(req.Params.Limit)
+	page, err := s.o.StatusReader.Bookmarks(ctx, localContentViewer(v), deref(req.Params.Cursor), limit)
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {
 			return ListBookmarksdefaultApplicationProblemPlusJSONResponse(p), nil
@@ -734,13 +729,17 @@ func (s *Server) ListBookmarks(ctx context.Context, req ListBookmarksRequestObje
 }
 
 // act runs an interaction of the viewer with a status and returns the status afterwards, or
-// the problem of the failure.
+// the problem of the failure. A status that the token's viewer may not see, whether gone or
+// hidden, answers 404 before anything changes, an un-action included.
 func (s *Server) act(ctx context.Context, statusID string, run func(accountID string) error) (StatusAfterActionJSONResponse, *problem, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return StatusAfterActionJSONResponse{}, nil, err
 	}
-	err = run(v.AccountID)
+	_, err = s.o.StatusReader.Visible(ctx, localContentViewer(v), statusID)
+	if err == nil {
+		err = run(v.AccountID)
+	}
 	if err == nil {
 		var out Status
 		if out, err = s.viewStatus(ctx, statusID); err == nil {
@@ -881,14 +880,11 @@ func (s *Server) ListStatusQuotes(ctx context.Context, req ListStatusQuotesReque
 	if err != nil {
 		return nil, err
 	}
-	limit := defaultLimit
-	if req.Params.Limit != nil {
-		limit = *req.Params.Limit
+	if p := s.plainPageProblem(ctx, req.Params.Cursor, req.Params.Limit); p != nil {
+		return ListStatusQuotesdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	if !validCursor(req.Params.Cursor) {
-		return ListStatusQuotesdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "cursor")), nil
-	}
-	page, err := s.o.StatusReader.Quotes(ctx, v.AccountID, req.Id, deref(req.Params.Cursor), limit)
+	limit, _ := pageLimit(req.Params.Limit)
+	page, err := s.o.StatusReader.Quotes(ctx, localContentViewer(v), req.Id, deref(req.Params.Cursor), limit)
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {
 			return ListStatusQuotesdefaultApplicationProblemPlusJSONResponse(p), nil

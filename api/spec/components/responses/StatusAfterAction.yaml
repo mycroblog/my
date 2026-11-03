@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: MIT
-description: The status after the action, as the authenticated user sees it.
+description: |
+  The status after the action, as the authenticated user sees it. The scope of the action is
+  enough to read this response. A status that is gone or that the token may not see is a 404
+  and the action changes nothing, an un-action included.
 headers:
   Cache-Control:
     $ref: ../headers/CacheControl.yaml

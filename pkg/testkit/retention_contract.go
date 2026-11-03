@@ -352,7 +352,7 @@ func retentionMaximum(t *testing.T, e *retentionEnv) {
 	if err != nil || len(marks) != 2 {
 		t.Errorf("bookmarks = %+v, %v; want both kept", marks, err)
 	}
-	page, err := e.statusReader().Bookmarks(ctx, reader, "", 10)
+	page, err := e.statusReader().Bookmarks(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: reader}, "", 10)
 	if err != nil || len(page.Statuses) != 1 || page.Statuses[0].Status.ID != recent.ID {
 		t.Errorf("bookmarked statuses = %+v, %v; want only the kept one (the purged one reads as deleted)", page.Statuses, err)
 	}

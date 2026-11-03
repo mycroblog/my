@@ -3518,7 +3518,8 @@ paths:
         '200':
           description: |
             A page of bookmarked posts. Posts that the user can no longer see are left out, so
-            a page may hold fewer posts than `limit` and still have a `next_cursor`.
+            a page may hold fewer posts than `limit` and still have a `next_cursor`. `direct` posts
+            need `read:direct`.
           headers:
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
@@ -3963,7 +3964,8 @@ paths:
         The statuses that quote a status of the user, newest first, each with its `quote` and
         its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
         out, so a page may hold fewer than `limit` statuses before the last. Another account's
-        status is a 404.
+        status is a 404, and so is the user's own `direct` status without `read:direct`, which
+        also leaves out the `direct` statuses that quote one.
       tags:
         - statuses
       security:
@@ -4010,7 +4012,9 @@ paths:
     get:
       operationId: getStatusSource
       summary: Get the source of the authenticated user's status, for editing it
-      description: Another account's status is a 404, the same as a missing one.
+      description: |
+        Another account's status is a 404, the same as a missing one, and so is a `direct` status
+        without `read:direct`.
       tags:
         - statuses
       security:
@@ -10264,7 +10268,12 @@ components:
 
         `read:statuses` does not show posts whose visibility is `direct`, in timelines, in a post's
         thread, or in a post's own response, nor in the posts of a notification; `read:direct` (which
-        `read` grants) does. Sending a `direct` post needs only `write:statuses`.
+        `read` grants) does. The same holds for bookmarks, a post's source, and the posts that quote
+        a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`.
+
+        A write scope reads the post it acts on: the response to an action on a post, such as
+        favouriting it with `write:favourites`, is the whole post. A token without `read:direct`
+        cannot act on a `direct` post: it gets a 404 and nothing changes.
 
         Only the server's own (first-party) clients may hold `admin`, `admin:read`, `admin:write`,
         and `write:supporters`: an authorization request of any other client that asks for one is
@@ -11039,7 +11048,10 @@ components:
           schema:
             $ref: '#/components/schemas/RoleProblem'
     StatusAfterAction:
-      description: The status after the action, as the authenticated user sees it.
+      description: |
+        The status after the action, as the authenticated user sees it. The scope of the action is
+        enough to read this response. A status that is gone or that the token may not see is a 404
+        and the action changes nothing, an un-action included.
       headers:
         Cache-Control:
           $ref: '#/components/headers/CacheControl'

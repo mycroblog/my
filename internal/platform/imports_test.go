@@ -156,7 +156,7 @@ func TestCSVExportAndImport(t *testing.T) {
 		mutes[0].Domain != "spam.example" || mutes[1].Domain != "xn--r8jz45g.xn--zckzah" {
 		t.Errorf("bob's domain mutes = %+v, %v", mutes, err)
 	}
-	page, err := e.app.Statuses.Bookmarks(ctx, bob.accountID, "", 10)
+	page, err := e.app.Statuses.Bookmarks(ctx, domcontent.Viewer{Kind: domcontent.ViewerLocal, AccountID: bob.accountID}, "", 10)
 	if err != nil || len(page.Statuses) != 1 || page.Statuses[0].Status.ID != post {
 		t.Errorf("bob's bookmarks = %+v, %v; want the post", page, err)
 	}
