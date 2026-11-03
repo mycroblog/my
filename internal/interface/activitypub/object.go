@@ -90,3 +90,28 @@ func (h *Handler) quoteAuthorization(w http.ResponseWriter, r *http.Request) {
 	}
 	writeBody(w, typeActivityJSON, acc.cache(obj.Public), status, obj.Document)
 }
+
+// activity serves GET /ap/activities/{id}: the Announce of a public or unlisted boost (ADR-0144
+// §5). Every other activity, and a request that prefers HTML, gets the same 404 as a missing one.
+func (h *Handler) activity(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Vary", "Accept")
+	id := r.PathValue("id")
+	if !kernel.ValidID(id) || parseAccept(r.Header.Get("Accept")).prefersHTML() {
+		h.notFound(w, r)
+		return
+	}
+	acc, ok := h.authorize(w, r, true)
+	if !ok {
+		return
+	}
+	if acc.refused() {
+		h.unauthorized(w, r)
+		return
+	}
+	obj, err := h.o.Objects.Announce(r.Context(), acc.requester, id)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	writeBody(w, typeActivityJSON, acc.cache(obj.Public), http.StatusOK, obj.Document)
+}

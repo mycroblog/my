@@ -8,7 +8,9 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -332,5 +334,71 @@ func TestFederationMode(t *testing.T) {
 	}
 	if _, err := c.app.FederationSever.Sever(ctx, "sideways"); err == nil {
 		t.Error("Sever(sideways) succeeded")
+	}
+}
+
+// TestAnnounceDereference checks that the id of a boost's Announce serves the activity that its
+// fan-out delivered, until the boost is retracted, and that other activity ids stay 404
+// (ADR-0144 §5).
+func TestAnnounceDereference(t *testing.T) {
+	t.Parallel()
+	network := &relayNet{docs: map[string][]byte{}}
+	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline"}, platform.AppOptions{HTTPClient: network}, "alice", "bob")
+	ctx := t.Context()
+	dave := newRemoteActor(t, network, "https://remote.example/users/dave", "Person", "https://remote.example/users/dave/inbox")
+	bob := "https://example.test/ap/actors/" + c.ids["bob"]
+	if code := inboxCode(t, c, dave, map[string]any{
+		"id": dave.id + "/activities/follow", "type": "Follow", "actor": dave.id, "object": bob,
+	}); code != http.StatusAccepted {
+		t.Fatalf("Follow = %d", code)
+	}
+	st := c.post("alice", map[string]any{"text": "boost me", "visibility": "public"})
+	network.taken()
+
+	boost, err := c.app.Interactions.Boost(ctx, c.ids["bob"], st.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var delivered map[string]any
+	for _, p := range network.taken()[dave.id+"/inbox"] {
+		if p["type"] == "Announce" {
+			delivered = p
+		}
+	}
+	if delivered == nil {
+		t.Fatal("the Announce was not delivered")
+	}
+	delete(delivered, "_raw")
+	// The delivered document adds its integrity proof and that proof's context.
+	delete(delivered, "proof")
+	delete(delivered, "@context")
+	path := strings.TrimPrefix(boost.URI, "https://example.test")
+	code, served := apGet(t, c, path)
+	if code != http.StatusOK || served["@context"] == nil {
+		t.Errorf("GET the Announce = %d %v", code, served)
+	}
+	delete(served, "@context")
+	if len(served) != len(delivered) {
+		t.Errorf("GET the Announce has %d properties, the delivered one %d", len(served), len(delivered))
+	}
+	for k, want := range delivered {
+		if got := served[k]; !reflect.DeepEqual(got, want) {
+			t.Errorf("GET the Announce: %s = %v, delivered %v", k, got, want)
+		}
+	}
+
+	fav, err := c.app.Interactions.Favourite(ctx, c.ids["bob"], st.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code, _ := apGet(t, c, strings.TrimPrefix(fav.URI, "https://example.test")); code != http.StatusNotFound {
+		t.Errorf("GET the Like = %d, want 404", code)
+	}
+
+	if err := c.app.Interactions.Unboost(ctx, c.ids["bob"], st.Id); err != nil {
+		t.Fatal(err)
+	}
+	if code, _ := apGet(t, c, path); code != http.StatusNotFound {
+		t.Errorf("GET a retracted Announce = %d, want 404", code)
 	}
 }

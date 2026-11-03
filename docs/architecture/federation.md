@@ -599,7 +599,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
 ## 10. コレクションとオブジェクトの GET
 
-連合の向きが `publish` を通さないとき、投稿・`/activity`・コレクション（outbox・followers・following・featured）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
+連合の向きが `publish` を通さないとき、投稿・`/activity`・ブーストの `Announce`・コレクション（outbox・followers・following・featured）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
 
 削除されたローカルの Actor（`deleted` を記録した時点から、消去の後も）の GET は、だれにでも `410 Gone` と `Tombstone`（`id` は Actor の URI）です。WebFinger（`acct:`・Actor の `id`・プロフィールの URL のどれでも）と `/@{username}` への ActivityPub の要求も `410` です（ADR-0144 §1）。`Delete` を受け損ねたサーバーが消えたと分かるためです。`deleted` より前の状態は変わりません（凍結中は最小の文書、それ以外の有効でない Actor は `404`）。存在しないユーザーとリモートの Actor も `404` です。HTML を求める要求は、削除された投稿と同じく `404` です。削除された Actor のコレクションと inbox は `404` です。連合の向きが `off` なら、削除されていても `404` です（§14.2）。サービスの終了の配送中も、削除済みの Actor は `410` です。
 
@@ -621,6 +621,10 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - `GET /ap/quote_authorizations/{uuid}` は、このサーバーが出した引用の承認の `QuoteAuthorization`（`attributedTo` は引用先の作者、`interactingObject` は引用元、`interactionTarget` は引用先）を `@context` 付きで返します（ADR-0069 §1）。
   引用先が `local` の投稿の承認は、取り消しや削除の後も含めて `404` です（[ADR-0144](../adr/0144-federation-differences-uri-quote.md) §4）。
   引用元がすでに示しているものなので、だれにでも返し、`public, max-age=60` です（Authorized Fetch のときは署名を求める）。取り消した承認と、引用先が削除された承認は `410 Gone` と `Tombstone`、無いものは 404 です。
+- `GET /ap/activities/{uuid}` は、公開範囲が `public` / `unlisted` で取り消されていないローカルのブーストの `Announce` だけを、配送と同じ形で保存している事実から組み立てて返します（`federation.Objects.Announce`、[ADR-0144](../adr/0144-federation-differences-uri-quote.md) §5）。
+  - ブーストした人の実効の公開範囲が `public` / `unlisted` でないとき（上限がかかったとき）、ブーストした人や、ローカルの引用先の投稿の作者を `content.CanView` が見せないとき（凍結・ブロック）、ブーストした投稿が削除されたときは 404 です。リモートの投稿のブーストは、投稿の作者については判定しません（`CanView` の `ContextObjectFetch` はこのサーバーの投稿だけを扱うため）。
+  - 未ログインでも同じ結果になる応答だけ `public, max-age=60` で、HTML を求めるリクエストは 404 です。ブーストは `Undo` を配送するので、取り消した後は `410` にせず 404 です。
+  - 残りの活動（`Follow`・`Like`・`Undo`・`Update`・`Delete`・`Accept`・`Reject`・`Block`・`Move`・`Flag`）、`/ap/objects/{id}/quote_request`、投票の `/ap/objects/{vote}` とその `/activity`、`{object}/replies`・`/likes`・`/shares` は 404 で、文書でも広告しません。これらの id は取得できず、ActivityPub §3.1 の取得できない id の例外として扱います。あとからルートを足しても id は変わりません。
 - `GET /ap/emojis/{uuid}` は、有効なローカルのカスタム絵文字の `Emoji` を `@context` 付きで返します（Mastodon は `id` を引いて絵文字を解決する。ADR-0051 §3）。存在しない・削除した・無効の絵文字と、HTML を求めるリクエストは同じ 404 です。絵文字と画像は公開のものなので、Authorized Fetch は当てず、`public, max-age=60` です。
 - コレクションはだれにも同じ内容を返します。outbox・followers・following は `totalItems` と最初のページ（`?page=true`）へのリンクを持つ `OrderedCollection` で、ページ（`OrderedCollectionPage`）は `partOf` と次のページ（`?max_id={カーソル}&page=true`）を持ちます（Mastodon と同じ形）。
   - outbox は、未ログインの閲覧者がプロフィールで見られる投稿（`public` / `unlisted`）の `Create` を、新しい順に 20 件ずつ返します。ブーストは載せません。`totalItems` は削除されていない投稿の数です（Mastodon と同じ）。
@@ -634,7 +638,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   | --- | --- | --- |
   | 利用者の Actor | 鍵の取得のための最小の文書（`@context`・`id`・`type`・`preferredUsername`・`inbox`・`publicKey`・`endpoints`。ここまでは Mastodon と同じ項目。これに加えて、FEP-8b32 の証明の鍵を解決するための `assertionMethod`、移転済みなら `movedTo`） | Actor の文書全体 |
   | インスタンス Actor | 文書全体（もともと最小の文書） | 文書全体 |
-  | オブジェクト（`/activity` を含む）・コレクション | `401` | 無効なときと同じ判定 |
+  | オブジェクト（`/activity` を含む）・ブーストの `Announce`・コレクション | `401` | 無効なときと同じ判定 |
   | WebFinger・NodeInfo・host-meta・HTML を求めるリクエスト | 無効なときと同じ | 無効なときと同じ |
 
   - `401` は、存在するかどうかを確かめる前に返します（存在が漏れない）。ADR-0032 の GET の署名を求める `Accept-Signature: sig1=("@method" "@target-uri");created` を付けるので、double-knocking のクライアントは RFC 9421 で再送します。
@@ -779,7 +783,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 | 展開と配送（§7.2・§7.3） | すべて `skipped` | `follow_out`・`follow_in` の `Reject`・`retract`・`protect` だけ送る | `publish`・`follow_in`・`retract`・`protect` だけ送る | すべて送る |
 | 外の取得（§6） | しない | する | 署名の検証と配送の宛先に要る Actor だけ。メディアプロキシはフォロワーの Actor の画像だけ | する |
 | ローカルの Actor の GET（§10） | `404` | 鍵の取得のための最小の文書（Authorized Fetch の署名なしと同じ項目） | 全体を返す | 全体を返す |
-| 投稿・`/activity`・コレクション・カスタム絵文字・引用の承認の GET（§10） | `404` | `404` | 返す | 返す |
+| 投稿・`/activity`・ブーストの `Announce`・コレクション・カスタム絵文字・引用の承認の GET（§10） | `404` | `404` | 返す | 返す |
 | インスタンス Actor の GET | `404` | 返す | 返す | 返す |
 | WebFinger・host-meta | `404` | 答える | 答える | 答える |
 | NodeInfo | `404` | 答える | 答える | 答える |
@@ -850,7 +854,7 @@ NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`s
 | inbox（共有・Actor ごと） | 署名の検証より前に `410` | `410` |
 | ローカルの Actor の GET | 凍結と同じ最小の文書（空のプロフィール・`suspended: true`・鍵・移転済みは `movedTo`）を、だれにでも `private, no-store` で返す | `410` と `Tombstone` |
 | インスタンス Actor の GET | 文書全体を返す | `410` と `Tombstone` |
-| 投稿・`/activity`・コレクション・カスタム絵文字・引用の承認の GET | `410` と `Tombstone` | 同左 |
+| 投稿・`/activity`・ブーストの `Announce`・コレクション・カスタム絵文字・引用の承認の GET | `410` と `Tombstone` | 同左 |
 | WebFinger・host-meta・`/@{username}` の ActivityPub の要求 | `410` | 同左 |
 | NodeInfo | 答える（`metadata.serviceClosure` に状態） | 同左 |
 
