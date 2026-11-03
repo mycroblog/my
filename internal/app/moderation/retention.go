@@ -79,6 +79,8 @@ type RetentionRepository interface {
 	ListRetentionHolds(ctx context.Context, accountID string) ([]moderation.RetentionHoldRecord, error)
 	// HeldAccountIDs returns the accounts that a hold in effect preserves, in ID order.
 	HeldAccountIDs(ctx context.Context) ([]string, error)
+	// HeldAccountIDsTx is HeldAccountIDs inside tx.
+	HeldAccountIDsTx(ctx context.Context, tx uow.Tx) ([]string, error)
 	// StatusRetained reports inside tx whether a report or an action on statuses points at the
 	// status, or a hold in effect preserves its author.
 	StatusRetained(ctx context.Context, tx uow.Tx, statusID, authorAccountID string) (bool, error)
@@ -97,6 +99,8 @@ type RetentionRepository interface {
 	PurgeReports(ctx context.Context, tx uow.Tx, ids []string) error
 	// ReportedVoiceRooms returns which of roomIDs a report points at (report_voice_rooms).
 	ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map[string]bool, error)
+	// ReportedVoiceRoomsTx is ReportedVoiceRooms inside tx.
+	ReportedVoiceRoomsTx(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]bool, error)
 	// ListSignupBlocksToPurge returns up to limit sign-up blocks, oldest first, that ended (were
 	// lifted or expired, whichever came first) before endedBefore, except those made by a ban
 	// of an account that a hold preserves.
@@ -185,6 +189,19 @@ func (s *Service) ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map
 		return map[string]bool{}, nil
 	}
 	return s.d.Repository.ReportedVoiceRooms(ctx, roomIDs)
+}
+
+// ReportedVoiceRoomsTx is ReportedVoiceRooms inside tx.
+func (s *Service) ReportedVoiceRoomsTx(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]bool, error) {
+	if len(roomIDs) == 0 {
+		return map[string]bool{}, nil
+	}
+	return s.d.Repository.ReportedVoiceRoomsTx(ctx, tx, roomIDs)
+}
+
+// HeldAccountIDsTx is HeldAccountIDs inside tx.
+func (s *Service) HeldAccountIDsTx(ctx context.Context, tx uow.Tx) ([]string, error) {
+	return s.d.Repository.HeldAccountIDsTx(ctx, tx)
 }
 
 // HeldAccountIDs returns the accounts that a hold in effect preserves; the purges of other

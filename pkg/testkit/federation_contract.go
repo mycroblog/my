@@ -1054,3 +1054,11 @@ func fedRecordsOnlyWhatFederates(t *testing.T, e *fedEnv) {
 		t.Errorf("Undo object = %v, want the embedded Announce", inner)
 	}
 }
+
+func (a *fedAccounts) FindByIDTx(ctx context.Context, _ uow.Tx, id string) (appaccount.Actor, error) {
+	return a.FindByID(ctx, id)
+}
+
+func (a *fedAccounts) RemoteInboxTx(ctx context.Context, _ uow.Tx, id string) (appaccount.RemoteInbox, error) {
+	return a.RemoteInbox(ctx, id)
+}

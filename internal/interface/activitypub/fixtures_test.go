@@ -21,6 +21,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/federation"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -244,6 +245,10 @@ func newServer(t *testing.T, accountDomain string) *server {
 
 // serverModes reads the federation mode of a server.
 type serverModes struct{ s *server }
+
+func (m serverModes) FederationModeTx(ctx context.Context, _ uow.Tx) (federation.Mode, error) {
+	return m.FederationMode(ctx)
+}
 
 func (m serverModes) FederationMode(context.Context) (federation.Mode, error) { return m.s.mode, nil }
 

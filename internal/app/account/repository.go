@@ -151,6 +151,8 @@ type Repository interface {
 // ADR-0060). Each one reads as the method of the same name without Tx does.
 type TxReads interface {
 	FindAccountTx(ctx context.Context, tx uow.Tx, id string) (account.Account, error)
+	FindInstanceActorTx(ctx context.Context, tx uow.Tx) (account.Account, error)
+	FindRemoteHeadTx(ctx context.Context, tx uow.Tx, accountID string) (account.RemoteHead, error)
 	FindLocalAccountTx(ctx context.Context, tx uow.Tx, accountID string) (account.LocalAccount, error)
 	FindLocalAccountByUserTx(ctx context.Context, tx uow.Tx, userID string) (account.LocalAccount, error)
 	FindHandleOfTx(ctx context.Context, tx uow.Tx, accountID string) (account.Handle, error)

@@ -42,6 +42,8 @@ type LoginProviderRepository interface {
 	FindLoginProvider(ctx context.Context, id string) (identity.LoginProvider, error)
 	// ListLoginProviders returns the providers that are not deleted, newest first.
 	ListLoginProviders(ctx context.Context) ([]identity.LoginProvider, error)
+	// ListLoginProvidersTx is ListLoginProviders inside tx.
+	ListLoginProvidersTx(ctx context.Context, tx uow.Tx) ([]identity.LoginProvider, error)
 	// FindLoginProviderSecret returns the current secret of a provider that is not deleted;
 	// ErrNotFound otherwise.
 	FindLoginProviderSecret(ctx context.Context, providerID string) (identity.LoginProviderSecret, error)

@@ -27,6 +27,8 @@ type MoveRepository interface {
 	LatestMove(ctx context.Context, tx uow.Tx, accountID string) (account.Move, error)
 	// FindMove returns a move by ID.
 	FindMove(ctx context.Context, id string) (account.Move, error)
+	// FindMoveTx is FindMove inside tx.
+	FindMoveTx(ctx context.Context, tx uow.Tx, id string) (account.Move, error)
 	// UpsertMoveState and DeleteAllMoveStates write account_move_states, for this module's
 	// projector and rebuild only.
 	UpsertMoveState(ctx context.Context, tx uow.Tx, s account.MoveState) error
@@ -239,7 +241,7 @@ func (s *Service) CancelMove(ctx context.Context, accountID string) error {
 		if !a.IsLocal() {
 			return fmt.Errorf("account %s: %w", accountID, ErrNotLocal)
 		}
-		m, err := repo.FindMove(ctx, st.MoveID)
+		m, err := repo.FindMoveTx(ctx, tx, st.MoveID)
 		if err != nil {
 			return err
 		}

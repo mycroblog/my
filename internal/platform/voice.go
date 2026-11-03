@@ -17,6 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/app/uow"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -239,6 +240,14 @@ func (r voiceRetention) ParticipantRetention(ctx context.Context) (time.Duration
 
 func (r voiceRetention) ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map[string]bool, error) {
 	return r.a.Moderation.ReportedVoiceRooms(ctx, roomIDs)
+}
+
+func (r voiceRetention) ReportedVoiceRoomsTx(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]bool, error) {
+	return r.a.Moderation.ReportedVoiceRoomsTx(ctx, tx, roomIDs)
+}
+
+func (r voiceRetention) HeldAccountIDsTx(ctx context.Context, tx uow.Tx) ([]string, error) {
+	return r.a.Moderation.HeldAccountIDsTx(ctx, tx)
 }
 
 func (r voiceRetention) HeldAccountIDs(ctx context.Context) ([]string, error) {

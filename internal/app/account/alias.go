@@ -31,6 +31,8 @@ type AliasRepository interface {
 	ListAliases(ctx context.Context, accountID string) ([]account.Alias, error)
 	// HasAlias reports whether an account has the alias uri.
 	HasAlias(ctx context.Context, accountID, uri string) (bool, error)
+	// HasAliasTx is HasAlias inside tx.
+	HasAliasTx(ctx context.Context, tx uow.Tx, accountID, uri string) (bool, error)
 }
 
 // EventAliasesChanged is emitted when an alias is added or removed.
@@ -71,7 +73,7 @@ func (s *Service) AddAlias(ctx context.Context, accountID string, alias Actor) (
 			return err
 		}
 		if n >= account.MaxAliases {
-			if ok, err := repo.HasAlias(ctx, accountID, a.URI); err != nil || ok {
+			if ok, err := repo.HasAliasTx(ctx, tx, accountID, a.URI); err != nil || ok {
 				return err
 			}
 			return account.ErrTooManyAliases

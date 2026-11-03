@@ -39,6 +39,8 @@ type Repository interface {
 
 	// ListCurrentSettings returns the current value of every key that has been set, by key.
 	ListCurrentSettings(ctx context.Context) ([]instance.CurrentSetting, error)
+	// ListCurrentSettingsTx is ListCurrentSettings inside tx.
+	ListCurrentSettingsTx(ctx context.Context, tx uow.Tx) ([]instance.CurrentSetting, error)
 	// ListSettingHistory returns the revisions of key, newest first, at most limit of them.
 	ListSettingHistory(ctx context.Context, key instance.SettingKey, limit int) ([]instance.SettingRevision, error)
 	// IsSettingValueUsed reports whether any revision of key, current or not, has value.

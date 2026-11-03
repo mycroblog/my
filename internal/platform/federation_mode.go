@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/mycroblog/my/internal/app/federation"
+	"github.com/mycroblog/my/internal/app/uow"
 	domainfederation "github.com/mycroblog/my/internal/domain/federation"
 	domaininstance "github.com/mycroblog/my/internal/domain/instance"
 )
@@ -30,6 +31,18 @@ func (m federationModes) FederationMode(ctx context.Context) (domainfederation.M
 	return settingModes(m).FederationMode(ctx)
 }
 
+// FederationModeTx implements federation.ModeSettings.
+func (m federationModes) FederationModeTx(ctx context.Context, tx uow.Tx) (domainfederation.Mode, error) {
+	c, err := m.a.Instance.ClosureTx(ctx, tx)
+	if err != nil {
+		return "", err
+	}
+	if !domaininstance.ClosureAllows(c.CurrentState(), domaininstance.ClosureFederate) {
+		return domainfederation.ModeOff, nil
+	}
+	return settingModes(m).FederationModeTx(ctx, tx)
+}
+
 // settingModes reads the instance setting federation_mode as it is, for the ActivityPub handler,
 // which answers a closed server's requests by the closure before the mode.
 type settingModes struct{ a *App }
@@ -37,6 +50,12 @@ type settingModes struct{ a *App }
 // FederationMode implements federation.ModeSettings.
 func (m settingModes) FederationMode(ctx context.Context) (domainfederation.Mode, error) {
 	v, err := m.a.Instance.FederationMode(ctx)
+	return domainfederation.Mode(v), err
+}
+
+// FederationModeTx implements federation.ModeSettings.
+func (m settingModes) FederationModeTx(ctx context.Context, tx uow.Tx) (domainfederation.Mode, error) {
+	v, err := m.a.Instance.FederationModeTx(ctx, tx)
 	return domainfederation.Mode(v), err
 }
 

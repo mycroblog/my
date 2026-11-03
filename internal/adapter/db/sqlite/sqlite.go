@@ -151,6 +151,7 @@ func (d *DB) Tx(ctx context.Context, fn func(tx uow.Tx) error) error {
 func (d *DB) attempt(ctx context.Context, fn func(tx uow.Tx) error) (err error) {
 	sctx, span := dbtrace.StartTx(ctx, d.tracer, dbtrace.SystemSQLite)
 	defer func() { dbtrace.End(span, err) }()
+	checkSecondConnection(d.db)
 	sqlTx, err := d.db.BeginTx(sctx, nil)
 	if err != nil {
 		return fmt.Errorf("sqlite: begin: %w", err)
@@ -162,7 +163,7 @@ func (d *DB) attempt(ctx context.Context, fn func(tx uow.Tx) error) (err error) 
 		}
 	}()
 	tx := &Tx{tx: sqlTx, owner: d.db, db: dbtrace.Wrap(sqlTx, d.tracer, dbtrace.SystemSQLite), projectors: d.opts.Projectors}
-	if err := fn(tx); err != nil {
+	if err := holdingTransaction(d.db, func() error { return fn(tx) }); err != nil {
 		return err
 	}
 	// A failed COMMIT (SQLITE_BUSY under the rollback journal) leaves SQLite inside the

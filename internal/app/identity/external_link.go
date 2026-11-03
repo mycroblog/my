@@ -220,7 +220,7 @@ func (s *Service) signInLinks(ctx context.Context, tx uow.Tx, userID string) ([]
 	if err != nil || len(links) == 0 {
 		return nil, err
 	}
-	ps, err := s.d.Repository.ListLoginProviders(ctx)
+	ps, err := s.d.Repository.ListLoginProvidersTx(ctx, tx)
 	if err != nil {
 		return nil, err
 	}

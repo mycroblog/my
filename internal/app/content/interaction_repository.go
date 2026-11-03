@@ -146,6 +146,8 @@ type InteractionRepository interface {
 	FindBoost(ctx context.Context, id string) (content.Boost, error)
 	FindBoostByURI(ctx context.Context, uri string) (content.Boost, error)
 	FindBoostRetraction(ctx context.Context, boostID string) (content.BoostRetraction, error)
+	// FindBoostRetractionTx is FindBoostRetraction inside tx.
+	FindBoostRetractionTx(ctx context.Context, tx uow.Tx, boostID string) (content.BoostRetraction, error)
 	FindBoostEdge(ctx context.Context, boosterAccountID, statusID string) (content.BoostEdge, error)
 	FindFavourite(ctx context.Context, accountID, statusID string) (content.Favourite, error)
 	// FindFavouriteByURI returns the favourite whose Like is uri.

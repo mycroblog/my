@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
@@ -20,6 +21,8 @@ var ErrFederationRestricted = errors.New("federation: the federation mode does n
 // federation.Allows about the flow it handles.
 type ModeSettings interface {
 	FederationMode(ctx context.Context) (federation.Mode, error)
+	// FederationModeTx is FederationMode inside tx.
+	FederationModeTx(ctx context.Context, tx uow.Tx) (federation.Mode, error)
 }
 
 // FixedMode is the ModeSettings of one mode, whatever the settings say.
@@ -27,6 +30,11 @@ type FixedMode federation.Mode
 
 // FederationMode implements ModeSettings.
 func (m FixedMode) FederationMode(context.Context) (federation.Mode, error) {
+	return federation.Mode(m), nil
+}
+
+// FederationModeTx implements ModeSettings.
+func (m FixedMode) FederationModeTx(context.Context, uow.Tx) (federation.Mode, error) {
 	return federation.Mode(m), nil
 }
 
@@ -47,6 +55,18 @@ func modeAllows(ctx context.Context, s ModeSettings, flow federation.Flow) (bool
 	m, err := currentMode(ctx, s)
 	if err != nil {
 		return false, err
+	}
+	return federation.Allows(m, flow), nil
+}
+
+// modeAllowsTx is modeAllows inside tx.
+func modeAllowsTx(ctx context.Context, tx uow.Tx, s ModeSettings, flow federation.Flow) (bool, error) {
+	if s == nil {
+		return federation.Allows(federation.DefaultMode, flow), nil
+	}
+	m, err := s.FederationModeTx(ctx, tx)
+	if err != nil {
+		return false, fmt.Errorf("read federation mode: %w", err)
 	}
 	return federation.Allows(m, flow), nil
 }
