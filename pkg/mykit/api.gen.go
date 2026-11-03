@@ -342,6 +342,7 @@ const (
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionInstanceMarkedAvailable         AdminAuditAction = "instance_marked_available"
 	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
 	AdminAuditActionLinkCardDomainFetchStopped      AdminAuditAction = "link_card_domain_fetch_stopped"
@@ -473,6 +474,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
+		return true
+	case AdminAuditActionInstanceMarkedAvailable:
 		return true
 	case AdminAuditActionInviteCreated:
 		return true
@@ -1061,6 +1064,39 @@ func (e AdminSignupBlockState) Valid() bool {
 	case AdminSignupBlockStateExpired:
 		return true
 	case AdminSignupBlockStateLifted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminVoiceRoomParticipationLeaveReason.
+const (
+	AdminVoiceRoomParticipationLeaveReasonBlocked      AdminVoiceRoomParticipationLeaveReason = "blocked"
+	AdminVoiceRoomParticipationLeaveReasonDisconnected AdminVoiceRoomParticipationLeaveReason = "disconnected"
+	AdminVoiceRoomParticipationLeaveReasonLeft         AdminVoiceRoomParticipationLeaveReason = "left"
+	AdminVoiceRoomParticipationLeaveReasonMoved        AdminVoiceRoomParticipationLeaveReason = "moved"
+	AdminVoiceRoomParticipationLeaveReasonRemoved      AdminVoiceRoomParticipationLeaveReason = "removed"
+	AdminVoiceRoomParticipationLeaveReasonRoomEnded    AdminVoiceRoomParticipationLeaveReason = "room_ended"
+	AdminVoiceRoomParticipationLeaveReasonSuspended    AdminVoiceRoomParticipationLeaveReason = "suspended"
+)
+
+// Valid indicates whether the value is a known member of the AdminVoiceRoomParticipationLeaveReason enum.
+func (e AdminVoiceRoomParticipationLeaveReason) Valid() bool {
+	switch e {
+	case AdminVoiceRoomParticipationLeaveReasonBlocked:
+		return true
+	case AdminVoiceRoomParticipationLeaveReasonDisconnected:
+		return true
+	case AdminVoiceRoomParticipationLeaveReasonLeft:
+		return true
+	case AdminVoiceRoomParticipationLeaveReasonMoved:
+		return true
+	case AdminVoiceRoomParticipationLeaveReasonRemoved:
+		return true
+	case AdminVoiceRoomParticipationLeaveReasonRoomEnded:
+		return true
+	case AdminVoiceRoomParticipationLeaveReasonSuspended:
 		return true
 	default:
 		return false
@@ -1991,6 +2027,27 @@ func (e ErrorGroupKind) Valid() bool {
 	case ErrorGroupKindError:
 		return true
 	case ErrorGroupKindPanic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ErrorGroupSampleRole.
+const (
+	ErrorGroupSampleRoleAll    ErrorGroupSampleRole = "all"
+	ErrorGroupSampleRoleWeb    ErrorGroupSampleRole = "web"
+	ErrorGroupSampleRoleWorker ErrorGroupSampleRole = "worker"
+)
+
+// Valid indicates whether the value is a known member of the ErrorGroupSampleRole enum.
+func (e ErrorGroupSampleRole) Valid() bool {
+	switch e {
+	case ErrorGroupSampleRoleAll:
+		return true
+	case ErrorGroupSampleRoleWeb:
+		return true
+	case ErrorGroupSampleRoleWorker:
 		return true
 	default:
 		return false
@@ -3857,6 +3914,60 @@ func (e Visibility) Valid() bool {
 	}
 }
 
+// Defines values for VoiceEndReason.
+const (
+	VoiceEndReasonDisabled         VoiceEndReason = "disabled"
+	VoiceEndReasonEmpty            VoiceEndReason = "empty"
+	VoiceEndReasonHost             VoiceEndReason = "host"
+	VoiceEndReasonHostDisconnected VoiceEndReason = "host_disconnected"
+	VoiceEndReasonHostIneligible   VoiceEndReason = "host_ineligible"
+	VoiceEndReasonModerator        VoiceEndReason = "moderator"
+	VoiceEndReasonTimeLimit        VoiceEndReason = "time_limit"
+)
+
+// Valid indicates whether the value is a known member of the VoiceEndReason enum.
+func (e VoiceEndReason) Valid() bool {
+	switch e {
+	case VoiceEndReasonDisabled:
+		return true
+	case VoiceEndReasonEmpty:
+		return true
+	case VoiceEndReasonHost:
+		return true
+	case VoiceEndReasonHostDisconnected:
+		return true
+	case VoiceEndReasonHostIneligible:
+		return true
+	case VoiceEndReasonModerator:
+		return true
+	case VoiceEndReasonTimeLimit:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceGrantKind.
+const (
+	VoiceGrantKindLivekit VoiceGrantKind = "livekit"
+	VoiceGrantKindP2p     VoiceGrantKind = "p2p"
+	VoiceGrantKindSora    VoiceGrantKind = "sora"
+)
+
+// Valid indicates whether the value is a known member of the VoiceGrantKind enum.
+func (e VoiceGrantKind) Valid() bool {
+	switch e {
+	case VoiceGrantKindLivekit:
+		return true
+	case VoiceGrantKindP2p:
+		return true
+	case VoiceGrantKindSora:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for VoiceRole.
 const (
 	VoiceRoleListener VoiceRole = "listener"
@@ -3977,6 +4088,63 @@ func (e VoiceSignalKind) Valid() bool {
 	case VoiceSignalKindOffer:
 		return true
 	case VoiceSignalKindRestart:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VoiceStreamEndReason.
+const (
+	VoiceStreamEndReasonBlocked          VoiceStreamEndReason = "blocked"
+	VoiceStreamEndReasonDisabled         VoiceStreamEndReason = "disabled"
+	VoiceStreamEndReasonDisconnected     VoiceStreamEndReason = "disconnected"
+	VoiceStreamEndReasonEmpty            VoiceStreamEndReason = "empty"
+	VoiceStreamEndReasonHost             VoiceStreamEndReason = "host"
+	VoiceStreamEndReasonHostDisconnected VoiceStreamEndReason = "host_disconnected"
+	VoiceStreamEndReasonHostIneligible   VoiceStreamEndReason = "host_ineligible"
+	VoiceStreamEndReasonLeft             VoiceStreamEndReason = "left"
+	VoiceStreamEndReasonModerator        VoiceStreamEndReason = "moderator"
+	VoiceStreamEndReasonMoved            VoiceStreamEndReason = "moved"
+	VoiceStreamEndReasonRemoved          VoiceStreamEndReason = "removed"
+	VoiceStreamEndReasonReplaced         VoiceStreamEndReason = "replaced"
+	VoiceStreamEndReasonRoomEnded        VoiceStreamEndReason = "room_ended"
+	VoiceStreamEndReasonSuspended        VoiceStreamEndReason = "suspended"
+	VoiceStreamEndReasonTimeLimit        VoiceStreamEndReason = "time_limit"
+)
+
+// Valid indicates whether the value is a known member of the VoiceStreamEndReason enum.
+func (e VoiceStreamEndReason) Valid() bool {
+	switch e {
+	case VoiceStreamEndReasonBlocked:
+		return true
+	case VoiceStreamEndReasonDisabled:
+		return true
+	case VoiceStreamEndReasonDisconnected:
+		return true
+	case VoiceStreamEndReasonEmpty:
+		return true
+	case VoiceStreamEndReasonHost:
+		return true
+	case VoiceStreamEndReasonHostDisconnected:
+		return true
+	case VoiceStreamEndReasonHostIneligible:
+		return true
+	case VoiceStreamEndReasonLeft:
+		return true
+	case VoiceStreamEndReasonModerator:
+		return true
+	case VoiceStreamEndReasonMoved:
+		return true
+	case VoiceStreamEndReasonRemoved:
+		return true
+	case VoiceStreamEndReasonReplaced:
+		return true
+	case VoiceStreamEndReasonRoomEnded:
+		return true
+	case VoiceStreamEndReasonSuspended:
+		return true
+	case VoiceStreamEndReasonTimeLimit:
 		return true
 	default:
 		return false
@@ -4534,8 +4702,9 @@ type AdminAccountDetail struct {
 	// `approved`. Omitted for a remote account.
 	RegistrationState *AdminAccountRegistrationState `json:"registration_state,omitempty"`
 
-	// Reports The newest 20 reports of the account, newest first.
-	Reports []AdminReport `json:"reports"`
+	// Reports The newest 20 reports of the account, newest first; omitted unless the viewer also has
+	// the `manage_reports` permission.
+	Reports *[]AdminReport `json:"reports,omitempty"`
 
 	// Restrictions What the account's own actions take away now (data-model §5.2), in a fixed order.
 	// The domain actions on its domain are listed apart.
@@ -4609,6 +4778,10 @@ type AdminAccountPrivateData struct {
 
 // AdminAccountRegistration The registration application of a local account.
 type AdminAccountRegistration struct {
+	// DecisionNote The moderators' note on the decision, as plain text; omitted while the registration is
+	// pending and when the decision has no note.
+	DecisionNote *string `json:"decision_note,omitempty"`
+
 	// Invite The invite that a local account signed up with, and who created it, which invited the user.
 	Invite *AdminAccountInvite `json:"invite,omitempty"`
 
@@ -4781,7 +4954,8 @@ type AdminAppealPage struct {
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 // suppression of the primary email address of the account's user), `account_moved` (a limited
 // local account moved to another local account, which does not inherit the limit). On a `domain`:
-// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+// cleared the failures of the server). On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 // `user` (a registration):
 // `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -4855,7 +5029,8 @@ type AdminAuditEntry struct {
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 	// suppression of the primary email address of the account's user), `account_moved` (a limited
 	// local account moved to another local account, which does not inherit the limit). On a `domain`:
-	// `domain_action_issued`, `domain_action_lifted`. On a `report`: `report_assigned`,
+	// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
+	// cleared the failures of the server). On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
 	// `user` (a registration):
 	// `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
@@ -4938,8 +5113,9 @@ type AdminAuditEntry struct {
 	SourceEventId *string `json:"source_event_id,omitempty"`
 
 	// TargetExists Whether the target is still there to look at. It is `false` for an account, a report,
-	// an appeal, or a sign-up block that is gone (erased past its retention), and for a
-	// role, a custom emoji, a webhook, or a relay that was deleted, which only `target_label`
+	// an appeal, or a sign-up block that is gone (erased past its retention), for a role, a
+	// login provider, a custom emoji, a custom emoji request, a webhook, or a relay that was
+	// deleted, and for a link card domain whose rule was removed, which only `target_label`
 	// names now. It is `true` for the other kinds of targets, which are never removed.
 	TargetExists bool `json:"target_exists"`
 
@@ -5658,11 +5834,16 @@ type AdminRegistration struct {
 	// AccountId The user's local account; omitted when it is gone.
 	AccountId *Id `json:"account_id,omitempty"`
 
-	// Email The user's primary email address; empty when there is none.
-	Email string `json:"email"`
+	// DecisionNote The moderators' note on the decision, as plain text; omitted while the registration is
+	// pending and when the decision has no note.
+	DecisionNote *string `json:"decision_note,omitempty"`
 
-	// EmailVerified Whether the user confirmed the email address.
-	EmailVerified bool `json:"email_verified"`
+	// Email The user's primary email address, shown only while the registration is pending, for its
+	// review; omitted when the user has none and once the registration is decided.
+	Email *string `json:"email,omitempty"`
+
+	// EmailVerified Whether the user confirmed the email address; present together with `email`.
+	EmailVerified *bool `json:"email_verified,omitempty"`
 
 	// InviteId The invite the user signed up with; omitted for none.
 	InviteId *Id `json:"invite_id,omitempty"`
@@ -5961,9 +6142,8 @@ type AdminReportVoiceRoom struct {
 	// EndNote The reason that a moderator gave for ending the room; omitted for none.
 	EndNote *string `json:"end_note,omitempty"`
 
-	// EndReason Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
-	// `moderator`, `time_limit`, `disabled`); omitted while it is open.
-	EndReason *string `json:"end_reason,omitempty"`
+	// EndReason Why the room ended; omitted while it is open.
+	EndReason *VoiceEndReason `json:"end_reason,omitempty"`
 
 	// EndedAt When the room ended; omitted while it is open.
 	EndedAt *time.Time `json:"ended_at,omitempty"`
@@ -6496,11 +6676,15 @@ type AdminVoiceRoomParticipation struct {
 
 	// LeaveReason Why the account left (`left`, `moved`, `disconnected`, `removed`, `blocked`,
 	// `suspended`, `room_ended`); omitted while it takes part.
-	LeaveReason *string `json:"leave_reason,omitempty"`
+	LeaveReason *AdminVoiceRoomParticipationLeaveReason `json:"leave_reason,omitempty"`
 
 	// LeftAt When the account left; omitted while it takes part.
 	LeftAt *time.Time `json:"left_at,omitempty"`
 }
+
+// AdminVoiceRoomParticipationLeaveReason Why the account left (`left`, `moved`, `disconnected`, `removed`, `blocked`,
+// `suspended`, `room_ended`); omitted while it takes part.
+type AdminVoiceRoomParticipationLeaveReason string
 
 // AdminVoiceRoomRevision A revision of the settings of a voice chat room. The name and the description are empty
 // once the account that wrote them is erased.
@@ -8501,8 +8685,8 @@ type ErrorGroupSample struct {
 	// RequestId The request ID of the occurrence; omitted when it had none.
 	RequestId *string `json:"request_id,omitempty"`
 
-	// Role The role of the process that reported it (`all`, `web`, `worker`, or `stream`); the web client reports have the role of the server that received them.
-	Role string `json:"role"`
+	// Role The role of the process that reported it; the web client reports have the role of the server that received them.
+	Role ErrorGroupSampleRole `json:"role"`
 
 	// Stack The stack, in the form of the runtime that reported it, without the arguments of the frames.
 	Stack string `json:"stack"`
@@ -8516,6 +8700,9 @@ type ErrorGroupSample struct {
 	// Version The version of the server of the occurrence.
 	Version string `json:"version"`
 }
+
+// ErrorGroupSampleRole The role of the process that reported it; the web client reports have the role of the server that received them.
+type ErrorGroupSampleRole string
 
 // ErrorGroupSource What reported the errors of a group, the server or the web client.
 type ErrorGroupSource string
@@ -11257,7 +11444,7 @@ type RecoveryCodes struct {
 
 // RegistrationDecisionRequest A moderator's decision on a registration.
 type RegistrationDecisionRequest struct {
-	// Note A note for the moderators, as plain text; omitted or empty for none.
+	// Note A note for the moderators, as plain text, which the registration shows as `decision_note`; omitted or empty for none.
 	Note *string `json:"note,omitempty"`
 }
 
@@ -12570,6 +12757,12 @@ type UpdateWebhookRequest struct {
 // accounts.
 type Visibility string
 
+// VoiceEndReason Why a voice chat room ended: `host` the host ended it, `empty` nobody was left in it,
+// `host_disconnected` the host lost the connection and nobody took over, `host_ineligible` the
+// host may no longer host, `moderator` a moderator ended it, `time_limit` it reached the limit
+// of its duration, and `disabled` the voice chat was turned off.
+type VoiceEndReason string
+
 // VoiceGrant What the client of a session needs to connect to the audio of a room. `kind` is the method
 // of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
 // `expires_at`.
@@ -12578,7 +12771,7 @@ type VoiceGrant struct {
 
 	// IceServers The STUN and TURN servers of the connections.
 	IceServers []VoiceIceServer `json:"ice_servers"`
-	Kind       string           `json:"kind"`
+	Kind       VoiceGrantKind   `json:"kind"`
 
 	// Options The options of the method for the client.
 	Options map[string]string `json:"options"`
@@ -12592,6 +12785,9 @@ type VoiceGrant struct {
 	// Url The endpoint of the media server; omitted for `p2p`.
 	Url *string `json:"url,omitempty"`
 }
+
+// VoiceGrantKind defines model for VoiceGrant.Kind.
+type VoiceGrantKind string
 
 // VoiceHostChoice The participant who becomes the host.
 type VoiceHostChoice struct {
@@ -12697,9 +12893,8 @@ type VoiceRoomEntryRole string
 
 // VoiceRoomHistoryEntry A voice chat room that the user hosted, as its settings stand last.
 type VoiceRoomHistoryEntry struct {
-	// EndReason Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
-	// `moderator`, `time_limit`, `disabled`); omitted while it is open.
-	EndReason *string `json:"end_reason,omitempty"`
+	// EndReason Why the room ended; omitted while it is open.
+	EndReason *VoiceEndReason `json:"end_reason,omitempty"`
 
 	// EndedAt When the room ended; omitted while it is open.
 	EndedAt *time.Time `json:"ended_at,omitempty"`
@@ -12843,21 +13038,18 @@ type VoiceRoomSettings struct {
 	// Name 1 to 100 characters on one line.
 	Name string `json:"name"`
 
-	// Post The post that the host writes when opening a voice chat room. The link of the room is
-	// appended to the text on a line of its own. The post is the host's own: `local` for a room of
+	// Post The post that the host writes when opening a voice chat room. Asking for one needs the
+	// `write:statuses` scope besides `write:voice`, or the request is a 403
+	// `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
 	// the `local` visibility and `private` for a room of the `followers` visibility, federated like
 	// any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
 	// visibility has no start post.
 	Post *VoiceStartPost `json:"post,omitempty"`
 
-	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// Speakers Who may become a speaker without asking; `manual` when omitted.
 	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
 
-	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
-	// invited users always see it, and a block with the host or a co-host always hides it.
+	// Visibility Who sees the room; `local` when omitted.
 	Visibility *VoiceRoomVisibility `json:"visibility,omitempty"`
 }
 
@@ -12958,8 +13150,9 @@ type VoiceSignal struct {
 // VoiceSignalKind The kind of a WebRTC signal.
 type VoiceSignalKind string
 
-// VoiceStartPost The post that the host writes when opening a voice chat room. The link of the room is
-// appended to the text on a line of its own. The post is the host's own: `local` for a room of
+// VoiceStartPost The post that the host writes when opening a voice chat room. Asking for one needs the
+// `write:statuses` scope besides `write:voice`, or the request is a 403
+// `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
 // the `local` visibility and `private` for a room of the `followers` visibility, federated like
 // any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
 // visibility has no start post.
@@ -12974,12 +13167,15 @@ type VoiceStartPost struct {
 
 // VoiceStreamEnd The data of the `removed`, `replaced`, and `ended` events of a voice chat room stream, after
 // which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
-// `moved`, `disconnected`, `removed`, `blocked`, `suspended`), the one of `replaced` is
+// `moved`, `disconnected`, `removed`, `blocked`, `suspended`, `room_ended`), the one of `replaced` is
 // `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
 // `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
 type VoiceStreamEnd struct {
-	Reason string `json:"reason"`
+	Reason VoiceStreamEndReason `json:"reason"`
 }
+
+// VoiceStreamEndReason defines model for VoiceStreamEnd.Reason.
+type VoiceStreamEndReason string
 
 // VoiceStreamGrant The data of a `grant` event of a voice chat room stream.
 type VoiceStreamGrant struct {
@@ -16555,9 +16751,10 @@ type ClientInterface interface {
 	//
 	// An account as the moderators see it (FR-714): its state, the restrictions of its own
 	// actions, and, for a local account, its registration, whether its email address is
-	// verified, and its roles, with its newest 20 actions and reports. The email address and
-	// the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-	// a 404. Needs the `manage_accounts` permission.
+	// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+	// `manage_reports` permission, its newest 20 reports. The email address and the IP
+	// addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+	// Needs the `manage_accounts` permission.
 	//
 	// Corresponds with GET /admin/accounts/{id} (the `GetAdminAccount` operationId).
 	GetAdminAccount(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -17731,8 +17928,9 @@ type ClientInterface interface {
 	// MarkInstanceAvailable Mark a remote server available
 	//
 	// Clears the failure days of the server and, when it is unavailable, marks it available
-	// again with the reason `operator`, so that deliveries to it resume. A server that is
-	// already available without failures stays as it is. Needs the `manage_domains`
+	// again with the reason `operator`, so that deliveries to it resume; the operation is
+	// audited as `instance_marked_available`. A server that is already available without
+	// failures stays as it is, and nothing is audited. Needs the `manage_domains`
 	// permission.
 	//
 	// Corresponds with POST /admin/instances/{domain}/mark_available (the `MarkInstanceAvailable` operationId).
@@ -18120,7 +18318,8 @@ type ClientInterface interface {
 	//
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. From the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
@@ -18134,7 +18333,8 @@ type ClientInterface interface {
 	//
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. From the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
@@ -18148,7 +18348,9 @@ type ClientInterface interface {
 	//
 	// Rejects a pending registration, so that its user cannot sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. Needs the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+	// A user without a registration is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type.
@@ -18160,7 +18362,9 @@ type ClientInterface interface {
 	//
 	// Rejects a pending registration, so that its user cannot sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. Needs the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+	// A user without a registration is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type.
@@ -21041,8 +21245,7 @@ type ClientInterface interface {
 	// ListVoiceHistory List the voice chat rooms the user hosted
 	//
 	// The rooms that the user hosted at some time, from opening them or from taking them over,
-	// newest first, with when each opened and ended and why it ended. A 404 while the voice chat
-	// is off on the server.
+	// newest first, with when each opened and ended and why it ended.
 	//
 	// Corresponds with GET /voice/history (the `ListVoiceHistory` operationId).
 	ListVoiceHistory(ctx context.Context, params *ListVoiceHistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21051,7 +21254,7 @@ type ClientInterface interface {
 	//
 	// The open voice chat rooms that the user sees: the rooms where the user follows the host or
 	// a speaker first, then by the most participants. With `tag`, only the rooms with that
-	// hashtag. A 404 while the voice chat is off on the server.
+	// hashtag.
 	//
 	// Corresponds with GET /voice/rooms (the `ListVoiceRooms` operationId).
 	ListVoiceRooms(ctx context.Context, params *ListVoiceRoomsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21064,7 +21267,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
 	// while as many rooms are open as the server allows, and a 409
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
-	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	// leaves the room the user was in. Invalid settings are a 422.
 	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
 	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
 	// status for a post that cannot be posted. The local followers of the user who see the room
@@ -21083,7 +21286,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
 	// while as many rooms are open as the server allows, and a 409
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
-	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	// leaves the room the user was in. Invalid settings are a 422.
 	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
 	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
 	// status for a post that cannot be posted. The local followers of the user who see the room
@@ -21097,7 +21300,7 @@ type ClientInterface interface {
 	// EndVoiceRoom End a voice chat room
 	//
 	// Ends a room that the user hosts, for every participant. A 403
-	// `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+	// `/api/v1/problems/voice-not-host` for a user who is not the host.
 	//
 	// Corresponds with DELETE /voice/rooms/{id} (the `EndVoiceRoom` operationId).
 	EndVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21105,7 +21308,7 @@ type ClientInterface interface {
 	// GetVoiceRoom Get a voice chat room
 	//
 	// An open room that the user sees. A room that ended or that the user does not see is a
-	// 404. A 404 while the voice chat is off on the server.
+	// 404.
 	//
 	// Corresponds with GET /voice/rooms/{id} (the `GetVoiceRoom` operationId).
 	GetVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21114,7 +21317,7 @@ type ClientInterface interface {
 	//
 	// Changes the settings of a room that the user hosts. The participants stay whatever the new
 	// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
-	// for invalid settings. A 404 while the voice chat is off on the server.
+	// for invalid settings.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21125,7 +21328,7 @@ type ClientInterface interface {
 	//
 	// Changes the settings of a room that the user hosts. The participants stay whatever the new
 	// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
-	// for invalid settings. A 404 while the voice chat is off on the server.
+	// for invalid settings.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21138,7 +21341,7 @@ type ClientInterface interface {
 	// servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
 	// servers on its connections, and restarts ICE. A session that is not the user's current
 	// session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
-	// server cannot give a grant now. A 404 while the voice chat is off on the server.
+	// server cannot give a grant now.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21151,7 +21354,7 @@ type ClientInterface interface {
 	// servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
 	// servers on its connections, and restarts ICE. A session that is not the user's current
 	// session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
-	// server cannot give a grant now. A 404 while the voice chat is off on the server.
+	// server cannot give a grant now.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21160,7 +21363,7 @@ type ClientInterface interface {
 
 	// LowerVoiceHand Lower a hand in a voice chat room
 	//
-	// Withdraws the user's request to speak. A hand that is down stays down. A 404 while the voice chat is off on the server.
+	// Withdraws the user's request to speak. A hand that is down stays down.
 	//
 	// Corresponds with DELETE /voice/rooms/{id}/hand (the `LowerVoiceHand` operationId).
 	LowerVoiceHand(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21168,7 +21371,7 @@ type ClientInterface interface {
 	// RaiseVoiceHand Raise a hand in a voice chat room
 	//
 	// Asks the host and the co-hosts for a permission to speak. A raised hand stays up, and a
-	// speaker raises none. A 404 while the voice chat is off on the server.
+	// speaker raises none.
 	//
 	// Corresponds with POST /voice/rooms/{id}/hand (the `RaiseVoiceHand` operationId).
 	RaiseVoiceHand(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21179,7 +21382,7 @@ type ClientInterface interface {
 	// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
 	// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
 	// session that is not the user's current session in the room is a 404: the client joins
-	// again. A 404 while the voice chat is off on the server.
+	// again.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21192,7 +21395,7 @@ type ClientInterface interface {
 	// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
 	// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
 	// session that is not the user's current session in the room is a 404: the client joins
-	// again. A 404 while the voice chat is off on the server.
+	// again.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21204,7 +21407,7 @@ type ClientInterface interface {
 	// Makes a participant who may host rooms the host of a room that the user hosts; the user
 	// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
 	// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
-	// over. A 404 while the voice chat is off on the server.
+	// over.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21216,7 +21419,7 @@ type ClientInterface interface {
 	// Makes a participant who may host rooms the host of a room that the user hosts; the user
 	// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
 	// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
-	// over. A 404 while the voice chat is off on the server.
+	// over.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21226,7 +21429,7 @@ type ClientInterface interface {
 	// ListVoiceInvitations List the invitations of a voice chat room
 	//
 	// Lists the invitations of the room that were not revoked, oldest first, for the host and
-	// the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+	// the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 	//
 	// Corresponds with GET /voice/rooms/{id}/invitations (the `ListVoiceInvitations` operationId).
 	ListVoiceInvitations(ctx context.Context, id VoiceRoomId, params *ListVoiceInvitationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21239,7 +21442,7 @@ type ClientInterface interface {
 	// also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
 	// a local, active user, is the host or the user, is in a block relation with the host or a
 	// co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
-	// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+	// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21254,7 +21457,7 @@ type ClientInterface interface {
 	// also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
 	// a local, active user, is the host or the user, is in a block relation with the host or a
 	// co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
-	// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+	// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21266,7 +21469,7 @@ type ClientInterface interface {
 	// Revokes the invitation of a user, by the host or a co-host: the user no longer sees the
 	// room unless in it, and the permission to speak of an invitation as a speaker goes too; a
 	// participant stays in the room as a speaker or a listener. A 404 for a user without an
-	// invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+	// invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 	//
 	// Corresponds with DELETE /voice/rooms/{id}/invitations/{account_id} (the `RevokeVoiceInvitation` operationId).
 	RevokeVoiceInvitation(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21277,7 +21480,7 @@ type ClientInterface interface {
 	// streams; the server records nothing. Only a speaker turns it on (403
 	// `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
 	// turning it on lifts the mute. A session that is not the user's current session in the room
-	// is a 404. A 404 while the voice chat is off on the server.
+	// is a 404.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21290,7 +21493,7 @@ type ClientInterface interface {
 	// streams; the server records nothing. Only a speaker turns it on (403
 	// `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
 	// turning it on lifts the mute. A session that is not the user's current session in the room
-	// is a 404. A 404 while the voice chat is off on the server.
+	// is a 404.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21301,7 +21504,7 @@ type ClientInterface interface {
 	//
 	// Takes a participant out of the room, by the host or a co-host, and bans the account from
 	// the room: it neither sees nor joins the room again. The host and the co-hosts do not remove
-	// each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host. A 404 while the voice chat is off on the server.
+	// each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host.
 	//
 	// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id} (the `RemoveVoiceParticipant` operationId).
 	RemoveVoiceParticipant(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21309,7 +21512,7 @@ type ClientInterface interface {
 	// RemoveVoiceCohost Stop a participant of a voice chat room being a co-host
 	//
 	// Makes a co-host a participant without the role of a co-host, by the host. A 403
-	// `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+	// `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 	//
 	// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/cohost (the `RemoveVoiceCohost` operationId).
 	RemoveVoiceCohost(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21321,32 +21524,15 @@ type ClientInterface interface {
 	// way, with the new co-host leave the room. A co-host stays a co-host while the participation
 	// lasts: one who leaves and joins again is a participant until the host makes them a co-host
 	// again. A 403 `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or one
-	// in a block relation with the host. A 404 while the voice chat is off on the server.
+	// in a block relation with the host.
 	//
 	// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/cohost (the `AssignVoiceCohost` operationId).
 	AssignVoiceCohost(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
-	//
-	// Makes a speaker a listener again, by the host or a co-host, and takes back the
-	// participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
-	//
-	// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/grant (the `RevokeVoiceSpeaking` operationId).
-	RevokeVoiceSpeaking(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GrantVoiceSpeaking Let a participant of a voice chat room speak
-	//
-	// Gives a participant a permission to speak, by the host or a co-host, with or without a
-	// raised hand: a raised hand is granted, and the participant then becomes a speaker. The
-	// permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
-	//
-	// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/grant (the `GrantVoiceSpeaking` operationId).
-	GrantVoiceSpeaking(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// DismissVoiceHand Dismiss the raised hand of a participant of a voice chat room
 	//
 	// Turns down a participant's request to speak, by the host or a co-host. A hand that is down
-	// stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+	// stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 	//
 	// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/hand (the `DismissVoiceHand` operationId).
 	DismissVoiceHand(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21354,10 +21540,27 @@ type ClientInterface interface {
 	// MuteVoiceParticipant Mute a participant of a voice chat room
 	//
 	// Turns the microphone of a participant off, by the host or a co-host. The participant may
-	// turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+	// turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 	//
 	// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/mute (the `MuteVoiceParticipant` operationId).
 	MuteVoiceParticipant(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
+	//
+	// Makes a speaker a listener again, by the host or a co-host, and takes back the
+	// participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
+	//
+	// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/speaking_permission (the `RevokeVoiceSpeaking` operationId).
+	RevokeVoiceSpeaking(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GrantVoiceSpeaking Let a participant of a voice chat room speak
+	//
+	// Gives a participant a permission to speak, by the host or a co-host, with or without a
+	// raised hand: a raised hand is granted, and the participant then becomes a speaker. The
+	// permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
+	//
+	// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/speaking_permission (the `GrantVoiceSpeaking` operationId).
+	GrantVoiceSpeaking(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// LeaveVoiceRoom Leave a voice chat room
 	//
@@ -21365,7 +21568,7 @@ type ClientInterface interface {
 	// next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
 	// 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
 	// `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-	// ends when nobody is left in it. A 404 while the voice chat is off on the server.
+	// ends when nobody is left in it.
 	//
 	// Corresponds with DELETE /voice/rooms/{id}/participation (the `LeaveVoiceRoom` operationId).
 	LeaveVoiceRoom(ctx context.Context, id VoiceRoomId, params *LeaveVoiceRoomParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21377,7 +21580,7 @@ type ClientInterface interface {
 	// session is disconnected. Joining leaves the room the user was in; the host of an open room
 	// leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
 	// `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
-	// allows. A 404 while the voice chat is off on the server.
+	// allows.
 	//
 	// Corresponds with POST /voice/rooms/{id}/participation (the `JoinVoiceRoom` operationId).
 	JoinVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21413,7 +21616,7 @@ type ClientInterface interface {
 	// BecomeVoiceListener Go back to listening in a voice chat room
 	//
 	// Makes the user, a speaker in the room, a listener again. A permission to speak stays, so
-	// the user may speak again. A listener stays one. A 404 while the voice chat is off on the server.
+	// the user may speak again. A listener stays one.
 	//
 	// Corresponds with DELETE /voice/rooms/{id}/speaker (the `BecomeVoiceListener` operationId).
 	BecomeVoiceListener(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21424,7 +21627,7 @@ type ClientInterface interface {
 	// the room's speakers setting covers, and the users with a permission to speak (a granted
 	// raised hand, a grant, or an invitation as a speaker) may; a user whom a moderator limited
 	// needs a permission. A 403 `/api/v1/problems/voice-cannot-speak` for anyone else, who raises a
-	// hand instead. A raised hand goes down. A speaker stays one. A 404 while the voice chat is off on the server.
+	// hand instead. A raised hand goes down. A speaker stays one.
 	//
 	// Corresponds with POST /voice/rooms/{id}/speaker (the `BecomeVoiceSpeaker` operationId).
 	BecomeVoiceSpeaker(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -22511,9 +22714,10 @@ func (c *Client) ListAdminAccounts(ctx context.Context, params *ListAdminAccount
 //
 // An account as the moderators see it (FR-714): its state, the restrictions of its own
 // actions, and, for a local account, its registration, whether its email address is
-// verified, and its roles, with its newest 20 actions and reports. The email address and
-// the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-// a 404. Needs the `manage_accounts` permission.
+// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+// `manage_reports` permission, its newest 20 reports. The email address and the IP
+// addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+// Needs the `manage_accounts` permission.
 //
 // Corresponds with GET /admin/accounts/{id} (the `GetAdminAccount` operationId).
 func (c *Client) GetAdminAccount(ctx context.Context, id AdminAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -24597,8 +24801,9 @@ func (c *Client) ListInstanceAvailabilityEvents(ctx context.Context, domain Inst
 // MarkInstanceAvailable Mark a remote server available
 //
 // Clears the failure days of the server and, when it is unavailable, marks it available
-// again with the reason `operator`, so that deliveries to it resume. A server that is
-// already available without failures stays as it is. Needs the `manage_domains`
+// again with the reason `operator`, so that deliveries to it resume; the operation is
+// audited as `instance_marked_available`. A server that is already available without
+// failures stays as it is, and nothing is audited. Needs the `manage_domains`
 // permission.
 //
 // Corresponds with POST /admin/instances/{domain}/mark_available (the `MarkInstanceAvailable` operationId).
@@ -25336,7 +25541,8 @@ func (c *Client) ListPendingRegistrations(ctx context.Context, params *ListPendi
 //
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. From the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
@@ -25360,7 +25566,8 @@ func (c *Client) ApproveRegistrationWithBody(ctx context.Context, userId Registr
 //
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. From the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
@@ -25384,7 +25591,9 @@ func (c *Client) ApproveRegistration(ctx context.Context, userId RegistrationUse
 //
 // Rejects a pending registration, so that its user cannot sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. Needs the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+// A user without a registration is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type.
@@ -25406,7 +25615,9 @@ func (c *Client) RejectRegistrationWithBody(ctx context.Context, userId Registra
 //
 // Rejects a pending registration, so that its user cannot sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. Needs the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+// A user without a registration is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type.
@@ -30737,8 +30948,7 @@ func (c *Client) SetUpTotp(ctx context.Context, reqEditors ...RequestEditorFn) (
 // ListVoiceHistory List the voice chat rooms the user hosted
 //
 // The rooms that the user hosted at some time, from opening them or from taking them over,
-// newest first, with when each opened and ended and why it ended. A 404 while the voice chat
-// is off on the server.
+// newest first, with when each opened and ended and why it ended.
 //
 // Corresponds with GET /voice/history (the `ListVoiceHistory` operationId).
 func (c *Client) ListVoiceHistory(ctx context.Context, params *ListVoiceHistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30757,7 +30967,7 @@ func (c *Client) ListVoiceHistory(ctx context.Context, params *ListVoiceHistoryP
 //
 // The open voice chat rooms that the user sees: the rooms where the user follows the host or
 // a speaker first, then by the most participants. With `tag`, only the rooms with that
-// hashtag. A 404 while the voice chat is off on the server.
+// hashtag.
 //
 // Corresponds with GET /voice/rooms (the `ListVoiceRooms` operationId).
 func (c *Client) ListVoiceRooms(ctx context.Context, params *ListVoiceRoomsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30780,7 +30990,7 @@ func (c *Client) ListVoiceRooms(ctx context.Context, params *ListVoiceRoomsParam
 // `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
 // while as many rooms are open as the server allows, and a 409
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
-// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+// leaves the room the user was in. Invalid settings are a 422.
 // With `post`, the user's start post, which links the room, is posted with it: a 422 for a
 // room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
 // status for a post that cannot be posted. The local followers of the user who see the room
@@ -30809,7 +31019,7 @@ func (c *Client) OpenVoiceRoomWithBody(ctx context.Context, contentType string, 
 // `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
 // while as many rooms are open as the server allows, and a 409
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
-// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+// leaves the room the user was in. Invalid settings are a 422.
 // With `post`, the user's start post, which links the room, is posted with it: a 422 for a
 // room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
 // status for a post that cannot be posted. The local followers of the user who see the room
@@ -30833,7 +31043,7 @@ func (c *Client) OpenVoiceRoom(ctx context.Context, body OpenVoiceRoomJSONReques
 // EndVoiceRoom End a voice chat room
 //
 // Ends a room that the user hosts, for every participant. A 403
-// `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+// `/api/v1/problems/voice-not-host` for a user who is not the host.
 //
 // Corresponds with DELETE /voice/rooms/{id} (the `EndVoiceRoom` operationId).
 func (c *Client) EndVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30851,7 +31061,7 @@ func (c *Client) EndVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ..
 // GetVoiceRoom Get a voice chat room
 //
 // An open room that the user sees. A room that ended or that the user does not see is a
-// 404. A 404 while the voice chat is off on the server.
+// 404.
 //
 // Corresponds with GET /voice/rooms/{id} (the `GetVoiceRoom` operationId).
 func (c *Client) GetVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30870,7 +31080,7 @@ func (c *Client) GetVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ..
 //
 // Changes the settings of a room that the user hosts. The participants stay whatever the new
 // settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
-// for invalid settings. A 404 while the voice chat is off on the server.
+// for invalid settings.
 //
 // Takes any type of body and a specified content type.
 //
@@ -30891,7 +31101,7 @@ func (c *Client) UpdateVoiceRoomWithBody(ctx context.Context, id VoiceRoomId, co
 //
 // Changes the settings of a room that the user hosts. The participants stay whatever the new
 // settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
-// for invalid settings. A 404 while the voice chat is off on the server.
+// for invalid settings.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -30914,7 +31124,7 @@ func (c *Client) UpdateVoiceRoom(ctx context.Context, id VoiceRoomId, body Updat
 // servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
 // servers on its connections, and restarts ICE. A session that is not the user's current
 // session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
-// server cannot give a grant now. A 404 while the voice chat is off on the server.
+// server cannot give a grant now.
 //
 // Takes any type of body and a specified content type.
 //
@@ -30937,7 +31147,7 @@ func (c *Client) RefreshVoiceGrantWithBody(ctx context.Context, id VoiceRoomId, 
 // servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
 // servers on its connections, and restarts ICE. A session that is not the user's current
 // session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
-// server cannot give a grant now. A 404 while the voice chat is off on the server.
+// server cannot give a grant now.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -30956,7 +31166,7 @@ func (c *Client) RefreshVoiceGrant(ctx context.Context, id VoiceRoomId, body Ref
 
 // LowerVoiceHand Lower a hand in a voice chat room
 //
-// Withdraws the user's request to speak. A hand that is down stays down. A 404 while the voice chat is off on the server.
+// Withdraws the user's request to speak. A hand that is down stays down.
 //
 // Corresponds with DELETE /voice/rooms/{id}/hand (the `LowerVoiceHand` operationId).
 func (c *Client) LowerVoiceHand(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30974,7 +31184,7 @@ func (c *Client) LowerVoiceHand(ctx context.Context, id VoiceRoomId, reqEditors 
 // RaiseVoiceHand Raise a hand in a voice chat room
 //
 // Asks the host and the co-hosts for a permission to speak. A raised hand stays up, and a
-// speaker raises none. A 404 while the voice chat is off on the server.
+// speaker raises none.
 //
 // Corresponds with POST /voice/rooms/{id}/hand (the `RaiseVoiceHand` operationId).
 func (c *Client) RaiseVoiceHand(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30995,7 +31205,7 @@ func (c *Client) RaiseVoiceHand(ctx context.Context, id VoiceRoomId, reqEditors 
 // without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
 // minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
 // session that is not the user's current session in the room is a 404: the client joins
-// again. A 404 while the voice chat is off on the server.
+// again.
 //
 // Takes any type of body and a specified content type.
 //
@@ -31018,7 +31228,7 @@ func (c *Client) SendVoiceHeartbeatWithBody(ctx context.Context, id VoiceRoomId,
 // without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
 // minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
 // session that is not the user's current session in the room is a 404: the client joins
-// again. A 404 while the voice chat is off on the server.
+// again.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -31040,7 +31250,7 @@ func (c *Client) SendVoiceHeartbeat(ctx context.Context, id VoiceRoomId, body Se
 // Makes a participant who may host rooms the host of a room that the user hosts; the user
 // stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
 // and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
-// over. A 404 while the voice chat is off on the server.
+// over.
 //
 // Takes any type of body and a specified content type.
 //
@@ -31062,7 +31272,7 @@ func (c *Client) HandOverVoiceRoomWithBody(ctx context.Context, id VoiceRoomId, 
 // Makes a participant who may host rooms the host of a room that the user hosts; the user
 // stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
 // and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
-// over. A 404 while the voice chat is off on the server.
+// over.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -31082,7 +31292,7 @@ func (c *Client) HandOverVoiceRoom(ctx context.Context, id VoiceRoomId, body Han
 // ListVoiceInvitations List the invitations of a voice chat room
 //
 // Lists the invitations of the room that were not revoked, oldest first, for the host and
-// the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+// the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 //
 // Corresponds with GET /voice/rooms/{id}/invitations (the `ListVoiceInvitations` operationId).
 func (c *Client) ListVoiceInvitations(ctx context.Context, id VoiceRoomId, params *ListVoiceInvitationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31105,7 +31315,7 @@ func (c *Client) ListVoiceInvitations(ctx context.Context, id VoiceRoomId, param
 // also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
 // a local, active user, is the host or the user, is in a block relation with the host or a
 // co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
-// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 //
 // Takes any type of body and a specified content type.
 //
@@ -31130,7 +31340,7 @@ func (c *Client) InviteToVoiceRoomWithBody(ctx context.Context, id VoiceRoomId, 
 // also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
 // a local, active user, is the host or the user, is in a block relation with the host or a
 // co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
-// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -31152,7 +31362,7 @@ func (c *Client) InviteToVoiceRoom(ctx context.Context, id VoiceRoomId, body Inv
 // Revokes the invitation of a user, by the host or a co-host: the user no longer sees the
 // room unless in it, and the permission to speak of an invitation as a speaker goes too; a
 // participant stays in the room as a speaker or a listener. A 404 for a user without an
-// invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+// invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 //
 // Corresponds with DELETE /voice/rooms/{id}/invitations/{account_id} (the `RevokeVoiceInvitation` operationId).
 func (c *Client) RevokeVoiceInvitation(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31173,7 +31383,7 @@ func (c *Client) RevokeVoiceInvitation(ctx context.Context, id VoiceRoomId, acco
 // streams; the server records nothing. Only a speaker turns it on (403
 // `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
 // turning it on lifts the mute. A session that is not the user's current session in the room
-// is a 404. A 404 while the voice chat is off on the server.
+// is a 404.
 //
 // Takes any type of body and a specified content type.
 //
@@ -31196,7 +31406,7 @@ func (c *Client) SetVoiceMicWithBody(ctx context.Context, id VoiceRoomId, conten
 // streams; the server records nothing. Only a speaker turns it on (403
 // `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
 // turning it on lifts the mute. A session that is not the user's current session in the room
-// is a 404. A 404 while the voice chat is off on the server.
+// is a 404.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -31217,7 +31427,7 @@ func (c *Client) SetVoiceMic(ctx context.Context, id VoiceRoomId, body SetVoiceM
 //
 // Takes a participant out of the room, by the host or a co-host, and bans the account from
 // the room: it neither sees nor joins the room again. The host and the co-hosts do not remove
-// each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host. A 404 while the voice chat is off on the server.
+// each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host.
 //
 // Corresponds with DELETE /voice/rooms/{id}/participants/{account_id} (the `RemoveVoiceParticipant` operationId).
 func (c *Client) RemoveVoiceParticipant(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31235,7 +31445,7 @@ func (c *Client) RemoveVoiceParticipant(ctx context.Context, id VoiceRoomId, acc
 // RemoveVoiceCohost Stop a participant of a voice chat room being a co-host
 //
 // Makes a co-host a participant without the role of a co-host, by the host. A 403
-// `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+// `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 //
 // Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/cohost (the `RemoveVoiceCohost` operationId).
 func (c *Client) RemoveVoiceCohost(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31257,7 +31467,7 @@ func (c *Client) RemoveVoiceCohost(ctx context.Context, id VoiceRoomId, accountI
 // way, with the new co-host leave the room. A co-host stays a co-host while the participation
 // lasts: one who leaves and joins again is a participant until the host makes them a co-host
 // again. A 403 `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or one
-// in a block relation with the host. A 404 while the voice chat is off on the server.
+// in a block relation with the host.
 //
 // Corresponds with POST /voice/rooms/{id}/participants/{account_id}/cohost (the `AssignVoiceCohost` operationId).
 func (c *Client) AssignVoiceCohost(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31272,47 +31482,10 @@ func (c *Client) AssignVoiceCohost(ctx context.Context, id VoiceRoomId, accountI
 	return c.Client.Do(req)
 }
 
-// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
-//
-// Makes a speaker a listener again, by the host or a co-host, and takes back the
-// participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
-//
-// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/grant (the `RevokeVoiceSpeaking` operationId).
-func (c *Client) RevokeVoiceSpeaking(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRevokeVoiceSpeakingRequest(c.Server, id, accountId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// GrantVoiceSpeaking Let a participant of a voice chat room speak
-//
-// Gives a participant a permission to speak, by the host or a co-host, with or without a
-// raised hand: a raised hand is granted, and the participant then becomes a speaker. The
-// permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
-//
-// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/grant (the `GrantVoiceSpeaking` operationId).
-func (c *Client) GrantVoiceSpeaking(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGrantVoiceSpeakingRequest(c.Server, id, accountId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 // DismissVoiceHand Dismiss the raised hand of a participant of a voice chat room
 //
 // Turns down a participant's request to speak, by the host or a co-host. A hand that is down
-// stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+// stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 //
 // Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/hand (the `DismissVoiceHand` operationId).
 func (c *Client) DismissVoiceHand(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31330,11 +31503,48 @@ func (c *Client) DismissVoiceHand(ctx context.Context, id VoiceRoomId, accountId
 // MuteVoiceParticipant Mute a participant of a voice chat room
 //
 // Turns the microphone of a participant off, by the host or a co-host. The participant may
-// turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+// turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 //
 // Corresponds with POST /voice/rooms/{id}/participants/{account_id}/mute (the `MuteVoiceParticipant` operationId).
 func (c *Client) MuteVoiceParticipant(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMuteVoiceParticipantRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RevokeVoiceSpeaking Stop a participant of a voice chat room from speaking
+//
+// Makes a speaker a listener again, by the host or a co-host, and takes back the
+// participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
+//
+// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/speaking_permission (the `RevokeVoiceSpeaking` operationId).
+func (c *Client) RevokeVoiceSpeaking(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeVoiceSpeakingRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GrantVoiceSpeaking Let a participant of a voice chat room speak
+//
+// Gives a participant a permission to speak, by the host or a co-host, with or without a
+// raised hand: a raised hand is granted, and the participant then becomes a speaker. The
+// permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
+//
+// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/speaking_permission (the `GrantVoiceSpeaking` operationId).
+func (c *Client) GrantVoiceSpeaking(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGrantVoiceSpeakingRequest(c.Server, id, accountId)
 	if err != nil {
 		return nil, err
 	}
@@ -31351,7 +31561,7 @@ func (c *Client) MuteVoiceParticipant(ctx context.Context, id VoiceRoomId, accou
 // next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
 // 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
 // `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-// ends when nobody is left in it. A 404 while the voice chat is off on the server.
+// ends when nobody is left in it.
 //
 // Corresponds with DELETE /voice/rooms/{id}/participation (the `LeaveVoiceRoom` operationId).
 func (c *Client) LeaveVoiceRoom(ctx context.Context, id VoiceRoomId, params *LeaveVoiceRoomParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31373,7 +31583,7 @@ func (c *Client) LeaveVoiceRoom(ctx context.Context, id VoiceRoomId, params *Lea
 // session is disconnected. Joining leaves the room the user was in; the host of an open room
 // leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
 // `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
-// allows. A 404 while the voice chat is off on the server.
+// allows.
 //
 // Corresponds with POST /voice/rooms/{id}/participation (the `JoinVoiceRoom` operationId).
 func (c *Client) JoinVoiceRoom(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31439,7 +31649,7 @@ func (c *Client) ReactInVoiceRoom(ctx context.Context, id VoiceRoomId, body Reac
 // BecomeVoiceListener Go back to listening in a voice chat room
 //
 // Makes the user, a speaker in the room, a listener again. A permission to speak stays, so
-// the user may speak again. A listener stays one. A 404 while the voice chat is off on the server.
+// the user may speak again. A listener stays one.
 //
 // Corresponds with DELETE /voice/rooms/{id}/speaker (the `BecomeVoiceListener` operationId).
 func (c *Client) BecomeVoiceListener(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -31460,7 +31670,7 @@ func (c *Client) BecomeVoiceListener(ctx context.Context, id VoiceRoomId, reqEdi
 // the room's speakers setting covers, and the users with a permission to speak (a granted
 // raised hand, a grant, or an invitation as a speaker) may; a user whom a moderator limited
 // needs a permission. A 403 `/api/v1/problems/voice-cannot-speak` for anyone else, who raises a
-// hand instead. A raised hand goes down. A speaker stays one. A 404 while the voice chat is off on the server.
+// hand instead. A raised hand goes down. A speaker stays one.
 //
 // Corresponds with POST /voice/rooms/{id}/speaker (the `BecomeVoiceSpeaker` operationId).
 func (c *Client) BecomeVoiceSpeaker(ctx context.Context, id VoiceRoomId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -46403,88 +46613,6 @@ func NewAssignVoiceCohostRequest(server string, id VoiceRoomId, accountId VoiceA
 	return req, nil
 }
 
-// NewRevokeVoiceSpeakingRequest constructs an http.Request for the RevokeVoiceSpeaking method
-func NewRevokeVoiceSpeakingRequest(server string, id VoiceRoomId, accountId VoiceAccountId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/voice/rooms/%s/participants/%s/grant", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGrantVoiceSpeakingRequest constructs an http.Request for the GrantVoiceSpeaking method
-func NewGrantVoiceSpeakingRequest(server string, id VoiceRoomId, accountId VoiceAccountId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/voice/rooms/%s/participants/%s/grant", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewDismissVoiceHandRequest constructs an http.Request for the DismissVoiceHand method
 func NewDismissVoiceHandRequest(server string, id VoiceRoomId, accountId VoiceAccountId) (*http.Request, error) {
 	var err error
@@ -46550,6 +46678,88 @@ func NewMuteVoiceParticipantRequest(server string, id VoiceRoomId, accountId Voi
 	}
 
 	operationPath := fmt.Sprintf("/voice/rooms/%s/participants/%s/mute", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRevokeVoiceSpeakingRequest constructs an http.Request for the RevokeVoiceSpeaking method
+func NewRevokeVoiceSpeakingRequest(server string, id VoiceRoomId, accountId VoiceAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms/%s/participants/%s/speaking_permission", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGrantVoiceSpeakingRequest constructs an http.Request for the GrantVoiceSpeaking method
+func NewGrantVoiceSpeakingRequest(server string, id VoiceRoomId, accountId VoiceAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/voice/rooms/%s/participants/%s/speaking_permission", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -47553,9 +47763,10 @@ type ClientWithResponsesInterface interface {
 	//
 	// An account as the moderators see it (FR-714): its state, the restrictions of its own
 	// actions, and, for a local account, its registration, whether its email address is
-	// verified, and its roles, with its newest 20 actions and reports. The email address and
-	// the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-	// a 404. Needs the `manage_accounts` permission.
+	// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+	// `manage_reports` permission, its newest 20 reports. The email address and the IP
+	// addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+	// Needs the `manage_accounts` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -48827,8 +49038,9 @@ type ClientWithResponsesInterface interface {
 	// MarkInstanceAvailableWithResponse Mark a remote server available
 	//
 	// Clears the failure days of the server and, when it is unavailable, marks it available
-	// again with the reason `operator`, so that deliveries to it resume. A server that is
-	// already available without failures stays as it is. Needs the `manage_domains`
+	// again with the reason `operator`, so that deliveries to it resume; the operation is
+	// audited as `instance_marked_available`. A server that is already available without
+	// failures stays as it is, and nothing is audited. Needs the `manage_domains`
 	// permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -49262,7 +49474,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. From the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
@@ -49276,7 +49489,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Approves a pending registration, so that its user can sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. From the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 	// announcement of the closure of the service on, a pending registration is not approved: a
 	// 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 	// the `manage_accounts` permission.
@@ -49290,7 +49504,9 @@ type ClientWithResponsesInterface interface {
 	//
 	// Rejects a pending registration, so that its user cannot sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. Needs the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+	// A user without a registration is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -49302,7 +49518,9 @@ type ClientWithResponsesInterface interface {
 	//
 	// Rejects a pending registration, so that its user cannot sign in, with an optional note
 	// for the moderators; the decision is audited. Deciding a decided registration changes
-	// nothing and keeps its decision. A user without a registration is a 404. Needs the
+	// nothing and keeps its decision. The answer on a decided registration has no email address:
+	// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+	// A user without a registration is a 404. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -52453,8 +52671,7 @@ type ClientWithResponsesInterface interface {
 	// ListVoiceHistoryWithResponse List the voice chat rooms the user hosted
 	//
 	// The rooms that the user hosted at some time, from opening them or from taking them over,
-	// newest first, with when each opened and ended and why it ended. A 404 while the voice chat
-	// is off on the server.
+	// newest first, with when each opened and ended and why it ended.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52465,7 +52682,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// The open voice chat rooms that the user sees: the rooms where the user follows the host or
 	// a speaker first, then by the most participants. With `tag`, only the rooms with that
-	// hashtag. A 404 while the voice chat is off on the server.
+	// hashtag.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52480,7 +52697,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
 	// while as many rooms are open as the server allows, and a 409
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
-	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	// leaves the room the user was in. Invalid settings are a 422.
 	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
 	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
 	// status for a post that cannot be posted. The local followers of the user who see the room
@@ -52499,7 +52716,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
 	// while as many rooms are open as the server allows, and a 409
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
-	// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+	// leaves the room the user was in. Invalid settings are a 422.
 	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
 	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
 	// status for a post that cannot be posted. The local followers of the user who see the room
@@ -52513,7 +52730,7 @@ type ClientWithResponsesInterface interface {
 	// EndVoiceRoomWithResponse End a voice chat room
 	//
 	// Ends a room that the user hosts, for every participant. A 403
-	// `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+	// `/api/v1/problems/voice-not-host` for a user who is not the host.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52523,7 +52740,7 @@ type ClientWithResponsesInterface interface {
 	// GetVoiceRoomWithResponse Get a voice chat room
 	//
 	// An open room that the user sees. A room that ended or that the user does not see is a
-	// 404. A 404 while the voice chat is off on the server.
+	// 404.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52534,7 +52751,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Changes the settings of a room that the user hosts. The participants stay whatever the new
 	// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
-	// for invalid settings. A 404 while the voice chat is off on the server.
+	// for invalid settings.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52545,7 +52762,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Changes the settings of a room that the user hosts. The participants stay whatever the new
 	// settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
-	// for invalid settings. A 404 while the voice chat is off on the server.
+	// for invalid settings.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52558,7 +52775,7 @@ type ClientWithResponsesInterface interface {
 	// servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
 	// servers on its connections, and restarts ICE. A session that is not the user's current
 	// session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
-	// server cannot give a grant now. A 404 while the voice chat is off on the server.
+	// server cannot give a grant now.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52571,7 +52788,7 @@ type ClientWithResponsesInterface interface {
 	// servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
 	// servers on its connections, and restarts ICE. A session that is not the user's current
 	// session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
-	// server cannot give a grant now. A 404 while the voice chat is off on the server.
+	// server cannot give a grant now.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52580,7 +52797,7 @@ type ClientWithResponsesInterface interface {
 
 	// LowerVoiceHandWithResponse Lower a hand in a voice chat room
 	//
-	// Withdraws the user's request to speak. A hand that is down stays down. A 404 while the voice chat is off on the server.
+	// Withdraws the user's request to speak. A hand that is down stays down.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52590,7 +52807,7 @@ type ClientWithResponsesInterface interface {
 	// RaiseVoiceHandWithResponse Raise a hand in a voice chat room
 	//
 	// Asks the host and the co-hosts for a permission to speak. A raised hand stays up, and a
-	// speaker raises none. A 404 while the voice chat is off on the server.
+	// speaker raises none.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52603,7 +52820,7 @@ type ClientWithResponsesInterface interface {
 	// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
 	// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
 	// session that is not the user's current session in the room is a 404: the client joins
-	// again. A 404 while the voice chat is off on the server.
+	// again.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52616,7 +52833,7 @@ type ClientWithResponsesInterface interface {
 	// without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
 	// minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
 	// session that is not the user's current session in the room is a 404: the client joins
-	// again. A 404 while the voice chat is off on the server.
+	// again.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52628,7 +52845,7 @@ type ClientWithResponsesInterface interface {
 	// Makes a participant who may host rooms the host of a room that the user hosts; the user
 	// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
 	// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
-	// over. A 404 while the voice chat is off on the server.
+	// over.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52640,7 +52857,7 @@ type ClientWithResponsesInterface interface {
 	// Makes a participant who may host rooms the host of a room that the user hosts; the user
 	// stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
 	// and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
-	// over. A 404 while the voice chat is off on the server.
+	// over.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52650,7 +52867,7 @@ type ClientWithResponsesInterface interface {
 	// ListVoiceInvitationsWithResponse List the invitations of a voice chat room
 	//
 	// Lists the invitations of the room that were not revoked, oldest first, for the host and
-	// the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+	// the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52665,7 +52882,7 @@ type ClientWithResponsesInterface interface {
 	// also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
 	// a local, active user, is the host or the user, is in a block relation with the host or a
 	// co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
-	// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+	// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52680,7 +52897,7 @@ type ClientWithResponsesInterface interface {
 	// also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
 	// a local, active user, is the host or the user, is in a block relation with the host or a
 	// co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
-	// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+	// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52692,7 +52909,7 @@ type ClientWithResponsesInterface interface {
 	// Revokes the invitation of a user, by the host or a co-host: the user no longer sees the
 	// room unless in it, and the permission to speak of an invitation as a speaker goes too; a
 	// participant stays in the room as a speaker or a listener. A 404 for a user without an
-	// invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+	// invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52705,7 +52922,7 @@ type ClientWithResponsesInterface interface {
 	// streams; the server records nothing. Only a speaker turns it on (403
 	// `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
 	// turning it on lifts the mute. A session that is not the user's current session in the room
-	// is a 404. A 404 while the voice chat is off on the server.
+	// is a 404.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52718,7 +52935,7 @@ type ClientWithResponsesInterface interface {
 	// streams; the server records nothing. Only a speaker turns it on (403
 	// `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
 	// turning it on lifts the mute. A session that is not the user's current session in the room
-	// is a 404. A 404 while the voice chat is off on the server.
+	// is a 404.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52729,7 +52946,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Takes a participant out of the room, by the host or a co-host, and bans the account from
 	// the room: it neither sees nor joins the room again. The host and the co-hosts do not remove
-	// each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host. A 404 while the voice chat is off on the server.
+	// each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52739,7 +52956,7 @@ type ClientWithResponsesInterface interface {
 	// RemoveVoiceCohostWithResponse Stop a participant of a voice chat room being a co-host
 	//
 	// Makes a co-host a participant without the role of a co-host, by the host. A 403
-	// `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+	// `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52753,38 +52970,17 @@ type ClientWithResponsesInterface interface {
 	// way, with the new co-host leave the room. A co-host stays a co-host while the participation
 	// lasts: one who leaves and joins again is a participant until the host makes them a co-host
 	// again. A 403 `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or one
-	// in a block relation with the host. A 404 while the voice chat is off on the server.
+	// in a block relation with the host.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/cohost (the `AssignVoiceCohost` operationId).
 	AssignVoiceCohostWithResponse(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*AssignVoiceCohostResponse, error)
 
-	// RevokeVoiceSpeakingWithResponse Stop a participant of a voice chat room from speaking
-	//
-	// Makes a speaker a listener again, by the host or a co-host, and takes back the
-	// participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/grant (the `RevokeVoiceSpeaking` operationId).
-	RevokeVoiceSpeakingWithResponse(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*RevokeVoiceSpeakingResponse, error)
-
-	// GrantVoiceSpeakingWithResponse Let a participant of a voice chat room speak
-	//
-	// Gives a participant a permission to speak, by the host or a co-host, with or without a
-	// raised hand: a raised hand is granted, and the participant then becomes a speaker. The
-	// permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/grant (the `GrantVoiceSpeaking` operationId).
-	GrantVoiceSpeakingWithResponse(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*GrantVoiceSpeakingResponse, error)
-
 	// DismissVoiceHandWithResponse Dismiss the raised hand of a participant of a voice chat room
 	//
 	// Turns down a participant's request to speak, by the host or a co-host. A hand that is down
-	// stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+	// stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52794,12 +52990,33 @@ type ClientWithResponsesInterface interface {
 	// MuteVoiceParticipantWithResponse Mute a participant of a voice chat room
 	//
 	// Turns the microphone of a participant off, by the host or a co-host. The participant may
-	// turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+	// turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/mute (the `MuteVoiceParticipant` operationId).
 	MuteVoiceParticipantWithResponse(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*MuteVoiceParticipantResponse, error)
+
+	// RevokeVoiceSpeakingWithResponse Stop a participant of a voice chat room from speaking
+	//
+	// Makes a speaker a listener again, by the host or a co-host, and takes back the
+	// participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/speaking_permission (the `RevokeVoiceSpeaking` operationId).
+	RevokeVoiceSpeakingWithResponse(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*RevokeVoiceSpeakingResponse, error)
+
+	// GrantVoiceSpeakingWithResponse Let a participant of a voice chat room speak
+	//
+	// Gives a participant a permission to speak, by the host or a co-host, with or without a
+	// raised hand: a raised hand is granted, and the participant then becomes a speaker. The
+	// permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/speaking_permission (the `GrantVoiceSpeaking` operationId).
+	GrantVoiceSpeakingWithResponse(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*GrantVoiceSpeakingResponse, error)
 
 	// LeaveVoiceRoomWithResponse Leave a voice chat room
 	//
@@ -52807,7 +53024,7 @@ type ClientWithResponsesInterface interface {
 	// next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
 	// 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
 	// `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-	// ends when nobody is left in it. A 404 while the voice chat is off on the server.
+	// ends when nobody is left in it.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52821,7 +53038,7 @@ type ClientWithResponsesInterface interface {
 	// session is disconnected. Joining leaves the room the user was in; the host of an open room
 	// leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
 	// `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
-	// allows. A 404 while the voice chat is off on the server.
+	// allows.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52859,7 +53076,7 @@ type ClientWithResponsesInterface interface {
 	// BecomeVoiceListenerWithResponse Go back to listening in a voice chat room
 	//
 	// Makes the user, a speaker in the room, a listener again. A permission to speak stays, so
-	// the user may speak again. A listener stays one. A 404 while the voice chat is off on the server.
+	// the user may speak again. A listener stays one.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52872,7 +53089,7 @@ type ClientWithResponsesInterface interface {
 	// the room's speakers setting covers, and the users with a permission to speak (a granted
 	// raised hand, a grant, or an invitation as a speaker) may; a user whom a moderator limited
 	// needs a permission. A 403 `/api/v1/problems/voice-cannot-speak` for anyone else, who raises a
-	// hand instead. A raised hand goes down. A speaker stays one. A 404 while the voice chat is off on the server.
+	// hand instead. A raised hand goes down. A speaker stays one.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -74775,6 +74992,11 @@ func (r SetVoiceMicResponse) ContentType() string {
 	return ""
 }
 
+// RemoveVoiceParticipantResponse200Headers the declared response headers of an HTTP 200 response for RemoveVoiceParticipant
+type RemoveVoiceParticipantResponse200Headers struct {
+	CacheControl *string
+}
+
 // RemoveVoiceParticipantResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveVoiceParticipant
 type RemoveVoiceParticipantResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -74786,10 +75008,19 @@ type RemoveVoiceParticipantResponseDefaultHeaders struct {
 type RemoveVoiceParticipantResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *VoiceRoom
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RemoveVoiceParticipantResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *RemoveVoiceParticipantResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RemoveVoiceParticipantResponse) GetJSON200() *VoiceRoom {
+	return r.JSON200
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -74956,6 +75187,122 @@ func (r AssignVoiceCohostResponse) ContentType() string {
 	return ""
 }
 
+// DismissVoiceHandResponse200Headers the declared response headers of an HTTP 200 response for DismissVoiceHand
+type DismissVoiceHandResponse200Headers struct {
+	CacheControl *string
+}
+
+// DismissVoiceHandResponseDefaultHeaders the declared response headers of an HTTP default response for DismissVoiceHand
+type DismissVoiceHandResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DismissVoiceHandResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *VoiceRoom
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *DismissVoiceHandResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DismissVoiceHandResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DismissVoiceHandResponse) GetJSON200() *VoiceRoom {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DismissVoiceHandResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DismissVoiceHandResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DismissVoiceHandResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DismissVoiceHandResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DismissVoiceHandResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// MuteVoiceParticipantResponseDefaultHeaders the declared response headers of an HTTP default response for MuteVoiceParticipant
+type MuteVoiceParticipantResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type MuteVoiceParticipantResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *MuteVoiceParticipantResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r MuteVoiceParticipantResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r MuteVoiceParticipantResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r MuteVoiceParticipantResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MuteVoiceParticipantResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r MuteVoiceParticipantResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // RevokeVoiceSpeakingResponse200Headers the declared response headers of an HTTP 200 response for RevokeVoiceSpeaking
 type RevokeVoiceSpeakingResponse200Headers struct {
 	CacheControl *string
@@ -75080,122 +75427,6 @@ func (r GrantVoiceSpeakingResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GrantVoiceSpeakingResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// DismissVoiceHandResponse200Headers the declared response headers of an HTTP 200 response for DismissVoiceHand
-type DismissVoiceHandResponse200Headers struct {
-	CacheControl *string
-}
-
-// DismissVoiceHandResponseDefaultHeaders the declared response headers of an HTTP default response for DismissVoiceHand
-type DismissVoiceHandResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type DismissVoiceHandResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *VoiceRoom
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *DismissVoiceHandResponse200Headers
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *DismissVoiceHandResponseDefaultHeaders
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r DismissVoiceHandResponse) GetJSON200() *VoiceRoom {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r DismissVoiceHandResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r DismissVoiceHandResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r DismissVoiceHandResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DismissVoiceHandResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r DismissVoiceHandResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// MuteVoiceParticipantResponseDefaultHeaders the declared response headers of an HTTP default response for MuteVoiceParticipant
-type MuteVoiceParticipantResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type MuteVoiceParticipantResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *MuteVoiceParticipantResponseDefaultHeaders
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r MuteVoiceParticipantResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r MuteVoiceParticipantResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r MuteVoiceParticipantResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r MuteVoiceParticipantResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r MuteVoiceParticipantResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -76508,9 +76739,10 @@ func (c *ClientWithResponses) ListAdminAccountsWithResponse(ctx context.Context,
 //
 // An account as the moderators see it (FR-714): its state, the restrictions of its own
 // actions, and, for a local account, its registration, whether its email address is
-// verified, and its roles, with its newest 20 actions and reports. The email address and
-// the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-// a 404. Needs the `manage_accounts` permission.
+// verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+// `manage_reports` permission, its newest 20 reports. The email address and the IP
+// addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+// Needs the `manage_accounts` permission.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -78328,8 +78560,9 @@ func (c *ClientWithResponses) ListInstanceAvailabilityEventsWithResponse(ctx con
 // MarkInstanceAvailableWithResponse Mark a remote server available
 //
 // Clears the failure days of the server and, when it is unavailable, marks it available
-// again with the reason `operator`, so that deliveries to it resume. A server that is
-// already available without failures stays as it is. Needs the `manage_domains`
+// again with the reason `operator`, so that deliveries to it resume; the operation is
+// audited as `instance_marked_available`. A server that is already available without
+// failures stays as it is, and nothing is audited. Needs the `manage_domains`
 // permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -78973,7 +79206,8 @@ func (c *ClientWithResponses) ListPendingRegistrationsWithResponse(ctx context.C
 //
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. From the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
@@ -78993,7 +79227,8 @@ func (c *ClientWithResponses) ApproveRegistrationWithBodyWithResponse(ctx contex
 //
 // Approves a pending registration, so that its user can sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. From the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after. A user without a registration is a 404. From the
 // announcement of the closure of the service on, a pending registration is not approved: a
 // 409 `/api/v1/problems/service-closing` (the announcement rejects the pending ones). Needs
 // the `manage_accounts` permission.
@@ -79013,7 +79248,9 @@ func (c *ClientWithResponses) ApproveRegistrationWithResponse(ctx context.Contex
 //
 // Rejects a pending registration, so that its user cannot sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. Needs the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+// A user without a registration is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -79031,7 +79268,9 @@ func (c *ClientWithResponses) RejectRegistrationWithBodyWithResponse(ctx context
 //
 // Rejects a pending registration, so that its user cannot sign in, with an optional note
 // for the moderators; the decision is audited. Deciding a decided registration changes
-// nothing and keeps its decision. A user without a registration is a 404. Needs the
+// nothing and keeps its decision. The answer on a decided registration has no email address:
+// only the list of pending registrations shows it, and `POST /admin/accounts/{id}/reveal` after.
+// A user without a registration is a 404. Needs the
 // `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -83652,8 +83891,7 @@ func (c *ClientWithResponses) SetUpTotpWithResponse(ctx context.Context, reqEdit
 // ListVoiceHistoryWithResponse List the voice chat rooms the user hosted
 //
 // The rooms that the user hosted at some time, from opening them or from taking them over,
-// newest first, with when each opened and ended and why it ended. A 404 while the voice chat
-// is off on the server.
+// newest first, with when each opened and ended and why it ended.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83670,7 +83908,7 @@ func (c *ClientWithResponses) ListVoiceHistoryWithResponse(ctx context.Context, 
 //
 // The open voice chat rooms that the user sees: the rooms where the user follows the host or
 // a speaker first, then by the most participants. With `tag`, only the rooms with that
-// hashtag. A 404 while the voice chat is off on the server.
+// hashtag.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83691,7 +83929,7 @@ func (c *ClientWithResponses) ListVoiceRoomsWithResponse(ctx context.Context, pa
 // `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
 // while as many rooms are open as the server allows, and a 409
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
-// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+// leaves the room the user was in. Invalid settings are a 422.
 // With `post`, the user's start post, which links the room, is posted with it: a 422 for a
 // room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
 // status for a post that cannot be posted. The local followers of the user who see the room
@@ -83716,7 +83954,7 @@ func (c *ClientWithResponses) OpenVoiceRoomWithBodyWithResponse(ctx context.Cont
 // `/api/v1/problems/voice-not-eligible` otherwise. A 409 `/api/v1/problems/voice-too-many-rooms`
 // while as many rooms are open as the server allows, and a 409
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
-// leaves the room the user was in. Invalid settings are a 422. A 404 while the voice chat is off on the server.
+// leaves the room the user was in. Invalid settings are a 422.
 // With `post`, the user's start post, which links the room, is posted with it: a 422 for a
 // room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
 // status for a post that cannot be posted. The local followers of the user who see the room
@@ -83736,7 +83974,7 @@ func (c *ClientWithResponses) OpenVoiceRoomWithResponse(ctx context.Context, bod
 // EndVoiceRoomWithResponse End a voice chat room
 //
 // Ends a room that the user hosts, for every participant. A 403
-// `/api/v1/problems/voice-not-host` for a user who is not the host. A 404 while the voice chat is off on the server.
+// `/api/v1/problems/voice-not-host` for a user who is not the host.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83752,7 +83990,7 @@ func (c *ClientWithResponses) EndVoiceRoomWithResponse(ctx context.Context, id V
 // GetVoiceRoomWithResponse Get a voice chat room
 //
 // An open room that the user sees. A room that ended or that the user does not see is a
-// 404. A 404 while the voice chat is off on the server.
+// 404.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83769,7 +84007,7 @@ func (c *ClientWithResponses) GetVoiceRoomWithResponse(ctx context.Context, id V
 //
 // Changes the settings of a room that the user hosts. The participants stay whatever the new
 // settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
-// for invalid settings. A 404 while the voice chat is off on the server.
+// for invalid settings.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83786,7 +84024,7 @@ func (c *ClientWithResponses) UpdateVoiceRoomWithBodyWithResponse(ctx context.Co
 //
 // Changes the settings of a room that the user hosts. The participants stay whatever the new
 // settings. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host, and a 422
-// for invalid settings. A 404 while the voice chat is off on the server.
+// for invalid settings.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83805,7 +84043,7 @@ func (c *ClientWithResponses) UpdateVoiceRoomWithResponse(ctx context.Context, i
 // servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
 // servers on its connections, and restarts ICE. A session that is not the user's current
 // session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
-// server cannot give a grant now. A 404 while the voice chat is off on the server.
+// server cannot give a grant now.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83824,7 +84062,7 @@ func (c *ClientWithResponses) RefreshVoiceGrantWithBodyWithResponse(ctx context.
 // servers; the client asks for it 10 minutes before its grant expires, sets the new ICE
 // servers on its connections, and restarts ICE. A session that is not the user's current
 // session in the room is a 404, and a 503 `/api/v1/problems/voice-unavailable` when the
-// server cannot give a grant now. A 404 while the voice chat is off on the server.
+// server cannot give a grant now.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83839,7 +84077,7 @@ func (c *ClientWithResponses) RefreshVoiceGrantWithResponse(ctx context.Context,
 
 // LowerVoiceHandWithResponse Lower a hand in a voice chat room
 //
-// Withdraws the user's request to speak. A hand that is down stays down. A 404 while the voice chat is off on the server.
+// Withdraws the user's request to speak. A hand that is down stays down.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83855,7 +84093,7 @@ func (c *ClientWithResponses) LowerVoiceHandWithResponse(ctx context.Context, id
 // RaiseVoiceHandWithResponse Raise a hand in a voice chat room
 //
 // Asks the host and the co-hosts for a permission to speak. A raised hand stays up, and a
-// speaker raises none. A 404 while the voice chat is off on the server.
+// speaker raises none.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83874,7 +84112,7 @@ func (c *ClientWithResponses) RaiseVoiceHandWithResponse(ctx context.Context, id
 // without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
 // minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
 // session that is not the user's current session in the room is a 404: the client joins
-// again. A 404 while the voice chat is off on the server.
+// again.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83893,7 +84131,7 @@ func (c *ClientWithResponses) SendVoiceHeartbeatWithBodyWithResponse(ctx context
 // without a heartbeat for 45 seconds leaves the room; the host keeps the room for 2 more
 // minutes, and then the earliest co-host who may host rooms takes over, or the room ends. A
 // session that is not the user's current session in the room is a 404: the client joins
-// again. A 404 while the voice chat is off on the server.
+// again.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83911,7 +84149,7 @@ func (c *ClientWithResponses) SendVoiceHeartbeatWithResponse(ctx context.Context
 // Makes a participant who may host rooms the host of a room that the user hosts; the user
 // stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
 // and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
-// over. A 404 while the voice chat is off on the server.
+// over.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83929,7 +84167,7 @@ func (c *ClientWithResponses) HandOverVoiceRoomWithBodyWithResponse(ctx context.
 // Makes a participant who may host rooms the host of a room that the user hosts; the user
 // stays in the room. A 403 `/api/v1/problems/voice-not-host` for a user who is not the host,
 // and a 422 `/api/v1/problems/voice-invalid-next-host` for a participant who may not take
-// over. A 404 while the voice chat is off on the server.
+// over.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83945,7 +84183,7 @@ func (c *ClientWithResponses) HandOverVoiceRoomWithResponse(ctx context.Context,
 // ListVoiceInvitationsWithResponse List the invitations of a voice chat room
 //
 // Lists the invitations of the room that were not revoked, oldest first, for the host and
-// the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+// the co-hosts. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83966,7 +84204,7 @@ func (c *ClientWithResponses) ListVoiceInvitationsWithResponse(ctx context.Conte
 // also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
 // a local, active user, is the host or the user, is in a block relation with the host or a
 // co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
-// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83987,7 +84225,7 @@ func (c *ClientWithResponses) InviteToVoiceRoomWithBodyWithResponse(ctx context.
 // also after a revocation). A 422 `/api/v1/problems/voice-invalid-invitee` for a user who is not
 // a local, active user, is the host or the user, is in a block relation with the host or a
 // co-host, or was removed from the room. A room sends at most 100 invitations an hour (a 429
-// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+// with `Retry-After`). A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -84005,7 +84243,7 @@ func (c *ClientWithResponses) InviteToVoiceRoomWithResponse(ctx context.Context,
 // Revokes the invitation of a user, by the host or a co-host: the user no longer sees the
 // room unless in it, and the permission to speak of an invitation as a speaker goes too; a
 // participant stays in the room as a speaker or a listener. A 404 for a user without an
-// invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host. A 404 while the voice chat is off on the server.
+// invitation that was not revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84024,7 +84262,7 @@ func (c *ClientWithResponses) RevokeVoiceInvitationWithResponse(ctx context.Cont
 // streams; the server records nothing. Only a speaker turns it on (403
 // `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
 // turning it on lifts the mute. A session that is not the user's current session in the room
-// is a 404. A 404 while the voice chat is off on the server.
+// is a 404.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -84043,7 +84281,7 @@ func (c *ClientWithResponses) SetVoiceMicWithBodyWithResponse(ctx context.Contex
 // streams; the server records nothing. Only a speaker turns it on (403
 // `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
 // turning it on lifts the mute. A session that is not the user's current session in the room
-// is a 404. A 404 while the voice chat is off on the server.
+// is a 404.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -84060,7 +84298,7 @@ func (c *ClientWithResponses) SetVoiceMicWithResponse(ctx context.Context, id Vo
 //
 // Takes a participant out of the room, by the host or a co-host, and bans the account from
 // the room: it neither sees nor joins the room again. The host and the co-hosts do not remove
-// each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host. A 404 while the voice chat is off on the server.
+// each other. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or a co-host.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84076,7 +84314,7 @@ func (c *ClientWithResponses) RemoveVoiceParticipantWithResponse(ctx context.Con
 // RemoveVoiceCohostWithResponse Stop a participant of a voice chat room being a co-host
 //
 // Makes a co-host a participant without the role of a co-host, by the host. A 403
-// `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+// `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84096,7 +84334,7 @@ func (c *ClientWithResponses) RemoveVoiceCohostWithResponse(ctx context.Context,
 // way, with the new co-host leave the room. A co-host stays a co-host while the participation
 // lasts: one who leaves and joins again is a participant until the host makes them a co-host
 // again. A 403 `/api/v1/problems/voice-not-host` for anyone but the host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host, or one
-// in a block relation with the host. A 404 while the voice chat is off on the server.
+// in a block relation with the host.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84109,43 +84347,10 @@ func (c *ClientWithResponses) AssignVoiceCohostWithResponse(ctx context.Context,
 	return ParseAssignVoiceCohostResponse(rsp)
 }
 
-// RevokeVoiceSpeakingWithResponse Stop a participant of a voice chat room from speaking
-//
-// Makes a speaker a listener again, by the host or a co-host, and takes back the
-// participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/grant (the `RevokeVoiceSpeaking` operationId).
-func (c *ClientWithResponses) RevokeVoiceSpeakingWithResponse(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*RevokeVoiceSpeakingResponse, error) {
-	rsp, err := c.RevokeVoiceSpeaking(ctx, id, accountId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseRevokeVoiceSpeakingResponse(rsp)
-}
-
-// GrantVoiceSpeakingWithResponse Let a participant of a voice chat room speak
-//
-// Gives a participant a permission to speak, by the host or a co-host, with or without a
-// raised hand: a raised hand is granted, and the participant then becomes a speaker. The
-// permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/grant (the `GrantVoiceSpeaking` operationId).
-func (c *ClientWithResponses) GrantVoiceSpeakingWithResponse(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*GrantVoiceSpeakingResponse, error) {
-	rsp, err := c.GrantVoiceSpeaking(ctx, id, accountId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGrantVoiceSpeakingResponse(rsp)
-}
-
 // DismissVoiceHandWithResponse Dismiss the raised hand of a participant of a voice chat room
 //
 // Turns down a participant's request to speak, by the host or a co-host. A hand that is down
-// stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+// stays down. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84161,7 +84366,7 @@ func (c *ClientWithResponses) DismissVoiceHandWithResponse(ctx context.Context, 
 // MuteVoiceParticipantWithResponse Mute a participant of a voice chat room
 //
 // Turns the microphone of a participant off, by the host or a co-host. The participant may
-// turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host. A 404 while the voice chat is off on the server.
+// turn it on again. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84174,13 +84379,46 @@ func (c *ClientWithResponses) MuteVoiceParticipantWithResponse(ctx context.Conte
 	return ParseMuteVoiceParticipantResponse(rsp)
 }
 
+// RevokeVoiceSpeakingWithResponse Stop a participant of a voice chat room from speaking
+//
+// Makes a speaker a listener again, by the host or a co-host, and takes back the
+// participant's permission to speak. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /voice/rooms/{id}/participants/{account_id}/speaking_permission (the `RevokeVoiceSpeaking` operationId).
+func (c *ClientWithResponses) RevokeVoiceSpeakingWithResponse(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*RevokeVoiceSpeakingResponse, error) {
+	rsp, err := c.RevokeVoiceSpeaking(ctx, id, accountId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeVoiceSpeakingResponse(rsp)
+}
+
+// GrantVoiceSpeakingWithResponse Let a participant of a voice chat room speak
+//
+// Gives a participant a permission to speak, by the host or a co-host, with or without a
+// raised hand: a raised hand is granted, and the participant then becomes a speaker. The
+// permission lasts while the room is open, until it is revoked. A 403 `/api/v1/problems/voice-not-host-or-cohost` for a participant who is neither the host nor a co-host, and a 422 `/api/v1/problems/voice-invalid-participant` for an account that is not in the room, the user, or the host.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /voice/rooms/{id}/participants/{account_id}/speaking_permission (the `GrantVoiceSpeaking` operationId).
+func (c *ClientWithResponses) GrantVoiceSpeakingWithResponse(ctx context.Context, id VoiceRoomId, accountId VoiceAccountId, reqEditors ...RequestEditorFn) (*GrantVoiceSpeakingResponse, error) {
+	rsp, err := c.GrantVoiceSpeaking(ctx, id, accountId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGrantVoiceSpeakingResponse(rsp)
+}
+
 // LeaveVoiceRoomWithResponse Leave a voice chat room
 //
 // Leaves a room that the user is in. The host of a room with other participants chooses the
 // next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
 // 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
 // `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-// ends when nobody is left in it. A 404 while the voice chat is off on the server.
+// ends when nobody is left in it.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84200,7 +84438,7 @@ func (c *ClientWithResponses) LeaveVoiceRoomWithResponse(ctx context.Context, id
 // session is disconnected. Joining leaves the room the user was in; the host of an open room
 // leaves it first (a 409 `/api/v1/problems/voice-hosting-elsewhere`). A 409
 // `/api/v1/problems/voice-room-full` for a room that holds as many people as the server
-// allows. A 404 while the voice chat is off on the server.
+// allows.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84256,7 +84494,7 @@ func (c *ClientWithResponses) ReactInVoiceRoomWithResponse(ctx context.Context, 
 // BecomeVoiceListenerWithResponse Go back to listening in a voice chat room
 //
 // Makes the user, a speaker in the room, a listener again. A permission to speak stays, so
-// the user may speak again. A listener stays one. A 404 while the voice chat is off on the server.
+// the user may speak again. A listener stays one.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84275,7 +84513,7 @@ func (c *ClientWithResponses) BecomeVoiceListenerWithResponse(ctx context.Contex
 // the room's speakers setting covers, and the users with a permission to speak (a granted
 // raised hand, a grant, or an invitation as a speaker) may; a user whom a moderator limited
 // needs a permission. A 403 `/api/v1/problems/voice-cannot-speak` for anyone else, who raises a
-// hand instead. A raised hand goes down. A speaker stays one. A 404 while the voice chat is off on the server.
+// hand instead. A raised hand goes down. A speaker stays one.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -110574,8 +110812,12 @@ func ParseRemoveVoiceParticipantResponse(rsp *http.Response) (*RemoveVoicePartic
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
-		break // No content-type
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VoiceRoom
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -110587,6 +110829,16 @@ func ParseRemoveVoiceParticipantResponse(rsp *http.Response) (*RemoveVoicePartic
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers RemoveVoiceParticipantResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers RemoveVoiceParticipantResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -110777,6 +111029,146 @@ func ParseAssignVoiceCohostResponse(rsp *http.Response) (*AssignVoiceCohostRespo
 	return response, nil
 }
 
+// ParseDismissVoiceHandResponse parses an HTTP response from a DismissVoiceHandWithResponse call
+func ParseDismissVoiceHandResponse(rsp *http.Response) (*DismissVoiceHandResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DismissVoiceHandResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VoiceRoom
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers DismissVoiceHandResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers DismissVoiceHandResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseMuteVoiceParticipantResponse parses an HTTP response from a MuteVoiceParticipantWithResponse call
+func ParseMuteVoiceParticipantResponse(rsp *http.Response) (*MuteVoiceParticipantResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MuteVoiceParticipantResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers MuteVoiceParticipantResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseRevokeVoiceSpeakingResponse parses an HTTP response from a RevokeVoiceSpeakingWithResponse call
 func ParseRevokeVoiceSpeakingResponse(rsp *http.Response) (*RevokeVoiceSpeakingResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -110897,146 +111289,6 @@ func ParseGrantVoiceSpeakingResponse(rsp *http.Response) (*GrantVoiceSpeakingRes
 		response.Headers200 = &headers
 	case true:
 		var headers GrantVoiceSpeakingResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseDismissVoiceHandResponse parses an HTTP response from a DismissVoiceHandWithResponse call
-func ParseDismissVoiceHandResponse(rsp *http.Response) (*DismissVoiceHandResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DismissVoiceHandResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest VoiceRoom
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case rsp.StatusCode == 200:
-		var headers DismissVoiceHandResponse200Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		response.Headers200 = &headers
-	case true:
-		var headers DismissVoiceHandResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseMuteVoiceParticipantResponse parses an HTTP response from a MuteVoiceParticipantWithResponse call
-func ParseMuteVoiceParticipantResponse(rsp *http.Response) (*MuteVoiceParticipantResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &MuteVoiceParticipantResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case rsp.StatusCode == 204:
-		break // No content-type
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case true:
-		var headers MuteVoiceParticipantResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

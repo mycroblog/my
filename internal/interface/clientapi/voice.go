@@ -12,6 +12,7 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
+	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/voice"
 )
 
@@ -248,7 +249,7 @@ func (s *Server) newVoiceRoomJoin(ctx context.Context, j appvoice.Joined) (Voice
 // newVoiceGrant presents the grant of a session.
 func newVoiceGrant(grant appvoice.Grant) VoiceGrant {
 	g := VoiceGrant{
-		Kind: grant.Kind, Options: map[string]string{}, IceServers: make([]VoiceIceServer, 0, len(grant.ICE)),
+		Kind: VoiceGrantKind(grant.Kind), Options: map[string]string{}, IceServers: make([]VoiceIceServer, 0, len(grant.ICE)),
 		RelayOnly: grant.RelayOnly, ExpiresAt: grant.ExpiresAt.UTC(),
 	}
 	for k, v := range grant.Options {
@@ -342,6 +343,12 @@ func (s *Server) OpenVoiceRoom(ctx context.Context, req OpenVoiceRoomRequestObje
 		return respond[OpenVoiceRoomdefaultApplicationProblemPlusJSONResponse](p, err)
 	}
 	b := req.Body
+	// A start post is a post: write:voice alone does not publish one.
+	if b.Post != nil && !v.Scope.Grants(identity.ScopeWriteStatuses) {
+		l := s.Localizer(ctx)
+		return OpenVoiceRoomdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusForbidden, ProblemTypeInsufficientScope,
+			l.ServerErrorsInsufficientScope(), l.ServerErrorsInsufficientScopeDetail(identity.ScopeWriteStatuses))), nil
+	}
 	in := appvoice.SettingsInput{Name: b.Name, Description: deref(b.Description), Icon: deref(b.Icon)}
 	if b.Hashtags != nil {
 		in.Hashtags = *b.Hashtags

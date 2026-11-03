@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -95,6 +96,16 @@ func instanceLinkCardDomainRemoves(t *testing.T, e *instanceEnv) {
 	}
 	if rules := e.linkCardRules(t); len(rules) != 0 {
 		t.Errorf("rules = %+v, want none", rules)
+	}
+	e.setLinkCardRule(t, "kept.example", instance.LinkCardNoFetch, "")
+	e.setLinkCardRule(t, "other.example", instance.LinkCardNoFetch, "")
+	if got, err := e.service.ExistingLinkCardDomains(ctx, []string{"a.example", "kept.example"}); err != nil || !slices.Equal(got, []string{"kept.example"}) {
+		t.Errorf("ExistingLinkCardDomains = %v, %v; want the domain with a rule", got, err)
+	}
+	for _, d := range []string{"kept.example", "other.example"} {
+		if err := e.service.RemoveLinkCardDomainRule(ctx, d, ruleModerator); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if got, err := e.service.LinkCardCrawl(ctx, "a.example"); err != nil || got != (instance.LinkCardCrawl{}) {
 		t.Errorf("LinkCardCrawl = %+v, %v, want nothing stopped", got, err)

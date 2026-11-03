@@ -128,7 +128,7 @@ if (which === "voice") {
     )
     .run(id, thirdPartyClient.clientID, thirdPartyClient.name, Date.now());
   seed
-    .prepare("INSERT INTO oauth_client_redirect_uris (client_id, redirect_uri) VALUES (?, ?)")
+    .prepare("INSERT INTO oauth_client_redirect_uris (oauth_client_id, redirect_uri) VALUES (?, ?)")
     .run(id, thirdPartyClient.redirectURI);
   seed.close();
 }

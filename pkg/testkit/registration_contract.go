@@ -236,6 +236,9 @@ func registrationApproval(t *testing.T, e *accountEnv) {
 	if a := r.access(t, alice.User.ID); a.Registration != identity.RegistrationPending {
 		t.Errorf("access after invalid decisions = %+v; want pending", a)
 	}
+	if e, err := r.Registration(ctx, alice.User.ID); err != nil || e.DecisionNote != "" {
+		t.Errorf("Registration(pending).DecisionNote = %q, %v; want none", e.DecisionNote, err)
+	}
 	d, err := r.DecideRegistration(ctx, appidentity.DecideInput{UserID: alice.User.ID, Decision: identity.DecisionApproved, DecidedByUserID: NamedID("mod"), Note: "welcome"})
 	if err != nil || d.DecidedBy != identity.DecidedByModerator || d.ApplicationID != p.Application.ID {
 		t.Fatalf("approve = %+v, %v", d, err)
@@ -245,6 +248,12 @@ func registrationApproval(t *testing.T, e *accountEnv) {
 	}
 	if _, err := r.DecideRegistration(ctx, appidentity.DecideInput{UserID: bob.User.ID, Decision: identity.DecisionRejected}); err != nil {
 		t.Fatal(err)
+	}
+	if e, err := r.Registration(ctx, alice.User.ID); err != nil || e.DecisionNote != "welcome" {
+		t.Errorf("Registration(approved).DecisionNote = %q, %v; want the note, which a second decision does not change", e.DecisionNote, err)
+	}
+	if e, err := r.Registration(ctx, bob.User.ID); err != nil || e.DecisionNote != "" {
+		t.Errorf("Registration(rejected without a note).DecisionNote = %q, %v; want none", e.DecisionNote, err)
 	}
 	if _, err := r.DecideRegistration(ctx, appidentity.DecideInput{UserID: NamedID("nobody"), Decision: identity.DecisionApproved}); !errors.Is(err, appidentity.ErrNotFound) {
 		t.Errorf("deciding on an unknown user = %v, want ErrNotFound", err)

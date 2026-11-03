@@ -14,8 +14,8 @@ import (
 )
 
 // setUpIdentity registers the identity module's projectors and builds its service, the
-// moderators' account management, and the purge of the sign-in and registration origins. It
-// comes after the moderation module, whose restrictions sign-in and registration read.
+// moderators' account management, the purge of the sign-in and registration origins, and the
+// purge of the expired sign-in records. It comes after the moderation module, whose restrictions sign-in and registration read.
 func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error {
 	passkeys, err := newPasskeys(cfg)
 	if err != nil {
@@ -124,6 +124,10 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 	// The sign-in and registration origins are erased after their retention (ADR-0038).
 	identity.NewOriginPurger(identity.OriginPurgeDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Policy: originRetention{a},
+	}).RegisterJobs(a.Handlers, a.Scheduler)
+	// The expired sessions, codes, token families, and one-time tokens go 30 days after they expire.
+	identity.NewAuthRecordPurger(identity.AuthRecordPurgeDeps{
+		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock,
 	}).RegisterJobs(a.Handlers, a.Scheduler)
 	return nil
 }

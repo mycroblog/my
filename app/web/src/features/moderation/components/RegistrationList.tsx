@@ -128,7 +128,7 @@ function RegistrationRow({ registration, review }: { registration: Registration;
             {/* A username reads left to right in every locale. */}
             {handle === undefined ? t("client:admin.registrations.account_gone") : <span dir="ltr">{handle}</span>}
           </Text>
-          {registration.email === "" ? (
+          {registration.email === undefined ? (
             <Text size="sm" tone="muted">
               {t("client:admin.registrations.email.none")}
             </Text>

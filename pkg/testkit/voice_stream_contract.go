@@ -105,7 +105,7 @@ func roomsStream(t *testing.T, e *roomsEnv) {
 		t.Errorf("state after joining again = %s %s, want replaced", s.End, s.Reason)
 	}
 	cst := e.openStream(t, carol, r, carols)
-	if err := e.svc.Remove(ctx, host, r, carol); err != nil {
+	if err := e.remove(ctx, host, r, carol); err != nil {
 		t.Fatal(err)
 	}
 	if s := e.streamState(t, cst); s.End != appvoice.StreamRemoved || s.Reason != string(voice.RemovedFromRoom) {

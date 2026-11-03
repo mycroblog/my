@@ -21,8 +21,12 @@ properties:
     items:
       type: string
   visibility:
-    $ref: ./VoiceRoomVisibility.yaml
+    description: Who sees the room; `local` when omitted.
+    allOf:
+      - $ref: ./VoiceRoomVisibility.yaml
   speakers:
-    $ref: ./VoiceRoomSpeakers.yaml
+    description: Who may become a speaker without asking; `manual` when omitted.
+    allOf:
+      - $ref: ./VoiceRoomSpeakers.yaml
   post:
     $ref: ./VoiceStartPost.yaml

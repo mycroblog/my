@@ -9,7 +9,7 @@ post:
     streams; the server records nothing. Only a speaker turns it on (403
     `/api/v1/problems/voice-cannot-speak`). After the host or a co-host muted the session,
     turning it on lifts the mute. A session that is not the user's current session in the room
-    is a 404. A 404 while the voice chat is off on the server.
+    is a 404.
   tags: [voice]
   security:
     - oauth2: ["write:voice"]

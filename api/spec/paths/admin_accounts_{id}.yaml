@@ -5,9 +5,10 @@ get:
   description: |
     An account as the moderators see it (FR-714): its state, the restrictions of its own
     actions, and, for a local account, its registration, whether its email address is
-    verified, and its roles, with its newest 20 actions and reports. The email address and
-    the IP addresses are not included; `POST .../reveal` shows them. An unknown account is
-    a 404. Needs the `manage_accounts` permission.
+    verified, and its roles, with its newest 20 actions and, for a viewer who also has the
+    `manage_reports` permission, its newest 20 reports. The email address and the IP
+    addresses are not included; `POST .../reveal` shows them. An unknown account is a 404.
+    Needs the `manage_accounts` permission.
   tags: [admin-moderation]
   security:
     - oauth2: ["admin:read"]

@@ -323,6 +323,25 @@ describe("an account's admin page", () => {
     expect(requests.filter((request) => request.includes("/reveal"))).toEqual([]);
   });
 
+  test("shows the note of the decision on the registration, and no reports when the viewer may not see them", async () => {
+    const { reports: _reports, ...withoutReports } = bobDetail;
+    const decided = {
+      ...withoutReports,
+      registration: {
+        submitted_at: "2026-10-01T00:00:00Z",
+        state_changed_at: "2026-10-01T01:00:00Z",
+        decision_note: "Known to the moderators.",
+      },
+    };
+    accountServer(decided);
+    await renderApp({ path: `/moderation/accounts/${decided.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Account" })).toBeInTheDocument();
+    expect(within(region("Account")).getByText("Known to the moderators.")).toHaveAttribute("dir", "auto");
+    expect(screen.queryByRole("region", { name: "Reports" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Reports" })).not.toBeInTheDocument();
+  });
+
   test("shows the invite the account signed up with and who created it", async () => {
     const invited = adminAccountDetailFixture(otherAccountFixture, {
       registration: {

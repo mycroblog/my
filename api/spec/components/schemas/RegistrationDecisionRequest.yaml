@@ -3,6 +3,6 @@ description: A moderator's decision on a registration.
 type: object
 properties:
   note:
-    description: A note for the moderators, as plain text; omitted or empty for none.
+    description: A note for the moderators, as plain text, which the registration shows as `decision_note`; omitted or empty for none.
     type: string
     maxLength: 1000

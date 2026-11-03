@@ -17,7 +17,6 @@ properties:
     type: string
     format: date-time
   end_reason:
-    description: |
-      Why the room ended (`host`, `empty`, `host_disconnected`, `host_ineligible`,
-      `moderator`, `time_limit`, `disabled`); omitted while it is open.
-    type: string
+    description: Why the room ended; omitted while it is open.
+    allOf:
+      - $ref: ./VoiceEndReason.yaml

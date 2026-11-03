@@ -142,7 +142,7 @@ func fedBuildsTheNote(t *testing.T, e *fedEnv) {
 	wantTags := [][3]string{
 		{"Mention", e.uri(a.mentioned), e.handle(a.mentioned)},
 		{"Mention", e.uri(a.localMentioned), e.handle(a.localMentioned)},
-		{"Hashtag", "https://" + contractHost + "/tags/Fediverse", "#Fediverse"},
+		{"Hashtag", "https://" + contractHost + "/tags/fediverse", "#Fediverse"},
 	}
 	if got := tagsOf(note); !slices.Equal(got, wantTags) {
 		t.Errorf("tag = %v, want %v", got, wantTags)
