@@ -234,7 +234,7 @@ CREATE INDEX sessions_expires_at ON sessions (expires_at);
 -- Event: a session ended before it expired.
 CREATE TABLE session_revocations (
   session_id TEXT NOT NULL PRIMARY KEY,
-  reason TEXT NOT NULL CHECK (reason IN ('logout', 'replaced', 'password_changed', 'moderation', 'expired_cleanup', 'account_deleted')),
+  reason TEXT NOT NULL CHECK (reason IN ('logout', 'replaced', 'password_changed', 'moderation', 'account_deleted')),
   revoked_at INTEGER NOT NULL
 ) STRICT;
 

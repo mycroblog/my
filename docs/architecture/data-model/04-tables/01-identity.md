@@ -194,7 +194,7 @@
 | --- | --- | --- | --- |
 | `sessions` | リソース | `id`, `user_id`, `token_hash`（`bytes`。Cookie の値の SHA-256）, `created_at`, `expires_at` | 一意 `(token_hash)`。インデックス `(user_id)`（処分による失効）, `(expires_at)`（期限切れの行の消去） |
 | `session_origins` | リソース（子） | `session_id`（PK）, `user_id`, `ip`（NULL 可）, `user_agent`（`string(512)`、NULL 可）, `created_at` | インデックス `(ip)`（同じ IP のアカウントの検索、FR-714）, `(user_id, created_at DESC)`（アカウントの最近のログイン元、FR-714）, `(created_at)`（保持期間による消去）。保持期間（[ADR-0038](../../../adr/0038-moderation-personal-data-retention.md)、既定 180 日）を過ぎた行を消去ジョブが消す |
-| `session_revocations` | イベント | `session_id`（PK）, `reason`（`enum(logout, replaced, password_changed, moderation, expired_cleanup, account_deleted)`）, `revoked_at` | 有効なセッション = 失効イベントが無く `expires_at` を過ぎていないもの。`replaced` は同じブラウザでのログインし直し |
+| `session_revocations` | イベント | `session_id`（PK）, `reason`（`enum(logout, replaced, password_changed, moderation, account_deleted)`）, `revoked_at` | 有効なセッション = 失効イベントが無く `expires_at` を過ぎていないもの。`replaced` は同じブラウザでのログインし直し |
 | `session_activity` | 現在値 | `session_id`（PK）, `last_seen_at` | ログイン時に作り、以後の更新は 1 時間に 1 回に間引く |
 | `oauth_clients` | リソース | `id`, `client_id`, `client_secret_hash`（NULL 可 = 公開クライアント）, `name`, `website`（NULL 可）, `scope`, `registration`（`enum(first_party, user, metadata_document, dynamic)`）, `owner_user_id`（NULL 可）, `created_at` | 一意 `(client_id)`。インデックス `(owner_user_id)`。`registration` は登録の経路で、変わらない。`name`・`website`・`scope`・`client_secret_hash` は登録したときの値 |
 | `oauth_client_disablements` | イベント | `id`, `oauth_client_id`, `disabled_by_user_id`（NULL 可 = CLI）, `disabled_at` | インデックス `(oauth_client_id)`。取り消しのない行があればクライアントは無効 |

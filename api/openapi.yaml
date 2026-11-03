@@ -11557,14 +11557,10 @@ components:
           allOf:
             - $ref: '#/components/schemas/Id'
         issuer:
-          description: |
-            `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-            account's own server.
+          description: '`moderator`: a moderator or the CLI.'
           type: string
           enum:
             - moderator
-            - system
-            - remote
         issued_by_account_id:
           description: |
             The account of the moderator who took the action; omitted for the CLI and the

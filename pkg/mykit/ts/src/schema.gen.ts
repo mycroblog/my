@@ -7847,11 +7847,10 @@ export interface components {
             /** @description The report the action follows from; omitted when there is none. */
             report_id?: components["schemas"]["Id"];
             /**
-             * @description `moderator`: a moderator or the CLI. `system`: this server by itself. `remote`: the
-             *     account's own server.
+             * @description `moderator`: a moderator or the CLI.
              * @enum {string}
              */
-            issuer: "moderator" | "system" | "remote";
+            issuer: "moderator";
             /**
              * @description The account of the moderator who took the action; omitted for the CLI and the
              *     system.

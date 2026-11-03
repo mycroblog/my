@@ -4,7 +4,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `moderation_actions` | イベント | `id`, `target_account_id`, `kind`（§5.2 の enum）, `reason_category`（`enum(spam, legal, violation, other)`）, `public_reason`（`text`、NULL 可。5,000 文字まで。本人に見せる理由）, `private_note`（`text`、NULL 可。5,000 文字まで）, `report_id`（NULL 可）, `issuer`（`enum(moderator, system, remote)`）, `issued_by_user_id`（NULL 可）, `notify_target`（`bool`）, `expires_at`（NULL 可 = 無期限）, `issued_at` | インデックス `(target_account_id, id DESC)`, `(report_id)` |
+| `moderation_actions` | イベント | `id`, `target_account_id`, `kind`（§5.2 の enum）, `reason_category`（`enum(spam, legal, violation, other)`）, `public_reason`（`text`、NULL 可。5,000 文字まで。本人に見せる理由）, `private_note`（`text`、NULL 可。5,000 文字まで）, `report_id`（NULL 可）, `issuer`（`enum(moderator)`）, `issued_by_user_id`（NULL 可）, `notify_target`（`bool`）, `expires_at`（NULL 可 = 無期限）, `issued_at` | インデックス `(target_account_id, id DESC)`, `(report_id)` |
 | `moderation_action_statuses` | イベント（子） | `action_id`, `status_id` | PK `(action_id, status_id)`。投稿単位の処分（`delete_statuses` / `mark_statuses_sensitive`）の対象。処分 1 件につき 1〜100 件で、処分の対象のアカウントの削除されていない投稿だけ（処分のユースケースが検査する）。ほかの種類の処分は持たない。インデックス `(status_id)`（投稿の消去で証拠を残す判定） |
 | `moderation_action_lifts` | イベント | `action_id`（PK）, `lifted_by_user_id`（NULL 可 = システム）, `reason`（`text`、NULL 可。5,000 文字まで）, `lifted_at` | 期限切れは「解除」ではないので記録しない（投影の読み取り時に期限で判定） |
 | `moderation_appeals` | リソース | `id`, `action_id`, `account_id`（申し立てた本人 = 処分の対象）, `body`（1〜2,000 文字。空白だけは不可）, `submitted_at` | 一意 `(action_id)`。ローカルのアカウントへの処分だけが対象。期間（ADR-0038、インスタンス設定 `appeal_window`、既定は処分から 180 日。`ban` はアカウントの削除の期日 = 処分から 30 日も過ぎない）を過ぎた処分と、アカウントが削除された `ban` には申し立てられない |

@@ -94,17 +94,11 @@ type Issuer string
 // Issuers.
 const (
 	IssuerModerator Issuer = "moderator"
-	IssuerSystem    Issuer = "system"
-	IssuerRemote    Issuer = "remote"
 )
 
 // Valid reports whether i is one of the issuers.
 func (i Issuer) Valid() bool {
-	switch i {
-	case IssuerModerator, IssuerSystem, IssuerRemote:
-		return true
-	}
-	return false
+	return i == IssuerModerator
 }
 
 var (

@@ -728,12 +728,6 @@ function ActionHistory({ account }: { account: AdminAccountDetail }) {
   );
 }
 
-const issuerLabels: Readonly<Record<AccountAction["issuer"], ClientMessageKey>> = {
-  moderator: "client:admin.account.actions.issuer.cli",
-  system: "client:admin.account.actions.issuer.system",
-  remote: "client:admin.account.actions.issuer.remote",
-};
-
 function ActionRow({ action, local, lift }: { action: AccountAction; local: boolean; lift: LiftAccountAction }) {
   const t = useT();
   const intl = useIntl();
@@ -791,7 +785,7 @@ function ActionRow({ action, local, lift }: { action: AccountAction; local: bool
         </DescriptionItem>
         <DescriptionItem term={t("client:admin.account.actions.issuer")}>
           {action.issued_by_account_id === undefined ? (
-            t(issuerLabels[action.issuer])
+            t("client:admin.account.actions.issuer.cli")
           ) : (
             <AssigneeName id={action.issued_by_account_id} />
           )}
