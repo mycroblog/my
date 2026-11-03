@@ -461,14 +461,16 @@ func (o *Objects) Featured(ctx context.Context, accountID string) ([]federation.
 // viewNote returns the Note of a status as an anonymous visitor sees it, from the parts that the
 // reader resolved. The reader showed the status to an anonymous visitor, so it is public or
 // unlisted and its effective visibility is its own (a ceiling would have made it followers-only):
-// no mention is left out of tag (ADR-0035 is about local statuses).
+// no mention is left out of tag (ADR-0035 is about local statuses). Like every Note, it says what
+// the status quotes and who may quote it.
 func (o *Objects) viewNote(ctx context.Context, v appcontent.StatusView) (federation.NoteDocument, error) {
 	parts, err := o.viewParts(ctx, v)
 	if err != nil {
 		return federation.NoteDocument{}, err
 	}
-	return statusNote(v.Status, v.Revision, v.Author, v.Status.Visibility, parts,
-		updatedOf(v.Revision), o.d.Host, o.d.AccountDomain), nil
+	note := statusNote(v.Status, v.Revision, v.Author, v.Status.Visibility, parts,
+		updatedOf(v.Revision), o.d.Host, o.d.AccountDomain)
+	return o.notes.withQuotes(ctx, note, v.Status, v.Author, v.Status.Visibility)
 }
 
 // viewParts returns the parts of the Note of a status from those the reader resolved, with the

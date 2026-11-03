@@ -1,0 +1,136 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    "https://w3id.org/security/v1",
+    {
+      "Emoji": "toot:Emoji",
+      "Hashtag": "as:Hashtag",
+      "PropertyValue": "schema:PropertyValue",
+      "QuoteAuthorization": "https://w3id.org/fep/044f#QuoteAuthorization",
+      "QuoteRequest": "https://w3id.org/fep/044f#QuoteRequest",
+      "_misskey_quote": "https://misskey-hub.net/ns#_misskey_quote",
+      "automaticApproval": {
+        "@id": "gts:automaticApproval",
+        "@type": "@id"
+      },
+      "blurhash": "toot:blurhash",
+      "canQuote": {
+        "@id": "gts:canQuote",
+        "@type": "@id"
+      },
+      "discoverable": "toot:discoverable",
+      "featured": {
+        "@id": "toot:featured",
+        "@type": "@id"
+      },
+      "featuredTags": {
+        "@id": "toot:featuredTags",
+        "@type": "@id"
+      },
+      "focalPoint": {
+        "@container": "@list",
+        "@id": "toot:focalPoint"
+      },
+      "gts": "https://gotosocial.org/ns#",
+      "indexable": "toot:indexable",
+      "interactingObject": {
+        "@id": "gts:interactingObject",
+        "@type": "@id"
+      },
+      "interactionPolicy": {
+        "@id": "gts:interactionPolicy",
+        "@type": "@id"
+      },
+      "interactionTarget": {
+        "@id": "gts:interactionTarget",
+        "@type": "@id"
+      },
+      "manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
+      "movedTo": {
+        "@id": "as:movedTo",
+        "@type": "@id"
+      },
+      "quote": {
+        "@id": "https://w3id.org/fep/044f#quote",
+        "@type": "@id"
+      },
+      "quoteAuthorization": {
+        "@id": "https://w3id.org/fep/044f#quoteAuthorization",
+        "@type": "@id"
+      },
+      "quoteUri": "http://fedibird.com/ns#quoteUri",
+      "quoteUrl": "as:quoteUrl",
+      "schema": "http://schema.org#",
+      "sensitive": "as:sensitive",
+      "suspended": "toot:suspended",
+      "toot": "http://joinmastodon.org/ns#",
+      "value": "schema:value",
+      "votersCount": "toot:votersCount"
+    }
+  ],
+  "id": "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f/featured",
+  "type": "OrderedCollection",
+  "totalItems": 1,
+  "orderedItems": [
+    {
+      "id": "https://social.example.org/ap/objects/0192f3b0-2c3d-7e4f-8a00-1122334455aa",
+      "type": "Note",
+      "published": "2026-10-01T09:00:00Z",
+      "url": "https://social.example.org/@alice/status/0192f3b0-2c3d-7e4f-8a00-1122334455aa",
+      "attributedTo": "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f",
+      "to": [
+        "https://www.w3.org/ns/activitystreams#Public"
+      ],
+      "cc": [
+        "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f/followers",
+        "https://remote.example/users/bob"
+      ],
+      "summary": "a content warning",
+      "sensitive": true,
+      "content": "\u003cp class=\"quote-inline\"\u003eRE: \u003ca href=\"https://remote.example/@bob/1\"\u003ehttps://remote.example/@bob/1\u003c/a\u003e\u003c/p\u003e\u003cp\u003e\u003cspan class=\"h-card\"\u003e\u003ca href=\"https://remote.example/@bob\" class=\"u-url mention\"\u003e@\u003cspan\u003ebob\u003c/span\u003e\u003c/a\u003e\u003c/span\u003e hello \u003ca href=\"https://social.example.org/tags/fediverse\" class=\"mention hashtag\" rel=\"tag\"\u003e#\u003cspan\u003eFediVerse\u003c/span\u003e\u003c/a\u003e\u003c/p\u003e",
+      "contentMap": {
+        "en": "\u003cp class=\"quote-inline\"\u003eRE: \u003ca href=\"https://remote.example/@bob/1\"\u003ehttps://remote.example/@bob/1\u003c/a\u003e\u003c/p\u003e\u003cp\u003e\u003cspan class=\"h-card\"\u003e\u003ca href=\"https://remote.example/@bob\" class=\"u-url mention\"\u003e@\u003cspan\u003ebob\u003c/span\u003e\u003c/a\u003e\u003c/span\u003e hello \u003ca href=\"https://social.example.org/tags/fediverse\" class=\"mention hashtag\" rel=\"tag\"\u003e#\u003cspan\u003eFediVerse\u003c/span\u003e\u003c/a\u003e\u003c/p\u003e"
+      },
+      "attachment": [
+        {
+          "type": "Document",
+          "mediaType": "image/jpeg",
+          "url": "https://files.social.example.org/media/r/large.jpg",
+          "name": "A cat on a sofa",
+          "blurhash": "UFHV6nWB2yk8pyo0adR*.7kCMdnjt7jtxuWB",
+          "focalPoint": [
+            0.5,
+            -0.25
+          ],
+          "width": 1280,
+          "height": 960
+        }
+      ],
+      "tag": [
+        {
+          "type": "Mention",
+          "href": "https://remote.example/users/bob",
+          "name": "@bob@remote.example"
+        },
+        {
+          "type": "Hashtag",
+          "href": "https://social.example.org/tags/fediverse",
+          "name": "#FediVerse"
+        }
+      ],
+      "quote": "https://remote.example/users/bob/statuses/1",
+      "_misskey_quote": "https://remote.example/users/bob/statuses/1",
+      "quoteUrl": "https://remote.example/users/bob/statuses/1",
+      "quoteUri": "https://remote.example/users/bob/statuses/1",
+      "quoteAuthorization": "https://remote.example/users/bob/quote_authorizations/1",
+      "interactionPolicy": {
+        "canQuote": {
+          "automaticApproval": [
+            "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f/followers"
+          ]
+        }
+      }
+    }
+  ]
+}
+

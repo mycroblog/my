@@ -5,6 +5,7 @@ package activitypub_test
 import (
 	"context"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
@@ -45,7 +46,7 @@ func newNoteWorld() *noteWorld {
 		Handle:  &account.Handle{AccountID: bobID, Username: "bob", UsernameNormalized: "bob", Domain: "remote.example"},
 	}
 	published := time.Date(2026, 10, 1, 9, 0, 0, 0, time.UTC)
-	body := `<p><span class="h-card"><a href="https://remote.example/@bob" class="u-url mention">@<span>bob</span></a></span> hello <a href="https://` + host + `/tags/fediverse" class="mention hashtag" rel="tag">#<span>fediverse</span></a></p>`
+	body := `<p><span class="h-card"><a href="https://remote.example/@bob" class="u-url mention">@<span>bob</span></a></span> hello <a href="https://` + host + `/tags/fediverse" class="mention hashtag" rel="tag">#<span>FediVerse</span></a></p>`
 	return &noteWorld{
 		actors: map[string]appaccount.Actor{aliceID: alice, bobID: bob},
 		status: appcontent.Status{
@@ -58,7 +59,7 @@ func newNoteWorld() *noteWorld {
 		},
 		parts: appcontent.RevisionParts{
 			Mentions: []appaccount.Actor{bob},
-			Tags:     []content.Tag{{ID: testkit.NamedID("tag-fediverse"), Name: "fediverse", NameNormalized: "fediverse"}},
+			Tags:     []content.Tag{{ID: testkit.NamedID("tag-fediverse"), Name: "FediVerse", NameNormalized: "fediverse"}},
 			Attachments: []appcontent.MediaView{{
 				Media: appcontent.Media{
 					Result: &content.MediaProcessingResult{
@@ -113,15 +114,23 @@ func (w *noteWorld) Relationship(_ context.Context, accountID, targetID string) 
 }
 
 func (w *noteWorld) Profile(context.Context, appcontent.Viewer, string, apptimeline.ProfileFilter, apptimeline.Query) (apptimeline.Page, error) {
-	return apptimeline.Page{}, nil
+	return apptimeline.Page{Entries: []apptimeline.Entry{{StatusID: w.status.ID}}}, nil
+}
+
+// view is the status as the reader presents it to the outbox and featured collections.
+func (w *noteWorld) view() appcontent.StatusView {
+	return appcontent.StatusView{
+		Status: w.status, Revision: w.rev, Author: w.actors[aliceID],
+		Attachments: w.parts.Attachments, Mentions: w.parts.Mentions, Tags: w.parts.Tags,
+	}
 }
 
 func (w *noteWorld) Views(context.Context, appcontent.Viewer, []string) ([]appcontent.StatusView, error) {
-	return nil, nil
+	return []appcontent.StatusView{w.view()}, nil
 }
 
 func (w *noteWorld) Pinned(context.Context, appcontent.Viewer, string) ([]appcontent.StatusView, error) {
-	return nil, nil
+	return []appcontent.StatusView{w.view()}, nil
 }
 
 func (w *noteWorld) EmojiTags(context.Context, []string) ([]appcontent.EmojiTag, error) {
@@ -166,15 +175,7 @@ var noteRequired = map[string][]string{
 // with the Note builder that the fan-out delivers too (federation.md §7.4, §10), against the
 // Create that each implementation publishes.
 func TestCreateNoteMatchesPeers(t *testing.T) {
-	w := newNoteWorld()
-	objects := appfederation.NewObjects(appfederation.ObjectsDeps{
-		Statuses: w, Accounts: w, Graph: w, Timeline: w, Reader: w, Host: host, AccountDomain: accountDomain,
-	})
-	s := &server{mux: http.NewServeMux(), accounts: newAccounts(t), objects: newObjects(), graph: &fakeGraph{}}
-	activitypub.New(activitypub.Options{
-		Host: host, AccountDomain: accountDomain, SoftwareVersion: "0.1.0", SourceURL: "https://github.com/mycroblog/my",
-		Accounts: s.accounts, Objects: objects, Graph: s.graph, Problem: problem,
-	}).Register(s.mux)
+	s := newNoteServer(t, newNoteWorld(), nil)
 
 	rec := s.get(t, "/ap/objects/"+noteStatusID+"/activity", acceptMastodon)
 	if rec.Code != http.StatusOK {
@@ -189,7 +190,77 @@ func TestCreateNoteMatchesPeers(t *testing.T) {
 	if m := tags[0].(map[string]any); m["type"] != "Mention" || m["name"] != "@bob@remote.example" || m["href"] != "https://remote.example/users/bob" {
 		t.Errorf("mention = %v", m)
 	}
-	if h := tags[1].(map[string]any); h["type"] != "Hashtag" || h["name"] != "#fediverse" || h["href"] != "https://"+host+"/tags/fediverse" {
+	if h := tags[1].(map[string]any); h["type"] != "Hashtag" || h["name"] != "#FediVerse" || h["href"] != "https://"+host+"/tags/fediverse" {
 		t.Errorf("hashtag = %v", h)
+	}
+}
+
+// newNoteServer returns the handler over appfederation.Objects on w and quotes.
+func newNoteServer(t *testing.T, w *noteWorld, quotes appfederation.ObjectQuotes) *server {
+	t.Helper()
+	objects := appfederation.NewObjects(appfederation.ObjectsDeps{
+		Statuses: w, Accounts: w, Graph: w, Timeline: w, Reader: w, Quotes: quotes, Host: host, AccountDomain: accountDomain,
+	})
+	s := &server{mux: http.NewServeMux(), accounts: newAccounts(t), objects: newObjects(), graph: &fakeGraph{}}
+	activitypub.New(activitypub.Options{
+		Host: host, AccountDomain: accountDomain, SoftwareVersion: "0.1.0", SourceURL: "https://github.com/mycroblog/my",
+		Accounts: s.accounts, Objects: objects, Graph: s.graph, Problem: problem,
+	}).Register(s.mux)
+	return s
+}
+
+// noteQuote is the approved quote of a remote status that the status of a noteWorld makes, with
+// the policy that followers may quote it.
+type noteQuote struct{}
+
+const (
+	noteQuotedURI  = "https://remote.example/users/bob/statuses/1"
+	noteQuotedPage = "https://remote.example/@bob/1"
+	noteQuoteAuth  = "https://remote.example/users/bob/quote_authorizations/1"
+)
+
+func (noteQuote) FindQuote(_ context.Context, statusID string) (appcontent.Quote, appcontent.QuoteState, error) {
+	return appcontent.Quote{StatusID: statusID, QuotedURI: noteQuotedURI},
+		appcontent.QuoteState{StatusID: statusID, Approval: appcontent.QuoteApprovalAccepted, AuthorizationURI: noteQuoteAuth}, nil
+}
+
+func (noteQuote) FindQuotePolicy(_ context.Context, statusID string) (appcontent.StatusQuotePolicy, error) {
+	return appcontent.StatusQuotePolicy{StatusID: statusID, Policy: appcontent.QuotePolicyFollowers}, nil
+}
+
+func (noteQuote) FederatedQuotePage(context.Context, string) (string, bool, error) {
+	return noteQuotedPage, true, nil
+}
+
+func (noteQuote) FindQuoteAuthorization(context.Context, string) (appcontent.QuoteAuthorization, error) {
+	return appcontent.QuoteAuthorization{}, appcontent.ErrNotFound
+}
+
+// TestCollectionsServeTheQuotingNote checks a quoting status in the outbox and featured: the Note
+// is the one its IRI serves (federation.md §7.4), and the collection's context defines its terms.
+func TestCollectionsServeTheQuotingNote(t *testing.T) {
+	s := newNoteServer(t, newNoteWorld(), noteQuote{})
+	rec := s.get(t, "/ap/objects/"+noteStatusID, acceptMastodon)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET the Note = %d %s", rec.Code, rec.Body)
+	}
+	own := decode(t, rec.Body.Bytes())
+	delete(own, "@context")
+	if own["quote"] != noteQuotedURI || own["quoteAuthorization"] != noteQuoteAuth || own["interactionPolicy"] == nil {
+		t.Fatalf("Note = %v", own)
+	}
+
+	rec = s.get(t, "/ap/actors/"+aliceID+"/featured", acceptMastodon)
+	checkGolden(t, "collection-featured-quote.json", rec.Body.Bytes())
+	items := decode(t, rec.Body.Bytes())["orderedItems"].([]any)
+	if len(items) != 1 || !reflect.DeepEqual(items[0], own) {
+		t.Errorf("featured Note = %v, want %v", items, own)
+	}
+
+	rec = s.get(t, "/ap/actors/"+aliceID+"/outbox?page=true", acceptMastodon)
+	checkGolden(t, "collection-outbox-quote.json", rec.Body.Bytes())
+	items = decode(t, rec.Body.Bytes())["orderedItems"].([]any)
+	if len(items) != 1 || !reflect.DeepEqual(items[0].(map[string]any)["object"], own) {
+		t.Errorf("outbox items = %v, want the Create of %v", items, own)
 	}
 }

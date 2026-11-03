@@ -43,7 +43,8 @@ func (h *Handler) actorDocument(ctx context.Context, a appaccount.Actor) (federa
 // keyDocument is the minimal actor document that authorized fetch serves to a request without
 // a verified signature: what a server needs to verify the actor's signatures and to address it,
 // with the properties Mastodon keeps in the same case (id, type, preferredUsername, inbox,
-// publicKey, endpoints), and the movedTo of an actor that moved, which Misskey reads when the
+// publicKey, endpoints), the assertionMethod that holds the key of the actor's integrity proofs
+// (FEP-521a, FEP-8b32), and the movedTo of an actor that moved, which Misskey reads when the
 // actor's Move arrives (ADR-0089) and which a federation mode that sends the Move must serve.
 type keyDocument struct {
 	Context           []any                         `json:"@context"`
@@ -52,6 +53,7 @@ type keyDocument struct {
 	PreferredUsername string                        `json:"preferredUsername"`
 	Inbox             federation.IRI                `json:"inbox"`
 	PublicKey         *federation.PublicKeyDocument `json:"publicKey,omitempty"`
+	AssertionMethod   []federation.MultikeyDocument `json:"assertionMethod,omitempty"`
 	Endpoints         map[string]federation.IRI     `json:"endpoints"`
 	MovedTo           federation.IRI                `json:"movedTo,omitempty"`
 }
@@ -60,7 +62,7 @@ type keyDocument struct {
 func keyDocumentOf(doc federation.ActorDocument) keyDocument {
 	return keyDocument{
 		Context: doc.Context, ID: doc.ID, Type: doc.Type, PreferredUsername: doc.PreferredUsername,
-		Inbox: doc.Inbox, PublicKey: doc.PublicKey, Endpoints: doc.Endpoints, MovedTo: doc.MovedTo,
+		Inbox: doc.Inbox, PublicKey: doc.PublicKey, AssertionMethod: doc.AssertionMethod, Endpoints: doc.Endpoints, MovedTo: doc.MovedTo,
 	}
 }
 
