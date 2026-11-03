@@ -36,6 +36,7 @@ type Objects interface {
 	Status(ctx context.Context, req appfederation.Requester, statusID string) (appfederation.Object, error)
 	StatusActivity(ctx context.Context, req appfederation.Requester, statusID string) (appfederation.Object, error)
 	QuoteAuthorization(ctx context.Context, id string) (appfederation.Object, error)
+	Announce(ctx context.Context, req appfederation.Requester, id string) (appfederation.Object, error)
 	PageStatusURI(ctx context.Context, statusID string) (string, error)
 	OutboxTotal(ctx context.Context, accountID string) (int64, error)
 	Outbox(ctx context.Context, accountID, before string) (appfederation.OutboxPage, error)
@@ -157,8 +158,8 @@ const (
 
 // Register registers every endpoint on r. The federation mode (ADR-0076) gates the GETs by their
 // flow: the discovery documents and the actors identify (404 when the mode is off), and the
-// statuses, their activities, the collections, the custom emoji, and the approvals of quotes
-// publish (404 when the mode does not send the local posts out; never 410, so that nothing tells
+// statuses, their activities, the collections, the custom emoji, the approvals of quotes, and the
+// Announce of boosts publish (404 when the mode does not send the local posts out; never 410, so that nothing tells
 // what exists).
 //
 // The service closure comes first (ADR-0088 §2): once the server is closed, the inboxes, the
@@ -188,6 +189,7 @@ func (h *Handler) Register(r Router) {
 	r.Handle("GET "+objectsPrefix+"{id}/"+activitySegment, publish(h.object))
 	r.Handle("GET "+emojisPrefix+"{id}", publish(h.emoji))
 	r.Handle("GET "+quoteAuthorizationsPrefix+"{id}", publish(h.quoteAuthorization))
+	r.Handle("GET "+activitiesPrefix+"{id}", publish(h.activity))
 	// A wildcard cannot share a path segment with "@", so every single-segment GET that no
 	// more specific pattern serves comes here; profilePage passes those that are not profile
 	// pages to the HTML handler.

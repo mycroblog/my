@@ -315,17 +315,23 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 		if err != nil {
 			return nil, err
 		}
-		aud := federation.Address(federation.Visibility(s.visibility), federation.FollowersOf(actor), mentioned)
-		announce := federation.NewActivityDocument(federation.IRI(s.boost.URI), federation.ActivityAnnounce, actor,
-			s.boost.BoostedAt, aud, federation.IRI(s.status.URI))
+		announce := announceDocument(s.boost, s.status, actor, s.visibility, mentioned)
 		doc = announce
 		if act.Type == federation.ActivityUndo {
-			doc = federation.NewActivityDocument(act.ActivityURI, act.Type, actor, act.CreatedAt, aud, announce.Embedded())
+			doc = federation.NewActivityDocument(act.ActivityURI, act.Type, actor, act.CreatedAt, federation.Audience{To: announce.To, Cc: announce.Cc}, announce.Embedded())
 		}
 	default:
 		return nil, fmt.Errorf("%w: %s of a %s", federation.ErrInvalidOutbound, act.Type, act.ObjectKind)
 	}
 	return doc.Marshal()
+}
+
+// announceDocument returns the Announce of boost b of st by actor, addressed by the effective
+// visibility vis to its followers and mentioned, the one place that the fan-out and GET of the
+// Announce's IRI build it (federation.md §7.4, §10).
+func announceDocument(b appcontent.Boost, st appcontent.Status, actor federation.IRI, vis appcontent.Visibility, mentioned []federation.IRI) federation.ActivityDocument {
+	aud := federation.Address(federation.Visibility(vis), federation.FollowersOf(actor), mentioned)
+	return federation.NewActivityDocument(federation.IRI(b.URI), federation.ActivityAnnounce, actor, b.BoostedAt, aud, federation.IRI(st.URI))
 }
 
 // accountDocument builds the Update or the Delete of a local actor, addressed to the public as

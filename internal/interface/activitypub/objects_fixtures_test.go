@@ -23,6 +23,7 @@ const (
 	strangerDomain   = "stranger.example"
 	statusPagePrefix = "https://" + host + "/@alice/status/"
 	outboxNext       = "0192f3b0-2c3d-7e4f-8a00-112233445600"
+	announceID       = "0192f3b0-2c3d-7e4f-8a00-112233445700"
 )
 
 // fakeObjects is an activitypub.Objects over fixed statuses. A request's requester is the domain
@@ -88,6 +89,20 @@ func (f *fakeObjects) StatusActivity(_ context.Context, req appfederation.Reques
 
 func (f *fakeObjects) QuoteAuthorization(context.Context, string) (appfederation.Object, error) {
 	return appfederation.Object{}, appfederation.ErrNotFound
+}
+
+// Announce finds the one boost announceID.
+func (f *fakeObjects) Announce(_ context.Context, _ appfederation.Requester, id string) (appfederation.Object, error) {
+	if f.err != nil {
+		return appfederation.Object{}, f.err
+	}
+	if id != announceID {
+		return appfederation.Object{}, fmt.Errorf("activity %s: %w", id, appfederation.ErrNotFound)
+	}
+	return appfederation.Object{
+		Public:   true,
+		Document: fmt.Appendf(nil, `{"@context":"https://www.w3.org/ns/activitystreams","id":"https://%s/ap/activities/%s","type":"Announce"}`, host, id),
+	}, nil
 }
 
 // PageStatusURI finds the statuses that an anonymous visitor may see and that are not deleted.

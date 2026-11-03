@@ -92,7 +92,9 @@ const AcceptSignatureGET = acceptSignatureGET
 type ObjectsDeps struct {
 	// Quotes reads the quotes and quote policies that Notes present, and the approvals this
 	// server gives (ADR-0069); nil presents none and serves no QuoteAuthorization.
-	Quotes   ObjectQuotes
+	Quotes ObjectQuotes
+	// Boosts reads the boosts whose Announce is served (ADR-0144 §5); nil serves none.
+	Boosts   ObjectBoosts
 	Statuses ObjectStatuses
 	Accounts ObjectAccounts
 	Graph    ObjectGraph
