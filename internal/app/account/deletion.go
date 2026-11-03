@@ -98,6 +98,12 @@ func (s *Service) CancelDeletionByModeration(ctx context.Context, tx uow.Tx, acc
 // remote account with ErrNotLocal. The state is read with a lock where the database takes one,
 // so that a concurrent deletion records one event only.
 func (s *Service) DeleteBySelf(ctx context.Context, accountID string) error {
+	return s.DeleteBySelfGuarded(ctx, accountID, nil)
+}
+
+// DeleteBySelfGuarded is DeleteBySelf with guard, which runs first in its transaction and refuses
+// the deletion by failing; a nil guard refuses nothing.
+func (s *Service) DeleteBySelfGuarded(ctx context.Context, accountID string, guard func(tx uow.Tx) error) error {
 	a, err := s.d.Repository.FindAccount(ctx, accountID)
 	if err != nil {
 		return err
@@ -107,6 +113,11 @@ func (s *Service) DeleteBySelf(ctx context.Context, accountID string) error {
 	}
 	id := s.d.IDs.NewID()
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if guard != nil {
+			if err := guard(tx); err != nil {
+				return err
+			}
+		}
 		st, err := s.d.Repository.LifecycleState(ctx, tx, accountID)
 		switch {
 		case errors.Is(err, ErrNotFound):

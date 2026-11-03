@@ -737,6 +737,19 @@ func (s *Service) UserLifecycle(ctx context.Context, userID string) (account.Lif
 	return st, err
 }
 
+// UserLifecycleTx is UserLifecycle read in tx, with a lock where the database takes one.
+func (s *Service) UserLifecycleTx(ctx context.Context, tx uow.Tx, userID string) (account.LifecycleState, error) {
+	la, err := s.d.Repository.FindLocalAccountByUserTx(ctx, tx, userID)
+	if err != nil {
+		return account.LifecycleState{}, err
+	}
+	st, err := s.d.Repository.LifecycleState(ctx, tx, la.AccountID)
+	if errors.Is(err, ErrNotFound) {
+		return account.InitialLifecycleState(la.AccountID), nil
+	}
+	return st, err
+}
+
 // CountLocalUsers returns the number of local accounts of users that are not deleted, for
 // NodeInfo's usage statistics. The instance actor is not counted.
 func (s *Service) CountLocalUsers(ctx context.Context) (int, error) {

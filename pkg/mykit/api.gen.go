@@ -16641,7 +16641,9 @@ type ClientInterface interface {
 	// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
 	// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
 	// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
-	// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+	// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Corresponds with POST /admin/accounts/{id}/email_suppression/lift (the `LiftAdminAccountEmailSuppression` operationId).
@@ -16855,7 +16857,9 @@ type ClientInterface interface {
 	// `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 	// keeps the first reason; deciding it the other way is a 409
 	// `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type.
@@ -16873,7 +16877,9 @@ type ClientInterface interface {
 	// `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 	// keeps the first reason; deciding it the other way is a 409
 	// `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type.
@@ -16887,7 +16893,9 @@ type ClientInterface interface {
 	// `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 	// keeps the first reason; deciding it the other way is a 409
 	// `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type.
@@ -16901,7 +16909,9 @@ type ClientInterface interface {
 	// `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 	// keeps the first reason; deciding it the other way is a 409
 	// `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type.
@@ -22627,7 +22637,9 @@ func (c *Client) CreateAccountAction(ctx context.Context, id AdminAccountId, bod
 // a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
 // mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
 // the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
-// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Corresponds with POST /admin/accounts/{id}/email_suppression/lift (the `LiftAdminAccountEmailSuppression` operationId).
@@ -23021,7 +23033,9 @@ func (c *Client) GetAppeal(ctx context.Context, id AppealId, reqEditors ...Reque
 // `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 // keeps the first reason; deciding it the other way is a 409
 // `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type.
@@ -23049,7 +23063,9 @@ func (c *Client) OverturnAppealWithBody(ctx context.Context, id AppealId, conten
 // `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 // keeps the first reason; deciding it the other way is a 409
 // `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type.
@@ -23073,7 +23089,9 @@ func (c *Client) OverturnAppeal(ctx context.Context, id AppealId, body OverturnA
 // `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 // keeps the first reason; deciding it the other way is a 409
 // `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type.
@@ -23097,7 +23115,9 @@ func (c *Client) UpholdAppealWithBody(ctx context.Context, id AppealId, contentT
 // `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 // keeps the first reason; deciding it the other way is a 409
 // `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type.
@@ -47623,7 +47643,9 @@ type ClientWithResponsesInterface interface {
 	// a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
 	// mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
 	// the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
-	// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+	// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47865,7 +47887,9 @@ type ClientWithResponsesInterface interface {
 	// `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 	// keeps the first reason; deciding it the other way is a 409
 	// `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -47883,7 +47907,9 @@ type ClientWithResponsesInterface interface {
 	// `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 	// keeps the first reason; deciding it the other way is a 409
 	// `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -47897,7 +47923,9 @@ type ClientWithResponsesInterface interface {
 	// `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 	// keeps the first reason; deciding it the other way is a 409
 	// `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -47911,7 +47939,9 @@ type ClientWithResponsesInterface interface {
 	// `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 	// keeps the first reason; deciding it the other way is a 409
 	// `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+	// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+	// A local account whose roles do not rank below the user's, the user's own included, is a
+	// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 	// `manage_accounts` permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -76592,7 +76622,9 @@ func (c *ClientWithResponses) CreateAccountActionWithResponse(ctx context.Contex
 // a hard bounce or a complaint suppressed (ADR-0086 §5), such as after the user fixed their
 // mailbox. It is recorded in the audit log as `email_suppression_lifted`. A remote account or
 // the instance actor is a 422 naming `id`, an account whose address is not suppressed a 409
-// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404. Needs the
+// `/api/v1/problems/email-not-suppressed`, and an unknown account a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -76942,7 +76974,9 @@ func (c *ClientWithResponses) GetAppealWithResponse(ctx context.Context, id Appe
 // `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 // keeps the first reason; deciding it the other way is a 409
 // `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -76966,7 +77000,9 @@ func (c *ClientWithResponses) OverturnAppealWithBodyWithResponse(ctx context.Con
 // `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 // keeps the first reason; deciding it the other way is a 409
 // `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -76986,7 +77022,9 @@ func (c *ClientWithResponses) OverturnAppealWithResponse(ctx context.Context, id
 // `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 // keeps the first reason; deciding it the other way is a 409
 // `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -77006,7 +77044,9 @@ func (c *ClientWithResponses) UpholdAppealWithBodyWithResponse(ctx context.Conte
 // `decision_reason`. Deciding a decided appeal the same way again changes nothing and
 // keeps the first reason; deciding it the other way is a 409
 // `/api/v1/problems/appeal-decided`. A `public_reason` that is too long or contains
-// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404. Needs the
+// U+0000 is a 422 naming `public_reason`. An unknown ID is a 404.
+// A local account whose roles do not rank below the user's, the user's own included, is a
+// 403 `/api/v1/problems/target-outranks-actor`. Needs the
 // `manage_accounts` permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).

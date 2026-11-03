@@ -25,15 +25,13 @@ func (s *Service) DeleteOwnAccount(ctx context.Context, userID string, c Confirm
 	if err := s.confirm(ctx, OperationAccountDeletion, userID, c); err != nil {
 		return err
 	}
-	switch last, err := s.IsLastAdministrator(ctx, userID); {
-	case err != nil:
+	guard, err := s.guardLastAdministrator(ctx, userID)
+	if err != nil {
 		return err
-	case last:
-		return ErrLastAdmin
 	}
 	st, err := s.d.Accounts.UserLifecycle(ctx, userID)
 	if err != nil {
 		return err
 	}
-	return s.d.Accounts.DeleteBySelf(ctx, st.AccountID)
+	return s.d.Accounts.DeleteBySelfGuarded(ctx, st.AccountID, guard)
 }
