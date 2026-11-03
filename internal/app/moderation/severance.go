@@ -69,11 +69,10 @@ const (
 	// JobSeverDomain cuts the follows of the local accounts with a suspended domain; its payload
 	// is severDomainPayload.
 	JobSeverDomain = "moderation.sever_domain"
-	// severBatch is the number of local accounts that one page of JobSeverDomain reads.
-	severBatch = 100
 )
 
 type severDomainPayload struct {
+	queue.FanOutStep
 	DomainActionID string `json:"domain_action_id"`
 }
 
@@ -130,51 +129,68 @@ func (s *Service) recordSeverance(ctx context.Context, tx uow.Tx, sv Severance, 
 	return true, tx.Emit(ctx, RelationshipsSevered{Severance: sv})
 }
 
-// SeverDomain cuts the follows between the local accounts and the accounts of the domain that
-// the suspension domainActionID covers, its subdomains included, without telling them, and
-// records a severance for each local account that lost an active follow; it returns how many
-// local accounts it recorded. It runs one short transaction per local account, so running it
-// again after a failure continues where it stopped: the follows that it ended stay ended and the
-// severances that it recorded are not recorded again. An action that is not a domain suspension
-// cuts nothing; one that has been lifted meanwhile still cuts its follows, as its issue did.
+// SeverDomain cuts the follows between the local accounts and the accounts of the domain that the
+// suspension domainActionID covers, its subdomains included, without telling them, and records a
+// severance for each local account that lost an active follow; it returns how many local accounts it
+// recorded. It runs one short transaction per local account, so running it again after a failure
+// changes nothing it did: the follows that it ended stay ended and the severances that it recorded
+// are not recorded again. An action that is not a domain suspension cuts nothing; one that has been
+// lifted meanwhile still cuts its follows, as its issue did.
 func (s *Service) SeverDomain(ctx context.Context, domainActionID string) (int, error) {
+	recorded := 0
+	err := s.severDomain(ctx, domainActionID, &recorded, func(fan queue.FanOut) error {
+		return fan.Walk(ctx, queue.KeyRange{})
+	})
+	return recorded, err
+}
+
+// severDomain does what SeverDomain says through run, which walks some or all of the local accounts,
+// adding the local accounts it recorded to recorded.
+func (s *Service) severDomain(ctx context.Context, domainActionID string, recorded *int, run func(queue.FanOut) error) error {
 	if !s.severs() || s.d.Directory == nil {
-		return 0, fmt.Errorf("%w: severing follows without the graph and account modules", ErrUnsupportedAction)
+		return fmt.Errorf("%w: severing follows without the graph and account modules", ErrUnsupportedAction)
 	}
 	rec, err := s.d.Repository.FindDomainActionRecord(ctx, domainActionID)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	a := rec.Action
 	if a.Kind != moderation.DomainSuspend {
-		return 0, nil
+		return nil
 	}
-	recorded := 0
-	after := ""
-	for {
-		locals, err := s.d.Directory.LocalAccountIDs(ctx, after, severBatch)
-		if err != nil {
-			return recorded, err
-		}
-		for _, local := range locals {
-			var created bool
-			err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-				var err error
-				created, err = s.severDomainOf(ctx, tx, a, local)
-				return err
-			})
-			if err != nil {
-				return recorded, err
+	fan := queue.FanOut{
+		Size: s.d.FanOutSize,
+		Page: queue.PageByLastKey(s.d.Directory.LocalAccountIDs),
+		Handle: func(ctx context.Context, locals []string) error {
+			for _, local := range locals {
+				var created bool
+				err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+					var err error
+					created, err = s.severDomainOf(ctx, tx, a, local)
+					return err
+				})
+				if err != nil {
+					return err
+				}
+				if created {
+					*recorded++
+				}
 			}
-			if created {
-				recorded++
+			return nil
+		},
+		Enqueue: func(ctx context.Context, steps []queue.FanOutStep) error {
+			jobs := make([]queue.NewJob, 0, len(steps))
+			for _, step := range steps {
+				payload, err := json.Marshal(severDomainPayload{FanOutStep: step, DomainActionID: a.ID})
+				if err != nil {
+					return err
+				}
+				jobs = append(jobs, queue.NewJob{Type: JobSeverDomain, Payload: payload, IdempotencyKey: queue.StepKey(JobSeverDomain+":"+a.ID, step)})
 			}
-		}
-		if len(locals) < severBatch {
-			return recorded, nil
-		}
-		after = locals[len(locals)-1]
+			return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Outbox.EnqueueTx(ctx, tx, jobs...) })
+		},
 	}
+	return run(fan)
 }
 
 // severDomainOf cuts, inside tx, the follows between the local account and the accounts of the
@@ -201,7 +217,10 @@ func (s *Service) handleSeverDomain(ctx context.Context, j queue.Job) queue.Resu
 	if err := json.Unmarshal(j.Payload, &p); err != nil || p.DomainActionID == "" {
 		return queue.Fail(fmt.Errorf("moderation: payload of %s: %q", JobSeverDomain, j.Payload))
 	}
-	_, err := s.SeverDomain(ctx, p.DomainActionID)
+	recorded := 0
+	err := s.severDomain(ctx, p.DomainActionID, &recorded, func(fan queue.FanOut) error {
+		return fan.Run(ctx, p.FanOutStep)
+	})
 	switch {
 	case errors.Is(err, ErrNotFound), errors.Is(err, ErrUnsupportedAction):
 		return queue.Fail(err)

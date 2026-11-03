@@ -31,6 +31,10 @@ WHERE account_id = sqlc.arg(account_id)
 ORDER BY created_at DESC, target_account_id DESC
 LIMIT sqlc.arg(page_limit);
 
+-- CountPostSubscribers counts the subscribers of a target.
+-- name: CountPostSubscribers :one
+SELECT count(*) FROM post_subscriptions WHERE target_account_id = sqlc.arg(target_account_id);
+
 -- ListPostSubscribersPage pages the subscribers of a target by the subscriber; an empty after
 -- starts at the first.
 -- name: ListPostSubscribersPage :many

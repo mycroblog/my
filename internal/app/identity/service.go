@@ -124,6 +124,8 @@ type Deps struct {
 	// Outbox enqueues the jobs that send those emails in the transactions of the use cases
 	// (ADR-0086 §1); a Mailer needs it.
 	Outbox queue.Outbox
+	// FanOutSize is the keys of one job of a wide fan-out, queue.FanOutSize when 0. Tests set it.
+	FanOutSize int
 	// RequireEmailVerification keeps users whose primary address is unverified from using
 	// the app (Access.Allowed). It is false when the mailer delivers no email (mail = none);
 	// then a moderator's approval stands in for verification and open mode waits for one

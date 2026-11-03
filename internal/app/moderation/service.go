@@ -200,6 +200,8 @@ type Deps struct {
 	// enqueues the job that cuts their follows; without either, a domain suspension cuts none.
 	Directory Directory
 	Outbox    queue.Outbox
+	// FanOutSize is the keys of one job of a wide fan-out, queue.FanOutSize when 0. Tests set it.
+	FanOutSize int
 	// Emails reads the email address of a banned account's user for the block the ban makes of
 	// it (AccountActionInput.BlockEmail); nil refuses such bans with ErrCannotBlockEmail.
 	Emails Emails

@@ -96,7 +96,7 @@ Mail jobs run only when `mail` is set to a provider. If the address or the state
 | `notification.email` | Sends the email of one notification that stayed unread for 15 minutes. Checks the read position, the user's setting, and that the notification is still shown. | A notification with email on, due 15 minutes later | Mail | Sends again |
 | `notification.moderator_email` | Sends a moderator notification by email, without waiting. | A moderator notification | Mail | Sends again |
 | `notification.supporter_email` | Sends a supporter notification by email. | A subscription's transition, or a plan being retired | Mail | Sends again |
-| `identity.closure_email_fanout` | Queues one service closure email for every user with a verified primary address, page by page, each user once. | The closure being recorded, or `identity.closure_email_reminders` | Mail | Safe |
+| `identity.closure_email_fanout` | Queues one service closure email for every user with a verified primary address, page by page, each user once. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. | The closure being recorded, or `identity.closure_email_reminders` | Mail | Safe |
 | `identity.closure_email` | Sends one service closure email to one user. | `identity.closure_email_fanout` | Mail | Sends again |
 | `identity.closure_email_reminders` | Queues the fan-out of each closure reminder whose time has come. | Schedule | Default | Next run |
 
@@ -105,9 +105,9 @@ Mail jobs run only when `mail` is set to a provider. If the address or the state
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
 | `notification.push` | Sends one notification to one Web Push subscription, if the subscription is still valid and the notification is still shown. A subscription the push service reports gone, or whose sign-in has ended, is removed. | A notification, for each subscription that wants its type | Default, using the wait the push service asks for. A refusal, or a message that cannot be sent, is dead at once. | Sends again. A device shows a repeat in place of the first message. |
-| `notification.notify_post_subscribers` | Notifies the subscribers of a post's author. | A new local post, or a delivered remote post | Default | Safe. Each notification is created once. |
-| `instance.notify_announcement` | Creates the announcement notifications for local users. Waits if the announcement has not started, and ends if it has ended. | An announcement getting the time it starts to show | Default | Safe. Each notification is created once. |
-| `notification.service_closure_fanout` | Creates the service closure notification for every local user. | The closure being recorded | Default | Safe. Each notification is created once. |
+| `notification.notify_post_subscribers` | Notifies the subscribers of a post's author. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. | A new local post, or a delivered remote post | Default | Safe. Each notification is created once. |
+| `instance.notify_announcement` | Creates the announcement notifications for local users. Waits if the announcement has not started, and ends if it has ended. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. | An announcement getting the time it starts to show | Default | Safe. Each notification is created once. |
+| `notification.service_closure_fanout` | Creates the service closure notification for every local user. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. | The closure being recorded | Default | Safe. Each notification is created once. |
 | `notification.service_closure_due` | Creates the notification for administrators once the closing date has passed and the announcement is still in effect. | The closure being recorded, due at the closing date | Default | Safe. The notification is created once. |
 | `notification.prune_error_group_notices` | Deletes the hourly error notices past their retention. | Schedule | Default | Next run |
 
@@ -115,7 +115,7 @@ Mail jobs run only when `mail` is set to a provider. If the address or the state
 
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
-| `moderation.sever_domain` | Cuts the follows of local accounts with a suspended domain, and records what each account lost. Continues where a previous run stopped. | A domain suspension | Default. An action that is gone or is not a domain suspension is dead at once. | Safe |
+| `moderation.sever_domain` | Cuts the follows of local accounts with a suspended domain, and records what each account lost. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. Running one again repeats nothing it did. | A domain suspension | Default. An action that is gone or is not a domain suspension is dead at once. | Safe |
 | `moderation.expire_restrictions` | Removes expired account restrictions, and tells other servers when a suspension ends. | Schedule | Default | Next run |
 | `moderation.purge_records` | Erases the moderation records past their retention. | Schedule | Default | Next run |
 | `identity.closure_rejections` | Rejects the pending registrations when the closure's notice period starts. Stops if the closure is withdrawn. | The closure being recorded | Default | Safe |
@@ -146,7 +146,7 @@ Mail jobs run only when `mail` is set to a provider. If the address or the state
 | `voice.check_account` | Applies a change of an account to its participation: a suspended or deleted account leaves, and a host who is no longer eligible hands over. | A suspension, deletion, or restriction of an account in a room | Default | Unconfirmed |
 | `voice.check_block` | Applies a block between two participants of a room: the one who is not a host or co-host leaves. | A block | Default | Unconfirmed |
 | `voice.check_hosts` | Checks the eligibility of every open room's host. | A change of roles or of `voice_room_starters` while rooms are open | Default | Unconfirmed |
-| `voice.notify_started` | Tells the local followers of a host who can see a room that it opened. | A room opening | Default | Safe. Each notification is created once. |
+| `voice.notify_started` | Tells the local followers of a host who can see a room that it opened. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. | A room opening | Default | Safe. Each notification is created once. |
 | `voice.purge_records` | Erases the participants' records of rooms that ended past their retention, except those a report or a hold preserves. | Schedule | Default | Next run |
 
 ## Webhooks

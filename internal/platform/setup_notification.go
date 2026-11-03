@@ -56,7 +56,7 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 	}
 	notification.RegisterProjectors(a.Projectors, deps)
 	notification.RegisterPostNotificationJobs(a.Handlers, notification.PostNotificationDeps{
-		UnitOfWork: a.UnitOfWork, Posts: subscribedPosts{a}, Projectors: deps,
+		UnitOfWork: a.UnitOfWork, Posts: subscribedPosts{a}, Projectors: deps, FanOutSize: a.fanOutSize,
 	})
 	a.voiceNotifier = notification.NewVoiceNotifier(deps)
 	moderators := a.setUpModeratorNotifications(cfg, repo, moderatorStaff{a}, pusher)

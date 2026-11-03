@@ -93,7 +93,7 @@
     新しく作った通知ごとに、同じトランザクションの outbox でメールのジョブ（`notification.supporter_email`、冪等キーは通知の ID）を積み、ジョブは主アドレスへ受け取る人の言語で送ります（課金の有効化はメールを送る構成を要するので、いつも送れます）。
     Web Push と通知の文面は支払いの画面へ導かず、Web Push は通知の画面を開きます。Web クライアントだけが `/settings/supporter` へのリンクを出します（Tauri のアプリは出さない。ADR-0072 §14）。
   - サービスの終了の通知（ADR-0088）の行は `service_closure_event_id` を必ず持ち、`source_account_id` を持ちません。ほかの種類は持ちません。`service_closure_change` は `service_closure` だけが持ちます。
-    `service_closure` は、予告・日付の変更・取り消しを記録したトランザクションで積むジョブ（`notification.service_closure_fanout`、冪等キーはイベントの ID）が、ローカルのアカウントを 100 件ずつ通知します。
+    `service_closure` は、予告・日付の変更・取り消しを記録したトランザクションで積むジョブ（`notification.service_closure_fanout`、冪等キーはイベントの ID）が、ローカルのアカウントを 100 件ずつ通知します（1,000 件を超えると、[ジョブの全体像](../../job-system.md#36-広いジョブの分割)のとおり範囲のジョブに分けます）。
     `admin_service_closure_due` は、予告と日付の変更のたびに閉鎖日に動くよう積むジョブ（`notification.service_closure_due`）が、その予告がまだ効いていてクローズしていないときだけ作ります（サーバーは閉鎖日に自動ではクローズしないため、クローズの操作を促す）。メールはモデレーターの通知と同じです。
     `supporter_service_closure` は加入を `supporter_subscription_id` にも持ち、サポーターの通知と同じくメールでも送ります。クライアント API は `service_closure` に、伝える変化と予告の日付（閉鎖日・持ち出しの期限。取り消しにはない）を載せます。予告・日付の変更・取り消しのメールは別に送ります（ADR-0086）。
   - `admin_error_group`（ADR-0103 §8）は、エラーのグループのドメインイベントと同じトランザクションで、`error_group_notice_hours` のその 1 時間の行に 1 を足し（upsert。同時のトランザクションも 1 件ずつ足す）、足した後の数が 10 以下ならそのグループを、ちょうど 11 なら `others` の通知を 1 つ作ります。12 以降は数えるだけで、`others` の件数はクライアント API が読むときの `notices - 10` です。
@@ -113,7 +113,7 @@
   - クライアント API の `notify`（`FollowAccountRequest`・`Relationship`）と CSV の `Notify on new posts` は購読を読み書きします。承認待ちのリモートのフォローと同時の `notify: true` は `post_subscription_requests` に記録し、`graph.follow_accepted` の projector が購読に変えます（上限に達していれば作らない）。承認待ちの間、`Relationship.notify` は偽です。
   - `graph.follow_terminated`（理由を問わない）は同じ組の依頼を消し、相手がリモートなら購読も消します。ローカルの相手の購読は、フォローを解除しても残ります。`graph.follow_rejected` は依頼を消し、`graph.blocked` は両方向の購読と依頼を消します。
   - 通知 `status` は、ローカルの作成と配送された `Create`（`Update` を `Create` として取り込んだものを含む）の取り込みで発行される `content.status_created` の projector が、投稿者に購読者がいるとき、同じトランザクションでジョブ（`notification.notify_post_subscribers`、冪等キーは投稿）を積んで作ります。取りに行った投稿（版の `RemoteRevisionSource.ActivityURI` が空）と編集（`content.status_revised`）では積みません。ブーストは投稿ではないので対象外です。
-  - ジョブは、他人への返信（返信先の投稿者が投稿者と違うか、返信先がこのサーバーにない）なら何もしません。そうでなければ購読者を 100 件ずつ、1 回ごとに短いトランザクションで、投稿がメンションした人を除き、単一の公開範囲のポリシー関数で投稿を見られる人に作ります。差出人は投稿者、`dedupe_key` は `status:<status_id>` で、投稿と受け取る人ごとに 1 つです。ブロック・ミュート・ドメインのミュート・`unsolicited_reach`・アプリ内の設定の除外は、ほかの通知と同じに効きます。
+  - ジョブは、他人への返信（返信先の投稿者が投稿者と違うか、返信先がこのサーバーにない）なら何もしません。そうでなければ購読者を（1,000 人を超えると範囲のジョブに分けて）100 件ずつ、1 回ごとに短いトランザクションで、投稿がメンションした人を除き、単一の公開範囲のポリシー関数で投稿を見られる人に作ります。差出人は投稿者、`dedupe_key` は `status:<status_id>` で、投稿と受け取る人ごとに 1 つです。ブロック・ミュート・ドメインのミュート・`unsolicited_reach`・アプリ内の設定の除外は、ほかの通知と同じに効きます。
   - `status` の設定のグループは普段の通知の 1 行で、アプリ内は既定オン、メールの経路を持ちません（`Rule.Absent`。行を持てず、メールのジョブを積まない）。Web Push は購読の `alerts` に `status` があるときに送り、投稿の画面を開きます。
 - 通知 `announcement`（ADR-0125 §2）は、サーバー全体へのお知らせ（§4.9）が利用者に見え始めたことを、ローカルの利用者それぞれに 1 回知らせます。差出人を持たず、`announcement_id` を持ち、`dedupe_key` は `announcement:<announcement_id>` です。
   - `instance.announcement_scheduled`（公開と、見え始める前に期間の始まりを動かす変更）の projector が、同じトランザクションでジョブ（`instance.notify_announcement`）を `ShowsFrom` の時刻に積みます。冪等キーはお知らせと `ShowsFrom` の組で、始まりを動かすと新しい時刻のジョブが加わります。

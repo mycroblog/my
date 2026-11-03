@@ -261,6 +261,8 @@ type App struct {
 	// (nil without routes) and the sweep of the lost signals (nil without a waker).
 	wakeRouter  *queue.WakeRouter
 	wakeSweeper *queue.WakeSweeper
+	// fanOutSize is AppOptions.FanOutSize.
+	fanOutSize int
 	// routeWakerForTests is AppOptions.RouteWaker.
 	routeWakerForTests func(config.QueueRoute) queue.Waker
 	// pushAuth checks the credentials of the requests to internalRoutes; nil builds the one of
@@ -381,6 +383,8 @@ type AppOptions struct {
 	// Google Cloud.
 	Waker             queue.Waker
 	PushAuthenticator queue.PushAuthenticator
+	// FanOutSize is the keys of one job of the wide fan-outs, queue.FanOutSize when 0. Tests only.
+	FanOutSize int
 	// RouteWaker stands in for the client of a queue of the routes of ADR-0139. Tests only.
 	RouteWaker func(config.QueueRoute) queue.Waker
 }
@@ -438,6 +442,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	}
 	a.Sealer = kernel.NewSealer(a.KeyManager)
 	a.waker, a.pushAuth, a.routeWakerForTests = opts.Waker, opts.PushAuthenticator, opts.RouteWaker
+	a.fanOutSize = opts.FanOutSize
 	repos, err := a.openDatabase(ctx, cfg)
 	if err != nil {
 		_ = a.Close() // releases the telemetry set up above

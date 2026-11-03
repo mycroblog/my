@@ -68,6 +68,7 @@ type ClosureEmailRepository interface {
 
 // closureEmailFanout is the payload of JobClosureEmailFanout.
 type closureEmailFanout struct {
+	queue.FanOutStep
 	ClosureEventID string                `json:"closure_event_id"`
 	Email          identity.ClosureEmail `json:"email"`
 }
@@ -133,7 +134,7 @@ func (s *Service) RegisterClosureEmails(r *uow.Projectors, reg *queue.JobHandler
 
 // enqueueClosureFanout enqueues JobClosureEmailFanout for p in tx.
 func (s *Service) enqueueClosureFanout(ctx context.Context, tx uow.Tx, p closureEmailFanout) error {
-	return s.enqueueMail(ctx, tx, JobClosureEmailFanout, string(p.Email)+":"+p.ClosureEventID, p)
+	return s.enqueueMail(ctx, tx, JobClosureEmailFanout, queue.StepKey(string(p.Email)+":"+p.ClosureEventID, p.FanOutStep), p)
 }
 
 // QueueClosureReminders is the work of JobClosureEmailReminders: it enqueues the fan-out of every
@@ -164,46 +165,55 @@ func (s *Service) QueueClosureReminders(ctx context.Context) error {
 	return nil
 }
 
-// fanOutClosureEmail queues the email of p for every user with a verified primary address, page
-// by page: each page records the users' rows and enqueues their jobs in one transaction, for the
-// rows it inserted only.
+// fanOutClosureEmail runs the step of the fan-out that queues the email of p for every user with a
+// verified primary address: each batch records the users' rows and enqueues their jobs in one
+// transaction, for the rows it inserted only.
 func (s *Service) fanOutClosureEmail(ctx context.Context, p closureEmailFanout) error {
-	after := ""
-	for {
-		ids, err := s.d.Repository.ListVerifiedEmailUsers(ctx, after, closureEmailBatch)
-		if err != nil {
-			return fmt.Errorf("identity: the recipients of the %s closure email: %w", p.Email, err)
-		}
-		if len(ids) == 0 {
-			return nil
-		}
-		now := s.d.Clock.Now()
-		err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			for _, id := range ids {
-				inserted, err := s.d.Repository.InsertServiceClosureEmail(ctx, tx, identity.ServiceClosureEmailRecord{
-					ID: s.d.IDs.NewID(), ClosureEventID: p.ClosureEventID, Email: p.Email, UserID: id, QueuedAt: now,
-				})
-				if err != nil {
-					return err
+	fan := queue.FanOut{
+		Size: s.d.FanOutSize, Batch: closureEmailBatch,
+		Page: queue.PageByLastKey(s.d.Repository.ListVerifiedEmailUsers),
+		Handle: func(ctx context.Context, ids []string) error {
+			now := s.d.Clock.Now()
+			err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+				for _, id := range ids {
+					inserted, err := s.d.Repository.InsertServiceClosureEmail(ctx, tx, identity.ServiceClosureEmailRecord{
+						ID: s.d.IDs.NewID(), ClosureEventID: p.ClosureEventID, Email: p.Email, UserID: id, QueuedAt: now,
+					})
+					if err != nil {
+						return err
+					}
+					if !inserted {
+						continue
+					}
+					job := closureEmail{ClosureEventID: p.ClosureEventID, Email: p.Email, UserID: id}
+					if err := s.enqueueMail(ctx, tx, JobClosureEmail, string(p.Email)+":"+p.ClosureEventID+":"+id, job); err != nil {
+						return err
+					}
 				}
-				if !inserted {
-					continue
-				}
-				job := closureEmail{ClosureEventID: p.ClosureEventID, Email: p.Email, UserID: id}
-				if err := s.enqueueMail(ctx, tx, JobClosureEmail, string(p.Email)+":"+p.ClosureEventID+":"+id, job); err != nil {
-					return err
-				}
+				return nil
+			})
+			if err != nil {
+				return fmt.Errorf("identity: queue the %s closure emails: %w", p.Email, err)
 			}
 			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("identity: queue the %s closure emails: %w", p.Email, err)
-		}
-		if len(ids) < closureEmailBatch {
-			return nil
-		}
-		after = ids[len(ids)-1]
+		},
+		Enqueue: func(ctx context.Context, steps []queue.FanOutStep) error {
+			return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+				for _, step := range steps {
+					next := p
+					next.FanOutStep = step
+					if err := s.enqueueClosureFanout(ctx, tx, next); err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+		},
 	}
+	if err := fan.Run(ctx, p.FanOutStep); err != nil {
+		return fmt.Errorf("identity: the recipients of the %s closure email: %w", p.Email, err)
+	}
+	return nil
 }
 
 // sendClosureEmail runs JobClosureEmail: while the email is still due (EmailDue), the user can

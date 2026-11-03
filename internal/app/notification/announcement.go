@@ -28,9 +28,6 @@ import (
 // JobNotifyAnnouncement creates the announcement notifications of an announcement.
 const JobNotifyAnnouncement = "instance.notify_announcement"
 
-// announcementBatch is how many recipients one transaction of JobNotifyAnnouncement notifies.
-const announcementBatch = 100
-
 // AnnouncementRecipients pages the recipients of the announcement notifications. The
 // composition root implements it on the account and moderation modules.
 type AnnouncementRecipients interface {
@@ -60,10 +57,13 @@ type AnnouncementDeps struct {
 	Outbox queue.Outbox
 	// Push enqueues the Web Push messages of the new notifications; nil pushes none.
 	Push *Pusher
+	// FanOutSize is the recipients of one job, queue.FanOutSize when 0. Tests set it.
+	FanOutSize int
 }
 
 // announcementJob is the payload of JobNotifyAnnouncement.
 type announcementJob struct {
+	queue.FanOutStep
 	AnnouncementID string `json:"announcement_id"`
 }
 
@@ -94,15 +94,15 @@ func RegisterAnnouncementJobs(reg *queue.JobHandlerRegistry, d AnnouncementDeps)
 		if err := json.Unmarshal(j.Payload, &p); err != nil || p.AnnouncementID == "" {
 			return queue.Fail(fmt.Errorf("notification: the payload of %s: %w", j.ID, err))
 		}
-		return notifyAnnouncement(ctx, d, p.AnnouncementID)
+		return notifyAnnouncement(ctx, d, p)
 	})
 }
 
 // notifyAnnouncement creates the announcement notifications of the announcement id when it is
 // published, within its window, and past ShowsFrom; it waits for ShowsFrom when the job runs
 // early, and does nothing for a draft, a withdrawn announcement, or an ended one.
-func notifyAnnouncement(ctx context.Context, d AnnouncementDeps, id string) queue.Result {
-	a, err := d.Announcements.AnnouncementNotice(ctx, id)
+func notifyAnnouncement(ctx context.Context, d AnnouncementDeps, p announcementJob) queue.Result {
+	a, err := d.Announcements.AnnouncementNotice(ctx, p.AnnouncementID)
 	switch {
 	case errors.Is(err, appinstance.ErrNotFound):
 		return queue.Done()
@@ -118,37 +118,50 @@ func notifyAnnouncement(ctx context.Context, d AnnouncementDeps, id string) queu
 	if !a.ShowsAt(now) {
 		return queue.Done() // ended before the job ran
 	}
-	if err := fanOutAnnouncement(ctx, d, a, now); err != nil {
+	if err := fanOutAnnouncement(ctx, d, a, p.FanOutStep, now); err != nil {
 		return queue.Retry(0, err)
 	}
 	return queue.Done()
 }
 
-// fanOutAnnouncement notifies the local users of a, announcementBatch of them per transaction.
-func fanOutAnnouncement(ctx context.Context, d AnnouncementDeps, a appinstance.AnnouncementNotice, now time.Time) error {
-	title := a.Title
-	after := ""
-	for {
-		ids, next, err := d.Recipients.LocalUserAccountIDs(ctx, after, announcementBatch)
-		if err != nil {
-			return fmt.Errorf("notification: the recipients of announcement %s: %w", a.ID, err)
-		}
-		err = d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			for _, id := range ids {
-				if err := notifyOfAnnouncement(ctx, d, tx, id, a.ID, title, now); err != nil {
-					return err
+// fanOutAnnouncement runs the step of the fan-out that notifies the local users of a.
+func fanOutAnnouncement(ctx context.Context, d AnnouncementDeps, a appinstance.AnnouncementNotice, step queue.FanOutStep, now time.Time) error {
+	fan := queue.FanOut{
+		Size: d.FanOutSize,
+		Page: d.Recipients.LocalUserAccountIDs,
+		Handle: func(ctx context.Context, ids []string) error {
+			err := d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+				for _, id := range ids {
+					if err := notifyOfAnnouncement(ctx, d, tx, id, a.ID, a.Title, now); err != nil {
+						return err
+					}
 				}
+				return nil
+			})
+			if err != nil {
+				return fmt.Errorf("notification: notify announcement %s: %w", a.ID, err)
 			}
 			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("notification: notify announcement %s: %w", a.ID, err)
-		}
-		if next == "" {
-			return nil
-		}
-		after = next
+		},
+		Enqueue: func(ctx context.Context, steps []queue.FanOutStep) error {
+			jobs := make([]queue.NewJob, 0, len(steps))
+			for _, step := range steps {
+				payload, err := json.Marshal(announcementJob{FanOutStep: step, AnnouncementID: a.ID})
+				if err != nil {
+					return err
+				}
+				jobs = append(jobs, queue.NewJob{
+					Type: JobNotifyAnnouncement, Payload: payload,
+					IdempotencyKey: queue.StepKey(JobNotifyAnnouncement+":"+a.ID, step),
+				})
+			}
+			return d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return d.Outbox.EnqueueTx(ctx, tx, jobs...) })
+		},
 	}
+	if err := fan.Run(ctx, step); err != nil {
+		return fmt.Errorf("notification: the recipients of announcement %s: %w", a.ID, err)
+	}
+	return nil
 }
 
 // notifyOfAnnouncement creates the announcement of recipientID, unless it is suspended or

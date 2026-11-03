@@ -118,7 +118,9 @@ type Deps struct {
 	Repository Repository
 	UnitOfWork uow.UnitOfWork
 	// Outbox enqueues JobApply in the transaction of a change.
-	Outbox     queue.Outbox
+	Outbox queue.Outbox
+	// FanOutSize is the keys of one job of a wide fan-out, queue.FanOutSize when 0. Tests set it.
+	FanOutSize int
 	Clock      kernel.Clock
 	IDs        kernel.IDGenerator
 	Heartbeats *Heartbeats
