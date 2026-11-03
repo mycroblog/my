@@ -163,9 +163,9 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
-| [`voice_max_participants`](#voice_max_participants) | `MY_VOICE_MAX_PARTICIPANTS` | `0` | no | no |
-| [`voice_max_room_duration`](#voice_max_room_duration) | `MY_VOICE_MAX_ROOM_DURATION` | `0` | no | no |
-| [`voice_max_open_rooms`](#voice_max_open_rooms) | `MY_VOICE_MAX_OPEN_ROOMS` | `0` | no | no |
+| [`voice_max_participants`](#voice_max_participants) | `MY_VOICE_MAX_PARTICIPANTS` | `50` | no | no |
+| [`voice_max_room_duration`](#voice_max_room_duration) | `MY_VOICE_MAX_ROOM_DURATION` | `4h` | no | no |
+| [`voice_max_open_rooms`](#voice_max_open_rooms) | `MY_VOICE_MAX_OPEN_ROOMS` | `10` | no | no |
 | [`voice_stun_urls`](#voice_stun_urls) | `MY_VOICE_STUN_URLS` | none | no | no |
 | [`voice_turn`](#voice_turn) | `MY_VOICE_TURN` | `none` | no | no |
 | [`voice_turn_urls`](#voice_turn_urls) | `MY_VOICE_TURN_URLS` | none | when `voice = p2p` and `voice_turn = coturn` | no |
@@ -842,7 +842,7 @@ Mailer adapter for verification emails. With `none`, no email reaches users, so 
 
 | Value | In v0 | Description |
 | --- | --- | --- |
-| `none` | yes | Logs each message, including its links, instead of sending it; for development and instances without email. |
+| `none` | yes | Sends nothing and logs each message's category; for instances without email. With `profile = development` it logs the whole message, including its links. |
 | `smtp` | yes | SMTP submission with mandatory STARTTLS (`smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`). |
 | `ses` | yes | The Amazon SES v2 API (`ses_region`, `ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out. |
 
@@ -1266,7 +1266,7 @@ How many people a room of `voice = p2p` holds, from 2 to 50; one more is refused
 How many people a room of `voice = livekit` or `voice = sora` holds; one more is refused. `0` sets no limit.
 
 - Environment variable: `MY_VOICE_MAX_PARTICIPANTS`
-- Default: `0`
+- Default: `50`
 - Required: no
 
 ### `voice_max_room_duration`
@@ -1274,7 +1274,7 @@ How many people a room of `voice = livekit` or `voice = sora` holds; one more is
 The longest a room stays open, a Go duration such as `4h`; a room that reaches it is ended. `0` sets no limit.
 
 - Environment variable: `MY_VOICE_MAX_ROOM_DURATION`
-- Default: `0`
+- Default: `4h`
 - Required: no
 
 ### `voice_max_open_rooms`
@@ -1282,7 +1282,7 @@ The longest a room stays open, a Go duration such as `4h`; a room that reaches i
 How many rooms may be open on the server at the same time; opening one more is refused. `0` sets no limit.
 
 - Environment variable: `MY_VOICE_MAX_OPEN_ROOMS`
-- Default: `0`
+- Default: `10`
 - Required: no
 
 ### `voice_stun_urls`

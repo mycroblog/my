@@ -87,7 +87,7 @@ func Readiness(c *Config) []Finding {
 		warnf("blob_fs_dir", "is in the temporary directory %s, which the system may clear", c.BlobFSDir)
 	}
 	if c.Mail == "none" {
-		warnf("mail", "is none, so no email reaches users: addresses go unverified and open sign-ups wait for a moderator's approval")
+		warnf("mail", "is none, so no email reaches users: addresses go unverified and open sign-ups wait for a moderator's approval; the log records only each message's category, not its address or links")
 	}
 	if c.VAPIDPrivateKey == "" {
 		warnf("vapid_private_key", "is not set, so the server sends no Web Push notifications; generate one with `my config vapid-key`")

@@ -639,7 +639,7 @@ var schema = []field{
 		doc: "Mailer adapter for verification emails. With `none`, no email reaches users, so an unverified address does not keep a user out and sign-ups in the `open` registration mode wait for a moderator's approval instead.",
 		def: "none",
 		choices: []choice{
-			{value: "none", inV0: true, doc: "Logs each message, including its links, instead of sending it; for development and instances without email."},
+			{value: "none", inV0: true, doc: "Sends nothing and logs each message's category; for instances without email. With `profile = development` it logs the whole message, including its links."},
 			{value: "smtp", inV0: true, doc: "SMTP submission with mandatory STARTTLS (`smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`)."},
 			{value: "ses", inV0: true, doc: "The Amazon SES v2 API (`ses_region`, `ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out."},
 		},
@@ -1019,21 +1019,21 @@ var schema = []field{
 	{
 		key:   "voice_max_participants",
 		doc:   "How many people a room of `voice = livekit` or `voice = sora` holds; one more is refused. `0` sets no limit.",
-		def:   "0",
+		def:   strconv.Itoa(defaultVoiceMaxParticipants),
 		check: checkNonNegativeInt,
 		set:   func(c *Config, v string) { c.VoiceMaxParticipants, _ = strconv.Atoi(v) },
 	},
 	{
 		key:   "voice_max_room_duration",
 		doc:   "The longest a room stays open, a Go duration such as `4h`; a room that reaches it is ended. `0` sets no limit.",
-		def:   "0",
+		def:   defaultVoiceMaxRoomDuration,
 		check: checkNonNegativeDuration,
 		set:   func(c *Config, v string) { c.VoiceMaxRoomDuration, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "voice_max_open_rooms",
 		doc:   "How many rooms may be open on the server at the same time; opening one more is refused. `0` sets no limit.",
-		def:   "0",
+		def:   strconv.Itoa(defaultVoiceMaxOpenRooms),
 		check: checkNonNegativeInt,
 		set:   func(c *Config, v string) { c.VoiceMaxOpenRooms, _ = strconv.Atoi(v) },
 	},

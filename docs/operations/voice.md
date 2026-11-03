@@ -24,14 +24,14 @@ Notes on the choice:
 - The build tags `no_voice_livekit` and `no_voice_sora` leave the two media-server methods out of a binary ([build tags](../reference/build-tags.md)).
 - Serve the instance over HTTPS: browsers allow microphone access only on secure pages.
 
-Limits you may set, all unset by default:
+The limits keep the cost of a paid media server bounded. `0` removes any of them except the last:
 
-| Setting | Meaning |
-| --- | --- |
-| `voice_max_room_duration` | The longest a room stays open, for example `4h`. A room that reaches it is ended. |
-| `voice_max_open_rooms` | How many rooms may be open at once on this server. |
-| `voice_max_participants` | The room size for `livekit` and `sora`. |
-| `voice_p2p_max_participants` | The room size for `p2p`, from 2 to 50, default 10. |
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `voice_max_room_duration` | `4h` | The longest a room stays open. A room that reaches it is ended. |
+| `voice_max_open_rooms` | `10` | How many rooms may be open at once on this server. |
+| `voice_max_participants` | `50` | The room size for `livekit` and `sora`. |
+| `voice_p2p_max_participants` | `10` | The room size for `p2p`, from 2 to 50. |
 
 Who may open rooms is the instance setting `voice_room_starters` ([instance settings](instance-settings.md)): by default only holders of the permission `start_voice_rooms` (the built-in `admin` role has it); `everyone` lets every signed-in local user who is not suspended or limited open rooms.
 
