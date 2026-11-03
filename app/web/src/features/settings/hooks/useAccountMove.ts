@@ -87,6 +87,10 @@ export function useAccountMove(onStatus: (status: string | undefined) => void): 
       setInput("");
       onStatus(t("client:account_move.move.done", { handle: targetHandle }));
     },
+    onError: (error) => {
+      // The page offers the provider again, with why; the dialog has nothing left to send.
+      if (external.takeBackIfExpired(error)) setIsOpen(false);
+    },
   });
   const lookup = useMutation({
     mutationKey: ["get", "/accounts/lookup", "move"] as const,

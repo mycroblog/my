@@ -90,7 +90,7 @@
   `POST /linked_identities` の `start_url` へアプリを離れる（`useLeaveApp`）。IdP から戻った画面は、アドレスのフラグメントの結果（`linked` か `external_error`）を `StatusMessage` か `role="alert"` に出す。
 - **連携したアカウントでの確認**（`features/settings` の `useExternalConfirmation` と `ExternalConfirmationChoice`）: パスワードもパスキーもない利用者（`isPreferred`。ほかの手段がある利用者にはほかの手段を先に勧める、ADR-0106 §3.7）の本人確認の操作（パスワードの設定・削除、パスキーの追加、アカウントの削除と移転、連携の追加。パスワードの削除はパスキーのない利用者）は、
   操作の前に「{IdP} でもう一度ログイン」のボタンを出し、`POST /linked_identities/confirmation`（`operation` と、戻り先の今の画面のパス）の `start_url` へアプリを離れる。サーバーは結果をフラグメント（`external_confirmation`・`operation`・`provider`、失敗は `external_error`）に入れて画面へ戻す。
-  画面は開いたときにフラグメントを 1 度だけ読み（`useExternalOutcome`）、アドレスから外す（再読み込みで出し直さない）。確認が戻った操作は、ボタンの代わりに確認した IdP の名前を出し、操作の要求の `external_confirmation` に入れて 1 度だけ送る。失敗は理由ごとの文言（`settings.external_confirmation.failed.*`）で出す。
+  画面は開いたときにフラグメントを 1 度だけ読み（`useExternalOutcome`）、アドレスから外す（再読み込みで出し直さない）。確認が戻った操作は、ボタンの代わりに確認した IdP の名前を出し、操作の要求の `external_confirmation` に入れて 1 度だけ送る。失敗は理由ごとの文言（`settings.external_confirmation.failed.*`）で出す。サーバーが確認の期限切れか使用済みを答えた（`external-confirmation-expired`）ら、どの操作も確認を取り下げて開いているダイアログを閉じ、理由とともにボタンを出し直す（`takeBackIfExpired`）。
 - **プロバイダ**（`App.tsx`）: 外側から、ランタイム設定、表示のロケール、i18n（`react-intl` と React Aria の `I18nProvider`）、QueryClient（`lib/query`）、セッションと API クライアント（`lib/auth/SessionProvider`、§10）、`AnnouncerProvider` / `ToastProvider`、React Aria の `RouterProvider`、ルーターの順に置く。
 - **文言**（`lib/i18n`）: クライアントの文言は `locales/<locale>/client/<area>.json`（領域ごとのファイル、ADR-0082）にある。`vite-plugins/client-catalogs.ts` がロケールごとに 1 つのモジュールにまとめ、ロケールごとに別のチャンクで読み込む。足りない文言は `ja-JP` → `ja` → `en` の順に補う。
   ID の型は `tools/i18n` が生成する `MessageArgs` から作る（`ClientMessageKey`）。文字列にするときは `useT()` の `t("client:…", 引数)` を使い、ID と引数の型を検査する。

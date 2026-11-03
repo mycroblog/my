@@ -15,7 +15,6 @@ import {
   beginLinkMutation,
   type Confirmation,
   type ExternalFailure,
-  isExternalConfirmationExpired,
   isLastSignInMethod,
   type LinkableLoginProvider,
   type LinkedIdentity,
@@ -150,6 +149,10 @@ export function useLinkAccount(): LinkAccount {
       if (confirmation.kind === "external") external.markUsed();
       leaveApp(url);
     },
+    onError: (error) => {
+      // The panel offers the provider again, with why; the dialog has nothing left to send.
+      if (external.takeBackIfExpired(error)) setLinking(undefined);
+    },
   });
   const method: LinkConfirmationMethod = hasPassword
     ? "password"
@@ -160,8 +163,6 @@ export function useLinkAccount(): LinkAccount {
   if (begin.isError) {
     const failure = confirmationFailure(begin.error);
     if (failure === "wrong-password") error = t("client:settings.linked_accounts.link.wrong_password");
-    else if (isExternalConfirmationExpired(begin.error))
-      error = t("client:settings.external_confirmation.failed.expired");
     else
       error = confirmationErrorMessage(t, failure, begin.error, (reason) =>
         t("client:settings.linked_accounts.link.failed", { reason }),

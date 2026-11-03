@@ -74,6 +74,10 @@ export function usePasswordChangeForm(onStatus: (status: string | undefined) => 
         t(confirmation.kind === "password" ? "client:settings.password.changed" : "client:settings.password.set.done"),
       );
     },
+    onError: (error) => {
+      // The page offers the provider again, with why, in place of the form.
+      external.takeBackIfExpired(error);
+    },
   });
   const failure = change.isError ? confirmationFailure(change.error) : undefined;
   let error: string | undefined;
@@ -155,6 +159,10 @@ export function usePasswordRemoval(onStatus: (status: string | undefined) => voi
       await refreshPasswordStatus(api, queryClient);
       setIsOpen(false);
       onStatus(t("client:settings.password.removed"));
+    },
+    onError: (error) => {
+      // The page offers the provider again, with why; the dialog has nothing left to send.
+      if (external.takeBackIfExpired(error)) setIsOpen(false);
     },
   });
   const failure = remove.isError ? confirmationFailure(remove.error) : undefined;
