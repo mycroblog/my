@@ -96,8 +96,8 @@
 | キー | 種類 |
 | --- | --- |
 | `like:` | `federation.fanout`、`federation.deliver`（お気に入りの配送だけ） |
-| `voice_room:` | 通話のメディアのイベントと適用のジョブ |
-| `supporter_subscription:` | サポーターの同期とコマンドのジョブ |
+| `voice_room:` | `voice.media_event`、`voice.apply` |
+| `supporter_subscription:` | `supporters.sync`、`supporters.command` |
 
 分けた結果、片方の種類が滞ると、同じキーのもう一方も待つ。
 
