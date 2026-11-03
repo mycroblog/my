@@ -76,12 +76,12 @@ RETURNING j.id, j.type, j.payload, j.idempotency_key, j.ordering_key, j.trace_pa
 -- leases nothing, to tell why.
 
 -- name: GetJobLease :one
-SELECT ordering_key, run_at, locked_until FROM jobs WHERE id = $1;
+SELECT type, ordering_key, run_at, locked_until FROM jobs WHERE id = $1;
 
 -- ListDueJobs is PickJob without the row locks, bounded by @batch_limit, for the sweep of lost
 -- wake-up signals: the jobs due at @due_before that a claim at @now could take.
 -- name: ListDueJobs :many
-SELECT j.id FROM jobs AS j
+SELECT j.id, j.type, j.run_at FROM jobs AS j
 WHERE j.run_at <= sqlc.arg(due_before) AND (j.locked_until IS NULL OR j.locked_until <= sqlc.arg(now))
   AND NOT EXISTS (
     SELECT 1 FROM jobs AS k
@@ -91,8 +91,39 @@ WHERE j.run_at <= sqlc.arg(due_before) AND (j.locked_until IS NULL OR j.locked_u
 ORDER BY j.run_at, j.id
 LIMIT sqlc.arg(batch_limit);
 
+-- ListDueJobsOfType is ListDueJobs for one job type, from jobs_type_run_at_id, for the sweep of a
+-- route (ADR-0139 section 4).
+-- name: ListDueJobsOfType :many
+SELECT j.id, j.type, j.run_at FROM jobs AS j
+WHERE j.type = sqlc.arg(job_type)
+  AND j.run_at <= sqlc.arg(due_before) AND (j.locked_until IS NULL OR j.locked_until <= sqlc.arg(now))
+  AND NOT EXISTS (
+    SELECT 1 FROM jobs AS k
+    WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+      AND (k.locked_until > sqlc.arg(now) OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+  )
+ORDER BY j.run_at, j.id
+LIMIT sqlc.arg(batch_limit);
+
+-- ListDueJobsExceptTypes is ListDueJobs for every type but the routed ones, for the sweep of the
+-- default queue.
+-- name: ListDueJobsExceptTypes :many
+SELECT j.id, j.type, j.run_at FROM jobs AS j
+WHERE j.type <> ALL(sqlc.arg(types)::text[])
+  AND j.run_at <= sqlc.arg(due_before) AND (j.locked_until IS NULL OR j.locked_until <= sqlc.arg(now))
+  AND NOT EXISTS (
+    SELECT 1 FROM jobs AS k
+    WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+      AND (k.locked_until > sqlc.arg(now) OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+  )
+ORDER BY j.run_at, j.id
+LIMIT sqlc.arg(batch_limit);
+
+-- name: GetDeadJobType :one
+SELECT type FROM dead_jobs WHERE id = sqlc.arg(id);
+
 -- name: NextJobOfKey :one
-SELECT id, run_at FROM jobs WHERE ordering_key = $1 ORDER BY created_at, id LIMIT 1;
+SELECT id, type, run_at FROM jobs WHERE ordering_key = $1 ORDER BY created_at, id LIMIT 1;
 
 -- name: DeleteClaimedJob :execrows
 DELETE FROM jobs WHERE id = $1 AND locked_by = $2 AND attempt = $3;

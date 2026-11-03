@@ -4,11 +4,14 @@ package config
 
 import (
 	"cmp"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/url"
 	"path"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -174,4 +177,118 @@ func workerJobConcurrencyChecks(vals map[string]string) []Issue {
 		issues = append(issues, Issue{Key: "worker_job_concurrency", Message: fmt.Sprintf("above 1 works only with queue = db, not %s", q)})
 	}
 	return issues
+}
+
+// QueueRoute sends the wake-up signals of the job types of Pattern, a type or a prefix such as
+// federation.*, to Queue instead of the default queue (ADR-0139). URL is the base URL of the
+// receiver of a Cloud Tasks route; for SQS it is empty, and the queue's event source decides.
+type QueueRoute struct {
+	Pattern string
+	Queue   string
+	URL     string
+}
+
+// splitQueueRoutes returns the routes of queue_sqs_routes or queue_cloudtasks_routes,
+// pattern=queue or pattern=queue@url.
+func splitQueueRoutes(v string) []QueueRoute {
+	var routes []QueueRoute
+	for entry := range strings.SplitSeq(v, ",") {
+		if entry = strings.TrimSpace(entry); entry == "" {
+			continue
+		}
+		pattern, target, _ := strings.Cut(entry, "=")
+		q, u, _ := strings.Cut(target, "@")
+		routes = append(routes, QueueRoute{Pattern: strings.TrimSpace(pattern), Queue: strings.TrimSpace(q), URL: strings.TrimSuffix(strings.TrimSpace(u), "/")})
+	}
+	return routes
+}
+
+// checkQueueRoutes checks the form of a list of routes: a pattern and a queue on each, and no
+// pattern twice. Whether the patterns match a job type is known once the handlers are registered
+// (queue.WakeRouter.TypesOfRoutes).
+func checkQueueRoutes(v string, checkQueue func(string) error, withURL bool) error {
+	seen := map[string]bool{}
+	for _, r := range splitQueueRoutes(v) {
+		if !jobTypePattern.MatchString(r.Pattern) {
+			return fmt.Errorf("%q must be a job type such as federation.deliver or a prefix such as federation.*, then = and a queue", r.Pattern)
+		}
+		if seen[r.Pattern] {
+			return fmt.Errorf("%q has two routes", r.Pattern)
+		}
+		seen[r.Pattern] = true
+		if r.Queue == "" {
+			return fmt.Errorf("%q has no queue", r.Pattern)
+		}
+		if err := checkQueue(r.Queue); err != nil {
+			return fmt.Errorf("the queue of %q: %w", r.Pattern, err)
+		}
+		if !withURL {
+			continue
+		}
+		if r.URL != "" {
+			if err := checkServiceURL(r.URL); err != nil {
+				return fmt.Errorf("the receiver of %q: %w", r.Pattern, err)
+			}
+		}
+	}
+	return nil
+}
+
+func checkSQSRoutes(v string) error {
+	for _, r := range splitQueueRoutes(v) {
+		if r.URL != "" {
+			return fmt.Errorf("the route of %q: an SQS route has no receiver URL", r.Pattern)
+		}
+	}
+	return checkQueueRoutes(v, checkSQSQueueURL, false)
+}
+
+func checkCloudTasksRoutes(v string) error {
+	return checkQueueRoutes(v, checkCloudTasksQueue, true)
+}
+
+// queueRouteChecks are the rules of queue_sqs_routes and queue_cloudtasks_routes (ADR-0139 §1):
+// each belongs to its queue, and only the queues with a waker can send signals to several queues.
+func queueRouteChecks(vals map[string]string) []Issue {
+	var issues []Issue
+	for _, q := range []string{"sqs", "cloudtasks"} {
+		key := "queue_" + q + "_routes"
+		if len(splitQueueRoutes(vals[key])) > 0 && vals["queue"] != q {
+			issues = append(issues, Issue{Key: key, Message: "needs queue = " + q + ", not " + cmp.Or(vals["queue"], "db")})
+		}
+	}
+	return issues
+}
+
+// QueueRoutes returns the routes of the queue of the config, with the default receiver filled in.
+func (c *Config) QueueRoutes() []QueueRoute {
+	switch c.Queue {
+	case "sqs":
+		return c.QueueSQSRoutes
+	case "cloudtasks":
+		routes := slices.Clone(c.QueueCloudTasksRoutes)
+		for i := range routes {
+			routes[i].URL = cmp.Or(routes[i].URL, c.QueueCloudTasksURL)
+		}
+		return routes
+	}
+	return nil
+}
+
+// QueueRoutesSummary returns the routes of the queue as one sorted line and a short hash of it,
+// which the processes log at startup so that an operator can compare them (ADR-0139 §1): a process
+// with other routes loses no job but silently sends signals to other queues.
+func (c *Config) QueueRoutesSummary() (routes, hash string) {
+	entries := make([]string, 0, len(c.QueueRoutes()))
+	for _, r := range c.QueueRoutes() {
+		entry := r.Pattern + "=" + r.Queue
+		if r.URL != "" {
+			entry += "@" + r.URL
+		}
+		entries = append(entries, entry)
+	}
+	slices.Sort(entries)
+	routes = strings.Join(entries, ",")
+	sum := sha256.Sum256([]byte(routes))
+	return routes, hex.EncodeToString(sum[:])[:12]
 }

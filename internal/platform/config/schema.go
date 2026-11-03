@@ -261,6 +261,18 @@ var schema = []field{
 		set: func(c *Config, v string) { c.Queue = v },
 	},
 	{
+		key:   "queue_sqs_routes",
+		doc:   "Comma-separated routes of `queue = sqs`, each `type=queue URL`, that send the wake-up signals of those job types to their own standard queue. A type is a name such as `notification.email` or a prefix such as `federation.*`; a name wins over a prefix, and a longer prefix over a shorter one. The others go to `queue_sqs_queue_url`. Give every process, `role = web` included, the same value: a process without it sends its signals to the default queue, which loses no job but undoes the split without an error. A type that matches no job type fails at startup.",
+		check: checkSQSRoutes,
+		set:   func(c *Config, v string) { c.QueueSQSRoutes = splitQueueRoutes(v) },
+	},
+	{
+		key:   "queue_cloudtasks_routes",
+		doc:   "Comma-separated routes of `queue = cloudtasks`, each `type=queue resource name` with an optional `@receiver URL`, that send the wake-up signals of those job types to their own queue, and to a separate service when the URL is given (`queue_cloudtasks_url` otherwise). A type is a name such as `notification.email` or a prefix such as `federation.*`; a name wins over a prefix, and a longer prefix over a shorter one. The others go to `queue_cloudtasks_queue`. Give every process, `role = web` included, the same value: a process without it sends its signals to the default queue, which loses no job but undoes the split without an error. A type that matches no job type fails at startup.",
+		check: checkCloudTasksRoutes,
+		set:   func(c *Config, v string) { c.QueueCloudTasksRoutes = splitQueueRoutes(v) },
+	},
+	{
 		key:          "queue_sqs_queue_url",
 		doc:          "URL of the SQS standard queue of `queue = sqs`, `https://sqs.{region}.amazonaws.com/{account}/{name}`, which carries the wake-up signals; the client uses the region of the URL. The server's credentials need `sqs:SendMessage` on it.",
 		requiredWhen: "when `queue = sqs`",
@@ -1454,6 +1466,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	issues = append(issues, wakerQueueChecks(vals, present)...)
 	issues = append(issues, workerJobTypeChecks(vals)...)
 	issues = append(issues, workerJobConcurrencyChecks(vals)...)
+	issues = append(issues, queueRouteChecks(vals)...)
 	return issues
 }
 

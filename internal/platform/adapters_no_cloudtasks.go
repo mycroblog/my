@@ -14,7 +14,7 @@ import (
 )
 
 // newCloudTasksWaker reports that the build tag no_cloudtasks left the Cloud Tasks queue out.
-func newCloudTasksWaker(context.Context, *config.Config, kernel.Clock, kernel.ErrorReporter) (queue.Waker, io.Closer, error) {
+func newCloudTasksWaker(context.Context, *config.Config, config.QueueRoute, kernel.Clock, kernel.ErrorReporter) (queue.Waker, io.Closer, error) {
 	return nil, nil, config.ExcludedError("queue", "cloudtasks", "no_cloudtasks")
 }
 

@@ -257,6 +257,12 @@ type App struct {
 	// closeWaker releases its client; both are nil for the other queues.
 	waker      queue.Waker
 	closeWaker io.Closer
+	// wakeRouter and wakeSweeper are the router of queue_sqs_routes or queue_cloudtasks_routes
+	// (nil without routes) and the sweep of the lost signals (nil without a waker).
+	wakeRouter  *queue.WakeRouter
+	wakeSweeper *queue.WakeSweeper
+	// routeWakerForTests is AppOptions.RouteWaker.
+	routeWakerForTests func(config.QueueRoute) queue.Waker
 	// pushAuth checks the credentials of the requests to internalRoutes; nil builds the one of
 	// the queue.
 	pushAuth queue.PushAuthenticator
@@ -375,6 +381,8 @@ type AppOptions struct {
 	// Google Cloud.
 	Waker             queue.Waker
 	PushAuthenticator queue.PushAuthenticator
+	// RouteWaker stands in for the client of a queue of the routes of ADR-0139. Tests only.
+	RouteWaker func(config.QueueRoute) queue.Waker
 }
 
 // NewApp connects the adapters that cfg selects and builds the application services on them.
@@ -429,7 +437,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.Sealer = kernel.NewSealer(a.KeyManager)
-	a.waker, a.pushAuth = opts.Waker, opts.PushAuthenticator
+	a.waker, a.pushAuth, a.routeWakerForTests = opts.Waker, opts.PushAuthenticator, opts.RouteWaker
 	repos, err := a.openDatabase(ctx, cfg)
 	if err != nil {
 		_ = a.Close() // releases the telemetry set up above
@@ -547,6 +555,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	if err := a.setUpWorkerJobConcurrency(cfg); err != nil {
+		return nil, err
+	}
+	if err := a.setUpWakeRoutes(); err != nil {
 		return nil, err
 	}
 	return a, nil

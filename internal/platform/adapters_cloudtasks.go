@@ -18,10 +18,11 @@ import (
 )
 
 // newCloudTasksWaker returns the waker of queue = cloudtasks on Application Default Credentials,
-// whose tasks call the jobs endpoint of queue_cloudtasks_url, and what releases its client.
-func newCloudTasksWaker(ctx context.Context, cfg *config.Config, clock kernel.Clock, reporter kernel.ErrorReporter) (queue.Waker, io.Closer, error) {
+// whose tasks in the queue of target call the jobs endpoint of target's URL, and what releases its
+// client.
+func newCloudTasksWaker(ctx context.Context, cfg *config.Config, target config.QueueRoute, clock kernel.Clock, reporter kernel.ErrorReporter) (queue.Waker, io.Closer, error) {
 	w, err := cloudtasks.New(ctx, cloudtasks.Options{
-		Queue: cfg.QueueCloudTasksQueue, URL: cfg.QueueCloudTasksURL + queuepush.PathJobs,
+		Queue: target.Queue, URL: target.URL + queuepush.PathJobs,
 		ServiceAccount: cfg.QueueCloudTasksServiceAccount, Audience: cfg.QueueCloudTasksAudience,
 		DispatchDeadline: cfg.QueueCloudTasksDispatchDeadline, Clock: clock, Reporter: reporter,
 	})

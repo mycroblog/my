@@ -4,6 +4,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -12,10 +13,12 @@ import (
 )
 
 // Wake is a wake-up signal (ADR-0120 §1): it asks a push receiver to claim the job JobID no
-// earlier than At. It carries nothing else: the job, its payload and its traceparent stay in the
-// database queue.
+// earlier than At. It carries nothing else out of the process: the job, its payload and its
+// traceparent stay in the database queue. Type is the job's type, which only chooses the queue of
+// the signal inside the process (WakeRouter, ADR-0139 §2); adapters do not send it.
 type Wake struct {
 	JobID string
+	Type  string
 	At    time.Time
 }
 
@@ -36,10 +39,14 @@ type Waker interface {
 // WakeFinder reads the jobs of the database queue that need a signal: those whose signal was lost
 // and the next job of an ordering key. queue/db implements it.
 type WakeFinder interface {
-	// DueJobs returns the IDs of at most limit jobs that a pull runner could claim at now and that
-	// were due at dueBefore: RunAt <= dueBefore, not leased at now, and not held back by their
-	// ordering key; the earliest RunAt first. None when limit <= 0.
-	DueJobs(ctx context.Context, now, dueBefore time.Time, limit int) ([]string, error)
+	// DueJobs returns the signals, at their RunAt, of at most limit jobs that a pull runner could
+	// claim at now and that were due at dueBefore: RunAt <= dueBefore, not leased at now, and not
+	// held back by their ordering key; the earliest RunAt first. None when limit <= 0.
+	DueJobs(ctx context.Context, now, dueBefore time.Time, limit int) ([]Wake, error)
+	// DueJobsOfTypes is DueJobs for the jobs of the given types only, and DueJobsExceptTypes for
+	// the jobs of every other type, including a type that no handler knows (ADR-0139 §4).
+	DueJobsOfTypes(ctx context.Context, types []string, now, dueBefore time.Time, limit int) ([]Wake, error)
+	DueJobsExceptTypes(ctx context.Context, types []string, now, dueBefore time.Time, limit int) ([]Wake, error)
 	// NextJob returns the first job of orderingKey in enqueue order, as a Wake at its RunAt; ok
 	// is false when no job of the key is left.
 	NextJob(ctx context.Context, orderingKey string) (w Wake, ok bool, err error)
@@ -70,7 +77,13 @@ type WakeSweepDeps struct {
 // for longer than the grace period and that no worker holds, which recovers the signals lost
 // between a commit and its send, the sends that failed, and the jobs of a worker that stopped
 // while it held their lease. Duplicates of signals still on their way are harmless.
-type WakeSweeper struct{ d WakeSweepDeps }
+//
+// With routes (UseRoutes) it sweeps each route on its own, so that a backlog of one route does not
+// fill the batch and hide the lost signals of the others (ADR-0139 §4).
+type WakeSweeper struct {
+	d      WakeSweepDeps
+	routes [][]string
+}
 
 // NewWakeSweeper returns the sweep on d. It panics when a required port is nil.
 func NewWakeSweeper(d WakeSweepDeps) *WakeSweeper {
@@ -86,20 +99,47 @@ func NewWakeSweeper(d WakeSweepDeps) *WakeSweeper {
 	return &WakeSweeper{d: d}
 }
 
-// Sweep signals at most one batch of the jobs whose signal is overdue and returns how many it
-// signaled. It is safe to repeat and to run concurrently.
+// UseRoutes makes each Sweep read the jobs of each group of types apart, and those of every other
+// type once more. Call it before the first Sweep; without it Sweep reads all the jobs at once.
+func (s *WakeSweeper) UseRoutes(routes [][]string) { s.routes = routes }
+
+// Sweep signals at most one batch per route of the jobs whose signal is overdue and returns how
+// many it signaled. A route that fails does not stop the others. It is safe to repeat and to run
+// concurrently.
 func (s *WakeSweeper) Sweep(ctx context.Context) (int, error) {
 	now := s.d.Clock.Now()
-	ids, err := s.d.Finder.DueJobs(ctx, now, now.Add(-s.d.Grace), s.d.Batch)
+	dueBefore := now.Add(-s.d.Grace)
+	if len(s.routes) == 0 {
+		wakes, err := s.d.Finder.DueJobs(ctx, now, dueBefore, s.d.Batch)
+		return s.signal(ctx, now, wakes, err)
+	}
+	var (
+		total  int
+		errs   []error
+		routed []string
+	)
+	for _, types := range s.routes {
+		routed = append(routed, types...)
+		wakes, err := s.d.Finder.DueJobsOfTypes(ctx, types, now, dueBefore, s.d.Batch)
+		n, err := s.signal(ctx, now, wakes, err)
+		total += n
+		errs = append(errs, err)
+	}
+	wakes, err := s.d.Finder.DueJobsExceptTypes(ctx, routed, now, dueBefore, s.d.Batch)
+	n, err := s.signal(ctx, now, wakes, err)
+	return total + n, errors.Join(append(errs, err)...)
+}
+
+// signal sends the signals that a read found, or wraps the error of the read.
+func (s *WakeSweeper) signal(ctx context.Context, now time.Time, wakes []Wake, err error) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("queue: wake sweep: %w", err)
 	}
-	if len(ids) == 0 {
+	if len(wakes) == 0 {
 		return 0, nil
 	}
-	wakes := make([]Wake, len(ids))
-	for i, id := range ids {
-		wakes[i] = Wake{JobID: id, At: now}
+	for i := range wakes {
+		wakes[i].At = now
 	}
 	if err := s.d.Waker.Wake(ctx, wakes); err != nil {
 		return 0, fmt.Errorf("queue: wake sweep: %w", err)

@@ -84,9 +84,13 @@ type Config struct {
 	// WorkerJobConcurrency is how many jobs this process runs at once (ADR-0140); 0 when the
 	// setting is not given, which runs one and checks nothing against the database's pool.
 	WorkerJobConcurrency int
-	QueueSQSQueueURL     string
-	QueueSQSEventsPath   string
-	QueueSQSEventsBudget time.Duration
+	// QueueSQSRoutes and QueueCloudTasksRoutes send the wake-up signals of some job types to their
+	// own queue (ADR-0139); read them with QueueRoutes.
+	QueueSQSRoutes        []QueueRoute
+	QueueCloudTasksRoutes []QueueRoute
+	QueueSQSQueueURL      string
+	QueueSQSEventsPath    string
+	QueueSQSEventsBudget  time.Duration
 
 	Blob  string
 	Media string

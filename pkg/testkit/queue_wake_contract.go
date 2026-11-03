@@ -56,6 +56,8 @@ func QueueWakeContract(t *testing.T, newHarness QueueWakeFactory) {
 		{"ReceivesSignals", wakeReceivesSignals},
 		{"ReceivesSignalsOfAnOrderingKey", wakeReceivesKeyedSignals},
 		{"ReceivesEarlySignals", wakeReceivesEarlySignals},
+		{"SignalsCarryTheJobType", wakeSignalsCarryType},
+		{"FindsDueJobsByType", wakeFindsDueJobsByType},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newHarness) })
@@ -337,12 +339,12 @@ func wakeSweepsLostSignals(t *testing.T, newHarness QueueWakeFactory) {
 	// Run every job the sweep finds: the lost ones and k2 after k1, but not the leased one.
 	ran := map[string]bool{}
 	for range 4 {
-		ids, err := f.h.Finder.DueJobs(t.Context(), f.clock.Now(), f.clock.Now(), 100)
+		due, err := f.h.Finder.DueJobs(t.Context(), f.clock.Now(), f.clock.Now(), 100)
 		if err != nil {
 			t.Fatalf("DueJobs: %v", err)
 		}
-		for _, id := range ids {
-			c := f.wantClaim(id, "w1", queue.Claimed)
+		for _, w := range due {
+			c := f.wantClaim(w.JobID, "w1", queue.Claimed)
 			ran[payloadOf(t, c.Job)] = true
 			if err := f.h.Source.Complete(t.Context(), "w1", c.Job); err != nil {
 				t.Fatalf("Complete: %v", err)
@@ -456,5 +458,136 @@ func wakeReceivesEarlySignals(t *testing.T, newHarness QueueWakeFactory) {
 	f.receive(id)
 	if run := f.wantRuns(1)[0]; run.Attempt != 1 {
 		t.Errorf("Attempt = %d, want 1: an early signal does not count", run.Attempt)
+	}
+}
+
+// wakeSignalsCarryType checks that every path of a signal knows the job's type, which chooses the
+// queue of the signal (ADR-0139 §2): an enqueue, a transaction, a retry, a job that a queue with a
+// delay limit delivered early, the next job of an ordering key, a requeued dead job, and the sweep.
+func wakeSignalsCarryType(t *testing.T, newHarness QueueWakeFactory) {
+	f := newWakeFixture(t, newHarness, queue.Retry(time.Minute, errors.New("flaky")), queue.Done())
+	wantType := func(path, jobType string) {
+		t.Helper()
+		wakes := f.waker.Take()
+		if len(wakes) == 0 {
+			t.Fatalf("%s sent no signal", path)
+		}
+		for _, w := range wakes {
+			if w.Type != jobType {
+				t.Fatalf("%s sent %+v, want the type %s", path, w, jobType)
+			}
+		}
+	}
+
+	if err := f.h.Queue.Enqueue(t.Context(), queue.NewJob{Type: "testkit.a"}); err != nil {
+		t.Fatalf("Enqueue: %v", err)
+	}
+	wantType("Enqueue", "testkit.a")
+
+	err := f.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+		return f.h.Outbox.EnqueueTx(t.Context(), tx, queue.NewJob{Type: "testkit.b"})
+	})
+	if err != nil {
+		t.Fatalf("Tx: %v", err)
+	}
+	wantType("EnqueueTx", "testkit.b")
+
+	// Clear the two jobs, so that the receiver below sees only its own.
+	due, err := f.h.Finder.DueJobs(t.Context(), f.clock.Now(), f.clock.Now(), 10)
+	if err != nil || len(due) != 2 {
+		t.Fatalf("DueJobs = %v, %v, want 2", due, err)
+	}
+	gotTypes := map[string]bool{due[0].Type: true, due[1].Type: true}
+	if !gotTypes["testkit.a"] || !gotTypes["testkit.b"] {
+		t.Fatalf("DueJobs = %+v, want the types of the jobs", due)
+	}
+	for _, w := range due {
+		c := f.wantClaim(w.JobID, "w1", queue.Claimed)
+		if err := f.h.Source.Complete(t.Context(), "w1", c.Job); err != nil {
+			t.Fatalf("Complete: %v", err)
+		}
+	}
+
+	id := f.enqueue(probe(`{"N":"retry"}`))
+	f.receive(id)
+	wantType("a retry", probe("").Type)
+
+	// The retry above is not due yet: its signal arrived early, and is sent again.
+	f.receive(id)
+	wantType("an early signal", probe("").Type)
+
+	f.clock.Advance(time.Minute)
+	f.receive(id)
+	f.waker.Take()
+
+	k1 := f.enqueue(keyedProbe("k1", "k"))
+	second := queue.NewJob{Type: "testkit.second", OrderingKey: "k"}
+	if err := f.h.Queue.Enqueue(t.Context(), second); err != nil {
+		t.Fatalf("Enqueue: %v", err)
+	}
+	f.waker.Take()
+	next, ok, err := f.h.Finder.NextJob(t.Context(), "k")
+	if err != nil || !ok || next.JobID != k1 || next.Type != keyedProbe("", "").Type {
+		t.Fatalf("NextJob = %+v, %v, %v, want k1 with its type", next, ok, err)
+	}
+
+	dead := f.enqueue(queue.NewJob{Type: "testkit.dead"})
+	c := f.wantClaim(dead, "w2", queue.Claimed)
+	if err := f.h.Source.Bury(t.Context(), "w2", c.Job, "broken", f.clock.Now()); err != nil {
+		t.Fatalf("Bury: %v", err)
+	}
+	if err := f.h.DeadJobs.RequeueDeadJob(t.Context(), dead); err != nil {
+		t.Fatalf("RequeueDeadJob: %v", err)
+	}
+	wantType("RequeueDeadJob", "testkit.dead")
+}
+
+// wakeFindsDueJobsByType checks the reads of the sweep of a route (ADR-0139 §4).
+func wakeFindsDueJobsByType(t *testing.T, newHarness QueueWakeFactory) {
+	f := newWakeFixture(t, newHarness)
+	now := f.clock.Now()
+	ids := map[string]string{}
+	for _, jobType := range []string{"testkit.a", "testkit.a", "testkit.b", "testkit.c"} {
+		ids[f.enqueue(queue.NewJob{Type: jobType})] = jobType
+	}
+	held := queue.NewJob{Type: "testkit.a", OrderingKey: "k"}
+	first := queue.NewJob{Type: "testkit.c", OrderingKey: "k"}
+	ids[f.enqueue(first)] = "testkit.c"
+	f.enqueue(held) // held back by first, of another type
+
+	types := func(wakes []queue.Wake) map[string]int {
+		n := map[string]int{}
+		for _, w := range wakes {
+			n[w.Type]++
+		}
+		return n
+	}
+	of, err := f.h.Finder.DueJobsOfTypes(t.Context(), []string{"testkit.a", "testkit.b"}, now, now, 10)
+	if err != nil {
+		t.Fatalf("DueJobsOfTypes: %v", err)
+	}
+	if got := types(of); len(of) != 3 || got["testkit.a"] != 2 || got["testkit.b"] != 1 {
+		t.Errorf("DueJobsOfTypes = %+v, want two of a and one of b, without the job its key holds back", of)
+	}
+	for i := 1; i < len(of); i++ {
+		if of[i].At.Before(of[i-1].At) || (of[i].At.Equal(of[i-1].At) && of[i].JobID < of[i-1].JobID) {
+			t.Errorf("DueJobsOfTypes = %+v, want the earliest first", of)
+		}
+	}
+	if limited, err := f.h.Finder.DueJobsOfTypes(t.Context(), []string{"testkit.a", "testkit.b"}, now, now, 2); err != nil || len(limited) != 2 {
+		t.Errorf("DueJobsOfTypes with limit 2 = %v, %v", limited, err)
+	}
+	except, err := f.h.Finder.DueJobsExceptTypes(t.Context(), []string{"testkit.a", "testkit.b"}, now, now, 10)
+	if err != nil {
+		t.Fatalf("DueJobsExceptTypes: %v", err)
+	}
+	if got := types(except); len(except) != 2 || got["testkit.c"] != 2 {
+		t.Errorf("DueJobsExceptTypes = %+v, want the two of c", except)
+	}
+	if none, err := f.h.Finder.DueJobsOfTypes(t.Context(), []string{"testkit.a"}, now, now.Add(-time.Hour), 10); err != nil || len(none) != 0 {
+		t.Errorf("DueJobsOfTypes before they were due = %v, %v", none, err)
+	}
+	if none, err := f.h.Finder.DueJobsExceptTypes(t.Context(), nil, now, now, 0); err != nil || len(none) != 0 {
+		t.Errorf("DueJobsExceptTypes with limit 0 = %v, %v", none, err)
 	}
 }

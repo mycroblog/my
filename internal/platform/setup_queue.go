@@ -111,6 +111,20 @@ func (a *App) setUpWorkerJobConcurrency(cfg *config.Config) error {
 	return nil
 }
 
+// setUpWakeRoutes checks the routes of the wake-up signals against the registered job types, which
+// is known only now (ADR-0139 §1), and gives the sweep a read per route (§4).
+func (a *App) setUpWakeRoutes() error {
+	if a.wakeRouter == nil {
+		return nil
+	}
+	groups, err := a.wakeRouter.TypesOfRoutes(a.Handlers.Types())
+	if err != nil {
+		return fmt.Errorf("queue routes: %w", err)
+	}
+	a.wakeSweeper.UseRoutes(groups)
+	return nil
+}
+
 func (a *App) runnerOptions() queue.RunnerOptions {
 	return queue.RunnerOptions{Clock: a.Clock, Logger: a.Logger, Meter: a.Meter, Tracer: a.Tracer, Attempts: a.JobAttempts, Errors: a.ErrorReporter}
 }
@@ -124,7 +138,8 @@ func (a *App) setUpPushEndpoints(cfg *config.Config) {
 		return
 	}
 	a.Scheduler.UseSharedSlots(a.KV)
-	a.trigger = queue.NewTrigger(a.Scheduler, queue.NewWakeSweeper(queue.WakeSweepDeps{Finder: a.wakeFinder, Waker: a.waker, Clock: a.Clock}))
+	a.wakeSweeper = queue.NewWakeSweeper(queue.WakeSweepDeps{Finder: a.wakeFinder, Waker: a.waker, Clock: a.Clock})
+	a.trigger = queue.NewTrigger(a.Scheduler, a.wakeSweeper)
 	if cfg.Queue == "sqs" {
 		// The Lambda Web Adapter passes the SQS events of the signals and the ticks through.
 		queuepush.NewLambda(queuepush.LambdaOptions{

@@ -894,6 +894,41 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{"worker_job_concurrency (MY_WORKER_JOB_CONCURRENCY): above 1 works only with queue = db, not inline"},
 		},
 		{
+			name: "SQS routes without queue = sqs",
+			env:  with(minimal(), "MY_QUEUE_SQS_ROUTES", "federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/q"),
+			want: []string{"queue_sqs_routes (MY_QUEUE_SQS_ROUTES): needs queue = sqs, not db"},
+		},
+		{
+			name: "Cloud Tasks routes without queue = cloudtasks",
+			env:  with(minimal(), "MY_QUEUE_CLOUDTASKS_ROUTES", "federation.*=projects/p/locations/l/queues/q"),
+			want: []string{"queue_cloudtasks_routes (MY_QUEUE_CLOUDTASKS_ROUTES): needs queue = cloudtasks, not db"},
+		},
+		{
+			name: "a route with a bad type",
+			env:  with(minimal(), "MY_QUEUE_SQS_ROUTES", "Federation*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/q"),
+			want: []string{`queue_sqs_routes (MY_QUEUE_SQS_ROUTES): "Federation*" must be a job type such as federation.deliver or a prefix such as federation.*, then = and a queue`},
+		},
+		{
+			name: "a route without a queue",
+			env:  with(minimal(), "MY_QUEUE_SQS_ROUTES", "federation.*"),
+			want: []string{`queue_sqs_routes (MY_QUEUE_SQS_ROUTES): "federation.*" has no queue`},
+		},
+		{
+			name: "two routes of one type",
+			env:  with(minimal(), "MY_QUEUE_SQS_ROUTES", "federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/a,federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/b"),
+			want: []string{`queue_sqs_routes (MY_QUEUE_SQS_ROUTES): "federation.*" has two routes`},
+		},
+		{
+			name: "an SQS route with a receiver",
+			env:  with(minimal(), "MY_QUEUE_SQS_ROUTES", "federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/a@https://worker.example.com"),
+			want: []string{`queue_sqs_routes (MY_QUEUE_SQS_ROUTES): the route of "federation.*": an SQS route has no receiver URL`},
+		},
+		{
+			name: "a Cloud Tasks route with a bad receiver",
+			env:  with(minimal(), "MY_QUEUE_CLOUDTASKS_ROUTES", "federation.*=projects/p/locations/l/queues/q@http://worker.example.com"),
+			want: []string{`queue_cloudtasks_routes (MY_QUEUE_CLOUDTASKS_ROUTES): the receiver of "federation.*": must be an absolute https URL without a path, such as https://my-worker-abc123-an.a.run.app`},
+		},
+		{
 			name: "inline queue with a split role",
 			env:  with(minimal(), "MY_QUEUE", "inline", "MY_ROLE", "worker"),
 			want: []string{"queue (MY_QUEUE): inline runs jobs in the enqueuing process and requires role = all, not worker"},
@@ -1210,5 +1245,42 @@ func TestMediaOrigin(t *testing.T) {
 		if _, _, err := Load(source(with(minimal(), "MY_MEDIA_ORIGIN", v), nil)); err == nil || !strings.Contains(err.Error(), "media_origin (MY_MEDIA_ORIGIN)") {
 			t.Errorf("%q: err = %v, want a media_origin error", v, err)
 		}
+	}
+}
+
+func TestQueueRoutes(t *testing.T) {
+	cfg := &Config{
+		Queue: "cloudtasks", QueueCloudTasksURL: "https://default.example.com",
+		QueueCloudTasksRoutes: []QueueRoute{
+			{Pattern: "media.*", Queue: "projects/p/locations/l/queues/m", URL: "https://media.example.com"},
+			{Pattern: "federation.*", Queue: "projects/p/locations/l/queues/f"},
+		},
+	}
+	routes := cfg.QueueRoutes()
+	if len(routes) != 2 || routes[0].URL != "https://media.example.com" || routes[1].URL != "https://default.example.com" {
+		t.Fatalf("QueueRoutes = %+v, want the default receiver where a route names none", routes)
+	}
+	line, hash := cfg.QueueRoutesSummary()
+	want := "federation.*=projects/p/locations/l/queues/f@https://default.example.com,media.*=projects/p/locations/l/queues/m@https://media.example.com"
+	if line != want {
+		t.Errorf("summary = %q, want %q", line, want)
+	}
+
+	// The order of the setting does not change the hash, which is what processes are compared by.
+	other := &Config{
+		Queue: "cloudtasks", QueueCloudTasksURL: "https://default.example.com",
+		QueueCloudTasksRoutes: []QueueRoute{cfg.QueueCloudTasksRoutes[1], cfg.QueueCloudTasksRoutes[0]},
+	}
+	if _, h := other.QueueRoutesSummary(); h != hash {
+		t.Errorf("hash = %s, want %s for the same routes in another order", h, hash)
+	}
+	other.QueueCloudTasksRoutes = other.QueueCloudTasksRoutes[:1]
+	if _, h := other.QueueRoutesSummary(); h == hash {
+		t.Error("different routes have the same hash")
+	}
+
+	// Routes of another queue are not used.
+	if got := (&Config{Queue: "db", QueueSQSRoutes: []QueueRoute{{Pattern: "a"}}}).QueueRoutes(); len(got) != 0 {
+		t.Errorf("QueueRoutes with queue = db = %+v", got)
 	}
 }

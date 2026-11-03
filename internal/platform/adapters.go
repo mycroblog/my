@@ -4,6 +4,7 @@ package platform
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -78,6 +79,9 @@ func (a *App) openDatabase(ctx context.Context, cfg *config.Config) (*repositori
 			}
 			a.waker, a.closeWaker = w, closer
 		}
+		if err := a.routeWaker(ctx, cfg, a.routeWakerForTests); err != nil {
+			return nil, err
+		}
 		queueOpts.Waker, queueOpts.Projectors, queueOpts.Logger = a.waker, a.Projectors, a.Logger
 	} else {
 		a.waker = nil
@@ -100,13 +104,68 @@ func queueInDatabase(q string) bool { return q == "db" || hasWaker(q) }
 // wake-up signals: cloudtasks and sqs (ADR-0120).
 func hasWaker(q string) bool { return q == "cloudtasks" || q == "sqs" }
 
-// newWaker returns the waker of the queue of cfg, which hasWaker accepts, and what releases its
-// client.
+// newWaker returns the waker of the default queue of cfg, which hasWaker accepts, and what
+// releases its client.
 func newWaker(ctx context.Context, cfg *config.Config, clock kernel.Clock, reporter kernel.ErrorReporter) (queue.Waker, io.Closer, error) {
 	if cfg.Queue == "sqs" {
-		return newSQSWaker(ctx, cfg, clock)
+		return newSQSWaker(ctx, cfg.QueueSQSQueueURL, clock)
 	}
-	return newCloudTasksWaker(ctx, cfg, clock, reporter)
+	return newCloudTasksWaker(ctx, cfg, config.QueueRoute{Queue: cfg.QueueCloudTasksQueue, URL: cfg.QueueCloudTasksURL}, clock, reporter)
+}
+
+// routeWaker puts the routes of cfg in front of a.waker (ADR-0139 §2). Without routes it changes
+// nothing, so that a deployment with one queue behaves as if they did not exist. stand, when set,
+// makes the waker of a route; a route to the same target shares its waker.
+func (a *App) routeWaker(ctx context.Context, cfg *config.Config, stand func(config.QueueRoute) queue.Waker) error {
+	routes := cfg.QueueRoutes()
+	if len(routes) == 0 {
+		return nil
+	}
+	wakers := map[config.QueueRoute]queue.Waker{}
+	closers := []io.Closer{}
+	if a.closeWaker != nil {
+		closers = append(closers, a.closeWaker)
+	}
+	wakeRoutes := make([]queue.WakeRoute, len(routes))
+	for i, r := range routes {
+		target := config.QueueRoute{Queue: r.Queue, URL: r.URL}
+		w, ok := wakers[target]
+		if !ok {
+			var closer io.Closer
+			var err error
+			switch {
+			case stand != nil:
+				w = stand(target)
+			case cfg.Queue == "sqs":
+				w, closer, err = newSQSWaker(ctx, r.Queue, a.Clock)
+			default:
+				w, closer, err = newCloudTasksWaker(ctx, cfg, target, a.Clock, a.ErrorReporter)
+			}
+			if err != nil {
+				return err
+			}
+			if closer != nil {
+				closers = append(closers, closer)
+			}
+			wakers[target] = w
+		}
+		wakeRoutes[i] = queue.WakeRoute{Pattern: r.Pattern, Waker: w}
+	}
+	a.wakeRouter = queue.NewWakeRouter(a.waker, wakeRoutes)
+	a.waker, a.closeWaker = a.wakeRouter, closeAll(closers)
+	return nil
+}
+
+// closeAll is an io.Closer of several, which closes all of them.
+type closeAll []io.Closer
+
+// Close implements io.Closer.
+func (c closeAll) Close() error {
+	var errs []error
+	for _, closer := range c {
+		errs = append(errs, closer.Close())
+	}
+	return errors.Join(errs...)
 }
 
 // valkeyServer is the connection to valkey_url that the adapters configured with it share.

@@ -143,9 +143,22 @@ type dueFinder struct {
 	err       error
 }
 
-func (f *dueFinder) DueJobs(_ context.Context, _, dueBefore time.Time, limit int) ([]string, error) {
+func (f *dueFinder) DueJobs(_ context.Context, _, dueBefore time.Time, limit int) ([]queue.Wake, error) {
 	f.dueBefore = dueBefore
-	return f.ids[:min(limit, len(f.ids))], f.err
+	ids := f.ids[:min(limit, len(f.ids))]
+	wakes := make([]queue.Wake, len(ids))
+	for i, id := range ids {
+		wakes[i] = queue.Wake{JobID: id}
+	}
+	return wakes, f.err
+}
+
+func (f *dueFinder) DueJobsOfTypes(context.Context, []string, time.Time, time.Time, int) ([]queue.Wake, error) {
+	return nil, nil
+}
+
+func (f *dueFinder) DueJobsExceptTypes(context.Context, []string, time.Time, time.Time, int) ([]queue.Wake, error) {
+	return nil, nil
 }
 
 func (f *dueFinder) NextJob(context.Context, string) (queue.Wake, bool, error) {
