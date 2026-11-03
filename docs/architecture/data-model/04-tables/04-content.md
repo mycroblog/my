@@ -9,12 +9,12 @@
 | `status_revisions` | イベント（版） | `id`, `status_id`, `seq`（`int`、1 始まり）, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`）, `revised_at` | 一意 `(status_id, seq)` |
 | `status_revision_bodies` | イベント（版の子） | `revision_id`, `language`（`lang`）, `content_html` | PK `(revision_id, language)`。AP の `contentMap` を正規化したもの。`content` だけのものは版の `language` で 1 行（NFR-I18N-5） |
 | `status_revision_sources` | イベント（部分型） | `revision_id`（PK）, `source_text`, `source_format`（`enum(text_plain)`） | ローカル投稿の入力ソース |
-| `status_revision_attachments` | イベント（版の子） | `revision_id`, `position`（`int`、0〜3）, `media_id`, `description`（`text`、NULL 可） | PK `(revision_id, position)`。代替テキストは版ごと（編集で直せる）。ローカルの投稿・編集が添付できるのは、投稿者の `uploaded_media` で最新の `media_processing_results` が `ready` のものだけ（content のユースケースが検査する） |
+| `status_revision_attachments` | イベント（版の子） | `revision_id`, `position`（`int`、0〜3）, `media_id`, `description`（`text`、NULL 可） | PK `(revision_id, position)`。代替テキストは版ごと（編集で直せる）。ローカルの投稿・編集が添付できるのは、投稿者の `uploaded_media` で最新の `media_processing_results` が `ready` のものだけ（content のユースケースが検査する）。インデックス `(media_id)` |
 | `status_revision_mentions` | イベント（版の子） | `revision_id`, `account_id` | PK `(revision_id, account_id)` |
 | `status_revision_tags` | イベント（版の子） | `revision_id`, `tag_id` | PK `(revision_id, tag_id)` |
 | `status_revision_emojis` | イベント（版の子） | `revision_id`, `emoji_id` | PK `(revision_id, emoji_id)`。インデックス `(emoji_id)`（リモートの絵文字の消去） |
 | `remote_status_revisions` | イベント（部分型） | `revision_id`（PK）, `activity_uri`（NULL 可。版を運んだ `Create` / `Update`。取得で作った版は NULL）, `html_policy_version`（`int`）, `omitted_attachment_count`（`int`、既定 0） | リモートのみ。本文をサニタイズしたポリシーの版（ADR-0019 §2）。`omitted_attachment_count` は 4 件を超えて記録しなかった添付の数。版の `revised_at` は AP の `updated`（無ければ `published`） |
-| `status_deletions` | イベント | `status_id`（PK）, `uri`, `author_account_id`, `origin`（`enum(author, moderation, remote, account_deletion, retention, auto_delete)`）, `moderation_action_id`（NULL 可）, `deleted_at` | 部分一意 `(uri) WHERE origin <> 'retention'`、インデックス `(uri)`。tombstone を兼ねる（遅れて届いた `Create` / `Update` で復活させない。GET には `410 Gone`） |
+| `status_deletions` | イベント | `status_id`（PK）, `uri`, `author_account_id`, `origin`（`enum(author, moderation, remote, account_deletion, retention, auto_delete)`）, `moderation_action_id`（NULL 可）, `deleted_at` | 部分一意 `(uri) WHERE origin <> 'retention'`、インデックス `(uri)`。tombstone を兼ねる（遅れて届いた `Create` / `Update` で復活させない。GET には `410 Gone`）。部分インデックス `(deleted_at)`（保持期間の消去） |
 
 - **公開範囲・作者・返信先・公開日時は投稿の不変の事実** です。変わり得る本文・CW・言語・添付・メンション・タグは版に置きます（FR-109）。
 - 返信先は `in_reply_to_uri`（不変の事実）だけを持ちます。親の `status_id` は `statuses (uri)` で引けるため保存しません。
@@ -140,7 +140,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `boosts` | リソース | `id`, `uri`（`Announce` の IRI）, `booster_account_id`, `status_id`, `visibility`（ローカルのブーストは元投稿の値を写す。リモートのブーストは `Announce` の宛先から決めた公開範囲と元投稿の公開範囲の狭いほう。不変）, `is_local`（ブーストした人がローカルか）, `boosted_at` | 一意 `(uri)`。インデックス `(status_id)`（件数の再集計）。CHECK `visibility <> 'local' OR is_local` |
+| `boosts` | リソース | `id`, `uri`（`Announce` の IRI）, `booster_account_id`, `status_id`, `visibility`（ローカルのブーストは元投稿の値を写す。リモートのブーストは `Announce` の宛先から決めた公開範囲と元投稿の公開範囲の狭いほう。不変）, `is_local`（ブーストした人がローカルか）, `boosted_at` | 一意 `(uri)`。インデックス `(status_id)`（件数の再集計）。CHECK `visibility <> 'local' OR is_local`。インデックス `(booster_account_id)` |
 | `boost_retractions` | イベント | `boost_id`（PK）, `origin`（`enum(booster, remote)`）, `retracted_at` | |
 | `boost_edges` | 投影 | `booster_account_id`, `status_id`, `boost_id` | PK `(booster_account_id, status_id)`、インデックス `(status_id)`（投稿の削除での除去）。有効なブーストは 1 人 1 投稿につき 1 つ。取り消し後の再ブーストは新しい `boosts` 行 |
 
@@ -170,7 +170,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `reactions` | リソース | `id`, `account_id`, `status_id`, `emoji_key`（Unicode 絵文字なら fully-qualified の形の絵文字、カスタム絵文字なら `custom_emojis.id`）, `custom_emoji_id`（NULL 可。Unicode 絵文字なら NULL）, `uri`（`Like` / `EmojiReact` の IRI）, `created_at` | 一意 `(account_id, status_id, emoji_key)`, `(uri)`。インデックス `(status_id, emoji_key, id)`（絵文字で絞った一覧）, `(status_id, id)`（一覧）, `(custom_emoji_id)`（リモートの絵文字の消去）。CHECK `custom_emoji_id IS NULL OR custom_emoji_id = emoji_key` |
+| `reactions` | 現在値 | `id`, `account_id`, `status_id`, `emoji_key`（Unicode 絵文字なら fully-qualified の形の絵文字、カスタム絵文字なら `custom_emojis.id`）, `custom_emoji_id`（NULL 可。Unicode 絵文字なら NULL）, `uri`（`Like` / `EmojiReact` の IRI）, `created_at` | 一意 `(account_id, status_id, emoji_key)`, `(uri)`。インデックス `(status_id, emoji_key, id)`（絵文字で絞った一覧）, `(status_id, id)`（一覧）, `(custom_emoji_id)`（リモートの絵文字の消去）。CHECK `custom_emoji_id IS NULL OR custom_emoji_id = emoji_key` |
 | `status_reaction_counts` | 投影 | `status_id`, `emoji_key`, `custom_emoji_id`（NULL 可）, `count`（`bigint`、1 以上） | PK `(status_id, emoji_key)`。インデックス `(status_id, count DESC, emoji_key)`（多い順の上位 20） |
 
 - 絵文字リアクション（FR-116、ADR-0052）は、お気に入りとは別の資源です。1 人が 1 投稿に絵文字ごとに 1 つ付けられ、取り消すと行を消して `content.unreacted` を発行します（取り消した後の付け直しは新しい行）。
@@ -217,8 +217,8 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `status_quotes` | リソース | `status_id`（PK）, `quoted_uri`（引用先の投稿の URI。まだ保存していない投稿でもよい）, `form`（`enum(fep_044f, legacy)`） | インデックス `(quoted_uri)`。引用先は投稿の作成時に決まり、変わらない |
-| `status_quote_events` | イベント | `id`, `status_id`, `kind`（`enum(accepted, rejected, revoked, detached)`）, `authorization_uri`（`accepted` が検証した、`revoked` が削除を受けた `QuoteAuthorization`。ほかは NULL。自分の投稿の引用の承認も NULL）, `occurred_at` | インデックス `(status_id, id)` |
-| `status_quote_states` | 投影 | `status_id`（PK）, `state`（`enum(pending, accepted, rejected, revoked, legacy, detached)`）, `authorization_uri`（`accepted` のときだけ） | インデックス `(authorization_uri)` |
+| `status_quote_events` | イベント | `id`, `status_id`, `kind`（`enum(accepted, rejected, revoked, detached)`）, `authorization_uri`（NULL 可。`accepted` が検証した、`revoked` が削除を受けた `QuoteAuthorization`。ほかは NULL。自分の投稿の引用の承認も NULL）, `occurred_at` | インデックス `(status_id, id)` |
+| `status_quote_states` | 投影 | `status_id`（PK）, `state`（`enum(pending, accepted, rejected, revoked, legacy, detached)`）, `authorization_uri`（NULL 可。`accepted` のときだけ） | インデックス `(authorization_uri)` |
 | `status_quote_policies` | 現在値 | `status_id`（PK）, `policy`（`enum(public, followers, nobody)`）, `updated_at` | ローカルの投稿は作成のときに必ず持ち、作者がいつでも変えられる。リモートの投稿は `interactionPolicy.canQuote` を宣言したものだけが持ち、`Update` のたびに置き換える |
 | `quote_authorizations` | リソース | `id`, `quoting_uri`（引用元。ローカルでもリモートでもよい）, `quoting_account_id`, `quoted_status_id`（ローカルの引用先）, `created_at` | 一意 `(quoting_uri, quoted_status_id)`、インデックス `(quoted_status_id, id)`。このサーバーが出した承認で、IRI は `https://{host}/ap/quote_authorizations/{id}`（保存しない） |
 | `quote_authorization_revocations` | イベント | `authorization_id`（PK）, `revoked_at` | 承認の取り消し。取り消した承認の IRI は 410 を返す |
@@ -261,14 +261,14 @@
 | `custom_emojis` | リソース | `id`, `shortcode`, `domain`（ローカルは `''`）, `uri`（NULL 可。ローカルは常に NULL で、`id` から `https://{host}/ap/emojis/{id}` を導く）, `created_by_user_id`（NULL 可。作った利用者。承認で作った絵文字は申請者、管理画面で作った絵文字と複製はその管理者、CLI とリモートの絵文字は NULL。変えない）, `created_at` | 一意 `(shortcode, domain)`, `(uri)`。インデックス `(domain, shortcode)`（ローカルのカスタム絵文字の一覧）, `(created_by_user_id, id)`（作成者の絵文字と上限の数え上げ） |
 | `custom_emoji_images` | イベント（版） | `id`, `emoji_id`, `media_id`, `revised_at` | インデックス `(emoji_id, id DESC)`, `(media_id)`。最新の行が現在の画像。ローカルは管理者がアップロードした `media_files`（CLI と承認した申請はインスタンスの Actor の `media_files`。申請は申請者のアップロードの処理結果を複製する）、リモートは `remote_media` |
 | `custom_emoji_requests` | リソース | `id`, `kind`（`enum(create, image)`）, `requester_user_id`（NULL 可 = 申請者のアカウントを消去した）, `emoji_id`（NULL 可。`image` の対象）, `shortcode`（`image` は対象の写し）, `media_id`（申請者のローカルのアカウントのアップロード）, `created_at` | CHECK `(kind = 'create') = (emoji_id IS NULL)`。インデックス `(requester_user_id, id)`, `(media_id)`。終わった申請も消さない（ADR-0070 §7） |
-| `custom_emoji_request_outcomes` | イベント | `id`, `request_id`, `outcome`（`enum(approved, rejected, withdrawn, lapsed)`）, `decided_by_user_id`（NULL 可。CLI と `lapsed`。取り下げは申請者）, `reason`（NULL 可、500 文字まで。`rejected` だけ）, `emoji_id`（`approved` だけ。作った・変えた絵文字）, `decided_at` | 一意 `(request_id)`。行のない申請が審査中 |
-| `custom_emoji_pending_requests` | 投影 | `request_id`（PK）, `requester_user_id`, `reserved_shortcode`（`create` だけ）, `emoji_id`（`image` だけ） | 一意 `(reserved_shortcode)`, `(emoji_id)`。インデックス `(requester_user_id)`。申請と同じトランザクションで作り、結果の行と同じトランザクションで消す。`custom_emoji_requests` のうち結果の行のないものから作り直せる |
+| `custom_emoji_request_outcomes` | イベント | `id`, `request_id`, `outcome`（`enum(approved, rejected, withdrawn, lapsed)`）, `decided_by_user_id`（NULL 可。CLI と `lapsed`。取り下げは申請者）, `reason`（NULL 可、500 文字まで。`rejected` だけ）, `emoji_id`（NULL 可。`approved` だけ。作った・変えた絵文字）, `decided_at` | 一意 `(request_id)`。行のない申請が審査中 |
+| `custom_emoji_pending_requests` | 投影 | `request_id`（PK）, `requester_user_id`, `reserved_shortcode`（NULL 可。`create` だけ）, `emoji_id`（NULL 可。`image` だけ） | 一意 `(reserved_shortcode)`, `(emoji_id)`。インデックス `(requester_user_id)`。申請と同じトランザクションで作り、結果の行と同じトランザクションで消す。`custom_emoji_requests` のうち結果の行のないものから作り直せる |
 | `custom_emoji_settings` | 現在値 | `emoji_id`（PK）, `enabled`, `visible_in_picker`（`bool`）, `category`（NULL 可、64 文字まで） | 行が無ければ有効・ピッカーに出す・カテゴリなし（既定に戻すと行を消す）。リモートの絵文字は `enabled` だけを使う |
 | `custom_emoji_aliases` | 現在値 | `emoji_id`, `alias`（shortcode と同じ文字種） | PK `(emoji_id, alias)`。ローカルだけ。ピッカーの検索に使う |
 | `polls` | イベント（版の子） | `id`, `revision_id`, `multiple`（`bool`）, `hide_totals`（`bool`。ローカルの投票で、締め切りまで選択肢ごとの票数を隠す）, `closes_at`（NULL 可） | 一意 `(revision_id)`。投票を作り直す編集は新しい版の新しい投票になる |
 | `poll_options` | イベント（子） | `poll_id`, `position`, `title` | PK `(poll_id, position)` |
 | `poll_votes` | イベント | `id`, `poll_id`, `account_id`, `position`, `uri`（NULL 可）, `voted_at` | 一意 `(poll_id, account_id, position)`, `(uri)`。インデックス `(account_id)`（消去）。複数選択の回答は選択肢ごとに 1 行 |
-| `poll_tally_observations` | イベント | `id`, `poll_id`, `voters_count`（NULL 可）, `observed_at` | 投票の集計値。リモートの投票は相手が `Create` / `Update` で送ったもの、ローカルの投票は投稿したとき（0）と回答のたびに `poll_votes` を数え直したもの |
+| `poll_tally_observations` | イベント | `id`, `poll_id`, `voters_count`（NULL 可）, `observed_at` | 投票の集計値。リモートの投票は相手が `Create` / `Update` で送ったもの、ローカルの投票は投稿したとき（0）と回答のたびに `poll_votes` を数え直したもの。インデックス `(poll_id, id DESC)` |
 | `poll_tally_observation_counts` | イベント（子） | `observation_id`, `position`, `votes` | PK `(observation_id, position)` |
 | `poll_tallies` | 投影 | `poll_id`, `position`, `votes`, `voters_count`（NULL 可。投票者数の分からない複数選択のリモートの投票） | PK `(poll_id, position)`。ローカルもリモートも最新の観測から |
 

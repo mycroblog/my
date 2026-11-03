@@ -10,7 +10,7 @@
 -- enqueued the job, which its run links to (ADR-0063 §2); an attribute of the job, not a state.
 -- ---------------------------------------------------------------------------------------------
 
--- Pending and running jobs of the database queue. A job is deleted when it finishes and moved
+-- Current value: pending and running jobs of the database queue. A job is deleted when it finishes and moved
 -- to dead_jobs when it fails for good. A claim sets locked_by and locked_until together.
 CREATE TABLE jobs (
   id uuid NOT NULL PRIMARY KEY,
@@ -33,7 +33,7 @@ CREATE INDEX jobs_run_at ON jobs (run_at);
 CREATE INDEX jobs_type_run_at_id ON jobs (type, run_at, id);
 CREATE INDEX jobs_ordering_key_run_at ON jobs (ordering_key, run_at);
 
--- Jobs that failed for good, kept for the admin screen and the CLI to requeue.
+-- Current value: jobs that failed for good, kept for the admin screen and the CLI to requeue.
 CREATE TABLE dead_jobs (
   id uuid NOT NULL PRIMARY KEY,
   type text NOT NULL,
@@ -69,7 +69,7 @@ CREATE INDEX job_attempts_finished_at ON job_attempts (finished_at);
 -- 基盤: key-value store (data-model/04-tables/10-infrastructure.md §4.10). Owned by internal/adapter/kv/db.
 -- ---------------------------------------------------------------------------------------------
 
--- Entries of the KeyValueStore port. expires_at is NULL for entries that never expire.
+-- Current value: entries of the KeyValueStore port. expires_at is NULL for entries that never expire.
 CREATE TABLE kv_entries (
   namespace text NOT NULL,
   key text NOT NULL,

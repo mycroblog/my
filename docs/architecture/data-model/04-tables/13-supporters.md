@@ -36,12 +36,12 @@
 | `supporter_subscriptions` | リソース | `id`（事業者に載せるこちらの ID）, `user_id`, `plan_id`, `price_id`（開始のとき）, `provider`, `created_at` | |
 | `supporter_checkouts` | イベント | `id`, `subscription_id`, `provider`, `provider_checkout_id`, `expires_at`, `created_at` | 一意 `(provider, provider_checkout_id)`。インデックス `(subscription_id, id DESC)`, `(provider, expires_at)` |
 | `supporter_subscription_links` | イベント | `subscription_id`（PK）, `provider`, `provider_subscription_id`, `linked_at` | 一意 `(provider, provider_subscription_id)` |
-| `supporter_subscription_transitions` | イベント（版） | `id`, `subscription_id`, `state`（`enum(pending, active, canceling, past_due, lapsed, expired, revoked, abandoned)`）, `plan_id`, `price_id`, `period_ends_at`（`pending`・`abandoned` だけ NULL）, `reason`（`enum(started, synced, grace_expired, reversed, plan_retired, account_closed, account_suspended, staff, service_closed)`）, `occurred_at` | インデックス `(subscription_id, id DESC)` |
+| `supporter_subscription_transitions` | イベント（版） | `id`, `subscription_id`, `state`（`enum(pending, active, canceling, past_due, lapsed, expired, revoked, abandoned)`）, `plan_id`, `price_id`, `period_ends_at`（NULL 可。`pending`・`abandoned` だけ NULL）, `reason`（`enum(started, synced, grace_expired, reversed, plan_retired, account_closed, account_suspended, staff, service_closed)`）, `occurred_at` | インデックス `(subscription_id, id DESC)` |
 | `supporter_grace_periods` | イベント | `transition_id`（PK。`past_due` の遷移）, `failed_at`, `ends_at`（`failed_at` + 7 日） | |
 | `supporter_scheduled_changes` | イベント | `transition_id`（PK）, `price_id`, `effective_at` | 行がなければ予約なし |
-| `supporter_subscription_reversals` | イベント | `id`, `subscription_id`, `kind`（`enum(full_refund, partial_refund, chargeback)`）, `provider`, `provider_reversal_id`, `occurred_at` | 一意 `(provider, provider_reversal_id)` |
+| `supporter_subscription_reversals` | イベント | `id`, `subscription_id`, `kind`（`enum(full_refund, partial_refund, chargeback)`）, `provider`, `provider_reversal_id`, `occurred_at` | 一意 `(provider, provider_reversal_id)`。インデックス `(subscription_id)` |
 | `supporter_subscription_heads` | 投影 | `subscription_id`（PK）, `transition_id`, `user_id`, `plan_id`, `state` | インデックス `(plan_id, state)`, `(user_id)` |
-| `supporter_live_subscriptions` | 投影 | `user_id`（PK）, `subscription_id` | 終端でない加入だけ。利用者ごとに 1 つ |
+| `supporter_live_subscriptions` | 投影 | `user_id`（PK）, `subscription_id` | 終端でない加入だけ。利用者ごとに 1 つ。一意 `(subscription_id)` |
 | `supporter_subscription_deadlines` | 投影 | `subscription_id`（PK）, `kind`（`enum(checkout, period_end, grace)`）, `due_at` | インデックス `(due_at)` |
 | `supporter_subscription_reads` | 現在値 | `subscription_id`（PK）, `read_at` | 当てた最新のスナップショットを事業者から読み始めた時刻 |
 | `supporter_listings` | 現在値 | `user_id`（PK）, `created_at` | 参加者の一覧に出る選択（ADR-0071 §6） |
