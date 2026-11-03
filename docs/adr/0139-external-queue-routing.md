@@ -1,0 +1,154 @@
+# ADR-0139: 外部のキューでジョブの種類ごとに処理能力を分ける
+
+- Status: Proposed
+- Date: 2026-11-03
+- Deciders: @rosylilly
+- Issue: #2003
+
+## Context（背景・課題）
+
+[ADR-0138](0138-worker-job-selection.md)の `worker_job_types` は `queue = db` だけで使える。`queue = sqs` / `cloudtasks` は、ジョブの ID だけを持つ合図を 1 つのキューで運び（[ADR-0120](0120-external-queue-wake-up-signals.md)）、受け取る側は合図を選べないため。
+その結果、Lambda や Cloud Run の構成では、特定の種類のジョブだけに処理能力を与えられない（NFR-PERF-2）。配送がたまると、メールや通知も同じキューの後ろで待つ。
+
+決定者の依頼（#1996 の回答、原文）:
+
+> SQS や CloudTasks でも特定ジョブだけ処理能力をスケールしたい処理というのはあると思うのでこの起動指定とは別の手段としてでも用意できないかを検討して欲しい。たとえばキューを分ける方法を提供するなど？
+
+コードの現状は次のとおり。
+
+- `queue.Waker` の `Wake` は `JobID` と `At` だけを持つ。合図を出す場所は 6 つで、どれも 1 つのキューに送る。投入（`queue/db` の `wakesOf`）、dead のジョブの再実行（`RequeueDeadJob`）、早く届いた合図の送り直し、リトライ、順序キーの次のジョブ（`NextJob`）、掃除（`WakeSweeper`）。
+- 受け口（`PushReceiver.Receive`）は `ClaimJob` で ID のジョブを取る。**どの受け口もすべての種類のハンドラを持つので、合図がどのキューから届いても正しく動く。**
+- 掃除は `DueJobs` で、期限の来たジョブを `run_at` の早い順に、1 回 500 件まで合図し直す。種類を見ない。
+- tick は別のメッセージで、SQS では同じキュー、Google Cloud では Cloud Scheduler から `/_internal/tick` へ届く。
+
+## Decision Drivers（判断基準）
+
+1. 運営者が、選んだ種類の処理能力をプラットフォームの設定で増やしたり絞ったりできる
+2. 正しさをキューの割り当てに依存させない（誤った割り当てや変更の途中でも、ジョブは失われない）
+3. 分けない構成の動作と費用を変えない（NFR-COST、ほぼ $0 の構成）
+4. 止まったキューを検知できる。[ADR-0138](0138-worker-job-selection.md) §3 と同じ手段にする
+5. 順序キーの順序を壊さない
+6. 実装と設定が小さい
+
+## Considered Options（選択肢）
+
+1. **種類 → キューの対応を設定で持ち、合図を送り分ける**（受け口は変えない）
+2. **種類を決め打ちのレーンに分け、レーンごとにキューを設定する**
+3. **1 つのキューのまま、受け口が種類を見て、実行しないものを送り直す**
+4. **何もしない**（プラットフォームの上限を 1 つの受け口全体にかける）
+
+## Decision（決定）
+
+> Proposed の推奨案。Accepted にするのは人間の Decider のみ。
+
+**推奨案は選択肢 1。** 合図はヒントでしかなく、どの受け口でもどのジョブでも実行できるので、キューを分けるのに必要なのは送る側の振り分けだけになる。受け口の変更と、種類で絞った claim は要らない。
+
+### 1. 設定
+
+- 設定のキーを方言ごとに 1 つ足す。指定しなければ今と同じで、すべての合図が今のキューに行く。
+  - `queue_sqs_routes`: `federation.*=https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-federation,notification.email=https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-mail`
+  - `queue_cloudtasks_routes`: `federation.*=projects/p/locations/l/queues/my-federation@https://federation-worker.example.com`。`@` 以降の受け口の URL は省略でき、省略すると `queue_cloudtasks_url` を使う
+- 左辺の書き方は [ADR-0138](0138-worker-job-selection.md) §1 と同じ（種類の名前か `prefix.*`）。**どのハンドラにも当たらない左辺は起動に失敗する**。右辺の形式の誤り、同じ左辺の重複も起動に失敗する。
+- いちばん具体的なものを選ぶ。完全な名前が接頭辞に勝ち、接頭辞は長いほうが勝つ。
+- `queue = db` / `inline` で指定すると起動に失敗する。[ADR-0138](0138-worker-job-selection.md) §5 の、外部のキューで `worker_job_types` を拒むことは変えない。
+- 合図を送るプロセス（`web` と `worker`）すべてが同じ設定を持つ前提にするが、違っていても §5 のとおりジョブは失われない。
+
+### 2. 合図の送り分け
+
+- `queue.Wake` に `Type` を足す。**外に出す合図の本文はジョブの ID のままで、種類はプロセス内の振り分けにだけ使う**（ADR-0120 §1 の「合図は ID と時刻だけを持つ」は変えない）。
+- `Waker` を実装する振り分けの部品を `internal/app/queue` に置く。種類で分けて、キューごとの今の adapter の `Waker` に渡す。adapter は変えない。
+- 種類が要るので、次の読み取りが種類も返すようにする。`RequeueDeadJob`、`ClaimJob` の `ClaimNotDue`、`NextJobOfKey`、`ListDueJobs`。投入とリトライは種類を持っている。
+- 送信の失敗は今と同じくログに出して掃除に任せる。**他のキューには回さない**（絞っている種類が他のキューにあふれないように）。
+
+### 3. 受け口
+
+- **増やさない。** SQS は `queue_sqs_events_path`、Cloud Tasks は `/_internal/jobs` の 1 つが、どのキューの合図も受ける。認証も今のまま。
+- 合図のキューに応じて処理を変えない。実行するかは `ClaimJob` だけで決まる。
+- プラットフォームの構成は運営者が選ぶ。どちらも同じイメージで動く。
+
+| | キューの分け方 | 処理能力の設定 |
+| --- | --- | --- |
+| AWS（1 つの関数） | キューごとに event source mapping | mapping ごとの最大同時実行数（2〜1,000、設定は無料）。関数の reserved concurrency は最大同時実行数の合計以上にする |
+| AWS（関数を分ける） | キューごとに関数 | 関数ごとのメモリ・タイムアウト・reserved concurrency |
+| Google Cloud（1 つのサービス） | ルートに URL を書かない | キューごとの `maxConcurrentDispatches` と `maxDispatchesPerSecond`。インスタンスの上限はサービスで共有する |
+| Google Cloud（サービスを分ける） | ルートに別のサービスの URL を書く | 上に加えて、サービスごとの最大インスタンス数と同時実行数 |
+
+- 分けたサービスは自分の URL を `queue_cloudtasks_url` に持つ。audience の既定は呼ばれた URL なので、今の検証で通る。
+- URL をルートに書く形にし、Cloud Tasks のキューの `uriOverride` には頼らない。上書きしたときの OIDC の audience の扱いが確かめられず（要検証）、CMEK とも併用できないため。
+
+### 4. 掃除と tick
+
+- **掃除はルートごとに行う。** 今の 500 件の上限のままだと、配送の滞りで古い合図が先頭を占め、失われたメールの合図が拾われなくなる。これは分けた目的に反する。
+- ルートごとに 1 回 500 件まで、その種類の `DueJobs` を読んで、そのキューに送る。ルートのある種類は ADR-0138 の索引 `(type, run_at, id)` を引く。既定のキューの分は `type <> ALL(ルートの種類)` で読む。ハンドラのない種類も既定のキューに残すため。ADR-0138 の測定で 80 ms 程度の形だが、1 分に 1 回なので許容する。
+- ルートがなければ今の 1 回だけで、クエリも変えない。
+- tick はキューを問わず処理できる。SQS では、tick を混ぜるキューが滞ると周期のジョブも掃除も遅れるので、滞りうる種類を既定のキューから外すか、tick だけのキューを作ることを運用の文書に書く。
+
+### 5. 割り当ての変更と未設定の種類
+
+- どのルートにも当たらない種類は既定のキュー（`queue_sqs_queue_url` / `queue_cloudtasks_queue`）に行く。**新しいバージョンで増えた種類も既定のキューで動くので、止まらない。**
+- 送り先を変えたとき、途中の合図は古いキューに残るが、その受け口が動いていれば実行される。古いキューを消すと合図は失われ、掃除が期限の 2 分後から拾う。SQS の遅延は最大 15 分だが、Cloud Tasks の合図は最大 30 日先の分が残っていることがある。どちらでも失われるのは合図だけで、ジョブは DB にある。
+- プロセスごとに設定が食い違っている間も、合図の送り先が変わるだけで害はない。
+
+### 6. 順序キー
+
+順序は `ClaimJob` と `NextJob` が DB で守るので、キューを分けても変わらない。前のジョブが残っていれば合図は捨てられ、前のジョブが終わるときに次のジョブの種類のキューへ合図する。
+[ADR-0138](0138-worker-job-selection.md) §4 と違い、種類をまたぐキー（`like:`、`voice_room:`、`supporter_subscription:`）を同じ組に置く必要はない。ただし、前のジョブのキューが滞れば、同じキーの次のジョブも待つ。
+
+### 7. 止まったキューの検知
+
+ジョブは DB にあるので、[ADR-0138](0138-worker-job-selection.md) §3 の `my.queue.oldest_ready_age`（種類のラベル）で同じように検知する。外部のキューの登録や、キューごとの指標の取得は足さない。
+受け口のないキューには合図がたまり続けるので、運用の文書に、対応する受け口の確認手順とプラットフォームの指標（SQS の滞留、Cloud Tasks のタスク数）を書く。
+
+### 8. 費用と上限
+
+2026-11-03 に公式の文書で確認した。
+
+- **SQS**: 最低料金はなく、すべての操作をリクエストとして数え、月 100 万リクエストは無料（[pricing](https://aws.amazon.com/sqs/pricing/)）。キュー単位の料金の記載はなく、キューの数の上限は [quotas](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-queues.html) に記載がない。100 万リクエストあたりの単価は取得した本文に含まれず **要検証**。
+- **Lambda**: event source mapping の同時実行は既定で最大 1,250、[最大同時実行数](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html)は 2〜1,000 で mapping ごと、設定は無料。関数に複数の SQS を結べる。最初は 5 つの並行で読み、低負荷でも 2 まで下げる。バッチの上限は標準キューで 10,000（[parameters](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-parameters.html)）、処理中のメッセージはキューあたり約 120,000（[visibility timeout](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)）。
+- **SQS の待ち受けの費用**: mapping はメッセージがなくてもキューを読み続けるので、**キューが増えるとリクエスト数が増え、無料枠を超えうる**。読む間隔は確かめられず、金額は **要検証**。実アカウントでの確認を実装の前提にする。
+- **Cloud Tasks**: キューは 1 リージョン 1,000 まで、1 キューの送出は毎秒 500 件まで（「より高い速さには複数のキューを使う」）、予定は 30 日先まで（[quotas](https://docs.cloud.google.com/tasks/docs/quotas)）。キューごとに同時数と速さを設定できる（[configuring queues](https://docs.cloud.google.com/tasks/docs/configuring-queues)）が、それぞれの既定値と上限の記載は確かめられなかった。料金のページは本文を取得できず、キューそのものの料金と単価は **要検証**。
+- **Cloud Run**: インスタンスあたりの同時実行は最大 1,000（[concurrency](https://docs.cloud.google.com/run/docs/about-concurrency)）、最大インスタンス数はサービス単位で設定でき既定 100（[max instances](https://docs.cloud.google.com/run/docs/configuring/max-instances)）、リクエストのタイムアウトは最大 60 分（[request timeout](https://docs.cloud.google.com/run/docs/configuring/request-timeout)）。
+
+**覆る条件**: 実アカウントでの確認で、待ち受けの費用がほぼ $0 の構成を壊すほど大きい場合（キューを分けるのを既定にはしないので、使う人だけの費用にとどまるが、文書で強く警告する）。または、滞ったキューで掃除の重複の合図が費用や処理を圧迫する場合（§4 の掃除の間隔や上限を見直す）。
+
+## Consequences（影響）
+
+- 良い影響
+  - Lambda と Cloud Run の構成でも、配送だけを増やす、メールを専用の枠で動かす、といった設計ができる。
+  - 分け方を誤ってもジョブは失われず、受け口の認証と処理は変わらない。
+  - 種類の増加に追従する。新しい種類は既定のキューで動く。
+- 悪い影響・トレードオフ
+  - ルートの設定を、合図を送るすべてのプロセスに揃える手間がある。キューや mapping の作成も運営者の作業で、種類の名前が設定の一部になる。
+  - 処理能力の上限は DB にもある。1 つのルートの同時実行を増やすと DB の接続と書き込みが増え、他の種類を遅くしうる。接続数の設計は別に要る。
+  - 滞ったキューでは、掃除が 1 分ごとにルートあたり最大 500 件の重複した合図を送る。重複は害がないが、課金は増える（1 つのキューの今も同じ性質で、ルートの数だけ増える）。
+  - ADR-0138 の索引 `(type, run_at, id)` に依存する。#1997 の後に実装する。
+  - 1 つの Cloud Run サービスのままでは、キューで絞ることはできても、種類ごとに最大インスタンス数は分けられない。
+  - `Waker` の読み取りのクエリが種類を返すように変わる。
+- **測っていないこと**: 実アカウントがないので、次はすべて未確認。SQS の複数の mapping の待ち受けの費用、Cloud Tasks の料金、Lambda と Cloud Run で分けたときの実際のスケーリング、ルートごとの掃除の所要時間、同じイメージを環境変数だけ変えて複数のサービスで動かす手順。
+- 後続の作業
+  - 実装の Issue を起票する。#1997（種類のラベルと索引）の後に行う。ADR-0120 §3 の掃除は、ルートがある構成ではこの ADR の §4 のとおりルートごとに行う
+  - 運用の文書（`docs/operations/running.md`）に構成の例・費用の注意・移行の手順を書く
+
+## Pros and Cons of the Options（詳細比較・任意）
+
+### 選択肢 2: 決め打ちのレーン
+
+- 良い点: 名前が安定し、運営者は種類の名前を知らなくてよい。
+- 悪い点: どう分けたいかは実際の負荷で決まるので、コードの割り当てでは足りない。ADR-0138 は種類で指定するので、2 つの言葉を持つことになる。
+
+### 選択肢 3: 受け口が送り直す
+
+- 良い点: キューも設定も増えない。
+- 悪い点: 合図が受け口とキューの間を回り続け、課金と実行回数が増える。SQS の受信に選択の引数はなく（ADR-0138 §5）、Lambda のイベントのフィルターは条件に合わないレコードを捨てる。
+
+### 選択肢 4: 何もしない
+
+- 良い点: 実装が要らない。受け口全体の同時実行はプラットフォームで増やせる。
+- 悪い点: 増やした分をすべての種類で分け合い、滞りの順番待ちは解消しない。依頼に応えられない。
+
+## Open Questions / 要検証
+
+- SQS のリクエストの単価と、mapping の待ち受けが月に生むリクエスト数（実アカウントで確認）
+- Cloud Tasks の料金（キューそのものの費用、単価、無料枠）
+- `maxConcurrentDispatches` と `maxDispatchesPerSecond` の既定値と上限
+- 設定の値の書式（`=` と `@`）。実装の前に、設定の型の慣習に合わせて最終的に決める
