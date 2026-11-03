@@ -131,7 +131,7 @@ func TestCustomEmojiRequests(t *testing.T) {
 	}
 
 	var req clientapi.CustomEmojiRequest
-	if code := api(carolToken, http.MethodPost, "/custom_emoji_requests", map[string]any{"kind": "create", "shortcode": "blobcat", "media_id": image(carol.AccountID)}, &req); code != http.StatusOK ||
+	if code := api(carolToken, http.MethodPost, "/custom_emoji_requests", map[string]any{"kind": "create", "shortcode": "blobcat", "media_id": image(carol.AccountID)}, &req); code != http.StatusCreated ||
 		req.State != clientapi.CustomEmojiRequestStatePending || req.Shortcode != "blobcat" || req.Url == nil {
 		t.Fatalf("POST /custom_emoji_requests = %d %+v", code, req)
 	}
@@ -188,7 +188,7 @@ func TestCustomEmojiRequests(t *testing.T) {
 	}
 
 	// A rejection, with its reason.
-	if code := api(carolToken, http.MethodPost, "/custom_emoji_requests", map[string]any{"kind": "create", "shortcode": "blobdog", "media_id": image(carol.AccountID)}, &req); code != http.StatusOK {
+	if code := api(carolToken, http.MethodPost, "/custom_emoji_requests", map[string]any{"kind": "create", "shortcode": "blobdog", "media_id": image(carol.AccountID)}, &req); code != http.StatusCreated {
 		t.Fatalf("POST /custom_emoji_requests = %d", code)
 	}
 	var rejected clientapi.AdminCustomEmojiRequest
@@ -225,7 +225,7 @@ func TestCustomEmojiRequests(t *testing.T) {
 		t.Errorf("PATCH own emoji = %d %+v", code, changed)
 	}
 	var adminEmoji clientapi.AdminCustomEmoji
-	if code := api(adminToken, http.MethodPost, "/admin/custom_emojis", map[string]any{"shortcode": "blobfox", "media_id": image(admin.AccountID)}, &adminEmoji); code != http.StatusOK {
+	if code := api(adminToken, http.MethodPost, "/admin/custom_emojis", map[string]any{"shortcode": "blobfox", "media_id": image(admin.AccountID)}, &adminEmoji); code != http.StatusCreated {
 		t.Fatalf("POST /admin/custom_emojis = %d", code)
 	}
 	if code := api(carolToken, http.MethodPatch, "/custom_emojis/mine/"+adminEmoji.Id, map[string]any{"category": "Cats"}, nil); code != http.StatusNotFound {
@@ -235,7 +235,7 @@ func TestCustomEmojiRequests(t *testing.T) {
 		t.Errorf("DELETE another's emoji = %d, want 404", code)
 	}
 	var imageReq clientapi.CustomEmojiRequest
-	if code := api(carolToken, http.MethodPost, "/custom_emoji_requests", map[string]any{"kind": "image", "emoji_id": own.Items[0].Id, "media_id": image(carol.AccountID)}, &imageReq); code != http.StatusOK ||
+	if code := api(carolToken, http.MethodPost, "/custom_emoji_requests", map[string]any{"kind": "image", "emoji_id": own.Items[0].Id, "media_id": image(carol.AccountID)}, &imageReq); code != http.StatusCreated ||
 		imageReq.Kind != clientapi.CustomEmojiRequestKindImage {
 		t.Errorf("an image request = %d %+v", code, imageReq)
 	}

@@ -178,7 +178,7 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: domain action %s: %w", a.ID, err)
 	}
-	return CreateDomainAction200JSONResponse{domainActionResponse(view)}, nil
+	return CreateDomainAction201JSONResponse{domainActionResponse(view)}, nil
 }
 
 // GetDomainAction serves GET /api/v1/admin/domain_actions/{id}.

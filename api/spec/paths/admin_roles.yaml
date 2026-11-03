@@ -35,7 +35,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateRoleRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminRole.yaml
     "422":
       $ref: ../components/responses/RoleProblem.yaml

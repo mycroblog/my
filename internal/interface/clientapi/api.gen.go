@@ -28664,9 +28664,9 @@ type CreateAccountActionResponseObject interface {
 	VisitCreateAccountActionResponse(w http.ResponseWriter) error
 }
 
-type CreateAccountAction200JSONResponse struct{ AdminAccountActionJSONResponse }
+type CreateAccountAction201JSONResponse struct{ AdminAccountActionJSONResponse }
 
-func (response CreateAccountAction200JSONResponse) VisitCreateAccountActionResponse(w http.ResponseWriter) error {
+func (response CreateAccountAction201JSONResponse) VisitCreateAccountActionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -28676,7 +28676,7 @@ func (response CreateAccountAction200JSONResponse) VisitCreateAccountActionRespo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -28827,11 +28827,11 @@ type RefetchAccountStatusesResponseObject interface {
 	VisitRefetchAccountStatusesResponse(w http.ResponseWriter) error
 }
 
-type RefetchAccountStatuses204Response struct {
+type RefetchAccountStatuses202Response struct {
 }
 
-func (response RefetchAccountStatuses204Response) VisitRefetchAccountStatusesResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RefetchAccountStatuses202Response) VisitRefetchAccountStatusesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -29209,9 +29209,9 @@ type CreateAdminAnnouncementResponseObject interface {
 	VisitCreateAdminAnnouncementResponse(w http.ResponseWriter) error
 }
 
-type CreateAdminAnnouncement200JSONResponse struct{ AdminAnnouncementJSONResponse }
+type CreateAdminAnnouncement201JSONResponse struct{ AdminAnnouncementJSONResponse }
 
-func (response CreateAdminAnnouncement200JSONResponse) VisitCreateAdminAnnouncementResponse(w http.ResponseWriter) error {
+func (response CreateAdminAnnouncement201JSONResponse) VisitCreateAdminAnnouncementResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -29221,7 +29221,7 @@ func (response CreateAdminAnnouncement200JSONResponse) VisitCreateAdminAnnouncem
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -29837,11 +29837,11 @@ type RunBillingImportResponseObject interface {
 	VisitRunBillingImportResponse(w http.ResponseWriter) error
 }
 
-type RunBillingImport204Response struct {
+type RunBillingImport202Response struct {
 }
 
-func (response RunBillingImport204Response) VisitRunBillingImportResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RunBillingImport202Response) VisitRunBillingImportResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -30227,9 +30227,9 @@ type CreateCostItemResponseObject interface {
 	VisitCreateCostItemResponse(w http.ResponseWriter) error
 }
 
-type CreateCostItem200JSONResponse struct{ CostItemJSONResponse }
+type CreateCostItem201JSONResponse struct{ CostItemJSONResponse }
 
-func (response CreateCostItem200JSONResponse) VisitCreateCostItemResponse(w http.ResponseWriter) error {
+func (response CreateCostItem201JSONResponse) VisitCreateCostItemResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -30239,7 +30239,7 @@ func (response CreateCostItem200JSONResponse) VisitCreateCostItemResponse(w http
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -31001,9 +31001,9 @@ type CreateCustomEmojiResponseObject interface {
 	VisitCreateCustomEmojiResponse(w http.ResponseWriter) error
 }
 
-type CreateCustomEmoji200JSONResponse struct{ AdminCustomEmojiJSONResponse }
+type CreateCustomEmoji201JSONResponse struct{ AdminCustomEmojiJSONResponse }
 
-func (response CreateCustomEmoji200JSONResponse) VisitCreateCustomEmojiResponse(w http.ResponseWriter) error {
+func (response CreateCustomEmoji201JSONResponse) VisitCreateCustomEmojiResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -31013,7 +31013,7 @@ func (response CreateCustomEmoji200JSONResponse) VisitCreateCustomEmojiResponse(
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -31280,9 +31280,9 @@ type CopyCustomEmojiResponseObject interface {
 	VisitCopyCustomEmojiResponse(w http.ResponseWriter) error
 }
 
-type CopyCustomEmoji200JSONResponse struct{ AdminCustomEmojiJSONResponse }
+type CopyCustomEmoji201JSONResponse struct{ AdminCustomEmojiJSONResponse }
 
-func (response CopyCustomEmoji200JSONResponse) VisitCopyCustomEmojiResponse(w http.ResponseWriter) error {
+func (response CopyCustomEmoji201JSONResponse) VisitCopyCustomEmojiResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -31292,7 +31292,7 @@ func (response CopyCustomEmoji200JSONResponse) VisitCopyCustomEmojiResponse(w ht
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -31497,9 +31497,9 @@ type CreateDomainActionResponseObject interface {
 	VisitCreateDomainActionResponse(w http.ResponseWriter) error
 }
 
-type CreateDomainAction200JSONResponse struct{ AdminDomainActionJSONResponse }
+type CreateDomainAction201JSONResponse struct{ AdminDomainActionJSONResponse }
 
-func (response CreateDomainAction200JSONResponse) VisitCreateDomainActionResponse(w http.ResponseWriter) error {
+func (response CreateDomainAction201JSONResponse) VisitCreateDomainActionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -31509,7 +31509,7 @@ func (response CreateDomainAction200JSONResponse) VisitCreateDomainActionRespons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -32907,11 +32907,11 @@ type RefetchInstanceStatusesResponseObject interface {
 	VisitRefetchInstanceStatusesResponse(w http.ResponseWriter) error
 }
 
-type RefetchInstanceStatuses204Response struct {
+type RefetchInstanceStatuses202Response struct {
 }
 
-func (response RefetchInstanceStatuses204Response) VisitRefetchInstanceStatusesResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RefetchInstanceStatuses202Response) VisitRefetchInstanceStatusesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -33015,9 +33015,9 @@ type CreateInviteResponseObject interface {
 	VisitCreateInviteResponse(w http.ResponseWriter) error
 }
 
-type CreateInvite200JSONResponse struct{ AdminInviteJSONResponse }
+type CreateInvite201JSONResponse struct{ AdminInviteJSONResponse }
 
-func (response CreateInvite200JSONResponse) VisitCreateInviteResponse(w http.ResponseWriter) error {
+func (response CreateInvite201JSONResponse) VisitCreateInviteResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -33027,7 +33027,7 @@ func (response CreateInvite200JSONResponse) VisitCreateInviteResponse(w http.Res
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -33250,11 +33250,11 @@ type RetryAdminJobResponseObject interface {
 	VisitRetryAdminJobResponse(w http.ResponseWriter) error
 }
 
-type RetryAdminJob204Response struct {
+type RetryAdminJob202Response struct {
 }
 
-func (response RetryAdminJob204Response) VisitRetryAdminJobResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RetryAdminJob202Response) VisitRetryAdminJobResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -33526,9 +33526,9 @@ type CreateLoginProviderResponseObject interface {
 	VisitCreateLoginProviderResponse(w http.ResponseWriter) error
 }
 
-type CreateLoginProvider200JSONResponse struct{ AdminLoginProviderJSONResponse }
+type CreateLoginProvider201JSONResponse struct{ AdminLoginProviderJSONResponse }
 
-func (response CreateLoginProvider200JSONResponse) VisitCreateLoginProviderResponse(w http.ResponseWriter) error {
+func (response CreateLoginProvider201JSONResponse) VisitCreateLoginProviderResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -33538,7 +33538,7 @@ func (response CreateLoginProvider200JSONResponse) VisitCreateLoginProviderRespo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -34295,11 +34295,11 @@ type RunPaymentReconcileResponseObject interface {
 	VisitRunPaymentReconcileResponse(w http.ResponseWriter) error
 }
 
-type RunPaymentReconcile204Response struct {
+type RunPaymentReconcile202Response struct {
 }
 
-func (response RunPaymentReconcile204Response) VisitRunPaymentReconcileResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RunPaymentReconcile202Response) VisitRunPaymentReconcileResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -34698,9 +34698,9 @@ type CreateRelayResponseObject interface {
 	VisitCreateRelayResponse(w http.ResponseWriter) error
 }
 
-type CreateRelay200JSONResponse struct{ AdminRelayJSONResponse }
+type CreateRelay201JSONResponse struct{ AdminRelayJSONResponse }
 
-func (response CreateRelay200JSONResponse) VisitCreateRelayResponse(w http.ResponseWriter) error {
+func (response CreateRelay201JSONResponse) VisitCreateRelayResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -34710,7 +34710,7 @@ func (response CreateRelay200JSONResponse) VisitCreateRelayResponse(w http.Respo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -35445,9 +35445,9 @@ type CreateRoleResponseObject interface {
 	VisitCreateRoleResponse(w http.ResponseWriter) error
 }
 
-type CreateRole200JSONResponse struct{ AdminRoleJSONResponse }
+type CreateRole201JSONResponse struct{ AdminRoleJSONResponse }
 
-func (response CreateRole200JSONResponse) VisitCreateRoleResponse(w http.ResponseWriter) error {
+func (response CreateRole201JSONResponse) VisitCreateRoleResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -35457,7 +35457,7 @@ func (response CreateRole200JSONResponse) VisitCreateRoleResponse(w http.Respons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -35730,9 +35730,9 @@ type CreateInstanceRuleResponseObject interface {
 	VisitCreateInstanceRuleResponse(w http.ResponseWriter) error
 }
 
-type CreateInstanceRule200JSONResponse struct{ AdminRuleJSONResponse }
+type CreateInstanceRule201JSONResponse struct{ AdminRuleJSONResponse }
 
-func (response CreateInstanceRule200JSONResponse) VisitCreateInstanceRuleResponse(w http.ResponseWriter) error {
+func (response CreateInstanceRule201JSONResponse) VisitCreateInstanceRuleResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -35742,7 +35742,7 @@ func (response CreateInstanceRule200JSONResponse) VisitCreateInstanceRuleRespons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -36240,9 +36240,9 @@ type CreateSignupBlockResponseObject interface {
 	VisitCreateSignupBlockResponse(w http.ResponseWriter) error
 }
 
-type CreateSignupBlock200JSONResponse struct{ AdminSignupBlockJSONResponse }
+type CreateSignupBlock201JSONResponse struct{ AdminSignupBlockJSONResponse }
 
-func (response CreateSignupBlock200JSONResponse) VisitCreateSignupBlockResponse(w http.ResponseWriter) error {
+func (response CreateSignupBlock201JSONResponse) VisitCreateSignupBlockResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -36252,7 +36252,7 @@ func (response CreateSignupBlock200JSONResponse) VisitCreateSignupBlockResponse(
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -36467,11 +36467,11 @@ type RefetchStatusResponseObject interface {
 	VisitRefetchStatusResponse(w http.ResponseWriter) error
 }
 
-type RefetchStatus204Response struct {
+type RefetchStatus202Response struct {
 }
 
-func (response RefetchStatus204Response) VisitRefetchStatusResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
+func (response RefetchStatus202Response) VisitRefetchStatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
 	return nil
 }
 
@@ -36574,9 +36574,9 @@ type CreateSupporterPlanResponseObject interface {
 	VisitCreateSupporterPlanResponse(w http.ResponseWriter) error
 }
 
-type CreateSupporterPlan200JSONResponse struct{ AdminSupporterPlanJSONResponse }
+type CreateSupporterPlan201JSONResponse struct{ AdminSupporterPlanJSONResponse }
 
-func (response CreateSupporterPlan200JSONResponse) VisitCreateSupporterPlanResponse(w http.ResponseWriter) error {
+func (response CreateSupporterPlan201JSONResponse) VisitCreateSupporterPlanResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -36586,7 +36586,7 @@ func (response CreateSupporterPlan200JSONResponse) VisitCreateSupporterPlanRespo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -37241,16 +37241,16 @@ type CreateWebhookResponseObject interface {
 	VisitCreateWebhookResponse(w http.ResponseWriter) error
 }
 
-type CreateWebhook200ResponseHeaders struct {
+type CreateWebhook201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type CreateWebhook200JSONResponse struct {
+type CreateWebhook201JSONResponse struct {
 	Body    AdminWebhookCreated
-	Headers CreateWebhook200ResponseHeaders
+	Headers CreateWebhook201ResponseHeaders
 }
 
-func (response CreateWebhook200JSONResponse) VisitCreateWebhookResponse(w http.ResponseWriter) error {
+func (response CreateWebhook201JSONResponse) VisitCreateWebhookResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -37260,7 +37260,7 @@ func (response CreateWebhook200JSONResponse) VisitCreateWebhookResponse(w http.R
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -38457,9 +38457,9 @@ type CreateCustomEmojiRequestResponseObject interface {
 	VisitCreateCustomEmojiRequestResponse(w http.ResponseWriter) error
 }
 
-type CreateCustomEmojiRequest200JSONResponse struct{ CustomEmojiRequestJSONResponse }
+type CreateCustomEmojiRequest201JSONResponse struct{ CustomEmojiRequestJSONResponse }
 
-func (response CreateCustomEmojiRequest200JSONResponse) VisitCreateCustomEmojiRequestResponse(w http.ResponseWriter) error {
+func (response CreateCustomEmojiRequest201JSONResponse) VisitCreateCustomEmojiRequestResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -38469,7 +38469,7 @@ func (response CreateCustomEmojiRequest200JSONResponse) VisitCreateCustomEmojiRe
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -40342,9 +40342,9 @@ type CreateOwnInviteResponseObject interface {
 	VisitCreateOwnInviteResponse(w http.ResponseWriter) error
 }
 
-type CreateOwnInvite200JSONResponse struct{ OwnInviteJSONResponse }
+type CreateOwnInvite201JSONResponse struct{ OwnInviteJSONResponse }
 
-func (response CreateOwnInvite200JSONResponse) VisitCreateOwnInviteResponse(w http.ResponseWriter) error {
+func (response CreateOwnInvite201JSONResponse) VisitCreateOwnInviteResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -40354,7 +40354,7 @@ func (response CreateOwnInvite200JSONResponse) VisitCreateOwnInviteResponse(w ht
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -40737,9 +40737,9 @@ type CreateListResponseObject interface {
 	VisitCreateListResponse(w http.ResponseWriter) error
 }
 
-type CreateList200JSONResponse struct{ ListJSONResponse }
+type CreateList201JSONResponse struct{ ListJSONResponse }
 
-func (response CreateList200JSONResponse) VisitCreateListResponse(w http.ResponseWriter) error {
+func (response CreateList201JSONResponse) VisitCreateListResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -40749,7 +40749,7 @@ func (response CreateList200JSONResponse) VisitCreateListResponse(w http.Respons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -42047,16 +42047,16 @@ type IssueOAuthAppTokenResponseObject interface {
 	VisitIssueOAuthAppTokenResponse(w http.ResponseWriter) error
 }
 
-type IssueOAuthAppToken200ResponseHeaders struct {
+type IssueOAuthAppToken201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type IssueOAuthAppToken200JSONResponse struct {
+type IssueOAuthAppToken201JSONResponse struct {
 	Body    OAuthAppToken
-	Headers IssueOAuthAppToken200ResponseHeaders
+	Headers IssueOAuthAppToken201ResponseHeaders
 }
 
-func (response IssueOAuthAppToken200JSONResponse) VisitIssueOAuthAppTokenResponse(w http.ResponseWriter) error {
+func (response IssueOAuthAppToken201JSONResponse) VisitIssueOAuthAppTokenResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -42066,7 +42066,7 @@ func (response IssueOAuthAppToken200JSONResponse) VisitIssueOAuthAppTokenRespons
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -43299,16 +43299,16 @@ type CreateReportResponseObject interface {
 	VisitCreateReportResponse(w http.ResponseWriter) error
 }
 
-type CreateReport200ResponseHeaders struct {
+type CreateReport201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type CreateReport200JSONResponse struct {
+type CreateReport201JSONResponse struct {
 	Body    Report
-	Headers CreateReport200ResponseHeaders
+	Headers CreateReport201ResponseHeaders
 }
 
-func (response CreateReport200JSONResponse) VisitCreateReportResponse(w http.ResponseWriter) error {
+func (response CreateReport201JSONResponse) VisitCreateReportResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -43318,7 +43318,7 @@ func (response CreateReport200JSONResponse) VisitCreateReportResponse(w http.Res
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -43514,16 +43514,16 @@ type CreateStatusResponseObject interface {
 	VisitCreateStatusResponse(w http.ResponseWriter) error
 }
 
-type CreateStatus200ResponseHeaders struct {
+type CreateStatus201ResponseHeaders struct {
 	CacheControl *string
 }
 
-type CreateStatus200JSONResponse struct {
+type CreateStatus201JSONResponse struct {
 	Body    Status
-	Headers CreateStatus200ResponseHeaders
+	Headers CreateStatus201ResponseHeaders
 }
 
-func (response CreateStatus200JSONResponse) VisitCreateStatusResponse(w http.ResponseWriter) error {
+func (response CreateStatus201JSONResponse) VisitCreateStatusResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -43533,7 +43533,7 @@ func (response CreateStatus200JSONResponse) VisitCreateStatusResponse(w http.Res
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }

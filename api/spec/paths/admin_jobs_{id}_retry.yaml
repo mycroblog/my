@@ -18,7 +18,7 @@ post:
       schema:
         $ref: ../components/schemas/Id.yaml
   responses:
-    "204":
+    "202":
       description: The job is enqueued.
     default:
       $ref: ../components/responses/Problem.yaml

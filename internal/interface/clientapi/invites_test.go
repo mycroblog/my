@@ -83,7 +83,7 @@ func TestOwnInvites(t *testing.T) {
 	e, f := newOwnInvitesEnv(t)
 	res := e.sendJSON(t, http.MethodPost, "/invites", "write", `{"max_uses":3,"expires_in":3600}`)
 	got := decodeJSON[clientapi.OwnInvite](t, res)
-	if res.StatusCode != http.StatusOK || got.Code != "QRSTUVWXYZ234567" || got.Url != "https://social.example/auth/sign_up?invite=QRSTUVWXYZ234567" ||
+	if res.StatusCode != http.StatusCreated || got.Code != "QRSTUVWXYZ234567" || got.Url != "https://social.example/auth/sign_up?invite=QRSTUVWXYZ234567" ||
 		got.MaxUses != 3 || got.Uses != 0 || got.State != clientapi.AdminInviteStateUsable || !got.ExpiresAt.Equal(adminNow.Add(time.Hour)) {
 		t.Fatalf("create = %d %+v", res.StatusCode, got)
 	}

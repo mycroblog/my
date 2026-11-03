@@ -148,7 +148,7 @@ func (s *Server) CreateRelay(ctx context.Context, req CreateRelayRequestObject) 
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: add relay: %w", err)
 	}
-	return CreateRelay200JSONResponse{adminRelayResponse(rv)}, nil
+	return CreateRelay201JSONResponse{adminRelayResponse(rv)}, nil
 }
 
 // DeleteRelay serves DELETE /api/v1/admin/relays/{id}.

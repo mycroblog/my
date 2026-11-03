@@ -63,7 +63,7 @@ post:
         schema:
           $ref: ../components/schemas/CreateDomainActionRequest.yaml
   responses:
-    "200":
+    "201":
       $ref: ../components/responses/AdminDomainAction.yaml
     default:
       $ref: ../components/responses/Problem.yaml

@@ -134,7 +134,7 @@ func (s *Server) CreateInstanceRule(ctx context.Context, req CreateInstanceRuleR
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: add a rule: %w", err)
 	}
-	return CreateInstanceRule200JSONResponse{adminRuleResponse(r)}, nil
+	return CreateInstanceRule201JSONResponse{adminRuleResponse(r)}, nil
 }
 
 // GetInstanceRule serves GET /api/v1/admin/rules/{id}.

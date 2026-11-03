@@ -580,8 +580,8 @@ func TestListAdminJobAttempts(t *testing.T) {
 func TestRetryDeadJob(t *testing.T) {
 	e, _, dead := newAdminEnv(t)
 	res := e.admin(t, http.MethodPost, "/admin/jobs/"+deadJobB+"/retry", "admin", nil)
-	if res.StatusCode != http.StatusNoContent {
-		t.Fatalf("retry = %d, want 204", res.StatusCode)
+	if res.StatusCode != http.StatusAccepted {
+		t.Fatalf("retry = %d, want 202", res.StatusCode)
 	}
 	if len(dead.enqueued) != 1 || dead.enqueued[0].ID != deadJobB || slices.ContainsFunc(dead.dead, func(d queue.DeadJob) bool { return d.ID == deadJobB }) {
 		t.Fatalf("enqueued = %+v, dead = %+v; want the job enqueued and no longer dead", dead.enqueued, dead.dead)

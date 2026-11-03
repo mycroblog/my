@@ -2510,7 +2510,7 @@ export interface paths {
         put?: never;
         /**
          * Post a status
-         * @description Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+         * @description Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
          *     returns the status posted with it, before the post rate limit and the other checks of
          *     a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
          *     finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -15427,7 +15427,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["CustomEmojiRequest"];
+            201: components["responses"]["CustomEmojiRequest"];
             422: components["responses"]["CustomEmojiProblem"];
             default: components["responses"]["Problem"];
         };
@@ -16952,7 +16952,7 @@ export interface operations {
         };
         responses: {
             /** @description The tokens. */
-            200: {
+            201: {
                 headers: {
                     "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
@@ -17504,7 +17504,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["List"];
+            201: components["responses"]["List"];
             default: components["responses"]["Problem"];
         };
     };
@@ -17991,7 +17991,7 @@ export interface operations {
         };
         responses: {
             /** @description The posted status. */
-            200: {
+            201: {
                 headers: {
                     "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
@@ -18633,7 +18633,7 @@ export interface operations {
         };
         responses: {
             /** @description The filed report. */
-            200: {
+            201: {
                 headers: {
                     "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
@@ -19948,7 +19948,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The job is enqueued. */
-            204: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -20121,7 +20121,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The import is queued. */
-            204: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -20170,7 +20170,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["CostItem"];
+            201: components["responses"]["CostItem"];
             default: components["responses"]["Problem"];
         };
     };
@@ -20412,7 +20412,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminDomainAction"];
+            201: components["responses"]["AdminDomainAction"];
             default: components["responses"]["Problem"];
         };
     };
@@ -20772,7 +20772,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminAccountAction"];
+            201: components["responses"]["AdminAccountAction"];
             default: components["responses"]["Problem"];
         };
     };
@@ -20850,7 +20850,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminRule"];
+            201: components["responses"]["AdminRule"];
             default: components["responses"]["Problem"];
         };
     };
@@ -20961,7 +20961,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminAnnouncement"];
+            201: components["responses"]["AdminAnnouncement"];
             default: components["responses"]["Problem"];
         };
     };
@@ -21222,7 +21222,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminCustomEmoji"];
+            201: components["responses"]["AdminCustomEmoji"];
             422: components["responses"]["CustomEmojiProblem"];
             default: components["responses"]["Problem"];
         };
@@ -21324,7 +21324,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminCustomEmoji"];
+            201: components["responses"]["AdminCustomEmoji"];
             422: components["responses"]["CustomEmojiProblem"];
             default: components["responses"]["Problem"];
         };
@@ -21663,7 +21663,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminRole"];
+            201: components["responses"]["AdminRole"];
             422: components["responses"]["RoleProblem"];
             default: components["responses"]["Problem"];
         };
@@ -21960,7 +21960,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminSignupBlock"];
+            201: components["responses"]["AdminSignupBlock"];
             default: components["responses"]["Problem"];
         };
     };
@@ -22196,7 +22196,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["OwnInvite"];
+            201: components["responses"]["OwnInvite"];
             default: components["responses"]["Problem"];
         };
     };
@@ -22256,7 +22256,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminInvite"];
+            201: components["responses"]["AdminInvite"];
             default: components["responses"]["Problem"];
         };
     };
@@ -22517,7 +22517,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminLoginProvider"];
+            201: components["responses"]["AdminLoginProvider"];
             422: components["responses"]["LoginProviderProblem"];
             default: components["responses"]["Problem"];
         };
@@ -22670,7 +22670,7 @@ export interface operations {
         };
         responses: {
             /** @description The new webhook and its secret. */
-            200: {
+            201: {
                 headers: {
                     "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
@@ -22968,7 +22968,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminRelay"];
+            201: components["responses"]["AdminRelay"];
             422: components["responses"]["RelayProblem"];
             default: components["responses"]["Problem"];
         };
@@ -23043,7 +23043,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The refetch is queued. */
-            204: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23065,7 +23065,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The refetch is queued. */
-            204: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23087,7 +23087,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The refetch is queued. */
-            204: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23128,7 +23128,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The reconciliation is queued. */
-            204: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23202,7 +23202,7 @@ export interface operations {
             };
         };
         responses: {
-            200: components["responses"]["AdminSupporterPlan"];
+            201: components["responses"]["AdminSupporterPlan"];
             422: components["responses"]["SupporterPlanProblem"];
             default: components["responses"]["Problem"];
         };

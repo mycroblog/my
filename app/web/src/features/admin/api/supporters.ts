@@ -186,7 +186,7 @@ export function runPaymentReconcileMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/payment_reconciles"] as const,
     mutationFn: async (): Promise<void> => {
-      // The middleware throws for every error status (a 429 within the hour); a 204 has no body to read.
+      // The middleware throws for every error status (a 429 within the hour); a 202 has no body to read.
       await api.fetch.POST("/admin/payment_reconciles");
     },
   };

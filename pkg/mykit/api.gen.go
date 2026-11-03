@@ -20706,7 +20706,7 @@ type ClientInterface interface {
 
 	// CreateStatusWithBody Post a status
 	//
-	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+	// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -20719,7 +20719,7 @@ type ClientInterface interface {
 
 	// CreateStatus Post a status
 	//
-	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+	// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -29889,7 +29889,7 @@ func (c *Client) RevokeSession(ctx context.Context, id Id, reqEditors ...Request
 
 // CreateStatusWithBody Post a status
 //
-// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -29912,7 +29912,7 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 
 // CreateStatus Post a status
 //
-// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -52068,7 +52068,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateStatusWithBodyWithResponse Post a status
 	//
-	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+	// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -52081,7 +52081,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateStatusWithResponse Post a status
 	//
-	// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+	// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 	// returns the status posted with it, before the post rate limit and the other checks of
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -55301,8 +55301,8 @@ func (r ListAccountActionsResponse) ContentType() string {
 	return ""
 }
 
-// CreateAccountActionResponse200Headers the declared response headers of an HTTP 200 response for CreateAccountAction
-type CreateAccountActionResponse200Headers struct {
+// CreateAccountActionResponse201Headers the declared response headers of an HTTP 201 response for CreateAccountAction
+type CreateAccountActionResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -55317,19 +55317,19 @@ type CreateAccountActionResponseDefaultHeaders struct {
 type CreateAccountActionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminAccountAction
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminAccountAction
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateAccountActionResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateAccountActionResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateAccountActionResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateAccountActionResponse) GetJSON200() *AdminAccountAction {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateAccountActionResponse) GetJSON201() *AdminAccountAction {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -55909,8 +55909,8 @@ func (r ListAdminAnnouncementsResponse) ContentType() string {
 	return ""
 }
 
-// CreateAdminAnnouncementResponse200Headers the declared response headers of an HTTP 200 response for CreateAdminAnnouncement
-type CreateAdminAnnouncementResponse200Headers struct {
+// CreateAdminAnnouncementResponse201Headers the declared response headers of an HTTP 201 response for CreateAdminAnnouncement
+type CreateAdminAnnouncementResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -55925,19 +55925,19 @@ type CreateAdminAnnouncementResponseDefaultHeaders struct {
 type CreateAdminAnnouncementResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminAnnouncement
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminAnnouncement
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateAdminAnnouncementResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateAdminAnnouncementResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateAdminAnnouncementResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateAdminAnnouncementResponse) GetJSON200() *AdminAnnouncement {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateAdminAnnouncementResponse) GetJSON201() *AdminAnnouncement {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -57065,8 +57065,8 @@ func (r ListCostItemsResponse) ContentType() string {
 	return ""
 }
 
-// CreateCostItemResponse200Headers the declared response headers of an HTTP 200 response for CreateCostItem
-type CreateCostItemResponse200Headers struct {
+// CreateCostItemResponse201Headers the declared response headers of an HTTP 201 response for CreateCostItem
+type CreateCostItemResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -57081,19 +57081,19 @@ type CreateCostItemResponseDefaultHeaders struct {
 type CreateCostItemResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *CostItem
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *CostItem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateCostItemResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateCostItemResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateCostItemResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateCostItemResponse) GetJSON200() *CostItem {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateCostItemResponse) GetJSON201() *CostItem {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -57891,8 +57891,8 @@ func (r ListAdminCustomEmojisResponse) ContentType() string {
 	return ""
 }
 
-// CreateCustomEmojiResponse200Headers the declared response headers of an HTTP 200 response for CreateCustomEmoji
-type CreateCustomEmojiResponse200Headers struct {
+// CreateCustomEmojiResponse201Headers the declared response headers of an HTTP 201 response for CreateCustomEmoji
+type CreateCustomEmojiResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -57913,23 +57913,23 @@ type CreateCustomEmojiResponseDefaultHeaders struct {
 type CreateCustomEmojiResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminCustomEmoji
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminCustomEmoji
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *CustomEmojiProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateCustomEmojiResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateCustomEmojiResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateCustomEmojiResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateCustomEmojiResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateCustomEmojiResponse) GetJSON200() *AdminCustomEmoji {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateCustomEmojiResponse) GetJSON201() *AdminCustomEmoji {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -58182,8 +58182,8 @@ func (r UpdateCustomEmojiResponse) ContentType() string {
 	return ""
 }
 
-// CopyCustomEmojiResponse200Headers the declared response headers of an HTTP 200 response for CopyCustomEmoji
-type CopyCustomEmojiResponse200Headers struct {
+// CopyCustomEmojiResponse201Headers the declared response headers of an HTTP 201 response for CopyCustomEmoji
+type CopyCustomEmojiResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -58204,23 +58204,23 @@ type CopyCustomEmojiResponseDefaultHeaders struct {
 type CopyCustomEmojiResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminCustomEmoji
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminCustomEmoji
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *CustomEmojiProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CopyCustomEmojiResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CopyCustomEmojiResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CopyCustomEmojiResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CopyCustomEmojiResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CopyCustomEmojiResponse) GetJSON200() *AdminCustomEmoji {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CopyCustomEmojiResponse) GetJSON201() *AdminCustomEmoji {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -58407,8 +58407,8 @@ func (r ListDomainActionsResponse) ContentType() string {
 	return ""
 }
 
-// CreateDomainActionResponse200Headers the declared response headers of an HTTP 200 response for CreateDomainAction
-type CreateDomainActionResponse200Headers struct {
+// CreateDomainActionResponse201Headers the declared response headers of an HTTP 201 response for CreateDomainAction
+type CreateDomainActionResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -58423,19 +58423,19 @@ type CreateDomainActionResponseDefaultHeaders struct {
 type CreateDomainActionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminDomainAction
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminDomainAction
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateDomainActionResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateDomainActionResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateDomainActionResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateDomainActionResponse) GetJSON200() *AdminDomainAction {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateDomainActionResponse) GetJSON201() *AdminDomainAction {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -60028,8 +60028,8 @@ func (r ListInvitesResponse) ContentType() string {
 	return ""
 }
 
-// CreateInviteResponse200Headers the declared response headers of an HTTP 200 response for CreateInvite
-type CreateInviteResponse200Headers struct {
+// CreateInviteResponse201Headers the declared response headers of an HTTP 201 response for CreateInvite
+type CreateInviteResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -60044,19 +60044,19 @@ type CreateInviteResponseDefaultHeaders struct {
 type CreateInviteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminInvite
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminInvite
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateInviteResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateInviteResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateInviteResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateInviteResponse) GetJSON200() *AdminInvite {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateInviteResponse) GetJSON201() *AdminInvite {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -60585,8 +60585,8 @@ func (r ListAdminLoginProvidersResponse) ContentType() string {
 	return ""
 }
 
-// CreateLoginProviderResponse200Headers the declared response headers of an HTTP 200 response for CreateLoginProvider
-type CreateLoginProviderResponse200Headers struct {
+// CreateLoginProviderResponse201Headers the declared response headers of an HTTP 201 response for CreateLoginProvider
+type CreateLoginProviderResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -60607,23 +60607,23 @@ type CreateLoginProviderResponseDefaultHeaders struct {
 type CreateLoginProviderResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminLoginProvider
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminLoginProvider
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *LoginProviderProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateLoginProviderResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateLoginProviderResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateLoginProviderResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateLoginProviderResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateLoginProviderResponse) GetJSON200() *AdminLoginProvider {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateLoginProviderResponse) GetJSON201() *AdminLoginProvider {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -61874,8 +61874,8 @@ func (r ListAdminRelaysResponse) ContentType() string {
 	return ""
 }
 
-// CreateRelayResponse200Headers the declared response headers of an HTTP 200 response for CreateRelay
-type CreateRelayResponse200Headers struct {
+// CreateRelayResponse201Headers the declared response headers of an HTTP 201 response for CreateRelay
+type CreateRelayResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -61896,23 +61896,23 @@ type CreateRelayResponseDefaultHeaders struct {
 type CreateRelayResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminRelay
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminRelay
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *RelayProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateRelayResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateRelayResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateRelayResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateRelayResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateRelayResponse) GetJSON200() *AdminRelay {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateRelayResponse) GetJSON201() *AdminRelay {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -62700,8 +62700,8 @@ func (r ListRolesResponse) ContentType() string {
 	return ""
 }
 
-// CreateRoleResponse200Headers the declared response headers of an HTTP 200 response for CreateRole
-type CreateRoleResponse200Headers struct {
+// CreateRoleResponse201Headers the declared response headers of an HTTP 201 response for CreateRole
+type CreateRoleResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -62722,23 +62722,23 @@ type CreateRoleResponseDefaultHeaders struct {
 type CreateRoleResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminRole
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminRole
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *RoleProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateRoleResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateRoleResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateRoleResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateRoleResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateRoleResponse) GetJSON200() *AdminRole {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateRoleResponse) GetJSON201() *AdminRole {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -62991,8 +62991,8 @@ func (r ListInstanceRulesResponse) ContentType() string {
 	return ""
 }
 
-// CreateInstanceRuleResponse200Headers the declared response headers of an HTTP 200 response for CreateInstanceRule
-type CreateInstanceRuleResponse200Headers struct {
+// CreateInstanceRuleResponse201Headers the declared response headers of an HTTP 201 response for CreateInstanceRule
+type CreateInstanceRuleResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -63007,19 +63007,19 @@ type CreateInstanceRuleResponseDefaultHeaders struct {
 type CreateInstanceRuleResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminRule
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminRule
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateInstanceRuleResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateInstanceRuleResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateInstanceRuleResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateInstanceRuleResponse) GetJSON200() *AdminRule {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateInstanceRuleResponse) GetJSON201() *AdminRule {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -63576,8 +63576,8 @@ func (r ListSignupBlocksResponse) ContentType() string {
 	return ""
 }
 
-// CreateSignupBlockResponse200Headers the declared response headers of an HTTP 200 response for CreateSignupBlock
-type CreateSignupBlockResponse200Headers struct {
+// CreateSignupBlockResponse201Headers the declared response headers of an HTTP 201 response for CreateSignupBlock
+type CreateSignupBlockResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -63592,19 +63592,19 @@ type CreateSignupBlockResponseDefaultHeaders struct {
 type CreateSignupBlockResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminSignupBlock
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminSignupBlock
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateSignupBlockResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateSignupBlockResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateSignupBlockResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateSignupBlockResponse) GetJSON200() *AdminSignupBlock {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateSignupBlockResponse) GetJSON201() *AdminSignupBlock {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -63952,8 +63952,8 @@ func (r ListAdminSupporterPlansResponse) ContentType() string {
 	return ""
 }
 
-// CreateSupporterPlanResponse200Headers the declared response headers of an HTTP 200 response for CreateSupporterPlan
-type CreateSupporterPlanResponse200Headers struct {
+// CreateSupporterPlanResponse201Headers the declared response headers of an HTTP 201 response for CreateSupporterPlan
+type CreateSupporterPlanResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -63974,23 +63974,23 @@ type CreateSupporterPlanResponseDefaultHeaders struct {
 type CreateSupporterPlanResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminSupporterPlan
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminSupporterPlan
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *SupporterPlanProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateSupporterPlanResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateSupporterPlanResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateSupporterPlanResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateSupporterPlanResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateSupporterPlanResponse) GetJSON200() *AdminSupporterPlan {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateSupporterPlanResponse) GetJSON201() *AdminSupporterPlan {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -64670,8 +64670,8 @@ func (r ListAdminWebhooksResponse) ContentType() string {
 	return ""
 }
 
-// CreateWebhookResponse200Headers the declared response headers of an HTTP 200 response for CreateWebhook
-type CreateWebhookResponse200Headers struct {
+// CreateWebhookResponse201Headers the declared response headers of an HTTP 201 response for CreateWebhook
+type CreateWebhookResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -64692,23 +64692,23 @@ type CreateWebhookResponseDefaultHeaders struct {
 type CreateWebhookResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminWebhookCreated
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminWebhookCreated
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *WebhookProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateWebhookResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateWebhookResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateWebhookResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateWebhookResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateWebhookResponse) GetJSON200() *AdminWebhookCreated {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateWebhookResponse) GetJSON201() *AdminWebhookCreated {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -65966,8 +65966,8 @@ func (r ListCustomEmojiRequestsResponse) ContentType() string {
 	return ""
 }
 
-// CreateCustomEmojiRequestResponse200Headers the declared response headers of an HTTP 200 response for CreateCustomEmojiRequest
-type CreateCustomEmojiRequestResponse200Headers struct {
+// CreateCustomEmojiRequestResponse201Headers the declared response headers of an HTTP 201 response for CreateCustomEmojiRequest
+type CreateCustomEmojiRequestResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -65988,23 +65988,23 @@ type CreateCustomEmojiRequestResponseDefaultHeaders struct {
 type CreateCustomEmojiRequestResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *CustomEmojiRequest
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *CustomEmojiRequest
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *CustomEmojiProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateCustomEmojiRequestResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateCustomEmojiRequestResponse201Headers
 	// Headers422 the parsed response headers for an HTTP 422 response
 	Headers422 *CreateCustomEmojiRequestResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateCustomEmojiRequestResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateCustomEmojiRequestResponse) GetJSON200() *CustomEmojiRequest {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateCustomEmojiRequestResponse) GetJSON201() *CustomEmojiRequest {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
@@ -67943,8 +67943,8 @@ func (r ListOwnInvitesResponse) ContentType() string {
 	return ""
 }
 
-// CreateOwnInviteResponse200Headers the declared response headers of an HTTP 200 response for CreateOwnInvite
-type CreateOwnInviteResponse200Headers struct {
+// CreateOwnInviteResponse201Headers the declared response headers of an HTTP 201 response for CreateOwnInvite
+type CreateOwnInviteResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -67959,19 +67959,19 @@ type CreateOwnInviteResponseDefaultHeaders struct {
 type CreateOwnInviteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *OwnInvite
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *OwnInvite
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateOwnInviteResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateOwnInviteResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateOwnInviteResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateOwnInviteResponse) GetJSON200() *OwnInvite {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateOwnInviteResponse) GetJSON201() *OwnInvite {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -68384,8 +68384,8 @@ func (r ListListsResponse) ContentType() string {
 	return ""
 }
 
-// CreateListResponse200Headers the declared response headers of an HTTP 200 response for CreateList
-type CreateListResponse200Headers struct {
+// CreateListResponse201Headers the declared response headers of an HTTP 201 response for CreateList
+type CreateListResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -68400,19 +68400,19 @@ type CreateListResponseDefaultHeaders struct {
 type CreateListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *List
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *List
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateListResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateListResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateListResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateListResponse) GetJSON200() *List {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateListResponse) GetJSON201() *List {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -69809,8 +69809,8 @@ func (r RotateOAuthAppSecretResponse) ContentType() string {
 	return ""
 }
 
-// IssueOAuthAppTokenResponse200Headers the declared response headers of an HTTP 200 response for IssueOAuthAppToken
-type IssueOAuthAppTokenResponse200Headers struct {
+// IssueOAuthAppTokenResponse201Headers the declared response headers of an HTTP 201 response for IssueOAuthAppToken
+type IssueOAuthAppTokenResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -69825,19 +69825,19 @@ type IssueOAuthAppTokenResponseDefaultHeaders struct {
 type IssueOAuthAppTokenResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *OAuthAppToken
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *OAuthAppToken
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *IssueOAuthAppTokenResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *IssueOAuthAppTokenResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *IssueOAuthAppTokenResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r IssueOAuthAppTokenResponse) GetJSON200() *OAuthAppToken {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r IssueOAuthAppTokenResponse) GetJSON201() *OAuthAppToken {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -71139,8 +71139,8 @@ func (r ListOwnReportsResponse) ContentType() string {
 	return ""
 }
 
-// CreateReportResponse200Headers the declared response headers of an HTTP 200 response for CreateReport
-type CreateReportResponse200Headers struct {
+// CreateReportResponse201Headers the declared response headers of an HTTP 201 response for CreateReport
+type CreateReportResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -71155,19 +71155,19 @@ type CreateReportResponseDefaultHeaders struct {
 type CreateReportResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Report
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Report
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateReportResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateReportResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateReportResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateReportResponse) GetJSON200() *Report {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateReportResponse) GetJSON201() *Report {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -71371,8 +71371,8 @@ func (r RevokeSessionResponse) ContentType() string {
 	return ""
 }
 
-// CreateStatusResponse200Headers the declared response headers of an HTTP 200 response for CreateStatus
-type CreateStatusResponse200Headers struct {
+// CreateStatusResponse201Headers the declared response headers of an HTTP 201 response for CreateStatus
+type CreateStatusResponse201Headers struct {
 	CacheControl *string
 }
 
@@ -71387,19 +71387,19 @@ type CreateStatusResponseDefaultHeaders struct {
 type CreateStatusResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Status
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Status
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *CreateStatusResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateStatusResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateStatusResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r CreateStatusResponse) GetJSON200() *Status {
-	return r.JSON200
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateStatusResponse) GetJSON201() *Status {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -82976,7 +82976,7 @@ func (c *ClientWithResponses) RevokeSessionWithResponse(ctx context.Context, id 
 
 // CreateStatusWithBodyWithResponse Post a status
 //
-// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -82995,7 +82995,7 @@ func (c *ClientWithResponses) CreateStatusWithBodyWithResponse(ctx context.Conte
 
 // CreateStatusWithResponse Post a status
 //
-// Posts a status as the authenticated user. Retrying with the same `Idempotency-Key`
+// Posts a status as the authenticated user (201). Retrying with the same `Idempotency-Key`
 // returns the status posted with it, before the post rate limit and the other checks of
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
@@ -87170,12 +87170,12 @@ func ParseCreateAccountActionResponse(rsp *http.Response) (*CreateAccountActionR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminAccountAction
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -87187,8 +87187,8 @@ func ParseCreateAccountActionResponse(rsp *http.Response) (*CreateAccountActionR
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateAccountActionResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateAccountActionResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -87196,7 +87196,7 @@ func ParseCreateAccountActionResponse(rsp *http.Response) (*CreateAccountActionR
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateAccountActionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -87387,7 +87387,7 @@ func ParseRefetchAccountStatusesResponse(rsp *http.Response) (*RefetchAccountSta
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -87898,12 +87898,12 @@ func ParseCreateAdminAnnouncementResponse(rsp *http.Response) (*CreateAdminAnnou
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminAnnouncement
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -87915,8 +87915,8 @@ func ParseCreateAdminAnnouncementResponse(rsp *http.Response) (*CreateAdminAnnou
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateAdminAnnouncementResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateAdminAnnouncementResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -87924,7 +87924,7 @@ func ParseCreateAdminAnnouncementResponse(rsp *http.Response) (*CreateAdminAnnou
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateAdminAnnouncementResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -88745,7 +88745,7 @@ func ParseRunBillingImportResponse(rsp *http.Response) (*RunBillingImportRespons
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -89270,12 +89270,12 @@ func ParseCreateCostItemResponse(rsp *http.Response) (*CreateCostItemResponse, e
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest CostItem
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -89287,8 +89287,8 @@ func ParseCreateCostItemResponse(rsp *http.Response) (*CreateCostItemResponse, e
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateCostItemResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateCostItemResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -89296,7 +89296,7 @@ func ParseCreateCostItemResponse(rsp *http.Response) (*CreateCostItemResponse, e
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateCostItemResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -90276,12 +90276,12 @@ func ParseCreateCustomEmojiResponse(rsp *http.Response) (*CreateCustomEmojiRespo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminCustomEmoji
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest CustomEmojiProblem
@@ -90300,8 +90300,8 @@ func ParseCreateCustomEmojiResponse(rsp *http.Response) (*CreateCustomEmojiRespo
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateCustomEmojiResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateCustomEmojiResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -90309,7 +90309,7 @@ func ParseCreateCustomEmojiResponse(rsp *http.Response) (*CreateCustomEmojiRespo
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateCustomEmojiResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -90642,12 +90642,12 @@ func ParseCopyCustomEmojiResponse(rsp *http.Response) (*CopyCustomEmojiResponse,
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminCustomEmoji
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest CustomEmojiProblem
@@ -90666,8 +90666,8 @@ func ParseCopyCustomEmojiResponse(rsp *http.Response) (*CopyCustomEmojiResponse,
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CopyCustomEmojiResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CopyCustomEmojiResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -90675,7 +90675,7 @@ func ParseCopyCustomEmojiResponse(rsp *http.Response) (*CopyCustomEmojiResponse,
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CopyCustomEmojiResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -90921,12 +90921,12 @@ func ParseCreateDomainActionResponse(rsp *http.Response) (*CreateDomainActionRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminDomainAction
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -90938,8 +90938,8 @@ func ParseCreateDomainActionResponse(rsp *http.Response) (*CreateDomainActionRes
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateDomainActionResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateDomainActionResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -90947,7 +90947,7 @@ func ParseCreateDomainActionResponse(rsp *http.Response) (*CreateDomainActionRes
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateDomainActionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -92726,7 +92726,7 @@ func ParseRefetchInstanceStatusesResponse(rsp *http.Response) (*RefetchInstanceS
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -92866,12 +92866,12 @@ func ParseCreateInviteResponse(rsp *http.Response) (*CreateInviteResponse, error
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminInvite
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -92883,8 +92883,8 @@ func ParseCreateInviteResponse(rsp *http.Response) (*CreateInviteResponse, error
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateInviteResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateInviteResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -92892,7 +92892,7 @@ func ParseCreateInviteResponse(rsp *http.Response) (*CreateInviteResponse, error
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateInviteResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -93174,7 +93174,7 @@ func ParseRetryAdminJobResponse(rsp *http.Response) (*RetryAdminJobResponse, err
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -93531,12 +93531,12 @@ func ParseCreateLoginProviderResponse(rsp *http.Response) (*CreateLoginProviderR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminLoginProvider
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest LoginProviderProblem
@@ -93555,8 +93555,8 @@ func ParseCreateLoginProviderResponse(rsp *http.Response) (*CreateLoginProviderR
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateLoginProviderResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateLoginProviderResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -93564,7 +93564,7 @@ func ParseCreateLoginProviderResponse(rsp *http.Response) (*CreateLoginProviderR
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateLoginProviderResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -94562,7 +94562,7 @@ func ParseRunPaymentReconcileResponse(rsp *http.Response) (*RunPaymentReconcileR
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -95087,12 +95087,12 @@ func ParseCreateRelayResponse(rsp *http.Response) (*CreateRelayResponse, error) 
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminRelay
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest RelayProblem
@@ -95111,8 +95111,8 @@ func ParseCreateRelayResponse(rsp *http.Response) (*CreateRelayResponse, error) 
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateRelayResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateRelayResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -95120,7 +95120,7 @@ func ParseCreateRelayResponse(rsp *http.Response) (*CreateRelayResponse, error) 
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateRelayResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -96093,12 +96093,12 @@ func ParseCreateRoleResponse(rsp *http.Response) (*CreateRoleResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminRole
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest RoleProblem
@@ -96117,8 +96117,8 @@ func ParseCreateRoleResponse(rsp *http.Response) (*CreateRoleResponse, error) {
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateRoleResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateRoleResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -96126,7 +96126,7 @@ func ParseCreateRoleResponse(rsp *http.Response) (*CreateRoleResponse, error) {
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateRoleResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -96459,12 +96459,12 @@ func ParseCreateInstanceRuleResponse(rsp *http.Response) (*CreateInstanceRuleRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminRule
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -96476,8 +96476,8 @@ func ParseCreateInstanceRuleResponse(rsp *http.Response) (*CreateInstanceRuleRes
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateInstanceRuleResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateInstanceRuleResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -96485,7 +96485,7 @@ func ParseCreateInstanceRuleResponse(rsp *http.Response) (*CreateInstanceRuleRes
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateInstanceRuleResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -97152,12 +97152,12 @@ func ParseCreateSignupBlockResponse(rsp *http.Response) (*CreateSignupBlockRespo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminSignupBlock
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -97169,8 +97169,8 @@ func ParseCreateSignupBlockResponse(rsp *http.Response) (*CreateSignupBlockRespo
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateSignupBlockResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateSignupBlockResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -97178,7 +97178,7 @@ func ParseCreateSignupBlockResponse(rsp *http.Response) (*CreateSignupBlockRespo
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateSignupBlockResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -97460,7 +97460,7 @@ func ParseRefetchStatusResponse(rsp *http.Response) (*RefetchStatusResponse, err
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
+	case rsp.StatusCode == 202:
 		break // No content-type
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
@@ -97600,12 +97600,12 @@ func ParseCreateSupporterPlanResponse(rsp *http.Response) (*CreateSupporterPlanR
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminSupporterPlan
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest SupporterPlanProblem
@@ -97624,8 +97624,8 @@ func ParseCreateSupporterPlanResponse(rsp *http.Response) (*CreateSupporterPlanR
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateSupporterPlanResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateSupporterPlanResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -97633,7 +97633,7 @@ func ParseCreateSupporterPlanResponse(rsp *http.Response) (*CreateSupporterPlanR
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateSupporterPlanResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -98477,12 +98477,12 @@ func ParseCreateWebhookResponse(rsp *http.Response) (*CreateWebhookResponse, err
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest AdminWebhookCreated
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest WebhookProblem
@@ -98501,8 +98501,8 @@ func ParseCreateWebhookResponse(rsp *http.Response) (*CreateWebhookResponse, err
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateWebhookResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateWebhookResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -98510,7 +98510,7 @@ func ParseCreateWebhookResponse(rsp *http.Response) (*CreateWebhookResponse, err
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateWebhookResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -100037,12 +100037,12 @@ func ParseCreateCustomEmojiRequestResponse(rsp *http.Response) (*CreateCustomEmo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest CustomEmojiRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest CustomEmojiProblem
@@ -100061,8 +100061,8 @@ func ParseCreateCustomEmojiRequestResponse(rsp *http.Response) (*CreateCustomEmo
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateCustomEmojiRequestResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateCustomEmojiRequestResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -100070,7 +100070,7 @@ func ParseCreateCustomEmojiRequestResponse(rsp *http.Response) (*CreateCustomEmo
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case rsp.StatusCode == 422:
 		var headers CreateCustomEmojiRequestResponse422Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -102422,12 +102422,12 @@ func ParseCreateOwnInviteResponse(rsp *http.Response) (*CreateOwnInviteResponse,
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest OwnInvite
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -102439,8 +102439,8 @@ func ParseCreateOwnInviteResponse(rsp *http.Response) (*CreateOwnInviteResponse,
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateOwnInviteResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateOwnInviteResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -102448,7 +102448,7 @@ func ParseCreateOwnInviteResponse(rsp *http.Response) (*CreateOwnInviteResponse,
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateOwnInviteResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -102947,12 +102947,12 @@ func ParseCreateListResponse(rsp *http.Response) (*CreateListResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest List
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -102964,8 +102964,8 @@ func ParseCreateListResponse(rsp *http.Response) (*CreateListResponse, error) {
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateListResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateListResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -102973,7 +102973,7 @@ func ParseCreateListResponse(rsp *http.Response) (*CreateListResponse, error) {
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateListResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -104648,12 +104648,12 @@ func ParseIssueOAuthAppTokenResponse(rsp *http.Response) (*IssueOAuthAppTokenRes
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest OAuthAppToken
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -104665,8 +104665,8 @@ func ParseIssueOAuthAppTokenResponse(rsp *http.Response) (*IssueOAuthAppTokenRes
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers IssueOAuthAppTokenResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers IssueOAuthAppTokenResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -104674,7 +104674,7 @@ func ParseIssueOAuthAppTokenResponse(rsp *http.Response) (*IssueOAuthAppTokenRes
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers IssueOAuthAppTokenResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -106227,12 +106227,12 @@ func ParseCreateReportResponse(rsp *http.Response) (*CreateReportResponse, error
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest Report
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -106244,8 +106244,8 @@ func ParseCreateReportResponse(rsp *http.Response) (*CreateReportResponse, error
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateReportResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateReportResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -106253,7 +106253,7 @@ func ParseCreateReportResponse(rsp *http.Response) (*CreateReportResponse, error
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateReportResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -106507,12 +106507,12 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest Status
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -106524,8 +106524,8 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers CreateStatusResponse200Headers
+	case rsp.StatusCode == 201:
+		var headers CreateStatusResponse201Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -106533,7 +106533,7 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers201 = &headers
 	case true:
 		var headers CreateStatusResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {

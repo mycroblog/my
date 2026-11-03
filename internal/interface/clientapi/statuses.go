@@ -524,7 +524,7 @@ func (s *Server) createdStatus(ctx context.Context, statusID string) (CreateStat
 		}
 		return nil, err
 	}
-	return CreateStatus200JSONResponse{Body: out, Headers: CreateStatus200ResponseHeaders{CacheControl: statusCache(ctx)}}, nil
+	return CreateStatus201JSONResponse{Body: out, Headers: CreateStatus201ResponseHeaders{CacheControl: statusCache(ctx)}}, nil
 }
 
 // quotableRemotely refuses a quote of a remote status while the federation mode does not send

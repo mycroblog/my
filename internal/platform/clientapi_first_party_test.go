@@ -88,7 +88,7 @@ func TestFirstPartyOnlyOperationsRefuseThirdPartyTokens(t *testing.T) {
 // and returns that notification's ID from carol's first-party list.
 func reportForModerators(t *testing.T, c *statusesClient) string {
 	t.Helper()
-	if res := c.do("alice", http.MethodPost, "/reports", map[string]any{"account_id": c.ids["bob"], "category": "spam"}, nil); res.StatusCode != http.StatusOK {
+	if res := c.do("alice", http.MethodPost, "/reports", map[string]any{"account_id": c.ids["bob"], "category": "spam"}, nil); res.StatusCode != http.StatusCreated {
 		t.Fatalf("POST /reports = %d", res.StatusCode)
 	}
 	var page clientapi.NotificationPage

@@ -38,12 +38,12 @@ func TestCloseService(t *testing.T) {
 	ctx := t.Context()
 	admin := e.user("alice")
 	e.want(e.do(http.MethodPost, "/admin/roles", admin.token, map[string]any{"key": "supporter", "position": 10, "permissions": []string{}}, nil),
-		http.StatusOK, "POST /admin/roles")
+		http.StatusCreated, "POST /admin/roles")
 	var plan clientapi.AdminSupporterPlan
 	e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, map[string]any{
 		"role": "supporter", "name": "Supporter", "monthly_price": map[string]string{"amount": "500", "currency": "JPY"},
 		"annual_discount_percent": 0, "emoji_limit": 0, "rank": 1, "visibility": "public",
-	}, &plan), http.StatusOK, "POST /admin/supporter_plans")
+	}, &plan), http.StatusCreated, "POST /admin/supporter_plans")
 	e.want(e.do(http.MethodPut, "/admin/supporter_program", admin.token, map[string]any{"enabled": true}, nil), http.StatusOK, "enable")
 	carol := e.user("carol")
 	subID := subscribeOnFake(t, e.app, prov, carol.id, plan.Id, "sub_c")
@@ -72,7 +72,7 @@ func TestCloseService(t *testing.T) {
 	e.want(e.do(http.MethodPost, "/admin/closure/close", admin.token, map[string]any{"confirm_domain": "other.example"}, nil), http.StatusBadRequest, "close with another domain")
 
 	// Before the closure, carol posts as usual.
-	e.want(e.do(http.MethodPost, "/statuses", carol.token, map[string]any{"text": "bye", "visibility": "public"}, nil), http.StatusOK, "POST /statuses before the closure")
+	e.want(e.do(http.MethodPost, "/statuses", carol.token, map[string]any{"text": "bye", "visibility": "public"}, nil), http.StatusCreated, "POST /statuses before the closure")
 
 	var closed clientapi.AdminServiceClosure
 	e.want(e.do(http.MethodPost, "/admin/closure/close", admin.token, confirm, &closed), http.StatusOK, "close")

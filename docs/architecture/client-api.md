@@ -85,6 +85,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 
 ### 2.3 エラー
 
+- リソースを作る操作は 201、ジョブに積むだけの操作は 202 で答えます（`api/redocly.yaml` の lint で強制）。
 - すべての操作は `default` 応答で `#/components/responses/Problem` を参照します（lint で強制）。
   本文は RFC 9457 の `application/problem+json` です。
 - 状態コード以上の意味を持たない問題は `type: about:blank` です。クライアントが分岐に使う問題には、安定した `type` の URI（`/api/v1/problems/<名前>` の相対参照）を割り当て、

@@ -73,9 +73,9 @@ func TestRefetchRemoteStatuses(t *testing.T) {
 		path, token string
 		status      int
 	}{
-		{"/admin/statuses/" + refetchRemoteStatusID + "/refetch", "admin", http.StatusNoContent},
-		{"/admin/accounts/" + bobAccountID + "/refetch_statuses", "admin", http.StatusNoContent},
-		{"/admin/instances/remote.example/refetch_statuses", "admin", http.StatusNoContent},
+		{"/admin/statuses/" + refetchRemoteStatusID + "/refetch", "admin", http.StatusAccepted},
+		{"/admin/accounts/" + bobAccountID + "/refetch_statuses", "admin", http.StatusAccepted},
+		{"/admin/instances/remote.example/refetch_statuses", "admin", http.StatusAccepted},
 		{"/admin/statuses/" + refetchLocalStatusID + "/refetch", "admin", http.StatusUnprocessableEntity},
 		{"/admin/accounts/" + aliceAccountID + "/refetch_statuses", "admin", http.StatusUnprocessableEntity},
 		{"/admin/instances/social.example/refetch_statuses", "admin", http.StatusUnprocessableEntity},

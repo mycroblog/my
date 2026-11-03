@@ -51,7 +51,7 @@ resp, err := api.CreateStatusWithResponse(ctx, &mykit.CreateStatusParams{}, myki
 if err != nil {
     return err
 }
-fmt.Println("posted", resp.JSON200.Id)
+fmt.Println("posted", resp.JSON201.Id)
 ```
 
 Every operation is a method `<Operation>WithResponse` of `*mykit.API`. The runnable versions of the snippets in this

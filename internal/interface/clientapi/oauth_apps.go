@@ -278,5 +278,5 @@ func (s *Server) IssueOAuthAppToken(ctx context.Context, req IssueOAuthAppTokenR
 		AccessToken: issued.AccessToken, TokenType: OAuthAppTokenTokenTypeBearer, RefreshToken: issued.RefreshToken,
 		ExpiresIn: int(issued.Token.ExpiresAt.Sub(issued.Token.IssuedAt).Seconds()), Scope: string(issued.Token.Scope),
 	}
-	return IssueOAuthAppToken200JSONResponse{Body: body, Headers: IssueOAuthAppToken200ResponseHeaders{CacheControl: &cache}}, nil
+	return IssueOAuthAppToken201JSONResponse{Body: body, Headers: IssueOAuthAppToken201ResponseHeaders{CacheControl: &cache}}, nil
 }

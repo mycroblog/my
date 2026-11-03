@@ -112,7 +112,7 @@ func TestAdminLoginProviders(t *testing.T) {
 	if code := api(adminToken, http.MethodPost, "/admin/login_providers", map[string]any{
 		"kind": "oidc", "display_name": "Example SSO", "issuer": "https://sso.example", "client_id": "my-client",
 		"client_secret": secret, "claims": []map[string]any{{"claim": "hd", "values": []string{"example.org", "example.com"}}},
-	}, &created); code != http.StatusOK {
+	}, &created); code != http.StatusCreated {
 		t.Fatalf("POST /admin/login_providers = %d", code)
 	}
 	id := created.Id
