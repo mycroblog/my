@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -223,6 +224,9 @@ type Deps struct {
 	// Emails reads the email address of a banned account's user for the block the ban makes of
 	// it (AccountActionInput.BlockEmail); nil refuses such bans with ErrCannotBlockEmail.
 	Emails Emails
+	// LocalDomains are the host and the account domain of this instance, which take no domain
+	// action.
+	LocalDomains []string
 	// CanonicalDomain returns a domain in IDNA A-labels, for the email_domain sign-up blocks
 	// and the domains of the addresses they screen; nil only lowers the case.
 	CanonicalDomain func(domain string) (string, error)
@@ -270,6 +274,12 @@ type DomainActionInput struct {
 	Duration time.Duration
 }
 
+// ownDomain reports whether domain is this instance's: an action on it means nothing, because the
+// local accounts have no domain, and it would read as this server blocking itself.
+func (s *Service) ownDomain(domain string) bool {
+	return slices.ContainsFunc(s.d.LocalDomains, func(d string) bool { return strings.EqualFold(d, domain) })
+}
+
 // IssueDomainAction records an action on a domain and, in the same transaction, the
 // restrictions it imposes on the domain and its subdomains (data-model §5.2), and emits
 // DomainRestrictionsChanged and its audit log entry. A suspension also enqueues JobSeverDomain,
@@ -277,6 +287,9 @@ type DomainActionInput struct {
 func (s *Service) IssueDomainAction(ctx context.Context, in DomainActionInput) (moderation.DomainAction, error) {
 	if !moderation.ValidDuration(in.Duration) {
 		return moderation.DomainAction{}, fmt.Errorf("%w: duration %s", moderation.ErrInvalidAction, in.Duration)
+	}
+	if s.ownDomain(in.Domain) {
+		return moderation.DomainAction{}, fmt.Errorf("%w: %q", moderation.ErrOwnDomain, in.Domain)
 	}
 	now := kernel.Normalize(s.d.Clock.Now())
 	a := moderation.DomainAction{

@@ -125,7 +125,7 @@ func newModerationEnv(t *testing.T, newHarness ModerationFactory) *moderationEnv
 	appmoderation.RegisterAuditProjector(projectors, h.Moderation)
 	e.svc = appmoderation.NewService(appmoderation.Deps{
 		UnitOfWork: h.UnitOfWork, Repository: h.Moderation, Accounts: e.actors, Clock: clock, IDs: ids,
-		Statuses: e.statuses, Lifecycles: e.lifecycles,
+		Statuses: e.statuses, Lifecycles: e.lifecycles, LocalDomains: []string{"self.example"},
 	})
 	e.policy = appmoderation.NewFederationPolicy(h.Moderation, clock)
 	e.accounts = appmoderation.NewAccountPolicy(h.Moderation, e.actors, clock)
@@ -486,6 +486,13 @@ func moderationRejectsInvalid(t *testing.T, e *moderationEnv) {
 			t.Errorf("IssueDomainAction(%q, %q) = %v, want ErrInvalidAction", in.Domain, in.Kind, err)
 		}
 	}
+	if _, err := e.svc.IssueDomainAction(ctx, appmoderation.DomainActionInput{Domain: "SELF.example", Kind: moderation.DomainSuspend}); !errors.Is(err, moderation.ErrOwnDomain) {
+		t.Errorf("IssueDomainAction(this server) = %v, want ErrOwnDomain", err)
+	}
+	imported, err := e.svc.ImportDomainBlocks(ctx, appmoderation.DomainBlockImportInput{Blocks: []moderation.DomainBlock{{Domain: "self.example", Severity: moderation.DomainBlockSuspend}}})
+	if err != nil || len(imported.Issued) != 0 || len(imported.Skipped) != 1 || imported.Skipped[0].Reason != appmoderation.DomainBlockOwnDomain {
+		t.Errorf("ImportDomainBlocks(this server) = %+v, %v; want it skipped as own_domain", imported, err)
+	}
 	// Text that a dialect cannot store as it is fails alike on every dialect (data-model §1.2),
 	// naming its column.
 	for _, tc := range []struct {
@@ -514,7 +521,7 @@ func moderationRejectsInvalid(t *testing.T, e *moderationEnv) {
 		}
 	}
 	e.checkDomain(t, "bad.example", false, false, false)
-	err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err = e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		rows, err := e.h.Moderation.AccountRestrictionRows(ctx, tx, e.remote)
 		if err == nil && len(rows) != 0 {
 			t.Errorf("AccountRestrictionRows after invalid actions = %+v, want none", rows)

@@ -5,7 +5,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import type { Schemas } from "../../test/fixtures";
+import { accountFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -38,7 +38,7 @@ describe("the OAuth apps screen", () => {
       http.get(`${apiBase}/admin/oauth_clients`, () =>
         HttpResponse.json({
           items: [
-            oauthClientFixture(clientId, { owner_id: "0192f0c4-7a8e-7000-8000-000000000002" }),
+            oauthClientFixture(clientId, { owner: accountFixture(2, "dave") }),
             oauthClientFixture(firstPartyId, { name: "my web", client_id: "web", registration: "first_party" }),
           ],
         } satisfies Schemas["AdminOAuthClientPage"]),

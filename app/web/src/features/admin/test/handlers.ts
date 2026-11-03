@@ -216,6 +216,7 @@ export function oauthClientFixture(
     registration: "user",
     confidential: false,
     scope: "read write",
+    owner_deleted: false,
     disabled: false,
     created_at: "2026-10-22T00:00:00Z",
     ...overrides,
@@ -228,7 +229,7 @@ export function hostDenialFixture(
   host: string,
   overrides: Partial<Schemas["AdminOAuthClientHostDenial"]> = {},
 ): Schemas["AdminOAuthClientHostDenial"] {
-  return { id, host, denied_at: "2026-10-23T00:00:00Z", ...overrides };
+  return { id, host, denied_by_deleted: false, denied_at: "2026-10-23T00:00:00Z", ...overrides };
 }
 
 /** An announcement as the admin API answers it, written at 2026-10-21T00:00:00Z as a draft, with `overrides`. */
@@ -627,7 +628,7 @@ export const handlers = [
   http.get(`${apiBase}/admin/rules/:id`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json(ruleFixture(String(params["id"]), 1))),
   ),
-  http.patch(`${apiBase}/admin/rules/:id`, async ({ request, params }) => {
+  http.put(`${apiBase}/admin/rules/:id`, async ({ request, params }) => {
     const body = (await request.clone().json()) as Schemas["InstanceRuleInput"];
     return withViewer(request, () =>
       HttpResponse.json(ruleFixture(String(params["id"]), 1, { ...body, revised_at: "2026-10-17T00:00:00Z" })),

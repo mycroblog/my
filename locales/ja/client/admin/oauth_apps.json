@@ -168,8 +168,12 @@
     "description": "Heading of the list of OAuth apps, and its table caption."
   },
   "admin.oauth_apps.owner": {
-    "defaultMessage": "登録した利用者: {id}",
-    "description": "The ID of the user who registered an app. {id} is the user's ID."
+    "defaultMessage": "登録した人: {handle}",
+    "description": "Who registered an app. {handle} is the handle of the user's account."
+  },
+  "admin.oauth_apps.owner.deleted": {
+    "defaultMessage": "登録した人: 削除されたアカウント",
+    "description": "Who registered an app, when the account of the user who did is gone."
   },
   "admin.oauth_apps.public": {
     "defaultMessage": "シークレットなし",

@@ -21,7 +21,7 @@
 | `voice_room_endings` | イベント | `room_id`（PK）, `reason`（`enum(host, empty, host_disconnected, host_ineligible, moderator, time_limit, disabled)`）, `ended_by_account_id`（NULL 可 = 自動の終了）, `ended_at`, `note`（`text`。500 文字まで。モデレーターが終えた理由の文。なしは `''`） | ルームごとに 1 つ。インデックス `(ended_at, room_id)`（記録の消去） |
 | `voice_room_heads` | 投影 | `room_id`（PK）, `revision_id`, `host_account_id`, `state`（`enum(open, ended)`）, `participants_count`（`int`） | インデックス `(state, room_id)`。一覧はこれを引く |
 | `voice_room_participants` | 投影 | `account_id`（PK。1 人 1 ルーム）, `room_id`, `participation_id`, `role`, `cohost_change_id`（NULL 可 = 共同ホストでない）, `hand_raised`（`bool`） | 一意 `(participation_id)`。インデックス `(room_id, participation_id)` |
-| `voice_room_host_graces` | 現在値 | `room_id`（PK）, `ends_at`（猶予の終わり。決定の内容としての期限） | インデックス `(ends_at)`。ホストの猶予の間だけ行がある |
+| `voice_room_host_graces` | 現在値 | `room_id`（PK）, `ends_at`（猶予の終わり。決定の内容としての期限） | ホストの猶予の間だけ行がある |
 
 - コマンドはイベントの行を書いてから、同じトランザクションでドメインイベント（`voice.room_opened`・`voice.room_revised`・`voice.host_changed`・`voice.cohost_changed`・`voice.participation_started`・`voice.participation_ended`・`voice.role_changed`・`voice.hand_raise_changed`・`voice.room_ended`）を発行します。
   `voice` の projector は、そのイベントが触れるルームの `voice_room_heads` の行と、アカウントの `voice_room_participants` の行を、再構築と同じ規則の SQL で作り直します（同期）。

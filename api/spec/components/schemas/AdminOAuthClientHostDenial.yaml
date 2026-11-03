@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: A host whose Client ID Metadata Documents an administrator denied.
 type: object
-required: [id, host, denied_at]
+required: [id, host, denied_by_deleted, denied_at]
 properties:
   id:
     $ref: ./Id.yaml
@@ -9,9 +9,14 @@ properties:
     description: The host name in lowercase, without a port.
     type: string
   denied_by:
-    description: The ID of the administrator's user; omitted for a denial from the command line.
+    description: |
+      The account of the administrator; omitted for a denial from the command line and when
+      that account is deleted (`denied_by_deleted`).
     allOf:
-      - $ref: ./Id.yaml
+      - $ref: ./Account.yaml
+  denied_by_deleted:
+    description: Whether an administrator denied the host whose account no longer exists.
+    type: boolean
   denied_at:
     type: string
     format: date-time

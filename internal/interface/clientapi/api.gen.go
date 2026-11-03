@@ -1913,6 +1913,7 @@ const (
 	DomainBlockImportStatusImportable     DomainBlockImportStatus = "importable"
 	DomainBlockImportStatusInvalid        DomainBlockImportStatus = "invalid"
 	DomainBlockImportStatusNoAction       DomainBlockImportStatus = "no_action"
+	DomainBlockImportStatusOwnDomain      DomainBlockImportStatus = "own_domain"
 )
 
 // Valid indicates whether the value is a known member of the DomainBlockImportStatus enum.
@@ -1927,6 +1928,8 @@ func (e DomainBlockImportStatus) Valid() bool {
 	case DomainBlockImportStatusInvalid:
 		return true
 	case DomainBlockImportStatusNoAction:
+		return true
+	case DomainBlockImportStatusOwnDomain:
 		return true
 	default:
 		return false
@@ -5758,8 +5761,12 @@ type AdminOAuthClient struct {
 	// document declares; every other name is a claim of whoever registered the client.
 	Name string `json:"name"`
 
-	// OwnerId The ID of the user who registered the client; omitted for the other routes.
-	OwnerId *Id `json:"owner_id,omitempty"`
+	// Owner The account of the user who registered the client; omitted for the other routes and
+	// when that account is deleted (`owner_deleted`).
+	Owner *Account `json:"owner,omitempty"`
+
+	// OwnerDeleted Whether a user registered the client whose account no longer exists.
+	OwnerDeleted bool `json:"owner_deleted"`
 
 	// Registration The route by which an OAuth client was registered (ADR-0090 §1): `first_party` is one of the
 	// server's own clients, `user` a client that a signed-in user registered, `metadata_document` a
@@ -5778,8 +5785,12 @@ type AdminOAuthClient struct {
 type AdminOAuthClientHostDenial struct {
 	DeniedAt time.Time `json:"denied_at"`
 
-	// DeniedBy The ID of the administrator's user; omitted for a denial from the command line.
-	DeniedBy *Id `json:"denied_by,omitempty"`
+	// DeniedBy The account of the administrator; omitted for a denial from the command line and when
+	// that account is deleted (`denied_by_deleted`).
+	DeniedBy *Account `json:"denied_by,omitempty"`
+
+	// DeniedByDeleted Whether an administrator denied the host whose account no longer exists.
+	DeniedByDeleted bool `json:"denied_by_deleted"`
 
 	// Host The host name in lowercase, without a port.
 	Host string `json:"host"`
@@ -8427,7 +8438,7 @@ type DomainBlockImportRow struct {
 	// `already_applied`: an action in effect of each of the row's kinds covers the domain
 	// already, on it or on a parent domain. `no_action`: the row stands for no action (a
 	// `noop` without rejections). `duplicate`: an earlier row has the same domain once
-	// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+	// normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
 	Status DomainBlockImportStatus `json:"status"`
 
 	// WrittenDomain The domain as written in the row.
@@ -8447,7 +8458,7 @@ type DomainBlockImportSkipped struct {
 // `already_applied`: an action in effect of each of the row's kinds covers the domain
 // already, on it or on a parent domain. `no_action`: the row stands for no action (a
 // `noop` without rejections). `duplicate`: an earlier row has the same domain once
-// normalized. `invalid`: the domain, the severity, or the public comment is not valid.
+// normalized. `own_domain`: the domain is this server's. `invalid`: the domain, the severity, or the public comment is not valid.
 type DomainBlockImportStatus string
 
 // DomainBlockSeverity The `#severity` of Mastodon's domain block CSV. `suspend`: the action `suspend`.
@@ -15146,7 +15157,7 @@ type ServerInterface interface {
 	// (GET /admin/rules/{id})
 	GetInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId)
 	// UpdateInstanceRule Revise the text of an instance rule
-	// (PATCH /admin/rules/{id})
+	// (PUT /admin/rules/{id})
 	UpdateInstanceRule(w http.ResponseWriter, r *http.Request, id RuleId)
 	// MoveInstanceRule Move an instance rule
 	// (POST /admin/rules/{id}/move)
@@ -26193,7 +26204,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/rules", wrapper.ListInstanceRules)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/rules", wrapper.CreateInstanceRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/rules/{id}", wrapper.GetInstanceRule)
-	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/rules/{id}", wrapper.UpdateInstanceRule)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/rules/{id}", wrapper.UpdateInstanceRule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/rules/{id}/move", wrapper.MoveInstanceRule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/rules/{id}/retire", wrapper.RetireInstanceRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/announcements", wrapper.ListAdminAnnouncements)
@@ -48155,7 +48166,7 @@ type StrictServerInterface interface {
 	// (GET /admin/rules/{id})
 	GetInstanceRule(ctx context.Context, request GetInstanceRuleRequestObject) (GetInstanceRuleResponseObject, error)
 	// UpdateInstanceRule Revise the text of an instance rule
-	// (PATCH /admin/rules/{id})
+	// (PUT /admin/rules/{id})
 	UpdateInstanceRule(ctx context.Context, request UpdateInstanceRuleRequestObject) (UpdateInstanceRuleResponseObject, error)
 	// MoveInstanceRule Move an instance rule
 	// (POST /admin/rules/{id}/move)

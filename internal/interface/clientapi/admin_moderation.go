@@ -171,6 +171,8 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
 	case errors.As(err, &textErr):
 		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
+	case errors.Is(err, moderation.ErrOwnDomain):
+		return unprocessable(l.ServerErrorsInvalidValue("domain"))
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: issue a domain action on %s: %w", in.Domain, err)
 	}

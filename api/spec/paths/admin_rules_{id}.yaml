@@ -15,12 +15,12 @@ get:
       $ref: ../components/responses/AdminRule.yaml
     default:
       $ref: ../components/responses/Problem.yaml
-patch:
+put:
   operationId: updateInstanceRule
   summary: Revise the text of an instance rule
   description: |
-    Records a revision whose text and hint replace those of the rule; the rule keeps its ID
-    and position. They are checked as for a new rule (422). A retired rule is a 409
+    Records a revision whose text and hint replace those of the rule, so that an omitted hint
+    removes the hint; the rule keeps its ID and position. They are checked as for a new rule (422). A retired rule is a 409
     and an unknown ID a 404. Needs the `manage_rules` permission.
   tags: [admin-server]
   security:

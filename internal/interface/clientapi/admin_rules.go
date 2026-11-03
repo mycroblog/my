@@ -154,7 +154,7 @@ func (s *Server) GetInstanceRule(ctx context.Context, req GetInstanceRuleRequest
 	return GetInstanceRule200JSONResponse{adminRuleResponse(r)}, nil
 }
 
-// UpdateInstanceRule serves PATCH /api/v1/admin/rules/{id}.
+// UpdateInstanceRule serves PUT /api/v1/admin/rules/{id}.
 func (s *Server) UpdateInstanceRule(ctx context.Context, req UpdateInstanceRuleRequestObject) (UpdateInstanceRuleResponseObject, error) {
 	if p, err := s.requirePermission(ctx, identity.PermManageRules); err != nil {
 		return nil, err
