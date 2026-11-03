@@ -761,3 +761,106 @@ func TestSelfDeactivationLeavesRooms(t *testing.T) {
 	// Nobody else may host, so the room ends.
 	e.want(e.do(http.MethodGet, room, carol.token, nil, nil), http.StatusNotFound, "the room after the host left")
 }
+
+// TestSelfDeactivationKeepsFollowRequests checks the table of follows and requests (ADR-0145 §6):
+// a request to the account waits and is still there afterwards, a request it made is answered by
+// the remote server meanwhile, a local follow from before stays, and new ones do not come back.
+func TestSelfDeactivationKeepsFollowRequests(t *testing.T) {
+	t.Parallel()
+	e := newDeactivationEnv(t)
+	ctx := t.Context()
+	_, aliceID := e.userOf("alice")
+	aliceURI := "https://example.test/ap/actors/" + aliceID
+	const carolInbox, daveInbox, frankInbox = "https://remote.example/users/carol/inbox", "https://remote.example/users/dave/inbox", "https://remote.example/users/frank/inbox"
+	carol := newRemoteActor(t, e.network, "https://remote.example/users/carol", "Person", carolInbox)
+	dave := newRemoteActor(t, e.network, "https://remote.example/users/dave", "Person", daveInbox)
+	frank := newRemoteActor(t, e.network, "https://remote.example/users/frank", "Person", frankInbox)
+	daveAccount, err := e.app.RemoteActors.Resolve(ctx, dave.id)
+	if err != nil {
+		t.Fatalf("Resolve(dave) = %v", err)
+	}
+	frankAccount, err := e.app.RemoteActors.Resolve(ctx, frank.id)
+	if err != nil {
+		t.Fatalf("Resolve(frank) = %v", err)
+	}
+	if res := e.do("alice", http.MethodPatch, "/accounts/update_credentials", map[string]any{"locked": true}, nil); res.StatusCode != http.StatusOK {
+		t.Fatalf("lock = %d", res.StatusCode)
+	}
+
+	// carol asks to follow alice, who asks to follow dave and frank; bob follows alice with a request she accepts.
+	postActorInbox(t, e, aliceID, carol, map[string]any{"id": carol.id + "/follows/1", "type": "Follow", "actor": carol.id, "object": aliceURI})
+	sentTo := func(id, inbox string) any {
+		t.Helper()
+		e.network.taken()
+		e.do("alice", http.MethodPost, "/accounts/"+id+"/follow", nil, nil)
+		follows := typesPosted(e.network.taken(), inbox, "Follow")
+		if len(follows) != 1 {
+			t.Fatalf("Follows to %s = %+v, want 1", inbox, follows)
+		}
+		return follows[0]["id"]
+	}
+	toDave := sentTo(daveAccount.Account.ID, daveInbox)
+	toFrank := sentTo(frankAccount.Account.ID, frankInbox)
+
+	e.deactivate("alice")
+
+	// The remote servers answer the requests she made; a local follow is refused.
+	postInbox(t, e.statusesClient, dave, map[string]any{"id": dave.id + "/accepts/1", "type": "Accept", "actor": dave.id, "object": toDave})
+	postInbox(t, e.statusesClient, frank, map[string]any{"id": frank.id + "/rejects/1", "type": "Reject", "actor": frank.id, "object": toFrank})
+	if res := e.do("bob", http.MethodPost, "/accounts/"+aliceID+"/follow", nil, nil); res.StatusCode == http.StatusOK {
+		t.Error("a local follow of a deactivated account succeeded")
+	}
+
+	e.reactivate("alice")
+	e.freshToken("alice")
+	var requests clientapi.AccountPage
+	e.do("alice", http.MethodGet, "/follow_requests", nil, &requests)
+	if len(requests.Accounts) != 1 || requests.Accounts[0].Uri != carol.id {
+		t.Errorf("follow requests after the reactivation = %+v, want the one that waited, not the refused bob", requests.Accounts)
+	}
+	var rel []clientapi.Relationship
+	e.do("alice", http.MethodGet, "/accounts/relationships?id="+daveAccount.Account.ID+"&id="+frankAccount.Account.ID, nil, &rel)
+	following := map[string]bool{}
+	requested := map[string]bool{}
+	for _, r := range rel {
+		following[r.Id] = r.Following != nil && *r.Following
+		requested[r.Id] = r.Requested != nil && *r.Requested
+	}
+	if !following[daveAccount.Account.ID] {
+		t.Errorf("relationships = %+v, want the Accept received while deactivated in effect", rel)
+	}
+	if following[frankAccount.Account.ID] || requested[frankAccount.Account.ID] {
+		t.Errorf("relationships = %+v, want the Reject received while deactivated in effect", rel)
+	}
+}
+
+// TestSelfDeactivationHidesQuotedPosts checks what a quote shows of a deactivated author (ADR-0145 §5),
+// and that it shows the post again after the reactivation.
+func TestSelfDeactivationHidesQuotedPosts(t *testing.T) {
+	t.Parallel()
+	e := newDeactivationEnv(t)
+	post := e.post("alice", map[string]any{"text": "quote me", "visibility": "public"})
+	quote := e.post("bob", map[string]any{"text": "look", "visibility": "public", "quoted_status_id": post.Id})
+	quoted := func() *clientapi.Status {
+		t.Helper()
+		var got clientapi.Status
+		if res := e.do("bob", http.MethodGet, "/statuses/"+quote.Id, nil, &got); res.StatusCode != http.StatusOK {
+			t.Fatalf("the quote = %d, want it to stay", res.StatusCode)
+		}
+		if got.Quote == nil {
+			t.Fatalf("the quote has no quote: %+v", got)
+		}
+		return got.Quote.QuotedStatus
+	}
+	if q := quoted(); q == nil || q.Id != post.Id {
+		t.Fatalf("the quoted post = %+v, want it shown", q)
+	}
+	e.deactivate("alice")
+	if q := quoted(); q != nil {
+		t.Errorf("the quoted post of a deactivated author = %+v, want none shown", q)
+	}
+	e.reactivate("alice")
+	if q := quoted(); q == nil || q.Id != post.Id {
+		t.Errorf("the quoted post after the reactivation = %+v, want it shown", q)
+	}
+}
