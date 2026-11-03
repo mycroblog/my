@@ -261,12 +261,24 @@ func (q *Queries) DeleteJobAttemptsBefore(ctx context.Context, arg DeleteJobAtte
 	return result.RowsAffected(), nil
 }
 
+const getDeadJobType = `-- name: GetDeadJobType :one
+SELECT type FROM dead_jobs WHERE id = $1
+`
+
+func (q *Queries) GetDeadJobType(ctx context.Context, id string) (string, error) {
+	row := q.db.QueryRow(ctx, getDeadJobType, id)
+	var type_ string
+	err := row.Scan(&type_)
+	return type_, err
+}
+
 const getJobLease = `-- name: GetJobLease :one
 
-SELECT ordering_key, run_at, locked_until FROM jobs WHERE id = $1
+SELECT type, ordering_key, run_at, locked_until FROM jobs WHERE id = $1
 `
 
 type GetJobLeaseRow struct {
+	Type        string
 	OrderingKey *string
 	RunAt       time.Time
 	LockedUntil pgtype.Timestamptz
@@ -278,7 +290,12 @@ type GetJobLeaseRow struct {
 func (q *Queries) GetJobLease(ctx context.Context, id string) (GetJobLeaseRow, error) {
 	row := q.db.QueryRow(ctx, getJobLease, id)
 	var i GetJobLeaseRow
-	err := row.Scan(&i.OrderingKey, &i.RunAt, &i.LockedUntil)
+	err := row.Scan(
+		&i.Type,
+		&i.OrderingKey,
+		&i.RunAt,
+		&i.LockedUntil,
+	)
 	return i, err
 }
 
@@ -435,7 +452,7 @@ func (q *Queries) ListDeadJobs(ctx context.Context, arg ListDeadJobsParams) ([]D
 }
 
 const listDueJobs = `-- name: ListDueJobs :many
-SELECT j.id FROM jobs AS j
+SELECT j.id, j.type, j.run_at FROM jobs AS j
 WHERE j.run_at <= $1 AND (j.locked_until IS NULL OR j.locked_until <= $2)
   AND NOT EXISTS (
     SELECT 1 FROM jobs AS k
@@ -452,21 +469,133 @@ type ListDueJobsParams struct {
 	BatchLimit int32
 }
 
+type ListDueJobsRow struct {
+	ID    string
+	Type  string
+	RunAt time.Time
+}
+
 // ListDueJobs is PickJob without the row locks, bounded by @batch_limit, for the sweep of lost
 // wake-up signals: the jobs due at @due_before that a claim at @now could take.
-func (q *Queries) ListDueJobs(ctx context.Context, arg ListDueJobsParams) ([]string, error) {
+func (q *Queries) ListDueJobs(ctx context.Context, arg ListDueJobsParams) ([]ListDueJobsRow, error) {
 	rows, err := q.db.Query(ctx, listDueJobs, arg.DueBefore, arg.Now, arg.BatchLimit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []string{}
+	items := []ListDueJobsRow{}
 	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
+		var i ListDueJobsRow
+		if err := rows.Scan(&i.ID, &i.Type, &i.RunAt); err != nil {
 			return nil, err
 		}
-		items = append(items, id)
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDueJobsExceptTypes = `-- name: ListDueJobsExceptTypes :many
+SELECT j.id, j.type, j.run_at FROM jobs AS j
+WHERE j.type <> ALL($1::text[])
+  AND j.run_at <= $2 AND (j.locked_until IS NULL OR j.locked_until <= $3)
+  AND NOT EXISTS (
+    SELECT 1 FROM jobs AS k
+    WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+      AND (k.locked_until > $3 OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+  )
+ORDER BY j.run_at, j.id
+LIMIT $4
+`
+
+type ListDueJobsExceptTypesParams struct {
+	Types      []string
+	DueBefore  time.Time
+	Now        pgtype.Timestamptz
+	BatchLimit int32
+}
+
+type ListDueJobsExceptTypesRow struct {
+	ID    string
+	Type  string
+	RunAt time.Time
+}
+
+// ListDueJobsExceptTypes is ListDueJobs for every type but the routed ones, for the sweep of the
+// default queue.
+func (q *Queries) ListDueJobsExceptTypes(ctx context.Context, arg ListDueJobsExceptTypesParams) ([]ListDueJobsExceptTypesRow, error) {
+	rows, err := q.db.Query(ctx, listDueJobsExceptTypes,
+		arg.Types,
+		arg.DueBefore,
+		arg.Now,
+		arg.BatchLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDueJobsExceptTypesRow{}
+	for rows.Next() {
+		var i ListDueJobsExceptTypesRow
+		if err := rows.Scan(&i.ID, &i.Type, &i.RunAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDueJobsOfType = `-- name: ListDueJobsOfType :many
+SELECT j.id, j.type, j.run_at FROM jobs AS j
+WHERE j.type = $1
+  AND j.run_at <= $2 AND (j.locked_until IS NULL OR j.locked_until <= $3)
+  AND NOT EXISTS (
+    SELECT 1 FROM jobs AS k
+    WHERE k.ordering_key = j.ordering_key AND k.id <> j.id
+      AND (k.locked_until > $3 OR k.created_at < j.created_at OR (k.created_at = j.created_at AND k.id < j.id))
+  )
+ORDER BY j.run_at, j.id
+LIMIT $4
+`
+
+type ListDueJobsOfTypeParams struct {
+	JobType    string
+	DueBefore  time.Time
+	Now        pgtype.Timestamptz
+	BatchLimit int32
+}
+
+type ListDueJobsOfTypeRow struct {
+	ID    string
+	Type  string
+	RunAt time.Time
+}
+
+// ListDueJobsOfType is ListDueJobs for one job type, from jobs_type_run_at_id, for the sweep of a
+// route (ADR-0139 section 4).
+func (q *Queries) ListDueJobsOfType(ctx context.Context, arg ListDueJobsOfTypeParams) ([]ListDueJobsOfTypeRow, error) {
+	rows, err := q.db.Query(ctx, listDueJobsOfType,
+		arg.JobType,
+		arg.DueBefore,
+		arg.Now,
+		arg.BatchLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDueJobsOfTypeRow{}
+	for rows.Next() {
+		var i ListDueJobsOfTypeRow
+		if err := rows.Scan(&i.ID, &i.Type, &i.RunAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -620,18 +749,19 @@ func (q *Queries) LockOrderingKey(ctx context.Context, lockKey string) error {
 }
 
 const nextJobOfKey = `-- name: NextJobOfKey :one
-SELECT id, run_at FROM jobs WHERE ordering_key = $1 ORDER BY created_at, id LIMIT 1
+SELECT id, type, run_at FROM jobs WHERE ordering_key = $1 ORDER BY created_at, id LIMIT 1
 `
 
 type NextJobOfKeyRow struct {
 	ID    string
+	Type  string
 	RunAt time.Time
 }
 
 func (q *Queries) NextJobOfKey(ctx context.Context, orderingKey *string) (NextJobOfKeyRow, error) {
 	row := q.db.QueryRow(ctx, nextJobOfKey, orderingKey)
 	var i NextJobOfKeyRow
-	err := row.Scan(&i.ID, &i.RunAt)
+	err := row.Scan(&i.ID, &i.Type, &i.RunAt)
 	return i, err
 }
 

@@ -3,6 +3,7 @@
 package db
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -63,12 +64,16 @@ type store interface {
 	deleteAttemptsBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error)
 	jobLease(ctx context.Context, tx uow.Tx, id string) (lease, bool, error)
 	claimID(ctx context.Context, tx uow.Tx, id, orderingKey, worker string, now, until time.Time) (queue.Job, bool, error)
-	dueJobs(ctx context.Context, tx uow.Tx, now, dueBefore time.Time, limit int) ([]string, error)
+	dueJobs(ctx context.Context, tx uow.Tx, now, dueBefore time.Time, limit int) ([]queue.Wake, error)
+	dueJobsOfType(ctx context.Context, tx uow.Tx, jobType string, now, dueBefore time.Time, limit int) ([]queue.Wake, error)
+	dueJobsExceptTypes(ctx context.Context, tx uow.Tx, types []string, now, dueBefore time.Time, limit int) ([]queue.Wake, error)
+	deadJobType(ctx context.Context, tx uow.Tx, id string) (string, error)
 	nextOfKey(ctx context.Context, tx uow.Tx, orderingKey string) (queue.Wake, bool, error)
 }
 
 // lease is what a claim by ID reads of a job before it claims it.
 type lease struct {
+	jobType     string
 	orderingKey string
 	runAt       time.Time
 	// lockedUntil is zero when the job was never leased or its lease ended.
@@ -123,11 +128,23 @@ func (q *Queue) committed(ctx context.Context, e uow.Event) {
 	queue.WakeJobs(context.WithoutCancel(ctx), q.opts.Waker, q.opts.Logger, ev.wakes...)
 }
 
+// wakesOfRows converts the rows of a read of due jobs, passing on its error.
+func wakesOfRows[R any](rows []R, err error, wake func(R) queue.Wake) ([]queue.Wake, error) {
+	if err != nil {
+		return nil, err
+	}
+	wakes := make([]queue.Wake, len(rows))
+	for i, r := range rows {
+		wakes[i] = wake(r)
+	}
+	return wakes, nil
+}
+
 // wakesOf returns the signals of jobs, each at its RunAt.
 func wakesOf(jobs []queue.Job) []queue.Wake {
 	w := make([]queue.Wake, len(jobs))
 	for i, j := range jobs {
-		w[i] = queue.Wake{JobID: j.ID, At: j.RunAt}
+		w[i] = queue.Wake{JobID: j.ID, Type: j.Type, At: j.RunAt}
 	}
 	return w
 }
@@ -278,26 +295,70 @@ func unclaimed(id string, now time.Time, l lease, found bool) queue.ClaimResult 
 	case !found || l.lockedUntil.After(now):
 		return queue.ClaimResult{Outcome: queue.ClaimUnavailable}
 	case l.runAt.After(now):
-		return queue.ClaimResult{Outcome: queue.ClaimNotDue, Job: queue.Job{ID: id, RunAt: l.runAt}}
+		return queue.ClaimResult{Outcome: queue.ClaimNotDue, Job: queue.Job{ID: id, Type: l.jobType, RunAt: l.runAt}}
 	}
 	return queue.ClaimResult{Outcome: queue.Claimed}
 }
 
 // DueJobs implements queue.WakeFinder with the condition of a claim, without its row locks.
-func (q *Queue) DueJobs(ctx context.Context, now, dueBefore time.Time, limit int) ([]string, error) {
+func (q *Queue) DueJobs(ctx context.Context, now, dueBefore time.Time, limit int) ([]queue.Wake, error) {
 	if limit <= 0 {
 		return nil, nil
 	}
-	var ids []string
+	var wakes []queue.Wake
 	err := q.db.Tx(ctx, func(tx uow.Tx) error {
 		var err error
-		ids, err = q.st.dueJobs(ctx, tx, kernel.Normalize(now), kernel.Normalize(dueBefore), limit)
+		wakes, err = q.st.dueJobs(ctx, tx, kernel.Normalize(now), kernel.Normalize(dueBefore), limit)
 		return err
 	})
 	if err != nil {
 		return nil, fmt.Errorf("queue/db: due jobs: %w", err)
 	}
-	return ids, nil
+	return wakes, nil
+}
+
+// DueJobsOfTypes implements queue.WakeFinder: each type is read from the index of (type, run_at,
+// id), so that a backlog of the other types costs nothing, and the earliest of them are returned.
+func (q *Queue) DueJobsOfTypes(ctx context.Context, types []string, now, dueBefore time.Time, limit int) ([]queue.Wake, error) {
+	if limit <= 0 {
+		return nil, nil
+	}
+	var wakes []queue.Wake
+	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+		wakes = nil
+		for _, t := range types {
+			w, err := q.st.dueJobsOfType(ctx, tx, t, kernel.Normalize(now), kernel.Normalize(dueBefore), limit)
+			if err != nil {
+				return err
+			}
+			wakes = append(wakes, w...)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("queue/db: due jobs of types: %w", err)
+	}
+	slices.SortFunc(wakes, func(a, b queue.Wake) int {
+		return cmp.Or(a.At.Compare(b.At), cmp.Compare(a.JobID, b.JobID))
+	})
+	return wakes[:min(limit, len(wakes))], nil
+}
+
+// DueJobsExceptTypes implements queue.WakeFinder.
+func (q *Queue) DueJobsExceptTypes(ctx context.Context, types []string, now, dueBefore time.Time, limit int) ([]queue.Wake, error) {
+	if limit <= 0 {
+		return nil, nil
+	}
+	var wakes []queue.Wake
+	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		wakes, err = q.st.dueJobsExceptTypes(ctx, tx, types, kernel.Normalize(now), kernel.Normalize(dueBefore), limit)
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("queue/db: due jobs except types: %w", err)
+	}
+	return wakes, nil
 }
 
 // NextJob implements queue.WakeFinder.
@@ -375,7 +436,12 @@ func (q *Queue) ListDeadJobs(ctx context.Context, jobType string, after queue.De
 // RequeueDeadJob implements queue.DeadJobs.
 func (q *Queue) RequeueDeadJob(ctx context.Context, id string) error {
 	now := q.opts.Clock.Now()
+	var jobType string
 	err := q.db.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		if jobType, err = q.st.deadJobType(ctx, tx, id); err != nil {
+			return err
+		}
 		if err := q.st.requeueDead(ctx, tx, id, now); err != nil {
 			return err
 		}
@@ -391,7 +457,7 @@ func (q *Queue) RequeueDeadJob(ctx context.Context, id string) error {
 	if err == nil {
 		// When a pending job of the same idempotency key stood in for it, the signal finds
 		// nothing to claim.
-		queue.WakeJobs(ctx, q.opts.Waker, q.opts.Logger, queue.Wake{JobID: id, At: kernel.Normalize(now)})
+		queue.WakeJobs(ctx, q.opts.Waker, q.opts.Logger, queue.Wake{JobID: id, Type: jobType, At: kernel.Normalize(now)})
 	}
 	return err
 }

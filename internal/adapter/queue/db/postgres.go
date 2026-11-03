@@ -383,7 +383,7 @@ func (s postgresStore) jobLease(ctx context.Context, tx uow.Tx, id string) (leas
 	if err != nil {
 		return lease{}, false, err
 	}
-	l := lease{orderingKey: deref(r.OrderingKey), runAt: kernel.Normalize(r.RunAt)}
+	l := lease{jobType: r.Type, orderingKey: deref(r.OrderingKey), runAt: kernel.Normalize(r.RunAt)}
 	if r.LockedUntil.Valid {
 		l.lockedUntil = kernel.Normalize(r.LockedUntil.Time)
 	}
@@ -416,14 +416,56 @@ func (s postgresStore) claimID(ctx context.Context, tx uow.Tx, id, orderingKey, 
 	return claimedJob(r), true, nil
 }
 
-func (s postgresStore) dueJobs(ctx context.Context, tx uow.Tx, now, dueBefore time.Time, limit int) ([]string, error) {
+func (s postgresStore) dueJobs(ctx context.Context, tx uow.Tx, now, dueBefore time.Time, limit int) ([]queue.Wake, error) {
 	q, err := s.queries(tx)
 	if err != nil {
 		return nil, err
 	}
-	return q.ListDueJobs(ctx, postgresqueue.ListDueJobsParams{
+	rows, err := q.ListDueJobs(ctx, postgresqueue.ListDueJobsParams{
 		DueBefore: dueBefore, Now: pgtype.Timestamptz{Time: now, Valid: true}, BatchLimit: int32Of(limit),
 	})
+	return wakesOfRows(rows, err, func(r postgresqueue.ListDueJobsRow) queue.Wake {
+		return queue.Wake{JobID: r.ID, Type: r.Type, At: kernel.Normalize(r.RunAt)}
+	})
+}
+
+func (s postgresStore) dueJobsOfType(ctx context.Context, tx uow.Tx, jobType string, now, dueBefore time.Time, limit int) ([]queue.Wake, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListDueJobsOfType(ctx, postgresqueue.ListDueJobsOfTypeParams{
+		JobType: jobType, DueBefore: dueBefore, Now: pgtype.Timestamptz{Time: now, Valid: true}, BatchLimit: int32Of(limit),
+	})
+	return wakesOfRows(rows, err, func(r postgresqueue.ListDueJobsOfTypeRow) queue.Wake {
+		return queue.Wake{JobID: r.ID, Type: r.Type, At: kernel.Normalize(r.RunAt)}
+	})
+}
+
+func (s postgresStore) dueJobsExceptTypes(ctx context.Context, tx uow.Tx, types []string, now, dueBefore time.Time, limit int) ([]queue.Wake, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListDueJobsExceptTypes(ctx, postgresqueue.ListDueJobsExceptTypesParams{
+		Types: types, DueBefore: dueBefore, Now: pgtype.Timestamptz{Time: now, Valid: true}, BatchLimit: int32Of(limit),
+	})
+	return wakesOfRows(rows, err, func(r postgresqueue.ListDueJobsExceptTypesRow) queue.Wake {
+		return queue.Wake{JobID: r.ID, Type: r.Type, At: kernel.Normalize(r.RunAt)}
+	})
+}
+
+// deadJobType returns the type of the dead job id, or "" when there is no such job.
+func (s postgresStore) deadJobType(ctx context.Context, tx uow.Tx, id string) (string, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return "", err
+	}
+	t, err := q.GetDeadJobType(ctx, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	return t, err
 }
 
 func (s postgresStore) nextOfKey(ctx context.Context, tx uow.Tx, orderingKey string) (queue.Wake, bool, error) {
@@ -438,5 +480,5 @@ func (s postgresStore) nextOfKey(ctx context.Context, tx uow.Tx, orderingKey str
 	if err != nil {
 		return queue.Wake{}, false, err
 	}
-	return queue.Wake{JobID: r.ID, At: kernel.Normalize(r.RunAt)}, true, nil
+	return queue.Wake{JobID: r.ID, Type: r.Type, At: kernel.Normalize(r.RunAt)}, true, nil
 }

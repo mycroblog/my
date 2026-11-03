@@ -14,6 +14,6 @@ import (
 )
 
 // newSQSWaker reports that the build tag no_sqs left the SQS queue out.
-func newSQSWaker(context.Context, *config.Config, kernel.Clock) (queue.Waker, io.Closer, error) {
+func newSQSWaker(context.Context, string, kernel.Clock) (queue.Waker, io.Closer, error) {
 	return nil, nil, config.ExcludedError("queue", "sqs", "no_sqs")
 }

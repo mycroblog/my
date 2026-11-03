@@ -242,6 +242,8 @@ flowchart TD
 
 `queue = db` では、`worker_job_types` と `worker_job_types_except` で種別ごとにワーカーを分けられます（[ADR-0138](../adr/0138-worker-job-selection.md)）。分けるときの順序キーの制約は[順序キー](#順序キー)の表のとおりで、同じキーを持つ種別は同じワーカーの組に置きます。外部のキューの構成では分けられません。
 
+`queue = sqs` と `cloudtasks` では、`queue_sqs_routes` と `queue_cloudtasks_routes` で種別ごとに合図のキューを分け、処理能力をプラットフォームの設定で変えられます（[ADR-0139](../adr/0139-external-queue-routing.md)）。振り分けるのは合図を送る側（`WakeRouter`）だけで、受け口はどの合図でも同じように `ClaimJob` します。キューが違っても順序キーの判定は DB で行うので、順序は変わりません。掃除（`queue.wake`）はルートごとに 1 回 500 件まで読み、ルートのある種別は `jobs_type_run_at_id` を引きます。
+
 ### 確かめ方
 
 実際のインスタンスで、次を見て推定を確かめます。Prometheus では `my.job.duration` は `my_job_duration_seconds` です。
