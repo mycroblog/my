@@ -132,10 +132,6 @@ type ProxyDeps struct {
 	// fields take media.DefaultSizes); without it the proxy serves no small variant.
 	Processor media.Processor
 	Sizes     media.Sizes
-	// MaxCacheSize bounds the total size of the cache in bytes; zero means
-	// DefaultRemoteMediaCacheMaxSize. The cleanup deletes the least recently accessed copies
-	// over it.
-	MaxCacheSize int64
 	// EmojiMaxBytes bounds the images of remote custom emoji (remote_custom_emoji_max_bytes,
 	// ADR-0051 §2); zero means content.DefaultRemoteCustomEmojiMaxBytes.
 	EmojiMaxBytes int64
@@ -211,9 +207,6 @@ func NewMediaProxy(d ProxyDeps) (*MediaProxy, error) {
 	}
 	if d.Logger == nil {
 		d.Logger = slog.Default()
-	}
-	if d.MaxCacheSize <= 0 {
-		d.MaxCacheSize = DefaultRemoteMediaCacheMaxSize
 	}
 	if d.EmojiMaxBytes <= 0 {
 		d.EmojiMaxBytes = content.DefaultRemoteCustomEmojiMaxBytes

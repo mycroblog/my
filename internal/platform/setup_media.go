@@ -119,11 +119,12 @@ func newMediaProxy(cfg *config.Config, repo content.MediaRepository, cards conte
 			s, err := a.Instance.Settings(ctx)
 			return content.ProxySettings{
 				Policy: content.RemoteMediaPolicy(s.RemoteMediaPolicy()), CacheTTL: s.RemoteMediaCacheTTL(),
+				MaxCacheSize: s.RemoteMediaCacheMaxBytes(),
 			}, err
 		},
 		// The account module's avatars and headers are what the avatars policy keeps.
 		UnitOfWork: a.UnitOfWork, Blobs: a.Blobs, Clock: a.Clock, ProfileImages: a.Accounts,
-		MaxCacheSize: cfg.RemoteMediaCacheMaxBytes, EmojiMaxBytes: cfg.RemoteCustomEmojiMaxBytes, Processor: a.MediaProcessor,
+		EmojiMaxBytes: cfg.RemoteCustomEmojiMaxBytes, Processor: a.MediaProcessor,
 		KeySource: a.Instance.MediaProxyKey, BaseURL: cfg.MediaBaseURL(), Logger: a.Logger,
 		// The federation mode decides which remote files are fetched (ADR-0076).
 		Federation: a.mediaGate(),

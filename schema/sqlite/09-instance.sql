@@ -25,7 +25,9 @@ CREATE TABLE instance_setting_revisions (
     'supporter_list_visibility', 'income_visibility', 'federation_mode', 'oauth_metadata_document_clients', 'dynamic_client_registration',
     'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'voice_participants_retention_days',
     'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_lifetime_seconds',
-    'public_counts', 'featured_accounts', 'login_providers_only'
+    'public_counts', 'featured_accounts', 'login_providers_only',
+    'remote_media_cache_max_bytes', 'remote_status_retention_days', 'remote_status_max_retention_days',
+    'relay_status_retention_days', 'oauth_client_rate_limits'
   )),
   value TEXT NOT NULL,
   revised_by_user_id TEXT,

@@ -2297,13 +2297,18 @@ const (
 	InstanceSettingKeyMemberInviteMaxLifetimeSeconds   InstanceSettingKey = "member_invite_max_lifetime_seconds"
 	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
 	InstanceSettingKeyModerationActionsRetentionDays   InstanceSettingKey = "moderation_actions_retention_days"
+	InstanceSettingKeyOauthClientRateLimits            InstanceSettingKey = "oauth_client_rate_limits"
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
 	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
 	InstanceSettingKeyRegistrationOriginsRetentionDays InstanceSettingKey = "registration_origins_retention_days"
+	InstanceSettingKeyRelayStatusRetentionDays         InstanceSettingKey = "relay_status_retention_days"
+	InstanceSettingKeyRemoteMediaCacheMaxBytes         InstanceSettingKey = "remote_media_cache_max_bytes"
 	InstanceSettingKeyRemoteMediaCacheTtlSeconds       InstanceSettingKey = "remote_media_cache_ttl_seconds"
 	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
+	InstanceSettingKeyRemoteStatusMaxRetentionDays     InstanceSettingKey = "remote_status_max_retention_days"
+	InstanceSettingKeyRemoteStatusRetentionDays        InstanceSettingKey = "remote_status_retention_days"
 	InstanceSettingKeyReportsRetentionDays             InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription          InstanceSettingKey = "require_media_description"
 	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
@@ -2378,6 +2383,8 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyModerationActionsRetentionDays:
 		return true
+	case InstanceSettingKeyOauthClientRateLimits:
+		return true
 	case InstanceSettingKeyOauthMetadataDocumentClients:
 		return true
 	case InstanceSettingKeyPreviewImage:
@@ -2388,9 +2395,17 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyRegistrationOriginsRetentionDays:
 		return true
+	case InstanceSettingKeyRelayStatusRetentionDays:
+		return true
+	case InstanceSettingKeyRemoteMediaCacheMaxBytes:
+		return true
 	case InstanceSettingKeyRemoteMediaCacheTtlSeconds:
 		return true
 	case InstanceSettingKeyRemoteMediaPolicy:
+		return true
+	case InstanceSettingKeyRemoteStatusMaxRetentionDays:
+		return true
+	case InstanceSettingKeyRemoteStatusRetentionDays:
 		return true
 	case InstanceSettingKeyReportsRetentionDays:
 		return true
@@ -2421,15 +2436,16 @@ func (e InstanceSettingKey) Valid() bool {
 
 // Defines values for InstanceSettingKind.
 const (
-	InstanceSettingKindAccount  InstanceSettingKind = "account"
-	InstanceSettingKindAccounts InstanceSettingKind = "accounts"
-	InstanceSettingKindBool     InstanceSettingKind = "bool"
-	InstanceSettingKindEmail    InstanceSettingKind = "email"
-	InstanceSettingKindEnum     InstanceSettingKind = "enum"
-	InstanceSettingKindInt      InstanceSettingKind = "int"
-	InstanceSettingKindLocale   InstanceSettingKind = "locale"
-	InstanceSettingKindMedia    InstanceSettingKind = "media"
-	InstanceSettingKindUri      InstanceSettingKind = "uri"
+	InstanceSettingKindAccount      InstanceSettingKind = "account"
+	InstanceSettingKindAccounts     InstanceSettingKind = "accounts"
+	InstanceSettingKindBool         InstanceSettingKind = "bool"
+	InstanceSettingKindClientLimits InstanceSettingKind = "client_limits"
+	InstanceSettingKindEmail        InstanceSettingKind = "email"
+	InstanceSettingKindEnum         InstanceSettingKind = "enum"
+	InstanceSettingKindInt          InstanceSettingKind = "int"
+	InstanceSettingKindLocale       InstanceSettingKind = "locale"
+	InstanceSettingKindMedia        InstanceSettingKind = "media"
+	InstanceSettingKindUri          InstanceSettingKind = "uri"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKind enum.
@@ -2440,6 +2456,8 @@ func (e InstanceSettingKind) Valid() bool {
 	case InstanceSettingKindAccounts:
 		return true
 	case InstanceSettingKindBool:
+		return true
+	case InstanceSettingKindClientLimits:
 		return true
 	case InstanceSettingKindEmail:
 		return true
@@ -6299,7 +6317,8 @@ type AdminSetting struct {
 	// the username of a local account, or empty for none. `email`: an email address such as
 	// `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
 	// none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
-	// a leading `@` are accepted), in order, or empty for none.
+	// a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
+	// `client_id=requests` pairs, or empty for none.
 	Kind InstanceSettingKind `json:"kind"`
 
 	// Maximum The greatest value of an `int` setting; omitted for other kinds.
@@ -9465,7 +9484,8 @@ type InstanceSettingKey string
 // the username of a local account, or empty for none. `email`: an email address such as
 // `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
 // none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
-// a leading `@` are accepted), in order, or empty for none.
+// a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
+// `client_id=requests` pairs, or empty for none.
 type InstanceSettingKind string
 
 // InstanceTextKey The key of an instance text: the name (one line), the short and full descriptions,

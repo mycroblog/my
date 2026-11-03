@@ -5,6 +5,7 @@ package instance
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"net/mail"
 	"net/url"
 	"slices"
@@ -126,6 +127,20 @@ const (
 	// while at least one is enabled: passwords and passkeys no longer sign in. With no enabled
 	// provider it does not apply (identity.Service.LoginProvidersOnly).
 	SettingLoginProvidersOnly SettingKey = "login_providers_only"
+	// SettingRemoteMediaCacheMaxBytes bounds the total size of the copies of remote media that
+	// the media proxy keeps (FR-803).
+	SettingRemoteMediaCacheMaxBytes SettingKey = "remote_media_cache_max_bytes"
+	// SettingRemoteStatusRetentionDays is how many days a remote post that nothing local refers
+	// to is kept after its publication, SettingRemoteStatusMaxRetentionDays bounds how long any
+	// remote post is kept (0 for no bound, ADR-0034), and SettingRelayStatusRetentionDays is how
+	// many days a post that only a relay brought in is kept (ADR-0061).
+	SettingRemoteStatusRetentionDays    SettingKey = "remote_status_retention_days"
+	SettingRemoteStatusMaxRetentionDays SettingKey = "remote_status_max_retention_days"
+	SettingRelayStatusRetentionDays     SettingKey = "relay_status_retention_days"
+	// SettingOAuthClientRateLimits caps the client API requests of OAuth clients, each across
+	// all its users, for an administrator to hold back a client that overloads the server
+	// (ADR-0090 §7).
+	SettingOAuthClientRateLimits SettingKey = "oauth_client_rate_limits"
 )
 
 // RegistrationMode is the value of SettingRegistrationMode (FR-001).
@@ -338,6 +353,20 @@ const (
 	// KindAccounts is the usernames of up to MaxSettingAccounts local accounts, lowercase,
 	// separated by single spaces, without repeats, or "" for none.
 	KindAccounts Kind = "accounts"
+	// KindClientLimits is comma-separated client_id=requests pairs, or "" for none.
+	KindClientLimits Kind = "client_limits"
+)
+
+// MaxClientLimitsLength bounds a KindClientLimits value, in bytes.
+const MaxClientLimitsLength = 8192
+
+// The bounds and defaults of the sizes and periods of remote content.
+const (
+	DefaultRemoteMediaCacheMaxBytes     = 1 << 30
+	MaxRemoteMediaCacheMaxBytes         = 1 << 50
+	DefaultRemoteStatusRetentionDays    = 90
+	DefaultRemoteStatusMaxRetentionDays = 0
+	DefaultRelayStatusRetentionDays     = 7
 )
 
 // MaxSettingAccounts bounds the usernames of a KindAccounts value.
@@ -557,6 +586,27 @@ var definitions = []Definition{
 		Doc: "Usernames of up to 20 local accounts, separated by spaces or commas, that the suggestions of accounts show first, in this order; an account that turned off being suggested is left out (FR-308).",
 	},
 	{
+		Key: SettingRemoteMediaCacheMaxBytes, Kind: KindInt, Default: strconv.Itoa(DefaultRemoteMediaCacheMaxBytes),
+		Min: 1, Max: MaxRemoteMediaCacheMaxBytes,
+		Doc: "Size limit in bytes of the copies of remote media that the media proxy keeps; the hourly cleanup deletes the least recently accessed ones over it (FR-803).",
+	},
+	{
+		Key: SettingRemoteStatusRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRemoteStatusRetentionDays), Min: 1, Max: MaxRetention,
+		Doc: "How many days a remote post is kept after its publication when nothing on this instance refers to it (ADR-0034).",
+	},
+	{
+		Key: SettingRemoteStatusMaxRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRemoteStatusMaxRetentionDays), Min: 0, Max: MaxRetention,
+		Doc: "The most days any remote post is kept after its publication, even when this instance refers to it; 0 sets no limit (ADR-0034).",
+	},
+	{
+		Key: SettingRelayStatusRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRelayStatusRetentionDays), Min: 1, Max: MaxRetention,
+		Doc: "How many days a remote post that only a relay brought in is kept after its publication (ADR-0061).",
+	},
+	{
+		Key: SettingOAuthClientRateLimits, Kind: KindClientLimits, Default: "",
+		Doc: "Caps on the client API requests of OAuth clients: comma-separated client_id=requests pairs, the requests that all the users of the client together may make in 5 minutes (ADR-0090 §7).",
+	},
+	{
 		Key: SettingLoginProvidersOnly, Kind: KindBool, Default: "false",
 		Doc: "Whether registration and sign-in are limited to the external login providers while at least one is enabled: passwords and passkeys no longer sign in, and users without a linked provider cannot sign in again once their sessions end. With no enabled provider it does not apply.",
 	},
@@ -607,6 +657,15 @@ func (d Definition) Parse(raw string) (string, error) {
 			return "", invalid(fmt.Sprintf("is outside %d..%d", d.Min, d.Max))
 		}
 		return strconv.Itoa(n), nil
+	case KindClientLimits:
+		limits, err := parseClientLimits(raw)
+		if err != nil {
+			return "", invalid(err.Error())
+		}
+		if len(raw) > MaxClientLimitsLength {
+			return "", invalid(fmt.Sprintf("is over %d bytes", MaxClientLimitsLength))
+		}
+		return formatClientLimits(limits), nil
 	case KindEnum:
 		if slices.Contains(d.Choices, raw) {
 			return raw, nil
@@ -1025,6 +1084,52 @@ func (s Settings) MemberInviteCaps() MemberInviteCaps {
 		MaxUses:      s.intValue(SettingMemberInviteMaxUses),
 		MaxExpiresIn: time.Duration(s.intValue(SettingMemberInviteMaxLifetimeSeconds)) * time.Second,
 	}
+}
+
+// RemoteMediaCacheMaxBytes returns the value of SettingRemoteMediaCacheMaxBytes.
+func (s Settings) RemoteMediaCacheMaxBytes() int64 {
+	return int64(s.intValue(SettingRemoteMediaCacheMaxBytes))
+}
+
+// OAuthClientRateLimits returns the value of SettingOAuthClientRateLimits by client ID.
+func (s Settings) OAuthClientRateLimits() map[string]int64 {
+	v, _ := s.Value(SettingOAuthClientRateLimits)
+	limits, err := parseClientLimits(v)
+	if err != nil {
+		return nil
+	}
+	return limits
+}
+
+// parseClientLimits parses client_id=requests pairs. The client_id of a metadata document is a
+// URL that may hold "=", so each pair splits at its last "=".
+func parseClientLimits(v string) (map[string]int64, error) {
+	limits := map[string]int64{}
+	for pair := range strings.SplitSeq(v, ",") {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+		i := strings.LastIndex(pair, "=")
+		if i <= 0 {
+			return nil, errors.New("is not comma-separated client_id=requests pairs")
+		}
+		n, err := strconv.ParseInt(strings.TrimSpace(pair[i+1:]), 10, 64)
+		if err != nil || n < 1 {
+			return nil, fmt.Errorf("has a cap of %q that is not a positive integer", pair[:i])
+		}
+		limits[strings.TrimSpace(pair[:i])] = n
+	}
+	return limits, nil
+}
+
+// formatClientLimits returns the stored form of limits, sorted by client ID.
+func formatClientLimits(limits map[string]int64) string {
+	pairs := make([]string, 0, len(limits))
+	for _, id := range slices.Sorted(maps.Keys(limits)) {
+		pairs = append(pairs, id+"="+strconv.FormatInt(limits[id], 10))
+	}
+	return strings.Join(pairs, ",")
 }
 
 // LoginProvidersOnly returns the value of SettingLoginProvidersOnly: what the administrator chose,

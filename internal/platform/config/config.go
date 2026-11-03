@@ -123,9 +123,7 @@ type Config struct {
 	// RemoteCustomEmojiMaxBytes bounds the image of a remote custom emoji that the media proxy
 	// serves.
 	RemoteCustomEmojiMaxBytes int64
-	// RemoteMediaCacheMaxBytes bounds the total size of the remote media cache.
-	RemoteMediaCacheMaxBytes int64
-	KV                       string
+	KV                        string
 	// ValkeyURL, ValkeyTLSCAFile, and ValkeyKeyPrefix configure the Valkey server of kv = valkey.
 	ValkeyURL       string
 	ValkeyTLSCAFile string
@@ -184,13 +182,7 @@ type Config struct {
 	// ADR-0118 §3).
 	PushAllowedHosts    []string
 	PushAllowedPrefixes []netip.Prefix
-	// RemoteStatusRetention is how long an unreferenced remote post is kept after its publication;
-	// RemoteStatusMaxRetention bounds how long any remote post is kept, zero for no bound (ADR-0034).
-	RemoteStatusRetention    time.Duration
-	RemoteStatusMaxRetention time.Duration
-	// RelayStatusRetention is how long a remote post that only a relay brought in is kept, and
-	// RelayIngestHourlyLimit how many activities each relay may bring in per hour (ADR-0061).
-	RelayStatusRetention   time.Duration
+	// RelayIngestHourlyLimit is how many activities each relay may bring in per hour (ADR-0061).
 	RelayIngestHourlyLimit int
 	// BillingSources are the providers whose usage charges are imported (billing_sources,
 	// ADR-0068), and the AWS caps bound the billed requests by UTC day and month (§4).
@@ -275,9 +267,6 @@ type Config struct {
 	// without a usable token may go unused, before the clean-up deletes it (ADR-0090 §1).
 	DynamicClientUnredeemedTTL time.Duration
 	DynamicClientIdleTTL       time.Duration
-	// OAuthClientRateLimits caps the client API requests per 5 minutes of the OAuth clients
-	// named by their public client_id, across all their users (ADR-0090 §7).
-	OAuthClientRateLimits map[string]int64
 	// MetricsExporter is the Meter adapter (ADR-0055 §2); MetricsListen is the address of the
 	// scrape of prometheus, and the EMF fields configure emf.
 	MetricsExporter      string
@@ -375,7 +364,6 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("media_max_audio_duration", c.MediaMaxAudioDuration),
 		slog.Int64("custom_emoji_max_bytes", c.CustomEmojiMaxBytes),
 		slog.Int64("remote_custom_emoji_max_bytes", c.RemoteCustomEmojiMaxBytes),
-		slog.Int64("remote_media_cache_max_bytes", c.RemoteMediaCacheMaxBytes),
 		slog.String("kv", c.KV),
 		slog.String("valkey_url", redact(c.ValkeyURL != "")),
 		slog.String("valkey_tls_ca_file", c.ValkeyTLSCAFile),
@@ -411,9 +399,6 @@ func (c *Config) LogValue() slog.Value {
 		slog.Any("webhook_allowed_destinations", append(slices.Clone(c.WebhookAllowedHosts), prefixStrings(c.WebhookAllowedPrefixes)...)),
 		slog.Any("login_provider_allowed_destinations", append(slices.Clone(c.LoginProviderAllowedHosts), prefixStrings(c.LoginProviderAllowedPrefixes)...)),
 		slog.Any("push_allowed_destinations", append(slices.Clone(c.PushAllowedHosts), prefixStrings(c.PushAllowedPrefixes)...)),
-		slog.Duration("remote_status_retention", c.RemoteStatusRetention),
-		slog.Duration("remote_status_max_retention", c.RemoteStatusMaxRetention),
-		slog.Duration("relay_status_retention", c.RelayStatusRetention),
 		slog.Int("relay_max_activities_per_hour", c.RelayIngestHourlyLimit),
 		slog.Any("billing_sources", c.BillingSources),
 		slog.Int("billing_aws_max_requests_per_day", c.BillingAWSMaxRequestsPerDay),
@@ -469,7 +454,6 @@ func (c *Config) LogValue() slog.Value {
 		slog.Duration("job_attempt_retention", c.JobAttemptRetention),
 		slog.Duration("dynamic_client_unredeemed_retention", c.DynamicClientUnredeemedTTL),
 		slog.Duration("dynamic_client_idle_retention", c.DynamicClientIdleTTL),
-		slog.Any("oauth_client_rate_limits", c.OAuthClientRateLimits),
 		slog.String("metrics_exporter", c.MetricsExporter),
 		slog.String("metrics_listen", c.MetricsListen),
 		slog.String("metrics_emf_namespace", c.MetricsEMFNamespace),

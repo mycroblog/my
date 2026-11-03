@@ -18280,6 +18280,11 @@ components:
         - public_counts
         - featured_accounts
         - login_providers_only
+        - remote_media_cache_max_bytes
+        - remote_status_retention_days
+        - remote_status_max_retention_days
+        - relay_status_retention_days
+        - oauth_client_rate_limits
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
@@ -18288,7 +18293,8 @@ components:
         the username of a local account, or empty for none. `email`: an email address such as
         `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
         none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
-        a leading `@` are accepted), in order, or empty for none.
+        a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
+        `client_id=requests` pairs, or empty for none.
       type: string
       enum:
         - bool
@@ -18300,6 +18306,7 @@ components:
         - email
         - uri
         - accounts
+        - client_limits
     InstanceTextKey:
       description: |
         The key of an instance text: the name (one line), the short and full descriptions,

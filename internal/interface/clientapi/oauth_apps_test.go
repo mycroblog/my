@@ -290,7 +290,7 @@ func TestOAuthAppRegistrationIsRateLimited(t *testing.T) {
 
 func TestClientLimitCapsAllUsersOfAClient(t *testing.T) {
 	e := newAuthEnv(t, func(o *clientapi.Options) {
-		o.ClientLimit = func(id string) (kernel.Limit, bool) {
+		o.ClientLimit = func(_ context.Context, id string) (kernel.Limit, bool) {
 			return kernel.Limit{Name: "test.client", Max: 2, Window: time.Minute}, id == "public-client-1"
 		}
 	})

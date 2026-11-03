@@ -237,7 +237,7 @@ export const instanceSettings: Readonly<Record<string, string>> = {
   public_counts: "true",
 };
 
-/** The instance rules, added with `my instance rule add`, in order. */
+/** The instance rules, added with `my instance rule create`, in order. */
 export const rules: readonly { text: string; hint?: string }[] = [
   { text: "Be kind to each other.", hint: "Disagree with ideas, not people." },
   { text: "No spam or unsolicited advertising.", hint: "Repeated promotional posts and links count as spam." },

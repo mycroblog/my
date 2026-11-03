@@ -10,7 +10,7 @@ before you need one. Upgrades take a backup too; [Upgrading](database.md#upgradi
 | The database | the SQLite file (`database_url`) or the PostgreSQL database | [SQLite](#sqlite) or [PostgreSQL](#postgresql) | everything: accounts, posts, follows, settings |
 | The media | the directory `blob_fs_dir` of the `fs` blob store, or the bucket `blob_s3_bucket` of the `s3` blob store or `blob_gcs_bucket` of the `gcs` blob store | [Media](#media) or [Media in a bucket](#media-in-a-bucket) | the uploaded images, videos, and audio files, and the cached remote files |
 | The KEK | wherever you keep `MY_KEK` or the file of `MY_KEK_FILE` (never in the database) | [The KEK](key-management.md#back-it-up), separately from the database | every actor's private key and with it the actor's identity in the fediverse, and the other secrets the database stores |
-| The configuration | the environment variables, the configuration file (`MY_CONFIG_FILE`), the secrets (`MY_VAPID_PRIVATE_KEY`, mail and payment keys), `.env` with Compose | copy them with your deployment files | nothing in the data, but the instance cannot start the same way; changing `host` breaks every federated URL |
+| The configuration | the environment variables, the configuration file (`MY_CONFIG`), the secrets (`MY_VAPID_PRIVATE_KEY`, mail and payment keys), `.env` with Compose | copy them with your deployment files | nothing in the data, but the instance cannot start the same way; changing `host` breaks every federated URL |
 
 What does not need a backup:
 

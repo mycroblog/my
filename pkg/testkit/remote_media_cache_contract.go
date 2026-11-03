@@ -86,10 +86,12 @@ func (c *cacheEnv) proxyOn(t *testing.T, repo appcontent.MediaRepository, maxSiz
 		Settings: func(context.Context) (appcontent.ProxySettings, error) {
 			c.mu.Lock()
 			defer c.mu.Unlock()
-			return c.settings, nil
+			s := c.settings
+			s.MaxCacheSize = maxSize
+			return s, nil
 		},
 		UnitOfWork: c.h.UnitOfWork, Blobs: c.blobs, Clock: c.clock, ProfileImages: c.referrers,
-		MaxCacheSize: maxSize, Keys: [][]byte{bytes.Repeat([]byte("k"), 32)}, BaseURL: "https://social.example",
+		Keys: [][]byte{bytes.Repeat([]byte("k"), 32)}, BaseURL: "https://social.example",
 		Processor: FakeMediaProcessor{},
 	})
 	if err != nil {

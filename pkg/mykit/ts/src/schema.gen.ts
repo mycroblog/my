@@ -11702,7 +11702,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -11710,10 +11710,11 @@ export interface components {
          *     the username of a local account, or empty for none. `email`: an email address such as
          *     `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
          *     none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
-         *     a leading `@` are accepted), in order, or empty for none.
+         *     a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
+         *     `client_id=requests` pairs, or empty for none.
          * @enum {string}
          */
-        InstanceSettingKind: "bool" | "int" | "enum" | "locale" | "media" | "account" | "email" | "uri" | "accounts";
+        InstanceSettingKind: "bool" | "int" | "enum" | "locale" | "media" | "account" | "email" | "uri" | "accounts" | "client_limits";
         /**
          * @description The key of an instance text: the name (one line), the short and full descriptions,
          *     the terms of service and the privacy policy (Markdown), the alternative texts of the

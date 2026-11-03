@@ -114,7 +114,7 @@ or with `my instance set`. `my config check -instance` warns about the texts, co
   `/.well-known/security.txt`. Verify with `curl -s https://<host>/.well-known/security.txt`.
 - **Terms of service and privacy policy**: `terms` and `privacy_policy`. The privacy policy must name the services that receive
   personal data, such as the CAPTCHA service and the mail provider. Verify the links on `/about` and on the sign-up screen.
-- **Server rules**: what users agree to when they sign up, and what moderators enforce. Add them with `my instance rule add`
+- **Server rules**: what users agree to when they sign up, and what moderators enforce. Add them with `my instance rule create`
   or in the administration screens, and verify them on `/about`.
 - **Registration mode**: `registration_mode` is `approval` until you change it; choose `open`, `approval`, `invite`, or `closed`
   for how people join. With `mail = none`, `open` sign-ups wait for a moderator's approval too.

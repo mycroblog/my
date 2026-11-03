@@ -543,8 +543,8 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
     期限（`expires_at` = 取得時刻 + `remote_media_cache_ttl_seconds`）の内はそこから返し、期限切れ・行がない・Blob がないときは取得し直します。
     取得したファイルは中身で判定した形式とサイズの上限の検査を通したうえで Blob に最後まで書いてから返すので、上限を超えるもの・途中で切れたものは残りも返りもしません。
   - 返した時刻（`last_accessed_at`）は 1 時間より細かくは書きません。返すたびにデータベースへ書かないためです。
-  - 1 時間ごとのジョブ `media.purge_remote_cache` が、期限切れのものを消し、続けて合計サイズが設定 `remote_media_cache_max_bytes`（既定 1 GiB）を超える分を `last_accessed_at` の古い順に消します（FR-803）。
-    容量の上限は Blob の費用に効くので、インスタンス設定ではなく運用者の設定です。1 回の実行で見る行数には上限があり、残りは次の実行が消します。
+  - 1 時間ごとのジョブ `media.purge_remote_cache` が、期限切れのものを消し、続けて合計サイズがインスタンス設定 `remote_media_cache_max_bytes`（既定 1 GiB）を超える分を `last_accessed_at` の古い順に消します（FR-803）。
+    容量の上限は、再起動なしに変えられるようインスタンス設定です。1 回の実行で見る行数には上限があり、残りは次の実行が消します。
     行を消すトランザクションで Blob のキーを `media_blob_deletions` に記録してから Blob を消すので、Blob の削除に失敗してもキーが残って次の実行が消し直し、どこからも指されない Blob は残りません。
     行は読んだときの `fetched_at` のままのときだけ消すので、その間に取得し直したものは行も Blob も残ります。
 - ドメイン単位の `media_fetch` の制限（`reject_media`）は、メディアの所有者のドメインと URL のホストの両方に当て、どちらかが制限されていればプロキシは取得せず 404 を返します。
@@ -768,7 +768,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   - リレーの Actor の `Announce` は、`object` をいつもオリジンから取得し、作者の制限を確かめて、`public` なら取り込んで記録します。ブーストとしては記録しません。
 - 取り込んだ投稿は、ほかのリモートの `public` の投稿と同じく連合タイムラインとハッシュタグのタイムラインに出ます。ホームには出ず、通知も作りません。
 - 関門の結果はメトリクス `my.relay.activities`（`my.outcome` が `admitted` / `over_limit` / `restricted` / `not_receiving`）に出ます。管理画面と CLI は、直近 24 時間の時ごとの件数から、取り込んだ件数（上限まで）と上限で捨てた件数を示します。
-- `relayed_statuses` の投稿は、`content.purge_relayed_statuses` が公開から設定 `relay_status_retention`（既定 7 日）で消します（[data-model §4.4](data-model/04-tables/04-content.md#リモート投稿の保持期間)）。脱退しても、取り込んだ投稿はすぐには消しません。
+- `relayed_statuses` の投稿は、`content.purge_relayed_statuses` が公開から設定 `relay_status_retention_days`（既定 7 日）で消します（[data-model §4.4](data-model/04-tables/04-content.md#リモート投稿の保持期間)）。脱退しても、取り込んだ投稿はすぐには消しません。
 
 ## 14. 連合の向き
 

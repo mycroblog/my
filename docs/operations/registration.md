@@ -181,9 +181,9 @@ The same decisions can be made from the admin screens (the client API). All of t
 Blocks reject registrations from the sign-up page, or switch them to approval, by email domain, email address or IP range.
 
 ```sh
-my admin signup-block add -kind email_domain spam.example          # also applies to subdomains; a U-label works too
-my admin signup-block add -kind ip_range -severity require_approval -duration 720h 192.0.2.0/24
-my admin signup-block add -kind email_hash spammer@example.com     # only a hash of the address is kept
+my admin signup-block create -kind email_domain spam.example          # also applies to subdomains; a U-label works too
+my admin signup-block create -kind ip_range -severity require_approval -duration 720h 192.0.2.0/24
+my admin signup-block create -kind email_hash spammer@example.com     # only a hash of the address is kept
 my admin signup-block list -active
 my admin signup-block lift <block id>
 ```

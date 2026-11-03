@@ -506,7 +506,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err := a.setUpNotification(cfg, repos.notifs, repos.pushes); err != nil {
 		return nil, err
 	}
-	a.setUpRetention(cfg, repos.retention, repos.statuses)
+	a.setUpRetention(repos.retention, repos.statuses)
 	a.setUpProjections(repos.projections, repos.projectionRepositories())
 	if err := a.setUpDataUpgrades(repos.dataUpgrades, opts.DataUpgrades); err != nil {
 		return nil, err
