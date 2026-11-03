@@ -328,7 +328,7 @@ groups:
   - name: my-email
     rules:
       - alert: MyEmailFailing
-        expr: sum(increase(my_job_duration_seconds_count{my_job_type=~".*_email.*", my_outcome="dead"}[1h])) > 0
+        expr: sum(increase(my_job_duration_seconds_count{my_job_type=~".*[._]email.*", my_outcome="dead"}[1h])) > 0
         labels:
           severity: ticket
         annotations:
@@ -337,8 +337,8 @@ groups:
           runbook_url: https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md#myemailfailing
       - alert: MyEmailRetrying
         expr: >-
-          sum(rate(my_job_duration_seconds_count{my_job_type=~".*_email.*", my_outcome="retry"}[15m]))
-            / sum(rate(my_job_duration_seconds_count{my_job_type=~".*_email.*"}[15m])) > 0.5
+          sum(rate(my_job_duration_seconds_count{my_job_type=~".*[._]email.*", my_outcome="retry"}[15m]))
+            / sum(rate(my_job_duration_seconds_count{my_job_type=~".*[._]email.*"}[15m])) > 0.5
         for: 15m
         labels:
           severity: ticket
