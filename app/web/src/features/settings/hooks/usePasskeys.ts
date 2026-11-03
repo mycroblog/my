@@ -96,6 +96,8 @@ export function usePasskeyForm(): PasskeyForm {
       setStatus(t("client:settings.passkeys.added", { name: added.name }));
     },
     onError: async (error) => {
+      // The panel offers the provider again, with why, in place of the form.
+      external.takeBackIfExpired(error);
       // A full list explains the refusal; show it as it is.
       if (passkeyFailure(error) === "too-many") await refreshPasskeys(api, queryClient);
     },

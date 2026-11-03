@@ -166,14 +166,8 @@ export function parseExternalOutcome(hash: string): ExternalOutcome | undefined 
 
 /** The problem types of links that the screen tells apart (api/openapi.yaml, Problem). */
 const lastSignInMethodType = "/api/v1/problems/last-sign-in-method";
-const externalExpiredType = "/api/v1/problems/external-confirmation-expired";
 
 /** Whether an unlink failed because the account is the user's last way to sign in. */
 export function isLastSignInMethod(error: unknown): boolean {
   return error instanceof ApiError && error.type === lastSignInMethodType;
-}
-
-/** Whether an operation failed because its confirmation with a provider expired or was used. */
-export function isExternalConfirmationExpired(error: unknown): boolean {
-  return error instanceof ApiError && error.type === externalExpiredType;
 }
