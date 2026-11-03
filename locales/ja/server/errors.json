@@ -419,6 +419,10 @@
     "defaultMessage": "この投稿は引用できません。",
     "description": "Detail of the HTTP 422 API error when a post quotes a post whose quote policy or visibility does not let the user quote it."
   },
+  "errors.status.quote_remote_audience": {
+    "defaultMessage": "ローカル限定・フォロワー限定・ダイレクトの投稿では、ほかのサーバーの投稿を引用できません。",
+    "description": "Detail of the HTTP 422 API error when a post whose visibility keeps it from other servers quotes a post from another server."
+  },
   "errors.status.reply_not_found": {
     "defaultMessage": "返信先の投稿が見つかりません。",
     "description": "Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see."

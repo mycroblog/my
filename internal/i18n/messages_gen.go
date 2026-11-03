@@ -2299,6 +2299,13 @@ func (l *Localizer) ServerErrorsStatusQuoteNotFound() string {
 	return l.format("server:errors.status.quote_not_found", nil)
 }
 
+// ServerErrorsStatusQuoteRemoteAudience formats "server:errors.status.quote_remote_audience". Detail of the HTTP 422 API error when a post whose visibility keeps it from other servers quotes a post from another server.
+//
+//	en: A local, followers-only, or direct post cannot quote a post from another server.
+func (l *Localizer) ServerErrorsStatusQuoteRemoteAudience() string {
+	return l.format("server:errors.status.quote_remote_audience", nil)
+}
+
 // ServerErrorsStatusReplyNotFound formats "server:errors.status.reply_not_found". Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see.
 //
 //	en: The post you are replying to was not found.

@@ -227,6 +227,13 @@ type QuoteFacts struct {
 	Policy QuotePolicy
 }
 
+// QuotesRemotePosts reports whether a local status of visibility v may quote a remote status
+// (ADR-0146): a quote names the quoting status's IRI to the quoted author's server, which is
+// outside the audience of a local, private, or direct status.
+func QuotesRemotePosts(v Visibility) bool {
+	return v == VisibilityPublic || v == VisibilityUnlisted
+}
+
 // MayQuote decides whether an account may quote a status (ADR-0069 §3, §4). A status the quoter
 // may not see, and a direct status, may not be quoted. A followers-only status is quoted only by
 // its author, in a followers-only or direct status. A local-only status is quoted only by local

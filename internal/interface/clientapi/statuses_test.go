@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -690,3 +691,19 @@ const (
 	sampleMediaID = "01890a5d-ac96-774b-bcce-b302099a9501"
 	otherMediaID  = "01890a5d-ac96-774b-bcce-b302099a9502"
 )
+
+// A quote that the visibility of the new status refuses says why (ADR-0146).
+func TestCreateStatusQuoteRemoteAudience(t *testing.T) {
+	e := newStatusEnv(t, &fakeStatuses{create: func(appcontent.CreateInput) (appcontent.Post, error) {
+		return appcontent.Post{}, fmt.Errorf("status: %w", appcontent.ErrQuoteRemoteAudience)
+	}})
+	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"look","visibility":"private","quoted_status_id":"`+sampleStatusID+`"}`)
+	defer func() { _ = res.Body.Close() }()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(string(body), "ほかのサーバーの投稿を引用できません") {
+		t.Errorf("create = %d %s, want 422 with the reason", res.StatusCode, body)
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -22,6 +23,9 @@ var (
 	ErrQuoteTargetNotFound = errors.New("content: the quoted status is not found")
 	// ErrQuoteNotAllowed reports a status that the author may not quote (content.MayQuote).
 	ErrQuoteNotAllowed = errors.New("content: the status may not be quoted")
+	// ErrQuoteRemoteAudience reports a local, private, or direct status that quotes a remote one
+	// (content.QuotesRemotePosts).
+	ErrQuoteRemoteAudience = errors.New("content: a status of this visibility may not quote a remote status")
 	// ErrInvalidQuotePolicy reports a quote policy that is not one of content's.
 	ErrInvalidQuotePolicy = errors.New("content: invalid quote policy")
 )
@@ -84,7 +88,9 @@ type localQuote struct {
 
 // quoteTarget returns the status that authorID quotes in a status of visibility vis
 // (ADR-0069 §3, §4). A status that does not exist, is deleted, or is hidden from the author fails
-// alike with ErrQuoteTargetNotFound; one that the author may not quote with ErrQuoteNotAllowed.
+// alike with ErrQuoteTargetNotFound; one that the author may not quote with ErrQuoteNotAllowed;
+// a remote one that a status of vis may not quote with ErrQuoteRemoteAudience. A refused quote
+// records nothing, and the status is not created.
 // A quote of a boost is a quote of the boosted status, which the boost's ID does not name.
 func (s *Service) quoteTarget(ctx context.Context, authorID, statusID string, vis content.Visibility) (localQuote, error) {
 	if s.d.Quotes == nil {
@@ -107,6 +113,9 @@ func (s *Service) quoteTarget(ctx context.Context, authorID, statusID string, vi
 	})
 	if allowance == content.QuoteDenied {
 		return localQuote{}, fmt.Errorf("status %s: %w", statusID, ErrQuoteNotAllowed)
+	}
+	if !quoted.IsLocal && !content.QuotesRemotePosts(vis) {
+		return localQuote{}, fmt.Errorf("status %s: %w", statusID, ErrQuoteRemoteAudience)
 	}
 	return localQuote{quoted: quoted, allowance: allowance}, nil
 }
@@ -217,27 +226,32 @@ func (s *Service) FindQuotePolicy(ctx context.Context, statusID string) (content
 	return s.d.Quotes.FindQuotePolicy(ctx, statusID)
 }
 
-// QuotedPageURL returns the HTML page of the quoted status uri, which the fallback of a quote
+// FederatedQuotePage returns the HTML page of the quoted status uri, which the fallback of a quote
 // links (ADR-0069 §3): the page of a stored status, or uri itself for one not stored or without
-// a page.
-func (s *Service) QuotedPageURL(ctx context.Context, uri string) (string, error) {
+// a page. It reports false when a federated Note must not name the quoted status at all: a
+// local-visibility status, whose IRI and author stay within its audience (ADR-0146), and a status
+// of this server that is gone, whose visibility is not known any more.
+func (s *Service) FederatedQuotePage(ctx context.Context, uri string) (string, bool, error) {
 	st, err := s.d.Repository.FindStatusByURI(ctx, uri)
 	if errors.Is(err, ErrNotFound) {
-		return uri, nil
+		return uri, !strings.HasPrefix(uri, "https://"+s.d.Host+"/"), nil
 	}
 	if err != nil {
-		return "", err
+		return "", false, err
+	}
+	if st.Visibility == content.VisibilityLocal {
+		return "", false, nil
 	}
 	var author appaccount.Actor
 	if st.IsLocal {
 		if author, err = s.d.Accounts.FindByID(ctx, st.AuthorAccountID); err != nil && !errors.Is(err, appaccount.ErrNotFound) {
-			return "", err
+			return "", false, err
 		}
 	}
 	if page := StatusPageURL(s.d.Host, st, author); page != "" {
-		return page, nil
+		return page, true, nil
 	}
-	return uri, nil
+	return uri, true, nil
 }
 
 // RejectQuote records that the quoted author's server refused the quote of the live status
