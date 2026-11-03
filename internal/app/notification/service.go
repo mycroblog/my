@@ -65,6 +65,9 @@ type Query struct {
 	After string
 	// Limit is the page size; zero or less means DefaultPageLimit, and it is capped at MaxPageLimit.
 	Limit int
+	// WithoutModerator leaves out every moderator notification, whatever the roles of the user: a
+	// third-party client does not get them (ADR-0143).
+	WithoutModerator bool
 }
 
 func (q Query) limit() int {
@@ -91,7 +94,7 @@ func (s *Service) List(ctx context.Context, accountID string, q Query) ([]notifi
 			return nil, fmt.Errorf("type %q: %w", t, notification.ErrInvalidType)
 		}
 	}
-	hidden, err := s.hidden(ctx, accountID)
+	hidden, err := s.hidden(ctx, accountID, q.WithoutModerator)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +108,7 @@ func (s *Service) List(ctx context.Context, accountID string, q Query) ([]notifi
 // accountID, is not dismissed, and no block, mute, domain mute, deleted status, lost
 // permission, or withdrawn or ended announcement hides it. The Web Push job checks it before sending.
 func (s *Service) Listed(ctx context.Context, accountID, id string) (bool, error) {
-	hidden, err := s.hidden(ctx, accountID)
+	hidden, err := s.hidden(ctx, accountID, false)
 	if err != nil {
 		return false, err
 	}
@@ -123,13 +126,13 @@ func (s *Service) ReadMarker(ctx context.Context, accountID string) (notificatio
 }
 
 // UnreadCount returns the number of accountID's notifications that List would return and that
-// are newer than its read marker.
-func (s *Service) UnreadCount(ctx context.Context, accountID string) (int64, error) {
+// are newer than its read marker; withoutModerator counts as Query.WithoutModerator lists.
+func (s *Service) UnreadCount(ctx context.Context, accountID string, withoutModerator bool) (int64, error) {
 	m, err := s.ReadMarker(ctx, accountID)
 	if err != nil {
 		return 0, err
 	}
-	hidden, err := s.hidden(ctx, accountID)
+	hidden, err := s.hidden(ctx, accountID, withoutModerator)
 	if err != nil {
 		return 0, err
 	}
@@ -137,11 +140,11 @@ func (s *Service) UnreadCount(ctx context.Context, accountID string) (int64, err
 }
 
 // hidden returns what the reads of accountID's notifications leave out now: the types of the
-// moderator notifications that accountID's user no longer has the permission for, and every
-// announcement but those that the users see now.
-func (s *Service) hidden(ctx context.Context, accountID string) (Hidden, error) {
+// moderator notifications that accountID's user no longer has the permission for, all of them
+// with withoutModerator, and every announcement but those that the users see now.
+func (s *Service) hidden(ctx context.Context, accountID string, withoutModerator bool) (Hidden, error) {
 	var granted []notification.Permission
-	if s.d.Staff != nil {
+	if s.d.Staff != nil && !withoutModerator {
 		var err error
 		if granted, err = s.d.Staff.GrantedPermissions(ctx, accountID); err != nil {
 			return Hidden{}, fmt.Errorf("notification: the permissions of %s: %w", accountID, err)

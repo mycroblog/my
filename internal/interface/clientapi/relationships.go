@@ -12,6 +12,7 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/domain/graph"
+	"github.com/mycroblog/my/internal/domain/identity"
 )
 
 // Graph is the part of the graph module's public API that the client API uses: follows,
@@ -52,27 +53,34 @@ const ProblemTypeBlocking = "/api/v1/problems/blocking"
 // maxMuteSeconds is the longest mute duration of the spec (MuteAccountRequest.duration).
 const maxMuteSeconds = 365 * 24 * 60 * 60
 
-// newRelationship presents a relationship as the Relationship schema, with notify, whether the
-// account subscribes to the target's new posts. It leaves out BlockedBy: an account that blocks
-// the viewer is not found at all.
-func newRelationship(r appgraph.Relationship, notify bool) Relationship {
-	return Relationship{
-		Id:                  r.TargetAccountID,
-		Following:           r.Following == graph.StateActive,
-		Requested:           r.Following == graph.StatePending,
-		FollowedBy:          r.FollowedBy == graph.StateActive,
-		RequestedBy:         r.FollowedBy == graph.StatePending,
-		ShowBoosts:          r.ShowBoosts,
-		Notify:              notify,
-		Blocking:            r.Blocking,
-		Muting:              r.Muting,
-		MutingNotifications: r.MutingNotifications,
+// newRelationship presents a relationship as the Relationship schema for the token scope, with
+// notify, whether the account subscribes to the target's new posts. A token sees the fields of the
+// lists that its scopes read or change: the follows, the blocks, and the mutes each have their own
+// scopes, and a relationship must not show one list to a token of another. It leaves out
+// BlockedBy: an account that blocks the viewer is not found at all.
+func newRelationship(scope identity.Scope, r appgraph.Relationship, notify bool) Relationship {
+	out := Relationship{Id: r.TargetAccountID}
+	if scope.Grants(identity.ScopeReadFollows) || scope.Grants(identity.ScopeWriteFollows) {
+		out.Following = new(r.Following == graph.StateActive)
+		out.Requested = new(r.Following == graph.StatePending)
+		out.FollowedBy = new(r.FollowedBy == graph.StateActive)
+		out.RequestedBy = new(r.FollowedBy == graph.StatePending)
+		out.ShowBoosts = new(r.ShowBoosts)
+		out.Notify = new(notify)
 	}
+	if scope.Grants(identity.ScopeReadBlocks) || scope.Grants(identity.ScopeWriteBlocks) {
+		out.Blocking = new(r.Blocking)
+	}
+	if scope.Grants(identity.ScopeReadMutes) || scope.Grants(identity.ScopeWriteMutes) {
+		out.Muting = new(r.Muting)
+		out.MutingNotifications = new(r.MutingNotifications)
+	}
+	return out
 }
 
-func relationshipResponse(r appgraph.Relationship, notify bool) RelationshipJSONResponse {
+func relationshipResponse(scope identity.Scope, r appgraph.Relationship, notify bool) RelationshipJSONResponse {
 	cache := cacheNoStore
-	return RelationshipJSONResponse{Body: newRelationship(r, notify), Headers: RelationshipResponseHeaders{CacheControl: &cache}}
+	return RelationshipJSONResponse{Body: newRelationship(scope, r, notify), Headers: RelationshipResponseHeaders{CacheControl: &cache}}
 }
 
 // graphProblem returns the problem that a graph use case's error means, and false for an
@@ -102,14 +110,26 @@ func (s *Server) relate(ctx context.Context, targetID string, change func(v View
 	return s.relateGuarded(ctx, targetID, nil, change)
 }
 
+// relateDespiteBlock is relate for the changes that a user may make to an account that blocks
+// them: blocking it back, and undoing their own block or mute of it. The answer reveals nothing
+// new, because a Relationship never tells that the account blocks the viewer.
+func (s *Server) relateDespiteBlock(ctx context.Context, targetID string, change func(v Viewer) (appgraph.Relationship, error)) (*RelationshipJSONResponse, *problem, error) {
+	return s.relateTo(ctx, targetID, false, nil, change)
+}
+
 // relateGuarded is relate with guard, which runs on the visible account before change and
 // returns the problem that refuses the change, or nil; a nil guard refuses nothing.
 func (s *Server) relateGuarded(ctx context.Context, targetID string, guard func(ctx context.Context, v Viewer, a appaccount.Actor) (*problem, error), change func(v Viewer) (appgraph.Relationship, error)) (*RelationshipJSONResponse, *problem, error) {
+	return s.relateTo(ctx, targetID, true, guard, change)
+}
+
+// relateTo is relateGuarded; blockCheck makes an account that blocks the viewer a 404.
+func (s *Server) relateTo(ctx context.Context, targetID string, blockCheck bool, guard func(ctx context.Context, v Viewer, a appaccount.Actor) (*problem, error), change func(v Viewer) (appgraph.Relationship, error)) (*RelationshipJSONResponse, *problem, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	a, ok, err := s.visibleAccount(ctx, &v, targetID)
+	a, ok, err := s.presentableByID(ctx, &v, targetID, blockCheck)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -140,7 +160,7 @@ func (s *Server) relateGuarded(ctx context.Context, targetID string, guard func(
 	if err != nil {
 		return nil, nil, err
 	}
-	res := relationshipResponse(r, notify)
+	res := relationshipResponse(v.Scope, r, notify)
 	return &res, nil, nil
 }
 
@@ -176,7 +196,7 @@ func (s *Server) GetRelationships(ctx context.Context, req GetRelationshipsReque
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, newRelationship(r, notify))
+		out = append(out, newRelationship(v.Scope, r, notify))
 	}
 	cache := cacheNoStore
 	return GetRelationships200JSONResponse{Body: out, Headers: GetRelationships200ResponseHeaders{CacheControl: &cache}}, nil
@@ -299,7 +319,7 @@ func (s *Server) RejectFollowRequest(ctx context.Context, req RejectFollowReques
 
 // BlockAccount serves POST /api/v1/accounts/{id}/block.
 func (s *Server) BlockAccount(ctx context.Context, req BlockAccountRequestObject) (BlockAccountResponseObject, error) {
-	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
+	res, p, err := s.relateDespiteBlock(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.Block(ctx, v.AccountID, req.Id)
 	})
 	switch {
@@ -313,7 +333,7 @@ func (s *Server) BlockAccount(ctx context.Context, req BlockAccountRequestObject
 
 // UnblockAccount serves POST /api/v1/accounts/{id}/unblock.
 func (s *Server) UnblockAccount(ctx context.Context, req UnblockAccountRequestObject) (UnblockAccountResponseObject, error) {
-	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
+	res, p, err := s.relateDespiteBlock(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.Unblock(ctx, v.AccountID, req.Id)
 	})
 	switch {
@@ -353,7 +373,7 @@ func (s *Server) MuteAccount(ctx context.Context, req MuteAccountRequestObject) 
 
 // UnmuteAccount serves POST /api/v1/accounts/{id}/unmute.
 func (s *Server) UnmuteAccount(ctx context.Context, req UnmuteAccountRequestObject) (UnmuteAccountResponseObject, error) {
-	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
+	res, p, err := s.relateDespiteBlock(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
 		return s.o.Graph.Unmute(ctx, v.AccountID, req.Id)
 	})
 	switch {

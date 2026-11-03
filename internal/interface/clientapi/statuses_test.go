@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -64,12 +65,12 @@ func (f *fakeStatuses) SetQuotePolicy(_ context.Context, accountID, id string, p
 	return content.StatusQuotePolicy{StatusID: id, Policy: p}, f.do("quote_policy:"+string(p), accountID, id)
 }
 
-func (f *fakeStatuses) Quotes(_ context.Context, accountID, id, _ string, _ int) (appcontent.QuotesPage, error) {
-	view, err := f.View(context.Background(), appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: accountID}, sampleStatusID)
+func (f *fakeStatuses) Quotes(_ context.Context, v appcontent.Viewer, id, _ string, _ int) (appcontent.QuotesPage, error) {
+	view, err := f.View(context.Background(), v, sampleStatusID)
 	if err != nil {
 		return appcontent.QuotesPage{}, err
 	}
-	return appcontent.QuotesPage{Statuses: []appcontent.StatusView{view}}, f.do("quotes", accountID, id)
+	return appcontent.QuotesPage{Statuses: []appcontent.StatusView{view}}, f.do("quotes", v.AccountID, id)
 }
 
 func (f *fakeStatuses) RevokeQuote(_ context.Context, accountID, quoted, quoting string) error {
@@ -90,6 +91,16 @@ func (f *fakeStatuses) View(_ context.Context, v appcontent.Viewer, id string) (
 	return f.view(v, id)
 }
 
+func (f *fakeStatuses) Visible(ctx context.Context, v appcontent.Viewer, id string) (content.Status, error) {
+	view, err := f.View(ctx, v, id)
+	return view.Status, err
+}
+
+func (f *fakeStatuses) Live(ctx context.Context, id string) error {
+	_, err := f.View(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal}, id)
+	return err
+}
+
 func (f *fakeStatuses) Thread(_ context.Context, v appcontent.Viewer, id string) (appcontent.Thread, error) {
 	view, err := f.View(context.Background(), v, id)
 	if err != nil {
@@ -106,16 +117,16 @@ func (f *fakeStatuses) History(_ context.Context, v appcontent.Viewer, id string
 	return []appcontent.RevisionView{{Revision: view.Revision, Attachments: view.Attachments}}, nil
 }
 
-func (f *fakeStatuses) Source(_ context.Context, accountID, id string) (content.Revision, error) {
-	view, err := f.View(context.Background(), appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: accountID}, id)
+func (f *fakeStatuses) Source(_ context.Context, v appcontent.Viewer, id string) (content.Revision, error) {
+	view, err := f.View(context.Background(), v, id)
 	if err != nil {
 		return content.Revision{}, err
 	}
 	return view.Revision, nil
 }
 
-func (f *fakeStatuses) Bookmarks(_ context.Context, accountID, _ string, limit int) (appcontent.BookmarkPage, error) {
-	view, err := f.View(context.Background(), appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: accountID}, sampleStatusID)
+func (f *fakeStatuses) Bookmarks(_ context.Context, v appcontent.Viewer, _ string, limit int) (appcontent.BookmarkPage, error) {
+	view, err := f.View(context.Background(), v, sampleStatusID)
 	if errors.Is(err, appcontent.ErrNotFound) {
 		return appcontent.BookmarkPage{}, nil
 	}
@@ -450,7 +461,7 @@ func TestStatusProblems(t *testing.T) {
 		{http.MethodPost, "/boost", appcontent.ErrPostingRestricted, "現在、あなたのアカウントは投稿できません。"},
 	}
 	for _, tc := range interactions {
-		e := newStatusEnv(t, &fakeStatuses{interact: func(string, string, string) error { return tc.err }})
+		e := newStatusEnv(t, &fakeStatuses{view: func(v appcontent.Viewer, _ string) (appcontent.StatusView, error) { return sampleView(v), nil }, interact: func(string, string, string) error { return tc.err }})
 		res := e.send(t, tc.method, "/statuses/"+sampleStatusID+tc.path, "write", "")
 		p := decodeProblem(t, res)
 		want := http.StatusUnprocessableEntity
@@ -690,3 +701,19 @@ const (
 	sampleMediaID = "01890a5d-ac96-774b-bcce-b302099a9501"
 	otherMediaID  = "01890a5d-ac96-774b-bcce-b302099a9502"
 )
+
+// A quote that the visibility of the new status refuses says why (ADR-0144 §4).
+func TestCreateStatusQuoteRemoteAudience(t *testing.T) {
+	e := newStatusEnv(t, &fakeStatuses{create: func(appcontent.CreateInput) (appcontent.Post, error) {
+		return appcontent.Post{}, fmt.Errorf("status: %w", appcontent.ErrQuoteRemoteAudience)
+	}})
+	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"look","visibility":"private","quoted_status_id":"`+sampleStatusID+`"}`)
+	defer func() { _ = res.Body.Close() }()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(string(body), "ほかのサーバーの投稿を引用できません") {
+		t.Errorf("create = %d %s, want 422 with the reason", res.StatusCode, body)
+	}
+}

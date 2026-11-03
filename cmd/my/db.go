@@ -43,7 +43,9 @@ func runDB(args []string, stdout, stderr io.Writer) int {
 		printLoadError(stderr, err)
 		return 1
 	}
-	app, err := platform.NewApp(ctx, cfg, dbAppOptions)
+	opts := dbAppOptions
+	opts.CheckDomainsOnly = *check
+	app, err := platform.NewApp(ctx, cfg, opts)
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "%s: %v\n", name, err)
 		return 1

@@ -5788,7 +5788,8 @@ type AdminReport struct {
 	// StatusIds The IDs of the target's posts that the report points at.
 	StatusIds []Id `json:"status_ids"`
 
-	// TargetAccount The account reported; omitted when the account is gone.
+	// TargetAccount The account reported, even when it is suspended or blocks the reporter; omitted when the
+	// account is gone.
 	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -5860,7 +5861,8 @@ type AdminReportDetail struct {
 	// review. A post that the server no longer has is left out.
 	Statuses []AdminReportStatus `json:"statuses"`
 
-	// TargetAccount The account reported; omitted when the account is gone.
+	// TargetAccount The account reported, even when it is suspended or blocks the reporter; omitted when the
+	// account is gone.
 	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// TargetAccountId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -7699,7 +7701,9 @@ type CreateStatusRequest struct {
 	QuotePolicy *QuotePolicy `json:"quote_policy,omitempty"`
 
 	// QuotedStatusId The status to quote (FR-114, ADR-0069). It must be one the user may see and may quote
-	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. Quoting a
+	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
+	// `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
+	// is created (ADR-0144 §4). Quoting a
 	// remote status while the instance does not send posts out (`Instance.federation.mode`
 	// `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
 	QuotedStatusId *Id `json:"quoted_status_id,omitempty"`
@@ -11175,7 +11179,8 @@ type PushSubscriptionKeys struct {
 
 // PushSubscriptionRequest A browser's push subscription and the notification types to push to it.
 type PushSubscriptionRequest struct {
-	// Alerts The notification types to push, each at most once; empty pushes none.
+	// Alerts The notification types to push, each at most once; empty pushes none. A third-party
+	// client's subscription leaves out the moderator notification types.
 	Alerts []NotificationType `json:"alerts"`
 
 	// Endpoint The push service URL (`PushSubscription.endpoint`), an `https` URL.
@@ -11268,15 +11273,21 @@ type RejectCustomEmojiRequestRequest struct {
 
 // Relationship The viewer's relationship with an account. It never says whether the account blocks
 // the viewer: such an account is not found at all.
+//
+// A token sees the fields its scopes cover, wherever the relationship comes from, and the
+// rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
+// `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
+// `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
+// `read:mutes` or `write:mutes`.
 type Relationship struct {
 	// Blocking Whether the viewer blocks the account.
-	Blocking bool `json:"blocking"`
+	Blocking *bool `json:"blocking,omitempty"`
 
 	// FollowedBy Whether the account actively follows the viewer.
-	FollowedBy bool `json:"followed_by"`
+	FollowedBy *bool `json:"followed_by,omitempty"`
 
 	// Following Whether the viewer actively follows the account.
-	Following bool `json:"following"`
+	Following *bool `json:"following,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
@@ -11284,24 +11295,24 @@ type Relationship struct {
 	Id Id `json:"id"`
 
 	// Muting Whether the viewer mutes the account (a mute that has not expired).
-	Muting bool `json:"muting"`
+	Muting *bool `json:"muting,omitempty"`
 
 	// MutingNotifications Whether the viewer's mute also hides the account's notifications.
-	MutingNotifications bool `json:"muting_notifications"`
+	MutingNotifications *bool `json:"muting_notifications,omitempty"`
 
 	// Notify Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
 	// without a follow. A subscription asked for with a follow request to an account on another
 	// server is false until that server accepts the follow.
-	Notify bool `json:"notify"`
+	Notify *bool `json:"notify,omitempty"`
 
 	// Requested Whether the viewer's follow request awaits the account's approval.
-	Requested bool `json:"requested"`
+	Requested *bool `json:"requested,omitempty"`
 
 	// RequestedBy Whether the account's follow request awaits the viewer's approval.
-	RequestedBy bool `json:"requested_by"`
+	RequestedBy *bool `json:"requested_by,omitempty"`
 
 	// ShowBoosts Whether the viewer's follow shows the account's boosts in the home timeline (true without a follow).
-	ShowBoosts bool `json:"show_boosts"`
+	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
 // RelationshipSeverance The follows that a `relationships_severed` tells of: the user lost them when the
@@ -16239,7 +16250,9 @@ type ClientInterface interface {
 	// GetRelationships Get the viewer's relationships with accounts
 	//
 	// Returns one relationship per requested account, in the order of the request. Accounts
-	// that do not exist, are not active, or block the viewer are left out.
+	// that do not exist, are not active, or block the viewer are left out. `blocking` needs
+	// `read:blocks` and `muting` and `muting_notifications` need `read:mutes` as well: without
+	// them the fields are absent.
 	//
 	// Corresponds with GET /accounts/relationships (the `GetRelationships` operationId).
 	GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -16325,7 +16338,8 @@ type ClientInterface interface {
 	//
 	// Ends the follows between the viewer and the account in both directions and keeps
 	// either from following the other until the block is lifted (FR-303). Blocking an
-	// account that the viewer already blocks changes nothing. Blocking a remote account
+	// account that the viewer already blocks changes nothing, and an account that blocks the
+	// viewer can be blocked back. Blocking a remote account
 	// also sends a Block to its server.
 	//
 	// Corresponds with POST /accounts/{id}/block (the `BlockAccount` operationId).
@@ -16432,6 +16446,9 @@ type ClientInterface interface {
 	// that it did. It does at most once a day per account, for at most 30 accounts per viewer
 	// in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 	//
+	// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+	// deleted account, the instance actor, and an account that blocks the viewer.
+	//
 	// Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
 	ListAccountStatuses(ctx context.Context, id Id, params *ListAccountStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -16450,7 +16467,8 @@ type ClientInterface interface {
 
 	// UnblockAccount Unblock an account
 	//
-	// The follows that the block ended stay ended. Without a block it changes nothing.
+	// The follows that the block ended stay ended. Without a block it changes nothing. It also
+	// works on an account that blocks the user.
 	//
 	// Corresponds with POST /accounts/{id}/unblock (the `UnblockAccount` operationId).
 	UnblockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -16464,7 +16482,7 @@ type ClientInterface interface {
 
 	// UnmuteAccount Unmute an account
 	//
-	// Without a mute it changes nothing.
+	// Without a mute it changes nothing. It also works on an account that blocks the user.
 	//
 	// Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
 	UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20412,7 +20430,9 @@ type ClientInterface interface {
 	// The reports that the user filed, newest first, each with whether it is still open or
 	// resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 	// a report was resolved, which actions it led to, the reasons given to the account, or
-	// who handles it.
+	// who handles it. A report shows its target even when the account is suspended or blocks
+	// the user. A report whose target no longer exists is left out, so a page may hold fewer
+	// reports than `limit` and still have a `next_cursor`.
 	//
 	// Corresponds with GET /reports (the `ListOwnReports` operationId).
 	ListOwnReports(ctx context.Context, params *ListOwnReportsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20670,7 +20690,8 @@ type ClientInterface interface {
 	// The statuses that quote a status of the user, newest first, each with its `quote` and
 	// its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
 	// out, so a page may hold fewer than `limit` statuses before the last. Another account's
-	// status is a 404.
+	// status is a 404, and so is the user's own `direct` status without `read:direct`, which
+	// also leaves out the `direct` statuses that quote one.
 	//
 	// Corresponds with GET /statuses/{id}/quotes (the `ListStatusQuotes` operationId).
 	ListStatusQuotes(ctx context.Context, id StatusId, params *ListStatusQuotesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20731,7 +20752,8 @@ type ClientInterface interface {
 
 	// GetStatusSource Get the source of the authenticated user's status, for editing it
 	//
-	// Another account's status is a 404, the same as a missing one.
+	// Another account's status is a 404, the same as a missing one, and so is a `direct` status
+	// without `read:direct`.
 	//
 	// Corresponds with GET /statuses/{id}/source (the `GetStatusSource` operationId).
 	GetStatusSource(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21923,7 +21945,9 @@ func (c *Client) RemovePassword(ctx context.Context, body RemovePasswordJSONRequ
 // GetRelationships Get the viewer's relationships with accounts
 //
 // Returns one relationship per requested account, in the order of the request. Accounts
-// that do not exist, are not active, or block the viewer are left out.
+// that do not exist, are not active, or block the viewer are left out. `blocking` needs
+// `read:blocks` and `muting` and `muting_notifications` need `read:mutes` as well: without
+// them the fields are absent.
 //
 // Corresponds with GET /accounts/relationships (the `GetRelationships` operationId).
 func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -22079,7 +22103,8 @@ func (c *Client) GetAccount(ctx context.Context, id AccountId, reqEditors ...Req
 //
 // Ends the follows between the viewer and the account in both directions and keeps
 // either from following the other until the block is lifted (FR-303). Blocking an
-// account that the viewer already blocks changes nothing. Blocking a remote account
+// account that the viewer already blocks changes nothing, and an account that blocks the
+// viewer can be blocked back. Blocking a remote account
 // also sends a Block to its server.
 //
 // Corresponds with POST /accounts/{id}/block (the `BlockAccount` operationId).
@@ -22276,6 +22301,9 @@ func (c *Client) RemoveAccountFromFollowers(ctx context.Context, id AccountId, r
 // that it did. It does at most once a day per account, for at most 30 accounts per viewer
 // in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 //
+// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+// deleted account, the instance actor, and an account that blocks the viewer.
+//
 // Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
 func (c *Client) ListAccountStatuses(ctx context.Context, id Id, params *ListAccountStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAccountStatusesRequest(c.Server, id, params)
@@ -22314,7 +22342,8 @@ func (c *Client) SubscribeAccount(ctx context.Context, id AccountId, reqEditors 
 
 // UnblockAccount Unblock an account
 //
-// The follows that the block ended stay ended. Without a block it changes nothing.
+// The follows that the block ended stay ended. Without a block it changes nothing. It also
+// works on an account that blocks the user.
 //
 // Corresponds with POST /accounts/{id}/unblock (the `UnblockAccount` operationId).
 func (c *Client) UnblockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -22348,7 +22377,7 @@ func (c *Client) UnfollowAccount(ctx context.Context, id AccountId, reqEditors .
 
 // UnmuteAccount Unmute an account
 //
-// Without a mute it changes nothing.
+// Without a mute it changes nothing. It also works on an account that blocks the user.
 //
 // Corresponds with POST /accounts/{id}/unmute (the `UnmuteAccount` operationId).
 func (c *Client) UnmuteAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -29516,7 +29545,9 @@ func (c *Client) PutPushSubscription(ctx context.Context, body PutPushSubscripti
 // The reports that the user filed, newest first, each with whether it is still open or
 // resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 // a report was resolved, which actions it led to, the reasons given to the account, or
-// who handles it.
+// who handles it. A report shows its target even when the account is suspended or blocks
+// the user. A report whose target no longer exists is left out, so a page may hold fewer
+// reports than `limit` and still have a `next_cursor`.
 //
 // Corresponds with GET /reports (the `ListOwnReports` operationId).
 func (c *Client) ListOwnReports(ctx context.Context, params *ListOwnReportsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30034,7 +30065,8 @@ func (c *Client) SetStatusQuotePolicy(ctx context.Context, id StatusId, body Set
 // The statuses that quote a status of the user, newest first, each with its `quote` and
 // its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
 // out, so a page may hold fewer than `limit` statuses before the last. Another account's
-// status is a 404.
+// status is a 404, and so is the user's own `direct` status without `read:direct`, which
+// also leaves out the `direct` statuses that quote one.
 //
 // Corresponds with GET /statuses/{id}/quotes (the `ListStatusQuotes` operationId).
 func (c *Client) ListStatusQuotes(ctx context.Context, id StatusId, params *ListStatusQuotesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30155,7 +30187,8 @@ func (c *Client) ListStatusReactions(ctx context.Context, id StatusId, params *L
 
 // GetStatusSource Get the source of the authenticated user's status, for editing it
 //
-// Another account's status is a 404, the same as a missing one.
+// Another account's status is a 404, the same as a missing one, and so is a `direct` status
+// without `read:direct`.
 //
 // Corresponds with GET /statuses/{id}/source (the `GetStatusSource` operationId).
 func (c *Client) GetStatusSource(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -47177,7 +47210,9 @@ type ClientWithResponsesInterface interface {
 	// GetRelationshipsWithResponse Get the viewer's relationships with accounts
 	//
 	// Returns one relationship per requested account, in the order of the request. Accounts
-	// that do not exist, are not active, or block the viewer are left out.
+	// that do not exist, are not active, or block the viewer are left out. `blocking` needs
+	// `read:blocks` and `muting` and `muting_notifications` need `read:mutes` as well: without
+	// them the fields are absent.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -47273,7 +47308,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Ends the follows between the viewer and the account in both directions and keeps
 	// either from following the other until the block is lifted (FR-303). Blocking an
-	// account that the viewer already blocks changes nothing. Blocking a remote account
+	// account that the viewer already blocks changes nothing, and an account that blocks the
+	// viewer can be blocked back. Blocking a remote account
 	// also sends a Block to its server.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47390,6 +47426,9 @@ type ClientWithResponsesInterface interface {
 	// that it did. It does at most once a day per account, for at most 30 accounts per viewer
 	// in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 	//
+	// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+	// deleted account, the instance actor, and an account that blocks the viewer.
+	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
@@ -47412,7 +47451,8 @@ type ClientWithResponsesInterface interface {
 
 	// UnblockAccountWithResponse Unblock an account
 	//
-	// The follows that the block ended stay ended. Without a block it changes nothing.
+	// The follows that the block ended stay ended. Without a block it changes nothing. It also
+	// works on an account that blocks the user.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -47430,7 +47470,7 @@ type ClientWithResponsesInterface interface {
 
 	// UnmuteAccountWithResponse Unmute an account
 	//
-	// Without a mute it changes nothing.
+	// Without a mute it changes nothing. It also works on an account that blocks the user.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -51728,7 +51768,9 @@ type ClientWithResponsesInterface interface {
 	// The reports that the user filed, newest first, each with whether it is still open or
 	// resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 	// a report was resolved, which actions it led to, the reasons given to the account, or
-	// who handles it.
+	// who handles it. A report shows its target even when the account is suspended or blocks
+	// the user. A report whose target no longer exists is left out, so a page may hold fewer
+	// reports than `limit` and still have a `next_cursor`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52018,7 +52060,8 @@ type ClientWithResponsesInterface interface {
 	// The statuses that quote a status of the user, newest first, each with its `quote` and
 	// its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
 	// out, so a page may hold fewer than `limit` statuses before the last. Another account's
-	// status is a 404.
+	// status is a 404, and so is the user's own `direct` status without `read:direct`, which
+	// also leaves out the `direct` statuses that quote one.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52087,7 +52130,8 @@ type ClientWithResponsesInterface interface {
 
 	// GetStatusSourceWithResponse Get the source of the authenticated user's status, for editing it
 	//
-	// Another account's status is a 404, the same as a missing one.
+	// Another account's status is a 404, the same as a missing one, and so is a `direct` status
+	// without `read:direct`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -75964,7 +76008,9 @@ func (c *ClientWithResponses) RemovePasswordWithResponse(ctx context.Context, bo
 // GetRelationshipsWithResponse Get the viewer's relationships with accounts
 //
 // Returns one relationship per requested account, in the order of the request. Accounts
-// that do not exist, are not active, or block the viewer are left out.
+// that do not exist, are not active, or block the viewer are left out. `blocking` needs
+// `read:blocks` and `muting` and `muting_notifications` need `read:mutes` as well: without
+// them the fields are absent.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -76102,7 +76148,8 @@ func (c *ClientWithResponses) GetAccountWithResponse(ctx context.Context, id Acc
 //
 // Ends the follows between the viewer and the account in both directions and keeps
 // either from following the other until the block is lifted (FR-303). Blocking an
-// account that the viewer already blocks changes nothing. Blocking a remote account
+// account that the viewer already blocks changes nothing, and an account that blocks the
+// viewer can be blocked back. Blocking a remote account
 // also sends a Block to its server.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -76273,6 +76320,9 @@ func (c *ClientWithResponses) RemoveAccountFromFollowersWithResponse(ctx context
 // that it did. It does at most once a day per account, for at most 30 accounts per viewer
 // in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 //
+// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+// deleted account, the instance actor, and an account that blocks the viewer.
+//
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
@@ -76307,7 +76357,8 @@ func (c *ClientWithResponses) SubscribeAccountWithResponse(ctx context.Context, 
 
 // UnblockAccountWithResponse Unblock an account
 //
-// The follows that the block ended stay ended. Without a block it changes nothing.
+// The follows that the block ended stay ended. Without a block it changes nothing. It also
+// works on an account that blocks the user.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -76337,7 +76388,7 @@ func (c *ClientWithResponses) UnfollowAccountWithResponse(ctx context.Context, i
 
 // UnmuteAccountWithResponse Unmute an account
 //
-// Without a mute it changes nothing.
+// Without a mute it changes nothing. It also works on an account that blocks the user.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -82567,7 +82618,9 @@ func (c *ClientWithResponses) PutPushSubscriptionWithResponse(ctx context.Contex
 // The reports that the user filed, newest first, each with whether it is still open or
 // resolved (FR-711). A report reopened by the moderators is open again. It never tells how
 // a report was resolved, which actions it led to, the reasons given to the account, or
-// who handles it.
+// who handles it. A report shows its target even when the account is suspended or blocks
+// the user. A report whose target no longer exists is left out, so a page may hold fewer
+// reports than `limit` and still have a `next_cursor`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83013,7 +83066,8 @@ func (c *ClientWithResponses) SetStatusQuotePolicyWithResponse(ctx context.Conte
 // The statuses that quote a status of the user, newest first, each with its `quote` and
 // its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
 // out, so a page may hold fewer than `limit` statuses before the last. Another account's
-// status is a 404.
+// status is a 404, and so is the user's own `direct` status without `read:direct`, which
+// also leaves out the `direct` statuses that quote one.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83118,7 +83172,8 @@ func (c *ClientWithResponses) ListStatusReactionsWithResponse(ctx context.Contex
 
 // GetStatusSourceWithResponse Get the source of the authenticated user's status, for editing it
 //
-// Another account's status is a 404, the same as a missing one.
+// Another account's status is a 404, the same as a missing one, and so is a `direct` status
+// without `read:direct`.
 //
 // Returns a wrapper object for the known response body format(s).
 //

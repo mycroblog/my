@@ -192,42 +192,42 @@ func TestClientAPIAccounts(t *testing.T) {
 	}
 
 	// Following a locked account is a request until the account accepts it.
-	if r := e.relate("follow", alice, bob, nil); r.Following || !r.Requested {
+	if r := e.relate("follow", alice, bob, nil); set(r.Following) || !set(r.Requested) {
 		t.Errorf("follow locked = %+v, want requested", r)
 	}
-	if r := e.relate("follow", alice, bob, nil); r.Following || !r.Requested {
+	if r := e.relate("follow", alice, bob, nil); set(r.Following) || !set(r.Requested) {
 		t.Errorf("follow locked again = %+v, want still requested", r)
 	}
 	if p := e.page("/follow_requests", bob.token); !slices.Equal(ids(p.Accounts), []string{alice.id}) || p.NextCursor != nil {
 		t.Errorf("bob's follow requests = %v", ids(p.Accounts))
 	}
-	if rs := e.relationships(bob, alice.id); len(rs) != 1 || !rs[0].RequestedBy || rs[0].FollowedBy {
+	if rs := e.relationships(bob, alice.id); len(rs) != 1 || !set(rs[0].RequestedBy) || set(rs[0].FollowedBy) {
 		t.Errorf("bob's relationship with alice = %+v", rs)
 	}
 	var r clientapi.Relationship
 	e.want(e.do(http.MethodPost, "/follow_requests/"+alice.id+"/authorize", bob.token, nil, &r), http.StatusOK, "authorize")
-	if !r.FollowedBy || r.RequestedBy || r.Id != alice.id {
+	if !set(r.FollowedBy) || set(r.RequestedBy) || r.Id != alice.id {
 		t.Errorf("authorize = %+v, want followed by alice", r)
 	}
-	if rs := e.relationships(alice, bob.id, carol.id, bob.id); len(rs) != 2 || !rs[0].Following || rs[0].Id != bob.id || rs[1].Following {
+	if rs := e.relationships(alice, bob.id, carol.id, bob.id); len(rs) != 2 || !set(rs[0].Following) || rs[0].Id != bob.id || set(rs[1].Following) {
 		t.Errorf("alice's relationships = %+v", rs)
 	}
 
 	// Rejecting declines the request; without one it is a 404.
-	if r := e.relate("follow", carol, bob, nil); !r.Requested {
+	if r := e.relate("follow", carol, bob, nil); !set(r.Requested) {
 		t.Errorf("carol follows bob = %+v", r)
 	}
 	e.want(e.do(http.MethodPost, "/follow_requests/"+carol.id+"/reject", bob.token, nil, &r), http.StatusOK, "reject")
-	if r.RequestedBy || r.FollowedBy {
+	if set(r.RequestedBy) || set(r.FollowedBy) {
 		t.Errorf("reject = %+v", r)
 	}
 	e.want(e.do(http.MethodPost, "/follow_requests/"+carol.id+"/reject", bob.token, nil, nil), http.StatusNotFound, "reject again")
 
 	// Open accounts are followed at once, with the preferences of the body.
-	if r := e.relate("follow", alice, carol, map[string]bool{"notify": true}); !r.Following || !r.Notify || !r.ShowBoosts {
+	if r := e.relate("follow", alice, carol, map[string]bool{"notify": true}); !set(r.Following) || !set(r.Notify) || !set(r.ShowBoosts) {
 		t.Errorf("follow open = %+v, want following with notify", r)
 	}
-	if r := e.relate("follow", bob, carol, nil); !r.Following || r.Notify {
+	if r := e.relate("follow", bob, carol, nil); !set(r.Following) || set(r.Notify) {
 		t.Errorf("bob follows carol = %+v", r)
 	}
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id, "", nil, &got), http.StatusOK, "carol")
@@ -252,10 +252,10 @@ func TestClientAPIAccounts(t *testing.T) {
 
 	// Removing a follower and unfollowing end the follows.
 	e.want(e.do(http.MethodPost, "/accounts/"+alice.id+"/remove_from_followers", bob.token, nil, &r), http.StatusOK, "remove follower")
-	if r.FollowedBy {
+	if set(r.FollowedBy) {
 		t.Errorf("remove follower = %+v", r)
 	}
-	if r := e.relate("unfollow", alice, carol, nil); r.Following {
+	if r := e.relate("unfollow", alice, carol, nil); set(r.Following) {
 		t.Errorf("unfollow = %+v", r)
 	}
 	if p := e.page("/accounts/"+alice.id+"/following", ""); len(p.Accounts) != 0 {
@@ -286,17 +286,18 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	e.relate("follow", carol, dave, nil)
 
 	// Carol blocks alice: the follows between them end in both directions.
-	if r := e.relate("block", carol, alice, nil); !r.Blocking || r.Following || r.FollowedBy {
+	if r := e.relate("block", carol, alice, nil); !set(r.Blocking) || set(r.Following) || set(r.FollowedBy) {
 		t.Errorf("block = %+v", r)
 	}
-	if r := e.relate("block", carol, alice, nil); !r.Blocking {
+	if r := e.relate("block", carol, alice, nil); !set(r.Blocking) {
 		t.Errorf("block again = %+v", r)
 	}
-	// Alice cannot find carol anymore: every endpoint answers as for an unknown account.
+	// Alice cannot find carol anymore: every endpoint answers as for an unknown account, except the
+	// ones for alice's own edges (TestBlockedUserManagesTheirOwnEdges).
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id, alice.token, nil, nil), http.StatusNotFound, "get blocker")
 	e.want(e.do(http.MethodGet, "/accounts/lookup?acct=carol", alice.token, nil, nil), http.StatusNotFound, "lookup blocker")
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id+"/followers", alice.token, nil, nil), http.StatusNotFound, "blocker's followers")
-	for _, action := range []string{"follow", "unfollow", "block", "mute"} {
+	for _, action := range []string{"follow", "unfollow", "mute"} {
 		e.want(e.do(http.MethodPost, "/accounts/"+carol.id+"/"+action, alice.token, nil, nil), http.StatusNotFound, action+" blocker")
 	}
 	if rs := e.relationships(alice, carol.id, dave.id); len(rs) != 1 || rs[0].Id != dave.id {
@@ -316,7 +317,7 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	if p := e.page("/blocks", carol.token); !slices.Equal(ids(p.Accounts), []string{alice.id}) {
 		t.Errorf("carol's blocks = %v", ids(p.Accounts))
 	}
-	if r := e.relate("unblock", carol, alice, nil); r.Blocking || r.FollowedBy {
+	if r := e.relate("unblock", carol, alice, nil); set(r.Blocking) || set(r.FollowedBy) {
 		t.Errorf("unblock = %+v, want no block and the follow still ended", r)
 	}
 	e.want(e.do(http.MethodGet, "/accounts/"+carol.id, alice.token, nil, nil), http.StatusOK, "get after unblock")
@@ -325,10 +326,10 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	}
 
 	// Mutes, with and without notifications and an expiry.
-	if r := e.relate("mute", alice, carol, map[string]any{"notifications": false, "duration": 3600}); !r.Muting || r.MutingNotifications {
+	if r := e.relate("mute", alice, carol, map[string]any{"notifications": false, "duration": 3600}); !set(r.Muting) || set(r.MutingNotifications) {
 		t.Errorf("mute = %+v", r)
 	}
-	if r := e.relate("mute", alice, dave, nil); !r.Muting || !r.MutingNotifications {
+	if r := e.relate("mute", alice, dave, nil); !set(r.Muting) || !set(r.MutingNotifications) {
 		t.Errorf("mute with defaults = %+v", r)
 	}
 	e.want(e.do(http.MethodPost, "/accounts/"+dave.id+"/mute", alice.token, map[string]int{"duration": -1}, nil), http.StatusBadRequest, "negative duration")
@@ -343,7 +344,7 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	if len(mutes.Mutes) != 1 || mutes.Mutes[0].Account.Id != carol.id || mutes.Mutes[0].Notifications || mutes.Mutes[0].ExpiresAt == nil || mutes.NextCursor != nil {
 		t.Errorf("second mutes page = %+v", mutes)
 	}
-	if r := e.relate("unmute", alice, carol, nil); r.Muting {
+	if r := e.relate("unmute", alice, carol, nil); set(r.Muting) {
 		t.Errorf("unmute = %+v", r)
 	}
 	mutes = clientapi.MutePage{}

@@ -16,7 +16,13 @@ import { HomeLink } from "./-layout/HomeLink";
  */
 export const Route = createFileRoute("/public")({
   // A feed to add to: the shell floats the new-post button over this page (web-client/16-look-states-and-wording.md G4).
-  staticData: { title: "client:public.title", hideHeading: "wide", composeButton: true, timeline: true },
+  staticData: {
+    reloadSafe: true,
+    title: "client:public.title",
+    hideHeading: "wide",
+    composeButton: true,
+    timeline: true,
+  },
   loader: async ({ context: { queryClient, api } }) => {
     // Cached pages that no write has marked stale are shown at once (and refetched in the background once
     // old); marked or missing ones are fetched and waited for (web-client/README.md S7).

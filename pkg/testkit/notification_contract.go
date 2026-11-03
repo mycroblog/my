@@ -540,7 +540,7 @@ func notificationReads(t *testing.T, e *notificationEnv) {
 
 	checkUnread := func(want int64) {
 		t.Helper()
-		if n, err := e.svc.UnreadCount(ctx, alice); err != nil || n != want {
+		if n, err := e.svc.UnreadCount(ctx, alice, false); err != nil || n != want {
 			t.Errorf("UnreadCount = %d, %v; want %d", n, err, want)
 		}
 	}
@@ -583,7 +583,7 @@ func notificationReads(t *testing.T, e *notificationEnv) {
 	if got := e.list(t, alice); !reflect.DeepEqual(got, ns[1:]) {
 		t.Errorf("notifications = %+v, want %+v", got, ns[1:])
 	}
-	if n, err := e.svc.UnreadCount(ctx, bob); err != nil || n != 1 {
+	if n, err := e.svc.UnreadCount(ctx, bob, false); err != nil || n != 1 {
 		t.Errorf("UnreadCount(bob) = %d, %v; want 1", n, err)
 	}
 }
@@ -597,7 +597,7 @@ func (e *notificationEnv) checkListed(t *testing.T, accountID, id string, want b
 
 func (e *notificationEnv) checkUnread(t *testing.T, accountID string, want int64) {
 	t.Helper()
-	if n, err := e.svc.UnreadCount(t.Context(), accountID); err != nil || n != want {
+	if n, err := e.svc.UnreadCount(t.Context(), accountID, false); err != nil || n != want {
 		t.Errorf("UnreadCount(%s) = %d, %v; want %d", accountID, n, err, want)
 	}
 }

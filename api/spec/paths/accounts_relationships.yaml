@@ -4,7 +4,9 @@ get:
   summary: Get the viewer's relationships with accounts
   description: |
     Returns one relationship per requested account, in the order of the request. Accounts
-    that do not exist, are not active, or block the viewer are left out.
+    that do not exist, are not active, or block the viewer are left out. `blocking` needs
+    `read:blocks` and `muting` and `muting_notifications` need `read:mutes` as well: without
+    them the fields are absent.
   tags: [accounts]
   security:
     - oauth2: ["read:follows"]

@@ -6,7 +6,7 @@ INSERT INTO statuses (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: InsertLocalStatus :exec
-INSERT INTO local_statuses (status_id, author_account_id, client_id, idempotency_key) VALUES (?, ?, ?, ?);
+INSERT INTO local_statuses (status_id, author_account_id, oauth_client_id, idempotency_key) VALUES (?, ?, ?, ?);
 
 -- name: InsertStatusRevision :exec
 INSERT INTO status_revisions (id, status_id, seq, spoiler_text, sensitive, language, revised_at)
@@ -238,10 +238,10 @@ SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, c
 FROM statuses WHERE uri = ?;
 
 -- name: GetLocalStatus :one
-SELECT status_id, author_account_id, client_id, idempotency_key FROM local_statuses WHERE status_id = ?;
+SELECT status_id, author_account_id, oauth_client_id, idempotency_key FROM local_statuses WHERE status_id = ?;
 
 -- name: GetLocalStatusByIdempotencyKey :one
-SELECT status_id, author_account_id, client_id, idempotency_key FROM local_statuses
+SELECT status_id, author_account_id, oauth_client_id, idempotency_key FROM local_statuses
 WHERE author_account_id = ? AND idempotency_key = ?;
 
 -- name: GetStatusRevision :one

@@ -151,12 +151,20 @@ Scopes are the same as the first-party web client's, in two levels: broad scopes
 The list the instance offers is `scopes_supported` in the [authorization server metadata](#discovery).
 A request without enough scope gets `403` with `WWW-Authenticate: Bearer error="insufficient_scope"`.
 
-- **Direct messages:** reading posts of the `direct` visibility needs `read:direct` (the broad `read` includes it). A token with only `read:statuses` never receives a `direct` post in a timeline, thread, or notification.
-  Sending a direct post needs only `write:statuses`.
+- **Direct messages:** reading posts of the `direct` visibility needs `read:direct` (the broad `read` includes it). A token with only `read:statuses` never receives a `direct` post in a timeline, thread, notification, bookmark list, post source, or list of quotes, the user's own posts included.
+  Sending a direct post needs only `write:statuses`. A token without `read:direct` cannot favourite, bookmark, boost, react to, or vote on a `direct` post: it gets `404` and nothing changes. It can still take back what the user already had on one, such as a favourite: that takes effect and the answer is the same `404`, which shows nothing of the post.
+- **Reading through a write scope:** a write scope reads the post it acts on, because the response to an action on a post (favouriting it with `write:favourites`, for example) is the whole post, followers-only content included.
 - **First-party-only scopes:** `admin`, `admin:read`, `admin:write` and `write:supporters` are never granted to a third-party app,
   not even through `write`. Asking for one at the authorization endpoint is an `invalid_scope` error. Administration is done from the first-party web client.
-- **First-party-only operations:** account security (password, two-factor authentication, passkeys, deleting the account, the list of signed-in browsers, and the list of authorized apps) is
-  marked `x-first-party-only` in the OpenAPI document and answers a third-party token with `403` `/api/v1/problems/first-party-only`, whatever its scopes.
+- **First-party-only operations:** the operations below are marked `x-first-party-only` in the OpenAPI document and answer a third-party token with `403` `/api/v1/problems/first-party-only`, whatever its scopes.
+  - Account security: password, two-factor authentication, passkeys, deleting the account, the list of signed-in browsers, and the list of authorized apps.
+  - Data exports, including the CSV exports, and data imports. Read the posts and lists an app needs through their own scopes instead.
+  - Changing and previewing the automatic deletion of posts. Reading the policy stays under `read:accounts`.
+  - Adding and removing aliases, which consent to another account moving its followers here. Reading them stays under `read:accounts`.
+  - Listing, creating, and revoking invites.
+  - The user's list of moderation actions, and appeals.
+- **Moderator notifications:** a third-party token never gets the moderator notifications (`admin_report`, `admin_appeal`, `admin_sign_up`, and the like), whatever the user's roles. They are left out of the notification list, the stream, and the unread count of the marker, and they are dropped from the alerts of the app's Web Push subscription.
+- **Relationships:** a `Relationship` holds only the fields of the lists the token's scopes cover, and the others are absent. `following`, `requested`, `followed_by`, `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`; `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need `read:mutes` or `write:mutes`. An absent field says nothing about the state, so do not read it as false.
 
 ## Rate limits
 

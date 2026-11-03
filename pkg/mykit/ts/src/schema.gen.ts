@@ -1606,7 +1606,9 @@ export interface paths {
         /**
          * Get the viewer's relationships with accounts
          * @description Returns one relationship per requested account, in the order of the request. Accounts
-         *     that do not exist, are not active, or block the viewer are left out.
+         *     that do not exist, are not active, or block the viewer are left out. `blocking` needs
+         *     `read:blocks` and `muting` and `muting_notifications` need `read:mutes` as well: without
+         *     them the fields are absent.
          */
         get: operations["getRelationships"];
         put?: never;
@@ -1717,7 +1719,8 @@ export interface paths {
          * Block an account
          * @description Ends the follows between the viewer and the account in both directions and keeps
          *     either from following the other until the block is lifted (FR-303). Blocking an
-         *     account that the viewer already blocks changes nothing. Blocking a remote account
+         *     account that the viewer already blocks changes nothing, and an account that blocks the
+         *     viewer can be blocked back. Blocking a remote account
          *     also sends a Block to its server.
          */
         post: operations["blockAccount"];
@@ -1872,7 +1875,8 @@ export interface paths {
         put?: never;
         /**
          * Unblock an account
-         * @description The follows that the block ended stay ended. Without a block it changes nothing.
+         * @description The follows that the block ended stay ended. Without a block it changes nothing. It also
+         *     works on an account that blocks the user.
          */
         post: operations["unblockAccount"];
         delete?: never;
@@ -1912,7 +1916,7 @@ export interface paths {
         put?: never;
         /**
          * Unmute an account
-         * @description Without a mute it changes nothing.
+         * @description Without a mute it changes nothing. It also works on an account that blocks the user.
          */
         post: operations["unmuteAccount"];
         delete?: never;
@@ -2835,7 +2839,8 @@ export interface paths {
          * @description The statuses that quote a status of the user, newest first, each with its `quote` and
          *     its state (ADR-0069 §5). Statuses the user may not see, and quotes taken away, are left
          *     out, so a page may hold fewer than `limit` statuses before the last. Another account's
-         *     status is a 404.
+         *     status is a 404, and so is the user's own `direct` status without `read:direct`, which
+         *     also leaves out the `direct` statuses that quote one.
          */
         get: operations["listStatusQuotes"];
         put?: never;
@@ -2886,7 +2891,8 @@ export interface paths {
         };
         /**
          * Get the source of the authenticated user's status, for editing it
-         * @description Another account's status is a 404, the same as a missing one.
+         * @description Another account's status is a 404, the same as a missing one, and so is a `direct` status
+         *     without `read:direct`.
          */
         get: operations["getStatusSource"];
         put?: never;
@@ -2916,6 +2922,9 @@ export interface paths {
          *     recent public posts from its server in the background; `remote_fetch_started` tells
          *     that it did. It does at most once a day per account, for at most 30 accounts per viewer
          *     in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
+         *
+         *     An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
+         *     deleted account, the instance actor, and an account that blocks the viewer.
          */
         get: operations["listAccountStatuses"];
         put?: never;
@@ -3077,7 +3086,9 @@ export interface paths {
          * @description The reports that the user filed, newest first, each with whether it is still open or
          *     resolved (FR-711). A report reopened by the moderators is open again. It never tells how
          *     a report was resolved, which actions it led to, the reasons given to the account, or
-         *     who handles it.
+         *     who handles it. A report shows its target even when the account is suspended or blocks
+         *     the user. A report whose target no longer exists is left out, so a page may hold fewer
+         *     reports than `limit` and still have a `next_cursor`.
          */
         get: operations["listOwnReports"];
         put?: never;
@@ -9178,7 +9189,10 @@ export interface components {
             /** @description The reporter, often the instance actor of a remote server; omitted when the account is gone. */
             reporter_account?: components["schemas"]["Account"];
             target_account_id: components["schemas"]["Id"];
-            /** @description The account reported; omitted when the account is gone. */
+            /**
+             * @description The account reported, even when it is suspended or blocks the reporter; omitted when the
+             *     account is gone.
+             */
             target_account?: components["schemas"]["Account"];
             /** @description The IDs of the target's posts that the report points at. */
             status_ids: components["schemas"]["Id"][];
@@ -10506,7 +10520,9 @@ export interface components {
             poll?: components["schemas"]["PollInput"];
             /**
              * @description The status to quote (FR-114, ADR-0069). It must be one the user may see and may quote
-             *     (`Status.quotable`); a quote of a boost is a quote of the boosted status. Quoting a
+             *     (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
+             *     `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
+             *     is created (ADR-0144 §4). Quoting a
              *     remote status while the instance does not send posts out (`Instance.federation.mode`
              *     `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
              */
@@ -13105,7 +13121,10 @@ export interface components {
             /** @description The push service URL (`PushSubscription.endpoint`), an `https` URL. */
             endpoint: string;
             keys: components["schemas"]["PushSubscriptionKeys"];
-            /** @description The notification types to push, each at most once; empty pushes none. */
+            /**
+             * @description The notification types to push, each at most once; empty pushes none. A third-party
+             *     client's subscription leaves out the moderator notification types.
+             */
             alerts: components["schemas"]["NotificationType"][];
         };
         /**
@@ -13205,31 +13224,37 @@ export interface components {
         /**
          * @description The viewer's relationship with an account. It never says whether the account blocks
          *     the viewer: such an account is not found at all.
+         *
+         *     A token sees the fields its scopes cover, wherever the relationship comes from, and the
+         *     rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
+         *     `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
+         *     `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
+         *     `read:mutes` or `write:mutes`.
          */
         Relationship: {
             id: components["schemas"]["Id"];
             /** @description Whether the viewer actively follows the account. */
-            following: boolean;
+            following?: boolean;
             /** @description Whether the viewer's follow request awaits the account's approval. */
-            requested: boolean;
+            requested?: boolean;
             /** @description Whether the account actively follows the viewer. */
-            followed_by: boolean;
+            followed_by?: boolean;
             /** @description Whether the account's follow request awaits the viewer's approval. */
-            requested_by: boolean;
+            requested_by?: boolean;
             /** @description Whether the viewer's follow shows the account's boosts in the home timeline (true without a follow). */
-            show_boosts: boolean;
+            show_boosts?: boolean;
             /**
              * @description Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
              *     without a follow. A subscription asked for with a follow request to an account on another
              *     server is false until that server accepts the follow.
              */
-            notify: boolean;
+            notify?: boolean;
             /** @description Whether the viewer blocks the account. */
-            blocking: boolean;
+            blocking?: boolean;
             /** @description Whether the viewer mutes the account (a mute that has not expired). */
-            muting: boolean;
+            muting?: boolean;
             /** @description Whether the viewer's mute also hides the account's notifications. */
-            muting_notifications: boolean;
+            muting_notifications?: boolean;
         };
         /**
          * @description The follows that a `relationships_severed` tells of: the user lost them when the
@@ -15043,7 +15068,13 @@ export interface components {
                 "application/problem+json": components["schemas"]["RoleProblem"];
             };
         };
-        /** @description The status after the action, as the authenticated user sees it. */
+        /**
+         * @description The status after the action, as the authenticated user sees it. The scope of the action is
+         *     enough to read this response. A status that is gone is a 404 and nothing changes. A status
+         *     that the token may not see is a 404 too, which shows nothing of it: an action changes
+         *     nothing, while an un-action (removing a favourite, boost, reaction, bookmark, or pin) still
+         *     takes back what the user had on it.
+         */
         StatusAfterAction: {
             headers: {
                 "Cache-Control": components["headers"]["CacheControl"];
@@ -17888,7 +17919,8 @@ export interface operations {
         responses: {
             /**
              * @description A page of bookmarked posts. Posts that the user can no longer see are left out, so
-             *     a page may hold fewer posts than `limit` and still have a `next_cursor`.
+             *     a page may hold fewer posts than `limit` and still have a `next_cursor`. `direct` posts
+             *     need `read:direct`.
              */
             200: {
                 headers: {

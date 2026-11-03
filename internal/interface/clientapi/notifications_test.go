@@ -72,7 +72,7 @@ func (f *fakeNotifications) ReadMarker(_ context.Context, accountID string) (not
 	return notification.ReadMarker{AccountID: accountID, LastReadID: f.markers[accountID]}, nil
 }
 
-func (f *fakeNotifications) UnreadCount(_ context.Context, accountID string) (int64, error) {
+func (f *fakeNotifications) UnreadCount(_ context.Context, accountID string, _ bool) (int64, error) {
 	var n int64
 	for _, x := range f.visible(accountID) {
 		if x.ID > f.markers[accountID] {

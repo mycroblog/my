@@ -173,6 +173,45 @@ func remoteQuotesLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 		t.Errorf("interactionPolicy = %s, want everyone", policy)
 	}
 
+	// A quote of a local-visibility post keeps its approval for the embed on this server, and a
+	// federated Note says nothing of it: no IRI, no author, and no fallback, in a public post or
+	// in another that reaches followers on other servers.
+	localOnly := e.localPost(t, author, content.VisibilityLocal)
+	for _, v := range []content.Visibility{content.VisibilityPublic, content.VisibilityUnlisted, content.VisibilityPrivate, content.VisibilityLocal} {
+		lq, err := e.quotePost(t, quoter, localOnly.ID, v)
+		if err != nil {
+			t.Fatalf("%s quote of a local-visibility post = %v", v, err)
+		}
+		ls := e.quoteState(t, lq.ID)
+		if ls.Approval != content.QuoteApprovalAccepted || ls.AuthorizationURI == "" {
+			t.Errorf("state of the %s quote of a local-visibility post = %+v, want accepted by a QuoteAuthorization", v, ls)
+		}
+		lnote := e.noteOf(t, lq)
+		for _, k := range []string{"quote", "_misskey_quote", "quoteUrl", "quoteUri", "quoteAuthorization"} {
+			if got, ok := lnote[k]; ok {
+				t.Errorf("%s of the %s quote of a local-visibility post = %v, want none", k, v, got)
+			}
+		}
+		raw := string(mustJSON(t, lnote))
+		for _, leak := range []string{localOnly.URI, ls.AuthorizationURI, "quote-inline", "/@author"} {
+			if strings.Contains(raw, leak) {
+				t.Errorf("the Note of the %s quote of a local-visibility post holds %q: %s", v, leak, raw)
+			}
+		}
+	}
+
+	// The author's own local-visibility post is left out in the same way, with no authorization.
+	ownLocal, err := e.quotePost(t, author, localOnly.ID, content.VisibilityPublic)
+	if err != nil {
+		t.Fatalf("quote of the author's own local-visibility post = %v", err)
+	}
+	if s := e.quoteState(t, ownLocal.ID); s.Approval != content.QuoteApprovalAccepted || s.AuthorizationURI != "" {
+		t.Errorf("state of a quote of the author's own local-visibility post = %+v, want accepted without an authorization", s)
+	}
+	if raw := string(mustJSON(t, e.noteOf(t, ownLocal))); strings.Contains(raw, localOnly.URI) || strings.Contains(raw, "quote-inline") {
+		t.Errorf("the Note of a quote of the author's own local-visibility post names it: %s", raw)
+	}
+
 	// The author's own post, also a followers-only one in a followers-only post, needs no
 	// QuoteAuthorization.
 	private := e.localPost(t, author, content.VisibilityPrivate)
@@ -235,6 +274,23 @@ func remoteSendsQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 
 	if _, err := e.quotePost(t, fan, closed.ID, content.VisibilityPublic); !errors.Is(err, appcontent.ErrQuoteNotAllowed) {
 		t.Errorf("quote of a post its author alone may quote = %v, want ErrQuoteNotAllowed", err)
+	}
+	// A post that stays out of other servers quotes no remote post, whatever that post declares,
+	// and the refusal leaves nothing: no status, and so no quote and no activity to send.
+	e.runFanOut(t)
+	for _, v := range []content.Visibility{content.VisibilityLocal, content.VisibilityPrivate, content.VisibilityDirect} {
+		for _, quoted := range []content.Status{open, legacy} {
+			st, err := e.quotePost(t, fan, quoted.ID, v)
+			if !errors.Is(err, appcontent.ErrQuoteRemoteAudience) {
+				t.Errorf("%s quote of %s = %v, want ErrQuoteRemoteAudience", v, quoted.URI, err)
+			}
+			if st.ID != "" {
+				t.Errorf("%s quote of %s created %s", v, quoted.URI, st.ID)
+			}
+		}
+	}
+	if n := len(e.jobs.pending); n != 0 {
+		t.Errorf("jobs after the refused quotes = %d, want none", n)
 	}
 	// A post without canQuote is quoted as a legacy quote, without a QuoteRequest.
 	l, err := e.quotePost(t, fan, legacy.ID, content.VisibilityPublic)

@@ -8,7 +8,7 @@ import { PageHeading } from "./-layout/PageHeading";
 
 /** The posts the signed-in user bookmarked, newest bookmark first (FR-113). Bookmarks are private, so it needs a session. */
 export const Route = createFileRoute("/bookmarks")({
-  staticData: { title: "client:bookmarks.title", hideHeading: true },
+  staticData: { reloadSafe: true, title: "client:bookmarks.title", hideHeading: true },
   beforeLoad: requireSignIn,
   // Cached pages that no bookmark has marked stale are shown at once (and refetched in the background once old);
   // marked or missing ones are fetched and waited for (web-client/README.md S7).

@@ -52,6 +52,9 @@ git switch -c <type>/<N>-<short-slug>     # e.g. task/42-sqlite-adapter, spike/1
   - Post the findings report as a comment on the issue, linking the code by commit permalink.
   - Put the conclusions into ADRs / docs in the present tense, from a separate `docs/<N>-<slug>` branch and PR, linking the report comment as evidence.
 
+**Web client epoch** ([ADR-0141](../adr/0141-web-client-update-timing.md) §4): a change that breaks open tabs of the web client with no deprecation period (a security fix that removes or changes an API at once)
+raises `clientapi.WebClientEpoch` and `webClientEpoch` in `app/web/src/lib/webClientEpoch.ts` together. Open tabs then reload at the first safe moment, so do not raise them for a change older clients survive.
+
 ## 5. Verify
 
 ```sh

@@ -9,7 +9,7 @@
 // a local account that is not active, a status hidden from the requester), answers with the same
 // 404 response (ADR-0018). Objects (/ap/objects/{id} and its /activity) are judged for the
 // requester that the request's HTTP signature names, through the federation module; a deleted
-// status answers 410 with a Tombstone. Responses that depend on the Accept header carry
+// status answers 410 with a Tombstone, and so does a deleted local actor. Responses that depend on the Accept header carry
 // Vary: Accept, and only documents that anyone may fetch anonymously are cacheable
 // (Cache-Control: public, max-age=60).
 //

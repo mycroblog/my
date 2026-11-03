@@ -84,7 +84,7 @@ In the admin API: `POST /api/v1/admin/accounts/{id}/actions` (the body has `kind
 ### What the user sees
 
 - An action with `notify_target` true reaches the user as a notification (`moderation_notice`). It carries the kind, the reason category, `public_reason`, the end time and the state. The kind and the category also come back as display names in the user's UI language.
-- The user can check the actions against them with `GET /api/v1/moderation/actions` (scope `read:accounts`, filter with `active`), newest first. Actions with `notify_target` false and lifted or expired actions are listed too.
+- The user can check the actions against them with the first-party `GET /api/v1/moderation/actions` (filter with `active`), newest first. Actions with `notify_target` false and lifted or expired actions are listed too.
 - `private_note`, the report, who took the action and the reason for lifting are never shown to the user.
 - A user can appeal each action once ([appeals](#appeals)). The action list and the action in a notification include whether it can be appealed (`appealable`), the deadline (`appeal_deadline`), and the appeal and its outcome (`appeal`).
 - A user under `disable_login`, `suspend` or `ban` cannot use the app or the API but can still sign in on the sign-in page (`/auth/sign_in`). There they see the kind, the reason and the end time of the action in effect
@@ -415,7 +415,7 @@ my admin retention release <hold id>
   A sign-up block created from that account's ban is also kept past 30 days after lifting or expiry.
 - You can place several holds on one account. When you release them all, records past their period are removed on the next run. Releasing an already released hold changes nothing.
 - Holds and their release are done only with the CLI, and the actor in the record is the CLI.
-- The data of a deleted account (one whose `ban` reached its date, or one the user deleted) is erased 7 days after deletion by the hourly job `account.erase_deleted`.
+- The data of a deleted account (one whose `ban` reached its date, one the user deleted, or a remote account that its server deleted) is erased 7 days after deletion by the hourly job `account.erase_deleted`. A remote account's posts go too, including those that local users bookmarked or replied to.
   An account under a hold is not erased. Posts that a report or action points to stay until that record is removed. The account's URI and username and the action records remain.
   The names and descriptions that the account gave its voice chat rooms are emptied; the rooms stay.
 

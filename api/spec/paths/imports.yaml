@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listDataImports
+  x-first-party-only: true
   summary: List the authenticated user's imports
   description: |
     Lists the user's latest 10 imports of CSV files, newest first, with their progress.
@@ -22,6 +23,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: startDataImport
+  x-first-party-only: true
   summary: Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
   description: |
     Imports a CSV file in the format that Mastodon exports (`exportCsv`; FR-008). The file's
