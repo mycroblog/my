@@ -87,15 +87,9 @@ tdm-reservation: 1
 
 When you change the settings, change the CDN rules to match. `/media/proxy/` is served by this server, so it needs no rule.
 
-## Updating the AI crawler list
+## The AI crawler list
 
-The list is generated from `robots.json` of [ai-robots-txt/ai.robots.txt](https://github.com/ai-robots-txt/ai.robots.txt) (MIT) and bundled in `internal/interface/web/ai_crawlers.gen.go`. It is not fetched at run time.
-About once a month, open an update pull request as follows.
-
-1. In `tasks/go.yml`, change `AI_ROBOTS_COMMIT` to the new commit and `AI_ROBOTS_SHA256` to the SHA-256 of that commit's `robots.json`.
-2. Run `scripts/task.sh go:ai-crawlers`.
-3. Review the diff. The classification (training or AI use) is derived from the `function` text in `robots.json`, so if a newly added crawler is classified wrongly,
-   fix it with `overrides` in `scripts/ai-crawlers/main.go`. Link-preview fetchers and general-purpose search engines are left out of the list with `excluded`.
+The list is generated from `robots.json` of [ai-robots-txt/ai.robots.txt](https://github.com/ai-robots-txt/ai.robots.txt) (MIT) and bundled in the binary. It is not fetched at run time, so a newer list comes with an upgrade.
 
 ## Verify
 

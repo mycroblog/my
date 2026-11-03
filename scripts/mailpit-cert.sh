@@ -7,7 +7,7 @@
 #   push-service.pem / push-service.key  the HTTPS certificate of the fake Web Push service of the test builds
 #                                        (`my dev push-service`), valid for localhost and 127.0.0.1.
 # mail = smtp and the Web Push sender always verify the server's certificate, so `my serve` trusts the CA through
-# SSL_CERT_FILE (docs/operations/email.md). Keeps the CA and each certificate unless it expires within a day; a
+# SSL_CERT_FILE (CONTRIBUTING.md, "Emails"). Keeps the CA and each certificate unless it expires within a day; a
 # certificate that the current CA did not sign is created again.
 # Usage: scripts/mailpit-cert.sh   (needs openssl; writes to MAILPIT_CERTS, default .tmp/mailpit)
 set -euo pipefail

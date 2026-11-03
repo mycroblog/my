@@ -12,7 +12,7 @@ name: Slow suite
 # No concurrency group: in a called workflow the group would be evaluated in the caller's context, and a release and
 # a nightly run on the same commit must not cancel each other. The callers set their own groups.
 
-# The inputs choose the release that the upgrade job upgrades from (docs/operations/releasing.md, "The upgrade test"):
+# The inputs choose the release that the upgrade job upgrades from (docs/agents/releasing.md, "The upgrade test"):
 # `version`, the candidate, upgrades from the latest patch of the previous minor version; with no `version` (nightly),
 # from the latest release. `previous` names the tag instead, for a pre-release tried from a branch:
 # `gh workflow run slow-suite.yml --ref <branch> -f previous=v0.0.0-test.1`.

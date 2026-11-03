@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Picks the release that a candidate version must upgrade from (docs/operations/releasing.md, "The upgrade test"):
+# Picks the release that a candidate version must upgrade from (docs/agents/releasing.md, "The upgrade test"):
 # the latest patch of the latest minor version before the candidate's, among the release tags read from stdin (one
 # per line; anything other than vX.Y.Z, such as a pre-release or a library's pkg/mykit/vX.Y.Z, is ignored).
 # Without a candidate, the latest release: the upgrade that the head of main has to support whatever it becomes.

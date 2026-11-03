@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Writes the draft of a release's notes (docs/operations/releasing.md, "Release notes") for
+# Writes the draft of a release's notes (docs/agents/releasing.md, "Release notes") for
 # .github/workflows/release.yml. The facts (Upgrading, Breaking changes, API changes, mykit, and mybot) come from the
 # repository's state at HEAD and at the previous release, read by tools/agentkit/cmd/releasenotes, and never from a
 # model. The prose comes from Claude, in tools/agentkit/cmd/releaseprose, and joins the facts only when a program
@@ -180,7 +180,7 @@ cmd_skeleton() {
   local section previous="${2:-}"
   [ -n "$previous" ] || previous="$(pick_previous "$1" 2> /dev/null || true)"
   for section in Upgrading "Breaking changes" "API changes"; do
-    printf '## %s\n\n<!-- scripts/release-notes.sh failed, so this draft has no generated text (the log of the release job says why). Write this section by hand: docs/operations/releasing.md, "Release notes". -->\n\n' "$section"
+    printf '## %s\n\n<!-- scripts/release-notes.sh failed, so this draft has no generated text (the log of the release job says why). Write this section by hand: docs/agents/releasing.md, "Release notes". -->\n\n' "$section"
   done
   "$scripts/release-libraries.sh" notes "$1"
   printf '\n'

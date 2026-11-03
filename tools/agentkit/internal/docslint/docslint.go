@@ -40,6 +40,11 @@ type Config struct {
 	Skip     []string `yaml:"skip"`     // files no rule reads (generated or vendored Markdown)
 	English  []string `yaml:"english"`  // files written in English only
 	Operator []string `yaml:"operator"` // files for users and operators: no design records, issues, or pull requests
+	// MaintainerTerms names the words of the project's own development that the listed documents must not use.
+	MaintainerTerms struct {
+		Files []string `yaml:"files"` // the documents the rule reads
+		Terms []string `yaml:"terms"` // the words, whatever their case, also inside code
+	} `yaml:"maintainer-terms"`
 	// Index is the document that links every user and operator document, so that a reader finds each.
 	Index struct {
 		File  string   `yaml:"file"`  // the index
@@ -90,8 +95,10 @@ const (
 	RuleLink       = "link"
 	RuleJapanese   = "japanese"
 	RuleDesignLink = "design-link"
-	RulePending    = "pending"
-	RuleIndex      = "index"
+	// RuleMaintainerTerm is an operator document using a word of the project's own development.
+	RuleMaintainerTerm = "maintainer-term"
+	RulePending        = "pending"
+	RuleIndex          = "index"
 )
 
 // matchAny reports whether p matches one of patterns and none of the exclusions among them: a pattern that starts
@@ -130,6 +137,7 @@ func Lint(root string, files []string, c *Config) ([]Finding, error) {
 	for _, p := range c.Pending.DesignLinks {
 		pendingDL[p] = 0
 	}
+	terms := maintainerTerms(c.MaintainerTerms.Terms)
 	var out []Finding
 	for _, p := range sorted {
 		if matchAny(c.Skip, p) {
@@ -156,6 +164,9 @@ func Lint(root string, files []string, c *Config) ([]Finding, error) {
 			} else {
 				out = append(out, fs...)
 			}
+		}
+		if md && matchAny(c.MaintainerTerms.Files, p) {
+			out = append(out, maintainerTermsOf(doc, terms)...)
 		}
 		if operator {
 			fs := designLinks(doc)
@@ -225,6 +236,7 @@ func stale(list []string, counts map[string]int, exists map[string]bool, scope [
 type line struct {
 	n     int
 	prose string   // the text outside code, link destinations, and HTML comments
+	shown string   // the text a reader sees: everything outside HTML comments, code and link destinations included
 	dests []string // the link destinations outside code and HTML comments
 	allow bool     // AllowJapanese on this line or the line before
 }
@@ -274,9 +286,11 @@ func parse(p, src string, md bool) *document {
 			continue
 		}
 		if fence != "" {
+			d.lines = append(d.lines, line{n: i + 1, allow: allow, shown: s})
 			continue
 		}
 		visible, comment := splitComments(s, &inComment)
+		ln.shown = visible
 		for _, m := range reAnchor.FindAllStringSubmatch(visible, -1) {
 			d.heads = append(d.heads, m[1])
 		}
@@ -482,6 +496,34 @@ func japanese(d *document) []Finding {
 		if i := strings.IndexFunc(ln.prose, isJapanese); i >= 0 {
 			r := []rune(strings.TrimSpace(ln.prose[i:]))
 			out = append(out, Finding{d.path, ln.n, RuleJapanese, fmt.Sprintf("Japanese text %q in an English-only document (write it in English, put an example in code, or mark it with %q)", string(r[:min(len(r), 20)]), AllowJapanese)})
+		}
+	}
+	return out
+}
+
+// maintainerTerms compiles the terms into patterns that match whole words, whatever their case.
+func maintainerTerms(terms []string) map[string]*regexp.Regexp {
+	out := make(map[string]*regexp.Regexp, len(terms))
+	for _, t := range terms {
+		out[t] = regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(t) + `\b`)
+	}
+	return out
+}
+
+// maintainerTermsOf reports the lines of d that use a term, inside code too: a command in a code block addresses the
+// reader as much as a sentence does.
+func maintainerTermsOf(d *document, terms map[string]*regexp.Regexp) []Finding {
+	names := make([]string, 0, len(terms))
+	for t := range terms {
+		names = append(names, t)
+	}
+	sort.Strings(names)
+	var out []Finding
+	for _, ln := range d.lines {
+		for _, t := range names {
+			if terms[t].MatchString(ln.shown) {
+				out = append(out, Finding{d.path, ln.n, RuleMaintainerTerm, fmt.Sprintf("%q belongs to the development of the project: reword it for an operator, or move the passage to a contributor document", t)})
+			}
 		}
 	}
 	return out

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The upgrade test of the release gate (scripts/upgrade-test.sh, docs/operations/releasing.md): a database made and
+# The upgrade test of the release gate (scripts/upgrade-test.sh, docs/agents/releasing.md): a database made and
 # filled by the previous release's images, upgraded by the candidate's images in the order of deploy/docker/compose.yaml
 # (upgrade-check, schema, upgrade, then the server), on SQLite or PostgreSQL. The script sets the images and the
 # dialect, generates the private CA and the remote server's files, and runs this file in two phases:
