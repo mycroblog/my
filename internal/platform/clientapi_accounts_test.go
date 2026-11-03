@@ -326,7 +326,7 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	}
 
 	// Mutes, with and without notifications and an expiry.
-	if r := e.relate("mute", alice, carol, map[string]any{"notifications": false, "duration": 3600}); !set(r.Muting) || set(r.MutingNotifications) {
+	if r := e.relate("mute", alice, carol, map[string]any{"hide_notifications": false, "duration": 3600}); !set(r.Muting) || set(r.MutingNotifications) {
 		t.Errorf("mute = %+v", r)
 	}
 	if r := e.relate("mute", alice, dave, nil); !set(r.Muting) || !set(r.MutingNotifications) {
@@ -335,13 +335,13 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	e.want(e.do(http.MethodPost, "/accounts/"+dave.id+"/mute", alice.token, map[string]int{"duration": -1}, nil), http.StatusUnprocessableEntity, "negative duration")
 	var mutes clientapi.MutePage
 	e.want(e.do(http.MethodGet, "/mutes?limit=1", alice.token, nil, &mutes), http.StatusOK, "mutes")
-	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != dave.id || !mutes.Items[0].Notifications || mutes.Items[0].ExpiresAt != nil || mutes.NextCursor == nil {
+	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != dave.id || !mutes.Items[0].HideNotifications || mutes.Items[0].ExpiresAt != nil || mutes.NextCursor == nil {
 		t.Fatalf("first mutes page = %+v", mutes)
 	}
 	cursor := *mutes.NextCursor
 	mutes = clientapi.MutePage{}
 	e.want(e.do(http.MethodGet, "/mutes?limit=1&cursor="+url.QueryEscape(cursor), alice.token, nil, &mutes), http.StatusOK, "mutes page 2")
-	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != carol.id || mutes.Items[0].Notifications || mutes.Items[0].ExpiresAt == nil || mutes.NextCursor != nil {
+	if len(mutes.Items) != 1 || mutes.Items[0].Account.Id != carol.id || mutes.Items[0].HideNotifications || mutes.Items[0].ExpiresAt == nil || mutes.NextCursor != nil {
 		t.Errorf("second mutes page = %+v", mutes)
 	}
 	if r := e.relate("unmute", alice, carol, nil); set(r.Muting) {

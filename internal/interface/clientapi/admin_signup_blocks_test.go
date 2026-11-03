@@ -125,7 +125,7 @@ func TestSignupBlocksAPI(t *testing.T) {
 	}
 	b := decodeJSON[clientapi.AdminSignupBlock](t, res)
 	if b.Kind != clientapi.AdminSignupBlockKindEmailDomain || b.Value != "spam.example" || b.Severity != clientapi.AdminSignupBlockSeverityReject ||
-		b.Comment == nil || *b.Comment != "wave" || b.ExpiresAt == nil || b.State != clientapi.AdminSignupBlockStateActive || b.LiftedAt != nil {
+		b.Comment == nil || *b.Comment != "wave" || b.ExpiresAt == nil || b.State != clientapi.ModerationActionStateActive || b.LiftedAt != nil {
 		t.Errorf("created block = %+v", b)
 	}
 	if len(blocks.added) != 1 || blocks.added[0].CreatedByUserID != userOf(aliceAccountID) || blocks.added[0].Duration != time.Minute {
@@ -167,7 +167,7 @@ func TestSignupBlocksAPI(t *testing.T) {
 	}
 
 	res = e.admin(t, http.MethodPost, "/admin/signup_blocks/"+b.Id+"/lift", "admin-write", nil)
-	if lifted := decodeJSON[clientapi.AdminSignupBlock](t, res); res.StatusCode != http.StatusOK || lifted.State != clientapi.AdminSignupBlockStateLifted || lifted.LiftedAt == nil {
+	if lifted := decodeJSON[clientapi.AdminSignupBlock](t, res); res.StatusCode != http.StatusOK || lifted.State != clientapi.ModerationActionStateLifted || lifted.LiftedAt == nil {
 		t.Errorf("lift = %d %+v", res.StatusCode, lifted)
 	}
 	if len(blocks.lifted) != 1 || blocks.lifted[0] != userOf(aliceAccountID) {

@@ -2,7 +2,7 @@
 description: The settings of a mute.
 type: object
 properties:
-  notifications:
+  hide_notifications:
     description: Also hide the account's notifications.
     type: boolean
     default: true

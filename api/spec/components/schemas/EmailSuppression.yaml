@@ -6,12 +6,12 @@ description: |
   address again lifts it. A `complaint` (the recipient marked an email as spam) stops the
   notification and announcement emails only.
 type: object
-required: [kind, since]
+required: [kind, state_changed_at]
 properties:
   kind:
     type: string
     enum: [hard_bounce, complaint]
-  since:
+  state_changed_at:
     description: When the failure that started the suppression happened.
     type: string
     format: date-time

@@ -7,7 +7,7 @@ properties:
     type: string
   state:
     $ref: ./AdminInstanceState.yaml
-  since:
+  state_changed_at:
     description: When the server entered its state; omitted for a server without failures.
     type: string
     format: date-time

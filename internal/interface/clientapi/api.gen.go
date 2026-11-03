@@ -175,48 +175,6 @@ func (e AdminAccountActionKind) Valid() bool {
 	}
 }
 
-// Defines values for AdminAccountActionState.
-const (
-	AdminAccountActionStateActive  AdminAccountActionState = "active"
-	AdminAccountActionStateExpired AdminAccountActionState = "expired"
-	AdminAccountActionStateLifted  AdminAccountActionState = "lifted"
-)
-
-// Valid indicates whether the value is a known member of the AdminAccountActionState enum.
-func (e AdminAccountActionState) Valid() bool {
-	switch e {
-	case AdminAccountActionStateActive:
-		return true
-	case AdminAccountActionStateExpired:
-		return true
-	case AdminAccountActionStateLifted:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for AdminAccountRegistrationState.
-const (
-	AdminAccountRegistrationStateApproved AdminAccountRegistrationState = "approved"
-	AdminAccountRegistrationStatePending  AdminAccountRegistrationState = "pending"
-	AdminAccountRegistrationStateRejected AdminAccountRegistrationState = "rejected"
-)
-
-// Valid indicates whether the value is a known member of the AdminAccountRegistrationState enum.
-func (e AdminAccountRegistrationState) Valid() bool {
-	switch e {
-	case AdminAccountRegistrationStateApproved:
-		return true
-	case AdminAccountRegistrationStatePending:
-		return true
-	case AdminAccountRegistrationStateRejected:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for AdminAccountRestriction.
 const (
 	AdminAccountRestrictionFederation               AdminAccountRestriction = "federation"
@@ -802,27 +760,6 @@ func (e AdminDomainActionKind) Valid() bool {
 	}
 }
 
-// Defines values for AdminDomainActionState.
-const (
-	AdminDomainActionStateActive  AdminDomainActionState = "active"
-	AdminDomainActionStateExpired AdminDomainActionState = "expired"
-	AdminDomainActionStateLifted  AdminDomainActionState = "lifted"
-)
-
-// Valid indicates whether the value is a known member of the AdminDomainActionState enum.
-func (e AdminDomainActionState) Valid() bool {
-	switch e {
-	case AdminDomainActionStateActive:
-		return true
-	case AdminDomainActionStateExpired:
-		return true
-	case AdminDomainActionStateLifted:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for AdminInstanceState.
 const (
 	AdminInstanceStateAvailable   AdminInstanceState = "available"
@@ -928,54 +865,6 @@ func (e AdminLoginProviderState) Valid() bool {
 	}
 }
 
-// Defines values for AdminReportCategory.
-const (
-	AdminReportCategoryLegal     AdminReportCategory = "legal"
-	AdminReportCategoryOther     AdminReportCategory = "other"
-	AdminReportCategorySpam      AdminReportCategory = "spam"
-	AdminReportCategoryViolation AdminReportCategory = "violation"
-)
-
-// Valid indicates whether the value is a known member of the AdminReportCategory enum.
-func (e AdminReportCategory) Valid() bool {
-	switch e {
-	case AdminReportCategoryLegal:
-		return true
-	case AdminReportCategoryOther:
-		return true
-	case AdminReportCategorySpam:
-		return true
-	case AdminReportCategoryViolation:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for AdminReportDetailCategory.
-const (
-	AdminReportDetailCategoryLegal     AdminReportDetailCategory = "legal"
-	AdminReportDetailCategoryOther     AdminReportDetailCategory = "other"
-	AdminReportDetailCategorySpam      AdminReportDetailCategory = "spam"
-	AdminReportDetailCategoryViolation AdminReportDetailCategory = "violation"
-)
-
-// Valid indicates whether the value is a known member of the AdminReportDetailCategory enum.
-func (e AdminReportDetailCategory) Valid() bool {
-	switch e {
-	case AdminReportDetailCategoryLegal:
-		return true
-	case AdminReportDetailCategoryOther:
-		return true
-	case AdminReportDetailCategorySpam:
-		return true
-	case AdminReportDetailCategoryViolation:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for AdminReportOutcome.
 const (
 	AdminReportOutcomeActioned  AdminReportOutcome = "actioned"
@@ -1045,27 +934,6 @@ func (e AdminSignupBlockSeverity) Valid() bool {
 	case AdminSignupBlockSeverityReject:
 		return true
 	case AdminSignupBlockSeverityRequireApproval:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for AdminSignupBlockState.
-const (
-	AdminSignupBlockStateActive  AdminSignupBlockState = "active"
-	AdminSignupBlockStateExpired AdminSignupBlockState = "expired"
-	AdminSignupBlockStateLifted  AdminSignupBlockState = "lifted"
-)
-
-// Valid indicates whether the value is a known member of the AdminSignupBlockState enum.
-func (e AdminSignupBlockState) Valid() bool {
-	switch e {
-	case AdminSignupBlockStateActive:
-		return true
-	case AdminSignupBlockStateExpired:
-		return true
-	case AdminSignupBlockStateLifted:
 		return true
 	default:
 		return false
@@ -2710,6 +2578,27 @@ func (e MediaUploadPurpose) Valid() bool {
 	case MediaUploadPurposeEmoji:
 		return true
 	case MediaUploadPurposeHeader:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ModerationActionState.
+const (
+	ModerationActionStateActive  ModerationActionState = "active"
+	ModerationActionStateExpired ModerationActionState = "expired"
+	ModerationActionStateLifted  ModerationActionState = "lifted"
+)
+
+// Valid indicates whether the value is a known member of the ModerationActionState enum.
+func (e ModerationActionState) Valid() bool {
+	switch e {
+	case ModerationActionStateActive:
+		return true
+	case ModerationActionStateExpired:
+		return true
+	case ModerationActionStateLifted:
 		return true
 	default:
 		return false
@@ -4517,13 +4406,13 @@ type AccountPage struct {
 // AccountSource The profile as the user typed it, for editing.
 type AccountSource struct {
 	// AvatarMediaId The media file of the avatar; omitted when there is none.
-	AvatarMediaId *string `json:"avatar_media_id,omitempty"`
+	AvatarMediaId *Id `json:"avatar_media_id,omitempty"`
 
 	// Fields The metadata fields as typed, in the order of the account's `fields`.
 	Fields []AccountFieldSource `json:"fields"`
 
 	// HeaderMediaId The media file of the header image; omitted when there is none.
-	HeaderMediaId *string `json:"header_media_id,omitempty"`
+	HeaderMediaId *Id `json:"header_media_id,omitempty"`
 
 	// Note The profile text as plain text; empty when there is none.
 	Note string `json:"note"`
@@ -4585,7 +4474,7 @@ type AdminAccount struct {
 
 	// RegistrationState Where the registration of a local account stands; a user made with the command line is
 	// `approved`. Omitted for a remote account.
-	RegistrationState *AdminAccountRegistrationState `json:"registration_state,omitempty"`
+	RegistrationState *RegistrationState `json:"registration_state,omitempty"`
 
 	// Restrictions What the account's own actions take away now (data-model §5.2), in a fixed order.
 	// The domain actions on its domain are listed apart.
@@ -4651,7 +4540,7 @@ type AdminAccountAction struct {
 
 	// State `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
 	// lifted it.
-	State AdminAccountActionState `json:"state"`
+	State ModerationActionState `json:"state"`
 
 	// StatusIds The posts of the account that `delete_statuses` or `mark_statuses_sensitive` acts
 	// on, in ID order; omitted for the other kinds.
@@ -4680,10 +4569,6 @@ type AdminAccountActionPage struct {
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
-
-// AdminAccountActionState `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-// lifted it.
-type AdminAccountActionState string
 
 // AdminAccountDetail The details of an account (FR-714).
 type AdminAccountDetail struct {
@@ -4715,7 +4600,7 @@ type AdminAccountDetail struct {
 
 	// RegistrationState Where the registration of a local account stands; a user made with the command line is
 	// `approved`. Omitted for a remote account.
-	RegistrationState *AdminAccountRegistrationState `json:"registration_state,omitempty"`
+	RegistrationState *RegistrationState `json:"registration_state,omitempty"`
 
 	// Reports The newest 20 reports of the account, newest first; omitted unless the viewer also has
 	// the `manage_reports` permission.
@@ -4813,10 +4698,6 @@ type AdminAccountRegistration struct {
 	SubmittedAt    time.Time `json:"submitted_at"`
 }
 
-// AdminAccountRegistrationState Where the registration of a local account stands; a user made with the command line is
-// `approved`. Omitted for a remote account.
-type AdminAccountRegistrationState string
-
 // AdminAccountRestriction A capability that an action takes away (data-model §5.2). `login`: logging in and the
 // API. `post`: posting, replying, boosting, editing. `interact`: following, favouriting,
 // boosting, voting. `visibility_ceiling_private`: posts are followers-only.
@@ -4859,6 +4740,9 @@ type AdminAnnouncement struct {
 	// PublishedAt When it was last published; omitted for a draft.
 	PublishedAt *time.Time `json:"published_at,omitempty"`
 
+	// RevisedAt When its text or window last changed.
+	RevisedAt time.Time `json:"revised_at"`
+
 	// StartsAt When it starts to show once published; omitted to show it from its publication.
 	StartsAt *time.Time `json:"starts_at,omitempty"`
 
@@ -4871,9 +4755,6 @@ type AdminAnnouncement struct {
 
 	// Title The heading, in plain text; empty for an announcement without one.
 	Title string `json:"title"`
-
-	// UpdatedAt When its text or window last changed.
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // AdminAnnouncementCreateRequest A new announcement, with its title, its text, and its window.
@@ -5394,7 +5275,7 @@ type AdminDomainAction struct {
 
 	// State `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
 	// lifted it.
-	State AdminDomainActionState `json:"state"`
+	State ModerationActionState `json:"state"`
 }
 
 // AdminDomainActionKind `suspend`: no federation with the domain at all. `limit`: its posts stay off the public
@@ -5410,10 +5291,6 @@ type AdminDomainActionPage struct {
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
-
-// AdminDomainActionState `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-// lifted it.
-type AdminDomainActionState string
 
 // AdminIncomePeriodTotal A week, month, or year of the income totals as the administrators see it: the `gross`, the
 // provider's `fee`, and the `net` (gross less fee) of each currency, sorted by currency code,
@@ -5471,12 +5348,12 @@ type AdminInstanceHealth struct {
 	// LastFailureDay The latest of those days; omitted without failures.
 	LastFailureDay *openapi_types.Date `json:"last_failure_day,omitempty"`
 
-	// Since When the server entered its state; omitted for a server without failures.
-	Since *time.Time `json:"since,omitempty"`
-
 	// State `available` servers get every delivery; `unavailable` ones only `Follow`, `Accept`, and
 	// `Reject`.
 	State AdminInstanceState `json:"state"`
+
+	// StateChangedAt When the server entered its state; omitted for a server without failures.
+	StateChangedAt *time.Time `json:"state_changed_at,omitempty"`
 }
 
 // AdminInstanceHealthPage A page of server health, in domain order.
@@ -5719,6 +5596,9 @@ type AdminLoginProvider struct {
 	// provider must belong to; empty lets every GitHub user in.
 	Organizations []string `json:"organizations"`
 
+	// RevisedAt When the settings last changed.
+	RevisedAt time.Time `json:"revised_at"`
+
 	// Scopes The scopes asked for besides the ones the kind needs, sorted.
 	Scopes []string `json:"scopes"`
 
@@ -5726,9 +5606,6 @@ type AdminLoginProvider struct {
 	// screen shows only the enabled providers.
 	State          AdminLoginProviderState `json:"state"`
 	StateChangedAt time.Time               `json:"state_changed_at"`
-
-	// UpdatedAt When the settings last changed.
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // AdminLoginProviderList The login providers, newest first.
@@ -5774,8 +5651,8 @@ type AdminOAuthClient struct {
 	// that registered itself (RFC 7591).
 	Registration OAuthClientRegistration `json:"registration"`
 
-	// Scope The most that the client may be granted, as space-separated scopes.
-	Scope string `json:"scope"`
+	// Scopes The most that the client may be granted.
+	Scopes []string `json:"scopes"`
 
 	// Website The client's home page; omitted when it has none.
 	Website *string `json:"website,omitempty"`
@@ -5874,12 +5751,12 @@ type AdminRegistration struct {
 	// Reason Why the user wants to join, as plain text; omitted when they gave none.
 	Reason *string `json:"reason,omitempty"`
 
-	// Since When the registration entered its state.
-	Since time.Time `json:"since"`
-
 	// State Where a registration stands: `pending` waits for a moderator, `approved` lets the user
 	// sign in, and `rejected` keeps them out.
 	State RegistrationState `json:"state"`
+
+	// StateChangedAt When the registration entered its state.
+	StateChangedAt time.Time `json:"state_changed_at"`
 
 	// SubmittedAt When the user signed up.
 	SubmittedAt time.Time `json:"submitted_at"`
@@ -5952,8 +5829,12 @@ type AdminRelayList struct {
 // AdminReport A report of an account to the moderators (FR-701).
 type AdminReport struct {
 	// AssigneeAccountId The account of the moderator who handles the report; omitted when nobody does.
-	AssigneeAccountId *Id                 `json:"assignee_account_id,omitempty"`
-	Category          AdminReportCategory `json:"category"`
+	AssigneeAccountId *Id `json:"assignee_account_id,omitempty"`
+
+	// Category Why the account is reported. `spam`: spam or unwanted promotion. `legal`: content that
+	// is illegal. `violation`: it breaks the instance rules that `rule_ids` cite. `other`:
+	// anything else.
+	Category ReportCategory `json:"category"`
 
 	// Comment The reporter's comment as plain text, up to 5,000 characters.
 	Comment string    `json:"comment"`
@@ -6010,15 +5891,16 @@ type AdminReport struct {
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
 }
 
-// AdminReportCategory defines model for AdminReport.Category.
-type AdminReportCategory string
-
 // AdminReportDetail A report as a moderator opens it: the report with its internal notes, the posts it
 // points at, and what the moderators had about its target.
 type AdminReportDetail struct {
 	// AssigneeAccountId The account of the moderator who handles the report; omitted when nobody does.
-	AssigneeAccountId *Id                       `json:"assignee_account_id,omitempty"`
-	Category          AdminReportDetailCategory `json:"category"`
+	AssigneeAccountId *Id `json:"assignee_account_id,omitempty"`
+
+	// Category Why the account is reported. `spam`: spam or unwanted promotion. `legal`: content that
+	// is illegal. `violation`: it breaks the instance rules that `rule_ids` cite. `other`:
+	// anything else.
+	Category ReportCategory `json:"category"`
 
 	// Comment The reporter's comment as plain text, up to 5,000 characters.
 	Comment string    `json:"comment"`
@@ -6091,9 +5973,6 @@ type AdminReportDetail struct {
 	// none.
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
 }
-
-// AdminReportDetailCategory defines model for AdminReportDetail.Category.
-type AdminReportDetailCategory string
 
 // AdminReportNote A moderator's internal note on a report; never shown to the target or the reporter.
 type AdminReportNote struct {
@@ -6418,7 +6297,7 @@ type AdminSignupBlock struct {
 
 	// State `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
 	// lifted it.
-	State AdminSignupBlockState `json:"state"`
+	State ModerationActionState `json:"state"`
 
 	// Value What the block matches, in canonical form: a domain in IDNA A-labels
 	// (`email_domain`), the hex SHA-256 of a canonical email address (`email_hash`), or a
@@ -6442,10 +6321,6 @@ type AdminSignupBlockPage struct {
 // AdminSignupBlockSeverity `reject`: the sign-up is refused. `require_approval`: the registration starts pending
 // for a moderator, whatever the registration mode.
 type AdminSignupBlockSeverity string
-
-// AdminSignupBlockState `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
-// lifted it.
-type AdminSignupBlockState string
 
 // AdminSupporterPlan A supporter plan as the administrators see it (ADR-0072 §3). The yearly price is the
 // monthly one × 12, discounted by `annual_discount_percent`, rounded down. A plan takes
@@ -6759,6 +6634,9 @@ type AdminWebhook struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
+	// RevisedAt When the URL, the description, or the events last changed.
+	RevisedAt time.Time `json:"revised_at"`
+
 	// State Whether the webhook receives the messages of its events.
 	State          AdminWebhookState `json:"state"`
 	StateChangedAt time.Time         `json:"state_changed_at"`
@@ -6767,9 +6645,6 @@ type AdminWebhook struct {
 	// server disabled it after the endpoint answered 410 Gone. `failing`: the server disabled
 	// it after the deliveries kept failing, without a success, for 72 hours and 20 attempts.
 	StateReason AdminWebhookStateReason `json:"state_reason"`
-
-	// UpdatedAt When the URL, the description, or the events last changed.
-	UpdatedAt time.Time `json:"updated_at"`
 
 	// Url Where the messages are posted.
 	Url string `json:"url"`
@@ -6909,12 +6784,12 @@ type Announcement struct {
 	// Read Whether the user has marked it read.
 	Read bool `json:"read"`
 
+	// RevisedAt When its text or window last changed.
+	RevisedAt time.Time `json:"revised_at"`
+
 	// Title The heading, in plain text, as the administrators wrote it; render it with `dir="auto"`.
 	// Empty for an announcement without one.
 	Title string `json:"title"`
-
-	// UpdatedAt When its text or window last changed.
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // AnnouncementList The announcements.
@@ -8512,8 +8387,8 @@ type EditStatusRequest struct {
 type EmailSuppression struct {
 	Kind EmailSuppressionKind `json:"kind"`
 
-	// Since When the failure that started the suppression happened.
-	Since time.Time `json:"since"`
+	// StateChangedAt When the failure that started the suppression happened.
+	StateChangedAt time.Time `json:"state_changed_at"`
 }
 
 // EmailSuppressionKind defines model for EmailSuppression.Kind.
@@ -8577,8 +8452,8 @@ type ErrorGroup struct {
 	// it to `open`), or `muted` (it notifies nobody until it is unmuted).
 	State ErrorGroupState `json:"state"`
 
-	// StateSince When the group entered its state; its first occurrence while it has always been open.
-	StateSince time.Time `json:"state_since"`
+	// StateChangedAt When the group entered its state; its first occurrence while it has always been open.
+	StateChangedAt time.Time `json:"state_changed_at"`
 
 	// Type The last type of the chain of the error (a Go type or the name of a JavaScript error).
 	Type string `json:"type"`
@@ -8644,8 +8519,8 @@ type ErrorGroupDetail struct {
 	// it to `open`), or `muted` (it notifies nobody until it is unmuted).
 	State ErrorGroupState `json:"state"`
 
-	// StateSince When the group entered its state; its first occurrence while it has always been open.
-	StateSince time.Time `json:"state_since"`
+	// StateChangedAt When the group entered its state; its first occurrence while it has always been open.
+	StateChangedAt time.Time `json:"state_changed_at"`
 
 	// Type The last type of the chain of the error (a Go type or the name of a JavaScript error).
 	Type string `json:"type"`
@@ -10079,7 +9954,7 @@ type ModerationAction struct {
 
 	// State `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
 	// lifted it.
-	State AdminAccountActionState `json:"state"`
+	State ModerationActionState `json:"state"`
 
 	// StatusIds The posts that an action on posts acted on; empty for an action on the whole account.
 	StatusIds []Id `json:"status_ids"`
@@ -10092,6 +9967,10 @@ type ModerationActionPage struct {
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
+
+// ModerationActionState `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
+// lifted it.
+type ModerationActionState string
 
 // ModerationAppeal The authenticated user's appeal of an action on their account. It never names the
 // moderator who decided it.
@@ -10157,8 +10036,8 @@ type MuteAccountRequest struct {
 	// Duration How long the mute lasts, in seconds; 0 mutes until unmuted.
 	Duration *int `json:"duration,omitempty"`
 
-	// Notifications Also hide the account's notifications.
-	Notifications *bool `json:"notifications,omitempty"`
+	// HideNotifications Also hide the account's notifications.
+	HideNotifications *bool `json:"hide_notifications,omitempty"`
 }
 
 // MuteDomainRequest The domain to mute.
@@ -10183,8 +10062,8 @@ type MutedAccount struct {
 	// ExpiresAt When the mute ends; left out for a mute until unmuted.
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 
-	// Notifications Whether the mute also hides the account's notifications.
-	Notifications bool `json:"notifications"`
+	// HideNotifications Whether the mute also hides the account's notifications.
+	HideNotifications bool `json:"hide_notifications"`
 }
 
 // NewCustomEmojiRequest A new custom emoji request: `create` takes the `shortcode` of the new emoji, and `image` the
@@ -14008,7 +13887,7 @@ type ListInstanceRulesParams struct {
 type GetLoginProvidersOnlyImpactParams struct {
 	// ProviderId A provider to count as if it were enabled, for the question of what enabling it would do.
 	// A new provider needs none: nobody links to it yet.
-	ProviderId *openapi_types.UUID `form:"provider_id,omitempty" json:"provider_id,omitempty"`
+	ProviderId *Id `form:"provider_id,omitempty" json:"provider_id,omitempty"`
 }
 
 // ListSignupBlocksParams defines parameters for ListSignupBlocks.

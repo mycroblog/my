@@ -33,7 +33,7 @@ func newAdminSignupBlock(v appmoderation.SignupBlockView) AdminSignupBlock {
 	b := v.Block
 	out := AdminSignupBlock{
 		Id: b.ID, Kind: AdminSignupBlockKind(b.Kind), Value: b.Value, Severity: AdminSignupBlockSeverity(b.Severity),
-		State: AdminSignupBlockState(v.State), CreatedAt: b.CreatedAt.UTC(),
+		State: ModerationActionState(v.State), CreatedAt: b.CreatedAt.UTC(),
 	}
 	if b.Comment != "" {
 		out.Comment = &b.Comment

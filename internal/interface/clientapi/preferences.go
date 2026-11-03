@@ -29,7 +29,7 @@ func newEmailSuppression(sup identity.EmailSuppression, ok bool) *EmailSuppressi
 	if !ok {
 		return nil
 	}
-	return &EmailSuppression{Kind: EmailSuppressionKind(sup.Kind), Since: sup.Since.UTC()}
+	return &EmailSuppression{Kind: EmailSuppressionKind(sup.Kind), StateChangedAt: sup.Since.UTC()}
 }
 
 // preferencesOf presents the preferences p of userID with the suppression of their address.

@@ -54,7 +54,7 @@ func newAdminWebhook(e webhook.Endpoint) AdminWebhook {
 	out := AdminWebhook{
 		Id: e.ID, Url: e.Settings.URL, Events: make([]WebhookEventType, 0, len(e.Settings.Events)),
 		State: AdminWebhookState(e.State), StateReason: AdminWebhookStateReason(e.StateReason),
-		StateChangedAt: e.StateChangedAt.UTC(), CreatedAt: e.CreatedAt.UTC(), UpdatedAt: e.RevisedAt.UTC(),
+		StateChangedAt: e.StateChangedAt.UTC(), CreatedAt: e.CreatedAt.UTC(), RevisedAt: e.RevisedAt.UTC(),
 	}
 	if e.Settings.Description != "" {
 		out.Description = &e.Settings.Description

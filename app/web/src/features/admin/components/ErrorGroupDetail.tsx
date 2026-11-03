@@ -111,7 +111,7 @@ function StateSection({ group }: { group: Detail }) {
             <ErrorStateLabel state={group.state} />
           </DescriptionItem>
           <DescriptionItem term={t("client:admin.errors.state_since")}>
-            <DateTime value={group.state_since} />
+            <DateTime value={group.state_changed_at} />
           </DescriptionItem>
           {group.resolved_version !== undefined && (
             <DescriptionItem term={t("client:admin.errors.resolved_version")}>

@@ -673,7 +673,7 @@ describe("time zone of the device", () => {
 
 describe("email suppression", () => {
   test("says that emails do not reach the address after a hard bounce, and what to do", async () => {
-    preferencesServer({ email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } });
+    preferencesServer({ email_suppression: { kind: "hard_bounce", state_changed_at: "2026-10-10T09:30:00Z" } });
     await renderApp({ path: "/settings/notifications" });
 
     const section = await screen.findByRole("region", { name: "Email delivery" });
@@ -683,7 +683,7 @@ describe("email suppression", () => {
   });
 
   test("sends the verification email again from the notice, and says so next to the button", async () => {
-    preferencesServer({ email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } });
+    preferencesServer({ email_suppression: { kind: "hard_bounce", state_changed_at: "2026-10-10T09:30:00Z" } });
     let requests = 0;
     server.use(
       http.post(`${apiBase}/accounts/email/verification`, () => {
@@ -702,7 +702,7 @@ describe("email suppression", () => {
   });
 
   test("says when the user may ask again after too many verification emails", async () => {
-    preferencesServer({ email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" } });
+    preferencesServer({ email_suppression: { kind: "hard_bounce", state_changed_at: "2026-10-10T09:30:00Z" } });
     server.use(
       http.post(`${apiBase}/accounts/email/verification`, () =>
         problem(429, "about:blank", "Too Many Requests", { headers: { "Retry-After": "1800" } }),
@@ -721,7 +721,7 @@ describe("email suppression", () => {
 
   test("removes the notice when the server says the address is verified again", async () => {
     const preferences = preferencesServer({
-      email_suppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" },
+      email_suppression: { kind: "hard_bounce", state_changed_at: "2026-10-10T09:30:00Z" },
     });
     server.use(
       http.post(`${apiBase}/accounts/email/verification`, () => {
@@ -742,7 +742,7 @@ describe("email suppression", () => {
   });
 
   test("says that notification emails stop after a complaint, without the hard bounce's advice", async () => {
-    preferencesServer({ email_suppression: { kind: "complaint", since: "2026-10-10T09:30:00Z" } });
+    preferencesServer({ email_suppression: { kind: "complaint", state_changed_at: "2026-10-10T09:30:00Z" } });
     await renderApp({ path: "/settings/notifications" });
 
     const section = await screen.findByRole("region", { name: "Email delivery" });
@@ -1131,9 +1131,9 @@ describe("blocks, mutes and follow requests", () => {
     server.use(
       http.get(`${apiBase}/mutes`, ({ request }) =>
         new URL(request.url).searchParams.get("cursor") === "next"
-          ? HttpResponse.json({ items: [{ account: carol, notifications: false }] })
+          ? HttpResponse.json({ items: [{ account: carol, hide_notifications: false }] })
           : HttpResponse.json({
-              items: [{ account: bob, notifications: true, expires_at: "2026-11-01T09:30:00Z" }],
+              items: [{ account: bob, hide_notifications: true, expires_at: "2026-11-01T09:30:00Z" }],
               next_cursor: "next",
             }),
       ),

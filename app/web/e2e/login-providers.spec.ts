@@ -135,7 +135,7 @@ async function administratorServer(page: Page) {
         // A provider with users linked to it, so the dialogs warn about them.
         linked_users: 2,
         created_at: "2026-10-20T00:00:00Z",
-        updated_at: "2026-10-20T00:00:00Z",
+        revised_at: "2026-10-20T00:00:00Z",
       };
       providers = [provider];
       return json(route, provider);

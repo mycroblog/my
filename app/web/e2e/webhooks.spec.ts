@@ -114,7 +114,7 @@ async function administratorServer(page: Page) {
         state_reason: "admin",
         state_changed_at: "2026-10-20T00:00:00Z",
         created_at: "2026-10-20T00:00:00Z",
-        updated_at: "2026-10-20T00:00:00Z",
+        revised_at: "2026-10-20T00:00:00Z",
       };
       webhooks = [webhook];
       return json(route, { webhook, secret });

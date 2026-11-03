@@ -39,7 +39,7 @@ properties:
     description: Whether the account is told of the action.
     type: boolean
   state:
-    $ref: ./AdminAccountActionState.yaml
+    $ref: ./ModerationActionState.yaml
   issued_at:
     type: string
     format: date-time

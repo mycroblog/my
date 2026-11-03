@@ -188,7 +188,7 @@ func TestClientAPIRemoteAccountActions(t *testing.T) {
 	// suspend: what bob sends is dropped, and his profile and posts are hidden.
 	var a clientapi.AdminAccountAction
 	e.want(e.do(http.MethodPost, "/admin/accounts/"+bobID+"/actions", mod.token, map[string]any{"kind": "suspend", "reason_category": "spam"}, &a), http.StatusOK, "suspend bob")
-	if a.AccountId != bobID || a.Kind != clientapi.AdminAccountActionKindSuspend || a.State != clientapi.AdminAccountActionStateActive || a.NotifyTarget {
+	if a.AccountId != bobID || a.Kind != clientapi.AdminAccountActionKindSuspend || a.State != clientapi.ModerationActionStateActive || a.NotifyTarget {
 		t.Errorf("suspension = %+v, want an active suspend of bob without a notice", a)
 	}
 	if _, ok := stored(create(2)); ok {
@@ -198,7 +198,7 @@ func TestClientAPIRemoteAccountActions(t *testing.T) {
 
 	// The lift brings the profile and the posts back, and bob's posts are received again.
 	e.want(e.do(http.MethodPost, "/admin/account_actions/"+a.Id+"/lift", mod.token, map[string]any{"reason": "mistake"}, &a), http.StatusOK, "lift")
-	if a.State != clientapi.AdminAccountActionStateLifted {
+	if a.State != clientapi.ModerationActionStateLifted {
 		t.Errorf("lifted = %+v", a)
 	}
 	shown("after the lift", first, true)

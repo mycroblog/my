@@ -363,7 +363,7 @@ func TestListInstanceHealth(t *testing.T) {
 		t.Fatalf("first page = %+v", page)
 	}
 	a := page.Items[0]
-	if a.State != clientapi.AdminInstanceStateUnavailable || a.FailureDays != 7 || a.Since == nil || !a.Since.Equal(adminNow.Add(-time.Hour)) ||
+	if a.State != clientapi.AdminInstanceStateUnavailable || a.FailureDays != 7 || a.StateChangedAt == nil || !a.StateChangedAt.Equal(adminNow.Add(-time.Hour)) ||
 		a.LastFailureDay == nil || a.LastFailureDay.String() != "2026-10-16" {
 		t.Errorf("a.example = %+v", a)
 	}
@@ -409,7 +409,7 @@ func TestGetInstanceHealth(t *testing.T) {
 	}
 	res = e.admin(t, http.MethodGet, "/admin/instances/healthy.example", "admin-read", nil)
 	got := decodeJSON[clientapi.AdminInstanceHealth](t, res)
-	if got.State != clientapi.AdminInstanceStateAvailable || got.Since != nil || got.LastFailureDay != nil || got.FailureDays != 0 {
+	if got.State != clientapi.AdminInstanceStateAvailable || got.StateChangedAt != nil || got.LastFailureDay != nil || got.FailureDays != 0 {
 		t.Errorf("a server without a row = %+v, want available without since", got)
 	}
 }
@@ -437,7 +437,7 @@ func TestMarkInstanceAvailable(t *testing.T) {
 	res := e.admin(t, http.MethodPost, "/admin/instances/a.example/mark_available", "admin", nil)
 	got := decodeJSON[clientapi.AdminInstanceHealth](t, res)
 	if res.StatusCode != http.StatusOK || got.State != clientapi.AdminInstanceStateAvailable || got.FailureDays != 0 || got.LastFailureDay != nil ||
-		got.Since == nil || !got.Since.Equal(adminNow) {
+		got.StateChangedAt == nil || !got.StateChangedAt.Equal(adminNow) {
 		t.Fatalf("marked = %d %+v", res.StatusCode, got)
 	}
 	if want := []string{userOf(aliceAccountID)}; !slices.Equal(health.markedBy, want) {

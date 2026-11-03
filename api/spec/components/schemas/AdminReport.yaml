@@ -11,8 +11,7 @@ properties:
       made on this server.
     type: string
   category:
-    type: string
-    enum: [spam, legal, violation, other]
+    $ref: ./ReportCategory.yaml
   comment:
     description: The reporter's comment as plain text, up to 5,000 characters.
     type: string

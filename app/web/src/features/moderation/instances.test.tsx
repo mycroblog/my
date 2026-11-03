@@ -30,7 +30,7 @@ function recordAdminRequests() {
 const paused: Schemas["AdminInstanceHealth"] = {
   domain: "down.example",
   state: "unavailable",
-  since: "2026-10-10T08:00:00Z",
+  state_changed_at: "2026-10-10T08:00:00Z",
   failure_days: 7,
   last_failure_day: "2026-10-10",
 };
@@ -120,7 +120,12 @@ describe("remote servers", () => {
       http.get(`${apiBase}/admin/instances/:domain`, () => HttpResponse.json(health)),
       http.get(`${apiBase}/admin/instances/:domain/availability_events`, () => HttpResponse.json({ items: events })),
       http.post(`${apiBase}/admin/instances/:domain/mark_available`, () => {
-        health = { domain: paused.domain, state: "available", since: "2026-10-17T00:00:00Z", failure_days: 0 };
+        health = {
+          domain: paused.domain,
+          state: "available",
+          state_changed_at: "2026-10-17T00:00:00Z",
+          failure_days: 0,
+        };
         events = [
           {
             id: "0192f0c4-7a8e-7000-8000-0000000000e3",
@@ -176,7 +181,7 @@ describe("remote servers", () => {
         return HttpResponse.json({
           domain: paused.domain,
           state: "available",
-          since: "2026-10-17T00:00:00Z",
+          state_changed_at: "2026-10-17T00:00:00Z",
           failure_days: 0,
         });
       }),

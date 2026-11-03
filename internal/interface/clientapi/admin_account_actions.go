@@ -55,7 +55,7 @@ func (s *Server) newAdminAccountActionsWith(ctx context.Context, reads presentRe
 		item := AdminAccountAction{
 			Id: a.ID, AccountId: a.TargetAccountID, Kind: AdminAccountActionKind(a.Kind),
 			ReasonCategory: AdminAccountActionCategory(a.ReasonCategory), Issuer: AdminAccountActionIssuer(a.Issuer),
-			NotifyTarget: a.NotifyTarget, State: AdminAccountActionState(v.State), IssuedAt: a.IssuedAt.UTC(),
+			NotifyTarget: a.NotifyTarget, State: ModerationActionState(v.State), IssuedAt: a.IssuedAt.UTC(),
 		}
 		if a.PublicReason != "" {
 			item.PublicReason = &a.PublicReason

@@ -61,7 +61,7 @@ type ServerOptions = {
   permissions?: string[];
   sendsEmail?: boolean;
   timeZoneChosen?: boolean;
-  emailSuppression?: { kind: string; since: string };
+  emailSuppression?: { kind: string; state_changed_at: string };
 };
 
 /**
@@ -293,7 +293,7 @@ async function signedInServer(
       case "GET /blocks":
         return json(route, { items: [bob] });
       case "GET /mutes":
-        return json(route, { items: [{ account: bob, notifications: true }] });
+        return json(route, { items: [{ account: bob, hide_notifications: true }] });
       case "GET /domain_mutes":
         // A long domain, and one in IDNA A-labels that the page shows with its U-labels too.
         return json(route, {
@@ -1000,7 +1000,7 @@ test.describe("post defaults", () => {
 test.describe("email suppression", () => {
   test("says that emails do not reach the address, and what to do", async ({ page, makeAxeBuilder }) => {
     await signedInServer(page, projectLocale(), {
-      emailSuppression: { kind: "hard_bounce", since: "2026-10-10T09:30:00Z" },
+      emailSuppression: { kind: "hard_bounce", state_changed_at: "2026-10-10T09:30:00Z" },
     });
     await page.goto("/settings/notifications");
     const section = page

@@ -999,8 +999,6 @@ components:
       $ref: ./components/schemas/AdminAccountActionKind.yaml
     AdminAccountActionPage:
       $ref: ./components/schemas/AdminAccountActionPage.yaml
-    AdminAccountActionState:
-      $ref: ./components/schemas/AdminAccountActionState.yaml
     AdminAccountDetail:
       $ref: ./components/schemas/AdminAccountDetail.yaml
     AdminAccountPage:
@@ -1037,8 +1035,6 @@ components:
       $ref: ./components/schemas/CreateLoginProviderRequest.yaml
     EmailSuppression:
       $ref: ./components/schemas/EmailSuppression.yaml
-    AdminAccountRegistrationState:
-      $ref: ./components/schemas/AdminAccountRegistrationState.yaml
     AdminAccountRestriction:
       $ref: ./components/schemas/AdminAccountRestriction.yaml
     AdminAccountSignIn:
@@ -1089,8 +1085,6 @@ components:
       $ref: ./components/schemas/AdminDomainActionKind.yaml
     AdminDomainActionPage:
       $ref: ./components/schemas/AdminDomainActionPage.yaml
-    AdminDomainActionState:
-      $ref: ./components/schemas/AdminDomainActionState.yaml
     AdminIncomePeriodTotal:
       $ref: ./components/schemas/AdminIncomePeriodTotal.yaml
     AdminIncomeTotals:
@@ -1223,8 +1217,6 @@ components:
       $ref: ./components/schemas/AdminSignupBlockPage.yaml
     AdminSignupBlockSeverity:
       $ref: ./components/schemas/AdminSignupBlockSeverity.yaml
-    AdminSignupBlockState:
-      $ref: ./components/schemas/AdminSignupBlockState.yaml
     AdminSupporterPlan:
       $ref: ./components/schemas/AdminSupporterPlan.yaml
     AdminSupporterPlanCreateRequest:
@@ -1753,6 +1745,8 @@ components:
       $ref: ./components/schemas/ReplaceCustomEmojiImageRequest.yaml
     Report:
       $ref: ./components/schemas/Report.yaml
+    ModerationActionState:
+      $ref: ./components/schemas/ModerationActionState.yaml
     ReportCategory:
       $ref: ./components/schemas/ReportCategory.yaml
     ReportPage:

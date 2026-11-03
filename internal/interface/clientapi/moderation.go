@@ -28,7 +28,7 @@ func newModerationAction(l *i18n.Localizer, v appmoderation.TargetActionView) Mo
 	out := ModerationAction{
 		Id: v.ID, Kind: AdminAccountActionKind(v.Kind), KindLabel: l.ServerModerationActionKind(string(v.Kind)),
 		ReasonCategory: AdminAccountActionCategory(v.ReasonCategory), ReasonCategoryLabel: l.ServerModerationActionCategory(string(v.ReasonCategory)),
-		StatusIds: append([]string{}, v.StatusIDs...), State: AdminAccountActionState(v.State), IssuedAt: v.IssuedAt.UTC(),
+		StatusIds: append([]string{}, v.StatusIDs...), State: ModerationActionState(v.State), IssuedAt: v.IssuedAt.UTC(),
 	}
 	if v.PublicReason != "" {
 		out.PublicReason = &v.PublicReason

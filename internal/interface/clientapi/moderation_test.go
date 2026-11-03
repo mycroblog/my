@@ -97,14 +97,14 @@ func TestListOwnModerationActions(t *testing.T) {
 	}
 	suspend, limit, warn := page.Items[0], page.Items[1], page.Items[2]
 	// alice's labels are in her language, Japanese.
-	if suspend.Id != actionID(3) || suspend.Kind != clientapi.AdminAccountActionKindSuspend || suspend.State != clientapi.AdminAccountActionStateActive ||
+	if suspend.Id != actionID(3) || suspend.Kind != clientapi.AdminAccountActionKindSuspend || suspend.State != clientapi.ModerationActionStateActive ||
 		!strings.HasPrefix(suspend.KindLabel, "凍結") || suspend.ReasonCategoryLabel != "法的な理由" || suspend.ExpiresAt != nil || suspend.PublicReason != nil {
 		t.Errorf("suspend = %+v", suspend)
 	}
 	if limit.ExpiresAt == nil || !limit.ExpiresAt.Equal(time.Date(2026, 10, 31, 0, 0, 0, 0, time.UTC)) || limit.ReasonCategoryLabel != "スパム" {
 		t.Errorf("limit = %+v", limit)
 	}
-	if warn.State != clientapi.AdminAccountActionStateLifted || warn.LiftedAt == nil || warn.PublicReason == nil || *warn.PublicReason != "be nice" ||
+	if warn.State != clientapi.ModerationActionStateLifted || warn.LiftedAt == nil || warn.PublicReason == nil || *warn.PublicReason != "be nice" ||
 		warn.KindLabel != "警告" || len(warn.StatusIds) != 0 {
 		t.Errorf("warn = %+v", warn)
 	}

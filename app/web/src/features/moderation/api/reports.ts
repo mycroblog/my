@@ -21,7 +21,7 @@ export type ReportCategory = Report["category"];
 export type AccountAction = Schemas["AdminAccountAction"];
 export type AccountActionKind = Schemas["AdminAccountActionKind"];
 export type AccountActionCategory = Schemas["AdminAccountActionCategory"];
-export type AccountActionState = Schemas["AdminAccountActionState"];
+export type AccountActionState = Schemas["ModerationActionState"];
 export type NewAccountAction = Schemas["CreateAccountActionRequest"];
 
 /** The tabs of the report queue, in their order: the reports that await the moderators, and those handled. */

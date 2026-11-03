@@ -121,7 +121,7 @@ export function isMissingPermission(error: unknown): boolean {
 
 export type DomainAction = Schemas["AdminDomainAction"];
 export type DomainActionKind = Schemas["AdminDomainActionKind"];
-export type DomainActionState = Schemas["AdminDomainActionState"];
+export type DomainActionState = Schemas["ModerationActionState"];
 export type NewDomainAction = Schemas["CreateDomainActionRequest"];
 
 /** The kinds of domain action, from the lightest to the heaviest, in the order of the form. */

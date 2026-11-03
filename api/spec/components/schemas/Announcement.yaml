@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: An announcement of the server to every local user (FR-726), as the user sees it.
 type: object
-required: [id, title, content, published_at, updated_at, read, ended]
+required: [id, title, content, published_at, revised_at, read, ended]
 properties:
   id:
     $ref: ./Id.yaml
@@ -23,7 +23,7 @@ properties:
     description: When it stops showing; omitted when it shows until it is withdrawn.
     type: string
     format: date-time
-  updated_at:
+  revised_at:
     description: When its text or window last changed.
     type: string
     format: date-time
