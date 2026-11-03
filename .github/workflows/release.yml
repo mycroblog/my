@@ -163,7 +163,11 @@ jobs:
             echo "The release notes' draft failed; write its sections by hand." >> "$GITHUB_STEP_SUMMARY"
             scripts/release-notes.sh skeleton "$VERSION" > "$RUNNER_TEMP/notes.md"
           fi
-          gh release create "$VERSION" --draft --verify-tag --generate-notes --notes-file "$RUNNER_TEMP/notes.md" \
+          # GitHub refuses a body over its limit, which the generated list alone passes for a release with no earlier
+          # one, and the tags exist by now: cut the list to fit.
+          gh api "repos/$GH_REPO/releases/generate-notes" -f tag_name="$VERSION" --jq .body > "$RUNNER_TEMP/generated.md"
+          scripts/release-notes.sh fit "$RUNNER_TEMP/notes.md" "$RUNNER_TEMP/generated.md" > "$RUNNER_TEMP/body.md"
+          gh release create "$VERSION" --draft --verify-tag --notes-file "$RUNNER_TEMP/body.md" \
             "${prerelease[@]}" --title "$VERSION"
           echo "Draft release $VERSION created at $SHA." >> "$GITHUB_STEP_SUMMARY"
 

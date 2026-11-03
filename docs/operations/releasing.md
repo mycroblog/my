@@ -91,6 +91,7 @@ an empty section and a missing one mean different things to an operator.
 The `release` job writes a starting draft of them from the repository, with `scripts/release-notes.sh` (tested by `scripts/release-notes-test.sh`,
 run with `scripts/task.sh shell:test`). It compares this release with the previous one, picked as for [the upgrade test](#the-upgrade-test): `previous` when
 a prerelease names it, otherwise the latest patch release of the previous minor version, ignoring prerelease tags and the libraries' `pkg/...` tags.
+The generated list of changes is cut by whole lines to fit GitHub's limit of 125,000 characters on a Release's body, which a release with no earlier one passes, and its Full Changelog link stays.
 The decider still reviews every section before publishing. HTML comments in the draft name what a script cannot fill:
 
 | Section | The draft says | Left to the decider |
