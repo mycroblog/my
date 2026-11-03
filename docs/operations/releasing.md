@@ -36,7 +36,8 @@ only when every job passes, tags that commit, drafts a GitHub Release, and publi
    If only the `npm` job fails after `release` passed, fix the cause (usually the trusted publisher registration) and rerun the failed job of that run
    (`gh run rerun <run-id> -R mycroblog/my --failed`); versions already published are skipped.
 4. When it passes, open the draft Release (`gh release view v0.1.0 -R mycroblog/my`, or the Releases page), tidy the generated list of changes,
-   write the sections that [Release notes](#release-notes) requires, and publish it. A prerelease is drafted as a prerelease.
+   review the sections that [Release notes](#release-notes) requires, fill in what the draft's comments ask for, and publish it.
+   A prerelease is drafted as a prerelease.
 
 ## The upgrade test
 
@@ -82,6 +83,24 @@ Fix it on `main` before releasing: [Versions](#versions) promises this upgrade.
 Besides the generated list of changes, every Release has the sections below. Write "None" in a section that has nothing to say;
 an empty section and a missing one mean different things to an operator.
 
+The `release` job writes a starting draft of them from the repository, with `scripts/release-notes.sh` (tested by `scripts/release-notes-test.sh`,
+run with `scripts/task.sh shell:test`). It compares this release with the previous one, picked as for [the upgrade test](#the-upgrade-test): `previous` when
+a prerelease names it, otherwise the latest patch release of the previous minor version, ignoring prerelease tags and the libraries' `pkg/...` tags.
+The decider still reviews every section before publishing. HTML comments in the draft name what a script cannot fill:
+
+| Section | The draft says | Left to the decider |
+| --- | --- | --- |
+| Upgrading | The data upgrade steps new since the previous release, the projections they rebuild, the releases to upgrade from and through, new required settings | How long each step takes on a large instance; anything else to do by hand; the result of `my schema apply -dry-run` |
+| Breaking changes | Renamed and removed settings, changed defaults and requirements, what the client API removed or changed, the schema files that changed, the commits marked `!` by area (their Conventional Commits scope) | What each one means for an operator or a client; whether a schema change removes data, and which release carried it over; which commits matter outside the repository |
+| API changes | The difference of `api/openapi.yaml`: added and removed operations, fields, and scopes, changed fields, deprecations with their dates and description, the operations that may be removed | The replacement of a deprecated operation when its description does not name one; the reason for a change made without the deprecation period |
+| mykit, mybot | The commits marked `!` with the library's scope or on its hand-written files; for `mykit`, the operations deprecated or removed | What each change means for a user of the library |
+
+Without any earlier release, as for `v0.1.0`, the draft is that of a first release: "None" in Upgrading, Breaking changes, and the libraries, because nothing can
+break yet, and the size of the client API. A patch release is compared with the previous minor version too, so remove what an earlier patch of its minor version already announced.
+
+The draft reads the literals in `dataUpgrades` and `retiredKeys`, the generated [configuration reference](../reference/configuration.md), and `api/openapi.yaml`,
+as they are at each release. If it cannot read them, the job still creates the release, with a warning, and the sections hold a request to write them by hand.
+
 ### Upgrading
 
 What an operator runs to upgrade to this release ([Upgrading](database.md#upgrading)):
@@ -93,8 +112,7 @@ What an operator runs to upgrade to this release ([Upgrading](database.md#upgrad
   removes data that an earlier release carried over, that release by name (it is what `my db upgrade -check` names when it stops).
 - Anything to do by hand before or after, such as a new required setting.
 
-To fill it, compare the data upgrade steps registered in `my` with those of the previous release, and run the new release's
-`my schema apply -dry-run` on a database of the previous release.
+To check it, run the new release's `my schema apply -dry-run` on a database of the previous release.
 
 ### Breaking changes
 
@@ -118,14 +136,15 @@ The client API (`/api/v1`) grows by addition. A breaking change first marks the 
   - operations and fields removed in this release (only those deprecated in an earlier release);
   - anything changed without the deprecation period because of a security fix, with the reason.
 
-  To write it, read the difference of `api/openapi.yaml` from the previous release, and the operations that have an `x-sunset` (`grep -n x-sunset api/openapi.yaml`).
+  To check it, read the difference of `api/openapi.yaml` from the previous release, and the operations that have an `x-sunset` (`grep -n x-sunset api/openapi.yaml`).
 - Before publishing, check what may be removed: an operation may be removed only if a release of an earlier minor version already shipped it with
   `deprecated: true` and its `Sunset` date has passed. Never deprecate and remove an operation within the same minor version.
+  The draft lists the operations that may be removed, and marks in bold each removal that breaks this rule.
 - A `Sunset` date is never before its `Deprecation` date (the generator checks this). When deprecating, pick a date after the next planned minor release.
 
 ### mykit and mybot
 
-The `release` job puts both sections, with how to install each from Go and npm, at the top of the draft. Before publishing, replace the note at the end of each:
+The `release` job puts both sections in the draft, with how to install each from Go and npm and the changes it found. Before publishing, check them against:
 
 - **mykit**: breaking changes to the hand-written layer (retries, paging, streaming, tokens), taken from the commits marked `!` in Conventional Commits
   (allowed during v0), and the types and functions of the generated client deprecated or removed in this release (the same operations as in [API changes](#api-changes)).
@@ -209,5 +228,5 @@ gh workflow run release.yml -R mycroblog/my --ref <branch> -f version=v0.0.0-tes
 
 ## What a release produces
 
-`release.yml` produces the tags (the server's and the libraries'), the draft Release, and the npm packages.
-Publishing the container images and generating the release notes are not part of it yet: the decider writes the notes' sections by hand.
+`release.yml` produces the tags (the server's and the libraries'), the draft Release with the starting draft of [its notes](#release-notes), and the npm packages.
+Publishing the container images is not part of it yet.

@@ -16,7 +16,10 @@
 #                                                           VERSION, the tag of the same release, in place of its
 #                                                           placeholder; its `replace` with ../mykit stays, and the
 #                                                           module's users ignore it.
-#   scripts/release-libraries.sh notes VERSION               Print the libraries' section of the release notes.
+#   scripts/release-libraries.sh notes VERSION [MYKIT MYBOT] Print the libraries' section of the release notes, with
+#                                                           the files MYKIT and MYBOT as the text of each library
+#                                                           (scripts/release-notes.sh); without them, a note on
+#                                                           what to write there.
 #
 # VERSION is the release's version, vX.Y.Z or vX.Y.Z-<pre-release> (release.yml's input).
 set -euo pipefail
@@ -93,10 +96,18 @@ cmd_go_mod() {
 }
 
 cmd_notes() {
-  [ $# -eq 1 ] || die "usage: notes VERSION"
+  [ $# -eq 1 ] || [ $# -eq 3 ] || die "usage: notes VERSION [MYKIT MYBOT]"
   local version tag
+  # shellcheck disable=SC2016 # The backticks are Markdown's.
+  local mykit='<!-- The breaking changes of the hand-written layer (the commits marked with `!`) and the deprecations of the generated client (ADR-0093 §8), or "None". -->'
+  # shellcheck disable=SC2016 # The backticks are Markdown's.
+  local mybot='<!-- The breaking changes of mybot (the commits marked with `!`; ADR-0094 §1), or "None". -->'
   version="$(npm_version "$1")"
   tag="$(cmd_npm_dist_tag "$1")"
+  if [ $# -eq 3 ]; then
+    mykit="$(cat "$2")"
+    mybot="$(cat "$3")"
+  fi
   cat << EOF
 ## mykit
 
@@ -106,7 +117,7 @@ The client library of the client API, released with this version of the server
 - Go: \`go get github.com/mycroblog/my/pkg/mykit@$1\`
 - npm: \`npm install @mycroblog/mykit@$version\` (dist-tag \`$tag\`, with provenance)
 
-<!-- The breaking changes of the hand-written layer (the commits marked with \`!\`) and the deprecations of the generated client (ADR-0093 §8), or "None". -->
+$mykit
 
 ## mybot
 
@@ -117,7 +128,7 @@ Its npm package depends on \`@mycroblog/mykit@$version\` exactly.
 - Go: \`go get github.com/mycroblog/my/pkg/mybot@$1\`
 - npm: \`npm install @mycroblog/mybot@$version\` (dist-tag \`$tag\`, with provenance)
 
-<!-- The breaking changes of mybot (the commits marked with \`!\`; ADR-0094 §1), or "None". -->
+$mybot
 EOF
 }
 

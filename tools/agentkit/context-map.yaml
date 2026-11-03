@@ -78,7 +78,7 @@ entries:
     notes:
       - "Every task with a desc appears in docs/reference/commands.md (`agentkit docs inventory`)."
   - name: release
-    paths: [".github/workflows/release.yml", ".github/workflows/slow-suite.yml", "scripts/release-libraries.sh"]
+    paths: [".github/workflows/release.yml", ".github/workflows/slow-suite.yml", "scripts/release-libraries.sh", "scripts/release-notes.sh", "scripts/release-notes-test.sh", "tools/agentkit/cmd/releasenotes/**"]
     userdocs: ["docs/operations/releasing.md"]
 
   # --- Documents --------------------------------------------------------------------------------------

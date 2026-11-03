@@ -96,8 +96,11 @@ jobs:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Every tag and commit, to compare with the previous release (scripts/release-notes.sh).
+          fetch-depth: 0
           persist-credentials: false
-      # For `go mod edit` (scripts/release-libraries.sh go-mod); no module or build cache is needed.
+      # For `go mod edit` (scripts/release-libraries.sh go-mod) and the reading of the notes' draft
+      # (scripts/release-notes.sh); no module or build cache is needed.
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -108,6 +111,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ inputs.version }}
+          PREVIOUS: ${{ inputs.previous }}
           SHA: ${{ github.sha }}
         run: |
           mapfile -t libraries < <(scripts/release-libraries.sh go-tags "$VERSION")
@@ -146,15 +150,20 @@ jobs:
           done
           prerelease=()
           if [[ "$VERSION" == *-* ]]; then prerelease=(--prerelease); fi
-          # The libraries' section (scripts/release-libraries.sh notes) comes before the generated list of changes;
-          # the decider fills it in before publishing the release.
-          scripts/release-libraries.sh notes "$VERSION" > "$RUNNER_TEMP/notes.md"
+          # The draft of the sections (scripts/release-notes.sh) comes before the generated list of changes; the
+          # decider reviews it and fills in what a script cannot before publishing the release. The tags exist by now
+          # and the suite took hours, so a failure of the draft only leaves the sections for the decider to write.
+          if ! scripts/release-notes.sh draft "$VERSION" "$PREVIOUS" > "$RUNNER_TEMP/notes.md"; then
+            echo "::warning::scripts/release-notes.sh failed: the draft has no generated sections."
+            echo "The release notes' draft failed; write its sections by hand." >> "$GITHUB_STEP_SUMMARY"
+            scripts/release-notes.sh skeleton "$VERSION" > "$RUNNER_TEMP/notes.md"
+          fi
           gh release create "$VERSION" --draft --verify-tag --generate-notes --notes-file "$RUNNER_TEMP/notes.md" \
             "${prerelease[@]}" --title "$VERSION"
           echo "Draft release $VERSION created at $SHA." >> "$GITHUB_STEP_SUMMARY"
 
       # M5 (#30) adds the release artefacts here, after the draft exists and before it is published: publishing the
-      # container images of the tagged commit and writing the release notes.
+      # container images of the tagged commit.
 
   npm:
     # Publishes the npm packages of the libraries once the commit is tagged. npm's trusted publishing authenticates this
