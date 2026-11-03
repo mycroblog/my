@@ -2216,6 +2216,27 @@ func (e InstanceVoiceRoomStarters) Valid() bool {
 	}
 }
 
+// Defines values for InstanceAudience.
+const (
+	InstanceAudienceEveryone InstanceAudience = "everyone"
+	InstanceAudienceOff      InstanceAudience = "off"
+	InstanceAudienceSignedIn InstanceAudience = "signed_in"
+)
+
+// Valid indicates whether the value is a known member of the InstanceAudience enum.
+func (e InstanceAudience) Valid() bool {
+	switch e {
+	case InstanceAudienceEveryone:
+		return true
+	case InstanceAudienceOff:
+		return true
+	case InstanceAudienceSignedIn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceDocumentKind.
 const (
 	InstanceDocumentKindCommerceDisclosure InstanceDocumentKind = "commerce_disclosure"
@@ -2306,7 +2327,8 @@ func (e InstanceRegistrationsMode) Valid() bool {
 // Defines values for InstanceSettingKey.
 const (
 	InstanceSettingKeyAiUsage                          InstanceSettingKey = "ai_usage"
-	InstanceSettingKeyAppealWindow                     InstanceSettingKey = "appeal_window"
+	InstanceSettingKeyAppealWindowDays                 InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyAuditLogRetentionDays            InstanceSettingKey = "audit_log_retention_days"
 	InstanceSettingKeyAuthorizedFetch                  InstanceSettingKey = "authorized_fetch"
 	InstanceSettingKeyContactAccount                   InstanceSettingKey = "contact_account"
 	InstanceSettingKeyContactEmail                     InstanceSettingKey = "contact_email"
@@ -2315,7 +2337,7 @@ const (
 	InstanceSettingKeyDomainActionsVisibility          InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration        InstanceSettingKey = "dynamic_client_registration"
 	InstanceSettingKeyFeaturedAccounts                 InstanceSettingKey = "featured_accounts"
-	InstanceSettingKeyFederatedTimelineAccess          InstanceSettingKey = "federated_timeline_access"
+	InstanceSettingKeyFederatedTimelineVisibility      InstanceSettingKey = "federated_timeline_visibility"
 	InstanceSettingKeyFederationMode                   InstanceSettingKey = "federation_mode"
 	InstanceSettingKeyFinanceViewerIncome              InstanceSettingKey = "finance_viewer_income"
 	InstanceSettingKeyFinanceViewerItemMemos           InstanceSettingKey = "finance_viewer_item_memos"
@@ -2324,32 +2346,31 @@ const (
 	InstanceSettingKeyIncomeVisibility                 InstanceSettingKey = "income_visibility"
 	InstanceSettingKeyIndexableDefault                 InstanceSettingKey = "indexable_default"
 	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
-	InstanceSettingKeyLinkCardsEnabled                 InstanceSettingKey = "link_cards_enabled"
+	InstanceSettingKeyLinkCards                        InstanceSettingKey = "link_cards"
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt         InstanceSettingKey = "link_cards_ignore_robots_txt"
-	InstanceSettingKeyLocalTimelineAccess              InstanceSettingKey = "local_timeline_access"
+	InstanceSettingKeyLocalTimelineVisibility          InstanceSettingKey = "local_timeline_visibility"
 	InstanceSettingKeyLoginProvidersOnly               InstanceSettingKey = "login_providers_only"
 	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
 	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
-	InstanceSettingKeyMemberInviteMaxExpiresIn         InstanceSettingKey = "member_invite_max_expires_in"
+	InstanceSettingKeyMemberInviteMaxLifetimeSeconds   InstanceSettingKey = "member_invite_max_lifetime_seconds"
 	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
+	InstanceSettingKeyModerationActionsRetentionDays   InstanceSettingKey = "moderation_actions_retention_days"
 	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
 	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
 	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
 	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
-	InstanceSettingKeyRemoteMediaCacheTtl              InstanceSettingKey = "remote_media_cache_ttl"
+	InstanceSettingKeyRegistrationOriginsRetentionDays InstanceSettingKey = "registration_origins_retention_days"
+	InstanceSettingKeyRemoteMediaCacheTtlSeconds       InstanceSettingKey = "remote_media_cache_ttl_seconds"
 	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
+	InstanceSettingKeyReportsRetentionDays             InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription          InstanceSettingKey = "require_media_description"
-	InstanceSettingKeyRetentionAuditLog                InstanceSettingKey = "retention_audit_log"
-	InstanceSettingKeyRetentionModerationActions       InstanceSettingKey = "retention_moderation_actions"
-	InstanceSettingKeyRetentionRegistrationOrigins     InstanceSettingKey = "retention_registration_origins"
-	InstanceSettingKeyRetentionReports                 InstanceSettingKey = "retention_reports"
-	InstanceSettingKeyRetentionSessionOrigins          InstanceSettingKey = "retention_session_origins"
-	InstanceSettingKeyRetentionVoiceParticipants       InstanceSettingKey = "retention_voice_participants"
 	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySecurityContact                  InstanceSettingKey = "security_contact"
+	InstanceSettingKeySessionOriginsRetentionDays      InstanceSettingKey = "session_origins_retention_days"
 	InstanceSettingKeySupporterListVisibility          InstanceSettingKey = "supporter_list_visibility"
 	InstanceSettingKeyThumbnail                        InstanceSettingKey = "thumbnail"
 	InstanceSettingKeyUserAppRegistration              InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyVoiceParticipantsRetentionDays   InstanceSettingKey = "voice_participants_retention_days"
 	InstanceSettingKeyVoicePublicSummary               InstanceSettingKey = "voice_public_summary"
 	InstanceSettingKeyVoiceRoomStarters                InstanceSettingKey = "voice_room_starters"
 )
@@ -2359,7 +2380,9 @@ func (e InstanceSettingKey) Valid() bool {
 	switch e {
 	case InstanceSettingKeyAiUsage:
 		return true
-	case InstanceSettingKeyAppealWindow:
+	case InstanceSettingKeyAppealWindowDays:
+		return true
+	case InstanceSettingKeyAuditLogRetentionDays:
 		return true
 	case InstanceSettingKeyAuthorizedFetch:
 		return true
@@ -2377,7 +2400,7 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyFeaturedAccounts:
 		return true
-	case InstanceSettingKeyFederatedTimelineAccess:
+	case InstanceSettingKeyFederatedTimelineVisibility:
 		return true
 	case InstanceSettingKeyFederationMode:
 		return true
@@ -2395,11 +2418,11 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyInviteCreators:
 		return true
-	case InstanceSettingKeyLinkCardsEnabled:
+	case InstanceSettingKeyLinkCards:
 		return true
 	case InstanceSettingKeyLinkCardsIgnoreRobotsTxt:
 		return true
-	case InstanceSettingKeyLocalTimelineAccess:
+	case InstanceSettingKeyLocalTimelineVisibility:
 		return true
 	case InstanceSettingKeyLoginProvidersOnly:
 		return true
@@ -2407,9 +2430,11 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyMemberInviteMaxActive:
 		return true
-	case InstanceSettingKeyMemberInviteMaxExpiresIn:
+	case InstanceSettingKeyMemberInviteMaxLifetimeSeconds:
 		return true
 	case InstanceSettingKeyMemberInviteMaxUses:
+		return true
+	case InstanceSettingKeyModerationActionsRetentionDays:
 		return true
 	case InstanceSettingKeyOauthMetadataDocumentClients:
 		return true
@@ -2419,33 +2444,29 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyRegistrationMode:
 		return true
-	case InstanceSettingKeyRemoteMediaCacheTtl:
+	case InstanceSettingKeyRegistrationOriginsRetentionDays:
+		return true
+	case InstanceSettingKeyRemoteMediaCacheTtlSeconds:
 		return true
 	case InstanceSettingKeyRemoteMediaPolicy:
 		return true
+	case InstanceSettingKeyReportsRetentionDays:
+		return true
 	case InstanceSettingKeyRequireMediaDescription:
-		return true
-	case InstanceSettingKeyRetentionAuditLog:
-		return true
-	case InstanceSettingKeyRetentionModerationActions:
-		return true
-	case InstanceSettingKeyRetentionRegistrationOrigins:
-		return true
-	case InstanceSettingKeyRetentionReports:
-		return true
-	case InstanceSettingKeyRetentionSessionOrigins:
-		return true
-	case InstanceSettingKeyRetentionVoiceParticipants:
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
 	case InstanceSettingKeySecurityContact:
+		return true
+	case InstanceSettingKeySessionOriginsRetentionDays:
 		return true
 	case InstanceSettingKeySupporterListVisibility:
 		return true
 	case InstanceSettingKeyThumbnail:
 		return true
 	case InstanceSettingKeyUserAppRegistration:
+		return true
+	case InstanceSettingKeyVoiceParticipantsRetentionDays:
 		return true
 	case InstanceSettingKeyVoicePublicSummary:
 		return true
@@ -3656,27 +3677,6 @@ func (e SupporterInterval) Valid() bool {
 	}
 }
 
-// Defines values for SupporterListVisibility.
-const (
-	SupporterListVisibilityOff      SupporterListVisibility = "off"
-	SupporterListVisibilityPublic   SupporterListVisibility = "public"
-	SupporterListVisibilitySignedIn SupporterListVisibility = "signed_in"
-)
-
-// Valid indicates whether the value is a known member of the SupporterListVisibility enum.
-func (e SupporterListVisibility) Valid() bool {
-	switch e {
-	case SupporterListVisibilityOff:
-		return true
-	case SupporterListVisibilityPublic:
-		return true
-	case SupporterListVisibilitySignedIn:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for SupporterPlanProblemReason.
 const (
 	SupporterPlanProblemReasonAnnualDiscountPercent SupporterPlanProblemReason = "annual_discount_percent"
@@ -3863,27 +3863,6 @@ func (e ThemeErrorScheme) Valid() bool {
 	case ThemeErrorSchemeDark:
 		return true
 	case ThemeErrorSchemeLight:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for TimelineAccess.
-const (
-	TimelineAccessEveryone TimelineAccess = "everyone"
-	TimelineAccessLoggedIn TimelineAccess = "logged_in"
-	TimelineAccessOff      TimelineAccess = "off"
-)
-
-// Valid indicates whether the value is a known member of the TimelineAccess enum.
-func (e TimelineAccess) Valid() bool {
-	switch e {
-	case TimelineAccessEveryone:
-		return true
-	case TimelineAccessLoggedIn:
-		return true
-	case TimelineAccessOff:
 		return true
 	default:
 		return false
@@ -6081,7 +6060,7 @@ type AdminReportDetail struct {
 
 	// VoiceRoom The voice chat room that a report points at, as the moderators review it: every revision
 	// of its settings, and the records of its participants while the server keeps them (90 days
-	// after the room ends by default, `retention_voice_participants`, and as long as a report
+	// after the room ends by default, `voice_participants_retention_days`, and as long as a report
 	// points at the room).
 	VoiceRoom *AdminReportVoiceRoom `json:"voice_room,omitempty"`
 
@@ -6154,7 +6133,7 @@ type AdminReportTargetHistory struct {
 
 // AdminReportVoiceRoom The voice chat room that a report points at, as the moderators review it: every revision
 // of its settings, and the records of its participants while the server keeps them (90 days
-// after the room ends by default, `retention_voice_participants`, and as long as a report
+// after the room ends by default, `voice_participants_retention_days`, and as long as a report
 // points at the room).
 type AdminReportVoiceRoom struct {
 	// Bans The accounts removed from the room, who may not join it again.
@@ -7785,7 +7764,7 @@ type CreateOAuthAppRequest struct {
 
 // CreateOwnInviteRequest A new invite of the user's own, within the caps of the instance settings.
 type CreateOwnInviteRequest struct {
-	// ExpiresIn How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted.
+	// ExpiresIn How many seconds the invite works, up to `member_invite_max_lifetime_seconds`; 7 days (or the cap when it is shorter) when omitted.
 	ExpiresIn *int `json:"expires_in,omitempty"`
 
 	// MaxUses How many sign-ups the invite allows, up to `member_invite_max_uses`; 1 (or the cap when it is lower) when omitted.
@@ -9136,9 +9115,9 @@ type Instance struct {
 	// Limits Limits that clients check before sending a request.
 	Limits InstanceLimits `json:"limits"`
 
-	// LinkCardsEnabled Whether the server fetches the pages that posts link to, for their link cards. While it is
+	// LinkCards Whether the server fetches the pages that posts link to, for their link cards. While it is
 	// false, the server fetches nothing for link cards.
-	LinkCardsEnabled bool `json:"link_cards_enabled"`
+	LinkCards bool `json:"link_cards"`
 
 	// LinkCardsIgnoreRobotsTxt Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
 	// link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
@@ -9206,10 +9185,12 @@ type Instance struct {
 	// StatusPageUrl The https address of the instance's status page, on a service apart from the server (ADR-0085). Absent when the operator has not set one.
 	StatusPageUrl *string `json:"status_page_url,omitempty"`
 
-	// SupporterListVisibility Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-	// §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-	// `signed_in`, the users signed in to this server.
-	SupporterListVisibility SupporterListVisibility `json:"supporter_list_visibility"`
+	// SupporterListVisibility Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	SupporterListVisibility InstanceAudience `json:"supporter_list_visibility"`
 
 	// SupportersEnabled Whether the supporter program is enabled: its plans (`GET /instance/supporter_plans`)
 	// and the subscriptions show only then.
@@ -9230,9 +9211,9 @@ type Instance struct {
 	Thumbnail *InstanceThumbnail `json:"thumbnail,omitempty"`
 
 	// Timelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
-	// setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-	// setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-	// timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+	// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+	// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 	Timelines InstanceTimelines `json:"timelines"`
 
 	// Version The server version.
@@ -9252,6 +9233,13 @@ type Instance struct {
 // `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
 // voice chat is off.
 type InstanceVoiceRoomStarters string
+
+// InstanceAudience Who may read something public about the instance, the value of the instance settings
+// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+// a 401; `everyone`, everyone, anonymous visitors included.
+type InstanceAudience string
 
 // InstanceBrandImage A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 // under `/brand/` on the server that name the revision, so their content never changes and
@@ -9509,21 +9497,23 @@ type InstanceThumbnail struct {
 }
 
 // InstanceTimelines Who may read the public timelines the instance serves (FR-202): `local` is the instance
-// setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-// setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-// timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 type InstanceTimelines struct {
-	// Federated Who may read a public timeline (the instance settings `local_timeline_access` and
-	// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-	// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-	// `everyone`, everyone, anonymous visitors included.
-	Federated TimelineAccess `json:"federated"`
+	// Federated Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	Federated InstanceAudience `json:"federated"`
 
-	// Local Who may read a public timeline (the instance settings `local_timeline_access` and
-	// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-	// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-	// `everyone`, everyone, anonymous visitors included.
-	Local TimelineAccess `json:"local"`
+	// Local Who may read something public about the instance, the value of the instance settings
+	// `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+	// `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+	// a 401; `everyone`, everyone, anonymous visitors included.
+	Local InstanceAudience `json:"local"`
 }
 
 // InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
@@ -9547,7 +9537,7 @@ type LiftAccountActionRequest struct {
 // after the status was posted or received. Omitted from a status with attachments or a
 // poll, from a status whose link has no card yet, from a status whose link is on a domain
 // where a rule of the crawler stops fetching, and when the instance setting
-// `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+// `link_cards` is off. A card appears after its fetch, so a status read right after
 // it was posted may have none.
 //
 // Clients show the card as one link to `url` and, under a content warning, only once the
@@ -10013,7 +10003,7 @@ type MediaVariants struct {
 }
 
 // MemberInviteLimits The caps and defaults of the invites that members create, from the instance settings
-// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
 type MemberInviteLimits struct {
 	// DefaultExpiresIn The seconds an invite created without `expires_in` works.
 	DefaultExpiresIn int `json:"default_expires_in"`
@@ -10760,7 +10750,7 @@ type OwnInvitePage struct {
 	Items     []OwnInvite `json:"items"`
 
 	// Limits The caps and defaults of the invites that members create, from the instance settings
-	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
 	Limits MemberInviteLimits `json:"limits"`
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
@@ -11946,7 +11936,7 @@ type Status struct {
 	// after the status was posted or received. Omitted from a status with attachments or a
 	// poll, from a status whose link has no card yet, from a status whose link is on a domain
 	// where a rule of the crawler stops fetching, and when the instance setting
-	// `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+	// `link_cards` is off. A card appears after its fetch, so a status read right after
 	// it was posted may have none.
 	//
 	// Clients show the card as one link to `url` and, under a content warning, only once the
@@ -12312,11 +12302,6 @@ type SupporterListPlan struct {
 	Name string `json:"name"`
 }
 
-// SupporterListVisibility Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-// §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-// `signed_in`, the users signed in to this server.
-type SupporterListVisibility string
-
 // SupporterListing Whether the user is on the supporter list.
 type SupporterListing struct {
 	Listed bool `json:"listed"`
@@ -12565,12 +12550,6 @@ type ThemeTokenValue struct {
 	Token string  `json:"token"`
 	Value *string `json:"value,omitempty"`
 }
-
-// TimelineAccess Who may read a public timeline (the instance settings `local_timeline_access` and
-// `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-// `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-// `everyone`, everyone, anonymous visitors included.
-type TimelineAccess string
 
 // TotpSetup A new TOTP secret to add to an authenticator app.
 type TotpSetup struct {
@@ -19815,7 +19794,7 @@ type ClientInterface interface {
 	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
-	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 	// `member_invite_max_active` usable invites gets a 409
 	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 	// user as the actor. Every sign-up with the invite checks again that the user may create
@@ -19836,7 +19815,7 @@ type ClientInterface interface {
 	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
-	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 	// `member_invite_max_active` usable invites gets a 409
 	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 	// user as the actor. Every sign-up with the invite checks again that the user may create
@@ -21182,8 +21161,8 @@ type ClientInterface interface {
 	//
 	// The public posts of the instance's accounts, newest first, and their local posts for a
 	// logged-in viewer, in the viewer's timeline languages. The instance setting
-	// `local_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-	// is `logged_in` an anonymous request is a 401.
+	// `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+	// is `signed_in` an anonymous request is a 401.
 	//
 	// Corresponds with GET /timelines/local (the `GetLocalTimeline` operationId).
 	GetLocalTimeline(ctx context.Context, params *GetLocalTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -21193,8 +21172,8 @@ type ClientInterface interface {
 	// The public posts of the instance's accounts and of the remote accounts whose posts the
 	// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
 	// visibilities, `local` ones included, and boosts never appear on it. The instance setting
-	// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-	// is `logged_in` an anonymous request is a 401.
+	// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+	// is `signed_in` an anonymous request is a 401.
 	//
 	// Corresponds with GET /timelines/public (the `GetPublicTimeline` operationId).
 	GetPublicTimeline(ctx context.Context, params *GetPublicTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -28244,7 +28223,7 @@ func (c *Client) ListOwnInvites(ctx context.Context, params *ListOwnInvitesParam
 // registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
-// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 // `member_invite_max_active` usable invites gets a 409
 // `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 // user as the actor. Every sign-up with the invite checks again that the user may create
@@ -28275,7 +28254,7 @@ func (c *Client) CreateOwnInviteWithBody(ctx context.Context, contentType string
 // registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
-// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 // `member_invite_max_active` usable invites gets a 409
 // `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 // user as the actor. Every sign-up with the invite checks again that the user may create
@@ -30781,8 +30760,8 @@ func (c *Client) GetListTimeline(ctx context.Context, id ListId, params *GetList
 //
 // The public posts of the instance's accounts, newest first, and their local posts for a
 // logged-in viewer, in the viewer's timeline languages. The instance setting
-// `local_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-// is `logged_in` an anonymous request is a 401.
+// `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+// is `signed_in` an anonymous request is a 401.
 //
 // Corresponds with GET /timelines/local (the `GetLocalTimeline` operationId).
 func (c *Client) GetLocalTimeline(ctx context.Context, params *GetLocalTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30802,8 +30781,8 @@ func (c *Client) GetLocalTimeline(ctx context.Context, params *GetLocalTimelineP
 // The public posts of the instance's accounts and of the remote accounts whose posts the
 // instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
 // visibilities, `local` ones included, and boosts never appear on it. The instance setting
-// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-// is `logged_in` an anonymous request is a 401.
+// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+// is `signed_in` an anonymous request is a 401.
 //
 // Corresponds with GET /timelines/public (the `GetPublicTimeline` operationId).
 func (c *Client) GetPublicTimeline(ctx context.Context, params *GetPublicTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -51123,7 +51102,7 @@ type ClientWithResponsesInterface interface {
 	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
-	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 	// `member_invite_max_active` usable invites gets a 409
 	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 	// user as the actor. Every sign-up with the invite checks again that the user may create
@@ -51144,7 +51123,7 @@ type ClientWithResponsesInterface interface {
 	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
-	// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 	// `member_invite_max_active` usable invites gets a 409
 	// `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 	// user as the actor. Every sign-up with the invite checks again that the user may create
@@ -52610,8 +52589,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// The public posts of the instance's accounts, newest first, and their local posts for a
 	// logged-in viewer, in the viewer's timeline languages. The instance setting
-	// `local_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-	// is `logged_in` an anonymous request is a 401.
+	// `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+	// is `signed_in` an anonymous request is a 401.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52623,8 +52602,8 @@ type ClientWithResponsesInterface interface {
 	// The public posts of the instance's accounts and of the remote accounts whose posts the
 	// instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
 	// visibilities, `local` ones included, and boosts never appear on it. The instance setting
-	// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-	// is `logged_in` an anonymous request is a 401.
+	// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+	// is `signed_in` an anonymous request is a 401.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -81581,7 +81560,7 @@ func (c *ClientWithResponses) ListOwnInvitesWithResponse(ctx context.Context, pa
 // registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
-// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 // `member_invite_max_active` usable invites gets a 409
 // `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 // user as the actor. Every sign-up with the invite checks again that the user may create
@@ -81608,7 +81587,7 @@ func (c *ClientWithResponses) CreateOwnInviteWithBodyWithResponse(ctx context.Co
 // registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
-// `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
 // `member_invite_max_active` usable invites gets a 409
 // `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
 // user as the actor. Every sign-up with the invite checks again that the user may create
@@ -83770,8 +83749,8 @@ func (c *ClientWithResponses) GetListTimelineWithResponse(ctx context.Context, i
 //
 // The public posts of the instance's accounts, newest first, and their local posts for a
 // logged-in viewer, in the viewer's timeline languages. The instance setting
-// `local_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-// is `logged_in` an anonymous request is a 401.
+// `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+// is `signed_in` an anonymous request is a 401.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83789,8 +83768,8 @@ func (c *ClientWithResponses) GetLocalTimelineWithResponse(ctx context.Context, 
 // The public posts of the instance's accounts and of the remote accounts whose posts the
 // instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
 // visibilities, `local` ones included, and boosts never appear on it. The instance setting
-// `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-// is `logged_in` an anonymous request is a 401.
+// `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+// is `signed_in` an anonymous request is a 401.
 //
 // Returns a wrapper object for the known response body format(s).
 //

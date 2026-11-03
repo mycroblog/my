@@ -1,8 +1,0 @@
-# SPDX-License-Identifier: MIT
-description: |
-  Who may read a public timeline (the instance settings `local_timeline_access` and
-  `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-  `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-  `everyone`, everyone, anonymous visitors included.
-type: string
-enum: ["off", logged_in, everyone]

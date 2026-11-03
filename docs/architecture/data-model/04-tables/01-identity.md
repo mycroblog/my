@@ -224,7 +224,7 @@
 - ログイン元（`session_origins`）と登録元（`registration_origins`）は、セッション・利用者と同じトランザクションで記録します。
   - IP アドレスは正規形（IPv4 射影の IPv6 は IPv4、ゾーンは外す）で持ち、同じアドレスが同じ文字列になるようにします。IP アドレスとして読めない値は記録しません。
   - IP アドレスも User-Agent も分からないログインは `session_origins` の行を作らず、IP アドレスの分からない登録は `registration_origins` の行を作りません。どちらもログインと登録を妨げません。
-  - 1 時間ごとの消去ジョブ `identity.purge_origins` が、保持期間（インスタンス設定 `retention_session_origins`・`retention_registration_origins`、既定 180 日、§4.9）を過ぎた行を、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。
+  - 1 時間ごとの消去ジョブ `identity.purge_origins` が、保持期間（インスタンス設定 `session_origins_retention_days`・`registration_origins_retention_days`、既定 180 日、§4.9）を過ぎた行を、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。
     保全（§4.3）のあるローカルのアカウントの利用者の行は消しません。期間と保全のある利用者は回ごとに読み直します。セッションと利用者は残ります。
   - IP アドレスとメールアドレスを返すのは、モデレーターのアカウントの管理（FR-714）の「表示」（`identity.AccountAdmin.Reveal`）だけで、呼ぶたびにそのためのトランザクションで監査ログ（`revealed_private_data`）を書き、書けたときだけ返します。
 - アカウントの管理（FR-714）の検索は、モジュールをまたぐ JOIN をしません。条件ごとに 1 つのモジュールが自分のテーブルから ID を新しい順のキーセットで返し（メールアドレス・メールのドメイン・IP アドレス・登録の状態は `identity` が利用者の ID で、処分の制限は `moderation` が `account_restrictions` から、削除は `account` が `account_lifecycle_states` から、それ以外は `account` が `accounts` と `account_handles` から）、`identity.AccountAdmin` が残りの条件をアカウントごとに確かめます。

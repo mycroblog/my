@@ -54,7 +54,7 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 }
 
 // appealWindow reads the appeal window of the moderation module from the instance setting
-// appeal_window (ADR-0038).
+// appeal_window_days (ADR-0038).
 type appealWindow struct{ a *App }
 
 func (w appealWindow) AppealWindow(ctx context.Context) (time.Duration, error) {
@@ -75,9 +75,9 @@ func (r retentionSettings) RetentionPeriods(ctx context.Context) (moderation.Ret
 		return moderation.RetentionPeriods{}, err
 	}
 	return moderation.RetentionPeriods{
-		Reports:  settings.Retention(instance.SettingRetentionReports),
-		Actions:  settings.Retention(instance.SettingRetentionModerationActions),
-		AuditLog: settings.Retention(instance.SettingRetentionAuditLog),
+		Reports:  settings.Retention(instance.SettingReportsRetentionDays),
+		Actions:  settings.Retention(instance.SettingModerationActionsRetentionDays),
+		AuditLog: settings.Retention(instance.SettingAuditLogRetentionDays),
 	}, nil
 }
 
@@ -96,8 +96,8 @@ func (o originRetention) OriginRetention(ctx context.Context) (identity.OriginRe
 		return identity.OriginRetentionPolicy{}, err
 	}
 	pol := identity.OriginRetentionPolicy{
-		SessionPeriod:      settings.Retention(instance.SettingRetentionSessionOrigins),
-		RegistrationPeriod: settings.Retention(instance.SettingRetentionRegistrationOrigins),
+		SessionPeriod:      settings.Retention(instance.SettingSessionOriginsRetentionDays),
+		RegistrationPeriod: settings.Retention(instance.SettingRegistrationOriginsRetentionDays),
 	}
 	for _, id := range held {
 		actor, err := o.a.Accounts.FindByID(ctx, id)

@@ -205,10 +205,10 @@ func (s *Server) GetHomeTimeline(ctx context.Context, req GetHomeTimelineRequest
 
 // GetLocalTimeline serves GET /api/v1/timelines/local. Visitors who are not logged in see only
 // public posts; local posts need a logged-in viewer (ADR-0017). It is a 404 while the instance
-// setting local_timeline_access is off, and a 401 for anonymous requests while it is logged_in
+// setting local_timeline_visibility is off, and a 401 for anonymous requests while it is signed_in
 // (FR-202).
 func (s *Server) GetLocalTimeline(ctx context.Context, req GetLocalTimelineRequestObject) (GetLocalTimelineResponseObject, error) {
-	denied, err := s.timelineDenied(ctx, instance.Settings.LocalTimelineAccess)
+	denied, err := s.timelineDenied(ctx, instance.Settings.LocalTimelineVisibility)
 	if err != nil {
 		return nil, err
 	} else if denied != nil {
@@ -232,8 +232,8 @@ func (s *Server) GetLocalTimeline(ctx context.Context, req GetLocalTimelineReque
 
 // timelineDenied returns the problem that refuses a timeline to the request under the instance
 // setting access (FR-202): a 404 while it is off, and a 401 for an anonymous request while it is
-// logged_in. It returns nil when the request may read the timeline.
-func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settings) instance.TimelineAccess) (*problem, error) {
+// signed_in. It returns nil when the request may read the timeline.
+func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settings) instance.Audience) (*problem, error) {
 	var settings instance.Settings
 	if s.o.Instance != nil {
 		var err error
@@ -243,9 +243,9 @@ func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settin
 	}
 	_, loggedIn := ViewerFrom(ctx)
 	switch access(settings) {
-	case instance.TimelineEveryone:
+	case instance.AudienceEveryone:
 		return nil, nil
-	case instance.TimelineLoggedIn:
+	case instance.AudienceSignedIn:
 		if loggedIn {
 			return nil, nil
 		}
@@ -260,10 +260,10 @@ func (s *Server) timelineDenied(ctx context.Context, access func(instance.Settin
 }
 
 // GetPublicTimeline serves GET /api/v1/timelines/public: the public posts of local and remote
-// accounts. It is a 404 while the instance setting federated_timeline_access is off, and a 401
-// for anonymous requests while it is logged_in (FR-202).
+// accounts. It is a 404 while the instance setting federated_timeline_visibility is off, and a 401
+// for anonymous requests while it is signed_in (FR-202).
 func (s *Server) GetPublicTimeline(ctx context.Context, req GetPublicTimelineRequestObject) (GetPublicTimelineResponseObject, error) {
-	denied, err := s.timelineDenied(ctx, instance.Settings.FederatedTimelineAccess)
+	denied, err := s.timelineDenied(ctx, instance.Settings.FederatedTimelineVisibility)
 	if err != nil {
 		return nil, err
 	} else if denied != nil {

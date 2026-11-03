@@ -125,7 +125,7 @@
   },
   "about.link_card_crawler.state.off": {
     "defaultMessage": "このサーバーでは、リンクのカードはオフで、クローラーは今は何も取得しません。このページの残りは、オンのときの動きです。",
-    "description": "What the crawler does on a server whose setting link_cards_enabled is off: at the top of the page about the crawler."
+    "description": "What the crawler does on a server whose setting link_cards is off: at the top of the page about the crawler."
   },
   "about.link_card_crawler.loading": {
     "defaultMessage": "このサーバーの設定を読み込んでいます",

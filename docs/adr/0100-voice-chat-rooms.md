@@ -236,7 +236,7 @@ v0.1.0 の前に DB を作り直せる期間（[ADR-0087](0087-schema-changes-af
 ### 13. 記録の保持と履歴（回答 24・32・37）
 
 - **参加者の記録**（`voice_room_participations`・`voice_room_participation_ends`・`voice_room_role_changes`・`voice_room_hand_raises`・`voice_room_speak_grants`・`voice_room_invitations` と取り消し・`voice_room_bans`）:
-  ルームの終了から 90 日で消す。`instance_settings` の `retention_voice_participants`（下限 30 日）で変えられる（ADR-0038 の形）。通報が参照するルームの記録は、その通報の保持の期限まで残す。保全（`retention_holds`）はいまのとおり効く。
+  ルームの終了から 90 日で消す。`instance_settings` の `voice_participants_retention_days`（下限 30 日）で変えられる（ADR-0038 の形）。通報が参照するルームの記録は、その通報の保持の期限まで残す。保全（`retention_holds`）はいまのとおり効く。
 - **ルームそのもの**（`voice_rooms`・改版・タグ・ホストの交代・共同ホストの変化・終了）は残す。アカウントの消去（ADR-0020 規約 6）は、そのアカウントが書いた改版の名前・説明を消し、data-model の消去の表に足す。
 - **履歴**: ホストだった人（`voice_room_host_changes` に名前がある人）だけが、設定の画面で自分がホストだったルームの一覧（名前・開いた時刻・終わった時刻・終わった理由）を見る（回答 32）。
 
@@ -267,7 +267,7 @@ UI の呼び名は、機能を「通話」/ "Voice chat"、単位を「ルーム
 - 悪い影響: 開始の投稿は連合するが、リモートの人は参加できない。リンク先が「ローカルの利用者だけ」と示すことで補う。
 - 後続の作業（ADR の決定の後に Issue にする）:
   - `voice` モジュールのドメインと判定の関数、スキーマ、投影
-  - 権限 `start_voice_rooms` と ADR-0072 の許可リスト、インスタンス設定（`voice_room_starters`・`voice_public_summary`・`retention_voice_participants`）
+  - 権限 `start_voice_rooms` と ADR-0072 の許可リスト、インスタンス設定（`voice_room_starters`・`voice_public_summary`・`voice_participants_retention_days`）
   - ハートビートと `voice.sweep`、ホストの猶予と自動の交代
   - 招待・通知 2 種・開始の投稿・リンク先のページと OGP
   - 通報の対象とモデレーターによる終了、監査ログ

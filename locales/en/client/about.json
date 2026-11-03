@@ -125,7 +125,7 @@
   },
   "about.link_card_crawler.state.off": {
     "defaultMessage": "On this server, link cards are off, so the crawler fetches nothing now. The rest of this page says what it does while they are on.",
-    "description": "What the crawler does on a server whose setting link_cards_enabled is off: at the top of the page about the crawler."
+    "description": "What the crawler does on a server whose setting link_cards is off: at the top of the page about the crawler."
   },
   "about.link_card_crawler.loading": {
     "defaultMessage": "Loading this server's settings",

@@ -80,9 +80,9 @@ const choices = {
       description: "client:admin.settings.supporter_list.off.description",
     },
     {
-      value: "public",
-      label: "client:admin.settings.supporter_list.public",
-      description: "client:admin.settings.supporter_list.public.description",
+      value: "everyone",
+      label: "client:admin.settings.supporter_list.everyone",
+      description: "client:admin.settings.supporter_list.everyone.description",
     },
     {
       value: "signed_in",

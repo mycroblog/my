@@ -2994,8 +2994,8 @@ export interface paths {
          * Get the local timeline
          * @description The public posts of the instance's accounts, newest first, and their local posts for a
          *     logged-in viewer, in the viewer's timeline languages. The instance setting
-         *     `local_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-         *     is `logged_in` an anonymous request is a 401.
+         *     `local_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+         *     is `signed_in` an anonymous request is a 401.
          */
         get: operations["getLocalTimeline"];
         put?: never;
@@ -3018,8 +3018,8 @@ export interface paths {
          * @description The public posts of the instance's accounts and of the remote accounts whose posts the
          *     instance holds, newest first, in the viewer's timeline languages (FR-202). Posts of other
          *     visibilities, `local` ones included, and boosts never appear on it. The instance setting
-         *     `federated_timeline_access` decides who may read it: while it is `off` it is a 404, and while it
-         *     is `logged_in` an anonymous request is a 401.
+         *     `federated_timeline_visibility` decides who may read it: while it is `off` it is a 404, and while it
+         *     is `signed_in` an anonymous request is a 401.
          */
         get: operations["getPublicTimeline"];
         put?: never;
@@ -3268,7 +3268,7 @@ export interface paths {
          *     (`local`) or the federated timeline (`federated`), from the moment it opens. Read it with
          *     `fetch` and send the access token in `Authorization`, like every other operation
          *     (`EventSource` cannot send it). Only logged-in users open it, whatever the instance setting
-         *     `local_timeline_access` or `federated_timeline_access` allows anonymous visitors; while the
+         *     `local_timeline_visibility` or `federated_timeline_visibility` allows anonymous visitors; while the
          *     setting of the timeline is `off` it is a 404.
          *
          *     Events:
@@ -6519,7 +6519,7 @@ export interface paths {
          *     registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
          *     `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
          *     value over the cap of the instance settings (`member_invite_max_uses`,
-         *     `member_invite_max_expires_in`) is a 422 naming it. A user who already holds
+         *     `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
          *     `member_invite_max_active` usable invites gets a 409
          *     `/api/v1/problems/too-many-invites`. The creation is recorded in the audit log with the
          *     user as the actor. Every sign-up with the invite checks again that the user may create
@@ -8974,7 +8974,7 @@ export interface components {
         };
         /**
          * @description The caps and defaults of the invites that members create, from the instance settings
-         *     `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_expires_in`.
+         *     `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
          */
         MemberInviteLimits: {
             /** @description How many usable invites one member may hold at once; 0 lets members create none. */
@@ -9297,7 +9297,7 @@ export interface components {
         /**
          * @description The voice chat room that a report points at, as the moderators review it: every revision
          *     of its settings, and the records of its participants while the server keeps them (90 days
-         *     after the room ends by default, `retention_voice_participants`, and as long as a report
+         *     after the room ends by default, `voice_participants_retention_days`, and as long as a report
          *     points at the room).
          */
         AdminReportVoiceRoom: {
@@ -10458,7 +10458,7 @@ export interface components {
         CreateOwnInviteRequest: {
             /** @description How many sign-ups the invite allows, up to `member_invite_max_uses`; 1 (or the cap when it is lower) when omitted. */
             max_uses?: number;
-            /** @description How many seconds the invite works, up to `member_invite_max_expires_in`; 7 days (or the cap when it is shorter) when omitted. */
+            /** @description How many seconds the invite works, up to `member_invite_max_lifetime_seconds`; 7 days (or the cap when it is shorter) when omitted. */
             expires_in?: number;
         };
         /** @description A new OAuth app. */
@@ -11469,7 +11469,7 @@ export interface components {
              *     and the subscriptions show only then.
              */
             supporters_enabled: boolean;
-            supporter_list_visibility: components["schemas"]["SupporterListVisibility"];
+            supporter_list_visibility: components["schemas"]["InstanceAudience"];
             /**
              * @description Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
              *     they are off, and clients then show no entry to them.
@@ -11494,7 +11494,7 @@ export interface components {
              * @description Whether the server fetches the pages that posts link to, for their link cards. While it is
              *     false, the server fetches nothing for link cards.
              */
-            link_cards_enabled: boolean;
+            link_cards: boolean;
             /**
              * @description Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
              *     link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
@@ -11683,11 +11683,20 @@ export interface components {
          */
         InstanceDocumentKind: "terms" | "privacy_policy" | "commerce_disclosure";
         /**
+         * @description Who may read something public about the instance, the value of the instance settings
+         *     `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
+         *     `domain_actions_rationale_visibility`, and `supporter_list_visibility`: `off`, nobody, and the
+         *     resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
+         *     a 401; `everyone`, everyone, anonymous visitors included.
+         * @enum {string}
+         */
+        InstanceAudience: "off" | "signed_in" | "everyone";
+        /**
          * @description The key of an instance setting (docs/operations/instance-settings.md). New keys may be
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_access" | "federated_timeline_access" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window" | "retention_session_origins" | "retention_registration_origins" | "retention_reports" | "retention_moderation_actions" | "retention_audit_log" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards_enabled" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "retention_voice_participants" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_expires_in" | "public_counts" | "featured_accounts" | "login_providers_only";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -11732,13 +11741,13 @@ export interface components {
         };
         /**
          * @description Who may read the public timelines the instance serves (FR-202): `local` is the instance
-         *     setting `local_timeline_access` of `GET /timelines/local`, and `federated` the instance
-         *     setting `federated_timeline_access` of `GET /timelines/public`. Clients do not offer a
-         *     timeline that is `off`, nor one that is `logged_in` to a visitor who is not logged in.
+         *     setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
+         *     setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+         *     timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
          */
         InstanceTimelines: {
-            local: components["schemas"]["TimelineAccess"];
-            federated: components["schemas"]["TimelineAccess"];
+            local: components["schemas"]["InstanceAudience"];
+            federated: components["schemas"]["InstanceAudience"];
         };
         /** @description The scope of the tokens of an app for the authenticated user. */
         IssueOAuthAppTokenRequest: {
@@ -11776,7 +11785,7 @@ export interface components {
          *     after the status was posted or received. Omitted from a status with attachments or a
          *     poll, from a status whose link has no card yet, from a status whose link is on a domain
          *     where a rule of the crawler stops fetching, and when the instance setting
-         *     `link_cards_enabled` is off. A card appears after its fetch, so a status read right after
+         *     `link_cards` is off. A card appears after its fetch, so a status read right after
          *     it was posted may have none.
          *
          *     Clients show the card as one link to `url` and, under a content warning, only once the
@@ -13861,13 +13870,6 @@ export interface components {
             id: components["schemas"]["Id"];
             name: string;
         };
-        /**
-         * @description Who may read the supporter list (the instance setting `supporter_list_visibility`, ADR-0071
-         *     §4): `off`, nobody, and `GET /instance/supporters` is a 404; `public`, everyone;
-         *     `signed_in`, the users signed in to this server.
-         * @enum {string}
-         */
-        SupporterListVisibility: "off" | "public" | "signed_in";
         /** @description Whether the user is on the supporter list. */
         SupporterListing: {
             listed: boolean;
@@ -14032,14 +14034,6 @@ export interface components {
             dark?: string;
             value?: string;
         };
-        /**
-         * @description Who may read a public timeline (the instance settings `local_timeline_access` and
-         *     `federated_timeline_access`, FR-202): `off`, nobody, and the timeline is a 404;
-         *     `logged_in`, the users logged in to this server, and an anonymous request is a 401;
-         *     `everyone`, everyone, anonymous visitors included.
-         * @enum {string}
-         */
-        TimelineAccess: "off" | "logged_in" | "everyone";
         /** @description A new TOTP secret to add to an authenticator app. */
         TotpSetup: {
             /** @description The secret in base32, for typing it into the app. */

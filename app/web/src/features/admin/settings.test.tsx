@@ -275,9 +275,9 @@ describe("the server's policies", () => {
       {
         values: {
           registration_mode: "invite",
-          local_timeline_access: "logged_in",
+          local_timeline_visibility: "signed_in",
           authorized_fetch: "true",
-          domain_actions_visibility: "users",
+          domain_actions_visibility: "signed_in",
         },
       },
     ]);
@@ -653,7 +653,13 @@ describe("the server's policies", () => {
       await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
     ).toBeInTheDocument();
     expect(settings.patches).toEqual([
-      { values: { voice_room_starters: "everyone", voice_public_summary: "true", retention_voice_participants: "45" } },
+      {
+        values: {
+          voice_room_starters: "everyone",
+          voice_public_summary: "true",
+          voice_participants_retention_days: "45",
+        },
+      },
     ]);
     expect(days).toHaveValue("45");
   });
@@ -700,7 +706,7 @@ describe("the server's policies", () => {
           invite_creators: "everyone",
           member_invite_max_active: "0",
           member_invite_max_uses: "3",
-          member_invite_max_expires_in: String(7 * 86_400),
+          member_invite_max_lifetime_seconds: String(7 * 86_400),
         },
       },
     ]);
