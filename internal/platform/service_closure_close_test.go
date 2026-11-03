@@ -69,7 +69,7 @@ func TestCloseService(t *testing.T) {
 		t.Errorf("close before the date: %s", typ)
 	}
 	e.want(e.do(http.MethodPut, "/admin/closure/announcement", admin.token, map[string]any{"closes_at": time.Now().Add(-time.Minute)}, nil), http.StatusOK, "announce")
-	e.want(e.do(http.MethodPost, "/admin/closure/close", admin.token, map[string]any{"confirm_domain": "other.example"}, nil), http.StatusBadRequest, "close with another domain")
+	e.want(e.do(http.MethodPost, "/admin/closure/close", admin.token, map[string]any{"confirm_domain": "other.example"}, nil), http.StatusUnprocessableEntity, "close with another domain")
 
 	// Before the closure, carol posts as usual.
 	e.want(e.do(http.MethodPost, "/statuses", carol.token, map[string]any{"text": "bye", "visibility": "public"}, nil), http.StatusOK, "POST /statuses before the closure")

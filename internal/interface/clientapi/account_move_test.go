@@ -77,8 +77,8 @@ func TestMoveOwnAccount(t *testing.T) {
 		t.Errorf("wrong password = %d %+v, want 422 wrong-password", res.StatusCode, p)
 	}
 	res = e.sendJSON(t, http.MethodPost, "/accounts/move", "write", `{"target_account_id":"`+bobAccountID+`"}`)
-	if res.StatusCode != http.StatusBadRequest {
-		t.Errorf("no confirmation = %d, want 400", res.StatusCode)
+	if res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("no confirmation = %d, want 422", res.StatusCode)
 	}
 	for _, tc := range []struct{ target, problem string }{
 		{noAlias, clientapi.ProblemTypeMoveAliasMissing},

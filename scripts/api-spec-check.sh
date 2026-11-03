@@ -40,7 +40,18 @@ for file in openapi.yaml "${present[@]}"; do
   fi
 done
 
+# Every problem type that the handlers return is documented in the Problem schema, for clients to
+# branch on it. The generated code repeats what the spec says, so it does not count.
+mapfile -t undocumented < <(comm -23 \
+  <(cd "$root" && grep -rhoE --include='*.go' --exclude='*_test.go' --exclude='*.gen.go' '"/api/v1/problems/[a-z-]+"' internal | tr -d '"' | sort -u) \
+  <(grep -oE '/api/v1/problems/[a-z-]+' "$spec/components/schemas/Problem.yaml" | sort -u))
+if [ "${#undocumented[@]}" -ne 0 ]; then
+  echo "api/spec/components/schemas/Problem.yaml does not list these problem types that the handlers return:" >&2
+  printf '  %s\n' "${undocumented[@]}" >&2
+  failed=1
+fi
+
 if [ "$failed" -ne 0 ]; then
   exit 1
 fi
-echo "api/spec/openapi.yaml lists every file of api/spec"
+echo "api/spec/openapi.yaml lists every file of api/spec, and Problem every problem type"

@@ -75,7 +75,7 @@ func TestListInstanceDomainActions(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e := newPublicDomainActionsEnv(t, tc.visibility, tc.rationale)
-			e.auth.tokens["none"] = bearer("", aliceAccountID)
+			e.auth.tokens["none"] = bearer("read:accounts", aliceAccountID)
 			res := e.send(t, http.MethodGet, "/instance/domain_actions", tc.token, "")
 			if res.StatusCode != http.StatusOK {
 				t.Fatalf("status = %d, want 200", res.StatusCode)

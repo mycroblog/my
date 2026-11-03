@@ -91,7 +91,7 @@ func (s *Server) passkeyProblem(ctx context.Context, err error) *problem {
 		p = s.problem(ctx, http.StatusTooManyRequests, ProblemTypeBlank, l.ServerErrorsRateLimited(), l.ServerErrorsRateLimitedDetail(retry))
 		p.Headers.RetryAfter = &retry
 	case errors.Is(err, identity.ErrInvalidPasskeyName):
-		p = s.invalidParameterResponse(ctx, "name")
+		p = s.unprocessableValue(ctx, "name")
 	case errors.Is(err, appidentity.ErrWrongPassword):
 		p = s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeWrongPassword, l.ServerErrorsWrongPassword(), "")
 	case errors.Is(err, appidentity.ErrInvalidPasskey):
@@ -149,7 +149,7 @@ func (s *Server) BeginPasskeyRegistration(ctx context.Context, req BeginPasskeyR
 	}
 	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password")
 	if !ok {
-		return BeginPasskeyRegistrationdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
+		return BeginPasskeyRegistrationdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, param)), nil
 	}
 	reg, err := s.o.Passkeys.BeginPasskeyRegistration(ctx, v.UserID, req.Body.Name, c)
 	if p := s.passkeyProblem(ctx, err); p != nil {
@@ -178,12 +178,15 @@ func (s *Server) CreatePasskey(ctx context.Context, req CreatePasskeyRequestObje
 	if s.o.Passkeys == nil {
 		return CreatePasskeydefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	}
-	if req.Body == nil || len(req.Body.Credential) == 0 {
+	if req.Body == nil {
 		return CreatePasskeydefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "credential")), nil
+	}
+	if len(req.Body.Credential) == 0 {
+		return CreatePasskeydefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "credential")), nil
 	}
 	response, err := json.Marshal(req.Body.Credential)
 	if err != nil {
-		return CreatePasskeydefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "credential")), nil
+		return CreatePasskeydefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "credential")), nil
 	}
 	c, err := s.o.Passkeys.FinishPasskeyRegistration(ctx, v.UserID, req.Body.RegistrationToken, response)
 	if p := s.passkeyProblem(ctx, err); p != nil {

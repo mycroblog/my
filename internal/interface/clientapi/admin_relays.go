@@ -135,7 +135,7 @@ func (s *Server) CreateRelay(ctx context.Context, req CreateRelayRequestObject) 
 	if pr := req.Body.Protocol; pr != nil {
 		in.Protocol = federation.RelayProtocol(*pr)
 		if !in.Protocol.Valid() {
-			return CreateRelaydefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "protocol")), nil
+			return CreateRelaydefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "protocol")), nil
 		}
 	}
 	if r := req.Body.Receive; r != nil {

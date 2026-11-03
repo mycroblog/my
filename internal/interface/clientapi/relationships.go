@@ -354,7 +354,7 @@ func (s *Server) MuteAccount(ctx context.Context, req MuteAccountRequestObject) 
 		}
 		if b.Duration != nil {
 			if *b.Duration < 0 || *b.Duration > maxMuteSeconds {
-				return MuteAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "duration")), nil
+				return MuteAccountdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "duration")), nil
 			}
 			in.Duration = time.Duration(*b.Duration) * time.Second
 		}

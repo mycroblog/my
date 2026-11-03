@@ -169,6 +169,17 @@ func TestReportClientErrorGecko(t *testing.T) {
 	}
 }
 
+// A third party's token does not count as signed in: its report never notifies the administrators.
+func TestReportClientErrorOfAThirdParty(t *testing.T) {
+	e := newClientErrorEnv(t)
+	e.auth.tokens["third"] = thirdParty(bearer("write:statuses", aliceAccountID))
+	e.report(t, "third", clientReport(geckoStack))
+	evs := e.reporter.take()
+	if len(evs) != 1 || !evs[0].Unauthenticated {
+		t.Errorf("events = %+v, want one that is unauthenticated", evs)
+	}
+}
+
 func TestReportClientErrorNormalizesMessage(t *testing.T) {
 	e := newClientErrorEnv(t)
 	r1 := clientReport(v8Stack)

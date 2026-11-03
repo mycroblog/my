@@ -105,8 +105,8 @@ func TestCloseService(t *testing.T) {
 	f.current.Schedule.ClosesAt = adminNow.Add(-time.Minute)
 	for _, body := range []string{`{"confirm_domain":"other.example"}`, `{"confirm_domain":""}`} {
 		res := e.send(t, http.MethodPost, "/admin/closure/close", "admin", body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, "confirm_domain") {
-			t.Errorf("close with %s = %d %+v, want 400", body, res.StatusCode, p)
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "confirm_domain") {
+			t.Errorf("close with %s = %d %+v, want 422", body, res.StatusCode, p)
 		}
 	}
 	if len(f.calls) != 0 {
@@ -221,7 +221,7 @@ func TestManageServiceClosure(t *testing.T) {
 		{`{"closes_at":"2026-12-16T09:00:00Z","message":"` + strings.Repeat("a", instance.MaxClosureMessageLength+1) + `"}`, "message"},
 	} {
 		res := e.send(t, http.MethodPut, "/admin/closure/announcement", "admin", tc.body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusBadRequest || p.Detail == nil || !strings.Contains(*p.Detail, tc.param) {
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, tc.param) {
 			t.Errorf("announce with a bad %s = %d %+v", tc.param, res.StatusCode, p)
 		}
 	}

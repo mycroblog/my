@@ -45,6 +45,15 @@ const cachePublic = "public, max-age=60"
 // depend on the viewer's locale.
 const cachePrivate = "private, max-age=60"
 
+// publicCache returns the Cache-Control of a public resource: an answer to a request with an access
+// token is in the user's locale, so shared caches do not store it.
+func publicCache(ctx context.Context) string {
+	if _, ok := ViewerFrom(ctx); ok {
+		return cachePrivate
+	}
+	return cachePublic
+}
+
 // GetInstance serves GET /api/v1/instance. The administrators' texts and rules hold one value
 // each, the same in every locale. Like every response, it varies with Accept-Language (localize)
 // for anonymous requests and is private for authenticated ones.

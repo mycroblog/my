@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
   Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
-  underscores. `shortcode_taken`: a local emoji has the shortcode. `invalid_alias`: an
+  underscores. `shortcode_taken`: a local emoji has the shortcode, or a pending request reserves it. `invalid_alias`: an
   alias breaks the rules of a shortcode, or there are more than 10. `invalid_category`:
   the category is longer than 64 characters or not text. `media_not_found`: the media
   file is not an upload of the user. `media_not_ready`: it has not finished processing.

@@ -257,7 +257,7 @@ func (s *Server) CreateCustomEmojiRequest(ctx context.Context, req CreateCustomE
 		}
 		in.EmojiID = knownID(*req.Body.EmojiId)
 	default:
-		return CreateCustomEmojiRequestdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "kind")), nil
+		return CreateCustomEmojiRequestdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "kind")), nil
 	}
 	r, err := s.o.CustomEmojiRequests.SubmitRequest(ctx, in)
 	if p, ok := s.customEmojiProblem(ctx, err); ok {

@@ -332,7 +332,7 @@ func TestClientAPIBlocksAndMutes(t *testing.T) {
 	if r := e.relate("mute", alice, dave, nil); !set(r.Muting) || !set(r.MutingNotifications) {
 		t.Errorf("mute with defaults = %+v", r)
 	}
-	e.want(e.do(http.MethodPost, "/accounts/"+dave.id+"/mute", alice.token, map[string]int{"duration": -1}, nil), http.StatusBadRequest, "negative duration")
+	e.want(e.do(http.MethodPost, "/accounts/"+dave.id+"/mute", alice.token, map[string]int{"duration": -1}, nil), http.StatusUnprocessableEntity, "negative duration")
 	var mutes clientapi.MutePage
 	e.want(e.do(http.MethodGet, "/mutes?limit=1", alice.token, nil, &mutes), http.StatusOK, "mutes")
 	if len(mutes.Mutes) != 1 || mutes.Mutes[0].Account.Id != dave.id || !mutes.Mutes[0].Notifications || mutes.Mutes[0].ExpiresAt != nil || mutes.NextCursor == nil {

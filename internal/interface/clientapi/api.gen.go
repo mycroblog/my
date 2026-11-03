@@ -8070,7 +8070,7 @@ type CustomEmojiProblem struct {
 	Detail *string `json:"detail,omitempty"`
 
 	// Reason Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
-	// underscores. `shortcode_taken`: a local emoji has the shortcode. `invalid_alias`: an
+	// underscores. `shortcode_taken`: a local emoji has the shortcode, or a pending request reserves it. `invalid_alias`: an
 	// alias breaks the rules of a shortcode, or there are more than 10. `invalid_category`:
 	// the category is longer than 64 characters or not text. `media_not_found`: the media
 	// file is not an upload of the user. `media_not_ready`: it has not finished processing.
@@ -8099,7 +8099,7 @@ type CustomEmojiProblem struct {
 }
 
 // CustomEmojiProblemReason Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
-// underscores. `shortcode_taken`: a local emoji has the shortcode. `invalid_alias`: an
+// underscores. `shortcode_taken`: a local emoji has the shortcode, or a pending request reserves it. `invalid_alias`: an
 // alias breaks the rules of a shortcode, or there are more than 10. `invalid_category`:
 // the category is longer than 64 characters or not text. `media_not_found`: the media
 // file is not an upload of the user. `media_not_ready`: it has not finished processing.
@@ -11307,6 +11307,23 @@ type PreviewDomainBlockImportRequest struct {
 //     each present only when the operator set it: `message`, the administrators' notice in
 //     plain text; `until`, when the maintenance is expected to end (RFC 3339); and
 //     `status_page_url`, the instance's status page.
+//   - `/api/v1/problems/custom-emoji-request-conflict` (409): a request for a custom emoji
+//     is not in the state the operation needs, or was decided meanwhile.
+//   - `/api/v1/problems/email-already-verified` (409): the primary email address is already
+//     confirmed, so no confirmation mail is sent.
+//   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
+//     suppressed, so there is nothing to lift.
+//   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
+//     `reason` says which.
+//   - `/api/v1/problems/invalid-role` (422): a role change breaks a rule; `reason` says which.
+//   - `/api/v1/problems/voice-already-invited` (409): the account is already invited to the room.
+//   - `/api/v1/problems/voice-cannot-speak` (403): the participant may not speak in the room.
+//   - `/api/v1/problems/voice-invalid-invitee` (422): the account cannot be invited to the room.
+//   - `/api/v1/problems/voice-invalid-participant` (422): the account is not a participant that
+//     the operation can act on.
+//   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
+//     co-hosts of the room.
+//   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
 type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`

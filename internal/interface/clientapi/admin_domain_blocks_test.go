@@ -156,8 +156,8 @@ func TestDomainBlockCSVRejectsInvalidInput(t *testing.T) {
 		"/admin/domain_actions/import":         `{"private_note":"\u0000","blocks":[]}`,
 	} {
 		res := e.sendJSON(t, http.MethodPost, path, "admin", body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity && res.StatusCode != http.StatusBadRequest {
-			t.Errorf("%s %s = %d %+v, want a 4xx", path, body, res.StatusCode, p)
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity {
+			t.Errorf("%s %s = %d %+v, want 422", path, body, res.StatusCode, p)
 		}
 	}
 	rows := strings.Repeat("x.example\n", moderation.MaxDomainBlockImport+1)

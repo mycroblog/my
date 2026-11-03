@@ -188,6 +188,7 @@ func TestOAuthAppRegistration(t *testing.T) {
 
 	for _, tc := range []struct{ body, param string }{
 		{`{"name":"","redirect_uris":["https://bot.example/cb"],"scope":"read","client_type":"public"}`, "name"},
+		{`{"name":"Bot","redirect_uris":["https://bot.example/cb"],"scope":"read","client_type":"desktop","x":"invalid-on-purpose"}`, "client_type"},
 		{`{"name":"Bot","redirect_uris":["http://localhost/cb"],"scope":"read","client_type":"public"}`, "redirect_uris"},
 		{`{"name":"Bot","website":"ftp://bot.example/","redirect_uris":["https://bot.example/cb"],"scope":"read","client_type":"public"}`, "website"},
 		{`{"name":"Bot","redirect_uris":["https://bot.example/cb"],"scope":"admin:read","client_type":"public"}`, "scope"},

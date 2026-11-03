@@ -147,7 +147,7 @@ func (s *Server) GetInstanceIncomeTotals(ctx context.Context, req GetInstanceInc
 	if p != nil {
 		return GetInstanceIncomeTotalsdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	cache := cachePublic
+	cache := publicCache(ctx)
 	return GetInstanceIncomeTotals200JSONResponse{Body: out, Headers: GetInstanceIncomeTotals200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
