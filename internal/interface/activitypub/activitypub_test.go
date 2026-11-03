@@ -5,6 +5,7 @@ package activitypub_test
 import (
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"testing"
@@ -374,5 +375,79 @@ func TestIDsDoNotDependOnUsernames(t *testing.T) {
 	}
 	if got := doc["publicKey"].(map[string]any)["id"]; got != account.KeyIRI(id, account.KeyRSASHA256) {
 		t.Errorf("publicKey.id = %v, want %s#main-key", got, id)
+	}
+}
+
+// TestWebFingerCanonicalDomain checks that every spelling of the configured domains answers, on a
+// server with internationalized domains and on one whose host has a port (federation.md §1.2).
+func TestWebFingerCanonicalDomain(t *testing.T) {
+	const (
+		aLabel = "xn--r8jz45g.jp"
+		uLabel = "例え.jp"
+		wide   = "ＸＮ－－ｒ８ｊｚ４５ｇ．ｊｐ"
+	)
+	serve := func(t *testing.T, serving, domain string) *server {
+		t.Helper()
+		s := &server{mux: http.NewServeMux(), accounts: newAccounts(t), objects: newObjects(), graph: &fakeGraph{}}
+		activitypub.New(activitypub.Options{
+			Host: serving, AccountDomain: domain, SoftwareVersion: "0.1.0", SourceURL: "https://github.com/mycroblog/my",
+			Accounts: s.accounts, Objects: s.objects, Graph: s.graph, Problem: problem,
+		}).Register(s.mux)
+		return s
+	}
+	finger := func(s *server, resource string) *httptest.ResponseRecorder {
+		t.Helper()
+		return s.get(t, "/.well-known/webfinger?resource="+url.QueryEscape(resource), "")
+	}
+
+	s := serve(t, "social."+aLabel, aLabel)
+	for _, resource := range []string{
+		"acct:alice@" + aLabel,
+		"acct:alice@" + uLabel,
+		"acct:alice@" + aLabel + ".",
+		"acct:alice@" + uLabel + ".",
+		"acct:alice@" + wide,
+		"acct:alice@social." + uLabel,
+		"alice@" + uLabel,
+		"https://social." + uLabel + "/@alice",
+		"https://social." + uLabel + "/ap/actors/" + aliceID,
+	} {
+		rec := finger(s, resource)
+		if rec.Code != http.StatusOK {
+			t.Errorf("resource %s: status %d, want 200", resource, rec.Code)
+			continue
+		}
+		if got := decode(t, rec.Body.Bytes())["subject"]; got != "acct:alice@"+aLabel {
+			t.Errorf("resource %s: subject = %v", resource, got)
+		}
+	}
+	for _, resource := range []string{"acct:" + aLabel + "@" + aLabel, "acct:" + uLabel + "@" + uLabel, "acct:" + aLabel + ".@" + uLabel} {
+		rec := finger(s, resource)
+		if rec.Code != http.StatusOK || decode(t, rec.Body.Bytes())["subject"] != "acct:"+aLabel+"@"+aLabel {
+			t.Errorf("instance actor resource %s = %d %s", resource, rec.Code, rec.Body)
+		}
+	}
+	for _, resource := range []string{
+		"acct:alice@other." + uLabel,
+		"acct:alice@xn--",
+		"acct:alice@" + aLabel + "..",
+		"acct:alice@",
+		"https://social." + uLabel + "/@alice?x=1",
+		"https://social." + uLabel + "/@alice#x",
+		"https://other." + uLabel + "/@alice",
+	} {
+		if rec := finger(s, resource); rec.Code != http.StatusNotFound {
+			t.Errorf("resource %s: status %d, want 404", resource, rec.Code)
+		}
+	}
+
+	dev := serve(t, "localhost:3000", "localhost:3000")
+	for _, resource := range []string{"acct:alice@localhost:3000", "acct:alice@LOCALHOST:3000"} {
+		if rec := finger(dev, resource); rec.Code != http.StatusOK {
+			t.Errorf("resource %s: status %d, want 200", resource, rec.Code)
+		}
+	}
+	if rec := finger(dev, "acct:alice@localhost:4000"); rec.Code != http.StatusNotFound {
+		t.Errorf("another port: status %d, want 404", rec.Code)
 	}
 }
