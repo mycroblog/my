@@ -24,11 +24,11 @@ const (
 	// JobPaymentEvent re-reads what a recorded webhook delivery points at and hands it to the
 	// Syncer. Its idempotency key is "payment_event:<provider>:<event ID>" and its ordering key
 	// the object that the event is about, so the jobs of one object run one at a time.
-	JobPaymentEvent = "supporters.payment_event"
+	JobPaymentEvent = "supporters.apply_payment_event"
 	// JobPaymentReconcile is the periodic reconciliation, every payments_reconcile_interval.
-	JobPaymentReconcile = "supporters.payment_reconcile"
+	JobPaymentReconcile = "supporters.reconcile_payments"
 	// JobPaymentReceiptPurge deletes the webhook receipts older than ReceiptRetention.
-	JobPaymentReceiptPurge = "supporters.payment_receipt_purge"
+	JobPaymentReceiptPurge = "supporters.purge_payment_receipts"
 
 	// WebhookMaxBodyBytes bounds the body of a webhook delivery, read before its signature is
 	// checked (413 beyond it).

@@ -52,7 +52,7 @@ const (
 	DefaultDynamicClientIdleTTL = 90 * 24 * time.Hour
 
 	// JobDeleteUnusedClients deletes the unused dynamically registered clients.
-	JobDeleteUnusedClients = "identity.delete_unused_oauth_clients"
+	JobDeleteUnusedClients = "identity.purge_unused_oauth_clients"
 	// UnusedClientsInterval is the period of the JobDeleteUnusedClients schedule.
 	UnusedClientsInterval = time.Hour
 

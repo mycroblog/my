@@ -29,7 +29,7 @@ const (
 	// JobProcessMedia processes one upload: payload {"media_id": "..."}.
 	JobProcessMedia = "media.process"
 	// JobCleanupMedia deletes the uploads that nothing attached in time (FR-803); no payload.
-	JobCleanupMedia = "media.cleanup"
+	JobCleanupMedia = "media.purge_unattached"
 )
 
 // Defaults of MediaDeps.

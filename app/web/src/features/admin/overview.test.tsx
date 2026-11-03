@@ -24,7 +24,7 @@ describe("the administration overview", () => {
           counts: [
             { state: "queued", type: "federation.deliver", count: 12 },
             { state: "dead", type: "federation.deliver", count: 2 },
-            { state: "dead", type: "kv.cleanup", count: 1 },
+            { state: "dead", type: "kv.purge_expired", count: 1 },
           ],
           waits: [],
           oldest_ready_at: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
