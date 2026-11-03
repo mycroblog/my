@@ -149,7 +149,12 @@ func (d *database) Backlog(_ context.Context, now time.Time) (queue.Backlog, err
 	return queue.Backlog{
 		Ready:         map[string]int64{"federation.deliver": 4, "media.process": 1, "retired.type": 2},
 		OldestReadyAt: now.Add(-90 * time.Second),
-		Dead:          3,
+		OldestReadyByType: map[string]time.Time{
+			"federation.deliver": now.Add(-90 * time.Second),
+			"media.process":      now.Add(-10 * time.Second),
+			"retired.type":       now.Add(-20 * time.Second),
+		},
+		Dead: 3,
 	}, nil
 }
 
@@ -253,13 +258,15 @@ func (w *gaugeWriter) WriteGauges(context.Context) error {
 var start = time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
 
 var want = map[string]float64{
-	"my.queue.ready{my.job.type=federation.deliver}":      4,
-	"my.queue.ready{my.job.type=media.process}":           1,
-	"my.queue.ready{my.job.type=other}":                   2,
-	"my.queue.oldest_ready_age":                           90,
-	"my.queue.dead":                                       3,
-	"my.instance.users":                                   10,
-	"my.instance.statuses":                                200,
+	"my.queue.ready{my.job.type=federation.deliver}":            4,
+	"my.queue.ready{my.job.type=media.process}":                 1,
+	"my.queue.ready{my.job.type=other}":                         2,
+	"my.queue.oldest_ready_age{my.job.type=federation.deliver}": 90,
+	"my.queue.oldest_ready_age{my.job.type=media.process}":      10,
+	"my.queue.oldest_ready_age{my.job.type=other}":              20,
+	"my.queue.dead":        3,
+	"my.instance.users":    10,
+	"my.instance.statuses": 200,
 	"my.media.stored_bytes{my.media.origin=local}":        3000,
 	"my.media.stored_bytes{my.media.origin=remote_cache}": 400,
 	"my.db.size": 50000,

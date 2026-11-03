@@ -39,7 +39,8 @@ var (
 		LabelKeys: []string{queue.LabelJobType},
 	}
 	QueueOldestReadyAge = kernel.Instrument{
-		Name: "my.queue.oldest_ready_age", Unit: "s", Description: "Time the oldest ready job of the database queue has waited.",
+		Name: "my.queue.oldest_ready_age", Unit: "s", Description: "Time the oldest ready job of each type of the database queue has waited.",
+		LabelKeys: []string{queue.LabelJobType},
 	}
 	QueueDead = kernel.Instrument{
 		Name: "my.queue.dead", Unit: "{job}", Description: "Jobs that failed for good.",
@@ -84,7 +85,9 @@ func (s *Service) RegisterGauges(m kernel.Meter) {
 	}))
 	m.Gauge(QueueOldestReadyAge, s.gauge(func(snap Snapshot, o kernel.GaugeObserver) {
 		if snap.Queue != nil {
-			o.Observe(snap.Queue.OldestReadyAge, kernel.Labels{})
+			for t, age := range snap.Queue.OldestReadyAges {
+				o.Observe(age, kernel.NewLabels(queue.LabelJobType, t))
+			}
 		}
 	}))
 	m.Gauge(QueueDead, s.gauge(func(snap Snapshot, o kernel.GaugeObserver) {

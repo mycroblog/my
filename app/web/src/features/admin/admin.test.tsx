@@ -191,6 +191,7 @@ describe("the queue dashboard", () => {
       { state: "dead", type: "federation.deliver", count: 1 },
       { state: "dead", type: "kv.cleanup", count: 1 },
     ],
+    waits: [{ type: "federation.deliver", oldest_ready_at: "2026-10-17T09:30:00Z" }],
     oldest_ready_at: "2026-10-17T09:30:00Z",
   };
 
@@ -238,6 +239,14 @@ describe("the queue dashboard", () => {
     const tiles = within(summary).getByRole("list", { name: "Jobs by state" });
     const [wait, ...states] = within(tiles).getAllByRole("listitem");
     expect(wait).toHaveTextContent(/^Longest job wait/);
+    // Each type says how long it keeps a job waiting: a type that no worker runs shows here.
+    const byType = within(summary).getByRole("list", { name: "Jobs by type" });
+    const [media, deliveries] = within(byType).getAllByRole("listitem");
+    expect(media).toHaveTextContent("media.process");
+    expect(media).toHaveTextContent("Longest job waitNo wait");
+    expect(deliveries).toHaveTextContent("federation.deliver");
+    expect(deliveries).toHaveTextContent("Longest job wait");
+    expect(deliveries).not.toHaveTextContent("No wait");
     expect(states.map((tile) => tile.textContent)).toEqual([
       "Waiting0",
       "Running1",

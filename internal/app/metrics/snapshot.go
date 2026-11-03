@@ -91,7 +91,9 @@ type QueuePart struct {
 	Ready map[string]int64 `json:"ready"`
 	// OldestReadyAge is how long the oldest ready job had waited at At, in seconds.
 	OldestReadyAge float64 `json:"oldest_ready_age"`
-	Dead           int64   `json:"dead"`
+	// OldestReadyAges is the same for each type with ready jobs, named as in Ready.
+	OldestReadyAges map[string]float64 `json:"oldest_ready_ages"`
+	Dead            int64              `json:"dead"`
 }
 
 // TotalsPart is the counts and sizes part of a snapshot.
@@ -252,12 +254,18 @@ func (s *Service) compute(ctx context.Context, snap Snapshot, queuePart, totalsP
 }
 
 func (s *Service) queuePart(b queue.Backlog, now time.Time) *QueuePart {
-	p := &QueuePart{At: now, Ready: make(map[string]int64, len(b.Ready)), Dead: b.Dead}
-	for t, n := range b.Ready {
+	p := &QueuePart{At: now, Ready: make(map[string]int64, len(b.Ready)), OldestReadyAges: make(map[string]float64, len(b.OldestReadyByType)), Dead: b.Dead}
+	name := func(t string) string {
 		if s.d.KnownJobType != nil && !s.d.KnownJobType(t) {
-			t = queue.JobTypeOther
+			return queue.JobTypeOther
 		}
-		p.Ready[t] += n
+		return t
+	}
+	for t, n := range b.Ready {
+		p.Ready[name(t)] += n
+	}
+	for t, at := range b.OldestReadyByType {
+		p.OldestReadyAges[name(t)] = max(p.OldestReadyAges[name(t)], now.Sub(at).Seconds())
 	}
 	if !b.OldestReadyAt.IsZero() {
 		p.OldestReadyAge = max(now.Sub(b.OldestReadyAt), 0).Seconds()

@@ -20,7 +20,7 @@ import (
 // database queue of cloudtasks and sqs with its waker: there a push receiver runs the jobs of
 // the signals instead of a runner (ADR-0120 §2).
 func (a *App) setUpQueue(cfg *config.Config) error {
-	runnerOpts := queue.RunnerOptions{Clock: a.Clock, Logger: a.Logger, Meter: a.Meter, Tracer: a.Tracer, Attempts: a.JobAttempts, Errors: a.ErrorReporter}
+	runnerOpts := a.runnerOptions()
 	switch cfg.Queue {
 	case "db":
 		// Set with the database above.
@@ -62,7 +62,32 @@ func (a *App) setUpDeadJobPurger(cfg *config.Config) {
 }
 
 func (a *App) setDBQueue(q *queuedb.Queue) {
+	a.dbQueue = q
 	a.Jobs, a.Outbox, a.DeadJobs, a.JobInspector, a.source, a.wakeFinder = q, q, q, q, q, q
+}
+
+// setUpWorkerJobTypes limits the runner to the job types of worker_job_types or
+// worker_job_types_except (ADR-0138), once every handler is registered. The configuration allows
+// them only with the db queue, whose scheduler it leaves as it is.
+func (a *App) setUpWorkerJobTypes(cfg *config.Config) error {
+	if len(cfg.WorkerJobTypes) == 0 && len(cfg.WorkerJobTypesExcept) == 0 {
+		return nil
+	}
+	if a.dbQueue == nil {
+		return fmt.Errorf("worker_job_types needs queue = db, not %s", cfg.Queue)
+	}
+	run, skip, err := queue.SelectJobTypes(a.Handlers.Types(), cfg.WorkerJobTypes, cfg.WorkerJobTypesExcept)
+	if err != nil {
+		return fmt.Errorf("worker_job_types: %w", err)
+	}
+	a.skippedJobTypes = skip
+	a.Runner = queue.NewPullRunner(sysmetrics.Source(a.dbQueue.OnlyTypes(run), a.Meter, "queue."+cfg.Queue), a.Handlers, a.runnerOptions())
+	a.runJobs = a.Runner.RunUntil
+	return nil
+}
+
+func (a *App) runnerOptions() queue.RunnerOptions {
+	return queue.RunnerOptions{Clock: a.Clock, Logger: a.Logger, Meter: a.Meter, Tracer: a.Tracer, Attempts: a.JobAttempts, Errors: a.ErrorReporter}
 }
 
 // setUpPushEndpoints serves the endpoints of the push receiver and of the external trigger of a

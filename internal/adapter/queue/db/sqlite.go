@@ -89,6 +89,41 @@ func (s sqliteStore) claim(ctx context.Context, tx uow.Tx, worker string, now, u
 	}, true, nil
 }
 
+func (s sqliteStore) claimOfTypes(ctx context.Context, tx uow.Tx, types []string, worker string, now, until time.Time) (queue.Job, bool, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return queue.Job{}, false, err
+	}
+	list, err := json.Marshal(types)
+	if err != nil {
+		return queue.Job{}, false, err
+	}
+	r, err := q.ClaimJobOfTypes(ctx, sqlitequeue.ClaimJobOfTypesParams{
+		Worker:      nullString(worker),
+		LockedUntil: sql.NullInt64{Int64: millis(until), Valid: true},
+		Now:         millis(now),
+		Types:       string(list),
+	})
+	if errors.Is(err, sql.ErrNoRows) {
+		return queue.Job{}, false, nil
+	}
+	if err != nil {
+		return queue.Job{}, false, err
+	}
+	return queue.Job{
+		ID:             r.ID,
+		Type:           r.Type,
+		Payload:        json.RawMessage(r.Payload),
+		IdempotencyKey: r.IdempotencyKey.String,
+		TraceParent:    r.TraceParent.String,
+		OrderingKey:    r.OrderingKey.String,
+		Attempt:        int(r.Attempt),
+		RunAt:          fromMillis(r.RunAt),
+		LastError:      r.LastError.String,
+		CreatedAt:      fromMillis(r.CreatedAt),
+	}, true, nil
+}
+
 func (s sqliteStore) deleteClaimed(ctx context.Context, tx uow.Tx, id, worker string, attempt int) (int64, error) {
 	q, err := s.queries(tx)
 	if err != nil {
@@ -191,10 +226,12 @@ func (s sqliteStore) backlog(ctx context.Context, tx uow.Tx, now time.Time) (que
 	if err != nil {
 		return queue.Backlog{}, err
 	}
-	b := queue.Backlog{Ready: make(map[string]int64, len(rows))}
+	b := queue.Backlog{Ready: make(map[string]int64, len(rows)), OldestReadyByType: make(map[string]time.Time, len(rows))}
 	for _, r := range rows {
 		b.Ready[r.Type] = r.Ready
-		if at := fromMillis(r.OldestRunAt); b.OldestReadyAt.IsZero() || at.Before(b.OldestReadyAt) {
+		at := fromMillis(r.OldestRunAt)
+		b.OldestReadyByType[r.Type] = at
+		if b.OldestReadyAt.IsZero() || at.Before(b.OldestReadyAt) {
 			b.OldestReadyAt = at
 		}
 	}
@@ -264,7 +301,7 @@ func (s sqliteStore) summarize(ctx context.Context, tx uow.Tx, now time.Time) (q
 	for _, r := range dead {
 		counts = append(counts, queue.JobCount{State: queue.JobStateDead, Type: r.Type, Count: r.Jobs})
 	}
-	return queue.JobSummary{Counts: sortCounts(counts), OldestReadyAt: b.OldestReadyAt}, nil
+	return queue.JobSummary{Counts: sortCounts(counts), OldestReadyAt: b.OldestReadyAt, OldestReadyByType: b.OldestReadyByType}, nil
 }
 
 func (s sqliteStore) insertAttempt(ctx context.Context, tx uow.Tx, a queue.Attempt) error {

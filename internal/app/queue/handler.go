@@ -5,6 +5,8 @@ package queue
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 	"sync"
 	"time"
 )
@@ -120,6 +122,13 @@ func (r *JobHandlerRegistry) RegisterWithPolicy(jobType string, h Handler, polic
 		r.byType = make(map[string]registration)
 	}
 	r.byType[jobType] = registration{handler: h, policy: policy}
+}
+
+// Types returns the registered job types, sorted.
+func (r *JobHandlerRegistry) Types() []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return slices.Sorted(maps.Keys(r.byType))
 }
 
 // Lookup returns the handler and retry policy registered for jobType.

@@ -21,6 +21,9 @@ const troubled = [
           { state: "dead", type: "federation.deliver", count: 41 },
           { state: "dead", type: "kv.cleanup", count: 2 },
         ],
+        waits: [
+          { type: "federation.deliver", oldest_ready_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString() },
+        ],
         oldest_ready_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
       } satisfies Schemas["AdminQueue"]),
     ),
