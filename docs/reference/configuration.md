@@ -390,7 +390,7 @@ How long a request or a job waits for a free connection of the database's pool b
 
 ### `database_dev_url`
 
-Connection string of the dev database that `my schema apply` builds the desired schema in, for `db = postgres`, in the format of `database_url`. Each run creates a temporary schema there and drops it at the end. Set it when the role of `database_url` may not create a schema in its database; the role of this URL needs that privilege, and the bootstrap SQL (the `pg_trgm` extension) runs in this database too. The server itself never uses it.
+Connection string of the dev database that `my schema apply` builds the desired schema in, for `db = postgres`, in the format of `database_url`. Each run creates a temporary schema there and drops it at the end. Set it when the role of `database_url` may not create a schema in its database; the role of this URL needs that privilege. The server itself never uses it.
 
 - Environment variable: `MY_DATABASE_DEV_URL` or `MY_DATABASE_DEV_URL_FILE`
 - Default: a temporary schema in the database of `database_url`
