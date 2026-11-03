@@ -30,6 +30,9 @@ type Deps struct {
 	// Logins keeps the accounts that moderation forbids to log in from signing in and from
 	// using their tokens; nil forbids nobody.
 	Logins LoginPolicy
+	// LoginsTx reads inside a transaction whom moderation forbids to log in, for the guard of the
+	// last administrator; nil forbids nobody.
+	LoginsTx LoginPolicyTx
 	// DefaultLocale returns the instance's default locale, which a new user gets unless the
 	// registration names one. It is called once per registration, before the transaction, so a
 	// change of the instance setting applies to the next registration. Nil or an empty result

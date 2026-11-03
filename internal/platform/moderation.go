@@ -186,8 +186,8 @@ func (m moderationRanks) MayActOn(ctx context.Context, byUserID, targetUserID st
 	return m.a.Identity.MayActOn(ctx, byUserID, targetUserID)
 }
 
-func (m moderationRanks) IsLastAdministrator(ctx context.Context, userID string) (bool, error) {
-	return m.a.Identity.IsLastAdministrator(ctx, userID)
+func (m moderationRanks) IsLastAdministratorTx(ctx context.Context, tx uow.Tx, userID string) (bool, error) {
+	return m.a.Identity.IsLastAdministratorTx(ctx, tx, userID)
 }
 
 type moderationEmails struct{ a *App }

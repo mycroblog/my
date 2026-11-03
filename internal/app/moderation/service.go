@@ -177,8 +177,9 @@ type Statuses interface {
 type StaffRanks interface {
 	// MayActOn reports whether byUserID ("" for the CLI) may act on the account of targetUserID.
 	MayActOn(ctx context.Context, byUserID, targetUserID string) (bool, error)
-	// IsLastAdministrator reports whether no other active user holds the admin role.
-	IsLastAdministrator(ctx context.Context, userID string) (bool, error)
+	// IsLastAdministratorTx locks the admin role and reports, in tx, whether no other user who holds
+	// it can sign in, so that the paths that remove an administrator run one at a time.
+	IsLastAdministratorTx(ctx context.Context, tx uow.Tx, userID string) (bool, error)
 }
 
 // Lifecycles is the part of the account module's public API that a ban and an overturned
@@ -465,9 +466,6 @@ func (s *Service) IssueAccountAction(ctx context.Context, in AccountActionInput)
 	if err := s.checkRank(ctx, in.IssuedByUserID, target); err != nil {
 		return moderation.Action{}, err
 	}
-	if err := s.checkLastAdministrator(ctx, in.Kind, target); err != nil {
-		return moderation.Action{}, err
-	}
 	var report moderation.Report
 	if in.ReportID != "" {
 		r, err := s.d.Repository.FindReport(ctx, in.ReportID)
@@ -512,6 +510,9 @@ func (s *Service) IssueAccountAction(ctx context.Context, in AccountActionInput)
 	auditID, resolutionID, resolutionAuditID := s.d.IDs.NewID(), s.d.IDs.NewID(), s.d.IDs.NewID()
 	blockAuditID := s.d.IDs.NewID()
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := s.checkLastAdministratorTx(ctx, tx, a.Kind, target); err != nil {
+			return err
+		}
 		if err := repo.LockAccountRestrictions(ctx, tx, a.TargetAccountID); err != nil {
 			return err
 		}
@@ -627,18 +628,13 @@ func (s *Service) checkRank(ctx context.Context, byUserID string, target appacco
 	return nil
 }
 
-// checkLastAdministrator fails with ErrLastAdministrator when an action of kind would keep the last
-// administrator from signing in.
-func (s *Service) checkLastAdministrator(ctx context.Context, kind moderation.ActionKind, target appaccount.Actor) error {
-	if s.d.Ranks == nil || target.Local == nil || target.Local.UserID == "" {
+// checkLastAdministratorTx fails, in tx, with ErrLastAdministrator when an action of kind would keep
+// the last administrator from signing in.
+func (s *Service) checkLastAdministratorTx(ctx context.Context, tx uow.Tx, kind moderation.ActionKind, target appaccount.Actor) error {
+	if s.d.Ranks == nil || target.Local == nil || target.Local.UserID == "" || !slices.Contains(kind.Restrictions(), moderation.RestrictLogin) {
 		return nil
 	}
-	switch kind {
-	case moderation.ActionDisableLogin, moderation.ActionSuspend, moderation.ActionBan:
-	default:
-		return nil
-	}
-	last, err := s.d.Ranks.IsLastAdministrator(ctx, target.Local.UserID)
+	last, err := s.d.Ranks.IsLastAdministratorTx(ctx, tx, target.Local.UserID)
 	if err != nil {
 		return err
 	}
