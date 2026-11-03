@@ -95,6 +95,11 @@ func (f *fakeStatuses) Visible(ctx context.Context, v appcontent.Viewer, id stri
 	return view.Status, err
 }
 
+func (f *fakeStatuses) Live(ctx context.Context, id string) error {
+	_, err := f.View(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal}, id)
+	return err
+}
+
 func (f *fakeStatuses) Thread(_ context.Context, v appcontent.Viewer, id string) (appcontent.Thread, error) {
 	view, err := f.View(context.Background(), v, id)
 	if err != nil {

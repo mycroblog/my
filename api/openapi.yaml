@@ -10273,7 +10273,9 @@ components:
 
         A write scope reads the post it acts on: the response to an action on a post, such as
         favouriting it with `write:favourites`, is the whole post. A token without `read:direct`
-        cannot act on a `direct` post: it gets a 404 and nothing changes.
+        cannot act on a `direct` post: it gets a 404 and nothing changes. It can still take back
+        what the user had on one (a favourite, say), and the answer is the same 404, which shows
+        nothing of the post.
 
         Only the server's own (first-party) clients may hold `admin`, `admin:read`, `admin:write`,
         and `write:supporters`: an authorization request of any other client that asks for one is
@@ -11050,8 +11052,10 @@ components:
     StatusAfterAction:
       description: |
         The status after the action, as the authenticated user sees it. The scope of the action is
-        enough to read this response. A status that is gone or that the token may not see is a 404
-        and the action changes nothing, an un-action included.
+        enough to read this response. A status that is gone is a 404 and nothing changes. A status
+        that the token may not see is a 404 too, which shows nothing of it: an action changes
+        nothing, while an un-action (removing a favourite, boost, reaction, bookmark, or pin) still
+        takes back what the user had on it.
       headers:
         Cache-Control:
           $ref: '#/components/headers/CacheControl'

@@ -175,6 +175,13 @@ func (r *Reader) Visible(ctx context.Context, viewer Viewer, statusID string) (c
 	return st, err
 }
 
+// Live fails with ErrNotFound when statusID is missing or deleted, whoever asks. It tells only
+// that the status exists, so the caller shows nothing of it on the strength of this check.
+func (r *Reader) Live(ctx context.Context, statusID string) error {
+	_, err := r.aud.live(ctx, statusID)
+	return err
+}
+
 // Thread returns the ancestors and descendants of a status that viewer may see (FR-106).
 func (r *Reader) Thread(ctx context.Context, viewer Viewer, statusID string) (Thread, error) {
 	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)

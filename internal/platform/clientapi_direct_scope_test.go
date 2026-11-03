@@ -116,8 +116,9 @@ func TestDirectPostsNeedReadDirect(t *testing.T) {
 }
 
 // TestActionsOnStatusesTheTokenCannotSee checks that an action on a post that the token does not
-// see, or that is gone, answers 404 and changes nothing (the un-actions too), and that a write
-// scope reads a post it may act on.
+// see, or that is gone, answers 404 and changes nothing; that an un-action changes nothing on a
+// post that is gone but takes effect on one that is hidden, answering the same 404; and that a
+// write scope reads a post it may act on.
 func TestActionsOnStatusesTheTokenCannotSee(t *testing.T) {
 	t.Parallel()
 	c := newStatusesClient(t, "alice", "bob")
@@ -135,6 +136,14 @@ func TestActionsOnStatusesTheTokenCannotSee(t *testing.T) {
 		return st
 	}
 	isTrue := func(b *bool) bool { return b != nil && *b }
+	reactions := func(id string) int {
+		t.Helper()
+		var page clientapi.StatusReactionPage
+		if res := c.do("alice", http.MethodGet, "/statuses/"+id+"/reactions", nil, &page); res.StatusCode != http.StatusOK {
+			t.Fatalf("GET reactions = %d", res.StatusCode)
+		}
+		return len(page.Items)
+	}
 	wantNotFound := func(user, method, path string, body any) {
 		t.Helper()
 		if res := c.do(user, method, path, body, nil); res.StatusCode != http.StatusNotFound {
@@ -154,7 +163,7 @@ func TestActionsOnStatusesTheTokenCannotSee(t *testing.T) {
 		wantNotFound(bookmarks, http.MethodPost, "/statuses/"+id+"/bookmark", nil)
 		wantNotFound(statuses, http.MethodPost, "/statuses/"+id+"/boost", nil)
 		st := get(id)
-		if isTrue(st.Favourited) || isTrue(st.Bookmarked) || isTrue(st.Boosted) || len(st.Reactions) != 0 {
+		if isTrue(st.Favourited) || isTrue(st.Bookmarked) || isTrue(st.Boosted) || reactions(id) != 0 {
 			t.Errorf("status %s after refused actions: %+v", id, st)
 		}
 	}
@@ -163,16 +172,28 @@ func TestActionsOnStatusesTheTokenCannotSee(t *testing.T) {
 		t.Errorf("poll after a refused vote: %+v", st.Poll)
 	}
 
-	// The un-actions change nothing on it either.
-	for _, path := range []string{"/favourite", "/bookmark"} {
-		if res := c.do("alice", http.MethodPost, "/statuses/"+dm.Id+path, nil, nil); res.StatusCode != http.StatusOK {
-			t.Fatalf("POST %s = %d", path, res.StatusCode)
+	// An un-action on it takes effect and answers the same 404, which shows nothing of the post.
+	for _, id := range []string{dm.Id, own.Id} {
+		for _, path := range []string{"/favourite", "/bookmark"} {
+			if res := c.do("alice", http.MethodPost, "/statuses/"+id+path, nil, nil); res.StatusCode != http.StatusOK {
+				t.Fatalf("POST %s = %d", path, res.StatusCode)
+			}
 		}
-	}
-	wantNotFound(favourites, http.MethodDelete, "/statuses/"+dm.Id+"/favourite", nil)
-	wantNotFound(bookmarks, http.MethodDelete, "/statuses/"+dm.Id+"/bookmark", nil)
-	if st := get(dm.Id); !isTrue(st.Favourited) || !isTrue(st.Bookmarked) {
-		t.Errorf("status after refused un-actions: favourited %v, bookmarked %v", st.Favourited, st.Bookmarked)
+		wantNotFound(favourites, http.MethodDelete, "/statuses/"+id+"/favourite", nil)
+		wantNotFound(bookmarks, http.MethodDelete, "/statuses/"+id+"/bookmark", nil)
+		if st := get(id); isTrue(st.Favourited) || isTrue(st.Bookmarked) {
+			t.Errorf("status %s after un-actions without read:direct: favourited %v, bookmarked %v", id, isTrue(st.Favourited), isTrue(st.Bookmarked))
+		}
+		if res := c.do("alice", http.MethodPut, "/statuses/"+id+"/reaction", map[string]any{"emoji": "🎉"}, nil); res.StatusCode != http.StatusOK {
+			t.Fatalf("PUT reaction = %d", res.StatusCode)
+		}
+		if n := reactions(id); n != 1 {
+			t.Fatalf("reactions after reacting = %d, want 1", n)
+		}
+		wantNotFound(favourites, http.MethodDelete, "/statuses/"+id+"/reaction", nil)
+		if n := reactions(id); n != 0 {
+			t.Errorf("status %s after taking back the reaction without read:direct: %d reactions", id, n)
+		}
 	}
 
 	// A write scope reads the post it acts on, followers-only content included.
@@ -191,25 +212,73 @@ func TestActionsOnStatusesTheTokenCannotSee(t *testing.T) {
 		t.Fatalf("favourite with write:favourites = %d", res.StatusCode)
 	}
 
-	// A post hidden from the user: the un-actions change nothing, as following again shows.
+	// A post hidden from the user that still exists: the un-actions take effect, and the answer
+	// shows nothing of it, as following again shows.
+	if res := c.do("alice", http.MethodDelete, "/statuses/"+private.Id+"/favourite", nil, nil); res.StatusCode != http.StatusOK {
+		t.Fatalf("DELETE favourite = %d", res.StatusCode)
+	}
+	if res := c.do("alice", http.MethodPut, "/statuses/"+private.Id+"/reaction", map[string]any{"emoji": "🎉"}, nil); res.StatusCode != http.StatusOK {
+		t.Fatalf("PUT reaction = %d", res.StatusCode)
+	}
 	if _, err := c.app.Graph.Unfollow(ctx, c.ids["alice"], c.ids["bob"]); err != nil {
 		t.Fatal(err)
 	}
-	wantNotFound("alice", http.MethodDelete, "/statuses/"+private.Id+"/bookmark", nil)
-	wantNotFound("alice", http.MethodDelete, "/statuses/"+private.Id+"/favourite", nil)
+	wantHidden := func(method, path string) {
+		t.Helper()
+		missing := problemShape(t, c.do("alice", method, "/statuses/0192f0c1-0000-7000-8000-000000000000"+path, nil, nil))
+		res := c.do("alice", method, "/statuses/"+private.Id+path, nil, nil)
+		if res.StatusCode != http.StatusNotFound {
+			t.Fatalf("%s %s on a hidden post = %d, want 404", method, path, res.StatusCode)
+		}
+		if got := problemShape(t, res); got != missing {
+			t.Errorf("%s %s on a hidden post = %s, want the answer of a missing post %s", method, path, got, missing)
+		}
+	}
+	wantHidden(http.MethodDelete, "/bookmark")
+	wantHidden(http.MethodDelete, "/reaction")
 	if _, err := c.app.Graph.Follow(ctx, c.ids["alice"], c.ids["bob"]); err != nil {
 		t.Fatal(err)
 	}
-	if st := get(private.Id); !isTrue(st.Favourited) || !isTrue(st.Bookmarked) {
-		t.Errorf("status after un-actions on a hidden post: favourited %v, bookmarked %v", st.Favourited, st.Bookmarked)
+	if st := get(private.Id); isTrue(st.Bookmarked) || reactions(private.Id) != 0 {
+		t.Errorf("status after un-actions on a hidden post: bookmarked %v, %d reactions", isTrue(st.Bookmarked), reactions(private.Id))
 	}
 
-	// A post that is gone answers 404 for every un-action.
-	if res := c.do("bob", http.MethodDelete, "/statuses/"+private.Id, nil, nil); res.StatusCode/100 != 2 {
+	// So is a favourite and a boost, on a post hidden by a block.
+	public := c.post("bob", map[string]any{"text": "public", "visibility": "public"})
+	for _, path := range []string{"/favourite", "/boost"} {
+		if res := c.do("alice", http.MethodPost, "/statuses/"+public.Id+path, nil, nil); res.StatusCode != http.StatusOK {
+			t.Fatalf("POST %s = %d", path, res.StatusCode)
+		}
+	}
+	if _, err := c.app.Graph.Block(ctx, c.ids["bob"], c.ids["alice"]); err != nil {
+		t.Fatal(err)
+	}
+	wantNotFound("alice", http.MethodDelete, "/statuses/"+public.Id+"/favourite", nil)
+	wantNotFound("alice", http.MethodDelete, "/statuses/"+public.Id+"/boost", nil)
+	if _, err := c.app.Graph.Unblock(ctx, c.ids["bob"], c.ids["alice"]); err != nil {
+		t.Fatal(err)
+	}
+	if st := get(public.Id); isTrue(st.Favourited) || isTrue(st.Boosted) {
+		t.Errorf("status after un-actions on a post hidden by a block: favourited %v, boosted %v", isTrue(st.Favourited), isTrue(st.Boosted))
+	}
+
+	// A post that is gone answers 404 for every un-action and changes nothing: the bookmark
+	// of the deleted post still takes its place in the list, so the page of one is empty.
+	older := c.post("bob", map[string]any{"text": "older", "visibility": "public"})
+	newer := c.post("bob", map[string]any{"text": "newer", "visibility": "public"})
+	for _, id := range []string{older.Id, newer.Id} {
+		if res := c.do("alice", http.MethodPost, "/statuses/"+id+"/bookmark", nil, nil); res.StatusCode != http.StatusOK {
+			t.Fatalf("bookmark = %d", res.StatusCode)
+		}
+	}
+	if res := c.do("bob", http.MethodDelete, "/statuses/"+newer.Id, nil, nil); res.StatusCode/100 != 2 {
 		t.Fatalf("DELETE status = %d", res.StatusCode)
 	}
 	for _, path := range []string{"/favourite", "/bookmark", "/boost", "/reaction", "/pin"} {
-		wantNotFound("alice", http.MethodDelete, "/statuses/"+private.Id+path, nil)
+		wantNotFound("alice", http.MethodDelete, "/statuses/"+newer.Id+path, nil)
+	}
+	if page := c.statusPage("alice", "/bookmarks?limit=1"); len(page.Items) != 0 || page.NextCursor == nil {
+		t.Errorf("bookmarks?limit=1 after un-actions on a gone post = %v, next %v; want the deleted post's bookmark kept", statusIDs(page), page.NextCursor)
 	}
 }
 
