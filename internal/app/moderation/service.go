@@ -27,6 +27,11 @@ var (
 	ErrInvalidReportReference = errors.New("moderation: the report does not exist or is of another account")
 	// ErrAccountNotFound reports an action or a report on an account that does not exist.
 	ErrAccountNotFound = errors.New("moderation: the account does not exist")
+	// ErrTargetOutranksActor reports an action on a local account whose user does not rank below
+	// the user who acts.
+	ErrTargetOutranksActor = errors.New("moderation: the target does not rank below the user who acts")
+	// ErrLastAdministrator reports an action that would keep the last administrator from signing in.
+	ErrLastAdministrator = errors.New("moderation: the last administrator cannot be locked out")
 	// ErrInvalidStatusReference reports an action on statuses that names a status that does
 	// not exist, is deleted, or is of another account.
 	ErrInvalidStatusReference = errors.New("moderation: the status does not exist or is of another account")
@@ -166,6 +171,16 @@ type Statuses interface {
 	ClearSensitivityOf(ctx context.Context, tx uow.Tx, actionID string) error
 }
 
+// StaffRanks is the part of the identity module's public API that keeps staff from acting on a
+// higher or equal rank and the instance from losing its last administrator. identity imports this
+// module, so it is a port.
+type StaffRanks interface {
+	// MayActOn reports whether byUserID ("" for the CLI) may act on the account of targetUserID.
+	MayActOn(ctx context.Context, byUserID, targetUserID string) (bool, error)
+	// IsLastAdministrator reports whether no other active user holds the admin role.
+	IsLastAdministrator(ctx context.Context, userID string) (bool, error)
+}
+
 // Lifecycles is the part of the account module's public API that a ban and an overturned
 // appeal of one use.
 // *appaccount.Service implements it.
@@ -182,6 +197,8 @@ type Deps struct {
 	UnitOfWork uow.UnitOfWork
 	Repository Repository
 	Accounts   Accounts
+	// Ranks checks who may act on a local account; nil checks nothing.
+	Ranks StaffRanks
 	// Statuses carries out the actions on statuses; nil refuses them with ErrUnsupportedAction.
 	Statuses Statuses
 	// Lifecycles schedules the deletion of a banned account; nil refuses bans with
@@ -416,7 +433,9 @@ type AccountActionInput struct {
 // action on statuses, moderation.ErrInvalidActionStatuses for its statuses). An unknown account
 // fails with ErrAccountNotFound, a report that does not exist or is of another account with
 // ErrInvalidReportReference, and a status that does not exist, is deleted, or is of another
-// account with ErrInvalidStatusReference.
+// account with ErrInvalidStatusReference. On a local account, an issuer who does not rank above its
+// user fails with ErrTargetOutranksActor, and an action that keeps the last administrator from
+// signing in fails with ErrLastAdministrator, whoever issues it.
 func (s *Service) IssueAccountAction(ctx context.Context, in AccountActionInput) (moderation.Action, error) {
 	if !in.Kind.Valid() {
 		return moderation.Action{}, fmt.Errorf("%w: kind %q", moderation.ErrInvalidAction, in.Kind)
@@ -442,6 +461,12 @@ func (s *Service) IssueAccountAction(ctx context.Context, in AccountActionInput)
 	if !slices.Contains(kinds, in.Kind) || (in.Kind.OnStatuses() && s.d.Statuses == nil) ||
 		(in.Kind == moderation.ActionBan && s.d.Lifecycles == nil) {
 		return moderation.Action{}, fmt.Errorf("%w: %s on a %s account", ErrUnsupportedAction, in.Kind, where)
+	}
+	if err := s.checkRank(ctx, in.IssuedByUserID, target); err != nil {
+		return moderation.Action{}, err
+	}
+	if err := s.checkLastAdministrator(ctx, in.Kind, target); err != nil {
+		return moderation.Action{}, err
 	}
 	var report moderation.Report
 	if in.ReportID != "" {
@@ -587,11 +612,48 @@ func (s *Service) carryOut(ctx context.Context, tx uow.Tx, a moderation.Action, 
 	return nil
 }
 
+// checkRank fails with ErrTargetOutranksActor when byUserID may not act on the local account target.
+func (s *Service) checkRank(ctx context.Context, byUserID string, target appaccount.Actor) error {
+	if s.d.Ranks == nil || target.Local == nil || target.Local.UserID == "" {
+		return nil
+	}
+	ok, err := s.d.Ranks.MayActOn(ctx, byUserID, target.Local.UserID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("%w: %s", ErrTargetOutranksActor, target.Account.ID)
+	}
+	return nil
+}
+
+// checkLastAdministrator fails with ErrLastAdministrator when an action of kind would keep the last
+// administrator from signing in.
+func (s *Service) checkLastAdministrator(ctx context.Context, kind moderation.ActionKind, target appaccount.Actor) error {
+	if s.d.Ranks == nil || target.Local == nil || target.Local.UserID == "" {
+		return nil
+	}
+	switch kind {
+	case moderation.ActionDisableLogin, moderation.ActionSuspend, moderation.ActionBan:
+	default:
+		return nil
+	}
+	last, err := s.d.Ranks.IsLastAdministrator(ctx, target.Local.UserID)
+	if err != nil {
+		return err
+	}
+	if last {
+		return fmt.Errorf("%w: %s", ErrLastAdministrator, target.Account.ID)
+	}
+	return nil
+}
+
 // LiftAccountAction lifts an action on an account: its restrictions end, while those of other
 // actions on the account stay, and the statuses that a mark_statuses_sensitive action marked are
 // no longer shown as sensitive by it; the statuses that delete_statuses deleted stay deleted.
 // Lifting the account's last suspension emits AccountSuspensionChanged. Lifting an action that
-// is already lifted changes nothing. A ban fails with ErrNotLiftable. An
+// is already lifted changes nothing. A ban fails with ErrNotLiftable, and a user who does not rank
+// above the account's user with ErrTargetOutranksActor. An
 // invalid reason fails with an error wrapping moderation.ErrInvalidAction and a
 // *moderation.TextError.
 func (s *Service) LiftAccountAction(ctx context.Context, actionID, liftedByUserID, reason string) error {
@@ -605,6 +667,15 @@ func (s *Service) LiftAccountAction(ctx context.Context, actionID, liftedByUserI
 	rec, err := repo.FindActionRecord(ctx, actionID)
 	if err != nil {
 		return err
+	}
+	switch target, err := s.d.Accounts.FindByID(ctx, rec.Action.TargetAccountID); {
+	case errors.Is(err, appaccount.ErrNotFound):
+	case err != nil:
+		return err
+	default:
+		if err := s.checkRank(ctx, liftedByUserID, target); err != nil {
+			return err
+		}
 	}
 	label, err := s.accountLabel(ctx, rec.Action.TargetAccountID)
 	if err != nil {

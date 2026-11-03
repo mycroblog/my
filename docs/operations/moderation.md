@@ -121,6 +121,10 @@ In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{i
 
 Searching accounts, viewing their details and revealing IP addresses and email addresses are done through the admin API and need the `manage_accounts` permission.
 
+Staff act only on lower ranks: issuing or lifting an action, revealing private data, issuing a password reset link, and removing two-factor authentication need the highest `position` among your roles to be above that of every role of the target.
+A higher or equal rank, your own account included, returns `403` with the problem type `/api/v1/problems/target-outranks-actor`, so a moderator cannot ban an administrator and one administrator cannot ban another. The `my admin` commands have no such limit.
+An action that keeps the only active administrator from signing in (`disable_login`, `suspend`, `ban`) is refused whoever issues it, and that administrator cannot delete their own account (`409` with `/api/v1/problems/last-administrator`). See [admin-cli.md](admin-cli.md) for the roles.
+
 - `GET /api/v1/admin/accounts` returns local and remote accounts, newest first (the instance Actor is excluded).
   You can filter by username prefix (`username`), domain (`domain`), local or remote (`origin`), state (`state`), and, for local accounts, email address (`email`), email domain (`email_domain`) and the IP address used to register or sign in (`ip`).
   You can give only one of `email`, `email_domain` and `ip`. The list does not include IP addresses or email addresses.

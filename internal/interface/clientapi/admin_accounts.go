@@ -215,6 +215,24 @@ func (s *Server) GetAdminAccount(ctx context.Context, req GetAdminAccountRequest
 	return GetAdminAccount200JSONResponse{Body: out, Headers: GetAdminAccount200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
+// ProblemTypeTargetOutranksActor is the problem of a moderation or recovery operation on an
+// account whose user does not rank below the viewer.
+const ProblemTypeTargetOutranksActor = "/api/v1/problems/target-outranks-actor"
+
+// ProblemTypeLastAdministrator is the problem of an operation that would leave the instance
+// without an administrator.
+const ProblemTypeLastAdministrator = "/api/v1/problems/last-administrator"
+
+// targetOutranksActor is the 403 of ProblemTypeTargetOutranksActor.
+func (s *Server) targetOutranksActor(ctx context.Context) problem {
+	return s.problem(ctx, http.StatusForbidden, ProblemTypeTargetOutranksActor, s.Localizer(ctx).ServerErrorsTargetOutranksActor(), "")
+}
+
+// lastAdministrator is the 409 of ProblemTypeLastAdministrator.
+func (s *Server) lastAdministrator(ctx context.Context) problem {
+	return s.problem(ctx, http.StatusConflict, ProblemTypeLastAdministrator, s.Localizer(ctx).ServerErrorsLastAdministrator(), "")
+}
+
 // DisableAdminAccountTwoFactor serves POST /api/v1/admin/accounts/{id}/two_factor/disable.
 func (s *Server) DisableAdminAccountTwoFactor(ctx context.Context, req DisableAdminAccountTwoFactorRequestObject) (DisableAdminAccountTwoFactorResponseObject, error) {
 	if p, err := s.requirePermission(ctx, identity.PermManageLoginRecovery); err != nil {
@@ -229,6 +247,8 @@ func (s *Server) DisableAdminAccountTwoFactor(ctx context.Context, req DisableAd
 	err = s.o.AccountAdmin.DisableTwoFactor(ctx, req.Id, v.UserID)
 	l := s.Localizer(ctx)
 	switch {
+	case errors.Is(err, appidentity.ErrTargetOutranksActor):
+		return DisableAdminAccountTwoFactordefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
 	case errors.Is(err, appaccount.ErrNotFound):
 		return DisableAdminAccountTwoFactordefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	case errors.Is(err, appidentity.ErrNotLocalAccount):
@@ -293,6 +313,8 @@ func (s *Server) IssueAdminAccountPasswordResetLink(ctx context.Context, req Iss
 	}
 	link, err := s.o.PasswordResetLinks.IssuePasswordResetLink(ctx, req.Id, v.UserID)
 	switch {
+	case errors.Is(err, appidentity.ErrTargetOutranksActor):
+		return IssueAdminAccountPasswordResetLinkdefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
 	case errors.Is(err, appaccount.ErrNotFound):
 		return IssueAdminAccountPasswordResetLinkdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	case errors.Is(err, appidentity.ErrNotLocalAccount):
@@ -322,6 +344,8 @@ func (s *Server) RevealAdminAccount(ctx context.Context, req RevealAdminAccountR
 	}
 	d, err := s.o.AccountAdmin.Reveal(ctx, req.Id, v.UserID)
 	switch {
+	case errors.Is(err, appidentity.ErrTargetOutranksActor):
+		return RevealAdminAccountdefaultApplicationProblemPlusJSONResponse(s.targetOutranksActor(ctx)), nil
 	case errors.Is(err, appaccount.ErrNotFound):
 		return RevealAdminAccountdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	case errors.Is(err, appidentity.ErrNotLocalAccount):

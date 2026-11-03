@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mycroblog/my/internal/app/identity"
+	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 )
 
@@ -18,6 +20,9 @@ import (
 func TestReportNotesReopenAndActionThroughTheAPI(t *testing.T) {
 	t.Parallel()
 	c := newStatusesClient(t, "alice", "bob", "carol")
+	if _, err := c.app.Identity.RevokeRole(t.Context(), identity.RoleChangeInput{UserID: c.userIDs["bob"], RoleKey: domainidentity.RoleAdmin}); err != nil {
+		t.Fatal(err)
+	}
 	const secret = "Probably the same person as before"
 	var report clientapi.Report
 	if res := c.do("alice", http.MethodPost, "/reports", map[string]any{"account_id": c.ids["bob"], "category": "spam"}, &report); res.StatusCode != http.StatusOK {

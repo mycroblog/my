@@ -17,13 +17,19 @@ var ErrWrongPassword = errors.New("identity: the password is wrong")
 // the Delete of the actor to the remote servers, and leaves the data to the erasure (data-model
 // §8). A wrong password fails with ErrWrongPassword, a wrong passkey with the errors of
 // Service.confirm, and too many of them (SelfDeletionLimit) with a *kernel.RateLimitedError; they
-// change nothing.
+// change nothing. The last administrator (IsLastAdministrator) fails with ErrLastAdmin.
 func (s *Service) DeleteOwnAccount(ctx context.Context, userID string, c Confirmation) error {
 	if s.d.RateLimiter == nil {
 		return errors.New("identity: DeleteOwnAccount needs a RateLimiter")
 	}
 	if err := s.confirm(ctx, OperationAccountDeletion, userID, c); err != nil {
 		return err
+	}
+	switch last, err := s.IsLastAdministrator(ctx, userID); {
+	case err != nil:
+		return err
+	case last:
+		return ErrLastAdmin
 	}
 	st, err := s.d.Accounts.UserLifecycle(ctx, userID)
 	if err != nil {

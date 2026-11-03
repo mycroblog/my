@@ -54,6 +54,7 @@ func TestListAccountStatusesAnswersLikeGetAccount(t *testing.T) {
 	t.Parallel()
 	e := newAccountsEnv(t)
 	mod, alice, bob, carol := e.user("mod"), e.user("alice"), e.user("bob"), e.user("carol")
+	e.setRole(carol, "") // the moderator suspends her below, which needs a lower rank
 
 	for _, u := range []testUser{alice, carol} {
 		e.want(e.do(http.MethodPost, "/statuses", u.token, map[string]any{"text": "hello", "visibility": "public"}, nil), http.StatusOK, "post")
@@ -88,6 +89,7 @@ func TestReportsShowATargetThatIsSuspendedOrBlocksTheReporter(t *testing.T) {
 	t.Parallel()
 	e := newAccountsEnv(t)
 	mod, bob, carol := e.user("mod"), e.user("bob"), e.user("carol")
+	e.setRole(carol, "") // the moderator suspends her below, which needs a lower rank
 
 	var filed clientapi.Report
 	e.want(e.do(http.MethodPost, "/reports", bob.token, map[string]any{"account_id": carol.id, "category": "spam"}, &filed), http.StatusOK, "file the report")

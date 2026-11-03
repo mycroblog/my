@@ -304,6 +304,7 @@ func TestSupporterSuspension(t *testing.T) {
 	}, &plan), http.StatusOK, "POST /admin/supporter_plans")
 	e.want(e.do(http.MethodPut, "/admin/supporter_program", admin.token, map[string]any{"enabled": true}, nil), http.StatusOK, "enable")
 	carol := e.user("carol")
+	e.setRole(carol, "")
 	subID := subscribeOnFake(t, e.app, prov, carol.id, plan.Id, "sub_9")
 	e.want(e.do(http.MethodPost, "/admin/accounts/"+carol.id+"/actions", admin.token, map[string]any{"kind": "suspend", "public_reason": "rules"}, nil),
 		http.StatusOK, "suspend")
