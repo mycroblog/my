@@ -381,6 +381,7 @@ func TestRetentionContract(t *testing.T) {
 			Federation:   db.FederationRepository(),
 			Retention:    db.StatusRepository(),
 			Purges:       db.FederationRepository(),
+			Instances:    db.FederationRepository(),
 			Profiles:     db.AccountRepository(),
 			Emojis:       db.CustomEmojiRepository(),
 		}

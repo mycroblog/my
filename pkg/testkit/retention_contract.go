@@ -29,6 +29,7 @@ type RetentionHarness struct {
 	Federation   appfederation.Repository
 	Retention    appcontent.RetentionRepository
 	Purges       appfederation.PurgeRepository
+	Instances    appfederation.InstanceRepository
 	Profiles     appaccount.ProfilePruneRepository
 	Emojis       EmojiPurgeStore
 }
@@ -74,6 +75,10 @@ func RetentionContract(t *testing.T, newHarness RetentionFactory) {
 		{"PrunesProfilesOfUnrelatedRemoteAccounts", retentionProfiles},
 		{"PurgesUnreferencedRemoteEmoji", retentionEmojis},
 		{"PurgesRelayedStatuses", retentionRelayed},
+		{"PurgesOutboundActivities", retentionOutboundActivities},
+		{"PurgesObservationsOfServers", retentionObservations},
+		{"PurgesDeletionsByRetention", retentionDeletions},
+		{"PurgesHandleVerifications", retentionHandleVerifications},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newRetentionEnv(t, newHarness)) })
@@ -594,7 +599,7 @@ func retentionProfiles(t *testing.T, e *retentionEnv) {
 	}
 
 	pruner := appaccount.NewProfilePruner(appaccount.PruneDeps{
-		UnitOfWork: e.rh.UnitOfWork, Repository: e.rh.Profiles, Relations: retentionRelations{e}, Batch: 1,
+		UnitOfWork: e.rh.UnitOfWork, Repository: e.rh.Profiles, Relations: retentionRelations{e}, Clock: e.clock, Batch: 1,
 	})
 	after := ""
 	for range 20 {

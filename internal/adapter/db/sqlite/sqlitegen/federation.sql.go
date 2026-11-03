@@ -140,6 +140,61 @@ func (q *Queries) CountUnfinishedClosureFanOuts(ctx context.Context) (int64, err
 	return count, err
 }
 
+const deleteAttemptsOfOutboundActivities = `-- name: DeleteAttemptsOfOutboundActivities :exec
+DELETE FROM delivery_attempts WHERE delivery_id IN (
+  SELECT d.id FROM deliveries d WHERE d.outbound_activity_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))))
+`
+
+func (q *Queries) DeleteAttemptsOfOutboundActivities(ctx context.Context, activityIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteAttemptsOfOutboundActivities, activityIds)
+	return err
+}
+
+const deleteAvailabilityEventsBefore = `-- name: DeleteAvailabilityEventsBefore :execrows
+DELETE FROM instance_availability_events
+WHERE id IN (
+  SELECT e.id FROM instance_availability_events e
+  WHERE e.id < ?1 AND e.occurred_at < ?2
+    AND EXISTS (SELECT 1 FROM instance_availability_events n WHERE n.domain = e.domain AND n.id > e.id)
+  ORDER BY e.id LIMIT ?3
+)
+`
+
+type DeleteAvailabilityEventsBeforeParams struct {
+	IDBefore       string
+	OccurredBefore int64
+	BatchLimit     int64
+}
+
+// DeleteAvailabilityEventsBefore removes at most @batch_limit events that occurred before
+// @occurred_before, except the newest of each domain. @id_before (the UUIDv7 floor of
+// @occurred_before) bounds the scan of the primary key.
+func (q *Queries) DeleteAvailabilityEventsBefore(ctx context.Context, arg DeleteAvailabilityEventsBeforeParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteAvailabilityEventsBefore, arg.IDBefore, arg.OccurredBefore, arg.BatchLimit)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const deleteCompletionsOfOutboundActivities = `-- name: DeleteCompletionsOfOutboundActivities :exec
+DELETE FROM outbound_fanout_completions WHERE outbound_activity_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteCompletionsOfOutboundActivities(ctx context.Context, activityIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteCompletionsOfOutboundActivities, activityIds)
+	return err
+}
+
+const deleteDeliveriesOfOutboundActivities = `-- name: DeleteDeliveriesOfOutboundActivities :exec
+DELETE FROM deliveries WHERE outbound_activity_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteDeliveriesOfOutboundActivities(ctx context.Context, activityIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteDeliveriesOfOutboundActivities, activityIds)
+	return err
+}
+
 const deleteDeliveryAttemptsBefore = `-- name: DeleteDeliveryAttemptsBefore :execrows
 DELETE FROM delivery_attempts
 WHERE id IN (
@@ -163,6 +218,51 @@ func (q *Queries) DeleteDeliveryAttemptsBefore(ctx context.Context, arg DeleteDe
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const deleteDocumentsOfOutboundActivities = `-- name: DeleteDocumentsOfOutboundActivities :exec
+DELETE FROM outbound_activity_documents WHERE outbound_activity_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteDocumentsOfOutboundActivities(ctx context.Context, activityIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteDocumentsOfOutboundActivities, activityIds)
+	return err
+}
+
+const deleteNodeInfoObservationsBefore = `-- name: DeleteNodeInfoObservationsBefore :execrows
+DELETE FROM instance_nodeinfo_observations
+WHERE id IN (
+  SELECT o.id FROM instance_nodeinfo_observations o
+  WHERE o.id < ?1 AND o.observed_at < ?2
+    AND EXISTS (SELECT 1 FROM instance_nodeinfo_observations n WHERE n.domain = o.domain AND n.id > o.id)
+  ORDER BY o.id LIMIT ?3
+)
+`
+
+type DeleteNodeInfoObservationsBeforeParams struct {
+	IDBefore       string
+	ObservedBefore int64
+	BatchLimit     int64
+}
+
+// DeleteNodeInfoObservationsBefore removes at most @batch_limit observations made before
+// @observed_before, except the newest of each domain. @id_before (the UUIDv7 floor of
+// @observed_before) bounds the scan of the primary key.
+func (q *Queries) DeleteNodeInfoObservationsBefore(ctx context.Context, arg DeleteNodeInfoObservationsBeforeParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteNodeInfoObservationsBefore, arg.IDBefore, arg.ObservedBefore, arg.BatchLimit)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const deleteOutboundActivities = `-- name: DeleteOutboundActivities :exec
+DELETE FROM outbound_activities WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteOutboundActivities(ctx context.Context, activityIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteOutboundActivities, activityIds)
+	return err
 }
 
 const deleteOutboundActivityDocumentsBefore = `-- name: DeleteOutboundActivityDocumentsBefore :execrows
@@ -936,6 +1036,50 @@ func (q *Queries) ListDeliveryAttempts(ctx context.Context, deliveryID string) (
 	return items, nil
 }
 
+const listExpiredOutboundActivities = `-- name: ListExpiredOutboundActivities :many
+SELECT o.id FROM outbound_activities o
+WHERE NOT (o.object_type = 'status' AND o.type = 'Create')
+  AND o.created_at < ?1
+  AND NOT EXISTS (SELECT 1 FROM closure_deletes x WHERE x.outbound_activity_id = o.id)
+  AND NOT (o.type = 'Delete' AND o.object_type = 'status' AND EXISTS (
+    SELECT 1 FROM outbound_activities c WHERE c.object_type = 'status' AND c.type = 'Create' AND c.object_id = o.object_id))
+  AND NOT (o.type = 'Delete' AND o.object_type = 'account' AND EXISTS (
+    SELECT 1 FROM outbound_activities c WHERE c.object_type = 'status' AND c.type = 'Create' AND c.actor_account_id = o.object_id))
+ORDER BY o.created_at, o.id
+LIMIT ?2
+`
+
+type ListExpiredOutboundActivitiesParams struct {
+	CreatedBefore int64
+	BatchLimit    int64
+}
+
+// ListExpiredOutboundActivities returns at most @batch_limit activities recorded before
+// @created_before, the oldest first, except a status's Create; the closure's Deletes, which the
+// closure counts; and a Delete that a kept Create still depends on (ListSupersededStatusCreates).
+func (q *Queries) ListExpiredOutboundActivities(ctx context.Context, arg ListExpiredOutboundActivitiesParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listExpiredOutboundActivities, arg.CreatedBefore, arg.BatchLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listInstanceAvailabilityEvents = `-- name: ListInstanceAvailabilityEvents :many
 SELECT id, domain, kind, reason, occurred_at FROM instance_availability_events
 WHERE domain = ?1 AND (CAST(?2 AS TEXT) = '' OR id < CAST(?2 AS TEXT))
@@ -1054,6 +1198,50 @@ func (q *Queries) ListOutboundActivitiesOfObject(ctx context.Context, arg ListOu
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSupersededStatusCreates = `-- name: ListSupersededStatusCreates :many
+SELECT c.id FROM outbound_activities d
+JOIN outbound_activities c ON c.object_type = 'status' AND c.type = 'Create' AND c.object_id = d.object_id
+WHERE d.type = 'Delete' AND d.object_type = 'status' AND d.created_at < ?2
+UNION ALL
+SELECT c.id FROM outbound_activities d
+JOIN outbound_activities c ON c.object_type = 'status' AND c.type = 'Create' AND c.actor_account_id = d.object_id
+WHERE d.type = 'Delete' AND d.object_type = 'account' AND d.created_at < ?2
+  AND NOT EXISTS (SELECT 1 FROM closure_deletes x WHERE x.outbound_activity_id = d.id)
+LIMIT ?1
+`
+
+type ListSupersededStatusCreatesParams struct {
+	BatchLimit    int64
+	CreatedBefore int64
+}
+
+// ListSupersededStatusCreates returns at most @batch_limit Creates of statuses whose Delete, or
+// the Delete of whose actor, was recorded before @created_before: the fan-out of that Delete read
+// the inboxes of the Create, and nothing reads them again. The closure's Delete of an actor stays
+// out of this, because it erases nothing.
+func (q *Queries) ListSupersededStatusCreates(ctx context.Context, arg ListSupersededStatusCreatesParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listSupersededStatusCreates, arg.BatchLimit, arg.CreatedBefore)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
