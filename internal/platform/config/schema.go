@@ -491,13 +491,6 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.RemoteCustomEmojiMaxBytes, _ = strconv.ParseInt(v, 10, 64) },
 	},
 	{
-		key:   "remote_media_cache_max_bytes",
-		doc:   "Size limit in bytes of the copies of remote media that the media proxy keeps when the instance setting `remote_media_policy` is `avatars` or `all`. The hourly cleanup deletes the expired copies, then the least recently accessed ones over this limit.",
-		def:   strconv.Itoa(1 << 30),
-		check: checkPositiveInt,
-		set:   func(c *Config, v string) { c.RemoteMediaCacheMaxBytes, _ = strconv.ParseInt(v, 10, 64) },
-	},
-	{
 		key: "kv",
 		doc: "Key-value store adapter for caches and rate limits.",
 		def: "db",
@@ -785,26 +778,6 @@ var schema = []field{
 		set: func(c *Config, v string) {
 			c.PushAllowedHosts, c.PushAllowedPrefixes = parseDestinations(v)
 		},
-	},
-	{
-		key:   "remote_status_retention",
-		doc:   "How long a remote post is kept after its publication when nothing on this instance refers to it (a local reply, boost, favourite, bookmark, notification, or a thread with a local post); the hourly purge then deletes it. A Go duration such as `2160h` (90 days).",
-		def:   "2160h",
-		check: checkPositiveDuration,
-		set:   func(c *Config, v string) { c.RemoteStatusRetention, _ = time.ParseDuration(v) },
-	},
-	{
-		key:   "remote_status_max_retention",
-		doc:   "The longest a remote post is kept after its publication, even when this instance refers to it; the hourly purge then deletes it, while local accounts' replies, boosts, favourites, and bookmarks stay and show it as deleted. A Go duration such as `8760h` (365 days); `0` or empty keeps referred posts without limit.",
-		check: checkNonNegativeDuration,
-		set:   func(c *Config, v string) { c.RemoteStatusMaxRetention, _ = time.ParseDuration(v) },
-	},
-	{
-		key:   "relay_status_retention",
-		doc:   "How long a remote post that only a relay brought in is kept after its publication when nothing on this instance refers to it and no local account follows its author; the hourly purge then deletes it. A Go duration such as `168h` (7 days).",
-		def:   "168h",
-		check: checkPositiveDuration,
-		set:   func(c *Config, v string) { c.RelayStatusRetention, _ = time.ParseDuration(v) },
 	},
 	{
 		key:   "relay_max_activities_per_hour",
@@ -1240,14 +1213,6 @@ var schema = []field{
 		def:   "2160h",
 		check: checkPositiveDuration,
 		set:   func(c *Config, v string) { c.DynamicClientIdleTTL, _ = time.ParseDuration(v) },
-	},
-	{
-		key:   "oauth_client_rate_limits",
-		doc:   "Caps on the client API requests of OAuth clients, for an administrator to hold back a client that overloads the server. A comma-separated list of `client_id=requests`: the requests that all the users of the client together may make in 5 minutes, on top of the per-account limit, such as `https://app.example/client.json=3000`. A client that is not listed is not limited. Over its cap, a request is answered `429` with `Retry-After`.",
-		check: checkClientRateLimits,
-		set: func(c *Config, v string) {
-			c.OAuthClientRateLimits, _ = parseClientRateLimits(v)
-		},
 	},
 	{
 		key: "metrics_exporter",
@@ -1807,33 +1772,6 @@ func checkListen(v string) error {
 }
 
 // checkLabelKeys accepts comma-separated metric label keys such as my.surface.
-func checkClientRateLimits(v string) error {
-	_, err := parseClientRateLimits(v)
-	return err
-}
-
-// parseClientRateLimits parses `client_id=requests` pairs. The client_id of a metadata document
-// is a URL that may hold "=", so each pair splits at its last "=".
-func parseClientRateLimits(v string) (map[string]int64, error) {
-	limits := map[string]int64{}
-	for pair := range strings.SplitSeq(v, ",") {
-		pair = strings.TrimSpace(pair)
-		if pair == "" {
-			continue
-		}
-		i := strings.LastIndex(pair, "=")
-		if i <= 0 {
-			return nil, errors.New("must be comma-separated client_id=requests pairs, such as app-id=3000")
-		}
-		n, err := strconv.ParseInt(strings.TrimSpace(pair[i+1:]), 10, 64)
-		if err != nil || n < 1 {
-			return nil, fmt.Errorf("the cap of %q must be a positive integer", pair[:i])
-		}
-		limits[strings.TrimSpace(pair[:i])] = n
-	}
-	return limits, nil
-}
-
 func checkLabelKeys(v string) error {
 	for k := range strings.SplitSeq(v, ",") {
 		k = strings.TrimSpace(k)

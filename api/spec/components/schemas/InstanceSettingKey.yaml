@@ -51,3 +51,8 @@ enum:
   - public_counts
   - featured_accounts
   - login_providers_only
+  - remote_media_cache_max_bytes
+  - remote_status_retention_days
+  - remote_status_max_retention_days
+  - relay_status_retention_days
+  - oauth_client_rate_limits

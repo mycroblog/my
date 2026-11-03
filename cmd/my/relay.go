@@ -134,7 +134,7 @@ mastodon relay (pub-relay, Activity-Relay) and its actor for a litepub one
 a litepub relay and any other a mastodon one. Only public posts go to a relay,
 with a linked data signature, and the public posts it relays are fetched from
 their origin into the federated and hashtag timelines, up to
-relay_max_activities_per_hour per hour, and kept for relay_status_retention.
+relay_max_activities_per_hour per hour, and kept for relay_status_retention_days.
 -send-only takes in nothing from the relay.
 
 unfollow leaves a pending or accepted relay with the Undo of its Follow, and

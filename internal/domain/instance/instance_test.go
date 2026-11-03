@@ -565,3 +565,42 @@ func TestCrawlerPolicy(t *testing.T) {
 		t.Errorf("stored policy = %+v, indexable default %v", s.CrawlerPolicy(), s.IndexableDefault())
 	}
 }
+
+// TestRemoteContentSettings covers the settings of remote content and of the caps on OAuth clients,
+// which an administrator changes while the instance runs.
+func TestRemoteContentSettings(t *testing.T) {
+	var zero instance.Settings
+	if zero.RemoteMediaCacheMaxBytes() != 1<<30 || zero.Retention(instance.SettingRemoteStatusRetentionDays) != 90*24*time.Hour ||
+		zero.Retention(instance.SettingRemoteStatusMaxRetentionDays) != 0 || zero.Retention(instance.SettingRelayStatusRetentionDays) != 7*24*time.Hour ||
+		len(zero.OAuthClientRateLimits()) != 0 {
+		t.Errorf("defaults = %d, %v, %v, %v, %v", zero.RemoteMediaCacheMaxBytes(), zero.Retention(instance.SettingRemoteStatusRetentionDays),
+			zero.Retention(instance.SettingRemoteStatusMaxRetentionDays), zero.Retention(instance.SettingRelayStatusRetentionDays), zero.OAuthClientRateLimits())
+	}
+	for _, tc := range []struct {
+		key       instance.SettingKey
+		raw, want string
+	}{
+		{instance.SettingRemoteStatusMaxRetentionDays, "0", "0"},
+		{instance.SettingRemoteStatusRetentionDays, "0", ""},
+		{instance.SettingRelayStatusRetentionDays, "3651", ""},
+		{instance.SettingRemoteMediaCacheMaxBytes, "0", ""},
+		{instance.SettingOAuthClientRateLimits, "", ""},
+		{instance.SettingOAuthClientRateLimits, " b=2, https://a.example/?x=1=3 ", "b=2,https://a.example/?x=1=3"},
+		{instance.SettingOAuthClientRateLimits, "client", ""},
+		{instance.SettingOAuthClientRateLimits, "client=0", ""},
+	} {
+		def, err := instance.Lookup(tc.key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := def.Parse(tc.raw)
+		invalid := tc.want == "" && tc.raw != ""
+		if invalid != (err != nil) || got != tc.want {
+			t.Errorf("Parse(%s, %q) = %q, %v; want %q", tc.key, tc.raw, got, err, tc.want)
+		}
+	}
+	s := instance.NewSettings([]instance.CurrentSetting{{Key: instance.SettingOAuthClientRateLimits, RevisionID: testID(1), Value: "b=2,https://a.example/?x=1=3"}})
+	if got := s.OAuthClientRateLimits(); got["b"] != 2 || got["https://a.example/?x=1"] != 3 || len(got) != 2 {
+		t.Errorf("OAuthClientRateLimits = %v", got)
+	}
+}

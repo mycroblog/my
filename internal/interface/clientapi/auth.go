@@ -180,7 +180,7 @@ func (s *Server) guard(pattern string, next http.Handler) http.Handler {
 			ok = s.limit(w, r, policyAccount, s.o.AccountLimit, v.AccountID)
 			// An administrator may cap one client across all its users (ADR-0090 §7).
 			if ok && s.o.ClientLimit != nil {
-				if lim, capped := s.o.ClientLimit(v.ClientPublicID); capped {
+				if lim, capped := s.o.ClientLimit(r.Context(), v.ClientPublicID); capped {
 					ok = s.limit(w, r, policyClient, lim, v.ClientID)
 				}
 			}

@@ -4,11 +4,12 @@ package platform
 
 import (
 	"context"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/federation"
-	"github.com/mycroblog/my/internal/platform/config"
+	"github.com/mycroblog/my/internal/domain/instance"
 )
 
 // retentionRepositories are the persistence of the purges of federated data; the database
@@ -23,24 +24,24 @@ type retentionRepositories struct {
 }
 
 // setUpRetention registers the purges of federated data and their schedules (ADR-0034, FR-803):
-// the remote statuses past remote_status_retention (or remote_status_max_retention), the ones
-// that only relays brought in past relay_status_retention (ADR-0061), the inbox
+// the remote statuses past remote_status_retention_days (or remote_status_max_retention_days), the ones
+// that only relays brought in past relay_status_retention_days (ADR-0061), the inbox
 // and delivery records, the past profiles of unrelated remote accounts, and the remote custom
 // emoji that nothing refers to any more (ADR-0051 §1). The statuses that the moderation records
 // need stay (ADR-0038). It also sets up the users' automatic deletion of their own old posts
 // (FR-118) and its schedule. It comes after the content, graph, and notification services, which
 // tell what local data refers to.
-func (a *App) setUpRetention(cfg *config.Config, repos retentionRepositories, statuses content.Repository) {
+func (a *App) setUpRetention(repos retentionRepositories, statuses content.Repository) {
 	content.NewRetention(content.RetentionDeps{
 		UnitOfWork: a.UnitOfWork, Repository: statuses, Retention: repos.statuses, Notifications: a.Notifications,
 		Evidence: a.Moderation,
-		Jobs:     a.Jobs, Clock: a.Clock, Period: cfg.RemoteStatusRetention, MaxPeriod: cfg.RemoteStatusMaxRetention,
+		Jobs:     a.Jobs, Clock: a.Clock, Periods: a.remoteStatusPeriods,
 	}).RegisterJobs(a.Handlers, a.Scheduler)
 	// The posts that only relays brought in (ADR-0061).
 	content.NewRelayedRetention(content.RelayedRetentionDeps{
 		UnitOfWork: a.UnitOfWork, Repository: statuses, Retention: repos.statuses, Notifications: a.Notifications,
 		Evidence: a.Moderation, Follows: followedAuthors{a},
-		Jobs: a.Jobs, Clock: a.Clock, Period: cfg.RelayStatusRetention,
+		Jobs: a.Jobs, Clock: a.Clock, Period: a.relayStatusRetention,
 	}).RegisterJobs(a.Handlers, a.Scheduler)
 	federation.NewPurger(federation.PurgeDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repos.purges, Clock: a.Clock,
@@ -75,4 +76,25 @@ func (r remoteRelations) RelatedToLocal(ctx context.Context, accountID string) (
 	}
 	n, err := r.a.Content.PostCount(ctx, accountID)
 	return n > 0, err
+}
+
+// remoteStatusPeriods reads the periods of the purge of remote statuses.
+func (a *App) remoteStatusPeriods(ctx context.Context) (content.RetentionPeriods, error) {
+	s, err := a.Instance.Settings(ctx)
+	if err != nil {
+		return content.RetentionPeriods{}, err
+	}
+	return content.RetentionPeriods{
+		Period:    s.Retention(instance.SettingRemoteStatusRetentionDays),
+		MaxPeriod: s.Retention(instance.SettingRemoteStatusMaxRetentionDays),
+	}, nil
+}
+
+// relayStatusRetention reads how long the posts that only relays brought in are kept.
+func (a *App) relayStatusRetention(ctx context.Context) (time.Duration, error) {
+	s, err := a.Instance.Settings(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return s.Retention(instance.SettingRelayStatusRetentionDays), nil
 }
