@@ -9351,7 +9351,8 @@ export interface components {
         /**
          * @description A post that a report points at, as a moderator reviews it. `status` is the post as it
          *     was last, without the moderator's own relation to it (`favourited`, `boosted`,
-         *     `bookmarked`, and `pinned` are omitted).
+         *     `bookmarked`, and `pinned` are omitted, and so is `me` of each of its `reactions`).
+         *     A deleted post has no counts and no `reactions` any more.
          */
         AdminReportStatus: {
             status: components["schemas"]["Status"];

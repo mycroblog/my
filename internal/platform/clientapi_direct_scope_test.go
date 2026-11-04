@@ -142,6 +142,14 @@ func TestActionsOnStatusesTheTokenCannotSee(t *testing.T) {
 		if res := c.do("alice", http.MethodGet, "/statuses/"+id+"/reactions", nil, &page); res.StatusCode != http.StatusOK {
 			t.Fatalf("GET reactions = %d", res.StatusCode)
 		}
+		// The counts on the status come from a projection of the same transaction.
+		counted := 0
+		for _, r := range get(id).Reactions {
+			counted += r.Count
+		}
+		if counted != len(page.Items) {
+			t.Errorf("status %s: Status.reactions counts %d, the list of reactors has %d", id, counted, len(page.Items))
+		}
 		return len(page.Items)
 	}
 	wantNotFound := func(user, method, path string, body any) {
