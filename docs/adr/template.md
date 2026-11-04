@@ -1,36 +1,31 @@
 # ADR-NNNN: タイトル（決定内容を短く）
 
-- Status: Proposed <!-- Proposed | Accepted | Rejected | Deprecated | Superseded by ADR-XXXX -->
+- Status: Proposed <!-- Proposed | Accepted | Rejected | Deprecated。Accepted にするのは人間の Decider のみ -->
 - Date: YYYY-MM-DD
 - Deciders: @rosylilly
 - Issue: <!-- 議論用 Issue（例: #12） -->
 
-## Context（背景・課題）
-
-何を決める必要があり、なぜ今決めるのか。関連する要件 ID（FR-xxx / NFR-xxx）を挙げる。
-
-## Decision Drivers（判断基準）
-
-- 判断に効く観点を、重要な順に箇条書き
-
-## Considered Options（選択肢）
-
-1. 選択肢 A
-2. 選択肢 B
-
 ## Decision（決定）
 
-> Proposed の間は「推奨案」として書く。Accepted にするのは人間の Decider のみ。
+<!-- Proposed の間は「推奨案」として書き、覆る条件も書く -->
 
-選んだ選択肢と理由。
+### 1. 結論
+
+決めたことと理由。ほかの文書やコードが `ADR-NNNN §1` で引用できるよう、節に番号を振る。
+
+## 経緯
+
+解く問題、関連する要件 ID（FR-xxx / NFR-xxx）、今の形に至った判断の変遷を短く。詳しい経過は git に任せる。
+
+## 採らなかった案
+
+- 案 A: その案の一番の強みと、採らなかった理由を 1〜2 行で
 
 ## Consequences（影響）
 
 - 良い影響
 - 悪い影響・トレードオフ
 - 後続で必要になる作業（Issue 化する）
-
-## Pros and Cons of the Options（詳細比較・任意）
 
 ## Open Questions / 要検証
 

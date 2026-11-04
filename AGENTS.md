@@ -69,12 +69,15 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
 
 - **Boy scout rule** ([ADR-0024](docs/adr/0024-boy-scout-rule.md)): never ignore something broken because it is outside your issue.
   Fix small things in a separate commit and list them in the PR; file an issue for anything larger and link it.
-- **Never change an ADR's status to `Accepted`/`Rejected` on your own judgment.** Only the human decider decides. You may record a decision
-  the decider has explicitly stated (quote it in the PR description). You may create and edit *Proposed* ADRs.
-- Do not rewrite the body of an Accepted ADR; supersede it with a new ADR instead (typo fixes are fine).
+- **Never change an ADR's status to `Accepted`/`Rejected`, or the conclusion of an Accepted ADR, on your own judgment.** Only the human decider
+  decides. You may record a decision the decider has explicitly stated (state the conclusion in the PR description; no verbatim quotes).
+  You may create and edit *Proposed* ADRs.
+- ADRs are organized by topic: when a decision changes, edit the ADR that owns the topic, moving what it replaces to `経緯` or `採らなかった案`.
+  Add a new ADR only for a topic no ADR owns ([writing-adrs.md](docs/agents/writing-adrs.md)).
 - **Every file in the repo describes the present, never its history** ([ADR-0021](docs/adr/0021-documents-describe-present-state.md)).
   No changelog sections, no "previously / in the first draft / old proposal" wording, no `[x]` resolved items in Open Questions —
   fold resolved answers into the body. Explain *why it changed* in the commit message and PR description instead.
+  The one exception is the `経緯` and `採らなかった案` sections of an ADR, which say why the decision has its present form.
 - Create ADRs with `scripts/task.sh docs:adr-new`, which picks a number no open PR uses; list them with `scripts/agentkit.sh adr list`.
 - Breaking changes ([ADR-0087](docs/adr/0087-schema-changes-after-launch.md)): before `v0.1.0` the DB may be recreated and nothing keeps compat shims.
   From `v0.1.0`, every schema change must upgrade the previous `main` without losing data (drop in a later minor release, rewrite data with `my db upgrade`);

@@ -243,5 +243,5 @@ once the milestone's implementation issues are done. Single-issue work keeps the
 
 ### Recording decisions
 
-When the decider answers a question in chat, quote the answer verbatim on the PR or issue it concerns, so that the
-decision stays with the work it governs.
+When the decider answers a question in chat, state the conclusion and its reason on the PR or issue it concerns, or
+in the ADR that owns the topic, so that the decision stays with the work it governs. Verbatim answers add nothing.
