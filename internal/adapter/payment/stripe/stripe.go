@@ -44,8 +44,9 @@ const (
 // SignatureHeader is the header of Stripe's webhook signatures.
 const SignatureHeader = "Stripe-Signature"
 
-// The requests per second that the adapter sends by default (ADR-0074 §4): below Stripe's read
-// limits of about 100 per second in live mode and 25 in test mode.
+// The requests per second that one Provider sends (ADR-0074 §4): below Stripe's limits per
+// account of 100 per second in live mode and 25 in a sandbox, and of 25 per second per endpoint
+// (https://docs.stripe.com/rate-limits).
 const (
 	LiveRequestsPerSecond = 20
 	TestRequestsPerSecond = 10

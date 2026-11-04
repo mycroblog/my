@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/supporters"
+	"github.com/mycroblog/my/internal/domain/finance"
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
@@ -737,9 +738,80 @@ func TestDecimal(t *testing.T) {
 	}{
 		{1000, "JPY", "1000"}, {-1250, "USD", "-12.50"}, {5, "usd", "0.05"}, {-5, "EUR", "-0.05"}, {1234, "KWD", "1.234"},
 		{0, "USD", "0.00"}, {-9223372036854775808, "JPY", "-9223372036854775808"},
+		// Stripe's special cases: two decimal places, whatever ISO 4217 has.
+		{500, "ISK", "5.00"}, {500, "UGX", "5.00"}, {17500, "HUF", "175.00"}, {80000, "TWD", "800.00"},
+		// Zero decimal places at Stripe, two in ISO 4217.
+		{500, "MGA", "500"}, {50, "KRW", "50"},
 	} {
 		if got := decimal(tc.minor, tc.cur); got != tc.want {
 			t.Errorf("decimal(%d, %s) = %s, want %s", tc.minor, tc.cur, got, tc.want)
+		}
+	}
+}
+
+// stripeMinimums is the list of https://docs.stripe.com/currencies#minimum-and-maximum-charge-amounts
+// as Stripe writes it, in major units.
+var stripeMinimums = map[string]string{
+	"USD": "0.50", "AED": "2.00", "ARS": "0.50", "AUD": "0.50", "BRL": "0.50", "CAD": "0.50", "CHF": "0.50",
+	"COP": "0.50", "CZK": "15.00", "DKK": "2.50", "EUR": "0.50", "GBP": "0.30", "HKD": "4.00", "HUF": "175.00",
+	"IDR": "0.50", "ILS": "0.50", "INR": "0.50", "JPY": "50", "KRW": "50", "MXN": "10", "MYR": "2.00",
+	"NOK": "3.00", "NZD": "0.50", "PHP": "0.50", "PLN": "2.00", "RON": "2.00", "RUB": "0.50", "SEK": "3.00",
+	"SGD": "0.50", "THB": "10", "ZAR": "0.50",
+}
+
+func TestMinimumAmount(t *testing.T) {
+	p := &Provider{}
+	for cur, major := range stripeMinimums {
+		minor, ok := p.MinimumAmount(cur)
+		if !ok {
+			t.Errorf("MinimumAmount(%s) reports it as not taken", cur)
+			continue
+		}
+		if got, err := finance.MinorUnitsOf(major, finance.Currency(cur)); err != nil || got != minor {
+			t.Errorf("MinimumAmount(%s) = %d, want %d (%s), %v", cur, minor, got, major, err)
+		}
+	}
+	if len(minimumAmounts) != len(stripeMinimums) {
+		t.Errorf("%d minimums, want the %d of Stripe's list", len(minimumAmounts), len(stripeMinimums))
+	}
+	if n, ok := p.MinimumAmount("krw"); !ok || n != 50 {
+		t.Errorf(`MinimumAmount("krw") = %d, %v, want any case to work`, n, ok)
+	}
+	for _, cur := range []string{"BGN", "ISK", "UGX", "TWD", "XXX"} {
+		if n, ok := p.MinimumAmount(cur); ok {
+			t.Errorf("MinimumAmount(%s) = %d, want it not taken", cur, n)
+		}
+	}
+}
+
+// A plan's amount reaches Stripe unconverted, so each currency it can use must have the same
+// decimal places in ISO 4217 and at Stripe.
+func TestMinimumAmountCurrenciesMatchISO(t *testing.T) {
+	for cur := range minimumAmounts {
+		iso, ok := finance.Currency(cur).MinorUnits()
+		if !ok || iso != exponent(cur) {
+			t.Errorf("%s has %d decimal places at Stripe, %d (%v) in ISO 4217", cur, exponent(cur), iso, ok)
+		}
+	}
+}
+
+func TestCheckPlanMinimum(t *testing.T) {
+	p := &Provider{}
+	for _, tc := range []struct {
+		cur    string
+		amount int64
+		ok     bool
+	}{
+		{"KRW", 49, false}, {"KRW", 50, true}, {"ZAR", 49, false}, {"ZAR", 50, true}, {"MXN", 999, false}, {"MXN", 1000, true},
+	} {
+		err := p.checkPlan(supporters.PlanSpec{PlanID: "p", Name: "P", Prices: []supporters.PriceSpec{
+			{Interval: supporters.IntervalMonth, Currency: tc.cur, AmountMinor: tc.amount},
+		}})
+		if (err == nil) != tc.ok {
+			t.Errorf("checkPlan(%d %s) = %v, want ok = %v", tc.amount, tc.cur, err, tc.ok)
+		}
+		if err != nil && !errors.Is(err, supporters.ErrPaymentInvalidRequest) {
+			t.Errorf("checkPlan(%d %s) = %v, want ErrPaymentInvalidRequest", tc.amount, tc.cur, err)
 		}
 	}
 }

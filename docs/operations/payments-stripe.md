@@ -12,6 +12,8 @@ One server can use only one provider. To switch to another provider later, ask t
 - **Plans and prices**: For each plan the server creates a Product through the API (ID `my_plan_<plan ID>`, with `metadata.my_plan_id`) and one Price per interval and currency (`lookup_key` is `my_<plan ID>_<month|year>_<currency>`).
   A Stripe Price cannot change its amount, so changing the amount creates a new Price and archives the old one. Subscriptions on the old Price renew at its amount. The discount for yearly payment is expressed in the amount of the yearly Price; no coupons are used.
   Do not edit or delete these Products and Prices in the dashboard.
+  A plan can use the currencies in [Stripe's list of minimum charges](https://docs.stripe.com/currencies#minimum-and-maximum-charge-amounts), and its monthly and yearly amounts must each reach that minimum: USD, AED, ARS, AUD, BRL, CAD, CHF, COP, CZK, DKK, EUR, GBP, HKD, HUF, IDR, ILS, INR, JPY, KRW, MXN, MYR, NOK, NZD, PHP, PLN, RON, RUB, SEK, SGD, THB, and ZAR. The server refuses any other currency.
+  The list holds for a charge in the account's settlement currency. A charge that Stripe converts must meet the settlement currency's minimum after the conversion, and the server does not check that, so choose a plan's amount well above the minimum when its currency differs from your bank account's.
 - **Subscribing**: The server creates a Checkout session with `mode=subscription` and sends the user's browser to its URL (`checkout.stripe.com`). The payment page expires after one hour.
   The server's subscription ID goes into `client_reference_id`, `metadata.my_subscription_id`, and the `metadata.my_subscription_id` of the Stripe subscription. Automatic tax calculation (Stripe Tax) is not enabled.
 - **Customer portal**: On first use, the server creates through the API a portal configuration (`metadata.my=1`) that enables only updating payment methods, the invoice history, and cancellation at the end of the period. Plan changes are made on this server's screens, not in the portal.
@@ -25,7 +27,11 @@ One server can use only one provider. To switch to another provider later, ask t
   `stripe_fee` covers the fees of the whole account, so **use a Stripe account dedicated to this server**. On an account used for other sales, those fees are subtracted from the income too.
 - **Dates**: Income dates are counted in the time zone of the Stripe account (the time zone under "Settings > Business > Account details" in the dashboard, `settings.dashboard.timezone` in the API). When it cannot be read, the server counts in UTC and reads it again every hour.
 
-The server sends at most 20 requests per second (10 in test mode). When Stripe returns `429`, the server waits as long as `Retry-After` says if that is 30 seconds or less and retries up to 2 times; beyond that it leaves the retry to the job.
+Each server process sends at most 20 requests per second (10 in test mode). [Stripe's limits](https://docs.stripe.com/rate-limits) are per account: 100 requests per second in live mode, 25 in a sandbox, and 25 per second for each endpoint. Processes of one server share them, as does anything else that uses the account.
+When Stripe returns `429`, the server waits as long as `Retry-After` says if that is 30 seconds or less (1 second without the header) and retries up to 2 times; beyond that it leaves the retry to the job.
+
+Stripe also allocates read requests per account: an average of 500 per transaction over 30 days, and at least 10,000 a month whatever the number of transactions. At the default interval, reconciliation stays far below that on a small server. A reconciliation that finds nothing still reads a few pages, so the shortest interval of 15 minutes (2,880 runs in 30 days) comes close to the 10,000 on an account with few transactions.
+Stripe limits each subscription to 10 new invoices a minute and 20 a day, and a plan change billed at once makes a new invoice.
 
 ## Card data and PCI DSS
 
@@ -46,7 +52,7 @@ For this reason, the operator's PCI DSS scope is expected to be that of a mercha
 Under "Developers > API keys", creating a **restricted key** (`rk_test_...` / `rk_live_...`) is recommended. A secret key (`sk_test_...` / `sk_live_...`) works too.
 The prefix of the key sets the mode, and a test key charges nothing. A publishable key (`pk_`) cannot be used.
 
-Give a restricted key these permissions (**not yet verified**: the exact names and any missing or excess permissions have to be checked in test mode).
+Give a restricted key these permissions. A restricted key with this table's permissions ran subscribing, plan changes, cancellation, reconciliation, and voiding invoices in a sandbox. Refunds and disputes have not been run with it, and nobody has checked that the table is the smallest set that works.
 
 | Resource | Permission | APIs used |
 | --- | --- | --- |
@@ -113,13 +119,19 @@ Test cards ([Stripe documentation](https://docs.stripe.com/testing)):
 | Number | Behavior |
 | --- | --- |
 | `4242 4242 4242 4242` | Succeeds |
-| `4000 0000 0000 0341` | Can be attached but the charge fails (to check payment failure and the grace period) |
+| `4000 0000 0000 0341` | Can be attached but the charge fails (to check payment failure and the start of the grace period) |
 | `4000 0000 0000 9995` | Fails for insufficient funds |
 | `4000 0000 0000 0259` | A dispute is created after the payment |
 
 Use any future expiry date and any 3-digit security code.
 
-To try renewal, payment failure, and the grace period, use a test clock. Subscribe with a customer attached to a test clock and advance time under "Billing > Test clocks" in the dashboard to trigger the renewal charge and the failure.
+To try renewal and payment failure, use a [test clock](https://docs.stripe.com/billing/testing/test-clocks/api-advanced-usage). A customer created by Checkout has no clock at creation, so subscribe first and then create a clock for that customer through the API, passing `customer` to `POST /v1/test_helpers/test_clocks` (API version `2026-05-27.dahlia` or later).
+Stripe allows this only when `frozen_time` is not in the past, the account has no Automations configured, and the customer has at most three subscriptions. The customer cannot leave the clock afterwards, and deleting the clock deletes the customer and its subscriptions. Advance time under "Billing > Test clocks" in the dashboard to trigger the renewal charge and the failure.
+
+A clock cannot show everything:
+
+- **The end of the grace period**: The server compares real time with the time Stripe reports for the failure (`finalized_at`), which is simulated and ahead of real time. The subscription enters the grace period, and advancing the clock further does not end it. The role stays until real time passes 7 days after the simulated failure, or until Stripe cancels the subscription when its retries run out, if the account is set to do that.
+- **The sweep of all subscriptions**: Stripe's subscription list leaves out subscriptions on a clock unless the request names the clock or the customer, and the server's sweep names neither. Only webhooks and the event list bring their changes to the server.
 
 ## 6. Try it locally (Stripe CLI)
 
@@ -132,6 +144,18 @@ stripe listen --forward-to http://localhost:8080/payments/webhooks/stripe \
 ```
 
 Put the `whsec_...` that `stripe listen` prints in `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` and start the server (match the port to your `listen` setting).
+
+`deploy/docker/compose.yaml` does not pass `MY_PAYMENTS*` to the container, so setting them in `.env` alone leaves payments off. Add them in `deploy/docker/compose.override.yaml`, which `docker compose` reads by itself unless you name files with `-f`:
+
+```yaml
+services:
+  my:
+    environment:
+      MY_PAYMENTS: stripe
+      MY_PAYMENTS_STRIPE_SECRET_KEY: ${MY_PAYMENTS_STRIPE_SECRET_KEY:?set it in .env}
+      MY_PAYMENTS_STRIPE_WEBHOOK_SECRET: ${MY_PAYMENTS_STRIPE_WEBHOOK_SECRET:?set it in .env}
+```
+
 In another terminal, you can fire single events.
 
 ```sh
@@ -147,23 +171,20 @@ The objects that `stripe trigger` creates carry no subscription ID of this serve
 ## 7. Operation
 
 - A reconciliation failure of kind `permission` means a wrong key or missing permissions. The server's log line (`payment reconciliation failed`) has Stripe's message, which names the permission to add.
-- When reconciliations often hit the request limit, raise `payments_reconcile_max_requests` or lengthen `payments_reconcile_interval`.
+- When reconciliations often hit the request limit, raise `payments_reconcile_max_requests` or lengthen `payments_reconcile_interval`. Every read counts toward Stripe's read allocation (see [What the server does at Stripe](#what-the-server-does-at-stripe)), so prefer the longer interval on an account with few transactions.
 - When reconciliation has been stopped for more than 30 days, the server cannot catch up from Stripe's event list (which reaches back 30 days). The sweep of all subscriptions repairs the state then.
 - Refunds and chargebacks are handled in Stripe's dashboard. A full refund and a chargeback remove the role and cancel the subscription at once, and a partial refund does not remove the role. Winning a dispute does not restore the role automatically.
 
 ## Items to verify
 
-The following behaviors come from Stripe's documentation and are to be confirmed in test mode.
+These have not been tried against Stripe, in a sandbox or live, and rest on Stripe's documentation.
 
-- Changing the price at the end of the period with a Subscription Schedule, and releasing that schedule.
-- That a subscription on an archived Price renews on that Price.
-- That `latest_invoice` and `schedule` can be expanded in the subscription list, and that the time a payment failed can be taken as the time the invoice was finalized (`status_transitions.finalized_at`).
-- That `settings.dashboard.timezone` of `GET /v1/account` can be read with a restricted key.
-- The list of permissions a restricted key needs (the table in section 2).
-- The table of minimum charge amounts per currency, and the currencies that Stripe treats with different decimal places from ISO 4217 (ISK, HUF, TWD, UGX, and others).
-- The exact values of the read rate limits.
-- That a declined upgrade with `payment_behavior=pending_if_incomplete` answers with `pending_update` or a `402`, leaves the price and the status `active`, and leaves no invoice open after the void, with no retry by Smart Retries.
-- That a card that asks for authentication (`4000 0027 6000 3184`) behaves as a decline in that flow, and that a change from monthly to yearly works the same way, with the billing date moving only after the payment.
-- That a change charges once when it is tried again with a good card after a decline.
+- A renewal of a subscription on an archived Price, which should stay on that Price.
+- `status_transitions.finalized_at` at a real renewal. The server takes it as the time the payment first failed, and counts the grace period from it.
+- Whether a `stripe_fee` transaction can be assigned to a subscription. The server does not try: it subtracts these fees from the income as a whole.
+- Whether `settings.dashboard.timezone` of `GET /v1/account` is read with a restricted key. A failed read does not stop the server, which counts in UTC, so a working server does not show it. Check that income dates fall in the account's time zone.
+- That `GET /v1/invoice_payments` filters by `payment[payment_intent]`, which links a payment to its subscription.
+- Full and partial refunds and chargebacks, from the dashboard to the state on the server.
+- That the sweep of all subscriptions repairs a subscription whose state the server missed.
 - What an upgrade does for a subscription paying with a method that pending updates do not list (ACH, SEPA, and Bacs direct debits). Keep those methods off in the dashboard until this is confirmed.
-- That `cancel_at_period_end=false` and `cancel_at=` (empty) clear a cancellation made through either field, and that `cancel_at_period_end=true` replaces a `cancel_at` in a later period.
+- That `cancel_at_period_end=true` replaces a `cancel_at` in a later period.
