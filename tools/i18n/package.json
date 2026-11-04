@@ -8,7 +8,7 @@
     "check": "bun run src/check.ts"
   },
   "dependencies": {
-    "@formatjs/cli-lib": "10.0.12",
+    "@formatjs/cli-lib": "10.2.0",
     "@formatjs/icu-messageformat-parser": "3.5.22",
     "intl-messageformat": "12.1.4"
   },
