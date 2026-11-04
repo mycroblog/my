@@ -14,7 +14,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
+	"github.com/mycroblog/my/tools/agentkit/internal/adr"
 	"github.com/mycroblog/my/tools/agentkit/internal/store"
 	"github.com/mycroblog/my/tools/agentkit/internal/text"
 )
@@ -22,6 +24,16 @@ import (
 // KB wraps the store with the presentation rules.
 type KB struct {
 	S *store.Store
+
+	aliasesOnce sync.Once
+	aliases     adr.Aliases
+	aliasesErr  error
+}
+
+// Aliases returns the retired ADR numbers of the repository, read once.
+func (k *KB) Aliases() (adr.Aliases, error) {
+	k.aliasesOnce.Do(func() { k.aliases, k.aliasesErr = adr.LoadAliases(k.S.Repo.Root) })
+	return k.aliases, k.aliasesErr
 }
 
 // Loc formats a node's location: path:start-end.
@@ -108,12 +120,17 @@ var (
 )
 
 // Resolve turns a reference into nodes. It accepts node ids (ADR-0070, FR-915, op:x, table:x, sym:..., doc:...),
-// ADR-0070#decision (the first section of the ADR whose anchor starts with "decision"),
+// ADR-0070#decision (the first section of the ADR whose anchor starts with "decision"), the retired number of an
+// ADR merged into another (ADR-0099, ADR-0099§5, which resolve to where it lives now),
 // <file>§4.4 or <file>#<anchor> with any unique suffix of a Markdown path or of a directory of section files
 // (data-model§4.4), short names (DeleteOwnAccount, custom_emojis), and the name of a directory of section files
 // (web-client), which resolves to its README.md.
 func (k *KB) Resolve(ref string) ([]store.Node, error) {
-	ref = strings.TrimSpace(ref)
+	aliases, err := k.Aliases()
+	if err != nil {
+		return nil, err
+	}
+	ref = aliases.Ref(strings.TrimSpace(ref))
 	if ns, err := k.S.Get(ref); err != nil || len(ns) > 0 {
 		return ns, err
 	}
@@ -243,6 +260,11 @@ func (k *KB) Show(w io.Writer, ref string, limit int) error {
 			fmt.Fprintln(w, k.Line(n))
 		}
 		return nil
+	}
+	if aliases, err := k.Aliases(); err == nil {
+		if cur := aliases.Ref(strings.TrimSpace(ref)); cur != strings.TrimSpace(ref) {
+			fmt.Fprintf(w, "%s was merged: this is %s\n", ref, cur)
+		}
 	}
 	for _, n := range ns {
 		body := k.Text(n)

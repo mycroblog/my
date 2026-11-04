@@ -119,7 +119,11 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	if !is.HasLabel("agent:ready") {
 		warn = append(warn, "not labeled agent:ready")
 	}
-	adrIDs := text.ADRs(all)
+	aliases, err := k.Aliases()
+	if err != nil {
+		return "", err
+	}
+	adrIDs := aliases.CurrentAll(text.ADRs(all))
 	type adrInfo struct {
 		node   store.Node
 		status string
@@ -186,6 +190,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	terms := focusTerms(is)
 
 	// Decisions: the Decision section of each ADR, focused on the issue's terms when it is too big.
+	focused := map[string]bool{}
 	if len(adrList) > 0 {
 		w.add("## Decisions\n\n")
 		for _, a := range adrList {
@@ -205,6 +210,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 			case text.Tokens(body) <= perADR:
 				w.addf("%s (%s)\n\n%s\n", kb.Loc(d), text.Ktok(text.Tokens(body)), demote(strings.TrimSpace(body)))
 			default:
+				focused[a.node.ID] = true
 				ex, kept := k.Focus(d, terms, perADR)
 				w.addf("Decision is %s tokens (%s); the paragraphs that mention the issue's terms:\n\n", text.Ktok(text.Tokens(body)), kb.Loc(d))
 				if kept == 0 {
@@ -221,13 +227,17 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	var secs []secRef
 	seenSec := map[string]bool{}
 	for _, mm := range reSectionRef.FindAllStringSubmatch(all, -1) {
-		key := mm[1] + "§" + mm[2]
-		if strings.HasPrefix(mm[1], "ADR-") && contains(adrIDs, mm[1]) {
-			continue // its Decision is above
+		file, num := mm[1], mm[2]
+		if strings.HasPrefix(file, "ADR-") {
+			file, num = aliases.Section(file, num)
+			if num == "" || (contains(adrIDs, file) && !focused[file]) {
+				continue // its whole Decision is above; a focused one may have left this section out
+			}
 		}
+		key := file + "§" + num
 		if !seenSec[key] {
 			seenSec[key] = true
-			secs = append(secs, secRef{strings.TrimSuffix(mm[1], ".md"), mm[2]})
+			secs = append(secs, secRef{strings.TrimSuffix(file, ".md"), num})
 		}
 	}
 	if len(secs) > 0 {

@@ -79,6 +79,20 @@ pending:
   japanese: []
   design-links: []
 
+# The ADRs and the citations of them: every ADR-NNNN and ADR-NNNN §k resolves and is not a retired number, a bare §k
+# inside an ADR is a heading of that ADR, and an ADR has the sections of docs/adr/template.md and no quoted answers.
+# Until `enforce` is set, `agentkit docs lint` prints the findings as warnings. The excluded files write ADR-NNNN for
+# something else: agentkit's own records, and the examples of its tests and comments.
+adrs:
+  enforce: false
+  exclude:
+    - "tools/agentkit/docs/adr/**"
+    - "tools/agentkit/README.md"
+    - "scripts/agentkit-*.sh"
+    - "tools/agentkit/internal/**/*_test.go"
+    - "tools/agentkit/internal/adr/aliases.go"
+    - "tools/agentkit/internal/docslint/*.go"
+
 # The names users and operators see, which the code defines and a document must mention (agentkit docs inventory):
 # the commands of `my` (README.md, docs/operations/, docs/reference/), the metrics (docs/operations/running.md), the
 # webhook event types (docs/reference/webhooks.md), the build tags (docs/reference/build-tags.md), the tasks that

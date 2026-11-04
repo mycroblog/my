@@ -55,3 +55,55 @@ func TestListRejectsMalformed(t *testing.T) {
 		t.Fatal("List accepted an ADR without a title and status")
 	}
 }
+
+func TestAliases(t *testing.T) {
+	root := t.TempDir()
+	if as, err := LoadAliases(root); err != nil || as != nil {
+		t.Fatalf("no file: %v %v", as, err)
+	}
+	write(t, root, "aliases.yaml", "# nothing yet\n")
+	if as, err := LoadAliases(root); err != nil || len(as) != 0 {
+		t.Fatalf("empty file: %v %v", as, err)
+	}
+	write(t, root, "aliases.yaml", `aliases:
+  ADR-0099: {to: ADR-0074, offset: 10, sections: {"2": "4"}, anchors: {usage: usage-payjp}}
+  ADR-0124: {to: ADR-0070, section: "4"}
+  ADR-0001: {to: ADR-0002}
+`)
+	as, err := LoadAliases(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for ref, want := range map[string]string{
+		"ADR-0099":          "ADR-0074",
+		"ADR-0099§5":        "ADR-0074§15",
+		"ADR-0099 §5.2":     "ADR-0074§15.2",
+		"ADR-0099§2.1":      "ADR-0074§4.1",
+		"ADR-0099#usage":    "ADR-0074#usage-payjp",
+		"ADR-0099#decision": "ADR-0074#decision",
+		"ADR-0099#nope":     "ADR-0074",
+		"ADR-0124§3":        "ADR-0070§4",
+		"ADR-0001§3":        "ADR-0002",
+		"ADR-0074§5":        "ADR-0074§5",
+		"data-model§4.4":    "data-model§4.4",
+	} {
+		if got := as.Ref(ref); got != want {
+			t.Errorf("Ref(%q) = %q, want %q", ref, got, want)
+		}
+	}
+	got := as.CurrentAll([]string{"ADR-0099", "ADR-0074", "ADR-0003", "ADR-0124", "ADR-0070"})
+	if want := []string{"ADR-0074", "ADR-0003", "ADR-0070"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("CurrentAll = %v, want %v", got, want)
+	}
+
+	for name, body := range map[string]string{
+		"chain":   "aliases:\n  ADR-0001: {to: ADR-0002}\n  ADR-0002: {to: ADR-0003}\n",
+		"bad id":  "aliases:\n  ADR-1: {to: ADR-0002}\n",
+		"unknown": "aliases:\n  ADR-0001: {to: ADR-0002, nope: 1}\n",
+	} {
+		write(t, root, "aliases.yaml", body)
+		if _, err := LoadAliases(root); err == nil {
+			t.Errorf("%s: no error", name)
+		}
+	}
+}
