@@ -846,3 +846,157 @@ func TestEventTypes(t *testing.T) {
 		t.Errorf("EventTypes = %d types, want the 16 of ADR-0074 §3", got)
 	}
 }
+
+// oneCheckout returns a provider on the fake API, a request of a checkout, and its session.
+func oneCheckout(t *testing.T) (*Provider, *fakeAPI, supporters.CheckoutRequest, supporters.Checkout) {
+	t.Helper()
+	p, f, _ := newOnFake(t, scenario())
+	r, err := p.EnsurePlan(t.Context(), supporters.PlanSpec{PlanID: "plan", Name: "Plan", Prices: []supporters.PriceSpec{
+		{Currency: "JPY", AmountMinor: 500, Interval: supporters.IntervalMonth},
+		{Currency: "JPY", AmountMinor: 5000, Interval: supporters.IntervalYear},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := supporters.CheckoutRequest{
+		LocalID: "local", Price: r.Prices[0].Ref, Email: "alice@example.com", Key: "first",
+		SuccessURL: "https://my.example/ok?checkout=success", CancelURL: "https://my.example/ok?checkout=canceled",
+	}
+	c, err := p.StartCheckout(t.Context(), req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Key = "second"
+	return p, f, req, c
+}
+
+// A session is continued only for what a new session would be, and only while it is open.
+func TestResumeCheckout(t *testing.T) {
+	p, f, req, c := oneCheckout(t)
+	res, page, err := p.ResumeCheckout(t.Context(), c.Ref, req)
+	if err != nil || res.Status != supporters.CheckoutOpen || page == nil || page.RedirectURL != c.RedirectURL || !page.ExpiresAt.Equal(c.ExpiresAt) {
+		t.Fatalf("ResumeCheckout = %+v, %+v, %v, want the page %+v", res, page, err, c)
+	}
+	for name, change := range map[string]func(*supporters.CheckoutRequest){
+		"another price": func(r *supporters.CheckoutRequest) { r.Price = "price_other" },
+		"a customer":    func(r *supporters.CheckoutRequest) { r.Customer, r.Email = "cus_alice", "" },
+		"another email": func(r *supporters.CheckoutRequest) { r.Email = "bob@example.com" },
+		"another return": func(r *supporters.CheckoutRequest) {
+			r.SuccessURL = "https://other.example/ok"
+		},
+		"another cancel": func(r *supporters.CheckoutRequest) { r.CancelURL = "https://other.example/no" },
+	} {
+		other := req
+		change(&other)
+		if res, page, err := p.ResumeCheckout(t.Context(), c.Ref, other); err != nil || res.Status != supporters.CheckoutOpen || page != nil {
+			t.Errorf("ResumeCheckout with %s = %+v, %+v, %v, want an open session without a page", name, res, page, err)
+		}
+	}
+	f.paySession(t, string(c.Ref))
+	if res, page, err := p.ResumeCheckout(t.Context(), c.Ref, req); err != nil || res.Status != supporters.CheckoutCompleted || page != nil {
+		t.Errorf("ResumeCheckout of a paid session = %+v, %+v, %v, want completed without a page", res, page, err)
+	}
+}
+
+// A tampered URL of an open session is not sent to the browser.
+func TestResumeCheckoutChecksTheHost(t *testing.T) {
+	p, f, req, c := oneCheckout(t)
+	f.mu.Lock()
+	f.checkouts[string(c.Ref)]["url"] = "https://evil.example/pay"
+	f.mu.Unlock()
+	if _, _, err := p.ResumeCheckout(t.Context(), c.Ref, req); !errors.Is(err, supporters.ErrInvalidPaymentResponse) {
+		t.Errorf("ResumeCheckout with a URL elsewhere = %v, want ErrInvalidPaymentResponse", err)
+	}
+}
+
+// Expiring makes a session unpayable; when Stripe refuses since the session just completed, the
+// answer is the completed session, with its subscription.
+func TestExpireCheckout(t *testing.T) {
+	p, f, _, c := oneCheckout(t)
+	if res, err := p.ExpireCheckout(t.Context(), c.Ref); err != nil || res.Status != supporters.CheckoutExpired {
+		t.Fatalf("ExpireCheckout = %+v, %v, want expired", res, err)
+	}
+	if res, err := p.ExpireCheckout(t.Context(), c.Ref); err != nil || res.Status != supporters.CheckoutExpired {
+		t.Errorf("ExpireCheckout again = %+v, %v, want expired", res, err)
+	}
+	if _, err := p.ExpireCheckout(t.Context(), "cs_unknown"); supporters.ErrorKindOf(err) != supporters.ErrorNotFound {
+		t.Errorf("ExpireCheckout of an unknown session = %v, want not_found", err)
+	}
+
+	p, f, _, c = oneCheckout(t)
+	sub, _ := f.paySession(t, string(c.Ref))
+	if res, err := p.ExpireCheckout(t.Context(), c.Ref); err != nil || res.Status != supporters.CheckoutCompleted || string(res.Subscription) != sub {
+		t.Errorf("ExpireCheckout of a paid session = %+v, %v, want completed with %s", res, err, sub)
+	}
+}
+
+// A refusal of Stripe for a session that stays open is an error: the caller must not make another page.
+func TestExpireCheckoutRefusedWhileOpen(t *testing.T) {
+	p, f, _, c := oneCheckout(t)
+	f.mu.Lock()
+	f.before = func(r *http.Request) int {
+		if strings.HasSuffix(r.URL.Path, "/expire") {
+			return http.StatusBadRequest
+		}
+		return 0
+	}
+	f.mu.Unlock()
+	if res, err := p.ExpireCheckout(t.Context(), c.Ref); supporters.ErrorKindOf(err) != supporters.ErrorInvalidRequest {
+		t.Errorf("ExpireCheckout refused while open = %+v, %v, want invalid_request", res, err)
+	}
+}
+
+// Two sessions of one subscription paid: the refund takes the charge of the second alone, a repeat
+// refunds nothing twice, and a key without the permission fails as permission.
+func TestRefundSubscription(t *testing.T) {
+	p, f, req, c := oneCheckout(t)
+	second, err := p.StartCheckout(t.Context(), req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, firstCharge := f.paySession(t, string(c.Ref))
+	sub, charge := f.paySession(t, string(second.Ref))
+	ref := supporters.SubscriptionRef(sub)
+	if snap, err := p.GetSubscription(t.Context(), ref); err != nil || snap.LocalID != "local" {
+		t.Fatalf("GetSubscription = %+v, %v, want our ID", snap, err)
+	}
+	f.mu.Lock()
+	f.before = func(r *http.Request) int {
+		if r.URL.Path == "/v1/refunds" && r.Method == http.MethodPost {
+			return http.StatusForbidden
+		}
+		return 0
+	}
+	f.mu.Unlock()
+	if err := p.RefundSubscription(t.Context(), ref, "k1"); supporters.ErrorKindOf(err) != supporters.ErrorPermission {
+		t.Fatalf("RefundSubscription without the permission = %v, want permission", err)
+	}
+	f.mu.Lock()
+	f.before = nil
+	f.mu.Unlock()
+	for _, key := range []string{"k2", "k3"} {
+		if err := p.RefundSubscription(t.Context(), ref, key); err != nil {
+			t.Fatalf("RefundSubscription(%s) = %v", key, err)
+		}
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.charges[charge]["refunded"] != true || f.charges[firstCharge]["refunded"] == true {
+		t.Errorf("refunded: second %v, first %v, want only the second", f.charges[charge]["refunded"], f.charges[firstCharge]["refunded"])
+	}
+	if len(f.refunds) != 1 {
+		t.Errorf("%d refunds, want 1", len(f.refunds))
+	}
+}
+
+// A charge in a dispute cannot be refunded; the refund goes on without it.
+func TestRefundSubscriptionLeavesADisputedCharge(t *testing.T) {
+	p, f, _, c := oneCheckout(t)
+	sub, charge := f.paySession(t, string(c.Ref))
+	f.mu.Lock()
+	f.charges[charge]["disputed"] = true
+	f.mu.Unlock()
+	if err := p.RefundSubscription(t.Context(), supporters.SubscriptionRef(sub), "k"); err != nil {
+		t.Errorf("RefundSubscription = %v", err)
+	}
+}

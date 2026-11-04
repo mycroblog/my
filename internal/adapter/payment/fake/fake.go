@@ -94,6 +94,9 @@ type Provider struct {
 	// changePayment fails the payment of a change at once (FailChangePayments); nil pays it.
 	changePayment error
 	changeCharges int
+	refunds       map[supporters.SubscriptionRef]bool
+	// refundFailure fails RefundSubscription (FailRefunds).
+	refundFailure error
 }
 
 type price struct {
@@ -144,6 +147,7 @@ func New(o Options) *Provider {
 	}
 	return &Provider{
 		o: o, products: map[string]supporters.ProductRef{}, checkouts: map[supporters.CheckoutRef]*checkout{},
+		refunds:      map[supporters.SubscriptionRef]bool{},
 		checkoutKeys: map[string]supporters.CheckoutRef{}, planNames: map[string]string{}, portals: map[string]*portal{}, changeKeys: map[string]string{},
 	}
 }
@@ -495,6 +499,35 @@ func (p *Provider) GetCheckout(ctx context.Context, ref supporters.CheckoutRef) 
 	return c.result, nil
 }
 
+// ResumeCheckout implements supporters.PaymentProvider.
+func (p *Provider) ResumeCheckout(ctx context.Context, ref supporters.CheckoutRef, req supporters.CheckoutRequest) (supporters.CheckoutResult, *supporters.Checkout, error) {
+	res, err := p.GetCheckout(ctx, ref)
+	if err != nil || res.Status != supporters.CheckoutOpen {
+		return res, nil, err
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	c := p.checkouts[ref]
+	if c.req == nil || c.req.Price != req.Price || c.req.Customer != req.Customer || c.req.Email != req.Email ||
+		c.req.SuccessURL != req.SuccessURL || c.req.CancelURL != req.CancelURL {
+		return res, nil, nil
+	}
+	page := p.checkoutOf(ref)
+	return res, &page, nil
+}
+
+// ExpireCheckout implements supporters.PaymentProvider.
+func (p *Provider) ExpireCheckout(ctx context.Context, ref supporters.CheckoutRef) (supporters.CheckoutResult, error) {
+	res, err := p.GetCheckout(ctx, ref)
+	if err != nil || res.Status != supporters.CheckoutOpen {
+		return res, err
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.checkouts[ref].result.Status = supporters.CheckoutExpired
+	return p.checkouts[ref].result, nil
+}
+
 // PortalURL implements supporters.PaymentProvider.
 func (p *Provider) PortalURL(ctx context.Context, customer supporters.CustomerRef, returnURL string) (string, error) {
 	p.mu.Lock()
@@ -640,6 +673,35 @@ func (p *Provider) CancelNow(ctx context.Context, sub supporters.SubscriptionRef
 		s.Status, s.CancelAtPeriodEnd, s.ScheduledPrice = supporters.StatusCanceled, false, ""
 		return nil
 	})
+}
+
+// RefundSubscription implements supporters.PaymentProvider: it records the refund of the whole
+// subscription, once.
+func (p *Provider) RefundSubscription(ctx context.Context, sub supporters.SubscriptionRef, _ string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if err := p.request(ctx); err != nil {
+		return err
+	}
+	if p.refundFailure != nil {
+		return p.refundFailure
+	}
+	p.refunds[sub] = true
+	return nil
+}
+
+// FailRefunds makes RefundSubscription fail with err; nil ends it.
+func (p *Provider) FailRefunds(err error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.refundFailure = err
+}
+
+// Refunded reports whether RefundSubscription refunded a subscription.
+func (p *Provider) Refunded(sub supporters.SubscriptionRef) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.refunds[sub]
 }
 
 // Resolve implements supporters.PaymentProvider.

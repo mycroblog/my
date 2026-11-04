@@ -30,6 +30,9 @@ func ContinuationKey(runID string) string { return "continue:" + runID }
 //  4. a sweep of every subscription of the account from the sweep cursor, which starts over
 //     after the last page.
 //
+// It also queues again the settling of the duplicates that are not settled, such as one whose
+// refund the key's permissions refused.
+//
 // Everything it re-reads goes to the Syncer. It records the attempt in one transaction with,
 // when it used its requests, the continuation job (ContinuationKey, ContinuationDelay later)
 // that picks up from its cursors. A job whose attempt is recorded does nothing. A failure of
@@ -55,6 +58,9 @@ func (p *Payments) Reconcile(ctx context.Context, runKey string) queue.Result {
 		// The first reconciliation reads the changes of one period; the sweep reads the rest.
 		run.ChangesUntil = now.Add(-p.d.ReconcileInterval)
 	default:
+		return queue.Retry(0, err)
+	}
+	if err := p.d.Syncer.RetryDuplicates(ctx, name, run.ID); err != nil {
 		return queue.Retry(0, err)
 	}
 	r := &reconciliation{p: p, run: &run, now: now, synced: map[SubscriptionRef]bool{}, checkouts: map[CheckoutRef]bool{}}

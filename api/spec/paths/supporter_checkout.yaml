@@ -5,8 +5,10 @@ post:
   description: |
     Starts a subscription to a plan at an interval and returns the payment provider's hosted
     checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-    Starting again while the subscription is `pending` makes a new checkout of the same
-    subscription. Only a local user with a verified primary address and without another
+    Starting again while the subscription is `pending` continues the open checkout for the same
+    plan and interval, or expires it and makes a new one of the same subscription, so that one
+    checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+    to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
     subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
     `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
     `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404

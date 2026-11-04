@@ -549,6 +549,64 @@ func (p *Provider) CancelNow(ctx context.Context, ref supporters.SubscriptionRef
 	})
 }
 
+// RefundSubscription implements supporters.PaymentProvider: a refund of the whole of each charge of
+// the subscription's paid invoices. Without an amount a refund takes what is left of its charge, and
+// Stripe refuses a charge with nothing left, so a repeat refunds nothing twice. The refund goes to the
+// card charged and takes Stripe's fee of the charge from nobody: Stripe keeps it.
+func (p *Provider) RefundSubscription(ctx context.Context, ref supporters.SubscriptionRef, key string) error {
+	params := &stripe.InvoiceListParams{
+		ListParams:   stripe.ListParams{Limit: stripe.Int64(supporters.PageSize), Single: true},
+		Subscription: stripe.String(string(ref)), Status: stripe.String(string(stripe.InvoiceStatusPaid)),
+	}
+	for {
+		var list *stripe.V1List[*stripe.Invoice]
+		err := p.do(ctx, "list the paid invoices of "+string(ref), func() error {
+			list = p.sc.V1Invoices.List(ctx, params)
+			return list.Err()
+		})
+		if err != nil {
+			return err
+		}
+		data := list.Data()
+		for _, inv := range data {
+			charges, err := p.paidCharges(ctx, inv.ID, subscriptionLink{})
+			if err != nil {
+				return err
+			}
+			for _, charge := range charges {
+				if err := p.refundCharge(ctx, charge, key); err != nil {
+					return err
+				}
+			}
+		}
+		if !list.Meta().HasMore || len(data) == 0 {
+			return nil
+		}
+		params.StartingAfter = stripe.String(data[len(data)-1].ID)
+	}
+}
+
+// refundCharge refunds what is left of a charge. A charge with nothing left is done. A charge in a
+// dispute cannot be refunded, and the dispute decides where its money goes.
+func (p *Provider) refundCharge(ctx context.Context, charge, key string) error {
+	return p.do(ctx, "refund the charge "+charge, func() error {
+		_, err := p.sc.V1Refunds.Create(ctx, &stripe.RefundCreateParams{
+			Params: idempotency(key, "refund:"+charge), Charge: stripe.String(charge), Reason: stripe.String(string(stripe.RefundReasonDuplicate)),
+		})
+		var se *stripe.Error
+		if errors.As(err, &se) {
+			switch se.Code {
+			case stripe.ErrorCodeChargeAlreadyRefunded:
+				return nil
+			case stripe.ErrorCodeChargeDisputed, stripe.ErrorCodeRefundDisputedPayment:
+				p.log.WarnContext(ctx, "a charge in a dispute cannot be refunded", slog.String("charge", charge))
+				return nil
+			}
+		}
+		return err
+	})
+}
+
 // ended reports whether a subscription can no longer change.
 func ended(s *stripe.Subscription) bool {
 	return s.Status == stripe.SubscriptionStatusCanceled || s.Status == stripe.SubscriptionStatusIncompleteExpired

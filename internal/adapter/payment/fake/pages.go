@@ -179,7 +179,7 @@ func (p *Provider) openCheckout(token string) (req supporters.CheckoutRequest, r
 		return supporters.CheckoutRequest{}, ref, false, false
 	case c.result.Status == supporters.CheckoutCompleted:
 		return *c.req, ref, true, false
-	case !p.o.Now().Before(c.expiresAt):
+	case c.result.Status == supporters.CheckoutExpired || !p.o.Now().Before(c.expiresAt):
 		return *c.req, ref, false, false
 	}
 	return *c.req, ref, false, true

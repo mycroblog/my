@@ -106,6 +106,7 @@ const paymentModeLabels: Readonly<Record<PaymentStatus["mode"], ClientMessageKey
 const paymentWarningLabels: Readonly<Record<PaymentStatusWarning, ClientMessageKey>> = {
   no_webhook: "client:admin.supporters.payment.warning.no_webhook",
   reconciliation_corrected: "client:admin.supporters.payment.warning.reconcile_corrected",
+  duplicate_charge: "client:admin.supporters.payment.warning.duplicate_charge",
 };
 
 const reconcileOutcomeLabels: Readonly<Record<PaymentReconciliationRun["outcome"], ClientMessageKey>> = {

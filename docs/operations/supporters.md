@@ -69,7 +69,7 @@ Enabling, disabling, and cancelling are written to the audit log as CLI operatio
 
 - When you change the monthly price or the discount, the new price applies to new subscriptions and plan changes. Existing subscribers renew at their original price. There is no operation to move existing subscribers to a new price. To move them, create a new plan and retire the old one.
 - Hiding a plan stops new subscriptions and changes to that plan. Existing subscriptions continue.
-- Retiring a plan cannot be undone. Its subscriptions are cancelled at the end of their period (pending ones close at once, and ones whose payment is late beyond the grace period are cancelled at once). When the last subscription ends, the role goes back to an ordinary role.
+- Retiring a plan cannot be undone. Its subscriptions are cancelled at the end of their period (pending ones close at once and their payment page stops taking payments, with any payment that still arrives refunded; and ones whose payment is late beyond the grace period are cancelled at once). When the last subscription ends, the role goes back to an ordinary role.
 
 ## Accounts and subscriptions
 

@@ -59,6 +59,9 @@ func newPaymentStatus(st appsupporters.PaymentStatus) PaymentStatus {
 	if st.ReconcileCorrected() {
 		out.Warnings = append(out.Warnings, PaymentStatusWarningsReconciliationCorrected)
 	}
+	if st.UnsettledDuplicates > 0 {
+		out.Warnings = append(out.Warnings, PaymentStatusWarningsDuplicateCharge)
+	}
 	return out
 }
 

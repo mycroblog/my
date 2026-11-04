@@ -46,6 +46,17 @@ type PaymentProvider interface {
 	StartCheckout(ctx context.Context, req CheckoutRequest) (Checkout, error)
 	// GetCheckout reports whether a checkout completed and, if so, what it created.
 	GetCheckout(ctx context.Context, ref CheckoutRef) (CheckoutResult, error)
+	// ResumeCheckout reads a checkout as GetCheckout does and, while it is open and was made for
+	// what req asks (its price, customer, and return URLs), also returns its page, which a start
+	// again sends the browser to instead of making another. The page is nil for a provider that
+	// keeps none (PAY.JP, whose StartCheckout signs a new URL).
+	ResumeCheckout(ctx context.Context, ref CheckoutRef, req CheckoutRequest) (CheckoutResult, *Checkout, error)
+	// ExpireCheckout makes an open checkout unpayable and reports what it is now: expired, or
+	// completed when the customer got there first. Safe to repeat. It fails, and the checkout
+	// stays payable, when the provider refuses to expire a checkout it still reports open. A
+	// provider that cannot withdraw a page reports it still open (PAY.JP, whose claim makes one
+	// subscription of all the pages of a checkout).
+	ExpireCheckout(ctx context.Context, ref CheckoutRef) (CheckoutResult, error)
 	// PortalURL returns a short-lived URL of the provider's customer portal (payment methods,
 	// invoices, cancellation at the period's end).
 	PortalURL(ctx context.Context, customer CustomerRef, returnURL string) (string, error)
@@ -69,6 +80,11 @@ type PaymentProvider interface {
 	ResumeCancellation(ctx context.Context, sub SubscriptionRef, key string) error
 	// CancelNow ends the subscription without a refund; nothing when it already ended.
 	CancelNow(ctx context.Context, sub SubscriptionRef, key string) error
+	// RefundSubscription refunds in full what is left of every settled charge of a subscription:
+	// nothing for a charge refunded already, or one in a dispute. Safe to repeat, with a new key
+	// for every attempt, since a provider may replay a stored failure under a key. It leaves a
+	// payment that has not settled.
+	RefundSubscription(ctx context.Context, sub SubscriptionRef, key string) error
 
 	// ParseWebhook verifies a delivery (its signature, its time within WebhookTolerance of now,
 	// and its mode against Mode) and returns what it points at. It does no I/O and fails with

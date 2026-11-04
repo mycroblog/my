@@ -6,6 +6,6 @@ properties:
   subscription_id:
     $ref: ./Id.yaml
   redirect_url:
-    description: The checkout, to open in the same tab.
+    description: Where to go next, in the same tab, which is the checkout unless it was paid already.
     type: string
     format: uri

@@ -27,6 +27,9 @@ type Syncer interface {
 	RecordMoney(ctx context.Context, provider string, ms []MoneyMovement) error
 	// KnownMoney reports which of the movement IDs of provider are recorded.
 	KnownMoney(ctx context.Context, provider string, ids []string) (map[string]bool, error)
+	// RetryDuplicates queues again the settling of the duplicates of provider that are not settled;
+	// cause makes the keys of the jobs.
+	RetryDuplicates(ctx context.Context, provider, cause string) error
 	// OpenCheckouts returns the checkouts of provider that our subscriptions wait for and that
 	// have not expired at now (ADR-0074 §4, stage 2).
 	OpenCheckouts(ctx context.Context, provider string, now time.Time) ([]CheckoutRef, error)

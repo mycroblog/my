@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/mycroblog/my/internal/app/account"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
@@ -180,7 +181,8 @@ type StartedCheckout struct {
 	RedirectURL    string
 }
 
-// StartCheckout starts a subscription to a plan (ADR-0072 §6): it records the pending
+// StartCheckout starts a subscription to a plan (ADR-0072 §6), or continues one still pending:
+// it records the pending
 // subscription and returns the provider's checkout for it; starting again while it is pending
 // makes a new checkout of the same subscription for the plan and interval asked now, and the
 // snapshot of the paid checkout moves the subscription to them. It fails with ErrDisabled or
@@ -248,19 +250,168 @@ func (s *Service) StartCheckout(ctx context.Context, in CheckoutInput) (StartedC
 	} else if !errors.Is(err, ErrNotFound) {
 		return StartedCheckout{}, err
 	}
+	earlier, err := s.earlierCheckouts(ctx, subID, req, now)
+	if err != nil {
+		return StartedCheckout{}, err
+	}
+	if earlier.paid != nil {
+		return s.startedPaid(ctx, in, subID, *earlier.paid)
+	}
+	if earlier.page != nil {
+		return StartedCheckout{SubscriptionID: subID, RedirectURL: earlier.page.RedirectURL}, nil
+	}
 	co, err := prov.StartCheckout(ctx, req)
 	if err != nil {
 		return StartedCheckout{}, fmt.Errorf("supporters: start the checkout of %s: %w", subID, err)
 	}
+	// Under the subscription's lock, so that of two starts that ran side by side the later one sees
+	// the earlier one's page and expires it, and the earlier one sees nothing of the later.
+	var others []CheckoutRef
+	linked := false
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		return s.d.Repository.InsertCheckout(ctx, tx, CheckoutRecord{
+		rec, err := s.d.Repository.LockSubscription(ctx, tx, subID)
+		if err != nil {
+			return err
+		}
+		if linked = rec.Link != ""; linked {
+			return nil
+		}
+		if err := s.d.Repository.InsertCheckout(ctx, tx, CheckoutRecord{
 			ID: s.d.IDs.NewID(), SubscriptionID: subID, Provider: name, Ref: co.Ref, ExpiresAt: kernelTime(co.ExpiresAt), CreatedAt: now,
-		})
+		}); err != nil {
+			return err
+		}
+		live, err := s.d.Repository.LiveCheckouts(ctx, tx, subID, now)
+		if err != nil {
+			return err
+		}
+		others = slices.DeleteFunc(live, func(ref CheckoutRef) bool { return ref == co.Ref || earlier.seen[ref] })
+		return nil
 	})
 	if err != nil {
 		return StartedCheckout{}, err
 	}
+	if linked {
+		// A page was paid while this one was made.
+		s.expireQuietly(ctx, subID, co.Ref)
+		return s.startedPaid(ctx, in, subID, CheckoutResult{})
+	}
+	for _, ref := range others {
+		res, err := prov.ExpireCheckout(ctx, ref)
+		if err != nil && ErrorKindOf(err) != ErrorNotFound {
+			s.expireQuietly(ctx, subID, co.Ref)
+			return StartedCheckout{}, fmt.Errorf("supporters: expire a checkout of %s: %w", subID, err)
+		}
+		if err == nil && res.Status == CheckoutCompleted {
+			s.expireQuietly(ctx, subID, co.Ref)
+			return s.startedPaid(ctx, in, subID, res)
+		}
+	}
 	return StartedCheckout{SubscriptionID: subID, RedirectURL: co.RedirectURL}, nil
+}
+
+// CheckoutResumeMinimum is the least time a page must have left for a start again to continue it:
+// a page about to expire would turn into the expired page while the customer types.
+const CheckoutResumeMinimum = 15 * time.Minute
+
+// earlierPages is what became of the checkouts that a start again found.
+type earlierPages struct {
+	// paid is the checkout that a customer completed; nil without one.
+	paid *CheckoutResult
+	// page is the open page to continue; nil to make a new one, the others being unpayable.
+	page *Checkout
+	// seen are the checkouts read.
+	seen map[CheckoutRef]bool
+}
+
+// earlierCheckouts settles the live checkouts of a subscription before a start: one that was paid
+// answers the start, an open one made for what req asks is continued, and every other open one is
+// expired, so that at most one page can take a payment (ADR-0072 §6). A failure leaves the start
+// without a page, since the earlier page may still be paid.
+func (s *Service) earlierCheckouts(ctx context.Context, subID string, req CheckoutRequest, now time.Time) (earlierPages, error) {
+	prov := s.d.Provider
+	out := earlierPages{seen: map[CheckoutRef]bool{}}
+	refs, err := s.d.Repository.LiveCheckouts(ctx, nil, subID, now)
+	if err != nil {
+		return out, err
+	}
+	var open []CheckoutRef
+	var keep CheckoutRef
+	for _, ref := range refs {
+		out.seen[ref] = true
+		res, page, err := prov.ResumeCheckout(ctx, ref, req)
+		if ErrorKindOf(err) == ErrorNotFound {
+			continue
+		}
+		if err != nil {
+			return out, fmt.Errorf("supporters: read a checkout of %s: %w", subID, err)
+		}
+		switch res.Status {
+		case CheckoutCompleted:
+			out.paid = &res
+		case CheckoutOpen:
+			if out.page == nil && page != nil && page.ExpiresAt.Sub(now) >= CheckoutResumeMinimum {
+				out.page, keep = page, ref
+				continue
+			}
+			open = append(open, ref)
+		}
+	}
+	if out.paid == nil {
+		for _, ref := range open {
+			res, err := prov.ExpireCheckout(ctx, ref)
+			if ErrorKindOf(err) == ErrorNotFound {
+				continue
+			}
+			if err != nil {
+				return out, fmt.Errorf("supporters: expire a checkout of %s: %w", subID, err)
+			}
+			if res.Status == CheckoutCompleted {
+				out.paid = &res
+				break
+			}
+		}
+	}
+	if out.paid != nil {
+		// The start ends here, and the cancellation of a second subscription covers a page that
+		// stays payable.
+		out.page = nil
+		s.expireQuietly(ctx, subID, append(open, keep)...)
+	}
+	return out, nil
+}
+
+// expireQuietly expires pages that the start no longer needs, and only logs a failure.
+func (s *Service) expireQuietly(ctx context.Context, subID string, refs ...CheckoutRef) {
+	for _, ref := range refs {
+		if ref == "" {
+			continue
+		}
+		if _, err := s.d.Provider.ExpireCheckout(ctx, ref); err != nil && ErrorKindOf(err) != ErrorNotFound {
+			s.d.Logger.WarnContext(ctx, "a checkout could not be expired", slog.String("subscription", subID), slog.Any("error", err))
+		}
+	}
+}
+
+// startedPaid answers a start whose subscription was paid for already: no new page, but the return
+// from a payment, whose screen re-reads the subscription. res is the checkout that was paid, when
+// it is known.
+func (s *Service) startedPaid(ctx context.Context, in CheckoutInput, subID string, res CheckoutResult) (StartedCheckout, error) {
+	if res.Status == CheckoutCompleted {
+		if _, err := s.SyncCheckout(ctx, s.d.Provider.Name(), res); err != nil {
+			return StartedCheckout{}, err
+		}
+	}
+	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return s.d.Outbox.EnqueueTx(ctx, tx, SyncJob(subID, "paid:"+string(res.Ref)))
+	})
+	if err != nil {
+		return StartedCheckout{}, err
+	}
+	if in.SuccessURL == "" {
+		return StartedCheckout{}, ErrLiveSubscription
+	}
+	return StartedCheckout{SubscriptionID: subID, RedirectURL: in.SuccessURL}, nil
 }
 
 // resync re-reads a user's linked subscription from the provider after a command and applies

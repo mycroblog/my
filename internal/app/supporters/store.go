@@ -91,6 +91,19 @@ type TransitionRecord struct {
 	OccurredAt time.Time
 }
 
+// Duplicate is a provider's subscription that charged for a subscription of ours which has another
+// one or has ended (supporter_duplicate_subscriptions, ADR-0072 §6): the server cancels and
+// refunds it.
+type Duplicate struct {
+	ID             string
+	SubscriptionID string
+	Provider       string
+	Ref            SubscriptionRef
+	DetectedAt     time.Time
+	// Settled reports that it is canceled and refunded.
+	Settled bool
+}
+
 // CheckoutRecord is a hosted checkout of a pending subscription (supporter_checkouts).
 type CheckoutRecord struct {
 	ID             string
@@ -206,6 +219,18 @@ type Repository interface {
 	// InsertCheckout records a checkout of a subscription; one of a provider's ref recorded
 	// already writes nothing, since a provider may return the same checkout for a second start.
 	InsertCheckout(ctx context.Context, tx uow.Tx, c CheckoutRecord) error
+	// LiveCheckouts returns the checkouts of a subscription that expire after now, newest first;
+	// tx may be nil.
+	LiveCheckouts(ctx context.Context, tx uow.Tx, subscriptionID string, now time.Time) ([]CheckoutRef, error)
+	// InsertDuplicate records a provider's subscription to cancel and refund, and reports whether
+	// it did: one recorded already writes nothing.
+	InsertDuplicate(ctx context.Context, tx uow.Tx, d Duplicate) (bool, error)
+	// SettleDuplicate records that a duplicate is canceled and refunded; again writes nothing.
+	SettleDuplicate(ctx context.Context, tx uow.Tx, duplicateID string, at time.Time) error
+	// FindDuplicate returns a duplicate of provider by the provider's ID; tx may be nil.
+	FindDuplicate(ctx context.Context, tx uow.Tx, provider string, ref SubscriptionRef) (Duplicate, error)
+	// UnsettledDuplicates returns the duplicates of provider that are not settled, oldest first.
+	UnsettledDuplicates(ctx context.Context, provider string) ([]Duplicate, error)
 	// FindSubscription returns a subscription; tx may be nil.
 	FindSubscription(ctx context.Context, tx uow.Tx, id string) (SubscriptionRecord, error)
 	// LockSubscription returns a subscription inside tx, so that its changes run one after

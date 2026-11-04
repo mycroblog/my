@@ -122,6 +122,38 @@ INSERT INTO supporter_checkouts (id, subscription_id, provider, provider_checkou
 VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (provider, provider_checkout_id) DO NOTHING;
 
+-- name: ListLiveSupporterCheckouts :many
+SELECT provider_checkout_id FROM supporter_checkouts
+WHERE subscription_id = sqlc.arg(subscription_id) AND expires_at > sqlc.arg(now)
+ORDER BY id DESC;
+
+-- name: InsertSupporterDuplicate :execrows
+INSERT INTO supporter_duplicate_subscriptions (id, subscription_id, provider, provider_subscription_id, detected_at)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (provider, provider_subscription_id) DO NOTHING;
+
+-- name: InsertSupporterDuplicateSettlement :exec
+INSERT INTO supporter_duplicate_settlements (duplicate_id, settled_at) VALUES ($1, $2)
+ON CONFLICT (duplicate_id) DO NOTHING;
+
+-- name: GetSupporterDuplicate :one
+SELECT d.id, d.subscription_id, d.provider, d.provider_subscription_id, d.detected_at,
+  EXISTS (SELECT 1 FROM supporter_duplicate_settlements x WHERE x.duplicate_id = d.id) AS settled
+FROM supporter_duplicate_subscriptions d
+WHERE d.provider = $1 AND d.provider_subscription_id = $2;
+
+-- name: ListUnsettledSupporterDuplicates :many
+SELECT d.id, d.subscription_id, d.provider, d.provider_subscription_id, d.detected_at
+FROM supporter_duplicate_subscriptions d
+WHERE d.provider = $1
+  AND NOT EXISTS (SELECT 1 FROM supporter_duplicate_settlements x WHERE x.duplicate_id = d.id)
+ORDER BY d.id;
+
+-- name: CountUnsettledSupporterDuplicates :one
+SELECT COUNT(*) FROM supporter_duplicate_subscriptions d
+WHERE d.provider = $1
+  AND NOT EXISTS (SELECT 1 FROM supporter_duplicate_settlements x WHERE x.duplicate_id = d.id);
+
 -- name: GetLatestSupporterCheckout :one
 SELECT id, subscription_id, provider, provider_checkout_id, expires_at, created_at
 FROM supporter_checkouts WHERE subscription_id = $1 ORDER BY id DESC LIMIT 1;

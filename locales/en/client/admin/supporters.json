@@ -191,6 +191,10 @@
     "defaultMessage": "The provider answered in a form the server cannot read. The next reconciliation tries again; if it goes on, report it to the developers of my.",
     "description": "How to fix a failure for an unreadable response."
   },
+  "admin.supporters.payment.warning.duplicate_charge": {
+    "defaultMessage": "A second subscription from one payment is not canceled and refunded yet. Each reconciliation tries again. The server's log line names the subscription and the reason. If the key lacks permission, give it the permission to write refunds; otherwise refund the charge in the provider's dashboard.",
+    "description": "Warning of the payment provider section: a member paid twice and the server could not cancel and refund the second subscription."
+  },
   "admin.supporters.payment.warning.no_webhook": {
     "defaultMessage": "No webhook delivery is recorded in the last 45 days. Check that the webhook endpoint is registered at the provider with this server's URL and that its signing secret is in the server's environment.",
     "description": "Warning of the payment provider section: no webhook delivery is recorded."

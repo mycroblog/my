@@ -3351,8 +3351,10 @@ export interface paths {
          * Start a subscription to a supporter plan
          * @description Starts a subscription to a plan at an interval and returns the payment provider's hosted
          *     checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-         *     Starting again while the subscription is `pending` makes a new checkout of the same
-         *     subscription. Only a local user with a verified primary address and without another
+         *     Starting again while the subscription is `pending` continues the open checkout for the same
+         *     plan and interval, or expires it and makes a new one of the same subscription, so that one
+         *     checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+         *     to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
          *     subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
          *     `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
          *     `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
@@ -12753,11 +12755,13 @@ export interface components {
             last_webhook_at?: string;
             last_reconciliation?: components["schemas"]["PaymentReconciliationRun"];
             /**
-             * @description The signs that the provider's webhook is not set up right: `no_webhook` (no delivery is
-             *     recorded) and `reconciliation_corrected` (the last reconciliation corrected subscriptions,
-             *     which a webhook delivery should have done).
+             * @description What the operator should look at: `no_webhook` (no delivery is recorded) and
+             *     `reconciliation_corrected` (the last reconciliation corrected subscriptions, which a webhook
+             *     delivery should have done) are signs that the provider's webhook is not set up right, and
+             *     `duplicate_charge` means that a second subscription of one payment is not canceled and
+             *     refunded yet.
              */
-            warnings: ("no_webhook" | "reconciliation_corrected")[];
+            warnings: ("no_webhook" | "reconciliation_corrected" | "duplicate_charge")[];
         };
         /**
          * @description A capability that a role grants. `manage_accounts`: the accounts and their moderation
@@ -13825,7 +13829,7 @@ export interface components {
             subscription_id: components["schemas"]["Id"];
             /**
              * Format: uri
-             * @description The checkout, to open in the same tab.
+             * @description Where to go next, in the same tab, which is the checkout unless it was paid already.
              */
             redirect_url: string;
         };

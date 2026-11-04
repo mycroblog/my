@@ -1217,6 +1217,14 @@ type SupporterCustomer struct {
 	CreatedAt          time.Time
 }
 
+type SupporterDuplicateSubscription struct {
+	ID                     string
+	SubscriptionID         string
+	Provider               string
+	ProviderSubscriptionID string
+	DetectedAt             time.Time
+}
+
 type SupporterProgramChange struct {
 	ID              string
 	State           string

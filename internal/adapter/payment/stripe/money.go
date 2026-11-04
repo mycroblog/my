@@ -439,32 +439,11 @@ func (p *Provider) resolveInvoice(ctx context.Context, id string) (supporters.Ch
 	if l.sub != "" {
 		ch.Subscriptions = []supporters.SubscriptionRef{l.sub}
 	}
-	var list *stripe.V1List[*stripe.InvoicePayment]
-	err = p.do(ctx, "list the payments of the invoice "+id, func() error {
-		list = p.sc.V1InvoicePayments.List(ctx, &stripe.InvoicePaymentListParams{
-			ListParams: stripe.ListParams{Limit: stripe.Int64(10), Single: true},
-			Invoice:    stripe.String(id), Expand: expand("data.", []string{"payment.payment_intent"}),
-		})
-		return list.Err()
-	})
+	charges, err := p.paidCharges(ctx, id, l)
 	if err != nil {
 		return ch, err
 	}
-	for _, ip := range list.Data() {
-		if ip.Status != "paid" || ip.Payment == nil {
-			continue
-		}
-		var charge string
-		switch {
-		case ip.Payment.Charge != nil:
-			charge = ip.Payment.Charge.ID
-		case ip.Payment.PaymentIntent != nil && ip.Payment.PaymentIntent.LatestCharge != nil:
-			p.links.put(ip.Payment.PaymentIntent.ID, l)
-			charge = ip.Payment.PaymentIntent.LatestCharge.ID
-		}
-		if charge == "" {
-			continue
-		}
+	for _, charge := range charges {
 		ms, err := p.moneyOf(ctx, charge)
 		if err != nil {
 			return ch, err
@@ -472,6 +451,38 @@ func (p *Provider) resolveInvoice(ctx context.Context, id string) (supporters.Ch
 		ch.Money = append(ch.Money, ms...)
 	}
 	return ch, nil
+}
+
+// paidCharges returns the charges of an invoice's paid payments, and, when sub is known, remembers
+// that their payment intents paid it.
+func (p *Provider) paidCharges(ctx context.Context, invoice string, link subscriptionLink) ([]string, error) {
+	var list *stripe.V1List[*stripe.InvoicePayment]
+	err := p.do(ctx, "list the payments of the invoice "+invoice, func() error {
+		list = p.sc.V1InvoicePayments.List(ctx, &stripe.InvoicePaymentListParams{
+			ListParams: stripe.ListParams{Limit: stripe.Int64(10), Single: true},
+			Invoice:    stripe.String(invoice), Expand: expand("data.", []string{"payment.payment_intent"}),
+		})
+		return list.Err()
+	})
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, ip := range list.Data() {
+		if ip.Status != "paid" || ip.Payment == nil {
+			continue
+		}
+		switch {
+		case ip.Payment.Charge != nil:
+			out = append(out, ip.Payment.Charge.ID)
+		case ip.Payment.PaymentIntent != nil && ip.Payment.PaymentIntent.LatestCharge != nil:
+			if link.sub != "" {
+				p.links.put(ip.Payment.PaymentIntent.ID, link)
+			}
+			out = append(out, ip.Payment.PaymentIntent.LatestCharge.ID)
+		}
+	}
+	return out, nil
 }
 
 // ListChanges implements supporters.PaymentProvider with Stripe's events of the types of

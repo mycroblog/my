@@ -129,6 +129,9 @@ type PaymentUnderTest struct {
 	// or take them again; ChangeCharges counts the payments of changes that succeeded.
 	DeclineChanges func(sub supporters.SubscriptionRef, declined bool)
 	ChangeCharges  func() int
+	// SignedPages reports that a checkout is a URL that the adapter signs (PAY.JP, ADR-0099 §3): it
+	// has no page to continue and cannot be expired, and a claim guards its payment.
+	SignedPages bool
 	// Expected, when not nil, is what the provider reports of a scenario that it cannot hold as
 	// given (PAY.JP API v1, ADR-0099: one currency, no incomplete subscriptions, its own IDs of
 	// checkouts and refunds); nil means the scenario as given.
@@ -360,6 +363,28 @@ func paymentCheckouts(t *testing.T, newProvider PaymentProviderFactory) {
 	if err != nil || got.Status != supporters.CheckoutOpen || got.LocalID != NamedID("local-new") {
 		t.Errorf("GetCheckout(new) = %+v, %v, want open with our ID", got, err)
 	}
+	switch res, page, err := p.ResumeCheckout(ctx, c.Ref, req); {
+	case err != nil || res.Status != supporters.CheckoutOpen:
+		t.Errorf("ResumeCheckout = %+v, %v, want open", res, err)
+	case u.SignedPages && page != nil:
+		t.Errorf("ResumeCheckout of a signed page = %+v, want none", page)
+	case !u.SignedPages && (page == nil || page.Ref != c.Ref || page.RedirectURL != c.RedirectURL):
+		t.Errorf("ResumeCheckout = %+v, want the page %+v", page, c)
+	}
+	other := req
+	other.SuccessURL = "https://my.example/supporters/elsewhere"
+	if _, page, err := p.ResumeCheckout(ctx, c.Ref, other); err != nil || page != nil {
+		t.Errorf("ResumeCheckout for other return URLs = %+v, %v, want no page", page, err)
+	}
+	want := supporters.CheckoutExpired
+	if u.SignedPages {
+		want = supporters.CheckoutOpen
+	}
+	for range 2 {
+		if res, err := p.ExpireCheckout(ctx, c.Ref); err != nil || res.Status != want {
+			t.Errorf("ExpireCheckout = %+v, %v, want %s", res, err, want)
+		}
+	}
 	checkouts := s.Checkouts
 	if e := u.expected(); e.Checkouts != nil {
 		checkouts = e.Checkouts
@@ -372,6 +397,14 @@ func paymentCheckouts(t *testing.T, newProvider PaymentProviderFactory) {
 	}
 	if _, err := p.GetCheckout(ctx, "cs_unknown"); supporters.ErrorKindOf(err) != supporters.ErrorNotFound {
 		t.Errorf("GetCheckout(unknown) = %v, want not_found", err)
+	}
+	for _, done := range checkouts {
+		if done.Status != supporters.CheckoutCompleted {
+			continue
+		}
+		if res, err := p.ExpireCheckout(ctx, done.Ref); err != nil || res != done {
+			t.Errorf("ExpireCheckout(%s) of a completed checkout = %+v, %v, want %+v", done.Ref, res, err, done)
+		}
 	}
 	portal, err := p.PortalURL(ctx, "cus_done", "https://my.example/supporters")
 	if err != nil || !allowedURL(portal, u.PortalHosts) {

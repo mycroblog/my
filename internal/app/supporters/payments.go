@@ -557,6 +557,9 @@ type PaymentStatus struct {
 	// reconciliation; nil without one.
 	LastWebhook *WebhookReceipt
 	LastRun     *ReconcileRun
+	// UnsettledDuplicates is how many second subscriptions the server has not canceled and
+	// refunded.
+	UnsettledDuplicates int
 }
 
 // NoWebhook reports whether no webhook delivery is recorded (within ReceiptRetention): the
@@ -585,6 +588,10 @@ func (p *Payments) Status(ctx context.Context) (PaymentStatus, error) {
 	case err == nil:
 		st.LastRun = &r
 	case !errors.Is(err, ErrNotFound):
+		return PaymentStatus{}, err
+	}
+	st.UnsettledDuplicates, err = p.d.Repository.CountUnsettledDuplicates(ctx, prov.Name())
+	if err != nil {
 		return PaymentStatus{}, err
 	}
 	return st, nil

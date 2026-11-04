@@ -54,6 +54,11 @@ const (
 	CommandCancelAtPeriodEnd Command = "cancel_at_period_end"
 	// CommandDropUnpaidChange removes what a failed change at once left collectible.
 	CommandDropUnpaidChange Command = "drop_unpaid_change"
+	// CommandSettleDuplicate cancels a provider's subscription that charged for nothing and refunds
+	// it (duplicates.go).
+	CommandSettleDuplicate Command = "settle_duplicate"
+	// CommandExpireCheckouts makes the pages of a subscription that closed unpayable.
+	CommandExpireCheckouts Command = "expire_checkouts"
 )
 
 // snapshotOf resolves the provider's prices of snap to ours: a price that is not ours is "".
@@ -119,6 +124,7 @@ func (s *Service) applySnapshot(ctx context.Context, provider string, snap Subsc
 	changed, orphan := false, false
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		changed, orphan = false, false
+		ended := snap.Status == StatusCanceled || snap.Status == StatusIncompleteExpired
 		rec, err := s.d.Repository.LockSubscription(ctx, tx, id)
 		if errors.Is(err, ErrNotFound) {
 			return nil
@@ -135,10 +141,17 @@ func (s *Service) applySnapshot(ctx context.Context, provider string, snap Subsc
 				return err
 			}
 			rec.Link = snap.Ref
+			if rec.Current.State.Final() && !ended {
+				// Paid on a page after our subscription closed: it bought nothing.
+				return s.recordDuplicate(ctx, tx, rec, provider, snap.Ref, now)
+			}
 		case snap.Ref != "" && rec.Link != snap.Ref:
 			s.d.Logger.WarnContext(ctx, "a provider's subscription names a subscription linked to another one",
 				slog.String("subscription", rec.ID), slog.String("provider_subscription", string(snap.Ref)))
-			return nil
+			if ended {
+				return nil // someone ended it at the provider; what they did about its charge stays
+			}
+			return s.recordDuplicate(ctx, tx, rec, provider, snap.Ref, now)
 		}
 		readAt := snap.ReadAt
 		if readAt.IsZero() {
@@ -278,6 +291,11 @@ func (s *Service) transition(ctx context.Context, tx uow.Tx, rec SubscriptionRec
 	if next.State == supporters.StateRevoked && rec.Current.State != supporters.StateRevoked && rec.Link != "" {
 		return s.enqueueCommand(ctx, tx, rec.ID, CommandCancelNow, "", "revoked")
 	}
+	if next.State.Final() && rec.Current.State == supporters.StatePending && rec.Link == "" {
+		// The pending subscription closed (its plan retired, its account deleted): a page must not
+		// charge for it any more.
+		return s.enqueueCommand(ctx, tx, rec.ID, CommandExpireCheckouts, "", "closed")
+	}
 	return nil
 }
 
@@ -327,7 +345,12 @@ func (s *Service) SyncCheckout(ctx context.Context, provider string, res Checkou
 		}
 		if rec.Link == "" && res.Subscription != "" {
 			changed = true
-			return s.d.Repository.InsertLink(ctx, tx, rec.ID, provider, res.Subscription, now)
+			if err := s.d.Repository.InsertLink(ctx, tx, rec.ID, provider, res.Subscription, now); err != nil {
+				return err
+			}
+			if rec.Current.State.Final() {
+				return s.recordDuplicate(ctx, tx, rec, provider, res.Subscription, now)
+			}
 		}
 		return nil
 	})
@@ -435,6 +458,8 @@ type commandPayload struct {
 	SubscriptionID string            `json:"subscription_id"`
 	Command        Command           `json:"command"`
 	Reason         supporters.Reason `json:"reason,omitempty"`
+	// Ref is the provider's subscription of CommandSettleDuplicate.
+	Ref SubscriptionRef `json:"ref,omitempty"`
 }
 
 // SyncJob returns the JobSync of a subscription; cause makes its idempotency key.
@@ -450,13 +475,17 @@ func SyncJob(subscriptionID, cause string) queue.NewJob {
 
 // enqueueCommand queues a JobCommand inside tx; cause makes its idempotency key.
 func (s *Service) enqueueCommand(ctx context.Context, tx uow.Tx, subscriptionID string, c Command, reason supporters.Reason, cause string) error {
-	b, err := json.Marshal(commandPayload{SubscriptionID: subscriptionID, Command: c, Reason: reason})
+	return s.enqueue(ctx, tx, commandPayload{SubscriptionID: subscriptionID, Command: c, Reason: reason}, cause)
+}
+
+func (s *Service) enqueue(ctx context.Context, tx uow.Tx, p commandPayload, cause string) error {
+	b, err := json.Marshal(p)
 	if err != nil {
 		return err
 	}
 	return s.d.Outbox.EnqueueTx(ctx, tx, queue.NewJob{
-		Type: JobCommand, Payload: b, IdempotencyKey: "command:" + subscriptionID + ":" + string(c) + ":" + cause,
-		OrderingKey: "supporter_subscription:" + subscriptionID,
+		Type: JobCommand, Payload: b, IdempotencyKey: "command:" + p.SubscriptionID + ":" + string(p.Command) + ":" + cause,
+		OrderingKey: "supporter_subscription:" + p.SubscriptionID,
 	})
 }
 
@@ -543,6 +572,12 @@ func (s *Service) RunCommand(ctx context.Context, p commandPayload, key string) 
 		return queue.Retry(0, err)
 	case rec.Provider != name:
 		return queue.Done()
+	}
+	switch p.Command {
+	case CommandSettleDuplicate:
+		return s.settleDuplicate(ctx, rec, p.Ref, key)
+	case CommandExpireCheckouts:
+		return s.expireCheckouts(ctx, rec)
 	}
 	if rec.Link == "" {
 		if !rec.Current.State.Final() && p.Reason != "" {

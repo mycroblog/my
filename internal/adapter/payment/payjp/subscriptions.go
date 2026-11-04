@@ -277,3 +277,28 @@ func (p *Provider) CancelNow(ctx context.Context, ref supporters.SubscriptionRef
 	}
 	return err
 }
+
+// RefundSubscription implements supporters.PaymentProvider: every paid charge of the subscription
+// that is not refunded yet gets a refund of the whole charge. API v1 takes no idempotency key;
+// a repeat finds the charge refunded. PAY.JP refunds charges for 180 days after their sale.
+func (p *Provider) RefundSubscription(ctx context.Context, sub supporters.SubscriptionRef, _ string) error {
+	for offset := 0; ; offset += supporters.PageSize {
+		var page list[charge]
+		q := url.Values{"subscription": {string(sub)}, "limit": {strconv.Itoa(supporters.PageSize)}, "offset": {strconv.Itoa(offset)}}
+		if err := p.get(ctx, "list the charges of a subscription", "/charges", q, &page); err != nil {
+			return err
+		}
+		for _, c := range page.Data {
+			if !c.Paid || c.Refunded {
+				continue
+			}
+			form := url.Values{"refund_reason": {"a second subscription of one payment"}}
+			if err := p.post(ctx, "refund a charge", "/charges/"+url.PathEscape(c.ID)+"/refund", form, nil); err != nil {
+				return err
+			}
+		}
+		if !page.HasMore || len(page.Data) == 0 {
+			return nil
+		}
+	}
+}
