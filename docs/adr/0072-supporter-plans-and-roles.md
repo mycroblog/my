@@ -223,6 +223,10 @@ ADR-0070 との契約:
 | `supporter_plan_price_archivals` | イベント | `price_id`（PK）, `archived_at` | 事業者でアーカイブした価格 |
 | `supporter_customers` | リソース | `id`, `user_id`, `provider`, `provider_customer_id`, `created_at` | 一意 `(provider, user_id)`, `(provider, provider_customer_id)` |
 | `supporter_subscriptions` | リソース | `id`（事業者に載せるこちらの ID）, `user_id`, `plan_id`（開始のときのプラン）, `price_id`, `provider`, `created_at` | インデックス `(user_id, id DESC)` |
+| `supporter_checkouts` | イベント | `id`, `subscription_id`, `provider`, `provider_checkout_id`, `expires_at`, `created_at` | `pending` の加入に始めた決済の画面。開き直すと新しい行。照合は開いている行を読み直す。インデックス `(subscription_id, id DESC)` |
+| `supporter_duplicate_subscriptions` | イベント | `id`, `subscription_id`, `provider`, `provider_subscription_id`, `detected_at` | §6 の、ほかの加入があるか終わった加入に課金した事業者のサブスクリプション。サーバーが解約して返金する。一意 `(provider, provider_subscription_id)` |
+| `supporter_duplicate_cancellations` | イベント | `duplicate_id`（PK）, `decided_at` | サーバーが解約を引き受けた。これ以降は事業者の一覧に出なくてもよい |
+| `supporter_duplicate_settlements` | イベント | `duplicate_id`（PK）, `settled_at` | 解約と返金が済んだか、事業者ですでに終わっていた。行がなければ管理者に警告を出す |
 | `supporter_subscription_links` | イベント | `subscription_id`（PK）, `provider`, `provider_subscription_id`, `linked_at` | 一意 `(provider, provider_subscription_id)`。初めてスナップショットを得たときに 1 回 |
 | `supporter_subscription_transitions` | イベント（版） | `id`, `subscription_id`, `state`（`enum(pending, active, canceling, past_due, lapsed, expired, revoked, abandoned)`）, `plan_id`, `price_id`, `period_ends_at`（`pending`・`abandoned` 以外は値を持つ。`CHECK`）, `reason`（`enum(started, synced, grace_expired, reversed, plan_retired, account_closed, account_suspended, staff, service_closed)`。`service_closed` は ADR-0088）, `occurred_at` | インデックス `(subscription_id, id DESC)` |
 | `supporter_grace_periods` | イベント | `transition_id`（PK。`past_due` の遷移）, `failed_at`, `ends_at` | `ends_at = failed_at + 7 日` |
@@ -231,6 +235,7 @@ ADR-0070 との契約:
 | `supporter_subscription_heads` | 投影 | `subscription_id`（PK）, `transition_id`, `user_id`, `plan_id`, `state` | インデックス `(plan_id, state)`、`(user_id)` |
 | `supporter_live_subscriptions` | 投影 | `user_id`（PK）, `subscription_id` | 状態が終端でない加入だけ。同時に 1 つを一意制約で守る |
 | `supporter_subscription_deadlines` | 投影 | `subscription_id`（PK）, `kind`（`enum(checkout, period_end, grace)`）, `due_at` | インデックス `(due_at)`。Scheduler が期限の来た行に `supporters.sync` を積む |
+| `supporter_subscription_reads` | 現在値 | `subscription_id`（PK）, `read_at` | 当てた最新のスナップショットを読んだ時刻（ADR-0074 §3）。それより前に読んだスナップショットは当てない |
 | `supporter_listings` | 現在値 | `user_id`（PK）, `created_at` | ADR-0070 §15 |
 | `managed_roles`（`identity`） | 現在値 | `role_id`（PK）, `manager`（`enum(supporters)`）, `created_at` | 行がある = プランが管理するロール（§5） |
 
@@ -262,6 +267,8 @@ ADR-0070 との契約:
 | 決済の開始 | `StartCheckout(こちらの加入の ID・顧客か メール・価格・ロケール・戻り先)` が、Web クライアントが次に進む先（リダイレクトの URL）を返す。こちらの加入の ID を事業者のサブスクリプションに載せ、スナップショットで返す。カード情報はこのサーバーを通らない |
 | ポータル | 支払い方法と請求書の画面の URL を返す。ポータルでのプランの変更は無効、解約は期間の終わりだけにする |
 | 命令 | `ChangePrice(サブスクリプション・価格・時期 {now_prorated, period_end})`、`CancelAtPeriodEnd`、`ResumeCancellation`、`CancelScheduledChange`（期間の終わりに予約した変更の取り下げ）、`CancelNow`（返金しない）。どれもこちらの ID から作る冪等キーで、2 回呼んでも 1 回と同じ |
+| 決済の画面の続き | `GetCheckout` で読み直す。`ResumeCheckout`（開いていて今の依頼と同じ画面なら続ける）・`ExpireCheckout`（開いている画面を払えなくし、今の状態を答える）。§6 の、1 つの加入に 2 度課金しないため |
+| 返金 | `RefundSubscription`（サブスクリプションの確定した課金の残りを返金する）。§6 の重複の片付けに使う |
 | 通知 | webhook の検証の後、`(事業者, event_id)` で重複を除き、「どの加入を取り直すか」（事業者のサブスクリプション）と、お金の動きの ID を返す。順序を仮定しない |
 | お金の動き | 返金・チャージバックを取り直すと、種類（返金・チャージバック・チャージバックの取り消し）・対象のサブスクリプション・返金の額と元の支払いの額（`MoneyMovement` の `Gross` と `ParentGross`。全額か一部かをこちらが判断する）・事業者の ID・確定したか（`Final`）が分かる。確定した動きだけで状態を変え、同じ動きを ADR-0067 の `RecordIncome` にも渡す |
 | 正 | `GetSubscription` のスナップショット: こちらの加入の ID、顧客、価格、正規化した状態（`incomplete`・`active`・`past_due`・`unpaid`・`paused`・`canceled`・`incomplete_expired`。試用は `active`）、期間の始まりと終わり、期間の終わりの解約の予約、期間の終わりに予約された価格、最後の成功の後の支払いの失敗の時刻（なければなし） |

@@ -54,6 +54,7 @@ Go がルートごとに HTML の外枠を `html/template` で返し、meta タ�
   - **ページ遷移**: ネットワーク優先にする（3 秒でタイムアウトし、オフライン用の外枠に切り替える）。サーバーが返す 404 や `noindex` を正とするため。
   - **`/api/*`**: キャッシュしない（NetworkOnly）。ログアウトしたら、すべてのキャッシュを消す。
   - **公開メディアとアバター**: キャッシュ優先にし、件数と期限に上限を設ける。
+  - `/theme/`・`/brand/`・絵文字の分割は、それぞれの ADR（ADR-0059・ADR-0091）の決まりでキャッシュする。
   - Service Worker で扱わないパス: `/api/`, `/oauth/`, `/.well-known/`, `/nodeinfo`, `/ap/`, `/manifest.webmanifest`
 - 更新の通知と反映は §9〜§15 が決める。
   - デプロイで古いチャンクが消えたとき（`vite:preloadError`）は、§12 の条件でページを読み直す。
@@ -77,7 +78,7 @@ Go がルートごとに HTML の外枠を `html/template` で返し、meta タ�
 
 ### 6. クライアントのキャッシュ（TanStack Query と TanStack Router）
 
-- **TanStack Query がサーバーのデータの唯一のキャッシュ**（S1）。ルーターは自分のデータを持たない（`defaultPreloadStaleTime: 0`）。
+- **TanStack Query がサーバーのデータの唯一のキャッシュ**（S1）。ルーターは自分のデータを持たない（`defaultStaleTime`・`defaultPreloadStaleTime` を `Number.NEGATIVE_INFINITY` にする。`0` では、壁時計が巻き戻ると新しく見えて loader を飛ばす）。
 - **loader は「キャッシュにあって無効化されていなければそのまま、なければ・無効化されていれば取って待つ」で読む**: `queryClient.query({ ...options, staleTime: Infinity })`（無限スクロールは `infiniteQuery`）。
   `staleTime: "static"` は無効化の印を見ないので loader では使わない。
 - **ルーターは再読み込みを待つ**: `routerOptions` に `defaultStaleReloadMode: "blocking"` を置く。

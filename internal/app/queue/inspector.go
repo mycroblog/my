@@ -97,10 +97,9 @@ type JobSummary struct {
 	OldestReadyByType map[string]time.Time
 }
 
-// JobInspector reads the jobs a queue holds, for the dashboard (ADR-0004 §7). Only the queues
-// that can read their jobs at no cost implement it: the database queue and the inline queue.
-// The platforms' queues (Cloud Tasks, SQS) do not, and their backlog is read from the
-// platform's metrics.
+// JobInspector reads the jobs a queue holds, for the dashboard (ADR-0004 §7). The database queue
+// and the inline queue implement it. Cloud Tasks and SQS only signal: their jobs are in the
+// database queue (ADR-0004 §9), so the jobs are listed with those queues too.
 type JobInspector interface {
 	// ListJobs returns up to limit pending jobs that match f at now, the earliest RunAt first,
 	// starting after the position after; none when limit <= 0 or f.State is JobStateDead (list

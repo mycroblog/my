@@ -154,7 +154,7 @@ jobs:
 
   go-static:
     # The Go checks the merge queue leaves out (ADR-0079): golangci-lint over everything, where pull requests only
-    # report the lines they change, and the builds of the build tag sets that leave adapters out.
+    # lint the modules they change, and the builds of the build tag sets that leave adapters out.
     runs-on: ubuntu-latest
     steps:
       - name: Check out

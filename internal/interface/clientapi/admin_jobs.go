@@ -26,7 +26,8 @@ import (
 type QueueDashboard struct {
 	// Adapter is the queue the server runs (the queue setting).
 	Adapter string
-	// Inspector lists the pending jobs; nil for a queue that cannot (Cloud Tasks, SQS).
+	// Inspector lists the pending jobs; nil for a queue that cannot, which no queue of the server
+	// is today (ADR-0004 §7).
 	Inspector queue.JobInspector
 	// Attempts reads the records of the runs that did not succeed; nil lists none.
 	Attempts queue.AttemptLog

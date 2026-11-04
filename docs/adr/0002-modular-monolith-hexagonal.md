@@ -9,13 +9,14 @@
 
 ### 1. モジュラーモノリス + Ports & Adapters
 
-- 層: `domain`（純粋）→ `application`（ユースケース・ポート定義）→ `interface`（Client API / ActivityPub / Admin）/ `adapters`（ポート実装）→ `entrypoints`（ターゲット別の組み立て）。
-- モジュール（`identity` `account` `content` `graph` `timeline` `notification` `federation` `moderation` `instance`）は
+- 層: `internal/domain`（純粋）→ `internal/app`（ユースケース・ポート定義）→ `internal/interface`（Client API / ActivityPub / Admin）/ `internal/adapter`（ポート実装）→ `internal/platform` と `cmd/`（ターゲット別の組み立て）。
+- モジュール（`identity` `account` `content` `graph` `timeline` `notification` `federation` `moderation` `instance` `diagnostics` `webhook` `finance` `supporters` `voice`。`internal/domain` に同じ名前のパッケージを持つ）は
   アプリケーション層の公開 API 経由でのみ相互参照する。DB テーブルの所有者はモジュール単位で決める。
-- 依存性注入はコンストラクタ / ファクトリ関数で明示的に行い、DI コンテナは使わない。組み立ては entrypoint の 1 箇所（composition root）。
+- 依存性注入はコンストラクタ / ファクトリ関数で明示的に行い、DI コンテナは使わない。組み立ては `internal/platform` と `cmd/` の 1 箇所（composition root）。
 - 依存方向は lint（golangci-lint の depguard）で CI 検査する。
 - モジュール間の非同期連携はドメインイベント → Transactional Outbox → JobQueue。
 - ポートは「2 つ以上の実装が現に存在する or 確実に必要」なものに限る。
+- `internal/app` には、モジュールのほかに共通の部品（`kernel` `queue` `uow` `blob` `media` `metrics` `projection` `stream` `dbupgrade` `rewrap`）も置く。ドメインを持たない。
 
 ### 2. サーバーは Go で書き、Cloudflare Workers は対象外とする
 

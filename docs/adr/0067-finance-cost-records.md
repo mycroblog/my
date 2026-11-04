@@ -142,7 +142,7 @@ type IncomeMovement struct {
 
 ### 12. 収入の記録の単位と net
 
-- お金の動き 1 件を 1 行のイベントにする（§18 の `income_movements`）。`(provider, provider_id)` で一意にし、同じ動きを webhook・照合・再試行で何度渡しても 1 行になる（ADR-0003。挿入の衝突は何もしない）。
+- お金の動き 1 件を 1 行のイベントにする（§18 の `income_movements`）。`(provider, provider_movement_id)` で一意にし、同じ動きを webhook・照合・再試行で何度渡しても 1 行になる（ADR-0003。挿入の衝突は何もしない）。
   Stripe の balance transaction は作られた後に変わらないので、版を持たない。事業者の側の訂正は、新しい動き（`adjustment`）として来る。
 - 総額・手数料・net の 3 つを持ち、公開と `view_finance` には net だけを出す。総額と手数料は `manage_finance` の管理画面で、手数料率の確かめに使う。
 - 種類ごとの値:
@@ -180,7 +180,7 @@ type IncomeMovement struct {
 - **按分**（`amortized`）:
   - `payment` で、`Covers` が 1 か月より長い（年払い）ものは、net を `Covers` の日数に日割り（§4 の累積の丸め、`Spread`）で載せる。月払いと、`Covers` を持たない支払いは `occurred_on` に載せる。
     §4 が年払いの費用を按分するのと同じ規則で、年払いの加入者がいる月だけ収入が跳ねることを防ぎ、按分の費用と並べたときに「月にいくら足りるか」を示す。
-  - `refund`・`chargeback`・`chargeback_reversal` で、元の支払い（`parent_id`）が按分されているものは、net を元の支払いと同じ `Covers` に日割りし、**`occurred_on` より前の日の分をまとめて `occurred_on` に載せ**、残りの日は元の支払いと同じ日割りで打ち消す。
+  - `refund`・`chargeback`・`chargeback_reversal` で、元の支払い（`parent_movement_id`）が按分されているものは、net を元の支払いと同じ `Covers` に日割りし、**`occurred_on` より前の日の分をまとめて `occurred_on` に載せ**、残りの日は元の支払いと同じ日割りで打ち消す。
     返金した月にそれまでに載った分が差し引かれ、公開した過去の期間の額は動かず、全額の返金なら後の月の按分は 0 になる。返金の総額は net の合計に一致する。
   - それ以外（元の支払いが按分されていない返金、`fee`、返らない手数料）は `occurred_on` に載せる。
 - 例: 2026-04-10 に 12,000 円の年払い（決済の手数料 3.6% の 432 円を引いて net 11,568 円、`Covers` 2026-04-10〜2027-04-09 の 365 日）を、2026-06-01 に全額返金（net −12,000 円。決済の手数料は返らない）。
@@ -215,7 +215,7 @@ type IncomeMovement struct {
 
 | テーブル | 分類 | 内容 |
 | --- | --- | --- |
-| `income_movements` | イベント | `id`, `provider`（`enum(stripe)`。事業者を足すときに値を足す）, `provider_id`（`string(255)`）, `kind`（`enum(payment, refund, chargeback, chargeback_reversal, fee)`）, `parent_movement_id`（NULL 可。`refund`・`chargeback`・`chargeback_reversal` は元の `payment` の行）, `subscription_id`（NULL 可 = `fee`。ADR-0072 の加入の ID への論理参照で、外部キーを付けない）, `occurred_at`, `occurred_on`（`date`）, `covers_starts_on`・`covers_ends_on`（`date`、NULL 可。`payment` だけが持つ。`CHECK`）, `gross_minor`・`fee_minor`・`net_minor`（`bigint`、負も可。`net_minor = gross_minor − fee_minor` の `CHECK`）, `currency`（`string(3)`）, `recorded_at`。一意 `(provider, provider_id)`。インデックス `(occurred_on)`, `(subscription_id, occurred_at)` |
+| `income_movements` | イベント | `id`, `provider`（`enum(stripe, payjp, fake)`。事業者を足すときに値を足す）, `provider_movement_id`（`string(255)`）, `kind`（`enum(payment, refund, chargeback, chargeback_reversal, fee)`）, `parent_movement_id`（NULL 可。`refund`・`chargeback`・`chargeback_reversal` は元の `payment` の行）, `subscription_id`（NULL 可 = `fee`。ADR-0072 の加入の ID への論理参照で、外部キーを付けない）, `occurred_at`, `occurred_on`（`date`）, `covers_starts_on`・`covers_ends_on`（`date`、NULL 可。`payment` だけが持つ。`CHECK`）, `gross_minor`・`fee_minor`・`net_minor`（`bigint`、負も可。`net_minor = gross_minor − fee_minor` の `CHECK`）, `currency`（`string(3)`）, `recorded_at`。一意 `(provider, provider_id)`。インデックス `(occurred_on)` |
 
 - 投影を持たず、集計は読み取りのときに計算する（§1）。数百人 × 年 12 回の規模で、期間の範囲の行を読んで按分しても軽い。
 - 元の支払いより先に返金が来たとき（照合の順序）は、ADR-0074 のジョブが元の支払いを事業者から取り直して先に渡す。`RecordIncome` は元の行がない返金を受けず、ジョブの再試行に任せる。

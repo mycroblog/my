@@ -53,12 +53,14 @@
 
 | 指標 | 種類・単位 | ラベル | 用途 |
 | --- | --- | --- | --- |
-| `http.server.request.duration` | Histogram・秒 | `http.request.method`、`http.route`（`ServeMux` のパターン。一致しないものは `other`）、`http.response.status_code`、`my.surface`（`client_api` / `activitypub` / `oauth` / `web` / `media` / `admin` / `payments`） | クライアント API・Inbox・Web の件数・遅延・エラー率 |
+| `http.server.request.duration` | Histogram・秒 | `http.request.method`、`http.route`（`ServeMux` のパターン。一致しないものは `other`）、`http.response.status_code`、`my.surface`（`client_api` / `activitypub` / `oauth` / `web` / `media` / `admin` / `payments` / `voice` / `queue`） | クライアント API・Inbox・Web の件数・遅延・エラー率 |
 | `http.server.active_requests` | UpDownCounter・{request} | `my.surface` | 処理中のリクエスト数（Self-hosted の web の契機） |
-| `my.inbox.activities` | Counter・{activity} | `activity.type`（既知の Activity の型、それ以外は `other`）、`my.outcome`（`accepted` / `duplicate` / `rejected` / `ignored` / `error`） | 連合の受信の件数と拒否の割合（ADR-0006） |
+| `my.inbox.activities` | Counter・{activity} | `activity.type`（既知の Activity の型、それ以外は `other`）、`my.outcome`（`accepted` / `duplicate` / `rejected` / `ignored` / `error`）、`my.inbox.rejection`（`rejected` のときの理由） | 連合の受信の件数と拒否の割合（ADR-0006） |
+| `my.relay.activities` | Counter・{activity} | `my.outcome` | リレーが運んだ活動を取り込んだか、なぜ捨てたか |
+| `my.move.activities` | Counter・{activity} | `my.outcome` | 受けた `Move` を記録したか、なぜ捨てたか（ADR-0089 §4） |
 | `my.delivery.attempts` | Counter・{attempt} | `my.outcome`（`success` / `retry` / `gone` / `failed`） | 配送の成功率 |
 | `my.delivery.duration` | Histogram・秒 | `my.outcome` | 配送の 1 回の HTTP の遅延 |
-| `my.job.duration` | Histogram・秒 | `my.job.type`（登録済みのジョブの型）、`my.outcome`（`success` / `retry` / `dead`） | ジョブの処理時間と失敗 |
+| `my.job.duration` | Histogram・秒 | `my.job.type`（登録済みのジョブの型）、`my.outcome`（`success` / `retry` / `dead` / `postponed`。`postponed` は仕事をせず試行も数えない実行） | ジョブの処理時間と失敗 |
 | `my.job.wait` | Histogram・秒 | `my.job.type` | 実行可能になってから処理が始まるまでの待ち（キューの遅延） |
 | `my.queue.ready` | Gauge・{job} | `my.job.type` | 実行可能なジョブの数（DB キューだけ。§4・§7） |
 | `my.queue.oldest_ready_age` | Gauge・秒 | `my.job.type`（ADR-0004 §17） | 最も古い実行可能なジョブの待ち時間（DB キューだけ。§4・§7） |
@@ -69,9 +71,16 @@
 | `my.instance.users`・`my.instance.statuses` | Gauge | なし | ローカルの利用者数・投稿数（NodeInfo の usage と同じ値。§4） |
 | `my.media.stored_bytes` | Gauge・バイト | `my.media.origin`（`local` / `remote_cache`） | メディアの容量。`local` はローカルのアップロードの現在の派生（`media_variants`）と処理待ちの原本（`uploaded_media`）の `file_size` の合計、`remote_cache` はリモートのメディアのキャッシュ（`remote_media_cache`）の合計（§4） |
 | `my.errors.reported` | Counter | `my.error.source`・`my.error.kind` | 報告したエラーの数（ADR-0103 §8） |
+| `my.errors.exported` | Counter | `my.outcome`（`success` / `dropped` / `failed`） | `errors_exporter` のサービスへ送った報告の数 |
+| `my.link_card.host_pauses` | Counter | `http.response.status_code`（`429` / `503`） | リンクカードの取得をホストごとに止めた回数（ADR-0062 §11） |
+| `my.billing.imports` | Counter | `my.billing.source`、`my.outcome`、`error.type`（`failed` のとき） | 請求の取り込みの試行（ADR-0068） |
+| `my.voice.turn.credentials` | Counter | `my.voice.turn`、`my.outcome`（`issued` / `reused` / `failed`） | 通話の TURN の資格情報（ADR-0101） |
+| `my.db.size` | Gauge・バイト | なし | DB の大きさ（§4） |
+| `my.billing.import.failing` | Gauge | `my.billing.source` | 最新の取り込みが失敗した事業者なら 1（ADR-0068。§4） |
+| `my.federation.instances` | Gauge | `my.federation.instance.state`（`available` / `unavailable`） | 配送に失敗しているサーバーの数（§4） |
 
 - `my.surface = payments` は、決済の事業者が呼ぶ webhook の受け口 `POST /payments/webhooks/{provider}` の要求に付ける（ADR-0074 §3）
-- DB から読む Gauge（`my.queue.*`・`my.instance.*`・`my.media.stored_bytes`）はインスタンス全体の値で、§4 のスナップショットから出す
+- DB から読む Gauge（`my.queue.*`・`my.instance.*`・`my.media.stored_bytes`・`my.db.size`・`my.billing.import.failing`・`my.federation.instances`）はインスタンス全体の値で、§4 のスナップショットから出す
 - `emf` では、リクエストとジョブの終わりに書ける Counter・Histogram と、§4 のスナップショットの行だけを出す。プロセスごとの UpDownCounter（処理中のリクエスト・ストリームの接続）は基盤の指標（Lambda の同時実行数）で代える
 
 ### 4. 複数のプロセスでの値の集計と共有
@@ -89,14 +98,14 @@ web・worker を分けたり、レプリカ・サーバーレスのインスタ�
 
 **スナップショット**（インスタンス全体の Gauge）:
 
-- 計算する関数は 1 つで、DB に問い合わせて全部の値と計算した時刻を返す。結果は `kernel.KeyValueStore` の名前空間 `metrics` に 1 件で置き、TTL を付ける
+- 計算する関数は 1 つで、DB に問い合わせて全部の値と計算した時刻を返す。結果は `kernel.KeyValueStore` の名前空間 `metrics` に 1 件で置き、TTL を付ける。計算した時刻は、鮮度の上限が違う部分（`queue` と `totals`）ごとに持つ
 - 各プロセスは収集（scrape・エクスポート）のとき、KV のスナップショットを読んで Gauge を出す。KV の読み取りはプロセスの中で 15 秒キャッシュする。DB には直接問い合わせない
 - スナップショットを作り直すのは次の 2 つだけ:
   - **収集のとき古ければ**: KV の値が鮮度の上限（キューの値は 30 秒、利用者数・投稿数・容量は 15 分）を過ぎていたら、KV の `IncrBy` で TTL 付きのロックを取ったプロセスだけが計算し直して書く。
     取れなかったプロセスは古い値を出す。worker が 0 レプリカでも、scrape される web がキューの値を作れる（KEDA が worker を 0 から起こせる）
   - **定期ジョブ `metrics.snapshot`**（15 分ごと。`metrics_exporter` が `none` 以外のときだけ登録する）: 計算して KV に書き、同じ値を 1 行の構造化ログ（`emf` では EMF）に出す。
     scrape のない Cloud Run と Lambda では、この行がインスタンス全体の値の唯一の経路になる（ログベースの指標・EMF の Gauge）
-- 値の鮮度はスナップショットの時刻で表し、`my.metrics.snapshot.age`（Gauge・秒）として出す。KV に値がない（期限切れ・まだない）ときは、ロックを取ったプロセスが計算する。取れなかったプロセスはその回の Gauge を出さない（0 と誤認させない）
+- 値の鮮度はスナップショットの時刻で表し、`my.metrics.snapshot.age`（Gauge・秒。ラベル `my.metrics.snapshot.part` = `queue` / `totals`）として出す。KV に値がない（期限切れ・まだない）ときは、ロックを取ったプロセスが計算する。取れなかったプロセスはその回の Gauge を出さない（0 と誤認させない）
 - 整合性: 値は最大で鮮度の上限だけ古い。同じ時刻には全プロセスが同じスナップショットを出すので、プロセスの間で値が食い違わない。
   ロックの取り損ねと重複の計算は、同じ値を上書きするだけで害がない（冪等）
 - `kv = memory` は KV がプロセスごとなので、各プロセスが自分で計算する。`kv = memory` は 1 プロセスの構成でだけ使う前提なので、これを許す
@@ -147,10 +156,10 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
 | 種類 | 測る者 | 指標 |
 | --- | --- | --- |
 | コンテナの CPU・メモリ・台数・入口のリクエスト数と遅延 | 基盤（`経緯` の表） | アプリは重ねて出さない。Docker Compose と Lambda のメモリだけは、下のプロセスの指標で補う |
-| プロセス | アプリ（`internal/platform`） | CPU 時間、常駐メモリ（RSS）、開いたファイル記述子の数と上限（Linux のみ）、起動時刻、役割・版の情報（`role`、ビルドの版） |
+| プロセス | アプリ（`internal/platform`） | CPU 時間、常駐メモリ（RSS）、開いたファイル記述子の数と上限（Linux のみ）、`process.uptime`。役割・版（`role`、ビルドの版）は指標でなく §6 の資源の属性で出す |
 | Go のランタイム | アプリ（`internal/platform`） | OTel の意味規約の `go.memory.used`・`go.memory.limit`・`go.memory.allocated`・`go.memory.gc.goal`・`go.goroutine.count`・`go.processor.limit`・`go.config.gogc`・`go.schedule.duration`。GC の回数と停止時間（`go.memory.gc.cycles`・`go.memory.gc.pause.duration`）も出す |
-| DB の接続のプール | DB アダプタ | `db.client.connection.count`（`state` = `idle` / `used`）・`db.client.connection.max`・`db.client.connection.pending_requests`・`db.client.connection.wait_time`・`db.client.connection.timeouts`。PostgreSQL は `pgxpool.Pool.Stat()`、SQLite は `sql.DB.Stats()` を観測のコールバックで読み、クエリごとの計測は足さない |
-| キュー・KV・ストリーム・Blob のアダプタ | 各アダプタ（port の実装の境界） | 操作ごとの所要時間のヒストグラムと失敗の数（ラベルは `adapter`・`operation`・`outcome`）。常時の接続を持つもの（valkey-go、`LISTEN` の接続、SQS のロングポーリング、Pub/Sub の受信）は接続の数と再接続の数 |
+| DB の接続のプール | DB アダプタ | `db.client.connection.count`（`state` = `idle` / `used`）・`db.client.connection.max`・`my.db.client.connection.waits`・`db.client.connection.wait_time`・`db.client.connection.timeouts`（待ちの人数は統計にないので、規約の `pending_requests` は出さず、待った回数で代える）。PostgreSQL は `pgxpool.Pool.Stat()`、SQLite は `sql.DB.Stats()` を観測のコールバックで読み、クエリごとの計測は足さない |
+| キュー・KV・ストリーム・Blob のアダプタ | 各アダプタ（port の実装の境界） | 操作ごとの所要時間のヒストグラム `my.adapter.operation.duration`（ラベルは `my.adapter`・`my.operation`・`my.outcome`）。常時の接続を持つもの（valkey-go、`LISTEN` の接続、SQS のロングポーリング、Pub/Sub の受信）は接続の数と再接続の数 |
 | 外向き HTTP | `internal/adapter/httpclient` | `http.client.request.duration`（ラベルは用途 `HTTPPurpose`・メソッド・状態コードの区分・SSRF ガードによる拒否か）と `http.client.open_connections` |
 
 - 指標の名前と単位は OpenTelemetry の意味規約に合わせる。runtime・DB・HTTP クライアントの規約の多くは Development の段階なので、規約が変わったら追う
@@ -179,7 +188,7 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
 - **`GOMEMLIMIT` は運営者が設定できる項目の一つ** とする（Go のランタイムの環境変数）。アプリは cgroup のメモリの上限から自動では決めず、設定がなければ Go の既定（上限なし）のまま動く。
   デプロイのテンプレート（M6）は設定できる値として置き、目安（コンテナのメモリの上限の約 90%）を添える
 - **DB の接続は台数の上限を決める**。web と worker の台数の最大 × プールの最大接続数が DB の接続の上限（Neon・Aurora・Cloud SQL・PgBouncer）を超えないように、
-  デプロイのテンプレートで台数の最大を決める。`db.client.connection.pending_requests` と `wait_time` は、上限に当たっていることの警報に使う
+  デプロイのテンプレートで台数の最大を決める。`my.db.client.connection.waits` と `wait_time` は、上限に当たっていることの警報に使う
 - `GOMAXPROCS` は Go 1.25 以降の既定（cgroup の CPU の上限に従う）に任せ、テンプレートで設定しない
 - スケールの契機に使うキューの滞留・遅延の指標の定義は §3 が持つ
 
@@ -210,8 +219,8 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
 ### 14. ジョブへの引き継ぎ（新しいトレース + link）
 
 - `queue.Job`・`queue.NewJob` は `TraceParent`（W3C `traceparent` の文字列、空も可）を持つ。`JobQueue.Enqueue` と `Outbox.EnqueueTx` は、呼び出しの `ctx` から `Tracer.Inject` で埋める（呼び出し側は何もしない）
-- 保存の場所: 表 `jobs`・`outbox_events`・`dead_jobs` の列 `trace_parent text`（null 許容。ADR-0023 の `schema/<dialect>.sql`）。
-  これは状態でなくジョブの属性で、ADR-0020 の「状態を null 許容の時刻で表さない」に当たらない。outbox のリレーは列をそのまま次のキューへ渡す。
+- 保存の場所: 表 `jobs`・`dead_jobs` の列 `trace_parent text`（null 許容。`schema/<dialect>/10-infrastructure.sql`）。`Outbox.EnqueueTx` も `jobs` に行を足す（ADR-0004）。
+  これは状態でなくジョブの属性で、ADR-0020 の「状態を null 許容の時刻で表さない」に当たらない。
   Cloud Tasks・SQS の合図は `traceparent` を運ばない。ジョブの行にあるので、伝播は DB の列で足りる（ADR-0004 §9）
 - runner はジョブの実行の span（種類 consumer）を **新しいトレースの根** として作り、`TraceParent` への link を持たせる。再試行は試行ごとに別の span で、属性 `my.job.attempt` を持つ
 - サンプリングは link に従う: link 先が sampled ならジョブも記録し、そうでなければ §17 の比率で決める（OTel の `Sampler` は link を見られる）。これで記録したリクエストの続きのジョブは欠けない

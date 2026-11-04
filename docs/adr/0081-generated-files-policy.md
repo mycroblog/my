@@ -15,17 +15,17 @@ TypeScript は `bun fmt` で整形する。依存は Dependabot で検知し更�
 | 生成物 | 扱い | 作る時点 |
 | --- | --- | --- |
 | `api/openapi.yaml`、`clientapi/*.gen.go` | コミットする（Go が読む） | `task api:generate` |
-| sqlc の生成物 | コミットする（Go が読む） | `task sqlc:generate` |
-| `internal/i18n/messages_gen.go`、`internal/i18n/testdata/golden.json` | コミットする（Go が読む） | `task i18n:generate` |
-| `internal/domain/instance/theme_tokens.gen.go` | コミットする（Go が読む） | `task ui:tokens` |
+| sqlc の生成物 | コミットする（Go が読む） | `task go:sqlc` |
+| `internal/i18n/messages_gen.go`、`internal/i18n/testdata/golden.json` | コミットする（Go が読む） | `task i18n:gen` |
+| `internal/domain/instance/theme_tokens.gen.go` | コミットする（Go が読む） | `task web:tokens-gen` |
 | `emoji_table.gen.go`、`ai_crawlers.gen.go` | コミットする（外のデータを固定した版で取り込む。入力がリポジトリにない） | 手動 |
 | `docs/reference/configuration.md` | コミットする（Go のテストが生成する人向けの文書。衝突は少ない） | `task go:config-docs` |
 | `@my/ui` のスクリーンショットの基準画像 | コミットする（派生物ではなく期待値。ADR-0110） | CI のコンテナ |
 | `tools/i18n/src/runtime/messages.gen.ts` | **コミットしない** | 型検査・ビルド・テストの前（`deps`） |
-| `app/web/src/lib/api/schema.gen.ts` | **コミットしない** | 同上 |
+| `pkg/mykit/ts/src/schema.gen.ts` | コミットする（TS だけが読むが、配るパッケージの一部。ADR-0093） | `task api:generate` |
 | `app/web/src/routeTree.gen.ts` | **コミットしない** | 同上 |
 | `app/ui/src/themeTokens.gen.ts` | **コミットしない** | 同上 |
-| `server` の疑似ロケール（`locales/{en-XA,ar-XB}/server/`） | コミットする（Go が読む） | `task i18n:generate` |
+| `server` の疑似ロケール（`locales/{en-XA,ar-XB}/server/`） | コミットする（Go が読む） | `task i18n:gen` |
 | `client` の疑似ロケール（`locales/{en-XA,ar-XB}/client/`） | **コミットしない** | 開発の起動・E2E・クライアントのビルドの前 |
 | ADR の索引（`docs/adr/README.md` の表） | **持たない**（§3） | — |
 
@@ -50,7 +50,7 @@ Go が整形するのは `client` 以外の名前空間だけである（Go の�
 
 - README に表を持たず、運用の規則だけを残す。一覧は `scripts/agentkit.sh adr list`（番号・タイトル・Status。`--status Proposed` で絞る）で見る。
   GitHub では、ディレクトリの一覧とコード検索（`path:docs/adr "Status: Proposed"`）で見る。
-- `scripts/adr-new.sh` は、main と開いている PR（`gh pr list` と `gh pr diff --name-only`）にある ADR の番号の最大に 1 を足して番号を選ぶ。
+- `scripts/adr-new.sh` は、作業ツリー・`docs/adr/aliases.yaml` の廃番・開いている PR（`gh pr list` と `gh pr diff --name-only`）にある ADR の番号の最大に 1 を足して番号を選ぶ。
   それでも重なったときに備え、Merge Queue の `repo` ジョブで番号の重複を検査する。重なったら、後から並んだ PR が番号を付け直す。
 
 ### 4. タスクの実行器: go-task
@@ -68,10 +68,11 @@ Go が整形するのは `client` 以外の名前空間だけである（Go の�
 ```text
 Taskfile.yml              ルート。includes と check・check:changed・generate だけを書く
 tasks/
-  go.yml                  go:vet・go:lint・go:test・go:build・go:build-tags・go:licenses・go:mod・sqlc:*
+  go.yml                  go:vet・go:lint・go:test・go:build・go:build-tags・go:licenses・go:mod・go:sqlc
   web.yml / ui.yml        web:*・ui:*（typecheck・lint・knip・build・test・ui-test・e2e）
   i18n.yml / api.yml      i18n:*・api:*（生成は sources / generates を宣言する）
-  schema.yml / docker.yml / docs.yml / agentkit.yml
+  db.yml / docker.yml / docs.yml / agentkit.yml
+  emoji.yml / mail.yml / mykit.yml / shell.yml
 ```
 
 - 1 つのファイルに全部を書かず、領域ごとのファイルに分ける。新しい領域は新しいファイルとして足し、ルートには include を 1 行足すだけにする（§7）。
@@ -82,6 +83,7 @@ tasks/
 
 ### 6. 実行の設定
 
+- CI では `scripts/task.sh` が `--output interleaved` を付ける。各ステップが 1 つのタスクを動かして自分のログを持つので、接頭辞は要らない。
 - **同時の数**: CI では制限しない（runner の 4 vCPU を使い切る）。手元では、`scripts/task.sh` が `TASK_CONCURRENCY` を CPU の数の半分にして呼ぶ。1 台のマシンで 4〜5 個のエージェントが同時に検査を回すからである。
   go-task は、設定ファイル（`.taskrc.yml` の `concurrency`）・環境変数 `TASK_CONCURRENCY`・`-C` の順に後のものを優先する（[Configuration Reference](https://taskfile.dev/reference/config/)、2026-10-23 確認）。手元で `TASK_CONCURRENCY=1` にすると、2 秒のタスク 3 つが 2.1 秒から 6.1 秒になり、直列に戻ることを確かめた。
 - **出力**: 手元は `prefixed` にする。
@@ -123,7 +125,7 @@ tasks/
 
 TypeScript と JavaScript のコードは `bun fmt` で整形し、CI で検査する。
 
-- 範囲は `app/`、`pkg/mykit/ts`、`pkg/mybot/ts`、`tools/i18n`、`tools/mail` の `*.ts`・`*.tsx`・`*.js`・`*.mjs` である。CSS・JSON（`locales/`）・Markdown・YAML（`api/spec`）は範囲に入れない。
+- 範囲は `app/`、`pkg/mykit/ts`、`pkg/mybot/ts`、`tools/i18n` の `*.ts`・`*.tsx`・`*.js`・`*.mjs` である。CSS・JSON（`locales/`）・Markdown・YAML（`api/spec`）は範囲に入れない。
 - 設定はリポジトリの根の `bunfig.toml` の `[fmt]` に置く。`bun fmt` は `[fmt]` を持つ一番近い `bunfig.toml` を読むので、各パッケージの `bunfig.toml`（`[install]` だけ）は `[fmt]` を持たない。
   - `printWidth = 120`。ほかは Prettier の既定（二重引用符、セミコロン、`trailingComma: "all"`、`arrowParens: "always"`、`objectWrap: "preserve"`）で、字下げと改行は `.editorconfig` から読む。
     120 は、コメントと文書を折り返している幅で、当時の行の 96.5 % が収まった。整形器はコメントを折り返さないので、広い幅ほど一度の差分は小さくても、コードとコメントの幅が揃う 120 を採る。
@@ -140,11 +142,11 @@ NFR-SEC-8 の依存関係の既知の脆弱性の検知は、Dependabot で行�
 
 - **検知**: リポジトリの Dependabot Alerts（vulnerability alerts）で、Go モジュール（`go.mod`・`tools/go.mod`）、Bun（`app/bun.lock`・`tools/i18n/bun.lock`）、GitHub Actions、`Dockerfile` のベースイメージの既知の脆弱性を検知する。CI のジョブ・タスクとしての脆弱性検査は持たない。
 - **更新の提案**: `.github/dependabot.yml` で版更新の PR を週 1 回作らせる。
-  ecosystem は `gomod`（`/`・`/tools`。§11）、`bun`（`/app`・`/tools/i18n`。Dependabot は text 形式の `bun.lock` に対応する）、`github-actions`、`docker`（`/` の `Dockerfile`）。
-- **cooldown**: すべての ecosystem で `cooldown.default-days: 3` を設定し、公開から 3 日未満の版への更新 PR を作らない。公開から 3 日未満の版を入れない決まり（`app/bunfig.toml`・`tools/i18n/bunfig.toml`・`tools/mail/bunfig.toml` の `minimumReleaseAge`）と揃える。
+  ecosystem は `gomod`（`/`・`/tools`。§11）、`bun`（`/app`・`/tools/i18n`。Dependabot は text 形式の `bun.lock` に対応する）、`github-actions`、`docker`（`/` の `Dockerfile` と `/pkg/mybot/examples`）。
+- **cooldown**: すべての ecosystem で `cooldown.default-days: 3` を設定し、公開から 3 日未満の版への更新 PR を作らない。公開から 3 日未満の版を入れない決まり（`app/bunfig.toml`・`tools/i18n/bunfig.toml` の `minimumReleaseAge`）と揃える。
   cooldown は版更新だけに効き、脆弱性を直す security update には効かない。
 - Dependabot の PR も通常の PR と同じく CI の `check` を通してから人間がマージする。
-  `Dockerfile` の Go・Node.js・Bun のタグは `.tool-versions` と一致させる必要がある（`docker:dockerfile-check`）ので、イメージの更新 PR は `.tool-versions` も合わせて直す。
+  `Dockerfile` の Go・Node.js・Bun のタグは `.tool-versions` と一致させる必要がある（`docker:dockerfile-check`）ので、タグの版は `ignore` にして手で上げ、Dependabot は `FROM` の digest だけを上げる。
 
 ### 11. Go の更新と go.work
 

@@ -9,9 +9,9 @@
 
 セキュリティの保護はアプリ内に組み込む（Go 標準ライブラリと少数の実績あるライブラリで、ポートの契約・HTTP ミドルウェア・ドメインサービスとして実装する。インフラ側の保護は任意の追加層）。以下を「ベースライン」とし、各機能の実装はこれに従う。数値はすべて設定で変更できる既定値。
 
-### 1. SSRF ガード付き HttpClient ポート（NFR-SEC-1）
+### 1. SSRF ガード付き HTTPClient ポート（NFR-SEC-1）
 
-すべての外部 HTTP（連合の取得・配送、WebFinger、メディアプロキシ、リンクプレビュー、Web Push 送信）は `HttpClient` ポートを通す。
+すべての外部 HTTP（連合の取得・配送、WebFinger、メディアプロキシ、リンクプレビュー、Web Push 送信）は `kernel.HTTPClient` ポートを通す。
 `net/http` の `http.DefaultClient` を直接使うことは lint（`forbidigo`）で禁止する。
 
 **拒否するアドレス**（出典: [IANA IPv4 / IPv6 Special-Purpose Address Registry](https://www.iana.org/assignments/iana-ipv4-special-registry/)、2026-10-16 確認）。
@@ -123,7 +123,7 @@ OAuth のクライアントの登録などの制限は ADR-0090 §7 が足す。
 
 ### 6. 秘密情報の保管とアクター秘密鍵の暗号化（NFR-SEC-7）
 
-- **アクター秘密鍵**（RSA 2048 ビット。将来 Ed25519 を追加）は DB に **AES-256-GCM で暗号化して** 保存する（エンベロープ暗号化）。
+- **アクター秘密鍵**（RSA 2048 ビットと、RFC 9421 の署名と Object Integrity Proofs に使う Ed25519）は DB に **AES-256-GCM で暗号化して** 保存する（エンベロープ暗号化）。
   - 鍵暗号化鍵（KEK）は DB の外（環境変数・シークレットファイル・クラウドのシークレットストア）に置く。DB のダンプだけが漏れても秘密鍵は漏れない。
   - 暗号文には KEK の ID（バージョン）を付け、KEK のローテーション時は新旧両方を設定して順次再暗号化できるようにする。AAD（追加認証データ）にアクター ID と列名を入れ、別の行への付け替えを防ぐ。
   - `KeyManager` ポートを定義し、アダプタは `local`（設定の KEK を使う。既定）、任意で `gcpkms` / `awskms`（KEK を KMS に置く。§11）。
@@ -195,7 +195,7 @@ upgrade-insecure-requests
 | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains`（`preload` は運営者が設定で付ける） |
 | `X-Content-Type-Options` | `nosniff` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin`（外部リンクは `rel="noreferrer"` を付ける） |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=(), usb=()`（カメラ等が必要になったら `self` に緩める） |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=(), usb=()`（カメラ等が必要になったら `self` に緩める。音声チャットが有効なら `microphone=(self)`、ADR-0100） |
 | `Cross-Origin-Opener-Policy` | `same-origin` |
 | `Cross-Origin-Resource-Policy` | Web クライアント・API は `same-site`、公開メディア・ActivityPub の JSON は `cross-origin` |
 | `X-Frame-Options` | `DENY`（`frame-ancestors` 非対応ブラウザ向け） |
@@ -271,7 +271,7 @@ upgrade-insecure-requests
 ## 経緯
 
 NFR-SEC-1〜8 は「何を守るか」を定めるが、「どう実装するか」は決まっていなかった。Fediverse サーバーは任意のリモートサーバーから送られる URL・HTML・メディア・署名付きリクエストを処理するので、SSRF・XSS・署名偽装・リソース枯渇の攻撃面が通常の Web アプリより広い。
-これらは `HttpClient`・`KeyValueStore` ポート、認証、メディア処理のインターフェイスに直接影響するので、M1 の実装の前に決めた。関連: NFR-PERF-4、NFR-REL-4、NFR-COST-2、NFR-PORT-1、ADR-0011。
+これらは `HTTPClient`・`KeyValueStore` ポート、認証、メディア処理のインターフェイスに直接影響するので、M1 の実装の前に決めた。関連: NFR-PERF-4、NFR-REL-4、NFR-COST-2、NFR-PORT-1、ADR-0011。
 
 判断基準は、全ターゲット（Self-hosted の最小構成でも Cloud Run / Lambda でも）で同じ保護が効くこと、運営者が何も設定しなくても安全で、緩める設定は明示的で起動時に警告を出すこと、Mastodon など主要実装が実際に送るものを拒否しないこと、1 vCPU / 1 GB RAM で DoS されにくいこと、OWASP・RFC・IANA など公開された基準に基づくこと、pure Go で AGPL-3.0 と両立し保守されている依存だけを使うこと。
 

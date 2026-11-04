@@ -32,7 +32,7 @@ Mastodon 4.x、Misskey、GoToSocial、Akkoma（Pleroma 系）。余力があれ�
 - 署名の double-knocking: 受信の振り分けは §4、送信の順序と再送は §5。
 - `@target-uri` / `(request-target)` は設定した公開オリジンから組み立て直し、`X-Forwarded-*` は信用しない。
 - Inbox は署名検証まで同期、処理は非同期（NFR-PERF-4。§6）。
-- **HttpClient ポートに SSRF ガード** を組み込み、すべての外部取得を通す（NFR-SEC-1）。
+- **HTTPClient ポートに SSRF ガード** を組み込み、すべての外部取得を通す（NFR-SEC-1）。
 - 受信した HTML は許可リストでサニタイズ（NFR-SEC-2）。
 - 公開範囲 `local` の配送先・オブジェクト取得の制限は [ADR-0017](0017-visibility-local.md) に従う。
 - 配送はドメイン単位に shared inbox へ集約。連続失敗ドメインはサーキットブレーカーで一時停止し、`InstanceHealth` に記録。

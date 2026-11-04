@@ -12,19 +12,21 @@
 - 単一の型付き設定スキーマを `core` に定義し、起動時に検証する（NFR-PORT-5）。
 - ソース: 環境変数（`MY_` プレフィックス、名称はプロダクト名確定時に変更）→ 任意の設定ファイル（TOML / JSON）→ 既定値。
 - アダプタ選択は明示的なキー（例: `MY_DATABASE=postgres`, `MY_DATABASE_URL=...`, `MY_QUEUE=sqs`, `MY_BLOB=s3`）。URL スキームからの推測はしない。
-- 秘密情報は環境変数 / シークレットストア（Secret Manager, Secrets Manager / SSM, Kubernetes Secret）から。
+- 秘密情報は環境変数 / シークレットストア（Secret Manager, Secrets Manager / SSM, Kubernetes Secret）から。Docker と Kubernetes の secret をファイルで渡せるよう `<NAME>_FILE`（ファイルのパスから読む）も受け付ける。設定ファイルには書けない。
 
 ### 2. パッケージング
 
-- モノレポ。Go は単一モジュール（`cmd/`, `internal/`, `pkg/testkit`）とする。クライアントアプリは `app/` の下に 1 アプリ 1 ディレクトリで置く（`app/web`、`app/mobile`）。
+- モノレポ。サーバーの Go は単一モジュール（`cmd/`, `internal/`, `pkg/testkit`）とする。利用者に配る `pkg/mykit`・`pkg/mybot`（ADR-0093）と開発ツールの `tools` は別のモジュールにする。クライアントアプリは `app/` の下に 1 アプリ 1 ディレクトリで置く（`app/web`。モバイルアプリの `app/mobile` は v0 の範囲の外）。共有パッケージの `app/ui`（ADR-0025）とメールの `app/mail` も同じ場所に置く。
   `app/*` を Bun ワークスペースのメンバーにし、クライアントのツールチェーン（依存・lint・テスト）をサーバーの Go と分けて扱う（レイアウトは [overview](../architecture/overview.md#6-リポジトリ構成)）。
 - アダプタはパッケージ単位に分け、ビルドタグで除外できるようにする（NFR-PORT-4）。
-- エントリポイント: `cmd/my`（単一バイナリ: `serve` / `worker` / `cli`。Self-hosted・Cloud Run・コンテナ）、`cmd/my-lambda`（AWS Lambda。Lambda Web Adapter で `cmd/my` を流用できるなら不要）。
+- エントリポイント: `cmd/my`（単一バイナリ: `serve` / `worker` / `cli`。Self-hosted・Cloud Run・コンテナ）、`cmd/my-lambda`（AWS Lambda。Lambda Web Adapter で `cmd/my` を流用できるなら不要。M6 で扱う）。
 - コンテナイメージ: multi-arch（amd64 / arm64）、非 root、distroless 系。レジストリは `ghcr.io/mycroblog/my` だけとし、公開（public）にする（§4 から §10）。
 - 利用者による拡張: 独自アダプタは「ポートの型を実装し、コントラクトテストを通し、独自エントリポイントで組み立てる」方式。
   Go の `plugin` パッケージによる動的ロードは使わない（移植性が低いため）。v0 ではフォークまたはツリー内への追加で拡張する。
 
 ### 3. デプロイテンプレート（`deploy/`）
+
+今あるのは `deploy/docker` の Compose で、ほかは M6 で作る（`deploy/monitoring` は監視の設定）。
 
 | ターゲット | 形式 |
 | --- | --- |
@@ -98,7 +100,7 @@ IaC は OSS ライセンスの OpenTofu を採用（Terraform 互換）。
 
 `release.yml` がタグなし（digest だけ）で push して署名し、公開時に**ビルドせず**タグを付ける。
 
-- **`release.yml`（下書きの段階）**: `release` の後に `image` ジョブを置く。`npm` ジョブと同じ位置で、スローな検査を通った `github.sha` をチェックアウトする。
+- **`release.yml`（下書きの段階）**: `release` の後に、`image`（1 のビルドと push）・`image-check`（2 の確認）・`image-attest`（3 の証明と添付）のジョブを順に置き、`image-scan` と `release-notes-image` が続く。`npm` ジョブと同じ位置で、スローな検査を通った `github.sha` をチェックアウトする。
   1. キャッシュなしで、両プラットフォームをタグなしで push する（`push-by-digest`）。`VERSION` は `inputs.version`。
   2. 各プラットフォームのバイナリを取り出し、`check-release-build.sh` と `my version` を確かめる。
   3. digest に `actions/attest` を実行し、digest を `image-digest.txt` として下書きの Release に添付する（`--clobber`）。ジョブの要約にも出す。
@@ -106,7 +108,7 @@ IaC は OSS ライセンスの OpenTofu を採用（Terraform 互換）。
   - 決定者は下書きの見直しの中で digest を動かせる。ノートに digest を書く。
 - **ワークフロー `release-image.yml`（公開の時）**: `release: published` で動く。決定者が公開するので `GITHUB_TOKEN` の制限に当たらない。やり直し用に `workflow_dispatch` も持つ。**ビルドしない。**
   1. 添付の digest を読み、証明を確かめ、来歴の commit がタグの commit と同じことを確かめる。合わなければ何もタグを付けず失敗する。
-  2. §4 の表のとおりタグを付ける（`scripts/` に置いて単体テストする。`scripts/previous-minor.sh` と同じ形）。
+  2. §4 の表のとおりタグを付ける（`scripts/release-image.sh`。単体テストする。`scripts/previous-minor.sh` と同じ形）。
   3. タグの digest が元と同じことを確かめ、匿名で pull できることを確かめる。
 - 公開前の Git のタグと npm は下書きの段階で公開される。下書きを捨てた版は、npm と同じくその番号を使わない。
 - 検査したイメージそのものではない。検査と公開で同じ commit、固定の基盤イメージ、固定のロックファイルからビルドし、違いは `VERSION` の埋め込みだけのはずである（ビットの一致は保証しない）。

@@ -23,8 +23,8 @@
 
 **Mastodon Client API（Streaming API、アプリ登録 API を含む）とは一切互換させず、独自のクライアント API だけを提供する。**
 
-- 自前の Web クライアント（PWA）とモバイルアプリが唯一の公式クライアントで、API は自前クライアントの要件に合わせて設計する。
-- 認可に OAuth 2.0（Authorization Code + PKCE）を使うのは、将来サードパーティクライアントを受け入れられるようにするためである。
+- 自前の Web クライアント（PWA）が公式クライアントで（モバイルアプリは v0 の範囲の外）、API は自前クライアントの要件に合わせて設計する。
+- 認可に OAuth 2.0（Authorization Code + PKCE）を使うのは、サードパーティのクライアントも同じ形で受け入れるためである（ADR-0090）。
 - **連合（ActivityPub / S2S）は従来どおり Mastodon などと相互運用する**（[ADR-0006](0006-federation-protocol-scope.md)）。この決定はクライアント API にだけ適用される。
 
 ### 3. コード生成

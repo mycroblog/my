@@ -66,7 +66,9 @@
 - `agent:ready` — 受け入れ基準が明確で、依存する ADR が Accepted。**エージェントはこのラベルの Issue だけを自律的に着手してよい。**
 - `status:needs-decision` — 人間の判断待ち（Proposed ADR に依存など）。エージェントは着手しない。
 - `agent:blocked` — エージェントが作業中に判断が必要になった。理由を Issue にコメントして人間を待つ。
-- `area:*` — 影響範囲（`federation`, `api`, `db`, `queue`, `storage`, `web`, `mobile`, `i18n`, `infra`, `harness`, `docs`）
+- `area:*` — 影響範囲（`federation`, `api`, `db`, `queue`, `storage`, `web`, `mobile`, `i18n`, `infra`, `harness`, `docs`, `lib`）
+- `ci:full` — PR でも Merge Queue の全検査を回す（ADR-0079）。
+- `db:destructive` — PR のスキーマの破壊的な変更を認める（`db-lint`。[schema/README.md](../../schema/README.md#changing-the-schema)）。
 - `priority:p0`〜`p2`
 
 #### 作業フロー（エージェント）

@@ -28,14 +28,15 @@
   - 相手のサーバーのドメインに処分（FR-702）がかかっている間は、その IdP でのログイン・登録・ひも付けを断る。
 - どれも Authorization Code フローで、`state` と PKCE（`S256`）を使う。`oidc` は `nonce` も使う。
   Discovery が `S256` を示さない IdP でも PKCE のパラメータは送る（受けない IdP は無視する）。
-- ほかの OIDC でない IdP（Discord など）を足すときは、`github` や `mastodon` と同じく、識別子とメールアドレスの取り出し方をコードに書いたプリセットとして足す。
+- `discord`: discord.com のエンドポイントはコードに固定する。識別子は数値の Discord ID。
+- ほかの OIDC でない IdP を足すときは、`github`・`mastodon`・`discord` と同じく、識別子とメールアドレスの取り出し方をコードに書いたプリセットとして足す。
   管理者がエンドポイントとフィールドを指定する汎用の OAuth 2.0 は持たない。
 
 ### 2. 管理と保存
 
 - IdP は DB に置き、identity モジュールが所有する。テーブルは ADR-0060 の webhook と同じ形にする（名前は data-model）。
   - リソース: IdP（ID、作った人、作った時刻）
-  - イベント（版）: 種類（`oidc` / `github` / `mastodon`）、表示名、`issuer`（`mastodon` ではサーバーの URL）、`client_id`、追加の scope、ポリシー（§4）。最新の版が現在の値
+  - イベント（版）: 種類（`oidc` / `github` / `mastodon` / `discord`）、表示名、`issuer`（`mastodon` ではサーバーの URL）、`client_id`、追加の scope、ポリシー（§4）。最新の版が現在の値
   - イベント: `client_secret`。`kernel.Sealer` で封をする。回転は行を足す
   - イベント: 有効化・無効化・削除
   - 投影: 現在の版・秘密・状態
@@ -103,6 +104,7 @@ IdP が検証済みと示したメールアドレス（`email_verified` が真�
     認可要求にも同じ値を `hd` として付けるが、これはアカウントを選ぶ画面の補助で、判断は ID トークンの claim で行う。
   - `github`: 所属する Organization の許可リスト（`read:org` scope）
   - `mastodon`: 条件を持たない（IdP にしたサーバーの利用者すべてが対象）
+  - `discord`: 所属する Discord サーバー（guild）の許可リスト（`guilds` scope）
 
 ### 5. IdP への HTTP
 

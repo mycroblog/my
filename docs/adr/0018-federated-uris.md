@@ -24,6 +24,7 @@ AP の `id` には UUIDv7 だけを使い、`/ap/` 名前空間に置く。人�
 | 投稿の replies / likes / shares | `{object}/replies` など | `…/ap/objects/0192f3b0-…/replies` |
 | その他のアクティビティ（Follow / Like / Announce / Block / Undo / Update / Delete / Accept / Reject / Flag） | `https://{host}/ap/activities/{uuid}` | `https://social.example.org/ap/activities/0192f3c1-…` |
 | カスタム絵文字（ADR-0051） | `https://{host}/ap/emojis/{uuid}` | — |
+| 引用の承認（ADR-0069 §1） | `https://{host}/ap/quote_authorizations/{uuid}` | — |
 | プロフィール（HTML、`url`） | `https://{host}/@{username}` | `https://social.example.org/@alice` |
 | 投稿（HTML、`url`） | `https://{host}/@{username}/status/{uuid}`（§8） | `https://social.example.org/@alice/status/0192f3b0-2c3d-7e4f-8a00-112233445566` |
 | ハッシュタグ（HTML、`Hashtag.href`） | `https://{host}/tags/{name}` | `https://social.example.org/tags/fediverse` |
@@ -32,7 +33,7 @@ AP の `id` には UUIDv7 だけを使い、`/ap/` 名前空間に置く。人�
 規則:
 
 - `id` は https・小文字・末尾スラッシュなし・クエリなし（コレクションのページ `?page=…` を除く）。パスにユーザー名を含めない。
-- 受信したアクティビティ中の自サーバーの URI は、正規表現 `^/ap/(actors|objects|activities|emojis)/{uuid}` で厳密にパースし、HTTP 取得せずに DB を引く。
+- 受信したアクティビティ中の自サーバーの URI は、`internal/interface/activitypub/uris.go` の `parseLocalURI` が接頭辞（`/ap/actors/` など）と `kernel.ValidID` で厳密にパースし、HTTP 取得せずに DB を引く。プロフィールの URL（`/@{username}`）も受ける。
 - `Create` の `id` は投稿から決まる値（`{object}/activity`）にして保存しない。`Update` は編集ごとに別のアクティビティなので `/ap/activities/{uuid}` を使う。
 - メディアの URL は `id` ではない（Blob / CDN のドメインに置いてよい。ADR-0005）。
 - この一覧は `id` の形を決めるもので、配信の約束ではない。配信する URI は §16。

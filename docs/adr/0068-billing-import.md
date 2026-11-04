@@ -97,7 +97,7 @@ type CostLine struct {
 | テーブル | 分類 | 内容 |
 | --- | --- | --- |
 | `billing_import_runs` | イベント | `id`, `source`（`enum(aws, gcp)`）, `run_key`（ジョブの冪等キー）, `outcome`（`enum(succeeded, failed)`）, `error_kind`（`enum(none, permission, not_enabled, not_found, throttled, request_cap, bytes_cap, invalid_response, unavailable)`）, `requests`（`int`）, `bytes_billed`（`bigint`）, `occurred_at` |
-| `billing_import_reservations` | イベント | `id`（試行の `billing_import_runs.id`）, `source`, `run_key`, `requests`, `reserved_at`。呼ぶ前の予約（§4） |
+| `billing_import_reservations` | イベント | `id`（試行の `billing_import_runs.id`）, `source`, `requests`, `reserved_at`。呼ぶ前の予約（§4） |
 | `imported_cost_revisions` | イベント（版） | `id`, `source`, `billing_month`（`string(7)`、`YYYY-MM`）, `service`（`string(200)`）, `charge_type`（`enum(usage, credit, refund, tax, support, fee, adjustment, other)`）, `category`（ADR-0067 の enum）, `starts_on`・`ends_on`（`date`）, `amount_minor`（`bigint`、負も可）, `currency`（`string(3)`）, `kind`（`enum(estimate, final, correction)`）, `run_id`（`billing_import_runs.id`）, `run_key`, `recorded_at`。`(source, billing_month, service, charge_type, run_key)` で一意 |
 | `imported_cost_heads` | 投影 | `(source, billing_month, service, charge_type)`（PK）→ `revision_id`。版を足すトランザクションで同期に更新する（ADR-0020 規約 7） |
 
@@ -136,7 +136,7 @@ type CostLine struct {
 
 ### 8. 設定と認証（ADR-0010、ADR-0019）
 
-デプロイの設定（TOML と `MY_*`）に置き、`make config-docs` の表に載せる。インスタンス設定（DB）には置かない。
+デプロイの設定（TOML と `MY_*`）に置き、`scripts/task.sh go:config-docs` の表に載せる。インスタンス設定（DB）には置かない。
 
 | キー | 内容 |
 | --- | --- |

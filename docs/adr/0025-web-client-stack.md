@@ -15,7 +15,7 @@
 | メモ化 | React Compiler 1.0 の規則を全コードに適用する（実装は §9）。手動の `useMemo` / `useCallback` / `memo` は原則書かない |
 | 言語 | TypeScript（`strict`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`）。版は §7 |
 | ビルド | Vite 8 + `@vitejs/plugin-react` 6。Bun をパッケージ管理とスクリプト実行に使う |
-| スタイル | Tailwind CSS v4（`@tailwindcss/vite`）、`tailwind-variants`、`tailwind-merge` |
+| スタイル | Tailwind CSS v4（`@tailwindcss/vite`）、`tailwind-variants`（クラスの合成も持つ） |
 | アクセシブルな部品の土台 | React Aria Components（Apache-2.0）。自前の UI キット（§2）が包んで公開する |
 | ルーティング | TanStack Router（ファイルベース、自動コード分割、Zod で検索パラメータを検証） |
 | サーバー状態 | TanStack Query 5（`queryOptions`、無限スクロールは `useInfiniteQuery`） |
@@ -64,8 +64,11 @@ app/
         components/# @my/ui を組み合わせた機能の部品
         index.ts   # 公開面。他の機能はここからだけ import する
       lib/         # API クライアント、QueryClient、SSE、i18n の初期化、ランタイム設定
+  mail/            # メールのテンプレート
   mobile/          # Tauri 2（将来）
 ```
+
+ワークスペースには、`pkg/mykit/ts` と `pkg/mybot/ts`（ADR-0093）も入る。
 
 ### 3. 依存の向き
 
@@ -81,7 +84,7 @@ app/
 - **`@my/ui` の部品は表示に専念する。**
   - 状態はできるだけ外から渡す（`value` / `onChange`）。
   - 見た目の違いは型付きの props（`variant`・`size`・`tone`）で表し、`tailwind-variants` の 1 部品 1 レシピで定義する。
-  - `className` は root（またはスロット）にだけ渡し、`tailwind-merge` で合成する。
+  - `className` は root（またはスロット）にだけ渡し、`tailwind-variants` で合成する。
 - **振る舞い（キーボード・フォーカス・ARIA）は React Aria に任せる。** 独自の振る舞いが必要な部品だけ `react-aria` のフックで組み立てる。
 - **機能のロジックは `features/<x>/hooks` のカスタムフックに置く。** フックは JSX を返さない。機能の部品はフックの戻り値を `@my/ui` に渡すだけにする。
 - **サーバーから取得するデータは `features/<x>/api` の `queryOptions` / mutation だけで扱う。** `useState` や Context にコピーしない。
@@ -91,7 +94,7 @@ app/
 ドメインを持たない振る舞い・スタイルのライブラリを、許可リストで管理して認める。`@my/ui` が依存してよいのは次のものに限り、許可リストは lint（`eslint-plugin-boundaries`）と `app/ui/package.json` で管理する。
 
 - React、React Aria Components / React Aria
-- Tailwind のユーティリティ: `tailwind-variants`、`tailwind-merge`
+- Tailwind のユーティリティ: `tailwind-variants`
 - ドメインを持たない振る舞いのライブラリ: 現在は `@tanstack/react-virtual`
 - アイコン: `react-icons`（Phosphor の `react-icons/pi` だけ、`Icons.tsx` からだけ。§6）
 

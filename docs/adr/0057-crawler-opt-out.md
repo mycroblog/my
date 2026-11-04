@@ -60,6 +60,7 @@ Content-Signal: search=no, ai-train=no, ai-input=no
 Disallow: /api/
 Disallow: /oauth/
 Disallow: /auth/
+Disallow: /mail/
 Disallow: /ap/
 Disallow: /media/proxy/
 Allow: /

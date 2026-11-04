@@ -182,7 +182,7 @@ pkg/mykit/
 
 ### 14. mybot: 冪等とレート制限
 
-- **冪等キー**: `Reply` と定期実行の投稿は、`createStatus` に決まった `Idempotency-Key` を付ける。返信は `mybot:reply:<通知 ID>:<そのハンドラの中での番号>`。
+- **冪等キー**: `Reply` と定期実行の投稿は、`createStatus` に決まった `Idempotency-Key` を付ける。返信は `mybot:reply:<通知 ID>:<そのハンドラの中での番号>`（`OnStatus` は通知を持たないので、通知 ID の代わりに投稿の ID を使う）。
   サーバーはアカウントごとにキーを覚えているので（`local_statuses` の一意制約）、§11 で同じ通知をもう一度処理しても投稿は 1 つになる。作者が `mykit` を直接使って投稿するときのために、同じ規則でキーを作る関数も出す。
   お気に入り・リアクション・フォローは、spec のとおり 2 度目の呼び出しが何も変えずに成功するので（`favouriteStatus`・`reactToStatus`・`followAccount` の説明）、キーを付けない。
 - **処理済みの記録**: `Store` ポート（Go はインタフェース、TS は型）で、処理済みの通知の ID・追いつきの位置・定期実行の最後の時刻・refresh token を持つ。

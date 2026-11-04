@@ -9,8 +9,8 @@
 
 ### 1. fan-out-on-read
 
-- v0 は **fan-out-on-read**: `statuses`（`account_id, id DESC` の複合インデックス）と `follows` を JOIN し、UUIDv7 の `id` でキーセットページング。
-- 可視性フィルタ（ブロック・ミュート・公開範囲）はドメインの `canView` を SQL 条件に写像した共通クエリビルダで適用。
+- v0 は **fan-out-on-read**: `timeline` モジュールの投影（`feed_entries`・`feed_follow_edges`）を読み、UUIDv7 の `id` でキーセットページング（data-model §6）。
+- 可視性フィルタ（ブロック・ミュート・公開範囲）は、方言別の sqlc のクエリと、返す直前のドメインの `CanView` の再適用で適用。
 - `TimelineReader` をアプリケーション内部のインターフェイスにし、将来 `home_feed` テーブル（fan-out-on-write）や KV キャッシュに差し替え可能にする。
 - 連合タイムラインはインスタンス設定で無効化可能（データ量と課金の抑制）。
 
