@@ -6076,7 +6076,8 @@ type AdminReportState string
 
 // AdminReportStatus A post that a report points at, as a moderator reviews it. `status` is the post as it
 // was last, without the moderator's own relation to it (`favourited`, `boosted`,
-// `bookmarked`, and `pinned` are omitted).
+// `bookmarked`, and `pinned` are omitted, and so is `me` of each of its `reactions`).
+// A deleted post has no counts and no `reactions` any more.
 type AdminReportStatus struct {
 	// DeletedAt When the post was deleted, by its author or otherwise; omitted when it is not.
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
@@ -17567,7 +17568,8 @@ type ClientInterface interface {
 	// DeleteCustomEmoji Delete a local custom emoji
 	//
 	// Deletes a local emoji for good, with its images; the posts and profiles that used it
-	// show its `:shortcode:` as text. A new emoji with the same shortcode is another emoji.
+	// show its `:shortcode:` as text, and the reactions with it are no longer shown. A new
+	// emoji with the same shortcode is another emoji.
 	// A remote emoji is a 422 with the reason `remote_emoji` (disable it instead). The
 	// deletion is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_custom_emojis` permission.
@@ -24181,7 +24183,8 @@ func (c *Client) CreateCustomEmoji(ctx context.Context, body CreateCustomEmojiJS
 // DeleteCustomEmoji Delete a local custom emoji
 //
 // Deletes a local emoji for good, with its images; the posts and profiles that used it
-// show its `:shortcode:` as text. A new emoji with the same shortcode is another emoji.
+// show its `:shortcode:` as text, and the reactions with it are no longer shown. A new
+// emoji with the same shortcode is another emoji.
 // A remote emoji is a 422 with the reason `remote_emoji` (disable it instead). The
 // deletion is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_custom_emojis` permission.
@@ -48977,7 +48980,8 @@ type ClientWithResponsesInterface interface {
 	// DeleteCustomEmojiWithResponse Delete a local custom emoji
 	//
 	// Deletes a local emoji for good, with its images; the posts and profiles that used it
-	// show its `:shortcode:` as text. A new emoji with the same shortcode is another emoji.
+	// show its `:shortcode:` as text, and the reactions with it are no longer shown. A new
+	// emoji with the same shortcode is another emoji.
 	// A remote emoji is a 422 with the reason `remote_emoji` (disable it instead). The
 	// deletion is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_custom_emojis` permission.
@@ -78668,7 +78672,8 @@ func (c *ClientWithResponses) CreateCustomEmojiWithResponse(ctx context.Context,
 // DeleteCustomEmojiWithResponse Delete a local custom emoji
 //
 // Deletes a local emoji for good, with its images; the posts and profiles that used it
-// show its `:shortcode:` as text. A new emoji with the same shortcode is another emoji.
+// show its `:shortcode:` as text, and the reactions with it are no longer shown. A new
+// emoji with the same shortcode is another emoji.
 // A remote emoji is a 422 with the reason `remote_emoji` (disable it instead). The
 // deletion is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_custom_emojis` permission.

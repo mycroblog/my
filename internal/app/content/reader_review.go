@@ -13,7 +13,8 @@ import (
 
 // ReviewedStatus is a status as the moderators review it as the evidence of a report.
 type ReviewedStatus struct {
-	// StatusView is the status as it was last; its Relation is nil.
+	// StatusView is the status as it was last; its Relation is nil. A deleted status has left the
+	// projections, so its Counters are zero and it has no Reactions.
 	StatusView
 	// DeletedAt is when the status was deleted, the zero time when it is not.
 	DeletedAt time.Time
@@ -72,6 +73,10 @@ func (r *Reader) Review(ctx context.Context, statusID string) (ReviewedStatus, e
 	case err == nil:
 		out.Counters = c
 	case !errors.Is(err, ErrNotFound):
+		return ReviewedStatus{}, err
+	}
+	// The moderator has no relation to the status, so nothing says that they reacted.
+	if out.Reactions, err = r.reactions(ctx, st, ""); err != nil {
 		return ReviewedStatus{}, err
 	}
 	return out, nil

@@ -68,7 +68,7 @@ type ReactedPage struct {
 // Reactions returns a page of the reactions to a status that viewer may see, newest first: up to
 // limit reactions older than the cursor before ("" for the newest), only those with the emoji
 // whose name (EmojiView.Name) is emoji unless it is "". An emoji that no reaction can have
-// gives an empty page. A status that the viewer may not see fails with ErrNotFound.
+// gives an empty page, and a reaction whose emoji was deleted is left out. A status that the viewer may not see fails with ErrNotFound.
 func (r *Reader) Reactions(ctx context.Context, viewer Viewer, statusID, emoji, before string, limit int) (ReactedPage, error) {
 	if _, _, err := r.aud.visibleStatus(ctx, viewer, statusID); err != nil {
 		return ReactedPage{}, err
@@ -81,23 +81,34 @@ func (r *Reader) Reactions(ctx context.Context, viewer Viewer, statusID, emoji, 
 			return ReactedPage{}, err
 		}
 	}
-	rs, err := r.d.Interactions.ListStatusReactions(ctx, statusID, key, before, limit)
-	if err != nil {
-		return ReactedPage{}, err
-	}
 	emojis := emojiCache{r: r, seen: map[string]*ReactionCustomEmoji{}}
-	out := ReactedPage{Reactions: make([]ReactedView, 0, len(rs))}
-	for _, re := range rs {
-		v, err := emojis.view(ctx, re.Emoji)
+	out := ReactedPage{Reactions: make([]ReactedView, 0, max(limit, 0))}
+	// More than one read only when reactions were left out, to fill the page.
+	for {
+		want := limit - len(out.Reactions)
+		rs, err := r.d.Interactions.ListStatusReactions(ctx, statusID, key, before, want)
 		if err != nil {
 			return ReactedPage{}, err
 		}
-		out.Reactions = append(out.Reactions, ReactedView{Reaction: re, Emoji: v})
+		for _, re := range rs {
+			v, err := emojis.view(ctx, re.Emoji)
+			if errors.Is(err, ErrNotFound) {
+				continue // its emoji was deleted, see reactions
+			}
+			if err != nil {
+				return ReactedPage{}, err
+			}
+			out.Reactions = append(out.Reactions, ReactedView{Reaction: re, Emoji: v})
+		}
+		if len(rs) == 0 || len(rs) < want {
+			return out, nil // the last page
+		}
+		before = rs[len(rs)-1].ID
+		if len(out.Reactions) == limit {
+			out.Next = before
+			return out, nil
+		}
 	}
-	if len(rs) == limit && limit > 0 {
-		out.Next = rs[len(rs)-1].ID
-	}
-	return out, nil
 }
 
 // emojiKey returns the key (content.ReactionEmoji.Key) of the emoji whose name is name, and
@@ -118,7 +129,8 @@ func (r *Reader) emojiKey(ctx context.Context, name string) (string, bool, error
 }
 
 // reactions returns the counts of the reactions to st, the most used content.MaxStatusReactions
-// emoji, with whether accountID ("" for an anonymous viewer) reacted with each.
+// emoji, with whether accountID ("" for an anonymous viewer) reacted with each. An emoji that was
+// deleted is left out.
 func (r *Reader) reactions(ctx context.Context, st content.Status, accountID string) ([]ReactionView, error) {
 	counts, err := r.d.Interactions.ListReactionCounts(ctx, st.ID, content.MaxStatusReactions)
 	if err != nil || len(counts) == 0 {
@@ -138,6 +150,11 @@ func (r *Reader) reactions(ctx context.Context, st content.Status, accountID str
 	out := make([]ReactionView, 0, len(counts))
 	for _, c := range counts {
 		v, err := emojis.view(ctx, c.Emoji)
+		if errors.Is(err, ErrNotFound) {
+			// A deleted local emoji leaves its reactions behind with nothing to show them with,
+			// which must not make the status they are on unreadable.
+			continue
+		}
 		if err != nil {
 			return nil, err
 		}
