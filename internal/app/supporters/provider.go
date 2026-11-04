@@ -51,7 +51,8 @@ type PaymentProvider interface {
 	// The commands that our own screens and jobs issue. Each is safe to repeat: a second call
 	// with the subscription already in the asked state changes nothing. key is the caller's
 	// idempotency key (the job's key and the operation's name), which a change that can be undone
-	// and made again must not repeat.
+	// and made again must not repeat. ChangePrice fails with ErrPaymentCanceling while a
+	// cancellation is scheduled, which our state may not show yet.
 	ChangePrice(ctx context.Context, sub SubscriptionRef, to PriceRef, when ChangeTiming, key string) error
 	// CancelScheduledChange withdraws the change waiting for the period's end; nothing without one.
 	CancelScheduledChange(ctx context.Context, sub SubscriptionRef, key string) error
@@ -289,10 +290,12 @@ type SubscriptionSnapshot struct {
 	LocalID string
 	Price   PriceRef
 	Status  SubscriptionStatus
-	// PeriodStart and PeriodEnd bound the current billing period.
+	// PeriodStart and PeriodEnd bound the current billing period; PeriodEnd is earlier when a
+	// cancellation ends the subscription before the period does.
 	PeriodStart time.Time
 	PeriodEnd   time.Time
-	// CancelAtPeriodEnd reports a cancellation scheduled for PeriodEnd.
+	// CancelAtPeriodEnd reports a cancellation scheduled for PeriodEnd, however it was made (our
+	// command, or the provider's own portal).
 	CancelAtPeriodEnd bool
 	// ScheduledPrice is the price that a change waiting for PeriodEnd switches to; zero without one.
 	ScheduledPrice PriceRef

@@ -48,7 +48,12 @@ func (p *Provider) snapshot(ctx context.Context, s *stripe.Subscription) (suppor
 	snap := supporters.SubscriptionSnapshot{
 		Ref: supporters.SubscriptionRef(s.ID), LocalID: s.Metadata[metaSubscriptionID], Price: supporters.PriceRef(item.Price.ID),
 		PeriodStart: unixTime(item.CurrentPeriodStart), PeriodEnd: unixTime(item.CurrentPeriodEnd),
-		CancelAtPeriodEnd: s.CancelAtPeriodEnd,
+		CancelAtPeriodEnd: cancelsByPeriodEnd(s),
+	}
+	if s.CancelAt != 0 && s.CancelAt < item.CurrentPeriodEnd {
+		// Set by hand before the period's end, the subscription ends then: the date on the screen
+		// and the deadline of the re-read follow it.
+		snap.PeriodEnd = unixTime(s.CancelAt)
 	}
 	if s.Customer != nil {
 		snap.Customer = supporters.CustomerRef(s.Customer.ID)
@@ -63,6 +68,17 @@ func (p *Provider) snapshot(ctx context.Context, s *stripe.Subscription) (suppor
 	snap.ScheduledPrice = scheduledPrice(s, item.CurrentPeriodEnd)
 	snap.LatestPaymentFailed = paymentFailed(s.LatestInvoice)
 	return snap, nil
+}
+
+// cancelsByPeriodEnd reports whether a subscription ends by the end of its current period. The
+// customer portal sets cancel_at to that time and leaves cancel_at_period_end false, so either
+// field can say it. A cancel_at after the period's end is not a cancellation yet: the subscription
+// renews at least once, and it goes on as active until the period that holds that date.
+func cancelsByPeriodEnd(s *stripe.Subscription) bool {
+	if s.CancelAtPeriodEnd {
+		return true
+	}
+	return s.CancelAt != 0 && s.CancelAt <= s.Items.Data[0].CurrentPeriodEnd
 }
 
 // pendingSchedule returns the subscription's schedule while it still waits to change it.
@@ -187,6 +203,10 @@ func (p *Provider) ChangePrice(ctx context.Context, ref supporters.SubscriptionR
 	}
 	if ended(s) {
 		return fmt.Errorf("stripe: %w: subscription %s ended", supporters.ErrPaymentInvalidRequest, ref)
+	}
+	if cancelsByPeriodEnd(s) {
+		// The portal's cancellation may not have reached our state yet; a change needs it undone.
+		return fmt.Errorf("stripe: %w: subscription %s", supporters.ErrPaymentCanceling, ref)
 	}
 	item := s.Items.Data[0]
 	current := supporters.PriceRef(item.Price.ID)
@@ -319,42 +339,63 @@ func (p *Provider) CancelScheduledChange(ctx context.Context, ref supporters.Sub
 
 // CancelAtPeriodEnd implements supporters.PaymentProvider. Stripe refuses to change the
 // cancellation of a subscription on a schedule, so a change waiting for the period's end is
-// dropped first: the subscription ends before it would take effect.
+// dropped first: the subscription ends before it would take effect. A subscription that the portal
+// canceled is canceled already; a cancel_at in a later period moves to this period's end.
 func (p *Provider) CancelAtPeriodEnd(ctx context.Context, ref supporters.SubscriptionRef, key string) error {
 	s, err := p.subscription(ctx, ref)
 	if err != nil {
 		return err
 	}
-	if ended(s) || s.CancelAtPeriodEnd {
+	if ended(s) || cancelsByPeriodEnd(s) {
 		return nil
 	}
 	if err := p.release(ctx, s, key); err != nil {
 		return err
 	}
-	return p.setCancelAtPeriodEnd(ctx, s.ID, true, key)
+	return p.do(ctx, "cancel_at_period_end "+s.ID, func() (err error) {
+		_, err = p.sc.V1Subscriptions.Update(ctx, s.ID, &stripe.SubscriptionUpdateParams{
+			Params: idempotency(key, "cancel_at_period_end"), CancelAtPeriodEnd: stripe.Bool(true),
+		})
+		return err
+	})
 }
 
-// ResumeCancellation implements supporters.PaymentProvider.
+// ResumeCancellation implements supporters.PaymentProvider. It clears both fields that can hold a
+// cancellation, cancel_at_period_end first and then whatever cancel_at it left, one request each:
+// Stripe's documentation does not say that one clears the other or that one update may send both.
 func (p *Provider) ResumeCancellation(ctx context.Context, ref supporters.SubscriptionRef, key string) error {
 	s, err := p.subscription(ctx, ref)
 	if err != nil {
 		return err
 	}
-	if ended(s) || !s.CancelAtPeriodEnd {
+	if ended(s) || (!s.CancelAtPeriodEnd && s.CancelAt == 0) {
 		return nil
 	}
-	return p.setCancelAtPeriodEnd(ctx, s.ID, false, key)
-}
-
-func (p *Provider) setCancelAtPeriodEnd(ctx context.Context, id string, cancel bool, key string) error {
-	op := "resume"
-	if cancel {
-		op = "cancel_at_period_end"
+	if err := p.release(ctx, s, key); err != nil {
+		return err
 	}
-	return p.do(ctx, op+" "+id, func() (err error) {
-		_, err = p.sc.V1Subscriptions.Update(ctx, id, &stripe.SubscriptionUpdateParams{
-			Params: idempotency(key, op), CancelAtPeriodEnd: stripe.Bool(cancel),
+	cancelAt := s.CancelAt
+	if s.CancelAtPeriodEnd {
+		err := p.do(ctx, "resume "+s.ID, func() error {
+			after, err := p.sc.V1Subscriptions.Update(ctx, s.ID, &stripe.SubscriptionUpdateParams{
+				Params: idempotency(key, "resume"), CancelAtPeriodEnd: stripe.Bool(false),
+			})
+			if err == nil {
+				cancelAt = after.CancelAt
+			}
+			return err
 		})
+		if err != nil {
+			return err
+		}
+	}
+	if cancelAt == 0 {
+		return nil
+	}
+	return p.do(ctx, "clear cancel_at of "+s.ID, func() error {
+		params := &stripe.SubscriptionUpdateParams{Params: idempotency(key, "resume_cancel_at")}
+		params.AddUnsetField(stripe.SubscriptionUpdateParamsUnsetFieldCancelAt)
+		_, err := p.sc.V1Subscriptions.Update(ctx, s.ID, params)
 		return err
 	})
 }

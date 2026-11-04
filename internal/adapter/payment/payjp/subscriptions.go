@@ -114,6 +114,9 @@ func (p *Provider) ChangePrice(ctx context.Context, ref supporters.SubscriptionR
 	if err != nil {
 		return err
 	}
+	if s.Status == subCanceled {
+		return fmt.Errorf("payjp: %w: subscription %s", supporters.ErrPaymentCanceling, ref)
+	}
 	path := "/subscriptions/" + url.PathEscape(s.ID)
 	switch when {
 	case supporters.ChangeAtPeriodEnd:

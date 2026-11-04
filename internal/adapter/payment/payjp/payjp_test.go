@@ -47,6 +47,22 @@ func newOnFake(t *testing.T, mode supporters.Mode, now time.Time) (*Provider, *f
 	return p, f
 }
 
+// A plan does not change while a cancellation waits, which our state may not show yet.
+func TestChangePriceRefusesACanceled(t *testing.T) {
+	now := time.Unix(1792630800, 0).UTC()
+	p, f := newOnFake(t, supporters.ModeTest, now)
+	f.addPlan("price_base", 500, "month", nil)
+	f.addPlan("price_up", 1000, "month", nil)
+	f.addSub(subscription{
+		ID: "sub_1", Customer: "cus_1", Status: subCanceled, Plan: f.plans["price_base"].plan,
+		CurrentPeriodStart: now.Unix(), CurrentPeriodEnd: now.AddDate(0, 1, 0).Unix(), Metadata: metadata{},
+	}, now.Unix())
+	err := p.ChangePrice(t.Context(), "sub_1", "price_up", supporters.ChangeNowProrated, "change:1")
+	if !errors.Is(err, supporters.ErrPaymentCanceling) {
+		t.Errorf("ChangePrice = %v, want ErrPaymentCanceling", err)
+	}
+}
+
 // statusOfFailure is the status of PAY.JP that fails a request with err.
 func statusOfFailure(err error) int {
 	switch {

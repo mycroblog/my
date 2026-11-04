@@ -5,6 +5,7 @@ package stripe
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -232,6 +233,132 @@ func TestCancelAtPeriodEndReleasesSchedule(t *testing.T) {
 	snap, err := p.GetSubscription(t.Context(), "sub_1")
 	if err != nil || !snap.CancelAtPeriodEnd || snap.ScheduledPrice != "" {
 		t.Errorf("after CancelAtPeriodEnd: %+v, %v", snap, err)
+	}
+}
+
+// The values of a real subscription canceled in Stripe's customer portal: cancel_at at the
+// period's end, cancel_at_period_end false, canceled_at the time of the cancellation, and active.
+const (
+	portalCancelAt   = int64(1825302070)
+	portalCanceledAt = int64(1793766445)
+)
+
+// portalCanceled returns a Provider whose sub_1 has cancel_at at offset from its period's end.
+func portalCanceled(t *testing.T, offset time.Duration) (*Provider, *fakeAPI) {
+	t.Helper()
+	p, f, _, _ := onPlan(t, "")
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	s := f.sub("sub_1")
+	f.item(s)["current_period_end"] = portalCancelAt
+	s.o["cancel_at"] = portalCancelAt + int64(offset/time.Second)
+	s.o["cancel_at_period_end"] = false
+	s.o["canceled_at"] = portalCanceledAt
+	return p, f
+}
+
+func TestPortalCancellationShows(t *testing.T) {
+	end := time.Unix(portalCancelAt, 0).UTC()
+	for name, tc := range map[string]struct {
+		offset     time.Duration
+		canceling  bool
+		periodEnds time.Time
+	}{
+		"at the period's end": {0, true, end},
+		// It ends sooner than the period, and the snapshot says when.
+		"before the period's end": {-24 * time.Hour, true, end.Add(-24 * time.Hour)},
+		// It renews first: not a cancellation yet.
+		"after the period's end": {24 * time.Hour, false, end},
+	} {
+		t.Run(name, func(t *testing.T) {
+			p, _ := portalCanceled(t, tc.offset)
+			snap, err := p.GetSubscription(t.Context(), "sub_1")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if snap.CancelAtPeriodEnd != tc.canceling || !snap.PeriodEnd.Equal(tc.periodEnds) || snap.Status != supporters.StatusActive {
+				t.Errorf("snapshot = %+v; want canceling %v, period end %s", snap, tc.canceling, tc.periodEnds)
+			}
+		})
+	}
+}
+
+// A portal's cancellation is undone by clearing cancel_at, which cancel_at_period_end does not
+// hold, and a second call changes nothing.
+func TestResumePortalCancellation(t *testing.T) {
+	p, f := portalCanceled(t, 0)
+	before := f.countRequests("POST /v1/subscriptions/sub_1")
+	for i := range 2 {
+		if err := p.ResumeCancellation(t.Context(), "sub_1", fmt.Sprintf("resume:%d", i)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	snap, err := p.GetSubscription(t.Context(), "sub_1")
+	if err != nil || snap.CancelAtPeriodEnd {
+		t.Errorf("after the resumption: %+v, %v", snap, err)
+	}
+	if n := f.countRequests("POST /v1/subscriptions/sub_1") - before; n != 1 {
+		t.Errorf("%d updates, want 1", n)
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if at := f.sub("sub_1").o["cancel_at"]; at != nil {
+		t.Errorf("cancel_at = %v, want it cleared", at)
+	}
+}
+
+// Our own cancellation, undone: cancel_at_period_end is cleared first, and then cancel_at whenever
+// it stays.
+func TestResumeOwnCancellationClearsBothFields(t *testing.T) {
+	p, f, _, _ := onPlan(t, "")
+	if err := p.CancelAtPeriodEnd(t.Context(), "sub_1", "cancel:1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.ResumeCancellation(t.Context(), "sub_1", "resume:1"); err != nil {
+		t.Fatal(err)
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if o := f.sub("sub_1").o; o["cancel_at_period_end"] != false || o["cancel_at"] != nil {
+		t.Errorf("cancel_at_period_end = %v, cancel_at = %v", o["cancel_at_period_end"], o["cancel_at"])
+	}
+}
+
+// A cancel_at by the period's end is a cancellation already, and one after it moves to the
+// period's end.
+func TestCancelWithCancelAtSet(t *testing.T) {
+	p, f := portalCanceled(t, 0)
+	before := f.countRequests("POST /v1/subscriptions/sub_1")
+	if err := p.CancelAtPeriodEnd(t.Context(), "sub_1", "cancel:1"); err != nil {
+		t.Fatal(err)
+	}
+	if n := f.countRequests("POST /v1/subscriptions/sub_1") - before; n != 0 {
+		t.Errorf("%d updates of a canceled subscription", n)
+	}
+	p, _ = portalCanceled(t, 24*time.Hour)
+	if err := p.CancelAtPeriodEnd(t.Context(), "sub_1", "cancel:2"); err != nil {
+		t.Fatal(err)
+	}
+	snap, err := p.GetSubscription(t.Context(), "sub_1")
+	if err != nil || !snap.CancelAtPeriodEnd || !snap.PeriodEnd.Equal(time.Unix(portalCancelAt, 0)) {
+		t.Errorf("after the cancellation: %+v, %v", snap, err)
+	}
+}
+
+// A plan does not change while the portal's cancellation waits, in either timing.
+func TestChangePriceRefusesACanceling(t *testing.T) {
+	p, f, lower, higher := onPlan(t, "")
+	f.mu.Lock()
+	f.sub("sub_1").o["cancel_at"] = f.item(f.sub("sub_1"))["current_period_end"]
+	f.mu.Unlock()
+	before := f.countRequests("POST /v1/subscriptions/sub_1")
+	for to, when := range map[supporters.PriceRef]supporters.ChangeTiming{higher: supporters.ChangeNowProrated, lower: supporters.ChangeAtPeriodEnd} {
+		if err := p.ChangePrice(t.Context(), "sub_1", to, when, "change:"+string(when)); !errors.Is(err, supporters.ErrPaymentCanceling) {
+			t.Errorf("ChangePrice(%s) = %v, want ErrPaymentCanceling", when, err)
+		}
+	}
+	if n := f.countRequests("POST /v1/subscriptions/sub_1") - before; n != 0 || len(f.schedules) != 0 {
+		t.Errorf("%d updates and %d schedules", n, len(f.schedules))
 	}
 }
 
