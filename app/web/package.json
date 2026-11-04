@@ -18,7 +18,7 @@
   "dependencies": {
     "@my/ui": "workspace:*",
     "@mycroblog/mykit": "workspace:*",
-    "@tanstack/react-query": "5.105.0",
+    "@tanstack/react-query": "5.105.1",
     "@tanstack/react-router": "1.170.46",
     "livekit-client": "2.23.0",
     "openapi-fetch": "0.17.0",
