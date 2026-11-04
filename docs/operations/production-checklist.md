@@ -129,6 +129,7 @@ or with `my instance set`. `my config check -instance` warns about the texts, co
 
 **Details**: [instance settings](instance-settings.md), [registration](registration.md),
 [search engines and AI crawlers](crawlers.md), [CAPTCHA](captcha.md) (what to write in the privacy policy),
+[privacy policy template](privacy-policy-template.md), [record of processing activities template](processing-record-template.md),
 [monitoring](monitoring.md) (the status page).
 
 ## Email
