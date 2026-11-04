@@ -10,9 +10,9 @@ export const cachePrefix = "my";
 export const mediaCacheName = `${cachePrefix}-media`;
 /** The runtime cache of the instance theme's stylesheets (ADR-0059). */
 export const themeCacheName = `${cachePrefix}-theme`;
-/** The runtime cache of the instance's own icon and logos (/brand/, ADR-0116). */
+/** The runtime cache of the instance's own icon and logos (/brand/, ADR-0059). */
 export const brandCacheName = `${cachePrefix}-brand`;
-/** The runtime cache of the Noto Color Emoji splits (ADR-0095 §3), which the precache leaves out. */
+/** The runtime cache of the Noto Color Emoji splits (ADR-0091 §10), which the precache leaves out. */
 export const emojiFontCacheName = `${cachePrefix}-emoji-font`;
 
 /**
@@ -30,7 +30,7 @@ export const clearCachesMessage = { type: "CLEAR_CACHES" } as const;
 /** The worker's reply to clearCachesMessage. */
 export const cachesClearedMessage = { type: "CACHES_CLEARED" } as const;
 
-/** Asks a worker whether it precached the file at `url`; it replies on the port (ADR-0141 §2). */
+/** Asks a worker whether it precached the file at `url`; it replies on the port (ADR-0028 §10). */
 export function hasPrecachedMessage(url: string) {
   return { type: "HAS_PRECACHED", url } as const;
 }

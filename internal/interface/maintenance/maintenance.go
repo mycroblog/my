@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package maintenance answers every request of the maintenance mode (ADR-0084): a 503 that says
+// Package maintenance answers every request of the maintenance mode (ADR-0088): a 503 that says
 // the server is under maintenance, in the form each surface understands, without touching any
 // adapter. It also renders the maintenance page that `my maintenance export` writes out, and in
 // the same template the static closure page and the front ends' configuration that
@@ -24,10 +24,10 @@ import (
 // ProblemType is the type of the client API's maintenance problem.
 const ProblemType = "/api/v1/problems/maintenance"
 
-// MaxRetryAfter bounds the Retry-After counted to Page.Until (ADR-0084 §3).
+// MaxRetryAfter bounds the Retry-After counted to Page.Until (ADR-0088 §10).
 const MaxRetryAfter = 24 * time.Hour
 
-// Paths that the maintenance mode answers by path (ADR-0084 §3). They repeat the paths of the
+// Paths that the maintenance mode answers by path (ADR-0088 §10). They repeat the paths of the
 // packages of the normal server, which this package does not import.
 const (
 	PathLiveness       = "/healthz"
@@ -79,7 +79,7 @@ func New(o Options) *Handler {
 	return &Handler{o: o}
 }
 
-// ServeHTTP answers by the table of ADR-0084 §3, routing only as far as that table needs.
+// ServeHTTP answers by the table of ADR-0088 §10, routing only as far as that table needs.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	hd := w.Header()
 	hd.Set("Retry-After", strconv.Itoa(h.retryAfter()))

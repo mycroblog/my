@@ -29,7 +29,7 @@ export function requestDataExportMutation(api: Api) {
   };
 }
 
-/** Puts a requested export at the top of the cached list, as the server answered it (ADR-0045). */
+/** Puts a requested export at the top of the cached list, as the server answered it (ADR-0028). */
 export function cacheRequestedExport(api: Api, queryClient: QueryClient, requested: DataExport): void {
   queryClient.setQueryData(dataExportsQueryOptions(api).queryKey, (list: Schemas["DataExportList"] | undefined) => ({
     items: [requested, ...(list?.items ?? []).filter((item) => item.id !== requested.id)],

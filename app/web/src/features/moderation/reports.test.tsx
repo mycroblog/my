@@ -558,7 +558,7 @@ describe("a report's page", () => {
     expect(screen.queryByRole("link", { name: `Report on ${isolated("@bob")}` })).not.toBeInTheDocument();
   });
 
-  // #464, ADR-0045: the action marks the queue stale, and the route fetches it again before showing it, so the
+  // #464, ADR-0028: the action marks the queue stale, and the route fetches it again before showing it, so the
   // queue never shows the report as it was before the action, however slowly the server answers.
   test("back on the queue after an action, the resolved report is gone at once, however slowly the lists come", async () => {
     const api = reportsServer([spam, older]);

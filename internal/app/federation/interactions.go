@@ -68,7 +68,7 @@ func registerFavouriteProjectors(r *uow.Projectors, rec recorder) {
 }
 
 // registerReactionProjectors records the Like and Undo Like of a local account's emoji reaction
-// to a remote status (ADR-0052 §3), as registerFavouriteProjectors does for a favourite: the same
+// to a remote status (ADR-0051 §8), as registerFavouriteProjectors does for a favourite: the same
 // activity of the same Like slot, to the status's author, whose Like carries the emoji
 // (reactionLikeDocument). Remote accounts react only to local statuses, so the reaction to a
 // remote status is a local account's.
@@ -113,7 +113,7 @@ func registerReactionProjectors(r *uow.Projectors, rec recorder) {
 }
 
 // reactionLikeDocument returns the Like of reaction re to the remote status st, or for an Undo
-// the Undo that embeds it (ADR-0052 §3): the Like of likeDocument with the emoji as its content
+// the Undo that embeds it (ADR-0051 §8): the Like of likeDocument with the emoji as its content
 // and _misskey_reaction, the Unicode emoji or ":shortcode:" of the custom emoji, and the Emoji tag
 // of a custom emoji whose image can be shown. A custom emoji without its shortcode (one the
 // command could not read) leaves the emoji out; the Undo still names the Like.
@@ -211,12 +211,12 @@ type InteractionHandlersDeps struct {
 }
 
 // RegisterInteractionHandlers sets the inbox handlers of boosts, favourites, and emoji reactions
-// (federation.md §3.4, ADR-0052 §1):
+// (federation.md §3.4, ADR-0051 §6):
 //
 //   - Announce of a post: content.RecordRemoteBoost. The post is found by its id; a remote post
 //     that is not stored is taken from the Announce when it is embedded from the actor's origin,
 //     fetched from its origin otherwise, and stored only when a local account follows the
-//     booster (ADR-0034). A local post must be one the booster may see and boost.
+//     booster (ADR-0006). A local post must be one the booster may see and boost.
 //   - EmojiReact of a local post whose content is an emoji (reactionOf):
 //     content.RecordRemoteReaction; one with anything else is dropped.
 //   - Like of a local post: content.RecordRemoteReaction when its _misskey_reaction, or else its
@@ -262,7 +262,7 @@ func activityURI(in *InboxActivity) string {
 
 func (h interactionHandlers) announce(ctx context.Context, in *InboxActivity) error {
 	if in.Relay != nil && in.Activity.Actor == in.Relay.ActorURI {
-		// The Announce of a LitePub relay carries a post to take in, not a boost (ADR-0061).
+		// The Announce of a LitePub relay carries a post to take in, not a boost (ADR-0006).
 		return h.d.Statuses.RelayedAnnounce(ctx, in)
 	}
 	st, err := h.d.Statuses.boosted(ctx, in)
@@ -306,7 +306,7 @@ func (h interactionHandlers) like(ctx context.Context, in *InboxActivity) error 
 }
 
 // reactionOf returns the emoji of a Like or an EmojiReact, and whether it is an emoji reaction
-// (ADR-0052 §1): its _misskey_reaction, or else its content, is one Unicode emoji or the
+// (ADR-0051 §6): its _misskey_reaction, or else its content, is one Unicode emoji or the
 // ":shortcode:" of a custom emoji with exactly one Emoji tag of that name (with or without
 // colons). A custom emoji is of the server of its Emoji's id, or of actorDomain without one. An
 // emoji of another server than actorDomain is borrowed (RemoteReactionEmoji.Borrowed): one of this
@@ -420,7 +420,7 @@ func (h interactionHandlers) undoLike(ctx context.Context, in *InboxActivity) er
 	return interactionError(err)
 }
 
-// boosted returns the post that an Announce boosts (federation.md §3.4, ADR-0034). A local post
+// boosted returns the post that an Announce boosts (federation.md §3.4, ADR-0006). A local post
 // and a stored remote post are found by the object's id. A remote post that is not stored is
 // stored only when a local account follows the booster: from the Announce when it embeds the
 // post from the booster's origin, fetched from the post's origin otherwise. Anything else drops
@@ -445,7 +445,7 @@ func (h *StatusHandlers) boosted(ctx context.Context, in *InboxActivity) (appcon
 		return appcontent.Status{}, err
 	}
 	if !followed {
-		return appcontent.Status{}, fmt.Errorf("%w: Announce of %s by %s, whom no local account follows (ADR-0034)", ErrDropActivity, ref.ID, act.Actor)
+		return appcontent.Status{}, fmt.Errorf("%w: Announce of %s by %s, whom no local account follows (ADR-0006)", ErrDropActivity, ref.ID, act.Actor)
 	}
 	if err := h.untombstoned(ctx, ref.ID, ""); err != nil {
 		return appcontent.Status{}, fmt.Errorf("%w: %w", ErrDropActivity, err)

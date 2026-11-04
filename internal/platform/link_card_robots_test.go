@@ -32,7 +32,7 @@ func (w *agentWeb) Do(ctx context.Context, req *kernel.HTTPRequest) (*kernel.HTT
 }
 
 // TestLinkCardRobotsThroughTheAPI runs robots.txt, the page's directives, and the setting through
-// the real stores and the client API (ADR-0131), and checks that the fetches of a card name the
+// the real stores and the client API (ADR-0062), and checks that the fetches of a card name the
 // crawler while the media proxy and the verification of a creator keep the server's name.
 func TestLinkCardRobotsThroughTheAPI(t *testing.T) {
 	t.Parallel()

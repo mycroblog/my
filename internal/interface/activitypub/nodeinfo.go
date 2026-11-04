@@ -84,7 +84,7 @@ type nodeThumbnail struct {
 // ids) with the thumbnail, and the closure of the service.
 func metadata(name, sourceURL string, m NodeMetadata, mode federation.Mode) map[string]any {
 	// federationMode tells other servers and their users the direction this server federates
-	// in (ADR-0076); serviceClosure tells them whether and when it closes (ADR-0088 §2).
+	// in (ADR-0006); serviceClosure tells them whether and when it closes (ADR-0088 §2).
 	out := map[string]any{"nodeName": name, "federationMode": mode, "serviceClosure": newNodeServiceClosure(m.Closure)}
 	if sourceURL != "" {
 		// Where users get the source (AGPL-3.0 section 13, ADR-0011), also when it is a mailto: address, which

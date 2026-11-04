@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Defaults of the cache of unwrapped DEKs (ADR-0121 §3).
+// Defaults of the cache of unwrapped DEKs (ADR-0019 §13).
 const (
 	DefaultDEKCacheTTL     = 10 * time.Minute
 	DefaultDEKCacheEntries = 1024
@@ -31,7 +31,7 @@ type DEKCacheOptions struct {
 
 // NewDEKCache returns a KeyManager that keeps the results of km.UnwrapKey for opts.TTL, at most
 // opts.Entries of them, so that a KeyManager that calls a KMS is not called for every use of a
-// sealed secret (ADR-0121 §3). An entry is found by a hash of the key ID, the wrapped DEK, and
+// sealed secret (ADR-0019 §13). An entry is found by a hash of the key ID, the wrapped DEK, and
 // the AAD, so a different wrapped DEK or AAD always reaches km. WrapKey is never cached. Errors
 // are not cached either. It returns km itself when opts disable the cache.
 //

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The main flow of M2 (#27) against a real `my serve` on SQLite (e2e/server.ts), in every width × locale
-// project (ADR-0015, ADR-0027): sign up, sign in through the server's screen (OAuth 2.0 with PKCE,
-// ADR-0030), post with a content warning and an image with its description, see the post on the home and
+// project (ADR-0015, ADR-0110): sign up, sign in through the server's screen (OAuth 2.0 with PKCE,
+// ADR-0090), post with a content warning and an image with its description, see the post on the home and
 // the local timeline, follow (an account that approves its followers too), and the notifications that
 // follow. Two users take part, each in a browser context of its own. Every screen on the way is checked
 // with axe, for horizontal scrolling and against an ARIA snapshot.

@@ -145,7 +145,7 @@ func (s *Service) Signal(ctx context.Context, accountID, roomID string, in Signa
 			from = p
 		}
 	}
-	// Two sessions connect when at least one of them is a speaker (P1).
+	// Two sessions connect when at least one of them is a speaker (ADR-0101 §4).
 	if from.Role != voice.RoleSpeaker && to.Role != voice.RoleSpeaker {
 		return &SignalError{Field: "to"}
 	}
@@ -235,7 +235,7 @@ func (s *Service) mayPublish(ctx context.Context, v RoomView, p Participant) (bo
 }
 
 // send puts a message for a session in the KeyValueStore for MessageTTL and signals its ID, with
-// the session it is for, to the streams of the room (ADR-0101 §4, B1): only the stream of that
+// the session it is for, to the streams of the room (ADR-0101 §4): only the stream of that
 // session reads it.
 func (s *Service) send(ctx context.Context, m Message) error {
 	b, err := json.Marshal(m)

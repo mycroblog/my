@@ -2,8 +2,8 @@
 // An account's admin page below its heading (FR-714, FR-703, FR-713; screens/moderation-account.md), in @my/ui's
 // TriageLayout: the summary with what its actions take away now as badges, the form of a new action as the decision
 // (A6: a moderator from a report comes to act), then the evidence and the tools. The account with its state, registration
-// (with the invite it signed up with and who created it, ADR-0108 §5) and roles; what its actions take away now; its email address and IP addresses, which a local account shows only
-// when the moderator presses "show" (each time is recorded in the audit log, ADR-0038); whether its user has
+// (with the invite it signed up with and who created it, ADR-0106 §18) and roles; what its actions take away now; its email address and IP addresses, which a local account shows only
+// when the moderator presses "show" (each time is recorded in the audit log, ADR-0058); whether its user has
 // two-factor authentication, with its removal, which asks first (recorded in the audit log); for manage_login_recovery,
 // issuing a password reset link for its user, which asks first, is recorded in the audit log, and shows the link
 // once with a copy button; the moderation actions

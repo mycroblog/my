@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The page of one of the server's announcements (/announcements/$id, web-client/screens/announcement.md), in the states
-// of ADR-0112 §1.
+// of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";

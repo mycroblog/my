@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// A timeline as a WAI-ARIA feed (web-client/README.md Y6, ADR-0027; https://www.w3.org/WAI/ARIA/apg/patterns/feed/):
+// A timeline as a WAI-ARIA feed (web-client/README.md Y6, ADR-0110; https://www.w3.org/WAI/ARIA/apg/patterns/feed/):
 // role="feed" labelled by a visible heading, one focusable <article> per item with aria-posinset and
 // aria-setsize, aria-busy while items are loading, and the feed keys:
 //
@@ -211,7 +211,7 @@ export type FeedProps<T> = Omit<
   /**
    * Keeps the item the reader is looking at where it is on screen when items are inserted above it, unless the
    * feed's top is in view (then the new items show). The feed does this itself, since the browser's scroll
-   * anchoring is not in every browser (Safari), and turns the browser's off for it (ADR-0077).
+   * anchoring is not in every browser (Safari), and turns the browser's off for it (ADR-0013).
    */
   keepPosition?: boolean | undefined;
   /** Called with whether the feed's first item is in view, when that changes (the reader is at the top). */
@@ -220,7 +220,7 @@ export type FeedProps<T> = Omit<
 
 /**
  * A timeline that scrolls with the page. Items are not inserted above the reader on their own unless the caller sets
- * `keepPosition`; by default show a NewItemsButton above it instead (web-client/README.md Y7, ADR-0077). The keys are listed in the module comment above;
+ * `keepPosition`; by default show a NewItemsButton above it instead (web-client/README.md Y7, ADR-0013). The keys are listed in the module comment above;
  * document them to users where the feed is used, since the feed role has no keyboard convention.
  */
 export function Feed<T>({

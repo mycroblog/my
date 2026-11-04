@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's rate limit in every width × locale project (web-client/09-app-shell.md §9 "外枠の読み込み" and "レート制限", ADR-0027):
+// The server's rate limit in every width × locale project (web-client/09-app-shell.md §9 "外枠の読み込み" and "レート制限", ADR-0110):
 // when what the shell reads on every page is refused with 429, a reloaded page stays in the user's locale, says in the
 // top bar when it loads again (Retry-After), and loads again by itself then. `vite preview` has no API, so the spec
 // answers the OAuth refresh and the client API with `page.route`. Texts come from the project's catalog.

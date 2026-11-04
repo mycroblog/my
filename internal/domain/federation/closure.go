@@ -10,7 +10,7 @@ import "time"
 
 // ClosureSends reports whether a closed server that delivers its Deletes sends the outbound
 // activity a: only the Delete of a local actor, which goes to the actor's followers and to every
-// known shared inbox whatever the federation mode (the exception to ADR-0076's off). Everything
+// known shared inbox whatever the federation mode (the exception to ADR-0006's off). Everything
 // else that was queued is skipped when it runs. The domain blocks still apply
 // (Deliverable).
 func ClosureSends(a OutboundActivity) bool {

@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// Deactivating one's own account (ADR-0145). A user who confirms it with the password, a code of
+// Deactivating one's own account (ADR-0089). A user who confirms it with the password, a code of
 // the second factor, a passkey, or a linked login provider hides their account for
 // account.DeactivationPeriod: every session and token ends in the transaction
 // (RegisterLifecycleProjectors), and one email states the date of the deletion where the server
@@ -42,7 +42,7 @@ const DeleteConfirmationFreshness = 15 * time.Minute
 var ErrSignInAgain = errors.New("identity: sign in again to confirm")
 
 // LiveSubscriptions tells whether a user has a live subscription to a supporter plan, which keeps
-// them from deactivating the account (ADR-0145 §1). The composition root implements it on the
+// them from deactivating the account (ADR-0089 §11). The composition root implements it on the
 // supporters module, which is built after this one.
 type LiveSubscriptions interface {
 	HasLiveSubscription(ctx context.Context, userID string) (bool, error)
@@ -109,7 +109,7 @@ func (s *Service) deactivationRefused(ctx context.Context, userID string, access
 	return nil
 }
 
-// DeactivateOwnAccount deactivates the local account that a user logs in as (ADR-0145), once the
+// DeactivateOwnAccount deactivates the local account that a user logs in as (ADR-0089), once the
 // user's current password, a code or recovery code of the second factor, a passkey, or a linked
 // login provider confirms it, and returns when the account is deleted. The confirmation email is
 // enqueued in the transaction of the deactivation, where the server sends mail. A refusal fails

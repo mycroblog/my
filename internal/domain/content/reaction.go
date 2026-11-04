@@ -10,11 +10,11 @@ import (
 	"time"
 )
 
-// This file holds the emoji reactions of accounts to statuses (FR-116, ADR-0052): a Unicode
+// This file holds the emoji reactions of accounts to statuses (FR-116, ADR-0051): a Unicode
 // emoji or a custom emoji, counted per emoji in the status_reaction_counts projection.
 
 // MaxStatusReactions is the number of emoji whose counts a status presents, the most used first
-// (ADR-0052 §5); the others are seen in the list of the accounts that reacted.
+// (ADR-0051 §10); the others are seen in the list of the accounts that reacted.
 const MaxStatusReactions = 20
 
 // ErrInvalidReaction reports an emoji that a reaction cannot have: neither one Unicode emoji nor
@@ -40,7 +40,7 @@ func (e ReactionEmoji) Key() string {
 // Valid reports whether exactly one of the emoji is set.
 func (e ReactionEmoji) Valid() bool { return (e.Unicode == "") != (e.CustomEmojiID == "") }
 
-// Reaction is an account's emoji reaction to a status (reactions, ADR-0052 §1). An account
+// Reaction is an account's emoji reaction to a status (reactions, ADR-0051 §6). An account
 // reacts to a status at most once with each emoji; taking a reaction back deletes it, and
 // reacting again makes a new one.
 type Reaction struct {
@@ -92,7 +92,7 @@ var emojiForms = sync.OnceValue(func() map[string]string {
 
 // ParseReactionShortcode returns the shortcode of a custom emoji reaction, ":shortcode:", and
 // whether s is one. The suffix "@host" that some implementations add to the shortcode of
-// another server's emoji is dropped (ADR-0052 §1), as are colons around a bare shortcode
+// another server's emoji is dropped (ADR-0051 §6), as are colons around a bare shortcode
 // (TrimShortcode).
 func ParseReactionShortcode(s string) (string, bool) {
 	if len(s) < 3 || s[0] != ':' || s[len(s)-1] != ':' {

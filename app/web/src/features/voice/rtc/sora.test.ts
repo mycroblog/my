@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The Sora method with a mocked sora-js-sdk (ADR-0102 §3, §6): the join in the grant's role with the grant's metadata
+// The Sora method with a mocked sora-js-sdk (ADR-0101 §12, §15): the join in the grant's role with the grant's metadata
 // and the session's client_id, whose audio is heard, joining again sendrecv with the same client_id to speak, the
 // microphone (one change after another, the latest last), going back to recvonly, joining again after the connection
 // went away, and leaving.

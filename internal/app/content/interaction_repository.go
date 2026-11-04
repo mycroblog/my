@@ -104,7 +104,7 @@ type InteractionRepository interface {
 
 	// Lookups.
 
-	// Emoji reactions (ADR-0052): a resource deleted when it is taken back, and the counts per
+	// Emoji reactions (ADR-0051): a resource deleted when it is taken back, and the counts per
 	// emoji of each status that is not deleted (status_reaction_counts), written only by this
 	// module's projectors and rebuild.
 

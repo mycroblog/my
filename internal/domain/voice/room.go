@@ -274,7 +274,7 @@ type Settings struct {
 // MaxIconLength bounds the bytes of the Unicode emoji of an icon, as icon_emoji_key does.
 const MaxIconLength = 100
 
-// Icon is the emoji icon of a room, in the shape of the emoji of a reaction (ADR-0052 §1): a
+// Icon is the emoji icon of a room, in the shape of the emoji of a reaction (ADR-0051 §6): a
 // Unicode emoji, fully qualified, or the ID of a custom emoji of this instance. At most one is
 // set; the zero Icon is no icon. The application layer checks that the emoji is one a local
 // account may use.

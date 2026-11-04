@@ -185,7 +185,7 @@
   },
   "status.federation.stays_local": {
     "defaultMessage": "連合先には届きません",
-    "description": "Short note at the end of the action bar of a post of another server while this server sends nothing to other servers (federation direction 'Receive only' or 'Off', ADR-0076): replies, boosts, favourites and reactions are recorded on this server but do not reach the post's server. It also describes those buttons."
+    "description": "Short note at the end of the action bar of a post of another server while this server sends nothing to other servers (federation direction 'Receive only' or 'Off', ADR-0006): replies, boosts, favourites and reactions are recorded on this server but do not reach the post's server. It also describes those buttons."
   },
   "status.favourite.off": {
     "defaultMessage": "お気に入りから外しました",

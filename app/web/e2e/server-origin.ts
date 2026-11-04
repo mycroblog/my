@@ -84,7 +84,7 @@ export const demoServerPort = demo;
 
 /**
  * The origin of the `my serve` of the test build that `node e2e/server.ts demo` starts with the demo scenario
- * (demo/scenario.ts, ADR-0117), on a database of its own, for the specs that need real data (e2e/demo-*.spec.ts,
+ * (demo/scenario.ts, ADR-0015), on a database of its own, for the specs that need real data (e2e/demo-*.spec.ts,
  * run with E2E_DEMO=1) and for `scripts/task.sh web:demo`.
  */
 export const demoServerURL = `http://localhost:${demoServerPort}`;

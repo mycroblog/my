@@ -10,7 +10,7 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
-// TestTracing checks the database spans of ADR-0063 §1: one per transaction attempt and one
+// TestTracing checks the database spans of ADR-0055 §13: one per transaction attempt and one
 // per query of the pool (pgx's QueryTracer), named after the sqlc query or the SQL keyword,
 // with the database system and the query's name only.
 func TestTracing(t *testing.T) {

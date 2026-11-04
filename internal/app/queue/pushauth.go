@@ -13,7 +13,7 @@ var ErrPushUnauthenticated = errors.New("queue: the push request is not authenti
 
 // PushAuthenticator checks the credential that a platform's queue or scheduler (Cloud Tasks,
 // Cloud Scheduler) sends with each request to the endpoints of a PushReceiver and a Trigger
-// (ADR-0120 §5). A signal only points at a job of the database queue, so a forged one can
+// (ADR-0004 §13). A signal only points at a job of the database queue, so a forged one can
 // neither create a job nor run one before its RunAt; the check keeps everyone else from making
 // the server read the database on their behalf.
 type PushAuthenticator interface {

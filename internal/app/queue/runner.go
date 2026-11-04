@@ -47,7 +47,7 @@ type Source interface {
 	// Bury moves the claimed job j to the dead jobs with lastErr, failed at failedAt.
 	Bury(ctx context.Context, worker string, j Job, lastErr string, failedAt time.Time) error
 	// ClaimJob leases the job id to worker until now+lease, like Claim but for one job named
-	// by a wake-up signal (PushReceiver, ADR-0120 §2), and increments its Attempt. The result
+	// by a wake-up signal (PushReceiver, ADR-0004 §10), and increments its Attempt. The result
 	// tells why it did not: the job is not due before its RunAt (ClaimNotDue, with the job's
 	// RunAt), an earlier job of its ordering key holds it back (ClaimHeldBack), or another
 	// worker holds its lease or there is no such job, because it completed, became a dead job,
@@ -110,9 +110,9 @@ type RunnerOptions struct {
 	Logger *slog.Logger
 	// Meter records my.job.duration and my.job.wait (ADR-0055 §3); nil records nothing.
 	Meter kernel.Meter
-	// Tracer records the span of each run (JobSpan, ADR-0063 §2); nil records nothing.
+	// Tracer records the span of each run (JobSpan, ADR-0055 §14); nil records nothing.
 	Tracer kernel.Tracer
-	// Attempts records the runs that did not succeed (ADR-0064 §1); nil records nothing. A
+	// Attempts records the runs that did not succeed (ADR-0004 §5); nil records nothing. A
 	// failure to record is logged and does not change the job's result.
 	Attempts AttemptLog
 	// Errors receives the panics of the handlers and the jobs that become dead (ADR-0103 §2),
@@ -282,7 +282,7 @@ func (r *PullRunner) runClaimed(ctx context.Context, j Job, now, leaseEnd time.T
 	if !found {
 		jobType = JobTypeOther // a type no handler knows is not a finite label value
 	}
-	// Each run is the root of a new trace, linked to the span that enqueued the job (ADR-0063 §2).
+	// Each run is the root of a new trace, linked to the span that enqueued the job (ADR-0055 §14).
 	tracer := r.opts.Tracer
 	ctx, span := tracer.Start(tracer.Linked(ctx, j.TraceParent), JobSpan.Named(jobType),
 		kernel.NewAttrs(kernel.StringAttr(LabelJobType, jobType), kernel.IntAttr(AttrJobAttempt, int64(j.Attempt))))
@@ -357,7 +357,7 @@ func (r *PullRunner) runClaimed(ctx context.Context, j Job, now, leaseEnd time.T
 	}
 }
 
-// recordAttempt stores the record of a run that did not succeed (ADR-0064 §1). The record is
+// recordAttempt stores the record of a run that did not succeed (ADR-0004 §5). The record is
 // written before the result, so that a job listed as retrying or dead has the record of its
 // last run; a failure to write it is logged and leaves the result alone.
 func (r *PullRunner) recordAttempt(ctx context.Context, j Job, outcome, lastErr string, started, finished time.Time) {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The main navigation, one landmark for every width (web-client/README.md D1, D2, ADR-0039): a tab bar on the bottom
+// The main navigation, one landmark for every width (web-client/README.md D1, D2, ADR-0110): a tab bar on the bottom
 // edge of phones, a side rail of icons with short labels on tablets (md), and a sidebar with full labels on
 // desktops (lg). The link to the current section has aria-current="page".
 //
@@ -190,7 +190,7 @@ const announcementsItem: NavigationItem = {
 };
 
 /**
- * The user's lists (ADR-0122), after voice chat in the rail and in the menu's sheet, never in the tab bar: a list is no
+ * The user's lists (ADR-0013), after voice chat in the rail and in the menu's sheet, never in the tab bar: a list is no
  * place switched to many times a day. A list's timeline (`/lists/{id}`) is in its section.
  */
 const listsItem: NavigationItem = {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A new post is on the viewer's profile from the moment the profile opens again, from the navigation or back in
-// the history (ADR-0045, web-client/README.md S1, S7), against a real `my serve` on SQLite (e2e/server.ts) in every
+// the history (ADR-0028, web-client/README.md S1, S7), against a real `my serve` on SQLite (e2e/server.ts) in every
 // width × locale project. The post marks stale the lists that no page shows; the profile's route fetches its
 // marked list again and the router waits for it (defaultStaleReloadMode "blocking"), so the profile never
 // renders the posts from before. Every GET of the client API takes 800 ms more, as over a real network, so

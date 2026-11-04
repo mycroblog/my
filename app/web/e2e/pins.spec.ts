@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Pinned posts in every width × locale project (FR-403, ADR-0027): the viewer's profile starts its posts tab
+// Pinned posts in every width × locale project (FR-403, ADR-0110): the viewer's profile starts its posts tab
 // with the pinned posts, and the viewer pins a post from its menu with the keyboard. `vite preview` has no
 // API, so the spec answers the token refresh and the client API with `page.route`, as a signed-in user's
 // server would. Names come from the project's catalog, so the spec finds the same elements in every locale.

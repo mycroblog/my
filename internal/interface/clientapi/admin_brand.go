@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// The brand images (ADR-0116): the admin operations that check, set, and clear the instance's
+// The brand images (ADR-0059): the admin operations that check, set, and clear the instance's
 // icon, logo, and dark logo (manage_settings), and Instance.icon / logo / logo_dark of
 // GET /instance.
 

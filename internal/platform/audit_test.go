@@ -18,7 +18,7 @@ import (
 
 // TestAuditLogOfEveryModule checks, through the composition root on SQLite, that the
 // administrative use cases of the identity, instance, and moderation modules each record one
-// audit log entry (ADR-0037) with their actor, target, and label, and that operations that
+// audit log entry (ADR-0058) with their actor, target, and label, and that operations that
 // fail or change nothing record none.
 func TestAuditLogOfEveryModule(t *testing.T) {
 	t.Parallel()

@@ -90,7 +90,7 @@ func TestPrometheusExposition(t *testing.T) {
 	}
 }
 
-// TestRuntimeMetrics checks the Go runtime metrics of ADR-0056 §1, which the Meter reports
+// TestRuntimeMetrics checks the Go runtime metrics of ADR-0055 §10, which the Meter reports
 // without any declaration.
 func TestRuntimeMetrics(t *testing.T) {
 	m := newPrometheus(t)

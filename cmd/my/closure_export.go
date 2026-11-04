@@ -18,7 +18,7 @@ import (
 )
 
 // exportClosureHTML implements `my admin closure export-html` (ADR-0088 §6): the static closure
-// page in the template of the maintenance page (ADR-0084 §4), as <out>/<locale>.html and
+// page in the template of the maintenance page (ADR-0088 §11), as <out>/<locale>.html and
 // <out>/index.html, and the examples of the front ends' configuration that serve it, for the
 // domain to answer once the server is stopped. It reads the closure and the instance from the
 // database, which the export needs: the closure is refused before the server is closed.

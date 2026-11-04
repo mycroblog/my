@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The emoji reactions under a post (FR-116, ADR-0052 §5): one toggle per emoji with its count, which the viewer
+// The emoji reactions under a post (FR-116, ADR-0051 §10): one toggle per emoji with its count, which the viewer
 // presses to react with that emoji or to take the reaction back, and a button that lists the accounts that reacted.
 // A custom emoji of another server is shown with its count but is no button: nobody here can react with it.
 import {

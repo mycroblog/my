@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The latest notifications in the third column of a timeline page on a desktop (xl; web-client/09-app-shell.md §9), in
-// the states of ADR-0112 §1. The rows themselves are in the stories of the notifications page.
+// the states of ADR-0079 §13 The rows themselves are in the stories of the notifications page.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";

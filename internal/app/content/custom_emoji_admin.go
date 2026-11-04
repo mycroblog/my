@@ -98,7 +98,7 @@ const EventCustomEmojiAdministered = "content.custom_emoji_administered"
 
 // CustomEmojiAdministered is emitted, in the transaction of the operation, for every operation
 // of an administrator on a custom emoji. The moderation module writes its audit log entry from
-// it (ADR-0037); the webhooks of ADR-0060 (custom_emoji.created, .updated, .deleted) are to
+// it (ADR-0058); the webhooks of ADR-0060 (custom_emoji.created, .updated, .deleted) are to
 // follow it too. Recording a remote emoji from a received document emits nothing.
 type CustomEmojiAdministered struct {
 	// AuditID is the ID of the audit log entry, generated before the transaction so that a

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 /**
- * Keeps what a bot must remember across restarts (ADR-0094 §6): the notifications it processed, the position of the
+ * Keeps what a bot must remember across restarts (ADR-0093 §14): the notifications it processed, the position of the
  * catch-up, the last runs of the scheduled jobs, and the rotated refresh token. MemoryStore and FileStore are the
  * implementations of the library; implement Store to keep the state elsewhere, such as in a database. One Store
  * serves one bot process: it needs no locking between processes. Times are milliseconds since the Unix epoch.

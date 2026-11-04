@@ -228,7 +228,7 @@ VAPID key generated on every start and sends its push messages to the fake push 
 (`my dev push-service` on `https://localhost:8930`, or `PUSH_SERVICE_PORT`), which starts and stops with it. It prints the URL
 (`http://localhost:8787`, or `DEMO_PORT`), Mailpit's web UI (`http://127.0.0.1:8025`, where the server's email
 arrives), and every person's email address and password. The scenario is created through `bin/my` and the client and
-admin APIs only, never SQL (ADR-0117): an item that no command or API can make is an API to add. When you change the
+admin APIs only, never SQL (ADR-0015): an item that no command or API can make is an API to add. When you change the
 API, keep `app/web/demo/` working; with the test build and Mailpit running, its specs (`e2e/demo-*.spec.ts`) run alone:
 
 ```sh

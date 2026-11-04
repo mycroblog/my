@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Runs the L4 task tests (ADR-0110 §7, ADR-0114): an agent (Claude Code, non-interactive) does each task of the
+// Runs the L4 task tests (ADR-0110 §7, ADR-0015): an agent (Claude Code, non-interactive) does each task of the
 // screens' L1 files in a browser it sees only through ARIA snapshots (the Playwright MCP server), against the demo
-// server (`node e2e/server.ts demo`, ADR-0117 §4: the test build with the demo scenario of demo/scenario.ts and its
+// server (`node e2e/server.ts demo`, ADR-0015 §8: the test build with the demo scenario of demo/scenario.ts and its
 // email in Mailpit), signed in as the person of the scenario that the front matter of the screen's L1 file names
 // (screens.ts), and the run writes the steps, backtracks, and lostness of every task to one JSON file (transcript.ts
 // says how they are measured). A task that reads email gets the person's mailbox, Mailpit's web UI, in a second
 // tab, and its steps there are recorded apart from the measures. `scripts/task.sh web:l4` runs it, with Mailpit and
 // the test build of `bin/my`; the Nightly workflow runs it on main with the agent authenticated by Workload Identity
-// Federation (ADR-0115).
+// Federation (ADR-0079).
 //
 //   node l4/run.ts [--screen <name>]... [--since <commit>] [--cap <n>] [--dry-run] [--out <file>]
 //

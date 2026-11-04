@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The client API (ADR-0016, ADR-0029, ADR-0066; the api context of scripts/changed-contexts.sh). The split spec in
+# The client API (ADR-0016; the api context of scripts/changed-contexts.sh). The split spec in
 # api/spec/ is the source of truth and api/openapi.yaml is its bundle; oapi-codegen is pinned in tools/go.mod and
 # the Redocly CLI here. The bundle, the Go code, and the TypeScript types of @mycroblog/mykit are committed; the web
 # client's TypeScript types are not (ADR-0081).

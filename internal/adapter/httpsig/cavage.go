@@ -157,7 +157,7 @@ func verifyCavage(r *federation.SignedRequest, _ *federation.Signature, opts fed
 }
 
 // signCavage signs req with draft-cavage. The library always declares algorithm="hs2019";
-// an RSA signature is declared as rsa-sha256 instead (ADR-0032). The algorithm parameter is
+// an RSA signature is declared as rsa-sha256 instead (ADR-0006). The algorithm parameter is
 // not covered by the signature, so rewriting it keeps the signature valid.
 func signCavage(req *kernel.HTTPRequest, key federation.SigningKey, opts federation.SignOptions) error {
 	alg, err := cavageAlgorithm(opts.Algorithm)

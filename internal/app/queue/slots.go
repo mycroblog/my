@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 )
 
-// SlotRunner runs up to a fixed number of jobs at once in one process (ADR-0140). Each slot is a
+// SlotRunner runs up to a fixed number of jobs at once in one process (ADR-0004). Each slot is a
 // PullRunner under its own worker name that claims a job only when it is free, so a claimed job
 // never waits for a slot and a job's lease means what it means with one runner.
 //

@@ -21,7 +21,7 @@ func KeyIDKind(keyID string) string {
 // NewKeyRouter returns a KeyManager that wraps with current and unwraps with the KeyManager of
 // the kind of the key ID (KeyIDKind): current for its own kind, and each of openers for the kind
 // of its CurrentKeyID. It moves the sealed values from one kind of KeyManager to another
-// (ADR-0121 §4): with the new one as current and the old one as an opener, `my kek rewrap`
+// (ADR-0019 §14): with the new one as current and the old one as an opener, `my kek rewrap`
 // re-wraps every value under the new one. Each KeyManager must have a different kind.
 func NewKeyRouter(current KeyManager, openers ...KeyManager) (KeyManager, error) {
 	if len(openers) == 0 {

@@ -2,7 +2,7 @@
 // The account page below its heading (FR-008): the archives of the user's data, each with its state, when it was
 // asked for, until when it can be downloaded and its size, and deleting the account, which asks for the password,
 // or for a passkey when the user has no password, in an alert dialog (ConfirmDialog: the deletion cannot be undone), and
-// deactivating it (ADR-0145), which states the date of the deletion first. Dates are in the user's locale and time zone.
+// deactivating it (ADR-0089), which states the date of the deletion first. Dates are in the user's locale and time zone.
 import {
   Box,
   Button,

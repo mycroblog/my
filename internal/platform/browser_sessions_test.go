@@ -284,7 +284,7 @@ func TestBrowserSessionsRevokeOthers(t *testing.T) {
 }
 
 // TestSignInAgainEndsTheFamiliesOfTheReplacedSession: the same browser does not stay listed twice,
-// and a third-party app authorized in it keeps its tokens (ADR-0136 §5).
+// and a third-party app authorized in it keeps its tokens (ADR-0090 §14).
 func TestSignInAgainEndsTheFamiliesOfTheReplacedSession(t *testing.T) {
 	t.Parallel()
 	e := newBrowserEnv(t)

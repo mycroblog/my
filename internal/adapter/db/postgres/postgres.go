@@ -70,7 +70,7 @@ func Open(ctx context.Context, url string, opts uow.Options) (*DB, error) {
 func (d *DB) SetAcquireTimeout(wait time.Duration) { d.conns.wait = wait }
 
 // SetTracer records a span of every transaction attempt and every query on the pool, of the
-// repositories and of the adapters that share it, on t (ADR-0063 §1).
+// repositories and of the adapters that share it, on t (ADR-0055 §13).
 func (d *DB) SetTracer(t kernel.Tracer) { d.tracer.set(t) }
 
 // Close closes every connection of the pool.

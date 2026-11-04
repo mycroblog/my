@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's notification settings (FR-210, ADR-0109 §1, §6; web-client/README.md S1): for each row of notification
+// The user's notification settings (FR-210, ADR-0086 §8, §13; web-client/README.md S1): for each row of notification
 // types the user gets, whether the notifications are made in the app and sent by email. Web Push stays the choice of
 // each subscription (api/push), and the sound the choice of this device (lib/notificationSound).
 import type { QueryClient } from "@tanstack/react-query";

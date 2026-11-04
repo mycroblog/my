@@ -20,7 +20,7 @@ import (
 // The admin operations of the registration review (FR-721, manage_accounts): the sign-ups that
 // wait for a moderator in approval mode, and the moderator's decision on one. The decision is
 // the use case of `my registration approve|reject`, which records it in registration_decisions
-// and the audit log (data-model §4.1, ADR-0037).
+// and the audit log (data-model §4.1, ADR-0058).
 
 // Registrations runs the moderators' use cases on registrations. *appidentity.Service
 // implements it.

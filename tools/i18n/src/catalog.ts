@@ -25,7 +25,7 @@ export type Catalog = Record<string, Record<string, Namespace>>;
 
 /**
  * The file of a key inside its namespace directory, without ".json": the key's first segment, or its first two
- * under "admin" (ADR-0082). `settings.profile.title` goes in settings.json, `admin.report.title` in admin/report.json.
+ * under "admin" (ADR-0081). `settings.profile.title` goes in settings.json, `admin.report.title` in admin/report.json.
  */
 export const areaOf = (key: string): string => {
   const segments = key.split(".");

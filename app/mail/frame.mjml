@@ -4,7 +4,7 @@
   internal/app/kernel/mail_frame.gen.html, which kernel.MailComposer executes; the {{...}} actions are Go's and
   name the fields of the composer's data. %color-NAME:SCHEME% is the default of the design token
   (internal/domain/instance/theme_tokens.gen.go). No external font is loaded: the system fonts are listed, and
-  frame.ts compiles with `fonts: {}`. The one external image is the instance's own logo when it has one (ADR-0116):
+  frame.ts compiles with `fonts: {}`. The one external image is the instance's own logo when it has one (ADR-0059):
   the same URL for every recipient, with the instance's name as its alt text for clients that load no images.
 -->
 <mjml lang="{{.Lang}}" dir="{{.Dir}}">

@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// Retention of the inbox and delivery records (ADR-0034, data-model §4.8, FR-803).
+// Retention of the inbox and delivery records (ADR-0006, data-model §4.8, FR-803).
 const (
 	// JobPurge deletes the inbox and delivery records past their retention; no payload.
 	JobPurge = "federation.purge_records"

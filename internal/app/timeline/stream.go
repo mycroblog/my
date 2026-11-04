@@ -14,7 +14,7 @@ import (
 // it commits (FR-207): a status as posted (content.status_created) and a boost
 // (content.boosted). The signal carries only the entry ID; each stream asks HomeEntry whether
 // its viewer's home timeline lists the entry. A status that the public timelines may list,
-// local or remote, also signals a public timeline entry (ADR-0127 §4), whose streams ask
+// local or remote, also signals a public timeline entry (ADR-0013 §20), whose streams ask
 // LocalEntry or PublicEntry.
 func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 	r.OnCommit(appcontent.EventStatusCreated, func(_ context.Context, e uow.Event) {

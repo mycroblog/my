@@ -1,8 +1,8 @@
 name: UI story tests
 
 # The story tests in the pinned Playwright image, called by ci.yml on pull requests (ADR-0079): the @my/ui stories
-# (ui:test, ADR-0027: axe on every story and the screenshots at 3 container widths × light / dark × LTR / RTL) when the
-# ui context changes, and the app/web screen stories (web:story-test, ADR-0112 §1: their play functions and axe, no
+# (ui:test, ADR-0110: axe on every story and the screenshots at 3 container widths × light / dark × LTR / RTL) when the
+# ui context changes, and the app/web screen stories (web:story-test, ADR-0079 §13: their play functions and axe, no
 # screenshots) when the client changes.
 
 on:

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The errors screens in every width × locale project (ADR-0103 §8, ADR-0027): an administrator with manage_errors sees
+// The errors screens in every width × locale project (ADR-0103 §8, ADR-0110): an administrator with manage_errors sees
 // the open error groups, opens one by keyboard, sees its latest occurrence with its stack and hourly counts, and
 // resolves it by keyboard, after which focus is on the state's heading; each step passes axe without scrolling
 // sideways. `vite preview` has no API, so the test plays the server of a signed-in administrator with page.route;

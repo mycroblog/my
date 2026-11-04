@@ -13,10 +13,10 @@ import (
 )
 
 // ErrCurrentBrowserSession reports an attempt to end the browser that asks, through the list of
-// browsers; signing out ends it (ADR-0136 §3).
+// browsers; signing out ends it (ADR-0090 §12).
 var ErrCurrentBrowserSession = errors.New("identity: the current browser session")
 
-// SignedInBrowser is a browser signed in to a user's account (ADR-0136): one session with the
+// SignedInBrowser is a browser signed in to a user's account (ADR-0090): one session with the
 // first-party client's working token families that started from it. It is derived from them.
 type SignedInBrowser struct {
 	// SessionID identifies the browser in RevokeSignedInBrowser.
@@ -84,7 +84,7 @@ func (s *Service) SignedInBrowsers(ctx context.Context, userID, currentFamilyID 
 	return browsers, nil
 }
 
-// RevokeSignedInBrowser signs one of the user's browsers out (ADR-0136 §4). It fails with
+// RevokeSignedInBrowser signs one of the user's browsers out (ADR-0090 §13). It fails with
 // ErrNotFound for a session that is not a browser of the user's list, and with
 // ErrCurrentBrowserSession for the browser with the token family currentFamilyID.
 func (s *Service) RevokeSignedInBrowser(ctx context.Context, userID, currentFamilyID, sessionID string) error {
@@ -103,7 +103,7 @@ func (s *Service) RevokeSignedInBrowser(ctx context.Context, userID, currentFami
 }
 
 // RevokeOtherSignedInBrowsers signs out every browser of the user but the one with the token
-// family currentFamilyID (ADR-0136 §4).
+// family currentFamilyID (ADR-0090 §13).
 func (s *Service) RevokeOtherSignedInBrowsers(ctx context.Context, userID, currentFamilyID string) error {
 	browsers, err := s.SignedInBrowsers(ctx, userID, currentFamilyID)
 	if err != nil {

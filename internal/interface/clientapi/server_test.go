@@ -62,11 +62,11 @@ func TestGetInstance(t *testing.T) {
 		Limits:        clientapi.InstanceLimits{MaxPostCharacters: 500},
 		Timelines:     clientapi.InstanceTimelines{Local: clientapi.InstanceAudienceEveryone, Federated: clientapi.InstanceAudienceSignedIn},
 		Rules:         []clientapi.InstanceRule{},
-		// Unset, the instance federates both ways (ADR-0076).
+		// Unset, the instance federates both ways (ADR-0006).
 		Federation: clientapi.InstanceFederation{Mode: clientapi.InstanceFederationModeBoth},
 		// Unset, the instance denies search engines and AI (ADR-0057).
 		SearchIndexing: clientapi.SearchIndexingDeny, AiUsage: clientapi.AIUsageDeny,
-		// Unset, link cards are fetched and obey robots.txt (ADR-0131).
+		// Unset, link cards are fetched and obey robots.txt (ADR-0062).
 		LinkCards: true,
 		// Unset, the costs are private (ADR-0067 §8).
 		FinanceVisibility:       clientapi.FinanceVisibilityPrivate,

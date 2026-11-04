@@ -37,7 +37,7 @@ func (availableInstances) InstanceState(context.Context, string) (federation.Ins
 	return federation.InstanceAvailable, nil
 }
 
-// TestFetcherMode checks the fetches that each federation mode makes (ADR-0076, 外の取得): none
+// TestFetcherMode checks the fetches that each federation mode makes (ADR-0006, 外の取得): none
 // when it is off, actors only when it is outbound, and everything otherwise. A fetch that the
 // mode makes reaches the failure memory, which answers not found here.
 func TestFetcherMode(t *testing.T) {
@@ -116,7 +116,7 @@ func TestMediaGate(t *testing.T) {
 	}
 }
 
-// TestReceives checks which received activities each mode hands to their handlers (ADR-0076,
+// TestReceives checks which received activities each mode hands to their handlers (ADR-0006,
 // 入口ごとの振る舞い, inbox の非同期の部分).
 func TestReceives(t *testing.T) {
 	const host = "my.example"

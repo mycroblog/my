@@ -16,7 +16,7 @@ import (
 // its service and the notifications of the moderators, the service closure, the announcements, and the supporters. It comes after the
 // graph and content projectors, whose events these projectors turn into notifications. Unless
 // mail = none, the notifications that their recipients get by email are emailed once they stay
-// unread (ADR-0109 §4).
+// unread (ADR-0086 §11).
 func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository, pushes notification.PushRepository) error {
 	a.Notifications = notification.NewService(notification.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Staff: moderatorStaff{a}, Announcements: a.Instance,

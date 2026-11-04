@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 )
 
-// The send profile of ADR-0032.
+// The send profile of ADR-0006.
 const (
 	// RFC9421TTL is the lifetime of an outbound RFC 9421 signature (expires = created + 5 min).
 	RFC9421TTL = 5 * time.Minute
@@ -26,7 +26,7 @@ const (
 	SchemeMemoryNamespace = "federation.signature_scheme"
 )
 
-// Covered components of outbound signatures (ADR-0032).
+// Covered components of outbound signatures (ADR-0006).
 var (
 	cavageGET      = []string{"(request-target)", "host", "date"}
 	cavagePOST     = []string{"(request-target)", "host", "date", "digest", "content-type"}
@@ -35,7 +35,7 @@ var (
 	errNoAlgorithm = errors.New("unsupported signing key type")
 )
 
-// SignedHTTPClient sends signed requests (federation.md §2, ADR-0032). It signs with
+// SignedHTTPClient sends signed requests (federation.md §2, ADR-0006). It signs with
 // draft-cavage-12 first; when the server answers 400 or 401, it sends the request once more
 // signed with RFC 9421 (following the server's Accept-Signature when a 401 carries one). A host
 // where that retry succeeded is remembered in the KeyValueStore for SchemeMemoryTTL and gets

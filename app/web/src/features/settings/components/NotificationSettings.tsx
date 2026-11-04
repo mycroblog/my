@@ -36,7 +36,7 @@ import {
 } from "../hooks/useNotificationSettings";
 
 /**
- * The notification settings (FR-210, ADR-0109 §1) in the sections of their screen requirements
+ * The notification settings (FR-210, ADR-0086 §8) in the sections of their screen requirements
  * (web-client/screens/settings-notifications.md): Web Push on this device and the notification sound above a table
  * per section of the notification types × the channels (in the app, Web Push, email, sound). Every control saves its
  * value as soon as it changes.
@@ -192,7 +192,7 @@ function PushNotifications({ push }: { push: NotificationSettingsView["push"] })
 }
 
 /**
- * The notification sound of this device (ADR-0109 §5): a switch of the whole sound, which shows the table's sound
+ * The notification sound of this device (ADR-0086 §12): a switch of the whole sound, which shows the table's sound
  * column, and a button that plays it once, which lets the browser play it later; when the browser does not, the
  * section says so.
  */

@@ -1321,7 +1321,7 @@
   },
   "settings.profile.badges": {
     "defaultMessage": "Badges",
-    "description": "Heading of the section of the badges settings page that chooses which role badges the profile shows (ADR-0071)."
+    "description": "Heading of the section of the badges settings page that chooses which role badges the profile shows (ADR-0070)."
   },
   "settings.profile.badges.description": {
     "defaultMessage": "Choose which badges of your roles to show on your profile. A badge stays hidden until you show it, and shows on your profile only.",

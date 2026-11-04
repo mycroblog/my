@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The accessibility regression suite of the staff's screens (ADR-0015, ADR-0027, ADR-0058, web-client/14-admin.md §14):
+// The accessibility regression suite of the staff's screens (ADR-0015, ADR-0110, ADR-0058, web-client/14-admin.md §14):
 // every moderation and server administration screen passes axe without scrolling sideways in every width × locale
 // project (the nightly E2E_MATRIX=full runs them all), the list of screens follows the moderation and admin
 // routes, and a moderator handles a report with the keyboard alone — the moderation page, the queue, the report,

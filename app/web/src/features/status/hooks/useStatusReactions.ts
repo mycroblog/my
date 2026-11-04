@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The emoji reactions to a post (FR-116, ADR-0052 §5): the counts per emoji under the post, which the viewer joins
+// The emoji reactions to a post (FR-116, ADR-0051 §10): the counts per emoji under the post, which the viewer joins
 // or leaves by pressing one, and the accounts that reacted.
 import { type ImageSources, useNotice } from "@my/ui";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -26,7 +26,7 @@ export type ReactionChip = {
   isSelected: boolean;
   /**
    * Joins (true) or leaves (false) the reaction, in place of the viewer's favourite or other reaction; null when the
-   * viewer cannot: while nobody is signed in, and for a custom emoji of another server, which is shown only (ADR-0052 §2).
+   * viewer cannot: while nobody is signed in, and for a custom emoji of another server, which is shown only (ADR-0051 §7).
    */
   onChange: ((on: boolean) => void) | null;
 };

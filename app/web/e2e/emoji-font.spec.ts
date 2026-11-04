@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The Noto Color Emoji web font (ADR-0095 §3) in Chromium, Firefox and WebKit: the emoji-font-* projects of
+// The Noto Color Emoji web font (ADR-0091 §10) in Chromium, Firefox and WebKit: the emoji-font-* projects of
 // playwright.config.ts run this spec, and only they. A page loads the splits of @my/ui/emoji.css only when it shows an
 // emoji of their unicode-range, and each browser picks the format its tech() supports: COLRv1 in Chromium and Firefox,
 // OpenType-SVG in WebKit. It plays the landing page against `vite preview`, whose client API it answers with page.route.

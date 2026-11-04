@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
-// Page is what the maintenance page shows (ADR-0084 §4). The maintenance mode and
+// Page is what the maintenance page shows (ADR-0088 §11). The maintenance mode and
 // `my maintenance export` fill it from the configuration (and the export from the database),
 // and both render it with Render, so that the two give the same words and look.
 type Page struct {
@@ -25,7 +25,7 @@ type Page struct {
 	Message string
 	// Until is when the maintenance is expected to end; zero for unknown.
 	Until time.Time
-	// StatusPageURL is the instance's status page (ADR-0085 §6); "" for none.
+	// StatusPageURL is the instance's status page (ADR-0088 §20); "" for none.
 	StatusPageURL string
 	// Theme holds the values of the tokens the page's CSS uses (TokenNames).
 	Theme Theme
@@ -94,7 +94,7 @@ type RenderOptions struct {
 
 // Render writes the maintenance page in the locales of ls, one section each in that order; the
 // first sets the document's language and title. It returns the page and its
-// Content-Security-Policy, which admits the inline CSS by its hash (ADR-0084 §4).
+// Content-Security-Policy, which admits the inline CSS by its hash (ADR-0088 §11).
 func Render(p Page, ls []*i18n.Localizer, o RenderOptions) (html []byte, csp string, err error) {
 	if len(ls) == 0 {
 		return nil, "", fmt.Errorf("maintenance: no locale")

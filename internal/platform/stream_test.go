@@ -147,7 +147,7 @@ func checkStreamsAcrossProcesses(t *testing.T, web, worker *platform.App) {
 			t.Fatalf("no %s event within 10 seconds", name)
 		}
 	}
-	// The stream of the federated timeline (ADR-0127) shares the Bus.
+	// The stream of the federated timeline (ADR-0013) shares the Bus.
 	federated := openTimelineStream(streamCtx, t, e, srv, alice, "/streaming/timelines/federated")
 	// The subscriptions open once the web process listens on the Bus.
 	deadline := time.Now().Add(15 * time.Second)

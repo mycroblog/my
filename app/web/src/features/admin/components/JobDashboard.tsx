@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The queue dashboard below its heading (ADR-0064): the state of the job queue (its jobs by state and type, and since
+// The queue dashboard below its heading (ADR-0004): the state of the job queue (its jobs by state and type, and since
 // when the oldest due job waits), then the jobs under tabs that filter by state, kept in the URL by the route
 // (web-client/README.md S3). Each job shows its state, why its last run failed, its keys and payload, and a disclosure with
 // the records of its runs that did not succeed; a dead job also has a button that runs it again, after which it leaves
@@ -166,7 +166,7 @@ function FilterTab({ queue, filter }: { queue: JobQueue; filter: JobFilter }) {
 }
 
 /**
- * The state of the queue (ADR-0113): how long its oldest due job waits and the jobs of each state as tiles, each a link
+ * The state of the queue (ADR-0110): how long its oldest due job waits and the jobs of each state as tiles, each a link
  * to its tab, the failed ones marked when there are any; then the queue's kind and its jobs by type.
  */
 function QueueSummary({ queue }: { queue: JobQueue }) {
@@ -222,7 +222,7 @@ function QueueSummary({ queue }: { queue: JobQueue }) {
   );
 }
 
-/** How long a type keeps a job waiting, which shows a type that no worker runs (ADR-0138 §3). */
+/** How long a type keeps a job waiting, which shows a type that no worker runs (ADR-0004 §17). */
 function TypeWait({ oldestReadyAt }: { oldestReadyAt: string | undefined }) {
   const t = useT();
   const wait = useJobWait(oldestReadyAt);

@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
-// newSoraTransport returns the transport of voice = sora (ADR-0102). The adapter reaches only
+// newSoraTransport returns the transport of voice = sora (ADR-0101). The adapter reaches only
 // the Sora server that the operator configured, or Sora Cloud, and a self-hosted one may be on
 // a private address, so its HTTP client is not the SSRF-guarded kernel.HTTPClient; a call has
 // 5 seconds and follows no redirect.

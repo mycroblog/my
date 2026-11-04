@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Generate the client API code from the split spec in api/spec/ (ADR-0029, ADR-0066): first the bundle
+# Generate the client API code from the split spec in api/spec/ (ADR-0016): first the bundle
 # api/openapi.yaml with the Redocly CLI version that REDOCLY_VERSION names (set by tasks/api.yml), then,
 # from the bundle, the Go server interface and the client of pkg/mykit (ADR-0093) with the oapi-codegen version
 # pinned in tools/go.mod, the per-operation security metadata that the client API enforces

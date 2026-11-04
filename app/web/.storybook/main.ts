@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Storybook 10 for the screens of app/web (ADR-0112 §1): each screen story renders the whole app at a route, with MSW
+// Storybook 10 for the screens of app/web (ADR-0079 §13): each screen story renders the whole app at a route, with MSW
 // in the browser (msw/browser) playing the server with the features' default handlers. It composes the @my/ui
 // Storybook (`refs`), so one URL shows the components and the screens: in development the kit's own Storybook on
 // port 6006 (`scripts/task.sh ui:storybook`), in the static build the kit's build copied into ./ui

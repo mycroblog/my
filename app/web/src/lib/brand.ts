@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The instance's own icon and logo (ADR-0116), which its administrators set in the server settings: the logo takes the
+// The instance's own icon and logo (ADR-0059), which its administrators set in the server settings: the logo takes the
 // place of the wordmark and the name in the app's header, and the icon that of the built-in mark where the server is
 // shown as a square picture. Both are SVGs under /brand/, shown only as images (`@my/ui`'s `Wordmark` and `BrandIcon`).
 import { useQuery } from "@tanstack/react-query";

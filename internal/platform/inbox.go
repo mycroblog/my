@@ -24,9 +24,9 @@ func (a *App) setUpInbox(cfg *config.Config, repo federationRepository) {
 		Accounts:   a.Accounts,
 		Domains:    a.ModerationPolicy,
 		Health:     a.InstanceHealth, RateLimiter: a.RateLimiter, Clock: a.Clock, Logger: a.Logger, Meter: a.Meter,
-		// The activities that accepted relays sign carry the relay (ADR-0061).
+		// The activities that accepted relays sign carry the relay (ADR-0006).
 		Relays: a.Relays,
-		// The mode off refuses every request (ADR-0076).
+		// The mode off refuses every request (ADR-0006).
 		Modes: federationModes{a},
 	})
 	a.setUpInboxProcessor(cfg, repo, outbox)
@@ -39,9 +39,9 @@ func (a *App) setUpInboxProcessor(cfg *config.Config, repo federationRepository,
 	a.InboxProcessor = federation.NewInboxProcessor(federation.InboxProcessorDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Actors: a.RemoteActors, Fetcher: a.RemoteActors,
 		Domains: a.ModerationPolicy, Accounts: a.ModerationPolicy,
-		// What relays bring in passes their gate before it is fetched (ADR-0061).
+		// What relays bring in passes their gate before it is fetched (ADR-0006).
 		Relays: a.Relays,
-		// The federation mode at the time of processing sorts the activities by flow (ADR-0076).
+		// The federation mode at the time of processing sorts the activities by flow (ADR-0006).
 		Modes: federationModes{a}, Host: cfg.Host,
 		Clock: a.Clock, Logger: a.Logger,
 	})
@@ -55,7 +55,7 @@ func (a *App) setUpInboxProcessor(cfg *config.Config, repo federationRepository,
 	// The handlers of each activity type (federation.md §3.4).
 	federation.RegisterFollowHandlers(a.InboxProcessor, federation.FollowHandlerDeps{
 		Graph: a.Graph, Accounts: a.Accounts, Relays: a.Relays, Quotes: a.QuoteHandlers, Moves: a.Accounts, Relationships: a.Graph,
-		// The Follows that the federation mode refuses get a Reject (ADR-0076).
+		// The Follows that the federation mode refuses get a Reject (ADR-0006).
 		Refusals: federation.NewFollowRefusals(federation.FollowRefusalsDeps{
 			UnitOfWork: a.UnitOfWork, Outbound: repo, Outbox: outbox, Inboxes: a.Accounts,
 			Clock: a.Clock, IDs: a.IDs, Host: cfg.Host,

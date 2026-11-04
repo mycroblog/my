@@ -9,7 +9,7 @@ import { RouteError } from "./-layout/RouteStates";
 
 /**
  * What the instance's link card crawler does and how a website refuses it (web-client/screens/about-crawler.md,
- * ADR-0131), for the operators of the websites it fetches, who come without an account. The `_` keeps the page out of
+ * ADR-0062), for the operators of the websites it fetches, who come without an account. The `_` keeps the page out of
  * the layout of `/about`. The server's shell of this address carries the link preview (ADR-0028).
  */
 export const Route = createFileRoute("/about_/crawler")({

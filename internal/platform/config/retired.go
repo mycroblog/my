@@ -11,7 +11,7 @@ import (
 
 // retiredKey is a setting that a release renamed or removed. Using it in the config file or the
 // environment is an error that names the new key or the reason, so that an operator who upgrades
-// notices the change instead of the setting being silently ignored (ADR-0087 §5).
+// notices the change instead of the setting being silently ignored (ADR-0023 §8).
 type retiredKey struct {
 	// key is the old TOML key; its environment variable is EnvPrefix + upper(key).
 	key string
@@ -23,7 +23,7 @@ type retiredKey struct {
 
 // retiredKeys lists the renamed and removed settings, oldest first. Keep an entry for at least
 // the minor release that changes the key and the next one, the releases an upgrade passes
-// through (ADR-0087 §4). scripts/release-notes.sh reads the literal for the release notes: keep
+// through (ADR-0023 §7). scripts/release-notes.sh reads the literal for the release notes: keep
 // its strings literal, or that script fails.
 var retiredKeys []retiredKey
 

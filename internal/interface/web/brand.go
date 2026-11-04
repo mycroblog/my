@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// The instance's own icon and logos (ADR-0116): the files of each brand revision at
+// The instance's own icon and logos (ADR-0059): the files of each brand revision at
 // /brand/<revision>/<rendition>.svg|.png, whose content never changes, and the shell, the Web App
 // Manifest, /apple-touch-icon.png, and link previews pointing at the current ones instead of the
 // build's icons.

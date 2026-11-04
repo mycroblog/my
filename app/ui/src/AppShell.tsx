@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The layout around every page of the app (ADR-0026, web-client/09-app-shell.md §9). Mobile first (D1): one column with the
+// The layout around every page of the app (ADR-0025, web-client/09-app-shell.md §9). Mobile first (D1): one column with the
 // navigation as a bottom tab bar; from md a side rail and the page; from xl a third column. Heights use svh (D5) and
 // every edge that touches the screen adds its safe-area inset. The offline bar before the shell (OfflineBanner) shares
 // the screen with it: the shell's heights are the screen's under the bar and what sticks to the top starts under it

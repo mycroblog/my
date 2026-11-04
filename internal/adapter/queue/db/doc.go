@@ -5,7 +5,7 @@
 //
 // Queue keeps jobs in the jobs table and implements queue.JobQueue, queue.Outbox (it inserts
 // into jobs in the caller's transaction), queue.Source for
-// queue.PullRunner, queue.DeadJobs, and, for the queue dashboard (ADR-0064), queue.JobInspector and
+// queue.PullRunner, queue.DeadJobs, and, for the queue dashboard (ADR-0004), queue.JobInspector and
 // queue.AttemptLog. The attempt log is in the application database whatever queue the server runs, so the
 // server uses a Queue as its attempt log with every queue adapter. Claims are leases recorded in jobs.locked_by and
 // jobs.locked_until: a worker that stops while running a job leaves the lease to expire, and
@@ -23,7 +23,7 @@
 //     a single worker per database, since more workers only contend for the same lock.
 //
 // With an external queue (Cloud Tasks, SQS), the jobs stay in jobs and the external queue
-// carries only wake-up signals (ADR-0120): a Queue built with Options.Waker signals each job it
+// carries only wake-up signals (ADR-0004): a Queue built with Options.Waker signals each job it
 // stores once its transaction commits, queue.Source.ClaimJob claims the job of a signal by ID
 // with the statements of a claim, and queue.WakeFinder finds the jobs whose signal was lost (the
 // condition of a claim without its row locks) and the next job of an ordering key.

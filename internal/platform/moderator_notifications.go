@@ -60,7 +60,7 @@ func (s moderatorStaff) PermissionHolders(ctx context.Context, tx uow.Tx, p doma
 	}
 	out := make([]notification.StaffMember, 0, len(holders))
 	for _, h := range holders {
-		// Nothing reaches a deactivated account (ADR-0145 §6).
+		// Nothing reaches a deactivated account (ADR-0089 §16).
 		deactivated, err := s.a.Accounts.DeactivatedTx(ctx, tx, h.AccountID)
 		if err != nil {
 			return nil, err
@@ -115,7 +115,7 @@ func (m notificationMailboxes) Mailbox(ctx context.Context, accountID string) (n
 	if err != nil || userID == "" {
 		return notification.Mailbox{}, false, err
 	}
-	// An email queued before its recipient deactivated the account stays unsent (ADR-0145 §6).
+	// An email queued before its recipient deactivated the account stays unsent (ADR-0089 §16).
 	switch actor, err := m.a.Accounts.FindByID(ctx, accountID); {
 	case err != nil:
 		return notification.Mailbox{}, false, err
@@ -142,7 +142,7 @@ var _ notification.Mailboxes = notificationMailboxes{}
 
 // emailUnsubscriptions implements identity.EmailUnsubscriptions on the notification settings:
 // the category of an unsubscribe link is a group of the settings, and the link turns its email
-// off (ADR-0109 §4).
+// off (ADR-0086 §11).
 type emailUnsubscriptions struct{ a *App }
 
 // Unsubscribable implements identity.EmailUnsubscriptions.

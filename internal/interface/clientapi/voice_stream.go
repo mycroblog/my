@@ -48,7 +48,7 @@ const (
 const voiceStreamPattern = "GET " + BasePath + "/voice/rooms/{id}/stream"
 
 // registerVoiceStream registers GET /voice/rooms/{id}/stream (operation streamVoiceRoom), which
-// the strict server does not generate (ADR-0029), behind the same gate and guard as the
+// the strict server does not generate (ADR-0016), behind the same gate and guard as the
 // generated voice chat operations.
 func (s *Server) registerVoiceStream(r Router) {
 	r.Handle(voiceStreamPattern, s.voiceGate(s.guard(voiceStreamPattern, http.HandlerFunc(s.serveVoiceStream))))

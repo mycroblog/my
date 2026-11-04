@@ -23,7 +23,7 @@ export type FinanceCostsProps = Omit<CostTotalsPanelProps, "children"> & {
 };
 
 /**
- * The body of the finances page (`/finance`, ADR-0070 §5, ADR-0073 §6), under its heading, for the holders of
+ * The body of the finances page (`/finance`, ADR-0070 §5, ADR-0067 §16), under its heading, for the holders of
  * view_finance: the totals of the instance's costs and of its income by week, month or year, amortized or in cash.
  * The costs always come with the breakdown of the current period by provider and category, and the lines of its items
  * while the instance shows their names or memos (a holder of manage_finance reads them all); the income always with

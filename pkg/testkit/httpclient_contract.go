@@ -344,7 +344,7 @@ func HTTPClientContract(t *testing.T, newClient func(t *testing.T, n HTTPClientN
 	})
 	t.Run("LimitsTheBodyPerPurpose", func(t *testing.T) {
 		e := newHTTPClientEnv(t, newClient)
-		// The CAPTCHA check allows a much smaller body than documents (ADR-0042 §3).
+		// The CAPTCHA check allows a much smaller body than documents (ADR-0106 §9).
 		limits, ok := kernel.DefaultHTTPLimits(kernel.HTTPPurposeHumanCheck)
 		if !ok {
 			t.Fatal("DefaultHTTPLimits(HTTPPurposeHumanCheck) is unknown")

@@ -41,7 +41,7 @@ type DeleteAccountStatusReactionsParams struct {
 
 // DeleteAccountStatusReactions removes the reactions of an account to a status, except the one with
 // the emoji except_key (” removes them all): what the Like slot of a local account gives up
-// (ADR-0052 section 1).
+// (ADR-0051 section 1).
 func (q *Queries) DeleteAccountStatusReactions(ctx context.Context, arg DeleteAccountStatusReactionsParams) ([]Reaction, error) {
 	rows, err := q.db.QueryContext(ctx, deleteAccountStatusReactions, arg.AccountID, arg.StatusID, arg.ExceptKey)
 	if err != nil {
@@ -225,7 +225,7 @@ type InsertReactionParams struct {
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
-// Emoji reactions (resource) and their counts per emoji (projection), ADR-0052.
+// Emoji reactions (resource) and their counts per emoji (projection), ADR-0051.
 // InsertReaction inserts nothing when the account already reacts to the status with the emoji.
 func (q *Queries) InsertReaction(ctx context.Context, arg InsertReactionParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, insertReaction,

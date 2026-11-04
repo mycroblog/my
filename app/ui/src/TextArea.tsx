@@ -56,7 +56,7 @@ const textArea = tv({
   ],
 });
 
-/** Remaining counts that are announced at once when typing reaches them (ADR-0027). */
+/** Remaining counts that are announced at once when typing reaches them (ADR-0110). */
 const thresholds = [50, 20, 0] as const;
 
 /**

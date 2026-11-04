@@ -17,7 +17,7 @@ export function recover(): Middleware {
 
 /**
  * Skips the handler, the event counting as processed, for a sender whose account has the bot flag (unless the
- * respondToBots option) and for a sender whom the bot replied to as often as the replyLimits option allows (ADR-0094
+ * respondToBots option) and for a sender whom the bot replied to as often as the replyLimits option allows (ADR-0093
  * §8). Events of the bot's own account never reach a handler, with or without it.
  */
 export function manners(): Middleware {
@@ -37,7 +37,7 @@ export function manners(): Middleware {
 
 /**
  * Makes the helpers of Context (reply, react, favourite, follow) wait for the client-side send budget of the postRate
- * and writeRate options, and for the reset of the server's rate limit when less than a tenth of it remains (ADR-0094
+ * and writeRate options, and for the reset of the server's rate limit when less than a tenth of it remains (ADR-0093
  * §6). A write that would wait longer than the maxSendWait option is dropped and logged.
  */
 export function sendBudget(): Middleware {
@@ -49,7 +49,7 @@ export function sendBudget(): Middleware {
 
 /**
  * The chain that every handler runs in unless the noDefaultMiddleware option is set, outermost first: recover,
- * manners, and sendBudget (ADR-0094 §4).
+ * manners, and sendBudget (ADR-0093 §12).
  */
 export function defaultMiddleware(): Middleware[] {
   return [recover(), manners(), sendBudget()];

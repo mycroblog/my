@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// The appeals (FR-707, ADR-0038, data-model §4.3): a local account appeals an action on it once,
+// The appeals (FR-707, ADR-0058, data-model §4.3): a local account appeals an action on it once,
 // within the instance's appeal window from the action, and a moderator upholds or overturns the
 // appeal. Overturning lifts the action in the same transaction (LiftAccountAction's effects; the
 // statuses that delete_statuses deleted stay deleted). A ban, which nothing else lifts (FR-703),

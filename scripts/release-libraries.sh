@@ -101,7 +101,7 @@ cmd_notes() {
   # shellcheck disable=SC2016 # The backticks are Markdown's.
   local mykit='<!-- The breaking changes of the hand-written layer (the commits marked with `!`) and the deprecations of the generated client (ADR-0093 §8), or "None". -->'
   # shellcheck disable=SC2016 # The backticks are Markdown's.
-  local mybot='<!-- The breaking changes of mybot (the commits marked with `!`; ADR-0094 §1), or "None". -->'
+  local mybot='<!-- The breaking changes of mybot (the commits marked with `!`; ADR-0093 §9), or "None". -->'
   version="$(npm_version "$1")"
   tag="$(cmd_npm_dist_tag "$1")"
   if [ $# -eq 3 ]; then

@@ -12,7 +12,7 @@ export type TimelineFeedProps = {
   "aria-labelledby": string;
   /**
    * What the timeline holds of a source that has more elsewhere, and the link to it (a remote account's
-   * profile, ADR-0044): shown above the posts, and in the empty state when there are none.
+   * profile, ADR-0006): shown above the posts, and in the empty state when there are none.
    */
   origin?: { notice: string; link: ReactNode };
   /** The posts pinned to the top of the timeline (a profile's, FR-403), before its own posts. */

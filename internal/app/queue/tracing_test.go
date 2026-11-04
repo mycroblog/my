@@ -64,7 +64,7 @@ func (recordingSpan) Recording() bool        { return true }
 func (r recordingSpan) End(errorType string) { r.s.ended, r.s.errorType = true, errorType }
 
 // TestRunnerTracesJobRuns checks that each run is a span named after the job's type, linked to
-// the job's TraceParent, with its attempt and outcome (ADR-0063 §2).
+// the job's TraceParent, with its attempt and outcome (ADR-0055 §14).
 func TestRunnerTracesJobRuns(t *testing.T) {
 	const tp = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
 	src := &jobsSource{emptySource: emptySource{claims: make(chan struct{}, 1)}, jobs: []queue.Job{

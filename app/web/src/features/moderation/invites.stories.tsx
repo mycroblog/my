@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The invites (/moderation/invites; web-client/screens/moderation.md): the form that creates one and the invites
-// of the staff and the members, in every state, in the states of ADR-0112 §1.
+// of the staff and the members, in every state, in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { longNameAccountFixture, otherAccountFixture } from "../../test/fixtures";
 import {

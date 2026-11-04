@@ -156,7 +156,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	var jobs sync.WaitGroup
 	stopJobs := make(chan struct{})
 	// With a push receiver, the requests of the platform's queue run the jobs and those of its
-	// scheduler tick the periodic ones (ADR-0120 §4).
+	// scheduler tick the periodic ones (ADR-0004 §12).
 	if a.Config.Role != config.RoleWeb && a.pushReceiver == nil {
 		if len(a.skippedJobTypes) > 0 {
 			a.Logger.InfoContext(ctx, "this worker skips these job types; another worker has to run them", slog.Any("job_types", a.skippedJobTypes))

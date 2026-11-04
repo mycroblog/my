@@ -151,7 +151,7 @@ func (s *Interactions) Unboost(ctx context.Context, accountID, statusID string) 
 
 // Favourite makes accountID favourite statusID and returns the favourite. Favouriting a status
 // that the account already favourites returns the existing favourite. The favourite takes back
-// the account's reaction to the status, with which it shares the Like slot (ADR-0052 §1). An
+// the account's reaction to the status, with which it shares the Like slot (ADR-0051 §6). An
 // account whose restrictions forbid interacting fails with ErrInteractionRestricted.
 func (s *Interactions) Favourite(ctx context.Context, accountID, statusID string) (content.Favourite, error) {
 	if err := s.checkRestrictions(ctx, accountID, false); err != nil {
@@ -291,7 +291,7 @@ func (s *Interactions) Unpin(ctx context.Context, accountID, statusID string) er
 
 // ReplaceRemotePins makes the pins of the remote account accountID the statuses statusIDs, the
 // newest pin first: the mirror of the account's featured collection, which the federation
-// module reads when it fetches or refreshes the account (ADR-0044). Only the first
+// module reads when it fetches or refreshes the account (ADR-0006). Only the first
 // content.MaxPins statuses that are the account's own, pinnable, and not deleted are kept; the
 // others are skipped. Pins that statusIDs leaves out are removed. A local account fails with
 // ErrActorUnavailable: its pins are its own commands (Pin, Unpin). Replacing the pins with the

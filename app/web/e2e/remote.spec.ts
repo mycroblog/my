@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Accounts and posts of other servers in every width × locale project (FR-006, ADR-0027): the full handle,
+// Accounts and posts of other servers in every width × locale project (FR-006, ADR-0110): the full handle,
 // the links to the profile and the post on their own server, the content warning, and the pictures that
 // come through the media proxy, one without a description. `vite preview` has no API, so the spec answers
 // the token refresh and the client API with `page.route`, as a signed-in user's server would. Names come
@@ -117,7 +117,7 @@ const fetchedPost: Status = {
 /**
  * Answers the client API as Alice's session, with Carol's profile and post. With `fetching`, the first page
  * of Carol's posts starts fetching her recent posts from her server and the later pages hold the post it
- * stored too (ADR-0044). Returns the number of requests for her posts so far.
+ * stored too (ADR-0006). Returns the number of requests for her posts so far.
  */
 async function serveApi(page: Page, { fetching = false } = {}): Promise<{ statuses: number }> {
   const requests = { statuses: 0 };

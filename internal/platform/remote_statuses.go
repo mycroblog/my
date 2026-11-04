@@ -22,7 +22,7 @@ func (r remoteMediaRecorder) RecordRemoteMedia(ctx context.Context, tx uow.Tx, i
 
 // registerStatusHandlers registers the inbox handlers of remote posts (Create, Update, and
 // Delete, docs/architecture/federation.md §3.4) on the inbox processor: the posts related to
-// local accounts are ingested through the content module (ADR-0034). The boosts and favourites
+// local accounts are ingested through the content module (ADR-0006). The boosts and favourites
 // (Announce, Like, EmojiReact, and their Undo) go through the same posts. It also registers the
 // fetches of remote posts, threads, outboxes, and featured collections (federation.fetch_object,
 // federation.fetch_outbox, and federation.fetch_featured, §6.2, §6.3), builds the Resolver, and
@@ -36,7 +36,7 @@ func (a *App) registerStatusHandlers(repo federation.InboxRepository) {
 		UnitOfWork: a.UnitOfWork, Statuses: a.Content, Accounts: a.Accounts, Actors: a.RemoteActors,
 		Fetcher: a.RemoteActors, Followers: a.Graph, Tombstones: repo, Outbox: outbox, Jobs: a.Jobs, KV: a.KV,
 		Profiles: a.Accounts, Relationships: a.Graph, Restrictions: a.ModerationPolicy, Pins: a.Interactions, Votes: a.Interactions,
-		// The posts that only relays bring in are kept for relay_status_retention_days (ADR-0061).
+		// The posts that only relays bring in are kept for relay_status_retention_days (ADR-0006).
 		Relayed: a.Content, RelayPolicy: a.ModerationPolicy, Quotes: a.Content, Approvals: a.Interactions,
 		Clock: a.Clock, Host: a.Config.Host, Logger: a.Logger,
 	})

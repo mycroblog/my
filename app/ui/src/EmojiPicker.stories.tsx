@@ -3,7 +3,7 @@
 // real layout gives, the section buttons and aria-current following the scrolling, the ranked search and its announced
 // count, the skin tone menu, picking with Shift held, and the popover. `FullSet` virtualizes every Unicode emoji of the
 // app's data (app/web/src/features/emoji/unicode, served to Storybook by .storybook/main.ts) and moves through rows that
-// were not rendered (ADR-0097).
+// were not rendered (ADR-0091).
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fn, waitFor } from "storybook/test";
@@ -451,7 +451,7 @@ async function loadFullSet(): Promise<EmojiPickerSection[]> {
 }
 
 /**
- * Every Unicode emoji (about 1,900 without the skin tone variants), virtualized (ADR-0097): only the rows in view and
+ * Every Unicode emoji (about 1,900 without the skin tone variants), virtualized (ADR-0091): only the rows in view and
  * four on each side are rendered, the grid tells its whole size, and the keys, the section buttons and focus work
  * across rows that were not rendered. It has no screenshots, since the emoji fonts load as rows scroll into view; the
  * other stories carry the picker's screenshots.

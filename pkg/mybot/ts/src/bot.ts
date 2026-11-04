@@ -83,7 +83,7 @@ export type BotOptions = {
 
   /**
    * oauth and refreshToken make the bot renew its access token with the refresh token (mykit's RefreshingTokenSource;
-   * ADR-0094 §7): the token that the server issued to the bot's own account for an app registered on its settings
+   * ADR-0093 §15): the token that the server issued to the bot's own account for an app registered on its settings
    * page, or that an authorization code was exchanged for. Every renewal rotates the refresh token, which the bot
    * saves in the store; when the store holds one, the bot starts from it rather than from refreshToken, which the
    * server has seen used. The server of oauth is that of the bot when absent.
@@ -111,7 +111,7 @@ export type BotOptions = {
   pollInterval?: number;
   /**
    * How old a notification the catch-up still handles: after a long stop, older ones are skipped. Absent means
-   * defaultCatchUpLimit; 0 turns the catch-up off (ADR-0094 §3).
+   * defaultCatchUpLimit; 0 turns the catch-up off (ADR-0093 §11).
    */
   catchUpLimit?: number;
   /** How long the processed notifications are remembered, longer than catchUpLimit; defaultProcessedRetention when absent. */
@@ -306,7 +306,7 @@ export class Bot {
     this.#settings = {
       mode: options.mode ?? "streaming",
       pollInterval: positive(options.pollInterval, defaultPollInterval),
-      // ADR-0094 §3: 0 turns the catch-up off.
+      // ADR-0093 §11: 0 turns the catch-up off.
       catchUpLimit: options.catchUpLimit ?? defaultCatchUpLimit,
       processedRetention: positive(options.processedRetention, defaultProcessedRetention),
       concurrency: positive(options.concurrency, defaultConcurrency),
@@ -426,7 +426,7 @@ export class Bot {
     return commands.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   }
 
-  /** The scopes the bot needs: its own account, the notifications and the event stream, and posting (ADR-0094 §7); and write:accounts to set the bot flag. */
+  /** The scopes the bot needs: its own account, the notifications and the event stream, and posting (ADR-0093 §15); and write:accounts to set the bot flag. */
   #requiredScopes(): string[] {
     const scopes = ["read:accounts", "read:notifications", "read:statuses", "write:statuses"];
     if (this.#options.setBotFlag === true) scopes.push("write:accounts");
@@ -559,7 +559,7 @@ export class Bot {
 
   /**
    * Starts the bot, handles once what is due, and resolves, for a bot that a cron or a job runner such as Cloud Run
-   * jobs starts again and again (ADR-0094 §9): the notifications since the store's position, back to the catchUpLimit
+   * jobs starts again and again (ADR-0093 §17): the notifications since the store's position, back to the catchUpLimit
    * option, and for each scheduled job the newest of its past times after its last run, whatever its catchUp. It
    * resolves when their handlers have returned. When signal aborts first, it shuts down as run does, and what did not
    * finish is due again on the next run. It rejects with the errors of starting that run rejects with, and with that
@@ -795,7 +795,7 @@ export class Bot {
   }
 
   /**
-   * Hands the missed notifications to the handlers oldest first (ADR-0094 §3), holding the position while it does.
+   * Hands the missed notifications to the handlers oldest first (ADR-0093 §11), holding the position while it does.
    * When reading them fails, it hands out none.
    */
   async #catchUp(signal: AbortSignal): Promise<void> {
@@ -960,7 +960,7 @@ export class Bot {
     return this.#runtime;
   }
 
-  /** Whether account is the bot's own, whose events never reach a handler (ADR-0094 §8). */
+  /** Whether account is the bot's own, whose events never reach a handler (ADR-0093 §16). */
   #isMe(account: Account | undefined): boolean {
     return account !== undefined && account.id === this.#runtime?.me.id;
   }

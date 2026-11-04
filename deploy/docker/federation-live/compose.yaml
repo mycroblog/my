@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Live interoperability stack (ADR-0006, ADR-0015, docs/architecture/federation.md §12): this server, Mastodon,
-# GoToSocial, Misskey, and Akkoma federating over HTTPS with a private CA, and an Activity-Relay relay (ADR-0061). scripts/federation-live.sh generates the CA, the
+# GoToSocial, Misskey, and Akkoma federating over HTTPS with a private CA, and an Activity-Relay relay (ADR-0006). scripts/federation-live.sh generates the CA, the
 # certificate, and the secrets, starts this file, creates one user on each server, runs the scenarios, and
 # collects the logs; run it with `scripts/task.sh docker:federation-live` (README.md next to this file).
 #
@@ -212,7 +212,7 @@ services:
     networks:
       - fed
 
-  # --- Akkoma (the LitePub relay of ADR-0061) ---------------------------------------------------
+  # --- Akkoma (the LitePub relay of ADR-0006) ---------------------------------------------------
 
   akkoma:
     build: ./akkoma
@@ -231,7 +231,7 @@ services:
     networks:
       - fed
 
-  # --- Activity-Relay (ADR-0061) -----------------------------------------------------------------
+  # --- Activity-Relay (ADR-0006) -----------------------------------------------------------------
 
   relay-server:
     image: &relay-image yukimochi/activity-relay:v2.0.11@sha256:5798afb692163dfe5e89ec2a1e48a59f7ea26f828837f9810a2f4b866190b024

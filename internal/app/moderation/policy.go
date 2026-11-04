@@ -82,7 +82,7 @@ func (p *FederationPolicy) RejectsReports(ctx context.Context, domain string) (b
 	return p.domainHas(ctx, domain, moderation.RestrictReportIntake)
 }
 
-// DiscoveryRestricted reports whether a relay must not bring in the posts of an author (ADR-0061):
+// DiscoveryRestricted reports whether a relay must not bring in the posts of an author (ADR-0006):
 // the domain, or a parent, or the account (accountID, "" for an account that is not stored) has
 // the federation or the public_discovery restriction, so that neither the federated timeline nor
 // search would show them.

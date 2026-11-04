@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Real-time updates of the home, the local and the federated timelines through the whole app (web-client/README.md S10,
-// Y7, T4; FR-207; ADR-0127 §5): the
+// Y7, T4; FR-207; ADR-0013 §21): the
 // layout's event stream, MSW as the server's GET /streaming, and the "N new posts" button.
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
@@ -305,7 +305,7 @@ class FakeIntersectionObserver {
   }
 }
 
-describe("new posts inserted on their own (ADR-0077)", () => {
+describe("new posts inserted on their own (ADR-0013)", () => {
   async function openHomeAutoInserting(autoInsert = true) {
     vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
     vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
@@ -489,7 +489,7 @@ describe("new posts inserted on their own (ADR-0077)", () => {
   });
 });
 
-describe("new posts in the local and the federated timelines (ADR-0127 §5)", () => {
+describe("new posts in the local and the federated timelines (ADR-0013 §21)", () => {
   /** Opens the timeline's page signed in, with the auto-insert setting, once its stream is open. */
   async function openPublic(kind: "local" | "public", autoInsert: boolean) {
     vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);

@@ -45,7 +45,7 @@ type EmojiPurgeStore interface {
 // The factory registers the cleanup of everything it creates with t.Cleanup.
 type RetentionFactory func(t *testing.T, opts uow.Options) RetentionHarness
 
-// RetentionContract verifies the purges of federated data (ADR-0034, FR-803) on a database
+// RetentionContract verifies the purges of federated data (ADR-0006, FR-803) on a database
 // adapter, with the real content, account, graph, timeline, notification, and federation
 // modules: remote statuses past remote_status_retention_days that nothing local refers to are
 // deleted with origin retention and their rows purged, while those a local reply, thread, boost,
@@ -58,7 +58,7 @@ type RetentionFactory func(t *testing.T, opts uow.Options) RetentionHarness
 // remote media of their images, while the referenced and the disabled ones stay, and a disabled
 // one stays disabled when it arrives again. The statuses that only a relay brought in go after
 // relay_status_retention_days unless something local refers to them or a local account follows their
-// author (ADR-0061).
+// author (ADR-0006).
 func RetentionContract(t *testing.T, newHarness RetentionFactory) {
 	t.Helper()
 	cases := []struct {

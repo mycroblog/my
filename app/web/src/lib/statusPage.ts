@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The instance's status page (FR-810, ADR-0085 §6): where its operators tell of outages and maintenance, from GET
+// The instance's status page (FR-810, ADR-0088 §20): where its operators tell of outages and maintenance, from GET
 // /instance's `status_page_url`. It is needed most when the server does not answer, and then GET /instance cannot
 // be read, so the app keeps the last answer in localStorage (lib/storage's statusPageKey), as it keeps the home
-// timeline: the Service Worker never answers the client API (web-client/11-pwa.md §11, ADR-0045).
+// timeline: the Service Worker never answers the client API (web-client/11-pwa.md §11, ADR-0028).
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useApi } from "./auth/SessionProvider";

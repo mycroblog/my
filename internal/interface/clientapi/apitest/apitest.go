@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package apitest checks client API handlers against api/openapi.yaml in tests (ADR-0029).
+// Package apitest checks client API handlers against api/openapi.yaml in tests (ADR-0016).
 // Every handler test of the client API serves its requests through Spec.Serve, so that a
 // response that drifts from the spec fails the test:
 //

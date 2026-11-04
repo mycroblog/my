@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The picker of the emoji to react to a post with (ADR-0091 §7; ADR-0052 §1, §5): the same emoji as the post form's
+// The picker of the emoji to react to a post with (ADR-0091 §7; ADR-0051 §6, §10): the same emoji as the post form's
 // picker (the emoji used often, the custom emoji of this server, every Unicode emoji in the skin tone chosen here).
 // The Unicode data comes from the server's EMOJI_VERSION, so the server accepts every emoji it offers; the custom emoji
 // of other servers are not offered. A post takes one reaction, so picking one always closes the picker.
@@ -13,7 +13,7 @@ export type ReactionChoice = { unicode: string } | { custom: PickerCustomEmoji }
 export type ReactionPickerControl = Omit<EmojiPickerContent, "remember"> & {
   /**
    * Closes the picker with `close`, counts the emoji of `selection` as used and reacts with it through `react`, also
-   * when the selection asks to keep the picker open (one reaction per post, ADR-0052 §1).
+   * when the selection asks to keep the picker open (one reaction per post, ADR-0051 §6).
    */
   select: (selection: EmojiPickerSelection, close: () => void, react: (choice: ReactionChoice) => void) => void;
 };

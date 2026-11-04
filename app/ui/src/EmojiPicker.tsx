@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The emoji picker of posts, profiles and reactions (ADR-0091 §3, §5, §6; ADR-0097; ADR-0051 §4; ADR-0052 §5). It holds
-// no data (ADR-0031): the app passes the sections to show (the emoji used often, the custom emoji by category, the
+// The emoji picker of posts, profiles and reactions (ADR-0091 §3, §5, §6; ADR-0091; ADR-0051 §4; ADR-0051 §10). It holds
+// no data (ADR-0025): the app passes the sections to show (the emoji used often, the custom emoji by category, the
 // Unicode groups), each with its heading, its icon and its emoji, and what to do with the one picked.
 //
 // From the top: a search field and the skin tone menu button, a toolbar of one button per section, and one grid of all
-// the sections, scrolled as a whole. The grid is one list of rows (ADR-0097 §1): per section a heading row, then its
+// the sections, scrolled as a whole. The grid is one list of rows (ADR-0091 §14): per section a heading row, then its
 // emoji cut into rows of as many columns as the grid's width holds. Only the rows in view and four on each side are
 // rendered (TanStack Virtual), and so is the row of the active cell wherever it is, so focus is never lost to the
 // virtualization (§2). The grid tells its size and each row's and cell's place with aria-rowcount / aria-colcount /
 // aria-rowindex / aria-colindex, and groups the rendered rows of a section in a rowgroup named by its heading (§3).
 //
-// Keyboard (WAI-ARIA APG, grid pattern, with a roving tabindex; ADR-0097 §4): Tab goes from the search field to the skin
+// Keyboard (WAI-ARIA APG, grid pattern, with a roving tabindex; ADR-0091 §17): Tab goes from the search field to the skin
 // tone button, the toolbar and the grid, where one cell takes focus. In the grid, left and right follow the writing
 // direction:
 //
@@ -235,7 +235,7 @@ const picker = tv({
     // The section at the top of the grid shows by a ground behind its icon, not by the color of the icon alone (WCAG 1.4.1).
     tab: "aria-current:bg-soft aria-current:text-accent",
     // The section buttons scroll the grid through the virtualizer, smoothly only when the user allows motion
-    // (web-client/README.md D6); a CSS scroll-behavior would fight the virtualizer's own scrolling (ADR-0097 §2).
+    // (web-client/README.md D6); a CSS scroll-behavior would fight the virtualizer's own scrolling (ADR-0091 §15).
     grid: "max-h-64 min-w-0 overflow-y-auto overscroll-contain outline-none",
     rows: "relative w-full",
     // The rows are placed by the virtualizer; their heights are what the probes measure.
@@ -246,7 +246,7 @@ const picker = tv({
       "flex size-10 shrink-0 cursor-default items-center justify-center rounded-md text-2xl outline-none pointer-coarse:size-11",
       "data-focus-visible:focus-ring data-hovered:bg-surface-sunken data-pressed:bg-surface-sunken",
     ],
-    // Copies of a heading and two cells, never seen, that tell the sizes of the rows and the columns (ADR-0097 §1).
+    // Copies of a heading and two cells, never seen, that tell the sizes of the rows and the columns (ADR-0091 §14).
     probe: "pointer-events-none invisible absolute top-0 inset-s-0 flex items-start gap-1",
     empty: "p-2 text-sm text-fg-muted",
     // The rows of the emoji still loading, in the size of the emoji rows.
@@ -366,7 +366,7 @@ function SectionIcon({ icon }: { icon: EmojiSectionIcon }) {
 /** The share of the grid's height at its top where a heading counts as the top of the grid. */
 const topBand = 0.1;
 
-/** How many rows the grid renders beyond each end of its view (ADR-0097 §2). */
+/** How many rows the grid renders beyond each end of its view (ADR-0091 §15). */
 const overscan = 4;
 
 /** The skin tone `keys` holds, from the menu's selection. */
@@ -432,7 +432,7 @@ function SkinToneButton({ value, onChange, label, names }: SkinToneButtonProps) 
 /** What the status region announced last: the count of the search `query`. */
 type Announced = { query: string; count: number };
 
-/** The sizes in CSS px that the rows and columns are laid out by, measured on the probes (ADR-0097 §1). */
+/** The sizes in CSS px that the rows and columns are laid out by, measured on the probes (ADR-0091 §14). */
 type Metrics = {
   /** The inner width of the grid. */
   width: number;
@@ -506,7 +506,7 @@ type Layout = {
   firstCellOf: Map<string, number>;
 };
 
-/** The rows of `groups` (ADR-0097 §1): per group a heading row, then its emoji in rows of `columns`. */
+/** The rows of `groups` (ADR-0091 §14): per group a heading row, then its emoji in rows of `columns`. */
 function layOut(groups: readonly Group[], columns: number, rowSize: number, headerSize: number): Layout {
   const layout: Layout = {
     rows: [],
@@ -690,7 +690,7 @@ export function EmojiPicker({
   const { direction } = useLocale();
   const [search, setSearch] = useState("");
   const [announced, setAnnounced] = useState<Announced | null>(null);
-  // The cell in the tab sequence, by its item id: the one that last had focus, or the first emoji (ADR-0097 §4).
+  // The cell in the tab sequence, by its item id: the one that last had focus, or the first emoji (ADR-0091 §17).
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [jump, setJump] = useState<Jump | null>(null);
   const [metrics, setMetrics] = useState<Metrics>(fallbackMetrics);
@@ -745,7 +745,7 @@ export function EmojiPicker({
     },
   });
 
-  // The section at the top of the grid: the last heading at or above the band at its top (ADR-0097 §5), unless the
+  // The section at the top of the grid: the last heading at or above the band at its top (ADR-0091 §18), unless the
   // grid is where a section button took it, which shows that section even when the grid cannot scroll that far.
   let topSection = shown[0]?.id;
   for (const row of layout.headerRows) {
@@ -769,7 +769,7 @@ export function EmojiPicker({
     };
   }, [query, count]);
 
-  // Measure the grid's width and the probes whenever they change size (ADR-0097 §1). The probes come before the grid,
+  // Measure the grid's width and the probes whenever they change size (ADR-0091 §14). The probes come before the grid,
   // so their ref is set when the grid's runs.
   function observeGrid(grid: HTMLDivElement) {
     gridRef.current = grid;
@@ -885,7 +885,7 @@ export function EmojiPicker({
     focusCell(first, headerRow, "start", allowsMotion());
   }
 
-  // The rendered rows, in a rowgroup per section named by its heading (ADR-0097 §3). A section's rowgroup is keyed by
+  // The rendered rows, in a rowgroup per section named by its heading (ADR-0091 §16). A section's rowgroup is keyed by
   // the section, so the row of the active cell, rendered apart from the rows in view, never moves to another element.
   const rowGroups: { group: Group; items: VirtualItem[] }[] = [];
   for (const virtualItem of virtualItems) {
@@ -977,7 +977,7 @@ export function EmojiPicker({
         aria-colcount={columns}
         {...(loading ? { "aria-busy": "true" } : {})}
         className={styles.grid()}
-        // eslint-disable-next-line restrict/syntax -- ADR-0097 §4: GridList cannot leave rows unrendered, so the virtualized grid handles its own keys (APG grid)
+        // eslint-disable-next-line restrict/syntax -- ADR-0091 §17: GridList cannot leave rows unrendered, so the virtualized grid handles its own keys (APG grid)
         onKeyDown={onGridKeyDown}
       >
         {layout.rows.length === 0 && loading ? null : layout.rows.length === 0 ? (

@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// The move of a local account to another (FR-009, FR-414, ADR-0089 送る側). Before the account
+// The move of a local account to another (FR-009, FR-414, ADR-0089 §3). Before the account
 // module records it, the target is checked as a received Move checks its target: it is fetched
 // again without a cache and must name the account among its aliases, it must not be the account
 // or have moved itself, and neither it nor its domain may be suspended here. The target may be a

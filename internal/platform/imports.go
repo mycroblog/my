@@ -207,7 +207,7 @@ func (t importTargets) Add(ctx context.Context, accountID string, kind domidenti
 		if err != nil || !item.Notify {
 			return itemError(err)
 		}
-		// Notify on new posts is the subscription (ADR-0123 §1); for a remote account it starts
+		// Notify on new posts is the subscription (ADR-0086 §14); for a remote account it starts
 		// when its server accepts the follow. A subscription that cannot be made leaves the
 		// follow as it is.
 		err = t.a.Subscriptions.SubscribeWithFollow(ctx, accountID, target)

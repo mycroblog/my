@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Whether animated images (GIF, animated WebP) play by themselves (ADR-0054 §3). Like the theme (lib/theme), it is
+// Whether animated images (GIF, animated WebP) play by themselves (ADR-0005 §6). Like the theme (lib/theme), it is
 // how this browser shows the app, so it is kept in localStorage (lib/storage) and not in the user's preferences on the server: it
 // applies before anyone signs in and outlives the session. On by default; even on, an animation stays still while
 // the system asks for reduced motion (@my/ui Picture).

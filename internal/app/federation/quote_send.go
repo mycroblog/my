@@ -251,7 +251,7 @@ func (h *QuoteHandlers) store(ctx context.Context, tx uow.Tx, act federation.Out
 
 // answer decides a remote QuoteRequest of the local status quoted by the post quoting: the
 // content module's decision, or, when the federation mode does not take the quoting post in
-// (ingest, outbound in ADR-0076), a refusal without asking it, since the quote would never be
+// (ingest, outbound in ADR-0006), a refusal without asking it, since the quote would never be
 // shown here. A status that is not a local one fails with appcontent.ErrNotFound.
 func (h *QuoteHandlers) answer(ctx context.Context, in *InboxActivity, quoted, quoting federation.IRI) (appcontent.QuoteAuthorization, appcontent.Status, error) {
 	if federation.Allows(in.mode(), federation.FlowIngest) {

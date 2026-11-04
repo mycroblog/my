@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The rooms the user hosted (ADR-0100 §13, 回答 32), for the settings page; and the open room of an account's profile
+// The rooms the user hosted (ADR-0100 §13), for the settings page; and the open room of an account's profile
 // where it hosts or speaks, which only a user who sees the room gets (§8, 回答 33: being a listener is never shown).
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useIntl } from "react-intl";

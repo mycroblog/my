@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The queries and mutations of the queue dashboard (ADR-0064, web-client/README.md S1): the state of the job queue, its
+// The queries and mutations of the queue dashboard (ADR-0004, web-client/README.md S1): the state of the job queue, its
 // jobs by state, the records of a job's runs that did not succeed, and running a dead job again. The lists follow
 // the API's keyset pagination as TanStack Query infinite queries, keyed like the client's own `[method, path]` with
 // "pages" at the end (web-client/10-api-client-and-auth.md §10).
@@ -80,7 +80,7 @@ export function retryJobMutation(api: Api) {
 }
 
 /**
- * Takes the dead job `id`, enqueued again, off the cached list of dead jobs (ADR-0045) and returns it as the list had
+ * Takes the dead job `id`, enqueued again, off the cached list of dead jobs (ADR-0028) and returns it as the list had
  * it. The job is pending now, so the counts of the queue and the lists of pending jobs are marked stale (S1).
  */
 export function cacheRetriedJob(api: Api, queryClient: QueryClient, id: string): Job | undefined {

@@ -88,11 +88,11 @@ type SignedIn struct {
 // many attempts failed from the client's IP address or for the email address (ADR-0019 §5).
 //
 // With a HumanVerifier, the CAPTCHA token is checked after the rate limits and before the
-// password (ADR-0042 §3). A token that fails the check fails the sign-in with an error wrapping
+// password (ADR-0106 §9). A token that fails the check fails the sign-in with an error wrapping
 // kernel.ErrHumanCheckFailed and counts as a failure of the client's IP address only, so that
 // nobody can lock another person's account with bad tokens. When the service cannot check the
 // token (kernel.ErrHumanCheckUnavailable), the sign-in goes on without the check (fail open,
-// ADR-0042 §4), so that an outage of the service or a wrong key does not lock everyone out.
+// ADR-0106 §10), so that an outage of the service or a wrong key does not lock everyone out.
 //
 // While registration and sign-in are limited to the login providers, it fails with
 // ErrLoginProvidersOnly before it looks at anything else.
@@ -232,7 +232,7 @@ func (s *Service) writeSession(ctx context.Context, tx uow.Tx, n newSession) err
 	now := n.session.CreatedAt
 	if n.previous != "" {
 		// The families of the replaced session end with it: this browser gets a new one, and the
-		// old one would stay usable and show as another browser (ADR-0136 §5).
+		// old one would stay usable and show as another browser (ADR-0090 §14).
 		if err := s.d.Repository.LockTokenGrants(ctx, tx, n.previousUserID); err != nil {
 			return err
 		}
@@ -362,7 +362,7 @@ func (s *Service) verifyPassword(ctx context.Context, normalizedEmail, password 
 // them out (Access.LoginRestricted); it gets no access token. So does an account whose deletion
 // is scheduled while a ban is in effect on it, until the deletion, so that the user can appeal the
 // ban (FR-707), and an account that its owner deactivated, until the date of its deletion, so that
-// the user can reactivate or delete it (Access.Deactivated, ADR-0145 §4).
+// the user can reactivate or delete it (Access.Deactivated, ADR-0089 §14).
 func (s *Service) checkActive(ctx context.Context, userID string) error {
 	st, err := s.d.Accounts.UserLifecycle(ctx, userID)
 	if errors.Is(err, account.ErrNotFound) {

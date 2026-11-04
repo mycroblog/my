@@ -33,7 +33,7 @@ func (e *mediaEnv) uploadAV(t *testing.T, in appcontent.UploadInput) appcontent.
 	return m
 }
 
-// mediaProcessesVideoAndAudio checks video and audio uploads (ADR-0054 §6): the poster kept
+// mediaProcessesVideoAndAudio checks video and audio uploads (ADR-0005 §9): the poster kept
 // beside the file as received, the remuxed file as the large animated variant with its media
 // type, size, and duration, the poster (or the cover in the file) as the still variants, the
 // received file and poster deleted, and the image that clients load.

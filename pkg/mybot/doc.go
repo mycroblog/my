@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package mybot builds bots for my, an ActivityPub microblog server, on the API client mykit (ADR-0094).
+// Package mybot builds bots for my, an ActivityPub microblog server, on the API client mykit (ADR-0093).
 //
 // The author of a bot writes the handlers of its events; the library receives the events, so that none is lost
 // or answered twice, and keeps the bot polite by default:
@@ -51,7 +51,7 @@
 // Reply, React, Favourite, and Follow. Up to 4 handlers run at once, those of one sender in order. Middleware
 // wraps every handler; the default chain recovers and logs (log/slog), applies the manners, and the send budget.
 //
-// Manners (ADR-0094 §8), each of which can be turned off in Config but the first: no event of the bot's own
+// Manners (ADR-0093 §16), each of which can be turned off in Config but the first: no event of the bot's own
 // account reaches a handler; accounts with the bot flag are not answered; one sender gets at most 5 replies in
 // 10 minutes and 15 in an hour; a reply is never more visible than the post it answers, and a public post gets
 // an unlisted reply; a reply mentions its sender alone. The bot refuses to start on an account without the bot

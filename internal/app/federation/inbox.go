@@ -39,7 +39,7 @@ var (
 type inboxPayload struct {
 	ActivityURI string           `json:"activity_uri"`
 	Trust       federation.Trust `json:"trust"`
-	// RelayID is the accepted relay whose actor signed the activity (ADR-0061), "" otherwise.
+	// RelayID is the accepted relay whose actor signed the activity (ADR-0006), "" otherwise.
 	RelayID string `json:"relay_id,omitempty"`
 }
 
@@ -125,10 +125,10 @@ type InboxDeps struct {
 	Accounts   InboxAccounts
 	// Domains are the domain blocks; nil means NoDomainRestrictions.
 	Domains DomainPolicy
-	// Modes reads the federation mode (ADR-0076); nil federates both ways.
+	// Modes reads the federation mode (ADR-0006); nil federates both ways.
 	Modes  ModeSettings
 	Health InstanceReacher
-	// Relays tells the activities that an accepted relay signed (ADR-0061); nil knows none.
+	// Relays tells the activities that an accepted relay signed (ADR-0006); nil knows none.
 	Relays RelaySigners
 	// RateLimiter applies IPLimit and DomainLimit; nil applies none.
 	RateLimiter *kernel.RateLimiter
@@ -141,7 +141,7 @@ type InboxDeps struct {
 	Meter kernel.Meter
 }
 
-// Inbox is the synchronous part of receiving an activity (federation.md §3.1, ADR-0033): it
+// Inbox is the synchronous part of receiving an activity (federation.md §3.1, ADR-0006): it
 // verifies the request, records the activity once, and enqueues JobInbox, whose handlers do the
 // rest asynchronously.
 type Inbox struct {
@@ -194,7 +194,7 @@ const (
 	ReasonRateLimited     = "rate limited"
 	ReasonDomainSuspended = "domain suspended"
 	ReasonInvalidActivity = "invalid activity"
-	// ReasonFederationOff is a request that the federation mode off refuses (ADR-0076).
+	// ReasonFederationOff is a request that the federation mode off refuses (ADR-0006).
 	ReasonFederationOff = "federation off"
 )
 
@@ -281,7 +281,7 @@ func (i *Inbox) receive(ctx context.Context, in InboxRequest, typ *string) (Rece
 	if keyHost == "" {
 		return Received{Rejection: rejection(i.d.Signatures.unauthorized(r, fmt.Errorf("keyId %q has no valid host", sig.KeyID)))}, nil
 	}
-	// 5. The federation mode, which refuses everything when it is off (ADR-0076), and the domain
+	// 5. The federation mode, which refuses everything when it is off (ADR-0006), and the domain
 	// blocks of the signing server. Every activity that comes in belongs to a flow that off stops,
 	// and the other modes take every request in and sort the activities asynchronously.
 	mode, err := currentMode(ctx, i.d.Modes)
@@ -339,7 +339,7 @@ func (i *Inbox) receive(ctx context.Context, in InboxRequest, typ *string) (Rece
 		Scheme: string(v.Scheme), Trust: env.TrustFor(owner), ReceivedAt: kernel.Normalize(i.d.Clock.Now()),
 	}
 	// The integrity proof of an activity that its actor signed (FEP-8b32). A relayed or
-	// forwarded activity is fetched again from its origin anyway (ADR-0033), so its proof is not
+	// forwarded activity is fetched again from its origin anyway (ADR-0006), so its proof is not
 	// checked.
 	if a.Trust == federation.TrustSigned {
 		_, rejected, err := i.d.Signatures.VerifyProof(ctx, r, env.Actor)
@@ -351,7 +351,7 @@ func (i *Inbox) receive(ctx context.Context, in InboxRequest, typ *string) (Rece
 		}
 	}
 	// An activity that an accepted relay relayed (signed by the relay for another actor) or
-	// announced carries the relay to its processing (ADR-0061).
+	// announced carries the relay to its processing (ADR-0006).
 	var relayID string
 	if i.d.Relays != nil && owner != "" && (a.Trust == federation.TrustRefetch || env.Type == string(federation.ActivityAnnounce)) {
 		if relayID, err = i.d.Relays.AcceptedRelayOf(ctx, owner); err != nil {

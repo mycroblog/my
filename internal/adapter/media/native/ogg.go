@@ -13,7 +13,7 @@ import (
 
 // An Ogg of one Vorbis or Opus stream is remuxed by replacing its comment header (Vorbis
 // comment, OpusTags), where tags and cover pictures go, with one that has the encoder's vendor
-// string and no comments, and by numbering the pages again (ADR-0054 §6). Ogg files of several
+// string and no comments, and by numbering the pages again (ADR-0005 §9). Ogg files of several
 // streams (Ogg video) are not accepted.
 
 // oggPage is a page of an Ogg stream.

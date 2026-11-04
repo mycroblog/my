@@ -8,7 +8,7 @@ import (
 )
 
 // Subscription is a local account's subscription to the new posts of another account
-// (post_subscriptions, a current value, ADR-0123 §1): each new post of the target that the
+// (post_subscriptions, a current value, ADR-0086 §14): each new post of the target that the
 // subscriber may see notifies the subscriber with a status notification. The target is never
 // told of it.
 type Subscription struct {
@@ -26,11 +26,11 @@ type SubscriptionRequest struct {
 	CreatedAt       time.Time
 }
 
-// MaxSubscriptions is how many subscriptions an account may have (ADR-0123 §1).
+// MaxSubscriptions is how many subscriptions an account may have (ADR-0086 §14).
 const MaxSubscriptions = 1000
 
 // SubscriberBatch is how many subscribers one step of the fan-out of a new post notifies
-// (ADR-0123 §2).
+// (ADR-0086 §15).
 const SubscriberBatch = 100
 
 // Errors of the subscriptions.

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server's announcements as a user sees them, above the home timeline (/home) below xl and in the third column
-// from xl, in the states of ADR-0112 §1. The home timeline itself is in its own stories; the list page is in
+// from xl, in the states of ADR-0079 §13 The home timeline itself is in its own stories; the list page is in
 // announcementList.stories.tsx.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

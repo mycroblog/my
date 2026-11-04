@@ -20,7 +20,7 @@ import (
 )
 
 // unbounded disables the library's own time checks; federation.SignatureVerifier applies the
-// window of ADR-0032 with the injected clock. 100 years keeps time arithmetic in range.
+// window of ADR-0006 with the injected clock. 100 years keeps time arithmetic in range.
 const unbounded = 100 * 365 * 24 * time.Hour
 
 // parseRFC9421 reads the first signature of Signature-Input and checks that Signature carries

@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Fetching the recent posts of a remote profile that a user opens (federation.md §6.3, ADR-0044).
+// Fetching the recent posts of a remote profile that a user opens (federation.md §6.3, ADR-0006).
 const (
 	// JobFetchOutbox fetches the first page of the outbox of a remote account and stores its
 	// recent public posts.
@@ -63,7 +63,7 @@ func fetchOutboxJob(accountID string, now time.Time) (queue.NewJob, error) {
 }
 
 // FetchOutbox starts fetching the recent posts of the account accountID, whose profile the
-// local account viewerID opened (ADR-0044), and reports whether it did. It does only for an
+// local account viewerID opened (ADR-0006), and reports whether it did. It does only for an
 // active remote account with an outbox, without the federation restriction, when neither of the
 // two blocks the other, when the account's outbox was not fetched in the last OutboxFetchTTL,
 // and when the viewer started fewer than OutboxUserLimit fetches in the last OutboxUserWindow.

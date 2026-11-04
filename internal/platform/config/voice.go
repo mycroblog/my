@@ -32,7 +32,7 @@ const maxCloudflareTURNTTL = 48 * time.Hour
 // below, the size of the HMAC-SHA256 key it keys.
 const minVoiceJoinSecretBytes = 32
 
-// voiceChecks rejects the voice settings that cannot connect a room (ADR-0101 §1, ADR-0102 §5).
+// voiceChecks rejects the voice settings that cannot connect a room (ADR-0101 §1, ADR-0101 §14).
 // With voice = off it checks nothing: the other voice_* settings are not used.
 func voiceChecks(vals map[string]string, present map[string]bool) []Issue {
 	var issues []Issue
@@ -64,7 +64,7 @@ func voiceChecks(vals map[string]string, present map[string]bool) []Issue {
 		switch vals["voice_sora_mode"] {
 		case "self_hosted":
 			// The API of a self-hosted Sora has no authentication of its own, and its webhooks
-			// are accepted only with Basic authentication (ADR-0102 §5).
+			// are accepted only with Basic authentication (ADR-0101 §14).
 			require("voice_sora_mode is self_hosted", "voice_sora_api_url", "voice_sora_webhook_username", "voice_sora_webhook_password")
 		case "cloud":
 			require("voice_sora_mode is cloud", "voice_sora_cloud_project_id", "voice_sora_cloud_api_key")
@@ -80,7 +80,7 @@ func voiceChecks(vals map[string]string, present map[string]bool) []Issue {
 }
 
 // VoiceWarnings returns the voice settings that work but that the operator likely did not
-// mean, for the log at start (ADR-0101 §1, ADR-0102 §3): p2p without STUN and TURN, which
+// mean, for the log at start (ADR-0101 §1, ADR-0101 §12): p2p without STUN and TURN, which
 // connects only the browsers on the same network, and the STUN and TURN settings that an SFU
 // does not use.
 func VoiceWarnings(c *Config) []Finding {

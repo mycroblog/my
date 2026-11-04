@@ -26,7 +26,7 @@ const (
 	akkomaUser        = "kate"
 )
 
-// TestRelayLitePub joins Akkoma's relay at its actor (ADR-0061): alice registers its URL with no
+// TestRelayLitePub joins Akkoma's relay at its actor (ADR-0006): alice registers its URL with no
 // protocol, which this server detects as litepub from the actor it fetches, and the relay actor
 // accepts the instance actor's Follow. Akkoma's relay then follows the instance actor (pleroma_ctl
 // relay follow), and this server accepts that Follow as the relay's. A public post of kate reaches

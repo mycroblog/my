@@ -10,7 +10,7 @@
 CREATE TABLE statuses (
   id TEXT NOT NULL PRIMARY KEY,
   uri TEXT NOT NULL,
-  -- the HTML page of a remote status; a local status's page is derived on read (ADR-0053).
+  -- the HTML page of a remote status; a local status's page is derived on read (ADR-0018).
   url TEXT,
   author_account_id TEXT NOT NULL,
   is_local INTEGER NOT NULL CHECK (is_local IN (0, 1)),
@@ -106,7 +106,7 @@ CREATE TABLE status_deletions (
 ) STRICT;
 CREATE INDEX status_deletions_uri ON status_deletions (uri);
 -- A deletion other than by retention keeps its URI from coming back, so there is at most one.
--- A remote status deleted by retention may be fetched again and deleted again (ADR-0034).
+-- A remote status deleted by retention may be fetched again and deleted again (ADR-0006).
 CREATE UNIQUE INDEX status_deletions_tombstone_uri ON status_deletions (uri) WHERE origin <> 'retention';
 CREATE INDEX status_deletions_retention ON status_deletions (deleted_at) WHERE origin = 'retention';
 
@@ -183,7 +183,7 @@ CREATE TABLE uploaded_media (
 ) STRICT;
 
 -- Event: one processing of a media file for a purpose, which picks the sizes of its variants
--- (ADR-0054). The newest row of a file is its current state.
+-- (ADR-0005). The newest row of a file is its current state.
 CREATE TABLE media_processing_results (
   id TEXT NOT NULL PRIMARY KEY,
   media_id TEXT NOT NULL,
@@ -199,7 +199,7 @@ CREATE TABLE media_processing_results (
 CREATE INDEX media_processing_results_media_id_id ON media_processing_results (media_id, id DESC);
 
 -- Event (child of a result): a processed rendition in blob storage, under the public prefix:
--- small, medium, and large still ones, and for an animation also animated ones (ADR-0054).
+-- small, medium, and large still ones, and for an animation also animated ones (ADR-0005).
 CREATE TABLE media_variants (
   result_id TEXT NOT NULL,
   size TEXT NOT NULL CHECK (size IN ('small', 'medium', 'large')),
@@ -279,7 +279,7 @@ CREATE UNIQUE INDEX favourites_uri ON favourites (uri);
 CREATE INDEX favourites_account_id_id ON favourites (account_id, id);
 CREATE INDEX favourites_status_id_id ON favourites (status_id, id);
 
--- Current value: an account's emoji reaction to a status (FR-116, ADR-0052), deleted when it is taken
+-- Current value: an account's emoji reaction to a status (FR-116, ADR-0051), deleted when it is taken
 -- back (content.unreacted). emoji_key is the Unicode emoji, fully qualified, or the
 -- custom_emojis.id of custom_emoji_id, NULL for a Unicode emoji. uri is the IRI of the Like or
 -- EmojiReact.
@@ -300,7 +300,7 @@ CREATE INDEX reactions_status_id_id ON reactions (status_id, id);
 -- The purge of unreferenced remote custom emoji looks up the reactions with an emoji.
 CREATE INDEX reactions_custom_emoji_id ON reactions (custom_emoji_id);
 
--- Projection: the reactions to each status that is not deleted, per emoji (ADR-0052 §1). A row
+-- Projection: the reactions to each status that is not deleted, per emoji (ADR-0051 §6). A row
 -- goes when its count reaches zero.
 CREATE TABLE status_reaction_counts (
   status_id TEXT NOT NULL,
@@ -321,12 +321,12 @@ CREATE TABLE bookmarks (
   PRIMARY KEY (account_id, status_id)
 ) STRICT;
 CREATE INDEX bookmarks_account_id_id ON bookmarks (account_id, id);
--- The retention purge keeps a bookmarked remote status (ADR-0034).
+-- The retention purge keeps a bookmarked remote status (ADR-0006).
 CREATE INDEX bookmarks_status_id ON bookmarks (status_id);
 
 -- Current value: a status its author pinned to the profile (the Featured collection): a local
 -- account's own pins, or a remote account's pins mirrored from its featured collection
--- (ADR-0044). Each pin holds one of the account's slots 1..5 (content.MaxPins), so the unique
+-- (ADR-0006). Each pin holds one of the account's slots 1..5 (content.MaxPins), so the unique
 -- slot index caps the pins of an account even under concurrent inserts.
 CREATE TABLE status_pins (
   account_id TEXT NOT NULL,
@@ -382,7 +382,7 @@ CREATE TABLE remote_status_revisions (
 ) STRICT;
 
 -- Resource (subtype of media_files): a remote file as the received document declared it, and
--- what it was recorded for (purpose), which sizes the media proxy's small variant (ADR-0054).
+-- what it was recorded for (purpose), which sizes the media proxy's small variant (ADR-0005).
 -- The file itself is not fetched. owner_account_id copies media_files.owner_account_id.
 CREATE TABLE remote_media (
   media_id TEXT NOT NULL PRIMARY KEY,
@@ -643,7 +643,7 @@ CREATE TABLE polls (
 ) STRICT;
 CREATE UNIQUE INDEX polls_revision_id ON polls (revision_id);
 
--- Event: a remote status taken in only because a relay sent it (ADR-0061), kept for
+-- Event: a remote status taken in only because a relay sent it (ADR-0006), kept for
 -- relay_status_retention_days instead of remote_status_retention_days. relay_id is the relay it came from,
 -- kept as an ID after the relay is deleted. Purged with the status.
 CREATE TABLE relayed_statuses (

@@ -9,7 +9,7 @@ import { z } from "zod";
 /** The id of the data block in the shell. */
 const configElementId = "config";
 
-/** A brand image of the instance (ADR-0116): the path of its SVG under /brand/ and the size of its viewBox. */
+/** A brand image of the instance (ADR-0059): the path of its SVG under /brand/ and the size of its viewBox. */
 const brandImageSchema = z.object({
   url: z.string().regex(/^\/brand\//u),
   width: z.int().positive(),

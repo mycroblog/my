@@ -53,7 +53,7 @@ func attrs(s tracetest.SpanStub) map[attribute.Key]attribute.Value {
 	return m
 }
 
-// TestTracerKeepsOnlyDeclaredAttributes checks the allowlist of ADR-0063 §4: an attribute whose
+// TestTracerKeepsOnlyDeclaredAttributes checks the allowlist of ADR-0055 §16: an attribute whose
 // key the spec did not declare, such as a URL, a client IP, or a User-Agent, never reaches the
 // receiver.
 func TestTracerKeepsOnlyDeclaredAttributes(t *testing.T) {
@@ -96,7 +96,7 @@ func TestTracerKeepsOnlyDeclaredAttributes(t *testing.T) {
 	}
 }
 
-// TestTracerLinksJobsToTheirRequest checks ADR-0063 §2: the run of a job is the root of a new
+// TestTracerLinksJobsToTheirRequest checks ADR-0055 §14: the run of a job is the root of a new
 // trace with a link to the span that enqueued it, recorded because that span was, even at a
 // ratio of 0; and the spans inside the run are its children.
 func TestTracerLinksJobsToTheirRequest(t *testing.T) {

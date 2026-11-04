@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The notifications (/notifications; FR-205) in the states of ADR-0112 §1, with every kind of notification: from
+// The notifications (/notifications; FR-205) in the states of ADR-0079 §13, with every kind of notification: from
 // other people, from the server to the user, and from the server to its staff.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
@@ -334,7 +334,7 @@ export const FromTheServerNarrow: Story = { ...narrow, ...answering(...notificat
 /** A server key of Web Push, for the instance of the stories of the prompt. */
 const pushServerKey = "BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8";
 
-/** A browser that has not been asked about notifications, and a server that sends Web Push (ADR-0137). */
+/** A browser that has not been asked about notifications, and a server that sends Web Push (ADR-0086). */
 const pushPrompt: Story = {
   beforeEach: () => {
     const permission = Object.getOwnPropertyDescriptor(Notification, "permission");

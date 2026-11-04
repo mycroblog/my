@@ -39,7 +39,7 @@ type fanOutPayload struct {
 	// followers, as the Delete of an actor goes: the Update of a suspension and of its end
 	// (federation.md §11.1). false for other activities.
 	SharedInboxes bool `json:"shared_inboxes,omitempty"`
-	// Inbox is the only recipient of an activity of the relay membership (ADR-0061), "" for
+	// Inbox is the only recipient of an activity of the relay membership (ADR-0006), "" for
 	// other activities.
 	Inbox string `json:"inbox,omitempty"`
 	Phase string `json:"phase,omitempty"`
@@ -65,7 +65,7 @@ func (p fanOutPayload) job(a federation.OutboundActivity) (queue.NewJob, error) 
 // when a needs no order.
 //
 // The Like and Undo Like of one local account about one remote status share a key, whether they
-// come from a favourite or a reaction (the Like slot, ADR-0052 §1): switching the slot sends the
+// come from a favourite or a reaction (the Like slot, ADR-0051 §6): switching the slot sends the
 // Undo of what was in it, then the new Like, and a server that keeps one reaction per account
 // and status (Misskey) refuses a Like that overtakes the Undo. Their fan-outs share the key, so
 // that the deliveries of the later activity are enqueued after those of the earlier one, and
@@ -119,7 +119,7 @@ type RecorderDeps struct {
 
 // ActorHiding reads in the transaction why a local actor is hidden from the remote servers: an
 // actor stays hidden until neither holds, so a change of one while the other holds sends nothing
-// (ADR-0145 §7).
+// (ADR-0089 §17).
 type ActorHiding interface {
 	SuspendedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error)
 	DeactivatedTx(ctx context.Context, tx uow.Tx, accountID string) (bool, error)
@@ -139,7 +139,7 @@ type ActorHiding interface {
 //   - account.aliases_changed of a local account: Update of the actor, recorded only when the
 //     federation mode publishes (ADR-0089).
 //   - account.lifecycle_event_recorded of a local account's deletion: Delete of the actor. Of a
-//     deactivation or a reactivation (ADR-0145 §7): Update of the actor to the followers and every
+//     deactivation or a reactivation (ADR-0089 §17): Update of the actor to the followers and every
 //     known shared inbox, unless a suspension hides the actor anyway.
 //   - account.moved of a local account's own move: Update of the actor, which carries movedTo,
 //     and Move (ADR-0089); account.move_canceled: Update of the actor, without movedTo.

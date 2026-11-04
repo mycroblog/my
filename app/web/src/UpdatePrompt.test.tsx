@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The toast about a new version (ADR-0141), in the whole app (web-client/README.md T4), and the call and the route as
+// The toast about a new version (ADR-0028), in the whole app (web-client/README.md T4), and the call and the route as
 // what decides whether it shows or the page reloads. jsdom has no Service Workers, so the container is a stand-in.
 import { AnnouncerProvider, ToastProvider } from "@my/ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

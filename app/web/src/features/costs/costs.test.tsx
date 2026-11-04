@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The public running costs and income through the whole app (web-client/README.md T4, FR-903, FR-917, ADR-0067 §8,
-// ADR-0073 §7): the section of the information page and the page at /about/costs show what the instance settings
+// ADR-0067 §17): the section of the information page and the page at /about/costs show what the instance settings
 // finance_visibility and income_visibility publish, for everyone, signed in or not: of the costs, nothing, the totals
 // only, or the totals with their breakdown by provider and category; of the income, nothing, the totals, or the totals
 // with the members of each plan; and the balance only when both are published. No individual payment is ever shown.
@@ -147,7 +147,7 @@ describe("a server that publishes the breakdown", () => {
     ).not.toBeInTheDocument();
   });
 
-  test("shows each provider as the server spells it, as entered (ADR-0098)", async () => {
+  test("shows each provider as the server spells it, as entered (ADR-0067)", async () => {
     serveCosts("breakdown");
     server.use(
       http.get(`${apiBase}/instance/cost_totals`, ({ request }) => {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The method-neutral boundary of the audio of a call (ADR-0101 §7, ADR-0102): one connection of the user's session to
+// The method-neutral boundary of the audio of a call (ADR-0101 §7, ADR-0101): one connection of the user's session to
 // the audio of a room, whatever the method of the server (p2p here; livekit and sora behind the same boundary). It is
 // plain TypeScript without React, and only the hooks of features/voice use it. It knows nothing of the client API:
 // the hooks hand it the grant, the participants of each `state`, and the signals of the room stream, and it sends its

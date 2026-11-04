@@ -1137,7 +1137,7 @@ func TestServerOrigin(t *testing.T) {
 }
 
 // TestStatusPageURL checks that status_page_url is empty by default and takes only an absolute https URL
-// (ADR-0085 §6).
+// (ADR-0088 §20).
 func TestStatusPageURL(t *testing.T) {
 	cfg, _, err := Load(source(minimal(), nil))
 	if err != nil || cfg.StatusPageURL != "" {

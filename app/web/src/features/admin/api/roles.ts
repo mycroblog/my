@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the roles screen (web-client/README.md S1, FR-720, manage_roles): the roles of the instance
 // (GET /admin/roles, shared with an account's roles region), creating one (POST /admin/roles), changing its position,
-// permissions and badge (PATCH /admin/roles/{role}, ADR-0071) and deleting it (DELETE). The server keeps the built-in
+// permissions and badge (PATCH /admin/roles/{role}, ADR-0070) and deleting it (DELETE). The server keeps the built-in
 // roles (admin changes only its badge; neither admin nor moderator is deleted), refuses a role above the viewer's highest one (403) and
 // permissions the viewer lacks, and deletes no role that someone holds: a refusal is a 422 `invalid-role` problem
 // whose `reason` says which. Every change is recorded in the audit log.
@@ -148,7 +148,7 @@ export function deleteRoleMutation(api: Api) {
 }
 
 /**
- * Marks what a change of a role changes (ADR-0045): the roles of the instance, the roles of every account (which
+ * Marks what a change of a role changes (ADR-0028): the roles of the instance, the roles of every account (which
  * carry their permissions), the viewer (whose permissions a change of a role they hold changes), the profiles (whose
  * badges a change of a badge changes), the viewer's badge choices and the audit log; the queries shown now are fetched
  * again and awaited.

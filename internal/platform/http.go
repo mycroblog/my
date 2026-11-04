@@ -31,9 +31,9 @@ const (
 	// (every table of schema/<dialect> exists), and 503 with a problem document otherwise.
 	PathReadiness = "/readyz"
 	// PathInstanceHealth is the health endpoint of the client API for uptime monitors, status
-	// pages, and the clients (ADR-0085 §1): the readiness check's answer, which reaches the
+	// pages, and the clients (ADR-0088 §15): the readiness check's answer, which reaches the
 	// database at most once every healthCacheTTL per process (healthCache). The client API
-	// serves it on the web role; the maintenance mode (ADR-0084) answers it itself.
+	// serves it on the web role; the maintenance mode (ADR-0088) answers it itself.
 	PathInstanceHealth = "/api/v1/instance/health"
 )
 
@@ -408,7 +408,7 @@ func validRequestID(id string) bool {
 // which the metric does not measure either. With the HTTP metrics, it also records the request's
 // http.server.request.duration in a unit of work of the Meter (ADR-0055 §3), which the line
 // carries with metrics_exporter = emf (§5). The request is a span of the Tracer
-// (HTTPServerSpan, ADR-0063 §1), which the line names by trace_id and span_id. A server error
+// (HTTPServerSpan, ADR-0055 §13), which the line names by trace_id and span_id. A server error
 // of a request whose client has left counts as statusClientClosedRequest in all of them, since
 // no one received it and an operator cannot act on it; a panic stays a server error.
 func (a *App) accessLog(next http.Handler) http.Handler {

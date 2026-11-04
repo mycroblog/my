@@ -43,7 +43,7 @@ DELETE FROM roles WHERE id = ?;
 -- name: ListExistingRoleIDs :many
 SELECT id FROM roles WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY id;
 
--- Role badges (ADR-0071).
+-- Role badges (ADR-0070).
 
 -- ListRoleBadges returns the badge of every role that has one.
 -- name: ListRoleBadges :many

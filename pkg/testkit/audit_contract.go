@@ -19,7 +19,7 @@ import (
 )
 
 // AuditLogContract verifies the audit log of a database adapter's moderation repository
-// (ADR-0037) through the moderation use cases and appmoderation.RegisterAuditProjector: the
+// (ADR-0058) through the moderation use cases and appmoderation.RegisterAuditProjector: the
 // moderators' operations on domains and reports each record one entry in their transaction, with
 // the actor (a user, or the CLI) and the target's label, and operations that change nothing
 // record none; an entry rolls back with its transaction and an invalid one fails it; the schema

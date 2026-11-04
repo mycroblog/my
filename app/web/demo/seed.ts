@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Applies the demo scenario (demo/scenario.ts, ADR-0117 §1) to a running `my serve` of the test build: the people
+// Applies the demo scenario (demo/scenario.ts, ADR-0015 §5) to a running `my serve` of the test build: the people
 // and the server's settings with `bin/my`, everything else with the client and admin APIs through
 // @mycroblog/mykit, signed in as each person through the web client's sign-in (the authorization code flow with
 // PKCE). It writes no SQL: timelines, notifications, and the other projections come from the actions. Every creating

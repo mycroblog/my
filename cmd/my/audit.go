@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/platform"
 )
 
-// runAdminAudit implements `my admin audit list`: the audit log (FR-704, ADR-0037). The audit
+// runAdminAudit implements `my admin audit list`: the audit log (FR-704, ADR-0058). The audit
 // log is read-only; no subcommand changes or deletes an entry.
 func runAdminAudit(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {

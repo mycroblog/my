@@ -203,7 +203,7 @@ const (
 	// TokenRevokedClientDeleted: the token's client was deleted.
 	TokenRevokedClientDeleted TokenRevocationReason = "client_deleted"
 	// TokenRevokedSessionReplaced: the user signed in again from the same browser, which ended
-	// the session the token's family started from (ADR-0136 §5).
+	// the session the token's family started from (ADR-0090 §14).
 	TokenRevokedSessionReplaced TokenRevocationReason = "session_replaced"
 )
 

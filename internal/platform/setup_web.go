@@ -42,7 +42,7 @@ func (a *App) setUpWeb(opts AppOptions) error {
 		// The instance theme (ADR-0059), read per request so that a saved theme applies at once.
 		Theme:         a.Instance.Theme,
 		ThemeRevision: a.themeRevision,
-		// The instance's own icon and logos (ADR-0116), read per request so that a change applies at once.
+		// The instance's own icon and logos (ADR-0059), read per request so that a change applies at once.
 		Brands:    a.Instance.Brands,
 		BrandFile: a.brandFile,
 		// What /robots.txt, the pages, and /.well-known/ state to crawlers (ADR-0057), read per request.

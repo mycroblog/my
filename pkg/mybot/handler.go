@@ -21,7 +21,7 @@ type Handler func(c *Context) error
 type Middleware func(next Handler) Handler
 
 // DefaultMiddleware is the chain that every handler runs in unless Config.NoDefaultMiddleware is set, outermost
-// first: Recover, Manners, and SendBudget (ADR-0094 §4).
+// first: Recover, Manners, and SendBudget (ADR-0093 §12).
 func DefaultMiddleware() []Middleware {
 	return []Middleware{Recover(), Manners(), SendBudget()}
 }
@@ -46,7 +46,7 @@ func Recover() Middleware {
 
 // Manners skips the handler, the event counting as processed, for a sender whose account has the bot flag
 // (unless Config.RespondToBots) and for a sender whom the bot replied to as often as Config.ReplyLimits allow
-// (ADR-0094 §8). Events of the bot's own account never reach a handler, with or without it.
+// (ADR-0093 §16). Events of the bot's own account never reach a handler, with or without it.
 func Manners() Middleware {
 	return func(next Handler) Handler {
 		return func(c *Context) error {
@@ -65,7 +65,7 @@ func Manners() Middleware {
 
 // SendBudget makes the helpers of Context (Reply, React, Favourite, Follow) wait for the client-side send budget
 // of Config.PostRate and Config.WriteRate, and for the reset of the server's rate limit when less than a tenth
-// of it remains (ADR-0094 §6). A write that would wait longer than Config.MaxSendWait is dropped and logged.
+// of it remains (ADR-0093 §14). A write that would wait longer than Config.MaxSendWait is dropped and logged.
 func SendBudget() Middleware {
 	return func(next Handler) Handler {
 		return func(c *Context) error {

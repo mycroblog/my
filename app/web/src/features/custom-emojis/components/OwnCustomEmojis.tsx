@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The user's page of their custom emoji (`/settings/custom-emojis`, ADR-0070 §1–§4, create_custom_emojis), below its
 // heading: three regions. "Your custom emoji" shows how many emoji the user requested this month against their monthly
-// limit in a meter, with when the count resets in the viewer's time zone (ADR-0124), and
+// limit in a meter, with when the count resets in the viewer's time zone (ADR-0070), and
 // lists the emoji the user made: their settings change in a dialog, a new image is requested by choosing another file,
 // and deleting one asks first in an alert dialog (it cannot be undone). "Your requests" lists the requests in every
 // state, newest first, with the reason of a rejection and withdrawing a pending one. "Request a custom emoji" holds

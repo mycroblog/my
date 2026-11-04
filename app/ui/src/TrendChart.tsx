@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// TrendChart (ADR-0113 §1): the values of up to three series over periods, as bars or lines, with a switch to the same
+// TrendChart (ADR-0110 §16): the values of up to three series over periods, as bars or lines, with a switch to the same
 // data as a table. The chart is one image (`role="img"`) named by its title and described by its summary sentence, which
 // the caller writes (the largest, the latest, the change); its values are read in the table. It is drawn by hand in SVG
 // (an exception to G10, listed in app/.oxlintrc.json): the plot is a 0–100 box stretched to the chart's size, with

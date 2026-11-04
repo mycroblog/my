@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// The OAuth 2.0 authorization server (ADR-0016, ADR-0019 §4, ADR-0030): the authorization code
+// The OAuth 2.0 authorization server (ADR-0016, ADR-0019 §4, ADR-0090): the authorization code
 // grant with PKCE S256 only (RFC 7636), redirect URIs matched exactly, one-time codes, refresh
 // tokens rotated on every use with the whole family revoked when a used one comes back
 // (RFC 9700 §4.14.2), and revocation (RFC 7009).
@@ -39,7 +39,7 @@ const (
 const DefaultWebClientID = "my-web"
 
 // WebClient describes the first-party web client, which the server registers at startup.
-// Its refresh token travels only in the __Host-my_rt cookie (ADR-0030), so the token endpoint
+// Its refresh token travels only in the __Host-my_rt cookie (ADR-0090), so the token endpoint
 // refuses its refresh_token grant.
 type WebClient struct {
 	// ClientID is the client's public identifier; "" registers no web client.
@@ -160,7 +160,7 @@ type OAuthRepository interface {
 	// started from, unless the session has a revocation already or the code had no session.
 	RevokeSessionOfTokenFamily(ctx context.Context, tx uow.Tx, familyID string, reason identity.RevocationReason, at time.Time) error
 	// ListBrowserSessions returns the user's sessions that work at now or that a working token
-	// family of the first-party client started from, newest first (ADR-0136 §1).
+	// family of the first-party client started from, newest first (ADR-0090 §10).
 	ListBrowserSessions(ctx context.Context, userID string, now time.Time) ([]identity.BrowserSession, error)
 	// ListBrowserSessionFamilies returns the user's working token families of the first-party
 	// client that started from a session.
@@ -345,7 +345,7 @@ func (s *Service) EnableOAuthClient(ctx context.Context, clientID, byUserID stri
 }
 
 // emitOAuthClientAudit emits the audit log entry of an administrator's operation on a client,
-// labeled with its name and client_id (ADR-0037, ADR-0090 §1); source is the ID of the event
+// labeled with its name and client_id (ADR-0058, ADR-0090 §1); source is the ID of the event
 // row, "" when the operation has no row of its own.
 func (s *Service) emitOAuthClientAudit(ctx context.Context, tx uow.Tx, action appmoderation.AuditAction, c identity.OAuthClient, source, byUserID string, at time.Time) error {
 	entry := appmoderation.AuditEntry{
@@ -668,7 +668,7 @@ func (s *Service) RefreshAccessToken(ctx context.Context, in RefreshRequest) (Is
 }
 
 // RefreshWebClient is RefreshAccessToken for the refresh token of the web client's cookie
-// (ADR-0030). It fails with invalid_grant for a refresh token of any other client.
+// (ADR-0090). It fails with invalid_grant for a refresh token of any other client.
 func (s *Service) RefreshWebClient(ctx context.Context, refreshToken string) (IssuedTokens, error) {
 	if s.d.WebClient.ClientID == "" || refreshToken == "" {
 		return IssuedTokens{}, errInvalidGrant

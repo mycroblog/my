@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The federated timeline (/public; FR-202): the public posts of this server and of the servers it knows, in the states of ADR-0112 §1.
+// The federated timeline (/public; FR-202): the public posts of this server and of the servers it knows, in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { type Schemas, statusPage } from "../../test/fixtures";

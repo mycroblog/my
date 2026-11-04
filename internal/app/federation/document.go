@@ -52,7 +52,7 @@ type notes struct {
 // visibility vis. A zero updated leaves updated out.
 //
 // The Note of a local-visibility status leaves out of tag the remote accounts that do not
-// actively follow the author at the time it is built (ADR-0035): a server that gets the status
+// actively follow the author at the time it is built (ADR-0017): a server that gets the status
 // for a follower would otherwise let a mentioned account there see it. The mention links in the
 // content stay. Its addressing has no mentioned accounts anyway (ADR-0017).
 func (n notes) note(ctx context.Context, st appcontent.Status, rev appcontent.Revision, author appaccount.Actor, vis appcontent.Visibility, updated time.Time) (federation.NoteDocument, error) {
@@ -80,7 +80,7 @@ func (n notes) note(ctx context.Context, st appcontent.Status, rev appcontent.Re
 }
 
 // withQuotes adds to the Note of the local status st its quote, unless the author took it away or
-// the quoted status is local-visibility (ADR-0144 §4), and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
+// the quoted status is local-visibility (ADR-0018 §15), and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
 // the author alone for the others, which remote servers see as followers-only. Without quotes it
 // returns note as it is.
 func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility) (federation.NoteDocument, error) {
@@ -130,7 +130,7 @@ func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st 
 // effective visibility vis to its followers and the mentioned accounts of parts, with the body of
 // rev: content per language, content warning, attachments, and the mentions, hashtags, and custom
 // emoji of parts as tag (federation.md §7.4, ADR-0051 §3). Its url is the status page under the author's current username
-// (ADR-0053). A zero updated leaves updated out.
+// (ADR-0018). A zero updated leaves updated out.
 func statusNote(st appcontent.Status, rev appcontent.Revision, author appaccount.Actor, vis appcontent.Visibility, parts appcontent.RevisionParts, updated time.Time, host, accountDomain string) federation.NoteDocument {
 	mentioned := make([]federation.IRI, 0, len(parts.Mentions))
 	for _, m := range parts.Mentions {
@@ -210,7 +210,7 @@ func questionPoll(v *appcontent.PollView) federation.QuestionPoll {
 }
 
 // attachmentOf returns the attachment document of a processed media file: the URL, type, and
-// size of its large variant, moving for an animation (ADR-0054 §5), or of the video or audio
+// size of its large variant, moving for an animation (ADR-0005 §8), or of the video or audio
 // file with its poster's large variant as icon and its length as duration; its alternative
 // text, blurhash, and focal point.
 func attachmentOf(m appcontent.MediaView) federation.AttachmentDocument {

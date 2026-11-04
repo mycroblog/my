@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A table to read: rows of values under column headers, each row named by its row header. It is the native `table`,
 // which assistive technology already reads by row and column; a table people select or sort in is React Aria's Table,
-// which the kit does not wrap yet (ADR-0031). The page never scrolls sideways: values wrap where `wrap="anywhere"` allows,
+// which the kit does not wrap yet (ADR-0025). The page never scrolls sideways: values wrap where `wrap="anywhere"` allows,
 // and a table of more columns than the width holds scrolls inside its own focusable group (a data table is exempt from
 // WCAG 1.4.10, and stacking its cells would leave them without their column headers).
 import { type ComponentPropsWithRef, createContext, type ReactNode, use, useId } from "react";

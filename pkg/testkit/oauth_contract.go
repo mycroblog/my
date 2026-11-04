@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// The OAuth cases of AccountRepositoryContract (ADR-0019 §4, ADR-0030).
+// The OAuth cases of AccountRepositoryContract (ADR-0019 §4, ADR-0090).
 
 const (
 	contractWebRedirect  = "https://social.example/login/callback"

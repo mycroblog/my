@@ -4,7 +4,7 @@ package sysmetrics
 
 import "github.com/mycroblog/my/internal/app/kernel"
 
-// Label keys of the outbound HTTP metrics. The destination is never a label (ADR-0056 §1).
+// Label keys of the outbound HTTP metrics. The destination is never a label (ADR-0055 §10).
 const (
 	LabelHTTPPurpose     = "my.http.purpose"
 	LabelHTTPMethod      = "http.request.method"
@@ -12,7 +12,7 @@ const (
 	LabelErrorType       = "error.type"
 )
 
-// The outbound HTTP metrics of ADR-0056 §1, measured by internal/adapter/httpclient.
+// The outbound HTTP metrics of ADR-0055 §10, measured by internal/adapter/httpclient.
 var (
 	HTTPClientRequestDuration = kernel.Instrument{
 		Name: "http.client.request.duration", Unit: "s",

@@ -11,7 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/app/supporters"
 )
 
-// The two ports between the supporters and the finance modules (ADR-0073 §1): the supporters
+// The two ports between the supporters and the finance modules (ADR-0067 §11): the supporters
 // hand their money movements to the income records, and the finance module reads the plans,
 // the subscribers, and the provider's time zone of the supporters. Both read the App when they
 // are called, since the supporters module is set up before the finance module.

@@ -28,7 +28,7 @@ const (
 const quoteAuthorizationsPrefix = "/ap/quote_authorizations/"
 
 // activitiesPrefix is the path of the IRIs of this server's activities other than Create before
-// the UUID (ADR-0018); only the Announce of a public or unlisted boost is served (ADR-0144 §5).
+// the UUID (ADR-0018); only the Announce of a public or unlisted boost is served (ADR-0018 §16).
 const activitiesPrefix = "/ap/activities/"
 
 // Collections of an actor, the last path segment under {actor}/ (ADR-0018). The inbox only

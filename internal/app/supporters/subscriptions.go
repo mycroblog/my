@@ -767,7 +767,7 @@ func (s *Service) LiveSubscriptionCount(ctx context.Context) (int, error) {
 
 // HasLiveSubscription reports whether a user has a live subscription, also one that ends at the end
 // of its period, whatever the state of the program. Such a user cannot deactivate the account
-// (ADR-0145 §1).
+// (ADR-0089 §11).
 func (s *Service) HasLiveSubscription(ctx context.Context, userID string) (bool, error) {
 	_, err := s.d.Repository.LiveSubscriptionID(ctx, nil, userID)
 	if errors.Is(err, ErrNotFound) {

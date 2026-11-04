@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package awskms implements the KeyManager port of internal/app/kernel with AWS KMS
-// (`key_manager = awskms`, `kms_key`, `kms_key_previous`; ADR-0121 §1).
+// (`key_manager = awskms`, `kms_key`, `kms_key_previous`; ADR-0019 §11).
 //
 // It wraps a data-encryption key with the Encrypt operation of a symmetric KMS key and unwraps
 // it with Decrypt, so the key-encryption key never leaves AWS KMS. The AAD goes into the

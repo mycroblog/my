@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
-// Lists (ADR-0122, data-model §4.6): an account groups the accounts it actively follows into
+// Lists (ADR-0013, data-model §4.6): an account groups the accounts it actively follows into
 // lists that only it sees, and reads a timeline of each. The timeline module owns them: the
 // owner's commands write lists, list_names, and list_members, the projector of
 // graph.follow_terminated takes an ended follow's followee out of every list of the follower, and
@@ -218,7 +218,7 @@ func (s *Service) ListMembers(ctx context.Context, owner, id, after string, limi
 	return s.d.Repository.ListMembers(ctx, id, after, limit)
 }
 
-// ListTimeline returns the timeline of the list id of a logged-in viewer (ADR-0122 §4): the rules
+// ListTimeline returns the timeline of the list id of a logged-in viewer (ADR-0013 §13): the rules
 // of Home with the authors (posters and boosters) limited to the members of the list, so never the
 // viewer's own posts. It reads in the widening windows of Home. It fails with ErrNotFound for a
 // list that the viewer does not own.

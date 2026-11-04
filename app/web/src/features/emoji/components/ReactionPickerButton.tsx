@@ -18,7 +18,7 @@ export type ReactionPickerButtonProps = {
  * emoji of this server and every Unicode emoji in the skin tone chosen here. Hovering or focusing it (in the dock,
  * opening it) starts loading the Unicode emoji, and the popover opens at once with skeleton rows until they arrive. The search field
  * takes focus; picking an emoji closes the popover, which returns focus to the button, and reacts with it, also when
- * Shift is held (one reaction per post, ADR-0052 §1). The button is named by its label and shows the same words as a
+ * Shift is held (one reaction per post, ADR-0051 §6). The button is named by its label and shows the same words as a
  * tooltip (web-client/16-look-states-and-wording.md G12).
  */
 export function ReactionPickerButton({

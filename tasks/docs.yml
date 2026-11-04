@@ -39,7 +39,7 @@ tasks:
       - scripts/adr-numbers.sh
 
   ci-coverage:
-    desc: Fail when a check of `check` runs in no step of .github/workflows and is not excluded with a reason (ADR-0083)
+    desc: Fail when a check of `check` runs in no step of .github/workflows and is not excluded with a reason (ADR-0079)
     cmds:
       - scripts/ci-coverage.sh
 

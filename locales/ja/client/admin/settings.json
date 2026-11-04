@@ -417,7 +417,7 @@
   },
   "admin.settings.federation.mode": {
     "defaultMessage": "連合の向き",
-    "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0076): which way posts flow between this server and other servers."
+    "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0006): which way posts flow between this server and other servers."
   },
   "admin.settings.federation.mode.description": {
     "defaultMessage": "このサーバーとほかのサーバーのあいだで、投稿・フォロー・反応をどちらの向きに流すかを選びます。変更はすぐに効きます。",

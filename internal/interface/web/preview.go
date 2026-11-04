@@ -94,7 +94,7 @@ type previewRoute struct {
 // parsePreviewRoute parses /@{name} and /@{name}/status/{id}. A name with the account domain
 // or the host (/@alice@example.org) is a local one; a name with another domain is a remote
 // account's page, which has no preview. Under a profile, the first segment is one of the
-// reserved words of the web client's pages (ADR-0053): only status is the server's, and the
+// reserved words of the web client's pages (ADR-0018): only status is the server's, and the
 // other paths are pages of the web client.
 func (h *Handler) parsePreviewRoute(p string) (previewRoute, bool) {
 	rest, ok := strings.CutPrefix(p, "/@")
@@ -139,7 +139,7 @@ func (h *Handler) servePreview(w http.ResponseWriter, r *http.Request, route pre
 		if s, err = h.o.Previews.Status(ctx, route.statusID); err == nil {
 			if s.Author.Username() != route.name {
 				// The page is found by the status ID; the URL with the current username is the
-				// canonical one (ADR-0053).
+				// canonical one (ADR-0018).
 				h.shellHeaders(w.Header())
 				http.Redirect(w, r, content.StatusURL(h.o.Host, s.Author.Username(), s.Post.Status.ID), http.StatusMovedPermanently)
 				return
@@ -282,7 +282,7 @@ func (h *Handler) profileImage(ctx context.Context, lang string, p appcontent.Pr
 }
 
 // instanceImage returns the instance's preview image for a preview in language lang, the
-// preview image drawn from its logo when it has none (ADR-0116), or the built-in image when it
+// preview image drawn from its logo when it has none (ADR-0059), or the built-in image when it
 // has neither. An image without alt text gets a generic one naming the instance.
 func (h *Handler) instanceImage(ctx context.Context, lang string) (*Image, error) {
 	l := h.o.Messages.Localizer(lang)

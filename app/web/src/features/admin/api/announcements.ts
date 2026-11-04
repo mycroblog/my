@@ -80,7 +80,7 @@ export function withdrawAnnouncementMutation(api: Api) {
 }
 
 /**
- * Marks what a change of the announcements changes (ADR-0045): the admin list, the users' list and the audit log;
+ * Marks what a change of the announcements changes (ADR-0028): the admin list, the users' list and the audit log;
  * the queries shown now are fetched again and awaited.
  */
 export async function refreshAnnouncements(queryClient: QueryClient): Promise<void> {

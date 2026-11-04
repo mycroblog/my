@@ -4,9 +4,9 @@
 // (e2e/main-flow.spec.ts) create users and approve sign-ups with them while the server runs, as an
 // operator does (docs/operations/registration.md). The voice chat server (`node e2e/server.ts voice`) has the same
 // configuration with `voice = p2p`, on a database and a port of its own. The demo server (`node e2e/server.ts demo`,
-// ADR-0117 §3) is the test build with the fake payment provider, in the `development` profile, with `voice = p2p`
+// ADR-0015 §7) is the test build with the fake payment provider, in the `development` profile, with `voice = p2p`
 // and its email sent to the development Mailpit on 127.0.0.1 (scripts/task.sh docker:mailpit), and Web Push on
-// with the fake push service of the test build (`my dev push-service`, ADR-0118) as the only push service it reaches.
+// with the fake push service of the test build (`my dev push-service`, ADR-0015) as the only push service it reaches.
 import { execFileSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import {

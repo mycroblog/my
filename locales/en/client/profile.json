@@ -117,7 +117,7 @@
   },
   "profile.follow.federation_restricted": {
     "defaultMessage": "This server does not follow accounts of other servers now.",
-    "description": "Shown in place of the follow button on the profile of an account of another server while this server does not follow other servers (federation direction 'Send only' or 'Off', ADR-0076)."
+    "description": "Shown in place of the follow button on the profile of an account of another server while this server does not follow other servers (federation direction 'Send only' or 'Off', ADR-0006)."
   },
   "profile.follow.request": {
     "defaultMessage": "Request to follow",
@@ -157,7 +157,7 @@
   },
   "profile.badges": {
     "defaultMessage": "Badges",
-    "description": "Accessible name of the list of the role badges on a profile (ADR-0071)."
+    "description": "Accessible name of the list of the role badges on a profile (ADR-0070)."
   },
   "profile.list.back": {
     "defaultMessage": "Back to the profile of {name}",

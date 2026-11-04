@@ -105,11 +105,11 @@
   },
   "compose.mention.unreached": {
     "defaultMessage": "{count, plural, other {{accounts} はほかのサーバーのアカウントで、あなたをフォローしていないため、この投稿は届きません。}}公開範囲「このサーバー」の投稿は、ほかのサーバーではあなたのフォロワーにだけ届き、このメンションはメンションではなくただのリンクとして表示されます。",
-    "description": "Warning under a post with the visibility 'This server' that mentions accounts of other servers that do not follow the author (ADR-0017, ADR-0035): those accounts do not receive the post, and the author's followers on other servers see the mention as a plain link, not as a mention. {accounts} is the list of their handles, for example '@carol@remote.example and @dave@other.example'; {count} is how many there are."
+    "description": "Warning under a post with the visibility 'This server' that mentions accounts of other servers that do not follow the author (ADR-0017): those accounts do not receive the post, and the author's followers on other servers see the mention as a plain link, not as a mention. {accounts} is the list of their handles, for example '@carol@remote.example and @dave@other.example'; {count} is how many there are."
   },
   "compose.federation.stays_local": {
     "defaultMessage": "連合先には届きません。このサーバーはいまほかのサーバーへ投稿を送らないため、返信先やメンションしたほかのサーバーのアカウントにはこの投稿が届きません。",
-    "description": "Warning under a post that replies to or mentions an account of another server while this server sends nothing to other servers (federation direction 'Receive only' or 'Off', ADR-0076)."
+    "description": "Warning under a post that replies to or mentions an account of another server while this server sends nothing to other servers (federation direction 'Receive only' or 'Off', ADR-0006)."
   },
   "compose.missing_description.add": {
     "defaultMessage": "説明を書く",

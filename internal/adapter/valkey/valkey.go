@@ -26,7 +26,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 )
 
-// AdapterName is the my.adapter label of the client's connections (ADR-0056 §1).
+// AdapterName is the my.adapter label of the client's connections (ADR-0055 §10).
 const AdapterName = "valkey"
 
 // Client is a connection pool to the server; it is safe for concurrent use.

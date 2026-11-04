@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/app/queue"
 )
 
-// TestTracesFromHTTPToJobs checks ADR-0063 with traces_exporter = otlp: a request from a trusted
+// TestTracesFromHTTPToJobs checks ADR-0055 with traces_exporter = otlp: a request from a trusted
 // proxy continues its traceparent, its queries are its children, the job it enqueued runs in a
 // new trace linked to it, every span reaches the OTLP receiver, no attribute is outside the
 // allowlist of §4, and the log lines carry the trace and span IDs.

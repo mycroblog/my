@@ -152,7 +152,7 @@ export function removeFromList(queryClient: QueryClient, api: Api, change: ListC
 }
 
 /**
- * What a change from the lists changes elsewhere (web-client/README.md S1, ADR-0045): the relationship as the server
+ * What a change from the lists changes elsewhere (web-client/README.md S1, ADR-0028): the relationship as the server
  * answered it goes into every cached answer of GET /accounts/relationships that holds the account (the
  * profile's buttons, the new-post form's mentions), and an unblock, an unmute or an accepted request fetches
  * again what refreshRelationship names (the follow counts and lists, the lists of posts). A rejected request

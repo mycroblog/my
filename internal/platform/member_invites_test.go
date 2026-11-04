@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/platform"
 )
 
-// TestMemberInvites drives the invites that members create on the real database (ADR-0108):
+// TestMemberInvites drives the invites that members create on the real database (ADR-0106):
 // the instance settings decide who may and the caps, a member's invite approves at once in
 // approval mode, and a limit on its creator stops it.
 func TestMemberInvites(t *testing.T) {

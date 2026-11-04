@@ -12,10 +12,10 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 )
 
-// Wake is a wake-up signal (ADR-0120 §1): it asks a push receiver to claim the job JobID no
+// Wake is a wake-up signal (ADR-0004 §9): it asks a push receiver to claim the job JobID no
 // earlier than At. It carries nothing else out of the process: the job, its payload and its
 // traceparent stay in the database queue. Type is the job's type, which only chooses the queue of
-// the signal inside the process (WakeRouter, ADR-0139 §2); adapters do not send it.
+// the signal inside the process (WakeRouter, ADR-0004 §24); adapters do not send it.
 type Wake struct {
 	JobID string
 	Type  string
@@ -44,7 +44,7 @@ type WakeFinder interface {
 	// held back by their ordering key; the earliest RunAt first. None when limit <= 0.
 	DueJobs(ctx context.Context, now, dueBefore time.Time, limit int) ([]Wake, error)
 	// DueJobsOfTypes is DueJobs for the jobs of the given types only, and DueJobsExceptTypes for
-	// the jobs of every other type, including a type that no handler knows (ADR-0139 §4).
+	// the jobs of every other type, including a type that no handler knows (ADR-0004 §26).
 	DueJobsOfTypes(ctx context.Context, types []string, now, dueBefore time.Time, limit int) ([]Wake, error)
 	DueJobsExceptTypes(ctx context.Context, types []string, now, dueBefore time.Time, limit int) ([]Wake, error)
 	// NextJob returns the first job of orderingKey in enqueue order, as a Wake at its RunAt; ok
@@ -73,13 +73,13 @@ type WakeSweepDeps struct {
 	Batch int
 }
 
-// WakeSweeper is the sweep queue.wake (ADR-0120 §3): it signals again the jobs that have been due
+// WakeSweeper is the sweep queue.wake (ADR-0004 §11): it signals again the jobs that have been due
 // for longer than the grace period and that no worker holds, which recovers the signals lost
 // between a commit and its send, the sends that failed, and the jobs of a worker that stopped
 // while it held their lease. Duplicates of signals still on their way are harmless.
 //
 // With routes (UseRoutes) it sweeps each route on its own, so that a backlog of one route does not
-// fill the batch and hide the lost signals of the others (ADR-0139 §4).
+// fill the batch and hide the lost signals of the others (ADR-0004 §26).
 type WakeSweeper struct {
 	d      WakeSweepDeps
 	routes [][]string

@@ -15,7 +15,7 @@ import (
 // A WebM is remuxed by writing its Segment again with the seek index (SeekHead), the segment
 // information (Info) without its title and date, the tracks (Tracks) without their names, the
 // clusters as they are, and the cue index (Cues); the tags (Tags), attachments (Attachments,
-// where cover images go), chapters (Chapters), and padding (Void) are dropped (ADR-0054 §6).
+// where cover images go), chapters (Chapters), and padding (Void) are dropped (ADR-0005 §9).
 // Dropping only shrinks the file, so every position that the seek index, the cues, and the
 // clusters hold is rewritten in the bytes it already has.
 

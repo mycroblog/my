@@ -38,7 +38,7 @@ func sum(m map[string]int64) int64 {
 	return n
 }
 
-// The example of ADR-0073 §5: a yearly payment of 12,000 yen with a fee of 432 yen on
+// The example of ADR-0067 §15: a yearly payment of 12,000 yen with a fee of 432 yen on
 // 2026-04-10, refunded in full on 2026-06-01.
 func adrExample(t *testing.T) (payment, refund IncomeMovement) {
 	covers := dateRange(t, "2026-04-10", "2027-04-09")

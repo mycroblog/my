@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's announcements in every width × locale project (FR-726, ADR-0125, ADR-0027): below xl a user sees the
+// The server's announcements in every width × locale project (FR-726, ADR-0125, ADR-0110): below xl a user sees the
 // published ones above the home timeline with the unread one marked in words, and marks it read; from xl they are in
 // the third column by their titles instead; the list page has the ended ones; the page of one, opened from its
 // notification, marks it read; an administrator writes an announcement with its title and withdraws it after its dialog. Each step passes axe without scrolling sideways. `vite preview`

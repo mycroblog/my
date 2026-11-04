@@ -19,7 +19,7 @@ import (
 // effect while reports that cite it still find it.
 //
 // Each change that records something records its audit log entry in the same transaction
-// (ADR-0037); one that records nothing, such as moving a rule to its place, is not audited.
+// (ADR-0058); one that records nothing, such as moving a rule to its place, is not audited.
 
 // RuleRepository is the persistence port of the instance rules. It is part of Repository.
 type RuleRepository interface {

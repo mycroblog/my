@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// This file holds the emoji reactions of content.InteractionRepository (ADR-0052).
+// This file holds the emoji reactions of content.InteractionRepository (ADR-0051).
 
 // InsertReaction implements content.InteractionRepository.
 func (r *InteractionRepository) InsertReaction(ctx context.Context, tx uow.Tx, re content.Reaction) (bool, error) {

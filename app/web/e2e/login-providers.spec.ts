@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The login providers screen in every width × locale project (ADR-0106, ADR-0027): an administrator sets up an
+// The login providers screen in every width × locale project (ADR-0106, ADR-0110): an administrator sets up an
 // OpenID Connect provider and sees its callback URL, sees it listed, disables it after the warning dialog, and deletes
 // it after its dialog, each step passing axe without scrolling sideways. `vite preview` has no API, so each test plays
 // the server of a signed-in administrator with page.route; names change with the locale, so the structure is checked

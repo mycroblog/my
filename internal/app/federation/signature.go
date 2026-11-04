@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 )
 
-// SignatureScheme names an HTTP signature format (ADR-0006, ADR-0032). The values are the ones
+// SignatureScheme names an HTTP signature format (ADR-0006). The values are the ones
 // stored in received_activities.signature_scheme and delivery_attempts.signature_scheme.
 type SignatureScheme string
 
@@ -68,7 +68,7 @@ func NewSignedRequest(origin *url.URL, r *http.Request, body []byte) *SignedRequ
 }
 
 // Signature is a parsed request signature. A Verifier returns it from Parse; the
-// SignatureVerifier applies the acceptance policy of ADR-0032 to it.
+// SignatureVerifier applies the acceptance policy of ADR-0006 to it.
 type Signature struct {
 	Scheme SignatureScheme
 	// Label is the RFC 9421 signature label; empty for draft-cavage.

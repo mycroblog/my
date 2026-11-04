@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The layout around every page (ADR-0026). Mobile first (web-client/README.md D1): one column with the
+// The layout around every page (ADR-0025). Mobile first (web-client/README.md D1): one column with the
 // navigation as a bottom tab bar; from md a side rail and the page; from xl a third column with the server's
 // announcements, the open voice chat rooms (on a room's page, its raised hands and about the room instead), the
 // viewer's latest notifications on timeline pages, and about the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
@@ -53,7 +53,7 @@ export function AppLayout() {
   const wide = useMediaQuery(wideQuery);
   const medium = useMediaQuery(mediumQuery);
   // Only pages with a feed float the new-post button (timelines and profiles: their routes' static data), below md
-  // (ADR-0039); from md the rail has the button.
+  // (ADR-0110); from md the rail has the button.
   const pageWantsButton = useMatches({
     select: (matches) => matches.some((match) => match.staticData.composeButton === true),
   });

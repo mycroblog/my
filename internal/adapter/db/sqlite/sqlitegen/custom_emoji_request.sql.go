@@ -43,7 +43,7 @@ type CountCustomEmojiUsageRow struct {
 	Pending  int64
 }
 
-// CountCustomEmojiUsage counts what the monthly limit of a creator counts (ADR-0124 section 1): the
+// CountCustomEmojiUsage counts what the monthly limit of a creator counts (ADR-0070 section 1): the
 // requests to create an emoji that the user submitted in [@since, @until), approved and pending
 // apart. Rejected, withdrawn, and lapsed requests do not count; deleting an approved emoji does
 // not change the count.

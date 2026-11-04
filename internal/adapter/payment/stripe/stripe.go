@@ -8,7 +8,7 @@
 // stripe-go (github.com/stripe/stripe-go/v87) is used only inside this package; its types never
 // leave it. The API version is the one the SDK pins. The webhook signatures are verified with the
 // standard library and the events are read for a few fields only, so that a version of the SDK
-// that differs from the endpoint's API version still accepts them (ADR-0074 W1).
+// that differs from the endpoint's API version still accepts them (ADR-0074 §3).
 //
 // The SDK reaches only api.stripe.com, which the operator chose by configuring the key, so its
 // HTTP client is not the SSRF-guarded kernel.HTTPClient (ADR-0074 §7, H1). The adapter keeps its
@@ -187,7 +187,7 @@ func (p *Provider) Name() string { return Name }
 func (p *Provider) Mode() supporters.Mode { return p.mode }
 
 // Location implements supporters.PaymentProvider: the time zone of the account's dashboard
-// (settings.dashboard.timezone), or UTC when it could not be read (ADR-0073 §3).
+// (settings.dashboard.timezone), or UTC when it could not be read (ADR-0067 §13).
 func (p *Provider) Location() *time.Location {
 	p.locMu.Lock()
 	defer p.locMu.Unlock()

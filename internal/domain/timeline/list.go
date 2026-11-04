@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 )
 
-// The limits of lists (ADR-0122 §5). They bound the IN of a list timeline's fan-out-on-read to
+// The limits of lists (ADR-0013 §14). They bound the IN of a list timeline's fan-out-on-read to
 // about the size of a home timeline's follows, and what a screen can handle; they are constants,
 // not settings.
 const (
@@ -32,7 +32,7 @@ var (
 	// ErrTooManyListMembers reports a member beyond MaxListMembers.
 	ErrTooManyListMembers = errors.New("timeline: too many list members")
 	// ErrNotFollowed reports a member that the owner does not actively follow: only accounts
-	// whose follow the owner has and they accepted can join the owner's lists (ADR-0122 §2).
+	// whose follow the owner has and they accepted can join the owner's lists (ADR-0013 §11).
 	ErrNotFollowed = errors.New("timeline: the owner does not follow the account")
 )
 

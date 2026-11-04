@@ -19,7 +19,7 @@ import (
 )
 
 // TestPostSubscriptionsThroughAPI drives the subscriptions to new posts on SQLite through the
-// client API (ADR-0123): a local account without a follow can be subscribed to, a remote one only
+// client API (ADR-0086): a local account without a follow can be subscribed to, a remote one only
 // while it is followed (422 otherwise, also while the follow awaits its server, whose acceptance
 // then makes the subscription that the follow's notify asked for); the new posts notify the
 // subscribers who may see them, so a private post reaches only the subscribers who follow the

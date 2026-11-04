@@ -37,7 +37,7 @@ function message(key: string): string {
 const pageHeading = (page: Page) => page.getByRole("main").getByRole("heading", { level: 1 });
 
 /**
- * Signs in through the server's sign-in screen (OAuth 2.0 with PKCE, ADR-0030), sets the user's display
+ * Signs in through the server's sign-in screen (OAuth 2.0 with PKCE, ADR-0090), sets the user's display
  * language to the project's locale (PATCH /api/v1/preferences with the app's access token) and reloads the
  * app in it.
  */

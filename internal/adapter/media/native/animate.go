@@ -127,7 +127,7 @@ func webpSource(data []byte) (animationSource, error) {
 }
 
 // animate makes the variants of an animation: the still ones from its first frame, and the
-// moving ones (ADR-0054 §3). When original is not nil and the large target keeps the whole
+// moving ones (ADR-0005 §6). When original is not nil and the large target keeps the whole
 // screen unscaled, the large moving variant is original re-encoded, which keeps its frames and
 // palettes exactly. pngLarge makes the large still variant PNG (stillVariants).
 func animate(src animationSource, ts [3]target, original *gif.GIF, pngLarge bool) (media.Output, error) {

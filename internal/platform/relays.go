@@ -11,7 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
-// setUpRelays builds the relays (ADR-0061): their administration, the Follow and Undo of the
+// setUpRelays builds the relays (ADR-0006): their administration, the Follow and Undo of the
 // instance actor that join and leave them, and the gate of what they bring in. It needs
 // RemoteActors, which fetches the actor of a LitePub relay, and comes before the inbox and the
 // fan-out, which use it.

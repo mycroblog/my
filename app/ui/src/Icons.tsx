@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The icon set of the kit (web-client/16-look-states-and-wording.md §16.3, G10–G13; ADR-0043). The shapes are Phosphor's, through
+// The icon set of the kit (web-client/16-look-states-and-wording.md §16.3, G10–G13; ADR-0025). The shapes are Phosphor's, through
 // react-icons/pi; this file is the only one that imports them. `iconTable` maps each meaningful name
 // (`ReplyIcon`) to its Phosphor icon off and on and to whether it has a direction, and every export below
 // renders one row of it. The Regular weight is the base; a toggle that is on uses the Fill weight when its
@@ -243,7 +243,7 @@ export const iconTable = {
   FinanceIcon: { off: glyph(PiCoins, "PiCoins") },
   // Voice chat (ADR-0100): a headset, which has no direction.
   VoiceIcon: { off: glyph(PiHeadset, "PiHeadset") },
-  // The user's lists of the accounts they follow (ADR-0122): a person beside lines.
+  // The user's lists of the accounts they follow (ADR-0013): a person beside lines.
   ListsIcon: { off: glyph(PiUserList, "PiUserList") },
   // The grouped menus of the settings and of the admin and moderation mode (ADR-0110 §5): one icon per page.
   BadgeIcon: { off: glyph(PiSealCheck, "PiSealCheck") },
@@ -313,7 +313,7 @@ export const iconTable = {
   // The arrow points into the door along the line, so it mirrors in right-to-left text.
   SignInIcon: { off: glyph(PiSignIn, "PiSignIn"), directional: true },
   SignUpIcon: { off: glyph(PiUserPlus, "PiUserPlus") },
-  // Data (ADR-0113): the change of a number from the period before. Up and down are the value's direction in any
+  // Data (ADR-0110): the change of a number from the period before. Up and down are the value's direction in any
   // writing direction, so they do not mirror.
   IncreaseIcon: { off: glyph(PiArrowUp, "PiArrowUp") },
   DecreaseIcon: { off: glyph(PiArrowDown, "PiArrowDown") },

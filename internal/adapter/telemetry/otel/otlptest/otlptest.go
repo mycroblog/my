@@ -3,7 +3,7 @@
 // Package otlptest is an OTLP/HTTP trace and log receiver for tests: it decodes the spans that the
 // otel Tracer exports and the log records of the otlp error exporter, so that tests outside the
 // OpenTelemetry adapters check what leaves the process without importing OpenTelemetry
-// (ADR-0063 §1, ADR-0103 §4 (3)).
+// (ADR-0055 §13, ADR-0103 §4 (3)).
 package otlptest
 
 import (

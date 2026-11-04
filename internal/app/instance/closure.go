@@ -276,7 +276,7 @@ type ClosureCounts interface {
 	// PendingMigrations counts the account migrations (ADR-0089: the sending of a Move and the
 	// jobs that move the followers) that have not ended.
 	PendingMigrations(ctx context.Context) (int, error)
-	// HeldAccounts counts the accounts that a retention hold (ADR-0038) preserves.
+	// HeldAccounts counts the accounts that a retention hold (ADR-0058) preserves.
 	HeldAccounts(ctx context.Context) (int, error)
 }
 

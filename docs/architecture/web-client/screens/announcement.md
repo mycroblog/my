@@ -6,7 +6,7 @@ paths: ["app/web/src/routes/announcements_.$id.tsx", "app/web/src/features/annou
 
 ## お知らせ（`/announcements/$id`）
 
-このサーバーの運営からのお知らせを 1 つ読む画面（FR-726、ADR-0125、[ADR-0130](../../../adr/0130-announcement-page.md)）。通知や Web Push や右帯から、目的のお知らせだけをすぐ読むためにある。
+このサーバーの運営からのお知らせを 1 つ読む画面（FR-726、ADR-0125、[ADR-0125](../../../adr/0125-announcement-title-notification-list.md)）。通知や Web Push や右帯から、目的のお知らせだけをすぐ読むためにある。
 一覧に出るお知らせ（公開中で見え始めたもの。期間の終わったものを含む）を読める。取り下げられたお知らせは読めない。
 
 ### 1. 使う人と頻度

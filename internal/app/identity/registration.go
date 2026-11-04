@@ -116,7 +116,7 @@ var (
 	// ErrInviteRequired reports a sign-up without an invite code in invite mode.
 	ErrInviteRequired = errors.New("identity: an invite is required")
 	// ErrInvalidInvite reports an invite code that is unknown, expired, revoked, used up, or
-	// of a member who may no longer create invites (ADR-0108 §3). It is one error for all of
+	// of a member who may no longer create invites (ADR-0106 §16). It is one error for all of
 	// them, so that the page does not tell them apart.
 	ErrInvalidInvite = errors.New("identity: invalid invite")
 	// ErrInviteCodeTaken reports an invite code that another invite already has.
@@ -160,7 +160,7 @@ type SignUpInput struct {
 	Locale string
 	// InviteCode is the invite the applicant entered: required in invite mode and optional in
 	// open and approval mode, where a code that does not work fails the sign-up all the same
-	// (ADR-0108 §4).
+	// (ADR-0106 §17).
 	InviteCode string
 	// Reason is why the applicant wants to join; it is kept in approval mode and ignored in
 	// the other modes.
@@ -190,7 +190,7 @@ type SignedUp struct {
 // (FR-001): open mode approves at once, approval mode leaves the registration pending for a
 // moderator unless the applicant brings a usable invite, invite mode needs a usable invite and
 // approves at once, and closed mode refuses. An invite works in open, approval, and invite
-// mode (ADR-0108 §4): it is usable when it is neither revoked, expired, nor used up, and when a
+// mode (ADR-0106 §17): it is usable when it is neither revoked, expired, nor used up, and when a
 // member created it, while that member may still create invites (§3); an invite code that is
 // not usable fails the sign-up in every mode, so that a mistyped code does not pass unnoticed.
 // When email verification is not required (no mailer delivers email, FR-002), open mode
@@ -213,10 +213,10 @@ type SignedUp struct {
 // account.ErrInvalidUsername for invalid input. A failure writes nothing.
 //
 // With a HumanVerifier, the CAPTCHA token is checked after SignUpIPLimit, which counts the
-// attempt, and before anything else, in every mode and with a valid invite too (ADR-0042 §3).
+// attempt, and before anything else, in every mode and with a valid invite too (ADR-0106 §9).
 // A token that fails the check fails the sign-up with an error wrapping
 // kernel.ErrHumanCheckFailed, and a service that cannot check it with an error wrapping
-// kernel.ErrHumanCheckUnavailable (fail closed, ADR-0042 §4).
+// kernel.ErrHumanCheckUnavailable (fail closed, ADR-0106 §10).
 func (s *Service) SignUp(ctx context.Context, in SignUpInput) (SignedUp, error) {
 	return s.signUp(ctx, in, nil)
 }
@@ -314,7 +314,7 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 	state := identity.UserRegistrationState{UserID: p.user.ID, State: identity.RegistrationPending, Since: now}
 	var decision *identity.RegistrationDecision
 	// A usable invite approves in approval mode too: its creator stands in for the moderator
-	// (ADR-0108 §4). In open mode it only records who invited the user.
+	// (ADR-0106 §17). In open mode it only records who invited the user.
 	approve := mode == identity.RegistrationInvite || (mode == identity.RegistrationOpen && s.d.RequireEmailVerification) ||
 		(mode == identity.RegistrationApproval && invite != nil)
 	if approve && severity != appmoderation.SignupRequireApproval {
@@ -396,7 +396,7 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 
 // signUpInvite returns the invite with the code for a sign-up, failing with ErrInvalidInvite
 // when no invite has the code, it expired, or a member created it who may no longer create
-// invites (ADR-0108 §3). redeemInvite checks the revocation and the uses in the transaction.
+// invites (ADR-0106 §16). redeemInvite checks the revocation and the uses in the transaction.
 func (s *Service) signUpInvite(ctx context.Context, code string) (identity.Invite, error) {
 	inv, err := s.d.Repository.FindInviteByCode(ctx, code)
 	if errors.Is(err, ErrNotFound) {
@@ -615,7 +615,7 @@ type Access struct {
 	// deactivated; nil otherwise.
 	DeletionDueAt *time.Time
 	// Deactivated is true when the account's owner deactivated it: the user can only reactivate
-	// or delete it, on the status page (ADR-0145 §4).
+	// or delete it, on the status page (ADR-0089 §14).
 	Deactivated bool
 	// DeletionDate is DeletionDueAt of a deactivated account as the user reads it; "" otherwise.
 	DeletionDate string
@@ -775,7 +775,7 @@ type DecideInput struct {
 // ErrNotFound when the user has no application, and with ErrNotPending when the registration is
 // already decided, also by a concurrent decision: a decided registration never changes again.
 // An approval fails with ErrServiceClosing from the announcement of the service closure on
-// (ADR-0088 §2). The decision is audited in its transaction (ADR-0037).
+// (ADR-0088 §2). The decision is audited in its transaction (ADR-0058).
 func (s *Service) DecideRegistration(ctx context.Context, in DecideInput) (identity.RegistrationDecision, error) {
 	if in.Decision != identity.DecisionApproved && in.Decision != identity.DecisionRejected {
 		return identity.RegistrationDecision{}, fmt.Errorf("identity: unknown decision %q", in.Decision)

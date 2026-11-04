@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The timeline feature: the home, local, federated and hashtag timelines (FR-201 to FR-203), the timelines of the
-// user's lists (ADR-0122 §4) and the list of the viewer's bookmarks (FR-113). Routes and other features use it through
+// user's lists (ADR-0013 §13) and the list of the viewer's bookmarks (FR-113). Routes and other features use it through
 // this file only (web-client/README.md A3).
 export {
   catchUpHome,

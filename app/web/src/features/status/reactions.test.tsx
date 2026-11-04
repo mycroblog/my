@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The emoji reactions of a post through the whole app (web-client/README.md T4, FR-116, ADR-0052): the counts under the
+// The emoji reactions of a post through the whole app (web-client/README.md T4, FR-116, ADR-0051): the counts under the
 // post, joining and leaving one, the picker, the Like slot shared with the favourite, and the accounts that reacted.
 import { screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
@@ -108,7 +108,7 @@ describe("the reactions of a post", () => {
     const thumbs = await within(reactions).findByRole("button", { name: reactionName("👍") });
     expect(thumbs).toHaveAttribute("aria-pressed", "false");
     expect(thumbs).toHaveAccessibleName("👍 2, react with this emoji");
-    // Another server's custom emoji is shown with its count, but nobody here can react with it (ADR-0052 §2).
+    // Another server's custom emoji is shown with its count, but nobody here can react with it (ADR-0051 §7).
     expect(within(reactions).getByRole("img", { name: ":blobcat:" })).toBeInTheDocument();
     expect(within(reactions).queryByRole("button", { name: /blobcat/ })).not.toBeInTheDocument();
     const favourite = within(article).getByRole("button", { name: /^Favourite\b/ });

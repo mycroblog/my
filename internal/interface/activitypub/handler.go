@@ -101,7 +101,7 @@ type Options struct {
 	Moves appfederation.MoveReader
 	// Inbox receives the activities POSTed to the inboxes; nil serves no inbox.
 	Inbox Inbox
-	// Modes reads the federation mode (ADR-0076) per request; nil federates both ways.
+	// Modes reads the federation mode (ADR-0006) per request; nil federates both ways.
 	Modes appfederation.ModeSettings
 	// Closure reads the state of the service closure (ADR-0088 §2) per request, which comes
 	// before the federation mode; nil never closes.
@@ -156,7 +156,7 @@ const (
 	PathNodeInfo      = "/nodeinfo/2.1"
 )
 
-// Register registers every endpoint on r. The federation mode (ADR-0076) gates the GETs by their
+// Register registers every endpoint on r. The federation mode (ADR-0006) gates the GETs by their
 // flow: the discovery documents and the actors identify (404 when the mode is off), and the
 // statuses, their activities, the collections, the custom emoji, the approvals of quotes, and the
 // Announce of boosts publish (404 when the mode does not send the local posts out; never 410, so that nothing tells
@@ -226,7 +226,7 @@ func (h *Handler) mode(w http.ResponseWriter, r *http.Request) (mode federation.
 }
 
 // gate serves next only when the federation mode lets flow through, and otherwise the 404 of a
-// missing resource (ADR-0076).
+// missing resource (ADR-0006).
 func (h *Handler) gate(flow federation.Flow, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		mode, ok := h.mode(w, r)
@@ -322,7 +322,7 @@ func visible(a appaccount.Actor) bool {
 }
 
 // answers reports whether an actor answers for itself to the remote servers: a visible one, or a
-// local one that its owner deactivated, which comes back (ADR-0145 §6, §7).
+// local one that its owner deactivated, which comes back (ADR-0089 §16, §17).
 func answers(a appaccount.Actor) bool {
 	return visible(a) || (a.Account.IsLocal() && a.Lifecycle.Deactivated())
 }

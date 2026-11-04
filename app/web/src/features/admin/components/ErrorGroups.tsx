@@ -3,7 +3,7 @@
 // source filters (kept in the URL by the route, web-client/README.md S3), a table of one page, and previous / next.
 // The groups are the most recently seen first; each row's first cell links to the group's page, where it is resolved
 // or muted. The occurrences say the counts of the last day and week in words, beside a Sparkline of the week by the day
-// (ADR-0113), which repeats them. Types, places and messages are the server's own text, in English, read left to right.
+// (ADR-0110), which repeats them. Types, places and messages are the server's own text, in English, read left to right.
 import {
   EmptyState,
   Hint,

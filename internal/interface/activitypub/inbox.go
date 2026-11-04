@@ -35,7 +35,7 @@ func (h *Handler) sharedInbox(w http.ResponseWriter, r *http.Request) {
 
 // actorInbox serves POST /ap/actors/{id}/inbox: the inbox of an active local actor, or of one that
 // its owner deactivated, whose Follows must be answered and whose senders must keep delivering
-// their Undos (ADR-0145 §6); 404 for any other id. Every inbox records the activity the same way;
+// their Undos (ADR-0089 §16); 404 for any other id. Every inbox records the activity the same way;
 // who it is for is in its addressing.
 func (h *Handler) actorInbox(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")

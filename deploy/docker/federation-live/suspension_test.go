@@ -43,8 +43,8 @@ func suspendedOnPeer(ctx context.Context, p *mastodonAPI, id string) (bool, stri
 // TestSuspension: a moderator of this server suspends a local user, and Mastodon shows the user
 // as suspended from the Update of the actor (suspended: true) that reaches its shared inbox;
 // lifting the suspension sends the profile again and Mastodon shows the user again
-// (federation.md §11.1, ADR-0036). Mastodon only: how Misskey and GoToSocial treat the
-// suspended actor is an open question of ADR-0036.
+// (federation.md §11.1, ADR-0058). Mastodon only: how Misskey and GoToSocial treat the
+// suspended actor is an open question of ADR-0058.
 func TestSuspension(t *testing.T) {
 	e := stack(t)
 	var m *peerClient

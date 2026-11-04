@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// The queue dashboard (ADR-0064): the state of the job queue, its jobs by state, the records of
+// The queue dashboard (ADR-0004): the state of the job queue, its jobs by state, the records of
 // the runs that did not succeed, and running a dead job again. Every operation needs the
 // manage_jobs permission.
 

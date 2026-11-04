@@ -19,7 +19,7 @@ import (
 // setUpQueue builds the job queue that cfg.Queue selects, the runner of the worker role, and the
 // scheduler of the periodic jobs. The db queue is set with the database, before it, and so is the
 // database queue of cloudtasks and sqs with its waker: there a push receiver runs the jobs of
-// the signals instead of a runner (ADR-0120 §2).
+// the signals instead of a runner (ADR-0004 §10).
 func (a *App) setUpQueue(cfg *config.Config) error {
 	runnerOpts := a.runnerOptions()
 	switch cfg.Queue {
@@ -44,7 +44,7 @@ func (a *App) setUpQueue(cfg *config.Config) error {
 		return fmt.Errorf("queue %q is not implemented yet", cfg.Queue)
 	}
 	if a.Runner == nil {
-		// The adapter operations of ADR-0056 §1; the inline queue runs the jobs in Enqueue.
+		// The adapter operations of ADR-0055 §10; the inline queue runs the jobs in Enqueue.
 		a.Jobs = sysmetrics.Jobs(a.Jobs, a.Meter, "queue."+cfg.Queue)
 		a.runnerSource = sysmetrics.Source(a.source, a.Meter, "queue."+cfg.Queue)
 		a.Runner = queue.NewPullRunner(a.runnerSource, a.Handlers, runnerOpts)
@@ -69,7 +69,7 @@ func (a *App) setDBQueue(q *queuedb.Queue) {
 }
 
 // setUpWorkerJobTypes limits the runner to the job types of worker_job_types or
-// worker_job_types_except (ADR-0138), once every handler is registered. The configuration allows
+// worker_job_types_except (ADR-0004), once every handler is registered. The configuration allows
 // them only with the db queue, whose scheduler it leaves as it is.
 func (a *App) setUpWorkerJobTypes(cfg *config.Config) error {
 	if len(cfg.WorkerJobTypes) == 0 && len(cfg.WorkerJobTypesExcept) == 0 {
@@ -94,11 +94,11 @@ func (a *App) setUpWorkerJobTypes(cfg *config.Config) error {
 var ErrWorkerJobConcurrency = errors.New("worker_job_concurrency is too high for the database's pool")
 
 // sqliteJobConcurrencyWarning is the worker_job_concurrency above which a database without a pool
-// logs a warning: SQLite writes one at a time, and the throughput fell at 128 (ADR-0140 §4).
+// logs a warning: SQLite writes one at a time, and the throughput fell at 128 (ADR-0004 §34).
 const sqliteJobConcurrencyWarning = 32
 
 // setUpWorkerJobConcurrency makes the worker role run worker_job_concurrency jobs at once
-// (ADR-0140), after setUpWorkerJobTypes chose the runner's source. A process that does not poll the
+// (ADR-0004), after setUpWorkerJobTypes chose the runner's source. A process that does not poll the
 // table has nothing to check: the settings refuse more than one there.
 func (a *App) setUpWorkerJobConcurrency(cfg *config.Config) error {
 	n := cfg.WorkerJobConcurrency
@@ -117,7 +117,7 @@ func (a *App) setUpWorkerJobConcurrency(cfg *config.Config) error {
 }
 
 // setUpWakeRoutes checks the routes of the wake-up signals against the registered job types, which
-// is known only now (ADR-0139 §1), and gives the sweep a read per route (§4).
+// is known only now (ADR-0004 §23), and gives the sweep a read per route (ADR-0004 §26).
 func (a *App) setUpWakeRoutes() error {
 	if a.wakeRouter == nil {
 		return nil
@@ -135,7 +135,7 @@ func (a *App) runnerOptions() queue.RunnerOptions {
 }
 
 // setUpPushEndpoints serves the endpoints of the push receiver and of the external trigger of a
-// queue with a waker (ADR-0120 §4, §5), once the KV and the HTTP client are set: the scheduler
+// queue with a waker (ADR-0004 §12, §13), once the KV and the HTTP client are set: the scheduler
 // claims its periods in the KV, which every process shares, and the platform's scheduler, not
 // the process, ticks it.
 func (a *App) setUpPushEndpoints(cfg *config.Config) {

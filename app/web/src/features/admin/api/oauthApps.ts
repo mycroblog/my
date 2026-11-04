@@ -103,7 +103,7 @@ export function allowHostMutation(api: Api) {
 }
 
 /**
- * Marks what a change changes (ADR-0045): the clients (a denial revokes the tokens of the host's clients, and a
+ * Marks what a change changes (ADR-0028): the clients (a denial revokes the tokens of the host's clients, and a
  * disablement shows in the list), the denied hosts and the audit log; the queries shown now are fetched again and
  * awaited.
  */

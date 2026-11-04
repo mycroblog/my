@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The report queue (/moderation/reports; web-client/screens/moderation.md) with its tabs and filters, in the states
-// of ADR-0112 §1.
+// of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
   answering,

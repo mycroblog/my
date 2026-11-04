@@ -31,7 +31,7 @@ type Deps struct {
 	// using their tokens; nil forbids nobody.
 	Logins LoginPolicy
 	// Subscriptions tells the users with a live subscription to a supporter plan, who cannot
-	// deactivate their accounts (ADR-0145 §1); nil means that none has one.
+	// deactivate their accounts (ADR-0089 §11); nil means that none has one.
 	Subscriptions LiveSubscriptions
 	// LoginsTx reads inside a transaction whom moderation forbids to log in, for the guard of the
 	// last administrator; nil forbids nobody.
@@ -52,7 +52,7 @@ type Deps struct {
 	// Passkeys runs the WebAuthn ceremonies of passkeys (FR-004), which also need the Sealer,
 	// the KV store, and the RateLimiter; nil turns passkeys off.
 	Passkeys PasskeyCeremonies
-	// HumanVerifier checks the CAPTCHA token of every sign-in and sign-up (ADR-0042 §3); nil,
+	// HumanVerifier checks the CAPTCHA token of every sign-in and sign-up (ADR-0106 §9); nil,
 	// as with the captcha setting none, checks nothing.
 	HumanVerifier kernel.HumanVerifier
 	// Logger records the sign-ins let through while the CAPTCHA service cannot check their
@@ -115,12 +115,12 @@ type Deps struct {
 	// list (FR-719); nil screens nothing.
 	SignupBlocks SignupScreen
 	// MemberInvites returns the instance settings of the invites that members create
-	// (invite_creators and the caps, ADR-0108 §1, §2). It is read per operation, so a change
+	// (invite_creators and the caps, ADR-0106 §14, §15). It is read per operation, so a change
 	// applies to the next one. Nil means the defaults: only the holders of create_invites,
 	// under the default caps.
 	MemberInvites func(ctx context.Context) (MemberInviteSettings, error)
 	// InviterRestricted reports whether moderation suspends or limits a local account, which
-	// keeps its user from creating invites and its invites from working (ADR-0108 §1, §3); nil
+	// keeps its user from creating invites and its invites from working (ADR-0106 §14, §16); nil
 	// restricts nobody.
 	InviterRestricted func(ctx context.Context, accountID string) (bool, error)
 	// Mailer sends verification emails, password reset emails, and the notices of password
@@ -142,7 +142,7 @@ type Deps struct {
 	// (IssuePasswordResetLink); no password change is notified by email.
 	EmailDelivery bool
 	// Unsubscriptions turns off the emails of the category of an unsubscribe link (ADR-0086 §4,
-	// ADR-0109 §4); nil issues no unsubscribe links and accepts none.
+	// ADR-0086 §11); nil issues no unsubscribe links and accepts none.
 	Unsubscriptions EmailUnsubscriptions
 	// Messages words the emails; nil means the embedded catalogs (i18n.Load).
 	Messages *i18n.Bundle

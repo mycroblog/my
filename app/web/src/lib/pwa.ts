@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The page's side of the Service Worker (ADR-0028, ADR-0141, app/web/sw/sw.ts): registering it, swapping in a waiting
+// The page's side of the Service Worker (ADR-0028, app/web/sw/sw.ts): registering it, swapping in a waiting
 // worker when no tab needs the old one, offering an update to a tab that stayed old for long and when this version
 // stops working, clearing the caches at sign-out, and reloading when a deploy removed the chunks of the running version.
 import { useSyncExternalStore } from "react";
@@ -16,7 +16,7 @@ import {
 import { webClientEpoch } from "./webClientEpoch";
 
 /**
- * What the shell offers: `stale` is a tab that kept an old build for long (ADR-0141 §3), `required` a version that no
+ * What the shell offers: `stale` is a tab that kept an old build for long (ADR-0028 §11), `required` a version that no
  * longer works (§4). `apply` reloads the page, which runs the new build whichever worker controls it.
  */
 export type PendingUpdate = { kind: "stale" | "required"; apply: () => void };
@@ -73,7 +73,7 @@ function trustedScriptURL(): string {
   return policy.createScriptURL(scriptURL) as string;
 }
 
-/** How long a tab keeps an old build before it offers the update: one toast per tab per week, whatever the deploys (ADR-0141 §3). */
+/** How long a tab keeps an old build before it offers the update: one toast per tab per week, whatever the deploys (ADR-0028 §11). */
 const staleAfterMs = 7 * 24 * 60 * 60 * 1000;
 
 /** How long the page waits for the waiting worker's answer. */
@@ -117,7 +117,7 @@ export type BuildIdentity = {
 /**
  * Registers the worker at /sw.js for the whole origin
  * (https://developer.mozilla.org/docs/Web/API/ServiceWorkerContainer/register). The first worker takes over at once
- * (it claims the page). A later version installs in the background and waits, and nothing shows (ADR-0141 §1):
+ * (it claims the page). A later version installs in the background and waits, and nothing shows (ADR-0028 §9):
  * - On a page of the worker's build, it is told to take over without a reload, once no tab of another build runs:
  *   activating deletes the chunks those tabs load (§2). It never reloads a page, so another tab's Update keeps working.
  * - On a page of an older build, usePendingUpdate() offers a reload once the update has waited for a week (§3).
@@ -201,7 +201,7 @@ const safeMomentPollMs = 3000;
 let safeMomentPoll: ReturnType<typeof setInterval> | undefined;
 
 /**
- * This version no longer works (ADR-0141 §4): offers Update at once, and `load` runs by itself at the first safe moment
+ * This version no longer works (ADR-0028 §12): offers Update at once, and `load` runs by itself at the first safe moment
  * (lib/reloadSafety) unless `mayLoad` is false. A call or a write in flight is never cut.
  */
 function offerRequiredUpdate(load: () => void, mayLoad: boolean): void {

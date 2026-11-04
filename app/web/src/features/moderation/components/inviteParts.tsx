@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Who created an invite (ADR-0108 §5), on the invites screen and on the page of an account that signed up with one:
+// Who created an invite (ADR-0106 §18), on the invites screen and on the page of an account that signed up with one:
 // the creator's account, a deleted account, or the command line.
 import { Link, Text } from "@my/ui";
 import type { components } from "@mycroblog/mykit";

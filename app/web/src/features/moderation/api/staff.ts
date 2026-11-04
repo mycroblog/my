@@ -97,7 +97,7 @@ export function markAvailableMutation(api: Api) {
 
 /**
  * Puts the health of `domain` after it was marked available (`next`) into the cache (web-client/README.md S1,
- * ADR-0045), once every cached list of remote servers is marked stale (refreshInstanceLists): marking it moves
+ * ADR-0028), once every cached list of remote servers is marked stale (refreshInstanceLists): marking it moves
  * it between them. Its history has a new event, which is marked.
  */
 export async function cacheMarkedAvailable(
@@ -223,7 +223,7 @@ function refreshPostListsAfter(queryClient: QueryClient, kind: DomainActionKind)
 }
 
 /**
- * What a new domain action changes (web-client/README.md S1, ADR-0045): it is in every list of domain actions, of the
+ * What a new domain action changes (web-client/README.md S1, ADR-0028): it is in every list of domain actions, of the
  * other tabs and domains too, and in the audit log, and a limit or a suspension changes the lists of posts.
  * They are marked stale; resolves once those on screen are fetched again.
  */
@@ -245,7 +245,7 @@ export async function refreshLiftedDomainAction(queryClient: QueryClient, lifted
 
 /**
  * Writes the lifted action from the answer into the cached lists of domain actions, which show it right
- * (ADR-0045): those of the actions in effect drop it, the others show it lifted.
+ * (ADR-0028): those of the actions in effect drop it, the others show it lifted.
  */
 export function cacheLiftedDomainAction(queryClient: QueryClient, lifted: DomainAction): void {
   for (const query of queryClient

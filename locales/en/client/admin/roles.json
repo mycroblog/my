@@ -253,7 +253,7 @@
   },
   "admin.roles.badge": {
     "defaultMessage": "Badge",
-    "description": "Term of a role's badge (ADR-0071) on the roles screen, and the heading of its field."
+    "description": "Term of a role's badge (ADR-0070) on the roles screen, and the heading of its field."
   },
   "admin.roles.badge.none": {
     "defaultMessage": "No badge",

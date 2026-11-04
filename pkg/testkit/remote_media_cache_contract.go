@@ -258,7 +258,7 @@ func mediaCachesRemoteMedia(t *testing.T, e *mediaEnv) {
 	}
 }
 
-// mediaCachesSmallRemoteVariants checks the media proxy's small variant (ADR-0054 §7): made
+// mediaCachesSmallRemoteVariants checks the media proxy's small variant (ADR-0005 §10): made
 // from the remote file on every request under none, and kept in the cache next to the file,
 // keyed by the URL and the purpose, under all.
 func mediaCachesSmallRemoteVariants(t *testing.T, e *mediaEnv) {

@@ -1,6 +1,6 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 
--- Emoji reactions (resource) and their counts per emoji (projection), ADR-0052.
+-- Emoji reactions (resource) and their counts per emoji (projection), ADR-0051.
 
 -- InsertReaction inserts nothing when the account already reacts to the status with the emoji.
 -- name: InsertReaction :execrows
@@ -14,7 +14,7 @@ RETURNING id, account_id, status_id, emoji_key, custom_emoji_id, uri, created_at
 
 -- DeleteAccountStatusReactions removes the reactions of an account to a status, except the one with
 -- the emoji except_key ('' removes them all): what the Like slot of a local account gives up
--- (ADR-0052 section 1).
+-- (ADR-0051 section 1).
 -- name: DeleteAccountStatusReactions :many
 DELETE FROM reactions
 WHERE account_id = @account_id AND status_id = @status_id AND emoji_key <> CAST(@except_key AS TEXT)

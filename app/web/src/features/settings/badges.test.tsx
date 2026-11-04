@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The badges of the user's roles on the badges settings page through the whole app (web-client/README.md T4, ADR-0071):
+// The badges of the user's roles on the badges settings page through the whole app (web-client/README.md T4, ADR-0070):
 // MSW plays the server's choices, and the user's switches change them.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";

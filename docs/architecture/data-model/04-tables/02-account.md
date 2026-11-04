@@ -50,7 +50,7 @@
   アカウントの一覧・タイムライン・通知は、1 ページ分のアカウントの画像を `content` モジュールの公開 API（`MediaService.ImageURLs`）で 1 回の問い合わせにまとめて読みます。
 - リモートのプロフィールは、取得した文書から版を作ります（内容が変わったときだけ）。`summary` と補足情報の値は取り込み時にサニタイズして `note_html` / `value_html` に保存し、表示名と補足情報の名前はプレーンテキストにします（[federation.md §5](../../federation.md#5-リモート-html-のサニタイズ)）。
   Actor の `tag` の `Emoji` は、投稿の絵文字と同じ規則（§4.4 のリモート投稿のコマンド）で `content` の公開 API（`Service.RecordRemoteEmojis`）が記録し、版の `account_profile_revision_emojis` に結びます。絵文字の組が変わったときも新しい版になります。
-- ローカルのアカウントとの関係が無いリモートのアカウント（どちらの向きのフォローも無く、保存した投稿も無い）は、1 日ごとの消去ジョブ `account.prune_remote_profiles` が、プロフィールの版を現在の 1 つに縮めます（[ADR-0034](../../../adr/0034-remote-content-scope-and-retention.md)）。
+- ローカルのアカウントとの関係が無いリモートのアカウント（どちらの向きのフォローも無く、保存した投稿も無い）は、1 日ごとの消去ジョブ `account.prune_remote_profiles` が、プロフィールの版を現在の 1 つに縮めます（[ADR-0006](../../../adr/0006-federation-protocol-scope.md)）。
   現在の版でない版と子テーブルの行（`account_profile_fields`、`account_profile_revision_emojis`、`remote_profile_revisions`）、`remote_account_heads` と現在の版のどちらも指さない `remote_account_snapshots` を消し、`accounts`・`remote_accounts`・鍵は残します。
   関係の判定は `graph` と `content` の公開 API で行い（`account` はこの 2 つを import しないので、組み立てる側が渡す）、トランザクションの前に読みます。1 トランザクションで調べるのは 100 アカウントまでで、続きはカーソル（`account_id`）を持った次のジョブが読みます。
 
@@ -63,7 +63,7 @@
 | `account_key_revocations` | イベント | `account_key_id`（PK）, `revoked_at` | |
 
 - ローカルの Actor（インスタンス Actor を含む）は、作成時に RSA 2048 ビット（`rsa_sha256`、`key_id` = `{actor}#main-key`）と Ed25519（`ed25519`、`key_id` = `{actor}#ed25519-key`）の 2 つの鍵を持ちます。
-- リモートの Actor は、同じ `key_id` のまま公開鍵を替えることがあります（Mastodon の `#main-key`）。取得した鍵の `fingerprint` が既存の行と違えば新しい行を作り、同じトランザクションで古い行に `account_key_revocations` を記録します。文書が宣言しなくなった鍵も同じように失効させます。別のアカウントの鍵になっている `key_id` は書き換えません。署名の検証は、`key_id` の失効していない最新の行を使います（[ADR-0032](../../../adr/0032-http-signature-profile.md)）。
+- リモートの Actor は、同じ `key_id` のまま公開鍵を替えることがあります（Mastodon の `#main-key`）。取得した鍵の `fingerprint` が既存の行と違えば新しい行を作り、同じトランザクションで古い行に `account_key_revocations` を記録します。文書が宣言しなくなった鍵も同じように失効させます。別のアカウントの鍵になっている `key_id` は書き換えません。署名の検証は、`key_id` の失効していない最新の行を使います（[ADR-0006](../../../adr/0006-federation-protocol-scope.md)）。
 - `private_key_enc` は PKCS #8 の秘密鍵を `kernel.Sealer` で暗号化した値です（ADR-0019 §6）。AAD は `account_key_id` と列名 `local_account_private_keys.private_key_enc` で、別の行・列に写すと復号できません。
 
 #### ライフサイクル
@@ -80,7 +80,7 @@
     削除済みのアカウントと、それより早い期日の削除がすでに予定されているアカウントには記録しません。
 - 本人による削除（FR-008、`POST /api/v1/accounts/delete`）は、現在のパスワードかその利用者のパスキーで確かめてから、猶予を置かずに `deleted`（`initiated_by = self`）を記録します（`account.Service.DeleteBySelf`）。
   本人による削除の予約はログインできない（§4.1）ので、予約しても本人には取り消せないためです。データの消去は、ほかの削除と同じく `deleted` から 7 日後です（下記）。削除済みのアカウントには記録しません。
-- 本人による無効化（[§5.6](../05-states-and-policies.md)、ADR-0145）は `deactivated`（`initiated_by = self`）を記録し、戻るときは `reactivated` を記録します。削除の日付は `since` の 30 日後で、`deletion_due_at` は使いません。
+- 本人による無効化（[§5.6](../05-states-and-policies.md)、ADR-0089）は `deactivated`（`initiated_by = self`）を記録し、戻るときは `reactivated` を記録します。削除の日付は `since` の 30 日後で、`deletion_due_at` は使いません。
 - 期日を過ぎた `deletion_scheduled` と、30 日を過ぎた `deactivated` は、1 時間ごとのジョブ `account.execute_deletions` が `deleted`（`initiated_by = system`）にします（`account.Service.ExecuteDueDeletions`）。
   種類ごとに 1 回で 100 件まで、アカウントごとに短いトランザクションで、状態を読み直してから記録するので、再実行しても二重に削除しません。
   `deleted` は既存の購読者を通して、アカウントと投稿を表示から外し、`Delete`（Actor）を送ります（[federation.md §7.1](../../federation.md)）。

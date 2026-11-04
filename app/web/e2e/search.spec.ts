@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The account search and the follow of an account on another server in every width × locale project
-// (FR-305, FR-301, ADR-0027): from the keyboard only, the search resolves a handle, opens the profile, and
+// (FR-305, FR-301, ADR-0110): from the keyboard only, the search resolves a handle, opens the profile, and
 // sends a follow request that waits for the other server. `vite preview` has no API, so the spec answers
 // the token refresh and the client API with `page.route`, as a signed-in user's server would. Names come
 // from the project's catalog, so the spec finds the same elements in every locale.

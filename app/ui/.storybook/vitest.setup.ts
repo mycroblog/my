@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Visual snapshots of every story (ADR-0027) not tagged `no-screenshot`. After a story has rendered and passed axe, its frame
+// Visual snapshots of every story (ADR-0110) not tagged `no-screenshot`. After a story has rendered and passed axe, its frame
 // is captured at each container width; the project fixes the direction and theme (../vitest.config.ts). A story of the
 // app shell sets a viewport instead (src/storyViewports.ts), which @storybook/addon-vitest has applied; it is captured
 // once, at that viewport.

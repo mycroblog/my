@@ -11,13 +11,13 @@ type ImageVariant struct {
 	Size          int64
 }
 
-// ImageVariants are the renditions of an image in one motion, by size (ADR-0054 §1).
+// ImageVariants are the renditions of an image in one motion, by size (ADR-0005 §4).
 type ImageVariants struct {
 	Small, Medium, Large ImageVariant
 }
 
 // Image is a media file as clients load it: its still renditions, and for an animation also
-// its moving ones (ADR-0054 §3, §5). For a video or audio file, Media is the file itself and
+// its moving ones (ADR-0005 §6, §8). For a video or audio file, Media is the file itself and
 // the still renditions are those of its poster, all empty when it has none (§6).
 type Image struct {
 	Still ImageVariants

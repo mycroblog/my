@@ -3,7 +3,7 @@
 // emoji of each text with the URLs of its image. The image goes in as a DOM element, never as HTML
 // (ADR-0019 §2): its alternative text is the `:shortcode:` it replaces, so a screen reader reads what the
 // author wrote. An animated emoji moves only when the user allows motion: the still image is the `<img>`,
-// and the animated one a `<source>` for `(prefers-reduced-motion: no-preference)` (ADR-0054 §3).
+// and the animated one a `<source>` for `(prefers-reduced-motion: no-preference)` (ADR-0005 §6).
 import { tv } from "tailwind-variants";
 import { useAnimationsPlay } from "./Picture";
 

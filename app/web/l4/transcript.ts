@@ -11,7 +11,7 @@
 // A backtrack is a step that goes back in the history, or one that returns to an address visited before other than
 // the one it left.
 //
-// A task that reads email has the mailbox, Mailpit's web UI, in a second tab (ADR-0117 §3). The steps on Mailpit's
+// A task that reads email has the mailbox, Mailpit's web UI, in a second tab (ADR-0015 §7). The steps on Mailpit's
 // origin (switching to its tab, opening the email, following its link, and switching to the tab the link opened) depend
 // on Mailpit's design, not the app's: they are recorded apart (`mailPath`), and each run of them counts as one step of
 // the path, "open the email and follow its link", as the L1 shortest path counts it.

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The lists page (/lists; web-client/screens/lists.md, ADR-0122) in the states of ADR-0112 §1, with a list's members
+// The lists page (/lists; web-client/screens/lists.md, ADR-0013) in the states of ADR-0079 §13, with a list's members
 // opened in a play.
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

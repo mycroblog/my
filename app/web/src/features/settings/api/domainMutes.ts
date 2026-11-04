@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The domains the viewer mutes (FR-304): the list, in the order of the domains over the API's keyset pagination, and
 // muting and unmuting a domain. A change hides or shows the domain's posts and notifications, so it marks every list of
-// posts and the notifications stale (web-client/README.md S1, ADR-0045).
+// posts and the notifications stale (web-client/README.md S1, ADR-0028).
 import { infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";

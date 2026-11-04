@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The P2P method of the audio of a call (ADR-0101 §4, §5): one RTCPeerConnection to each other live session of the
-// room when at least one of the two speaks (P1; two listeners never connect). Of the two, the session with the greater
+// room when at least one of the two speaks (ADR-0101 §4; two listeners never connect). Of the two, the session with the greater
 // ID sends the first offer; after that, either renegotiates by the perfect negotiation pattern of WebRTC, with the
 // session of the smaller ID polite (MDN, "Establishing a connection: The WebRTC perfect negotiation pattern").
 // Signals go through the room stream and POST /voice/rooms/{id}/signals, one at a time and in order for each pair.
@@ -367,7 +367,7 @@ class Peer {
   }
 }
 
-/** Whether two sessions connect (P1): at least one of them speaks. */
+/** Whether two sessions connect (ADR-0101 §4): at least one of them speaks. */
 function connects(selfSpeaker: boolean, member: Pick<VoiceMember, "speaker">): boolean {
   return selfSpeaker || member.speaker;
 }

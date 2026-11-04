@@ -60,7 +60,7 @@ func (e *fedEnv) actorUpdates(t *testing.T, accountID string) []federation.Outbo
 }
 
 // fedPropagatesSuspensions checks the Update of a local actor that a suspension and its end
-// send (federation.md §11.1, ADR-0036): it goes to the followers and every known shared inbox,
+// send (federation.md §11.1, ADR-0058): it goes to the followers and every known shared inbox,
 // it carries the emptied actor marked suspended, with its key, while the suspension is in
 // effect and the profile after it ends, it goes out while a ban schedules the deletion, and an
 // action whose transaction rolls back records nothing.

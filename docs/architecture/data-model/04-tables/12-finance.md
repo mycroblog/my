@@ -1,6 +1,6 @@
 ### 4.12 finance
 
-サーバーの維持費用と収入（FR-901・FR-902・FR-904・FR-917、[ADR-0067](../../../adr/0067-finance-cost-records.md)・[ADR-0068](../../../adr/0068-billing-import.md)・[ADR-0073](../../../adr/0073-income-records-and-publication.md)・[ADR-0098](../../../adr/0098-cost-provider-display.md)）。`internal/app/finance` が所有します。
+サーバーの維持費用と収入（FR-901・FR-902・FR-904・FR-917、[ADR-0067](../../../adr/0067-finance-cost-records.md)・[ADR-0068](../../../adr/0068-billing-import.md)・[ADR-0067](../../../adr/0067-finance-cost-records.md)・[ADR-0067](../../../adr/0067-finance-cost-records.md)）。`internal/app/finance` が所有します。
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
@@ -14,7 +14,7 @@
 | `billing_import_reservations` | イベント | `id`（試行の `billing_import_runs.id`）, `source`（`enum(aws, gcp)`）, `requests`（`int`。上限のない事業者は 0）, `reserved_at` | インデックス `(source, reserved_at)` |
 | `imported_cost_revisions` | イベント（版） | `id`, `source`, `billing_month`（`string(7)`。`YYYY-MM`）, `service`（`string(200)`）, `charge_type`（`enum(usage, credit, refund, tax, support, fee, adjustment, other)`）, `category`（`cost_item_label_revisions` と同じ enum）, `starts_on`・`ends_on`（`date`）, `amount_minor`（`bigint`。負も可）, `currency`（`string(3)`）, `kind`（`enum(estimate, final, correction)`）, `run_id`, `run_key`, `recorded_at` | 一意 `(source, billing_month, service, charge_type, run_key)`。`starts_on <= ends_on` |
 | `imported_cost_heads` | 投影 | `(source, billing_month, service, charge_type)`（PK）, `revision_id` | 版を足すトランザクションで同期に更新する |
-| `income_movements` | イベント | `id`, `provider`（`enum(stripe, payjp, fake)`）, `provider_movement_id`（`string(255)`。Stripe は balance transaction の ID、PAY.JP は ADR-0099 §5 の ID）, `kind`（`enum(payment, refund, chargeback, chargeback_reversal, fee)`）, `parent_movement_id`（NULL 可。返金・チャージバック・その取り消しの元の `payment` の行）, `subscription_id`（NULL 可 = 加入に結び付かない手数料。加入への論理参照で外部キーを付けない）, `occurred_at`, `occurred_on`（`date`。事業者のレポートのタイムゾーンでの日付）, `covers_starts_on`・`covers_ends_on`（`date`。NULL 可。`payment` の請求の期間）, `gross_minor`・`fee_minor`・`net_minor`（`bigint`。負も可）, `currency`（`string(3)`）, `recorded_at` | 一意 `(provider, provider_movement_id)`。`net_minor = gross_minor - fee_minor`。`covers_*` は両方 NULL か `payment` で `starts_on <= ends_on`。`parent_movement_id` は返金・チャージバック・取り消しだけ。インデックス `(occurred_on)` |
+| `income_movements` | イベント | `id`, `provider`（`enum(stripe, payjp, fake)`）, `provider_movement_id`（`string(255)`。Stripe は balance transaction の ID、PAY.JP は ADR-0074 §13 の ID）, `kind`（`enum(payment, refund, chargeback, chargeback_reversal, fee)`）, `parent_movement_id`（NULL 可。返金・チャージバック・その取り消しの元の `payment` の行）, `subscription_id`（NULL 可 = 加入に結び付かない手数料。加入への論理参照で外部キーを付けない）, `occurred_at`, `occurred_on`（`date`。事業者のレポートのタイムゾーンでの日付）, `covers_starts_on`・`covers_ends_on`（`date`。NULL 可。`payment` の請求の期間）, `gross_minor`・`fee_minor`・`net_minor`（`bigint`。負も可）, `currency`（`string(3)`）, `recorded_at` | 一意 `(provider, provider_movement_id)`。`net_minor = gross_minor - fee_minor`。`covers_*` は両方 NULL か `payment` で `starts_on <= ends_on`。`parent_movement_id` は返金・チャージバック・取り消しだけ。インデックス `(occurred_on)` |
 
 - 作成は項目・最初のラベルの版・`starts_on` から効く最初の価格の版（と終了日を渡したときは終了の変更）を 1 つのトランザクションで書き、`finance.cost_item_changed` を発行します。
   ラベルの変更と終了の変更も `finance.cost_item_changed` を発行し、その射影が `cost_item_heads` を書きます。取り消しは `finance.cost_item_canceled` を発行し、射影が行を消します。
@@ -27,7 +27,7 @@
   期間は暦の日付で区切り、週は ISO 8601（月曜〜日曜）です。合計は通貨ごとで、内訳は `provider_normalized`・区分・通貨でまとめます。
 - 金額は通貨の最小単位の整数で、小数の桁は `internal/domain/finance` の ISO 4217 の表（`finance.Currency.MinorUnits`。JPY は 0、USD は 2）にあります。表は ISO 4217 の現行の通貨と基金のコードのうち、小数の桁を持つもの（N.A. の貴金属・SDR・試験用のコードを除く）です。
 - `provider_normalized` は事業者の NFKC・小文字の形（`finance.NormalizeProvider`）で、表記の揺れ（全角・大文字）を内訳で 1 つにまとめます。まとめるキーで、表示には使いません。
-  内訳の行と項目の行に出す事業者は、期間ごと・`provider_normalized` ごとに 1 つの表記で、その期間に支払いが載る項目のうち、いまのラベルの版の `revised_at` が最も新しい（同じなら版の `id` が大きい）項目の `provider` です（ADR-0098）。
+  内訳の行と項目の行に出す事業者は、期間ごと・`provider_normalized` ごとに 1 つの表記で、その期間に支払いが載る項目のうち、いまのラベルの版の `revised_at` が最も新しい（同じなら版の `id` が大きい）項目の `provider` です（ADR-0067）。
   取り込んだ費用の表記は取り込みの事業者の名前（`AWS`・`Google Cloud`）で、同じ期間・同じ `provider_normalized` に手入力の項目があればその表記を優先します。
 - 利用料金の取り込み（ADR-0068）は、`billing_sources` の事業者ごとの定期ジョブ `finance.billing_import`（24 時間ごと）が `BillingSource` ポートで事業者の請求月の費用を読み、試行ごとに `billing_import_runs` の行を 1 つ足します。
   成功した試行は、キー `(source, billing_month, service, charge_type)` ごとに最新の版と金額・通貨・確定の別・`starts_on`〜`ends_on` を比べ、違うキーだけ版を足して `imported_cost_heads` を同じトランザクションで更新します。取り直した月で事業者が返さなくなったキーは金額 0 の版になります。
@@ -38,9 +38,9 @@
   記録されていない予約が `finance.ReservationHold`（15 分）以内にある間、同じ事業者のほかの試行は呼ばずに後で再試行し、同じ `run_key` の試行が成功していれば何も呼ばずに終えます。
 - 集計は、取り込んだ費用の各キーの最新の版を `starts_on`〜`ends_on` の日数に、現金主義でも按分でも日割りで載せ、`estimate` の版が載る期間を見込みとします（ADR-0068 §3）。
 
-- 収入（ADR-0073）は、決済の事業者で額が確定したお金の動きを 1 件 1 行で `income_movements` に記録します。加入のモジュール（`supporters`）の webhook と照合のジョブが `finance.RecordIncome` を呼び、
+- 収入（ADR-0067）は、決済の事業者で額が確定したお金の動きを 1 件 1 行で `income_movements` に記録します。加入のモジュール（`supporters`）の webhook と照合のジョブが `finance.RecordIncome` を呼び、
   `(provider, provider_movement_id)` の一意で同じ動きは何度渡されても 1 行です（挿入の衝突は何もしない）。返金・チャージバック・その取り消しは元の支払いの行を `parent_movement_id` に持ち、元の行がまだなければ記録せずにジョブの再試行に任せます。
   加入の ID は事業者の加入をこちらの加入に写したもので、こちらの加入でなければ NULL です。行は利用者を持たず、加入者のアカウントは管理画面だけが `finance.SupporterDirectory`（`internal/platform` が `supporters` で実装する）で引きます。
 - 収入の集計は投影に持たず、期間に載りうる行（期間の日の行、期間に掛かる請求の期間の支払い、期間の終わりまでの返金などのうち元の支払いの請求の期間が期間に掛かるもの）を読んで `finance.IncomeTotals` で計算します。
-  按分では 31 日より長い請求の期間の支払いを日割りし、その返金・チャージバック・取り消しは、元の支払いの日割りのうち自分の日より前の分を自分の日にまとめて載せ、残りを元の支払いと同じ日割りで打ち消します（ADR-0073 §5）。
+  按分では 31 日より長い請求の期間の支払いを日割りし、その返金・チャージバック・取り消しは、元の支払いの日割りのうち自分の日より前の分を自分の日にまとめて載せ、残りを元の支払いと同じ日割りで打ち消します（ADR-0067 §15）。
   総額と net を同じ規則で載せ、手数料は期間の総額 − net です。収支は同じ期間・同じ見方の費用の合計を通貨ごとに引きます（`finance.Balance`）。

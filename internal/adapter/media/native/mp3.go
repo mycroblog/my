@@ -12,7 +12,7 @@ import (
 )
 
 // An MP3 is remuxed by keeping only its MPEG audio Layer III frames: the ID3v2 tags in front,
-// the APE and ID3v1 tags at the end, and anything between frames are dropped (ADR-0054 §6).
+// the APE and ID3v1 tags at the end, and anything between frames are dropped (ADR-0005 §9).
 // The cover picture (APIC) of the ID3v2 tag is kept aside as the cover.
 
 // mp3Bitrates are the bitrates of Layer III in kbit/s by MPEG version 1 and 2 (2.5 too) and

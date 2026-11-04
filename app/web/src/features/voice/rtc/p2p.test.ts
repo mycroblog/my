@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The P2P engine with a fake RTCPeerConnection (ADR-0101 §4, §5): whom a session connects to (P1), who sends the first
+// The P2P engine with a fake RTCPeerConnection (ADR-0101 §4, §5): whom a session connects to (ADR-0101 §4), who sends the first
 // offer, glare under perfect negotiation, whose audio plays, the renewal of a grant with restartIce, the relay
 // policy, the direction of the session descriptions of a participant who does not speak, and the recovery from lost or
 // refused signals, stale candidates, and refused configurations. A relay between the
@@ -146,7 +146,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("whom a session connects to (P1)", () => {
+describe("whom a session connects to (ADR-0101 §4)", () => {
   test("connects a speaker to everyone, and never two listeners", async () => {
     const r = room();
     r.join("a");

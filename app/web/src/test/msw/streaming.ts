@@ -78,7 +78,7 @@ export function streamingServer(path = "/streaming") {
  * reach the real network. A test that sends events opens its streams with `streamingServer()`.
  */
 /**
- * GET /preferences of a user who turned the automatic insertion of new posts off (ADR-0077), for the tests of the
+ * GET /preferences of a user who turned the automatic insertion of new posts off (ADR-0013), for the tests of the
  * "N new posts" button: new posts wait behind it instead of going into the feed.
  */
 export function newPostsHeld() {

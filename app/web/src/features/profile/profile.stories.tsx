@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The profile page (/@{acct}; web-client/screens/profile.md) in the states of ADR-0112 §1: another local account, the
+// The profile page (/@{acct}; web-client/screens/profile.md) in the states of ADR-0079 §13: another local account, the
 // viewer's own, an account of another server, one that moved, and one that is not there (unknown or suspended).
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse, type RequestHandler } from "msw";

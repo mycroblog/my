@@ -24,7 +24,7 @@ type ClosurePage struct {
 	Message string
 	// ClosesAt is the closing date of the announcement; zero leaves it out.
 	ClosesAt time.Time
-	// StatusPageURL is the instance's status page (ADR-0085 §6); "" for none.
+	// StatusPageURL is the instance's status page (ADR-0088 §20); "" for none.
 	StatusPageURL string
 	// Theme holds the values of the tokens the page's CSS uses (TokenNames).
 	Theme Theme

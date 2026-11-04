@@ -435,7 +435,7 @@ func movesMigrate(t *testing.T, e *moveEnv) {
 // movesFromAkkoma receives the Move that Akkoma sends (akkoma/3.20/move: to as an array, with
 // published and context) to a target with the actor that Akkoma renders, naming the source in
 // alsoKnownAs (akkoma/3.20/actor-also-known-as). Akkoma is not in the live interoperability test,
-// so this is its regression test (ADR-0089 相互運用の確かめ方).
+// so this is its regression test (ADR-0089 §10).
 func movesFromAkkoma(t *testing.T, e *moveEnv) {
 	ctx := t.Context()
 	const (

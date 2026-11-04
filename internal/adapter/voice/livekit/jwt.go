@@ -14,7 +14,7 @@ import (
 )
 
 // The JWTs of LiveKit are HS256 only, signed with the API secret of the API key in iss
-// (ADR-0102 §2): the access tokens of the participants, the tokens of the server's own API
+// (ADR-0101 §11): the access tokens of the participants, the tokens of the server's own API
 // calls, and the tokens of the webhooks. They are written with crypto/hmac rather than a JWT
 // library or LiveKit's SDK.
 

@@ -1,6 +1,6 @@
 name: UI preview deploy
 
-# Publishes the builds of ui-preview.yml on the Cloudflare Worker of scripts/ui-preview/wrangler.jsonc (ADR-0112 §2-§4)
+# Publishes the builds of ui-preview.yml on the Cloudflare Worker of scripts/ui-preview/wrangler.jsonc (ADR-0079 §14〜§16)
 # (ui-preview-cleanup.yml deletes the Previews of closed pull requests). It always runs main's workflow, script, and Worker config, in the
 # environment `ui-preview` (deployment branches: main only), which holds the secret CLOUDFLARE_API_TOKEN and the
 # variable CLOUDFLARE_ACCOUNT_ID:

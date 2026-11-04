@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The subscriptions of the app to the streaming API (web-client/README.md S10): the user's stream, which the layout keeps
 // open, and the stream of the local or the federated timeline, which their screens keep open while they are shown
-// (ADR-0127 §5). A stream is an external system that the app stays in sync with while a user is signed in, which is
+// (ADR-0013 §21). A stream is an external system that the app stays in sync with while a user is signed in, which is
 // what an Effect is for (react.dev, "Synchronizing with Effects"; "Lifecycle of Reactive Effects"): it connects when
 // the session is signed in, and its cleanup aborts the request when the session ends, the screen is left, or the app
 // unmounts. The

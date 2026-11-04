@@ -26,7 +26,7 @@ type PaymentProvider interface {
 	// the {provider} of the webhook path.
 	Name() string
 	// Location is the time zone of the provider's reports; MoneyMovement.OccurredOn uses it
-	// (ADR-0073 §3).
+	// (ADR-0067 §13).
 	Location() *time.Location
 	// Mode reports whether the credentials are for test payments (no real charges) or live ones.
 	Mode() Mode
@@ -114,7 +114,7 @@ type PaymentProvider interface {
 
 // PageServer is implemented by a provider without hosted checkout and portal pages: our server
 // serves the adapter's own pages instead, under PagesPath of its Name, and StartCheckout and
-// PortalURL return URLs of them (ADR-0099 §1, §3).
+// PortalURL return URLs of them (ADR-0074 §9, §11).
 type PageServer interface {
 	// Pages returns the handler of the GET and POST requests under PagesPath(Name()), which
 	// see their whole path, rendered with env.
@@ -122,7 +122,7 @@ type PageServer interface {
 }
 
 // PageEnv is what the pages of a PageServer render with: the server's own pages' locales and
-// stylesheet (ADR-0009, ADR-0030).
+// stylesheet (ADR-0009, ADR-0090).
 type PageEnv struct {
 	// Locales resolves the locale of a request.
 	Locales *i18n.Resolver
@@ -346,7 +346,7 @@ func readSubscription(ctx context.Context, prov PaymentProvider, clock kernel.Cl
 	return snap, err
 }
 
-// MoneyKind is the kind of a money movement (ADR-0073 §1).
+// MoneyKind is the kind of a money movement (ADR-0067 §11).
 type MoneyKind string
 
 // The kinds of money movements.
@@ -391,7 +391,7 @@ type DateRange struct {
 func (r DateRange) IsZero() bool { return r == DateRange{} }
 
 // MoneyMovement is a movement of money on the provider's account (ADR-0074 §1), which
-// finance.RecordIncome takes as an IncomeMovement (ADR-0073 §1). The provider returns only the
+// finance.RecordIncome takes as an IncomeMovement (ADR-0067 §11). The provider returns only the
 // movements whose amounts are final.
 type MoneyMovement struct {
 	// ID is the provider's ID, unique per provider (Stripe: the balance transaction).
@@ -432,7 +432,7 @@ const (
 	NoticeIgnored NoticeKind = "ignored"
 )
 
-// Notice is a provider's event: a signal to re-read an object, never its state (ADR-0074 T1).
+// Notice is a provider's event: a signal to re-read an object, never its state (ADR-0074 §3).
 type Notice struct {
 	// EventID is the provider's ID of the event, unique per provider.
 	EventID string

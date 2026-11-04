@@ -53,7 +53,7 @@ type LinkCardPage struct {
 }
 
 // metaRobotsNames are the meta tags whose content holds robots directives for a link card: the
-// tag for every robot, and the tag of the crawler itself (ADR-0131 §5).
+// tag for every robot, and the tag of the crawler itself (ADR-0062 §13).
 var metaRobotsNames = []string{"robots", kernel.LinkCardAgentToken}
 
 // ApplyRobots removes from the card what directives forbid, from its head or the X-Robots-Tag of

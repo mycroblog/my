@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The totals of the instance's income as the administrators' costs screen, the public costs page and the finances
-// page show them (ADR-0073 §5–§7, FR-916, FR-917): the table of the periods, newest first, with the net income of
+// page show them (ADR-0067 §15〜§17, FR-916, FR-917): the table of the periods, newest first, with the net income of
 // each currency, the gross and the fees on the costs screen only, and the balance against the costs where the answer
 // carries it; the members of each supporter plan now where they are shown; and the rules that date and place the
 // payments. Nothing here names a payment or a subscriber. Plan names are the operators' words, shown with dir="auto".
@@ -46,7 +46,7 @@ type ShownIncomeTotals = Omit<IncomeTotals, "periods"> & { periods: readonly Sho
 
 export type IncomeTotalsViewProps = {
   totals: ShownIncomeTotals;
-  /** Shows the gross and the provider's fees of each period: the costs screen only (ADR-0073 §6). */
+  /** Shows the gross and the provider's fees of each period: the costs screen only (ADR-0067 §16). */
   detailed?: boolean;
   /** The level of the headings of the members of each plan and of the rules: 3 below an h2, 4 below an h3. */
   headingLevel?: 3 | 4;
@@ -134,7 +134,7 @@ export function IncomeTotalsView({ totals, detailed = false, headingLevel = 3, t
   );
 }
 
-/** The members of each supporter plan now (ADR-0073 §7): never per period, never the plans' amounts. */
+/** The members of each supporter plan now (ADR-0067 §17): never per period, never the plans' amounts. */
 function PlanMembers({ plans, headingLevel }: { plans: readonly IncomePlanCount[]; headingLevel: 3 | 4 }) {
   const t = useT();
   const headingId = useId();
@@ -163,7 +163,7 @@ function PlanMembers({ plans, headingLevel }: { plans: readonly IncomePlanCount[
   );
 }
 
-/** How the income totals date and place the payments (ADR-0073 §3, §5), and what the balance is. */
+/** How the income totals date and place the payments (ADR-0067 §13, §15), and what the balance is. */
 function IncomeRules({
   totals,
   balance,

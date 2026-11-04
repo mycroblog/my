@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// In every width × locale project: the signed-in browsers of the settings (ADR-0136), the Web Push prompt of the
-// notifications page (ADR-0137), and the small layout of link cards (FR-007). `vite preview` has no API, so each test
+// In every width × locale project: the signed-in browsers of the settings (ADR-0090), the Web Push prompt of the
+// notifications page (ADR-0086), and the small layout of link cards (FR-007). `vite preview` has no API, so each test
 // plays a signed-in user's server with page.route. Names come from the project's catalog.
 import type { Page, Route } from "@playwright/test";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, servedImage, test } from "./fixtures";

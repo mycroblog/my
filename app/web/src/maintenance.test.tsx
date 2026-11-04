@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Integration tests of the server's maintenance (ADR-0084 §3, web-client/09-app-shell.md §9 "メンテナンス", README.md T4):
+// Integration tests of the server's maintenance (ADR-0088 §10, web-client/09-app-shell.md §9 "メンテナンス", README.md T4):
 // while the client API and the OAuth endpoints answer with the maintenance problem, the app shows the maintenance in
 // place of every page, keeps the session, tries again after Retry-After, and loads the page again once the server
 // answers. The page cannot reload in jsdom, so renderApp counts the reloads.

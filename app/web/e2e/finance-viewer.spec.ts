@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The finances page in every width × locale project (ADR-0070 §5, ADR-0027): a user whose roles have view_finance and
+// The finances page in every width × locale project (ADR-0070 §5, ADR-0110): a user whose roles have view_finance and
 // no staff permission finds Finances in the rail from md and in the menu's sheet below it, with neither Moderation
 // nor Administration, and reads the totals with their breakdown and the lines of the items that the server shows (a
 // long name and a memo in Arabic, which reads right to left), and the income with the balance and the members of a

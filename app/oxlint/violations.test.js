@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Proves that Oxlint, with app/.oxlintrc.json and the JS plugins of the installed versions, reports the
-// violation of each 強制 row of docs/architecture/web-client/README.md that lint checks (ADR-0049): it copies the
+// violation of each 強制 row of docs/architecture/web-client/README.md that lint checks (ADR-0025): it copies the
 // fixtures of violations/ into a feature of app/web, where the rules of a feature apply, lints them, and
 // requires exactly the reports that each line's `expect:` comment names (as `plugin(rule)`, the codes of
 // Oxlint's JSON reporter). Run with `node --test` from app/ (part of `scripts/task.sh web:lint`).

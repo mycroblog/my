@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The registrations screen in every width × locale project (ADR-0027, NFR-MOD-7): the sign-ups awaiting
+// The registrations screen in every width × locale project (ADR-0110, NFR-MOD-7): the sign-ups awaiting
 // approval with their applicants' reasons, approving one through its alert dialog with a note and rejecting
 // another, each passing axe without scrolling sideways. `vite preview` has no API, so each test plays the server
 // of a signed-in moderator with page.route; names change with the locale, so the structure is checked by role

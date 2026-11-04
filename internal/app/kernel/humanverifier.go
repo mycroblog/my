@@ -8,7 +8,7 @@ import (
 	"net/url"
 )
 
-// HumanVerifier checks the token that a CAPTCHA widget put into a form (ADR-0042). The adapter
+// HumanVerifier checks the token that a CAPTCHA widget put into a form (ADR-0106). The adapter
 // lives in internal/adapter/captcha/siteverify and passes testkit.HumanVerifierContract. When the
 // captcha setting is none there is no HumanVerifier: callers receive nil and check nothing.
 //
@@ -24,7 +24,7 @@ type HumanVerifier interface {
 	Verify(ctx context.Context, token, action string) error
 }
 
-// The actions that the sign-in, registration, and password reset forms verify (ADR-0042 §3).
+// The actions that the sign-in, registration, and password reset forms verify (ADR-0106 §9).
 const (
 	HumanCheckActionSignIn        = "sign_in"
 	HumanCheckActionSignUp        = "sign_up"
@@ -50,7 +50,7 @@ const (
 )
 
 // HumanCheckWidget is what a page needs to render the widget of the configured service and to
-// read its token back (ADR-0042 §1, §5). The adapter's preset fills it; the composition root
+// read its token back (ADR-0106 §7, §11). The adapter's preset fills it; the composition root
 // hands it to the pages that render the widget.
 type HumanCheckWidget struct {
 	Service HumanCheckService

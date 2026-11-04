@@ -56,7 +56,7 @@ type Session struct {
 }
 
 // SessionRef is a session as the media path sees it. AccountID is empty on a media server that
-// knows only the session (ADR-0102 §3).
+// knows only the session (ADR-0101 §12).
 type SessionRef struct {
 	ID        string
 	AccountID string
@@ -70,7 +70,7 @@ type Grant struct {
 	Kind      string            // "p2p", "livekit", "sora"
 	URL       string            // the SFU endpoint; empty for p2p
 	Token     string            // the SFU access token; empty for p2p
-	Options   map[string]string // method-specific options for the client (ADR-0102)
+	Options   map[string]string // method-specific options for the client (ADR-0101)
 	ICE       []ICEServer       // STUN / TURN servers with short-lived credentials
 	RelayOnly bool              // iceTransportPolicy = "relay"
 	ExpiresAt time.Time         // the client asks for a new grant before this
@@ -109,7 +109,7 @@ type ConnectDecision struct {
 }
 
 // SessionDeduplicator is implemented by a transport whose media server may hold several
-// connections of one session (Sora with default_duplicate_client_id = allow, ADR-0102 §3):
+// connections of one session (Sora with default_duplicate_client_id = allow, ADR-0101 §12):
 // Deduplicate keeps the newest connection of the session and disconnects the others.
 // JobMediaEvent calls it when a live session joins the media path.
 type SessionDeduplicator interface {

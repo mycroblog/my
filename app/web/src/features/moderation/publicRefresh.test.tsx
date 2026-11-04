@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The moderators' writes that change what everyone sees, and a report filed by a moderator, are in the lists that
-// no page shows when they are made (web-client/README.md S1, ADR-0045): the timeline or the queue opened afterwards shows
+// no page shows when they are made (web-client/README.md S1, ADR-0028): the timeline or the queue opened afterwards shows
 // the change from its first render. The server answers every list slowly, as over a real network, so that a list
 // shown from a stale cache would be seen.
 import { screen, waitFor, within } from "@testing-library/react";

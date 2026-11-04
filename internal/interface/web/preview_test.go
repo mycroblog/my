@@ -394,7 +394,7 @@ func TestHiddenPagesAreTheGenericShell(t *testing.T) {
 			t.Errorf("GET %s headers %v differ from %v", path, h, *first)
 		}
 	}
-	// Other pages of the web client under a profile (the reserved words of ADR-0053 but status,
+	// Other pages of the web client under a profile (the reserved words of ADR-0018 but status,
 	// pages under a post, and the form without status, which is no page), and remote profiles,
 	// are the generic shell, which search engines never index (ADR-0057).
 	for _, path := range []string{
@@ -408,7 +408,7 @@ func TestHiddenPagesAreTheGenericShell(t *testing.T) {
 	}
 }
 
-// TestPostPageRedirectsToTheCurrentUsername checks ADR-0053: a post page is found by the status
+// TestPostPageRedirectsToTheCurrentUsername checks ADR-0018: a post page is found by the status
 // ID, and a URL with another username redirects to the canonical one with 301.
 func TestPostPageRedirectsToTheCurrentUsername(t *testing.T) {
 	s := status(alice("Alice", ""), content.VisibilityPublic, "<p>hi</p>")

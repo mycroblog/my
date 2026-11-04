@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The poll of a post in every width × locale project (FR-112, ADR-0027): the options of a poll the viewer has not
+// The poll of a post in every width × locale project (FR-112, ADR-0110): the options of a poll the viewer has not
 // voted in, the vote, and the results after it, each axe-clean and without horizontal scrolling. `vite preview` has
 // no API, so the spec answers the token refresh and the client API with `page.route`. Names come from the project's
 // catalog.

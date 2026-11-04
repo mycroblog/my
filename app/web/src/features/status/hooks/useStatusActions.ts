@@ -55,7 +55,7 @@ export type StatusActions = {
   favourite: RelationToggle;
   bookmark: RelationToggle;
   /**
-   * Reacts to the post with `emoji`, in place of the viewer's favourite or other reaction (ADR-0052 §1); reacting
+   * Reacts to the post with `emoji`, in place of the viewer's favourite or other reaction (ADR-0051 §6); reacting
    * with the emoji the viewer reacted with takes it back.
    */
   react: (emoji: ReactionEmoji) => void;
@@ -80,13 +80,13 @@ export type StatusActions = {
   /**
    * Opens the form quoting the post (FR-114). `isDisabled` while the viewer may not quote it (`Status.quotable`:
    * its policy, or a followers-only or direct post of someone else). Null for a post of another server while the
-   * instance sends nothing out (its federation mode is `off` or `inbound`, ADR-0076): the quote request could not
+   * instance sends nothing out (its federation mode is `off` or `inbound`, ADR-0006): the quote request could not
    * reach it, and the server refuses the quote.
    */
   quote: { onPress: () => void; isDisabled: boolean } | null;
   /**
    * Whether the reply, boost, favourite and reaction stay on this server: the post is of another server and the
-   * instance sends nothing out (`off` or `inbound`, ADR-0076). They are still recorded here; the bar says so.
+   * instance sends nothing out (`off` or `inbound`, ADR-0006). They are still recorded here; the bar says so.
    */
   staysLocal: boolean;
   /**

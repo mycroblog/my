@@ -55,7 +55,7 @@ type RemoteStatusHarness struct {
 type RemoteStatusFactory func(t *testing.T, opts uow.Options) RemoteStatusHarness
 
 // RemoteStatusContract verifies the ingestion of remote posts (federation.md §3.3, §3.4,
-// §6.3, ADR-0034) on a database adapter, through the inbox processor with the real Create, Update,
+// §6.3, ADR-0006) on a database adapter, through the inbox processor with the real Create, Update,
 // and Delete handlers and the real content, account, graph, timeline, and notification modules:
 // the Notes of the major implementations (the federation fixtures) are ingested with IDs whose
 // time is their published time; Creates unrelated to a local account are not stored, while
@@ -67,7 +67,7 @@ type RemoteStatusFactory func(t *testing.T, opts uow.Options) RemoteStatusHarnes
 // ThreadDepth and ThreadMaxItems; fetched posts must be attributed within their origin; failed
 // fetches are not repeated; Resolver resolves handles and the URLs of accounts and posts; the
 // featured collections of fetched actors become their pins, fetched again on an Add or Remove to
-// them by their owner (ADR-0044); the quotes of posts are recorded, their quoted posts fetched one
+// them by their owner (ADR-0006); the quotes of posts are recorded, their quoted posts fetched one
 // level, and their approvals verified, revoked, and presented per viewer (ADR-0069); and a
 // post with NUL in every string is stored with U+FFFD (federation.md §4). The
 // actors and the fetches are in-memory stand-ins, and the network of the fetch cases is in memory.

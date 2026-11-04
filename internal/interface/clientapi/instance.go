@@ -91,19 +91,19 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	out.Limits = InstanceLimits{MaxPostCharacters: settings.MaxStatusLength(), RequireMediaDescription: settings.RequireMediaDescription()}
 	out.Timelines = InstanceTimelines{Local: InstanceAudience(settings.LocalTimelineVisibility()), Federated: InstanceAudience(settings.FederatedTimelineVisibility())}
 	// The direction the instance federates in, by which clients offer the operations on remote
-	// accounts and posts (FR-413, ADR-0076).
+	// accounts and posts (FR-413, ADR-0006).
 	out.Federation = InstanceFederation{Mode: InstanceFederationMode(federationMode(settings))}
 	out.SendsEmail = s.o.SendsEmail
 	// What the instance states to search engines and AI crawlers (FR-725, ADR-0057).
 	out.SearchIndexing, out.AiUsage = SearchIndexing(settings.SearchIndexing()), AIUsage(settings.AIUsage())
 	// What the link card crawler does on this instance, for the page that tells site operators
-	// about it (ADR-0131).
+	// about it (ADR-0062).
 	out.LinkCards, out.LinkCardsIgnoreRobotsTxt = settings.LinkCardsEnabled(), settings.LinkCardsIgnoreRobotsTxt()
 	// How much of the costs GET /instance/cost_totals publishes (FR-903, ADR-0067 §8).
 	out.FinanceVisibility = FinanceVisibility(settings.FinanceVisibility())
-	// How much of the income GET /instance/income_totals publishes (FR-917, ADR-0073 §7).
+	// How much of the income GET /instance/income_totals publishes (FR-917, ADR-0067 §17).
 	out.IncomeVisibility = IncomeVisibility(settings.IncomeVisibility())
-	// Who may read the supporter list of GET /instance/supporters (ADR-0071 §4).
+	// Who may read the supporter list of GET /instance/supporters (ADR-0070 §13).
 	out.SupporterListVisibility = InstanceAudience(settings.SupporterListVisibility())
 	// Whether the supporter program shows its plans (ADR-0072 §2).
 	if s.o.Supporters != nil {
@@ -131,7 +131,7 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	if out.Theme, err = s.instanceTheme(ctx); err != nil {
 		return nil, err
 	}
-	// The instance's own icon and logos (ADR-0116), which clients show instead of the built-in ones.
+	// The instance's own icon and logos (ADR-0059), which clients show instead of the built-in ones.
 	if err := s.instanceBrands(ctx, &out); err != nil {
 		return nil, err
 	}

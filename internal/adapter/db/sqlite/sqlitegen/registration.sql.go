@@ -38,7 +38,7 @@ type CountUsableMemberInvitesParams struct {
 }
 
 // CountUsableMemberInvites counts the invites a member created as a member that are not
-// revoked, expired, or used up at now (ADR-0108).
+// revoked, expired, or used up at now (ADR-0106).
 func (q *Queries) CountUsableMemberInvites(ctx context.Context, arg CountUsableMemberInvitesParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countUsableMemberInvites, arg.Creator, arg.Now)
 	var count int64
@@ -494,7 +494,7 @@ type ListMemberInvitesByCreatorRow struct {
 	Revoked         bool
 }
 
-// ListMemberInvitesByCreator lists the invites a member created as a member (ADR-0108),
+// ListMemberInvitesByCreator lists the invites a member created as a member (ADR-0106),
 // newest first.
 func (q *Queries) ListMemberInvitesByCreator(ctx context.Context, arg ListMemberInvitesByCreatorParams) ([]ListMemberInvitesByCreatorRow, error) {
 	rows, err := q.db.QueryContext(ctx, listMemberInvitesByCreator, arg.Creator, arg.Before, arg.PageLimit)

@@ -49,7 +49,7 @@ type deliveryEnv struct {
 	meter *Meter
 	// actor is a local account with a signing key.
 	actor string
-	// mode is the federation mode that the deliveries read when they run (ADR-0076); "" is
+	// mode is the federation mode that the deliveries read when they run (ADR-0006); "" is
 	// both.
 	mode federation.Mode
 	// closing says that the server is closed and delivers the closure's Deletes (ADR-0088).
@@ -489,7 +489,7 @@ func answer(status int) deliveryRoute {
 }
 
 // fedSkipsWhatTheModeDoesNotSend checks that a delivery asks the federation mode when it runs
-// (ADR-0076): what the mode does not send is a skipped attempt without a request, done for good,
+// (ADR-0006): what the mode does not send is a skipped attempt without a request, done for good,
 // so that widening the mode later does not send it.
 func fedSkipsWhatTheModeDoesNotSend(t *testing.T, e *fedEnv) {
 	d := newDeliveryEnv(t, e)

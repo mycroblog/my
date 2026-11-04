@@ -298,7 +298,7 @@ func (r *RemoteActors) refreshIfStale(ctx context.Context, accountID string) {
 }
 
 // ResolvePublicKey implements PublicKeyResolver: the current key of keyID from account_keys,
-// or the key of the fetched owner when it is unknown or refresh is set (ADR-0032). A stored
+// or the key of the fetched owner when it is unknown or refresh is set (ADR-0006). A stored
 // key of an actor fetched RemoteActorTTL ago is used and the actor refreshed asynchronously.
 // Fetching gives up after KeyResolveTimeout.
 func (r *RemoteActors) ResolvePublicKey(ctx context.Context, keyID string, refresh bool) (PublicKey, error) {
@@ -405,7 +405,7 @@ type refreshAllPayload struct {
 }
 
 // handleRefreshAll reads one batch of stale actors, enqueues a refresh of each one that local
-// accounts follow, and enqueues the next batch (federation.md §6.2, ADR-0034).
+// accounts follow, and enqueues the next batch (federation.md §6.2, ADR-0006).
 func (r *RemoteActors) handleRefreshAll(ctx context.Context, j queue.Job) queue.Result {
 	var p refreshAllPayload
 	if len(j.Payload) > 0 && string(j.Payload) != "null" {

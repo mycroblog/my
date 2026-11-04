@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package dbupgrade runs the data upgrade steps of `my db upgrade` and records them in the
-// database (ADR-0087 §2, §4). A schema change that rewrites existing rows adds the new tables or
+// database (ADR-0023 §5, §7). A schema change that rewrites existing rows adds the new tables or
 // columns in one release (the expand) and rewrites the rows with a step: Go code with a key, run
 // once per database after `schema apply`, idempotent, in small transactions (ADR-0003). A later
 // minor release drops what the step read (the contract) and names the step as a prerequisite:

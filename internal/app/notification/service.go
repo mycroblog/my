@@ -66,7 +66,7 @@ type Query struct {
 	// Limit is the page size; zero or less means DefaultPageLimit, and it is capped at MaxPageLimit.
 	Limit int
 	// WithoutModerator leaves out every moderator notification, whatever the roles of the user: a
-	// third-party client does not get them (ADR-0143).
+	// third-party client does not get them (ADR-0090).
 	WithoutModerator bool
 }
 
@@ -204,7 +204,7 @@ func (s *Service) own(ctx context.Context, tx uow.Tx, accountID, id string) (not
 }
 
 // StatusNotified reports inside tx whether a notification is about a status, which keeps a
-// remote status from the retention purge (ADR-0034).
+// remote status from the retention purge (ADR-0006).
 func (s *Service) StatusNotified(ctx context.Context, tx uow.Tx, statusID string) (bool, error) {
 	return s.d.Repository.StatusHasNotifications(ctx, tx, statusID)
 }

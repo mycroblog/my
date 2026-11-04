@@ -122,7 +122,7 @@ function useLoadState(audioRef: React.RefObject<HTMLAudioElement | null>) {
 /**
  * The player of an audio file: a play / pause button, a decorative waveform with a seek slider over it, the name, and
  * the elapsed and total time. It wraps an `<audio>` without the browser's controls and never starts by itself
- * (ADR-0054 §6). The slider (React Aria) moves with the arrow keys, Home / End and PageUp / PageDown; it is disabled
+ * (ADR-0005 §9). The slider (React Aria) moves with the arrow keys, Home / End and PageUp / PageDown; it is disabled
  * until the file's length is known. From a press until the sound starts the play button pulses (and the wait is read
  * out); a file that could not load shows `MediaLoadFailure` over the player, with "Try again".
  */

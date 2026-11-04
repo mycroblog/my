@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The app shell of people who are not signed in (web-client/09-app-shell.md §9, "signed-out navigation"): the top bar
 // with Local, Federated, Search, About, Sign in, and Sign up while the server takes new accounts, in the states of
-// ADR-0112 §1. The page under it is the search page, which needs no data before a query.
+// ADR-0079 §13 The page under it is the search page, which needs no data before a query.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";

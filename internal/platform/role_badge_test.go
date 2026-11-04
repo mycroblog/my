@@ -14,7 +14,7 @@ import (
 
 // TestRoleBadgesStayOnTheProfile checks, through the composition root on SQLite, that a role
 // badge that its holder shows is on the account's profile in the client API, and in none of the
-// actor's JSON-LD, WebFinger, and NodeInfo (ADR-0071 §3).
+// actor's JSON-LD, WebFinger, and NodeInfo (ADR-0070 §12).
 func TestRoleBadgesStayOnTheProfile(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})

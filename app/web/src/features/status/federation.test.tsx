@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The actions on posts and the new-post form under the instance's federation direction (ADR-0076, FR-413), through
+// The actions on posts and the new-post form under the instance's federation direction (ADR-0006, FR-413), through
 // the whole app (web-client/README.md T4): while the instance sends nothing out (`off`, `inbound`), the actions on a post of
 // another server and a post that replies to or mentions an account of another server say that they do not reach
 // it, and quoting a post of another server is not offered. The real router and QueryClient, MSW for the client API.

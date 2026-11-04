@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The demo server (`node e2e/server.ts demo`, ADR-0117): a person of the demo scenario signs in and reads a home
+// The demo server (`node e2e/server.ts demo`, ADR-0015): a person of the demo scenario signs in and reads a home
 // timeline with the scenario's posts; a second run of the seed adds nothing; and a password reset arrives in Mailpit
 // with a link that sets the password. It runs in the demo-chromium project of playwright.config.ts, which exists
 // only with E2E_DEMO=1, as the demo server needs the test build (`GO_TAGS=e2e_fakes scripts/task.sh go:bin`) and

@@ -21,7 +21,7 @@ func (a *App) setUpOTelMeter(ctx context.Context, cfg *config.Config, opts AppOp
 	return nil
 }
 
-// setUpOTelTracer sets the Tracer of traces_exporter = otlp (ADR-0063 §5).
+// setUpOTelTracer sets the Tracer of traces_exporter = otlp (ADR-0055 §17).
 func (a *App) setUpOTelTracer(ctx context.Context, cfg *config.Config, opts AppOptions) error {
 	t, err := otel.NewTracer(ctx, otel.TracerOptions{
 		ServiceVersion: opts.Version, Role: string(cfg.Role), SampleRatio: cfg.TracesSampleRatio, Flush: cfg.TracesFlush,

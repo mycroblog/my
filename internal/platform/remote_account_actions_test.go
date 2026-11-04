@@ -31,9 +31,9 @@ import (
 )
 
 // TestClientAPIRemoteAccountActions checks the actions on a remote account through the
-// composition root and the client API (FR-703, data-model §5.2, ADR-0036): a suspend drops what
+// composition root and the client API (FR-703, data-model §5.2, ADR-0058): a suspend drops what
 // the account sends and hides its profile and posts, and its lift brings them back; the kinds
-// that only a local account takes are a 422; issuing and lifting are audited (ADR-0037), and
+// that only a local account takes are a 422; issuing and lifting are audited (ADR-0058), and
 // nothing is sent to the account's server.
 func TestClientAPIRemoteAccountActions(t *testing.T) {
 	t.Parallel()
@@ -83,7 +83,7 @@ func TestClientAPIRemoteAccountActions(t *testing.T) {
 	aliceIRI := "https://" + cfg.Host + "/ap/actors/" + r.AccountID
 
 	// create posts a public Note of bob that mentions alice (so that it is in the scope of what
-	// the instance stores, ADR-0034) to the shared inbox, signed with bob's key; the inline queue
+	// the instance stores, ADR-0006) to the shared inbox, signed with bob's key; the inline queue
 	// processes it before the inbox answers.
 	create := func(n int) string {
 		t.Helper()

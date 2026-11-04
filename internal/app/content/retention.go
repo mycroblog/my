@@ -18,7 +18,7 @@ import (
 const (
 	// RetentionDeletionRetention is how long a deletion by retention (status_deletions) is kept.
 	RetentionDeletionRetention = 30 * 24 * time.Hour
-	// JobPurgeRemoteStatuses deletes the remote statuses past their retention (ADR-0034,
+	// JobPurgeRemoteStatuses deletes the remote statuses past their retention (ADR-0006,
 	// FR-803). Its payload is the cursor of the run (none for the first job of a run).
 	JobPurgeRemoteStatuses = "content.purge_remote_statuses"
 	// DefaultRemoteStatusRetention is how long a remote status that nothing local refers to is
@@ -76,7 +76,7 @@ type NotifiedStatuses interface {
 }
 
 // RetainedStatuses tells whether the moderation records keep a status from the purge: a report
-// or an action points at it, or a retention hold preserves its author (ADR-0038). The
+// or an action points at it, or a retention hold preserves its author (ADR-0058). The
 // composition root implements it on the moderation module, which imports this one.
 type RetainedStatuses interface {
 	StatusRetained(ctx context.Context, tx uow.Tx, statusID, authorAccountID string) (bool, error)
@@ -111,12 +111,12 @@ type RetentionPeriods struct {
 	MaxPeriod time.Duration
 }
 
-// Retention purges the remote statuses past their retention (ADR-0034). A remote status
+// Retention purges the remote statuses past their retention (ADR-0006). A remote status
 // published longer ago than the retention period that nothing local refers to (a live local
 // reply, a live local status in its thread, an unretracted local boost, a favourite, a bookmark,
 // a pin, or a notification) is deleted with origin retention; with a maximum period, any remote
 // status published longer ago than it is. A status that a report or a moderation action points
-// at, or whose author a retention hold preserves, is kept regardless (ADR-0038). The deletion leaves every projection as the author's
+// at, or whose author a retention hold preserves, is kept regardless (ADR-0058). The deletion leaves every projection as the author's
 // deletion would, and its rows are purged in the same transaction; local accounts' boosts,
 // favourites, bookmarks, and pins stay, and readers treat their status as deleted. A deletion by
 // retention does not keep the URI from being fetched again, and goes after

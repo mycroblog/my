@@ -359,7 +359,7 @@ WHERE tag_id = sqlc.arg(tag_id)::uuid;
 -- name: ListTagUsageOf :many
 SELECT tag_id, statuses_count, last_used_at FROM tag_usage WHERE tag_id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY tag_id;
 
--- Lists (data-model 4.6, ADR-0122) -----------------------------------------------------------------
+-- Lists (data-model 4.6, ADR-0013) -----------------------------------------------------------------
 
 -- name: InsertList :exec
 INSERT INTO lists (id, owner_account_id, created_at) VALUES ($1, $2, $3);

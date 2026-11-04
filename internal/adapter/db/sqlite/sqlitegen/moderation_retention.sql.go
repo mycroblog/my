@@ -98,7 +98,7 @@ type InsertRetentionHoldParams struct {
 
 // SPDX-License-Identifier: AGPL-3.0-only
 // Retention of the moderation records and the holds that stop it (events), data-model 4.3, 8,
-// ADR-0038. A hold is in effect while it has no release.
+// ADR-0058. A hold is in effect while it has no release.
 func (q *Queries) InsertRetentionHold(ctx context.Context, arg InsertRetentionHoldParams) error {
 	_, err := q.db.ExecContext(ctx, insertRetentionHold,
 		arg.ID,

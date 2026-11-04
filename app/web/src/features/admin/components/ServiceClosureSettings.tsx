@@ -364,7 +364,7 @@ function Closed({ closure }: { closure: AdminServiceClosure }) {
 }
 
 /**
- * The deliveries as a progress bar (ADR-0113): the finished ones (delivered, refused for good, skipped or failed) of all
+ * The deliveries as a progress bar (ADR-0110): the finished ones (delivered, refused for good, skipped or failed) of all
  * the recorded ones; the total grows while inboxes are still being computed. Then the counts behind it.
  */
 function Progress({ progress }: { progress: AdminServiceClosureProgress }) {

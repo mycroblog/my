@@ -24,11 +24,11 @@ func (a *App) setUpDelivery(repo federation.Repository) error {
 		Keys:   federation.AccountSigningKeys{Accounts: a.Accounts},
 		Proofs: federation.AccountProofKeys{Accounts: a.Accounts},
 		// The Create, Update, and Delete of public posts carry a linked data signature, so that
-		// relays can forward them to Mastodon and Misskey (ADR-0061).
+		// relays can forward them to Mastodon and Misskey (ADR-0006).
 		LinkedData: ld,
 		Domains:    a.ModerationPolicy,
 		Clock:      a.Clock, IDs: a.IDs, Logger: a.Logger, Meter: a.Meter, Tracer: a.Tracer,
-		// The federation mode decides what goes out when each delivery runs (ADR-0076), and the
+		// The federation mode decides what goes out when each delivery runs (ADR-0006), and the
 		// service closure before it (ADR-0088 §2).
 		Modes: federationModes{a}, Closure: closureSettings{a},
 	})

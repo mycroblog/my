@@ -46,11 +46,11 @@ export class ApiError extends Error implements Problem {
 /** The problem type of the 403 for every operation that the closed server refuses (ADR-0088 §2). */
 const serviceClosedType = "/api/v1/problems/service-closed";
 
-/** The problem type of the server's maintenance mode (ADR-0084 §3): a 503 to every operation, with Retry-After. */
+/** The problem type of the server's maintenance mode (ADR-0088 §10): a 503 to every operation, with Retry-After. */
 const maintenanceProblemType = "/api/v1/problems/maintenance";
 
 /**
- * The server is under maintenance (ADR-0084 §3): it answers every operation, and the OAuth endpoints, with a 503 of
+ * The server is under maintenance (ADR-0088 §10): it answers every operation, and the OAuth endpoints, with a 503 of
  * this problem type. The session is still there, so nothing discards a token or signs out for it; the app shell shows
  * the maintenance in place of the app (lib/maintenance.ts). The members that the problem adds are kept only when they
  * are well formed, since the app shows them.

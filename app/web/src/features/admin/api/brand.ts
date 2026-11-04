@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The queries and mutations of the server's own icon and logos (ADR-0116, manage_settings): the images as the
+// The queries and mutations of the server's own icon and logos (ADR-0059, manage_settings): the images as the
 // administrators see them (GET /admin/instance/brand), checking an SVG without saving it (POST .../sanitize), setting
 // one with its PNG renditions (PUT .../{kind}), and going back to the built-in image (DELETE .../{kind}). An image that
 // breaks a rule is a 422 `invalid-brand` problem whose `brand_error` says why.
@@ -106,7 +106,7 @@ export function brandErrorOf(error: unknown): BrandError | undefined {
 }
 
 /**
- * Marks what a change of a brand image changes (ADR-0045): the admin's brand images, GET /instance (its `icon`, `logo`,
+ * Marks what a change of a brand image changes (ADR-0028): the admin's brand images, GET /instance (its `icon`, `logo`,
  * and `logo_dark`, which the app's header and the landing page show), and the audit log, which records the change.
  */
 export async function cacheSavedBrand(

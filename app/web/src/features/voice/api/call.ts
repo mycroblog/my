@@ -300,7 +300,7 @@ export async function inviteToVoiceRoom(
   return data;
 }
 
-/** Puts the room as the room stream or a write has it into its query (ADR-0045). */
+/** Puts the room as the room stream or a write has it into its query (ADR-0028). */
 export function cacheVoiceRoomState(api: Api, queryClient: QueryClient, room: VoiceRoom): void {
   queryClient.setQueryData(voiceRoomQueryOptions(api, room.id).queryKey, room);
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Reporting an account from a post's menu in every width × locale project (FR-701, ADR-0027): the whole
+// Reporting an account from a post's menu in every width × locale project (FR-701, ADR-0110): the whole
 // dialog with the keyboard only, the focus on each step's heading, and axe, horizontal scroll and the ARIA
 // structure on each step. `vite preview` has no API, so the spec answers the token refresh and the client API
 // with `page.route`, as a signed-in user's server would. Names come from the project's catalog, so the spec

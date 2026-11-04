@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The sign-up blocks screen in every width × locale project (ADR-0027, FR-719): the blocks in effect with an
+// The sign-up blocks screen in every width × locale project (ADR-0110, FR-719): the blocks in effect with an
 // email domain in non-Latin letters shown in both of its forms and a long hash that wraps, adding a block on an
 // email domain with the keyboard, importing a list with the keyboard and reading the lines it skipped, and
 // lifting a block, each passing axe without scrolling sideways. `vite

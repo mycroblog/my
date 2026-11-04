@@ -73,7 +73,7 @@ const (
 	PermManageLoginProviders Permission = "manage_login_providers"
 	// PermCreateInvites: create invites of one's own within the caps of the instance settings,
 	// list them, and revoke them, while the instance setting invite_creators is permitted
-	// (ADR-0108 §1). It is a member permission (ADR-0070 §1): it touches only the holder's own
+	// (ADR-0106 §14). It is a member permission (ADR-0070 §1): it touches only the holder's own
 	// invites, never those of others or the settings of the server, so a supporter plan may
 	// grant it (ADR-0072 §5).
 	PermCreateInvites Permission = "create_invites"

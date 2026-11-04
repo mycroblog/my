@@ -15,7 +15,7 @@ import (
 
 const (
 	// JobPruneRemoteProfiles shrinks the profile history of the remote accounts that nothing local
-	// relates to (ADR-0034, FR-803). Its payload is the cursor of the run (none for the first job).
+	// relates to (ADR-0006, FR-803). Its payload is the cursor of the run (none for the first job).
 	JobPruneRemoteProfiles = "account.prune_remote_profiles"
 	// PruneInterval is the period of the prune's schedule.
 	PruneInterval = 24 * time.Hour
@@ -68,7 +68,7 @@ type PruneDeps struct {
 	Batch int
 }
 
-// ProfilePruner runs JobPruneRemoteProfiles (ADR-0034): a remote account that no local account
+// ProfilePruner runs JobPruneRemoteProfiles (ADR-0006): a remote account that no local account
 // follows or is followed by, and whose statuses are all gone, keeps only its current profile
 // revision and the snapshots its head and that revision point to. The account's row, its URI,
 // and its keys stay. A later fetch adds revisions again as usual.

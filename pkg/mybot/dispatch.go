@@ -30,7 +30,7 @@ func senderOf(a *mykit.Account) string {
 }
 
 // dispatcher runs the jobs: up to its limit at once, those of one sender one after the other in the order they
-// came (ADR-0094 §4). A notification that is queued or running is not queued again, so that the catch-up and the
+// came (ADR-0093 §12). A notification that is queued or running is not queued again, so that the catch-up and the
 // event stream may both bring it.
 type dispatcher struct {
 	run func(job)
@@ -128,7 +128,7 @@ func (d *dispatcher) done() <-chan struct{} {
 	return ch
 }
 
-// tracker computes the position of the catch-up (ADR-0094 §3): the newest notification up to which every
+// tracker computes the position of the catch-up (ADR-0093 §11): the newest notification up to which every
 // notification handed to the bot was processed. Handlers end out of order, so a processed notification moves the
 // position only when no older one is still pending; while a catch-up hands out notifications, the position holds
 // still, so that a restart in the middle of it reads them again.

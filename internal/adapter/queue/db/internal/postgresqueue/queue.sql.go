@@ -284,7 +284,7 @@ type GetJobLeaseRow struct {
 	LockedUntil pgtype.Timestamptz
 }
 
-// A claim by ID (a wake-up signal, ADR-0120 section 2) reads the job's lease with GetJobLease, then
+// A claim by ID (a wake-up signal, ADR-0004 section 2) reads the job's lease with GetJobLease, then
 // runs LockOrderingKey and ClaimJob as a claim does, and reads the lease again when ClaimJob
 // leases nothing, to tell why.
 func (q *Queries) GetJobLease(ctx context.Context, id string) (GetJobLeaseRow, error) {
@@ -577,7 +577,7 @@ type ListDueJobsOfTypeRow struct {
 }
 
 // ListDueJobsOfType is ListDueJobs for one job type, from jobs_type_run_at_id, for the sweep of a
-// route (ADR-0139 section 4).
+// route (ADR-0004 section 4).
 func (q *Queries) ListDueJobsOfType(ctx context.Context, arg ListDueJobsOfTypeParams) ([]ListDueJobsOfTypeRow, error) {
 	rows, err := q.db.Query(ctx, listDueJobsOfType,
 		arg.JobType,
@@ -697,7 +697,7 @@ type ListPendingJobsRow struct {
 }
 
 // ListPendingJobs returns the jobs of the type @job_type (every type when empty) in the state
-// @state at @now (every state when empty; the states of ADR-0064 section 3: running while the
+// @state at @now (every state when empty; the states of ADR-0004 section 3: running while the
 // lease holds, otherwise queued before the first run and retrying after it), the earliest run_at
 // first, after the position (@after_run_at, @after_id); a NULL @after_id starts at the first.
 func (q *Queries) ListPendingJobs(ctx context.Context, arg ListPendingJobsParams) ([]ListPendingJobsRow, error) {
@@ -833,7 +833,7 @@ type PickJobOfTypesRow struct {
 	OrderingKey *string
 }
 
-// PickJobOfTypes is PickJob for a worker that runs only some job types (ADR-0138 section 2): it
+// PickJobOfTypes is PickJob for a worker that runs only some job types (ADR-0004 section 2): it
 // takes each type's candidate from jobs_type_run_at_id and picks the earliest of them, so that a
 // backlog of the other types costs nothing. A condition on PickJob would walk that backlog. The
 // candidates of the other types stay locked until the transaction ends; the other workers skip

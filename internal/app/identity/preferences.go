@@ -56,7 +56,7 @@ type PreferencesInput struct {
 	DefaultQuotePolicy      identity.QuotePolicy
 	DefaultPostLanguage     string
 	RequireMediaDescription bool
-	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0077).
+	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0013).
 	TimelineAutoInsert bool
 	// LinkCardSize is how the web client shows link cards; "" keeps the current one.
 	LinkCardSize identity.LinkCardSize
@@ -169,7 +169,7 @@ type PreferencesUpdate struct {
 	DefaultQuotePolicy      *identity.QuotePolicy
 	DefaultPostLanguage     *string
 	RequireMediaDescription *bool
-	// TimelineAutoInsert is the preference of that name (ADR-0077).
+	// TimelineAutoInsert is the preference of that name (ADR-0013).
 	TimelineAutoInsert *bool
 	// LinkCardSize is the preference of that name.
 	LinkCardSize *identity.LinkCardSize

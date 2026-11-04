@@ -25,7 +25,7 @@ type Type string
 // admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved,
 // admin_service_closure_due, and admin_error_group go to the staff whose roles grant the permission they need
 // (ModeratorPermission). status tells a subscriber of a new post of an account it subscribes to
-// (ADR-0123). announcement tells every local user of a server-wide announcement once it starts
+// (ADR-0086). announcement tells every local user of a server-wide announcement once it starts
 // to show (ADR-0125 §2).
 const (
 	TypeFollow         Type = "follow"
@@ -34,7 +34,7 @@ const (
 	TypeMention        Type = "mention"
 	TypeBoost          Type = "boost"
 	TypeFavourite      Type = "favourite"
-	// TypeReaction is an emoji reaction to a status of the recipient (FR-116, ADR-0052 §5).
+	// TypeReaction is an emoji reaction to a status of the recipient (FR-116, ADR-0051 §10).
 	TypeReaction Type = "reaction"
 	// TypeQuote is a quote of a status of the recipient that is shown: approved, or a legacy
 	// quote (FR-114, ADR-0069 §5). StatusID is the quoting status.
@@ -97,7 +97,7 @@ const (
 	// the group. At most ErrorGroupHourlyCap of them are made in an hour; the rest of the hour
 	// fold into one with ErrorGroupChange others and the hour in ErrorGroupHour.
 	TypeAdminErrorGroup Type = "admin_error_group"
-	// TypeStatus tells a local account of a new post of an account it subscribes to (ADR-0123):
+	// TypeStatus tells a local account of a new post of an account it subscribes to (ADR-0086):
 	// SourceAccountID is the author and StatusID the post.
 	TypeStatus Type = "status"
 	// TypeAnnouncement tells a local account of a server-wide announcement once it starts to
@@ -433,7 +433,7 @@ func InteractionKey(t Type, statusID, sourceAccountID string) string {
 
 // ReactionKey is the dedupe key of a reaction notification: one per status, source account, and
 // emoji (the key of the reaction's emoji), so that reacting again with the same emoji does not
-// notify again, and reacting with another one does (ADR-0052 §5).
+// notify again, and reacting with another one does (ADR-0051 §10).
 func ReactionKey(statusID, sourceAccountID, emojiKey string) string {
 	return string(TypeReaction) + ":" + statusID + ":" + sourceAccountID + ":" + emojiKey
 }

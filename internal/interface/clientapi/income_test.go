@@ -100,7 +100,7 @@ func (f *fakeIncome) ListIncome(_ context.Context, filter appfinance.IncomeFilte
 }
 
 // incomeSecrets are what neither the public totals nor the finance viewers may read: who paid
-// what, and the gross and the fees (ADR-0073 §6, §7).
+// what, and the gross and the fees (ADR-0067 §16, §17).
 var incomeSecrets = []string{incomeSubscription, incomeAccount, incomeUsername, incomeProviderID, `"gross"`, `"fee"`, "12000", `"432"`}
 
 func newIncomeEnv(t *testing.T) (*authEnv, *fakeIncome) {
@@ -162,7 +162,7 @@ func setSetting(t *testing.T, e *authEnv, key, value string) {
 }
 
 // TestInstanceIncomeTotals checks what GET /instance/income_totals publishes at each level of
-// income_visibility, apart from finance_visibility (FR-917, ADR-0073 §7): never a payment of
+// income_visibility, apart from finance_visibility (FR-917, ADR-0067 §17): never a payment of
 // anyone, the gross, or the fees; the plans only at plans; and the balance only while both
 // settings publish.
 func TestInstanceIncomeTotals(t *testing.T) {
@@ -254,7 +254,7 @@ func TestInstanceIncomeTotals(t *testing.T) {
 	}
 }
 
-// TestFinanceIncomeTotals checks GET /finance/income_totals (ADR-0073 §6): the holders of
+// TestFinanceIncomeTotals checks GET /finance/income_totals (ADR-0067 §16): the holders of
 // view_finance read the net and the balance whatever is published, the plans only while
 // finance_viewer_income or income_visibility shows them, and never who paid what, the gross, or
 // the fees.
@@ -289,7 +289,7 @@ func TestFinanceIncomeTotals(t *testing.T) {
 	}
 }
 
-// TestAdminIncome checks the administrators' income operations (ADR-0073 §6): manage_finance
+// TestAdminIncome checks the administrators' income operations (ADR-0067 §16): manage_finance
 // reads the gross, the fees, and each movement with its subscriber; view_finance reads neither.
 func TestAdminIncome(t *testing.T) {
 	e, income := newIncomeEnv(t)

@@ -15,7 +15,7 @@ import (
 // Pages returns the handler of the GET paths that no route serves: the web client's pages.
 // Every answer depends on Accept, since the same URL may be an ActivityPub document. A request
 // that asks for HTML gets the page (Options.HTML). One that asks for ActivityPub gets 404, except
-// at a post page, which redirects to the post's id (ADR-0053, ADR-0018).
+// at a post page, which redirects to the post's id (ADR-0018).
 func (h *Handler) Pages() http.Handler {
 	return http.HandlerFunc(h.page)
 }

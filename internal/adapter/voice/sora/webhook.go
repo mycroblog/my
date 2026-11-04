@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/app/voice"
 )
 
-// The webhooks of Sora (ADR-0102 §4, §5): the auth webhook, which Sora calls before every
+// The webhooks of Sora (ADR-0101 §13, §14): the auth webhook, which Sora calls before every
 // connection and which answers 2xx with whether it is allowed, and the event and session
 // webhooks, whose connection.created, connection.destroyed, and session.destroyed become
 // voice.Events. A self-hosted Sora sends them with Basic authentication (webhook_basic_authn);
@@ -106,7 +106,7 @@ type authRequest struct {
 }
 
 // authResponse is the answer of the auth webhook: an allowed connection gets the session as
-// its client_id and audio only, in Opus (ADR-0102 §3).
+// its client_id and audio only, in Opus (ADR-0101 §12).
 type authResponse struct {
 	Allowed        bool   `json:"allowed"`
 	Reason         string `json:"reason,omitempty"`

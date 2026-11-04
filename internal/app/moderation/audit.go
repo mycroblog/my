@@ -14,11 +14,11 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// The audit log (FR-704, ADR-0037). The administrative use cases of every module emit
+// The audit log (FR-704, ADR-0058). The administrative use cases of every module emit
 // AuditRecorded in the transaction of the operation, after its source event; the projector
 // that RegisterAuditProjector registers writes the entry in that transaction, so an operation
 // and its entry commit or roll back together. Nothing updates or deletes an entry: there is no
-// use case for it, and only the retention cleanup (ADR-0038) removes old entries.
+// use case for it, and only the retention cleanup (ADR-0058) removes old entries.
 
 // AuditEntry is moderation.AuditEntry, an entry of the audit log as other modules emit it.
 type AuditEntry = moderation.AuditEntry
@@ -263,7 +263,7 @@ type AuditTarget struct {
 }
 
 // GoneAuditTargets returns the targets of entries that no longer exist: accounts, reports,
-// appeals, and sign-up blocks erased (past their retention, ADR-0038), and roles, login providers,
+// appeals, and sign-up blocks erased (past their retention, ADR-0058), and roles, login providers,
 // custom emoji, custom emoji requests, webhooks, relays, and link card rules deleted (through
 // Deps.AuditTargets). It looks up each kind of target once for all the entries. A domain, a user, a
 // setting, a rule, an announcement, and an invite are never removed, a canceled cost item keeps its

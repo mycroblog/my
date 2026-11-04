@@ -19,7 +19,7 @@ func (s Session) Expired(now time.Time) bool { return !now.Before(s.ExpiresAt) }
 
 // SessionOrigin is the client that started a session: its IP address and User-Agent, "" when
 // unknown (data-model §4.1, session_origins). It is kept apart from the session so that it is
-// erased after its retention (ADR-0038) while the session stays.
+// erased after its retention (ADR-0058) while the session stays.
 type SessionOrigin struct {
 	SessionID string
 	UserID    string
@@ -32,7 +32,7 @@ type SessionOrigin struct {
 func (o SessionOrigin) Empty() bool { return o.IP == "" && o.UserAgent == "" }
 
 // RegistrationOrigin is the IP address a user registered from on the registration page
-// (data-model §4.1, registration_origins). It is erased after its retention (ADR-0038).
+// (data-model §4.1, registration_origins). It is erased after its retention (ADR-0058).
 type RegistrationOrigin struct {
 	UserID     string
 	IP         string
@@ -59,7 +59,7 @@ const (
 	RevokedAccountDeleted RevocationReason = "account_deleted"
 )
 
-// BrowserSession is a session that is a signed-in browser at some moment (ADR-0136 §1), with
+// BrowserSession is a session that is a signed-in browser at some moment (ADR-0090 §10), with
 // where it signed in from. IP and UserAgent are "" when unknown or erased after their retention.
 type BrowserSession struct {
 	ID         string

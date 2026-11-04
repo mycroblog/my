@@ -68,7 +68,7 @@ func apGet(t *testing.T, c *statusesClient, path string) (int, map[string]any) {
 	return rec.Code, doc
 }
 
-// TestFederationMode switches the federation mode (FR-413, ADR-0076) through the admin API and
+// TestFederationMode switches the federation mode (FR-413, ADR-0006) through the admin API and
 // checks each entry point in the four modes with the inline queue: the inbox (synchronous and
 // asynchronous), the fan-out and the delivery, the GETs of the actors, the statuses, and the
 // collections, WebFinger, host-meta, and NodeInfo. Narrowing the mode and widening it again keeps
@@ -339,7 +339,7 @@ func TestFederationMode(t *testing.T) {
 
 // TestAnnounceDereference checks that the id of a boost's Announce serves the activity that its
 // fan-out delivered, until the boost is retracted, and that other activity ids stay 404
-// (ADR-0144 §5).
+// (ADR-0018 §16).
 func TestAnnounceDereference(t *testing.T) {
 	t.Parallel()
 	network := &relayNet{docs: map[string][]byte{}}

@@ -86,7 +86,7 @@ func TestServiceClosureNoticePeriod(t *testing.T) {
 	if s, err := e.app.Instance.Settings(ctx); err != nil || s.RegistrationMode() != instance.RegistrationOpen {
 		t.Errorf("the setting during the notice = %v, %v; it keeps its value", s.RegistrationMode(), err)
 	}
-	// Registration is closed, so no invite is made either (ADR-0108 §4).
+	// Registration is closed, so no invite is made either (ADR-0106 §17).
 	setMode(instance.RegistrationInvite)
 	if _, err := e.app.Identity.CreateInvite(ctx, appidentity.CreateInviteInput{}); !errors.Is(err, appidentity.ErrRegistrationClosed) {
 		t.Errorf("CreateInvite during the notice = %v, want ErrRegistrationClosed", err)

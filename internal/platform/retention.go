@@ -23,12 +23,12 @@ type retentionRepositories struct {
 	autoDeletes content.AutoDeleteRepository
 }
 
-// setUpRetention registers the purges of federated data and their schedules (ADR-0034, FR-803):
+// setUpRetention registers the purges of federated data and their schedules (ADR-0006, FR-803):
 // the remote statuses past remote_status_retention_days (or remote_status_max_retention_days), the ones
-// that only relays brought in past relay_status_retention_days (ADR-0061), the inbox
+// that only relays brought in past relay_status_retention_days (ADR-0006), the inbox
 // and delivery records, the past profiles of unrelated remote accounts, and the remote custom
 // emoji that nothing refers to any more (ADR-0051 §1). The statuses that the moderation records
-// need stay (ADR-0038). It also sets up the users' automatic deletion of their own old posts
+// need stay (ADR-0058). It also sets up the users' automatic deletion of their own old posts
 // (FR-118) and its schedule. It comes after the content, graph, and notification services, which
 // tell what local data refers to.
 func (a *App) setUpRetention(repos retentionRepositories, statuses content.Repository) {
@@ -37,7 +37,7 @@ func (a *App) setUpRetention(repos retentionRepositories, statuses content.Repos
 		Evidence: a.Moderation,
 		Jobs:     a.Jobs, Clock: a.Clock, Periods: a.remoteStatusPeriods,
 	}).RegisterJobs(a.Handlers, a.Scheduler)
-	// The posts that only relays brought in (ADR-0061).
+	// The posts that only relays brought in (ADR-0006).
 	content.NewRelayedRetention(content.RelayedRetentionDeps{
 		UnitOfWork: a.UnitOfWork, Repository: statuses, Retention: repos.statuses, Notifications: a.Notifications,
 		Evidence: a.Moderation, Follows: followedAuthors{a},

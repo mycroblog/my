@@ -65,7 +65,7 @@ func Open(ctx context.Context, dsn string, opts uow.Options) (*DB, error) {
 }
 
 // SetTracer records a span of every transaction attempt and every query of the repositories
-// and of the database job queue on t (ADR-0063 §1). Call it before the first transaction.
+// and of the database job queue on t (ADR-0055 §13). Call it before the first transaction.
 func (d *DB) SetTracer(t kernel.Tracer) { d.tracer = kernel.TracerOrNop(t) }
 
 // normalizeDSN turns a path or file: URI into a file: URI with the required parameters.

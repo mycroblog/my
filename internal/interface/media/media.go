@@ -117,7 +117,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// needs no quoting beyond the quotes.
 	hd.Set("Content-Disposition", `inline; filename="`+path.Base(key)+`"`)
 	// A key is written once, by the processing job of its media file, and names its processing
-	// result (ADR-0054 §4).
+	// result (ADR-0005 §7).
 	hd.Set("Cache-Control", "public, max-age=31536000, immutable")
 
 	if rs, ok := rc.(io.ReadSeeker); ok {

@@ -276,7 +276,7 @@ const listRoleBadges = `-- name: ListRoleBadges :many
 SELECT role_id, label, color, updated_at FROM role_badges ORDER BY role_id
 `
 
-// Role badges (ADR-0071).
+// Role badges (ADR-0070).
 // ListRoleBadges returns the badge of every role that has one.
 func (q *Queries) ListRoleBadges(ctx context.Context) ([]RoleBadge, error) {
 	rows, err := q.db.Query(ctx, listRoleBadges)

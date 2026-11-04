@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The app's main navigation, one landmark for every width (web-client/README.md D1, D2, ADR-0039): a tab bar on the bottom
+// The app's main navigation, one landmark for every width (web-client/README.md D1, D2, ADR-0110): a tab bar on the bottom
 // edge of phones, a side rail of icons with short labels from md, and a sidebar with full labels from lg. Like
 // AppShell, it answers to the viewport (the shell is the one place for viewport breakpoints, D2).
 //

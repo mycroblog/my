@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The accounts (/moderation/accounts; web-client/screens/moderation.md): the search and the local and remote
-// accounts it finds, in the states of ADR-0112 §1.
+// accounts it finds, in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
   accountFixture,

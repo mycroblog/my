@@ -30,7 +30,7 @@ export type AccountSearchState = {
   signedOut: boolean;
   /**
    * Whether only the accounts this server knows can be found because the instance does not take in other servers'
-   * posts (its federation mode is `off` or `outbound`, ADR-0076), signed in or not.
+   * posts (its federation mode is `off` or `outbound`, ADR-0006), signed in or not.
    */
   knownOnly: boolean;
 };
@@ -66,7 +66,7 @@ export function useAccountSearch({ initialQuery, onFound }: AccountSearchOptions
   const [value, setValue] = useState(initialQuery);
   // Resolving needs a token; while the session is still resuming, the request waits for it (lib/api/client.ts).
   const signedOut = session === "signed-out";
-  // Resolving reaches the account's server, which the server refuses while it takes nothing in (ADR-0076).
+  // Resolving reaches the account's server, which the server refuses while it takes nothing in (ADR-0006).
   const { followsRemote } = useFederation();
   const scope: Scope = !followsRemote ? "known-only" : signedOut ? "signed-out" : "all";
   const mutation = useMutation({

@@ -22,7 +22,7 @@ import (
 	"github.com/mycroblog/my/schema"
 )
 
-// The span attributes that ADR-0063 §4 allows.
+// The span attributes that ADR-0055 §16 allows.
 var allowedSpanAttributes = map[string]bool{
 	"http.request.method": true, "http.route": true, "http.response.status_code": true, "my.surface": true,
 	"my.job.type": true, "my.job.attempt": true, "my.outcome": true, "activity.type": true,
@@ -93,7 +93,7 @@ func post(t *testing.T, h http.Handler, remote string) {
 
 // TestNoneTracerCorrelatesLogs checks that traces_exporter = none records no span and sends
 // nothing, yet the log lines of a request from a trusted proxy carry its traceparent's IDs
-// (ADR-0063 §6), and a job enqueued then carries no TraceParent.
+// (ADR-0055 §18), and a job enqueued then carries no TraceParent.
 func TestNoneTracerCorrelatesLogs(t *testing.T) {
 	var traceParents []string
 	a, logs := newTracedApp(t, nil, func(_ context.Context, j queue.Job) queue.Result {

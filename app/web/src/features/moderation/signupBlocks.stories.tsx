@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The sign-up blocks (/moderation/signup-blocks; web-client/screens/moderation.md): the blocks on email domains,
-// email addresses and IP ranges, the form that adds one, and the import, in the states of ADR-0112 §1.
+// email addresses and IP ranges, the form that adds one, and the import, in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
   answering,

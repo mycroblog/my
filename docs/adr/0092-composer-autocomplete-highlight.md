@@ -5,59 +5,10 @@
 - Deciders: @rosylilly
 - Issue: #1041
 
-## Context（背景・課題）
-
-投稿フォームの本文は `@my/ui` の `TextArea` のプレーンテキストで、補完も強調表示もない（[web-client §12](../architecture/web-client/12-compose.md)）。
-決定者は、`@` から始まるアカウント・`#` から始まるハッシュタグ・`:` から始まるカスタム絵文字を補完し、入力している間からメンションとハッシュタグを目で分かるようにしたい。
-
-いまの仕組みで足りないもの:
-
-- サーバーに前方一致でアカウントやハッシュタグを探す API がない。あるのは `GET /accounts/lookup`（`acct` の完全一致、`resolve=true` で外のアカウントを WebFinger で解決。FR-305）だけで、
-  投稿フォームは `local` の投稿の警告（ADR-0017）と連合の向きの注記（[ADR-0076](0076-federation-direction.md)）のためにドメイン付きのメンションを確かめるのに使っている。
-- 本文のメンション・ハッシュタグ・URL はサーバーの `ParseText`（`internal/app/content/text.go`、FR-103）が、`:shortcode:` は `ScanShortcodes`（`internal/domain/content/custom_emoji.go`、ADR-0051）が投稿の時に読み取る。
-  プロフィールの自己紹介と補足情報も同じ規則で読む（`RenderProfileText`）。クライアントの強調表示はこの規則と一致しなければ、強調したのにリンクにならない（あるいはその逆の）ずれが出る。
-  Web はすでにドメイン付きのメンションの正規表現を 1 つ写している（`features/compose/hooks/policy.ts` の `domainMentionPattern`）。
-- 打つたびに問い合わせが飛ぶので、near-zero cost（NFR-COST）とレート制限（client-api §4.2、アカウント単位 1,500 / 5 分）の中に収める必要がある。
-
-関連する要件: FR-101、FR-103、FR-109、FR-111、FR-305、FR-412、FR-413。関連 ADR: ADR-0009（i18n・正規化・検索）、ADR-0016（client API）、ADR-0017、ADR-0020（データの分類）、ADR-0027（品質ゲート）、
-ADR-0031（`@my/ui` の依存）、ADR-0039（320 px のシート）、ADR-0051（カスタム絵文字）、ADR-0076。
-`:` の補完は Unicode 絵文字のデータを [ADR-0091](0091-composer-emoji-picker.md)（絵文字ピッカー）と共有する。
-
-## Decision Drivers（判断基準）
-
-1. **日本語の入力を壊さない**: IME の変換中に候補を開かない・確定のキー（Enter）を奪わない。取り消し・スペルチェック・モバイルの入力をブラウザの標準のまま保つ。
-2. **アクセシビリティ**: WAI-ARIA と APG に沿い、ARIA in HTML に反しない。色だけで意味を伝えない（WCAG 1.4.1）。ADR-0027 の検査を通る。
-3. **サーバーとクライアントの読み取りの一致**: 強調した部分がそのまま投稿でリンクになる。
-4. **コスト**: SQLite と PostgreSQL の両方で拡張なしに速く、問い合わせの回数が少ない。
-5. **依存と保守**: ADR-0031 の許可リストの中で作り、独自の編集器を持たない。
-6. **候補の質**: 自分がフォローしている相手・よく使われるタグが先に出る。
-
-## Considered Options（選択肢）
-
-論点が 3 つあるので、それぞれに選択肢を置く。
-
-### A. 補完の候補の出どころ
-
-- A1. 専用の補完の API（`GET /accounts/search`・`GET /tags/search`）を足し、名前の正規化した前方一致の B-tree の索引で引く。
-- A2. 汎用の検索の API（`GET /search`、アカウント・タグ・投稿をまとめて返す）を作り、全文検索の索引（SQLite FTS5 の trigram・PostgreSQL の `pg_trgm`）で部分一致にする。
-- A3. サーバーに API を足さず、クライアントが手元のデータ（フォロー中の一覧・最近見たアカウント）だけから出す。
-
-### B. 補完の UI の作り方
-
-- B1. React Aria Components の `Autocomplete`（`react-aria-components` 1.21.1 に安定版として入っている）と `ListBox` の仮想フォーカスを、`TextArea` に付ける。
-- B2. `@my/ui` に独自のフック（`useTextAutocomplete`）を書き、React Aria の `useListBox` と `aria-activedescendant` を自前で結ぶ。
-- B3. テキストエリアに `role="combobox"` を付け、APG の combobox をそのまま当てる。
-
-### C. 入力中の強調表示
-
-- C1. テキストエリアの後ろに同じ文字の層（backdrop）を重ね、層の側で区間に背景を塗る。入力はネイティブの `textarea` のまま。
-- C2. `contenteditable` の編集器（自作、または Lexical・ProseMirror・Tiptap など）に置き換え、メンションなどを要素として描く。
-- C3. 強調表示をしない（補完だけ）。
-
 ## Decision（決定）
 
-**A1 + B1 + C1 を採用する。** B1 は React Aria の `Autocomplete` に §3 の上書きをして使い、実機の spike で上書きでは足りないと分かったときだけ B2 にする。
-理由は判断基準 1・2（IME とアクセシビリティ）を最も確実に守れるのが「ネイティブの `textarea` を保ち、その外に候補と強調を足す」形で、判断基準 4 を満たすのが拡張なしの B-tree の前方一致だからである。
+**専用の補完の API を正規化した前方一致の B-tree の索引で引き、UI は React Aria の `Autocomplete` に §3 の上書きをして使い、強調表示は `textarea` の後ろに重ねた層で塗る。**
+IME とアクセシビリティを最も確実に守れるのが「ネイティブの `textarea` を保ち、その外に候補と強調を足す」形で、コストを抑えられるのが拡張なしの B-tree の前方一致だからである。
 
 ### 1. サーバーの補完の API（client API、ADR-0016）
 
@@ -74,7 +25,7 @@ ADR-0031（`@my/ui` の依存）、ADR-0039（320 px のシート）、ADR-0051�
 - `indexable`（FR-412、ADR-0057）は補完に効かせない。メンションの補完は、投稿から辿れるハンドルを打つ手間を省くだけで、検索エンジンや全文検索への掲載ではないため。Mastodon もアカウントの検索で `indexable` を見ず、`discoverable` は自己紹介の全文検索にだけ効かせる（2026-10-23 に上の `Account::Search` の `searchable_text` で確認）。
 - 解決はしない（`resolve` を持たない）。Mastodon の Web の補完も `resolve: false`・`limit: 4` で、200 ms の間引きと前の問い合わせの取り消しをしている（2026-10-23 に [`actions/compose.js`](https://github.com/mastodon/mastodon/blob/131aabcaf1f1f13e0615f8ad2748ab05f966e2c9/app/javascript/mastodon/actions/compose.js) の `fetchComposeSuggestionsAccounts` で確認）。
   `q` が完全な `user@domain` で候補に完全一致がないときは、クライアントが既存の `GET /accounts/lookup`（`resolve=true`）を 1 回だけ呼び、見つかれば候補の先頭に足す。
-  解決の上限と 429、連合の向き（`off` / `outbound` では `resolve` を送らない、ADR-0076）は既存の lookup の規則をそのまま使う。
+  解決の上限と 429、連合の向き（`off` / `outbound` では `resolve` を送らない、ADR-0006）は既存の lookup の規則をそのまま使う。
 
 **ハッシュタグ: `GET /api/v1/tags/search`**（スコープ `read:statuses`、トークン必須）
 
@@ -91,7 +42,7 @@ ADR-0031（`@my/ui` の依存）、ADR-0039（320 px のシート）、ADR-0051�
 - 索引: 両方とも `term`（`tags` は既存の `name_normalized`）の B-tree で、`term >= q AND term < q || U+10FFFF` の範囲で引く。PostgreSQL では列を `COLLATE "C"` にしてバイト順にし、SQLite は既定の `BINARY` を使う。
   拡張（`pg_trgm`・FTS5）は使わない。FTS5 の trigram は 3 文字未満の部分文字列に一致しない（[SQLite FTS5 §4.3.4](https://www.sqlite.org/fts5.html)、2026-10-23 確認）ので、1〜2 文字から出す補完には合わない。
 - 読み取りの量: 範囲の先頭から索引順に最大 100 行を読み、アプリケーション層で並べ替える。ブロック・ミュート・フォローの関係は、その候補の ID だけを `graph` の `internal/app` に問い合わせる（モジュールをまたぐ唯一の経路、ADR-0002）。
-- 部分一致（表示名の途中の語でない位置）は扱わない。汎用の検索（A2）は別の ADR で決める。
+- 部分一致（表示名の途中の語でない位置）は扱わない。汎用の検索は別の ADR で決める。
 
 #### レート制限とキャッシュ
 
@@ -108,18 +59,17 @@ ADR-0031（`@my/ui` の依存）、ADR-0039（320 px のシート）、ADR-0051�
 
 ### 3. 補完の UI
 
-- **ロール**: `textarea` に `role="combobox"` を付けない（B3 を採らない）。ARIA in HTML は `textarea` に `textbox` 以外のロールを許さない（[ARIA in HTML](https://www.w3.org/TR/html-aria/)、2026-10-23 確認）。
+- **ロール**: `textarea` に `role="combobox"` を付けない。ARIA in HTML は `textarea` に `textbox` 以外のロールを許さない（[ARIA in HTML](https://www.w3.org/TR/html-aria/)、2026-10-23 確認）。
   暗黙の `textbox` のまま、`aria-autocomplete="list"`・`aria-controls`（候補の `listbox`）・`aria-activedescendant` を付ける（いずれも WAI-ARIA 1.2 の `textbox` が持てる属性、[WAI-ARIA 1.2 §5.4 textbox](https://www.w3.org/TR/wai-aria-1.2/#textbox)、2026-10-23 確認）。
   `textbox` は `aria-expanded` を持てないので、開いたことと件数は `role="status"` の告知（「候補 5 件」）で伝える。候補は `role="listbox"` の `role="option"` で、選ばれた候補に `aria-selected="true"` を付ける（APG の combobox の listbox の部分）。
-- **作り方**: React Aria Components の `Autocomplete` を `TextArea` と `ListBox` に使う（B1）。公式の文書は `inputValue` に入力の一部を渡して `@` のメンションのような行内の補完を作る例を `TextArea` で示している
+- **作り方**: React Aria Components の `Autocomplete`（`react-aria-components` 1.21.1 に安定版として入っている）を `TextArea` と `ListBox`（仮想フォーカス）に使う。公式の文書は `inputValue` に入力の一部を渡して `@` のメンションのような行内の補完を作る例を `TextArea` で示している
   （[React Aria Autocomplete](https://react-aria.adobe.com/Autocomplete)、2026-10-23 確認）。
   リポジトリが固定する `react-aria` 3.52.1 の `useAutocomplete`（`dist/private/autocomplete/useAutocomplete.mjs`、2026-10-23 確認）は、入力に `role` を付けず、`aria-autocomplete="list"`・`aria-controls`・`aria-activedescendant` を付け、
   `isComposing` の間はキーを処理せず、仮想フォーカスのある候補を Enter で選び、Tab は候補に渡さない。上の要件に合う。一方で次の点は合わないので、`TextAreaAutocomplete` で上書きする。
   - 入力に `spellCheck="false"`・`autoCorrect="off"`・`enterKeyHint="go"` を付ける。投稿の本文ではスペルチェックと自動修正を保ち、改行のキーを `go` にしないため、`TextArea` の側で戻す。
   - IME の判定は `isComposing` だけで、`keyCode === 229` を見ない（下の Safari の問題）。`onKeyDown` の前に 229 を見て止める。
   - 候補の一覧がある間は上下の矢印をすべて候補に渡すので、候補を閉じたら `ListBox` を外し、本文の行の移動を妨げない。
-  これらをブラウザと IME の組み合わせで確かめるのは spike で行い（Chrome・Safari・Firefox、iOS・Android の日本語入力。実機が要る）、
-  上書きで足りなければ `@my/ui` に `useTextAutocomplete` を書き（B2）、React Aria の `useListBox` と仮想フォーカスを使う。どちらも ADR-0031 の許可リストの中である。部品は `@my/ui` の `TextAreaAutocomplete` にし、API を呼ぶ部分は `features/compose` が渡す。
+  上書きで足りることは spike（#1152）で確かめた（Playwright の Chromium・Firefox・WebKit、IME は合成イベントで模した）。部品は `@my/ui` の `TextAreaAutocomplete` にし、API を呼ぶ部分は `features/compose` が渡す。
 - **キーボード**: 開いている間、上下の矢印で候補を移り（端で止まる）、Enter と Tab で確定し、Esc で閉じる。IME の変換中（下の IME の項）は、どのキーでも確定しない。開いたときは先頭の候補を選んだ状態にする。
   Esc は候補を閉じるだけで、投稿のシート（`Sheet`）を閉じない（イベントの伝播を止める）。開いていないときのキーは変えない。Ctrl / Cmd + Enter の送信は開いていても送信にする。
 - **確定**: 入力中の語（`@` / `#` / `:` からカーソルまで）を候補の値（`@user` か `@user@domain`、`#Tag`、`:shortcode:`）で置き換え、後ろに空白がなければ半角空白を 1 つ足してカーソルをその後に置く。
@@ -129,19 +79,19 @@ ADR-0031（`@my/ui` の依存）、ADR-0039（320 px のシート）、ADR-0051�
   WebKit の main では直っている（2026-10-23 に [WebKit bug 165004](https://bugs.webkit.org/show_bug.cgi?id=165004) で確認。bug 311717 の重複として解決）が、直る前の Safari が残るので、229 の判定を保つ。
   全角の `＠`・`＃`・`：` は起点にしない（サーバーも読まない）。
 - **位置**: 候補はカーソルの行の直下に、入力欄と同じ幅で出す。カーソルの行の位置は、テキストエリアと同じスタイルの鏡の要素（強調表示の層と兼ねる、§4）で求める。
-  画面の下に入らないときは行の上に出す（React Aria の `Popover` の反転）。モバイルのソフトウェアキーボードは `visualViewport` の高さを境にする。320 px のシート（ADR-0039）でも入力欄の幅に収まる。
+  画面の下に入らないときは行の上に出す（React Aria の `Popover` の反転）。モバイルのソフトウェアキーボードは `visualViewport` の高さを境にする。320 px のシート（ADR-0110）でも入力欄の幅に収まる。
 - **問い合わせ**: 語が 1 文字（`:` は 2 文字）以上になってから、入力が 200 ms 止まったら問い合わせる。新しい問い合わせは前のものを取り消す（TanStack Query の `signal`）。
   読み込み中は 300 ms を超えたら「読み込み中」を、結果がなければ「候補はありません」を候補の場所に出し、どちらも告知する。失敗（429 を含む）は候補を閉じるだけで知らせない。
 - **候補の見た目**: アカウントはアバター・表示名（`dir="auto"`、カスタム絵文字は画像）・`@user@domain`、タグは `#名前` と使われている投稿の数、絵文字は画像か文字と `:shortcode:`。文言は `client*` の名前空間に足す（ADR-0009）。
 
 ### 4. 入力中の強調表示
 
-- **方法**: C1。`textarea` の後ろに `aria-hidden` の層を置き、同じ文字を同じフォント・字間・行の高さ・内側の余白・`white-space: pre-wrap`・`overflow-wrap`・書字方向で並べる。
+- **方法**: `textarea` の後ろに `aria-hidden` の層を置き、同じ文字を同じフォント・字間・行の高さ・内側の余白・`white-space: pre-wrap`・`overflow-wrap`・書字方向で並べる。
   層の文字は透明にして区間の背景だけを塗り、文字はネイティブの `textarea` が描く（二重に描かないので、ずれても文字は読める）。`textarea` の背景を透明にし、`scroll` で層の位置を合わせ、`ResizeObserver` で幅を合わせる。
-- **強調するもの**: メンション・ハッシュタグ・URL・手元のデータにある `:shortcode:`（画像にはしない）と、文字数の上限を超えた部分。メンションの解決の結果では見た目を変えない（打つたびの解決になるため。外のメンションの注記は §12 の既存の警告が受け持つ）。
-- **色だけに頼らない**: 強調は飾りで、意味は文字（`@`・`#`・`:`）がすでに伝えているので、色を足しても WCAG 1.4.1 に反しない。上限を超えた部分は文字数カウンタ（ADR-0027 の読み上げ）が伝える。
+- **強調するもの**: メンション・ハッシュタグ・URL・手元のデータにある `:shortcode:`（画像にはしない）と、文字数の上限を超えた部分。メンションの解決の結果では見た目を変えない（打つたびの解決になるため。外のメンションの注記は web-client §12 の既存の警告が受け持つ）。
+- **色だけに頼らない**: 強調は飾りで、意味は文字（`@`・`#`・`:`）がすでに伝えているので、色を足しても WCAG 1.4.1 に反しない。上限を超えた部分は文字数カウンタ（ADR-0110 の読み上げ）が伝える。
   強制カラーモードでは背景が消えるので、`forced-colors:` で下線にする。色は新しいデザインシステムのトークン（#988）にライトとダークの組で足す。
-- **書字方向**: 層と `textarea` に同じ `dir="auto"` を付け（ADR-0009 §5）、論理プロパティだけを使う。`ar-XB` のスクリーンショットで位置を確かめる（ADR-0027）。
+- **書字方向**: 層と `textarea` に同じ `dir="auto"` を付け（ADR-0009 §5）、論理プロパティだけを使う。`ar-XB` のスクリーンショットで位置を確かめる（ADR-0110）。
 - **規則の一致**: Web に `lib/textTokens.ts` を置き、`ParseText` と `ScanShortcodes` の規則を写す（`domainMentionPattern` もこれに寄せる）。
   共通のテストベクタ（入力の文字列と、期待する区間の種類・位置の一覧）を `pkg/testkit/fixtures/text/` の JSON に置き、Go の `ParseText`・`ScanShortcodes` のテストと Vitest の `textTokens` のテストの両方が読む。
   規則を変える PR は両方のテストを同時に直さなければ通らない。
@@ -159,17 +109,34 @@ ADR-0031（`@my/ui` の依存）、ADR-0039（320 px のシート）、ADR-0051�
 
 ### 6. 機能要件と設計文書
 
-- `docs/requirements/01-functional.md` に次の行を足す:
+- `docs/requirements/01-functional.md` の要件は次のとおり。
   - **FR-119**（S）: 投稿フォームの補完と強調: 投稿の本文・CW・プロフィールの自己紹介と表示名で、`@` のアカウント（フォロー中を先に、ブロック・ミュートを除く）・`#` のハッシュタグ（使われた数の順）・`:` の絵文字を候補から入れられ、入力中のメンション・ハッシュタグ・URL・絵文字・上限を超えた部分を強調表示する（ADR-0092）。
   - **FR-306**（S）: アカウントとハッシュタグの前方一致の検索（ユーザー名・`user@domain`・表示名の語、ローカルとこのサーバーが知る外のアカウント）。
-- `docs/architecture/web-client/12-compose.md` に「補完と強調表示」の項を足し、§3・§4 の振る舞いを書く。`domainMentionPattern` の記述を `textTokens` に寄せる。
-- `docs/architecture/client-api.md`・`docs/architecture/data-model/` に 2 つの操作と 2 つの投影を足す。
+- `docs/architecture/web-client/12-compose.md` の「補完と強調表示」の項に §3・§4 の振る舞いを書く。
+- `docs/architecture/client-api.md`・`docs/architecture/data-model/` に 2 つの操作と 2 つの投影を書く。
 
 #### 見直す条件
 
-- spike で、ネイティブの `textarea` と層（C1）では主要なブラウザ（Chrome・Safari・Firefox、iOS・Android）で強調がずれる場面（折り返し・スクロール・ズーム）が避けられないと分かったら、C2 を改めて比べる。
-- 補完の利用の計測で、前方一致の 100 行の上限のためにフォロー中の相手が出ない苦情が多いと分かったら、閲覧者のフォロー先に限った索引（A1 の拡張）を足す。
-- 汎用の全文検索（A2）を別の ADR で入れることになり、その索引が 1〜2 文字の前方一致も十分に速く引けるなら、補完の API をその上に寄せる。
+- ネイティブの `textarea` と層では主要なブラウザ（Chrome・Safari・Firefox、iOS・Android）で強調がずれる場面（折り返し・スクロール・ズーム）が避けられないと分かったら、`contenteditable` の編集器を改めて比べる。
+- 補完の利用の計測で、前方一致の 100 行の上限のためにフォロー中の相手が出ない苦情が多いと分かったら、閲覧者のフォロー先に限った索引を足す。
+- 汎用の全文検索を別の ADR で入れることになり、その索引が 1〜2 文字の前方一致も十分に速く引けるなら、補完の API をその上に寄せる。
+
+## 経緯
+
+投稿フォームの本文は `@my/ui` の `TextArea` のプレーンテキストで、補完も強調表示もなかった（[web-client §12](../architecture/web-client/12-compose.md)）。`@` のアカウント・`#` のハッシュタグ・`:` のカスタム絵文字を補完し、入力している間からメンションとハッシュタグを目で分かるようにする。関連する要件は FR-101、FR-103、FR-109、FR-111、FR-305、FR-412、FR-413。
+
+サーバーには `GET /accounts/lookup`（`acct` の完全一致、`resolve=true` で外のアカウントを WebFinger で解決。FR-305）しかなかった。本文の読み取りはサーバーの `ParseText`（`internal/app/content/text.go`、FR-103）と `ScanShortcodes`（`internal/domain/content/custom_emoji.go`、ADR-0051）が持ち（プロフィールも `RenderProfileText` で同じ規則）、強調はこれと一致しなければ、強調したのにリンクにならないずれが出る。打つたびに問い合わせが飛ぶので、near-zero cost（NFR-COST）とレート制限（client-api §4.2、アカウント単位 1,500 / 5 分）の中に収める必要があった。
+
+日本語の入力を壊さないこと（IME の変換中に候補を開かず確定の Enter を奪わない、取り消し・スペルチェック・モバイルの入力をブラウザの標準のまま保つ）、WAI-ARIA と APG に沿い ADR-0110 の検査を通ること、ADR-0025 の許可リストの中で独自の編集器を持たないことを基準に選んだ。
+
+## 採らなかった案
+
+- 汎用の検索の API（`GET /search`、SQLite FTS5 の trigram・PostgreSQL の `pg_trgm`）: 部分一致ができ検索画面と共有できるが、3 文字未満の語に一致しないか索引が効きにくい。投稿の全文検索まで含むと設計が大きく、`indexable` の扱いが検索と補完で違うのに 1 つの API に混ざる。
+- サーバーに API を足さず、クライアントの手元のデータだけから出す: サーバーの変更がないが、フォローしていない相手・知らないタグが出ず、フォロー中の一覧を全部取るとフォローの多い人で重い。
+- `@my/ui` に独自のフック（`useTextAutocomplete`）を書き、React Aria の `useListBox` と `aria-activedescendant` を結ぶ: IME と Enter を細かく制御できるが、仮想フォーカスと告知を自分で保守する。spike で上書きで足りたので要らなかった。
+- `textarea` に `role="combobox"` を付ける: APG のとおりで `aria-expanded` を使えるが、ARIA in HTML に反し、axe などの検査と支援技術の扱いが不確かになる。
+- `contenteditable` の編集器（自作、Lexical・ProseMirror・Tiptap など）: 区間を要素として描けてずれがなく、メンションをチップにもできるが、IME・取り消し・貼り付け・モバイルの入力をすべて編集器が担う。Lexical などは ADR-0025 の許可リストの外で、読み上げも自分で保証する必要がある。
+- 強調表示をしない: 何もしなくて済むが、入力中に目で分かるようにする目的を満たさない。
 
 ## Consequences（影響）
 
@@ -187,35 +154,8 @@ ADR-0031（`@my/ui` の依存）、ADR-0039（320 px のシート）、ADR-0051�
   - `account_search_terms` と `tag_usage` の 2 つの投影が増え、プロフィールの更新と投稿の書き込みが少し重くなる。
   - Enter で候補を確定するので、候補が開いている間に改行するには Esc を先に押す必要がある。
   - `indexable = false` のアカウントも、ハンドルと表示名の前方一致で補完に出る。
-- 後続で必要になる作業（issue にする）
-  - サーバー: `account_search_terms` と `tag_usage` の投影・スキーマ（両方言）と、`GET /accounts/search`・`GET /tags/search`（spec・ハンドラ・テスト）。
-  - 共通のテストベクタ: `pkg/testkit/fixtures/text/` と Go のテスト、Web の `lib/textTokens.ts` と Vitest のテスト。
-  - Web の補完: `@my/ui` の `TextAreaAutocomplete`（B1 の spike の結果で B1 か B2）と、投稿フォーム・編集のダイアログ・CW・プロフィールへの組み込み。
-  - Web の強調表示: 強調の層、トークン（#988 の体系）、強制カラーモード、スクリーンショットの基準。
-  - 文書: FR-119・FR-306、web-client §12、client-api、data-model の更新。
-  - spike（上の issue より先）: React Aria の `Autocomplete` を `TextArea` に付けたときの IME（Chrome・Safari・Firefox・iOS・Android の日本語入力）、§3 の上書き（`spellCheck`・`autoCorrect`・`enterKeyHint`・`keyCode === 229`）が効くか、Enter・Esc の扱い、`execCommand('insertText')` の取り消し、層のずれ。
-
-## Pros and Cons of the Options（詳細比較・任意）
-
-### A. 候補の出どころ
-
-- A1（専用 API・B-tree の前方一致）: + 1 文字から引け、両方言で拡張なしに速い。+ 補完の目的に合わせた並びと除外を持てる。− 部分一致がない。− 投影が 2 つ増える。
-- A2（汎用の検索・trigram）: + 部分一致ができ、検索画面と共有できる。− 3 文字未満の語に一致しない（FTS5）か、索引が効きにくい（`pg_trgm` も 3 文字単位）。− 投稿の全文検索まで含むと設計が大きく、補完のために待つことになる。− `indexable` の扱いが検索と補完で違うのに 1 つの API に混ざる。
-- A3（クライアントだけ）: + サーバーの変更がない。− フォローしていない相手・知らないタグが出ない。− フォロー中の一覧を全部取ると、フォローの多い人で重い。
-
-### B. 補完の UI
-
-- B1（React Aria `Autocomplete`）: + 仮想フォーカス・`ListBox`・告知を React Aria が持ち、ほかの部品と同じ作法になる。+ 公式に `@` のメンションの例があり、`role` を付けず `isComposing` を見る。− `spellCheck`・`autoCorrect`・`enterKeyHint` を本文に合わない値にし、`keyCode === 229` を見ないので、上書きが要る。
-- B2（独自のフック）: + IME と Enter を細かく制御できる。− 仮想フォーカスと告知を自分で保守する。
-- B3（`textarea` に `role="combobox"`）: + APG のとおりで `aria-expanded` を使える。− ARIA in HTML に反し、axe などの検査と支援技術の扱いが不確かになる。
-
-### C. 強調表示
-
-- C1（層）: + 入力はネイティブのまま。+ 依存を足さない。− 同期の手間とわずかなずれ。
-- C2（`contenteditable`）: + 区間を要素として描け、ずれがない。メンションを「チップ」にもできる。− IME・取り消し・貼り付け・モバイルの入力をすべて編集器が担い、ブラウザの違いの不具合が多い。− Lexical などの依存は ADR-0031 の許可リストの外で、新しい ADR がいる。− 支援技術での読み上げを自分で保証する必要がある。
-- C3（強調しない）: + 何もしない。− 決定者の要望を満たさない。
+  - 実機と支援技術での確認はしていない。バグ報告が届いたら #1738 を開き直して確かめる。
 
 ## Open Questions / 要検証
 
-- React Aria の `Autocomplete` に §3 の上書きをした `TextArea` が、各ブラウザと日本語 IME の組み合わせ（Chrome・Safari・Firefox、iOS・Android）で変換中に開かず確定を奪わないか、`execCommand('insertText')` の取り消しが各ブラウザで 1 回で戻るか。**要検証**（実機の spike）。
 - 補完の問い合わせの回数が既存のアカウント単位のレート制限に収まるか。**要検証**（実装後の計測）。

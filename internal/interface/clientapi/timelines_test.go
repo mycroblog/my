@@ -547,7 +547,7 @@ func TestListAccountStatuses(t *testing.T) {
 
 // The first page of a profile that a logged-in viewer opens starts fetching the account's recent
 // posts, and the page tells when it did; later pages, pinned posts, local accounts, and anonymous
-// viewers start nothing, and a failure to start does not fail the page (ADR-0044).
+// viewers start nothing, and a failure to start does not fail the page (ADR-0006).
 func TestListAccountStatusesStartsFetchingRecentPosts(t *testing.T) {
 	e := newTimelineEnv(t)
 	auth := map[string]string{"Authorization": "Bearer read"}

@@ -50,12 +50,12 @@
 - **未保存の変更**: プロフィールの編集のように、まとめて保存するフォームは、保存していない変更があるまま別の画面へ移るとき（検索条件とハッシュだけの変化は除く）に、TanStack Router の `useBlocker`（`withResolver`）で遷移を止め、
   `ConfirmDialog`（`alertdialog`）で確かめる。フォーカスは「編集を続ける」から始まり、Esc もそれと同じく画面に残る。再読み込みとタブを閉じるときは、ブラウザ自身の確認（`beforeunload`）になる。
   変更は保存済みの値と比べて求めるので、手で元に戻した変更や保存した後は確かめない。設定を変えたとたんに保存する画面（表示・投稿・タイムライン、通知）は対象にしない。
-- **通知の設定**（`/settings/notifications`、設定のメニューの「通知」、FR-210、[ADR-0109](../../adr/0109-notification-settings.md) §1・§2・§5、`features/settings` の `NotificationSettings`）: loader が `GET /preferences/notifications`・`GET /preferences`・`GET /instance` を待つ。
+- **通知の設定**（`/settings/notifications`、設定のメニューの「通知」、FR-210、[ADR-0086](../../adr/0086-email-delivery.md) §8, §9, §12、`features/settings` の `NotificationSettings`）: loader が `GET /preferences/notifications`・`GET /preferences`・`GET /instance` を待つ。
   上から、この端末の Web Push のスイッチ（[§11](11-pwa.md)）、この端末の通知音、メールが届かない理由（`email_suppression`。メールの列があるときだけ）、区分（ほかの人からの通知・モデレーター向け・このサーバーからのお知らせ）ごとの表を置く。
   - 表は読むための表（`@my/ui` の `Table`。区分の見出しが名前）で、行はサーバーが返す行（モデレーター向けは権限による。サポーターの行は Tauri のアプリでは出さない）、列はアプリ内・プッシュ（この端末で Web Push がオンのときだけ）・メール（`Instance.sends_email` のときだけ）・音（通知音のスイッチがオンのときだけ）。
     各セルは `Checkbox` で、セルの中にラベルがないので「行の名前：列の名前」をアクセシブルネームにする。止められないセル（`fixed`）はオンのまま操作できなくし、アプリ内がオフの行のプッシュ・メール・音のセルも操作できなくする。
   - アプリ内とメールのセルは変えたとたんに `PATCH /preferences/notifications`（そのセルだけ）で保存し、保存中の値は保留中の mutation（`useMutationState`）から出し（S8）、応答でキャッシュを置き換える。失敗はサーバーの理由を `role="alert"` で出し、保存済みの値に戻す。
-  - **通知音**（`lib/notificationSound.ts`、ADR-0109 §5）: 組み込みの 1 つの音（`lib/notification-sound.wav`。`notificationSoundAsset.test.ts` の関数で合成したもので、テストが同じ出力であることを確かめる）を、アプリを開いている間にイベントストリームで新しい通知を受けたとき（`useLiveUpdates`）、全体のスイッチと、その種類の行の音がオンなら 1 回鳴らす。
+  - **通知音**（`lib/notificationSound.ts`、ADR-0086 §12）: 組み込みの 1 つの音（`lib/notification-sound.wav`。`notificationSoundAsset.test.ts` の関数で合成したもので、テストが同じ出力であることを確かめる）を、アプリを開いている間にイベントストリームで新しい通知を受けたとき（`useLiveUpdates`）、全体のスイッチと、その種類の行の音がオンなら 1 回鳴らす。
     設定は端末ごとに localStorage の `my:notifications:sound` に持ち、サーバーに送らない。最後の通知から 3 秒以内に届いた通知は鳴らさない（続けて届いた通知はまとめて 1 回）。ブラウザが自動再生を止めているとき（`play()` が拒否される）は鳴らさない。
     「音を試す」ボタンが同じ `<audio>` の要素で 1 回鳴らし、ブラウザに再生を許してもらう。鳴らなかったときはその理由と対処を出す。
 - **古い投稿の自動削除**（`/settings/auto-delete`、設定のメニューの「古い投稿の自動削除」、FR-118、`features/settings` の `AutoDeleteSettings`）: `GET /preferences/auto_delete` の設定を、有効にするスイッチ、削除する投稿の古さ（`Select`。7 日〜2 年と、保存されている値が選択肢になければそれも）、
@@ -67,7 +67,7 @@
   各行はドメインを U ラベルで（A ラベルと違えば A ラベルも、どちらも `dir="ltr"`）出し、「ミュートを解除」（アクセシブルネームにドメインを含める）で `DELETE /domain_mutes/{domain}` を送る。解除した行は一覧から消し、フォーカスを次の行のボタンへ移す（`useFocusAfterRemoval`）。
   ミュートと解除は投稿の一覧と通知（未読数を含む）を古くする（S1）。ミュートは一覧も取り直す（ドメインの順に入る）。
 - **パスワード**（`/settings/password`、設定のメニューの「パスワード」、FR-002・FR-004、`features/settings` の `PasswordSettings`）: loader が、パスワードがあるか（`GET /accounts/password`）とパスキーの一覧を読む。
-  ログインが IdP だけに制限されている間（`GET /instance` の `login_providers_only`、[ADR-0133](../../adr/0133-login-providers-only.md)）は、パスワードの変更と設定のフォームの代わりにできない理由を出し、削除だけを残す。
+  ログインが IdP だけに制限されている間（`GET /instance` の `login_providers_only`、[ADR-0106](../../adr/0106-external-login-providers.md)）は、パスワードの変更と設定のフォームの代わりにできない理由を出し、削除だけを残す。
   パスワードがある利用者には 2 つの区画（`h2` の `section`）を出す。「パスワードを変更」は、変更が何をするか（ほかのブラウザーとアプリからログアウトし、パスキーと二要素認証は残る）の説明と、
   現在のパスワードと新しいパスワード（`autocomplete` は `current-password` / `new-password`、長さはブラウザーの制約検証）の `TextField` のフォーム。`POST /accounts/password` を送り、
   間違った現在のパスワードはその欄のエラー、ほかの失敗は `role="alert"` で出す。「パスワードを削除」は、パスキーだけでログインするようになることの説明と、`ConfirmDialog`（`danger`）で確かめるボタン。
@@ -92,7 +92,7 @@
   操作の前に「{IdP} でもう一度ログイン」のボタンを出し、`POST /linked_identities/confirmation`（`operation` と、戻り先の今の画面のパス）の `start_url` へアプリを離れる。サーバーは結果をフラグメント（`external_confirmation`・`operation`・`provider`、失敗は `external_error`）に入れて画面へ戻す。
   画面は開いたときにフラグメントを 1 度だけ読み（`useExternalOutcome`）、アドレスから外す（再読み込みで出し直さない）。確認が戻った操作は、ボタンの代わりに確認した IdP の名前を出し、操作の要求の `external_confirmation` に入れて 1 度だけ送る。失敗は理由ごとの文言（`settings.external_confirmation.failed.*`）で出す。サーバーが確認の期限切れか使用済みを答えた（`external-confirmation-expired`）ら、どの操作も確認を取り下げて開いているダイアログを閉じ、理由とともにボタンを出し直す（`takeBackIfExpired`）。
 - **プロバイダ**（`App.tsx`）: 外側から、ランタイム設定、表示のロケール、i18n（`react-intl` と React Aria の `I18nProvider`）、QueryClient（`lib/query`）、セッションと API クライアント（`lib/auth/SessionProvider`、§10）、`AnnouncerProvider` / `ToastProvider`、React Aria の `RouterProvider`、ルーターの順に置く。
-- **文言**（`lib/i18n`）: クライアントの文言は `locales/<locale>/client/<area>.json`（領域ごとのファイル、ADR-0082）にある。`vite-plugins/client-catalogs.ts` がロケールごとに 1 つのモジュールにまとめ、ロケールごとに別のチャンクで読み込む。足りない文言は `ja-JP` → `ja` → `en` の順に補う。
+- **文言**（`lib/i18n`）: クライアントの文言は `locales/<locale>/client/<area>.json`（領域ごとのファイル、ADR-0081）にある。`vite-plugins/client-catalogs.ts` がロケールごとに 1 つのモジュールにまとめ、ロケールごとに別のチャンクで読み込む。足りない文言は `ja-JP` → `ja` → `en` の順に補う。
   ID の型は `tools/i18n` が生成する `MessageArgs` から作る（`ClientMessageKey`）。文字列にするときは `useT()` の `t("client:…", 引数)` を使い、ID と引数の型を検査する。
 - **ルーティング**（`router.ts`）: TanStack Router のファイルルート。Vite のプラグインが `routes/` から `routeTree.gen.ts` を生成する（自動コード分割）。生成物はコミットしない（ADR-0081）。
   `tsc`・Oxlint・knip・テストの前には、`scripts/task.sh web:routes-gen`（`app/web/scripts/routes.ts`）が Vite を通さず同じ設定で生成する。
@@ -100,7 +100,7 @@
   - `-` で始まるファイルとディレクトリはルートにならない。外枠の部品は `routes/-layout/` に置く。
   - プロフィールのアドレスはサーバーの外枠と同じ `/@username`（リモートのアカウントは `/@username@domain`）で、ルートは接頭辞付きのパラメータ（`routes/@{$acct}.tsx`）にする。
     パラメータの `@` を `%40` にしないように、ルーターは `pathParamsAllowedCharacters: ["@"]` にする。複数の機能が指す画面のアドレスは `lib/paths.ts` で作る。
-  - プロフィールの下（`/@{acct}/…`）の第 1 区間は、次の予約語だけにする（[ADR-0053](../../adr/0053-status-page-url.md)）。ID やタグ名などの可変の値は第 1 区間に置かず、語の下に置く。
+  - プロフィールの下（`/@{acct}/…`）の第 1 区間は、次の予約語だけにする（[ADR-0018](../../adr/0018-federated-uris.md)）。ID やタグ名などの可変の値は第 1 区間に置かず、語の下に置く。
     語は `[a-z][a-z0-9_-]*` で、1 件を指すページは単数、一覧は複数にする。ルートのファイルは `routes/@{$acct}_.<語>….tsx`。
     語を足すときはこの表を更新する（ADR は要らない）。サーバーが役割を持つのは `status` だけで（外枠の meta タグと、ActivityPub の `Accept` での `id` へのリダイレクト）、ほかの語のアドレスには汎用の外枠が返る。
 
@@ -124,7 +124,7 @@
   ほかのリンクは新しいタブで開いて、サーバーの `rel`（`nofollow noopener noreferrer`）に `noopener noreferrer` を保ち、「（新しいタブで開きます）」を末尾に足す。
   アプリの外へ出るリンク（ほかのサイト、ソースコードの公開先）は `ExternalLink` で新しいタブで開く（Y12）。
   それ以外のサーバー自身のパス（`/auth`・`/oauth`・`/api` などの予約パス、`lib/paths.ts` の `isServerPath`。登録の画面など）へのリンクはアプリのルートではないので、外枠の `navigate`（`App.tsx`）がルーターに渡さず、`leaveApp` でページごと開く。
-- **レイアウト**（`routes/-layout/AppLayout.tsx`。見た目は `@my/ui` の `AppShell`・`AppNavigation`）: モバイルファーストで、`md` 未満は下端のタブバー、`md` から横のレール、`lg` から文言付きのサイドバー、`xl` から 3 列目（右帯）を出す。`md` からのレールには「投稿を書く」の `primary` ボタンが 1 つあり（`lg` から文言付き、`md` はアイコンだけ）、`md` 未満のタブバーは場所だけにして投稿は浮かぶボタンから開く（ADR-0039）。
+- **レイアウト**（`routes/-layout/AppLayout.tsx`。見た目は `@my/ui` の `AppShell`・`AppNavigation`）: モバイルファーストで、`md` 未満は下端のタブバー、`md` から横のレール、`lg` から文言付きのサイドバー、`xl` から 3 列目（右帯）を出す。`md` からのレールには「投稿を書く」の `primary` ボタンが 1 つあり（`lg` から文言付き、`md` はアイコンだけ）、`md` 未満のタブバーは場所だけにして投稿は浮かぶボタンから開く（ADR-0110）。
   投稿フォームはページに置かず、常に `Sheet`（`lg` から画面の中央のパネル、§12）で開く。開くのは、レールのボタン、`md` 未満の浮かぶボタン、返信・引用のボタンで、ページに置くフォームは常に 1 つにする。
   浮かぶボタンは `md` 未満の、ルートの静的なデータ（TanStack Router の `staticData`、`composeButton: true`）を持つ画面（タイムラインとプロフィール）にだけ、タブバーの上に出す（G4）。外枠は今のマッチ（`useMatches`）からそれを読む。
   ほかの画面でもシートは置いたままにし、返信のボタンはそこで開く。浮かぶボタンはアイコンだけで、「投稿を書く」をアクセシブルネーム（`aria-label`）と `Tooltip` にする（G12）。レールのボタンは `md` ではアイコンだけで同じ名前を持つ。
@@ -154,7 +154,7 @@
   `md` 未満で高さが 32rem 以下の画面（横向きのモバイル端末、400% の拡大の 320 × 225 CSS px）は `short:` の variant（`@my/ui/theme.css`）で、タブバーの項目を `min-h-12` にし、ボタンとの間を詰め、上端のオフラインの帯（G17）を粘着させずにページと一緒に流して、固定した要素を画面の高さの半分に収める（WCAG 1.4.10）。
   ナビゲーション（`routes/-layout/Navigation.tsx`）は 1 つの `nav` で、今いる区画のリンクに `aria-current="page"` を付ける。今いる項目は色だけでなく形でも示す（`RailItem`）: タブバーではアイコンの後ろに塗った丸い形を置き、レールとサイドバーでは行全体を塗る（WCAG 1.4.1）。「プロフィール」の区画は自分のプロフィールとそのフォロワー / フォローの一覧で、
   同じ `/@{acct}` の下にある自分の投稿の詳細は含めない。画面の端に接する要素は `env(safe-area-inset-*)` を足し、高さは `svh` で指定する。
-  - 項目は [ADR-0039](../../adr/0039-mobile-navigation-and-compose-entry.md) に従い、ローカルと連合のタイムラインは 1 つの画面のタブにせず、どの幅でもナビゲーションの別の項目・別の画面にする（決定者の指示、[#660](https://github.com/mycroblog/my/issues/660)）。
+  - 項目は [ADR-0110](../../adr/0110-web-experience-principles.md) に従い、ローカルと連合のタイムラインは 1 つの画面のタブにせず、どの幅でもナビゲーションの別の項目・別の画面にする（決定者の指示、[#660](https://github.com/mycroblog/my/issues/660)）。
     利用者が並べ替えない限り、`md` 未満のタブバーは、ホーム・ローカル・連合・通知・検索・メニューの 6 つ（サーバーが提供しないタイムラインの項目は出さないので 4〜6 つ）で、
     `md` からのレールとサイドバーは、ホーム・ローカル・連合・通知・検索・プロフィール・ブックマーク・設定の 8 つにする。どちらも 1 つのリストの同じ順番で、各項目はその幅で出ないときに `display: none`（アクセシビリティツリーからも外れる）にする。
   - 利用者は、この 8 つの項目の順番と表示・非表示を「表示・投稿・タイムライン」の「ナビゲーション」の区画（`features/settings` の `NavigationSettings`）で選ぶ（[#662](https://github.com/mycroblog/my/issues/662)）。
@@ -168,7 +168,7 @@
     サーバー管理の画面の権限（`manage_settings`・`manage_rules`・`manage_custom_emojis`・`manage_announcements`・`manage_webhooks`・`manage_roles`・`manage_jobs`・`manage_finance`）のどれかを持つ閲覧者には「管理」（`/admin`）を、設定の後にこの順で足す。どちらも、その区分に閲覧者の使える画面があるときだけ出すので、組み込みのモデレーターには「管理」が出ない。レールとサイドバーとメニューのシートに出し、タブバーには出さない。運営の区分は、その最初の項目の上の線で利用者の項目（通話・会計を含む）と分ける。
     権限の 3 つめの区分「利用者の機能」（`member`。`view_finance` など、[ADR-0070](../../adr/0070-permission-split-emoji-finance.md)）はこの規則に数えないので、それだけを持つ閲覧者には「モデレーション」も「管理」も出ない。
     ログイン中の閲覧者には、利用者の項目の後（通話があればその後、リストと会計の前）に「お知らせ」（`/announcements`、ADR-0125）を足す。並べ替えの対象にせず、レールとサイドバーとメニューのシートに出し、タブバーには出さない。今見えているお知らせに未読があるときは、その数を「通知」と同じくバッジで出す（名前は「お知らせ、未読 2 件」）。
-    ログイン中の閲覧者には、利用者の項目の後（通話があればその後、会計の前）に「リスト」（`/lists`、ADR-0122）を足す。「通話」と同じく並べ替えの対象にせず、レールとサイドバーとメニューのシートに出し、タブバーには出さない。リストは頻繁に切り替える場所ではなく（タブバーの 5 つはホームなどの毎日の場所に使う）、`/lists/$id` も「リスト」の区画に数える。
+    ログイン中の閲覧者には、利用者の項目の後（通話があればその後、会計の前）に「リスト」（`/lists`、ADR-0013）を足す。「通話」と同じく並べ替えの対象にせず、レールとサイドバーとメニューのシートに出し、タブバーには出さない。リストは頻繁に切り替える場所ではなく（タブバーの 5 つはホームなどの毎日の場所に使う）、`/lists/$id` も「リスト」の区画に数える。
     サーバーが通話を有効にしている（`GET /instance` の `voice_enabled`、ADR-0100 §2）ログイン中の閲覧者には、利用者の項目のすぐ後に「通話」（`/voice`）を足す。「会計」と同じく並べ替えの対象にせず、レールとサイドバーとメニューのシートに出し、タブバーには出さない。
     `view_finance` を持つ閲覧者には、利用者の項目の後、スタッフの区分の前に「会計」（`/finance`）を足す。スタッフの区分と同じく並べ替えの対象にせず、レールとサイドバーとメニューのシートに出し、タブバーには出さない。
     jsdom はスタイルを当てないので、統合テストでは両方の項目が文書にあり、どの幅で何が出るかは E2E（`e2e/shell.spec.ts`・`e2e/federated.spec.ts`）で確かめる。
@@ -190,7 +190,7 @@
   - `lg` からのサイドバーは、リストの上にサーバーの名前（下の「サーバーの名前」）を、リストの下（`nav` の末尾）にサインインしているアカウントのアバター・表示名・ハンドルを出す。
     サーバーの名前はルートのアドレス（`/`）へのリンク（`routes/-layout/ServerNameLink.tsx`）で、サインインしていない人にはランディングページを、サインインしている利用者にはホームのタイムラインを開く。
     名前は見えている名前、説明（`aria-describedby`）は「このサーバーのトップページ」にし、ランディングページにいる間は `aria-current="page"` を持つ。`xl` からの 3 列目（`ServerInfo`）とメニューのシートも、サーバーの名前を同じリンクで出す。
-    サーバーがロゴを設定しているとき（[ADR-0116](../../adr/0116-custom-logo-and-icon.md)、`lib/brand.ts` の `useBrand`。`GET /instance` の `logo` / `logo_dark`、読めるまでは外枠のランタイム設定）は、`nav` の先頭のこのリンクは組み込みのワードマークと名前の文字の代わりにロゴの `<img>`（`Wordmark` の `logo`、`alt` はサーバーの名前）だけを出す。
+    サーバーがロゴを設定しているとき（[ADR-0059](../../adr/0059-design-tokens-and-instance-theme.md)、`lib/brand.ts` の `useBrand`。`GET /instance` の `logo` / `logo_dark`、読めるまでは外枠のランタイム設定）は、`nav` の先頭のこのリンクは組み込みのワードマークと名前の文字の代わりにロゴの `<img>`（`Wordmark` の `logo`、`alt` はサーバーの名前）だけを出す。
     暗いロゴがあれば暗い地でそれを出し、2 枚の絵を `role="img"` の 1 つの箱にして名前を 1 回だけ持たせる。管理画面の外枠（`BrandMark`）も同じロゴを出す。
     `ServerInfo` は、アイコンがあるとき名前のリンクの横にアイコン（`BrandIcon`、装飾）を置く。SVG はどこでも `<img>` だけで出し、インラインにしない。
     アカウントはそのプロフィールへのリンクで、名前は表示名とハンドル（それぞれ 1 行に省略、G7）、説明（`aria-describedby`）は「サインインしているアカウント」にする。
@@ -227,20 +227,20 @@
   ソースコードの区画は、AGPL-3.0 第 13 条（ADR-0011）により利用者がソースコードを入手できることと、公開先（`source_url`）へのリンク（`SourceCodeLink`）を出す。
   `https:` の URL なら「ソースコードを見る」（`ExternalLink`。新しいタブで開く、Y12）、`mailto:` なら「ソースコードをメールで請求する」にし、情報ページではその下に請求先のアドレス（`dir="ltr"`）を説明リストで出す。
   ライセンスの区画は、Web のアプリが同梱するほかの人のソフトウェア・データ・フォントのライセンスの表示へのリンクを、サーバーの設定によらずいつも出す。
-  アプリと Service Worker に含まれる npm のパッケージ（Vite の `build.license` が作る `licenses/npm-packages.md`・`licenses/npm-packages-sw.md`）、Unicode の絵文字のデータと CLDR の名前（`LICENSE-Unicode.txt`、ADR-0091 §1）、Noto Color Emoji のフォント（`OFL.txt`、ADR-0095 §6）の 4 つである。
+  アプリと Service Worker に含まれる npm のパッケージ（Vite の `build.license` が作る `licenses/npm-packages.md`・`licenses/npm-packages-sw.md`）、Unicode の絵文字のデータと CLDR の名前（`LICENSE-Unicode.txt`、ADR-0091 §1）、Noto Color Emoji のフォント（`OFL.txt`、ADR-0091 §13）の 4 つである。
   どれもビルドの `dist/licenses/` のファイルをサーバーが `/licenses/` で平文（`text/plain`）として配るもので、アプリのルートではないので、リンクはアプリの外のページとして同じタブで開く（`lib/paths.ts` の `isServerPath`）。同梱するものを増やしたら、`vite.config.ts` とこの区画の両方に足す。
   処分したドメインの一覧は、インスタンス設定 `domain_actions_visibility` に従う。API が 404（誰にも見せない）を返すときは区画ごと出さず、401（ログインした利用者だけに見せる。サインインしていない閲覧者）を返すときは、一覧の代わりにそのことと `/login` へのリンクを出す。
   どちらも設定の答えなので再試行しない。項目はドメイン（伏せ字はサーバーが返したまま、`dir="ltr"`）・種類・公開コメント（`dir="auto"`。見せてよい相手にだけサーバーが返す）で、伏せ字のドメインがあるときは一覧の前にそのことを書く。
   一覧は 40 件ずつで、続きは「さらに表示」のボタンで読む。loader は `GET /instance` と一覧の最初のページを待つが、どちらの失敗もページの失敗にはせず、一覧の失敗はその区画の中に出す。
-  運営の費用の区画は、`GET /instance` の `finance_visibility`（FR-903、[ADR-0067](../../adr/0067-finance-cost-records.md) §8）か `income_visibility`（FR-917、[ADR-0073](../../adr/0073-income-records-and-publication.md) §7）のどちらかが `private` でないときだけ出し、
+  運営の費用の区画は、`GET /instance` の `finance_visibility`（FR-903、[ADR-0067](../../adr/0067-finance-cost-records.md) §8）か `income_visibility`（FR-917、[ADR-0067](../../adr/0067-finance-cost-records.md) §17）のどちらかが `private` でないときだけ出し、
   費用と収入のそれぞれについて何を公開しているか（費用は合計だけか、内訳までか。収入は合計だけか、プランごとの人数までか。項目の名前・メモ・個々の支払い・誰が払ったかは出さない）、どちらも公開しているときは収支も公開していること、`/about/costs` へのリンク（公開しているものを名前にする）を置く。
-  サポーターの区画（`features/supporters` の `AboutSupportersSection`、ADR-0072 §14、ADR-0071 §4）は、`GET /instance` の `supporters_enabled` が真のとき、加入を受け付けているプラン（`GET /instance/supporter_plans`。名前と説明は `dir="auto"`・`lang=""`、月額と年額）と `/settings/supporter` へのリンクを、
+  サポーターの区画（`features/supporters` の `AboutSupportersSection`、ADR-0072 §14、ADR-0070 §13）は、`GET /instance` の `supporters_enabled` が真のとき、加入を受け付けているプラン（`GET /instance/supporter_plans`。名前と説明は `dir="auto"`・`lang=""`、月額と年額）と `/settings/supporter` へのリンクを、
   `supporter_list_visibility` が `off` でないとき `/about/supporters` へのリンクを出す。どちらもなければ区画を出さない。Tauri のアプリでは、プランと加入へのリンクを出さず、一覧へのリンクだけを出す（下の「Tauri のアプリ」）。
   `xl` からの 3 列目（`ServerInfo`）・メニューのシート・サインインしていないときの画面のフッター（ランディングページを含む）からリンクする。
   サーバーはこのアドレスに、ランディングページと同じインスタンスのリンクプレビュー（タイトルは「{サーバーの名前} について」）付きの外枠を返す。
-- **リンクのカードのクローラーのページ**（`routes/about_.crawler.tsx`、`features/about`、FR-117、ADR-0131、[要件](screens/about-crawler.md)）: `/about/crawler` は、サインインしているかによらず同じ中身を、外枠の中に出す。
+- **リンクのカードのクローラーのページ**（`routes/about_.crawler.tsx`、`features/about`、FR-117、ADR-0062、[要件](screens/about-crawler.md)）: `/about/crawler` は、サインインしているかによらず同じ中身を、外枠の中に出す。
   ほかのサイトの運営者に向けて、クローラーの動きと断り方を書き、`GET /instance` の `link_cards`・`link_cards_ignore_robots_txt` に合わせて、このサーバーでの状態を言う。情報のページの「検索エンジンと AI」の区画からリンクする。
-- **運営の費用のページ**（`routes/about_.costs.tsx`、`features/costs`、FR-903・FR-917、ADR-0067 §8、ADR-0073 §7）: `/about/costs` は、サインインしているかによらず同じ中身を、外枠の中に出す。見出し（`h1`）は「{サーバーの名前} の運営の費用」にする。
+- **運営の費用のページ**（`routes/about_.costs.tsx`、`features/costs`、FR-903・FR-917、ADR-0067 §8、ADR-0067 §17）: `/about/costs` は、サインインしているかによらず同じ中身を、外枠の中に出す。見出し（`h1`）は「{サーバーの名前} の運営の費用」にする。
   計上のしかたと週・月・年のタブ（どちらも URL に置く。S3）を 1 組だけ置き、タブの中に「費用」と「収入」の区画（`h2` の `section`）を並べる。費用と収入は同じ期間と同じ計上のしかたで読む。今日の日付は端末のタイムゾーンでルートの loader が決める。
   タブの中の先頭に、公開している費用と収入の「費用の概要」（§14 の「費用の概要」。今の期間の `StatTile` と期間ごとの棒の `TrendChart`。収支は費用と収入をどちらも公開しているときだけ）を出す。
   「費用」は管理画面の費用の集計（§14 の「費用」）と同じ部品（`CostTotalsView`）で、概要のグラフが出さないとき（通貨が 2 つ以上）だけ新しい期間が先の合計の表を、いつも期間の区切りの規則を出し、`GET /instance/cost_totals` を読む。今の期間の事業者ごとの内訳は `finance_visibility` が `breakdown` のときだけ出し、`totals` のときは合計だけを公開していることを書く。
@@ -248,7 +248,7 @@
   収入の数え方の規則（手数料と返金・事業者ごとの日付のタイムゾーン・選んだ計上のしかた・収支）を出し、`GET /instance/income_totals` を読む。費用を公開していないときは、そのため収支を公開していないことを書く。総額・手数料・個々の支払い・加入者は出さない。
   どちらかの API が 404（公開しない）を返すときはその区画を出さず、どちらも 404 のときは、タブの代わりにどちらも公開していないことと `/about` へのリンクを出す。これは設定の答えなので再試行しない。
   loader は `GET /instance` と 2 つの合計を待つが、どの失敗もページの失敗にはせず、合計の失敗はそれぞれの区画の中に出す。
-- **サポーターの一覧**（`routes/about_.supporters.tsx`、`features/supporters` の `SupporterListView`、[ADR-0071](../../adr/0071-role-badges-and-supporter-list.md) §4）: `/about/supporters` は、インスタンス設定 `supporter_list_visibility` の範囲で、外枠の中に出す。見出し（`h1`）は「{サーバーの名前} のサポーター」にする。
+- **サポーターの一覧**（`routes/about_.supporters.tsx`、`features/supporters` の `SupporterListView`、[ADR-0070](../../adr/0070-permission-split-emoji-finance.md) §13）: `/about/supporters` は、インスタンス設定 `supporter_list_visibility` の範囲で、外枠の中に出す。見出し（`h1`）は「{サーバーの名前} のサポーター」にする。
   `GET /instance/supporters` を無限の query で読み、応答の `plans` の順にプランの名前の見出し（`h2`、`dir="auto"`・`lang=""`）の区画を作り、各人を情報ページの連絡先と同じ 1 つのプロフィールへのリンク（アバター・表示名（`dir="auto"`）・ハンドル（`dir="ltr"`））で並べる。
   一覧はプランの順、プランの中では新しい順に並ぶので、続きのページの人は同じ見出しの下に続く。読み込めた人のいないプランの見出しは出さない。続きは「さらに表示」で読む。金額・月払いか年払いか・日付・人数は出さない。
   API が 404（誰にも見せない）を返すときは、そのことと `/about` へのリンクを、401（サインインした人だけに見せる。サインインしていない閲覧者）を返すときは、そのことと戻り先をこのページにした `/login` へのリンクを出す。どちらも設定の答えなので再試行しない。
@@ -258,7 +258,7 @@
   タブの中の先頭に「費用の概要」（§14。収支はいつも）を、「費用」の区画（`h2` の `section`）に今の期間の事業者ごとの内訳（設定によらずいつも）と期間の区切りの規則を、「収入」の区画に応答が `plans` を持つとき（`finance_viewer_income` か `income_visibility` が `plans`、または `manage_finance`）だけいまのプランごとの加入者の数、収入の数え方の規則を出す。合計の表と手数料を引いた収入と収支の表は、概要のグラフが出さないとき（通貨が 2 つ以上）だけ出す。総額・手数料・個々の支払い・加入者は出さない。
   インスタンス設定 `finance_viewer_item_names`・`finance_viewer_item_memos` のどちらかが有効なら、今の期間の項目の行（名前・事業者・区分・額・メモ。名前とメモはサーバーが返したときだけ。`dir="auto"`）を内訳の下に出し、画面の説明の下に、項目の名前とメモのどちらを見せているかを書く。`manage_finance` を持つ人にはサーバーがすべての行を返すので、この文を出さない。
   権限のない閲覧者には、要求を送らずに理由（権限の名前）を出す。loader は閲覧者を待ち、権限があるときだけ 2 つの合計を待つが、合計の失敗はページの失敗にはせず、それぞれの区画の中に出す。
-- **自分のカスタム絵文字**（`/settings/custom-emojis`、`routes/settings.custom-emojis.tsx`、`features/custom-emojis` の `OwnCustomEmojis`、[ADR-0070](../../adr/0070-permission-split-emoji-finance.md) §1〜§3、[ADR-0124](../../adr/0124-custom-emoji-monthly-limit.md)）: `create_custom_emojis` を持つ人の設定の画面で、ナビゲーションの項目を増やさず、設定のメニューにその人にだけ「あなたのカスタム絵文字」を出す。
+- **自分のカスタム絵文字**（`/settings/custom-emojis`、`routes/settings.custom-emojis.tsx`、`features/custom-emojis` の `OwnCustomEmojis`、[ADR-0070](../../adr/0070-permission-split-emoji-finance.md) §1〜§3、[ADR-0070](../../adr/0070-permission-split-emoji-finance.md)）: `create_custom_emojis` を持つ人の設定の画面で、ナビゲーションの項目を増やさず、設定のメニューにその人にだけ「あなたのカスタム絵文字」を出す。
   権限のない閲覧者には、要求を送らずに理由（権限の名前）を出す。loader は権限があるときだけ自分の絵文字（`GET /custom_emojis/mine`）と申請（`GET /custom_emoji_requests`）を待つ（スコープ `read:custom_emojis` / `write:custom_emojis`。`admin:*` を要さない）。
   「カスタム絵文字を申請する」「あなたの申請」「あなたが作ったカスタム絵文字」の 3 つの区画（`h2` の `section`）を並べる。
   - **申請**: 今月の作成の使った数と毎月の上限（メーター「今月の作成」に「{使った数} / {上限} 個（うち審査中 {審査中} 個）」。使った数はその UTC の暦月に出した作成の申請のうち承認済みと審査中の数で、絵文字を消しても減らない）と、次のリセットの日時（`resets_at`、翌月 1 日 00:00 UTC を閲覧者のタイムゾーンで）、上限がなければそのこと、と画像（`FileTrigger`）と shortcode のフォーム。管理画面の登録と同じく画像を `POST /media`（`purpose=emoji`）で送って処理を待ち、`POST /custom_emoji_requests`（`kind=create`）を送る。
@@ -277,9 +277,9 @@
     操作は状態ごとに、`pending` は「支払いに進む」（同じプランと間隔でもう一度 `POST /supporter/checkout`）、`canceling` は「解約を取り消す」、予約した変更があれば「予約した変更を取り消す」、`active` と `past_due` は「解約する」（`ConfirmDialog`、`danger`。期間の終わりまで特典が続き、それ以降の請求がないこと）、`pending` 以外は「支払い方法と請求書」（`POST /supporter/portal` の URL へ `leaveApp` で移る）。
     `active` のときだけ「プランを変更する」の区画に同じ 2 つの `RadioGroup` を出し、上位のプランや年払いはすぐ（差額を日割りで請求）、下位のプランや月払いは期間の終わりに変わることを説明し、確認のダイアログに選んだ変更がどちらかを書いてから `POST /supporter/subscription/change` を送る。いまのプランと間隔のままならボタンを押せない。もとの価格で続けているときは、変えると変更先のいまの価格になることを書く。
     変更・解約・取り消しは `POST /supporter/subscription/{change,cancel,resume,cancel_scheduled_change}` で、応答の加入でキャッシュを置き換え、掲載の選択・サポーターの一覧・閲覧者のアカウント（ロールとバッジ）に無効化の印を付け、結果を区画の `StatusMessage` に出して `useAnnouncer` で知らせる。失敗は `type` に対応する文言で出す。
-  - **掲載の選択**（ADR-0071 §4）: `/settings/badges`（「バッジとサポーターの一覧」、[screens/badges.md](screens/badges.md)）の「サポーターの一覧」の区画（`SupporterListingSettings`）で、`GET /preferences/supporter_listing` の `listed` を `Switch` にし、変えるとすぐ `PUT` で保存してサポーターの一覧に無効化の印を付ける（既定は載せない）。
+  - **掲載の選択**（ADR-0070 §13）: `/settings/badges`（「バッジとサポーターの一覧」、[screens/badges.md](screens/badges.md)）の「サポーターの一覧」の区画（`SupporterListingSettings`）で、`GET /preferences/supporter_listing` の `listed` を `Switch` にし、変えるとすぐ `PUT` で保存してサポーターの一覧に無効化の印を付ける（既定は載せない）。
     区画の説明に、一覧にはプランの見出しの下にアバター・名前・ハンドルだけが出て金額や日付は出ないこと、加入が終わると選択も消えることを書く。プランに加入していない利用者（API が 404）と、`supporter_list_visibility` が `off` のときは区画を出さない。特典の設定なので Tauri のアプリでも出す。
-- **Tauri のアプリ**（`lib/platform.ts` の `isTauriApp()`、ADR-0072 §14）: Web クライアントが Tauri 2 のアプリ（ADR-0008）の WebView の中で動くかは、Tauri がページのスクリプトより前に置く `window.isTauri` が `true` かだけで決める（`@tauri-apps/api` の `isTauri()` が読むのと同じ値。依存は足さない）。ほかの手段（User-Agent、ビルドの旗）で見分けない。
+- **Tauri のアプリ**（`lib/platform.ts` の `isTauriApp()`、ADR-0072 §14）: Web クライアントが Tauri 2 のアプリ（ADR-0028）の WebView の中で動くかは、Tauri がページのスクリプトより前に置く `window.isTauri` が `true` かだけで決める（`@tauri-apps/api` の `isTauri()` が読むのと同じ値。依存は足さない）。ほかの手段（User-Agent、ビルドの旗）で見分けない。
   アプリでは、加入・プランの変更・解約・解約の取り消し・顧客ポータルの画面（`/settings/supporter`）、設定のメニューのその項目、`/about` のプランの区画と加入へのリンクを出さない。`/settings/supporter` を直接開いても、プランも加入も読まずに、この画面はアプリでは使えないことだけを出す。
   購入への導線も、Web で加入できることの案内も出さない。特典（プロフィールのバッジ、`/settings/custom-emojis`、`/finance`）と、サポーターの一覧とそのリンク、掲載の選択はアプリでも出す。新しく購入につながる画面やリンクを足すときは、この関数で出し分ける。
 - **フォーカスとタイトル**（`routes/-layout/useViewChange.ts`、Y5）: ルーターが画面を描画するたびに、`main` の `h1` の文字列から `document.title` を `client:shell.document_title`（画面名とサーバー名）で作る。`h1` がサーバーの名前そのもの（ランディングページ）なら、名前を重ねずサーバーの名前だけにする。サーバーの名前が変わったときも作り直す（フォーカスは動かさない）。
@@ -323,7 +323,7 @@
   その間、オフラインの帯（`ConnectionBanner` が出す 1 つの `OfflineBanner`）に、リクエストが多すぎることと、読み込み直す時刻（秒まで）を出す。オフラインのときはオフラインの文言を優先する。
   `src/shell.test.tsx` が外枠の 4 つの要求の失敗（5xx と 429）・前の値の保持・再読み込み後の表示言語・429 の帯とその時刻での取り直し・アカウントの区画の再試行を MSW で検査し、
   `e2e/rate-limit.spec.ts` が 429 の帯の axe・横スクロール・ARIA スナップショットと、時刻での取り直しを検査する。
-- **メンテナンス**（`lib/maintenance.ts`、`src/Maintenance.tsx`、[ADR-0084](../../adr/0084-maintenance-mode.md) §3）: メンテナンスモードのサーバーは、client API と OAuth の JSON の端点に `503` と Problem（`type: /api/v1/problems/maintenance`）と `Retry-After` を返す。
+- **メンテナンス**（`lib/maintenance.ts`、`src/Maintenance.tsx`、[ADR-0088](../../adr/0088-service-shutdown-modes.md) §10）: メンテナンスモードのサーバーは、client API と OAuth の JSON の端点に `503` と Problem（`type: /api/v1/problems/maintenance`）と `Retry-After` を返す。
   API クライアントとセッションはこれを `MaintenanceError`（`ApiError` に、告知文 `notice`・終了予定 `until`・ステータスページ `statusPageUrl` を足したもの。形の正しいものだけ持つ）にし、
   ページに 1 つの `Maintenance`（React の外のストア、`lib/services.ts` が作る）に知らせる。この 503 ではトークンを捨てず、更新の失敗として扱わず、サインアウトしない（§10）。
   - 外枠（`App.tsx` の `MaintenanceGate`）は、ストアがメンテナンス中の間、ルーターの代わりに画面全体をメンテナンスの表示（`StandalonePage` の `main`）にする。

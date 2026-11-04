@@ -13,7 +13,7 @@ const searchSchema = z.object({
 });
 
 /**
- * `/login` is not a page: it starts signing in at once, sending the browser to the server's sign-in screen (ADR-0030)
+ * `/login` is not a page: it starts signing in at once, sending the browser to the server's sign-in screen (ADR-0090)
  * with a new PKCE challenge, and the callback returns to `return_to`. Every sign-in link of the app (the top bar, the
  * pages that ask to sign in, the pages that need a session) leads here, and so do bookmarks of it.
  */

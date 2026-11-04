@@ -230,7 +230,7 @@ type subscriptionLink struct {
 	start, end int64 // the invoice's period of service; 0 without one
 }
 
-// covers returns the days of the period, the day of its end excluded (ADR-0073 §1).
+// covers returns the days of the period, the day of its end excluded (ADR-0067 §11).
 func (l subscriptionLink) covers(loc *time.Location) supporters.DateRange {
 	if l.start == 0 || l.end <= l.start {
 		return supporters.DateRange{}

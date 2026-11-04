@@ -61,7 +61,7 @@ const (
 	InboxRejectionInvalid = "invalid"
 )
 
-// The outcomes of an activity that a relay brought in (ADR-0061), the my.outcome label of
+// The outcomes of an activity that a relay brought in (ADR-0006), the my.outcome label of
 // my.relay.activities.
 const (
 	// RelayOutcomeAdmitted is an activity taken in: its post is fetched from its origin.
@@ -93,12 +93,12 @@ var (
 		LabelKeys: []string{LabelActivityType, LabelOutcome, LabelInboxRejection},
 	}
 	RelayActivities = kernel.Instrument{
-		Name: "my.relay.activities", Unit: "{activity}", Description: "Activities that relays brought in, by whether they were taken in (ADR-0061).",
+		Name: "my.relay.activities", Unit: "{activity}", Description: "Activities that relays brought in, by whether they were taken in (ADR-0006).",
 		LabelKeys: []string{LabelOutcome},
 	}
 )
 
-// DeliverySpan is the span of the POST of a delivery attempt (ADR-0063 §1), around the client
+// DeliverySpan is the span of the POST of a delivery attempt (ADR-0055 §13), around the client
 // span of the request: the activity's type and the attempt's outcome, never the inbox.
 var DeliverySpan = kernel.SpanSpec{
 	Name: "my.delivery", Kind: kernel.SpanInternal, AttrKeys: []string{LabelActivityType, LabelOutcome},

@@ -82,7 +82,7 @@ export function errorGroupActionMutation(api: Api) {
 }
 
 /**
- * Puts the group's new state into the cached detail at once, then fetches again what the change changes (ADR-0045):
+ * Puts the group's new state into the cached detail at once, then fetches again what the change changes (ADR-0028):
  * the detail, whose history gains the change, and every list, which the group may enter or leave. The queries shown
  * now are awaited.
  */

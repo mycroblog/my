@@ -113,7 +113,7 @@ func LocalActorEmojis(ctx context.Context, emojis EmojiTagReader, host string, a
 
 // LocalActorImages reads the avatar and header of a local actor through images, as their large
 // variants: moving for an animation, which the receiving servers make still versions of
-// (ADR-0054 §5). A nil images reads none.
+// (ADR-0005 §8). A nil images reads none.
 func LocalActorImages(ctx context.Context, images ProfileImages, a appaccount.Actor) (ActorImages, error) {
 	p := a.Profile
 	if images == nil || p == nil || p.AvatarMediaID == "" && p.HeaderMediaID == "" {

@@ -18,7 +18,7 @@ import (
 const (
 	// JobExecuteDeletions deletes the accounts whose scheduled deletion is due (data-model
 	// §4.2, §8): a ban's, or that of an account whose owner deactivated it DeactivationPeriod ago
-	// (ADR-0145 §2).
+	// (ADR-0089 §12).
 	JobExecuteDeletions = "account.execute_deletions"
 	// DeletionInterval is the period of the JobExecuteDeletions schedule.
 	DeletionInterval = time.Hour
@@ -160,7 +160,7 @@ type DeletionHold func(ctx context.Context, tx uow.Tx, accountID string) (bool, 
 func (s *Service) SetDeletionHold(hold DeletionHold) { s.deletionHold = hold }
 
 // ExecuteDueDeletions deletes up to deletionBatch accounts of each kind that are due: those whose
-// scheduled deletion is due, and those deactivated for account.DeactivationPeriod (ADR-0145 §2).
+// scheduled deletion is due, and those deactivated for account.DeactivationPeriod (ADR-0089 §12).
 // Each gets a deleted lifecycle event initiated by the system, in a short transaction of its own,
 // which hides it and its statuses at once and sends the Delete of the actor (federation.md §7.1).
 // The state is read again under its lock, and an account that was reactivated, or whose deletion

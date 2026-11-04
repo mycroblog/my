@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Two-factor authentication (/settings/two-factor) in the states of ADR-0112 §1.
+// Two-factor authentication (/settings/two-factor) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";

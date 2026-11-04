@@ -13,9 +13,9 @@ import (
 	"github.com/mycroblog/my/internal/domain/finance"
 )
 
-// The income records of FinanceRepositoryContract (ADR-0073): each money movement is recorded
+// The income records of FinanceRepositoryContract (ADR-0067): each money movement is recorded
 // once however often it comes, a refund waits for its payment, a movement that breaks the rules
-// is left out, the totals place the yearly payments and their refunds by ADR-0073 §5 whatever
+// is left out, the totals place the yearly payments and their refunds by ADR-0067 §15 whatever
 // window they are read in, the balance subtracts the costs, and the listing pages through the
 // movements newest first with the subscribers' accounts.
 
@@ -68,7 +68,7 @@ func incomeMovement(t *testing.T, id string, kind finance.IncomeKind, day, gross
 	}
 }
 
-// incomeScenario is the example of ADR-0073 §5 (a yearly payment of 12,000 yen on 2026-04-10
+// incomeScenario is the example of ADR-0067 §15 (a yearly payment of 12,000 yen on 2026-04-10
 // refunded in full on 2026-06-01), a monthly payment with a partial refund, and a fee of no
 // subscription.
 func incomeScenario(t *testing.T) []appfinance.IncomeMovement {

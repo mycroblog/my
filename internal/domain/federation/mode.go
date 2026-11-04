@@ -2,7 +2,7 @@
 
 package federation
 
-// This file holds the federation direction (FR-413, ADR-0076): the instance setting
+// This file holds the federation direction (FR-413, ADR-0006): the instance setting
 // federation_mode, the flows of content between this server and the others, and which flows each
 // mode lets through. Every entry point of federation asks Allows (and Refuses) about the flow it
 // handles and never branches on the mode's value.
@@ -40,7 +40,7 @@ func (m Mode) Valid() bool {
 	return false
 }
 
-// Flow is a kind of content that moves between this server and the others (ADR-0076, 流れの分類).
+// Flow is a kind of content that moves between this server and the others (ADR-0006, 流れの分類).
 type Flow string
 
 // Flows.
@@ -71,7 +71,7 @@ func Flows() []Flow {
 	return []Flow{FlowPublish, FlowIngest, FlowFollowOut, FlowFollowIn, FlowRetract, FlowProtect, FlowIdentify}
 }
 
-// allowed is the table of ADR-0076 (流れの分類): the modes each flow passes in.
+// allowed is the table of ADR-0006 (流れの分類): the modes each flow passes in.
 var allowed = map[Flow][]Mode{
 	FlowPublish:   {ModeOutbound, ModeBoth},
 	FlowIngest:    {ModeInbound, ModeBoth},
@@ -101,7 +101,7 @@ func Refuses(mode Mode, flow Flow) bool {
 
 // OutboundFlows returns the flows of an outbound activity a (federation.md §7). The activity goes
 // out when the mode allows one of them, or, for a Reject, refuses one of them (Sends). retracting
-// tells the Update of an actor that carries its suspension (ADR-0036), which takes the actor's
+// tells the Update of an actor that carries its suspension (ADR-0058), which takes the actor's
 // profile back, or its movedTo (ADR-0089), which only tells the followers where it went.
 //
 //   - The Create and Update of a status, a boost, a favourite or reaction, a vote, a
@@ -163,7 +163,7 @@ func Sends(mode Mode, a OutboundActivity, retracting bool) bool {
 
 // AddsRecipients reports whether mode lets the outbound activity a reach recipients beyond the
 // ones that what it takes back went to: a retraction in a mode that does not publish goes only
-// to the inboxes of the original delivery and the followers at the time (ADR-0076), never to
+// to the inboxes of the original delivery and the followers at the time (ADR-0006), never to
 // every known shared inbox.
 func AddsRecipients(mode Mode, a OutboundActivity, retracting bool) bool {
 	for _, f := range OutboundFlows(a, retracting) {

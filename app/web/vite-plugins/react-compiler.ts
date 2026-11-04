@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// React Compiler for the client build (ADR-0065): runs oxc-transform-react, Oxc's port of the compiler, on the
+// React Compiler for the client build (ADR-0025): runs oxc-transform-react, Oxc's port of the compiler, on the
 // client environment's modules and holds the gate of web-client/README.md R4, which fails `vite build` when the
 // compiler reports a diagnostic outside a function that opts out, or when it compiled no function.
 import { transform } from "oxc-transform-react";

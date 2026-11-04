@@ -220,7 +220,7 @@ func TestTokenEndpointRejectsMalformedRequests(t *testing.T) {
 		appidentity.OAuthInvalidRequest, "bearer client authentication")
 }
 
-// The refresh token cookie is accepted only by POST /oauth/token/refresh (ADR-0030).
+// The refresh token cookie is accepted only by POST /oauth/token/refresh (ADR-0090).
 func TestOnlyTheRefreshEndpointReadsTheCookie(t *testing.T) {
 	id := &fakeIdentity{}
 	h := newServer(t, id)

@@ -702,7 +702,7 @@ const (
 	otherMediaID  = "01890a5d-ac96-774b-bcce-b302099a9502"
 )
 
-// A quote that the visibility of the new status refuses says why (ADR-0144 §4).
+// A quote that the visibility of the new status refuses says why (ADR-0018 §15).
 func TestCreateStatusQuoteRemoteAudience(t *testing.T) {
 	e := newStatusEnv(t, &fakeStatuses{create: func(appcontent.CreateInput) (appcontent.Post, error) {
 		return appcontent.Post{}, fmt.Errorf("status: %w", appcontent.ErrQuoteRemoteAudience)

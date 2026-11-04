@@ -13,7 +13,7 @@ import (
 )
 
 // The authorization of a connection that a media server asks about before it connects
-// (ConnectAuthorizer, ADR-0102 §4): Sora calls it on every connection and waits at most 5
+// (ConnectAuthorizer, ADR-0101 §13): Sora calls it on every connection and waits at most 5
 // seconds (10 on Sora Cloud), so the decision only reads the projections and the
 // KeyValueStore, outside any transaction, and makes no external call.
 
@@ -73,7 +73,7 @@ func (s *Service) AuthorizeMediaConnect(ctx context.Context, req MediaWebhook) (
 	return MediaConnectResult{Outcome: MediaWebhookAccepted, Status: status, Body: body}, nil
 }
 
-// decideConnect applies the room to a connection (ADR-0102 §4): the room is open on the
+// decideConnect applies the room to a connection (ADR-0101 §13): the room is open on the
 // method, the session is the current, live session of a participant who is not banned, a
 // connection that publishes audio is a speaker's, and the participant is within the capacity
 // of the room, in the order the participants joined.

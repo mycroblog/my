@@ -1,11 +1,11 @@
 # Web クライアントの設計規約
 
 Web クライアント（`app/web`）と共有 UI キット（`app/ui`）を書くときの規約です。
-根拠は [ADR-0025](../../adr/0025-web-client-stack.md)（技術スタック）、[ADR-0026](../../adr/0026-client-workspace-and-component-architecture.md)（構成と責務分離）、[ADR-0027](../../adr/0027-ui-quality-gates.md)（品質ゲート）、[ADR-0028](../../adr/0028-html-shell-link-previews-and-pwa.md)（HTML の外枠と PWA）です。
+根拠は [ADR-0025](../../adr/0025-web-client-stack.md)（技術スタック）、[ADR-0025](../../adr/0025-web-client-stack.md)（構成と責務分離）、[ADR-0110](../../adr/0110-web-experience-principles.md)（品質ゲート）、[ADR-0028](../../adr/0028-html-shell-link-previews-and-pwa.md)（HTML の外枠と PWA）です。
 主な出典は react.dev、WAI-ARIA Authoring Practices、WCAG 2.2、Tailwind CSS・TanStack・Testing Library の公式ドキュメントです。
 
 「強制」の列は、lint・型検査・テストで機械的に検査するものを示します。「レビュー」はレビューで確認します。
-lint は Oxlint で、`scripts/task.sh web:lint`（`web:check` と `check` の一部）で実行します（[ADR-0049](../../adr/0049-client-lint-oxlint.md)）。
+lint は Oxlint で、`scripts/task.sh web:lint`（`web:check` と `check` の一部）で実行します（[ADR-0025](../../adr/0025-web-client-stack.md)）。
 設定は `app/.oxlintrc.json` です。型情報の規則（`typescript/*`）は tsgolint が、React Compiler とフックの規則（`react/*`）は Oxlint が動かし、
 ほかのプラグインの規則は Oxlint の JS プラグインとして動きます。独自の制限は、`app/.oxlintrc.json` がセレクタを渡す JS プラグイン `app/oxlint/restrictions.js` の規則
 （`restrict/syntax`・`restrict/svg`・`restrict/feature`・`restrict/test`）と、Oxlint の `no-restricted-imports` などの規則の設定です。
@@ -45,7 +45,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 | R1 | コンポーネントとフックは純粋にする。レンダリング中に副作用・変更・`Date.now()` / `Math.random()` を書かない | `react/purity`、`react/globals` |
 | R2 | props・state・フックに渡した値・JSX に渡した値を変更しない（`push` / `sort` ではなく `toSorted` / スプレッド） | `react/immutability`（代入を検出する。`push` / `sort` などのメソッド呼び出しはレビュー） |
 | R3 | フックはコンポーネントか `use*` 関数のトップレベルでだけ呼ぶ | `react/rules-of-hooks` |
-| R4 | React Compiler を全コードに適用する。コンパイラが最適化を諦めるコードは lint とビルドで失敗させる。コンパイラから外す（`"use no memo"`）のは、コンパイルできないライブラリを包む 1 つのフックだけにし、理由を書く（`@my/ui` の `Feed` と `EmojiPicker` が TanStack Virtual の仮想化を読む、それぞれ 1 つのフック） | Oxlint の React Compiler の規則（`react/*`。`react/incompatible-library`・`react/unsupported-syntax` も error）、`vite build`（`app/web/vite-plugins/react-compiler.ts`。React Compiler の Oxc の移植 `oxc-transform-react` が診断を 1 つでも出すと、場所と理由を出して失敗する。`"use no memo"` で外した関数の中の診断は除く。1 つも関数を変換しなくても失敗。ADR-0065）、`restrict/syntax`（`"use no memo"` / `"use no forget"`。必要なときは理由付きの無効化コメント。API クライアントのフック `api.query.useQuery` / `api.query.useMutation` の呼び出し、§10） |
+| R4 | React Compiler を全コードに適用する。コンパイラが最適化を諦めるコードは lint とビルドで失敗させる。コンパイラから外す（`"use no memo"`）のは、コンパイルできないライブラリを包む 1 つのフックだけにし、理由を書く（`@my/ui` の `Feed` と `EmojiPicker` が TanStack Virtual の仮想化を読む、それぞれ 1 つのフック） | Oxlint の React Compiler の規則（`react/*`。`react/incompatible-library`・`react/unsupported-syntax` も error）、`vite build`（`app/web/vite-plugins/react-compiler.ts`。React Compiler の Oxc の移植 `oxc-transform-react` が診断を 1 つでも出すと、場所と理由を出して失敗する。`"use no memo"` で外した関数の中の診断は除く。1 つも関数を変換しなくても失敗。ADR-0025）、`restrict/syntax`（`"use no memo"` / `"use no forget"`。必要なときは理由付きの無効化コメント。API クライアントのフック `api.query.useQuery` / `api.query.useMutation` の呼び出し、§10） |
 | R5 | `useMemo` / `useCallback` / `memo` は書かない。必要なとき（Effect の依存に安定した参照が要るなど）は理由をコメントに書く | `no-restricted-imports`・`restrict/syntax`（`useMemo` / `useCallback` / `memo` の使用。必要なときは理由付きの無効化コメント）、`react/use-memo` |
 | R6 | 他の値から計算できるものは state にせず、レンダリング中に計算する | `react/set-state-in-effect`、`react/no-deriving-state-in-effects` |
 | R7 | 利用者の操作で起きる処理（送信・通知・計測）はイベントハンドラに書く。Effect に書かない | レビュー |
@@ -61,15 +61,15 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 
 | # | 規約 | 強制 |
 | --- | --- | --- |
-| S1 | サーバーのデータは TanStack Query だけで扱う。取得は `features/<x>/api` の `queryOptions`、書き込みは `useMutation` で行う。成功時に、応答で確かに分かる変化（投稿・閲覧者・関係・設定）は `setQueryData` / `updateCachedStatuses` でキャッシュに書き、並びや件数が変わり得る一覧・件数には `invalidateQueries`（既定の `refetchType: "active"`）で無効化の印を付ける。表示していないクエリは、次にその画面を開いたときに loader が取り直して待つ（S7）ので、取り直さない。書き込みの成功表示は、表示中のクエリの取り直しを待ってから出す（`await invalidateQueries(...)`）。書き込みが変えるクエリは、その書き込みの関数の隣（`features/<x>/api` のキャッシュ更新関数。例: `cachePostedStatus`）に書き、部品の `onSuccess` はそれを呼ぶ。データの種類ごとの方針は [ADR-0045](../../adr/0045-client-server-cache-policy.md) | `features/*/api` と `lib/` の外で `no-restricted-imports`（`openapi-fetch`・`openapi-react-query`・`lib/api`、型でない `@mycroblog/mykit`）・`no-restricted-globals` / `no-restricted-properties`（`fetch`）、`features/*/hooks` と `features/*/components` で `restrict/feature`（キャッシュを書き換える `QueryClient` のメソッド `setQueryData`・`invalidateQueries` などの呼び出し）、`@tanstack/eslint-plugin-query` の `flat/recommended-strict`（`@tanstack/query/exhaustive-deps`・`@tanstack/query/prefer-query-options` など） |
+| S1 | サーバーのデータは TanStack Query だけで扱う。取得は `features/<x>/api` の `queryOptions`、書き込みは `useMutation` で行う。成功時に、応答で確かに分かる変化（投稿・閲覧者・関係・設定）は `setQueryData` / `updateCachedStatuses` でキャッシュに書き、並びや件数が変わり得る一覧・件数には `invalidateQueries`（既定の `refetchType: "active"`）で無効化の印を付ける。表示していないクエリは、次にその画面を開いたときに loader が取り直して待つ（S7）ので、取り直さない。書き込みの成功表示は、表示中のクエリの取り直しを待ってから出す（`await invalidateQueries(...)`）。書き込みが変えるクエリは、その書き込みの関数の隣（`features/<x>/api` のキャッシュ更新関数。例: `cachePostedStatus`）に書き、部品の `onSuccess` はそれを呼ぶ。データの種類ごとの方針は [ADR-0028](../../adr/0028-html-shell-link-previews-and-pwa.md) | `features/*/api` と `lib/` の外で `no-restricted-imports`（`openapi-fetch`・`openapi-react-query`・`lib/api`、型でない `@mycroblog/mykit`）・`no-restricted-globals` / `no-restricted-properties`（`fetch`）、`features/*/hooks` と `features/*/components` で `restrict/feature`（キャッシュを書き換える `QueryClient` のメソッド `setQueryData`・`invalidateQueries` などの呼び出し）、`@tanstack/eslint-plugin-query` の `flat/recommended-strict`（`@tanstack/query/exhaustive-deps`・`@tanstack/query/prefer-query-options` など） |
 | S2 | サーバーのデータを `useState`・Context・グローバルストアにコピーしない | レビュー |
 | S3 | 共有・リロード・戻る / 進むで保ちたい状態（タイムラインの種類・タブ・検索語・開いているメディア）は URL に置き、Zod で検証する | TanStack Router の型 |
 | S4 | 状態は使う場所の近くに置き、必要なときだけ最も近い共通の親に持ち上げる | レビュー |
 | S5 | 状態は判別可能なユニオンで表す（`{ status: 'idle' } \| { status: 'error'; error: Problem }`）。矛盾し得る真偽値を並べない | レビュー |
 | S6 | Context は、変化の少ない値（閲覧者・ロケール・テーマ・複合部品の内部）にだけ使い、更新頻度ごとに分ける | レビュー |
-| S7 | ルートは薄くする。パラメータと検索条件を取り出し、loader で、キャッシュにないか無効化されていれば取得して待ち（`queryClient.query({ ...options, staleTime: Infinity })`。無限スクロールは `queryClient.infiniteQuery`。無効化の印を見ない `staleTime: "static"` と、非推奨の `ensureQueryData` は使わない）、それから機能の部品を表示する。ルーターは `defaultStaleReloadMode: "blocking"` で、前に訪れたルートでも loader の終わりを待って描画する（ADR-0045） | `@tanstack/eslint-plugin-router` の `flat/recommended`（`@tanstack/router/create-route-property-order` など）、`restrict/syntax`（`staleTime: "static"`・`ensureQueryData`）、レビュー |
+| S7 | ルートは薄くする。パラメータと検索条件を取り出し、loader で、キャッシュにないか無効化されていれば取得して待ち（`queryClient.query({ ...options, staleTime: Infinity })`。無限スクロールは `queryClient.infiniteQuery`。無効化の印を見ない `staleTime: "static"` と、非推奨の `ensureQueryData` は使わない）、それから機能の部品を表示する。ルーターは `defaultStaleReloadMode: "blocking"` で、前に訪れたルートでも loader の終わりを待って描画する（ADR-0028） | `@tanstack/eslint-plugin-router` の `flat/recommended`（`@tanstack/router/create-route-property-order` など）、`restrict/syntax`（`staleTime: "static"`・`ensureQueryData`）、レビュー |
 | S8 | 楽観的更新は、まず保留中の mutation の `variables` を表示する方式にする。複数の画面に反映が要るときだけ、キャッシュを書き換えて失敗時に戻す | レビュー |
-| S9 | API の型は OpenAPI からの生成物だけを使う。同じ型を手で書かない | 生成物の差分検査（ADR-0029） |
+| S9 | API の型は OpenAPI からの生成物だけを使う。同じ型を手で書かない | 生成物の差分検査（ADR-0016） |
 | S10 | アプリのストリーム（`GET /streaming` と、ローカル・連合のタイムラインの `GET /streaming/timelines/{timeline}`）の購読は `lib/sse` の `useEventStream` の Effect だけが行い、受け取った内容を Query のキャッシュに書き込む | レビュー |
 | S11 | ブラウザの保存（localStorage・sessionStorage）は `lib/storage` で宣言したキーだけを通して読み書きする。新しく残すものは、そこにキーを宣言してから使う（下の「ブラウザの保存」） | `lib/storage` とテストの外で `restrict/storage`（`localStorage`・`sessionStorage` の参照） |
 
@@ -86,12 +86,12 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 | `my:display:theme` | localStorage | 表示のテーマ（§9）。`public/theme.js` も同じキーと形式を読む | いいえ |
 | `my:display:locale` | localStorage | 最後に表示したロケール（§9） | いいえ |
 | `my:display:autoplay` | localStorage | アニメーションの自動再生（§13） | いいえ |
-| `my:display:chart-view` | localStorage | 推移のグラフ（`TrendChart`）をグラフで出すか表で出すか。すべてのグラフで共通（§14、ADR-0113） | いいえ |
+| `my:display:chart-view` | localStorage | 推移のグラフ（`TrendChart`）をグラフで出すか表で出すか。すべてのグラフで共通（§14、ADR-0110） | いいえ |
 | `my:display:navigation` | localStorage | ナビゲーションの項目の順番と隠した項目（§9） | いいえ |
-| `my:notifications:push-prompt-dismissed` | localStorage | プッシュ通知の案内を閉じたか、スイッチをオフにしたアカウントの ID の一覧（§11、ADR-0137 §4） | いいえ |
-| `my:notifications:sound` | localStorage | 通知音を鳴らすか（全体のスイッチ。既定はオフ）と、鳴らす通知の種類（§9、ADR-0109 §5） | いいえ |
+| `my:notifications:push-prompt-dismissed` | localStorage | プッシュ通知の案内を閉じたか、スイッチをオフにしたアカウントの ID の一覧（§11、ADR-0086 §21） | いいえ |
+| `my:notifications:sound` | localStorage | 通知音を鳴らすか（全体のスイッチ。既定はオフ）と、鳴らす通知の種類（§9、ADR-0086 §12） | いいえ |
 | `my:instance:timelines` | localStorage | インスタンスが提供する公開タイムライン（§9） | いいえ |
-| `my:instance:status-page` | localStorage | 最後に読んだ `GET /instance` の `status_page_url`（§11、ADR-0085 §6） | いいえ |
+| `my:instance:status-page` | localStorage | 最後に読んだ `GET /instance` の `status_page_url`（§11、ADR-0088 §20） | いいえ |
 | `my:emoji:recent` | localStorage | よく使う絵文字（Unicode 絵文字の基の列とカスタム絵文字の `:shortcode:`）と、減衰させた回数・最後に使った時刻（§12、ADR-0091 §3） | いいえ |
 | `my:emoji:skin-tone` | localStorage | 絵文字のピッカーで選んだ肌の色（§12、ADR-0091 §3） | いいえ |
 | `my:user:first-run-dismissed:<アカウント ID>` | localStorage | ホームの「始め方」のチェックリストを閉じたか（[screens/home-first-run.md](screens/home-first-run.md)） | いいえ |
@@ -106,8 +106,8 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 
 | # | 規約 | 強制 |
 | --- | --- | --- |
-| A1 | 依存の向きは `routes → features → (@my/ui, lib)` だけにする | `boundaries/dependencies`（要素は `shell`（`web/src` 直下）・`route`・`feature`・`lib`・`ui`、機能の WebRTC を扱う React を使わない TypeScript の `rtc`（`web/src/features/*/rtc`。その機能の `hooks` だけが import し、`rtc` は React・API・`@my/ui`・機能のほかの部分を import しない。ADR-0101 §7。SFU の方式のブラウザの SDK（`livekit-client`・`sora-js-sdk`）は `rtc` だけが、許可の方式が分かってから `import()` で読み、ほかの要素は import しない。ADR-0102 §6）、テストだけが import できる `test`（`web/src/test`）と `feature-test`（`web/src/features/*/test`））、`boundaries/no-unknown-files` |
-| A2 | `@my/ui` は React・React Aria Components・Tailwind のユーティリティと、ドメインを持たない振る舞いのライブラリ（許可リストは ADR-0031）にだけ依存する。API・Query・Router・機能・i18n のカタログを import しない（文言は props / children で受け取る） | `boundaries/dependencies`（`ui` が import できるのは `ui` 自身と React・React Aria・`@tanstack/react-virtual`・`tailwind-variants`、`Icons.tsx` だけは `react-icons` だけ）、パッケージの依存関係（Bun の isolated linker） |
+| A1 | 依存の向きは `routes → features → (@my/ui, lib)` だけにする | `boundaries/dependencies`（要素は `shell`（`web/src` 直下）・`route`・`feature`・`lib`・`ui`、機能の WebRTC を扱う React を使わない TypeScript の `rtc`（`web/src/features/*/rtc`。その機能の `hooks` だけが import し、`rtc` は React・API・`@my/ui`・機能のほかの部分を import しない。ADR-0101 §7。SFU の方式のブラウザの SDK（`livekit-client`・`sora-js-sdk`）は `rtc` だけが、許可の方式が分かってから `import()` で読み、ほかの要素は import しない。ADR-0101 §15）、テストだけが import できる `test`（`web/src/test`）と `feature-test`（`web/src/features/*/test`））、`boundaries/no-unknown-files` |
+| A2 | `@my/ui` は React・React Aria Components・Tailwind のユーティリティと、ドメインを持たない振る舞いのライブラリ（許可リストは ADR-0025）にだけ依存する。API・Query・Router・機能・i18n のカタログを import しない（文言は props / children で受け取る） | `boundaries/dependencies`（`ui` が import できるのは `ui` 自身と React・React Aria・`@tanstack/react-virtual`・`tailwind-variants`、`Icons.tsx` だけは `react-icons` だけ）、パッケージの依存関係（Bun の isolated linker） |
 | A3 | 機能は、ほかの機能を `index.ts` 経由でだけ使う | `boundaries/dependencies`（ほかの `feature` は `index.ts` だけ） |
 | A4 | 機能のロジックは `features/<x>/hooks` のカスタムフックに置く。フックは JSX を返さない。機能の部品はフックの戻り値を `@my/ui` に渡すだけにする。`app/web/src`（外枠・`routes`・`features`・`lib`・テストを含む）は Tailwind のクラスを書かない: JSX の `className`（`@my/ui` の部品に渡すものを含む）と、`tailwind-variants`・`tailwind-merge`・`clsx` などクラスを組み立てる手段の import を使わない。見た目とレイアウト（3 列の外枠を含む）は `@my/ui` の部品（`Stack`・`Cluster`・`Grid`・`Box`・`Text`・`Heading` など）と、その見た目の変種を表す props で書く。props にない見た目は `@my/ui` に props か部品を足す。例外は、`@my/ui` の部品で表せないブラウザやプラットフォーム固有の調整だけで、その行に理由を書いた無効化コメントを付ける | `restrict/classes`（`className` の属性とプロパティ、クラスを組み立てるライブラリの import。`web/src` の全ファイルに掛かり、テストも除かない）、レビュー |
 | A5 | 操作できる要素は `@my/ui`（React Aria Components を包んだ部品）から使う。`onClick` を付けた `div` / `span` を書かない | `restrict/syntax`（`div` / `span` の `onClick`・`onKeyDown`・`onPointerDown` など） |
@@ -135,7 +135,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
 | Y4 | フォーカスできる要素はすべて `focus-visible` のリングを持つ。固定ヘッダでフォーカスを隠さない（`scroll-padding`） | 見た目のスナップショット、レビュー |
 | Y5 | ルートが変わったら、新しい画面の `h1`（`tabindex="-1"`）にフォーカスを移し、`document.title` を更新する。外枠が 1 か所で行う（§9） | Playwright、統合テスト |
 | Y6 | タイムラインは feed パターンにする（`@my/ui` の `Feed`。`role="feed"`、`<article>`、`aria-posinset` / `aria-setsize`（総数が分からないときは `-1`）、`aria-busy` を必ず戻す、Page Down / Page Up で記事の間を移動し、Control + End / Control + Home で feed の外に出る）。仮想化しても、フォーカスのある記事は表示範囲の外でもマウントしておく | ARIA スナップショット、キーボードのテスト（`Feed` の部品のテストとストーリー） |
-| Y7 | 新しい投稿は、利用者の設定 `timeline_auto_insert`（既定は真、[ADR-0127](../../adr/0127-public-timeline-streaming.md) の 6）が真のときだけ自動で差し込む（[ADR-0077](../../adr/0077-timeline-auto-insert.md)）。偽のときと、フォーカスや選択がフィードの中にある間は差し込まず、「N 件の新しい投稿」を `@my/ui` の `NewItemsButton`（`role="status"` の中のボタン）で知らせ、押されたときだけ差し込む。自動で差し込むときは、読んでいる投稿の位置をスクロールの補正で保ち、先頭から離れている間だけ `NewItemsButton` を浮かせる。差し込んだ投稿を 1 件ずつ読ませず、件数は `NewItemsButton` だけで知らせる。それ以外の件数・完了・エラーは、共通の `role="status"` / `role="alert"` の通知部品（`@my/ui` の `AnnouncerProvider`。機能からは結果の見える置き場を言う `useNotice` で呼ぶ（G25）。見える通知は `ToastProvider` / `useToast`、操作の結果を画面に残すときは `StatusMessage` か `FormActionBar`）だけで知らせ、読み上げだけで終えない（G24、G25）。フォーカスを奪わない | ARIA スナップショット、部品のテスト（Announcer・NewItemsButton のテストとストーリー）、レビュー |
+| Y7 | 新しい投稿は、利用者の設定 `timeline_auto_insert`（既定は真、[ADR-0013](../../adr/0013-timeline-strategy.md) の 6）が真のときだけ自動で差し込む（[ADR-0013](../../adr/0013-timeline-strategy.md)）。偽のときと、フォーカスや選択がフィードの中にある間は差し込まず、「N 件の新しい投稿」を `@my/ui` の `NewItemsButton`（`role="status"` の中のボタン）で知らせ、押されたときだけ差し込む。自動で差し込むときは、読んでいる投稿の位置をスクロールの補正で保ち、先頭から離れている間だけ `NewItemsButton` を浮かせる。差し込んだ投稿を 1 件ずつ読ませず、件数は `NewItemsButton` だけで知らせる。それ以外の件数・完了・エラーは、共通の `role="status"` / `role="alert"` の通知部品（`@my/ui` の `AnnouncerProvider`。機能からは結果の見える置き場を言う `useNotice` で呼ぶ（G25）。見える通知は `ToastProvider` / `useToast`、操作の結果を画面に残すときは `StatusMessage` か `FormActionBar`）だけで知らせ、読み上げだけで終えない（G24、G25）。フォーカスを奪わない | ARIA スナップショット、部品のテスト（Announcer・NewItemsButton のテストとストーリー）、レビュー |
 | Y8 | CW は disclosure パターン（`aria-expanded` のボタン、閉じた内容は `hidden`）にする | 部品のテスト |
 | Y9 | 画像の添付には代替テキストの入力欄を必ず出す。サムネイルには「説明なし」のような欠落の印を出さず（代替テキストのない画像は支援技術にだけ「説明なし」という名前で読ませる）、代替テキストがある画像の右下（書字方向の末尾側）に飾りの小さなノートのアイコンのバッジを付ける（`aria-hidden`） | 部品のテスト |
 | Y10 | 利用者が書いた内容（表示名・投稿・プロフィール）と管理者が書いた内容（インスタンスの説明・ルール・規約）は `dir="auto"` で表示し、分かる場合は `lang` を付ける。言語を記録しない管理者の文（どのロケールでも同じ 1 つの値）は `lang=""`（言語不明）にして、画面の言語を引き継がせない | 部品のテスト、ARIA スナップショット |
@@ -219,7 +219,7 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
     終わりのないアニメーション（スピナー、スケルトンの明滅）は待たない。
   - プロジェクトは画面幅 320 / 390 / 768 / 1024 / 1440 px × ロケール `en` / `ja` / `en-XA` / `ar-XB` の 20 個。768 px 未満はタッチと粗いポインタのスマートフォンとして動かす。
   - 遅い検査（リリースの関門・nightly・手動、[ADR-0079](../../adr/0079-ci-single-gate-merge-queue.md)）は全体（`E2E_MATRIX=full`）を動かす。PR と Merge Queue では動かさない。既定の部分集合（全ロケールの 320 / 1440 px）は手動だけで、Web に触れる PR では作者が手元で `scripts/task.sh web:e2e` を回すか、PR のブランチに対して `web-e2e.yml` を `workflow_dispatch` で手で回す。
-  - CI（`web-e2e.yml`）は `app/web/dist` と `bin/my` を 1 回だけビルドし、全シャードが同じビルドを検査する（[ADR-0047](../../adr/0047-ci-protection-layers.md)）。シャードは部分集合が 4、全体が 8 で、各シャードの blob レポートを 1 つの HTML レポートにまとめる。`scripts/task.sh web:e2e` は手元で全部を 1 回で回す。
+  - CI（`web-e2e.yml`）は `app/web/dist` と `bin/my` を 1 回だけビルドし、全シャードが同じビルドを検査する（[ADR-0079](../../adr/0079-ci-single-gate-merge-queue.md)）。シャードは部分集合が 4、全体が 8 で、各シャードの blob レポートを 1 つの HTML レポートにまとめる。`scripts/task.sh web:e2e` は手元で全部を 1 回で回す。
   - spec は `e2e/fixtures.ts` から `test` / `expect` を import する。`vite preview` は `index.html`（ランタイム設定の代わりを含む）をそのまま返すので、fixture がプロジェクトのロケールを `<html lang dir>` に書き込み、サーバーの外枠と同じ状態にする。ビルドのファイルへの相対のリンクは、`my serve` と同じくルートからのものにする（ルートより下の画面のため）。`vite preview` は CSP を付けないので、fixture は `my serve`（`e2e/server.ts`）の外枠が送る CSP を取得してそのまま付ける。spec も本番と同じ Trusted Types と取得元の制限の下で動き、CSP が拒む sink（`DOMParser` や `innerHTML` への文字列）はアプリと同じく spec を失敗させる。画像は自分のオリジンからしか読めないので、spec が作る画像は `data:` URL を `servedImage` に渡し、プレビューのオリジンで配る。ランタイム設定の `apiOrigin` もその回の `vite preview` のオリジンに書き換えるので、クライアントの API と OAuth の要求はプレビューに届き、spec が `page.route` で応答できる（ログイン済みの画面は、`/oauth/token/refresh` と API の操作に応答して作る）。axe は `makeAxeBuilder` と `expectNoAxeViolations`（規則と対象のセレクタの一覧が空であることを検査）、横スクロールは `expectNoHorizontalScroll` で検査する。
   - 構造は `toMatchAriaSnapshot` で検査する。ロケールで変わる名前は、スナップショットから省くか正規表現にする。
   - CI は、digest で固定した Playwright の公式イメージで動かす。イメージの版は `@playwright/test` の版と合わせる。
@@ -246,9 +246,9 @@ Oxlint は警告でも失敗します（`options.denyWarnings`）。
     手元の OS のフォントや描画では一致しないので、手元で作った画像はコミットしない。
     - 見た目を変えたら `scripts/task.sh ui:snapshots-update`（Docker でそのイメージを使う）で作り直し、差分の画像を確かめてからコミットする。
     - 同じ比較を手元でするときは `scripts/task.sh ui:test-docker` を使う。`scripts/task.sh ui:test` を手元で動かす（`scripts/task.sh ui:test-install` でブラウザを入れる）と、axe は信用できるが、スクリーンショットは一致しない。
-  - `scripts/task.sh check` はブラウザなしで動く検査だけを集める。`scripts/task.sh ui:test` は CI の `ui-test` ジョブがそのイメージの中で、`app/ui` を変える PR で動かす（Merge Queue では動かさない、[ADR-0047](../../adr/0047-ci-protection-layers.md)）。失敗したときの実際の画像と差分は成果物 `ui-test-screenshots` にある。
+  - `scripts/task.sh check` はブラウザなしで動く検査だけを集める。`scripts/task.sh ui:test` は CI の `ui-test` ジョブがそのイメージの中で、`app/ui` を変える PR で動かす（Merge Queue では動かさない、[ADR-0079](../../adr/0079-ci-single-gate-merge-queue.md) §2）。失敗したときの実際の画像と差分は成果物 `ui-test-screenshots` にある。
   - ワークフローのイメージと `PLAYWRIGHT_IMAGE`、`playwright` / `@playwright/test` の版が食い違うと、`scripts/task.sh web:playwright-image-check`（`scripts/task.sh check` の一部）が失敗する。
-- 画面のストーリー（[ADR-0112](../../adr/0112-pr-ui-preview.md) §1）は、その画面の機能の `features/<x>/<画面>.stories.tsx` に置く。Storybook は `app/web/.storybook` で、`scripts/task.sh web:storybook`（ポート 6007）で開き、
+- 画面のストーリー（[ADR-0079](../../adr/0079-ci-single-gate-merge-queue.md) §13）は、その画面の機能の `features/<x>/<画面>.stories.tsx` に置く。Storybook は `app/web/.storybook` で、`scripts/task.sh web:storybook`（ポート 6007）で開き、
   `app/ui` の Storybook を composition（`refs`）で取り込む（開発では `scripts/task.sh ui:storybook` のポート 6006、静的なビルド `scripts/task.sh web:storybook-build` では `storybook-static/ui/` に置いた `@my/ui` のビルド）。
   - ストーリーは、アプリ全体をルートのアドレスで描く（`src/test/stories.tsx` の `renderScreen` と `screenLoader`。統合テストの `renderApp` と同じサービス）。API はブラウザの MSW（`msw/browser`、`src/test/msw/browser.ts`）が、
     統合テストと同じ既定のハンドラ（`src/test/msw/defaultHandlers.ts`、各機能の `test/handlers.ts`）とストーリーのハンドラ（`parameters.screen.handlers`）で答える。MSW の Service Worker は、インストールした `msw` のものを Storybook の Vite のプラグインが配る。

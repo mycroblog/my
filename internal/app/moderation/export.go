@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// The disclosure of an account's moderation records (ADR-0038): an operator answers a request
+// The disclosure of an account's moderation records (ADR-0058): an operator answers a request
 // of access (GDPR art. 15, APPI art. 33) with every record about the account, the private notes
 // included, and only the reporters' identities withheld: a report about the account names
 // neither its reporter nor the server it came from. The records are what the retention has kept;

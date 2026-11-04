@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// InviteCreatorKind is how an invite was created (ADR-0108 §3, invites.creator_kind).
+// InviteCreatorKind is how an invite was created (ADR-0106 §16, invites.creator_kind).
 type InviteCreatorKind string
 
 // Invite creator kinds.
@@ -15,12 +15,12 @@ const (
 	// InviteByStaff: a holder of manage_invites, or the CLI. No cap limits these invites, and
 	// a sign-up does not check their creator.
 	InviteByStaff InviteCreatorKind = "staff"
-	// InviteByMember: a member, through their own invites (ADR-0108 §1), under the caps of
+	// InviteByMember: a member, through their own invites (ADR-0106 §14), under the caps of
 	// MemberInviteCaps; every sign-up checks that the creator may still create invites (§3).
 	InviteByMember InviteCreatorKind = "member"
 )
 
-// InviterFacts are what decides whether a user may create invites of their own (ADR-0108 §1),
+// InviterFacts are what decides whether a user may create invites of their own (ADR-0106 §14),
 // and whether the invites a member created still work (§3).
 type InviterFacts struct {
 	// Mode is the registration mode: no invite is made or used while it is closed (§4).
@@ -40,20 +40,20 @@ type InviterFacts struct {
 }
 
 // MayCreateInvites reports whether a user may create invites of their own, and whether an
-// invite a member created lets people sign up (ADR-0108 §1, §3): the registration is not
+// invite a member created lets people sign up (ADR-0106 §14, §16): the registration is not
 // closed, the account is active, approved, and neither suspended nor limited, and the instance
 // lets everyone create invites or the user holds create_invites.
 func MayCreateInvites(f InviterFacts) bool {
 	return f.Mode != RegistrationClosed && f.Active && f.Approved && !f.Restricted && (f.EveryoneInvites || f.HasPermission)
 }
 
-// The defaults of the invites members create (ADR-0108 §2).
+// The defaults of the invites members create (ADR-0106 §15).
 const (
 	DefaultMemberInviteUses      = 1
 	DefaultMemberInviteExpiresIn = 7 * 24 * time.Hour
 )
 
-// MemberInviteCaps bound the invites of one member (ADR-0108 §2): the instance settings
+// MemberInviteCaps bound the invites of one member (ADR-0106 §15): the instance settings
 // member_invite_max_active, member_invite_max_uses, and member_invite_max_lifetime_seconds.
 type MemberInviteCaps struct {
 	// MaxActive is how many usable invites a member may hold at once; 0 lets nobody create
@@ -84,7 +84,7 @@ var (
 )
 
 // Resolve returns the uses and the lifetime of a member's new invite: those asked for, or the
-// defaults for zero values. Unlimited uses and no expiry cannot be asked for (ADR-0108 §2). It
+// defaults for zero values. Unlimited uses and no expiry cannot be asked for (ADR-0106 §15). It
 // fails with ErrInviteUsesOverCap or ErrInviteExpiryOverCap for a value outside its cap.
 func (c MemberInviteCaps) Resolve(uses int, expiresIn time.Duration) (int, time.Duration, error) {
 	if uses == 0 {

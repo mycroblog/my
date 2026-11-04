@@ -1,6 +1,6 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 --
--- Subscriptions to the new posts of an account (notification, ADR-0123, data-model section 4.7).
+-- Subscriptions to the new posts of an account (notification, ADR-0086, data-model section 4.7).
 
 -- InsertPostSubscription inserts nothing when the account already subscribes to the target.
 -- name: InsertPostSubscription :execrows

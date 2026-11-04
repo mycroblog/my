@@ -9,11 +9,11 @@ export type Rate = {
 const minute = 60_000;
 const hour = 60 * minute;
 
-/** The budget of posts, replies included: 60 an hour, six tenths of the server's 300 in three hours (ADR-0094 §6). */
+/** The budget of posts, replies included: 60 an hour, six tenths of the server's 300 in three hours (ADR-0093 §14). */
 export const defaultPostRate: Rate = { n: 60, per: hour };
 /** The budget of the other writes (reactions, favourites, follows): 60 a minute. */
 export const defaultWriteRate: Rate = { n: 60, per: minute };
-/** The most replies to one sender: 5 in 10 minutes and 15 in an hour (ADR-0094 §8). */
+/** The most replies to one sender: 5 in 10 minutes and 15 in an hour (ADR-0093 §16). */
 export const defaultReplyLimits: readonly Rate[] = [
   { n: 5, per: 10 * minute },
   { n: 15, per: hour },
@@ -126,7 +126,7 @@ function structuredItems(value: string): StructuredItem[] {
   });
 }
 
-/** Counts the replies to each sender, for the reply limits of ADR-0094 §8. */
+/** Counts the replies to each sender, for the reply limits of ADR-0093 §16 */
 export class ReplyLimiter {
   readonly #limits: readonly Rate[];
   readonly #sent = new Map<string, number[]>();

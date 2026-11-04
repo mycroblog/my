@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The toast about a new version (ADR-0141): nothing shows while the running version keeps working. A tab that stayed
+// The toast about a new version (ADR-0028): nothing shows while the running version keeps working. A tab that stayed
 // old for a week offers Update once, outside calls; a version that stopped working offers it at once, and lib/pwa
 // reloads by itself at the first safe moment. The toast is announced politely and never takes focus (web-client/README.md Y7).
 // This component also registers what lib/reloadSafety cannot see from the page: the route and the writes.

@@ -97,7 +97,7 @@ func (r closureRecipients) LocalUserAccountIDs(ctx context.Context, after string
 		if id == actor.Account.ID {
 			continue
 		}
-		// Nothing reaches a deactivated account (ADR-0145 §6).
+		// Nothing reaches a deactivated account (ADR-0089 §16).
 		a, err := r.a.Accounts.FindByID(ctx, id)
 		if err != nil {
 			return nil, "", err

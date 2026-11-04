@@ -132,7 +132,7 @@ func TestManageInvites(t *testing.T) {
 	}
 }
 
-// The staff see who created each invite, and how (ADR-0108 §5); while the registration is
+// The staff see who created each invite, and how (ADR-0106 §18); while the registration is
 // closed, no invite is created (§4).
 func TestAdminInvitesShowTheirCreators(t *testing.T) {
 	f := &fakeInvites{}

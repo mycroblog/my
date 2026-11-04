@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Fails when the desired-state schema of one dialect cannot upgrade a database of a base schema without losing or
-# rewriting data (ADR-0087 §3): `scripts/task.sh db:lint BASE=<ref> DB_DIALECT=sqlite|postgres` runs it.
+# rewriting data (ADR-0023 §6): `scripts/task.sh db:lint BASE=<ref> DB_DIALECT=sqlite|postgres` runs it.
 #
 #   scripts/db-lint.sh [options]
 #     --dialect sqlite|postgres  the dialect (required)

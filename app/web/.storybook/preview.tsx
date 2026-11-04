@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The Storybook preview of app/web (ADR-0112 §1): the app's stylesheet, the locale and theme toolbars, the viewports of
+// The Storybook preview of app/web (ADR-0079 §13): the app's stylesheet, the locale and theme toolbars, the viewports of
 // the screen stories, and the accessibility gate that fails a story test on any axe violation. A screen story renders
 // the whole app (src/test/stories.tsx), which sets lang and dir of <html> from the locale itself.
 import type { Decorator, Preview } from "@storybook/react-vite";

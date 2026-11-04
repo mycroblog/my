@@ -79,7 +79,7 @@ export function retireRuleMutation(api: Api) {
 }
 
 /**
- * Marks what a change of the rules changes (ADR-0045): the rules, whose order may change for every rule, the
+ * Marks what a change of the rules changes (ADR-0028): the rules, whose order may change for every rule, the
  * rules of GET /instance and the audit log; the queries shown now are fetched again and awaited.
  */
 export async function refreshRules(queryClient: QueryClient): Promise<void> {

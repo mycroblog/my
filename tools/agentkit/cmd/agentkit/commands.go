@@ -19,7 +19,7 @@ Read (instead of grep / cat over the repository):
   ctx <issue> [--layer server|web] [--budget 30000]   everything an issue needs, in one pack (.tmp/agentkit/ctx/<n>.md)
   find <words> [--kind k,k] [--under path] [-n 15]     ranked locations; kinds: section adr adr-section requirement
                                                        go go-test ts ts-test op schema table query msg file
-  show <ref> [--max 12000]                             the text of a ref: ADR-0070, ADR-0070#decision, FR-915,
+  show <ref> [--max 12000]                             the text of a ref: ADR-0070#decision, FR-915,
                                                        data-model§4.4, web-client#5-アクセシビリティ, op:<id>,
                                                        table:<name>, query:<Name>, <GoName>, path:10-40
   outline <path>                                       headings / declarations with line ranges and sizes

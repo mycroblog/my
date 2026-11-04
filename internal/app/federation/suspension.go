@@ -11,7 +11,7 @@ import (
 )
 
 // RegisterSuspensionProjectors subscribes the federation module to the moderation module's
-// suspensions of local accounts (federation.md §11.1, ADR-0036): each change of a local
+// suspensions of local accounts (federation.md §11.1, ADR-0058): each change of a local
 // account's suspension (moderation.account_suspension_changed: suspend or ban, and the lift or
 // the expiry of the last one) records, in the transaction of the action, an Update of the actor
 // and the JobFanOut that delivers it to the actor's followers and every known shared inbox,
@@ -20,7 +20,7 @@ import (
 // (FanOutDeps.Suspensions). A rolled-back action records nothing. d.Accounts tells local
 // accounts from remote ones; the suspension of a remote account sends nothing here, and neither
 // does a change on an account that its owner deactivated, which stays hidden either way
-// (ADR-0145 §7).
+// (ADR-0089 §17).
 func RegisterSuspensionProjectors(r *uow.Projectors, d RecorderDeps) {
 	rec := recorder{d: d}
 	r.Register(appmoderation.EventAccountSuspensionChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {

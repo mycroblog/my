@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The way back from the server's sign-in screen (/login/callback; ADR-0030): the app checks the state, exchanges the
+// The way back from the server's sign-in screen (/login/callback; ADR-0090): the app checks the state, exchanges the
 // code, and opens the page the sign-in started from, or says why the sign-in failed (SignInFailure), in the states of
-// ADR-0112 §1. Each story has a state of its own, since the app completes a callback once per state.
+// ADR-0079 §13 Each story has a state of its own, since the app completes a callback once per state.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";

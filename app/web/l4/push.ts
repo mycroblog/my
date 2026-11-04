@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The L4 tasks that turn Web Push on (ADR-0118 §4), named by the `push` key of a screen's front matter (screens.ts).
+// The L4 tasks that turn Web Push on (ADR-0015 §12), named by the `push` key of a screen's front matter (screens.ts).
 // The browser of the task subscribes with the demo server's fake push service through the shim of e2e/web-push.ts,
 // which the init page installs (mcp.ts) and which keeps the subscription in a state file of the task. The harness, not
 // the agent, judges the task: the browser subscribed, the server holds that subscription for the signed-in person,

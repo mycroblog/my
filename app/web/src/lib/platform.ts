@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Where the web client runs: in a browser, or as the Tauri app (ADR-0008), whose WebView loads the same build. The app
+// Where the web client runs: in a browser, or as the Tauri app (ADR-0028), whose WebView loads the same build. The app
 // shows no way to subscribe to the supporter plans (ADR-0072 §14, web-client/09-app-shell.md §9 "Tauri のアプリ"); this module is
 // the one flag that tells the two apart.
 

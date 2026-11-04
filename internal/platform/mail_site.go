@@ -26,7 +26,7 @@ func (a *App) mailSite(ctx context.Context) kernel.MailSite {
 		return site
 	}
 	site.ContactEmail = settings.ContactEmail()
-	// The instance's own logo heads the HTML version (ADR-0116); a failure to read it leaves the
+	// The instance's own logo heads the HTML version (ADR-0059); a failure to read it leaves the
 	// header without one.
 	brands, err := a.Instance.Brands(ctx)
 	if err != nil {

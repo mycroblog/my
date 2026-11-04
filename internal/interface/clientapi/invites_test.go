@@ -86,7 +86,7 @@ func TestOwnInviteWithoutABody(t *testing.T) {
 	}
 }
 
-// A member creates, lists, and revokes their own invites (ADR-0108 §5).
+// A member creates, lists, and revokes their own invites (ADR-0106 §18).
 func TestOwnInvites(t *testing.T) {
 	e, f := newOwnInvitesEnv(t)
 	res := e.sendJSON(t, http.MethodPost, "/invites", "write", `{"max_uses":3,"expires_in":3600}`)
@@ -131,7 +131,7 @@ func TestOwnInvites(t *testing.T) {
 	}
 }
 
-// The refusals of the service are problems (ADR-0108 §1, §2).
+// The refusals of the service are problems (ADR-0106 §14, §15).
 func TestOwnInviteProblems(t *testing.T) {
 	e, f := newOwnInvitesEnv(t)
 	for _, tc := range []struct {

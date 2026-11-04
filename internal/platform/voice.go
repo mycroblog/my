@@ -78,7 +78,7 @@ func newVoice(cfg *config.Config) Voice {
 // setUpVoice builds the voice module (ADR-0100): the projectors of its projections, its
 // subscriptions to the events that change who may be in a room, its jobs, the rooms over the
 // transport of the voice setting (ADR-0101 §2), and the endpoints of the events of the media
-// servers (ADR-0102 §4). The jobs run with the voice chat off too, so that
+// servers (ADR-0101 §13). The jobs run with the voice chat off too, so that
 // voice.sweep ends the rooms left open (disabled).
 func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 	appvoice.RegisterProjectors(a.Projectors, repo)
@@ -135,7 +135,7 @@ func (a *App) setUpVoice(cfg *config.Config, repo appvoice.Repository) error {
 }
 
 // voiceHTTPClient returns the HTTP client of a voice adapter that calls a server the operator
-// configured (an SFU, Cloudflare's TURN service; ADR-0102 §1): it does not follow redirects, so
+// configured (an SFU, Cloudflare's TURN service; ADR-0101 §10): it does not follow redirects, so
 // that a request and its credentials reach that server only.
 func voiceHTTPClient(timeout time.Duration) *http.Client {
 	return &http.Client{

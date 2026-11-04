@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// jsdom lays nothing out, so the picker lays its grid out by its fallback metrics (ADR-0097 §1): 8 columns, emoji rows
+// jsdom lays nothing out, so the picker lays its grid out by its fallback metrics (ADR-0091 §14): 8 columns, emoji rows
 // of 44 px, heading rows of 28 px, in a grid 256 px high. The stories check the layout in Chromium.
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";

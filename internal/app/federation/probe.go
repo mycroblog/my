@@ -50,7 +50,7 @@ type ProbeDeps struct {
 	Batch int
 	// Logger logs servers that stay unavailable; nil means slog.Default().
 	Logger *slog.Logger
-	// Modes reads the federation mode (ADR-0076): the probe reads NodeInfo (identify) unless it
+	// Modes reads the federation mode (ADR-0006): the probe reads NodeInfo (identify) unless it
 	// is off. nil federates both ways.
 	Modes ModeSettings
 }

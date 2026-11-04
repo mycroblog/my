@@ -242,7 +242,7 @@ export const localeKey = declareKey<string | null>("my:display:locale", {
   userData: false,
 });
 
-/** Whether animated images play by themselves on this browser (lib/autoplay, ADR-0054 §3). */
+/** Whether animated images play by themselves on this browser (lib/autoplay, ADR-0005 §6). */
 export const autoplayKey = declareKey<boolean>("my:display:autoplay", {
   area: "local",
   version: 1,
@@ -252,7 +252,7 @@ export const autoplayKey = declareKey<boolean>("my:display:autoplay", {
 });
 
 /**
- * How this browser shows the TrendCharts (ADR-0113 §2): as charts, or as their tables. One choice for every chart, so
+ * How this browser shows the TrendCharts (ADR-0110 §17): as charts, or as their tables. One choice for every chart, so
  * that a reader who prefers the tables keeps them on every screen.
  */
 export const chartViewKey = declareKey<"chart" | "table">("my:display:chart-view", {
@@ -264,7 +264,7 @@ export const chartViewKey = declareKey<"chart" | "table">("my:display:chart-view
 });
 
 /**
- * The notification sound of this browser (lib/notificationSound, ADR-0109 §5): the switch of the whole sound, off by
+ * The notification sound of this browser (lib/notificationSound, ADR-0086 §12): the switch of the whole sound, off by
  * default, and the notification types that sound while it is on. It is how this device behaves, not the user's data.
  */
 export type NotificationSoundSettings = { enabled: boolean; types: readonly string[] };
@@ -294,7 +294,7 @@ export const timelinesKey = declareKey<StoredTimelines | null>("my:instance:time
 
 /**
  * The instance's status page (GET /instance's `status_page_url`, an https URL) as last read, so that the offline bar can
- * link to it when the server does not answer (lib/statusPage, ADR-0085 §6); null when the instance has none or has
+ * link to it when the server does not answer (lib/statusPage, ADR-0088 §20); null when the instance has none or has
  * not been read on this browser. An instance setting, not the user's data.
  */
 export const statusPageKey = declareKey<string | null>("my:instance:status-page", {
@@ -357,7 +357,7 @@ export const signInKey = declareKey<StoredSignIn | null>("my:oauth-pending", {
   userData: false,
 });
 
-/** When a waiting Service Worker was first found (lib/pwa, ADR-0141 §3), in epoch milliseconds; a swap removes it. */
+/** When a waiting Service Worker was first found (lib/pwa, ADR-0028 §11), in epoch milliseconds; a swap removes it. */
 export const updateSeenKey = declareKey<number | null>("my:update-seen-at", {
   area: "local",
   version: 1,
@@ -366,7 +366,7 @@ export const updateSeenKey = declareKey<number | null>("my:update-seen-at", {
   userData: false,
 });
 
-/** The `webClientEpoch` this tab last reloaded for by itself (lib/pwa, ADR-0141 §4). */
+/** The `webClientEpoch` this tab last reloaded for by itself (lib/pwa, ADR-0028 §12). */
 export const requiredReloadKey = declareKey<number | null>("my:required-reload-epoch", {
   area: "session",
   version: 1,
@@ -473,7 +473,7 @@ export const linkCardSizeKey = declareKey<"large" | "small">("my:user:link-card-
 
 /**
  * The accounts (by their IDs) that closed the prompt to turn on Web Push, or turned Web Push off, on this browser
- * (ADR-0137 §4). It stays after the session, so that signing in again does not ask again whoever said no.
+ * (ADR-0086 §21). It stays after the session, so that signing in again does not ask again whoever said no.
  */
 export const pushPromptDismissedKey = declareKey<readonly string[]>("my:notifications:push-prompt-dismissed", {
   area: "local",

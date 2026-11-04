@@ -43,7 +43,7 @@ const (
 // StatusURI returns the ActivityPub id of a local status on host (ADR-0018).
 func StatusURI(host, statusID string) string { return content.StatusURI(host, statusID) }
 
-// StatusPageURL returns the HTML page of st by author (ADR-0053): of a local status, the page
+// StatusPageURL returns the HTML page of st by author (ADR-0018): of a local status, the page
 // under the author's current username, derived on read; of a remote status, the url it arrived
 // with. It is "" when there is none.
 func StatusPageURL(host string, st Status, author appaccount.Actor) string {

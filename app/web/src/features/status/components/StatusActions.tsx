@@ -53,14 +53,14 @@ function reactionEmojiOf(choice: ReactionChoice): ReactionEmoji {
 }
 
 /**
- * The action bar of a post: reply, boost, quote (FR-114), favourite, the picker of emoji reactions (ADR-0052 §5), bookmark, and a menu with
+ * The action bar of a post: reply, boost, quote (FR-114), favourite, the picker of emoji reactions (ADR-0051 §10), bookmark, and a menu with
  * the link, the revocation of this post's approved quote of a post of the viewer (ADR-0069 §3), for another account's post what the
  * viewer can do about its author (useAuthorActions) with the report of the post (features/report) and, with the permission, the
  * links to the moderation page (useStatusActions), and, for the viewer's own posts, edit (EditStatusDialog), who may quote it (QuotePolicyDialog), the posts that
  * quote it, pin or unpin, and delete behind a confirmation (WAI-ARIA APG, alert dialog pattern). Nothing while
  * nobody is signed in. The toggles keep their names in both states and expose the state with
  * `aria-pressed` (APG, button pattern); a count is part of the toggle's name (WCAG 2.5.3). On a post of another server while the
- * instance sends nothing out (ADR-0076), quoting is not offered and a note at the end of the bar, which also
+ * instance sends nothing out (ADR-0006), quoting is not offered and a note at the end of the bar, which also
  * describes the reply, boost and favourite, says that the actions do not reach that server.
  */
 export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsProps) {
@@ -77,7 +77,7 @@ export function StatusActions({ status, onDeleted, repliesHref }: StatusActionsP
   if (actions === null) return null;
   const post = status.boost ?? status;
   const remove = actions.delete;
-  // The note that the actions on a post of another server do not reach it (ADR-0076) describes each of them.
+  // The note that the actions on a post of another server do not reach it (ADR-0006) describes each of them.
   const note = actions.staysLocal ? staysLocalId : undefined;
 
   return (

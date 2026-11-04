@@ -121,7 +121,7 @@ type PaymentUnderTest struct {
 	PortalHosts   []string
 	// TimedSignature reports that the provider signs each delivery's body and time, with several
 	// signatures while its secret rotates (Stripe). A provider that authenticates deliveries by a
-	// fixed token (PAY.JP, ADR-0099 §4) leaves it false: its Deliver ignores at, a key other than
+	// fixed token (PAY.JP, ADR-0074 §12) leaves it false: its Deliver ignores at, a key other than
 	// "" sends a wrong token, and the contract skips the cases of a tampered body, the time, and
 	// several signatures.
 	TimedSignature bool
@@ -129,11 +129,11 @@ type PaymentUnderTest struct {
 	// or take them again; ChangeCharges counts the payments of changes that succeeded.
 	DeclineChanges func(sub supporters.SubscriptionRef, declined bool)
 	ChangeCharges  func() int
-	// SignedPages reports that a checkout is a URL that the adapter signs (PAY.JP, ADR-0099 §3): it
+	// SignedPages reports that a checkout is a URL that the adapter signs (PAY.JP, ADR-0074 §11): it
 	// has no page to continue and cannot be expired, and a claim guards its payment.
 	SignedPages bool
 	// Expected, when not nil, is what the provider reports of a scenario that it cannot hold as
-	// given (PAY.JP API v1, ADR-0099: one currency, no incomplete subscriptions, its own IDs of
+	// given (PAY.JP API v1, ADR-0074: one currency, no incomplete subscriptions, its own IDs of
 	// checkouts and refunds); nil means the scenario as given.
 	Expected *PaymentExpected
 }
@@ -698,7 +698,7 @@ func paymentMoney(t *testing.T, newProvider PaymentProviderFactory) {
 			t.Errorf("%s: not final", m.ID)
 		}
 	}
-	// Each movement maps to an income movement that the income records hold (ADR-0073 §1): Net =
+	// Each movement maps to an income movement that the income records hold (ADR-0067 §11): Net =
 	// Gross - Fee in the currency's minor unit, a period on the payments only, and the parent
 	// on the refunds, chargebacks, and reversals.
 	for _, m := range got {

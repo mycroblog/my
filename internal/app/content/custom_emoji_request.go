@@ -88,7 +88,7 @@ type CustomEmojiRequestRepository interface {
 	// ListCustomEmojiRequestsByID returns, in ID order, the requests among ids that exist.
 	ListCustomEmojiRequestsByID(ctx context.Context, ids []string) ([]content.CustomEmojiRequestRecord, error)
 	// CountCustomEmojiUsage counts the requests to create an emoji that a user submitted in
-	// [since, until), the approved ones and, apart, the pending ones (ADR-0124 §1).
+	// [since, until), the approved ones and, apart, the pending ones (ADR-0070 §4).
 	CountCustomEmojiUsage(ctx context.Context, userID string, since, until time.Time) (approved, pending int, err error)
 	// IsMediaOfPendingCustomEmojiRequest reports whether a pending request uses a media file.
 	IsMediaOfPendingCustomEmojiRequest(ctx context.Context, mediaID string) (bool, error)
@@ -114,7 +114,7 @@ type CustomEmojiCreators interface {
 	AccountOf(ctx context.Context, userID string) (string, error)
 }
 
-// CustomEmojiQuota is the limit of the custom emoji that a creator makes in a month (ADR-0124): the
+// CustomEmojiQuota is the limit of the custom emoji that a creator makes in a month (ADR-0070): the
 // supporter plans set it (ADR-0072 §11). limited is false for no limit.
 type CustomEmojiQuota interface {
 	Limit(ctx context.Context, userID string) (limit int, limited bool, err error)
@@ -608,7 +608,7 @@ func (s *CustomEmojiService) presentRequests(ctx context.Context, recs []content
 	return out, nil
 }
 
-// CustomEmojiUsage is what a creator has used of their monthly limit (ADR-0124): the requests to
+// CustomEmojiUsage is what a creator has used of their monthly limit (ADR-0070): the requests to
 // create an emoji they submitted this UTC calendar month that are approved or pending, and the
 // limit, when Limited. Pending is the part of Used that the pending requests take; ResetsAt is
 // when the count resets, the first day of the next month at 00:00 UTC.

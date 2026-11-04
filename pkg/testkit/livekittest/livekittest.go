@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package livekittest gives tests a LiveKit server (livekit-server --dev, Apache-2.0) for the
-// contract of the voice = livekit transport (ADR-0102 §2): the adapter's calls of the Twirp API
+// contract of the voice = livekit transport (ADR-0101 §11): the adapter's calls of the Twirp API
 // checked against the real server rather than the httptest stand-in of its own tests.
 //
 // Each New starts a container of its own. The tests need Docker and run only with

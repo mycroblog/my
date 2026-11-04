@@ -20,7 +20,7 @@ type Options struct {
 	// MaxDelay limits how far in the future a job becomes visible (0 for no limit).
 	MaxDelay time.Duration
 	// Tracer fills the TraceParent of the enqueued jobs from the span of the caller's context
-	// (ADR-0063 §2); nil leaves it empty.
+	// (ADR-0055 §14); nil leaves it empty.
 	Tracer kernel.Tracer
 }
 

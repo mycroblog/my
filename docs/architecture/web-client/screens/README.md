@@ -1,12 +1,12 @@
 # 画面の要件（L1）
 
-画面（ルート）ごとに 1 ファイル `<slug>.md` を置く（[ADR-0082](../../../adr/0082-conflict-free-file-layout.md)）。このディレクトリが画面の一覧で、別の一覧は持たない。
+画面（ルート）ごとに 1 ファイル `<slug>.md` を置く（[ADR-0081](../../../adr/0081-generated-files-policy.md)）。このディレクトリが画面の一覧で、別の一覧は持たない。
 [ADR-0110 §4](../../../adr/0110-web-experience-principles.md) の L1 で、[体験の原則](../21-experience-principles.md)を画面に当てはめた短いテキストにする。
 書式は Shape Up の Breadboarding（場所・操作・つながり）と OOUX の ORCA（Objects・Relationships・CTAs・Attributes）を下敷きにする。
 
 - UI を変える issue は、その画面のこのファイルがなければ `agent:ready` にしない。画面を変える PR は、挙動が変わるならこのファイルも同じ PR で直す。
-- 画面を足すときに触るのは、その画面のファイル（と機能のコード）だけにする。L4 の課題テスト（[ADR-0114](../../../adr/0114-l4-task-tests-nightly.md)）が要るものは、ファイルの先頭のフロントマター（下）に書く。
-- 現在の状態だけを書く（[ADR-0021](../../../adr/0021-documents-describe-present-state.md)）。
+- 画面を足すときに触るのは、その画面のファイル（と機能のコード）だけにする。L4 の課題テスト（[ADR-0015](../../../adr/0015-testing-strategy.md)）が要るものは、ファイルの先頭のフロントマター（下）に書く。
+- 現在の状態だけを書く（[ADR-0000](../../../adr/0000-record-architecture-decisions.md)）。
 
 ## 雛形
 

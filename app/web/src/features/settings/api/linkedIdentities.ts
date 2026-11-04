@@ -105,7 +105,7 @@ export function beginExternalConfirmationMutation(api: Api) {
 }
 
 /**
- * What linking or unlinking changes (web-client/README.md S1, ADR-0045): the list. Resolves once it is fetched again.
+ * What linking or unlinking changes (web-client/README.md S1, ADR-0028): the list. Resolves once it is fetched again.
  */
 export async function refreshLinkedIdentities(api: Api, queryClient: QueryClient): Promise<void> {
   await queryClient.invalidateQueries({ queryKey: linkedIdentitiesQueryOptions(api).queryKey });

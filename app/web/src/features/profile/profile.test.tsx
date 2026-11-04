@@ -666,7 +666,7 @@ describe("the badges of a profile", () => {
 
   test("are a named list next to the name, drawn as the staff wrote them, and not on the account's posts", async () => {
     bobServer({}, { badges: [...badges] });
-    // Even an author that carried badges would show none on its posts (ADR-0071 §3); the server sends none there.
+    // Even an author that carried badges would show none on its posts (ADR-0070 §12); the server sends none there.
     server.use(
       http.get(`${apiBase}/accounts/:id/statuses`, ({ request }) =>
         HttpResponse.json(

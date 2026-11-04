@@ -99,7 +99,7 @@ function accountOf(me: CredentialAccount): Account {
 }
 
 /**
- * A fake server of the client API for the tests of a bot (ADR-0094 §10): a fetch, which Server.options hands the bot,
+ * A fake server of the client API for the tests of a bot (ADR-0093 §18): a fetch, which Server.options hands the bot,
  * that answers the operations that mybot calls (verifyAccountCredentials, updateAccountCredentials,
  * listNotifications, streamEvents, createStatus, and those of the helpers of Context: reactToStatus, favouriteStatus,
  * followAccount) with the types of api/openapi.yaml, and keeps in memory what the bot did. inject sends a notification

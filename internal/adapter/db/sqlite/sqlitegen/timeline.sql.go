@@ -512,7 +512,7 @@ type InsertListParams struct {
 	CreatedAt      int64
 }
 
-// Lists (data-model 4.6, ADR-0122) -----------------------------------------------------------------
+// Lists (data-model 4.6, ADR-0013) -----------------------------------------------------------------
 func (q *Queries) InsertList(ctx context.Context, arg InsertListParams) error {
 	_, err := q.db.ExecContext(ctx, insertList, arg.ID, arg.OwnerAccountID, arg.CreatedAt)
 	return err

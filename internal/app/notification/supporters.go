@@ -44,7 +44,7 @@ type supporterEmail struct {
 }
 
 // SupporterAccounts tells whether the recipient of a supporter notification deactivated the
-// account: nothing reaches it until it comes back (ADR-0145 §6). *appaccount.Service implements it.
+// account: nothing reaches it until it comes back (ADR-0089 §16). *appaccount.Service implements it.
 type SupporterAccounts interface {
 	DeactivatedTx(ctx context.Context, tx uow.Tx, id string) (bool, error)
 }

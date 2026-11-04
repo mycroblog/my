@@ -47,7 +47,7 @@
   --palette-cocoa-900: #241f20;
   --palette-cocoa-950: #1c1819;
 
-  /* Data series (ADR-0113): the second series of a chart, a blue far in hue from the coral and the amber
+  /* Data series (ADR-0110): the second series of a chart, a blue far in hue from the coral and the amber
      of the first and the third. */
   --palette-data-blue-600: oklch(52% 0.13 245);
   --palette-data-blue-300: oklch(76% 0.1 245);
@@ -81,7 +81,7 @@
   --palette-amber-50: #fff3de;
   --palette-amber-900: #665232;
 
-  /* Badge colors (ADR-0071): a pale and a deep step for the light theme, a dark and a light step
+  /* Badge colors (ADR-0070): a pale and a deep step for the light theme, a dark and a light step
      for the dark theme, at the same lightness for every hue so that each pair keeps its contrast. */
   --palette-badge-red-100: oklch(95% 0.02 25);
   --palette-badge-red-200: oklch(90% 0.043 25);
@@ -207,7 +207,7 @@
   --color-wave: var(--palette-rose-400);
   /* The spark after a heading: mango, a decoration only. */
   --color-spark: var(--palette-mango-400);
-  /* The series of a chart (ADR-0113: TrendChart, Sparkline, BreakdownBar), in order: coral, blue, amber. Each is a
+  /* The series of a chart (ADR-0110: TrendChart, Sparkline, BreakdownBar), in order: coral, blue, amber. Each is a
      meaningful graphic, 3:1 against surface and surface-raised (WCAG 1.4.11); a series is also told apart by its line's
      dash and its legend's text, never by the color alone. Forced-colors mode draws every series in CanvasText. */
   --color-data-1: light-dark(var(--palette-coral-700), var(--palette-coral-350));
@@ -218,7 +218,7 @@
   --color-hand: var(--palette-mango-400);
   --color-hand-fg: var(--palette-charcoal-900);
 
-  /* Role badges (ADR-0071): badge-<color> is the background and badge-<color>-fg the text on it.
+  /* Role badges (ADR-0070): badge-<color> is the background and badge-<color>-fg the text on it.
      The color only decorates; the badge's name carries its meaning. Server themes cannot override them. */
   --color-badge-neutral: light-dark(var(--palette-cream-200), var(--palette-cocoa-700));
   --color-badge-neutral-fg: light-dark(var(--palette-charcoal-900), var(--palette-cocoa-50));
@@ -242,7 +242,7 @@
 
 @theme {
   /* --- Typography ---------------------------------------------------------------------------- */
-  /* Emoji first: "my Noto Color Emoji" is the web font of @my/ui/emoji.css (ADR-0095), whose unicode-range holds only
+  /* Emoji first: "my Noto Color Emoji" is the web font of @my/ui/emoji.css (ADR-0091), whose unicode-range holds only
      emoji code points, so the OS fonts still draw every other character; ahead of them, it also wins over the CJK and
      UI fonts that have their own glyphs of symbols such as ☀ ♠ ❤. A stylesheet that does not import emoji.css (the
      server-rendered pages) has no such face, and the family is skipped. Then the OS fonts: after the Latin UI fonts
@@ -305,7 +305,7 @@
   --elevation-sm: 0 1px 2px 0 #502e2614;
   --elevation-md: 0 7px 28px 0 #502e2614;
   --elevation-lg: 0 16px 40px 0 #502e2624;
-  /* The soft surfaces (ADR-0111 §3): a raised face (soft-raised) and a sunken one (soft-inset, fields and grooves). These
+  /* The soft surfaces (ADR-0110 §14): a raised face (soft-raised) and a sunken one (soft-inset, fields and grooves). These
      are the values without relative colour; where the browser has it, the rule after this block derives them from the
      surface colours instead, so a server theme that changes the surfaces moves its shadows too. A server theme may
      still set either outright, which wins over both (one value for both themes, like the other elevations). */
@@ -337,7 +337,7 @@
   --animate-celebrate: celebrate var(--transition-duration-slow) var(--ease-celebrate);
 }
 
-/* The soft elevations from the surface colours (ADR-0111 §3), where relative colour of a light-dark() colour parses;
+/* The soft elevations from the surface colours (ADR-0110 §14), where relative colour of a light-dark() colour parses;
    elsewhere the @theme values above stay. Only the lightness moves, so the shadows keep the surface's hue. In the light
    theme a raised face has a lighter shadow above and a darker one below; in the dark theme a light shadow would only
    look muddy, so the raised face has a 1px lighter line inside its top edge and the dark shadow, and the sunken one only

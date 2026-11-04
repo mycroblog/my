@@ -61,7 +61,7 @@ type FetcherDeps struct {
 	Key func(ctx context.Context) (SigningKey, error)
 	// Host is this instance's host, whose URIs are never fetched (federation.md §1.2).
 	Host string
-	// Modes reads the federation mode (ADR-0076): Fetch takes content in (ingest) and FetchActor
+	// Modes reads the federation mode (ADR-0006): Fetch takes content in (ingest) and FetchActor
 	// fetches actors and their keys (identify). nil federates both ways.
 	Modes ModeSettings
 }
@@ -87,14 +87,14 @@ type Fetched struct {
 // Fetch fetches the document with the IRI uri (its fragment is ignored) to take it in: a post, a
 // thread, a collection. It fails with an error wrapping ErrFetchGone, ErrFetchNotFound,
 // ErrFetchFailed, ErrFetchUnavailable, or ErrFetchRefused; other errors come from the stores. A
-// fetch that the federation mode does not make (ingest, ADR-0076) fails with ErrFetchRefused and
+// fetch that the federation mode does not make (ingest, ADR-0006) fails with ErrFetchRefused and
 // ErrFederationRestricted.
 func (f *Fetcher) Fetch(ctx context.Context, uri string) (*Fetched, error) {
 	return f.fetch(ctx, uri, federation.FlowIngest)
 }
 
 // FetchActor is Fetch of an actor or of its key, which verifying signatures and addressing
-// deliveries need: the federation mode makes it unless it is off (identify, ADR-0076).
+// deliveries need: the federation mode makes it unless it is off (identify, ADR-0006).
 func (f *Fetcher) FetchActor(ctx context.Context, uri string) (*Fetched, error) {
 	return f.fetch(ctx, uri, federation.FlowIdentify)
 }

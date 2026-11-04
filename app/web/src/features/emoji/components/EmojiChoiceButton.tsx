@@ -16,7 +16,7 @@ export type EmojiChoiceButtonProps = {
 /**
  * A button that opens the post form's emoji picker in a popover (WAI-ARIA APG, dialog pattern; ADR-0091 §4) to choose
  * one emoji, such as the icon of a voice chat room (FR-923): the emoji used often, the custom emoji of this server and
- * every Unicode emoji in the skin tone chosen here, the same emoji that a reaction takes (ADR-0052 §2). Hovering or
+ * every Unicode emoji in the skin tone chosen here, the same emoji that a reaction takes (ADR-0051 §7). Hovering or
  * focusing it starts loading the Unicode emoji; the popover opens at once with its search field focused. Picking an
  * emoji closes the popover, which returns focus to the button. The button is named by the words it shows.
  */

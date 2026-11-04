@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // An account's page (/moderation/accounts/{id}; web-client/screens/moderation.md): the account with its state and
-// registration, the actions on it, the reports about it, and the action form, in the states of ADR-0112 §1.
+// registration, the actions on it, the reports about it, and the action form, in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { otherAccountFixture, rtlNameAccountFixture, type Schemas, statusFixture } from "../../test/fixtures";

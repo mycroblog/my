@@ -2,7 +2,7 @@
 // The costs screen below its heading (ADR-0067 §7, ADR-0068 §9, manage_finance; web-client/screens/admin-finance.md),
 // in two tabs kept in the URL: reading and recording (audit A12). The overview has the totals by week, month or year
 // under tabs, amortized (the default) or in cash, with the rules that cut their periods next to them, and the income
-// that the payment provider records (ADR-0073 §6) under the same tabs, with the gross, the fees, the net, the balance
+// that the payment provider records (ADR-0067 §16) under the same tabs, with the gross, the fees, the net, the balance
 // and the members of each plan; what is published of them; and the money movements, newest first, with their
 // subscribers by username, narrowed to a kind and a range of dates, which only this screen shows. The records have the
 // recorded items, newest first, in the list-and-add part (`ListSection`) whose one primary action opens the form that
@@ -228,7 +228,7 @@ function PublicationSection(props: { granularity: CostGranularity; basis: CostBa
 
 /**
  * What the instance publishes of these costs and of the income (the instance settings `finance_visibility` and
- * `income_visibility`, ADR-0067 §8, ADR-0073 §7), read from GET /instance.
+ * `income_visibility`, ADR-0067 §8, ADR-0067 §17), read from GET /instance.
  */
 function Publication() {
   const t = useT();
@@ -1003,7 +1003,7 @@ function BillingImportRow({
 }
 
 /**
- * The payment provider's money movements of the income, newest first (ADR-0073 §6): what each brought or took back,
+ * The payment provider's money movements of the income, newest first (ADR-0067 §16): what each brought or took back,
  * and whose subscription it belongs to, narrowed to a kind (which applies at once) and to the dates they are counted on
  * (applied together, since a date field changes while it is typed). Only this screen shows them; the payment provider
  * records them, and nothing here changes them.

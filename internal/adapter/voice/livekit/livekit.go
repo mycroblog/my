@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package livekit is the voice.Transport of voice = livekit (ADR-0102): a LiveKit server,
+// Package livekit is the voice.Transport of voice = livekit (ADR-0101): a LiveKit server,
 // self-hosted or LiveKit Cloud, carries the audio of the rooms. The adapter calls the Twirp API
 // of its RoomService with net/http and signs the tokens itself (HS256), without LiveKit's SDK.
 //
 // A room of my is the LiveKit room named by the room's ID, and a session is the LiveKit
 // participant whose identity is the session's ID; the account's ID never reaches LiveKit
-// (ADR-0102 §3). The server enforces who speaks: a speaker's token may publish the microphone
+// (ADR-0101 §12). The server enforces who speaks: a speaker's token may publish the microphone
 // only, a listener's nothing, and SetSpeaking changes the permission of the connected
 // participant without a reconnect.
 package livekit
@@ -33,7 +33,7 @@ const Kind = "livekit"
 // only when the client connects, and the client asks for a new grant to connect again.
 const GrantTTL = 60 * time.Second
 
-// The timeouts of the LiveKit rooms (ADR-0102 §3), short so that a room nobody connects to does
+// The timeouts of the LiveKit rooms (ADR-0101 §12), short so that a room nobody connects to does
 // not stay on the server: EmptyTimeout closes a room nobody joined, as long as a grant lasts and
 // then some; DepartureTimeout closes a room after its last participant left, as long as the
 // grace of a disconnected host (voice.HostGracePeriod), so that a host who comes back finds it.
@@ -62,7 +62,7 @@ type Options struct {
 	MaxParticipants int
 	// HTTPClient calls the API: the operator configured the server, which may be on a private
 	// address, so it is the adapter's own client rather than the SSRF-guarded kernel.HTTPClient
-	// (ADR-0102 §1).
+	// (ADR-0101 §10).
 	HTTPClient *http.Client
 	Clock      kernel.Clock
 }
@@ -173,7 +173,7 @@ func (tr trackInfo) audio() bool {
 
 // Mute implements voice.Transport: GetParticipant finds the participant's audio tracks, and
 // MutePublishedTrack mutes each. The participant can turn the microphone on again from its
-// client (ADR-0102 §3). A session that is not connected has nothing to mute.
+// client (ADR-0101 §12). A session that is not connected has nothing to mute.
 func (t *Transport) Mute(ctx context.Context, room voice.RoomRef, s voice.Session) error {
 	var p participantInfo
 	err := t.call(ctx, "GetParticipant", room.ID, map[string]any{"room": room.ID, "identity": s.ID}, &p)
@@ -198,12 +198,12 @@ func (t *Transport) Mute(ctx context.Context, room voice.RoomRef, s voice.Sessio
 }
 
 // Unmute implements voice.Transport and does nothing: the participant turns the microphone on
-// from its client, which LiveKit lets through after a mute by the server (ADR-0102 §3).
+// from its client, which LiveKit lets through after a mute by the server (ADR-0101 §12).
 func (*Transport) Unmute(context.Context, voice.RoomRef, voice.Session) error { return nil }
 
 // Remove implements voice.Transport with RemoveParticipant. A self-hosted LiveKit does not
 // revoke the participant's token, so the participant may connect again; the JobMediaEvent of
-// its participant_joined and voice.sweep remove it again (ADR-0102 §4).
+// its participant_joined and voice.sweep remove it again (ADR-0101 §13).
 func (t *Transport) Remove(ctx context.Context, room voice.RoomRef, s voice.Session) error {
 	err := t.call(ctx, "RemoveParticipant", room.ID, map[string]any{"room": room.ID, "identity": s.ID}, nil)
 	if isNotFound(err) {

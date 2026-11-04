@@ -18,10 +18,10 @@ import (
 )
 
 // changeLookback is how far back a command looks for the charge of the difference that an
-// earlier try of it made (ADR-0099 §2).
+// earlier try of it made (ADR-0074 §10).
 const changeLookback = 48 * time.Hour
 
-// snapshot maps a subscription of PAY.JP to the port's (ADR-0099 §2): a trial is active (the
+// snapshot maps a subscription of PAY.JP to the port's (ADR-0074 §10): a trial is active (the
 // adapter makes one only to keep the period of a change), canceled is a cancellation at the
 // period's end, and paused is a failed payment since paused_at, since the adapter never pauses.
 func (p *Provider) snapshot(ctx context.Context, s subscription) supporters.SubscriptionSnapshot {
@@ -54,7 +54,7 @@ func (p *Provider) getSubscription(ctx context.Context, ref supporters.Subscript
 }
 
 // GetSubscription implements supporters.PaymentProvider. PAY.JP deletes a subscription when its
-// cancellation takes effect, so one that it no longer has is canceled (ADR-0099 §2): the adapter
+// cancellation takes effect, so one that it no longer has is canceled (ADR-0074 §10): the adapter
 // only re-reads the subscriptions that it reported.
 func (p *Provider) GetSubscription(ctx context.Context, ref supporters.SubscriptionRef) (supporters.SubscriptionSnapshot, error) {
 	s, err := p.getSubscription(ctx, ref)
@@ -106,7 +106,7 @@ func parseOffsetCursor(cursor string, now time.Time) (until int64, offset int, e
 	return until, offset, nil
 }
 
-// ChangePrice implements supporters.PaymentProvider (ADR-0099 §2). Now: it charges the prorated
+// ChangePrice implements supporters.PaymentProvider (ADR-0074 §10). Now: it charges the prorated
 // difference of the rest of the period (U1) once, by the key in the charge's metadata, and only
 // after that charge succeeds switches the plan with trial_end at the period's end, so that PAY.JP
 // charges the new plan's full amount then rather than now. A declined charge returns
@@ -161,7 +161,7 @@ func (p *Provider) ChangePrice(ctx context.Context, ref supporters.SubscriptionR
 }
 
 // proratedDifference is the difference of the prices per second of two plans over the rest of
-// the period from now, rounded down, in yen (ADR-0099 §2, U1). The price per second of a plan is
+// the period from now, rounded down, in yen (ADR-0074 §10, U1). The price per second of a plan is
 // its amount over one period of its interval from the period's start. It is not positive when
 // the new plan costs less per second, such as a year at a discount after a month.
 func proratedDifference(from, to plan, start, end, now time.Time) int64 {

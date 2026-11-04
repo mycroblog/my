@@ -98,7 +98,7 @@ func TestCrawlerStatements(t *testing.T) {
 		instance.SettingSecurityContact: "mailto:security@social.example",
 	})
 	register("bob")
-	// The supporter list is never for search engines (ADR-0071 §4): its page, and its API with
+	// The supporter list is never for search engines (ADR-0070 §13): its page, and its API with
 	// its problems.
 	for path, want := range map[string]string{
 		"/": "", "/@alice": "noindex, noarchive", "/@bob": "", "/home": "noindex, noarchive",

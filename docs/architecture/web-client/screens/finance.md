@@ -6,8 +6,8 @@ paths: ["app/web/src/routes/finance.tsx", "app/web/src/features/costs/**"]
 
 ## 会計（`/finance`）
 
-`view_finance` を持つ人（`manage_finance` を持つ人も）が、サーバーの費用と収入を、スタッフの画面の外で読む画面（ADR-0070 §5、ADR-0073 §6、[§9](../09-app-shell.md)）。
-数は「費用の概要」（[§14](../14-admin.md)。`StatTile`・`TrendChart`・`BreakdownBar`。ADR-0113）で先に出す。保存する操作はない。期間と計上のしかたは URL に置く。
+`view_finance` を持つ人（`manage_finance` を持つ人も）が、サーバーの費用と収入を、スタッフの画面の外で読む画面（ADR-0070 §5、ADR-0067 §16、[§9](../09-app-shell.md)）。
+数は「費用の概要」（[§14](../14-admin.md)。`StatTile`・`TrendChart`・`BreakdownBar`。ADR-0110）で先に出す。保存する操作はない。期間と計上のしかたは URL に置く。
 
 ### 1. 使う人と頻度
 

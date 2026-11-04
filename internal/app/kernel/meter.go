@@ -9,7 +9,7 @@ import (
 	"slices"
 )
 
-// Meter creates the instruments of the service and system metrics (ADR-0055 §1, ADR-0056).
+// Meter creates the instruments of the service and system metrics (ADR-0055 §1, ADR-0055).
 // An instrument is declared once, at startup, with its name, unit, description, and the label
 // keys it accepts, and then records measurements: a Counter adds to a sum, an UpDownCounter
 // adds to a value that also goes down, a Histogram records a distribution, a Gauge is a

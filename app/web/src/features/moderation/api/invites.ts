@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the invites (FR-001, manage_invites): the codes that let people sign up in every
-// registration mode but `closed` (ADR-0108 §4), the moderators' and the members' own, listed newest first with how they
+// registration mode but `closed` (ADR-0106 §17), the moderators' and the members' own, listed newest first with how they
 // were used and who created them, created and revoked. The list
 // follows the API's keyset pagination as a TanStack Query infinite query whose key ends with "pages"
 // (web-client/10-api-client-and-auth.md §10).
@@ -65,7 +65,7 @@ export function refreshInvites(queryClient: QueryClient): Promise<void> {
   return queryClient.invalidateQueries({ queryKey: ["get", "/admin/invites"] });
 }
 
-/** Writes the revoked invite from the answer into the cached list (ADR-0045), which shows it right. */
+/** Writes the revoked invite from the answer into the cached list (ADR-0028), which shows it right. */
 export function cacheRevokedInvite(queryClient: QueryClient, revoked: Invite): void {
   queryClient.setQueriesData<InfiniteData<{ items: Invite[] }>>(
     { queryKey: ["get", "/admin/invites"] },

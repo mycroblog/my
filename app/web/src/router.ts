@@ -27,7 +27,7 @@ export const routerOptions = {
   // A page visited before renders only once its loader has ended, not from its previous match while the loader
   // runs (TanStack Router's default "background"): a loader returns at once what is cached and not marked
   // stale, and fetches again what a write has marked, so that the page never shows what it was before the
-  // write (web-client/README.md S7, ADR-0045).
+  // write (web-client/README.md S7, ADR-0028).
   defaultStaleReloadMode: "blocking",
   scrollRestoration: true,
   // A remote account's profile is /@alice@example.com, as the server's shell routes have it (ADR-0028);
@@ -95,7 +95,7 @@ declare module "@tanstack/react-router" {
     /** The shell gives the page a wide column (the signed-out landing, whose hero has posts beside its text). */
     wideMain?: boolean;
     /**
-     * The page is for reading, so a required update may reload it by itself (ADR-0141 §5). A page without this is never
+     * The page is for reading, so a required update may reload it by itself (ADR-0028 §13). A page without this is never
      * reloaded without the user asking: a new page is on the safe side until it says otherwise.
      */
     reloadSafe?: boolean;

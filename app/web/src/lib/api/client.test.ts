@@ -210,7 +210,7 @@ test("answers without a token when signed out", async () => {
   expect(session.status).toBe("signed-out");
 });
 
-/** The 503 that the server's maintenance mode answers every operation and the OAuth endpoints with (ADR-0084 §3). */
+/** The 503 that the server's maintenance mode answers every operation and the OAuth endpoints with (ADR-0088 §10). */
 function maintenanceResponse(members: Record<string, string> = {}, retryAfter = "600") {
   return HttpResponse.json(
     { type: "/api/v1/problems/maintenance", title: "Under maintenance", status: 503, ...members },

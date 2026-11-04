@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The lists page below its heading (web-client/screens/lists.md, ADR-0122): the list-and-add part (`ListSection`) with
+// The lists page below its heading (web-client/screens/lists.md, ADR-0013): the list-and-add part (`ListSection`) with
 // the user's lists, oldest first, its count over the most lists, and the button that opens the form that creates one (a
 // note in its place once the user has the most). Each row has the list's name (a link to its timeline) and its number of
 // members, "Manage members" (a disclosure that opens the members' region under the row), "Rename" (the form in the

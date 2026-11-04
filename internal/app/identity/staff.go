@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// What the notifications read of the identity module (FR-712, ADR-0109 §4): who holds a
+// What the notifications read of the identity module (FR-712, ADR-0086 §11): who holds a
 // permission, where a user's notification emails go, and how many registrations await a
 // decision.
 
@@ -86,7 +86,7 @@ type Mailbox struct {
 	Locale         string
 }
 
-// NotificationMailbox returns where a user's notification emails are sent (ADR-0109 §4): the
+// NotificationMailbox returns where a user's notification emails are sent (ADR-0086 §11): the
 // primary address once verified, in the user's locale. ok is false when the user has no
 // preferences or no primary address, has not verified it, or when the suppression of the
 // address stops notifications (ADR-0086 §5). Whether the user wants a notification by email is

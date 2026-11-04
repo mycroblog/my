@@ -8,11 +8,11 @@ import (
 	"unicode/utf8"
 )
 
-// MaxAttemptErrorBytes bounds the Error of an Attempt (ADR-0064 §2): longer errors keep their
+// MaxAttemptErrorBytes bounds the Error of an Attempt (ADR-0004 §6): longer errors keep their
 // first bytes, cut at a UTF-8 boundary.
 const MaxAttemptErrorBytes = 2000
 
-// Attempt is the record of one run of a job that did not succeed (ADR-0064 §1): the runner
+// Attempt is the record of one run of a job that did not succeed (ADR-0004 §5): the runner
 // records a retry and a dead job, never a success. It carries neither the payload nor the
 // handler's logs; Error is the handler's error, which never holds an email address, an IP
 // address, a token, or a post's text.
@@ -46,7 +46,7 @@ type AttemptPosition struct {
 }
 
 // AttemptLog keeps the records of the runs that did not succeed, for the queue dashboard
-// (ADR-0064). It lives in the application database whatever the queue adapter, as dead jobs do.
+// (ADR-0004). It lives in the application database whatever the queue adapter, as dead jobs do.
 type AttemptLog interface {
 	// RecordAttempt stores a. Recording the same run again (same JobID, Attempt, and
 	// FinishedAt) keeps one record.

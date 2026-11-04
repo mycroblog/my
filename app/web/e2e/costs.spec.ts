@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The public running costs and income (FR-903, FR-917, ADR-0067 §8, ADR-0073 §7) in every width × locale project: the
+// The public running costs and income (FR-903, FR-917, ADR-0067 §8, ADR-0067 §17) in every width × locale project: the
 // section of the information page and the page at /about/costs as the instance settings finance_visibility and
 // income_visibility publish them, against `vite preview`, whose
 // client API the spec plays with page.route (no session). Names change with the locale, so elements are found by role,

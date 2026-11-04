@@ -10,14 +10,14 @@ import (
 )
 
 // WakeRoute sends the signals of the job types that Pattern matches, a type or a prefix such as
-// federation.*, through Waker (ADR-0139).
+// federation.*, through Waker (ADR-0004).
 type WakeRoute struct {
 	Pattern string
 	Waker   Waker
 }
 
 // WakeRouter is a Waker that sends each signal through the route of its job's type, or through
-// the default Waker when no route matches (ADR-0139 §2). The type is used only here: what leaves
+// the default Waker when no route matches (ADR-0004 §24). The type is used only here: what leaves
 // the process is the signal the chosen Waker sends, which names the job and nothing else.
 //
 // A failed send is not tried on another queue, so that a type held back on its queue does not

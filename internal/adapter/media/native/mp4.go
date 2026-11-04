@@ -15,7 +15,7 @@ import (
 )
 
 // An MP4 (ISO BMFF, QuickTime included) is remuxed into ftyp, moov, and one mdat (fast start)
-// that holds only the chunks of the kept tracks (ADR-0054 §6). The moov keeps the movie header
+// that holds only the chunks of the kept tracks (ADR-0005 §9). The moov keeps the movie header
 // and the video and sound tracks with their creation and modification times zeroed, and drops
 // everything else: user data (udta, where cameras put the location), metadata (meta, where
 // iPhones put it), uuid boxes (XMP), and track references. Fragmented files (moof) are not
@@ -124,7 +124,7 @@ var mp4Codecs = map[string]string{
 	"mp4a": "aac", "Opus": "opus", ".mp3": "mp3",
 }
 
-// mp4HEVC are the sample entries of HEVC, which is not accepted (ADR-0054 §6).
+// mp4HEVC are the sample entries of HEVC, which is not accepted (ADR-0005 §9).
 var mp4HEVC = map[string]bool{"hvc1": true, "hev1": true, "dvh1": true, "dvhe": true}
 
 type mp4File struct {

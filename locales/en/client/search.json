@@ -9,7 +9,7 @@
   },
   "search.description_known_only": {
     "defaultMessage": "Enter @username@server or the address of a profile. This server does not look up accounts of other servers now, so only the accounts it already knows are found.",
-    "description": "Help text of the account search field while this server does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0076)."
+    "description": "Help text of the account search field while this server does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0006)."
   },
   "search.failed": {
     "defaultMessage": "Could not search for accounts: {reason}",
@@ -29,7 +29,7 @@
   },
   "search.not_found_known_only": {
     "defaultMessage": "This server does not know that account, and it does not look up accounts of other servers now.",
-    "description": "Error of the account search when this server does not know the account and does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0076)."
+    "description": "Error of the account search when this server does not know the account and does not look up accounts of other servers (federation direction 'Send only' or 'Off', ADR-0006)."
   },
   "search.rate_limited": {
     "defaultMessage": "Too many searches. Try again in a few minutes.",

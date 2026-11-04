@@ -27,7 +27,7 @@ type ReviewedStatus struct {
 var reviewer = content.Viewer{Kind: content.ViewerLocal, Moderator: true}
 
 // Review returns a status for the moderators who handle a report that points at it, whatever
-// its visibility and also when it is deleted (data-model §4.3, ADR-0038: the evidence of a
+// its visibility and also when it is deleted (data-model §4.3, ADR-0058: the evidence of a
 // report stays until the report's retention ends). It does not go through content.CanView: it is
 // not a view of any viewer, and only the moderation module calls it, for the statuses of a
 // report (report_statuses), on behalf of a holder of the manage_reports permission. A status

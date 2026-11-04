@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's own logo and icon in the app (ADR-0116): the logo, which includes the server's name, takes the place of
+// The server's own logo and icon in the app (ADR-0059): the logo, which includes the server's name, takes the place of
 // the wordmark and the name at the start of the navigation, an image named by the server's name, with its dark variant
 // for dark grounds; the icon takes the place of the built-in mark on the landing page's masthead. Without them the
 // built-in wordmark and the name show. Through the whole app (web-client/README.md T4), signed out.

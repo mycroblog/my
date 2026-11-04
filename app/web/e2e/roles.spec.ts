@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Granting and revoking the roles of a local account on its admin page in every width × locale project (ADR-0027,
+// Granting and revoking the roles of a local account on its admin page in every width × locale project (ADR-0110,
 // FR-720): a viewer whose highest role is a custom one with manage_roles sees admin above it without a button and
 // with the reason, grants moderator by keyboard after its alert dialog, and focus moves to the region's heading,
 // each step passing axe without scrolling sideways. `vite preview` has no API, so the test plays the server with

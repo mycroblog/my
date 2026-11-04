@@ -107,7 +107,7 @@ const (
 	// DeletedByAutoDelete is the deletion of an old local post by its author's automatic
 	// deletion policy (FR-118). It federates as the author's own deletion does.
 	DeletedByAutoDelete DeletionOrigin = "auto_delete"
-	// DeletedByRetention is the purge of an old remote status (ADR-0034). Unlike the others, it
+	// DeletedByRetention is the purge of an old remote status (ADR-0006). Unlike the others, it
 	// does not stop the same URI from being ingested again.
 	DeletedByRetention DeletionOrigin = "retention"
 )

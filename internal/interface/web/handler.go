@@ -70,7 +70,7 @@ type Options struct {
 	// ThemeRevision returns a theme revision, current or not, for its stylesheet at
 	// ThemeStylesheetPath, and false when there is none; nil serves no theme stylesheets.
 	ThemeRevision func(ctx context.Context, id string) (instance.ThemeRevision, bool, error)
-	// Brands returns the instance's own icon and logos (ADR-0116). The shell, the manifest, and
+	// Brands returns the instance's own icon and logos (ADR-0059). The shell, the manifest, and
 	// /apple-touch-icon.png use the icon's files instead of the build's, the runtime config names
 	// the logos, and link previews fall back to the logo's preview image before the built-in one.
 	// It is called per request, so that a change applies without a restart; nil means the
@@ -611,7 +611,7 @@ func addVary(h http.Header, value string) {
 }
 
 // Stylesheet returns the URL of the stylesheet that the build makes for the server-rendered
-// pages from the client's design tokens (app/web/src/server-pages.css, ADR-0030), or "" when the
+// pages from the client's design tokens (app/web/src/server-pages.css, ADR-0090), or "" when the
 // build has none (no build, or a Vite dev server).
 func (h *Handler) Stylesheet() string { return h.tags.ServerPages }
 

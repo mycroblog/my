@@ -19,7 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// The acceptance window of ADR-0032 and ADR-0019 §7.
+// The acceptance window of ADR-0006 and ADR-0019 §7.
 const (
 	// SignatureMaxAge is how old a draft-cavage Date (or created) may be, and how long an
 	// RFC 9421 signature without expires stays valid after created.
@@ -38,7 +38,7 @@ const (
 const KeyRefreshNamespace = "federation.key_refresh"
 
 // Accept-Signature values (RFC 9421 §5.1) sent with 401 responses: the components the RFC 9421
-// profile of ADR-0032 requires, with created.
+// profile of ADR-0006 requires, with created.
 const (
 	acceptSignatureGET  = `sig1=("@method" "@target-uri");created`
 	acceptSignaturePOST = `sig1=("@method" "@target-uri" "content-digest");created`
@@ -109,7 +109,7 @@ type PublicKey struct {
 }
 
 // PublicKeyResolver finds the public key of a key ID: from account_keys, fetching the owner's
-// document when the key is unknown or stale (ADR-0032).
+// document when the key is unknown or stale (ADR-0006).
 type PublicKeyResolver interface {
 	// ResolvePublicKey returns the key named keyID. With refresh it fetches the owner's
 	// document again even when a stored key is fresh. It fails with an error wrapping
@@ -143,7 +143,7 @@ type VerifiedSignature struct {
 	Owner string
 }
 
-// SignatureVerifier applies the receive profile of ADR-0032 (docs/architecture/federation.md
+// SignatureVerifier applies the receive profile of ADR-0006 (docs/architecture/federation.md
 // §2, §3.1): it parses the signature, checks the required components, the time window, and the
 // body digest without any I/O (Check), then resolves the key and verifies the signature,
 // refetching a rotated key at most once per KeyRefreshInterval (Verify).

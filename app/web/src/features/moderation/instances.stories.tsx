@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The health of remote servers (/moderation/instances; web-client/screens/moderation.md) with its filter, in the
-// states of ADR-0112 §1.
+// states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
   answering,

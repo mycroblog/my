@@ -361,7 +361,7 @@ func passkeyRejectsRemovedAndInactive(t *testing.T, e *accountEnv) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	// A deactivated account signs in, to the server-rendered status page only (ADR-0145 §4).
+	// A deactivated account signs in, to the server-rendered status page only (ADR-0089 §14).
 	if _, err := e.signInWithPasskey(t, p); err != nil {
 		t.Errorf("SignInWithPasskey(deactivated account) = %v", err)
 	}

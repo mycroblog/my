@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Web Push in the E2E tests of the demo server (ADR-0118 §2): the browser's push subscription comes from the fake push
+// Web Push in the E2E tests of the demo server (ADR-0015 §10): the browser's push subscription comes from the fake push
 // service that e2e/server.ts starts beside the demo server (`my dev push-service`), and the messages that the fake
 // received and decrypted are handed to the page's real Service Worker over the Chrome DevTools Protocol.
 //

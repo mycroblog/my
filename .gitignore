@@ -48,7 +48,7 @@ storybook-static/
 # Scratch space of local tools and agents (logs, temporary clones).
 /.tmp/
 
-# go-task's checksums of the generators' inputs (ADR-0080).
+# go-task's checksums of the generators' inputs (ADR-0081).
 /.task/
 
 # Generated files only the TypeScript clients read (ADR-0081): the tasks that read them generate them first

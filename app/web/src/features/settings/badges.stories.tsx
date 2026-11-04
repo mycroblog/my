@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The badges and the supporter list (/settings/badges; web-client/screens/badges.md) in the states of ADR-0112 §1.
+// The badges and the supporter list (/settings/badges; web-client/screens/badges.md) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";

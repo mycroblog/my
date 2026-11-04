@@ -43,7 +43,7 @@ func (g followGraph) FollowWith(ctx context.Context, followerID, followeeID stri
 
 // TestFederationModeRestrictsRemoteOperations checks that, in each federation mode, following
 // a remote account, resolving one, and quoting a remote status pass or are the 403 of
-// federation-restricted as ADR-0076 says, and that a refused resolution fetches nothing.
+// federation-restricted as ADR-0006 says, and that a refused resolution fetches nothing.
 func TestFederationModeRestrictsRemoteOperations(t *testing.T) {
 	const remoteQuoted = "01890a5d-ac96-774b-bcce-b302099a8300"
 	for _, tt := range []struct {

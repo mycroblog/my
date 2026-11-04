@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 name: Set up go-task
 description: >-
-  Restore bin/task, the go-task that scripts/task.sh runs (ADR-0080), from the cache keyed on tools/go.mod and
+  Restore bin/task, the go-task that scripts/task.sh runs (ADR-0081), from the cache keyed on tools/go.mod and
   tools/go.sum, or build it with the Go of .tool-versions on a miss. Run it after actions/checkout.
 
 runs:

@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The task runner of the repository (ADR-0080). Run it with scripts/task.sh, never with a `task` on PATH;
+# The task runner of the repository (ADR-0081). Run it with scripts/task.sh, never with a `task` on PATH;
 # `scripts/task.sh --list` lists the tasks. Each area keeps its tasks in tasks/<area>.yml under its own namespace:
 # a new area is a new file there and one line under `includes`. This file holds only the includes, the checks across
 # areas (check, check:changed), and the generators (generate). The CI jobs are workflow steps that each call one of the
-# area tasks (ADR-0083); scripts/ci-coverage.sh fails when a check of `check` runs in no step.
+# area tasks (ADR-0079); scripts/ci-coverage.sh fails when a check of `check` runs in no step.
 #
 # Pass variables as arguments (`scripts/task.sh go:bin VERSION=v1.2.3`) or in the environment.
 version: "3"

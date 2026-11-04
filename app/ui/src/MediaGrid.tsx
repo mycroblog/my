@@ -73,7 +73,7 @@ const mediaGrid = tv({
 });
 
 /**
- * A video or audio file that a cell plays (ADR-0054 §6). A `video` never plays by itself and has the browser's controls, and an `audio` file never plays by itself and has an `AudioPlayer`; a `gifv` (a short silent video in place of an animated image) loops muted without controls while animations
+ * A video or audio file that a cell plays (ADR-0005 §9). A `video` never plays by itself and has the browser's controls, and an `audio` file never plays by itself and has an `AudioPlayer`; a `gifv` (a short silent video in place of an animated image) loops muted without controls while animations
  * play by themselves (`AutoplayContext`) or the post plays them (`AnimationsPlayContext`) and the system does not ask for reduced motion, and has controls otherwise.
  */
 export type MediaPlayback = { kind: "video" | "audio" | "gifv"; url: string };

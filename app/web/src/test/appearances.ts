@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Whether something was ever on screen while a flow ran, not only at its end: a page that renders what a
-// write has made stale and replaces it a moment later passes an assertion made after it (ADR-0045).
+// write has made stale and replaces it a moment later passes an assertion made after it (ADR-0028).
 import { onTestFinished } from "vitest";
 
 /**

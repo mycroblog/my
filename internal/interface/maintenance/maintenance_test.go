@@ -52,7 +52,7 @@ func serve(h http.Handler, method, target string, header map[string]string) *htt
 	return rec
 }
 
-// TestResponses checks every row of the table of ADR-0084 §3.
+// TestResponses checks every row of the table of ADR-0088 §10
 func TestResponses(t *testing.T) {
 	h := newHandler(t, testPage())
 	const statusBody = `{"status":"maintenance"}` + "\n"
@@ -218,7 +218,7 @@ func TestPageLocales(t *testing.T) {
 	}
 }
 
-// The page's CSP admits its inline CSS by hash and never 'unsafe-inline' (ADR-0084 §4).
+// The page's CSP admits its inline CSS by hash and never 'unsafe-inline' (ADR-0088 §11).
 func TestPageCSP(t *testing.T) {
 	w := serve(newHandler(t, testPage()), http.MethodGet, "/", nil)
 	csp := w.Header().Get("Content-Security-Policy")

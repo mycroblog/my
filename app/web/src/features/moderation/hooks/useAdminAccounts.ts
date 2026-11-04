@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The moderators' account screens (FR-714, FR-703, FR-713): the search form and its results, one account, showing
-// its email address and IP addresses only when the moderator asks (each time is recorded in the audit log, ADR-0038),
+// its email address and IP addresses only when the moderator asks (each time is recorded in the audit log, ADR-0058),
 // removing its two-factor authentication, issuing a password reset link for its user (shown once), and lifting the
 // moderation actions on it. Failures of what the moderator does are toasts or stay in the
 // confirmation; a failure to load the results stays in their region (web-client/README.md E2, web-client/16-look-states-and-wording.md G16).

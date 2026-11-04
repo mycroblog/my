@@ -318,7 +318,7 @@ func subscribeOnFake(t *testing.T, app *platform.App, prov *fake.Provider, accou
 }
 
 // TestSupporterSuspension cancels the subscription of a suspended account at the end of its
-// period, keeping its role until then (ADR-0072 §10, S1).
+// period, keeping its role until then (ADR-0072 §10).
 func TestSupporterSuspension(t *testing.T) {
 	t.Parallel()
 	e, prov := newSupportersEnv(t)
@@ -399,7 +399,7 @@ func TestCommerceDisclosurePage(t *testing.T) {
 }
 
 // TestSupporterSubscriptionAndList drives a user's subscription and the supporter list on
-// SQLite (ADR-0072 §6, §18, ADR-0071 §4): the user subscribes through the provider's checkout,
+// SQLite (ADR-0072 §6, §18, ADR-0070 §13): the user subscribes through the provider's checkout,
 // which returns to the web client, and cannot subscribe to another plan while subscribed; the
 // list shows only the members who chose to be listed, by plan, with their accounts and never an
 // amount or a date; supporter_list_visibility decides who reads it; and the end of the
@@ -444,7 +444,7 @@ func TestSupporterSubscriptionAndList(t *testing.T) {
 	if own.Subscription == nil || own.Subscription.State != clientapi.SupporterSubscriptionStateActive || own.Subscription.PlanName != "Supporter" {
 		t.Fatalf("after the return: %+v", own.Subscription)
 	}
-	// The payment reaches the income records with our subscription (ADR-0073 §1); the public
+	// The payment reaches the income records with our subscription (ADR-0067 §11); the public
 	// income shows the plan's members and never the payment.
 	paid := time.Now().UTC()
 	day := supporters.DateOf(paid)

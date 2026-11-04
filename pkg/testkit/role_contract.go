@@ -27,7 +27,7 @@ import (
 // roles are created, changed, and deleted (except the built-in ones, and those that users hold)
 // with their audit log entries, within the rank and the permissions of the actor; role badges
 // are set and removed, shown only by the users who chose to, and their choice goes with the
-// role, moving to the new role of a replacement (ADR-0071). It uses the same harness as
+// role, moving to the new role of a replacement (ADR-0070). It uses the same harness as
 // AccountRepositoryContract.
 func RoleRepositoryContract(t *testing.T, newHarness AccountFactory) {
 	t.Helper()

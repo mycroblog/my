@@ -289,7 +289,7 @@ func (s *Service) remoteImage(ctx context.Context, tx uow.Tx, accountID, url str
 	return id, nil
 }
 
-// rotateRemoteKeys stores the declared keys of a remote actor (data-model §4.2, ADR-0032): a
+// rotateRemoteKeys stores the declared keys of a remote actor (data-model §4.2, ADR-0006): a
 // key seen before stays, a new fingerprint under a key ID replaces the current key of that ID,
 // which is revoked in the same transaction, and a key of the actor that the document no longer
 // declares is revoked. A key ID that another account holds is left alone.

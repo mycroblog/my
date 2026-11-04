@@ -421,7 +421,7 @@ var activityStreamsTypes = map[account.ActorType]string{
 }
 
 // PublishedKey returns the key that a's document publishes as publicKey: its RSA key at
-// {actor}#main-key (ADR-0032), false when it has none.
+// {actor}#main-key (ADR-0006), false when it has none.
 func (a Actor) PublishedKey() (account.Key, bool) {
 	for _, k := range a.Keys {
 		if k.Algorithm == account.KeyRSASHA256 && k.KeyID == account.KeyIRI(a.Account.URI, account.KeyRSASHA256) {
@@ -784,7 +784,7 @@ func (s *Service) PrivateKey(ctx context.Context, k account.Key) (crypto.Signer,
 
 // SigningKey returns the key ID and the opened private key that a local actor signs outbound
 // requests with: its newest RSA key ({actor}#main-key), which every implementation verifies
-// (ADR-0006, ADR-0032). It fails with ErrNotFound when the account does not exist or has no
+// (ADR-0006). It fails with ErrNotFound when the account does not exist or has no
 // RSA key, as a remote account has none.
 func (s *Service) SigningKey(ctx context.Context, accountID string) (keyID string, key crypto.Signer, err error) {
 	keys, err := s.d.Repository.ListKeys(ctx, accountID)

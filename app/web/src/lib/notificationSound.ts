@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The notification sound (ADR-0109 §5): one built-in sound that the app plays while it is open, when a new notification
+// The notification sound (ADR-0086 §12): one built-in sound that the app plays while it is open, when a new notification
 // arrives over the event stream and its type's sound is on. Like the autoplay of animations (lib/autoplay), it is how
 // this device behaves, so the settings are kept in localStorage (lib/storage) and never sent to the server: a switch of
 // the whole sound, off by default, and the types that sound. A burst of notifications plays the sound once, and

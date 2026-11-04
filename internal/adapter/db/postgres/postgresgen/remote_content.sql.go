@@ -89,7 +89,7 @@ SELECT EXISTS (
 `
 
 // ExistsLocalStatusInConversation reports whether a local status that is not deleted belongs to
-// the conversation, for the scope of remote content (ADR-0034: replies in a thread that has a
+// the conversation, for the scope of remote content (ADR-0006: replies in a thread that has a
 // local status).
 func (q *Queries) ExistsLocalStatusInConversation(ctx context.Context, conversationUri *string) (bool, error) {
 	row := q.db.QueryRow(ctx, existsLocalStatusInConversation, conversationUri)

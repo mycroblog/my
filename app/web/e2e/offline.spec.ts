@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Going offline and back in every width × locale project (web-client/16-look-states-and-wording.md G17, ADR-0027): the app's one offline bar
+// Going offline and back in every width × locale project (web-client/16-look-states-and-wording.md G17, ADR-0110): the app's one offline bar
 // comes and goes as a polite live region, a page opened offline says why it cannot load instead of loading
 // forever, and back online it loads by itself; the home timeline says offline that it shows the posts loaded last
 // (FR-604). `vite preview` has no API, so the spec answers GET /instance and

@@ -48,7 +48,7 @@ export type StatusSource = components["schemas"]["StatusSource"];
 /** One revision of a post (GET /statuses/{id}/history). */
 export type StatusEdit = components["schemas"]["StatusEdit"];
 
-/** The emoji of a reaction: a Unicode emoji, or a custom emoji with its image (ADR-0052). */
+/** The emoji of a reaction: a Unicode emoji, or a custom emoji with its image (ADR-0051). */
 export type ReactionEmoji = components["schemas"]["ReactionEmoji"];
 
 /** The poll of a post (FR-112). */
@@ -100,7 +100,7 @@ export async function editStatus(api: Api, id: string, body: EditStatusRequest):
 }
 
 /**
- * Puts the server's answer to an edit into the cache (web-client/README.md S1, ADR-0045): every cached copy of the
+ * Puts the server's answer to an edit into the cache (web-client/README.md S1, ADR-0028): every cached copy of the
  * post, in a list or inside a boost, becomes the edited post, where it is, so that no list on screen moves
  * (Y7). The history has one more revision: it is marked stale, and fetched again if it is on screen.
  */
@@ -164,7 +164,7 @@ export function restoreRelation(queryClient: QueryClient, id: string, relation: 
 /**
  * Sets the viewer's emoji reaction to post `id` to `emoji`, the `name` of a ReactionEmoji (PUT
  * /statuses/{id}/reaction), or takes it back with null (DELETE); returns the post after it. The viewer has one
- * favourite or one reaction on a post (ADR-0052 §1): the server takes back the favourite or the other reaction. Both
+ * favourite or one reaction on a post (ADR-0051 §6): the server takes back the favourite or the other reaction. Both
  * are setters, so a retry after a lost answer is safe.
  */
 async function setReaction(api: Api, id: string, emoji: string | null): Promise<Status> {
@@ -178,7 +178,7 @@ async function setReaction(api: Api, id: string, emoji: string | null): Promise<
 }
 
 /**
- * Turns the viewer's Like slot of post `id` from `previous` into `slot` (ADR-0052 §1): favourites, reacts with an
+ * Turns the viewer's Like slot of post `id` from `previous` into `slot` (ADR-0051 §6): favourites, reacts with an
  * emoji, or takes back what is there; returns the post after it.
  */
 export function setLikeSlot(api: Api, id: string, slot: LikeSlot, previous: LikeSlot): Promise<Status> {
@@ -265,7 +265,7 @@ function isAccountStatusesQuery(queryKey: QueryKey, accountId: string): boolean 
 
 /**
  * Puts the server's answer to a press of the viewer `viewerId`'s `relation` to post `id` into the cache
- * (web-client/README.md S1, ADR-0045). The server's count includes others' actions, so it is taken only from the
+ * (web-client/README.md S1, ADR-0028). The server's count includes others' actions, so it is taken only from the
  * `last` press: an answer to an earlier press does not undo a later one still on its way. A boost is also an
  * entry of the viewer's home timeline and of their own posts, which it joins or leaves: those lists are marked,
  * and only marked stale: a list on screen keeps its top (Y7), and a list opened next is fetched again before it shows (S7).
@@ -388,7 +388,7 @@ export async function deleteStatus(api: Api, id: string): Promise<void> {
 }
 
 /**
- * Takes the deleted post `post` out of the cache (web-client/README.md S1, ADR-0045): its own query and thread go,
+ * Takes the deleted post `post` out of the cache (web-client/README.md S1, ADR-0028): its own query and thread go,
  * every list drops it and the boosts of it, and its parent has one reply less.
  */
 export function cacheDeletedStatus(api: Api, queryClient: QueryClient, post: Status): void {
@@ -408,7 +408,7 @@ export function cacheDeletedStatus(api: Api, queryClient: QueryClient, post: Sta
 }
 
 /**
- * The web client's address of a post: `/@{acct}/status/{id}` (ADR-0053), where acct is the author's username
+ * The web client's address of a post: `/@{acct}/status/{id}` (ADR-0018), where acct is the author's username
  * for a local account and `username@domain` for a remote one. The name only makes the address readable; the ID
  * finds the post (the server answers the same path with the post's link preview, ADR-0028).
  */

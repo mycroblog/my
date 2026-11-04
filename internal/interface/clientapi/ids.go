@@ -11,7 +11,7 @@ import (
 
 // Ids that come from a client are checked before they reach the application layer, which
 // passes them to the database as they are. Only the 36 lowercase characters of a UUIDv7 name a
-// resource (kernel.ValidID, ADR-0078 §5): any other form means the same as an ID that
+// resource (kernel.ValidID, ADR-0003 §9): any other form means the same as an ID that
 // names nothing, and answers like one, so that a malformed ID shows no more than a missing one
 // (ADR-0018).
 //

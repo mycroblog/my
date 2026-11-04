@@ -35,7 +35,7 @@ export function updateAutoDeletePolicyMutation(api: Api) {
 }
 
 /**
- * Puts the policy as the server saved it into the cache (web-client/README.md S1, ADR-0045). Saving it deletes nothing at
+ * Puts the policy as the server saved it into the cache (web-client/README.md S1, ADR-0028). Saving it deletes nothing at
  * once (the server's hourly job does), so no list of posts changes.
  */
 export function cacheSavedAutoDeletePolicy(api: Api, queryClient: QueryClient, saved: AutoDeletePolicy): void {

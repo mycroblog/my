@@ -21,12 +21,12 @@ import (
 // here because it combines what this module knows of users (registration, email, roles, where
 // they signed in from) with the account module and the moderation module, which this module
 // already reads. The email address and the IP addresses are only ever returned by Reveal, which
-// records each call in the audit log (ADR-0037, NFR-MOD-5).
+// records each call in the audit log (ADR-0058, NFR-MOD-5).
 
 // AdminAccountState is the state of an account as moderators see it, derived from the account's
 // lifecycle, its own moderation actions, and its registration, in this order of precedence:
 // deleted, suspended (suspend, ban), disabled (disable_login), deactivated (by its owner,
-// ADR-0145 §5), rejected and pending (the registration), limited (limit), and active.
+// ADR-0089 §15), rejected and pending (the registration), limited (limit), and active.
 type AdminAccountState string
 
 // States of accounts.
@@ -142,7 +142,7 @@ type AdminAccountDetail struct {
 	Application *identity.RegistrationApplication
 	// DecisionNote is the note of the decision on the application, "" without one.
 	DecisionNote string
-	// Invite is the invite the user signed up with, whose creator invited them (ADR-0108 §5);
+	// Invite is the invite the user signed up with, whose creator invited them (ADR-0106 §18);
 	// nil without one.
 	Invite *identity.Invite
 	// HasEmail reports whether the user has a primary email address, and EmailVerified whether

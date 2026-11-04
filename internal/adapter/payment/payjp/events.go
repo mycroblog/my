@@ -15,7 +15,7 @@ import (
 
 // PAY.JP lists the events newest first by an offset, with since and until in seconds, both
 // included. The adapter reads them oldest first in windows of time that hold at most a page
-// each: a window with more is narrowed, an empty one widened (ADR-0099 §5, §6).
+// each: a window with more is narrowed, an empty one widened (ADR-0074 §13, §14).
 const (
 	// maxWindowRequests bounds the requests of one call; the cursor carries on from there.
 	maxWindowRequests = 40
@@ -134,7 +134,7 @@ func timeCursor(cursor string, from time.Time) (time.Time, error) {
 
 // ListChanges implements supporters.PaymentProvider: the notices of the subscriptions' events
 // and of the failed charges, oldest first. PAY.JP does not document how long it keeps the
-// events, so it never fails with ErrChangesWindow (ADR-0099 §6).
+// events, so it never fails with ErrChangesWindow (ADR-0074 §14).
 func (p *Provider) ListChanges(ctx context.Context, since time.Time, cursor string) (supporters.ChangePage, error) {
 	from, err := timeCursor(cursor, since)
 	if err != nil {

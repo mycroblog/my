@@ -1,9 +1,9 @@
-# Bun settings for the client workspace (ADR-0026).
+# Bun settings for the client workspace (ADR-0025).
 [install]
 # `bun add` writes exact versions; every dependency is pinned (ADR-0025).
 exact = true
 # Each workspace package resolves only the dependencies it declares, so @my/ui cannot
-# import anything outside its own package.json (ADR-0026).
+# import anything outside its own package.json (ADR-0025).
 linker = "isolated"
 # Never resolve a version published less than three days ago, transitive ones included.
 minimumReleaseAge = 259200

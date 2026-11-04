@@ -3,7 +3,7 @@ import { type RefObject, useEffect, useState } from "react";
 
 /**
  * Whether the reader is in the feed: focus is inside it, or text in it is selected. Content that moves on its own
- * must be pausable (WCAG 2.2.2), so the home timeline does not insert new posts meanwhile (ADR-0077 §4).
+ * must be pausable (WCAG 2.2.2), so the home timeline does not insert new posts meanwhile (ADR-0013 §5).
  * Focus that moves to a dialog or any element outside the feed ends the pause. The browser's focus and selection
  * are an external system, which an effect subscribes to (react.dev: "You Might Not Need an Effect").
  */

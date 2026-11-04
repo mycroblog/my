@@ -19,7 +19,7 @@ import (
 )
 
 // The users' own subscriptions to the supporter plans (ADR-0072 §6, §8, §18; tag supporters,
-// scopes read:supporters and write:supporters) and the supporter list (ADR-0071 §4): the
+// scopes read:supporters and write:supporters) and the supporter list (ADR-0070 §13): the
 // members' choice to be listed (/preferences/supporter_listing) and the public list
 // (/instance/supporters), which the instance setting supporter_list_visibility opens.
 
@@ -42,7 +42,7 @@ const (
 const supporterReturnPath = "/settings/supporter"
 
 // supporterListRobots is the X-Robots-Tag of the supporter list, whatever the instance states
-// to search engines (ADR-0071 §4, N1).
+// to search engines (ADR-0070 §13).
 const supporterListRobots = "noindex, noarchive"
 
 // OwnSupporters runs the users' own subscriptions and the supporter list:
@@ -426,7 +426,7 @@ func decodeSupporterCursor(c string) (*appsupporters.Listing, bool) {
 }
 
 // ListInstanceSupporters serves GET /api/v1/instance/supporters: the members who chose to be
-// listed, as the instance setting supporter_list_visibility allows (ADR-0071 §4).
+// listed, as the instance setting supporter_list_visibility allows (ADR-0070 §13).
 func (s *Server) ListInstanceSupporters(ctx context.Context, req ListInstanceSupportersRequestObject) (ListInstanceSupportersResponseObject, error) {
 	var settings instance.Settings
 	if s.o.Instance != nil {

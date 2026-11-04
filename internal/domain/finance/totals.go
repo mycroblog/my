@@ -41,7 +41,7 @@ type Entry struct {
 	// Provider is the normalized provider that groups the breakdown, and Category its category.
 	Provider string
 	Category Category
-	// Spelling is the provider as entered, which a breakdown line of Provider may show (ADR-0098).
+	// Spelling is the provider as entered, which a breakdown line of Provider may show (ADR-0067).
 	Spelling Spelling
 	// Estimated marks an imported cost of a month that its provider has not closed (ADR-0068 §3).
 	Estimated bool
@@ -50,7 +50,7 @@ type Entry struct {
 	Item ItemRef
 	// Span, when set, is the range that Amount spreads over by day, of which only the dates of
 	// Range carry their part: the rest of a refund of an amortized payment, which cancels the
-	// payment's later days with the payment's own rounding (ADR-0073 §5). Nil spreads Amount over
+	// payment's later days with the payment's own rounding (ADR-0067 §15). Nil spreads Amount over
 	// Range.
 	Span *DateRange
 }
@@ -68,7 +68,7 @@ func (e Entry) amountIn(part DateRange) int64 {
 }
 
 // Spelling is a provider as entered, which the lines of its normalized provider in a period may
-// show (ADR-0098): the provider of a cost item's current label revision, recorded at RevisedAt as
+// show (ADR-0067): the provider of a cost item's current label revision, recorded at RevisedAt as
 // the revision RevisionID, or the provider's name of an imported cost, with no revision.
 type Spelling struct {
 	Name       string
@@ -126,7 +126,7 @@ type ItemRef struct {
 
 // ItemLine is the amount of an item in a currency over a period: the cost item or the service
 // of an imported cost of Item, with the provider and category that group its breakdown, and the
-// spelling of the provider that the period's lines show (ADR-0098).
+// spelling of the provider that the period's lines show (ADR-0067).
 type ItemLine struct {
 	Item         ItemRef
 	Provider     string
@@ -165,7 +165,7 @@ type BreakdownKey struct {
 }
 
 // Line is an amount of a breakdown key, with the spelling of its provider that the period's lines
-// of the key's provider show (ADR-0098).
+// of the key's provider show (ADR-0067).
 type Line struct {
 	Key          BreakdownKey
 	ProviderName string

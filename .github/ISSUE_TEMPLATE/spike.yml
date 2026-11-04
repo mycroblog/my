@@ -13,7 +13,7 @@ body:
     id: method
     attributes:
       label: Method
-      description: What to build or measure. Throwaway code goes on an unmerged spike/<issue>-<slug> branch (ADR-0022).
+      description: What to build or measure. Throwaway code goes on an unmerged spike/<issue>-<slug> branch (ADR-0000).
   - type: input
     id: timebox
     attributes:

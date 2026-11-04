@@ -4,7 +4,7 @@ ADR-0020 の分類は、`jobs`・`dead_jobs`・`kv_entries` が現在値、`job_
 
 | テーブル | カラム | 一意 | インデックス |
 | --- | --- | --- | --- |
-| `jobs`（`queue/db`） | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `run_at`, `locked_by`（NULL 可）, `locked_until`（NULL 可）, `last_error`（NULL 可）, `created_at` | `(idempotency_key)` | `(run_at)`, `(type, run_at, id)`（種類を選ぶワーカーの claim、ADR-0138）, `(ordering_key, run_at)` |
+| `jobs`（`queue/db`） | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `run_at`, `locked_by`（NULL 可）, `locked_until`（NULL 可）, `last_error`（NULL 可）, `created_at` | `(idempotency_key)` | `(run_at)`, `(type, run_at, id)`（種類を選ぶワーカーの claim、ADR-0004）, `(ordering_key, run_at)` |
 | `dead_jobs` | `id`, `type`, `payload`（`document`）, `idempotency_key`（NULL 可）, `ordering_key`（NULL 可）, `trace_parent`（NULL 可）, `attempt`, `last_error`, `created_at`, `failed_at` | — | `(failed_at)` |
 | `job_attempts`（イベント） | `job_id`, `attempt`, `job_type`, `outcome`（`enum(retry, dead)`）, `error`（`text`、2,000 バイトまで）, `worker`, `started_at`, `finished_at` | PK `(job_id, attempt, finished_at)` | `(finished_at)` |
 | `kv_entries`（`kv/db`） | `namespace`, `key`, `value`（`bytes`）, `expires_at`（NULL 可 = 無期限） | PK `(namespace, key)` | `(expires_at)` |
@@ -12,14 +12,14 @@ ADR-0020 の分類は、`jobs`・`dead_jobs`・`kv_entries` が現在値、`job_
 
 - ジョブのペイロードはアダプタ間を渡る「解釈しない文書」なので `document` 型です（ドメインのデータは入れず、ID を渡します）。
 - Transactional Outbox（ADR-0004）は `jobs` そのものです。`EnqueueTx` は呼び手のトランザクションで `jobs` に書き、外部のキュー（Cloud Tasks・SQS）を使うときも
-  ジョブは `jobs` に残り、外部のキューは起こす合図だけを運びます（[ADR-0120](../../../adr/0120-external-queue-wake-up-signals.md)）。
-- `trace_parent` はジョブを投入した span の W3C `traceparent` で、ジョブの実行の span はこれへの link を持ちます（[ADR-0063](../../../adr/0063-distributed-tracing.md) §2）。
+  ジョブは `jobs` に残り、外部のキューは起こす合図だけを運びます（[ADR-0004](../../../adr/0004-job-queue-abstraction.md)）。
+- `trace_parent` はジョブを投入した span の W3C `traceparent` で、ジョブの実行の span はこれへの link を持ちます（[ADR-0055](../../../adr/0055-service-observability.md) §14）。
   状態でなくジョブの属性で、記録していない span から投入したジョブは NULL です。dead job への移動・再実行はそのまま引き継ぎます。
 - `jobs` は未完了のジョブだけを持ちます。完了したジョブは削除し、恒久的に失敗したジョブは `dead_jobs` に移します。
   そのため `jobs (idempotency_key)` の一意制約は「未完了のジョブの間での一意」を表します。
 - `dead_jobs` は管理 API から再実行するまで残り、`failed_at` から設定 `dead_job_retention`（既定 30 日）を過ぎた行を 1 時間ごとの消去ジョブ `queue.purge_dead_jobs` が
   `DeadJobs.DeleteDeadJobsBefore` で古い順に、1 回 1,000 件・20 回まで消します（FR-803）。続きは次の回が消します。
-- `job_attempts` は【イベント】で、成功しなかったジョブの試行（`retry` と `dead`）を 1 試行 1 行で記録します（[ADR-0064](../../../adr/0064-queue-job-dashboard.md)）。
+- `job_attempts` は【イベント】で、成功しなかったジョブの試行（`retry` と `dead`）を 1 試行 1 行で記録します（[ADR-0004](../../../adr/0004-job-queue-abstraction.md)）。
   成功した試行は記録しないので、書き込みは失敗の数にだけ比例します。runner が `queue.AttemptLog` を通して、キューのアダプタによらずアプリの DB に書き、記録の失敗はジョブの結果を変えません。
   ペイロードとハンドラのログは持たず、`error` はハンドラが返したエラーの先頭 2,000 バイト（UTF-8 の境界で切る）で、ハンドラはエラーにメールアドレス・IP アドレス・トークン・本文を入れません。
   dead job の再実行は試行回数を数え直すので、同じ `attempt` が 2 回現れることがあり、`finished_at` を主キーに含めて区別します。同じ試行を繰り返し記録しても 1 行です。
@@ -37,7 +37,7 @@ ADR-0020 の分類は、`jobs`・`dead_jobs`・`kv_entries` が現在値、`job_
   取得は、同じキーの他のジョブがリース中のとき、または自分より前に投入された同じキーのジョブが `jobs` に残っている（遅延中・リトライ待ちを含む）ときは、そのジョブを飛ばします。
   この判定はインデックス `(ordering_key, run_at)` で同じキーの行を引きます。
   PostgreSQL では同じキーのジョブを同時に取得する 2 つのトランザクションが互いのリースを見落とさないよう、取得はキーのトランザクション内 advisory lock を取ってから候補を再確認します。
-- `data_upgrade_runs` は【イベント】で、`my db upgrade` が完了した更新の手順（[ADR-0087](../../../adr/0087-schema-changes-after-launch.md) §2・§4）を 1 手順 1 行で記録します。
+- `data_upgrade_runs` は【イベント】で、`my db upgrade` が完了した更新の手順（[ADR-0023](../../../adr/0023-declarative-schema-management.md) §5, §7）を 1 手順 1 行で記録します。
   手順は `internal/app/dbupgrade` の `Step` で、キー・説明・実行の関数（冪等で、小さなトランザクションの繰り返し）・作り直す投影の名前を持ち、`internal/platform/setup_dbupgrade.go` に登録します。
   手順の実行と投影の作り直しが終わってから記録するので、途中で失敗した手順は次の `my db upgrade` でもう一度実行します。同じ手順を 2 回記録しても最初の行が残ります。
   contract を含む版は前提とする手順のキーと、足りないときに通る版を持ち、`my db upgrade --check`（`schema apply` の前）が記録に無ければ終了コード 1 で止まります。

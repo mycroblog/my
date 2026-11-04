@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// PushReceiver is the push form of JobRunner (ADR-0004, ADR-0120 §2): the endpoint of an
+// PushReceiver is the push form of JobRunner (ADR-0004, ADR-0004 §10): the endpoint of an
 // external queue hands it the job ID of each wake-up signal, and it claims that job by ID
 // (Source.ClaimJob), runs it, and records the result as a PullRunner does (Complete, Release or
 // Bury, the record of the attempt, and the report of a dead job or a panic).

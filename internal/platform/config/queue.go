@@ -37,7 +37,7 @@ var wakerQueueRequired = map[string][]string{
 }
 
 // wakerQueueChecks are the checks of the queues whose external queue only carries wake-up
-// signals, cloudtasks and sqs (ADR-0120 §4, §6): the jobs are in the database, so they need a
+// signals, cloudtasks and sqs (ADR-0004 §12, §14): the jobs are in the database, so they need a
 // database that the processes share, and the slots of the periodic jobs are claimed in the KV,
 // so they need one that the processes share too.
 func wakerQueueChecks(vals map[string]string, present map[string]bool) []Issue {
@@ -127,7 +127,7 @@ func checkJobTypePatterns(v string) error {
 	return nil
 }
 
-// workerJobTypeChecks are the rules of worker_job_types and worker_job_types_except (ADR-0138):
+// workerJobTypeChecks are the rules of worker_job_types and worker_job_types_except (ADR-0004):
 // a wake-up signal names one job, so only a worker that polls the table can choose.
 func workerJobTypeChecks(vals map[string]string) []Issue {
 	var issues []Issue
@@ -149,7 +149,7 @@ func workerJobTypeChecks(vals map[string]string) []Issue {
 }
 
 // maxWorkerJobConcurrency is the most jobs a process can run at once, the range that was measured
-// (ADR-0140 §1).
+// (ADR-0004 §31).
 const maxWorkerJobConcurrency = 128
 
 // checkWorkerJobConcurrency accepts the number of jobs a process runs at once.
@@ -162,7 +162,7 @@ func checkWorkerJobConcurrency(v string) error {
 }
 
 // workerJobConcurrencyChecks are the rules of worker_job_concurrency that the settings alone
-// decide (ADR-0140 §1, §6): only a worker that polls the table runs several jobs. Its check against
+// decide (ADR-0004 §31, §36): only a worker that polls the table runs several jobs. Its check against
 // the database's pool needs the pool, so the server makes it when it opens the database.
 func workerJobConcurrencyChecks(vals map[string]string) []Issue {
 	n, err := strconv.Atoi(vals["worker_job_concurrency"])
@@ -180,7 +180,7 @@ func workerJobConcurrencyChecks(vals map[string]string) []Issue {
 }
 
 // QueueRoute sends the wake-up signals of the job types of Pattern, a type or a prefix such as
-// federation.*, to Queue instead of the default queue (ADR-0139). URL is the base URL of the
+// federation.*, to Queue instead of the default queue (ADR-0004). URL is the base URL of the
 // receiver of a Cloud Tasks route; for SQS it is empty, and the queue's event source decides.
 type QueueRoute struct {
 	Pattern string
@@ -247,7 +247,7 @@ func checkCloudTasksRoutes(v string) error {
 	return checkQueueRoutes(v, checkCloudTasksQueue, true)
 }
 
-// queueRouteChecks are the rules of queue_sqs_routes and queue_cloudtasks_routes (ADR-0139 §1):
+// queueRouteChecks are the rules of queue_sqs_routes and queue_cloudtasks_routes (ADR-0004 §23):
 // each belongs to its queue, and only the queues with a waker can send signals to several queues.
 func queueRouteChecks(vals map[string]string) []Issue {
 	var issues []Issue
@@ -276,7 +276,7 @@ func (c *Config) QueueRoutes() []QueueRoute {
 }
 
 // QueueRoutesSummary returns the routes of the queue as one sorted line and a short hash of it,
-// which the processes log at startup so that an operator can compare them (ADR-0139 §1): a process
+// which the processes log at startup so that an operator can compare them (ADR-0004 §23): a process
 // with other routes loses no job but silently sends signals to other queues.
 func (c *Config) QueueRoutesSummary() (routes, hash string) {
 	entries := make([]string, 0, len(c.QueueRoutes()))

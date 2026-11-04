@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Check the layout of the split client API spec in api/spec/ (ADR-0066): the root api/spec/openapi.yaml
+# Check the layout of the split client API spec in api/spec/ (ADR-0016): the root api/spec/openapi.yaml
 # lists every file under api/spec/paths/ and api/spec/components/ (redocly bundle silently leaves out a
 # component that nothing refers to) and no file that does not exist, and every file starts with the
 # SPDX header.

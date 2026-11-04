@@ -30,7 +30,7 @@ type FollowRefusalsDeps struct {
 }
 
 // FollowRefusals answers the remote Follows that the federation mode refuses (follow_in in
-// inbound, ADR-0076) with a Reject, without recording a follow, so that none of them stays
+// inbound, ADR-0006) with a Reject, without recording a follow, so that none of them stays
 // pending.
 type FollowRefusals struct {
 	d   FollowRefusalsDeps

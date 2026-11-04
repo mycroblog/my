@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's page of their own invites through the whole app (web-client/README.md T4, ADR-0108 §2, §5): the settings
+// The user's page of their own invites through the whole app (web-client/README.md T4, ADR-0106 §15, §18): the settings
 // list it only for a user who may create invites; the form offers only the choices within the caps and starts at the
 // server's defaults; a refused invite says why; a user who holds as many invites as allowed is told so; a user who may
 // no longer create invites still lists and revokes theirs; revoking moves focus to the invite's heading; with MSW

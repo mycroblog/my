@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The numbers of the instance's finances at a glance (ADR-0113), above the totals on the public costs page, the
+// The numbers of the instance's finances at a glance (ADR-0110), above the totals on the public costs page, the
 // finances page and the administrators' costs screen: the costs, the income and the balance of the current period as
 // StatTiles with their change from the period before, and the costs against the income of every shown period as a
 // TrendChart of bars, with the same data as its table. A chart has one unit, so it is drawn when every amount is in one

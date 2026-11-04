@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The states of the update flow of ADR-0141: the worker swap under Web Locks and the other tabs (§2), the tab that stays
-// old (§3), and the required update (§4). jsdom has no Service Workers or Web Locks, so all of them are stand-ins, and a
+// The states of the update flow of ADR-0028 §10 to §12: the worker swap under Web Locks and the other tabs (ADR-0028 §10), the tab that stays
+// old (ADR-0028 §11), and the required update (ADR-0028 §12). jsdom has no Service Workers or Web Locks, so all of them are stand-ins, and a
 // tab of another build is a lock that its tab holds.
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";

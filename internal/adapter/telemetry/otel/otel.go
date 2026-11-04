@@ -8,11 +8,11 @@
 // standard OTEL_EXPORTER_OTLP_* and OTEL_METRIC_EXPORT_* environment variables.
 //
 // Besides the instruments declared through kernel.Meter, the Meter reports the Go runtime
-// metrics of ADR-0056 §1 (go.memory.*, go.goroutine.count, go.processor.limit, go.config.gogc,
+// metrics of ADR-0055 §10 (go.memory.*, go.goroutine.count, go.processor.limit, go.config.gogc,
 // go.schedule.duration, and the GC cycles and pauses) from the OpenTelemetry contrib runtime
 // instrumentation and runtime/metrics.
 //
-// The Tracer (ADR-0063) exports the spans over OTLP/HTTP; see Tracer.
+// The Tracer (ADR-0055) exports the spans over OTLP/HTTP; see Tracer.
 //
 // The resource carries service.name, service.version, and my.role, and the attributes of
 // OTEL_RESOURCE_ATTRIBUTES, through which a platform can add the instance's identifier
@@ -118,7 +118,7 @@ func New(ctx context.Context, opts Options) (*Meter, error) {
 }
 
 // NewResource returns the resource of the metrics, the traces, and the exported error reports
-// (ADR-0055 §6, ADR-0063 §1, ADR-0103 §4 (3)):
+// (ADR-0055 §6, ADR-0055 §13, ADR-0103 §4 (3)):
 // service.name (default "my"), service.version, my.role, and the attributes of
 // OTEL_RESOURCE_ATTRIBUTES.
 func NewResource(ctx context.Context, name, version, role string) (*resource.Resource, error) {

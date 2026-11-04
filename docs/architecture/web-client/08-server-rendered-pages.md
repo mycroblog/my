@@ -1,17 +1,17 @@
 ## 8. サーバーが描画する画面
 
-ログイン（二要素認証を使う利用者に認証コードを求める 2 段目の画面 `/auth/sign_in/two_factor` を含む）・登録・メール確認・パスワードリセット（リンクの要求 `/auth/forgot_password` と、リンクが開く新しいパスワードの設定 `/auth/reset_password`）・通知のメールの配信停止（`/mail/unsubscribe`。`GET` は確認だけ、`POST` は RFC 8058 のワンクリックで、ログインも CSRF のトークンも要らない、ADR-0086 §4）・アカウントの状態・OAuth の認可同意の画面は、Go の `html/template`（`internal/interface/authpages`）が描画し、JavaScript なしで動く（ADR-0030）。CAPTCHA を有効にしたときだけ、ログイン・登録・パスワードリセットのリンクの要求の画面はサービスのウィジェットのスクリプトを読み、そのページの CSP にサービスのオリジンを足す（ADR-0042）。ログインの画面は、Web クライアントのビルドが作るスクリプト（`src/server-pages/passkey-sign-in.ts`、CSP は `script-src 'self'`）を読み、パスキーに対応したブラウザでだけ「パスキーでログイン」のボタンを出す（FR-004）。ボタンのフォームは JavaScript がないと隠れたままで、メールアドレスとパスワードのフォームはスクリプトなしで動く。ログインと登録の画面では、操作のボタン（ログイン・パスキー・外部のログイン・アカウントの作成）を縦に並べてフォームの幅いっぱいにし、ほかの画面へのリンク（パスワードを忘れたとき・アカウントの作成・ログイン）は水平線の下にまとめて中央に寄せる。
+ログイン（二要素認証を使う利用者に認証コードを求める 2 段目の画面 `/auth/sign_in/two_factor` を含む）・登録・メール確認・パスワードリセット（リンクの要求 `/auth/forgot_password` と、リンクが開く新しいパスワードの設定 `/auth/reset_password`）・通知のメールの配信停止（`/mail/unsubscribe`。`GET` は確認だけ、`POST` は RFC 8058 のワンクリックで、ログインも CSRF のトークンも要らない、ADR-0086 §4）・アカウントの状態・OAuth の認可同意の画面は、Go の `html/template`（`internal/interface/authpages`）が描画し、JavaScript なしで動く（ADR-0090）。CAPTCHA を有効にしたときだけ、ログイン・登録・パスワードリセットのリンクの要求の画面はサービスのウィジェットのスクリプトを読み、そのページの CSP にサービスのオリジンを足す（ADR-0106）。ログインの画面は、Web クライアントのビルドが作るスクリプト（`src/server-pages/passkey-sign-in.ts`、CSP は `script-src 'self'`）を読み、パスキーに対応したブラウザでだけ「パスキーでログイン」のボタンを出す（FR-004）。ボタンのフォームは JavaScript がないと隠れたままで、メールアドレスとパスワードのフォームはスクリプトなしで動く。ログインと登録の画面では、操作のボタン（ログイン・パスキー・外部のログイン・アカウントの作成）を縦に並べてフォームの幅いっぱいにし、ほかの画面へのリンク（パスワードを忘れたとき・アカウントの作成・ログイン）は水平線の下にまとめて中央に寄せる。
 
 - 登録の画面は、作ったアカウントがすぐ使える（メールアドレスの確認とモデレーターの承認を待たない）とき、Web クライアントのサインイン（`/login?return_to=%2Fwelcome`、`authpages.PathWelcome`）へ送り、
   サインインの 1 往復で、ようこその画面（[screens/welcome.md](screens/welcome.md)）に着く。待つものがあるときは、ログインの画面（何が足りないかを言う）へ送る。
   メールアドレスの確認を終えた画面の「続ける」も、同じサインインへのリンクにする。
-- ログインと登録が外部 IdP だけに制限されている間（`login_providers_only`、[ADR-0133](../../adr/0133-login-providers-only.md)）は、ログインの画面にパスワードとパスキーのフォームとパスワードを忘れたときのリンクを出さず、IdP のボタンだけを出す。登録の画面も、新規登録を許す IdP のボタンだけを出す。パスワードを忘れたときとリセットのリンクの画面は、できないことだけを言う。開いたままの画面からの POST は、入力によらず同じ文で断る。
+- ログインと登録が外部 IdP だけに制限されている間（`login_providers_only`、[ADR-0106](../../adr/0106-external-login-providers.md)）は、ログインの画面にパスワードとパスキーのフォームとパスワードを忘れたときのリンクを出さず、IdP のボタンだけを出す。登録の画面も、新規登録を許す IdP のボタンだけを出す。パスワードを忘れたときとリセットのリンクの画面は、できないことだけを言う。開いたままの画面からの POST は、入力によらず同じ文で断る。
 - スタイルは Vite のビルドの別のエントリ `app/web/src/server-pages.css` にある。Tailwind と `@my/ui/theme.css` を読み込み、テンプレートが使う少数のクラス（`page`・`card`・`field`・`hint`・`field-error`・`alert`・`notice`・`button` など）を
   トークンのユーティリティの `@apply` で定義する。テンプレートからクラスを集めないので、Tailwind はソースを走査しない（`source(none)`）。
 - `my serve` はビルドのマニフェストのキー `src/server-pages.css` からファイル名を引き（`web.Handler.Stylesheet`）、画面の `<link rel="stylesheet">` にする。SPA の外枠はこの CSS を読み込まない。
   サーバーのテーマ（§9 の「サーバーのテーマ」）があれば、その後にテーマのスタイルシートも読む（`authpages.Options.ThemeStylesheet`）。この CSS はユーティリティを持たないので、テーマのトークンは `@apply` で作った規則と `theme.css` の基本の規則を通して効く。
   Vite の開発サーバーを使うときはビルドがないので、画面にスタイルは付かない。
-- カードの上には、組み込みのワードマーク（`.site-logo`、CSS の背景）とサーバーの名前を出す。サーバーがロゴを設定しているとき（[ADR-0116](../../adr/0116-custom-logo-and-icon.md)、`authpages.Options.Logos`）は、
+- カードの上には、組み込みのワードマーク（`.site-logo`、CSS の背景）とサーバーの名前を出す。サーバーがロゴを設定しているとき（[ADR-0059](../../adr/0059-design-tokens-and-instance-theme.md)、`authpages.Options.Logos`）は、
   その代わりにロゴの SVG の `<img class="site-own-logo">`（`alt` はサーバーの名前）だけを出し、暗いロゴがあれば `<picture>` の `prefers-color-scheme: dark` の `<source>` にする。
 - CSP は `style-src 'self'` で、インラインのスタイルとスクリプトを置かない。
 - ダークモードは `prefers-color-scheme` に従う（トークンの `light-dark()` と `<meta name="color-scheme" content="light dark">`）。フォーカスのリングは `theme.css` の `:focus-visible`、

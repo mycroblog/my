@@ -25,7 +25,7 @@ const searchSchema = z.object({
 });
 
 /**
- * The instance's finances for the holders of view_finance (ADR-0070 §5, ADR-0073 §6): the totals of its costs and of
+ * The instance's finances for the holders of view_finance (ADR-0070 §5, ADR-0067 §16): the totals of its costs and of
  * its income by week, month or year, with as much of the items and of the plans as the instance shows. It is a page of the user's side, not of the staff's screens,
  * so a viewer who is not staff needs no admin scope. The totals end with today's period on the viewer's device.
  */

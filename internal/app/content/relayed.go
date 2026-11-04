@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// The remote statuses that only a relay brought in (ADR-0061): the federation module records
+// The remote statuses that only a relay brought in (ADR-0006): the federation module records
 // them in relayed_statuses when it takes them in, and they are kept for relay_status_retention_days
 // instead of remote_status_retention_days, unless something local refers to them or a local account
 // follows their author.
@@ -74,7 +74,7 @@ type RelayedRetentionDeps struct {
 // RelayedRetention purges the remote statuses that only a relay brought in, published longer
 // ago than the period, that nothing local refers to (as Retention judges it) and whose author no
 // local account follows. They are deleted with origin retention, as the retention purge deletes
-// remote statuses (ADR-0034); the others stay for that purge.
+// remote statuses (ADR-0006); the others stay for that purge.
 type RelayedRetention struct{ d RelayedRetentionDeps }
 
 // NewRelayedRetention returns the purge of the relayed statuses on d.

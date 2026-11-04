@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The story tests of app/web (ADR-0112 §1): every screen story runs in Chromium through Vitest browser mode and the
+// The story tests of app/web (ADR-0079 §13): every screen story runs in Chromium through Vitest browser mode and the
 // Storybook Vitest addon, with its play function, and fails on any axe violation (parameters.a11y.test = 'error' in
 // .storybook/preview.tsx) and on a console.error or console.warn (@my/ui's test/consoleGuard.ts). Screens have no
 // screenshot baselines: the E2E screenshots cover them. The component tests are vitest.config.ts (jsdom).

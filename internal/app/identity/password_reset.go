@@ -77,7 +77,7 @@ type PasswordResetRequest struct {
 // identity.ErrInvalidEmail for an address that is not one, a *kernel.RateLimitedError after
 // PasswordResetIPLimit, and, with a HumanVerifier, an error wrapping kernel.ErrHumanCheckFailed
 // or kernel.ErrHumanCheckUnavailable: like a sign-up, a request that the service cannot check
-// is refused (fail closed, ADR-0042 §4), since it sends email. While registration and sign-in are
+// is refused (fail closed, ADR-0106 §10), since it sends email. While registration and sign-in are
 // limited to the login providers, it fails with ErrLoginProvidersOnly whatever the address.
 func (s *Service) RequestPasswordReset(ctx context.Context, in PasswordResetRequest) error {
 	if !s.PasswordResetByEmail() {

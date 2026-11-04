@@ -64,7 +64,7 @@ const (
 // provider sends, so that it only stops a flood of forged requests.
 var WebhookIPLimit = kernel.Limit{Name: "payments.webhook.ip", Max: 3000, Window: 5 * time.Minute}
 
-// PageIPLimit bounds the requests to the pages of a PageServer from one client IP (ADR-0099 §1):
+// PageIPLimit bounds the requests to the pages of a PageServer from one client IP (ADR-0074 §9):
 // a checkout or a card change takes a handful, so it only stops a flood.
 var PageIPLimit = kernel.Limit{Name: "payments.pages.ip", Max: 300, Window: 5 * time.Minute}
 
@@ -131,7 +131,7 @@ type PagesResult struct {
 	RetryAfter  time.Duration
 }
 
-// Pages returns the handler of a request to the pages of provider (ADR-0099 §1): the
+// Pages returns the handler of a request to the pages of provider (ADR-0074 §9): the
 // configured provider's when it is a PageServer and the client IP is within PageLimit.
 func (p *Payments) Pages(ctx context.Context, provider, clientIP string) (PagesResult, error) {
 	ps, ok := p.d.Provider.(PageServer)
@@ -496,7 +496,7 @@ var errSyncer = errors.New("supporters: sync")
 var errRequestCap = errors.New("supporters: the reconciliation used its requests")
 
 // recordMoney hands final movements to the Syncer with the payments of their refunds,
-// chargebacks, and reversals that are not recorded yet, re-read first with GetMoney (ADR-0073
+// chargebacks, and reversals that are not recorded yet, re-read first with GetMoney (ADR-0067
 // §1). take reports whether one more request may be sent; without one it fails with
 // errRequestCap and records nothing.
 func (p *Payments) recordMoney(ctx context.Context, ms []MoneyMovement, take func() bool) error {

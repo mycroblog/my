@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The relays screen below its heading (ADR-0061, manage_settings): the form that registers and joins a relay, then
+// The relays screen below its heading (ADR-0006, manage_settings): the form that registers and joins a relay, then
 // the relays, in registration order. Each relay shows its protocol, URL, state and since when, whether it takes in
 // the posts it relays, what it brought in during the last 24 hours, its actor once it accepted, and a warning while
 // a domain action suspends its server. A relay is left while pending or joined, joined again once left or

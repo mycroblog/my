@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Loads the ESM build of @mycroblog/mybot (dist/, and @mycroblog/mykit's through node_modules) on the runtime that
 // runs this file, and runs a bot with a FileStore against a fake server in memory: the CI test that the package works
-// on Node.js and Deno as it is published (ADR-0094 §1; Bun runs the unit tests). It exits non-zero on a failure.
+// on Node.js and Deno as it is published (ADR-0093 §9; Bun runs the unit tests). It exits non-zero on a failure.
 //
 //   node test/runtimes.mjs
 //   deno run --allow-read --allow-write --allow-env test/runtimes.mjs

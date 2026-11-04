@@ -7,7 +7,7 @@
 //   error: rich-text tag, number skeleton / style, or date / time argument in a namespace
 //          shared with Go (anything but client*)
 //   error: malformed locale directory, namespace, or key; two keys mapping to one accessor
-//   error: catalog file outside locales/<locale>/<namespace>/<area>.json, or a key outside its area's file (ADR-0082)
+//   error: catalog file outside locales/<locale>/<namespace>/<area>.json, or a key outside its area's file (ADR-0081)
 //   error: generated files Go reads (server pseudo-locales, Go accessors, golden) differ from `scripts/task.sh i18n:gen`
 // The generated files only the TS clients read (client pseudo-locales, TS accessors) are not committed and not
 // checked here (ADR-0081): i18n:gen-ts writes them before the tasks that read them, maybe while this runs.
@@ -171,7 +171,7 @@ function checkUnused(ids: Iterable<string>) {
   }
 }
 
-/** Every catalog file is locales/<locale>/<namespace>/<area>.json and holds only the keys of its area (ADR-0082). */
+/** Every catalog file is locales/<locale>/<namespace>/<area>.json and holds only the keys of its area (ADR-0081). */
 function checkLayout(files: CatalogFile[]) {
   for (const { path, locale, ns, area, entries } of files) {
     if (!ns) {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The relays screen in every width × locale project (ADR-0061, ADR-0027): an administrator registers and joins a
+// The relays screen in every width × locale project (ADR-0006, ADR-0110): an administrator registers and joins a
 // relay, sees it listed awaiting its answer, leaves it, joins it again, leaves it and deletes it after its dialog,
 // each step passing axe without scrolling sideways. `vite preview` has no API, so each test plays the server of a
 // signed-in administrator with page.route; names change with the locale, so the structure is checked by role, by

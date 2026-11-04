@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The Storybook preview of @my/ui (ADR-0027): the token stylesheet, the locale, theme and instance theme
+// The Storybook preview of @my/ui (ADR-0110): the token stylesheet, the locale, theme and instance theme
 // toolbars, and the accessibility gate that fails a story test on any axe violation.
 import type { Decorator, Preview } from "@storybook/react-vite";
 import { type ReactNode, useEffect, useState } from "react";

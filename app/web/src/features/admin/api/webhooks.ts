@@ -180,7 +180,7 @@ export function redeliverWebhookMutation(api: Api) {
 }
 
 /**
- * Marks what a change of a webhook changes (ADR-0045): the list and the webhook, whose state or settings the
+ * Marks what a change of a webhook changes (ADR-0028): the list and the webhook, whose state or settings the
  * answer shows, and the audit log; the queries shown now are fetched again and awaited.
  */
 export async function refreshWebhooks(queryClient: QueryClient): Promise<void> {

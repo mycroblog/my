@@ -2,7 +2,7 @@
 
 // Package authpages serves the server-rendered sign-in, sign-out, registration, email
 // verification, password reset (password_reset.go), email unsubscribe (mail_unsubscribe.go), and
-// OAuth authorization (consent) screens (ADR-0030): plain HTML forms from html/template that
+// OAuth authorization (consent) screens (ADR-0090): plain HTML forms from html/template that
 // work without JavaScript, worded from the server message catalog and styled by one stylesheet
 // that the web client's build provides. With
 // a CAPTCHA (Options.HumanCheck), the sign-in, registration, and password reset forms also load
@@ -71,7 +71,7 @@ const (
 	// PathAppeal takes the status page's appeals of the moderation actions that keep the user
 	// out of the app (moderation.go).
 	PathAppeal = "/auth/appeal"
-	// PathReactivate brings back the deactivated account of the signed-in user (ADR-0145 §4).
+	// PathReactivate brings back the deactivated account of the signed-in user (ADR-0089 §14).
 	PathReactivate = "/auth/reactivate"
 	// PathDeleteDeactivated deletes the deactivated account of the signed-in user.
 	PathDeleteDeactivated = "/auth/deactivated/delete"
@@ -173,12 +173,12 @@ type Options struct {
 	// ThemeStylesheet returns the URL of the instance theme's stylesheet, which the pages load
 	// after Stylesheet (ADR-0059), or "" when the theme changes nothing; nil loads none.
 	ThemeStylesheet func(ctx context.Context) string
-	// Logos returns the paths of the instance's own logo and dark logo (ADR-0116), which the pages
+	// Logos returns the paths of the instance's own logo and dark logo (ADR-0059), which the pages
 	// show above their card in place of the built-in wordmark and the name (the logo includes the
 	// name, which is its alt text); "" for one that is unset. nil shows the built-in wordmark.
 	Logos func(ctx context.Context) (logo, logoDark string)
 	// StatusPageURL is the address of the instance's status page, which the footer of every page
-	// links to (ADR-0085 §6); empty links to none. It is a setting, not read from the database, so
+	// links to (ADR-0088 §20); empty links to none. It is a setting, not read from the database, so
 	// the error pages of a database outage link to it too.
 	StatusPageURL string
 	// Logger logs unexpected errors; nil means slog.Default().

@@ -16,7 +16,7 @@ export type Income =
   | { status: "ready"; totals: IncomeTotals };
 
 /**
- * The income totals that the instance publishes for the shown periods up to `today` (FR-917, ADR-0073 §7). A 4xx is
+ * The income totals that the instance publishes for the shown periods up to `today` (FR-917, ADR-0067 §17). A 4xx is
  * the instance's setting or a query the page never makes, not a failure to try again, so it is not retried.
  */
 export function usePublicIncome(granularity: CostGranularity, basis: CostBasis, today: string): Income {
@@ -42,7 +42,7 @@ export function usePublicIncome(granularity: CostGranularity, basis: CostBasis, 
 
 /**
  * The income totals of the shown periods up to `today` for the finances page (GET /finance/income_totals,
- * ADR-0073 §6): the net and the balance always, the members of each plan when the instance shows them. A viewer
+ * ADR-0067 §16): the net and the balance always, the members of each plan when the instance shows them. A viewer
  * without the permission sends nothing.
  */
 export function useFinanceIncome(

@@ -86,7 +86,7 @@ func TestMediaProxy(t *testing.T) {
 	if resp.StatusCode != http.StatusOK || body != string(png) {
 		t.Fatalf("GET %s = %d, %d bytes", path, resp.StatusCode, len(body))
 	}
-	// The small variant is a still WebP made from the file (ADR-0054 §7).
+	// The small variant is a still WebP made from the file (ADR-0005 §10).
 	small := strings.Replace(path, "/full?", "/small?", 1)
 	id := strings.TrimPrefix(strings.Split(path, "/full?")[0], content.ProxyPathPrefix)
 	if u, err := url.Parse(s.app.MediaProxy.URL(id, content.ProxySmall)); err == nil {

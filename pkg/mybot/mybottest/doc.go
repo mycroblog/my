@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package mybottest tests bots of mybot without a server (ADR-0094 §10). Server is a fake server of the client
+// Package mybottest tests bots of mybot without a server (ADR-0093 §18). Server is a fake server of the client
 // API, an httptest.Server that answers the operations that a bot calls with the types of api/openapi.yaml; the
 // test sends the bot notifications with Inject and checks what it posted with Posted or WaitPosted:
 //

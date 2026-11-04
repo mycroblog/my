@@ -1,7 +1,7 @@
 name: PostgreSQL contract
 
 # The PostgreSQL tests (the repository contracts of internal/adapter/db/postgres, the kv and queue adapters, and the
-# dual-dialect tests of internal/platform) on a real postgres container instead of pgmem (ADR-0041). Part of the slow
+# dual-dialect tests of internal/platform) on a real postgres container instead of pgmem (ADR-0015). Part of the slow
 # suite (slow-suite.yml, ADR-0079) and runnable by hand on any branch; pull requests and merge groups run the same
 # tests on pgmem.
 

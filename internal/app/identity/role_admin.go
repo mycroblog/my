@@ -17,7 +17,7 @@ import (
 // internal/domain/identity: the built-in roles keep their keys, admin is never changed, and a
 // role that users hold is never deleted; a user changes only the roles at or below their highest
 // one and only the permissions they hold. Each change writes the roles and their permissions
-// (resources and current values) and records its audit log entry (ADR-0037) in one transaction.
+// (resources and current values) and records its audit log entry (ADR-0058) in one transaction.
 // Permissions are read from the current roles on every request, so a change applies to the
 // holders of the role from their next request.
 
@@ -53,7 +53,7 @@ type UpdateRoleInput struct {
 	// SetPermissions reports whether Permissions are given (an empty list removes every
 	// permission).
 	SetPermissions bool
-	// Badge is the new badge of the role, or nil with SetBadge to remove it (ADR-0071).
+	// Badge is the new badge of the role, or nil with SetBadge to remove it (ADR-0070).
 	Badge *BadgeInput
 	// SetBadge reports whether the badge changes: to Badge, or to none when Badge is nil.
 	SetBadge bool

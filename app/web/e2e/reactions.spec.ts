@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The emoji reactions of a post in every width × locale project (FR-116, ADR-0052 §5, ADR-0027): the row of
+// The emoji reactions of a post in every width × locale project (FR-116, ADR-0051 §10, ADR-0110): the row of
 // reactions under the post, the picker of reactions, reacting in place of the favourite, and the dialog of the
 // accounts that reacted, each axe-clean and without horizontal scrolling. `vite preview` has no API, so the spec
 // answers the token refresh and the client API with `page.route`. Names come from the project's catalog and match exactly:

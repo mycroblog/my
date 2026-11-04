@@ -15,7 +15,7 @@ import (
 
 // The invites (FR-001, manage_invites): the admin operations that create, list, and revoke the
 // codes that let people sign up while the registration mode is open, approval, or invite
-// (ADR-0108 §4): the staff's invites and those that members created (invites.go). The CLI's
+// (ADR-0106 §17): the staff's invites and those that members created (invites.go). The CLI's
 // `my invite` runs the same use cases.
 
 // Invites runs the use cases of the invites. *appidentity.Service implements it.
@@ -52,7 +52,7 @@ func newInviteCreatorKind(k identity.InviteCreatorKind) InviteCreatorKind {
 }
 
 // withInviteCreators presents invites to the staff with the accounts of their creators
-// (ADR-0108 §5), read once for all of them.
+// (ADR-0106 §18), read once for all of them.
 func (s *Server) withInviteCreators(ctx context.Context, list []appidentity.InviteStatus) ([]AdminInvite, error) {
 	if s.o.UserAccounts == nil || s.o.Accounts == nil {
 		out := make([]AdminInvite, len(list))

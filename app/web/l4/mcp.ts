@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The Playwright MCP server the agent drives (ADR-0114): its command line, which gives the agent ARIA snapshots and
+// The Playwright MCP server the agent drives (ADR-0015): its command line, which gives the agent ARIA snapshots and
 // no images, and a minimal MCP client over its standard input and output that the dry run uses to check, without
 // the agent, that the server opens the start page signed in (or signed out) and the mailbox of a task that reads email.
 // For a task that turns Web Push on (push.ts), the init page also grants notifications and replaces the browser's
@@ -81,7 +81,7 @@ export function mcpCommand(options: {
     initPage,
     "--allowed-origins",
     origins.join(";"),
-    // The permission prompt is not part of a push task (ADR-0118 §4): notifications are granted beforehand.
+    // The permission prompt is not part of a push task (ADR-0015 §12): notifications are granted beforehand.
     ...(options.push === undefined ? [] : ["--grant-permissions", "notifications"]),
     // ARIA snapshots only: no image ever reaches the agent.
     "--image-responses",

@@ -49,7 +49,7 @@ type ErasureStep struct {
 	// Done reports that the eraser has nothing more to erase in this run.
 	Done bool
 	// Kept reports that the batch left data that a later run erases: the statuses that the
-	// moderation records still need (ADR-0038).
+	// moderation records still need (ADR-0058).
 	Kept bool
 }
 
@@ -80,7 +80,7 @@ type ErasureRepository interface {
 	AccountErased(ctx context.Context, accountID string) (bool, error)
 }
 
-// HeldAccounts lists the accounts whose erasure a retention hold stops (ADR-0038);
+// HeldAccounts lists the accounts whose erasure a retention hold stops (ADR-0058);
 // *moderation.Service implements it.
 type HeldAccounts interface {
 	HeldAccountIDs(ctx context.Context) ([]string, error)

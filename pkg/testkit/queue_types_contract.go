@@ -16,7 +16,7 @@ import (
 // QueueTypesSource returns the view of a queue whose Claim takes only jobs of types.
 type QueueTypesSource func(types []string) queue.Source
 
-// QueueTypesContract verifies a queue whose workers can run only some job types (ADR-0138 §2):
+// QueueTypesContract verifies a queue whose workers can run only some job types (ADR-0004 §16):
 // such a worker takes the earliest due job of its types and never one of another type, even an
 // older one; leases and due times work as in a plain claim; an earlier job of an ordering key
 // holds a job back whatever its type; a plain claim still takes every type; and concurrent workers

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The header of a post card with the names that are hardest to fit, in every width × locale project
-// (ADR-0027, web-client/16-look-states-and-wording.md G7, G9): a 30-character display name, an Arabic display name and a handle on a
+// (ADR-0110, web-client/16-look-states-and-wording.md G7, G9): a 30-character display name, an Arabic display name and a handle on a
 // long domain, as authors and as a booster. Each header stays within two lines, the page does not scroll
 // sideways (the per-PR 320 px projects are where that breaks first), and a local author's handle has no
 // domain while a remote one's has it (web-client/13-status-detail-and-actions.md §13). The accounts are the client's shared test

@@ -57,7 +57,7 @@ func localhostTLSServer(t *testing.T, h http.Handler) (*httptest.Server, *x509.C
 	return srv, pool
 }
 
-// TestWebPushDestinations checks push_allowed_destinations (ADR-0118 §3): the listed
+// TestWebPushDestinations checks push_allowed_destinations (ADR-0015 §11): the listed
 // destinations open for the Web Push sends alone, over https, without following a redirect;
 // federation fetch and delivery, WebFinger, link previews, the media proxy, webhooks, and
 // sign-in providers keep the guard.

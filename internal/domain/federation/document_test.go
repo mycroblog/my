@@ -11,7 +11,7 @@ import (
 )
 
 // The Like of a reaction carries the emoji twice, as Misskey sends it, with the Emoji tag of a
-// custom emoji and the terms of _misskey_reaction in its context (ADR-0052 §3).
+// custom emoji and the terms of _misskey_reaction in its context (ADR-0051 §8).
 func TestNewReactionLike(t *testing.T) {
 	at := time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
 	tag := federation.EmojiTag("https://my.example/emojis/1", "blobcat", at, "image/png", "https://my.example/media/1.png")

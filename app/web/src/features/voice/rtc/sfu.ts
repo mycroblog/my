@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// What the SFU methods (livekit, sora; ADR-0102 §6) share behind the VoiceConnection of ADR-0101 §7: the audio of the
+// What the SFU methods (livekit, sora; ADR-0101 §15) share behind the VoiceConnection of ADR-0101 §7: the audio of the
 // remote participants, each in a RemoteAudio of the environment and heard only while the latest `state` lists its
 // session as a speaker (the receiver's side of the enforcement, as in P2P), and the wait for a change that the server
 // makes on its own path (a permission, a grant) before the microphone can go on. A TalkingDetector given to the remote

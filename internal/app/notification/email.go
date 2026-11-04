@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
-// The emails of the ordinary notifications and of the moderation notices (ADR-0109 §4): when a
+// The emails of the ordinary notifications and of the moderation notices (ADR-0086 §11): when a
 // projector creates a notification whose group the recipient gets by email, the same
 // transaction enqueues JobNotificationEmail to run notification.EmailDelay later. The job sends
 // one email of the notification only when, by then, the notification is still unread (newer

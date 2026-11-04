@@ -10,7 +10,7 @@ import (
 )
 
 // DataUpgrades are the data upgrade steps of `my db upgrade` and the prerequisites of
-// `my db upgrade --check` (ADR-0087 §2, §4).
+// `my db upgrade --check` (ADR-0023 §5, §7).
 type DataUpgrades struct {
 	Steps         []dbupgrade.Step
 	Prerequisites []dbupgrade.Prerequisite

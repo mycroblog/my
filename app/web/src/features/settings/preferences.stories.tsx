@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The display, posting, and timeline preferences (/settings/preferences; web-client/screens/settings-preferences.md) in
-// the states of ADR-0112 §1.
+// the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";

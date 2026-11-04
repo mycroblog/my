@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Shared E2E fixtures and assertions (ADR-0027). Specs import `test` and `expect` from here, not from
+// Shared E2E fixtures and assertions (ADR-0110). Specs import `test` and `expect` from here, not from
 // @playwright/test, so every spec gets the same axe configuration.
 import AxeBuilder from "@axe-core/playwright";
 import { test as base, expect, type Locator, type Page } from "@playwright/test";
 import { previewOrigin, serverURL } from "./server-origin.ts";
 
-/** The axe rule tags for WCAG 2.2 AA (ADR-0027, web-client/README.md Y1). */
+/** The axe rule tags for WCAG 2.2 AA (ADR-0110, web-client/README.md Y1). */
 const axeTags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] as const;
 
 type Fixtures = {
@@ -256,7 +256,7 @@ export async function expectTabWhollyVisible(tab: Locator): Promise<void> {
 }
 
 /**
- * Opens the page at `path` from the main navigation as a user of the project's width does (ADR-0039): with the
+ * Opens the page at `path` from the main navigation as a user of the project's width does (ADR-0110): with the
  * item of the tab bar or the rail that links to it, or below md with the link in the menu's sheet for the items
  * that are not in the tab bar; signed out, below lg, with the item behind the top bar's Menu button (a disclosure,
  * not a dialog). Call it once the current page has rendered.

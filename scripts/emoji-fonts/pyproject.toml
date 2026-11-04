@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-# The generation-time tools of the emoji fonts (ADR-0095 §2), which `scripts/task.sh emoji:generate` runs through uv
+# The generation-time tools of the emoji fonts (ADR-0091 §9), which `scripts/task.sh emoji:generate` runs through uv
 # with the versions of uv.lock. Nothing here is part of the server, the client's build, or `scripts/task.sh check`.
 [project]
 name = "my-emoji-fonts"

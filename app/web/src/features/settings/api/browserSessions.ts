@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The browsers signed in to the user's account (ADR-0136): the list, signing out one, and signing out the others.
+// The browsers signed in to the user's account (ADR-0090): the list, signing out one, and signing out the others.
 import type { QueryClient } from "@tanstack/react-query";
 import type { components } from "@mycroblog/mykit";
 import type { Api } from "../../../lib/api/client";
@@ -36,7 +36,7 @@ export function revokeOtherBrowserSessionsMutation(api: Api) {
 }
 
 /**
- * What signing out a browser changes (web-client/README.md S1, ADR-0045): this list and the last use of the web client
+ * What signing out a browser changes (web-client/README.md S1, ADR-0028): this list and the last use of the web client
  * among the authorized apps. Resolves once the list is fetched again.
  */
 export async function refreshBrowserSessions(api: Api, queryClient: QueryClient): Promise<void> {

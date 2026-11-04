@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The page of a voice chat room (/voice/{id}; web-client/screens/voice-room.md) in the states of ADR-0112 §1.
+// The page of a voice chat room (/voice/{id}; web-client/screens/voice-room.md) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse, type RequestHandler } from "msw";
 import { expect } from "storybook/test";

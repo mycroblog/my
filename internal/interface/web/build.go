@@ -18,7 +18,7 @@ const (
 	// entryKey is the manifest key of the SPA's entry: the HTML input of the Vite build.
 	entryKey = "index.html"
 	// serverPagesKey is the manifest key of the stylesheet entry of the pages the server renders
-	// without JavaScript (app/web/src/server-pages.css, ADR-0030).
+	// without JavaScript (app/web/src/server-pages.css, ADR-0090).
 	serverPagesKey = "src/server-pages.css"
 	// passkeySignInKey is the manifest key of the script entry that signs in with a passkey on the
 	// server-rendered sign-in page (app/web/src/server-pages/passkey-sign-in.ts, FR-004).

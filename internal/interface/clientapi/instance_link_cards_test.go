@@ -10,7 +10,7 @@ import (
 )
 
 // TestInstanceLinkCardSettings checks that GET /instance says what the link card crawler does,
-// for the page that tells site operators about it (ADR-0131), and follows the settings at once.
+// for the page that tells site operators about it (ADR-0062), and follows the settings at once.
 func TestInstanceLinkCardSettings(t *testing.T) {
 	e, _ := newIncomeEnv(t)
 	read := func() clientapi.Instance {

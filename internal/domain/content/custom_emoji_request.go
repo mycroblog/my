@@ -122,7 +122,7 @@ func NormalizeCustomEmojiRejectReason(reason string) (string, error) {
 }
 
 // CustomEmojiLimitPeriod returns the month that the limit of a creator counts at now
-// (ADR-0124 §1): the UTC calendar month, from since, the first day at 00:00 UTC, until the first
+// (ADR-0070 §4): the UTC calendar month, from since, the first day at 00:00 UTC, until the first
 // day of the next month at 00:00 UTC, when the count resets.
 func CustomEmojiLimitPeriod(now time.Time) (since, until time.Time) {
 	now = now.UTC()

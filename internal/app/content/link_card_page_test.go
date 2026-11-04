@@ -160,7 +160,7 @@ func TestLinkCardURL(t *testing.T) {
 	}
 }
 
-// TestLinkCardPageDirectives checks the robots meta tags of a page (ADR-0131 §5): which tags are
+// TestLinkCardPageDirectives checks the robots meta tags of a page (ADR-0062 §13): which tags are
 // read, what each directive takes away, that the stricter wins, and what always stays.
 func TestLinkCardPageDirectives(t *testing.T) {
 	t.Parallel()

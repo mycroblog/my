@@ -23,7 +23,7 @@ import (
 // The server-wide announcements (FR-726, data-model §4.9). The holders of manage_announcements
 // write an announcement, a plain-text title and a body in Markdown, as a draft, publish it for every local user within an
 // optional window, revise it, and withdraw it for good; each change records an event and its
-// audit log entry in one transaction (ADR-0037). Every local user sees the published
+// audit log entry in one transaction (ADR-0058). Every local user sees the published
 // announcements of the moment, rendered to sanitized HTML, and marks the ones they have read.
 // A publication, a revision of a published announcement, and a withdrawal signal the streams
 // once they commit (ADR-0050). A publication, and a revision that moves the start of the window

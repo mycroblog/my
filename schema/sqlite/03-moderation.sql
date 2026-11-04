@@ -203,12 +203,12 @@ CREATE TABLE report_notes (
 ) STRICT;
 CREATE INDEX report_notes_report_id_id ON report_notes (report_id, id);
 
--- moderation: the audit log (data-model §4.3, ADR-0037). Owned by internal/app/moderation.
+-- moderation: the audit log (data-model §4.3, ADR-0058). Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: one administrative operation, appended in the transaction of the operation by the
 -- moderation module's projector. Never updated; only the retention cleanup deletes rows
--- (ADR-0038). target_label copies the target's display name, so that the entry stays readable
+-- (ADR-0058). target_label copies the target's display name, so that the entry stays readable
 -- after the target is erased. source_event_id is the row of the source event, which holds the
 -- reasons and notes. actor_user_id is set exactly for a user actor (the CLI acts as no user).
 CREATE TABLE audit_log_entries (
@@ -263,7 +263,7 @@ CREATE INDEX audit_log_entries_target_kind_target_id_id ON audit_log_entries (ta
 CREATE INDEX audit_log_entries_actor_user_id_id ON audit_log_entries (actor_user_id, id DESC);
 
 -- ---------------------------------------------------------------------------------------------
--- moderation: the follows that suspensions cut (data-model §4.3, FR-717, ADR-0036). Owned by
+-- moderation: the follows that suspensions cut (data-model §4.3, FR-717, ADR-0058). Owned by
 -- internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
@@ -285,7 +285,7 @@ CREATE UNIQUE INDEX relationship_severances_domain_action_id_account_id ON relat
 CREATE UNIQUE INDEX relationship_severances_action_id_account_id ON relationship_severances (action_id, account_id);
 
 -- ---------------------------------------------------------------------------------------------
--- moderation: appeals of actions on local accounts (#337, data-model §4.3, FR-707, ADR-0038).
+-- moderation: appeals of actions on local accounts (#337, data-model §4.3, FR-707, ADR-0058).
 -- Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
@@ -350,7 +350,7 @@ CREATE TABLE signup_block_lifts (
 
 -- ---------------------------------------------------------------------------------------------
 -- moderation: retention of the moderation records and the holds that stop it (#349,
--- data-model §4.3, §8, ADR-0038). Owned by internal/app/moderation.
+-- data-model §4.3, §8, ADR-0058). Owned by internal/app/moderation.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: an operator's hold on the erasure of an account's records (a court order to preserve

@@ -111,7 +111,7 @@ func runMaintenance(args []string, stdout, stderr io.Writer) int {
 // exportInstance is what `my maintenance export` reads from the database.
 type exportInstance struct {
 	name, locale string
-	// theme holds the overrides of the design tokens; the custom CSS is never exported (ADR-0084 §5).
+	// theme holds the overrides of the design tokens; the custom CSS is never exported (ADR-0088 §12).
 	theme []instance.ThemeTokenValue
 }
 

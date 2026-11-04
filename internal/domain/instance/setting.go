@@ -49,9 +49,9 @@ const (
 	SettingDomainActionsVisibility          SettingKey = "domain_actions_visibility"
 	SettingDomainActionsRationaleVisibility SettingKey = "domain_actions_rationale_visibility"
 	// SettingAppealWindowDays is how many days after an action on an account the account may
-	// appeal it (FR-707, ADR-0038).
+	// appeal it (FR-707, ADR-0058).
 	SettingAppealWindowDays SettingKey = "appeal_window_days"
-	// The retention periods of the moderation records, in days (ADR-0038): the sign-in and
+	// The retention periods of the moderation records, in days (ADR-0058): the sign-in and
 	// registration origins, the reports after their last resolution, the actions on accounts
 	// and their appeals after the action ended, and the audit log.
 	SettingSessionOriginsRetentionDays      SettingKey = "session_origins_retention_days"
@@ -72,7 +72,7 @@ const (
 	// the linked pages (FR-117, ADR-0062).
 	SettingLinkCards SettingKey = "link_cards"
 	// SettingLinkCardsIgnoreRobotsTxt is whether the fetches of link cards skip robots.txt
-	// (ADR-0131 §4).
+	// (ADR-0062 §12).
 	SettingLinkCardsIgnoreRobotsTxt SettingKey = "link_cards_ignore_robots_txt"
 	// SettingDynamicClientRegistration is whether OAuth clients may register themselves
 	// without authentication at POST /oauth/register (RFC 7591, ADR-0090 §1).
@@ -91,12 +91,12 @@ const (
 	SettingFinanceViewerItemMemos SettingKey = "finance_viewer_item_memos"
 	SettingFinanceViewerIncome    SettingKey = "finance_viewer_income"
 	// SettingSupporterListVisibility decides who may read the supporter list of the members who
-	// chose to be listed (ADR-0071 §4).
+	// chose to be listed (ADR-0070 §13).
 	SettingSupporterListVisibility SettingKey = "supporter_list_visibility"
 	// SettingIncomeVisibility decides how much of the instance's income the public API and the
-	// about page show (FR-917, ADR-0073 §7), apart from SettingFinanceVisibility.
+	// about page show (FR-917, ADR-0067 §17), apart from SettingFinanceVisibility.
 	SettingIncomeVisibility SettingKey = "income_visibility"
-	// SettingFederationMode is the direction the instance federates in (FR-413, ADR-0076).
+	// SettingFederationMode is the direction the instance federates in (FR-413, ADR-0006).
 	SettingFederationMode SettingKey = "federation_mode"
 	// SettingUserAppRegistration is whether users may register OAuth apps (ADR-0090 §1).
 	SettingUserAppRegistration SettingKey = "user_app_registration"
@@ -110,7 +110,7 @@ const (
 	SettingVoiceRoomStarters              SettingKey = "voice_room_starters"
 	SettingVoicePublicSummary             SettingKey = "voice_public_summary"
 	SettingVoiceParticipantsRetentionDays SettingKey = "voice_participants_retention_days"
-	// SettingInviteCreators decides who may create invites of their own (ADR-0108 §1), and
+	// SettingInviteCreators decides who may create invites of their own (ADR-0106 §14), and
 	// SettingMemberInviteMaxActive, SettingMemberInviteMaxUses, and
 	// SettingMemberInviteMaxLifetimeSeconds bound those invites (§2).
 	SettingInviteCreators                 SettingKey = "invite_creators"
@@ -132,8 +132,8 @@ const (
 	SettingRemoteMediaCacheMaxBytes SettingKey = "remote_media_cache_max_bytes"
 	// SettingRemoteStatusRetentionDays is how many days a remote post that nothing local refers
 	// to is kept after its publication, SettingRemoteStatusMaxRetentionDays bounds how long any
-	// remote post is kept (0 for no bound, ADR-0034), and SettingRelayStatusRetentionDays is how
-	// many days a post that only a relay brought in is kept (ADR-0061).
+	// remote post is kept (0 for no bound, ADR-0006), and SettingRelayStatusRetentionDays is how
+	// many days a post that only a relay brought in is kept (ADR-0006).
 	SettingRemoteStatusRetentionDays    SettingKey = "remote_status_retention_days"
 	SettingRemoteStatusMaxRetentionDays SettingKey = "remote_status_max_retention_days"
 	SettingRelayStatusRetentionDays     SettingKey = "relay_status_retention_days"
@@ -154,7 +154,7 @@ const (
 	RegistrationClosed   RegistrationMode = "closed"   // nobody may sign up
 )
 
-// FederationMode is the value of SettingFederationMode (FR-413, ADR-0076). Its values are those
+// FederationMode is the value of SettingFederationMode (FR-413, ADR-0006). Its values are those
 // of the federation module's mode (federation.Mode), which decides what each one lets through.
 type FederationMode string
 
@@ -220,7 +220,7 @@ const (
 	FinanceViewerIncomePlans  FinanceViewerIncome = "plans"  // the totals and the number of members of each plan
 )
 
-// IncomeVisibility is the value of SettingIncomeVisibility (ADR-0073 §7): how much of the
+// IncomeVisibility is the value of SettingIncomeVisibility (ADR-0067 §17): how much of the
 // instance's income everyone may read. No level publishes the individual payments, the
 // subscribers, the amounts of each plan, or the gross and the fees.
 type IncomeVisibility string
@@ -242,7 +242,7 @@ const (
 	VoiceRoomStartersPermitted VoiceRoomStarters = "permitted" // the holders of start_voice_rooms
 )
 
-// InviteCreators is the value of SettingInviteCreators (ADR-0108 §1): who may create invites of
+// InviteCreators is the value of SettingInviteCreators (ADR-0106 §14): who may create invites of
 // their own besides the holders of manage_invites.
 type InviteCreators string
 
@@ -252,7 +252,7 @@ const (
 	InviteCreatorsPermitted InviteCreators = "permitted" // the holders of create_invites
 )
 
-// The bounds and defaults of the caps of the invites members create (ADR-0108 §2).
+// The bounds and defaults of the caps of the invites members create (ADR-0106 §15).
 const (
 	DefaultMemberInviteMaxActive    = 5
 	MaxMemberInviteMaxActive        = 100
@@ -311,14 +311,14 @@ const (
 	MaxMaxStatusLength = 100000
 )
 
-// Bounds and default of SettingAppealWindowDays, in days (ADR-0038).
+// Bounds and default of SettingAppealWindowDays, in days (ADR-0058).
 const (
 	MinAppealWindow     = 20
 	MaxAppealWindow     = 365
 	DefaultAppealWindow = 180
 )
 
-// Floors and defaults of the retention settings, in days (ADR-0038). A period may not be set
+// Floors and defaults of the retention settings, in days (ADR-0058). A period may not be set
 // shorter than its floor; MaxRetention bounds every period.
 const (
 	MinRetentionOrigins        = 90
@@ -449,27 +449,27 @@ var definitions = []Definition{
 	},
 	{
 		Key: SettingAppealWindowDays, Kind: KindInt, Default: strconv.Itoa(DefaultAppealWindow), Min: MinAppealWindow, Max: MaxAppealWindow,
-		Doc: "How many days after a moderation action a local account may appeal it, once (FR-707, ADR-0038).",
+		Doc: "How many days after a moderation action a local account may appeal it, once (FR-707, ADR-0058).",
 	},
 	{
 		Key: SettingSessionOriginsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionOrigins), Min: MinRetentionOrigins, Max: MaxRetention,
-		Doc: "How many days the IP address and User-Agent of a sign-in are kept after the session started (ADR-0038).",
+		Doc: "How many days the IP address and User-Agent of a sign-in are kept after the session started (ADR-0058).",
 	},
 	{
 		Key: SettingRegistrationOriginsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionOrigins), Min: MinRetentionOrigins, Max: MaxRetention,
-		Doc: "How many days the IP address of a registration is kept after it (ADR-0038).",
+		Doc: "How many days the IP address of a registration is kept after it (ADR-0058).",
 	},
 	{
 		Key: SettingReportsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionModeration), Min: MinRetentionModeration, Max: MaxRetention,
-		Doc: "How many days a report is kept after its last resolution; a report that an action follows from is kept as long as the action (ADR-0038).",
+		Doc: "How many days a report is kept after its last resolution; a report that an action follows from is kept as long as the action (ADR-0058).",
 	},
 	{
 		Key: SettingModerationActionsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionModeration), Min: MinRetentionModeration, Max: MaxRetention,
-		Doc: "How many days an action on an account and its appeal are kept after the action ended: its lift, expiry, or the decision on its appeal, whichever is last (ADR-0038).",
+		Doc: "How many days an action on an account and its appeal are kept after the action ended: its lift, expiry, or the decision on its appeal, whichever is last (ADR-0058).",
 	},
 	{
 		Key: SettingAuditLogRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionAuditLog), Min: MinRetentionAuditLog, Max: MaxRetention,
-		Doc: "How many days an audit log entry is kept (ADR-0037, ADR-0038).",
+		Doc: "How many days an audit log entry is kept (ADR-0058).",
 	},
 	{
 		Key: SettingSearchIndexing, Kind: KindEnum, Default: string(SearchDeny),
@@ -507,7 +507,7 @@ var definitions = []Definition{
 	},
 	{
 		Key: SettingLinkCardsIgnoreRobotsTxt, Kind: KindBool, Default: "false",
-		Doc: "Whether the fetches of link cards skip robots.txt, so that the linked sites cannot refuse them with it (ADR-0131).",
+		Doc: "Whether the fetches of link cards skip robots.txt, so that the linked sites cannot refuse them with it (ADR-0062).",
 	},
 	{
 		Key: SettingFinanceVisibility, Kind: KindEnum, Default: string(FinancePrivate),
@@ -530,17 +530,17 @@ var definitions = []Definition{
 	{
 		Key: SettingSupporterListVisibility, Kind: KindEnum, Default: string(AudienceOff),
 		Choices: audienceChoices,
-		Doc:     "Who may read the supporter list (GET /instance/supporters and /about/supporters) of the members of the supporter plans who chose to be listed: off (nobody), public (everyone), or signed_in (the users signed in to this server); it shows their accounts and plans only, never amounts or dates (ADR-0071 §4).",
+		Doc:     "Who may read the supporter list (GET /instance/supporters and /about/supporters) of the members of the supporter plans who chose to be listed: off (nobody), public (everyone), or signed_in (the users signed in to this server); it shows their accounts and plans only, never amounts or dates (ADR-0070 §13).",
 	},
 	{
 		Key: SettingIncomeVisibility, Kind: KindEnum, Default: string(IncomePrivate),
 		Choices: []string{string(IncomePrivate), string(IncomeTotals), string(IncomePlans)},
-		Doc:     "How much of the instance's income GET /instance/income_totals and the about page show: private (nothing), totals (the net income of each currency by period), or plans (also the number of members of each supporter plan now); the balance against the costs is shown only while finance_visibility is not private as well, and individual payments, subscribers, the amounts of each plan, and the fees are never shown (FR-917, ADR-0073 §7).",
+		Doc:     "How much of the instance's income GET /instance/income_totals and the about page show: private (nothing), totals (the net income of each currency by period), or plans (also the number of members of each supporter plan now); the balance against the costs is shown only while finance_visibility is not private as well, and individual payments, subscribers, the amounts of each plan, and the fees are never shown (FR-917, ADR-0067 §17).",
 	},
 	{
 		Key: SettingFederationMode, Kind: KindEnum, Default: string(FederationBoth),
 		Choices: []string{string(FederationOff), string(FederationInbound), string(FederationOutbound), string(FederationBoth)},
-		Doc:     "The direction the instance federates in: off (neither), inbound (follows and reads remote accounts but sends none of the local posts, profiles, and reactions out), outbound (takes remote followers and delivers the local posts to them but takes none of the remote posts and reactions in), or both; narrowing it keeps the follows, the posts taken in, and the delivery records (FR-413, ADR-0076).",
+		Doc:     "The direction the instance federates in: off (neither), inbound (follows and reads remote accounts but sends none of the local posts, profiles, and reactions out), outbound (takes remote followers and delivers the local posts to them but takes none of the remote posts and reactions in), or both; narrowing it keeps the follows, the posts taken in, and the delivery records (FR-413, ADR-0006).",
 	},
 	{
 		Key: SettingUserAppRegistration, Kind: KindBool, Default: "true",
@@ -562,20 +562,20 @@ var definitions = []Definition{
 	{
 		Key: SettingInviteCreators, Kind: KindEnum, Default: string(InviteCreatorsPermitted),
 		Choices: []string{string(InviteCreatorsEveryone), string(InviteCreatorsPermitted)},
-		Doc:     "Who may create invites of their own besides the staff with manage_invites: everyone (every signed-in local user who is not suspended or limited) or permitted (only the holders of the create_invites permission) (ADR-0108 §1).",
+		Doc:     "Who may create invites of their own besides the staff with manage_invites: everyone (every signed-in local user who is not suspended or limited) or permitted (only the holders of the create_invites permission) (ADR-0106 §14).",
 	},
 	{
 		Key: SettingMemberInviteMaxActive, Kind: KindInt, Default: strconv.Itoa(DefaultMemberInviteMaxActive), Min: 0, Max: MaxMemberInviteMaxActive,
-		Doc: "How many usable invites (not revoked, expired, or used up) one member may hold at once; 0 lets members create none. Invites of the staff do not count (ADR-0108 §2).",
+		Doc: "How many usable invites (not revoked, expired, or used up) one member may hold at once; 0 lets members create none. Invites of the staff do not count (ADR-0106 §15).",
 	},
 	{
 		Key: SettingMemberInviteMaxUses, Kind: KindInt, Default: strconv.Itoa(DefaultMemberInviteMaxUses), Min: 1, Max: MaxMemberInviteMaxUses,
-		Doc: "How many people may sign up with one invite that a member creates (ADR-0108 §2).",
+		Doc: "How many people may sign up with one invite that a member creates (ADR-0106 §15).",
 	},
 	{
 		Key: SettingMemberInviteMaxLifetimeSeconds, Kind: KindInt, Default: strconv.Itoa(int(DefaultMemberInviteMaxExpiresIn / time.Second)),
 		Min: int(MinMemberInviteMaxExpiresIn / time.Second), Max: int(MaxMemberInviteMaxExpiresIn / time.Second),
-		Doc: "How long, in seconds, an invite that a member creates may work at most (ADR-0108 §2).",
+		Doc: "How long, in seconds, an invite that a member creates may work at most (ADR-0106 §15).",
 	},
 	{
 		Key: SettingPublicCounts, Kind: KindBool, Default: "true",
@@ -592,15 +592,15 @@ var definitions = []Definition{
 	},
 	{
 		Key: SettingRemoteStatusRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRemoteStatusRetentionDays), Min: 1, Max: MaxRetention,
-		Doc: "How many days a remote post is kept after its publication when nothing on this instance refers to it (ADR-0034).",
+		Doc: "How many days a remote post is kept after its publication when nothing on this instance refers to it (ADR-0006).",
 	},
 	{
 		Key: SettingRemoteStatusMaxRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRemoteStatusMaxRetentionDays), Min: 0, Max: MaxRetention,
-		Doc: "The most days any remote post is kept after its publication, even when this instance refers to it; 0 sets no limit (ADR-0034).",
+		Doc: "The most days any remote post is kept after its publication, even when this instance refers to it; 0 sets no limit (ADR-0006).",
 	},
 	{
 		Key: SettingRelayStatusRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRelayStatusRetentionDays), Min: 1, Max: MaxRetention,
-		Doc: "How many days a remote post that only a relay brought in is kept after its publication (ADR-0061).",
+		Doc: "How many days a remote post that only a relay brought in is kept after its publication (ADR-0006).",
 	},
 	{
 		Key: SettingOAuthClientRateLimits, Kind: KindClientLimits, Default: "",

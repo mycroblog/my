@@ -12,7 +12,7 @@ export function isolate(name: string): string {
   return `⁨${name}⁩`;
 }
 
-/** The limits of lists (ADR-0122 §5) as the messages take them: numbers formatted in the UI's locale ("1,000"). */
+/** The limits of lists (ADR-0013 §14) as the messages take them: numbers formatted in the UI's locale ("1,000"). */
 export function useLimits(): { lists: string; members: string; name: string } {
   const intl = useIntl();
   return {

@@ -85,7 +85,7 @@ function replaceAction(data: InfiniteData<{ items: ModerationAction[] }> | undef
 
 /**
  * Puts the action as the server answered its appeal, with the appeal, into both cached lists of the user's own
- * actions (ADR-0045): the form gives way to the appeal's state on the page at once.
+ * actions (ADR-0028): the form gives way to the appeal's state on the page at once.
  */
 export function cacheAppealedAction(api: Api, queryClient: QueryClient, action: ModerationAction): void {
   for (const scope of ["active", "all"] as const) {

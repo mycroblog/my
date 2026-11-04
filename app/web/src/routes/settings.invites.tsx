@@ -6,7 +6,7 @@ import { useT } from "../lib/i18n";
 import { SettingsHeading } from "./-layout/SettingsHeading";
 
 /**
- * The invites the user created (FR-011, ADR-0108 §5): creating one within the caps of the instance settings, listing
+ * The invites the user created (FR-011, ADR-0106 §18): creating one within the caps of the instance settings, listing
  * them, copying a link, and revoking one. The settings list the page only for a user who may create invites now; a
  * user who no longer may still opens it from its address to list and revoke theirs.
  */

@@ -47,7 +47,7 @@ func checkSubscribed(t *testing.T, s *appnotification.Subscriptions, accountID, 
 	}
 }
 
-// notificationSubscriptions checks the subscriptions to new posts (ADR-0123 §1): a local account
+// notificationSubscriptions checks the subscriptions to new posts (ADR-0086 §14): a local account
 // without a follow, a remote one only while it is actively followed, none to oneself or across a
 // block; a subscription asked for with a pending follow of a remote account that the acceptance
 // makes; the end of the follow of a remote account, which ends the subscription, and of a local
@@ -164,7 +164,7 @@ func (p contractPosts) AuthorOf(ctx context.Context, uri string) (string, error)
 	return st.AuthorAccountID, err
 }
 
-// notificationNewPosts checks the status notifications of new posts (ADR-0123 §2): a new post
+// notificationNewPosts checks the status notifications of new posts (ADR-0086 §15): a new post
 // and a reply to the author's own post notify each subscriber once, from the job that the
 // transaction of the post enqueues; a reply to someone else's post, an edit, a boost, and a
 // fetched remote post notify nobody; a subscriber whom the post mentions gets the mention only,

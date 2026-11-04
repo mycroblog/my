@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The PNG renditions of a brand image, drawn in the administrator's browser (ADR-0116 §3): the sanitized SVG is loaded
+// The PNG renditions of a brand image, drawn in the administrator's browser (ADR-0059 §10): the sanitized SVG is loaded
 // into an <img> from a blob: URL (the shell's CSP allows img-src blob:), drawn on a <canvas> at each size the server
 // asked for, and encoded as PNG. The browser draws the SVG as faithfully as it draws it for the viewers (favicons, the
 // home screen), so the PNGs show the same picture; the SVG is never put into the page itself. The layout of each

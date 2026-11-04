@@ -319,7 +319,7 @@ function hourPages(counts: readonly ErrorGroupHourCount[]): PagedPages<ErrorGrou
 }
 
 /**
- * The occurrences of each of the last 48 hours, the current one last, as bars (ADR-0113): the hours without any count
+ * The occurrences of each of the last 48 hours, the current one last, as bars (ADR-0110): the hours without any count
  * zero. The summary says the total and the busiest hour.
  */
 function HourlyChart({ counts }: { counts: readonly ErrorGroupHourCount[] }) {

@@ -55,7 +55,7 @@ function searchOf(totals: { granularity: CostGranularity; basis: CostBasis }, mo
 }
 
 /**
- * The instance's costs and income (ADR-0067, ADR-0068, ADR-0073 §6), for manage_finance, in two tabs: reading them (the
+ * The instance's costs and income (ADR-0067, ADR-0068, ADR-0067 §16), for manage_finance, in two tabs: reading them (the
  * totals of both by week, month or year, what is published, and the money movements of the income, of a kind and a
  * range of dates) and recording them (the recorded items and the state of the billing imports). The totals end with
  * today's period on the viewer's device. Each tab loads only what it shows.

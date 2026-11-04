@@ -1,0 +1,119 @@
+# The numbers of the ADRs merged into another: where each one lives now. Issues, pull requests, and commits keep
+# citing the old numbers, and agentkit resolves them through this file. Never reuse a number listed here.
+aliases:
+  ADR-0001: {to: ADR-0002, section: '2'}
+  ADR-0007: {to: ADR-0016, section: '2'}
+  ADR-0008: {to: ADR-0028, section: '5'}
+  ADR-0012: {to: ADR-0023, section: '9'}
+  ADR-0014: {to: ADR-0000, section: '5'}
+  ADR-0021: {to: ADR-0000, section: '2'}
+  ADR-0022: {to: ADR-0000, section: '3'}
+  ADR-0024: {to: ADR-0000, section: '4'}
+  ADR-0026: {to: ADR-0025, section: '2'}
+  ADR-0027: {to: ADR-0110, section: '9'}
+  ADR-0029: {to: ADR-0016, section: '3'}
+  ADR-0030: {to: ADR-0090, section: '16'}
+  ADR-0031: {to: ADR-0025, section: '5'}
+  ADR-0032: {to: ADR-0006, section: '4'}
+  ADR-0033: {to: ADR-0006, section: '6'}
+  ADR-0034: {to: ADR-0006, section: '11'}
+  ADR-0035: {to: ADR-0017, section: '2'}
+  ADR-0036: {to: ADR-0058, section: '6'}
+  ADR-0037: {to: ADR-0058, section: '7'}
+  ADR-0038: {to: ADR-0058, section: '8'}
+  ADR-0039: {to: ADR-0110, section: '11'}
+  ADR-0040: {to: ADR-0079, section: '8'}
+  ADR-0041: {to: ADR-0015, section: '3'}
+  ADR-0042:
+    to: ADR-0106
+    offset: 6
+    sections: {C: '13', Context: '13'}
+  ADR-0043: {to: ADR-0025, section: '6'}
+  ADR-0044: {to: ADR-0006, section: '14'}
+  ADR-0045: {to: ADR-0028, section: '6'}
+  ADR-0046: {to: ADR-0081, section: '10'}
+  ADR-0047: {to: ADR-0079, section: '9'}
+  ADR-0048: {to: ADR-0025, section: '7'}
+  ADR-0049: {to: ADR-0025, section: '8'}
+  ADR-0052: {to: ADR-0051, offset: 5}
+  ADR-0053: {to: ADR-0018, section: '8'}
+  ADR-0054: {to: ADR-0005, offset: 3}
+  ADR-0056: {to: ADR-0055, offset: 9}
+  ADR-0061: {to: ADR-0006, section: '18'}
+  ADR-0063: {to: ADR-0055, offset: 12}
+  ADR-0064: {to: ADR-0004, offset: 4}
+  ADR-0065: {to: ADR-0025, section: '9'}
+  ADR-0066: {to: ADR-0016, section: '4'}
+  ADR-0071: {to: ADR-0070, offset: 9}
+  ADR-0073: {to: ADR-0067, offset: 10}
+  ADR-0075: {to: ADR-0055, section: '3'}
+  ADR-0076: {to: ADR-0006, section: '23'}
+  ADR-0077: {to: ADR-0013, offset: 1}
+  ADR-0078: {to: ADR-0003, offset: 4}
+  ADR-0080: {to: ADR-0081, section: '4'}
+  ADR-0082: {to: ADR-0081, section: '7'}
+  ADR-0083: {to: ADR-0079, section: '11'}
+  ADR-0084:
+    to: ADR-0088
+    offset: 7
+    anchors: {decision決定: 8-メンテナンスモードの切り替え}
+  ADR-0085:
+    to: ADR-0088
+    offset: 14
+    anchors: {4-メンテナンスモードとの関係: 18-メンテナンスモードとの関係}
+  ADR-0087: {to: ADR-0023, offset: 3}
+  ADR-0094: {to: ADR-0093, offset: 8}
+  ADR-0095: {to: ADR-0091, offset: 7}
+  ADR-0096: {to: ADR-0091, section: '9'}
+  ADR-0097: {to: ADR-0091, offset: 13}
+  ADR-0098: {to: ADR-0067, offset: 19}
+  ADR-0099: {to: ADR-0074, offset: 8}
+  ADR-0102: {to: ADR-0101, offset: 9}
+  ADR-0104: {to: ADR-0051, section: '6'}
+  ADR-0105: {to: ADR-0068, section: '4'}
+  ADR-0107: {to: ADR-0081, section: '9'}
+  ADR-0108: {to: ADR-0106, offset: 13}
+  ADR-0109: {to: ADR-0086, offset: 7}
+  ADR-0111: {to: ADR-0110, offset: 11}
+  ADR-0112: {to: ADR-0079, offset: 12}
+  ADR-0113: {to: ADR-0110, offset: 15}
+  ADR-0114: {to: ADR-0015, section: '4'}
+  ADR-0115: {to: ADR-0079, section: '17'}
+  ADR-0116: {to: ADR-0059, offset: 7}
+  ADR-0117: {to: ADR-0015, offset: 4}
+  ADR-0118: {to: ADR-0015, offset: 8}
+  ADR-0119: {to: ADR-0079, section: '10'}
+  ADR-0120: {to: ADR-0004, offset: 8}
+  ADR-0121: {to: ADR-0019, offset: 10}
+  ADR-0122:
+    to: ADR-0013
+    offset: 9
+    anchors: {decision決定: decision決定}
+  ADR-0123:
+    to: ADR-0086
+    offset: 13
+    anchors: {decision決定: 14-投稿の通知の購読}
+  ADR-0124: {to: ADR-0070, section: '4'}
+  ADR-0126: {to: ADR-0023, offset: 9}
+  ADR-0127: {to: ADR-0013, offset: 16}
+  ADR-0128: {to: ADR-0003, section: '14'}
+  ADR-0129: {to: ADR-0057, section: '5'}
+  ADR-0130: {to: ADR-0125, section: '5'}
+  ADR-0131:
+    to: ADR-0062
+    offset: 8
+    anchors: {decision決定: decision決定}
+  ADR-0132: {to: ADR-0062, offset: 13}
+  ADR-0133: {to: ADR-0106, offset: 19}
+  ADR-0134: {to: ADR-0081, section: '11'}
+  ADR-0135: {to: ADR-0081, section: '11'}
+  ADR-0136: {to: ADR-0090, offset: 9}
+  ADR-0137: {to: ADR-0086, offset: 17}
+  ADR-0138: {to: ADR-0004, offset: 14}
+  ADR-0139: {to: ADR-0004, offset: 22}
+  ADR-0140: {to: ADR-0004, offset: 30}
+  ADR-0141: {to: ADR-0028, offset: 8}
+  ADR-0142: {to: ADR-0010, offset: 3}
+  ADR-0143: {to: ADR-0090, section: '4'}
+  ADR-0144: {to: ADR-0018, offset: 11}
+  ADR-0145: {to: ADR-0089, offset: 10}

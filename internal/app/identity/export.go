@@ -23,7 +23,7 @@ import (
 // The export of a user's data (FR-008, data-model §4.1): the user asks for an archive, a job
 // builds it into blob storage, and the user downloads it until it expires. The archive is a ZIP
 // file whose entries the composition root chooses (ExportDeps.Entries): the actor, the posts as an
-// ActivityStreams outbox, and the user's own moderation records (ADR-0038).
+// ActivityStreams outbox, and the user's own moderation records (ADR-0058).
 
 const (
 	// JobBuildExport builds the archive of a data export. Its payload is ExportJob.

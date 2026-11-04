@@ -144,7 +144,7 @@ classify() {
       select_contexts docs
       return
       ;;
-    # pkg/mybot, a Go module of its own on top of pkg/mykit (ADR-0094), is checked by the mykit context too.
+    # pkg/mybot, a Go module of its own on top of pkg/mykit (ADR-0093), is checked by the mykit context too.
     pkg/mykit/* | pkg/mybot/*)
       select_contexts mykit
       return

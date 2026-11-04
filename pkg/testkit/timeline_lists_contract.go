@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
-// The lists of the timeline module (ADR-0122), verified with TimelineContract: their commands,
+// The lists of the timeline module (ADR-0013), verified with TimelineContract: their commands,
 // the members (only active follows, taken out when the follow ends), the limits, that another
 // account sees none of them, the list timeline, and the lists of a home entry for the streams.
 

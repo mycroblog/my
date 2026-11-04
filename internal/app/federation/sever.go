@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// SeverDirection says which follows with remote accounts SeverFederation ends (ADR-0076, `my
+// SeverDirection says which follows with remote accounts SeverFederation ends (ADR-0006, `my
 // admin federation sever --direction`).
 type SeverDirection string
 
@@ -61,7 +61,7 @@ type SeveranceDeps struct {
 
 // Severance ends the follows between the local accounts and the remote ones in one or both
 // directions, for the operator who narrows the federation mode and wants the relationships gone
-// too (ADR-0076, 切り替え). Changing the mode never calls it.
+// too (ADR-0006, 切り替え). Changing the mode never calls it.
 type Severance struct{ d SeveranceDeps }
 
 // NewSeverance returns the Severance on d.
@@ -75,7 +75,7 @@ type Severed struct {
 }
 
 // Sever ends, in dir, every pending or active follow between a local account and a remote one,
-// as moderation ends them (follow_terminations with the reason moderation, ADR-0036). Each ended
+// as moderation ends them (follow_terminations with the reason moderation, ADR-0058). Each ended
 // follow is told to the remote side, a Reject of its Follow or an Undo of the local account's,
 // only when the federation mode at the time sends it (federation.Sends); otherwise nothing is
 // recorded to send. It runs one short transaction per local account and is safe to repeat: a

@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// The invites that members create of their own (ADR-0108): GET and POST /api/v1/invites and
+// The invites that members create of their own (ADR-0106): GET and POST /api/v1/invites and
 // POST /api/v1/invites/{id}/revoke, under the caps of the instance settings.
 
 // OwnInvites runs the use cases of the invites that members create. *appidentity.Service

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The relays screen through the whole app (web-client/README.md T4, ADR-0061): an administrator with manage_settings sees
+// The relays screen through the whole app (web-client/README.md T4, ADR-0006): an administrator with manage_settings sees
 // the relays and their state, registers and joins one, sees why the server refused one, leaves a relay, joins it
 // again and deletes it after asking; with MSW playing the API.
 import { screen, waitFor, within } from "@testing-library/react";

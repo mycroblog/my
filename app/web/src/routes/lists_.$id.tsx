@@ -16,7 +16,7 @@ import { RouteError } from "./-layout/RouteStates";
 const paramsSchema = z.object({ id: z.string().min(1).max(64) });
 
 /**
- * The timeline of one of the user's lists (web-client/screens/list-timeline.md, ADR-0122 §4), named after the list.
+ * The timeline of one of the user's lists (web-client/screens/list-timeline.md, ADR-0013 §13), named after the list.
  * Another user's list, or one that is gone, is not found, and says so with the way to the lists.
  */
 export const Route = createFileRoute("/lists_/$id")({

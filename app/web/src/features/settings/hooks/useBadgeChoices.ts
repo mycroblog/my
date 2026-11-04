@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The badges on the user's profile (ADR-0071): one switch per role with a badge that the user holds, saved as soon
+// The badges on the user's profile (ADR-0070): one switch per role with a badge that the user holds, saved as soon
 // as it changes. A badge is hidden until the user shows it.
 import { type BadgeColor, type SaveState, useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";

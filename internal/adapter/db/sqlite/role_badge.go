@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// Role badges and their display on profiles (ADR-0071).
+// Role badges and their display on profiles (ADR-0070).
 
 // RoleBadge implements identity.RoleBadgeRepository.
 func (r *IdentityRepository) RoleBadge(ctx context.Context, tx uow.Tx, roleID string) (identity.RoleBadge, bool, error) {

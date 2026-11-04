@@ -24,7 +24,7 @@ func (r statusesByURI) FindStatusByURI(_ context.Context, uri string) (content.S
 }
 
 // A federated Note names no local-visibility post, nor a post of this server that is gone, whose
-// visibility is not known any more; a remote post that is not stored keeps its own URI (ADR-0144 §4).
+// visibility is not known any more; a remote post that is not stored keeps its own URI (ADR-0018 §15).
 func TestFederatedQuotePage(t *testing.T) {
 	const (
 		localOnly = "https://social.example/ap/objects/local"

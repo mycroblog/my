@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The account page (/settings/account): the archives of the user's data and deleting the
-// account, in the states of ADR-0112 §1.
+// account, in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";

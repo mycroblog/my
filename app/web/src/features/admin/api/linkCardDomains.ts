@@ -56,7 +56,7 @@ export function removeLinkCardDomainRuleMutation(api: Api) {
 }
 
 /**
- * Marks what a change of a rule changes (ADR-0045): the list and the audit log; the queries shown now are fetched
+ * Marks what a change of a rule changes (ADR-0028): the list and the audit log; the queries shown now are fetched
  * again and awaited.
  */
 export async function refreshLinkCardDomainRules(queryClient: QueryClient): Promise<void> {

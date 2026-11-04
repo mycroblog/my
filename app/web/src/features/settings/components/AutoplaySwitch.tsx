@@ -4,7 +4,7 @@ import { useT } from "../../../lib/i18n";
 import { setAutoplay, useAutoplay } from "../../../lib/autoplay";
 
 /**
- * Whether animated images play by themselves (ADR-0054 §3; the APG switch pattern). A change applies at once and is
+ * Whether animated images play by themselves (ADR-0005 §6; the APG switch pattern). A change applies at once and is
  * kept on this browser (lib/autoplay), so it needs no saving and no sign-in.
  */
 export function AutoplaySwitch() {

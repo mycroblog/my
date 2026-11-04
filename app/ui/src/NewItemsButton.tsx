@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// "N new posts" (web-client/README.md Y7, ADR-0027, ADR-0077): new items wait above a feed until the reader asks for them,
+// "N new posts" (web-client/README.md Y7, ADR-0110, ADR-0013): new items wait above a feed until the reader asks for them,
 // because content that moves on its own breaks WCAG 2.2.2 and takes the reader's place away. A caller whose reader chose
 // to have them inserted automatically uses the button for the count of what was inserted while the reader is away from
 // the top, and for what is held back while the reader is in the feed; the count is announced the same way.

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The passkey button of the sign-in page that the Go server renders without JavaScript (ADR-0030, FR-004). The page
+// The passkey button of the sign-in page that the Go server renders without JavaScript (ADR-0090, FR-004). The page
 // carries a hidden form with the options of a sign-in in data-passkey-options; in a browser with passkeys, this
 // script shows the form and, when it is sent, asks the browser for a passkey and sends its answer in the credential
 // field, so that the server signs in as with the password form. A prompt that the user dismisses or that fails

@@ -5,7 +5,7 @@ package queue
 import "context"
 
 // Trigger is the external trigger of the periodic work of a server whose jobs arrive by
-// wake-up signals (ADR-0120 §4): a platform scheduler (Cloud Scheduler, EventBridge Scheduler)
+// wake-up signals (ADR-0004 §12): a platform scheduler (Cloud Scheduler, EventBridge Scheduler)
 // calls Tick about once a minute, and the process runs no Scheduler of its own. The scheduler
 // must claim its slots in a shared key-value store (Scheduler.UseSharedSlots), because the ticks
 // of one period may reach several processes.

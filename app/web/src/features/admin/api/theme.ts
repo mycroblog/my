@@ -46,7 +46,7 @@ export function themeErrorsOf(error: unknown): readonly ThemeError[] | undefined
 }
 
 /**
- * Marks what a new theme changes (ADR-0045): the theme, GET /instance (its `theme`), and the audit log, which
+ * Marks what a new theme changes (ADR-0028): the theme, GET /instance (its `theme`), and the audit log, which
  * records the change. Pages load the theme's stylesheet from the HTML shell, so the open page keeps its look
  * until it is loaded again.
  */

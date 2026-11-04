@@ -42,7 +42,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		Sealer: a.Sealer, KV: a.KV,
 		// Passkeys sign in instead of the password (FR-004); their ceremonies' state is sealed too.
 		Passkeys: passkeys,
-		// nil for captcha = none; sign-in and sign-up check the CAPTCHA token otherwise (ADR-0042).
+		// nil for captcha = none; sign-in and sign-up check the CAPTCHA token otherwise (ADR-0106).
 		HumanVerifier: a.HumanVerifier, Logger: a.Logger,
 		// The default locale and the registration mode are instance settings in the database,
 		// never configuration (docs/reference/configuration.md); they are read per registration so
@@ -98,7 +98,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		Mailer: a.Mailer, Outbox: outbox,
 		// The registration page screens sign-ups against the sign-up block list (FR-719).
 		SignupBlocks: a.Moderation,
-		// Members create invites as the instance settings let them (ADR-0108 §1, §2), read per
+		// Members create invites as the instance settings let them (ADR-0106 §14, §15), read per
 		// operation, while moderation neither suspends nor limits them (§1, §3).
 		MemberInvites:     a.memberInviteSettings,
 		InviterRestricted: a.inviterRestricted,
@@ -107,7 +107,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		// Users ask for password reset links by email only when the mailer delivers it (FR-002).
 		EmailDelivery: sendsEmail(cfg),
 		// An unsubscribe link turns off the email of a row of the notification settings
-		// (ADR-0109 §4).
+		// (ADR-0086 §11).
 		Unsubscriptions: emailUnsubscriptions{a},
 		Messages:        a.Messages,
 		BaseURL:         cfg.ServerOrigin(),
@@ -126,7 +126,7 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		UnitOfWork: a.UnitOfWork, Repository: repo, Accounts: a.Accounts, Restrictions: a.AccountPolicy,
 		Clock: a.Clock, IDs: a.IDs,
 	})
-	// The sign-in and registration origins are erased after their retention (ADR-0038).
+	// The sign-in and registration origins are erased after their retention (ADR-0058).
 	identity.NewOriginPurger(identity.OriginPurgeDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Policy: originRetention{a},
 	}).RegisterJobs(a.Handlers, a.Scheduler)

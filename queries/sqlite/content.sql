@@ -275,7 +275,7 @@ SELECT status_id, uri, author_account_id, origin, moderation_action_id, deleted_
 WHERE status_id = ?;
 
 -- GetStatusDeletionByURI returns the deletion that keeps a URI from coming back, or else the
--- latest deletion by retention (a URI may have several, ADR-0034).
+-- latest deletion by retention (a URI may have several, ADR-0006).
 -- name: GetStatusDeletionByURI :one
 SELECT status_id, uri, author_account_id, origin, moderation_action_id, deleted_at FROM status_deletions
 WHERE uri = ?

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's maintenance in every width × locale project (ADR-0084 §3, web-client/09-app-shell.md §9 "メンテナンス"): when
+// The server's maintenance in every width × locale project (ADR-0088 §10, web-client/09-app-shell.md §9 "メンテナンス"): when
 // the client API and the OAuth endpoints answer with the maintenance problem, a reloaded page (the shell that a Service
 // Worker or the preview still serves) shows the maintenance in place of the app, with what the server set, and once
 // the API answers again after Retry-After it returns to the page by itself, still signed in. `vite preview` has no API,

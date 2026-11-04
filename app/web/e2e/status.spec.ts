@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A post's page and the actions on it in every width × locale project (FR-106 to FR-108, FR-113,
-// ADR-0027): the thread under its headings, the toggles and their rollback, the menu and the delete
+// ADR-0110): the thread under its headings, the toggles and their rollback, the menu and the delete
 // confirmation. `vite preview` has no API, so the spec answers the token refresh and the client API with
 // `page.route`, as a signed-in user's server would. Names come from the project's catalog, so the spec
 // finds the same elements in every locale.
@@ -289,7 +289,7 @@ test("the viewer's own post asks before it is deleted", async ({ page, makeAxeBu
       .getByRole("button", { name: message("status.action.more") }),
   ).toBeVisible();
   const navigation = page.getByRole("navigation", { name: message("shell.nav.label") });
-  // Found by its address: below md the rail's Profile is hidden and the menu's sheet has the same item (ADR-0039).
+  // Found by its address: below md the rail's Profile is hidden and the menu's sheet has the same item (ADR-0110).
   await expect(navigation.locator('a[href="/profile"]')).not.toHaveAttribute("aria-current");
 
   await page

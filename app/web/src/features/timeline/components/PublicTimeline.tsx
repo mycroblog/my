@@ -16,7 +16,7 @@ export type PublicTimelineProps = {
 /**
  * The local or the federated timeline (web-client/screens/local.md, public.md). For a signed-in user it is the home
  * timeline's feed with its "N new posts" button, whose new entries the timeline's own stream delivers while it is shown,
- * under the same auto-insert setting (ADR-0127 §5). A visitor gets no stream (ADR-0127 §2): the posts of the moment the
+ * under the same auto-insert setting (ADR-0013 §21). A visitor gets no stream (ADR-0013 §18): the posts of the moment the
  * page opened, without the button. The route loads its first page.
  */
 export function PublicTimeline({ timeline, "aria-labelledby": labelledBy }: PublicTimelineProps) {

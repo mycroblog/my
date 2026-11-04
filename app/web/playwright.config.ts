@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Playwright E2E for the web client (ADR-0015, ADR-0027). Every test runs in one project per
+// Playwright E2E for the web client (ADR-0015, ADR-0110). Every test runs in one project per
 // viewport width × locale. E2E_MATRIX=full runs all of them (nightly); otherwise only the default subset
 // runs: every locale at the narrowest and widest width. The client's tests run against `vite preview` of
 // the built app (`scripts/task.sh web:e2e` builds it first), or against E2E_BASE_URL when it is set. The tests of the
@@ -12,7 +12,7 @@
 import { defineConfig, devices, type Project } from "@playwright/test";
 import { previewOrigin, previewPort, serverPort, voiceServerPort } from "./e2e/server-origin.ts";
 
-/** Viewport widths in CSS px (ADR-0027). */
+/** Viewport widths in CSS px (ADR-0110). */
 const widths = [320, 390, 768, 1024, 1440] as const;
 /** The source locale, Japanese and the two pseudo-locales (ADR-0009, ADR-0015). */
 const locales = ["en", "ja", "en-XA", "ar-XB"] as const;
@@ -35,7 +35,7 @@ const voiceP2PSpec = /voice-p2p\.spec\.ts$/;
 const demoSpec = /demo-[^/]*\.spec\.ts$/;
 
 /**
- * Whether the run starts the demo server (`node e2e/server.ts demo`, ADR-0117) and its specs: it needs the test build
+ * Whether the run starts the demo server (`node e2e/server.ts demo`, ADR-0015) and its specs: it needs the test build
  * (`GO_TAGS=e2e_fakes scripts/task.sh go:bin`) and Mailpit (`scripts/task.sh docker:mailpit`), so only E2E_DEMO=1 asks
  * for it: the `demo-e2e` job of the Nightly workflow, and a run by hand.
  */
@@ -61,7 +61,7 @@ const matrix: Project[] = widths
     }),
   );
 
-// The Noto Color Emoji web font (ADR-0095 §3) picks its format by the browser's tech() support: COLRv1 in Chromium and
+// The Noto Color Emoji web font (ADR-0091 §10) picks its format by the browser's tech() support: COLRv1 in Chromium and
 // Firefox, OpenType-SVG in WebKit, so its spec runs in all three engines (the pinned Playwright image has them).
 const emojiFontProjects: Project[] = (["Desktop Chrome", "Desktop Firefox", "Desktop Safari"] as const).map(
   (device) => ({

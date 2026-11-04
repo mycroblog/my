@@ -135,7 +135,7 @@ export function countPostedStatus(api: Api, queryClient: QueryClient): number | 
  * (`resolve`), as the server resolves the mentions of a post (data-model/04-tables/04-content.md §4.4). A handle that does not
  * resolve is a 404 and a spent fetch budget a 429: answers rather than failures to retry, and the server
  * leaves such a mention as text. Without `resolve` (while the instance takes nothing in from other servers,
- * ADR-0076, when the server refuses to resolve), only an account the instance knows is found.
+ * ADR-0006, when the server refuses to resolve), only an account the instance knows is found.
  */
 export function lookupAccountQueryOptions(api: Api, acct: string, resolve: boolean) {
   return api.query.queryOptions(

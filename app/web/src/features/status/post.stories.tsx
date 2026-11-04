@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// A post and the thread around it (/@{acct}/status/{id}; FR-113) in the states of ADR-0112 §1: replies, a quote,
+// A post and the thread around it (/@{acct}/status/{id}; FR-113) in the states of ADR-0079 §13: replies, a quote,
 // a poll, more pictures than a post shows, a content warning, and a link card.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

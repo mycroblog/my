@@ -38,7 +38,7 @@ type signUpForm struct {
 	// LoginProvidersOnly replaces the password form with the login providers that let new users
 	// sign up.
 	LoginProvidersOnly bool
-	// AskInvite shows the invite code field, which every mode but closed takes (ADR-0108 §4);
+	// AskInvite shows the invite code field, which every mode but closed takes (ADR-0106 §17);
 	// NeedInvite makes it required (invite mode).
 	AskInvite  bool
 	NeedInvite bool
@@ -273,7 +273,7 @@ func (h *Handler) signUpFailedWith(w http.ResponseWriter, r *http.Request, p pag
 	case errors.Is(err, kernel.ErrHumanCheckFailed):
 		p.Error = l.ServerAuthHumanCheckFailed()
 	case errors.Is(err, kernel.ErrHumanCheckUnavailable):
-		// Registration fails closed while the service cannot check the token (ADR-0042 §4).
+		// Registration fails closed while the service cannot check the token (ADR-0106 §10).
 		status = http.StatusServiceUnavailable
 		p.Error = l.ServerAuthHumanCheckUnavailable()
 	case errors.Is(err, appidentity.ErrSignUpRefused):

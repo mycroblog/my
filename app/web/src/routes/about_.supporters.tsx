@@ -9,7 +9,7 @@ import { PageHeading } from "./-layout/PageHeading";
 import { RouteError } from "./-layout/RouteStates";
 
 /**
- * The supporter list (ADR-0071 §4): the members of the supporter plans who chose to be listed, by plan, as far as the
+ * The supporter list (ADR-0070 §13): the members of the supporter plans who chose to be listed, by plan, as far as the
  * instance setting supporter_list_visibility publishes it. The `_` keeps the page out of the layout of `/about`. The
  * server's shell of this address always asks search engines not to index or archive it.
  */

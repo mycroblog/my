@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Lint rules of the split client API spec api/spec/openapi.yaml (ADR-0066) for Redocly CLI (pinned in
+# Lint rules of the split client API spec api/spec/openapi.yaml (ADR-0016) for Redocly CLI (pinned in
 # tasks/api.yml, run by `scripts/task.sh api:lint`).
 # Besides the recommended rules, the custom rules keep the document inside the OpenAPI 3.1
-# subset that oapi-codegen and openapi-typescript support (ADR-0029) and enforce the
+# subset that oapi-codegen and openapi-typescript support (ADR-0016) and enforce the
 # conventions of ADR-0016. docs/architecture/client-api.md lists the conventions.
 extends:
   - recommended
@@ -141,7 +141,7 @@ rules:
     assertions:
       casing: snake_case
     message: Path and query parameter names are snake_case.
-  # JSON Schema keywords that the generators do not support (ADR-0029).
+  # JSON Schema keywords that the generators do not support (ADR-0016).
   rule/schema-supported-keywords:
     subject:
       type: Schema
@@ -168,7 +168,7 @@ rules:
         - contentMediaType
         - contentSchema
         - not
-    message: This JSON Schema keyword is outside the OpenAPI 3.1 subset that the code generators support (ADR-0029).
+    message: This JSON Schema keyword is outside the OpenAPI 3.1 subset that the code generators support (ADR-0016).
   # A type is one name and never null: a property without a value is left out of the object.
   rule/schema-single-type:
     subject:
@@ -183,10 +183,10 @@ rules:
       type: Root
     assertions:
       disallowed: [webhooks, jsonSchemaDialect]
-    message: Webhooks and jsonSchemaDialect are outside the supported OpenAPI 3.1 subset (ADR-0029).
+    message: Webhooks and jsonSchemaDialect are outside the supported OpenAPI 3.1 subset (ADR-0016).
   rule/no-callbacks:
     subject:
       type: Operation
     assertions:
       disallowed: [callbacks]
-    message: Callbacks are outside the supported OpenAPI 3.1 subset (ADR-0029).
+    message: Callbacks are outside the supported OpenAPI 3.1 subset (ADR-0016).

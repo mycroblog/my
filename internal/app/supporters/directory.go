@@ -12,7 +12,7 @@ import (
 
 // What the other modules read of the supporters through the platform (ADR-0072 §11, §12): the
 // limit of the custom emoji that a plan sets (content.CustomEmojiQuota, ADR-0070 §4) and the
-// supporter directory of the finance module (finance.SupporterDirectory, ADR-0073). Both count
+// supporter directory of the finance module (finance.SupporterDirectory, ADR-0067). Both count
 // the member states only (active, canceling, past due), and both are empty while the program is
 // disabled.
 
@@ -107,7 +107,7 @@ func (s *Service) SubscriptionUsers(ctx context.Context, ids []string) ([]Subscr
 }
 
 // ProviderLocation returns the name of the configured payment provider and the time zone in
-// which its money movements fall on their dates (ADR-0073 §3); false with payments =
+// which its money movements fall on their dates (ADR-0067 §13); false with payments =
 // none.
 func (s *Service) ProviderLocation() (string, *time.Location, bool) {
 	if s.d.Provider == nil {

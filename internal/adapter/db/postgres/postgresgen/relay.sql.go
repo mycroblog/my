@@ -192,7 +192,7 @@ type InsertRelayParams struct {
 
 // SPDX-License-Identifier: AGPL-3.0-only
 //
-// Queries of the relays (ADR-0061, data-model section 4.8), owned by internal/app/federation.
+// Queries of the relays (ADR-0006, data-model section 4.8), owned by internal/app/federation.
 func (q *Queries) InsertRelay(ctx context.Context, arg InsertRelayParams) error {
 	_, err := q.db.Exec(ctx, insertRelay,
 		arg.ID,

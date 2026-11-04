@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The "Add to list" dialog of a followed account's profile (web-client/screens/profile.md §4, ADR-0122) in the states
-// of ADR-0112 §1. Each story opens the dialog from the profile's menu in its play.
+// The "Add to list" dialog of a followed account's profile (web-client/screens/profile.md §4, ADR-0013) in the states
+// of ADR-0079 §13 Each story opens the dialog from the profile's menu in its play.
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { within } from "storybook/test";

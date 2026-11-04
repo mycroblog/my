@@ -19,7 +19,7 @@ import (
 )
 
 // instanceBrandCases are the cases of InstanceRepositoryContract about the brand images
-// (ADR-0116): nothing until one is set, revisions that keep their files and stay readable after a
+// (ADR-0059): nothing until one is set, revisions that keep their files and stay readable after a
 // newer one or a clear, rejected uploads that write nothing, and the instance_brands projection
 // equal to a rebuild.
 var instanceBrandCases = []struct {

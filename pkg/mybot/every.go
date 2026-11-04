@@ -55,7 +55,7 @@ var (
 	ErrPostedAlready = errors.New("mybot: the run of the scheduled job posted already")
 )
 
-// EveryIdempotencyKey is the Idempotency-Key of the post of the run at of the scheduled job name (ADR-0094 §5):
+// EveryIdempotencyKey is the Idempotency-Key of the post of the run at of the scheduled job name (ADR-0093 §13):
 // mybot:every:<name>:<the time in RFC 3339, UTC>. Two processes of one bot that run the same time post once. Use
 // it when posting with mykit directly.
 func EveryIdempotencyKey(name string, at time.Time) string {

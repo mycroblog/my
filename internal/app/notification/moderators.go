@@ -28,8 +28,8 @@ import (
 // whose users' roles grant the permission the type needs (notification.ModeratorPermission).
 // The recipients are those who hold it in the transaction that creates the notifications; the
 // list leaves out the notifications of a recipient who no longer holds it (Service.List). A
-// recipient who turned a type off in the app gets none of it (ADR-0109 §3); one who gets it by
-// email, as every recipient does until they turn it off (ADR-0109 §2), gets an email from a job
+// recipient who turned a type off in the app gets none of it (ADR-0086 §10); one who gets it by
+// email, as every recipient does until they turn it off (ADR-0086 §9), gets an email from a job
 // that the same transaction enqueues, so it is sent at once but only once the notification is
 // committed.
 
@@ -203,7 +203,7 @@ func (p *moderatorProjector) notify(ctx context.Context, tx uow.Tx, n notificati
 			return err
 		}
 		if !choices.TypeEnabled(n.Type, notification.ChannelInApp) {
-			continue // turned off in the app (ADR-0109 §3)
+			continue // turned off in the app (ADR-0086 §10)
 		}
 		n.ID, n.RecipientAccountID = p.d.IDs.NewID(), m.AccountID
 		if err := n.Validate(); err != nil {

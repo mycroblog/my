@@ -66,7 +66,7 @@ function isAdminCountsQuery(queryKey: readonly unknown[]): boolean {
 }
 
 /**
- * Marks stale what a decision on a registration changes beside the list (web-client/README.md S1, ADR-0045): the audit
+ * Marks stale what a decision on a registration changes beside the list (web-client/README.md S1, ADR-0028): the audit
  * log, which records it, and the account searches and the account's page, which show the account's state.
  * Resolves once those on screen are fetched again.
  */
@@ -81,7 +81,7 @@ export async function refreshDecidedRegistration(queryClient: QueryClient): Prom
 
 /**
  * Takes the decided registration `id` off the cached list, which keeps only those awaiting approval, and
- * marks the moderators' counts (ADR-0045).
+ * marks the moderators' counts (ADR-0028).
  */
 export function cacheDecidedRegistration(api: Api, queryClient: QueryClient, id: string): void {
   queryClient.setQueryData(

@@ -1,5 +1,5 @@
 {
-  "//": "Solution file: every file of @my/ui belongs to one of the referenced projects. tsc checks them one by one (the typecheck script), and tsgolint (Oxlint's type-aware rules, ADR-0049) finds each file's project from here.",
+  "//": "Solution file: every file of @my/ui belongs to one of the referenced projects. tsc checks them one by one (the typecheck script), and tsgolint (Oxlint's type-aware rules, ADR-0025) finds each file's project from here.",
   "files": [],
   "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }, { "path": "./scripts/tsconfig.json" }]
 }

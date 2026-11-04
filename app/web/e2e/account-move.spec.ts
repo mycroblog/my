@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The aliases and the move of the account in every width × locale project (ADR-0027, FR-009, ADR-0089): the pages pass
+// The aliases and the move of the account in every width × locale project (ADR-0110, FR-009, ADR-0089): the pages pass
 // axe without scrolling sideways, and the account moves by keyboard through its alert dialog (which asks for the
 // password and starts on it), then cancels the move. `vite preview` has no API, so each test plays the server of a
 // signed-in user with page.route; names change with the locale, so the structure is checked by role and by the

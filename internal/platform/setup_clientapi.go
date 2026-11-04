@@ -59,7 +59,7 @@ const clientLimitsTTL = time.Minute
 func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit kernel.Limit) {
 	api := clientapi.New(clientapi.Options{
 		Host: cfg.Host, Origin: cfg.ServerOrigin(), ResourceMetadataURL: cfg.ServerOrigin() + oauth.PathProtectedResourceMetadata, WebOrigin: cfg.WebOrigin, SoftwareVersion: version, SourceURL: config.VersionedSourceURL(cfg.SourceURL, version), StatusPageURL: cfg.StatusPageURL, Instance: a.Instance,
-		// The health endpoint of the uptime monitors (ADR-0085 §1).
+		// The health endpoint of the uptime monitors (ADR-0088 §15).
 		ServerHealth: newHealthCache(a.readyCheck, a.Clock),
 		// The counts and the operators of the landing page, read again every few minutes.
 		Overview:      instance.NewOverview(overviewSources{a}, a.Clock),
@@ -109,7 +109,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		WebhookReads: webhookReads{a},
 		// The error groups (ADR-0103 §8).
 		ErrorGroups: a.Diagnostics,
-		// The relays the instance joins (ADR-0061).
+		// The relays the instance joins (ADR-0006).
 		Relays: a.Relays,
 		// The refetch of remote posts from their servers (FR-407).
 		Refetches: a.Refetches,

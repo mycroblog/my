@@ -19,7 +19,7 @@
 | `instance_nodeinfo_observations` | イベント | `id`, `domain`, `software_name`, `software_version`, `observed_at` | インデックス `(domain, id DESC)` |
 | `instance_availability_events` | イベント | `id`, `domain`, `kind`（`enum(marked_unavailable, marked_available)`）, `reason`（`enum(failure_days, delivery_succeeded, inbound_request, probe_succeeded, operator)`）, `occurred_at` | インデックス `(domain, id DESC)`。配送先として扱うかの判断の記録（管理画面で理由を示す） |
 | `instance_health` | 現在値 | `domain`（PK）, `state`（`enum(available, unavailable)`）, `since`, `failure_days`（`int`。直近の連続した失敗の、異なる UTC の日の数）, `last_failure_day`（`string(8)`、`YYYYMMDD`。失敗が無ければ空文字） | インデックス `(state)`。`delivery_attempts` と `instance_availability_events` から更新する。成功時の更新は、`failure_days > 0` か `state = unavailable` のときだけ行う |
-| `relays` | リソース | `id`, `protocol`（`enum(mastodon, litepub)`）, `url`（登録した URL。`mastodon` は inbox、`litepub` は Actor）, `inbox_url`（配送先）, `receive`（`bool`）, `created_by_user_id`（NULL 可 = CLI）, `created_at` | 一意 `(url)`。`left` か `rejected` のときだけ、子の行と一緒に消せる（[ADR-0061](../../../adr/0061-federation-relays.md)） |
+| `relays` | リソース | `id`, `protocol`（`enum(mastodon, litepub)`）, `url`（登録した URL。`mastodon` は inbox、`litepub` は Actor）, `inbox_url`（配送先）, `receive`（`bool`）, `created_by_user_id`（NULL 可 = CLI）, `created_at` | 一意 `(url)`。`left` か `rejected` のときだけ、子の行と一緒に消せる（[ADR-0006](../../../adr/0006-federation-protocol-scope.md)） |
 | `relay_events` | イベント | `id`, `relay_id`, `kind`（`enum(follow_sent, accepted, rejected, left)`）, `follow_activity_uri`（`follow_sent` が送った `Follow` の `id`。ほかは対象の `Follow`）, `relay_actor_uri`（NULL 可。`accepted` の主体。ほかは NULL）, `actor_user_id`（NULL 可 = CLI か受信）, `occurred_at` | 一意 `(relay_id, follow_activity_uri, kind)`（同じ答えの再処理で増えない）。インデックス `(relay_id, id DESC)`。CHECK `(kind = 'accepted') = (relay_actor_uri IS NOT NULL)` |
 | `relay_states` | 投影 | `relay_id`（PK）, `state`（`enum(pending, accepted, rejected, left)`）, `follow_activity_uri`, `relay_actor_uri`（NULL 可）, `since` | `relay_events` の最新の行から作る。インデックス `(follow_activity_uri)`（`Accept` / `Reject` の照合）、`(relay_actor_uri)`（受信の署名者の照合） |
 
@@ -37,7 +37,7 @@
   `permanent_failure` と `skipped` は `instance_health` を変えません。projector は同じドメインへの同時の更新を失わないよう、行を読んでから書くまで行ロックを取ります（PostgreSQL は `SELECT ... FOR UPDATE`、SQLite は書き込みが直列）。
 - `delivery_attempts.signature_scheme` が NULL の行は、応答を得ていない試行です（送らなかった `skipped` とサーキットブレーカーが開いていた `retryable_failure`、接続・TLS・タイムアウトの失敗、`HTTPClient` が拒否した宛先）。
 - `trust = refetch` の受信の記録は、オリジンで確かめられずに捨てたとき、原本とともに消します（[federation §3.2](../../federation.md#32-非同期の部分)）。同じアクティビティが後から届けば、もう一度記録します。
-- 受信の記録（`received_activities`）は 30 日、原本は 7 日で削除します（[ADR-0034](../../../adr/0034-remote-content-scope-and-retention.md)、FR-803）。
+- 受信の記録（`received_activities`）は 30 日、原本は 7 日で削除します（[ADR-0006](../../../adr/0006-federation-protocol-scope.md)、FR-803）。
   1 時間ごとの消去ジョブ `federation.purge_records` が、原本、受信の記録、`received_activity_answers`（30 日）、`remote_follow_tombstones`（30 日）、`remote_object_tombstones`（30 日）、`outbound_activity_documents`（30 日）、`delivery_attempts`（30 日）の順に、1 文あたり 1,000 行・1 テーブルあたり 20 文まで、古い順に消します。続きは次の回が消します。
   受信の記録は原本が消えたものだけを消すので、原本が受信の記録より長く残ることはありません。`outbound_activity_documents` と `delivery_attempts` の走査は、主キーの UUIDv7 の範囲（期限の下限より前）で止まります。
 - 送信のアクティビティ（`outbound_activities`）は配送（`deliveries`）・試行・本文・`outbound_fanout_completions` とともに、`federation.purge_records` が 1 トランザクションあたり 100 件・20 回まで消します。

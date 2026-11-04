@@ -27,7 +27,7 @@ declare global {
 /** The locale every catalog is written in, and the last fallback (ADR-0009). */
 export const sourceLocale = "en";
 
-/** A locale's client catalog in the FormatJS JSON catalog shape, merged from its area files (ADR-0082). */
+/** A locale's client catalog in the FormatJS JSON catalog shape, merged from its area files (ADR-0081). */
 type Catalog = Record<string, { defaultMessage: string }>;
 
 /** A loader per locale that has a client catalog; each catalog is its own chunk of the build (vite-plugins/client-catalogs.ts). */

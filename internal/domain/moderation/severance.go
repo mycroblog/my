@@ -12,7 +12,7 @@ import (
 var ErrInvalidSeverance = errors.New("moderation: invalid relationship severance")
 
 // Severance is the event that a local account lost follows when a domain or a remote account
-// was suspended (relationship_severances, FR-717, ADR-0036): the suspension ends every follow
+// was suspended (relationship_severances, FR-717, ADR-0058): the suspension ends every follow
 // between the account and the suspended accounts, in both directions, and a severance counts
 // the active ones that the account lost. Lifting the suspension does not restore them.
 type Severance struct {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package oauth serves the token endpoints of the OAuth 2.0 authorization server
-// (ADR-0016, ADR-0019 §4, ADR-0030): the token endpoint (RFC 6749 §3.2) for the
+// (ADR-0016, ADR-0019 §4, ADR-0090): the token endpoint (RFC 6749 §3.2) for the
 // authorization_code and refresh_token grants, revocation (RFC 7009), and the web client's
 // refresh endpoint. The authorization endpoint is a server-rendered screen in authpages.
 //

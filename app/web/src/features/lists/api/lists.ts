@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's lists of the accounts they follow (ADR-0122): the lists, their members, the lists an account is in, and
+// The user's lists of the accounts they follow (ADR-0013): the lists, their members, the lists an account is in, and
 // the followed accounts to add. Only the owner sees them. Every write says what it changes in the cache next to it
-// (web-client/README.md S1, ADR-0045).
+// (web-client/README.md S1, ADR-0028).
 import { infiniteQueryOptions, type QueryClient, queryOptions } from "@tanstack/react-query";
 import type { components } from "@mycroblog/mykit";
 import type { Api } from "../../../lib/api/client";
@@ -16,10 +16,10 @@ type ListCollection = components["schemas"]["ListCollection"];
 /** An account as the client API returns it. */
 export type Account = components["schemas"]["Account"];
 
-/** The most lists a user has (ADR-0122 §5). */
+/** The most lists a user has (ADR-0013 §14). */
 export const maxLists = 50;
 
-/** The most members a list has (ADR-0122 §5). */
+/** The most members a list has (ADR-0013 §14). */
 export const maxListMembers = 1000;
 
 /** The most grapheme clusters of a list's name (ListRequest.name). */
@@ -81,7 +81,7 @@ const followingSearchLimit = 20;
 /**
  * The accounts that the user actively follows whose names match `q`, best match first: the name search
  * (GET /accounts/search, which ranks followed accounts first), kept to the accounts whose relationship says the user
- * follows them (GET /accounts/relationships). Requested follows and other accounts are left out (ADR-0122 §2).
+ * follows them (GET /accounts/relationships). Requested follows and other accounts are left out (ADR-0013 §11).
  */
 export function followingSearchQueryOptions(api: Api, q: string) {
   return queryOptions({

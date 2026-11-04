@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The emoji picker of the new-post form in every width × locale project (ADR-0091, ADR-0051 §4, ADR-0027): opened
+// The emoji picker of the new-post form in every width × locale project (ADR-0091, ADR-0051 §4, ADR-0110): opened
 // from the top end corner of the text, it passes axe without scrolling sideways (also in the 320 px sheet), its grid
 // is reached with Tab from the search field and moves with the arrow keys in the writing direction, and the emoji
 // picked with Enter goes into the text. `vite preview` has no API, so the spec answers the client API and the token

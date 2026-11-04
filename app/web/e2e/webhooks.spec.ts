@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The webhooks screen in every width × locale project (ADR-0060, ADR-0027): an administrator sets up a webhook and
+// The webhooks screen in every width × locale project (ADR-0060, ADR-0110): an administrator sets up a webhook and
 // sees its secret once, sees it listed, disables and enables it, and deletes it after its dialog, each step passing
 // axe without scrolling sideways. `vite preview` has no API, so each test plays the server of a signed-in
 // administrator with page.route; names change with the locale, so the structure is checked by role, by the names in

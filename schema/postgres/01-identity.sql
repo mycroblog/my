@@ -155,7 +155,7 @@ CREATE TABLE managed_roles (
   created_at timestamptz NOT NULL
 );
 
--- Current value: the badge of a role (ADR-0071): a row means the role has one.
+-- Current value: the badge of a role (ADR-0070): a row means the role has one.
 CREATE TABLE role_badges (
   role_id uuid NOT NULL PRIMARY KEY,
   label text NOT NULL,
@@ -165,7 +165,7 @@ CREATE TABLE role_badges (
   updated_at timestamptz NOT NULL
 );
 
--- Current value: the badges a user shows on their profile (ADR-0071): a row means the user shows
+-- Current value: the badges a user shows on their profile (ADR-0070): a row means the user shows
 -- the badge of a role they hold.
 CREATE TABLE user_role_badge_displays (
   user_id uuid NOT NULL,
@@ -188,7 +188,7 @@ CREATE TABLE user_preferences (
   default_quote_policy text NOT NULL DEFAULT 'public' CHECK (default_quote_policy IN ('public', 'followers', 'nobody')),
   default_post_language text NOT NULL,
   require_media_description boolean NOT NULL,
-  -- Whether the web client inserts new timeline posts without asking (ADR-0077); on by default (ADR-0127 §6).
+  -- Whether the web client inserts new timeline posts without asking (ADR-0013); on by default (ADR-0013 §22).
   timeline_auto_insert boolean NOT NULL DEFAULT true,
   -- How the web client shows link cards: large, with the image above the text, or small, with a
   -- square image beside it (FR-007).
@@ -244,7 +244,7 @@ CREATE TABLE session_activity (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- identity: OAuth 2.0 authorization server (data-model/04-tables/01-identity.md §4.1, ADR-0019 §4, ADR-0030).
+-- identity: OAuth 2.0 authorization server (data-model/04-tables/01-identity.md §4.1, ADR-0019 §4, ADR-0090).
 -- Every oauth_client_id column refers to oauth_clients.id; oauth_clients.client_id is the public identifier.
 -- ---------------------------------------------------------------------------------------------
 
@@ -513,7 +513,7 @@ CREATE INDEX user_registration_states_state_since ON user_registration_states (s
 -- Resource: an invite code. created_by_user_id is NULL for an invite from the CLI; max_uses
 -- and expires_at are NULL for no limit. creator_kind is staff for an invite of a holder of
 -- manage_invites or the CLI, and member for an invite a member created under the caps, whose
--- creator every sign-up checks again (ADR-0108 §3).
+-- creator every sign-up checks again (ADR-0106 §16).
 CREATE TABLE invites (
   id uuid NOT NULL PRIMARY KEY,
   code text COLLATE "C" NOT NULL,
@@ -545,7 +545,7 @@ CREATE TABLE invite_revocations (
 
 -- Resource: a token sent to a user. token_hash is the SHA-256 digest of the token. An
 -- email_unsubscribe token names the unsubscribable category of email it turns off (ADR-0086 §4):
--- a group of the notification settings (notification_settings.notification_group, ADR-0109 §4).
+-- a group of the notification settings (notification_settings.notification_group, ADR-0086 §11).
 CREATE TABLE user_tokens (
   id uuid NOT NULL PRIMARY KEY,
   user_id uuid NOT NULL,
@@ -574,7 +574,7 @@ CREATE TABLE user_token_redemptions (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- identity: where sign-ins and registrations came from (data-model/04-tables/01-identity.md §4.1, ADR-0038). Kept
+-- identity: where sign-ins and registrations came from (data-model/04-tables/01-identity.md §4.1, ADR-0058). Kept
 -- apart from sessions and users so that the purge erases them after their retention.
 -- ---------------------------------------------------------------------------------------------
 

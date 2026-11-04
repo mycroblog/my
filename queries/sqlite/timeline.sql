@@ -362,7 +362,7 @@ WHERE tag_id = CAST(sqlc.arg(tag_id) AS TEXT);
 -- name: ListTagUsageOf :many
 SELECT tag_id, statuses_count, last_used_at FROM tag_usage WHERE tag_id IN (sqlc.slice(ids)) ORDER BY tag_id;
 
--- Lists (data-model 4.6, ADR-0122) -----------------------------------------------------------------
+-- Lists (data-model 4.6, ADR-0013) -----------------------------------------------------------------
 
 -- name: InsertList :exec
 INSERT INTO lists (id, owner_account_id, created_at) VALUES (?, ?, ?);

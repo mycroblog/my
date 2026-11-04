@@ -21,10 +21,10 @@ type Options struct {
 	Clock kernel.Clock
 	IDs   kernel.IDGenerator
 	// Tracer fills the TraceParent of the enqueued jobs from the span of the caller's context
-	// (ADR-0063 §2); nil leaves it empty.
+	// (ADR-0055 §14); nil leaves it empty.
 	Tracer kernel.Tracer
 	// Waker, when set, makes Queue send a wake-up signal for each job it stores, once the
-	// transaction that stores it commits (ADR-0120 §1): the jobs of a server whose external
+	// transaction that stores it commits (ADR-0004 §9): the jobs of a server whose external
 	// queue (Cloud Tasks, SQS) delivers them to a queue.PushReceiver. A failed send is logged,
 	// and the queue.WakeSweeper sends the signal again.
 	Waker queue.Waker
@@ -222,7 +222,7 @@ func (q *Queue) Claim(ctx context.Context, worker string, now time.Time, lease t
 	return j, ok, nil
 }
 
-// OnlyTypes returns a view of q whose Claim takes only jobs of the given types (ADR-0138 §2),
+// OnlyTypes returns a view of q whose Claim takes only jobs of the given types (ADR-0004 §16),
 // for a worker that runs some of the types. Everything else is q's. An ordering key still holds
 // a job back whatever the type of the earlier job.
 func (q *Queue) OnlyTypes(types []string) queue.Source {
@@ -555,7 +555,7 @@ func sortCounts(c []queue.JobCount) []queue.JobCount { return queue.SortJobCount
 
 // RecordAttempt implements queue.AttemptLog, in a transaction of its own. The records live in
 // the application database whatever queue the server runs, so the server uses a Queue as the
-// attempt log with every queue adapter (ADR-0064 §1).
+// attempt log with every queue adapter (ADR-0004 §5).
 func (q *Queue) RecordAttempt(ctx context.Context, a queue.Attempt) error {
 	a.Error = queue.TruncateAttemptError(a.Error)
 	a.StartedAt, a.FinishedAt = kernel.Normalize(a.StartedAt), kernel.Normalize(a.FinishedAt)

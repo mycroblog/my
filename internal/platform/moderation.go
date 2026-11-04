@@ -49,12 +49,12 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 	a.Moderation.RegisterJobs(a.Handlers, a.Scheduler)
 	a.Accounts.RegisterDeletionJobs(a.Handlers, a.Scheduler)
 	// The administrative use cases of every module emit their audit log entries; the projector
-	// writes them in the transaction of the operation (ADR-0037).
+	// writes them in the transaction of the operation (ADR-0058).
 	moderation.RegisterAuditProjector(a.Projectors, repo)
 }
 
 // appealWindow reads the appeal window of the moderation module from the instance setting
-// appeal_window_days (ADR-0038).
+// appeal_window_days (ADR-0058).
 type appealWindow struct{ a *App }
 
 func (w appealWindow) AppealWindow(ctx context.Context) (time.Duration, error) {
@@ -66,7 +66,7 @@ func (w appealWindow) AppealWindow(ctx context.Context) (time.Duration, error) {
 }
 
 // retentionSettings reads the retention periods of the moderation records from the instance
-// settings (ADR-0038).
+// settings (ADR-0058).
 type retentionSettings struct{ a *App }
 
 func (r retentionSettings) RetentionPeriods(ctx context.Context) (moderation.RetentionPeriods, error) {
@@ -83,7 +83,7 @@ func (r retentionSettings) RetentionPeriods(ctx context.Context) (moderation.Ret
 
 // originRetention reads the policy of the identity module's origin purge: the periods of the
 // instance settings and the users of the local accounts that a retention hold preserves
-// (ADR-0038).
+// (ADR-0058).
 type originRetention struct{ a *App }
 
 func (o originRetention) OriginRetention(ctx context.Context) (identity.OriginRetentionPolicy, error) {

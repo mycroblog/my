@@ -21,7 +21,7 @@ type Syncer interface {
 	// subscription (LocalID) to the provider's customer and subscription. It reports whether our
 	// state changed.
 	SyncCheckout(ctx context.Context, provider string, res CheckoutResult) (bool, error)
-	// RecordMoney records final money movements of provider (finance.RecordIncome, ADR-0073)
+	// RecordMoney records final money movements of provider (finance.RecordIncome, ADR-0067)
 	// and the refunds and chargebacks that revoke a subscription (ADR-0072 §7). The parent of
 	// each refund, chargeback, and reversal is either recorded already or comes earlier in ms.
 	RecordMoney(ctx context.Context, provider string, ms []MoneyMovement) error

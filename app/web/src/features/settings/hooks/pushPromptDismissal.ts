@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Which accounts said no to the prompt to turn on Web Push on this browser (ADR-0137 §4). Web Push belongs to a device,
+// Which accounts said no to the prompt to turn on Web Push on this browser (ADR-0086 §21). Web Push belongs to a device,
 // so this does too, and each account has its own answer: another user of a shared browser is still asked.
 import { pushPromptDismissedKey, useStorage } from "../../../lib/storage";
 

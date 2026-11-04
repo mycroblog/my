@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// A text area with trigger-based inline completion (ADR-0092 §3, B1): React Aria Components' Autocomplete around the
+// A text area with trigger-based inline completion (ADR-0092 §3): React Aria Components' Autocomplete around the
 // kit's TextArea and a ListBox in a non-modal Popover, with the overrides #1152 found necessary. The textarea stays a
 // native `textbox` (no combobox role); Autocomplete gives it aria-autocomplete="list", aria-controls and
 // aria-activedescendant while the list is shown, and a status region announces the count, loading and no results.

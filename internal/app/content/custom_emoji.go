@@ -97,7 +97,7 @@ func (s *MediaService) customEmojiViews(ctx context.Context, reads mediaReads, e
 			continue
 		}
 		proxied := s.d.Proxy.URL(m.MediaID, ProxyFull)
-		// The still version is the proxy's small variant (ADR-0054 §7), when the proxy can make it.
+		// The still version is the proxy's small variant (ADR-0005 §10), when the proxy can make it.
 		still := proxied
 		if s.d.Proxy.d.Processor != nil {
 			still = s.d.Proxy.URL(m.MediaID, ProxySmall)

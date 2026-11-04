@@ -230,7 +230,7 @@ func liveKitWebhookToken(key, secret string, body []byte) string {
 }
 
 // TestVoiceLiveKit starts the server with voice = livekit and checks the endpoint of LiveKit's
-// events (ADR-0102 §4): a delivery signed with the API secret is accepted, and one that does not
+// events (ADR-0101 §13): a delivery signed with the API secret is accepted, and one that does not
 // verify, such as a tampered body, is refused.
 func TestVoiceLiveKit(t *testing.T) {
 	t.Parallel()
@@ -371,7 +371,7 @@ func postSora(t *testing.T, h http.Handler, path, user, pass string, body []byte
 }
 
 // TestVoiceSora starts the server with voice = sora on a self-hosted Sora and checks the
-// endpoints of Sora's webhooks (ADR-0102 §4, §5): with the Basic authentication of the
+// endpoints of Sora's webhooks (ADR-0101 §13, §14): with the Basic authentication of the
 // webhooks, the auth webhook answers 200 and refuses a connection without a join value, and
 // the events endpoint answers 200 with a JSON object; without it, both refuse.
 func TestVoiceSora(t *testing.T) {

@@ -142,7 +142,7 @@ type CostItem struct {
 	// ProviderNormalized is the provider in the form that groups the breakdown (NFKC, lower case).
 	ProviderNormalized string
 	// LabelRevisionID and LabelRevisedAt are the ID and the time of the current label's revision,
-	// which choose the provider's spelling of a breakdown line (ADR-0098).
+	// which choose the provider's spelling of a breakdown line (ADR-0067).
 	LabelRevisionID string
 	LabelRevisedAt  time.Time
 	// Prices are the price revisions in the order they were recorded; the first one starts on

@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// The notification settings cases of NotificationContract (FR-210, ADR-0109).
+// The notification settings cases of NotificationContract (FR-210, ADR-0086).
 
 // setting turns channel ch of group g on or off for accountID.
 func (e *notificationEnv) setting(t *testing.T, accountID string, g notification.Group, ch notification.Channel, on bool) {

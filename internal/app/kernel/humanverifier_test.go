@@ -24,6 +24,6 @@ func TestHumanCheckWidgetScriptSrc(t *testing.T) {
 func TestHumanCheckHTTPLimits(t *testing.T) {
 	l, ok := DefaultHTTPLimits(HTTPPurposeHumanCheck)
 	if !ok || l.MaxBodyBytes != 64<<10 || l.Timeout != 10*time.Second {
-		t.Errorf("DefaultHTTPLimits(HTTPPurposeHumanCheck) = %+v, %v; want 64 KiB and 10s (ADR-0042 §3)", l, ok)
+		t.Errorf("DefaultHTTPLimits(HTTPPurposeHumanCheck) = %+v, %v; want 64 KiB and 10s (ADR-0106 §9)", l, ok)
 	}
 }

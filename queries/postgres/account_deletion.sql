@@ -11,14 +11,14 @@ ORDER BY deletion_due_at, account_id
 LIMIT sqlc.arg(lim);
 
 -- ListDueDeactivations returns up to lim accounts whose owner deactivated them at or before cutoff,
--- longest deactivated first (ADR-0145 section 2).
+-- longest deactivated first (ADR-0089 section 2).
 -- name: ListDueDeactivations :many
 SELECT account_id, state, since, deletion_due_at FROM account_lifecycle_states
 WHERE state = 'deactivated' AND since <= sqlc.arg(cutoff)::timestamptz
 ORDER BY since, account_id
 LIMIT sqlc.arg(lim);
 
--- FindLatestReactivation returns when an account was last reactivated (ADR-0145 section 8).
+-- FindLatestReactivation returns when an account was last reactivated (ADR-0089 section 8).
 -- name: FindLatestReactivation :one
 SELECT occurred_at FROM account_lifecycle_events
 WHERE account_id = $1 AND kind = 'reactivated'

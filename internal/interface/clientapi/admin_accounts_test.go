@@ -85,7 +85,7 @@ func (f *fakeAccountAdmin) Detail(_ context.Context, id string) (appidentity.Adm
 	if a.Local != nil {
 		d.Registration = &identity.UserRegistrationState{UserID: a.Local.UserID, State: identity.RegistrationApproved, Since: adminNow}
 		d.Application = &identity.RegistrationApplication{UserID: a.Local.UserID, Reason: "hi", InviteID: adminInviteID, SubmittedAt: adminNow.Add(-time.Hour)}
-		// Bob invited the user (ADR-0108 §5).
+		// Bob invited the user (ADR-0106 §18).
 		d.Invite = &identity.Invite{ID: adminInviteID, Code: "ABCDEFGHIJKLMNOP", CreatedByUserID: userOf(bobAccountID), CreatorKind: identity.InviteByMember, CreatedAt: adminNow}
 		d.DecisionNote = f.decisionNote
 		d.HasEmail, d.EmailVerified = true, true

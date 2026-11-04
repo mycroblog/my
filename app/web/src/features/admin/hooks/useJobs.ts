@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The queue dashboard (ADR-0064): the state of the job queue, its jobs under a state filter, the records of a job's
+// The queue dashboard (ADR-0004): the state of the job queue, its jobs under a state filter, the records of a job's
 // runs that did not succeed, and running dead jobs again. A job that is enqueued again leaves the dead jobs on the
 // server, so it leaves the cached pages at once.
 import { useNotice, useToast } from "@my/ui";

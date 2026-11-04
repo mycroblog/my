@@ -113,7 +113,7 @@ CREATE TABLE instance_theme (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- instance: brand images (data-model §4.9, ADR-0116). Owned by internal/app/instance.
+-- instance: brand images (data-model §4.9, ADR-0059). Owned by internal/app/instance.
 -- The files live in the BlobStore under keys the server makes from the revision ID.
 -- ---------------------------------------------------------------------------------------------
 
@@ -302,7 +302,7 @@ CREATE TABLE service_closure_heads (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- instance: secrets of the instance (data-model §4.9, ADR-0121 §2). Owned by internal/app/instance.
+-- instance: secrets of the instance (data-model §4.9, ADR-0019 §12). Owned by internal/app/instance.
 -- Names are defined in internal/domain/instance.
 -- ---------------------------------------------------------------------------------------------
 

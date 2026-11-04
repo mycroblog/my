@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's own icon and logos on the server settings screen (ADR-0116, manage_settings;
+// The server's own icon and logos on the server settings screen (ADR-0059, manage_settings;
 // docs/architecture/web-client/screens/admin-settings.md): the icon, the logo, and the logo for dark backgrounds, each
 // a form of its own. Choosing an SVG checks it on the server and draws its PNG renditions here; the previews show it
 // where it will be used, what the server removed from it is listed, and saving sets it for every visitor. Each form

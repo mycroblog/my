@@ -29,7 +29,7 @@ WHERE id = (
 RETURNING id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, last_error, created_at;
 
 -- ClaimJobOfTypes is ClaimJob for a worker that runs only some job types, the JSON array @types
--- (ADR-0138 section 2): it takes each type's candidate from jobs_type_run_at_id and leases the
+-- (ADR-0004 section 2): it takes each type's candidate from jobs_type_run_at_id and leases the
 -- earliest of them, so that a backlog of the other types costs nothing. A condition on ClaimJob
 -- would walk that backlog while holding the write lock.
 -- name: ClaimJobOfTypes :one
@@ -57,7 +57,7 @@ WHERE id = (
 RETURNING id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, last_error, created_at;
 
 -- ClaimJobByID leases the job @id under the conditions of ClaimJob, for a claim by ID (a
--- wake-up signal, ADR-0120 section 2). The claim reads the job's lease with GetJobLease before
+-- wake-up signal, ADR-0004 section 2). The claim reads the job's lease with GetJobLease before
 -- and, when this leases nothing, after it, to tell why.
 -- name: ClaimJobByID :one
 UPDATE jobs
@@ -90,7 +90,7 @@ ORDER BY j.run_at, j.id
 LIMIT @batch_limit;
 
 -- ListDueJobsOfType is ListDueJobs for one job type, from jobs_type_run_at_id, for the sweep of a
--- route (ADR-0139 section 4).
+-- route (ADR-0004 section 4).
 -- name: ListDueJobsOfType :many
 SELECT j.id, j.type, j.run_at FROM jobs AS j
 WHERE j.type = @job_type
@@ -184,7 +184,7 @@ ORDER BY type;
 SELECT COUNT(*) FROM dead_jobs;
 
 -- ListPendingJobs returns the jobs of the type @job_type (every type when empty) in the state
--- @state at @now (every state when empty; the states of ADR-0064 section 3: running while the
+-- @state at @now (every state when empty; the states of ADR-0004 section 3: running while the
 -- lease holds, otherwise queued before the first run and retrying after it), the earliest run_at
 -- first, after the position (@after_run_at, @after_id); an empty @after_id starts at the first.
 -- name: ListPendingJobs :many

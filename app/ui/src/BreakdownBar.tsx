@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// BreakdownBar (ADR-0113 §1): the shares of a whole (the costs by item, the jobs by state) as segments of one bar, with
+// BreakdownBar (ADR-0110 §16): the shares of a whole (the costs by item, the jobs by state) as segments of one bar, with
 // a legend that says each item's name, value and share in text. The bar is drawn in HTML and is decorative; the legend
 // carries the data. The segments are flex items in the line's direction, so they mirror in right-to-left text. A segment
 // is told apart by its color and by the border between segments, which forced-colors mode keeps.

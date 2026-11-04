@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The totals of the instance's income (ADR-0073 §5, §7, §9, web-client/README.md S1): the net income of each currency by
+// The totals of the instance's income (ADR-0067 §15, §17, §19, web-client/README.md S1): the net income of each currency by
 // week, month or year, with the balance against the costs under the same basis and the number of members of each
 // supporter plan now where they are shown. The public totals (GET /instance/income_totals) are what the instance
 // setting `income_visibility` publishes: nothing (404), the totals, or the totals with the members of each plan, and

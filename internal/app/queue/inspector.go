@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// JobState is the state of a job on the queue dashboard (ADR-0064 §3), derived from the job's
+// JobState is the state of a job on the queue dashboard (ADR-0004 §7), derived from the job's
 // current values: no column records it.
 type JobState string
 
@@ -93,11 +93,11 @@ type JobSummary struct {
 	// OldestReadyAt is the earliest RunAt among the due jobs that no worker holds; zero when
 	// none is.
 	OldestReadyAt time.Time
-	// OldestReadyByType is the same for each type with such a job (ADR-0138 §3).
+	// OldestReadyByType is the same for each type with such a job (ADR-0004 §17).
 	OldestReadyByType map[string]time.Time
 }
 
-// JobInspector reads the jobs a queue holds, for the dashboard (ADR-0064 §3). Only the queues
+// JobInspector reads the jobs a queue holds, for the dashboard (ADR-0004 §7). Only the queues
 // that can read their jobs at no cost implement it: the database queue and the inline queue.
 // The platforms' queues (Cloud Tasks, SQS) do not, and their backlog is read from the
 // platform's metrics.

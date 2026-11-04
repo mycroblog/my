@@ -84,7 +84,7 @@ pending:
 # Until `enforce` is set, `agentkit docs lint` prints the findings as warnings. The excluded files write ADR-NNNN for
 # something else: agentkit's own records, and the examples of its tests and comments.
 adrs:
-  enforce: false
+  enforce: true
   exclude:
     - "tools/agentkit/docs/adr/**"
     - "tools/agentkit/README.md"

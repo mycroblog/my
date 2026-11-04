@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The finances of the server for the holders of view_finance (/finance; web-client/screens/finance.md) in the states of
-// ADR-0112 §1.
+// ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import type { RequestHandler } from "msw";

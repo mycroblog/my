@@ -13,7 +13,7 @@ const searchSchema = z.object({
 });
 
 /**
- * What a user reads once they have deactivated their account and are signed out (ADR-0145 §3): the date of the deletion,
+ * What a user reads once they have deactivated their account and are signed out (ADR-0089 §13): the date of the deletion,
  * and how to come back.
  */
 export const Route = createFileRoute("/deactivated")({

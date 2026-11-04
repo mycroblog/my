@@ -1083,7 +1083,7 @@ func (l *Localizer) ServerAuthSignedInTitle() string {
 	return l.format("server:auth.signed_in.title", nil)
 }
 
-// ServerAuthStatusPageLink formats "server:auth.status_page.link". Text of the link to the instance's status page (ADR-0085) in the footer of the server-rendered pages, shown only when the operator set status_page_url.
+// ServerAuthStatusPageLink formats "server:auth.status_page.link". Text of the link to the instance's status page (ADR-0088) in the footer of the server-rendered pages, shown only when the operator set status_page_url.
 //
 //	en: Service status
 func (l *Localizer) ServerAuthStatusPageLink() string {
@@ -3734,7 +3734,7 @@ func (l *Localizer) ServerMaintenanceStatusPage() string {
 	return l.format("server:maintenance.status_page", nil)
 }
 
-// ServerMaintenanceTitle formats "server:maintenance.title". Heading of the maintenance page (ADR-0084) and the title of the maintenance problem of the client API.
+// ServerMaintenanceTitle formats "server:maintenance.title". Heading of the maintenance page (ADR-0088) and the title of the maintenance problem of the client API.
 //
 //	en: Under maintenance
 func (l *Localizer) ServerMaintenanceTitle() string {
@@ -3762,7 +3762,7 @@ func (l *Localizer) ServerModerationActionKind(kind string) string {
 	return l.format("server:moderation.action.kind", map[string]any{"kind": kind})
 }
 
-// ServerPaymentsBack formats "server:payments.back". Link from the PAY.JP checkout or card page back to where the user came from (ADR-0099 §3).
+// ServerPaymentsBack formats "server:payments.back". Link from the PAY.JP checkout or card page back to where the user came from (ADR-0074 §11).
 //
 //	en: Back
 func (l *Localizer) ServerPaymentsBack() string {
@@ -3881,7 +3881,7 @@ func (l *Localizer) ServerPaymentsFakeFailed() string {
 	return l.format("server:payments.fake.failed", nil)
 }
 
-// ServerPaymentsFakeNotice formats "server:payments.fake.notice". Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0117 §2).
+// ServerPaymentsFakeNotice formats "server:payments.fake.notice". Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6).
 //
 //	en: Test build: this checkout stands in for a payment provider, and no money moves.
 func (l *Localizer) ServerPaymentsFakeNotice() string {

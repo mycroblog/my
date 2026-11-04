@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The publication settings next to the screens whose data they publish (audit A8 of #1638): how much of the running
 // costs is published (FR-903) and shown to the holders of view_finance (ADR-0070 §5) and how much of the income is
-// published (FR-917), on the costs screen; who may read the supporter list (ADR-0071 §4), on the supporters screen.
+// published (FR-917), on the costs screen; who may read the supporter list (ADR-0070 §13), on the supporters screen.
 // They stay instance settings (manage_settings): the form reads and saves them with the server settings' API, sends
 // the ones that changed together, and each change goes to the audit log (FR-704).
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

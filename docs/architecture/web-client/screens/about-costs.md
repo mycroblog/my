@@ -6,8 +6,8 @@ paths: ["app/web/src/routes/about_.costs.tsx", "app/web/src/features/costs/**"]
 
 ## 運営の費用（`/about/costs`）
 
-誰でも（サインインしていなくても）、サーバーが公開している費用と収入を読む画面（FR-903・FR-917、ADR-0067 §8、ADR-0073 §7、[§9](../09-app-shell.md)）。
-数は「費用の概要」（[§14](../14-admin.md)。`StatTile`・`TrendChart`・`BreakdownBar`。ADR-0113）で先に出す。保存する操作はない。期間と計上のしかたは URL に置く。
+誰でも（サインインしていなくても）、サーバーが公開している費用と収入を読む画面（FR-903・FR-917、ADR-0067 §8、ADR-0067 §17、[§9](../09-app-shell.md)）。
+数は「費用の概要」（[§14](../14-admin.md)。`StatTile`・`TrendChart`・`BreakdownBar`。ADR-0110）で先に出す。保存する操作はない。期間と計上のしかたは URL に置く。
 
 ### 1. 使う人と頻度
 

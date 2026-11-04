@@ -88,7 +88,7 @@ const (
 	// DecidedByModerator: a moderator, in the admin screens or with the CLI.
 	DecidedByModerator Decider = "moderator"
 	// DecidedBySystem: the server, which approves sign-ups at once in open and invite mode, and
-	// those with a usable invite in approval mode (ADR-0108 §4).
+	// those with a usable invite in approval mode (ADR-0106 §17).
 	DecidedBySystem Decider = "system"
 	// DecidedByServiceClosure: the server, which rejects the pending applications when the
 	// closure of the service is announced (ADR-0088 §2).
@@ -138,14 +138,14 @@ type UserRegistrationState struct {
 }
 
 // Invite is an invite code that lets people sign up (data-model §4.1, invites): it is required
-// in invite mode and optional in open and approval mode (ADR-0108 §4).
+// in invite mode and optional in open and approval mode (ADR-0106 §17).
 type Invite struct {
 	ID   string
 	Code string
 	// CreatedByUserID is the user who created the invite, or "" for the CLI.
 	CreatedByUserID string
 	// CreatorKind is how the invite was created: by the staff or the CLI, or by a member under
-	// the caps, whose eligibility every sign-up checks again (ADR-0108 §3).
+	// the caps, whose eligibility every sign-up checks again (ADR-0106 §16).
 	CreatorKind InviteCreatorKind
 	// MaxUses is how many sign-ups the invite allows; 0 means no limit.
 	MaxUses int
@@ -207,7 +207,7 @@ const (
 
 // UnsubscribeCategory is a category of email that its recipient can turn off from the email
 // itself (ADR-0086 §4, user_tokens.unsubscribe_category): a group of the notification settings
-// whose email the user chooses (ADR-0109 §4), such as "mention" or "admin_report".
+// whose email the user chooses (ADR-0086 §11), such as "mention" or "admin_report".
 type UnsubscribeCategory string
 
 // UserToken is a token sent to a user, such as the link of a verification email (data-model

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Checks the build tags of the server (docs/reference/build-tags.md): the tags that leave adapters out (NFR-PORT-4,
-# ADR-0010, ADR-0015 Build matrix) and the test-only tag e2e_fakes, which adds the fakes (ADR-0117 §2, ADR-0118 §1). For each
+# ADR-0010, ADR-0015 §1) and the test-only tag e2e_fakes, which adds the fakes (ADR-0015 §6, ADR-0015 §9). For each
 # representative set of tags, it builds every package with CGO_ENABLED=0, runs go vet, and fails when cmd/my still
 # depends on a package that a tag of the set leaves out. It fails as well when cmd/my without e2e_fakes (the default
 # build with no tags among them) depends on a fake: a fake that records payments as paid or accepts any push message must never reach a released

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The profile pages in every width × locale project (FR-204, FR-301 to FR-303, ADR-0027): the header, the
+// The profile pages in every width × locale project (FR-204, FR-301 to FR-303, ADR-0110): the header, the
 // follow button and its confirmation, the menu, the tabs and the follow lists. The built client runs on
 // `vite preview`, which has no API: the specs answer the OAuth refresh and the client API with
 // `page.route`, as a signed-in user's server would. Names change with the locale, so elements are found by

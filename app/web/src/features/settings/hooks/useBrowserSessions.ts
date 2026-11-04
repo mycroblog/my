@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The browsers signed in to the user's account (ADR-0136): the list, signing out one, and signing out the others.
+// The browsers signed in to the user's account (ADR-0090): the list, signing out one, and signing out the others.
 import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useApi } from "../../../lib/auth/SessionProvider";

@@ -97,11 +97,11 @@ func (a *App) openDatabase(ctx context.Context, cfg *config.Config) (*repositori
 }
 
 // queueInDatabase reports whether the jobs of the queue are in the database: queue = db, and the
-// queues with a waker, which only carry wake-up signals for them (ADR-0120).
+// queues with a waker, which only carry wake-up signals for them (ADR-0004).
 func queueInDatabase(q string) bool { return q == "db" || hasWaker(q) }
 
 // hasWaker reports whether the queue is the database queue with an external queue carrying its
-// wake-up signals: cloudtasks and sqs (ADR-0120).
+// wake-up signals: cloudtasks and sqs (ADR-0004).
 func hasWaker(q string) bool { return q == "cloudtasks" || q == "sqs" }
 
 // newWaker returns the waker of the default queue of cfg, which hasWaker accepts, and what
@@ -113,7 +113,7 @@ func newWaker(ctx context.Context, cfg *config.Config, clock kernel.Clock, repor
 	return newCloudTasksWaker(ctx, cfg, config.QueueRoute{Queue: cfg.QueueCloudTasksQueue, URL: cfg.QueueCloudTasksURL}, clock, reporter)
 }
 
-// routeWaker puts the routes of cfg in front of a.waker (ADR-0139 §2). Without routes it changes
+// routeWaker puts the routes of cfg in front of a.waker (ADR-0004 §24). Without routes it changes
 // nothing, so that a deployment with one queue behaves as if they did not exist. stand, when set,
 // makes the waker of a route; a route to the same target shares its waker.
 func (a *App) routeWaker(ctx context.Context, cfg *config.Config, stand func(config.QueueRoute) queue.Waker) error {

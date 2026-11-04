@@ -83,7 +83,7 @@ WHERE CAST(sqlc.arg(before) AS TEXT) = '' OR i.id < sqlc.arg(before)
 ORDER BY i.id DESC
 LIMIT sqlc.arg(page_limit);
 
--- ListMemberInvitesByCreator lists the invites a member created as a member (ADR-0108),
+-- ListMemberInvitesByCreator lists the invites a member created as a member (ADR-0106),
 -- newest first.
 -- name: ListMemberInvitesByCreator :many
 SELECT i.id, i.code, i.created_by_user_id, i.creator_kind, i.max_uses, i.expires_at, i.created_at,
@@ -96,7 +96,7 @@ ORDER BY i.id DESC
 LIMIT sqlc.arg(page_limit);
 
 -- CountUsableMemberInvites counts the invites a member created as a member that are not
--- revoked, expired, or used up at now (ADR-0108).
+-- revoked, expired, or used up at now (ADR-0106).
 -- name: CountUsableMemberInvites :one
 SELECT COUNT(*) FROM invites i
 WHERE i.created_by_user_id = sqlc.arg(creator) AND i.creator_kind = 'member'

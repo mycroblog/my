@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Deactivating the user's own account (ADR-0145): what it would do now, the dialog that confirms it with the password,
+// Deactivating the user's own account (ADR-0089): what it would do now, the dialog that confirms it with the password,
 // a code of the second factor, a passkey or a linked provider, and the page that states the date of the deletion.
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";

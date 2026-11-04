@@ -27,7 +27,7 @@ import (
 	domain "github.com/mycroblog/my/internal/domain/content"
 )
 
-// robotsCardsEnv runs LinkCards.Fetch on fakes that keep what ADR-0131 bears on: the cards, the
+// robotsCardsEnv runs LinkCards.Fetch on fakes that keep what ADR-0062 bears on: the cards, the
 // store with its expiries, and a web that follows redirects as the HTTPClient does, asking the
 // request's CheckRedirect before requesting each hop.
 type robotsCardsEnv struct {
@@ -104,7 +104,7 @@ const (
 	robotsFile        = robotsOrigin + "/robots.txt"
 )
 
-// TestLinkCardRobotsResponses checks each row of the table of responses in ADR-0131 §2.
+// TestLinkCardRobotsResponses checks each row of the table of responses in ADR-0062 §10
 func TestLinkCardRobotsResponses(t *testing.T) {
 	t.Parallel()
 	text := func(status int, body string) robotsResponse {

@@ -3,7 +3,7 @@
 // cost items (GET /admin/cost_items, newest first, as an infinite query), the totals of a range of weeks, months or
 // years under a basis (GET /admin/cost_totals), the state of the billing imports (GET /admin/billing_imports),
 // recording, relabeling, revising, ending and canceling an item, and importing a provider's charges now. Every change
-// goes to the audit log and changes the totals. The income (ADR-0073 §6) is only read: its totals with the gross, the
+// goes to the audit log and changes the totals. The income (ADR-0067 §16) is only read: its totals with the gross, the
 // fees and the balance (GET /admin/income_totals), and the payment provider's money movements, newest first, with their
 // subscribers (GET /admin/income_movements); the payment provider records it, and nobody changes it here.
 import { infiniteQueryOptions, type QueryClient, queryOptions } from "@tanstack/react-query";
@@ -206,7 +206,7 @@ export function runBillingImportMutation(api: Api) {
 }
 
 /**
- * Marks what a change of the cost items changes (ADR-0045): the list, every range of totals and the audit log; the
+ * Marks what a change of the cost items changes (ADR-0028): the list, every range of totals and the audit log; the
  * queries shown now are fetched again and awaited.
  */
 export async function refreshCosts(queryClient: QueryClient): Promise<void> {

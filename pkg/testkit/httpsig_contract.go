@@ -28,7 +28,7 @@ import (
 
 // HTTPSignatureContract verifies a federation.Signer and federation.Verifier pair, together
 // with the policy built on them (federation.SignatureVerifier and federation.SignedHTTPClient,
-// ADR-0032): the request test vectors of RFC 9421 Appendix B verify; hand-built draft-cavage
+// ADR-0006): the request test vectors of RFC 9421 Appendix B verify; hand-built draft-cavage
 // signatures in the forms Mastodon and GoToSocial send verify, also when the signed
 // (request-target) lacks the query string; requests that miss a required component, fall
 // outside the time window, or carry a tampered body are refused; signatures of both schemes
@@ -70,7 +70,7 @@ type rfc9421Vector struct {
 }
 
 // rfc9421RequestVectors are the request signatures of RFC 9421 Appendix B.2 that use the
-// algorithms of ADR-0032 (B.2.4 signs a response with ECDSA and B.2.5 uses HMAC).
+// algorithms of ADR-0006 (B.2.4 signs a response with ECDSA and B.2.5 uses HMAC).
 var rfc9421RequestVectors = []rfc9421Vector{
 	{
 		name: "B.2.1 minimal", key: rfc9421RSAPSSPublicKey, alg: federation.AlgRSAPSSSHA512,

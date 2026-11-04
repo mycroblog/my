@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The prompt to turn on Web Push on the notifications page through the whole app (web-client/README.md T4; ADR-0137):
+// The prompt to turn on Web Push on the notifications page through the whole app (web-client/README.md T4; ADR-0086):
 // MSW plays the server, and a stand-in for the browser's Push API (jsdom has none) plays the browser.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
@@ -62,7 +62,7 @@ function selectedTab() {
   return within(screen.getByRole("tablist", { name: "Notification types" })).getByRole("tab", { selected: true });
 }
 
-describe("when the prompt shows (ADR-0137 §1)", () => {
+describe("when the prompt shows (ADR-0086 §18)", () => {
   test("offers Web Push above the tabs without asking the browser or subscribing", async () => {
     const browser = pushBrowser();
     const push = pushServer();
@@ -182,7 +182,7 @@ describe("when the prompt shows (ADR-0137 §1)", () => {
   });
 });
 
-describe("the flow of the prompt (ADR-0137 §2)", () => {
+describe("the flow of the prompt (ADR-0086 §19)", () => {
   test("closing it subscribes nothing, moves the focus to the tabs, and is remembered", async () => {
     const browser = pushBrowser();
     const push = pushServer();
@@ -325,7 +325,7 @@ describe("the flow of the prompt (ADR-0137 §2)", () => {
   });
 });
 
-describe("what is remembered (ADR-0137 §4)", () => {
+describe("what is remembered (ADR-0086 §21)", () => {
   async function pushSwitch(path = "/settings/notifications") {
     const view = await renderApp({ path });
     return { ...view, control: await screen.findByRole("switch", { name: /Notify me on this device/ }) };

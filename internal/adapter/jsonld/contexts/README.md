@@ -1,6 +1,6 @@
 # Bundled JSON-LD contexts
 
-The contexts that the linked data signatures of public posts resolve (ADR-0061), embedded in the binary so that
+The contexts that the linked data signatures of public posts resolve (ADR-0006), embedded in the binary so that
 canonicalization never fetches a context from the network. Mastodon and Misskey bundle the same three.
 
 | File | URL | Source |

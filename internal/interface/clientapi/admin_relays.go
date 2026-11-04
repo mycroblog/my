@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// The relays the instance joins (ADR-0061, FR-724): the admin operations on /admin/relays
+// The relays the instance joins (ADR-0006, FR-724): the admin operations on /admin/relays
 // (manage_settings, ADR-0058 server administration).
 
 // ProblemTypeInvalidRelay is the problem type of a relay operation that breaks a rule (422),

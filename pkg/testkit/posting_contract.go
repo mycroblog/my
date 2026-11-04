@@ -413,7 +413,7 @@ func postingPosts(t *testing.T, e *postingEnv) {
 		IdempotencyKey: "key-1",
 	})
 	st, rev := p.Status, p.Revision
-	// A local status's page is derived on read, not stored (ADR-0053).
+	// A local status's page is derived on read, not stored (ADR-0018).
 	if st.URI != content.StatusURI(contractHost, st.ID) || st.URL != "" {
 		t.Errorf("status URIs = %q, %q", st.URI, st.URL)
 	}

@@ -1,229 +1,277 @@
 # ADR-0079: CI の検査を Merge Queue に一本化する
 
-- Status: Accepted（ジョブの中身を `task ci:<ジョブ>` 1 つにする部分を ADR-0083（CI のジョブはワークフローのステップで組み、go-task は手元の入口にする） が、手元の `check:changed` を Merge Queue の前の関門にする部分を ADR-0119（Merge Queue の検査を唯一の関門にし、手元の検査を必須にしない） が置き換える）
+- Status: Accepted
 - Date: 2026-10-23
 - Deciders: @rosylilly
-- Issue: #1052
-
-## Context（背景・課題）
-
-[ADR-0047](0047-ci-protection-layers.md) は、検査を PR・Merge Queue・main への push・nightly に振り分け、
-文脈（`scripts/changed-contexts.sh`）ごとの再利用ワークフローに分けた。
-その後、エージェントが 4〜5 本ずつ並行して PR を出す運用（[workflow.md §9](../agents/workflow.md#9-parallel-batches)）が続いている。
-ここで、同じ検査の繰り返しと runner の取り合いが、並列の作業のリードタイムを決めるようになった。
-
-決定者の要望（#1052、原文）:
-
-> CI / Merge Queue を使うかどうかというレベルから再設計したいです。
-> 現状同じような内容のテストが重複して走っているだけにも思えるし、adr-index などの生成系も言い方は悪いですがコンフリクトの温床にしかなっておらず、並列作業に対するリードタイム悪化を招いています。
-> GitHub Actions も同様に並列作業でエンキューされたものが無駄にキューを圧迫していて、これも根本的に解決したいし、中身が `make ~~~` なのでいろいろ直列に実行していて、本質的に並列できそうなものも整備されない・されにくい状態になっている
-
-関係する要件は NFR-DEV-1（1 つのコマンドで検査が走る）と NFR-DEV-2（外部サービスなしで検査が完結する）。
-タスクの実行は [ADR-0080](0080-task-runner-go-task.md)、生成物は [ADR-0081](0081-generated-files-policy.md)、
-衝突しにくいファイルの構成は [ADR-0082](0082-conflict-free-file-layout.md) が決める。この ADR は、どこで何を検査するかを決める。
-
-### 実測（2026-10-20〜23）
-
-`gh api` で取った CI と Main のジョブ約 5,800 件の `created_at` / `started_at` / `completed_at` から測った。秒の値は「中央値 / p90」。
-
-| 区分 | 実行 | 結果まで | 3 日間の runner 時間 | 気づいたこと |
-| --- | --- | --- | --- | --- |
-| PR（`ci.yml`） | 322 回 | 280 / 748 | 52.5 h | 失敗は 4 回。ジョブの起動待ちの p90 が 5〜8 分（`docker-smoke` 498、`docker-arm64` 352、`go` 310） |
-| Merge Queue（`ci.yml`） | 216 回 | 282 / 490 | 28.5 h | 失敗は 2 回。中身は PR とほぼ同じ |
-| main への push（`main.yml`） | 191 回 | 810 / 929 | 83.6 h | 114 回（60%）が次の push で取り消し。E2E の 4 シャード（各約 10 分）が捨てられる |
-| CodeQL | 188 回 | — | 未計測 | main への push ごと。70 回が取り消し |
-
-- 1 つの変更は、エージェントの手元の `make check-changed`、PR の `check`、Merge Queue の `check` の 3 回、同じ文脈の検査を通る。
-  PR と Merge Queue の失敗はどちらも 1% 前後で、手元の検査を通ったものがほとんどそのまま通っている。
-- Merge Queue が止めた 2 回のうち 1 回は、重ねて初めて壊れる型の不一致だった。一方の PR が `reactions` を必須にし、
-  もう一方が E2E のフィクスチャを足していた（`tsc`、run 39385861802）。Merge Queue の価値は、統合した状態でコンパイル・型検査・テストを通すことにある。
-- Free プランの GitHub-hosted runner は、同時に 20 ジョブまで動く。キャッシュはリポジトリあたり 10 GB まで
-  （[Actions limits](https://docs.github.com/en/actions/reference/limits)、2026-10-23 確認）。
-  PR 1 回は最大約 14 ジョブに分かれ、ジョブごとの準備（checkout・ツールの導入・キャッシュの復元）に 60〜165 秒かかる。
-- Go のキャッシュは `go-test` が 5.1 GB、`go-lint` が 2.9 GB ある。`go-test` のキャッシュの復元（165 秒）は、テスト本体（133 秒）より長い。
-  `go` ジョブでは golangci-lint が 2 回走る（action と `make go-lint`）。
-- 14 日間で PR のマージ 235 件に対し、ブランチに main をマージしたコミットが 138 件ある。衝突のたびに Merge Queue から外れ、
-  PR と Merge Queue の CI が両方とも最初から回り直す（衝突の原因は ADR-0081・ADR-0082）。
-
-決定者の決定（チャット、原文）:
-
-> 全 ADR Accepted
-
-## Decision Drivers（判断基準）
-
-1. main を壊さない。2 つの PR を重ねて初めて壊れるもの（コンパイル・型・テスト・生成物）は、マージの前に統合した状態で必ず止める
-2. 1 つの変更を、同じ検査で何度も検査しない
-3. 並列の作業のリードタイム（PR を開いてからマージまで。runner の起動待ちを含む）を短くする
-4. 同時 20 ジョブとキャッシュの 10 GB を、結果が使われない実行に使わない
-5. エージェントの外の PR（OSS の貢献者・Dependabot）にも、マージの前の検査と早い結果を返す
-6. 遅い検査（E2E・実 PostgreSQL・連合・arm64）の退行は、リリースの前に必ず見つけ、普段は遅くとも 1 日で見つける
-
-## Considered Options（選択肢）
-
-本検査（テストを含む重い検査）の場所:
-
-- A. 今のまま（ADR-0047）。PR と Merge Queue の両方で、変わった文脈を検査する
-- B. Merge Queue に一本化する。PR は、その PR のファイルだけで結果が決まる軽い検査にする
-- C. PR に一本化する。Merge Queue はコンパイル・型検査・vet だけにする
-- D. Merge Queue をやめる。PR を通ったものはそのままマージし、重ねて壊れたものは main で見つけて直す
-
-遅い検査:
-
-- S1. 今のまま。main への push ごとに回し、新しい push で取り消す
-- S2. main への push ごとに回すが、取り消さない（実行中 1 つと待ち 1 つ）
-- S3. リリースを作るときの関門にし、nightly と手動でも回す
-- S4. nightly だけ
-
-ジョブの分け方:
-
-- J1. 今のまま。文脈ごとに 1〜2 ジョブ（PR で最大約 14 ジョブ）
-- J2. ツールチェーンと種類ごとに数ジョブにまとめ、ジョブの中をタスクの並列実行（ADR-0080）で埋める
+- Issue: #1052, #553, #1064, #1638, #1674, #1734
 
 ## Decision（決定）
 
-> 決定者の回答（チャット、原文）: 本検査の場所は「MQ に一本化」、遅い検査は「リリースを作成しようとしたら回す、とかどうですか？任意に実行するのと定時で回すのも用意はしつつ」。
-> リリースの関門の範囲（タグと GitHub Release の下書きまでを決め、成果物は M5 に残す）は「そのままで構いません」（#1053）。
-> ビルドタグの組み合わせと golangci-lint の置き場所（PR #1069 のあとの Merge Queue の実測を受けて）:
-> 「build-tags については毎度のビルドで確認する必要性を感じません。リリース前の検査で十分に思えます。」
-> 「golangci-lint については PR, main で `only-new-issues` して MQ ではスキップでもいいぐらいなのでは？(MQ 状態で項目が増えるとも思えない)」
-> PR で `only-new-issues`、Merge Queue では回さず、遅い検査で全体を回し、main では検査せずキャッシュのためだけに回す案に対して「ADR-0079 を書き換えていいです。やってください。案にも賛成です。」
-> Docker の smoke test について「docker-smoke と docker-amd64 って何を保証してます？MQ での実行や PR での実行必要ですか？ go build との本質的な違いがわかりません」。
-> smoke test を Docker の文脈が変わった PR だけにし、Merge Queue から外し、arm64 を遅い検査だけにする案に対して「すでに MQ 入れてマージまでされたので修正は別の PR でお願いします」。
+本検査（テストを含む重い検査）は Merge Queue に一本化し、PR はその PR のファイルだけで結果が決まる軽い検査にする。
+遅い検査はリリースを作るときの関門にし、nightly と手動でも回す。ジョブはツールチェーンと種類ごとに数個にまとめ、ジョブの中を並列で埋める。
 
-**B・S3・J2 を採る。**
+### 1. 守るものと防ぐ場所
 
-### 守るものと防ぐ場所
+Merge Queue の全検査が、`main` に入る前の唯一の関門である。
 
 | 層 | いつ | 何を検査するか | 必須 |
 | --- | --- | --- | --- |
-| 手元 | push の前 | `task check:changed`（ADR-0080）。作者が直すためのもので、CI の代わりではない | — |
-| PR の `check`（preflight） | `pull_request` | その PR のファイルだけで結果が決まり、重ねても変わらないもの。下の表 | ○ |
-| PR の lint | `pull_request` | golangci-lint（PR が変えた行の指摘だけ） | ○ |
-| PR の Docker | `pull_request`（Docker の文脈が変わったとき） | Docker Compose の smoke test（amd64） | ○ |
-| Merge Queue の `check`（本検査） | `merge_group` | 統合した状態で、変わった文脈のコンパイル・型・vet・テスト・生成物 | ○ |
-| main への push | `push` | 検査はしない。キャッシュを作るジョブだけ（下記） | — |
-| 遅い検査 | リリースの関門・nightly・手動 | E2E（全体）・実 PostgreSQL・stream の契約・連合・arm64 と amd64 のイメージ・golangci-lint（全体）・ビルドタグの組み合わせ・CodeQL | リリースでは○ |
+| 手元 | 任意 | `task check:changed`（ADR-0081）。CI の失敗の再現と書いている途中の確認のためのもの（§10） | — |
+| PR の `check`（preflight） | `pull_request` | その PR のファイルだけで結果が決まり、重ねても変わらないもの（§2） | ○ |
+| PR の lint | `pull_request` | golangci-lint（PR が変えた行の指摘だけ。§3） | ○ |
+| PR の Docker | `pull_request`（Docker の文脈が変わったとき） | Docker Compose の smoke test（amd64。§4） | ○ |
+| Merge Queue の `check`（本検査） | `merge_group` | 統合した状態で、変わった文脈のコンパイル・型・vet・テスト・生成物（§5） | ○ |
+| main への push | `push` | 検査はしない。キャッシュを作るジョブだけ（§7） | — |
+| 遅い検査 | リリースの関門・nightly・手動 | E2E（全体）・実 PostgreSQL・stream の契約・連合・arm64 と amd64 のイメージ・golangci-lint（全体）・ビルドタグの組み合わせ・CodeQL（§8） | リリースでは○ |
 
-PR の `check`（preflight）は 1 ジョブにまとめ、目安を 2 分以内にする:
+Merge Queue に入るのは PR の `check` を通ったものだけなので、PR だけで回す検査も main に入る前に一度は通っている。
+
+### 2. PR の `check`（preflight）
+
+1 ジョブにまとめ、目安を 2 分以内にする。
 
 | 守るもの | 検査 | 理由 |
 | --- | --- | --- |
 | Markdown・シェルの書式 | markdownlint、shellcheck | ファイル単位で決まる |
 | 依存のライセンス | go-licenses、npm のライセンス | lockfile で決まる。2 つの PR の依存の和は、それぞれが通った依存の和 |
 | Go の書式 | gofmt | ファイル単位で決まる |
-| Dockerfile と `.tool-versions` の一致、Playwright の版、デザイントークン、CSS の `100vh` | 今の `docker-check`・`playwright-image-check`・`web-tokens`・CSS の検査 | ファイル単位または lockfile で決まる |
-| `@my/ui` のスクリーンショットと axe（ui の文脈が変わったときだけ、別ジョブ） | `ui-test` | 基準画像は変えた PR の中で直す必要がある（ADR-0027） |
+| TypeScript の書式 | `web:fmt-check`（ADR-0081）。Merge Queue の `repo` でも回す | — |
+| Dockerfile と `.tool-versions` の一致、Playwright の版、デザイントークン、CSS の `100vh` | `docker-check`・`playwright-image-check`・`web-tokens`・CSS の検査 | ファイル単位または lockfile で決まる |
+| `@my/ui` のスクリーンショットと axe（ui の文脈が変わったときだけ、別ジョブ） | `ui-test` | 基準画像は変えた PR の中で直す必要がある（ADR-0110） |
 
-golangci-lint は、Go（`tools/agentkit` を含む）が変わった PR で、preflight とは別のジョブ（`lint`）で回す。指摘は golangci-lint-action の `only-new-issues` で PR が変えた行に絞り、PR に注釈として付ける。
-解析そのものは全パッケージに対して行うので、速さは main が作る golangci-lint のキャッシュで決まる。
-Merge Queue では回さない。2 つの PR を重ねて増える指摘は、別々の PR が同じ関数の最後の呼び出し元を 1 つずつ消すような稀な場合に限られ、ビルドは壊さない。
-その指摘も、PR が変えた行の外に出るものも、遅い検査の golangci-lint（全体）が見つける。
+### 3. PR の golangci-lint
 
-Docker Compose の smoke test（amd64）は、Docker の文脈（`Dockerfile`・`.dockerignore`・`deploy/`・`scripts/docker-smoke.sh`）が変わった PR で、別のジョブ（`docker-smoke`）で回す。
-守るのは、イメージでしか分からないものである。Dockerfile の各段がビルドできること、`.dockerignore` がイメージに要るファイルを落とさないこと、`deploy/docker/compose.yaml` の配線（環境変数による設定、スキーマの適用と起動の順序、ボリューム）、実行用のイメージ（nonroot・`/data` の権限・CLI）である。
-サーバーの組み立てと起動、WebFinger・Actor・NodeInfo、両方言へのスキーマの適用は、Go のテストと `db-check` がすでに確かめる。そのため、`cmd/` や `internal/platform/` を変えただけの PR では回さない。
-結果は PR の Docker の構成のファイルでほぼ決まるので、Merge Queue では回さない。イメージに要る新しいファイルを別の PR が足すといった稀な重なりは、リリースの前に遅い検査が見つける。
-arm64 のイメージは、Go を `CGO_ENABLED=0` でクロスコンパイルするので、amd64 との違いはベースのイメージとプラットフォームの指定だけである。遅い検査でだけビルドする。
+- Go（`tools/agentkit` を含む）が変わった PR で、preflight とは別のジョブ（`lint`）で回す。指摘は golangci-lint-action の `only-new-issues` で PR が変えた行に絞り、PR に注釈として付ける。
+- 解析そのものは全パッケージに対して行うので、速さは main が作る golangci-lint のキャッシュで決まる。
+- Merge Queue では回さない。2 つの PR を重ねて増える指摘は、別々の PR が同じ関数の最後の呼び出し元を 1 つずつ消すような稀な場合に限られ、ビルドは壊さない。
+  その指摘も、PR が変えた行の外に出るものも、遅い検査の golangci-lint（全体）が見つける。
 
-Merge Queue の `check`（本検査）は、変わった文脈（`scripts/changed-contexts.sh`）に応じて次のジョブを組む。
-文脈が変わっていないジョブは今までどおりスキップし、`check` はスキップを成功として扱う（ADR-0047 の仕組みのまま）:
+### 4. PR の Docker smoke test
+
+- Docker Compose の smoke test（amd64）は、Docker の文脈（`Dockerfile`・`.dockerignore`・`deploy/`・`scripts/docker-smoke.sh`）が変わった PR で、別のジョブ（`docker-smoke`）で回す。
+- 守るのは、イメージでしか分からないものである。Dockerfile の各段がビルドできること、`.dockerignore` がイメージに要るファイルを落とさないこと、`deploy/docker/compose.yaml` の配線（環境変数による設定、スキーマの適用と起動の順序、ボリューム）、実行用のイメージ（nonroot・`/data` の権限・CLI）である。
+- サーバーの組み立てと起動、WebFinger・Actor・NodeInfo、両方言へのスキーマの適用は、Go のテストと `db-check` がすでに確かめる。そのため、`cmd/` や `internal/platform/` を変えただけの PR では回さない。
+- 結果は PR の Docker の構成のファイルでほぼ決まるので、Merge Queue では回さない。イメージに要る新しいファイルを別の PR が足すといった稀な重なりは、リリースの前に遅い検査が見つける。
+- arm64 のイメージは、Go を `CGO_ENABLED=0` でクロスコンパイルするので、amd64 との違いはベースのイメージとプラットフォームの指定だけである。遅い検査でだけビルドする。
+
+### 5. Merge Queue の `check`（本検査）
+
+変わった文脈（`scripts/changed-contexts.sh`）に応じて次のジョブを組む。判定の漏れは「知らないパスはすべての文脈」で防ぐ。
 
 | ジョブ | 中身（ジョブの中は並列） | 対象の文脈 |
 | --- | --- | --- |
 | `server-static` | `go mod tidy -diff`、`go vet`、`CGO_ENABLED=0` のビルド、Go が読む生成物の鮮度（ADR-0081）、`db-check`（両方言） | go・schema・api・i18n |
-| `server-test` | `go test ./...`（pgmem、ADR-0041） | go・schema・api・i18n |
+| `server-test` | `go test ./...`（pgmem、ADR-0015） | go・schema・api・i18n |
 | `client-static` | 生成（ADR-0081）→ `tsc`・Oxlint・knip・`vite build`・i18n のカタログの検査 | ui・web・api・i18n |
 | `client-test`（2 シャード） | Vitest（`app/web`・`app/ui`・`tools/i18n`）。`app/web` は `vitest --shard=<i>/2` で 2 ジョブに分ける | ui・web・api・i18n |
-| `repo` | agentkit の検査と文脈の地図、ADR の番号の重複（ADR-0081） | 常に |
+| `repo` | agentkit の検査と文脈の地図、ADR の番号の重複（ADR-0081）、手元と CI の組み合わせのずれ（§11） | 常に |
 
-- ジョブの中身は、ADR-0080 のタスク（`task ci:<ジョブ>`）1 つにする。ワークフローは、ツールの準備とそのタスクの呼び出しだけを書く。
-  同じタスクを手元でも同じに回せる。
 - ビルドタグの組み合わせ（アダプタを外したビルド）は Merge Queue で回さず、遅い検査で回す。組み合わせが壊れるのはアダプタやビルドタグを変えたときに限られ、マージのたびに確かめる必要はない。リリースの前には必ず通る。
-- `client-test` を初めから 2 つに分けるのは、今の `web-test` だけで 242 / 274 秒かかり、Merge Queue の最長のジョブになるからである。
+- `client-test` を初めから 2 つに分けるのは、`web-test` だけで 242 / 274 秒（中央値 / p90）かかり、Merge Queue の最長のジョブになるからである。
   Vitest 5.0.5 の `--shard <index>/<count>` で分ける（`vitest --help`、2026-10-23 確認）。
-- Merge Queue で同時に組むグループは最大 2、1 回にマージするのは最大 5 のまま（`.github/rulesets/protect-main.json`）。1 グループのジョブは最大 6 なので、
-  Merge Queue が同時 20 ジョブのうち 12 を超えて使うことはない。
-- PR の `check` を本検査にしたいとき（外の貢献者の PR を早めに確かめる、Merge Queue で落ちた原因を PR で調べる）は、
-  PR に `ci:full` のラベルを付ける。そのときだけ、PR でも Merge Queue と同じジョブを回す。
-- 必須チェックは今までどおり `check` の 1 つにし、`pull_request` と `merge_group` で中身を変える。ワークフローにパスのフィルタは付けない（ADR-0047 の理由のまま）。
-  1 つの `check` の中身をイベントで変える形は、ADR-0047 の入力 `scope`（shellcheck などを PR だけで回す）ですでに動いている。
+- Merge Queue で同時に組むグループは最大 2（`max_entries_to_build: 2`）、1 回にマージするのは最大 5（`max_entries_to_merge: 5`）にする（`.github/rulesets/protect-main.json`）。グループが増えると同時 20 ジョブを使い切り、PR の待ちが延びるからである。
+  1 グループのジョブは最大 6 なので、Merge Queue が同時 20 ジョブのうち 12 を超えて使うことはない。
+- PR の `check` を本検査にしたいとき（外の貢献者の PR を早めに確かめる、Merge Queue で落ちた原因を PR で調べる）は、PR に `ci:full` のラベルを付ける。そのときだけ、PR でも Merge Queue と同じジョブを回す。
 
-### main への push
+### 6. 必須チェックとスキップ
 
-- 検査は回し直さない。main のコミットは、Merge Queue で検査したマージグループの head そのものである（ADR-0047 のまま）。
+- 必須チェックは `ci.yml` の `check` の 1 つにし、`pull_request` と `merge_group` で中身を変える。
+- PR の実行は、同じ PR に新しい push が来たら取り消す。
+- `ci.yml` は `pull_request` と `merge_group` で必ず起動し、ワークフローにパスのフィルタを付けない。文脈を絞るのは、ジョブの `if`（`changes` の出力）だけにする。
+  `if` でスキップしたジョブは "Success" を報告し、`needs` の結果は `skipped` になるので、`check`（`if: always()`）はスキップを成功として扱う。
+- この形を採る根拠（GitHub のドキュメント、2026-10-19 確認）:
+  - パス・ブランチ・コミットメッセージでスキップされたワークフローのチェックは "Pending" のままで、必須ならマージを止める（[Troubleshooting required status checks](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)）。
+  - Merge Queue が必須にする Actions のチェックは `merge_group` で起動しなければならず、起動しないと報告されずにマージが失敗する（[Managing a merge queue](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue)）。
+  - `merge_group` のフィルタとして書かれているのは `branches` / `branches-ignore` だけである（[Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)）。Merge Queue で変更範囲によって検査を絞るには、ワークフローの中で差分を判定するしかない。
+
+### 7. main への push
+
+- 検査は回し直さない。main のコミットは、Merge Queue で検査したマージグループの head そのものである。
 - `main.yml` は、PR と Merge Queue が復元するキャッシュだけを作る。キャッシュを作れるのは main だけである。
   実行は、そのブランチと既定のブランチで作られたキャッシュしか復元できない。マージグループは `gh-readonly-queue/main/...` という自分のブランチで動くので、
   そこで保存したキャッシュはほかのグループや PR から使えない（[Dependency caching](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching)、2026-10-23 確認）。
-  Go のキャッシュは、空の `GOCACHE` から作り直して保存する（前のキャッシュを復元して足さない）。
-  これでキャッシュの大きさを 1 回のビルドの分に保つ。キーは `go.sum`・`tools/go.sum`・Go の版・日付にする。保存するのは、そのキーのキャッシュがまだないときだけにする。
-  Bun のキャッシュは lockfile をキーにする（今のまま）。
+- Go のキャッシュは、空の `GOCACHE` から作り直して保存する（前のキャッシュを復元して足さない）。これでキャッシュの大きさを 1 回のビルドの分に保つ。
+  キーは `go.sum`・`tools/go.sum`・Go の版・日付にする。保存するのは、そのキーのキャッシュがまだないときだけにする。
+  Bun のキャッシュは lockfile をキーにする。
 - Go のキャッシュには、復元するジョブが読むものだけを、そのジョブと同じ設定（`CGO_ENABLED=0`。cgo の設定はビルドキャッシュのキーに入る）で、1 つずつ順に作る。
   モジュール、パッケージと Go のツールのビルド、テストのバイナリ、`go vet` の結果、agentkit のビルド、golangci-lint の解析の結果である。
   検査は回さない（golangci-lint は指摘があっても失敗させない）。ライセンスや `go mod tidy` のように何も残さない検査を回したり、検査を並列に回して CPU を取り合わせたりしない。
 - CodeQL は main への push では回さず、毎日の schedule・リリースの関門・手動で回す。
 
-### 遅い検査: リリースの関門・nightly・手動
+### 8. 遅い検査: リリースの関門・nightly・手動
 
-- 遅い検査の組（E2E の全体〈`matrix: full`、8 シャード〉、`federation-live`、`postgres-contract`、`stream-contract`、amd64 と arm64 のイメージと smoke test、golangci-lint の全体とビルドタグの組み合わせ、CodeQL）を、
-  1 つの再利用ワークフロー `slow-suite.yml` にまとめる。
+- 遅い検査の組（E2E の全体〈`matrix: full`、8 シャード〉、`federation-live`、`postgres-contract`、`stream-contract`、amd64 と arm64 のイメージと smoke test、golangci-lint の全体とビルドタグの組み合わせ、CodeQL）を、1 つの再利用ワークフロー `slow-suite.yml` にまとめる。
 - **リリースの関門**: リリースは `release.yml`（`workflow_dispatch`、入力は版）だけが作る。`release.yml` は、指定したコミットで `slow-suite.yml` を回す。
   すべて通ったときだけ、そのコミットにタグを打ち、GitHub Release を下書きで作る。成果物（イメージの公開・リリースノート）は M5（#30）が足す。
-- **nightly**: `nightly.yml` は `slow-suite.yml` を毎日 18:00 UTC に回す。ただし、前回成功した nightly から main が動いていなければ回さない。
-- **手動**: `slow-suite.yml` と各ワークフロー（`web-e2e.yml` など）は、`workflow_dispatch` で任意のブランチに回せる。
-  E2E の部分集合（`matrix: pr`）は手動でだけ回す。
-- main への push ごとの E2E はやめる。並行の作業では、E2E の失敗をマイルストーンの終わりにまとめて直す（workflow.md §9）。
-  push ごとの結果は使われず、6 割は途中で捨てられていた。
+- **nightly**: `nightly.yml` は `slow-suite.yml` を毎日 18:00 UTC に回す。ただし、前回成功した nightly から main が動いていなければ回さない。GitHub の混雑で 2 時間ほど遅れて起動することがあるが、退行を 1 日以内に見つけるには足りる。
+- **手動**: `slow-suite.yml` と各ワークフロー（`web-e2e.yml` など）は、`workflow_dispatch` で任意のブランチに回せる。E2E の部分集合（`matrix: pr`）は手動でだけ回す。
+- **E2E の頻度**: main への push ごとの E2E はやめる。PR でも自動では回さない（パスやラベルによる起動も持たない）。
+  E2E に触れる PR では、作者が `scripts/task.sh web:e2e` か `web-e2e.yml` を手で回す。並行の作業では、E2E の失敗をマイルストーンの終わりにまとめて直す（workflow.md §9）。
+  v0 のあいだは main が一時的に E2E で落ちることを許す。見つけたら、壊した PR を特定して直す PR を出す。
 
-### 見込みの効果（3 日間の実測から見積もる）
+### 9. E2E の並列化
 
-| 区分 | 今の runner 時間 | 見込み | 根拠 |
-| --- | --- | --- | --- |
-| PR | 52.5 h | 約 15 h | preflight は 1 ジョブ約 90 秒、`ui-test` は ui が変わったときだけ |
-| Merge Queue | 28.5 h | 約 20 h | 小さいジョブをまとめて準備を減らす。キャッシュの復元が 165 秒から数十秒になる。golangci-lint は PR で回す |
-| main への push | 83.6 h | 約 3 h | キャッシュを作るジョブだけ |
-| nightly・リリース | 数 h | 数 h | 今の nightly と同じ量 |
+`web-e2e.yml` は、ビルド・シャード・レポートの 3 段にする。
 
-- PR の `check` は、中央値約 280 秒から 2 分以内になる。runner の起動待ちも、取り合う相手が減って短くなる。
-- マージまでのリードタイムは、PR の preflight と Merge Queue の本検査（目安 4〜5 分）の和になる。今の PR の `check` と Merge Queue の `check` の和（約 9〜10 分）より短い。
+```text
+build（ubuntu-latest、1 ジョブ）: app/web のビルドと bin/my のビルド → actions/upload-artifact（app/web/dist と bin/my）
+shard 1..N（Playwright のイメージ）: bun install → download-artifact → playwright test --shard=i/N --reporter=blob
+report（1 ジョブ、if: always()）: blob を集めて playwright merge-reports で 1 つの HTML にする
+```
 
-### 覆す条件
+- シャードは `fullyParallel: true` のテスト単位で分かれる。シャードごとに自分の `vite preview` と `my serve`（SQLite、毎回新しい DB）を起動するので、シードとレート制限はシャードの中で閉じる。
+- 成果物を配る主な理由は、時間よりも全シャードが同じビルドを検査することである（ビルドそのものは約 16 秒）。シャードは Go のセットアップを省ける。
+- シャードの数は `matrix: pr` が 4、`matrix: full` が 8。
+- シャードの worker 数は 2。実測（#562）では 3 にしても、`matrix: pr` の範囲が約 10.0 分から約 8.8 分、`matrix: full` が約 10.6 分から約 10.2 分になるだけで、縮む時間が小さい。
 
-- 手元の検査を通らない PR が増え、Merge Queue で落ちて外れる PR が週に数件を超えるなら、本検査の一部（コンパイル・型検査）を PR にも戻す。
+### 10. 手元の実行と Merge Queue から外れた PR
+
+- エージェントも人間も、`check` / `check:changed` をコミット・push・PR の前に走らせる義務を負わない。手元の実行は、CI の失敗の再現と、書いている途中の確認のためのものである。
+- PR の `check`（preflight）の範囲（§2）と `ci:full` ラベルの使い方（§5）は、手元の検査の有無に関わらず同じである。
+- Merge Queue から外れた PR は、持ち主が直して入れ直す。その間も列の残りは進む。
+- 並行する PR の順序や衝突は、計画の問題（workflow.md §9）として扱う。手元で検査を走らせる理由にしない。
+- フォーマット（`web:fmt`、`gofmt`）は、preflight が見るものなので、push の前にかける。安く、preflight の失敗を避けられる。
+- `agentkit check` は任意のコマンドとして残す。`agentkit pr open` は、手元の検査を通したことを PR の項目にしない。
+
+### 11. CI のジョブの組み方
+
+- go-task は、各検査のコマンドの唯一の定義と、手元の入口（`check`・`check:changed`・領域ごとの `*:check`・生成・開発の起動）に徹する。
+- CI のジョブは、ワークフローで組む。準備のステップ（checkout・`setup-go`・`setup-bun`・`setup-task`・生成）の後に、互いに依存しない検査を `parallel` のステップにする。
+  各ステップは名前を検査の名前にして、末端のタスクを 1 つ呼ぶ（`scripts/task.sh go:vet`）。
+- 公式の action が注釈やキャッシュで価値を足す検査は、その action をステップに使う（golangci-lint-action）。コマンドの版は `.tool-versions` から読み、タスクと同じ版にする。
+- `ci:*` の集約タスクは持たない。CI 向けの `output: group` と `error_only` の設定も持たない（ステップごとにログが分かれる）。
+- go-task の `deps` が保証する順序は、ワークフローでも保つ。生成は並列のまとまりの前のステップにする。互いに干渉する検査は、同じまとまりに入れないか、`deps` で順序を持つ 1 つのタスクとして呼ぶ。
+  干渉する検査の例: `web:lint-rules` は `app/web/src` に一時的なファイルを置く。golangci-lint は同時に 1 つしか動かない。
+- 手元と CI の組み合わせのずれは、`repo` ジョブで検査する。`check` が含む末端のタスクがすべて、CI のどこかのステップで呼ばれているか、CI で回さない理由とともに除外の一覧にあるかを確かめる。
+- GitHub Actions は 1 つのジョブの中でステップを並列に動かせる（`parallel`・`background`・`wait`・`wait-all`・`cancel`）。並列のステップはそれぞれのログと実行を持ち、1 つのジョブで同時に動く background のステップは 10 まで、composite action の中では使えない
+  （[changelog](https://github.blog/changelog/2026-06-25-actions-steps-can-now-be-run-in-parallel)、[Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)、2026-10-23 確認）。
+
+### 12. 覆す条件
+
+- Merge Queue で落ちて外れる PR が週に数件を超えるなら、本検査の一部（コンパイル・型検査）を PR にも戻す。`ci:full` の使い方と preflight の範囲も見直す。
 - リリースの関門で見つかる退行が、直前のマイルストーンの作業に埋もれて直しにくいなら、nightly を必須にするか、E2E の部分集合を Merge Queue に入れる。
-- 有料のプランや self-hosted runner に移り、同時実行の上限が問題でなくなったら、PR でも本検査を回すことを考え直す。
+- 有料のプラン、大きな runner や self-hosted runner に移り、同時実行の上限が問題でなくなったら、PR でも本検査を回すことや、E2E の部分集合を Merge Queue に入れることを考え直す。
+- 重ねて初めて壊れる種類の失敗が、Merge Queue で回さない検査（`ui-test`・`docker-smoke` など）で main に繰り返し入るなら、その検査を Merge Queue に戻す。
+- `parallel` のステップが GitHub-hosted runner で期待どおりに動かない（ログが分かれない、失敗が拾えない）なら、ジョブを検査ごとに分けるか、ジョブの中身を集約タスクの呼び出しに戻す。
+- 組み合わせのずれの検査（§11）が保守の負担になるなら、検査をやめ、ずれはレビューで見る。
+
+### 13. UI のプレビュー: 置くもの
+
+PR ごとの UI のプレビューとして、部品と画面の Storybook を Cloudflare Workers の Previews に置く。
+
+- `app/web` に Storybook を足し、画面のストーリーを置く。ストーリーは機能の部品（`features/<x>/components`）をルートの単位で描き、API は機能のテストの MSW のハンドラ（`features/<x>/test/handlers.ts`）とフィクスチャで差し替える。
+  ブラウザの MSW には `msw/browser` を使う（MSW は既存の依存）。
+- 画面のストーリーは、ADR-0110 の L1 の作業ごとに、通常・空・読み込み中・エラー・長い文言（`ja`・`en-XA`）・RTL（`ar-XB`）・320 px の状態を持つ。操作は `play` 関数で書き、Storybook の Interactions のパネルで動きを再生できるようにする。
+- `app/web` の Storybook は、`app/ui` の Storybook を Storybook の composition（`refs`）で取り込み、1 つの URL で部品と画面の両方を見られるようにする。
+- 画面のストーリーは、品質ゲート（ADR-0110）の axe の検査に入れる。スクリーンショットの比較には入れない（画面は E2E のスクリーンショットが受け持つ）。
+
+### 14. UI のプレビュー: 置き場
+
+- Cloudflare の、静的アセットだけを返す Worker を 1 つ作る。サーバーの実行環境ではない（my のサーバーは Cloudflare Workers を対象にしない方針のまま）。
+- **PR ごと**: Workers の Previews（`wrangler preview --name pr-<番号>`）に置く。URL は `pr-<番号>-<Worker 名>.<サブドメイン>.workers.dev` で、`workers.dev` は `X-Robots-Tag: noindex` を返す。
+  閉じた PR の Preview は消す（§15）。無料のプランで Worker あたり 100 の Preview を持て、上限では最も古いものから消える（2026-10-28 に [Previews の文書](https://developers.cloudflare.com/workers/previews/)で確認）。
+- **main**: main への push で本番の Worker に置く。これが ADR-0110 の L5 で決定者が見る、全画面と部品の一覧になる。
+
+### 15. UI のプレビュー: CI の構成
+
+- **ビルド**（`ui-preview.yml`、`pull_request`、`app/**` と `locales/**` を変える PR）: 2 つの Storybook を静的にビルドし、成果物として上げる。秘密情報を持たない。PR の必須の検査にもマージの条件にもしない。
+- **公開**（`ui-preview-deploy.yml`、ビルドの `workflow_run`）: main の workflow として動き、Cloudflare の API トークン（秘密情報）を持つ。成果物を静的なファイルとしてだけ扱い、中身を実行しない。
+  Worker の設定（`wrangler` の設定）は main の側のものを使い、成果物から Worker のコードを読まない。
+- **PR へのコメント**: 公開した URL と、main の Storybook と比べて追加・変更されたストーリー（ビルドの `index.json` の差分）への直接のリンクを、PR の 1 つのコメントにまとめて更新する。
+  決定者は、このリストを見る順として使い、コメントは GitHub の PR に書く（L5 の分類は ADR-0110）。
+- **閉じた PR**: `ui-preview-cleanup.yml` が 24 時間に 1 回の schedule と手動（`workflow_dispatch`）で、閉じた PR とマージした PR の Preview を消す。Worker の Preview の一覧を Cloudflare の API で取り、各 PR の状態を GitHub に尋ねる。
+  main の workflow とスクリプトだけを `main` に限った environment で動かし、PR のものをチェックアウトもダウンロードもしない。
+
+### 16. UI のプレビュー: 確かめることと見直す条件
+
+- Previews が静的アセットだけの Worker で動くことは、文書に明記がない。実装の issue の最初に確かめ、動かなければ、同じ Worker のバージョンの URL（`wrangler versions upload --preview-alias pr-<番号>`）に置く。
+  どちらでも URL・コメントの流れは変わらない。バージョンの URL は消せないので掃除はせず、同じ別名の次のアップロードが置き換える。
+- Cloudflare の無料のプランで、Previews もバージョンの URL も静的アセットに使えない場合は、GitHub Pages にして、PR ごとの URL を諦め、main の一覧だけを置く。
+- 画面のストーリーの手入れ（MSW のハンドラとルートの差し替え）が、画面の追加のたびに大きな手間になる場合は、`app/web` 全体をブラウザの MSW で動くデモとしてビルドする形に切り替える。
+
+### 17. CI から Claude API への認証
+
+CI から Claude API を使うジョブはすべて Workload Identity Federation（WIF）で認証し、`ANTHROPIC_API_KEY` を GitHub に置かない。
+
+- **ジョブの範囲**: Claude API を使うジョブは、それぞれ専用の environment で動き、`permissions: id-token: write` を持つ。どの environment も、デプロイできるブランチは `main` だけである。
+  - `nightly.yml` の `l4`: environment `ux-nightly`。
+  - `release.yml` の `release-notes-prose`: environment `release-notes`。ブランチでの試しのリリースでは動かず、draft は事実だけになる。
+- **Anthropic の側**（決定者が Claude Console の Workload identity で設定する）:
+  - 発行者は `https://token.actions.githubusercontent.com` を discovery の方式で登録する。
+  - CI 専用のワークスペースとサービスアカウントを作り、ワークスペースに使用額の上限を設ける。上限が、CI 全体の Claude API の費用の上限になる。2 つのジョブは同じワークスペースとサービスアカウントを使う。
+  - フェデレーションの規則は environment ごとに 1 つ作る。`subject_prefix` を `repo:mycroblog@346242925/my@1421587381:environment:<environment>`（GitHub がこのリポジトリに発行する `sub` は、所有者とリポジトリの数値 ID を含む形である）、`audience` を `https://api.anthropic.com` にし、
+    `claims` で `repository_owner: mycroblog` と `ref: refs/heads/main` も確かめる。トークンの有効期間は短く（例 600 秒）する。
+- **GitHub の側**: 規則・組織・サービスアカウント・ワークスペースの ID は秘密ではないので、各 environment の variable に置く
+  （`ANTHROPIC_FEDERATION_RULE_ID`・`ANTHROPIC_ORGANIZATION_ID`・`ANTHROPIC_SERVICE_ACCOUNT_ID`・`ANTHROPIC_WORKSPACE_ID`）。
+- **トークンの受け渡し**: ジョブは GitHub の OIDC のトークンを `ANTHROPIC_IDENTITY_TOKEN_FILE` のファイルに書き、Claude Code が交換する。GitHub のトークンは約 5 分で切れるので、ジョブはファイルを 2 分ごとに取り直す。
+- **信頼しない入力を読むジョブ**: `release-notes-prose` は PR と Issue の本文を読むので、モデルの入力を信頼しない。書き込みの権限を持たず、モデルに道具を与えず、環境変数のうち `ANTHROPIC_` で始まるものだけを Claude Code に渡す。出力は機械が検査してから別のジョブが draft に入れ、決定者が読んで公開する。
+- **見直す条件**: 使うエージェントの道具（Claude Code）が WIF の交換に対応せず、包む手間が大きい場合は、交換したアクセストークンを、そのジョブの中でだけ環境変数として渡す。静的なキーには戻さない。
+
+WIF は GitHub の OIDC のトークンを短い有効期間の Anthropic のアクセストークンに交換する仕組みである（2026-10-28 に [Use WIF with GitHub Actions](https://platform.claude.com/docs/en/manage-claude/wif-providers/github-actions) で確認）。
+
+## 経緯
+
+関係する要件は NFR-DEV-1（1 つのコマンドで検査が走る）と NFR-DEV-2（外部サービスなしで検査が完結する）。
+
+v0 の開発が進むと、`web-e2e`（約 15 分）が PR の待ち時間を決めるようになり、E2E を main への push でだけ回し、新しい push で取り消す形にした（2026-10-19）。
+続けて、検査を PR・Merge Queue・main・nightly に振り分け、文脈ごとの再利用ワークフロー（`ctx-*.yml`）と `changes` ジョブで組み、E2E をシャードに分けた。
+この時点の実測で、main への push の 63% はジョブが 1 つも動かずに取り消され、残りも Merge Queue と同じ木を 2 度検査していた。
+
+4〜5 本ずつ並行して PR を出す運用（workflow.md §9）では、それでも同じ検査の繰り返しと runner の取り合いがリードタイムを決めた。
+3 日間の実測（2026-10-20〜23、ジョブ約 5,800 件）で、runner 時間は PR 52.5 h、Merge Queue 28.5 h、main への push 83.6 h で、main の push の 60% が次の push で取り消されていた。
+PR と Merge Queue の失敗はどちらも 1% 前後で、Merge Queue が止めた 2 回のうち 1 回は重ねて初めて壊れる型の不一致だった（`tsc`、run 39385861802）。
+Merge Queue の価値は、統合した状態でコンパイル・型検査・テストを通すことにある。そこで本検査を Merge Queue に寄せ、main への push をキャッシュの作成だけにし、遅い検査をリリースの関門にした。
+Free プランの GitHub-hosted runner は同時 20 ジョブ、キャッシュはリポジトリあたり 10 GB である（[Actions limits](https://docs.github.com/en/actions/reference/limits)、2026-10-23 確認）。
+
+その後の Merge Queue の実測を受けて、ビルドタグの組み合わせを遅い検査へ移し、golangci-lint を PR の変えた行に絞り、smoke test を Docker の文脈が変わった PR だけにした。
+
+本検査を PR の上で初めて回すと（#1069、`ci:full`）`server-static` が 754 秒かかった。ジョブが `task ci:<job>` 1 つの形では、Actions の画面からどの検査が遅いのかが分からなかったので、ジョブをワークフローの `parallel` のステップで組み直した（§11）。
+
+Merge Queue の前の関門は当初、手元の `check:changed` の役だった。ところが 1 台のマシンで 5 エージェントを並行させた日に、手元の検査が負荷でタイムアウトし（Go の sqlite アダプタのテストが 600 秒に達した）、その日 Merge Queue が止めた 2 件（#1704 は PR をまたいだ相互作用、#1678 は proxy.golang.org のネットワークエラー）は手元の検査では見つからなかった。
+そこで検査の義務を、結果を決める場所である Merge Queue に一本化した（§1、§10）。
+
+UI のプレビュー（§13〜§16）は、ADR-0110 の批評のサイクル（L5）で決定者が PR の画面と動きを見るために足した。品質ゲート（ADR-0110）のスクリーンショットは `prefers-reduced-motion: reduce` で撮るのでマイクロインタラクションが写らず、`app/web` にはストーリーがなかった。PR の preflight に足す余地はなく、フォークの PR の workflow は秘密情報を読めない。
+
+Claude API の認証（§17）は、ADR-0015 が API キーを environment に置くとしていたものを、決定者の求めで WIF に変えた。
+
+## 採らなかった案
+
+- 今のまま PR と Merge Queue の両方で本検査を回す: PR で全部の結果が分かるが、同じ検査を 2 回回し、runner の取り合いでどちらも遅くなる。
+- PR に一本化し、Merge Queue はコンパイル・型検査・vet だけにする: 作者は早く結果を知れるが、テストどうしの組み合わせで壊れるものが main に入る。PR の本検査は main に入る前に古くなる。
+- Merge Queue をやめる: 一番単純で待ちの列もないが、重ねて壊れた main は並行で動くエージェント全員を止める。実測では本物の重ね合わせの失敗が 3 日で 1 回あった。
+- 遅い検査を main への push ごとに、取り消さず回す: 退行に早く気づくが、マージの多い日は runner を使い続け、workflow.md §9 の並行の作業では結果がすぐには使われない。
+- 遅い検査を nightly だけにする: 一番安いが、リリースの直前に確かめる仕組みがない。
+- 文脈ごとの 1〜2 ジョブ（PR で最大約 14 ジョブ）のまま: 落ちた文脈がジョブ名で分かるが、ジョブごとの準備が足し上がり、同時 20 ジョブを取り合う。
+- 文脈ごとの独立したワークフローに `paths` を付ける: 文脈ごとに読め回せるが、スキップで必須チェックが Pending のまま残り、`merge_group` にはパスのフィルタがない。
+- E2E を 1 ジョブのまま回す: runner の消費は最も少ないが、全体で 45〜49 分かかる。
+- 手元の `check:changed` を必須のまま残す: 自分の PR で閉じた失敗は早く分かるが、並行のマシンを食い合い、Merge Queue が見る統合の失敗は防げない。
+- `ci:full` を既定にして PR でも全検査を回す: 結果は早いが、同じ検査を繰り返す。
+- CI のジョブを `task ci:<job>` 1 つにする: 手元と CI が同じ組を回せるが、検査ごとの時間とログが見えない。
+- ワークフローにタスクを通さずコマンドを直接書く: 検査のコマンドが手元と 2 か所に分かれ、中身がずれる。
+- プレビューを `app/ui` の Storybook だけにする: いちばん安いが、問題の中心である画面の情報設計を批評できない。
+- プレビューを `app/web` 全体のデモにする: 導線を確かめられるが、特定の状態を作る仕組みが要り、状態を列挙する Storybook より批評の入口として弱い。
+- プレビューを Chromatic に置く: 公開・見た目の比較・承認がそろうが、無料は月 5,000 スナップショット（2026-10-28 に[料金の文書](https://chromatic.com/pricing)で確認）ですぐ超え、比較は既存のスクリーンショットと重なる。
+- プレビューを GitHub Pages に置く: 外部の依存が増えないが、1 つのリポジトリに 1 つのサイトで、PR ごとの URL を持てない。
+- Claude API に静的な API キーを使う: 設定が secret 1 つで済むが、キーは漏れると取り消すまで使え、`main` に限る仕組みも environment の設定にだけ頼る。
 
 ## Consequences（影響）
 
 - 良い影響:
-  - 本検査は、統合した状態に対して 1 回だけ回る。PR の結果は 2 分以内に返る。
-  - main への push（runner 時間の約半分）と CodeQL が、検査のための runner を使わなくなる。PR と Merge Queue のジョブが、起動を待たずに動きやすくなる。
+  - 本検査は、統合した状態に対して 1 回だけ回る。PR の結果は 2 分以内に返る。並行のマシンが検査で詰まらない。
+  - main への push と CodeQL が、検査のための runner を使わなくなる。
   - リリースは、遅い検査をすべて通ったコミットからしか作れない。
+  - Actions の画面で、検査ごとの所要時間とログが見え、失敗したステップの名前が落ちた検査の名前になる。
+  - 決定者が PR ごとに、画面の状態と動きをブラウザで見てコメントでき、変わったストーリーの一覧がレビューの順になる。画面のストーリーは ADR-0110 の L3 と L4 の入力にも使える。
+  - GitHub に Claude API の秘密情報がなく、費用は専用のワークスペースの上限を超えない。
 - 悪い影響・トレードオフ:
-  - 手元の検査を飛ばした PR は、Merge Queue で初めて落ちる。落ちた PR は Merge Queue から外れ、同じグループの後ろの PR が組み直しになる。
-    エージェントは push の前に `task check:changed` を回すこと（今の規則のまま）が前提になる。
+  - 自分の PR の中で閉じた失敗も、Merge Queue で初めて見つかることが増える。落ちた PR は外れ、同じグループの後ろの PR が組み直しになる。
   - 外の貢献者の PR は、`ci:full` を付けない限り、Merge Queue まで型やテストの結果が分からない。
-  - E2E の退行が main に入ってから見つかるまでが、push ごとの数十分から、nightly の最長 1 日になる。
+  - E2E の退行が main に入ってから見つかるまでが、nightly の最長 1 日になる。実 PostgreSQL も同じである。
   - キャッシュを日付で作り直すので、日中に変わったパッケージは Merge Queue で毎回ビルドし直す。
-- 後続の作業（issue にする）:
-  - `ci.yml` と `ctx-*.yml` を preflight と本検査のジョブに組み替え、`ci:full` のラベルを足す（ADR-0080 のタスクの移行と一緒に行う）
-  - `main.yml` をキャッシュを作るジョブだけにし、Go のキャッシュの作り方を変える
-  - `slow-suite.yml` と `release.yml` を作り、`nightly.yml` を `slow-suite.yml` の呼び出しにし、main が動いていない日は飛ばす
-  - CodeQL の起動を schedule・リリース・手動にする
-  - [workflow.md](../agents/workflow.md)・AGENTS.md・CONTRIBUTING.md・[docs/reference/commands.md](../reference/commands.md) の CI の説明を書き直す
-
-## Pros and Cons of the Options（詳細比較・任意）
-
-- A（今のまま）: PR で全部の結果が分かる。その代わり、同じ検査を PR と Merge Queue で 2 回回し、runner の取り合いでどちらも遅くなる。
-- C（PR に一本化）: 作者は PR でテストの結果を早く知る。Merge Queue は 1〜2 分で済む。
-  その代わり、テストどうしの組み合わせで壊れるもの（同じ表やフィクスチャを 2 つの PR が変えるなど）は main に入る。
-  また、PR の本検査は main に入る前に古くなる（後ろのマージで前提が変わる）。
-- D（Merge Queue をやめる）: 仕組みが一番単純で、待ちの列もない。その代わり、重ねて壊れた main は、並行で動くエージェント全員の手元の検査を止める。
-  実測では、本物の重ね合わせの失敗が 3 日で 1 回あった。
-- S2（push ごと・取り消さない）: 退行に早く気づく。その代わり、マージの多い日は実行がつながり、runner を使い続ける。§9 では結果がすぐには使われない。
-- S4（nightly だけ）: 一番安い。リリースの直前にもう一度確かめる仕組みがない。
-- J1（文脈ごと）: どの文脈が落ちたかがジョブ名で分かる。その代わり、ジョブごとの準備が足し上がり、同時 20 ジョブを取り合う。
-  J2 では、どの検査が落ちたかを、タスクのまとまった出力（ADR-0080 の `output: group`）とジョブの要約で示す。
-
-## Open Questions / 要検証
-
-- なし。
+  - `scripts/changed-contexts.sh` の判定に Merge Queue が頼る。
+  - E2E のシャードは準備の時間の分だけ runner を多く使う。
+  - CI の組み方を、タスクの `deps` とワークフローの 2 か所で持つ。手元で CI のジョブと同じ組を 1 つのコマンドで回す手段はなく、手元は `task check` か `task check:changed` を使う。`parallel` は 2026-06 からの機能で、使われた実績が少ない。
+  - `app/web` に Storybook の設定とストーリーが増え、画面を足すたびにストーリーを書く。
+  - Cloudflare のアカウントと API トークンが外部の依存として増える。トークンは Workers の編集だけに権限を絞る。Preview の URL は公開で、PR の未マージの UI を誰でも見られる（OSS なので内容はもともと公開）。
+  - Claude API の上限を 2 つのジョブで分け合うので、nightly が上限まで使うと、リリースの本文の呼び出しは失敗し、draft は事実だけになる。リリースは止まらない。
+  - WIF の設定が Claude Console と GitHub に分かれ、規則の `sub` の形を間違えると交換が `401` で失敗する。失敗の理由は Claude Console の認証の履歴で見る。

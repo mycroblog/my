@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The new entries of the streamed timelines that wait for the reader (web-client/README.md Y7, S10): the home timeline,
-// each of the user's lists (ADR-0122 §4), and the local and the federated timelines (ADR-0127 §5). The user's stream
+// each of the user's lists (ADR-0013 §13), and the local and the federated timelines (ADR-0013 §21). The user's stream
 // delivers the first two (`update`, `list_update`) and the timeline's own stream, open while its screen shows it, the
 // others (`update`). While a page
 // shows the timeline they stay in a Query cache entry of their own until they are inserted at the top: by the reader
-// pressing "N new posts" or, when the reader chose automatic insertion (ADR-0077), by useNewPosts as soon as nothing
+// pressing "N new posts" or, when the reader chose automatic insertion (ADR-0013), by useNewPosts as soon as nothing
 // keeps them (the reader is not in the feed). While no page shows it, nobody is reading it: the stream inserts them into
 // its cached pages at once, so that the timeline shows them from the moment it opens again (a timeline loaded less than
 // `staleTime` ago that no write marked stale is not fetched again on opening).
@@ -21,7 +21,7 @@ import { type Status, type StatusPage, type Timeline, timelineQueryOptions } fro
 /** The timelines whose new entries a stream delivers: the home timeline, the user's lists, the local and the federated. */
 export type StreamedTimeline = Extract<Timeline, { kind: "home" | "list" | "local" | "public" }>;
 
-/** The timelines that have a stream of their own, open while their screen shows them (ADR-0127 §5). */
+/** The timelines that have a stream of their own, open while their screen shows them (ADR-0013 §21). */
 export type PublicStreamedTimeline = Extract<Timeline, { kind: "local" | "public" }>;
 
 /** The new entries the stream delivered, newest first, and whether they may not join the loaded ones. */

@@ -1,5 +1,5 @@
 {
-  "description": "The cron expressions of Every (ADR-0094 §5), shared by the Go and the TypeScript mybot so that both take the same expressions and compute the same times. next: the successive times after from. prev: the last time at or before at. Times are RFC 3339 in UTC. A wall-clock time that a daylight saving time change skips does not happen; one that it repeats happens once, at its first occurrence.",
+  "description": "The cron expressions of Every (ADR-0093 §13), shared by the Go and the TypeScript mybot so that both take the same expressions and compute the same times. next: the successive times after from. prev: the last time at or before at. Times are RFC 3339 in UTC. A wall-clock time that a daylight saving time change skips does not happen; one that it repeats happens once, at its first occurrence.",
   "next": [
     {"name": "a number", "expr": "0 9 * * *", "tz": "", "from": "2026-10-25T08:59:00Z", "next": ["2026-10-25T09:00:00Z", "2026-10-26T09:00:00Z"]},
     {"name": "strictly after from", "expr": "0 9 * * *", "tz": "", "from": "2026-10-25T09:00:00Z", "next": ["2026-10-26T09:00:00Z"]},

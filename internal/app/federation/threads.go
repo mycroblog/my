@@ -19,7 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Fetching remote posts and their threads (federation.md §6.3, ADR-0034).
+// Fetching remote posts and their threads (federation.md §6.3, ADR-0006).
 const (
 	// JobFetchObject fetches one remote post and, within the bounds of its payload, enqueues
 	// the fetches of its ancestors and replies.
@@ -100,7 +100,7 @@ func (h *StatusHandlers) fetchParentTx(ctx context.Context, tx uow.Tx, st appcon
 }
 
 // FetchThread starts fetching the thread of the status statusID that a user opened
-// (federation.md §6.3, ADR-0034): its missing ancestors up to ThreadDepth levels, and for a
+// (federation.md §6.3, ADR-0006): its missing ancestors up to ThreadDepth levels, and for a
 // remote status the replies its server lists, ThreadDepth levels deep, ThreadMaxItems documents
 // in all. The fetches run as JobFetchObject jobs. A thread opened in the last ThreadFetchTTL is
 // not fetched again, and neither is a local status that replies to nothing (its replies are
@@ -385,7 +385,7 @@ func (h *StatusHandlers) fetched(ctx context.Context, got *Fetched, parent bool)
 
 // storeOptions say how a post is stored: with the fetch of its parent (parent), or as one that a
 // relay brought in (relay), which is stored only when it is public, without fetching its parent
-// or the unknown actors it mentions, and is recorded in relayed_statuses (ADR-0061).
+// or the unknown actors it mentions, and is recorded in relayed_statuses (ADR-0006).
 type storeOptions struct {
 	parent bool
 	relay  *RelayMembership

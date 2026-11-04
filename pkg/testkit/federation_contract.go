@@ -50,7 +50,7 @@ type FederationFactory func(t *testing.T, opts uow.Options) FederationHarness
 // and the Flag of the instance actor that forwards a report to the reported account's inbox.
 // The documents carry the body of the revision they present
 // (federation.md §7.4); a local status leaves the remote accounts that do not follow its author
-// out of tag (ADR-0035); the Delete is stored with the deletion, so that it reaches the
+// out of tag (ADR-0017); the Delete is stored with the deletion, so that it reaches the
 // inboxes of the Create after the status's rows are gone; and the automatic deletion of an old
 // post (FR-118) sends the same Delete as its author's deletion. It also covers one delivery (federation.md §7.3): the classification of
 // responses, the circuit breaker, the failure days that make a server unavailable and the

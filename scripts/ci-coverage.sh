@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Fails when a check of `scripts/task.sh check` runs in no CI step (ADR-0083). The CI jobs are workflow steps that each
+# Fails when a check of `scripts/task.sh check` runs in no CI step (ADR-0079). The CI jobs are workflow steps that each
 # run one task, so a check added to a `<context>:check` task must also get a step, or an entry in EXCLUDED below with
 # the reason CI does not run it.
 #
@@ -87,7 +87,7 @@ for task in $(printf '%s\n' "${!checks[@]}" | sort); do
   fi
 done
 if [ "$missing" != 0 ]; then
-  echo "Add a step that runs it (\`scripts/task.sh <task>\`) to a job, or list it in EXCLUDED with the reason (ADR-0083)." >&2
+  echo "Add a step that runs it (\`scripts/task.sh <task>\`) to a job, or list it in EXCLUDED with the reason (ADR-0079)." >&2
 fi
 if [ "$status" != 0 ] || [ "$missing" != 0 ]; then
   exit 1

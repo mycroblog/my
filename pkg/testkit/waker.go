@@ -11,7 +11,7 @@ import (
 )
 
 // Waker is a queue.Waker that records the signals it is given, for the tests of the wake-up
-// signals (ADR-0120). It is safe for concurrent use.
+// signals (ADR-0004). It is safe for concurrent use.
 type Waker struct {
 	mu    sync.Mutex
 	wakes []queue.Wake

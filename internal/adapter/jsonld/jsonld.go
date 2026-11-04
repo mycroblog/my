@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package jsonld canonicalizes JSON-LD documents for the linked data signatures of public posts
-// (ADR-0061): URDNA2015 to N-Quads with github.com/piprate/json-gold, whose contexts resolve only
+// (ADR-0006): URDNA2015 to N-Quads with github.com/piprate/json-gold, whose contexts resolve only
 // from the documents bundled here (contexts/), never from the network. It implements
 // federation.Canonicalizer and keeps the JSON-LD library out of the application layer.
 package jsonld

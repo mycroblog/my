@@ -11,7 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// Role badges on profiles (ADR-0071, FR-913). Account.badges is filled by the account's own
+// Role badges on profiles (ADR-0070, FR-913). Account.badges is filled by the account's own
 // endpoints (newProfile) only, in one read; every other Account has none, so that timelines and
 // lists of accounts read nothing more. The viewer chooses which badges to show through
 // /preferences/badges, off by default.

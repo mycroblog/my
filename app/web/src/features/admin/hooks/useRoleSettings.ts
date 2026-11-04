@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The roles screen (FR-720, manage_roles): the roles of the instance, what the viewer may do with each, creating a
-// role, changing its position and permissions, giving it a badge (ADR-0071), and deleting it. The viewer changes only
+// role, changing its position and permissions, giving it a badge (ADR-0070), and deleting it. The viewer changes only
 // the roles at or below their highest one and only the permissions their roles grant; admin changes only its badge,
 // and neither built-in role is deleted. A refused input stays next to its field; what a change did is announced and kept in a StatusMessage.
 import { type BadgeColor, useNotice } from "@my/ui";

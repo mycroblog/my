@@ -14,21 +14,21 @@ import (
 	"github.com/mycroblog/my/internal/domain/finance"
 )
 
-// The income records (ADR-0073, FR-917): the payment provider's final money movements, which
+// The income records (ADR-0067, FR-917): the payment provider's final money movements, which
 // the supporters module hands over through RecordIncome, and the totals of their net by period,
 // computed on read like the costs. The finance module reads the supporters through the
 // SupporterDirectory port, which internal/platform implements on the supporters module.
 
 // ErrIncomeParentMissing reports a refund, a chargeback, or a reversal whose payment is not
-// recorded yet: the job that hands it over records the payment first and retries (ADR-0073 §8).
+// recorded yet: the job that hands it over records the payment first and retries (ADR-0067 §18).
 var ErrIncomeParentMissing = errors.New("finance: the payment of the movement is not recorded")
 
 // IncomeMovement is a final money movement of a payment provider in the provider-neutral form
-// that RecordIncome takes (ADR-0073 §1). Its fields are plain values, so that the module that
+// that RecordIncome takes (ADR-0067 §11). Its fields are plain values, so that the module that
 // hands it over needs nothing of the finance domain.
 type IncomeMovement struct {
 	// Provider is the provider's name ("stripe", "payjp"), and ProviderID its ID of the movement, unique
-	// per provider (Stripe: the balance transaction; PAY.JP: ADR-0099 §5).
+	// per provider (Stripe: the balance transaction; PAY.JP: ADR-0074 §13).
 	Provider   string
 	ProviderID string
 	// Kind is a finance.IncomeKind: payment, refund, chargeback, chargeback_reversal, or fee.
@@ -76,7 +76,7 @@ type IncomeFilter struct {
 	Kind     finance.IncomeKind
 }
 
-// IncomeRepository is the part of Repository that records the income (ADR-0073 §8).
+// IncomeRepository is the part of Repository that records the income (ADR-0067 §18).
 type IncomeRepository interface {
 	// InsertIncome records a movement and reports whether it did: a movement already recorded
 	// (the same provider and provider ID) writes nothing.
@@ -95,7 +95,7 @@ type IncomeRepository interface {
 	ListIncome(ctx context.Context, f IncomeFilter, before string, limit int) ([]IncomeRecord, error)
 }
 
-// PlanCount is the number of members of a supporter plan (ADR-0073 §7, N1).
+// PlanCount is the number of members of a supporter plan (ADR-0067 §17).
 type PlanCount struct {
 	PlanID  string
 	Name    string
@@ -103,7 +103,7 @@ type PlanCount struct {
 }
 
 // ProviderRule is the reporting time zone of a payment provider, in which its movements fall on
-// their dates (ADR-0073 §3).
+// their dates (ADR-0067 §13).
 type ProviderRule struct {
 	Provider string
 	Location *time.Location
@@ -116,7 +116,7 @@ type Subscriber struct {
 	Username  string
 }
 
-// SupporterDirectory is what the finance module reads of the supporters module (ADR-0073 §1):
+// SupporterDirectory is what the finance module reads of the supporters module (ADR-0067 §11):
 // internal/platform implements it on the supporters module. It reads nothing while the program
 // is disabled.
 type SupporterDirectory interface {
@@ -182,7 +182,7 @@ func (r IncomeRecord) movement() finance.IncomeMovement {
 }
 
 // RecordIncome records the final money movements of a payment provider, each once however
-// often it comes (ADR-0073 §2), in order, one short transaction each: a refund, a chargeback,
+// often it comes (ADR-0067 §12), in order, one short transaction each: a refund, a chargeback,
 // or a reversal after its payment, which the batch or an earlier one recorded. It fails with
 // ErrIncomeParentMissing for a movement whose payment is not recorded, so that the job retries
 // once it is. A movement that breaks the rules of the income records is logged and left out,
@@ -250,7 +250,7 @@ type IncomeQuery struct {
 }
 
 // IncomeTotals returns the totals of the recorded income over the periods of q under its basis
-// (ADR-0073 §5), computed on read, and the balance against the costs (Totals) when q asks for
+// (ADR-0067 §15), computed on read, and the balance against the costs (Totals) when q asks for
 // it. It fails with finance.ErrInvalidBasis and the errors of finance.Granularity.Periods.
 func (s *Service) IncomeTotals(ctx context.Context, q IncomeQuery) ([]IncomePeriod, error) {
 	periods, err := s.periods(q.TotalsQuery)
@@ -306,7 +306,7 @@ func (s *Service) periods(q TotalsQuery) ([]finance.Period, error) {
 	return q.Granularity.Periods(q.From, q.To)
 }
 
-// PlanCounts returns the members of each supporter plan now (ADR-0073 §7); none without the
+// PlanCounts returns the members of each supporter plan now (ADR-0067 §17); none without the
 // supporters module.
 func (s *Service) PlanCounts(ctx context.Context) ([]PlanCount, error) {
 	if s.d.Supporters == nil {
@@ -319,7 +319,7 @@ func (s *Service) PlanCounts(ctx context.Context) ([]PlanCount, error) {
 	return out, err
 }
 
-// IncomeRules returns the reporting time zones of the payment providers (ADR-0073 §3).
+// IncomeRules returns the reporting time zones of the payment providers (ADR-0067 §13).
 func (s *Service) IncomeRules() []ProviderRule {
 	if s.d.Supporters == nil {
 		return []ProviderRule{}
@@ -332,7 +332,7 @@ func (s *Service) IncomeRules() []ProviderRule {
 }
 
 // IncomeEntry is a recorded movement with the local account of its subscriber, as the
-// administrators see it (ADR-0073 §6); Subscriber is the zero value without one.
+// administrators see it (ADR-0067 §16); Subscriber is the zero value without one.
 type IncomeEntry struct {
 	IncomeRecord
 	Subscriber Subscriber

@@ -27,7 +27,7 @@ const schemaApplyLock = "my schema apply"
 const devSchemaPrefix = "my_schema_apply_"
 
 // ApplySchema brings the PostgreSQL database of url (the database_url setting) to the embedded
-// schema (schema.Postgres) with the Atlas library (ADR-0126 §1). Holding a session-scoped
+// schema (schema.Postgres) with the Atlas library (ADR-0023 §10). Holding a session-scoped
 // advisory lock, it runs the bootstrap SQL (schema.PostgresBootstrap), executes the schema in
 // a temporary schema of its own (in the database of devURL when it is not empty, else in the
 // target database) and inspects it, inspects the target's current schema, plans the

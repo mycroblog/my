@@ -10,7 +10,7 @@
 | `instance_rule_revisions` | イベント（版） | `id`, `rule_id`, `position`（`int`）, `text`（`string(300)`。1 行）, `hint`（`string(1000)`。空 = 補足なし）, `revised_by_user_id`（NULL 可 = CLI による変更）, `revised_at` | インデックス `(rule_id, id DESC)`。文と補足は 1 つずつで、どのロケールでも同じ値を表示する |
 | `instance_rule_retirements` | イベント | `rule_id`（PK）, `retired_by_user_id`（NULL 可 = CLI による廃止）, `retired_at` | 廃止したルールも通報からは参照できる |
 | `instance_rule_heads` | 投影 | `rule_id`（PK）, `revision_id`, `position` | 有効なルールだけ。インデックス `(position)` |
-| `link_card_domain_rules` | 現在値 | `domain`（PK。正規化したホスト）, `mode`（`enum(no_fetch, no_images)`）, `note`（`string(5000)`。空 = メモなし）, `updated_at` | リンクのカードのクローラーのドメインごとのルール（FR-117、ADR-0132）。サブドメインにも効く。最大 1,000 行。変更の履歴は監査ログ（§4.3）に残し、再構築の対象でない |
+| `link_card_domain_rules` | 現在値 | `domain`（PK。正規化したホスト）, `mode`（`enum(no_fetch, no_images)`）, `note`（`string(5000)`。空 = メモなし）, `updated_at` | リンクのカードのクローラーのドメインごとのルール（FR-117、ADR-0062）。サブドメインにも効く。最大 1,000 行。変更の履歴は監査ログ（§4.3）に残し、再構築の対象でない |
 | `instance_theme_revisions` | イベント（版） | `id`, `custom_css`（`string`。空 = なし。64 KiB まで）, `revised_by_user_id`（NULL 可 = CLI による変更）, `revised_at` | トークンもカスタム CSS も無い版はテーマを既定に戻す |
 | `instance_theme_tokens` | イベント（版の子） | `revision_id`, `token`（`enum`。上書きできるトークンの生成した一覧）, `scheme`（`enum(light, dark, all)`。色はライトとダーク、ほかは `all`）, `value` | PK `(revision_id, token, scheme)` |
 | `instance_theme` | 投影 | `id`（PK。常に 1）, `revision_id` | テーマを保存したことがあれば 1 行 |
@@ -25,7 +25,7 @@
 | `service_closure_events` | イベント | `id`, `kind`（`enum(announced, withdrawn, closed, delivery_completed)`）, `changed_by_user_id`（NULL 可 = CLI とサーバー自身による変更）, `occurred_at` | サービスの終了（FR-808、[ADR-0088](../../../adr/0088-service-shutdown-modes.md)）の状態の変化 |
 | `service_closure_schedules` | イベント（`announced` の部分型） | `event_id`（PK）, `closes_at`, `export_until`, `message`（`string(5000)`。空 = なし） | CHECK `export_until >= closes_at` |
 | `service_closure_heads` | 投影 | `id`（PK。常に 1）, `state`（`enum(announced, closed, delivery_completed)`）, `event_id`（最後のイベント）, `announcement_event_id`（効いている予定の `announced`） | 終了を予告している間とその後に 1 行。行が無い = 予告なし |
-| `instance_secrets` | リソース | `id`, `name`（`string`。`media_proxy_key`）, `sealed_secret`（`Sealer` で封じた値。AAD は `id` と列の名前）, `created_at` | 一意 `(name)`。サーバーが最初に使うときに作る秘密（[ADR-0121](../../../adr/0121-kms-key-managers.md) §2）。名前は `internal/domain/instance` に定義する。`my kek rewrap` の対象 |
+| `instance_secrets` | リソース | `id`, `name`（`string`。`media_proxy_key`）, `sealed_secret`（`Sealer` で封じた値。AAD は `id` と列の名前）, `created_at` | 一意 `(name)`。サーバーが最初に使うときに作る秘密（[ADR-0019](../../../adr/0019-security-baseline.md) §12）。名前は `internal/domain/instance` に定義する。`my kek rewrap` の対象 |
 | `instance_domains` | リソース | `id`（PK。常に 1）, `host`（`string`）, `account_domain`（`string`）, `recorded_at` | この DB が属するドメイン。最初に DB を使う `my serve` か `my` コマンドが 1 回だけ書き、以後は設定と比べて、違えば拒否する（[ADR-0018](../../../adr/0018-federated-uris.md)）。`my config check -instance` と `my db upgrade -check` は比べるだけで書かない |
 
 - 設定値は 1 キー 1 スカラーにします。複合的な設定はキーを分けます（JSON にしない）。
@@ -51,7 +51,7 @@
 - テーマ（[ADR-0059](../../../adr/0059-design-tokens-and-instance-theme.md)）は版ごとにテーマ全体（上書きしたトークンとカスタム CSS）を記録し、`instance_theme` が `id` の最大の版を指します。
   `instance_theme_tokens.token` の `CHECK` は、`app/ui/src/theme.css` から生成したトークンの一覧（`internal/domain/instance/theme_tokens.gen.go`）と同じで、`schema` のテストが食い違いを検出します。
   値は保存の前にドメインが種類ごとの形・範囲と色の組のコントラストを検査し、検査済みの値だけからスタイルシートを組み立てます。版の内容は変わらないので、過去の版のスタイルシートの URL も同じ内容を返し続けます。
-- サーバーのロゴとアイコン（[ADR-0116](../../../adr/0116-custom-logo-and-icon.md)）は、種類（`icon`・`logo`・`logo_dark`）ごとの設定と消去を版として記録し、`instance_brands` が種類ごとに `id` の最大の版を指します（最大の版が `clear` なら行を持たず、組み込みの絵を使う）。
+- サーバーのロゴとアイコン（[ADR-0059](../../../adr/0059-design-tokens-and-instance-theme.md)）は、種類（`icon`・`logo`・`logo_dark`）ごとの設定と消去を版として記録し、`instance_brands` が種類ごとに `id` の最大の版を指します（最大の版が `clear` なら行を持たず、組み込みの絵を使う）。
   ファイルの中身は BlobStore に `instance/brand/<版の id>/<rendition>.<svg|png>` のキーで置き、`instance_brand_files` はキー・寸法・大きさ・SHA-256 を持ちます。
   BlobStore への書き込みはトランザクションの前に行い、トランザクションが失敗したら書いたファイルを消します。版の内容は変わらないので、過去の版のファイルも消さず、`/brand/<版の id>/` の URL は同じ内容を返し続けます。
 - お知らせ（FR-726）は、`manage_announcements` を持つ人が下書きとして作り、公開し、取り下げます。タイトルと本文と表示の期間（`starts_at`・`ends_at`）を変えるたびに版を記録し、`announcement_heads` が `id` の最大の版と、状態の変化の最後の結果を指します。

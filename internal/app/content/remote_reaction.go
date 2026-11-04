@@ -12,13 +12,13 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// This file holds the emoji reactions of remote accounts (FR-116, ADR-0052), which the federation
+// This file holds the emoji reactions of remote accounts (FR-116, ADR-0051), which the federation
 // module records from the EmojiReact and Like activities it receives and takes back on their
 // Undo (docs/architecture/federation.md §3.4). Like the remote favourites, they are of local
 // statuses only, emit the same events as a local command would, and send nothing.
 
 // The emoji reactions as part of this module's public API, for the federation module, which
-// decides from them whether a Like is a reaction (ADR-0052 §1).
+// decides from them whether a Like is a reaction (ADR-0051 §6).
 type (
 	// Reaction is content.Reaction.
 	Reaction = content.Reaction
@@ -46,7 +46,7 @@ type RemoteReactionEmoji struct {
 	// Custom is the custom emoji, its Shortcode without colons.
 	Custom *RemoteEmojiInput
 	// Domain is the domain of the custom emoji: the host of its Emoji's id, or the reacting
-	// account's domain when the Emoji has no id (ADR-0052 §1); "" for an emoji of this server.
+	// account's domain when the Emoji has no id (ADR-0051 §6); "" for an emoji of this server.
 	Domain string
 	// Borrowed reports a custom emoji of another server than the reacting account's. Only that
 	// server's documents record its emoji: a borrowed emoji is taken only when it is stored
@@ -77,7 +77,7 @@ type RemoteReactionInput struct {
 //
 // Recording a reaction that the account already has with the emoji, or an activity whose URI is
 // recorded already, changes nothing and returns the existing reaction. A reaction with another
-// emoji is another reaction: the account may react with several (ADR-0052 §1).
+// emoji is another reaction: the account may react with several (ADR-0051 §6).
 func (s *Interactions) RecordRemoteReaction(ctx context.Context, in RemoteReactionInput) (content.Reaction, error) {
 	unicode, err := remoteUnicode(in.Emoji)
 	if err != nil {

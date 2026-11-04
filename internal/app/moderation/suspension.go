@@ -17,7 +17,7 @@ import (
 // federation restriction of suspend and ban): an action that suspends it, and the lift or the
 // expiry of its last suspension (moderation.SuspensionChange), of a local account and of a
 // remote one alike. The federation module sends the Update of a local actor from it
-// (federation.md §11.1, ADR-0036); when it starts the suspension of a remote account, the same
+// (federation.md §11.1, ADR-0058); when it starts the suspension of a remote account, the same
 // transaction cuts the follows with the account (FR-717: relationship_severances.action_id is
 // ActionID, severance.go).
 const EventAccountSuspensionChanged = "moderation.account_suspension_changed"

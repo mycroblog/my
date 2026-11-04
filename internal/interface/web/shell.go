@@ -25,7 +25,7 @@ type runtimeConfig struct {
 	AccountDomain string `json:"accountDomain"`
 	// DefaultLocale is the instance's default locale.
 	DefaultLocale string `json:"defaultLocale"`
-	// Icon, Logo, and LogoDark are the instance's own brand images (ADR-0116): the path of the SVG
+	// Icon, Logo, and LogoDark are the instance's own brand images (ADR-0059): the path of the SVG
 	// and the size of its viewBox; each is left out while the built-in image applies.
 	Icon     *runtimeBrandImage `json:"icon,omitempty"`
 	Logo     *runtimeBrandImage `json:"logo,omitempty"`
@@ -40,7 +40,7 @@ type shellData struct {
 	Lang, Dir, Title string
 	// Theme gives the theme colors and the theme's stylesheet (ADR-0059).
 	Theme themeState
-	// Brand holds the paths of the instance's own icon (ADR-0116), nil for the build's icons.
+	// Brand holds the paths of the instance's own icon (ADR-0059), nil for the build's icons.
 	Brand *brandIcon
 	// Crawlers state the page's crawler policy in its meta tags (ADR-0057).
 	Crawlers                   crawlerDirectives

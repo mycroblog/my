@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Videos and audio files in posts in every width × locale project (FR-105, ADR-0054 §6, ADR-0027): an uploaded video
+// Videos and audio files in posts in every width × locale project (FR-105, ADR-0005 §9, ADR-0110): an uploaded video
 // with its poster, an audio file without a description, and a video of another server through the media proxy play in
 // their cells with the browser's controls, never by themselves. `vite preview` has no API, so the spec answers the
 // token refresh, the client API, and the media files with `page.route`, as a signed-in user's server would.

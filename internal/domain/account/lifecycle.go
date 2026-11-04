@@ -51,7 +51,7 @@ const (
 )
 
 // A self-deactivated account is deleted DeactivationPeriod after it was deactivated, and a
-// deactivation waits DeactivationGap after the previous reactivation (ADR-0145 §2, §8).
+// deactivation waits DeactivationGap after the previous reactivation (ADR-0089 §12, §18).
 const (
 	DeactivationPeriod = 30 * 24 * time.Hour
 	DeactivationGap    = 24 * time.Hour
@@ -75,7 +75,7 @@ func (s LifecycleState) Active() bool { return s.State == StateActive }
 func (s LifecycleState) DeletionScheduled() bool { return s.State == StateDeletionScheduled }
 
 // Deactivated reports whether the account's owner deactivated it and has not come back
-// (ADR-0145). The state says nothing of the deadline; DeactivationExpired does.
+// (ADR-0089). The state says nothing of the deadline; DeactivationExpired does.
 func (s LifecycleState) Deactivated() bool { return s.State == StateDeactivated }
 
 // DeactivationDueAt returns when a deactivated account is deleted, DeactivationPeriod after its

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The browser and the operating system in a User-Agent, for the list of signed-in browsers (ADR-0136 §2). It tells the
+// The browser and the operating system in a User-Agent, for the list of signed-in browsers (ADR-0090 §11). It tells the
 // common browsers apart and nothing more: what it does not know, the caller shows as the original string.
 
 export type DescribedUserAgent = { browser: string | undefined; os: string | undefined };

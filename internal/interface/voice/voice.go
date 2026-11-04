@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package voice serves the endpoints that the media servers of the voice chat call (ADR-0102
+// Package voice serves the endpoints that the media servers of the voice chat call (ADR-0101
 // §1, §4): POST /voice/webhooks/livekit receives the events of a LiveKit server, and
 // POST /voice/webhooks/sora/events the event and session webhooks of a Sora server, whose
 // POST /voice/webhooks/sora/auth authorizes each connection. They are not part of the client

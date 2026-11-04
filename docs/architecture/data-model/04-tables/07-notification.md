@@ -11,9 +11,9 @@
 | `notification_deleted_statuses` | 投影 | `status_id`（PK） | `content.status_deleted` から作る。その投稿についての通知があるときだけ（削除された投稿に後から通知は付かない） |
 | `push_subscriptions` | 現在値 | `id`, `account_id`, `oauth_token_family_id`, `endpoint`, `key_p256dh`, `key_auth`, `created_at`, `updated_at` | 一意 `(endpoint)`, 一意 `(oauth_token_family_id)`。インデックス `(account_id)`（FR-206） |
 | `push_subscription_alerts` | 現在値 | `subscription_id`, `notification_type` | PK `(subscription_id, notification_type)` |
-| `post_subscriptions` | 現在値 | `account_id`（購読する人）, `target_account_id`（対象のアカウント）, `created_at` | PK `(account_id, target_account_id)`。CHECK `account_id <> target_account_id`。インデックス `(account_id, created_at, target_account_id)`（購読の一覧。新しい順のキーセット）、`(target_account_id, account_id)`（投稿の通知の購読者の走査）。1 人あたり 1,000 件まで（ADR-0123） |
+| `post_subscriptions` | 現在値 | `account_id`（購読する人）, `target_account_id`（対象のアカウント）, `created_at` | PK `(account_id, target_account_id)`。CHECK `account_id <> target_account_id`。インデックス `(account_id, created_at, target_account_id)`（購読の一覧。新しい順のキーセット）、`(target_account_id, account_id)`（投稿の通知の購読者の走査）。1 人あたり 1,000 件まで（ADR-0086） |
 | `post_subscription_requests` | 現在値 | `account_id`, `target_account_id`, `created_at` | PK `(account_id, target_account_id)`。インデックス `(target_account_id, account_id)`。承認待ちのリモートのフォローと同時に頼まれた購読 |
-| `notification_settings` | 現在値 | `account_id`, `notification_group`（`enum(mention, follow, follow_request, follow_accepted, boost, favourite, reaction, quote, poll_closed, account_moved, voice, admin_report, admin_sign_up, admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved, admin_service_closure_due, admin_error_group, moderation, status, announcement)`）, `channel`（`enum(in_app, email)`）, `enabled`（`bool`）, `updated_at` | PK `(account_id, notification_group, channel)`。CHECK `moderation` は `email` だけ（FR-210、ADR-0109 §6） |
+| `notification_settings` | 現在値 | `account_id`, `notification_group`（`enum(mention, follow, follow_request, follow_accepted, boost, favourite, reaction, quote, poll_closed, account_moved, voice, admin_report, admin_sign_up, admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved, admin_service_closure_due, admin_error_group, moderation, status, announcement)`）, `channel`（`enum(in_app, email)`）, `enabled`（`bool`）, `updated_at` | PK `(account_id, notification_group, channel)`。CHECK `moderation` は `email` だけ（FR-210、ADR-0086 §13） |
 
 - 通知は `notification` の同期 projector が、`graph` と `content` のドメインイベントから同じトランザクションで作ります（§2.1）。
 
@@ -76,7 +76,7 @@
 
   - 本人は `moderation_notice` から処分の種類・公開理由・対象の投稿・期限を見られ、異議申し立てに進めます（FR-715）。
     クライアント API は通知に処分を本人に見せる形（種類と理由のカテゴリは本人の UI 言語の表示名付き）で埋め込み、`GET /api/v1/moderation/actions` は本人への処分を通知の有無に関わらずすべて新しい順に返します。
-    どちらも非公開のメモ・通報・処分した人を含めません（ADR-0038）。`moderation_notice` の行は `moderation_action_id` を必ず持ち、ほかの種類は持ちません。
+    どちらも非公開のメモ・通報・処分した人を含めません（ADR-0058）。`moderation_notice` の行は `moderation_action_id` を必ず持ち、ほかの種類は持ちません。
   - `appeal_decided` と `admin_appeal` の行は `appeal_id` を必ず持ち、ほかの種類は持ちません。クライアント API は `appeal_decided` に申し立てた処分を本人に見せる形（申し立てと審査の結果を含む）で埋め込み、`admin_appeal` には `appeal_id` だけを載せます。
     `admin_appeal` は申し立てた本人には作りません。
   - `report_resolved` は解決したことだけを伝え、処分の内容は含めません（FR-711）。
@@ -108,7 +108,7 @@
   - `admin_sign_up` は `identity.registration_pending`（登録が `pending` で始まった）から作ります。
   - 受け取る人がその種類をアプリ内でオフにしていれば作りません（下の通知の設定）。メールがオン（既定）の受け取る人には、新しく作った通知ごとに、同じトランザクションの outbox でメールのジョブ（`notification.moderator_email`、冪等キーは通知の ID）を積み、未読を待たずに送ります。
     ジョブは送る時点で権限と設定とあて先（確認済みで、抑止されていない主のアドレス）を確かめ、通知の種類と通知の画面へのリンクだけを書いたメールを `Mailer` で送ります。`mail = none` ではジョブを積みません。
-- 新しい投稿の購読（ADR-0123）は、ローカルの利用者が対象のアカウントごとに `post_subscriptions` に持ちます。購読は相手に知らせず、API・ActivityPub のどれにも出しません。
+- 新しい投稿の購読（ADR-0086）は、ローカルの利用者が対象のアカウントごとに `post_subscriptions` に持ちます。購読は相手に知らせず、API・ActivityPub のどれにも出しません。
   - ローカルの相手はフォローを問わず購読でき、リモートの相手は承認済みでフォローしている間（`graph` の `Follows` が真）だけ購読できます。自分自身は CHECK と `notification.ErrSelfSubscription`、どちらかがブロックしている相手（`graph` の `BlockedEitherWay`）とフォローしていないリモートの相手は `notification.ErrNotSubscribable` で断ります。上限を超える購読は、挿入した後の件数で `notification.ErrSubscriptionLimit` にしてトランザクションを戻します。
   - クライアント API の `notify`（`FollowAccountRequest`・`Relationship`）と CSV の `Notify on new posts` は購読を読み書きします。承認待ちのリモートのフォローと同時の `notify: true` は `post_subscription_requests` に記録し、`graph.follow_accepted` の projector が購読に変えます（上限に達していれば作らない）。承認待ちの間、`Relationship.notify` は偽です。
   - `graph.follow_terminated`（理由を問わない）は同じ組の依頼を消し、相手がリモートなら購読も消します。ローカルの相手の購読は、フォローを解除しても残ります。`graph.follow_rejected` は依頼を消し、`graph.blocked` は両方向の購読と依頼を消します。
@@ -121,7 +121,7 @@
   - 一覧・未読数・Web Push の送る前の確認は、今見えているお知らせ（`instance` の `ShownAnnouncementIDs`）の通知だけを残し、取り下げたお知らせと期間の終わったお知らせの通知を読み取り時に隠します（行は消さない）。
   - 設定のグループ `announcement` はインスタンスからの知らせの 1 行ですが、アプリ内は選べて既定オン、メールの経路を持ちません（`Rule.Absent`）。Web Push は購読の `alerts` に `announcement` があるときに送り、そのときのタイトルを出して、そのお知らせの画面（`/announcements/<id>`）を開きます。
   - アカウントの消去は、その人の購読と依頼、その人への購読と依頼も消します（§8）。
-- 通知の設定（FR-210、ADR-0109 §2・§3・§6）は、利用者が選んだ（種類のグループ、経路）だけを `notification_settings` に持ち、行が無ければグループの既定に従います。グループと既定、固定の経路はドメインの `notification.Groups` が決めます。
+- 通知の設定（FR-210、ADR-0086 §9, §10, §13）は、利用者が選んだ（種類のグループ、経路）だけを `notification_settings` に持ち、行が無ければグループの既定に従います。グループと既定、固定の経路はドメインの `notification.Groups` が決めます。
   - グループは、普段の通知が種類ごと（通話の `voice_room_started`・`voice_room_invited` は `voice` にまとめる）、モデレーター向けが種類ごと、インスタンスからの知らせが `moderation`（`moderation_notice`・`report_resolved`・`appeal_decided`・`relationships_severed`・`custom_emoji_request_decided`）・`service_closure`・`supporter`（`supporter_*`）・`announcement` です。
   - 既定は、普段の通知がアプリ内オン・メールオフ、モデレーター向けがどちらもオン、`moderation` がアプリ内固定・メールオフ、`service_closure` と `supporter` がどちらも固定、`announcement` がアプリ内オン（選べる）でメールなしです。固定の経路は行を持ちません（CHECK と `Setting.Validate` で拒否）。
     クライアント API は、権限の無いモデレーター向けの行と、サポーターの機能が無効のときの `supporter` の行を返しません。

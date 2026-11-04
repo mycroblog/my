@@ -80,7 +80,7 @@ type App struct {
 	Outbox   queue.Outbox
 	DeadJobs queue.DeadJobs
 	// JobAttempts records the runs of jobs that did not succeed, in the database whatever the
-	// queue (ADR-0064 §1); JobInspector lists the pending jobs, nil for a queue that cannot.
+	// queue (ADR-0004 §5); JobInspector lists the pending jobs, nil for a queue that cannot.
 	JobAttempts  queue.AttemptLog
 	JobInspector queue.JobInspector
 	Handlers     *queue.JobHandlerRegistry
@@ -99,7 +99,7 @@ type App struct {
 	HTTPClient kernel.HTTPClient
 	// Meter is the metrics adapter that cfg.MetricsExporter selects (ADR-0055).
 	Meter kernel.Meter
-	// Tracer is the tracing adapter that cfg.TracesExporter selects (ADR-0063).
+	// Tracer is the tracing adapter that cfg.TracesExporter selects (ADR-0055).
 	Tracer kernel.Tracer
 	// ErrorReporter receives the error reports of every module and hands them to its sinks:
 	// those the modules add and the exporter that cfg.ErrorsExporter selects (ADR-0103).
@@ -109,7 +109,7 @@ type App struct {
 	MetricsSnapshot *metrics.Service
 	// HumanVerifier checks the CAPTCHA token of the sign-in and registration forms, and
 	// HumanCheckWidget is what those pages render for it; both are nil when captcha is none
-	// (ADR-0042).
+	// (ADR-0106).
 	HumanVerifier    kernel.HumanVerifier
 	HumanCheckWidget *kernel.HumanCheckWidget
 
@@ -160,7 +160,7 @@ type App struct {
 	Notifications *notification.Service
 	// voiceNotifier creates the notifications of the voice chat rooms (ADR-0100 §8).
 	voiceNotifier *notification.VoiceNotifier
-	// Subscriptions keeps the local accounts' subscriptions to new posts (ADR-0123).
+	// Subscriptions keeps the local accounts' subscriptions to new posts (ADR-0086).
 	Subscriptions *notification.Subscriptions
 	// Push registers the Web Push subscriptions and sends the notifications to them (FR-206).
 	Push *notification.PushService
@@ -204,7 +204,7 @@ type App struct {
 	Scheduler *queue.Scheduler
 	// Projections rebuilds and verifies the projections (`my projection`, data-model §9).
 	Projections *projection.Service
-	// DataUpgrades runs and checks the data upgrade steps (`my db upgrade`, ADR-0087 §4); the
+	// DataUpgrades runs and checks the data upgrade steps (`my db upgrade`, ADR-0023 §7); the
 	// readiness check requires every step that it registers.
 	DataUpgrades *dbupgrade.Service
 	// Rewrap reports and re-wraps the stored sealed values under the current KEK (`my kek`,
@@ -237,10 +237,10 @@ type App struct {
 	// Refetches queues the refetch of remote posts that operators request (FR-407,
 	// docs/architecture/federation.md §6.4).
 	Refetches *federation.Refetches
-	// Relays joins and leaves the relays and admits what they bring in (ADR-0061).
+	// Relays joins and leaves the relays and admits what they bring in (ADR-0006).
 	Relays *federation.Relays
 	// FederationSever ends the follows with remote accounts for `my admin federation sever`
-	// (ADR-0076).
+	// (ADR-0006).
 	FederationSever *federation.Severance
 
 	source queue.Source
@@ -250,11 +250,11 @@ type App struct {
 	runnerSource queue.Source
 	// dbPoolMax is the maximum of the database's connection pool; 0 for a database without one.
 	dbPoolMax int
-	// skippedJobTypes are the job types that worker_job_types leaves to other workers (ADR-0138).
+	// skippedJobTypes are the job types that worker_job_types leaves to other workers (ADR-0004).
 	skippedJobTypes []string
 	// wakeFinder finds the jobs of the database queue that need a wake-up signal.
 	wakeFinder queue.WakeFinder
-	// waker sends the wake-up signals of an external queue (queue = cloudtasks, ADR-0120), and
+	// waker sends the wake-up signals of an external queue (queue = cloudtasks, ADR-0004), and
 	// closeWaker releases its client; both are nil for the other queues.
 	waker      queue.Waker
 	closeWaker io.Closer
@@ -301,7 +301,7 @@ type App struct {
 	routes       []route
 	// http records the HTTP server metrics; nil when Meter records nothing.
 	http *httpMetrics
-	// readinessFailures counts the failed readiness checks (ADR-0056 §3).
+	// readinessFailures counts the failed readiness checks (ADR-0055 §12).
 	readinessFailures kernel.Counter
 	// readyFlight runs one readiness check for the concurrent requests (readyCheck).
 	readyFlight singleflight.Group
@@ -389,7 +389,7 @@ type AppOptions struct {
 	PushAuthenticator queue.PushAuthenticator
 	// FanOutSize is the keys of one job of the wide fan-outs, queue.FanOutSize when 0. Tests only.
 	FanOutSize int
-	// RouteWaker stands in for the client of a queue of the routes of ADR-0139. Tests only.
+	// RouteWaker stands in for the client of a queue of the routes of ADR-0004. Tests only.
 	RouteWaker func(config.QueueRoute) queue.Waker
 	// CheckDomainsOnly keeps NewApp from recording host and account_domain on a database that has
 	// none, for the commands that change nothing. A mismatch still fails.
@@ -480,7 +480,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		a.HTTPClient = newHTTPClient(cfg, opts.Version, a.Logger, a.Meter, a.Tracer)
 	}
 	a.setUpPushEndpoints(cfg)
-	// The identity module's sign-in and registration check the CAPTCHA through it (ADR-0042 §3).
+	// The identity module's sign-in and registration check the CAPTCHA through it (ADR-0106 §9).
 	if a.HumanVerifier, a.HumanCheckWidget, err = newHumanVerifier(cfg, a.HTTPClient, a.Logger); err != nil {
 		return nil, err
 	}
@@ -609,7 +609,7 @@ func newHTTPClient(cfg *config.Config, version string, logger *slog.Logger, mete
 		Webhook: httpclient.Destinations{Hosts: cfg.WebhookAllowedHosts, Prefixes: cfg.WebhookAllowedPrefixes},
 		// So may the requests to the external identity providers (ADR-0106 §5).
 		LoginProvider: httpclient.Destinations{Hosts: cfg.LoginProviderAllowedHosts, Prefixes: cfg.LoginProviderAllowedPrefixes},
-		// And, in the development profile alone, the Web Push sends to a fake push service (ADR-0118 §3).
+		// And, in the development profile alone, the Web Push sends to a fake push service (ADR-0015 §11).
 		WebPush: httpclient.Destinations{Hosts: cfg.PushAllowedHosts, Prefixes: cfg.PushAllowedPrefixes},
 	}
 	if len(cfg.PushAllowedHosts) > 0 || len(cfg.PushAllowedPrefixes) > 0 {
@@ -623,7 +623,7 @@ func newHTTPClient(cfg *config.Config, version string, logger *slog.Logger, mete
 }
 
 // newHumanVerifier returns the CAPTCHA verifier and widget that cfg.Captcha selects, and
-// nil for none, which sends nothing to a third party (ADR-0042).
+// nil for none, which sends nothing to a third party (ADR-0106).
 func newHumanVerifier(cfg *config.Config, client kernel.HTTPClient, logger *slog.Logger) (kernel.HumanVerifier, *kernel.HumanCheckWidget, error) {
 	if cfg.Captcha == "" || cfg.Captcha == "none" {
 		return nil, nil, nil
@@ -647,7 +647,7 @@ func hostOnly(host string) string {
 	return host
 }
 
-// newKeyManager builds the KeyManager of cfg (ADR-0121 §3, §4). With key_manager = local, the
+// newKeyManager builds the KeyManager of cfg (ADR-0019 §13, §14). With key_manager = local, the
 // KEKs of kek and kek_previous wrap and unwrap, and the keys of kms_key and kms_key_previous, when
 // set, only unwrap the values still wrapped by their KMS, until `my kek rewrap` moves them to the
 // local KEK. With a KMS, the KMS key manager of kms_key wraps, and the KEKs of kek and kek_previous

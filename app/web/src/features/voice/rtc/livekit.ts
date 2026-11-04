@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The LiveKit method of the audio of a call (ADR-0102 §3, §6): one Room of livekit-client, joined with the grant's URL
+// The LiveKit method of the audio of a call (ADR-0101 §12, §15): one Room of livekit-client, joined with the grant's URL
 // and access token; the identity of the session in the room is its session ID. The SDK is a chunk of its own, loaded
 // with import() only when a grant names LiveKit (the other screens never fetch it).
 //

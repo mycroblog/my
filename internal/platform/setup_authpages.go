@@ -10,7 +10,7 @@ import (
 )
 
 // setUpAuthPages registers the sign-in screens. They load the stylesheet the web build makes for
-// them (ADR-0030), so they come after setUpWeb.
+// them (ADR-0090), so they come after setUpWeb.
 func (a *App) setUpAuthPages(cfg *config.Config) {
 	authpages.New(authpages.Options{
 		Identity: a.Identity, OAuth: a.Identity, Issuer: cfg.ServerOrigin(), FormActionOrigins: []string{cfg.WebOrigin},
