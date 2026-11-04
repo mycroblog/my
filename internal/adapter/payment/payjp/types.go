@@ -46,6 +46,7 @@ const (
 
 type customer struct {
 	ID          string     `json:"id"`
+	Email       string     `json:"email"`
 	DefaultCard string     `json:"default_card"`
 	Cards       list[card] `json:"cards"`
 }

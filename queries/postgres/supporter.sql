@@ -115,9 +115,12 @@ ON CONFLICT (subscription_id) DO UPDATE SET kind = excluded.kind, due_at = exclu
 -- name: DeleteSupporterDeadline :exec
 DELETE FROM supporter_subscription_deadlines WHERE subscription_id = $1;
 
+-- InsertSupporterCheckout writes nothing for a checkout that is recorded already: a provider
+-- may return the same one for a second start.
 -- name: InsertSupporterCheckout :exec
 INSERT INTO supporter_checkouts (id, subscription_id, provider, provider_checkout_id, expires_at, created_at)
-VALUES ($1, $2, $3, $4, $5, $6);
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (provider, provider_checkout_id) DO NOTHING;
 
 -- name: GetLatestSupporterCheckout :one
 SELECT id, subscription_id, provider, provider_checkout_id, expires_at, created_at

@@ -355,6 +355,57 @@ func TestCheckoutWaitsForTheClaimOfAnotherProcess(t *testing.T) {
 	}
 }
 
+// TestCheckoutStartedAgainInTheHour starts the checkout of one subscription twice in an hour, on
+// two plans: one ref, and each URL keeps its own plan. Whichever page is paid first makes the only
+// subscription, since the claim and the search go by the subscription and not by the plan.
+func TestCheckoutStartedAgainInTheHour(t *testing.T) {
+	e := newPageEnv(t)
+	e.f.addPlan("q", 2400, "month", nil)
+	e.f.plans["q"].Name = "Gold"
+	first, oldState := e.checkout(t)
+	again, err := e.p.StartCheckout(t.Context(), supporters.CheckoutRequest{
+		LocalID: "local-1", Price: "q", Email: "alice@example.com", Locale: "ja",
+		SuccessURL: "https://my.example/supporter/done", CancelURL: "https://my.example/supporter", Key: "another key",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again.Ref != first.Ref || !again.ExpiresAt.Equal(first.ExpiresAt) {
+		t.Errorf("checkouts of one hour = %+v and %+v, want one ref and expiry", first, again)
+	}
+	newState := query(t, again.RedirectURL).Get("s")
+	for _, tc := range []struct{ state, plan, price string }{{oldState, "p", "1,200"}, {newState, "q", "2,400"}} {
+		st, err := e.p.verify(tc.state, pageCheckout, unitNow)
+		if err != nil || st.Plan != tc.plan {
+			t.Errorf("state = %+v, %v, want plan %s", st, err, tc.plan)
+		}
+		rec := e.get(t, supporters.PagesPath(Name)+pageCheckout+"?s="+url.QueryEscape(tc.state))
+		if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), tc.price) {
+			t.Errorf("page of plan %s = %d, want the price %s", tc.plan, rec.Code, tc.price)
+		}
+	}
+	e.f.addToken("tok_ok", "4242", "verified")
+	claims := &sharedClaims{}
+	proc := e.process(t, claims)
+	if rec := proc.post(t, pageCheckout, postedCard(newState, "tok_ok")); rec.Code != http.StatusSeeOther {
+		t.Fatalf("checkout on the new page = %d, want 303", rec.Code)
+	}
+	if rec := proc.post(t, pageCheckout, postedCard(oldState, "tok_ok")); rec.Code != http.StatusSeeOther {
+		t.Errorf("checkout on the old page = %d, want 303 to the first one's subscription", rec.Code)
+	}
+	rec := e.get(t, supporters.PagesPath(Name)+pageCheckout+"?s="+url.QueryEscape(oldState))
+	if rec.Code != http.StatusSeeOther {
+		t.Errorf("old page after the payment = %d, want 303", rec.Code)
+	}
+	subs := e.subscriptionsOf("my_local-1")
+	if len(subs) != 1 || subs[0].Plan.ID != "q" {
+		t.Errorf("subscriptions = %+v, want one on the plan of the page that was paid", subs)
+	}
+	if claims.claims != 2 || len(claims.held) != 0 {
+		t.Errorf("%d claims with %d still held, want 2 of the one subscription, released", claims.claims, len(claims.held))
+	}
+}
+
 func TestCheckoutRefusals(t *testing.T) {
 	e := newPageEnv(t)
 	_, s := e.checkout(t)
@@ -392,6 +443,7 @@ func TestPortalChangesTheCardAndResumes(t *testing.T) {
 	e.f.addSub(subscription{ID: "sub_1", Customer: "cus_1", Plan: e.f.plans["p"].plan, Status: subPaused, PausedAt: unitNow.Add(-24 * time.Hour).Unix()}, unitNow.Unix())
 	e.f.customers["cus_1"].Cards.Data = []card{{ID: "car_old", Brand: "Visa", Last4: declinedLast4, ExpMonth: 1, ExpYear: 2027}}
 	e.f.customers["cus_1"].DefaultCard = "car_old"
+	e.f.customers["cus_1"].Email = "alice@example.com"
 	e.f.addCharge(charge{ID: "ch_1", Customer: "cus_1", Amount: 1200, AmountRefunded: 200, Captured: true, Created: unitNow.Add(-40 * 24 * time.Hour).Unix(), FeeRate: "3.00", Subscription: "sub_1"}, "")
 	portal, err := e.p.PortalURL(t.Context(), "cus_1", "https://my.example/supporter")
 	if err != nil {
@@ -403,7 +455,7 @@ func TestPortalChangesTheCardAndResumes(t *testing.T) {
 	rec := httptest.NewRecorder()
 	e.srv.ServeHTTP(rec, req)
 	body := rec.Body.String()
-	for _, want := range []string{"Visa (末尾 0002、有効期限 1/2027)", "加入が止まっています", "1,200 円", "200 円", "2026-09-12", "card-form"} {
+	for _, want := range []string{"Visa (末尾 0002、有効期限 1/2027)", "加入が止まっています", "1,200 円", "200 円", "2026-09-12", "card-form", `value="alice@example.com"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("portal page lacks %q", want)
 		}

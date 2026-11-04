@@ -203,7 +203,8 @@ type Repository interface {
 	// InsertSubscription records a subscription and its first transition, with its deadline;
 	// ErrLiveSubscription when its user has a live subscription.
 	InsertSubscription(ctx context.Context, tx uow.Tx, s Subscription, first TransitionRecord, d *Deadline) error
-	// InsertCheckout records a checkout of a subscription.
+	// InsertCheckout records a checkout of a subscription; one of a provider's ref recorded
+	// already writes nothing, since a provider may return the same checkout for a second start.
 	InsertCheckout(ctx context.Context, tx uow.Tx, c CheckoutRecord) error
 	// FindSubscription returns a subscription; tx may be nil.
 	FindSubscription(ctx context.Context, tx uow.Tx, id string) (SubscriptionRecord, error)

@@ -348,6 +348,14 @@ func paymentCheckouts(t *testing.T, newProvider PaymentProviderFactory) {
 	if again, err := p.StartCheckout(ctx, req); err != nil || again.Ref != c.Ref {
 		t.Errorf("StartCheckout with the same key = %+v, %v, want %s", again, err, c.Ref)
 	}
+	// Starting again with another key gives a page to go to, under a new ref or the same one.
+	resume := req
+	resume.Key += ":again"
+	if again, err := p.StartCheckout(ctx, resume); err != nil || again.Ref == "" || !allowedURL(again.RedirectURL, u.CheckoutHosts) {
+		t.Errorf("StartCheckout with another key = %+v, %v, want a checkout on %v", again, err, u.CheckoutHosts)
+	} else if got, err := p.GetCheckout(ctx, again.Ref); err != nil || got.Status != supporters.CheckoutOpen || got.LocalID != req.LocalID {
+		t.Errorf("GetCheckout(started again) = %+v, %v, want open with our ID", got, err)
+	}
 	got, err := p.GetCheckout(ctx, c.Ref)
 	if err != nil || got.Status != supporters.CheckoutOpen || got.LocalID != NamedID("local-new") {
 		t.Errorf("GetCheckout(new) = %+v, %v, want open with our ID", got, err)
