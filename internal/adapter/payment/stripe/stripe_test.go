@@ -912,7 +912,7 @@ func TestResumeCheckoutChecksTheHost(t *testing.T) {
 // Expiring makes a session unpayable; when Stripe refuses since the session just completed, the
 // answer is the completed session, with its subscription.
 func TestExpireCheckout(t *testing.T) {
-	p, f, _, c := oneCheckout(t)
+	p, _, _, c := oneCheckout(t)
 	if res, err := p.ExpireCheckout(t.Context(), c.Ref); err != nil || res.Status != supporters.CheckoutExpired {
 		t.Fatalf("ExpireCheckout = %+v, %v, want expired", res, err)
 	}
@@ -923,7 +923,7 @@ func TestExpireCheckout(t *testing.T) {
 		t.Errorf("ExpireCheckout of an unknown session = %v, want not_found", err)
 	}
 
-	p, f, _, c = oneCheckout(t)
+	p, f, _, c := oneCheckout(t)
 	sub, _ := f.paySession(t, string(c.Ref))
 	if res, err := p.ExpireCheckout(t.Context(), c.Ref); err != nil || res.Status != supporters.CheckoutCompleted || string(res.Subscription) != sub {
 		t.Errorf("ExpireCheckout of a paid session = %+v, %v, want completed with %s", res, err, sub)
