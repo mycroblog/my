@@ -55,7 +55,7 @@ Give a restricted key these permissions (**not yet verified**: the exact names a
 | Subscription Schedules (part of Subscriptions) | Write | `POST /v1/subscription_schedules`, `POST /v1/subscription_schedules/{id}`, `POST /v1/subscription_schedules/{id}/release` |
 | Invoices | Read | `GET /v1/invoices/{id}`, `GET /v1/invoice_payments` |
 | Charges, Refunds, Disputes | Read | `GET /v1/charges/{id}`, `GET /v1/refunds` |
-| Balance transactions (Balance) | Read | `GET /v1/balance_transactions` |
+| Balance transaction sources | Read | `GET /v1/balance_transactions` |
 | Events | Read | `GET /v1/events` |
 | Account (information of an account outside Connect) | Read | `GET /v1/account` (time zone) |
 
@@ -143,7 +143,7 @@ The objects that `stripe trigger` creates carry no subscription ID of this serve
 
 ## 7. Operation
 
-- A reconciliation failure of kind `permission` means a wrong key or missing permissions.
+- A reconciliation failure of kind `permission` means a wrong key or missing permissions. The server's log line (`payment reconciliation failed`) has Stripe's message, which names the permission to add.
 - When reconciliations often hit the request limit, raise `payments_reconcile_max_requests` or lengthen `payments_reconcile_interval`.
 - When reconciliation has been stopped for more than 30 days, the server cannot catch up from Stripe's event list (which reaches back 30 days). The sweep of all subscriptions repairs the state then.
 - Refunds and chargebacks are handled in Stripe's dashboard. A full refund and a chargeback remove the role and cancel the subscription at once, and a partial refund does not remove the role. Winning a dispute does not restore the role automatically.

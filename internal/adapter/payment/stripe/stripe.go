@@ -268,7 +268,8 @@ func retryAfter(se *stripe.Error, now time.Time) time.Duration {
 }
 
 // classify wraps an error of the SDK in the error of supporters that names its kind. The
-// message keeps Stripe's type, code, and request ID, never the response's body.
+// message keeps Stripe's type, code, and request ID, and never the response's body, except the
+// text of a refused key: it names the permission to add, and Stripe masks the key in it.
 func classify(ctx context.Context, err error) error {
 	if ctx.Err() != nil {
 		return fmt.Errorf("%w: %w", supporters.ErrPaymentUnavailable, ctx.Err())
@@ -282,6 +283,7 @@ func classify(ctx context.Context, err error) error {
 	switch s := se.HTTPStatusCode; {
 	case s == http.StatusUnauthorized || s == http.StatusForbidden:
 		kind = supporters.ErrPaymentPermission
+		desc += ": " + se.Msg
 	case s == http.StatusNotFound:
 		kind = supporters.ErrPaymentNotFound
 	case s == http.StatusTooManyRequests:
