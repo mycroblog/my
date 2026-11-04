@@ -8,7 +8,7 @@
 
 | ターゲット | コンピュート | RDB | キュー | Blob | スケジューラ | 想定固定費 |
 | --- | --- | --- | --- | --- | --- | --- |
-| **Google Cloud** | Cloud Run（min instances 0） | 外部 Neon / Turso、または Cloud SQL | Cloud Tasks（push） | GCS（または R2） | Cloud Scheduler | ほぼ $0（Cloud SQL を使うと最小構成でも約 $9/月〜） |
+| **Google Cloud** | Cloud Run（min instances 0） | 外部の Neon、または Cloud SQL | Cloud Tasks（push） | GCS（または R2） | Cloud Scheduler | ほぼ $0（Cloud SQL を使うと最小構成でも約 $9/月〜） |
 | **AWS** | Lambda（Function URL）+ Lambda Web Adapter | Aurora Serverless v2（0 ACU）/ RDS / 外部 | SQS（event source） | S3 + CloudFront | EventBridge Scheduler | ほぼ $0（DB 次第。Aurora は常時接続があると 0 ACU にならない） |
 | **Self-hosted** | Docker Compose / microk8s | SQLite（+ Litestream）/ PostgreSQL | DB キュー | ローカル FS / MinIO / 外部 S3 互換 | プロセス内 cron | VM 代（$4〜6/月 クラス、要検証） |
 
@@ -17,9 +17,8 @@
 1. **Aurora Serverless v2 の 0 ACU は「ユーザー接続が 1 本もない」ときだけ** 一時停止する。常駐ワーカーの DB ポーリングやコネクションプール、RDS Proxy があると停止しない。復帰は通常約 15 秒、24 時間超の停止後は 30 秒以上。
    → 連合サーバーは受信が途切れにくく、「ほぼ $0」になる前提は弱い。AWS の最安 DB 構成として外部 DB を併記する。
 2. **Neon Free は 100 CU-hours/プロジェクト/月**。最小 0.25 CU で 400 時間/月（約 16.7 日）分で、常時起動（約 730 時間）には足りない。5 分無通信で scale to zero（Free では無効化不可）。
-3. **Turso Free** は 100 DB・5 GB・月 5 億 rows read・月 1,000 万 rows written。上限超過のクエリは `BLOCKED` で失敗する（課金で継続されない）。なお料金ページに「Turso is joining Supabase」との告知があり、プラン体系が変わる可能性がある。
-4. **SQS の遅延上限は 15 分、Cloud Tasks の予約上限は 30 日**。SQS のメッセージ上限は **1 MiB**。
-5. **AWS Lambda Web Functions**（2026-10 発表の新形態。HTTP サーバーをそのまま動かせる）は現時点で **Node.js のみ** 対応で、Go サーバーには使えない。Go では引き続き Lambda Web Adapter（Event Functions）を使う。
+3. **SQS の遅延上限は 15 分、Cloud Tasks の予約上限は 30 日**。SQS のメッセージ上限は **1 MiB**。
+4. **AWS Lambda Web Functions**（2026-10 発表の新形態。HTTP サーバーをそのまま動かせる）は現時点で **Node.js のみ** 対応で、Go サーバーには使えない。Go では引き続き Lambda Web Adapter（Event Functions）を使う。
 
 ## Cloudflare（実行環境としては対象外）
 
@@ -50,7 +49,7 @@
 ## Google Cloud
 
 - **構成**: Cloud Run サービス（Web）+ 同一イメージのワーカー用エンドポイント。Cloud Tasks が HTTP でワーカーを叩く（push 型）。
-- **RDB**: Cloud SQL は最小構成でも常時課金のため、低コスト構成では Neon（Postgres）や Turso（libSQL）などの外部サーバーレス DB を推奨。
+- **RDB**: Cloud SQL は最小構成でも常時課金のため、低コスト構成では Neon（Postgres）などの外部サーバーレス PostgreSQL を推奨。
   Cloud Run + SQLite は永続ディスクがないため非推奨。
 - **キュー**: 遅延実行・レート制御・タスク名による重複排除がある Cloud Tasks を第一候補。Pub/Sub は将来オプション。
 
@@ -209,7 +208,9 @@
 - 常時起動（約 730 時間/月）だと 0.25 CU でも 182.5 CU-hours になり Free 枠を超える。**5 分以上アクセスが途切れる時間がどれだけあるか** が Free で収まるかの分かれ目になる（M6 で計測）。
 - 要検証: Free 枠を使い切った後の挙動（停止か、制限か）を公式ページで明示的に確認できなかった。
 
-### Turso（libSQL）
+### Turso（libSQL。将来の候補）
+
+`my` は v0.1.0 では libSQL に対応していない（ADR-0003 §1）。次は対応を決めるときの材料で、今の構成の候補ではない。
 
 | 項目（Free プラン） | 値 |
 | --- | --- |
@@ -223,7 +224,7 @@
 
 - rows read は「返した行」ではなく **スキャンした行** で数える（集約関数・インデックスのない検索・JOIN で増える。`SELECT 1` でも 1 行）。中断したトランザクションの書き込みも rows written に数える。
   → タイムライン取得はインデックスで走査行数を抑え、カウンタは集計テーブルで持つ（ADR-0003 / ADR-0013 の方針と整合）。
-- 料金ページに「Turso is joining Supabase」との告知がある。プラン体系・提供継続性は今後変わりうるため、Turso 依存の機能は libSQL / SQLite 互換の範囲に留める。
+- 料金ページに「Turso is joining Supabase」との告知がある。プラン体系・提供継続性は今後変わりうるため、対応するなら Turso 依存の機能は libSQL / SQLite 互換の範囲に留める。
 - 要検証: 料金ページの月払い価格（表示は年払い割引込み）、ドキュメントのプラン名（Starter / Scaler）と料金ページのプラン名（Free / Developer / Scaler）の対応。
 
 出典（2026-10-16 確認）:
@@ -337,6 +338,6 @@
 | 1 投稿あたりの配送リクエスト数 | フォロワーのドメイン分布 × shared inbox 利用率（Cloud Tasks / SQS のオペレーション数に直結） |
 | 受信アクティビティ量 | 連合タイムラインの流量（リレー非接続時） |
 | DB のアイドル時間 | 5 分以上アクセスが途切れる時間の合計（Neon の scale to zero、Aurora の自動一時停止が効くか） |
-| DB 読み書き行数 | タイムライン 1 回取得あたりの 読み取り行数・コンピュート時間（Neon の CU-hours、Turso の rows read） |
+| DB 読み書き行数 | タイムライン 1 回取得あたりの 読み取り行数・コンピュート時間（Neon の CU-hours） |
 | ストレージ | ローカルメディア総量、リモートメディアのキャッシュ方針別 |
 | 転送量 | メディア配信（CDN 経由 / 直接）、連合配送の外向き通信 |

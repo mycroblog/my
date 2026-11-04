@@ -11,10 +11,12 @@
 
 | 方言ファミリ | 具体的な実体 | アダプタ |
 | --- | --- | --- |
-| SQLite 系 | ローカル SQLite ファイル、libSQL / Turso | `sqlite`, `libsql` |
+| SQLite | ローカル SQLite ファイル | `sqlite` |
 | PostgreSQL 系 | セルフホスト PG、Neon、Supabase、Cloud SQL、RDS / Aurora | `postgres` |
 
 MySQL 系（MySQL、TiDB Serverless、PlanetScale 等）は v0 では対象外とし、v1 以降にコミュニティアダプタとして受け入れられる設計にする。Aurora DSQL には対応しない（§14）。
+
+libSQL / Turso は v0.1.0 では対応せず、将来の候補とする。v0.1.0 の時点でアダプタの実装がなく、対応するときは Go クライアントの成熟度（Open Questions）を確かめて、改めて決める。決定者の決定（#2178）。
 
 ### 2. 抽象化
 
@@ -27,13 +29,12 @@ MySQL 系（MySQL、TiDB Serverless、PlanetScale 等）は v0 では対象外�
   - カウンタ（フォロワー数・お気に入り数など）は加算 SQL（`SET n = n + 1`）を使い、定期ジョブで再集計して補正する。
 - SQL の扱い（Go）: **sqlc を方言ごとに生成**（`queries/sqlite/*.sql`, `queries/postgres/*.sql`）し、方言別アダプタがリポジトリポートを実装する。
   方言差（FTS、JSON 関数、日付関数、プレースホルダ）はアダプタ内に閉じ込める。根拠は [#17 の調査報告](https://github.com/mycroblog/my/issues/17#issuecomment-6209364365)。
-- ドライバ: SQLite は `modernc.org/sqlite`（cgo 不要）、PostgreSQL は `pgx/v5`、libSQL / Turso は公式 Go クライアント（成熟度は Open Questions）。
+- ドライバ: SQLite は `modernc.org/sqlite`（cgo 不要）、PostgreSQL は `pgx/v5`。
 - トランザクションの設定:
   - SQLite は `BEGIN IMMEDIATE`（`_txlock=immediate`）+ `busy_timeout` + WAL を必須とする。遅延ロックのままだと書き込みの競合でリトライが多発する。
   - PostgreSQL は READ COMMITTED を既定とし、直列化失敗・デッドロックは `UnitOfWork` のリトライで吸収する。
-- スキーマは方言ごとに `schema/<dialect>/` を持つ（ADR-0023、ADR-0081）。共通の論理スキーマ（`docs/architecture/data-model/`）から乖離していないかを CI で検査する。
+- スキーマは方言ごとに `schema/<dialect>/` を持つ（ADR-0023、ADR-0081）。
 - **コントラクトテスト**: リポジトリポートごとに単一のテストスイートを書き、SQLite（インメモリ / 一時ファイル）・PostgreSQL で実行する。PostgreSQL の実行環境と頻度は ADR-0015 と ADR-0079 が決める。
-  libSQL など実体が必要なものは nightly。
 
 ### 3. 型・ID・時刻の共通規約
 
@@ -70,7 +71,7 @@ PostgreSQL の UUIDv7 の列を `uuid` 型にし、SQLite と Go の型は変え
 
 ### 7. SQLite の ID
 
-- SQLite は `TEXT` の 36 文字。SQLite は小さな構成向けで、大きさの差の効き目が小さい。`sqlite3` の CLI で読めること、libSQL / Turso でもそのまま動くことを優先する
+- SQLite は `TEXT` の 36 文字。SQLite は小さな構成向けで、大きさの差の効き目が小さい。`sqlite3` の CLI で読めることを優先する
 - `BLOB` にしないので、SQLite の生成コードとクエリは PostgreSQL の型の選択に影響されない
 
 ### 8. Go の型と sqlc
@@ -149,7 +150,7 @@ ID の列が多い表（関係・投影・イベント）ほど効く。読み�
 
 ## 経緯
 
-運営者が「維持コストの安いもの、あるいは慣れたもの」から RDB を選べるようにしたい（G3）が、方言を増やすほどテストと保守の費用が増える。無料枠や低価格の選択肢（SQLite、Turso、Neon、Supabase）と慣れた PostgreSQL を覆い、at-least-once のジョブ（ADR-0004）と `CGO_ENABLED=0`（ADR-0002）に合うことを基準に、SQLite 系と PostgreSQL 系の 2 ファミリに決めた。Cloudflare D1 は ADR-0002 により対象外である。
+運営者が「維持コストの安いもの、あるいは慣れたもの」から RDB を選べるようにしたい（G3）が、方言を増やすほどテストと保守の費用が増える。無料枠や低価格の選択肢（SQLite、Neon、Supabase）と慣れた PostgreSQL を覆い、at-least-once のジョブ（ADR-0004）と `CGO_ENABLED=0`（ADR-0002）に合うことを基準に、SQLite 系と PostgreSQL 系の 2 ファミリに決めた。Cloudflare D1 は ADR-0002 により対象外である。
 
 PostgreSQL の ID の型は当初、`COLLATE "C"` の `text` か `uuid` 型かを未決にしていた。`text` の 1 値 37 バイトが `uuid` で 16 バイトになり、表と索引が小さくなり、不正な値を DB が拒む。型の変更は実運用のデータが溜まると移し替えが要るので、v0.x の公開の前に `uuid` に決めた（#1022、実装は #1049）。外へ出す ID の形・並び順・アプリケーション層を変えないことを条件にした。
 
@@ -157,7 +158,7 @@ Aurora DSQL は当初「検証次第で」候補に残し、トランザクシ�
 
 ## 採らなかった案
 
-- PostgreSQL のみ: 方言は最少だが、無料枠の選択肢（SQLite、Turso）を覆えない。
+- PostgreSQL のみ: 方言は最少だが、無料枠の選択肢（SQLite）を覆えない。
 - SQLite 系 + PostgreSQL 系 + MySQL 系: 選択肢は広がるが、テストと保守の費用が方言の数だけ増える。MySQL 系は v1 以降のコミュニティアダプタに回す。
 - ORM の方言吸収に任せる: 検討した案。
 - 生 SQL を方言別に手書き: 方言分岐とスキャン定型が全メソッドに散る（[#17 の調査報告](https://github.com/mycroblog/my/issues/17#issuecomment-6209364365)）。
@@ -185,6 +186,6 @@ Aurora DSQL は当初「検証次第で」候補に残し、トランザクシ�
 ## Open Questions / 要検証
 
 - 読み取り専用の経路（`BEGIN IMMEDIATE` を取らない読み取りトランザクション / 非トランザクション読み取り）の API
-- libSQL / Turso の Go クライアントの成熟度（cgo 要否、リモート接続でのトランザクション）
+- 将来 libSQL / Turso に対応するときの、Go クライアントの成熟度（cgo 要否、リモート接続でのトランザクション）
 - `uuid` と `text` が混ざる比較・結合（§5 の `text` のままの列との結合）が、実際のクエリでどれだけあるか。多すぎれば §13 に当たる
 - 読み取り量で課金される DB での、実際の課金への効き目（M6 の計測）

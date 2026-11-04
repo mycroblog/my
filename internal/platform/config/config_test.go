@@ -445,7 +445,7 @@ func TestLoadInvalid(t *testing.T) {
 				"web_origin (MY_WEB_ORIGIN): must be an origin: http or https, a host, and an optional port, without path or trailing slash",
 				`role (MY_ROLE): unknown value "both"; want one of all, web, worker`,
 				"listen (MY_LISTEN): must be host:port, for example :8080 or 127.0.0.1:8080",
-				`database (MY_DATABASE): unknown value "mysql"; want one of sqlite, libsql, postgres`,
+				`database (MY_DATABASE): unknown value "mysql"; want one of sqlite, postgres`,
 				"kek (MY_KEK): must decode to 32 bytes, got 5",
 			},
 		},
@@ -559,7 +559,7 @@ func TestLoadInvalid(t *testing.T) {
 			want: []string{
 				"queue_cloudtasks_queue (MY_QUEUE_CLOUDTASKS_QUEUE): required when queue is cloudtasks",
 				"queue_cloudtasks_service_account (MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT): required when queue is cloudtasks",
-				"queue (MY_QUEUE): cloudtasks keeps the jobs in the database and requires database = postgres or libsql, not sqlite",
+				"queue (MY_QUEUE): cloudtasks keeps the jobs in the database and requires database = postgres, not sqlite",
 				"queue (MY_QUEUE): cloudtasks claims the periods of the periodic jobs in the KV and requires kv = db or valkey, not memory",
 			},
 		},
@@ -568,7 +568,7 @@ func TestLoadInvalid(t *testing.T) {
 			env:  with(minimal(), "MY_QUEUE", "sqs", "MY_KV", "memory"),
 			want: []string{
 				"queue_sqs_queue_url (MY_QUEUE_SQS_QUEUE_URL): required when queue is sqs",
-				"queue (MY_QUEUE): sqs keeps the jobs in the database and requires database = postgres or libsql, not sqlite",
+				"queue (MY_QUEUE): sqs keeps the jobs in the database and requires database = postgres, not sqlite",
 				"queue (MY_QUEUE): sqs claims the periods of the periodic jobs in the KV and requires kv = db or valkey, not memory",
 			},
 		},

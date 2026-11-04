@@ -177,7 +177,7 @@ React Compiler は `oxc-transform-react` で動かし、`app/web` と `app/ui` �
   - このゲートは診断のすべてを失敗にするので、位置のない検証を数えなかった Babel 版より厳しい。決定者はこの厳しさを受け入れている。
 - `app/ui`（Storybook と Vitest）は、`@vitejs/plugin-react` の `compiler` オプションで同じ `oxc-transform-react` を使う。ゲートは `app/web` のビルドが持つ。
 - 0.x の experimental な `oxc-transform-react` を本番のビルドに使う。決定者はこれを受け入れている。
-- 版は、`app/web` と `app/ui` で同じ `oxc-transform-react` の版に固定し、`@vitejs/plugin-react` の peer の範囲に入る版にそろえる。
+- 版は、`app/web` と `app/ui` で同じ `oxc-transform-react` の版に固定する。`@vitejs/plugin-react` の peer の範囲の外の版も使う。今の 0.156.0 は peer の `^0.152.0` の外で、`web:build`・`ui:unit-test`・`web:test` で確かめている。
 - 版を上げるときは、`app/web` のビルドが出すメモ化した関数の数と、`scripts/task.sh web:check`・`ui:test`・`web:e2e` の結果を PR に書く。
   数が変わったら、変わったファイルの出力を読んで確かめる。
 - Oxc だけの誤変換の issue に当たる書き方をコードで使うときは、その issue を Oxc で直した版にしてから使う。

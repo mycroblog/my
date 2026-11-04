@@ -203,7 +203,7 @@ var schema = []field{
 	{
 		key:    "worker_job_concurrency",
 		defDoc: "`1`",
-		doc:    "How many jobs this process runs at once, from 1 to 128. Raise it for jobs that mostly wait on other servers, usually together with `worker_job_types`. With `database = postgres` it must be below the pool maximum (`pool_max_conns` of `database_url`, by default the greater of 4 and the CPU count), or the server does not start. With `database = sqlite` or `libsql`, a value above 32 logs a warning. A value of 2 or more needs `queue = db` and `role = all` or `worker`.",
+		doc:    "How many jobs this process runs at once, from 1 to 128. Raise it for jobs that mostly wait on other servers, usually together with `worker_job_types`. With `database = postgres` it must be below the pool maximum (`pool_max_conns` of `database_url`, by default the greater of 4 and the CPU count), or the server does not start. With `database = sqlite`, a value above 32 logs a warning. A value of 2 or more needs `queue = db` and `role = all` or `worker`.",
 		check:  checkWorkerJobConcurrency,
 		set:    func(c *Config, v string) { c.WorkerJobConcurrency, _ = strconv.Atoi(v) },
 	},
@@ -236,7 +236,6 @@ var schema = []field{
 		def: "sqlite",
 		choices: []choice{
 			{value: "sqlite", doc: "Local SQLite file (`modernc.org/sqlite`). The build tag `no_sqlite` leaves it out."},
-			{value: "libsql", doc: "libSQL / Turso."},
 			{value: "postgres", doc: "PostgreSQL and compatible services (`pgx/v5`). The build tag `no_postgres` leaves it out."},
 		},
 		set: func(c *Config, v string) { c.DB = v },
@@ -251,7 +250,7 @@ var schema = []field{
 	{
 		key:    "database_acquire_timeout",
 		defDoc: "`60s`",
-		doc:    "How long a request or a job waits for a free connection of the database's pool before giving up, as a Go duration; `0` waits without a limit. It bounds only the wait, never the query or the transaction that follows. A request that gives up gets a `503` with `Retry-After`, and a job runs again later without using an attempt. Only for `database = postgres`: SQLite and libSQL have no limit on connections to wait for, and setting it fails there. Each process has its own value, so processes of different roles can differ.",
+		doc:    "How long a request or a job waits for a free connection of the database's pool before giving up, as a Go duration; `0` waits without a limit. It bounds only the wait, never the query or the transaction that follows. A request that gives up gets a `503` with `Retry-After`, and a job runs again later without using an attempt. Only for `database = postgres`: SQLite has no limit on connections to wait for, and setting it fails there. Each process has its own value, so processes of different roles can differ.",
 		check:  checkAcquireTimeout,
 		set:    func(c *Config, v string) { c.DatabaseAcquireTimeout, _ = time.ParseDuration(v) },
 	},
@@ -269,8 +268,8 @@ var schema = []field{
 		choices: []choice{
 			{value: "db", doc: "Queue table in the database."},
 			{value: "inline", doc: "Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`."},
-			{value: "sqs", doc: "The queue table in the database (`database = postgres` or `libsql`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: the Lambda Web Adapter passes the SQS events to `queue_sqs_events_path`, whose records run the jobs and, for the tick message that EventBridge Scheduler sends every minute, the periodic jobs (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out."},
-			{value: "cloudtasks", doc: "The queue table in the database (`database = postgres` or `libsql`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md)."},
+			{value: "sqs", doc: "The queue table in the database (`database = postgres`), with an Amazon SQS standard queue (`queue_sqs_queue_url`) carrying a wake-up signal for each job. No process polls the table or the SQS queue, and no scheduler runs in the process: the Lambda Web Adapter passes the SQS events to `queue_sqs_events_path`, whose records run the jobs and, for the tick message that EventBridge Scheduler sends every minute, the periodic jobs (docs/operations/running.md). Requires `kv = db` or `valkey`. Credentials from the AWS SDK's default chain. The build tag `no_sqs` leaves it out."},
+			{value: "cloudtasks", doc: "The queue table in the database (`database = postgres`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out (docs/operations/running.md)."},
 		},
 		set: func(c *Config, v string) { c.Queue = v },
 	},

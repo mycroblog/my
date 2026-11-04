@@ -30,7 +30,7 @@ Remote servers ──AP──►│                               │
         └──────────────────────────────────────────────────────────────────────┘
                 ▲  ports (interfaces) — application 層が定義
         ┌───────┴─────────── Outbound adapters（設定で選択）────────────────────┐
-        │ DB: sqlite │ libsql │ postgres                                        │
+        │ DB: sqlite │ postgres                                                 │
         │ Queue: db │ sqs │ cloud-tasks │ inline                                │
         │ Blob: fs │ s3-compatible(S3/R2/GCS/MinIO)                             │
         │ KV/Cache: db │ memory │ valkey(任意。Redis 互換)                        │
@@ -242,7 +242,7 @@ internal/
     authpages/       # ログイン・ログアウト・登録・メール確認の画面（html/template、JavaScript なし。ADR-0090。CAPTCHA を有効にしたときだけ、ログインと登録の画面がサービスのウィジェットを読む。ADR-0106。ログインの画面は、パスキーに対応したブラウザでだけパスキーのボタンを出す Web ビルドのスクリプトを読む。FR-004）
     web/             # Web クライアントの HTML の外枠（ランディングページ・インスタンスの情報ページ・プロフィール・投稿のリンクプレビューを含む）・ビルド成果物（dist/ を埋め込む）・Web アプリマニフェスト（ADR-0028）
   adapter/
-    db/{sqlite,libsql,postgres}/
+    db/{sqlite,postgres}/
     queue/{db,inline,sqs,cloudtasks}/
     blob/{fs,s3}/
     media/{native,vips,none}/
