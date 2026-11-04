@@ -27,8 +27,8 @@ message delivery, the visibility timeout, the retention, the long polls, and the
 name can be used again; `SetUnreachable` makes every call wait for its context. Every test run uses it.
 
 `awstest.Emulator(t)` returns the `aws.Config` of the AWS emulator [Floci](https://github.com/floci-io/floci): a
-`floci/floci` container started with testcontainers-go when `TEST_AWS=container` (`scripts/task.sh go:test-stream`, CI on main and
-nightly), or a running emulator at `TEST_AWS_ENDPOINT`; otherwise the test is skipped. `TEST_AWS_REQUIRED` makes a
+`floci/floci` container started with testcontainers-go when `TEST_AWS=container` (`scripts/task.sh go:test-stream`, the slow suite
+of CI), or a running emulator at `TEST_AWS_ENDPOINT`; otherwise the test is skipped. `TEST_AWS_REQUIRED` makes a
 missing Docker fail the tests. The package's `TestMain` calls `os.Exit(awstest.Main(m))`.
 
 ## Mailpit

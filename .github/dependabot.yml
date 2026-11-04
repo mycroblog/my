@@ -16,7 +16,8 @@ updates:
     # and `go mod tidy` in each, and one pull request carries them, so the integration modules that `replace` the root
     # stay tidy. Direct dependencies only, the default: updating indirect ones breaks builds that a direct dependency
     # pins to an older version. /tools keeps versions of its own, outside the workspace; every requirement there is
-    # `// indirect` (the `tool` directives), so version updates leave it alone and the tools are raised by hand.
+    # `// indirect` (the `tool` directives), so no update starts from it and the tools are raised by hand, but a
+    # dependency that a workspace module updates is raised there too, in the same pull request.
     # pkg/mykit and pkg/mybot are raised by hand too: their go.mod reaches their users, and a bump there alone can
     # leave the integration modules untidy.
     directories:

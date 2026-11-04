@@ -80,7 +80,7 @@ type App struct {
 	Outbox   queue.Outbox
 	DeadJobs queue.DeadJobs
 	// JobAttempts records the runs of jobs that did not succeed, in the database whatever the
-	// queue (ADR-0004 §5); JobInspector lists the pending jobs, nil for a queue that cannot.
+	// queue (ADR-0004 §5); JobInspector lists the pending jobs.
 	JobAttempts  queue.AttemptLog
 	JobInspector queue.JobInspector
 	Handlers     *queue.JobHandlerRegistry

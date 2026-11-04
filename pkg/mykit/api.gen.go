@@ -18414,12 +18414,11 @@ type ClientInterface interface {
 	// GetAdminQueue Get the state of the job queue
 	//
 	// The jobs of the job queue by state and type, when the oldest due job has been waiting
-	// since, and what the queue can list. The database queue and the inline queue
-	// list their pending jobs (`queued`, `running`, `retrying`); the queues of the platforms
-	// (Cloud Tasks, SQS) do not (`pending_listing` is `false`): then `counts` is empty and the
-	// backlog is read from the platform's metrics, while `GET /admin/jobs?state=dead` and the
-	// attempts still list the dead jobs and the failed runs, which are in the database with
-	// every queue. Needs the `manage_jobs`
+	// since, and what the queue can list. Every queue lists its pending jobs (`queued`,
+	// `running`, `retrying`): with Cloud Tasks and SQS the jobs are in the database too, and those
+	// services only signal them. `pending_listing` is `false` for a queue that cannot, and then
+	// `counts` is empty, while `GET /admin/jobs?state=dead` and the attempts still list the dead
+	// jobs and the failed runs. Needs the `manage_jobs`
 	// permission; a user without it gets a 403 `/api/v1/problems/missing-permission`.
 	//
 	// Corresponds with GET /admin/queue (the `GetAdminQueue` operationId).
@@ -25738,12 +25737,11 @@ func (c *Client) GetPaymentStatus(ctx context.Context, reqEditors ...RequestEdit
 // GetAdminQueue Get the state of the job queue
 //
 // The jobs of the job queue by state and type, when the oldest due job has been waiting
-// since, and what the queue can list. The database queue and the inline queue
-// list their pending jobs (`queued`, `running`, `retrying`); the queues of the platforms
-// (Cloud Tasks, SQS) do not (`pending_listing` is `false`): then `counts` is empty and the
-// backlog is read from the platform's metrics, while `GET /admin/jobs?state=dead` and the
-// attempts still list the dead jobs and the failed runs, which are in the database with
-// every queue. Needs the `manage_jobs`
+// since, and what the queue can list. Every queue lists its pending jobs (`queued`,
+// `running`, `retrying`): with Cloud Tasks and SQS the jobs are in the database too, and those
+// services only signal them. `pending_listing` is `false` for a queue that cannot, and then
+// `counts` is empty, while `GET /admin/jobs?state=dead` and the attempts still list the dead
+// jobs and the failed runs. Needs the `manage_jobs`
 // permission; a user without it gets a 403 `/api/v1/problems/missing-permission`.
 //
 // Corresponds with GET /admin/queue (the `GetAdminQueue` operationId).
@@ -49928,12 +49926,11 @@ type ClientWithResponsesInterface interface {
 	// GetAdminQueueWithResponse Get the state of the job queue
 	//
 	// The jobs of the job queue by state and type, when the oldest due job has been waiting
-	// since, and what the queue can list. The database queue and the inline queue
-	// list their pending jobs (`queued`, `running`, `retrying`); the queues of the platforms
-	// (Cloud Tasks, SQS) do not (`pending_listing` is `false`): then `counts` is empty and the
-	// backlog is read from the platform's metrics, while `GET /admin/jobs?state=dead` and the
-	// attempts still list the dead jobs and the failed runs, which are in the database with
-	// every queue. Needs the `manage_jobs`
+	// since, and what the queue can list. Every queue lists its pending jobs (`queued`,
+	// `running`, `retrying`): with Cloud Tasks and SQS the jobs are in the database too, and those
+	// services only signal them. `pending_listing` is `false` for a queue that cannot, and then
+	// `counts` is empty, while `GET /admin/jobs?state=dead` and the attempts still list the dead
+	// jobs and the failed runs. Needs the `manage_jobs`
 	// permission; a user without it gets a 403 `/api/v1/problems/missing-permission`.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -80049,12 +80046,11 @@ func (c *ClientWithResponses) GetPaymentStatusWithResponse(ctx context.Context, 
 // GetAdminQueueWithResponse Get the state of the job queue
 //
 // The jobs of the job queue by state and type, when the oldest due job has been waiting
-// since, and what the queue can list. The database queue and the inline queue
-// list their pending jobs (`queued`, `running`, `retrying`); the queues of the platforms
-// (Cloud Tasks, SQS) do not (`pending_listing` is `false`): then `counts` is empty and the
-// backlog is read from the platform's metrics, while `GET /admin/jobs?state=dead` and the
-// attempts still list the dead jobs and the failed runs, which are in the database with
-// every queue. Needs the `manage_jobs`
+// since, and what the queue can list. Every queue lists its pending jobs (`queued`,
+// `running`, `retrying`): with Cloud Tasks and SQS the jobs are in the database too, and those
+// services only signal them. `pending_listing` is `false` for a queue that cannot, and then
+// `counts` is empty, while `GET /admin/jobs?state=dead` and the attempts still list the dead
+// jobs and the failed runs. Needs the `manage_jobs`
 // permission; a user without it gets a 403 `/api/v1/problems/missing-permission`.
 //
 // Returns a wrapper object for the known response body format(s).
