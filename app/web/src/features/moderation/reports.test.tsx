@@ -421,6 +421,60 @@ describe("a report's page", () => {
     expect(within(notes).getByText("Command line")).toBeInTheDocument();
   });
 
+  test("shows a reported post's poll without a vote, its quote, the notice of a quote it may not show, and its card", async () => {
+    const [pollId, quoteId, hiddenId, cardId, quotedId] = ["b1", "b2", "b3", "b4", "b5"].map(
+      (end) => `0192f0c4-7a8e-7000-8000-0000000000${end}`,
+    ) as [string, string, string, string, string];
+    const report = reportFixture({
+      status_ids: [pollId, quoteId, hiddenId, cardId],
+      statuses: [
+        {
+          status: {
+            ...statusFixture(pollId),
+            // A moderator has no vote: `voted` and `own_votes` are omitted.
+            poll: {
+              id: "0192f0c4-7a8e-7000-8000-0000000000e1",
+              expires_at: "2099-10-17T12:00:00Z",
+              expired: false,
+              multiple: false,
+              votes_count: 4,
+              options: [
+                { title: "Red", votes_count: 1 },
+                { title: "Blue", votes_count: 3 },
+              ],
+            },
+          },
+        },
+        {
+          status: {
+            ...statusFixture(quoteId),
+            quote: {
+              state: "accepted",
+              quoted_status: { ...statusFixture(quotedId), content: "<p>The quoted words</p>" },
+            },
+          },
+        },
+        { status: { ...statusFixture(hiddenId), quote: { state: "unauthorized" } } },
+        {
+          status: {
+            ...statusFixture(cardId),
+            card: { url: "https://news.example/a", title: "Big news", description: "A and B", site_name: "News" },
+          },
+        },
+      ],
+    });
+    reportsServer([report]);
+    await renderApp({ path: `/moderation/reports/${report.id}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Report" })).toBeInTheDocument();
+    const posts = region("Reported posts");
+    expect(within(posts).getByText("Blue")).toBeInTheDocument();
+    expect(within(posts).queryByRole("button", { name: "Vote" })).not.toBeInTheDocument();
+    expect(within(posts).getByText("The quoted words")).toBeInTheDocument();
+    expect(within(posts).getByText("You cannot see the quoted post.")).toBeInTheDocument();
+    expect(within(posts).getByRole("link", { name: /Big news/ })).toHaveAttribute("href", "https://news.example/a");
+  });
+
   test("takes the report, leaves it, and writes notes", async () => {
     const api = reportsServer([spam]);
     const { user } = await renderApp({ path: `/moderation/reports/${spam.id}` });
