@@ -3130,6 +3130,7 @@ func (e PaymentStatusMode) Valid() bool {
 
 // Defines values for PaymentStatusWarnings.
 const (
+	PaymentStatusWarningsDuplicateCharge         PaymentStatusWarnings = "duplicate_charge"
 	PaymentStatusWarningsNoWebhook               PaymentStatusWarnings = "no_webhook"
 	PaymentStatusWarningsReconciliationCorrected PaymentStatusWarnings = "reconciliation_corrected"
 )
@@ -3137,6 +3138,8 @@ const (
 // Valid indicates whether the value is a known member of the PaymentStatusWarnings enum.
 func (e PaymentStatusWarnings) Valid() bool {
 	switch e {
+	case PaymentStatusWarningsDuplicateCharge:
+		return true
 	case PaymentStatusWarningsNoWebhook:
 		return true
 	case PaymentStatusWarningsReconciliationCorrected:
@@ -6255,7 +6258,7 @@ type AdminServiceClosureCheck struct {
 	// EstimatedDeletes The estimate of the deliveries of the closure, `local_accounts` times `delivery_inboxes`.
 	EstimatedDeletes int `json:"estimated_deletes"`
 
-	// LiveSupporterSubscriptions The supporter subscriptions that go on, which the closure cancels at once without a refund.
+	// LiveSupporterSubscriptions The supporter subscriptions that go on, which the closure cancels at once without a refund, except a payment for one still pending.
 	LiveSupporterSubscriptions int `json:"live_supporter_subscriptions"`
 
 	// LocalAccounts The local accounts of users that are not deleted, each of which the closure sends a `Delete` of.
@@ -10940,9 +10943,11 @@ type PaymentStatus struct {
 	// TimeZone The IANA time zone of the provider's reports (`UTC`), in which the income is dated.
 	TimeZone string `json:"time_zone"`
 
-	// Warnings The signs that the provider's webhook is not set up right: `no_webhook` (no delivery is
-	// recorded) and `reconciliation_corrected` (the last reconciliation corrected subscriptions,
-	// which a webhook delivery should have done).
+	// Warnings What the operator should look at: `no_webhook` (no delivery is recorded) and
+	// `reconciliation_corrected` (the last reconciliation corrected subscriptions, which a webhook
+	// delivery should have done) are signs that the provider's webhook is not set up right, and
+	// `duplicate_charge` means that a second subscription of one payment is not canceled and
+	// refunded yet.
 	Warnings []PaymentStatusWarnings `json:"warnings"`
 }
 
@@ -12257,7 +12262,7 @@ type StatusText = string
 
 // SupporterCheckout The payment provider's hosted checkout of a subscription.
 type SupporterCheckout struct {
-	// RedirectUrl The checkout, to open in the same tab.
+	// RedirectUrl Where to go next, in the same tab, which is the checkout unless it was paid already.
 	RedirectUrl string `json:"redirect_url"`
 
 	// SubscriptionId The ID of a resource, a UUIDv7 in its canonical string form.
@@ -19097,7 +19102,8 @@ type ClientInterface interface {
 	// EndSupporterSubscription End a subscription at once
 	//
 	// Ends a subscription at once, without a refund: the role goes now, and the
-	// payment provider stops billing. A refund is the operator's to make at the provider. A
+	// payment provider stops billing. A refund is the operator's to make at the provider, except
+	// that a payment for a subscription still pending, which gave nothing, is refunded. A
 	// subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 	// unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
 	//
@@ -21087,8 +21093,10 @@ type ClientInterface interface {
 	//
 	// Starts a subscription to a plan at an interval and returns the payment provider's hosted
 	// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-	// Starting again while the subscription is `pending` makes a new checkout of the same
-	// subscription. Only a local user with a verified primary address and without another
+	// Starting again while the subscription is `pending` continues the open checkout for the same
+	// plan and interval, or expires it and makes a new one of the same subscription, so that one
+	// checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+	// to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
 	// subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
 	// `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
 	// `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
@@ -21104,8 +21112,10 @@ type ClientInterface interface {
 	//
 	// Starts a subscription to a plan at an interval and returns the payment provider's hosted
 	// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-	// Starting again while the subscription is `pending` makes a new checkout of the same
-	// subscription. Only a local user with a verified primary address and without another
+	// Starting again while the subscription is `pending` continues the open checkout for the same
+	// plan and interval, or expires it and makes a new one of the same subscription, so that one
+	// checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+	// to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
 	// subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
 	// `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
 	// `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
@@ -26996,7 +27006,8 @@ func (c *Client) ListSupporterSubscriptions(ctx context.Context, params *ListSup
 // EndSupporterSubscription End a subscription at once
 //
 // Ends a subscription at once, without a refund: the role goes now, and the
-// payment provider stops billing. A refund is the operator's to make at the provider. A
+// payment provider stops billing. A refund is the operator's to make at the provider, except
+// that a payment for a subscription still pending, which gave nothing, is refunded. A
 // subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 // unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
 //
@@ -30666,8 +30677,10 @@ func (c *Client) ListSubscriptions(ctx context.Context, params *ListSubscription
 //
 // Starts a subscription to a plan at an interval and returns the payment provider's hosted
 // checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-// Starting again while the subscription is `pending` makes a new checkout of the same
-// subscription. Only a local user with a verified primary address and without another
+// Starting again while the subscription is `pending` continues the open checkout for the same
+// plan and interval, or expires it and makes a new one of the same subscription, so that one
+// checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+// to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
 // subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
 // `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
 // `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
@@ -30693,8 +30706,10 @@ func (c *Client) StartSupporterCheckoutWithBody(ctx context.Context, contentType
 //
 // Starts a subscription to a plan at an interval and returns the payment provider's hosted
 // checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-// Starting again while the subscription is `pending` makes a new checkout of the same
-// subscription. Only a local user with a verified primary address and without another
+// Starting again while the subscription is `pending` continues the open checkout for the same
+// plan and interval, or expires it and makes a new one of the same subscription, so that one
+// checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+// to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
 // subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
 // `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
 // `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
@@ -50653,7 +50668,8 @@ type ClientWithResponsesInterface interface {
 	// EndSupporterSubscriptionWithResponse End a subscription at once
 	//
 	// Ends a subscription at once, without a refund: the role goes now, and the
-	// payment provider stops billing. A refund is the operator's to make at the provider. A
+	// payment provider stops billing. A refund is the operator's to make at the provider, except
+	// that a payment for a subscription still pending, which gave nothing, is refunded. A
 	// subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 	// unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
 	//
@@ -52837,8 +52853,10 @@ type ClientWithResponsesInterface interface {
 	//
 	// Starts a subscription to a plan at an interval and returns the payment provider's hosted
 	// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-	// Starting again while the subscription is `pending` makes a new checkout of the same
-	// subscription. Only a local user with a verified primary address and without another
+	// Starting again while the subscription is `pending` continues the open checkout for the same
+	// plan and interval, or expires it and makes a new one of the same subscription, so that one
+	// checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+	// to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
 	// subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
 	// `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
 	// `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
@@ -52854,8 +52872,10 @@ type ClientWithResponsesInterface interface {
 	//
 	// Starts a subscription to a plan at an interval and returns the payment provider's hosted
 	// checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-	// Starting again while the subscription is `pending` makes a new checkout of the same
-	// subscription. Only a local user with a verified primary address and without another
+	// Starting again while the subscription is `pending` continues the open checkout for the same
+	// plan and interval, or expires it and makes a new one of the same subscription, so that one
+	// checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+	// to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
 	// subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
 	// `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
 	// `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
@@ -81117,7 +81137,8 @@ func (c *ClientWithResponses) ListSupporterSubscriptionsWithResponse(ctx context
 // EndSupporterSubscriptionWithResponse End a subscription at once
 //
 // Ends a subscription at once, without a refund: the role goes now, and the
-// payment provider stops billing. A refund is the operator's to make at the provider. A
+// payment provider stops billing. A refund is the operator's to make at the provider, except
+// that a payment for a subscription still pending, which gave nothing, is refunded. A
 // subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 // unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
 //
@@ -84309,8 +84330,10 @@ func (c *ClientWithResponses) ListSubscriptionsWithResponse(ctx context.Context,
 //
 // Starts a subscription to a plan at an interval and returns the payment provider's hosted
 // checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-// Starting again while the subscription is `pending` makes a new checkout of the same
-// subscription. Only a local user with a verified primary address and without another
+// Starting again while the subscription is `pending` continues the open checkout for the same
+// plan and interval, or expires it and makes a new one of the same subscription, so that one
+// checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+// to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
 // subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
 // `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
 // `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
@@ -84332,8 +84355,10 @@ func (c *ClientWithResponses) StartSupporterCheckoutWithBodyWithResponse(ctx con
 //
 // Starts a subscription to a plan at an interval and returns the payment provider's hosted
 // checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-// Starting again while the subscription is `pending` makes a new checkout of the same
-// subscription. Only a local user with a verified primary address and without another
+// Starting again while the subscription is `pending` continues the open checkout for the same
+// plan and interval, or expires it and makes a new one of the same subscription, so that one
+// checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+// to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
 // subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
 // `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
 // `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404

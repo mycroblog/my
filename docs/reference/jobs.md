@@ -129,7 +129,7 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | --- | --- | --- | --- | --- |
 | `supporters.ensure_prices` | Makes the prices of a plan's current terms at the payment provider, and archives those no longer used. | A plan's terms changing | Default | Safe. The provider call is idempotent. |
 | `supporters.sync` | Reads a subscription again from the provider and applies what it finds. | Provider notices, a due deadline, a checkout | Default | Safe. It only re-reads and applies. |
-| `supporters.command` | Sends a cancellation to the provider, or removes what a failed plan change left to collect. | A user's or the server's cancellation | Default | Safe. The provider call carries the job's idempotency key. |
+| `supporters.command` | Sends a cancellation to the provider, removes what a failed plan change left to collect, expires the payment pages of a closed pending subscription, or cancels and refunds a second subscription of one payment. | A user's or the server's cancellation, a pending subscription closing, a second subscription found, each reconciliation while one is not settled | Default | Safe. A repeat finds the page expired, the subscription ended, and the charge refunded. |
 | `supporters.sync_due` | Queues `supporters.sync` for the subscriptions whose deadline has passed. | Schedule | Default | Next run |
 | `supporters.cancel_for_closure` | Cancels the subscriptions when a service closure is announced, and tells the subscribers. | The closure being recorded | Default | Safe |
 | `supporters.apply_payment_event` | Applies one notice from the payment provider by re-reading what it points at. | A verified webhook from the provider | Default | Safe. Duplicates and reordering come down to re-reading. |

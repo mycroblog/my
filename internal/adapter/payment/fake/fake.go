@@ -94,6 +94,14 @@ type Provider struct {
 	// changePayment fails the payment of a change at once (FailChangePayments); nil pays it.
 	changePayment error
 	changeCharges int
+	refunds       map[supporters.SubscriptionRef]bool
+	// refundFailure fails RefundSubscription (FailRefunds).
+	refundFailure error
+	// deleteCanceled reports canceled subscriptions as deleted (DeleteCanceled).
+	deleteCanceled bool
+	listsDeleted   bool
+	// readFailure fails GetSubscription (FailSubscriptionReads).
+	readFailure error
 }
 
 type price struct {
@@ -144,6 +152,7 @@ func New(o Options) *Provider {
 	}
 	return &Provider{
 		o: o, products: map[string]supporters.ProductRef{}, checkouts: map[supporters.CheckoutRef]*checkout{},
+		refunds:      map[supporters.SubscriptionRef]bool{},
 		checkoutKeys: map[string]supporters.CheckoutRef{}, planNames: map[string]string{}, portals: map[string]*portal{}, changeKeys: map[string]string{},
 	}
 }
@@ -495,6 +504,35 @@ func (p *Provider) GetCheckout(ctx context.Context, ref supporters.CheckoutRef) 
 	return c.result, nil
 }
 
+// ResumeCheckout implements supporters.PaymentProvider.
+func (p *Provider) ResumeCheckout(ctx context.Context, ref supporters.CheckoutRef, req supporters.CheckoutRequest) (supporters.CheckoutResult, *supporters.Checkout, error) {
+	res, err := p.GetCheckout(ctx, ref)
+	if err != nil || res.Status != supporters.CheckoutOpen {
+		return res, nil, err
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	c := p.checkouts[ref]
+	if c.req == nil || c.req.Price != req.Price || c.req.Customer != req.Customer || c.req.Email != req.Email ||
+		c.req.SuccessURL != req.SuccessURL || c.req.CancelURL != req.CancelURL {
+		return res, nil, nil
+	}
+	page := p.checkoutOf(ref)
+	return res, &page, nil
+}
+
+// ExpireCheckout implements supporters.PaymentProvider.
+func (p *Provider) ExpireCheckout(ctx context.Context, ref supporters.CheckoutRef) (supporters.CheckoutResult, error) {
+	res, err := p.GetCheckout(ctx, ref)
+	if err != nil || res.Status != supporters.CheckoutOpen {
+		return res, err
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.checkouts[ref].result.Status = supporters.CheckoutExpired
+	return p.checkouts[ref].result, nil
+}
+
 // PortalURL implements supporters.PaymentProvider.
 func (p *Provider) PortalURL(ctx context.Context, customer supporters.CustomerRef, returnURL string) (string, error) {
 	p.mu.Lock()
@@ -642,6 +680,55 @@ func (p *Provider) CancelNow(ctx context.Context, sub supporters.SubscriptionRef
 	})
 }
 
+// RefundSubscription implements supporters.PaymentProvider: it records the refund of the whole
+// subscription, once.
+func (p *Provider) RefundSubscription(ctx context.Context, sub supporters.SubscriptionRef, _ string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if err := p.request(ctx); err != nil {
+		return err
+	}
+	if p.refundFailure != nil {
+		return p.refundFailure
+	}
+	if i := p.subIndex(sub); i >= 0 && p.deleteCanceled && !p.listsDeleted && p.subs[i].Status == supporters.StatusCanceled {
+		return fmt.Errorf("%w: no charges of the subscription %s", supporters.ErrInvalidPaymentResponse, sub)
+	}
+	p.refunds[sub] = true
+	return nil
+}
+
+// DeleteCanceled makes GetSubscription report a canceled subscription as PAY.JP reports one that it
+// deleted: canceled, with nothing else, our ID included. listsCharges says whether RefundSubscription
+// still finds the charges of such a subscription, which it otherwise fails on, as PAY.JP's adapter
+// does on an empty list.
+func (p *Provider) DeleteCanceled(listsCharges bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.deleteCanceled, p.listsDeleted = true, listsCharges
+}
+
+// FailSubscriptionReads makes GetSubscription alone fail with err; nil ends it.
+func (p *Provider) FailSubscriptionReads(err error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.readFailure = err
+}
+
+// FailRefunds makes RefundSubscription fail with err; nil ends it.
+func (p *Provider) FailRefunds(err error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.refundFailure = err
+}
+
+// Refunded reports whether RefundSubscription refunded a subscription.
+func (p *Provider) Refunded(sub supporters.SubscriptionRef) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.refunds[sub]
+}
+
 // Resolve implements supporters.PaymentProvider.
 func (p *Provider) Resolve(ctx context.Context, n supporters.Notice) (supporters.Change, error) {
 	p.mu.Lock()
@@ -680,9 +767,15 @@ func (p *Provider) GetSubscription(ctx context.Context, ref supporters.Subscript
 	if err := p.request(ctx); err != nil {
 		return supporters.SubscriptionSnapshot{}, err
 	}
+	if p.readFailure != nil {
+		return supporters.SubscriptionSnapshot{}, p.readFailure
+	}
 	i := p.subIndex(ref)
 	if i < 0 {
 		return supporters.SubscriptionSnapshot{}, fmt.Errorf("%w: subscription %s", supporters.ErrPaymentNotFound, ref)
+	}
+	if p.deleteCanceled && p.subs[i].Status == supporters.StatusCanceled {
+		return supporters.SubscriptionSnapshot{Ref: ref, Status: supporters.StatusCanceled}, nil
 	}
 	return p.subs[i], nil
 }

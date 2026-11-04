@@ -176,7 +176,8 @@ func onScenario(t *testing.T, s testkit.PaymentScenario) testkit.PaymentUnderTes
 		f.fail(statusOfFailure(s.Failure))
 	}
 	return testkit.PaymentUnderTest{
-		Provider: p, Deliver: deliver(s.Now), CheckoutHosts: []string{testHost}, PortalHosts: []string{testHost}, Expected: exp,
+		SignedPages: true,
+		Provider:    p, Deliver: deliver(s.Now), CheckoutHosts: []string{testHost}, PortalHosts: []string{testHost}, Expected: exp,
 		DeclineChanges: func(sub supporters.SubscriptionRef, declined bool) {
 			f.mu.Lock()
 			defer f.mu.Unlock()
@@ -296,4 +297,60 @@ func deliver(now time.Time) testkit.PaymentDeliver {
 
 func TestPaymentProviderContract(t *testing.T) {
 	testkit.PaymentProviderContract(t, onScenario)
+}
+
+// A refund takes the paid charges of the subscription alone, and a repeat refunds nothing twice.
+func TestRefundSubscription(t *testing.T) {
+	now := time.Date(2026, 10, 22, 3, 0, 0, 0, time.UTC)
+	p, f := newOnFake(t, supporters.ModeTest, now)
+	f.addCharge(charge{ID: "ch_second", Amount: 500, Paid: true, Subscription: "sub_second", Created: now.Unix()}, "evt_a")
+	f.addCharge(charge{ID: "ch_failed", Amount: 500, Subscription: "sub_second", Created: now.Unix()}, "evt_b")
+	f.addCharge(charge{ID: "ch_linked", Amount: 500, Paid: true, Subscription: "sub_linked", Created: now.Unix()}, "evt_c")
+	for range 2 {
+		if err := p.RefundSubscription(t.Context(), "sub_second", "key"); err != nil {
+			t.Fatalf("RefundSubscription = %v", err)
+		}
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if c := f.charges["ch_second"]; !c.Refunded || c.AmountRefunded != 500 {
+		t.Errorf("the charge = %+v, want refunded in full", c.charge)
+	}
+	if f.charges["ch_failed"].Refunded || f.charges["ch_linked"].Refunded {
+		t.Errorf("refunded a charge that failed or of another subscription: %+v, %+v", f.charges["ch_failed"].charge, f.charges["ch_linked"].charge)
+	}
+}
+
+// PAY.JP deletes what CancelNow cancels: the snapshot no longer has our ID, and the refund still
+// finds the charges. A charge past PAY.JP's window is left, without stopping the refund, which no
+// attempt could make succeed.
+func TestRefundSubscriptionAfterItsDeletion(t *testing.T) {
+	now := time.Date(2026, 10, 22, 3, 0, 0, 0, time.UTC)
+	p, f := newOnFake(t, supporters.ModeTest, now)
+	f.addSub(subscription{ID: "sub_second", Customer: "cus_a", Status: subActive, Metadata: metadata{metaSubscriptionID: "local"}}, now.Unix())
+	f.addCharge(charge{ID: "ch_new", Amount: 500, Paid: true, Subscription: "sub_second", Created: now.Unix()}, "evt_a")
+	f.addCharge(charge{ID: "ch_old", Amount: 500, Paid: true, Subscription: "sub_second", Created: now.Add(-181 * 24 * time.Hour).Unix()}, "evt_b")
+	if err := p.CancelNow(t.Context(), "sub_second", "key"); err != nil {
+		t.Fatal(err)
+	}
+	snap, err := p.GetSubscription(t.Context(), "sub_second")
+	if err != nil || snap.Status != supporters.StatusCanceled || snap.LocalID != "" {
+		t.Fatalf("GetSubscription after the deletion = %+v, %v, want canceled without our ID", snap, err)
+	}
+	if err := p.RefundSubscription(t.Context(), "sub_second", "key"); err != nil {
+		t.Fatalf("RefundSubscription = %v", err)
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if !f.charges["ch_new"].Refunded || f.charges["ch_old"].Refunded {
+		t.Errorf("refunded: new %v, old %v, want only the new", f.charges["ch_new"].Refunded, f.charges["ch_old"].Refunded)
+	}
+}
+
+// A subscription of PAY.JP is created by its first charge, so a list without any is not a refund done.
+func TestRefundSubscriptionWithoutChargesFails(t *testing.T) {
+	p, _ := newOnFake(t, supporters.ModeTest, time.Date(2026, 10, 22, 3, 0, 0, 0, time.UTC))
+	if err := p.RefundSubscription(t.Context(), "sub_deleted", "key"); !errors.Is(err, supporters.ErrInvalidPaymentResponse) {
+		t.Errorf("RefundSubscription with no charges = %v, want ErrInvalidPaymentResponse", err)
+	}
 }

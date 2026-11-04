@@ -455,6 +455,9 @@ func (f *fakeAPI) serveCharges(w http.ResponseWriter, r *http.Request, rest []st
 			if v := r.Form.Get("term"); v != "" && c.TermID != v {
 				continue
 			}
+			if v := r.Form.Get("subscription"); v != "" && c.Subscription != v {
+				continue
+			}
 			if within(r, c.Created) {
 				all = append(all, c.charge)
 			}
@@ -492,6 +495,17 @@ func (f *fakeAPI) serveCharges(w http.ResponseWriter, r *http.Request, rest []st
 			return
 		}
 		writeJSON(w, c.charge)
+	case len(rest) == 2 && rest[1] == "refund" && r.Method == http.MethodPost:
+		c, ok := f.charges[rest[0]]
+		switch {
+		case !ok:
+			apiFail(w, http.StatusNotFound, "invalid_id")
+		case c.Refunded:
+			apiFail(w, http.StatusBadRequest, "already_refunded")
+		default:
+			c.AmountRefunded, c.Refunded = c.Amount, true
+			writeJSON(w, c.charge)
+		}
 	default:
 		apiFail(w, http.StatusNotFound, "not_found")
 	}

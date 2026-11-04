@@ -307,6 +307,8 @@ func (s *recordingSyncer) KnownMoney(_ context.Context, _ string, ids []string) 
 	return out, nil
 }
 
+func (s *recordingSyncer) RetryDuplicates(context.Context, string, string) error { return nil }
+
 func (s *recordingSyncer) OpenCheckouts(context.Context, string, time.Time) ([]supporters.CheckoutRef, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

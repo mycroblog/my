@@ -21,7 +21,7 @@ type fakePayments struct{ requested []string }
 
 func (f *fakePayments) Status(context.Context) (appsupporters.PaymentStatus, error) {
 	return appsupporters.PaymentStatus{
-		Provider: "stripe", Mode: appsupporters.ModeLive, Location: time.UTC,
+		Provider: "stripe", Mode: appsupporters.ModeLive, Location: time.UTC, UnsettledDuplicates: 1,
 		LastRun: &appsupporters.ReconcileRun{
 			Outcome: appsupporters.ReconcileFailed, ErrorKind: appsupporters.ErrorPermission, Requests: 3,
 			CheckedSubscriptions: 2, CorrectedSubscriptions: 1, OccurredAt: time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC),
@@ -63,7 +63,7 @@ func TestPaymentStatus(t *testing.T) {
 		t.Errorf("last reconcile = %+v", r)
 	}
 	if want := []clientapi.PaymentStatusWarnings{
-		clientapi.PaymentStatusWarningsNoWebhook, clientapi.PaymentStatusWarningsReconciliationCorrected,
+		clientapi.PaymentStatusWarningsNoWebhook, clientapi.PaymentStatusWarningsReconciliationCorrected, clientapi.PaymentStatusWarningsDuplicateCharge,
 	}; !slices.Equal(st.Warnings, want) {
 		t.Errorf("warnings = %v, want %v", st.Warnings, want)
 	}

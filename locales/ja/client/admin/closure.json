@@ -68,7 +68,7 @@
     "description": "Label of the number of supporter subscriptions that closing cancels."
   },
   "admin.closure.check.subscriptions.warning": {
-    "defaultMessage": "クローズすると、これらの加入はすぐに解約され、返金はされません。",
+    "defaultMessage": "クローズすると、これらの加入はすぐに解約され、まだ準備中の加入の支払いを除き、返金はされません。",
     "description": "Warning when supporter subscriptions go on."
   },
   "admin.closure.check.title": {

@@ -56,6 +56,19 @@ func (q *Queries) CountSupporterMembers(ctx context.Context) ([]CountSupporterMe
 	return items, nil
 }
 
+const countUnsettledSupporterDuplicates = `-- name: CountUnsettledSupporterDuplicates :one
+SELECT COUNT(*) FROM supporter_duplicate_subscriptions d
+WHERE d.provider = ?
+  AND NOT EXISTS (SELECT 1 FROM supporter_duplicate_settlements x WHERE x.duplicate_id = d.id)
+`
+
+func (q *Queries) CountUnsettledSupporterDuplicates(ctx context.Context, provider string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUnsettledSupporterDuplicates, provider)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteAllSupporterDeadlines = `-- name: DeleteAllSupporterDeadlines :exec
 DELETE FROM supporter_subscription_deadlines
 `
@@ -217,6 +230,44 @@ func (q *Queries) GetSupporterCustomer(ctx context.Context, arg GetSupporterCust
 		&i.Provider,
 		&i.ProviderCustomerID,
 		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getSupporterDuplicate = `-- name: GetSupporterDuplicate :one
+SELECT d.id, d.subscription_id, d.provider, d.provider_subscription_id, d.detected_at,
+  EXISTS (SELECT 1 FROM supporter_duplicate_cancellations x WHERE x.duplicate_id = d.id) AS cancelling,
+  EXISTS (SELECT 1 FROM supporter_duplicate_settlements x WHERE x.duplicate_id = d.id) AS settled
+FROM supporter_duplicate_subscriptions d
+WHERE d.provider = ? AND d.provider_subscription_id = ?
+`
+
+type GetSupporterDuplicateParams struct {
+	Provider               string
+	ProviderSubscriptionID string
+}
+
+type GetSupporterDuplicateRow struct {
+	ID                     string
+	SubscriptionID         string
+	Provider               string
+	ProviderSubscriptionID string
+	DetectedAt             int64
+	Cancelling             bool
+	Settled                bool
+}
+
+func (q *Queries) GetSupporterDuplicate(ctx context.Context, arg GetSupporterDuplicateParams) (GetSupporterDuplicateRow, error) {
+	row := q.db.QueryRowContext(ctx, getSupporterDuplicate, arg.Provider, arg.ProviderSubscriptionID)
+	var i GetSupporterDuplicateRow
+	err := row.Scan(
+		&i.ID,
+		&i.SubscriptionID,
+		&i.Provider,
+		&i.ProviderSubscriptionID,
+		&i.DetectedAt,
+		&i.Cancelling,
+		&i.Settled,
 	)
 	return i, err
 }
@@ -504,6 +555,64 @@ func (q *Queries) InsertSupporterCustomer(ctx context.Context, arg InsertSupport
 		arg.ProviderCustomerID,
 		arg.CreatedAt,
 	)
+	return err
+}
+
+const insertSupporterDuplicate = `-- name: InsertSupporterDuplicate :execrows
+INSERT INTO supporter_duplicate_subscriptions (id, subscription_id, provider, provider_subscription_id, detected_at)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT (provider, provider_subscription_id) DO NOTHING
+`
+
+type InsertSupporterDuplicateParams struct {
+	ID                     string
+	SubscriptionID         string
+	Provider               string
+	ProviderSubscriptionID string
+	DetectedAt             int64
+}
+
+func (q *Queries) InsertSupporterDuplicate(ctx context.Context, arg InsertSupporterDuplicateParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertSupporterDuplicate,
+		arg.ID,
+		arg.SubscriptionID,
+		arg.Provider,
+		arg.ProviderSubscriptionID,
+		arg.DetectedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const insertSupporterDuplicateCancellation = `-- name: InsertSupporterDuplicateCancellation :exec
+INSERT INTO supporter_duplicate_cancellations (duplicate_id, decided_at) VALUES (?, ?)
+ON CONFLICT (duplicate_id) DO NOTHING
+`
+
+type InsertSupporterDuplicateCancellationParams struct {
+	DuplicateID string
+	DecidedAt   int64
+}
+
+func (q *Queries) InsertSupporterDuplicateCancellation(ctx context.Context, arg InsertSupporterDuplicateCancellationParams) error {
+	_, err := q.db.ExecContext(ctx, insertSupporterDuplicateCancellation, arg.DuplicateID, arg.DecidedAt)
+	return err
+}
+
+const insertSupporterDuplicateSettlement = `-- name: InsertSupporterDuplicateSettlement :exec
+INSERT INTO supporter_duplicate_settlements (duplicate_id, settled_at) VALUES (?, ?)
+ON CONFLICT (duplicate_id) DO NOTHING
+`
+
+type InsertSupporterDuplicateSettlementParams struct {
+	DuplicateID string
+	SettledAt   int64
+}
+
+func (q *Queries) InsertSupporterDuplicateSettlement(ctx context.Context, arg InsertSupporterDuplicateSettlementParams) error {
+	_, err := q.db.ExecContext(ctx, insertSupporterDuplicateSettlement, arg.DuplicateID, arg.SettledAt)
 	return err
 }
 
@@ -889,6 +998,40 @@ func (q *Queries) ListKnownSupporterReversals(ctx context.Context, arg ListKnown
 	return items, nil
 }
 
+const listLiveSupporterCheckouts = `-- name: ListLiveSupporterCheckouts :many
+SELECT provider_checkout_id FROM supporter_checkouts
+WHERE subscription_id = ?1 AND expires_at > ?2
+ORDER BY id DESC
+`
+
+type ListLiveSupporterCheckoutsParams struct {
+	SubscriptionID string
+	Now            int64
+}
+
+func (q *Queries) ListLiveSupporterCheckouts(ctx context.Context, arg ListLiveSupporterCheckoutsParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listLiveSupporterCheckouts, arg.SubscriptionID, arg.Now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var provider_checkout_id string
+		if err := rows.Scan(&provider_checkout_id); err != nil {
+			return nil, err
+		}
+		items = append(items, provider_checkout_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listLiveSupporterSubscriptionIDs = `-- name: ListLiveSupporterSubscriptionIDs :many
 SELECT subscription_id FROM supporter_live_subscriptions ORDER BY subscription_id
 `
@@ -1245,6 +1388,43 @@ func (q *Queries) ListSupporterSubscriptionUsers(ctx context.Context, ids string
 	for rows.Next() {
 		var i ListSupporterSubscriptionUsersRow
 		if err := rows.Scan(&i.ID, &i.UserID, &i.PlanID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUnsettledSupporterDuplicates = `-- name: ListUnsettledSupporterDuplicates :many
+SELECT d.id, d.subscription_id, d.provider, d.provider_subscription_id, d.detected_at
+FROM supporter_duplicate_subscriptions d
+WHERE d.provider = ?
+  AND NOT EXISTS (SELECT 1 FROM supporter_duplicate_settlements x WHERE x.duplicate_id = d.id)
+ORDER BY d.id
+`
+
+func (q *Queries) ListUnsettledSupporterDuplicates(ctx context.Context, provider string) ([]SupporterDuplicateSubscription, error) {
+	rows, err := q.db.QueryContext(ctx, listUnsettledSupporterDuplicates, provider)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SupporterDuplicateSubscription{}
+	for rows.Next() {
+		var i SupporterDuplicateSubscription
+		if err := rows.Scan(
+			&i.ID,
+			&i.SubscriptionID,
+			&i.Provider,
+			&i.ProviderSubscriptionID,
+			&i.DetectedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

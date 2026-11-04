@@ -3351,8 +3351,10 @@ export interface paths {
          * Start a subscription to a supporter plan
          * @description Starts a subscription to a plan at an interval and returns the payment provider's hosted
          *     checkout, which the client opens in the same tab; no card details reach this server. The checkout returns to `/settings/supporter` of the web client.
-         *     Starting again while the subscription is `pending` makes a new checkout of the same
-         *     subscription. Only a local user with a verified primary address and without another
+         *     Starting again while the subscription is `pending` continues the open checkout for the same
+         *     plan and interval, or expires it and makes a new one of the same subscription, so that one
+         *     checkout at most can take a payment. When one was paid already, `redirect_url` is the return
+         *     to `/settings/supporter` instead of a checkout. Only a local user with a verified primary address and without another
          *     subscription may subscribe: a 422 `/api/v1/problems/supporter-ineligible` otherwise, a 409
          *     `/api/v1/problems/supporter-subscribed` with a subscription that is not pending, and a 422
          *     `/api/v1/problems/supporter-plan-unavailable` for a plan that takes no subscriptions. A 404
@@ -7581,7 +7583,8 @@ export interface paths {
         /**
          * End a subscription at once
          * @description Ends a subscription at once, without a refund: the role goes now, and the
-         *     payment provider stops billing. A refund is the operator's to make at the provider. A
+         *     payment provider stops billing. A refund is the operator's to make at the provider, except
+         *     that a payment for a subscription still pending, which gave nothing, is refunded. A
          *     subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
          *     unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
          */
@@ -9711,7 +9714,7 @@ export interface components {
             delivery_inboxes: number;
             /** @description The estimate of the deliveries of the closure, `local_accounts` times `delivery_inboxes`. */
             estimated_deletes: number;
-            /** @description The supporter subscriptions that go on, which the closure cancels at once without a refund. */
+            /** @description The supporter subscriptions that go on, which the closure cancels at once without a refund, except a payment for one still pending. */
             live_supporter_subscriptions: number;
             /**
              * @description The account migrations (the sending of a `Move` and the jobs that move the followers) that have not ended. They should end before the closure delivers its `Delete`;
@@ -12753,11 +12756,13 @@ export interface components {
             last_webhook_at?: string;
             last_reconciliation?: components["schemas"]["PaymentReconciliationRun"];
             /**
-             * @description The signs that the provider's webhook is not set up right: `no_webhook` (no delivery is
-             *     recorded) and `reconciliation_corrected` (the last reconciliation corrected subscriptions,
-             *     which a webhook delivery should have done).
+             * @description What the operator should look at: `no_webhook` (no delivery is recorded) and
+             *     `reconciliation_corrected` (the last reconciliation corrected subscriptions, which a webhook
+             *     delivery should have done) are signs that the provider's webhook is not set up right, and
+             *     `duplicate_charge` means that a second subscription of one payment is not canceled and
+             *     refunded yet.
              */
-            warnings: ("no_webhook" | "reconciliation_corrected")[];
+            warnings: ("no_webhook" | "reconciliation_corrected" | "duplicate_charge")[];
         };
         /**
          * @description A capability that a role grants. `manage_accounts`: the accounts and their moderation
@@ -13825,7 +13830,7 @@ export interface components {
             subscription_id: components["schemas"]["Id"];
             /**
              * Format: uri
-             * @description The checkout, to open in the same tab.
+             * @description Where to go next, in the same tab, which is the checkout unless it was paid already.
              */
             redirect_url: string;
         };

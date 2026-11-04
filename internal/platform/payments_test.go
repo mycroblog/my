@@ -48,6 +48,8 @@ func (s *syncedSubscriptions) KnownMoney(context.Context, string, []string) (map
 	return map[string]bool{}, nil
 }
 
+func (s *syncedSubscriptions) RetryDuplicates(context.Context, string, string) error { return nil }
+
 func (s *syncedSubscriptions) OpenCheckouts(context.Context, string, time.Time) ([]supporters.CheckoutRef, error) {
 	return nil, nil
 }

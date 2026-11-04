@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -44,15 +45,17 @@ type fakeAPI struct {
 	// fails the request as one that never reached the API, so its key is not kept.
 	before func(r *http.Request) int
 	// throttle answers the next requests with 429 and Retry-After.
-	throttle      int
-	retryAfter    string
-	requests      []string
-	idem          map[string]idemEntry
-	products      map[string]obj
-	prices        []obj
-	subs          []*fakeSub
-	schedules     map[string]*fakeSchedule
-	checkouts     map[string]obj
+	throttle   int
+	retryAfter string
+	requests   []string
+	idem       map[string]idemEntry
+	products   map[string]obj
+	prices     []obj
+	subs       []*fakeSub
+	schedules  map[string]*fakeSchedule
+	checkouts  map[string]obj
+	// sessionPrices are the prices of the checkouts that the API created, by session.
+	sessionPrices map[string]string
 	portalConfigs []obj
 	bts           []*fakeBT
 	charges       map[string]obj
@@ -128,7 +131,7 @@ func newFakeAPI(t *testing.T, now func() time.Time) *fakeAPI {
 	f := &fakeAPI{
 		t: t, now: now, timezone: "UTC", retryAfter: "1",
 		idem: map[string]idemEntry{}, products: map[string]obj{}, schedules: map[string]*fakeSchedule{},
-		checkouts: map[string]obj{}, charges: map[string]obj{}, disputes: map[string]obj{}, invoices: map[string]obj{},
+		checkouts: map[string]obj{}, sessionPrices: map[string]string{}, charges: map[string]obj{}, disputes: map[string]obj{}, invoices: map[string]obj{},
 		intents: map[string]obj{},
 	}
 	f.srv = httptest.NewServer(http.HandlerFunc(f.serve))
@@ -610,6 +613,17 @@ func (f *fakeAPI) route(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		f.list(w, r, out, false)
+	case m == "POST" && parts[0] == "refunds" && len(parts) == 1:
+		f.createRefund(w, r)
+	case m == "GET" && parts[0] == "invoices" && len(parts) == 1:
+		var out []any
+		for _, id := range slices.Sorted(maps.Keys(f.invoices)) {
+			inv := f.invoices[id]
+			if inv["status"] == r.Form.Get("status") && inv["my_subscription"] == r.Form.Get("subscription") {
+				out = append(out, inv)
+			}
+		}
+		f.list(w, r, out, false)
 	case m == "GET" && parts[0] == "invoices" && len(parts) == 2:
 		if inv, ok := f.invoices[parts[1]]; ok {
 			f.respond(w, r, inv)
@@ -634,6 +648,60 @@ func (f *fakeAPI) route(w http.ResponseWriter, r *http.Request) {
 	default:
 		f.fail(w, http.StatusNotFound, "invalid_request_error", "", "Unrecognized request URL "+m+" "+r.URL.Path)
 	}
+}
+
+// paySession completes an open session as the hosted page does: a subscription that names our ID,
+// with its paid invoice and charge. It returns the subscription's ID and the charge's.
+func (f *fakeAPI) paySession(t *testing.T, id string) (sub, charge string) {
+	t.Helper()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	c := f.checkouts[id]
+	if c == nil || c["status"] != "open" {
+		t.Fatalf("session %s is %v, want open", id, c["status"])
+	}
+	local, _ := c["client_reference_id"].(string)
+	price := f.sessionPrices[id]
+	sub, charge = f.nextID("sub"), f.nextID("ch")
+	now := f.now()
+	f.putSubscription(supporters.SubscriptionSnapshot{
+		Ref: supporters.SubscriptionRef(sub), Customer: supporters.CustomerRef("cus_" + id), LocalID: local, Price: supporters.PriceRef(price),
+		Status: supporters.StatusActive, PeriodStart: now, PeriodEnd: now.Add(30 * 24 * time.Hour),
+	})
+	inv := f.nextID("in")
+	f.invoices[inv] = obj{"id": inv, "object": "invoice", "status": "paid", "my_subscription": sub}
+	f.charges[charge] = obj{"id": charge, "object": "charge"}
+	f.invoicePays = append(f.invoicePays, obj{
+		"id": "inpay_" + inv, "object": "invoice_payment", "status": "paid", "invoice": ref{id: inv},
+		"payment": obj{"type": "charge", "charge": ref{id: charge}},
+	})
+	c["status"], c["url"], c["subscription"], c["customer"] = "complete", nil, sub, "cus_"+id
+	return sub, charge
+}
+
+// createRefund refunds what is left of a charge, and refuses one with nothing left or in a dispute,
+// in the shape of Stripe's errors.
+func (f *fakeAPI) createRefund(w http.ResponseWriter, r *http.Request) {
+	id := r.Form.Get("charge")
+	c, ok := f.charges[id]
+	switch {
+	case !ok:
+		f.missing(w, "charge")
+		return
+	case r.Form.Get("reason") != "duplicate":
+		f.bad(w, "the reason of a refund of a second subscription is duplicate")
+		return
+	case c["refunded"] == true:
+		f.fail(w, http.StatusBadRequest, "invalid_request_error", "charge_already_refunded", "Charge "+id+" has already been refunded.")
+		return
+	case c["disputed"] == true:
+		f.fail(w, http.StatusBadRequest, "invalid_request_error", "charge_disputed", "Charge "+id+" has been charged back.")
+		return
+	}
+	c["refunded"] = true
+	re := obj{"id": f.nextID("re"), "object": "refund", "charge": ref{id: id}, "status": "succeeded"}
+	f.refunds = append(f.refunds, re)
+	f.respond(w, r, re)
 }
 
 func (f *fakeAPI) serveProducts(w http.ResponseWriter, r *http.Request, parts []string) {
@@ -808,14 +876,39 @@ func (f *fakeAPI) serveCheckouts(w http.ResponseWriter, r *http.Request, parts [
 			"id": id, "object": "checkout.session", "mode": "subscription", "status": "open", "url": u,
 			"client_reference_id": local, "metadata": metadata(form), "customer": nullable(form.Get("customer")),
 			"customer_email": nullable(form.Get("customer_email")), "subscription": nil, "expires_at": exp,
-			"locale": form.Get("locale"), "success_url": form.Get("success_url"),
+			"locale": form.Get("locale"), "success_url": form.Get("success_url"), "cancel_url": form.Get("cancel_url"),
 		}
+		f.sessionPrices[id] = form.Get("line_items[0][price]")
 		f.respond(w, r, f.checkouts[id])
 	case r.Method == "GET" && len(parts) == 3 && parts[1] == "sessions":
-		if c, ok := f.checkouts[parts[2]]; ok {
-			f.respond(w, r, c)
-		} else {
+		c, ok := f.checkouts[parts[2]]
+		if !ok {
 			f.missing(w, "checkout.session")
+			return
+		}
+		if expansions(r.Form)["line_items"] {
+			// Includable: Stripe returns the line items only on request.
+			out := obj{}
+			for k, v := range c {
+				out[k] = v
+			}
+			out["line_items"] = obj{"object": "list", "has_more": false, "data": []any{
+				obj{"id": "li_" + parts[2], "object": "item", "price": f.price(f.sessionPrices[parts[2]])},
+			}}
+			c = out
+		}
+		f.respond(w, r, c)
+	case r.Method == "POST" && len(parts) == 4 && parts[1] == "sessions" && parts[3] == "expire":
+		c, ok := f.checkouts[parts[2]]
+		switch {
+		case !ok:
+			f.missing(w, "checkout.session")
+		case c["status"] != "open":
+			f.bad(w, "Only Checkout Sessions with a status in [\"open\"] can be expired.")
+		default:
+			// Stripe documents the expired session without a url.
+			c["status"], c["url"] = "expired", nil
+			f.respond(w, r, c)
 		}
 	default:
 		f.missing(w, "route")

@@ -1215,6 +1215,14 @@ type SupporterCustomer struct {
 	CreatedAt          int64
 }
 
+type SupporterDuplicateSubscription struct {
+	ID                     string
+	SubscriptionID         string
+	Provider               string
+	ProviderSubscriptionID string
+	DetectedAt             int64
+}
+
 type SupporterProgramChange struct {
 	ID              string
 	State           string

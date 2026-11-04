@@ -183,6 +183,19 @@ func (p *Provider) GetCheckout(ctx context.Context, ref supporters.CheckoutRef) 
 	return res, nil
 }
 
+// ResumeCheckout implements supporters.PaymentProvider: the adapter's page keeps no input and
+// StartCheckout signs a URL for what is asked now, so there is no page to continue.
+func (p *Provider) ResumeCheckout(ctx context.Context, ref supporters.CheckoutRef, _ supporters.CheckoutRequest) (supporters.CheckoutResult, *supporters.Checkout, error) {
+	res, err := p.GetCheckout(ctx, ref)
+	return res, nil, err
+}
+
+// ExpireCheckout implements supporters.PaymentProvider: a signed URL cannot be withdrawn, so an
+// open checkout stays open. Its pages make one subscription, under the claim of our ID.
+func (p *Provider) ExpireCheckout(ctx context.Context, ref supporters.CheckoutRef) (supporters.CheckoutResult, error) {
+	return p.GetCheckout(ctx, ref)
+}
+
 // findSubscription looks for the subscription of a customer with our ID.
 func (p *Provider) findSubscription(ctx context.Context, cus, localID string) (subscription, bool, error) {
 	for offset := 0; ; offset += supporters.PageSize {

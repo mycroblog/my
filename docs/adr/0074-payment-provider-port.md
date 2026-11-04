@@ -108,6 +108,12 @@ type PaymentProvider interface {
     StartCheckout(ctx context.Context, req CheckoutRequest) (Checkout, error)
     // GetCheckout reports whether a checkout completed and, if so, what it created.
     GetCheckout(ctx context.Context, ref CheckoutRef) (CheckoutResult, error)
+    // ResumeCheckout reads a checkout and, while it is open and was made for what req asks, returns
+    // its page; nil for a provider that keeps none.
+    ResumeCheckout(ctx context.Context, ref CheckoutRef, req CheckoutRequest) (CheckoutResult, *Checkout, error)
+    // ExpireCheckout makes an open checkout unpayable and reports what it is now: expired, or
+    // completed when the customer got there first. A provider that cannot withdraw a page reports it open.
+    ExpireCheckout(ctx context.Context, ref CheckoutRef) (CheckoutResult, error)
     // PortalURL returns a short-lived URL of the provider's customer portal.
     PortalURL(ctx context.Context, customer CustomerRef, returnURL string) (string, error)
 
@@ -118,6 +124,8 @@ type PaymentProvider interface {
     CancelAtPeriodEnd(ctx context.Context, sub SubscriptionRef, key string) error
     ResumeCancellation(ctx context.Context, sub SubscriptionRef, key string) error
     CancelNow(ctx context.Context, sub SubscriptionRef, key string) error
+    // RefundSubscription refunds what is left of every settled charge of a subscription (ADR-0072 §6).
+    RefundSubscription(ctx context.Context, sub SubscriptionRef, key string) error
 
     // ParseWebhook verifies a delivery and returns what it points at. It does no I/O.
     ParseWebhook(header http.Header, body []byte, now time.Time) (Notice, error)
@@ -251,6 +259,9 @@ type MoneyMovement struct {
     - **待っている変更**: Schedule の段階の移行は保留の更新を捨てるので、更新の前に解放する。支払いが断られたら同じ変更を Schedule に作り直す。
   - `period_end`: Subscription Schedule を作り（既存のサブスクリプションから）、今の期間の終わりから新しい Price の段階を足す。`CancelScheduledChange` は Schedule を解放（release）する。
     Schedule の作り方と、`subscription_update` を使わずに期間の終わりへ回せることは **要検証**（#920 で fake の REST の形を Stripe の文書に合わせる）。
+- **画面を続ける・失効させる**（ADR-0072 §6）: `ResumeCheckout` は `GET /v1/checkout/sessions/{id}`（`expand[]=line_items`）で読む。`url` はセッションが開いている間だけある（文書の記載）。`line_items` の価格・`success_url`・`cancel_url`・顧客かメールが今の依頼と同じときだけ、その `url` を返す。Stripe が値を書き換えて保存するなら一致せず、新しい画面になるだけで、支払いは増えない（**要検証**）。
+  `ExpireCheckout` は `POST /v1/checkout/sessions/{id}/expire`。開いていないセッションには誤りを返す（文書の記載）ので、400 ならセッションを読み直し、完了か失効ならそれを答え、まだ開いているなら誤りのままにする。誤りのコードは文書にないので見ない。
+- **返金**: `RefundSubscription` は、`GET /v1/invoices`（`subscription`、`status=paid`）と `GET /v1/invoice_payments` で課金を引き、`POST /v1/refunds`（`charge`、`reason=duplicate`、額は付けない）を送る。額を付けない返金は残りの全額で、返金済みの課金には `charge_already_refunded` を返す（文書の記載）ので、完了として扱い、繰り返しても二重にならない。失敗を再生しないよう、冪等キーは試みごとに変える。dispute 中の課金（`charge_disputed`・`refund_disputed_payment`）は dispute に任せて飛ばす。1 つの課金の失敗で残りを止めず、最後に誤りを返す。制限付きの鍵には Refunds の書き込みの権限が要る。
 - **解約**: `CancelAtPeriodEnd` と `ResumeCancellation` は `cancel_at_period_end` を立てる・下ろす。`CancelNow` は `DELETE /v1/subscriptions/{id}`（`prorate=false`、`invoice_now=false`）で、もう終わっていれば何もしない。
   全額の返金とチャージバックのときに `supporters` が呼ぶ（決定者の回答 2、ADR-0072）。
 - **冪等**: 作成と変更の POST には `Idempotency-Key` に呼び出し側の `key`（ジョブの冪等キーと操作の名前）を付ける。Stripe はキーを 24 時間で消すことがあるので、各コマンドは呼ぶ前に今の状態を読み、もう望む状態なら呼ばない（24 時間を越えたジョブの再試行でも二重にならない）。

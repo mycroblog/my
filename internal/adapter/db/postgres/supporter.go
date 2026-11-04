@@ -391,6 +391,88 @@ func (r *SupporterRepository) InsertCheckout(ctx context.Context, tx uow.Tx, c s
 	}), "insert supporter checkout")
 }
 
+// LiveCheckouts implements supporters.Repository.
+func (r *SupporterRepository) LiveCheckouts(ctx context.Context, tx uow.Tx, subscriptionID string, now time.Time) ([]supporters.CheckoutRef, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListLiveSupporterCheckouts(ctx, postgresgen.ListLiveSupporterCheckoutsParams{SubscriptionID: subscriptionID, Now: now})
+	if err != nil {
+		return nil, wrap(err, "list live supporter checkouts")
+	}
+	out := make([]supporters.CheckoutRef, len(rows))
+	for i, ref := range rows {
+		out[i] = supporters.CheckoutRef(ref)
+	}
+	return out, nil
+}
+
+// InsertDuplicate implements supporters.Repository.
+func (r *SupporterRepository) InsertDuplicate(ctx context.Context, tx uow.Tx, d supporters.Duplicate) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertSupporterDuplicate(ctx, postgresgen.InsertSupporterDuplicateParams{
+		ID: d.ID, SubscriptionID: d.SubscriptionID, Provider: d.Provider, ProviderSubscriptionID: string(d.Ref), DetectedAt: d.DetectedAt,
+	})
+	if err != nil {
+		return false, wrap(err, "insert supporter duplicate")
+	}
+	return n > 0, nil
+}
+
+// CancelDuplicate implements supporters.Repository.
+func (r *SupporterRepository) CancelDuplicate(ctx context.Context, tx uow.Tx, duplicateID string, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.InsertSupporterDuplicateCancellation(ctx, postgresgen.InsertSupporterDuplicateCancellationParams{DuplicateID: duplicateID, DecidedAt: at}), "record the cancellation of a supporter duplicate")
+}
+
+// SettleDuplicate implements supporters.Repository.
+func (r *SupporterRepository) SettleDuplicate(ctx context.Context, tx uow.Tx, duplicateID string, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.InsertSupporterDuplicateSettlement(ctx, postgresgen.InsertSupporterDuplicateSettlementParams{DuplicateID: duplicateID, SettledAt: at}), "settle supporter duplicate")
+}
+
+// FindDuplicate implements supporters.Repository.
+func (r *SupporterRepository) FindDuplicate(ctx context.Context, tx uow.Tx, provider string, ref supporters.SubscriptionRef) (supporters.Duplicate, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return supporters.Duplicate{}, err
+	}
+	row, err := q.GetSupporterDuplicate(ctx, postgresgen.GetSupporterDuplicateParams{Provider: provider, ProviderSubscriptionID: string(ref)})
+	if err != nil {
+		return supporters.Duplicate{}, notFound(err, supporters.ErrNotFound, "supporter duplicate "+string(ref))
+	}
+	return supporters.Duplicate{
+		ID: row.ID, SubscriptionID: row.SubscriptionID, Provider: row.Provider, Ref: supporters.SubscriptionRef(row.ProviderSubscriptionID),
+		DetectedAt: row.DetectedAt, Cancelling: row.Cancelling, Settled: row.Settled,
+	}, nil
+}
+
+// UnsettledDuplicates implements supporters.Repository.
+func (r *SupporterRepository) UnsettledDuplicates(ctx context.Context, provider string) ([]supporters.Duplicate, error) {
+	rows, err := r.db.reader().ListUnsettledSupporterDuplicates(ctx, provider)
+	if err != nil {
+		return nil, wrap(err, "list unsettled supporter duplicates")
+	}
+	out := make([]supporters.Duplicate, len(rows))
+	for i, row := range rows {
+		out[i] = supporters.Duplicate{
+			ID: row.ID, SubscriptionID: row.SubscriptionID, Provider: row.Provider, Ref: supporters.SubscriptionRef(row.ProviderSubscriptionID),
+			DetectedAt: row.DetectedAt,
+		}
+	}
+	return out, nil
+}
+
 // subscription reads a subscription with its current transition, link, and latest checkout.
 func subscription(ctx context.Context, q *postgresgen.Queries, id string) (supporters.SubscriptionRecord, error) {
 	row, err := q.GetSupporterSubscription(ctx, id)

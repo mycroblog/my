@@ -191,6 +191,10 @@
     "defaultMessage": "事業者がサーバーの読めない形で答えました。次の照合で再び試します。続くようなら my の開発者に報告してください。",
     "description": "How to fix a failure for an unreadable response."
   },
+  "admin.supporters.payment.warning.duplicate_charge": {
+    "defaultMessage": "1 つの加入への 2 つめの支払いを、まだ解約と返金ができていません。照合のたびに再び試します。サーバーのログに、対象の加入と理由があります。鍵の権限が足りないときは返金の書き込みの権限を与えてください。それ以外のときは事業者の管理画面で返金してください。",
+    "description": "Warning of the payment provider section: a member paid twice and the server could not cancel and refund the second subscription."
+  },
   "admin.supporters.payment.warning.no_webhook": {
     "defaultMessage": "45 日以内に webhook を受けた記録がありません。事業者にこのサーバーの URL で webhook のエンドポイントが登録され、その署名シークレットがサーバーの環境変数にあるかを確かめてください。",
     "description": "Warning of the payment provider section: no webhook delivery is recorded."
@@ -584,7 +588,7 @@
     "description": "Title of the confirmation before ending a subscription at once."
   },
   "admin.supporters.subscription.cancel.description": {
-    "defaultMessage": "ロールはすぐに外れ、決済の事業者の請求も止まります。返金はしません。必要なら決済の事業者の画面で返金してください。元に戻せません。",
+    "defaultMessage": "ロールはすぐに外れ、決済の事業者の請求も止まります。まだ準備中で何も提供していない加入の支払いを除き、返金はしません。必要なら決済の事業者の画面で返金してください。元に戻せません。",
     "description": "Explanation in the confirmation before ending a subscription at once."
   },
   "admin.supporters.subscription.canceled": {

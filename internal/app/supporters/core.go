@@ -54,6 +54,11 @@ const (
 	CommandCancelAtPeriodEnd Command = "cancel_at_period_end"
 	// CommandDropUnpaidChange removes what a failed change at once left collectible.
 	CommandDropUnpaidChange Command = "drop_unpaid_change"
+	// CommandSettleDuplicate cancels a provider's subscription that charged for nothing and refunds
+	// it (duplicates.go).
+	CommandSettleDuplicate Command = "settle_duplicate"
+	// CommandExpireCheckouts makes the pages of a subscription that closed unpayable.
+	CommandExpireCheckouts Command = "expire_checkouts"
 )
 
 // snapshotOf resolves the provider's prices of snap to ours: a price that is not ours is "".
@@ -119,6 +124,7 @@ func (s *Service) applySnapshot(ctx context.Context, provider string, snap Subsc
 	changed, orphan := false, false
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		changed, orphan = false, false
+		ended := subscriptionEnded(snap.Status)
 		rec, err := s.d.Repository.LockSubscription(ctx, tx, id)
 		if errors.Is(err, ErrNotFound) {
 			return nil
@@ -131,14 +137,26 @@ func (s *Service) applySnapshot(ctx context.Context, provider string, snap Subsc
 		}
 		switch {
 		case rec.Link == "" && snap.Ref != "":
+			if ended {
+				// Not what our subscription runs on: an operator may have ended it for one that is
+				// live, which must not become the second subscription.
+				return nil
+			}
 			if err := s.d.Repository.InsertLink(ctx, tx, rec.ID, provider, snap.Ref, now); err != nil {
 				return err
 			}
 			rec.Link = snap.Ref
+			if rec.Current.State.Final() {
+				// Paid on a page after our subscription closed: it bought nothing.
+				return s.recordDuplicate(ctx, tx, rec, provider, snap.Ref, now)
+			}
 		case snap.Ref != "" && rec.Link != snap.Ref:
 			s.d.Logger.WarnContext(ctx, "a provider's subscription names a subscription linked to another one",
 				slog.String("subscription", rec.ID), slog.String("provider_subscription", string(snap.Ref)))
-			return nil
+			if ended {
+				return nil // someone ended it at the provider; what they did about its charge stays
+			}
+			return s.recordDuplicate(ctx, tx, rec, provider, snap.Ref, now)
 		}
 		readAt := snap.ReadAt
 		if readAt.IsZero() {
@@ -155,12 +173,20 @@ func (s *Service) applySnapshot(ctx context.Context, provider string, snap Subsc
 			}
 		}
 		if rec.Current.State.Final() {
-			// The provider still bills a subscription that ended here: stop it.
-			orphan = snap.Status != StatusCanceled && snap.Status != StatusIncompleteExpired
-			if orphan {
-				return s.enqueueCommand(ctx, tx, rec.ID, CommandCancelNow, "", "orphan")
+			// The provider still bills a subscription that ended here: stop it, unless a duplicate's
+			// job does and refunds it too.
+			orphan = !ended
+			if !orphan {
+				return nil
 			}
-			return nil
+			switch _, err := s.d.Repository.FindDuplicate(ctx, tx, provider, snap.Ref); {
+			case err == nil:
+				orphan = false
+				return nil
+			case !errors.Is(err, ErrNotFound):
+				return err
+			}
+			return s.enqueueCommand(ctx, tx, rec.ID, CommandCancelNow, "", "orphan")
 		}
 		if snap.UnpaidChange != "" {
 			// A failure part of the way through a change: the use case could not clean it up.
@@ -278,6 +304,11 @@ func (s *Service) transition(ctx context.Context, tx uow.Tx, rec SubscriptionRec
 	if next.State == supporters.StateRevoked && rec.Current.State != supporters.StateRevoked && rec.Link != "" {
 		return s.enqueueCommand(ctx, tx, rec.ID, CommandCancelNow, "", "revoked")
 	}
+	if next.State.Final() && rec.Current.State == supporters.StatePending {
+		// The pending subscription closed (its plan retired, its account deleted): a page must not
+		// charge for it any more.
+		return s.enqueueCommand(ctx, tx, rec.ID, CommandExpireCheckouts, "", "closed")
+	}
 	return nil
 }
 
@@ -287,7 +318,14 @@ func (s *Service) close(ctx context.Context, tx uow.Tx, rec SubscriptionRecord, 
 	if !ok {
 		return nil
 	}
-	return s.transition(ctx, tx, rec, next, reason, now)
+	if err := s.transition(ctx, tx, rec, next, reason, now); err != nil {
+		return err
+	}
+	if rec.Current.State == supporters.StatePending && rec.Link != "" {
+		// It closed before a snapshot made it active: whatever was paid bought nothing.
+		return s.recordDuplicate(ctx, tx, rec, rec.Provider, rec.Link, now)
+	}
+	return nil
 }
 
 // SyncCheckout implements Syncer: a completed checkout records the user's customer and links
@@ -307,9 +345,13 @@ func (s *Service) SyncCheckout(ctx context.Context, provider string, res Checkou
 			return false, err
 		}
 	}
+	dead, err := s.checkoutEnded(ctx, id, provider, res)
+	if err != nil || dead {
+		return false, err
+	}
 	now := s.now()
 	changed := false
-	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		changed = false
 		rec, err := s.d.Repository.LockSubscription(ctx, tx, id)
 		if errors.Is(err, ErrNotFound) {
@@ -327,11 +369,39 @@ func (s *Service) SyncCheckout(ctx context.Context, provider string, res Checkou
 		}
 		if rec.Link == "" && res.Subscription != "" {
 			changed = true
-			return s.d.Repository.InsertLink(ctx, tx, rec.ID, provider, res.Subscription, now)
+			if err := s.d.Repository.InsertLink(ctx, tx, rec.ID, provider, res.Subscription, now); err != nil {
+				return err
+			}
+			if rec.Current.State.Final() {
+				return s.recordDuplicate(ctx, tx, rec, provider, res.Subscription, now)
+			}
 		}
 		return nil
 	})
 	return changed, err
+}
+
+// checkoutEnded reports whether a completed checkout made a subscription that has ended at the
+// provider while ours has no link: it must not become what ours runs on, as in applySnapshot.
+func (s *Service) checkoutEnded(ctx context.Context, id, provider string, res CheckoutResult) (bool, error) {
+	if res.Subscription == "" || s.d.Provider == nil || s.d.Provider.Name() != provider {
+		return false, nil
+	}
+	rec, err := s.d.Repository.FindSubscription(ctx, nil, id)
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
+	}
+	if err != nil || rec.Link != "" {
+		return false, err
+	}
+	snap, err := s.d.Provider.GetSubscription(ctx, res.Subscription)
+	if ErrorKindOf(err) == ErrorNotFound {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("supporters: read the subscription of checkout %s: %w", res.Ref, err)
+	}
+	return subscriptionEnded(snap.Status), nil
 }
 
 // RecordMoney implements Syncer: it records the refunds and chargebacks of our subscriptions,
@@ -435,6 +505,8 @@ type commandPayload struct {
 	SubscriptionID string            `json:"subscription_id"`
 	Command        Command           `json:"command"`
 	Reason         supporters.Reason `json:"reason,omitempty"`
+	// Ref is the provider's subscription of CommandSettleDuplicate.
+	Ref SubscriptionRef `json:"ref,omitempty"`
 }
 
 // SyncJob returns the JobSync of a subscription; cause makes its idempotency key.
@@ -450,13 +522,17 @@ func SyncJob(subscriptionID, cause string) queue.NewJob {
 
 // enqueueCommand queues a JobCommand inside tx; cause makes its idempotency key.
 func (s *Service) enqueueCommand(ctx context.Context, tx uow.Tx, subscriptionID string, c Command, reason supporters.Reason, cause string) error {
-	b, err := json.Marshal(commandPayload{SubscriptionID: subscriptionID, Command: c, Reason: reason})
+	return s.enqueue(ctx, tx, commandPayload{SubscriptionID: subscriptionID, Command: c, Reason: reason}, cause)
+}
+
+func (s *Service) enqueue(ctx context.Context, tx uow.Tx, p commandPayload, cause string) error {
+	b, err := json.Marshal(p)
 	if err != nil {
 		return err
 	}
 	return s.d.Outbox.EnqueueTx(ctx, tx, queue.NewJob{
-		Type: JobCommand, Payload: b, IdempotencyKey: "command:" + subscriptionID + ":" + string(c) + ":" + cause,
-		OrderingKey: "supporter_subscription:" + subscriptionID,
+		Type: JobCommand, Payload: b, IdempotencyKey: "command:" + p.SubscriptionID + ":" + string(p.Command) + ":" + cause,
+		OrderingKey: "supporter_subscription:" + p.SubscriptionID,
 	})
 }
 
@@ -507,6 +583,12 @@ func (s *Service) Sync(ctx context.Context, id string) queue.Result {
 	if _, err := s.SyncSubscription(ctx, name, snap); err != nil {
 		return queue.Retry(0, err)
 	}
+	if rec.Link == "" && subscriptionEnded(snap.Status) {
+		// An ended subscription takes no link, so the deadline still applies.
+		if err := s.expirePending(ctx, id); err != nil {
+			return queue.Retry(0, err)
+		}
+	}
 	return queue.Done()
 }
 
@@ -543,6 +625,12 @@ func (s *Service) RunCommand(ctx context.Context, p commandPayload, key string) 
 		return queue.Retry(0, err)
 	case rec.Provider != name:
 		return queue.Done()
+	}
+	switch p.Command {
+	case CommandSettleDuplicate:
+		return s.settleDuplicate(ctx, rec, p.Ref, key)
+	case CommandExpireCheckouts:
+		return s.expireCheckouts(ctx, rec)
 	}
 	if rec.Link == "" {
 		if !rec.Current.State.Final() && p.Reason != "" {

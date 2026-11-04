@@ -25,10 +25,12 @@ properties:
     $ref: ./PaymentReconciliationRun.yaml
   warnings:
     description: |
-      The signs that the provider's webhook is not set up right: `no_webhook` (no delivery is
-      recorded) and `reconciliation_corrected` (the last reconciliation corrected subscriptions,
-      which a webhook delivery should have done).
+      What the operator should look at: `no_webhook` (no delivery is recorded) and
+      `reconciliation_corrected` (the last reconciliation corrected subscriptions, which a webhook
+      delivery should have done) are signs that the provider's webhook is not set up right, and
+      `duplicate_charge` means that a second subscription of one payment is not canceled and
+      refunded yet.
     type: array
     items:
       type: string
-      enum: [no_webhook, reconciliation_corrected]
+      enum: [no_webhook, reconciliation_corrected, duplicate_charge]

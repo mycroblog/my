@@ -16,6 +16,11 @@ One server can use only one provider. To switch to another provider later, ask t
   The list holds for a charge in the account's settlement currency. A charge that Stripe converts must meet the settlement currency's minimum after the conversion, and the server does not check that, so choose a plan's amount well above the minimum when its currency differs from your bank account's.
 - **Subscribing**: The server creates a Checkout session with `mode=subscription` and sends the user's browser to its URL (`checkout.stripe.com`). The payment page expires after one hour.
   The server's subscription ID goes into `client_reference_id`, `metadata.my_subscription_id`, and the `metadata.my_subscription_id` of the Stripe subscription. Automatic tax calculation (Stripe Tax) is not enabled.
+- **Starting again**: At most one page of a pending subscription can take a payment. A user who starts again on the same plan and interval returns to the open page, with what they typed, unless it has less than 15 minutes left. Any other start gets a new page, and the server expires the earlier one, which then shows Stripe's expired message. If an earlier page was paid already, the user gets no page: they go to the return screen, which shows the subscription. If the server cannot expire an earlier page, the start fails and the user can try again.
+  A pending subscription that closes (its plan retired, its account deleted) expires its page in the same way.
+- **A second subscription**: Two payments can still meet, when both pages are submitted at the same moment. The subscription that reaches the server first is the user's. The server cancels the other one at once and refunds all its paid invoices in full, renewals included, since it gave nothing for any period, with the reason `duplicate`, and logs `a second subscription was canceled and refunded`. A payment for a pending subscription that has closed is treated the same way, also when it reached the server just before the close. The user receives Stripe's refund and sees one subscription. Stripe does not return its fee on the refunded charge, and that fee shows in the income.
+  A charge in a dispute is not refunded, and neither is a payment that had not settled when the server looked (a debit method, for example). A subscription that someone already cancelled in the dashboard is left as it is, with its charges, and it never becomes the user's subscription.
+  **Before upgrading a server from a version without this**, look in Stripe for customers with two subscriptions whose `metadata.my_subscription_id` is the same. The first reconciliation cancels the one not in use and refunds everything it charged. Cancel in the dashboard any that you would rather settle by hand, and the server leaves them alone.
 - **Customer portal**: On first use, the server creates through the API a portal configuration (`metadata.my=1`) that enables only updating payment methods, the invoice history, and cancellation at the end of the period. Plan changes are made on this server's screens, not in the portal.
   A cancellation in the portal shows on this server as scheduled to cancel, and the user can undo it from the server's screen. A plan change is refused until it is undone.
 - **A cancellation date set by hand**: The portal sets the subscription's `cancel_at`, not `cancel_at_period_end`, and the server reads both. A `cancel_at` you set in the dashboard or through the API counts the same when it is not after the end of the current period. When it is before that end, the server shows that date as the end of the subscription, and the user keeps the role until then. A later `cancel_at` is not a cancellation yet: the subscription stays active until the period that holds the date.
@@ -52,21 +57,24 @@ For this reason, the operator's PCI DSS scope is expected to be that of a mercha
 Under "Developers > API keys", creating a **restricted key** (`rk_test_...` / `rk_live_...`) is recommended. A secret key (`sk_test_...` / `sk_live_...`) works too.
 The prefix of the key sets the mode, and a test key charges nothing. A publishable key (`pk_`) cannot be used.
 
-Give a restricted key these permissions. A restricted key with this table's permissions ran subscribing, plan changes, cancellation, reconciliation, and voiding invoices in a sandbox. Refunds and disputes have not been run with it, and nobody has checked that the table is the smallest set that works.
+Give a restricted key these permissions. A restricted key with this table's permissions ran subscribing, plan changes, cancellation, reconciliation, and voiding invoices in a sandbox. Refunds, expiring a page, and disputes have not been run with it, and nobody has checked that the table is the smallest set that works.
 
 | Resource | Permission | APIs used |
 | --- | --- | --- |
 | Products | Write | `GET`, `POST /v1/products`, `POST /v1/products/{id}` |
 | Prices | Write | `GET`, `POST /v1/prices`, `POST /v1/prices/{id}` |
-| Checkout Sessions | Write | `POST /v1/checkout/sessions`, `GET /v1/checkout/sessions/{id}` |
+| Checkout Sessions | Write | `POST /v1/checkout/sessions`, `GET /v1/checkout/sessions/{id}`, `POST /v1/checkout/sessions/{id}/expire` |
 | Customer portal | Write | `GET`, `POST /v1/billing_portal/configurations`, `POST /v1/billing_portal/sessions` |
 | Subscriptions | Write | `GET /v1/subscriptions`, `POST`, `DELETE /v1/subscriptions/{id}` |
 | Subscription Schedules (part of Subscriptions) | Write | `POST /v1/subscription_schedules`, `POST /v1/subscription_schedules/{id}`, `POST /v1/subscription_schedules/{id}/release` |
 | Invoices | Write | `GET /v1/invoices/{id}`, `GET /v1/invoice_payments`, `POST /v1/invoices/{id}/void` |
-| Charges, Refunds, Disputes | Read | `GET /v1/charges/{id}`, `GET /v1/refunds` |
+| Charges, Refunds | Write | `GET /v1/charges/{id}`, `GET /v1/refunds`, `POST /v1/refunds` |
+| Disputes | Read | Read through the balance transactions and charges |
 | Balance transaction sources | Read | `GET /v1/balance_transactions` |
 | Events | Read | `GET /v1/events` |
 | Account (information of an account outside Connect) | Read | `GET /v1/account` (time zone) |
+
+Without the permission to write refunds, the server still cancels a second subscription, and `duplicate_charge` stays in the warnings (see [Register the webhook endpoint](#3-register-the-webhook-endpoint)) until it can refund. A key created before this permission was listed needs it added.
 
 Pass the key in the environment variable `MY_PAYMENTS_STRIPE_SECRET_KEY` (or the path of a file in `MY_PAYMENTS_STRIPE_SECRET_KEY_FILE`). It cannot be written in the configuration file.
 If the key leaks, rotate it in the dashboard and redeploy with the new key.
@@ -94,6 +102,7 @@ While you rotate the signing secret, Stripe signs with both the old and the new 
 
 The state of the provider (the mode, when the last webhook arrived, and the result and failure kind of the last reconciliation) is shown in the "Payment provider" section of `/admin/supporters` in the administration, and by the admin API `GET /api/v1/admin/payment_status` (permission `manage_supporters`). The section explains how to fix each kind of reconciliation failure.
 `warnings` lists `no_webhook` (no webhook has ever been recorded) and `reconciliation_corrected` (the last reconciliation repaired a subscription). Suspect a misconfigured webhook when either appears.
+It also lists `duplicate_charge`: a second subscription is not cancelled and refunded yet. See [Operation](#7-operation).
 "Reconcile now" in the section (`POST /api/v1/admin/payment_reconciliation/runs`) reconciles at once instead of waiting for the scheduled run. It is limited to once per UTC hour (a second call in the same hour returns `429`), and the audit log records `payment_reconcile_queued`.
 
 ## 4. Configure the server
@@ -173,7 +182,8 @@ The objects that `stripe trigger` creates carry no subscription ID of this serve
 - A reconciliation failure of kind `permission` means a wrong key or missing permissions. The server's log line (`payment reconciliation failed`) has Stripe's message, which names the permission to add.
 - When reconciliations often hit the request limit, raise `payments_reconcile_max_requests` or lengthen `payments_reconcile_interval`. Every read counts toward Stripe's read allocation (see [What the server does at Stripe](#what-the-server-does-at-stripe)), so prefer the longer interval on an account with few transactions.
 - When reconciliation has been stopped for more than 30 days, the server cannot catch up from Stripe's event list (which reaches back 30 days). The sweep of all subscriptions repairs the state then.
-- Refunds and chargebacks are handled in Stripe's dashboard. A full refund and a chargeback remove the role and cancel the subscription at once, and a partial refund does not remove the role. Winning a dispute does not restore the role automatically.
+- `duplicate_charge` in the warnings means that a user paid twice and the server could not finish cancelling and refunding the second subscription. The log line `a second subscription could not be canceled and refunded` names both subscriptions and the kind of failure, and appears again at each reconciliation, which tries again. With kind `permission`, add the permission to write refunds. Otherwise refund the charge in the dashboard: the next try finds nothing left to refund and clears the warning. "Reconcile now" tries at once.
+- Other refunds and chargebacks are handled in Stripe's dashboard. A full refund and a chargeback remove the role and cancel the subscription at once, and a partial refund does not remove the role. Winning a dispute does not restore the role automatically.
 
 ## Items to verify
 
@@ -188,3 +198,8 @@ These have not been tried against Stripe, in a sandbox or live, and rest on Stri
 - That the sweep of all subscriptions repairs a subscription whose state the server missed.
 - What an upgrade does for a subscription paying with a method that pending updates do not list (ACH, SEPA, and Bacs direct debits). Keep those methods off in the dashboard until this is confirmed.
 - That `cancel_at_period_end=true` replaces a `cancel_at` in a later period.
+- Returning to an open page. The server compares what `GET /v1/checkout/sessions/{id}` returns (`line_items`, `success_url`, `cancel_url`, `customer`, `customer_email`) with the new request, and any difference makes a new page. If Stripe rewrites `success_url` or `customer_email` when it stores them, the user gets a new page each time and loses what they typed, but pays once.
+- Expiring a session as its payment completes. Stripe's documentation says that a session that is not open returns an error, and the server then reads the session. The error's exact code and the status while a card authentication is in progress are not documented.
+- That one session cannot be paid twice from two tabs. A session holds one subscription and completes once, but the documentation does not state it for two submissions at the same moment.
+- Whether a failed authentication on the payment page leaves an `incomplete` subscription that names the server's subscription. The server would link it and keep the user pending, and a payment on another page would be refunded as the second one.
+- A refund of a second subscription, with a restricted key whose "Charges" and "Refunds" permissions are as the table says, and the money movements that follow it.

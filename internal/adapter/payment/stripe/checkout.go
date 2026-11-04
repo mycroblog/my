@@ -129,6 +129,73 @@ func (p *Provider) GetCheckout(ctx context.Context, ref supporters.CheckoutRef) 
 	if err != nil {
 		return supporters.CheckoutResult{}, err
 	}
+	return checkoutResult(cs), nil
+}
+
+// ResumeCheckout implements supporters.PaymentProvider: the session's page, whose url Stripe keeps
+// while it is open, when the session is what a new one would be. The customer's input stays on it.
+func (p *Provider) ResumeCheckout(ctx context.Context, ref supporters.CheckoutRef, req supporters.CheckoutRequest) (supporters.CheckoutResult, *supporters.Checkout, error) {
+	var cs *stripe.CheckoutSession
+	err := p.do(ctx, "read the checkout "+string(ref), func() (err error) {
+		cs, err = p.sc.V1CheckoutSessions.Retrieve(ctx, string(ref), &stripe.CheckoutSessionRetrieveParams{Expand: expand("", []string{"line_items"})})
+		return err
+	})
+	if err != nil {
+		return supporters.CheckoutResult{}, nil, err
+	}
+	res := checkoutResult(cs)
+	if res.Status != supporters.CheckoutOpen || cs.URL == "" || !sessionAsks(cs, req) {
+		return res, nil, nil
+	}
+	if err := checkHostedURL(cs.URL, CheckoutHost); err != nil {
+		return supporters.CheckoutResult{}, nil, err
+	}
+	return res, &supporters.Checkout{Ref: ref, RedirectURL: cs.URL, ExpiresAt: unixTime(cs.ExpiresAt)}, nil
+}
+
+// sessionAsks reports whether a session read with its line items charges and returns what req asks.
+// Anything it cannot tell is another session, which only costs the customer's input.
+func sessionAsks(cs *stripe.CheckoutSession, req supporters.CheckoutRequest) bool {
+	if cs.LineItems == nil || len(cs.LineItems.Data) != 1 || cs.LineItems.Data[0].Price == nil ||
+		cs.LineItems.Data[0].Price.ID != string(req.Price) {
+		return false
+	}
+	success, err := successURL(req.SuccessURL)
+	if err != nil || cs.SuccessURL != success || cs.CancelURL != req.CancelURL {
+		return false
+	}
+	if req.Customer != "" {
+		return cs.Customer != nil && cs.Customer.ID == string(req.Customer)
+	}
+	return cs.Customer == nil && cs.CustomerEmail == req.Email
+}
+
+// ExpireCheckout implements supporters.PaymentProvider. Stripe refuses a session that is not open,
+// such as one just completed, so a refusal is settled by what the session is now.
+func (p *Provider) ExpireCheckout(ctx context.Context, ref supporters.CheckoutRef) (supporters.CheckoutResult, error) {
+	var cs *stripe.CheckoutSession
+	err := p.do(ctx, "expire the checkout "+string(ref), func() (err error) {
+		cs, err = p.sc.V1CheckoutSessions.Expire(ctx, string(ref), &stripe.CheckoutSessionExpireParams{})
+		return err
+	})
+	if err == nil {
+		return checkoutResult(cs), nil
+	}
+	if supporters.ErrorKindOf(err) != supporters.ErrorInvalidRequest {
+		return supporters.CheckoutResult{}, err
+	}
+	res, readErr := p.GetCheckout(ctx, ref)
+	if readErr != nil {
+		return supporters.CheckoutResult{}, readErr
+	}
+	if res.Status == supporters.CheckoutOpen {
+		return supporters.CheckoutResult{}, err
+	}
+	return res, nil
+}
+
+// checkoutResult returns the port's result of a session.
+func checkoutResult(cs *stripe.CheckoutSession) supporters.CheckoutResult {
 	res := supporters.CheckoutResult{Ref: supporters.CheckoutRef(cs.ID), LocalID: cs.ClientReferenceID}
 	if res.LocalID == "" {
 		res.LocalID = cs.Metadata[metaSubscriptionID]
@@ -147,7 +214,7 @@ func (p *Provider) GetCheckout(ctx context.Context, ref supporters.CheckoutRef) 
 	default:
 		res.Status = supporters.CheckoutOpen
 	}
-	return res, nil
+	return res
 }
 
 // PortalURL implements supporters.PaymentProvider: a session of the customer portal on the

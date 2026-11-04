@@ -68,7 +68,7 @@
     "description": "Label of the number of supporter subscriptions that closing cancels."
   },
   "admin.closure.check.subscriptions.warning": {
-    "defaultMessage": "Closing cancels these subscriptions at once, without a refund.",
+    "defaultMessage": "Closing cancels these subscriptions at once, without a refund, except a payment for one still pending, which gave nothing.",
     "description": "Warning when supporter subscriptions go on."
   },
   "admin.closure.check.title": {

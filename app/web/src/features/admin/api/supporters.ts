@@ -171,7 +171,7 @@ export function retireSupporterPlanMutation(api: Api) {
   };
 }
 
-/** Ends a subscription at once, without a refund (POST /admin/supporter_subscriptions/{id}/end), as the options of useMutation. */
+/** Ends a subscription at once, without a refund unless still pending (POST /admin/supporter_subscriptions/{id}/end), as the options of useMutation. */
 export function endSupporterSubscriptionMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/supporter_subscriptions/{id}/end"] as const,

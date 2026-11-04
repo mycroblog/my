@@ -85,6 +85,10 @@ type PaymentRepository interface {
 	// partial ones when resumable is true; ErrNotFound without one.
 	LastReconcileRun(ctx context.Context, provider string, resumable bool) (ReconcileRun, error)
 
+	// CountUnsettledDuplicates returns how many second subscriptions of provider the server has
+	// not canceled and refunded.
+	CountUnsettledDuplicates(ctx context.Context, provider string) (int, error)
+
 	// ClaimCheckout takes the claim c of a checkout and reports whether it did: it does when no
 	// one holds the checkout or the claim of its holder expired at or before c.ClaimedAt.
 	ClaimCheckout(ctx context.Context, tx uow.Tx, c CheckoutClaim) (bool, error)

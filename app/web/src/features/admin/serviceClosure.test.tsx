@@ -121,7 +121,9 @@ describe("the service closure screen", () => {
       within(section).getByText("Let the migrations end before closing; the closure sends its Deletes after them."),
     ).toBeInTheDocument();
     expect(
-      within(section).getByText("Closing cancels these subscriptions at once, without a refund."),
+      within(section).getByText(
+        "Closing cancels these subscriptions at once, without a refund, except a payment for one still pending, which gave nothing.",
+      ),
     ).toBeInTheDocument();
     expect(within(section).getByText(/Export their records with the CLI/u)).toBeInTheDocument();
 

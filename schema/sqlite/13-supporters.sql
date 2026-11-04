@@ -135,6 +135,31 @@ CREATE UNIQUE INDEX supporter_checkouts_provider_checkout ON supporter_checkouts
 CREATE INDEX supporter_checkouts_subscription_id_id ON supporter_checkouts (subscription_id, id DESC);
 CREATE INDEX supporter_checkouts_provider_expires_at ON supporter_checkouts (provider, expires_at);
 
+-- Event: a provider's subscription that charged for a subscription of ours which has another one
+-- or has ended: the server cancels and refunds it.
+CREATE TABLE supporter_duplicate_subscriptions (
+  id TEXT NOT NULL PRIMARY KEY,
+  subscription_id TEXT NOT NULL,
+  provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
+  provider_subscription_id TEXT NOT NULL CHECK (length(provider_subscription_id) BETWEEN 1 AND 255),
+  detected_at INTEGER NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX supporter_duplicate_subscriptions_provider_subscription ON supporter_duplicate_subscriptions (provider, provider_subscription_id);
+
+-- Event: the server took a duplicate on, before it cancels it at the provider: from here it does
+-- not need the provider to report the subscription, which it may delete.
+CREATE TABLE supporter_duplicate_cancellations (
+  duplicate_id TEXT NOT NULL PRIMARY KEY,
+  decided_at INTEGER NOT NULL
+) STRICT;
+
+-- Event: nothing is left to do for a duplicate: it is canceled and refunded, or it had ended at the
+-- provider already. Without a row the administrators see a warning.
+CREATE TABLE supporter_duplicate_settlements (
+  duplicate_id TEXT NOT NULL PRIMARY KEY,
+  settled_at INTEGER NOT NULL
+) STRICT;
+
 -- Event: the provider's subscription of ours, recorded once, from the first snapshot or the
 -- completed checkout that names it.
 CREATE TABLE supporter_subscription_links (

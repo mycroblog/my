@@ -45,6 +45,15 @@ func (r *PaymentRepository) LastWebhookReceipt(ctx context.Context, provider str
 	}, nil
 }
 
+// CountUnsettledDuplicates implements supporters.PaymentRepository.
+func (r *PaymentRepository) CountUnsettledDuplicates(ctx context.Context, provider string) (int, error) {
+	n, err := r.db.reader().CountUnsettledSupporterDuplicates(ctx, provider)
+	if err != nil {
+		return 0, wrap(err, "count unsettled supporter duplicates")
+	}
+	return int(n), nil
+}
+
 // PurgeWebhookReceipts implements supporters.PaymentRepository.
 func (r *PaymentRepository) PurgeWebhookReceipts(ctx context.Context, tx uow.Tx, before time.Time, limit int) (int64, error) {
 	q, err := r.db.queries(tx)
