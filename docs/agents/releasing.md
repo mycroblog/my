@@ -37,7 +37,7 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    (`gh run rerun <run-id> -R mycroblog/my --failed`); versions already published are skipped.
 4. When it passes, open the draft Release (`gh release view v0.1.0 -R mycroblog/my`, or the Releases page) and read its [notes](#release-notes):
    the prose is a draft from a model, and the facts after it come from the repository. Fill in what the draft's comments ask for.
-5. [Review the image](#review-the-image-in-the-draft): run its digest, read the `image-scan` report, and write the digest in the notes.
+5. [Review the image](#review-the-image-in-the-draft): run its digest and read the `image-scan` report.
 6. Publish the draft. A prerelease is drafted as a prerelease. `release-image.yml` then gives the image its tags within minutes; check that its run passed.
 
    ```sh
@@ -261,7 +261,7 @@ There is no `0` and no `latest` during v0, because both would cross a minor vers
 1. `image` builds both platforms from the tested commit, with no cache and `VERSION` set to the version, and pushes them **by digest, with no tag**. It adds the OCI labels and annotations
    (`scripts/release-image.sh metadata`) and an SBOM of the image and of the `web` stage. Buildx's provenance is off, because the signed one below replaces it.
 2. `image-check` runs on a runner of each platform: it takes the binary out of the image, runs `scripts/check-release-build.sh` on it, which fails on the test-only build tag `e2e_fakes`, and checks what `my version` prints.
-3. `image-attest` signs the digest's provenance with `actions/attest` (keyless, through Sigstore's public instance, which ties the workflow and the commit to the digest), pushes it next to the image, and attaches the digest to the draft as `image-digest.txt`.
+3. `image-attest` signs the digest's provenance with `actions/attest` (keyless, through Sigstore's public instance, which ties the workflow and the commit to the digest), pushes it next to the image, and attaches the digest to the draft as `image-digest.txt`. `release-notes-image` then writes the image in the draft's notes.
 4. `image-scan` reports what Grype finds in both platforms in the job's summary. It stops nothing.
 
 `release-image.yml`, when the Release is published (a prerelease too), never builds:
@@ -289,7 +289,7 @@ docker run --rm ghcr.io/mycroblog/my@sha256:... version
 
 - Run the digest as far as this release calls for; nothing has a tag yet, so no operator receives it.
 - Read the `image-scan` job's summary, and decide whether a finding should hold the release. A finding with a fix in a base image or a dependency means another commit and a new version.
-- Write the image in the notes, as `ghcr.io/mycroblog/my:0.1.0@sha256:...`, the form operators pin.
+- The `release-notes-image` job writes the image at the end of the notes, as `ghcr.io/mycroblog/my:0.1.0@sha256:...`, the form operators pin. If that job failed, write it by hand.
 
 ### Vulnerability scan
 

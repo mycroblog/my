@@ -8,6 +8,7 @@ name: Release
 # The notes (scripts/release-notes.sh): the release job creates the draft with the facts, derived from the repository.
 # release-notes-prose then asks Claude for the prose and checks it by program, and release-notes-edit puts prose and
 # facts in the draft. A failure of those two jobs leaves the facts in place and stops nothing, as the tags exist by then.
+# release-notes-image adds the image's digest once it is attested.
 #
 # The client libraries are released with the server at the same version (ADR-0093 §8, ADR-0094 §1): the release job
 # tags the Go module pkg/mykit as pkg/mykit/vX.Y.Z at the same commit, and pkg/mybot as pkg/mybot/vX.Y.Z at a commit
@@ -437,6 +438,32 @@ jobs:
           echo "$DIGEST" > "$RUNNER_TEMP/image-digest.txt"
           gh release upload "$VERSION" "$RUNNER_TEMP/image-digest.txt" --clobber
           echo "Image: \`ghcr.io/mycroblog/my@$DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
+
+  release-notes-image:
+    # Writes the image in the draft's notes, in the form operators pin. It runs after the prose, which replaces the body,
+    # and leaves a published release alone. A failure stops nothing: the digest is still on the draft as image-digest.txt.
+    needs: [validate, image, image-attest, release-notes-edit]
+    if: ${{ !cancelled() && needs.image-attest.result == 'success' }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: write
+    steps:
+      - name: Write the image in the notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$(gh release view "$VERSION" --json isDraft --jq .isDraft)" != true ]; then
+            echo "The release is published: its notes stay as they are." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # A rerun of the image job makes a new digest: everything from the heading on is this job's own.
+          gh release view "$VERSION" --json body --jq .body | sed '/^## Container image$/,$d' > "$RUNNER_TEMP/notes.md"
+          printf '## Container image\n\n```\nghcr.io/mycroblog/my:%s@%s\n```\n' "${VERSION#v}" "$DIGEST" >> "$RUNNER_TEMP/notes.md"
+          gh release edit "$VERSION" --notes-file "$RUNNER_TEMP/notes.md"
 
   image-scan:
     # A report for the decider, in this job's summary. It stops nothing: the tags exist by now, and many findings have no
