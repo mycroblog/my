@@ -327,7 +327,15 @@ func (s *Service) ChangePlan(ctx context.Context, userID, planID string, interva
 	if err != nil {
 		return SubscriptionView{}, err
 	}
-	if err := s.d.Provider.ChangePrice(ctx, v.Link, price.Ref, ChangeTiming(timing), s.changeKey(v, price.ID, timing)); err != nil {
+	err = s.d.Provider.ChangePrice(ctx, v.Link, price.Ref, ChangeTiming(timing), s.changeKey(v, price.ID, timing))
+	if errors.Is(err, ErrPaymentCanceling) {
+		// A cancellation in the provider's portal that our state has not seen yet.
+		if _, err := s.resync(ctx, v.SubscriptionRecord); err != nil {
+			return SubscriptionView{}, err
+		}
+		return SubscriptionView{}, ErrSubscriptionState
+	}
+	if err != nil {
 		return SubscriptionView{}, err
 	}
 	return s.resync(ctx, v.SubscriptionRecord)

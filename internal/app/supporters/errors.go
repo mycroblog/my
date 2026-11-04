@@ -48,6 +48,9 @@ var (
 	// ErrPaymentInvalidRequest: the provider refused the request itself, such as a checkout in
 	// another currency than the customer's (400).
 	ErrPaymentInvalidRequest = errors.New("supporters: the payment provider refused the request")
+	// ErrPaymentCanceling: the subscription waits to end, so its plan cannot change until the
+	// cancellation is withdrawn.
+	ErrPaymentCanceling = errors.New("supporters: the subscription at the payment provider is canceling")
 	// ErrPaymentThrottled: the provider throttles the requests (429).
 	ErrPaymentThrottled = errors.New("supporters: the payment provider throttles the requests")
 	// ErrPaymentUnavailable: the provider did not answer (5xx, network).
@@ -71,6 +74,7 @@ var errorKinds = []struct {
 	{ErrPaymentPermission, ErrorPermission},
 	{ErrPaymentNotFound, ErrorNotFound},
 	{ErrPaymentInvalidRequest, ErrorInvalidRequest},
+	{ErrPaymentCanceling, ErrorInvalidRequest},
 	{ErrPaymentThrottled, ErrorThrottled},
 	{ErrPaymentUnavailable, ErrorUnavailable},
 	{ErrInvalidPaymentResponse, ErrorInvalidResponse},

@@ -82,7 +82,7 @@ type idemEntry struct {
 }
 
 type fakeSub struct {
-	o        obj // id, customer, metadata, status, cancel_at_period_end, items
+	o        obj // id, customer, metadata, status, cancel_at_period_end, cancel_at, items
 	schedule string
 	invoice  obj
 }
@@ -175,7 +175,7 @@ func (f *fakeAPI) putSubscription(snap supporters.SubscriptionSnapshot) {
 	}
 	sub := &fakeSub{o: obj{
 		"id": id, "object": "subscription", "customer": string(snap.Customer), "metadata": meta, "status": string(snap.Status),
-		"cancel_at_period_end": snap.CancelAtPeriodEnd, "livemode": false,
+		"cancel_at_period_end": snap.CancelAtPeriodEnd, "cancel_at": nil, "livemode": false,
 		"items": obj{"object": "list", "has_more": false, "data": []any{obj{
 			"id": "si_" + id, "object": "subscription_item", "price": string(snap.Price), "quantity": 1,
 			"current_period_start": snap.PeriodStart.Unix(), "current_period_end": snap.PeriodEnd.Unix(),
@@ -188,6 +188,9 @@ func (f *fakeAPI) putSubscription(snap supporters.SubscriptionSnapshot) {
 			"status_transitions": obj{"finalized_at": snap.LatestPaymentFailed.Unix()}}
 	}
 	sub.invoice = inv
+	if snap.CancelAtPeriodEnd {
+		sub.o["cancel_at"] = snap.PeriodEnd.Unix()
+	}
 	if snap.ScheduledPrice != "" {
 		sch := &fakeSchedule{id: "sub_sched_" + id, sub: id, status: "active", behavior: "release", phases: []fakePhase{
 			{start: snap.PeriodStart.Unix(), end: snap.PeriodEnd.Unix(), price: string(snap.Price)},
@@ -911,12 +914,28 @@ func (f *fakeAPI) subscriptions(w http.ResponseWriter, r *http.Request, parts []
 			f.bad(w, "A canceled subscription can only update its cancellation_details and metadata.")
 			return
 		}
-		if _, ok := r.Form["cancel_at_period_end"]; ok {
-			if s.schedule != "" {
-				f.bad(w, "The subscription is managed by the subscription schedule "+s.schedule+", and updating any cancelation behavior directly is not allowed. Please update the schedule instead.")
+		_, atEnd := r.Form["cancel_at_period_end"]
+		_, at := r.Form["cancel_at"]
+		if (atEnd || at) && s.schedule != "" {
+			f.bad(w, "The subscription is managed by the subscription schedule "+s.schedule+", and updating any cancelation behavior directly is not allowed. Please update the schedule instead.")
+			return
+		}
+		if atEnd && at {
+			f.bad(w, "You cannot set both cancel_at and cancel_at_period_end.")
+			return
+		}
+		if atEnd {
+			s.o["cancel_at_period_end"] = r.Form.Get("cancel_at_period_end") == "true"
+			if s.o["cancel_at_period_end"] == true {
+				s.o["cancel_at"] = f.item(s)["current_period_end"]
+			}
+		}
+		if at {
+			if r.Form.Get("cancel_at") != "" {
+				f.bad(w, "this fake only clears cancel_at")
 				return
 			}
-			s.o["cancel_at_period_end"] = r.Form.Get("cancel_at_period_end") == "true"
+			s.o["cancel_at"] = nil
 		}
 		if price := r.Form.Get("items[0][price]"); price != "" {
 			if r.Form.Get("items[0][id]") != f.item(s)["id"] {
@@ -943,7 +962,7 @@ func (f *fakeAPI) subscriptions(w http.ResponseWriter, r *http.Request, parts []
 			return
 		}
 		s.o["status"] = "canceled"
-		s.o["cancel_at_period_end"] = false
+		s.o["cancel_at_period_end"], s.o["cancel_at"] = false, nil
 		if s.schedule != "" {
 			f.schedules[s.schedule].status = "canceled"
 			s.schedule = ""

@@ -15,6 +15,8 @@ One server can use only one provider. To switch to another provider later, ask t
 - **Subscribing**: The server creates a Checkout session with `mode=subscription` and sends the user's browser to its URL (`checkout.stripe.com`). The payment page expires after one hour.
   The server's subscription ID goes into `client_reference_id`, `metadata.my_subscription_id`, and the `metadata.my_subscription_id` of the Stripe subscription. Automatic tax calculation (Stripe Tax) is not enabled.
 - **Customer portal**: On first use, the server creates through the API a portal configuration (`metadata.my=1`) that enables only updating payment methods, the invoice history, and cancellation at the end of the period. Plan changes are made on this server's screens, not in the portal.
+  A cancellation in the portal shows on this server as scheduled to cancel, and the user can undo it from the server's screen. A plan change is refused until it is undone.
+- **A cancellation date set by hand**: The portal sets the subscription's `cancel_at`, not `cancel_at_period_end`, and the server reads both. A `cancel_at` you set in the dashboard or through the API counts the same when it is not after the end of the current period. When it is before that end, the server shows that date as the end of the subscription, and the user keeps the role until then. A later `cancel_at` is not a cancellation yet: the subscription stays active until the period that holds the date.
 - **Plan changes**: An upgrade switches at once and bills the difference prorated (`proration_behavior=always_invoice`). A downgrade, and a change from yearly to monthly, switch at the end of the period through a Subscription Schedule.
 - **Reading state back**: The server treats a webhook as a signal and reads the subscription, the Checkout session, and the money movements back from the Stripe API to decide the state.
   In addition, a reconciliation every `payments_reconcile_interval` (default 6 hours) reads the event list, the unfinished Checkout sessions, the balance transactions, and a sweep of all subscriptions, and repairs any webhook the server missed.
@@ -159,3 +161,4 @@ The following behaviors come from Stripe's documentation and are to be confirmed
 - The list of permissions a restricted key needs (the table in section 2).
 - The table of minimum charge amounts per currency, and the currencies that Stripe treats with different decimal places from ISO 4217 (ISK, HUF, TWD, UGX, and others).
 - The exact values of the read rate limits.
+- That `cancel_at_period_end=false` and `cancel_at=` (empty) clear a cancellation made through either field, and that `cancel_at_period_end=true` replaces a `cancel_at` in a later period.

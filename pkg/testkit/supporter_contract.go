@@ -64,6 +64,7 @@ func SupporterRepositoryContract(t *testing.T, newHarness SupporterFactory) {
 		{"ChangesPlansAtOnceOrAtThePeriodEnd", supporterChanges},
 		{"RetriesAChangeWithItsKey", supporterChangeRetry},
 		{"MakesAWithdrawnChangeAgain", supporterChangeAgain},
+		{"RefusesAChangeThatMeetsACancellationAtTheProvider", supporterChangeMeetsCancellation},
 		{"SendsACancellationAgainWithANewKey", supporterCancelRetry},
 		{"AppliesNoSnapshotOlderThanTheApplied", supporterSnapshotOrder},
 		{"AbandonsUnpaidCheckouts", supporterAbandon},
@@ -879,6 +880,35 @@ func supporterChangeRetry(t *testing.T, e *supporterEnv) {
 	if len(rec.keys) != 3 || rec.keys[2] == rec.keys[0] {
 		t.Errorf("key of another change = %q, want a new one", rec.keys)
 	}
+}
+
+// supporterChangeMeetsCancellation changes the plan after the provider's portal canceled the
+// subscription and before our state saw it: the change fails as one on a canceling subscription
+// does, and the state catches up.
+func supporterChangeMeetsCancellation(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	id, ref := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	s, ok := e.world.Subscription(ref)
+	if !ok {
+		t.Fatalf("no subscription %s at the provider", ref)
+	}
+	s.CancelAtPeriodEnd = true
+	e.world.PutSubscription(s)
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrSubscriptionState) {
+		t.Errorf("a change after the portal's cancellation: %v", err)
+	}
+	e.expect(t, id, domain.StateCanceling, basic, true)
+	if _, err := e.svc.Resume(ctx, alice); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); err != nil {
+		t.Errorf("the change after the resumption: %v", err)
+	}
+	e.expect(t, id, domain.StateActive, gold, true)
 }
 
 // supporterChangeAgain withdraws a change at the period's end and makes it again in the same

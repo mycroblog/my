@@ -546,6 +546,9 @@ func (p *Provider) command(ctx context.Context, ref supporters.SubscriptionRef, 
 // parameters.
 func (p *Provider) ChangePrice(ctx context.Context, sub supporters.SubscriptionRef, to supporters.PriceRef, when supporters.ChangeTiming, key string) error {
 	return p.command(ctx, sub, false, func(s *supporters.SubscriptionSnapshot) error {
+		if s.CancelAtPeriodEnd {
+			return fmt.Errorf("%w: subscription %s", supporters.ErrPaymentCanceling, s.Ref)
+		}
 		if !p.activePrice(to) {
 			return fmt.Errorf("%w: price %s is not active", supporters.ErrPaymentInvalidRequest, to)
 		}
