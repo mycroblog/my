@@ -40,6 +40,9 @@ type fakeAPI struct {
 	timezone string
 	// failure answers every request with this status (0: none).
 	failure int
+	// before sees each request before it is answered, holding the lock; a status other than 0
+	// fails the request as one that never reached the API, so its key is not kept.
+	before func(r *http.Request) int
 	// throttle answers the next requests with 429 and Retry-After.
 	throttle      int
 	retryAfter    string
@@ -384,6 +387,12 @@ func (f *fakeAPI) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		f.fail(w, f.failure, typ, "", "failing")
 		return
+	}
+	if f.before != nil {
+		if status := f.before(r); status != 0 {
+			f.fail(w, status, "api_error", "", "failing")
+			return
+		}
 	}
 	key := r.Header.Get("Idempotency-Key")
 	if r.Method != http.MethodGet && key != "" {
@@ -946,6 +955,16 @@ func (f *fakeAPI) subscriptions(w http.ResponseWriter, r *http.Request, parts []
 	f.respond(w, r, f.subscriptionObject(s))
 }
 
+// attachSchedule puts s on a new schedule of one phase, its current price until the period's end.
+func (f *fakeAPI) attachSchedule(s *fakeSub) *fakeSchedule {
+	it := f.item(s)
+	sch := &fakeSchedule{id: f.nextID("sub_sched"), sub: s.o["id"].(string), status: "active", behavior: "release",
+		phases: []fakePhase{{start: it["current_period_start"].(int64), end: it["current_period_end"].(int64), price: it["price"].(string)}}}
+	f.schedules[sch.id] = sch
+	s.schedule = sch.id
+	return sch
+}
+
 func (f *fakeAPI) serveSchedules(w http.ResponseWriter, r *http.Request, parts []string) {
 	switch {
 	case r.Method == "POST" && len(parts) == 1:
@@ -958,12 +977,7 @@ func (f *fakeAPI) serveSchedules(w http.ResponseWriter, r *http.Request, parts [
 			f.bad(w, "The subscription is already attached to a schedule.")
 			return
 		}
-		it := f.item(s)
-		sch := &fakeSchedule{id: f.nextID("sub_sched"), sub: s.o["id"].(string), status: "active", behavior: "release",
-			phases: []fakePhase{{start: it["current_period_start"].(int64), end: it["current_period_end"].(int64), price: it["price"].(string)}}}
-		f.schedules[sch.id] = sch
-		s.schedule = sch.id
-		f.respond(w, r, f.scheduleObject(sch))
+		f.respond(w, r, f.scheduleObject(f.attachSchedule(s)))
 	case r.Method == "POST" && len(parts) == 2:
 		sch, ok := f.schedules[parts[1]]
 		if !ok {

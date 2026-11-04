@@ -50,7 +50,8 @@ type PaymentProvider interface {
 
 	// The commands that our own screens and jobs issue. Each is safe to repeat: a second call
 	// with the subscription already in the asked state changes nothing. key is the caller's
-	// idempotency key (the job's key and the operation's name).
+	// idempotency key (the job's key and the operation's name), which a change that can be undone
+	// and made again must not repeat.
 	ChangePrice(ctx context.Context, sub SubscriptionRef, to PriceRef, when ChangeTiming, key string) error
 	// CancelScheduledChange withdraws the change waiting for the period's end; nothing without one.
 	CancelScheduledChange(ctx context.Context, sub SubscriptionRef, key string) error

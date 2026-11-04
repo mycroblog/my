@@ -327,18 +327,28 @@ func (s *Service) ChangePlan(ctx context.Context, userID, planID string, interva
 	if err != nil {
 		return SubscriptionView{}, err
 	}
-	if err := s.d.Provider.ChangePrice(ctx, v.Link, price.Ref, ChangeTiming(timing), changeKey(v, price.ID)); err != nil {
+	if err := s.d.Provider.ChangePrice(ctx, v.Link, price.Ref, ChangeTiming(timing), s.changeKey(v, price.ID, timing)); err != nil {
 		return SubscriptionView{}, err
 	}
 	return s.resync(ctx, v.SubscriptionRecord)
 }
 
-// changeKey is the idempotency key of a change of v to the price toPriceID: the same for every
-// attempt of one change, so that a retry after a failure part of the way (the difference charged,
-// the plan not switched yet) does not charge again. It names the subscription, the price it
-// pays now, the new price, and the end of the current period: a subscription cannot change from
-// one price to another at once twice in one period, since it moves at once only up.
-func changeKey(v SubscriptionView, toPriceID string) string {
+// changeKey is the idempotency key of a change of v to the price toPriceID.
+//
+// A change at once has the same key for every attempt, so that a retry after a failure part of
+// the way (the difference charged, the plan not switched yet) does not charge again. It names the
+// subscription, the price it pays now, the new price, and the end of the current period: a
+// subscription cannot change from one price to another at once twice in one period, since it
+// moves at once only up.
+//
+// A change at the period's end has a new key for every attempt: it can be withdrawn and made again
+// in one period, and a repeated key would replay the first one, whose schedule is gone. It charges
+// nothing, and the provider reads the subscription first, so a retry goes on from what the attempt
+// before it left.
+func (s *Service) changeKey(v SubscriptionView, toPriceID string, timing supporters.Timing) string {
+	if timing == supporters.TimingPeriodEnd {
+		return "change:" + v.ID + ":" + s.d.IDs.NewID()
+	}
 	return "change:" + v.ID + ":" + v.Current.PriceID + ":" + toPriceID + ":" + strconv.FormatInt(v.Current.PeriodEndsAt.Unix(), 10)
 }
 

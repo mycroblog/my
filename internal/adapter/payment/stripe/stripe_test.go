@@ -7,7 +7,9 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net/http"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -231,6 +233,151 @@ func TestCancelAtPeriodEndReleasesSchedule(t *testing.T) {
 	if err != nil || !snap.CancelAtPeriodEnd || snap.ScheduledPrice != "" {
 		t.Errorf("after CancelAtPeriodEnd: %+v, %v", snap, err)
 	}
+}
+
+// onPlan returns a Provider whose sub_1 pays price_1, scheduled to change to scheduled unless it
+// is empty, with a lower and a higher price to change to.
+func onPlan(t *testing.T, scheduled supporters.PriceRef) (p *Provider, f *fakeAPI, lower, higher supporters.PriceRef) {
+	t.Helper()
+	s := scenario()
+	s.Subscriptions = []supporters.SubscriptionSnapshot{{
+		Ref: "sub_1", Customer: "cus_1", LocalID: "01890a5d-ac96-7000-8000-000000000002", Price: "price_1", Status: supporters.StatusActive,
+		PeriodStart: s.Now, PeriodEnd: s.Now.AddDate(0, 1, 0), ScheduledPrice: scheduled,
+	}}
+	p, f, _ = newOnFake(t, s)
+	refs, err := p.EnsurePlan(t.Context(), supporters.PlanSpec{
+		PlanID: "01890a5d-ac96-7000-8000-000000000001", Name: "Supporter", Prices: []supporters.PriceSpec{
+			{Interval: supporters.IntervalMonth, AmountMinor: 500, Currency: "JPY"},
+			{Interval: supporters.IntervalYear, AmountMinor: 5000, Currency: "JPY"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p, f, refs.Prices[0].Ref, refs.Prices[1].Ref
+}
+
+// wantPrices fails unless sub_1 pays price and waits to change to scheduled.
+func wantPrices(t *testing.T, p *Provider, price, scheduled supporters.PriceRef) {
+	t.Helper()
+	snap, err := p.GetSubscription(t.Context(), "sub_1")
+	if err != nil || snap.Price != price || snap.ScheduledPrice != scheduled {
+		t.Errorf("sub_1 = %+v, %v; want price %s, scheduled %q", snap, err, price, scheduled)
+	}
+}
+
+// failOnce makes the next request of a method and path fail with status.
+func failOnce(f *fakeAPI, method, path string, status int) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.before = func(r *http.Request) int {
+		if r.Method != method || r.URL.Path != path {
+			return 0
+		}
+		f.before = nil
+		return status
+	}
+}
+
+// A change at the period's end can be withdrawn and made again, with a new schedule.
+func TestChangeAtPeriodEndAgainAfterWithdrawal(t *testing.T) {
+	p, f, lower, _ := onPlan(t, "")
+	ctx := t.Context()
+	if err := p.ChangePrice(ctx, "sub_1", lower, supporters.ChangeAtPeriodEnd, "change:1"); err != nil {
+		t.Fatal(err)
+	}
+	wantPrices(t, p, "price_1", lower)
+	if err := p.CancelScheduledChange(ctx, "sub_1", "unschedule:1"); err != nil {
+		t.Fatal(err)
+	}
+	wantPrices(t, p, "price_1", "")
+	if err := p.ChangePrice(ctx, "sub_1", lower, supporters.ChangeAtPeriodEnd, "change:2"); err != nil {
+		t.Fatal(err)
+	}
+	wantPrices(t, p, "price_1", lower)
+	if len(f.schedules) != 2 {
+		t.Errorf("%d schedules, want 2", len(f.schedules))
+	}
+}
+
+// A retry with a new key goes on from the schedule that the failed attempt left, which has no
+// change yet, and makes no second one.
+func TestChangeAtPeriodEndRetryReusesTheSchedule(t *testing.T) {
+	p, f, lower, _ := onPlan(t, "")
+	ctx := t.Context()
+	f.mu.Lock()
+	f.before = func(r *http.Request) int {
+		if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/v1/subscription_schedules/") {
+			f.before = nil
+			return http.StatusInternalServerError
+		}
+		return 0
+	}
+	f.mu.Unlock()
+	if err := p.ChangePrice(ctx, "sub_1", lower, supporters.ChangeAtPeriodEnd, "change:1"); err == nil {
+		t.Fatal("ChangePrice with the phases refused succeeded")
+	}
+	wantPrices(t, p, "price_1", "")
+	if err := p.ChangePrice(ctx, "sub_1", lower, supporters.ChangeAtPeriodEnd, "change:2"); err != nil {
+		t.Fatal(err)
+	}
+	wantPrices(t, p, "price_1", lower)
+	if len(f.schedules) != 1 {
+		t.Errorf("%d schedules, want 1", len(f.schedules))
+	}
+}
+
+// Two submissions at once read no schedule, and Stripe refuses the second to create one: it goes
+// on with the schedule of the first.
+func TestChangeAtPeriodEndDoubleSubmit(t *testing.T) {
+	p, f, lower, _ := onPlan(t, "")
+	f.mu.Lock()
+	f.before = func(r *http.Request) int {
+		if r.Method == http.MethodPost && r.URL.Path == "/v1/subscription_schedules" {
+			f.before = nil
+			f.attachSchedule(f.sub("sub_1"))
+		}
+		return 0
+	}
+	f.mu.Unlock()
+	if err := p.ChangePrice(t.Context(), "sub_1", lower, supporters.ChangeAtPeriodEnd, "change:2"); err != nil {
+		t.Fatal(err)
+	}
+	wantPrices(t, p, "price_1", lower)
+	if len(f.schedules) != 1 {
+		t.Errorf("%d schedules, want 1", len(f.schedules))
+	}
+}
+
+// Any other refusal of a new schedule stays the failure of the change.
+func TestChangeAtPeriodEndRefusedSchedule(t *testing.T) {
+	p, f, lower, _ := onPlan(t, "")
+	failOnce(f, http.MethodPost, "/v1/subscription_schedules", http.StatusBadRequest)
+	err := p.ChangePrice(t.Context(), "sub_1", lower, supporters.ChangeAtPeriodEnd, "change:1")
+	if !errors.Is(err, supporters.ErrPaymentInvalidRequest) {
+		t.Errorf("ChangePrice = %v, want an invalid request", err)
+	}
+}
+
+// A change at once keeps its key through its retries, and its retry can meet a schedule that was
+// made after the first attempt released another: releasing it is another request, which Stripe
+// would refuse under the first release's key.
+func TestChangeNowRetryReleasesASecondSchedule(t *testing.T) {
+	p, f, lower, higher := onPlan(t, "price_2")
+	ctx := t.Context()
+	failOnce(f, http.MethodPost, "/v1/subscriptions/sub_1", http.StatusInternalServerError)
+	if err := p.ChangePrice(ctx, "sub_1", higher, supporters.ChangeNowProrated, "change:now"); err == nil {
+		t.Fatal("ChangePrice with the update refused succeeded")
+	}
+	wantPrices(t, p, "price_1", "")
+	if err := p.ChangePrice(ctx, "sub_1", lower, supporters.ChangeAtPeriodEnd, "change:later"); err != nil {
+		t.Fatal(err)
+	}
+	wantPrices(t, p, "price_1", lower)
+	if err := p.ChangePrice(ctx, "sub_1", higher, supporters.ChangeNowProrated, "change:now"); err != nil {
+		t.Fatal(err)
+	}
+	wantPrices(t, p, higher, "")
 }
 
 // A notice of an invoice resolves to its subscription and the payment of its charge; the events
