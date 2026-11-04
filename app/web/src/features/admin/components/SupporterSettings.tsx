@@ -904,7 +904,7 @@ function SubscriptionRow({
   );
 }
 
-/** Ending a subscription at once, after an alert dialog: the role goes now, without a refund. */
+/** Ending a subscription at once, after an alert dialog: the role goes now, without a refund unless still pending. */
 function CancelSubscription({
   subscription,
   who,

@@ -427,7 +427,7 @@ export type SubscriptionActions = {
   status: string | undefined;
 };
 
-/** Ending subscriptions at once, without a refund (ADR-0072 §10). */
+/** Ending subscriptions at once, without a refund unless still pending (ADR-0072 §10). */
 export function useSubscriptionActions(): SubscriptionActions {
   const api = useApi();
   const t = useT();

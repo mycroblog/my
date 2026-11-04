@@ -99,6 +99,9 @@ type Provider struct {
 	refundFailure error
 	// deleteCanceled reports canceled subscriptions as deleted (DeleteCanceled).
 	deleteCanceled bool
+	listsDeleted   bool
+	// readFailure fails GetSubscription (FailSubscriptionReads).
+	readFailure error
 }
 
 type price struct {
@@ -688,16 +691,28 @@ func (p *Provider) RefundSubscription(ctx context.Context, sub supporters.Subscr
 	if p.refundFailure != nil {
 		return p.refundFailure
 	}
+	if i := p.subIndex(sub); i >= 0 && p.deleteCanceled && !p.listsDeleted && p.subs[i].Status == supporters.StatusCanceled {
+		return fmt.Errorf("%w: no charges of the subscription %s", supporters.ErrInvalidPaymentResponse, sub)
+	}
 	p.refunds[sub] = true
 	return nil
 }
 
 // DeleteCanceled makes GetSubscription report a canceled subscription as PAY.JP reports one that it
-// deleted: canceled, with nothing else, our ID included.
-func (p *Provider) DeleteCanceled() {
+// deleted: canceled, with nothing else, our ID included. listsCharges says whether RefundSubscription
+// still finds the charges of such a subscription, which it otherwise fails on, as PAY.JP's adapter
+// does on an empty list.
+func (p *Provider) DeleteCanceled(listsCharges bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.deleteCanceled = true
+	p.deleteCanceled, p.listsDeleted = true, listsCharges
+}
+
+// FailSubscriptionReads makes GetSubscription alone fail with err; nil ends it.
+func (p *Provider) FailSubscriptionReads(err error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.readFailure = err
 }
 
 // FailRefunds makes RefundSubscription fail with err; nil ends it.
@@ -751,6 +766,9 @@ func (p *Provider) GetSubscription(ctx context.Context, ref supporters.Subscript
 	defer p.mu.Unlock()
 	if err := p.request(ctx); err != nil {
 		return supporters.SubscriptionSnapshot{}, err
+	}
+	if p.readFailure != nil {
+		return supporters.SubscriptionSnapshot{}, p.readFailure
 	}
 	i := p.subIndex(ref)
 	if i < 0 {

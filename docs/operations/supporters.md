@@ -54,7 +54,7 @@ The text of Web Push and notifications does not lead to the payment screen. Only
 - `status`: whether the program is enabled, what it needs before it can be enabled (a provider, email), and the number of running subscriptions.
 - `enable`, `disable`: enable and disable the program. Disabling is refused while any subscription is running.
 - `plans`: the list of plans (retired ones included), with the number of preparing and retired plans and of subscriptions.
-- `subscriptions`: the list of subscriptions (filter with `-plan` and `-state`). `cancel <subscription ID>` cancels a subscription at once (no refund).
+- `subscriptions`: the list of subscriptions (filter with `-plan` and `-state`). `cancel <subscription ID>` cancels a subscription at once (no refund, except a payment for a pending subscription, which bought nothing).
 
 Enabling, disabling, and cancelling are written to the audit log as CLI operations. Creating, changing, and retiring plans is done in the administration or through the admin API.
 
@@ -75,7 +75,7 @@ Enabling, disabling, and cancelling are written to the audit log as CLI operatio
 
 - Deleting an account and banning it (which schedules deletion) cancel its subscriptions at once, without a refund (a payment for a subscription still pending bought nothing, and is refunded). Reversing a ban does not restore the subscriptions.
 - Suspending an account schedules cancellation at the end of the period. Lifting the suspension does not restore it automatically; the user cancels the cancellation before the end of the period or subscribes again.
-- From the list of subscribers in "Supporters", an administrator can cancel one subscription at once (no refund; it is written to the audit log).
+- From the list of subscribers in "Supporters", an administrator can cancel one subscription at once (no refund, except a payment for a pending subscription, which bought nothing; it is written to the audit log).
 
 ## Disabling the program and changing providers
 

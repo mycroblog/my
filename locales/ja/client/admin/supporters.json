@@ -588,7 +588,7 @@
     "description": "Title of the confirmation before ending a subscription at once."
   },
   "admin.supporters.subscription.cancel.description": {
-    "defaultMessage": "ロールはすぐに外れ、決済の事業者の請求も止まります。返金はしません。必要なら決済の事業者の画面で返金してください。元に戻せません。",
+    "defaultMessage": "ロールはすぐに外れ、決済の事業者の請求も止まります。まだ準備中で何も提供していない加入の支払いを除き、返金はしません。必要なら決済の事業者の画面で返金してください。元に戻せません。",
     "description": "Explanation in the confirmation before ending a subscription at once."
   },
   "admin.supporters.subscription.canceled": {

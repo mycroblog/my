@@ -6258,7 +6258,7 @@ type AdminServiceClosureCheck struct {
 	// EstimatedDeletes The estimate of the deliveries of the closure, `local_accounts` times `delivery_inboxes`.
 	EstimatedDeletes int `json:"estimated_deletes"`
 
-	// LiveSupporterSubscriptions The supporter subscriptions that go on, which the closure cancels at once without a refund.
+	// LiveSupporterSubscriptions The supporter subscriptions that go on, which the closure cancels at once without a refund, except a payment for one still pending.
 	LiveSupporterSubscriptions int `json:"live_supporter_subscriptions"`
 
 	// LocalAccounts The local accounts of users that are not deleted, each of which the closure sends a `Delete` of.
@@ -19102,7 +19102,8 @@ type ClientInterface interface {
 	// EndSupporterSubscription End a subscription at once
 	//
 	// Ends a subscription at once, without a refund: the role goes now, and the
-	// payment provider stops billing. A refund is the operator's to make at the provider. A
+	// payment provider stops billing. A refund is the operator's to make at the provider, except
+	// that a payment for a subscription still pending, which gave nothing, is refunded. A
 	// subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 	// unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
 	//
@@ -27005,7 +27006,8 @@ func (c *Client) ListSupporterSubscriptions(ctx context.Context, params *ListSup
 // EndSupporterSubscription End a subscription at once
 //
 // Ends a subscription at once, without a refund: the role goes now, and the
-// payment provider stops billing. A refund is the operator's to make at the provider. A
+// payment provider stops billing. A refund is the operator's to make at the provider, except
+// that a payment for a subscription still pending, which gave nothing, is refunded. A
 // subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 // unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
 //
@@ -50666,7 +50668,8 @@ type ClientWithResponsesInterface interface {
 	// EndSupporterSubscriptionWithResponse End a subscription at once
 	//
 	// Ends a subscription at once, without a refund: the role goes now, and the
-	// payment provider stops billing. A refund is the operator's to make at the provider. A
+	// payment provider stops billing. A refund is the operator's to make at the provider, except
+	// that a payment for a subscription still pending, which gave nothing, is refunded. A
 	// subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 	// unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
 	//
@@ -81134,7 +81137,8 @@ func (c *ClientWithResponses) ListSupporterSubscriptionsWithResponse(ctx context
 // EndSupporterSubscriptionWithResponse End a subscription at once
 //
 // Ends a subscription at once, without a refund: the role goes now, and the
-// payment provider stops billing. A refund is the operator's to make at the provider. A
+// payment provider stops billing. A refund is the operator's to make at the provider, except
+// that a payment for a subscription still pending, which gave nothing, is refunded. A
 // subscription that has ended is a 409 `/api/v1/problems/subscription-ended`, and an
 // unknown one a 404. Recorded in the audit log. Needs the `manage_supporters` permission.
 //

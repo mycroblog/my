@@ -346,3 +346,11 @@ func TestRefundSubscriptionAfterItsDeletion(t *testing.T) {
 		t.Errorf("refunded: new %v, old %v, want only the new", f.charges["ch_new"].Refunded, f.charges["ch_old"].Refunded)
 	}
 }
+
+// A subscription of PAY.JP is created by its first charge, so a list without any is not a refund done.
+func TestRefundSubscriptionWithoutChargesFails(t *testing.T) {
+	p, _ := newOnFake(t, supporters.ModeTest, time.Date(2026, 10, 22, 3, 0, 0, 0, time.UTC))
+	if err := p.RefundSubscription(t.Context(), "sub_deleted", "key"); !errors.Is(err, supporters.ErrInvalidPaymentResponse) {
+		t.Errorf("RefundSubscription with no charges = %v, want ErrInvalidPaymentResponse", err)
+	}
+}

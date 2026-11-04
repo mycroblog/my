@@ -588,7 +588,7 @@
     "description": "Title of the confirmation before ending a subscription at once."
   },
   "admin.supporters.subscription.cancel.description": {
-    "defaultMessage": "The role goes now and the payment provider stops billing. Nothing is refunded: refund at the payment provider if needed. This cannot be undone.",
+    "defaultMessage": "The role goes now and the payment provider stops billing. Nothing is refunded, except a payment for a subscription still pending, which gave nothing: refund at the payment provider if needed. This cannot be undone.",
     "description": "Explanation in the confirmation before ending a subscription at once."
   },
   "admin.supporters.subscription.canceled": {

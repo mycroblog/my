@@ -644,9 +644,19 @@ func (s *Service) OwnSubscriptionsByID(ctx context.Context, userID string, ids [
 	return out, nil
 }
 
-// CancelByStaff ends a live subscription at once without a refund (ADR-0072 §10): it expires
-// here with the reason staff, which takes the role away, and the provider's subscription is
-// canceled at once after the commit. It fails with ErrNotFound for an unknown subscription and
+// cancelClosed queues the cancellation at the provider of rec, as it was before close ended it. A
+// pending one is the settling's to cancel, which close queued (duplicates.go): a cancellation of
+// ours before that job's first read would look like one by hand and lose the refund.
+func (s *Service) cancelClosed(ctx context.Context, tx uow.Tx, rec SubscriptionRecord, reason supporters.Reason, cause string) error {
+	if rec.Link == "" || rec.Current.State == supporters.StatePending {
+		return nil
+	}
+	return s.enqueueCommand(ctx, tx, rec.ID, CommandCancelNow, reason, cause)
+}
+
+// CancelByStaff ends a live subscription at once without a refund (ADR-0072 §10), except a pending
+// one, whose payment bought nothing (§6): it expires here with the reason staff, which takes the
+// role away, and the provider's subscription is canceled at once after the commit. It fails with ErrNotFound for an unknown subscription and
 // with ErrNoLiveSubscription for one that ended. Audited.
 func (s *Service) CancelByStaff(ctx context.Context, id, byUserID string) error {
 	rec, err := s.d.Repository.FindSubscription(ctx, nil, id)
@@ -675,10 +685,8 @@ func (s *Service) CancelByStaff(ctx context.Context, id, byUserID string) error 
 		if err := s.close(ctx, tx, rec, supporters.ReasonStaff, now); err != nil {
 			return err
 		}
-		if rec.Link != "" {
-			if err := s.enqueueCommand(ctx, tx, rec.ID, CommandCancelNow, "", "staff"); err != nil {
-				return err
-			}
+		if err := s.cancelClosed(ctx, tx, rec, "", "staff"); err != nil {
+			return err
 		}
 		return tx.Emit(ctx, audit(auditID, byUserID, appmoderation.AuditSupporterSubscriptionCanceled,
 			appmoderation.AuditTargetSupporterSubscription, rec.ID, plan.Revision.Name+" "+label, rec.ID, now))
@@ -707,10 +715,7 @@ func (s *Service) RegisterProjectors(r *uow.Projectors) {
 		if err := s.close(ctx, tx, rec, supporters.ReasonAccountClosed, s.now()); err != nil {
 			return err
 		}
-		if rec.Link == "" {
-			return nil
-		}
-		return s.enqueueCommand(ctx, tx, rec.ID, CommandCancelNow, "", "account_closed")
+		return s.cancelClosed(ctx, tx, rec, "", "account_closed")
 	})
 	r.Register(appmoderation.EventAccountSuspensionChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appmoderation.AccountSuspensionChanged)
@@ -746,10 +751,7 @@ func (s *Service) cancelForClosure(ctx context.Context, tx uow.Tx, closureEventI
 		if err := s.close(ctx, tx, rec, supporters.ReasonServiceClosed, now); err != nil {
 			return err
 		}
-		if rec.Link == "" {
-			continue
-		}
-		if err := s.enqueueCommand(ctx, tx, rec.ID, CommandCancelNow, supporters.ReasonServiceClosed, "service_closed:"+closureEventID); err != nil {
+		if err := s.cancelClosed(ctx, tx, rec, supporters.ReasonServiceClosed, "service_closed:"+closureEventID); err != nil {
 			return err
 		}
 	}

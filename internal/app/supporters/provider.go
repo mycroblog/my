@@ -83,7 +83,8 @@ type PaymentProvider interface {
 	// RefundSubscription refunds in full what is left of every settled charge of a subscription:
 	// nothing for a charge refunded already, or one in a dispute. Safe to repeat, with a new key
 	// for every attempt, since a provider may replay a stored failure under a key. It leaves a
-	// payment that has not settled.
+	// payment that has not settled. It fails, rather than report a refund it cannot vouch for, when
+	// a provider whose subscriptions always have a charge lists none.
 	RefundSubscription(ctx context.Context, sub SubscriptionRef, key string) error
 
 	// ParseWebhook verifies a delivery (its signature, its time within WebhookTolerance of now,

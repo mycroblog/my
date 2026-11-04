@@ -285,7 +285,9 @@ const refundWindow = 180 * 24 * time.Hour
 // RefundSubscription implements supporters.PaymentProvider: every paid charge of the subscription
 // that is not refunded yet gets a refund of the whole charge. API v1 takes no idempotency key; a
 // repeat finds the charge refunded. A charge past PAY.JP's window is left, with a log line, since
-// no attempt could refund it, and one that fails does not stop the others.
+// no attempt could refund it, and one that fails does not stop the others. A subscription of PAY.JP
+// is created by its first charge, so a list without any cannot be read as nothing to refund: it may
+// be what PAY.JP lists for a subscription that it deleted, which its documentation does not say.
 func (p *Provider) RefundSubscription(ctx context.Context, sub supporters.SubscriptionRef, _ string) error {
 	var failed error
 	now := p.o.Now()
@@ -294,6 +296,9 @@ func (p *Provider) RefundSubscription(ctx context.Context, sub supporters.Subscr
 		q := url.Values{"subscription": {string(sub)}, "limit": {strconv.Itoa(supporters.PageSize)}, "offset": {strconv.Itoa(offset)}}
 		if err := p.get(ctx, "list the charges of a subscription", "/charges", q, &page); err != nil {
 			return err
+		}
+		if offset == 0 && len(page.Data) == 0 {
+			return fmt.Errorf("payjp: %w: no charges of the subscription %s", supporters.ErrInvalidPaymentResponse, sub)
 		}
 		for _, c := range page.Data {
 			if !c.Paid || c.Refunded {

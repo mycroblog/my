@@ -60,8 +60,8 @@ func subscriptionEnded(status SubscriptionStatus) bool {
 // settleDuplicate is the work of CommandSettleDuplicate. The first attempt re-reads the provider's
 // subscription: one that already ended was ended by someone else, and what they did about its charge
 // stays, and one that is not what the record says is left alone until someone ends it. Otherwise it
-// records the cancellation first, since the provider may then no longer report the subscription
-// (PAY.JP deletes it), and every later attempt goes on from there. A failure that a retry cannot
+// records that it takes the subscription on, since the provider may no longer report it after the
+// cancellation (PAY.JP deletes it), and every later attempt goes on from there. A failure that a retry cannot
 // help leaves the record unsettled for the administrators and the next reconciliation.
 func (s *Service) settleDuplicate(ctx context.Context, rec SubscriptionRecord, ref SubscriptionRef, key string) queue.Result {
 	prov, name := s.d.Provider, s.d.Provider.Name()
@@ -110,13 +110,20 @@ func (s *Service) settleDuplicate(ctx context.Context, rec SubscriptionRecord, r
 			return queue.Retry(0, err)
 		}
 	}
+	// The refund comes first, since a provider that deletes what it cancels (PAY.JP) may no longer
+	// list its charges. A failure that a retry may cure waits with the subscription as it is; any
+	// other still stops the billing, as a key without the permission to refund does. A new key for
+	// every attempt: Stripe replays a stored failure under a key, and a refund of a whole charge
+	// cannot run twice.
+	refundErr := prov.RefundSubscription(ctx, ref, key+":"+s.d.IDs.NewID())
+	if refundErr != nil && ErrorKindOf(refundErr).Retried() {
+		return failed("refund", refundErr)
+	}
 	if err := prov.CancelNow(ctx, ref, key); err != nil && ErrorKindOf(err) != ErrorNotFound {
 		return failed("cancel", err)
 	}
-	// A new key for every attempt: Stripe replays a stored failure under a key, and a refund of a
-	// whole charge cannot run twice.
-	if err := prov.RefundSubscription(ctx, ref, key+":"+s.d.IDs.NewID()); err != nil {
-		return failed("refund", err)
+	if refundErr != nil {
+		return failed("refund", refundErr)
 	}
 	if r := settle(); !r.IsDone() {
 		return r

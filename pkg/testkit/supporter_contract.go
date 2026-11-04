@@ -81,6 +81,7 @@ func SupporterRepositoryContract(t *testing.T, newHarness SupporterFactory) {
 		{"RefundsASecondSubscriptionTheProviderDeleted", supporterRefundAfterDeletion},
 		{"RefundsWhatWasPaidWhenALinkedPendingCloses", supporterLinkedPendingCloses},
 		{"KeepsTheRefundWhenABillingStopFollowsAFailedRead", supporterOrphanAfterFailedRead},
+		{"RefundsALinkedPendingThatStaffCancelsAfterAFailedRead", supporterStaffCancelsLinkedPending},
 		{"LinksNoSubscriptionThatEnded", supporterEndedTakesNoLink},
 		{"LeavesASecondSubscriptionThatEndedBeforeItsJob", supporterEndedBeforeTheJob},
 		{"MakesNoPageForASubscriptionThatClosesMeanwhile", supporterStartMeetsClose},
@@ -140,7 +141,8 @@ type subscriptionWorld interface {
 type refundControl interface {
 	FailRefunds(err error)
 	Refunded(sub supporters.SubscriptionRef) bool
-	DeleteCanceled()
+	DeleteCanceled(listsCharges bool)
+	FailSubscriptionReads(err error)
 }
 
 // changePayments is the world's control of the payments of changes at once.
@@ -1577,39 +1579,83 @@ func (e *supporterEnv) paidSubscription(id string, plan supporters.PlanView, ref
 	return snap
 }
 
-// supporterRefundAfterDeletion fails the refund of a second subscription on a provider that deletes
-// what it cancels, as PAY.JP does, so that the next attempts cannot read our ID from it: they still
-// refund it, and the warning clears.
+// supporterRefundAfterDeletion settles second subscriptions on a provider that deletes what it
+// cancels, as PAY.JP does. The refund comes before the deletion. After a refused refund the next
+// attempts cannot read our ID any more, and go on: they refund when the provider still lists the
+// charges, and otherwise the record stays unsettled, never settled as refunded.
 func supporterRefundAfterDeletion(t *testing.T, e *supporterEnv) {
 	ctx := t.Context()
 	e.enable(t)
 	plan := e.plan(t, "supporter", 1, 10, 500)
 	id, _ := e.subscribe(t, e.user("alice"), plan, domain.IntervalMonth)
 	refunds := e.refunds(t)
-	refunds.DeleteCanceled()
+	refunds.DeleteCanceled(false)
+	second := func(ref supporters.SubscriptionRef) {
+		t.Helper()
+		if _, err := e.svc.SyncSubscription(ctx, paymentProvider, e.paidSubscription(id, plan, ref, supporters.StatusActive)); err != nil {
+			t.Fatal(err)
+		}
+		e.run(t)
+	}
+	retry := func(cause string) {
+		t.Helper()
+		if err := e.svc.RetryDuplicates(ctx, paymentProvider, cause); err != nil {
+			t.Fatal(err)
+		}
+		e.run(t)
+	}
+	second("sub_plain")
+	if got, _ := e.world.Subscription("sub_plain"); got.Status != supporters.StatusCanceled || !refunds.Refunded("sub_plain") || e.unsettled(t) != 0 {
+		t.Errorf("a second subscription = %s, refunded %v, %d unsettled, want canceled and refunded", got.Status, refunds.Refunded("sub_plain"), e.unsettled(t))
+	}
+
 	refunds.FailRefunds(supporters.ErrPaymentPermission)
-	snap := e.paidSubscription(id, plan, "sub_second", supporters.StatusActive)
-	if _, err := e.svc.SyncSubscription(ctx, paymentProvider, snap); err != nil {
-		t.Fatal(err)
-	}
-	e.run(t)
-	if refunds.Refunded("sub_second") || e.unsettled(t) != 1 {
-		t.Fatalf("with the refund refused: refunded %v, %d unsettled, want none and one", refunds.Refunded("sub_second"), e.unsettled(t))
-	}
-	if err := e.svc.RetryDuplicates(ctx, paymentProvider, "still-refused"); err != nil {
-		t.Fatal(err)
-	}
-	e.run(t)
-	if e.unsettled(t) != 1 {
-		t.Errorf("a refund refused again: %d unsettled, want one", e.unsettled(t))
+	second("sub_refused")
+	if got, _ := e.world.Subscription("sub_refused"); got.Status != supporters.StatusCanceled || refunds.Refunded("sub_refused") || e.unsettled(t) != 1 {
+		t.Fatalf("with the refund refused = %s, refunded %v, %d unsettled, want canceled, not refunded, and one", got.Status, refunds.Refunded("sub_refused"), e.unsettled(t))
 	}
 	refunds.FailRefunds(nil)
-	if err := e.svc.RetryDuplicates(ctx, paymentProvider, "allowed"); err != nil {
+	retry("no-list")
+	if refunds.Refunded("sub_refused") || e.unsettled(t) != 1 {
+		t.Errorf("with no charges to list: refunded %v, %d unsettled, want not refunded and one", refunds.Refunded("sub_refused"), e.unsettled(t))
+	}
+	refunds.DeleteCanceled(true)
+	retry("listed")
+	if !refunds.Refunded("sub_refused") || e.unsettled(t) != 0 {
+		t.Errorf("with the charges listed: refunded %v, %d unsettled, want refunded and none", refunds.Refunded("sub_refused"), e.unsettled(t))
+	}
+}
+
+// supporterStaffCancelsLinkedPending cancels a pending subscription whose payment linked, while the
+// settling cannot read the provider's subscription: no cancellation of ours may overtake it and pass
+// for one by hand, and the refund still happens.
+func supporterStaffCancelsLinkedPending(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	co, ref := e.startPaged(t, e.svc, e.user("alice"), plan, domain.IntervalMonth)
+	snap := e.paidSubscription(co.SubscriptionID, plan, "sub_a", supporters.StatusActive)
+	res := supporters.CheckoutResult{Ref: ref, Status: supporters.CheckoutCompleted, LocalID: co.SubscriptionID, Customer: snap.Customer, Subscription: "sub_a"}
+	e.world.PutCheckout(res)
+	if _, err := e.svc.SyncCheckout(ctx, paymentProvider, res); err != nil {
+		t.Fatal(err)
+	}
+	refunds := e.refunds(t)
+	refunds.FailSubscriptionReads(supporters.ErrInvalidPaymentResponse)
+	if err := e.svc.CancelByStaff(ctx, co.SubscriptionID, ""); err != nil {
 		t.Fatal(err)
 	}
 	e.run(t)
-	if !refunds.Refunded("sub_second") || e.unsettled(t) != 0 {
-		t.Errorf("after the retry: refunded %v, %d unsettled, want refunded and none", refunds.Refunded("sub_second"), e.unsettled(t))
+	refunds.FailSubscriptionReads(nil)
+	if got, _ := e.world.Subscription("sub_a"); got.Status != supporters.StatusActive || e.unsettled(t) != 1 {
+		t.Errorf("after the failed read = %s, %d unsettled, want still active and one", got.Status, e.unsettled(t))
+	}
+	if err := e.svc.RetryDuplicates(ctx, paymentProvider, "run-1"); err != nil {
+		t.Fatal(err)
+	}
+	e.run(t)
+	if got, _ := e.world.Subscription("sub_a"); got.Status != supporters.StatusCanceled || !refunds.Refunded("sub_a") || e.unsettled(t) != 0 {
+		t.Errorf("after the retry = %s, refunded %v, %d unsettled, want canceled and refunded", got.Status, refunds.Refunded("sub_a"), e.unsettled(t))
 	}
 }
 

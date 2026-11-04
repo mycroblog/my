@@ -187,7 +187,8 @@ subscriptions that hold its role. subscriptions lists the subscriptions, newest
 first, of a -plan or in a -state; USER is the subscriber's user ID.
 
 cancel ends a subscription at once, without a refund: the plan's role goes, and
-the provider's subscription is canceled at once by a job.
+the provider's subscription is canceled at once by a job. A payment for a pending
+subscription gave nothing, and the job refunds it.
 
 Enabling, disabling, and cancelling are recorded in the audit log as the CLI's,
 as those of the admin screen and the admin API (/api/v1/admin/supporter_program,

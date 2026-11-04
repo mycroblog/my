@@ -6260,7 +6260,7 @@ type AdminServiceClosureCheck struct {
 	// EstimatedDeletes The estimate of the deliveries of the closure, `local_accounts` times `delivery_inboxes`.
 	EstimatedDeletes int `json:"estimated_deletes"`
 
-	// LiveSupporterSubscriptions The supporter subscriptions that go on, which the closure cancels at once without a refund.
+	// LiveSupporterSubscriptions The supporter subscriptions that go on, which the closure cancels at once without a refund, except a payment for one still pending.
 	LiveSupporterSubscriptions int `json:"live_supporter_subscriptions"`
 
 	// LocalAccounts The local accounts of users that are not deleted, each of which the closure sends a `Delete` of.
