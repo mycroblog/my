@@ -5488,7 +5488,8 @@ export interface paths {
         /**
          * Delete a local custom emoji
          * @description Deletes a local emoji for good, with its images; the posts and profiles that used it
-         *     show its `:shortcode:` as text. A new emoji with the same shortcode is another emoji.
+         *     show its `:shortcode:` as text, and the reactions with it are no longer shown. A new
+         *     emoji with the same shortcode is another emoji.
          *     A remote emoji is a 422 with the reason `remote_emoji` (disable it instead). The
          *     deletion is recorded in the audit log. An unknown ID is a 404. Needs the
          *     `manage_custom_emojis` permission.

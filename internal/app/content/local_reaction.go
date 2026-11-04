@@ -123,7 +123,8 @@ func (s *Interactions) takeBackReactions(ctx context.Context, tx uow.Tx, account
 		if id := r.Emoji.CustomEmojiID; id != "" && !st.IsLocal {
 			ev.Emoji = taken[id]
 			if ev.Emoji == nil {
-				// Reacted after slotEmojis read the slot; the Undo goes without the emoji.
+				// Reacted after slotEmojis read the slot, or the emoji was deleted; the Undo goes
+				// without the emoji.
 				ev.Emoji = &EmojiTag{ID: id, Local: true}
 			}
 		}
@@ -152,6 +153,9 @@ func (s *Interactions) slotEmojis(ctx context.Context, accountID string, st cont
 			continue
 		}
 		tag, err := s.emojiTag(ctx, id)
+		if errors.Is(err, ErrNotFound) {
+			continue // the emoji was deleted; the Undo goes without it (takeBackReactions)
+		}
 		if err != nil {
 			return nil, err
 		}
