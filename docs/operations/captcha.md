@@ -91,7 +91,7 @@ If a reverse proxy or CDN in front of the server overrides the CSP, add the same
 ## What to write in the privacy policy
 
 With CAPTCHA enabled, the browser of anyone who opens the sign-in, sign-up or password-reset request page connects directly to the service, and the service receives the IP address, browser information and cookies.
-The instance's privacy policy (`my instance set privacy_policy`, see [instance settings](instance-settings.md)) is yours to write; the server does not add anything to it. Write at least the following.
+The instance's privacy policy (`my instance set privacy_policy`, see [instance settings](instance-settings.md)) is yours to write; the server does not add anything to it. The [privacy policy template](privacy-policy-template.md) has a row for the service. Write at least the following.
 
 - Which service (the provider's name) you use and why: to prevent automated sign-in, sign-up and password-reset requests.
 - What reaches the service (IP address, browser and device information, cookies, widget interactions), and that only the sign-in, sign-up and password-reset request pages send it.

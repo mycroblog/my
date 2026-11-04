@@ -17,6 +17,8 @@
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
 - [Production checklist (what to verify before going live, and what my config check checks)](operations/production-checklist.md)
 - [Closing the service (announcement, closure, the static closure page, deleting the data)](operations/service-closure.md)
+- [Privacy policy template (what the server keeps, why, for how long, and who receives it)](operations/privacy-policy-template.md)
+- [Record of processing activities template (GDPR Article 30)](operations/processing-record-template.md)
 - [External monitoring and status pages (UptimeRobot, Better Stack, Gatus, Uptime Kuma, Upptime)](operations/monitoring.md)
 - [Alerts and runbook (Prometheus alerting rules, what to do when an alert fires, telling users about an incident)](operations/alerts.md)
 - [Error reporting (the error report log line, error groups and notifications, sending reports to Sentry, GlitchTip, Datadog or OpenTelemetry, scrubbing)](operations/error-reporting.md)

@@ -45,7 +45,7 @@ my instance set registration_mode invite
   The confirmation works once, for that operation only, within 10 minutes; signing in with an account that is not the linked one counts as a wrong attempt, against the same limit as a wrong password.
 - On every registration and sign-in, the server records the client IP address (and, for sign-in, the User-Agent). The records are removed automatically after 180 days
   (the instance settings `session_origins_retention_days` and `registration_origins_retention_days`, at least 90 days). Records of an account under a retention hold are kept ([record retention and holds](moderation.md#record-retention-and-holds)).
-  State this retention period in your privacy policy.
+  State this retention period in your privacy policy ([privacy policy template](privacy-policy-template.md)).
 
 ## When a user can use the app
 

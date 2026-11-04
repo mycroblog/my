@@ -303,7 +303,7 @@ entries:
   - name: module-instance
     paths: ["internal/domain/instance/**", "internal/app/instance/**"]
     docs: ["docs/architecture/data-model/04-tables/09-instance.md#49-instance", "docs/operations/instance-settings.md", "docs/adr/0088-service-shutdown-modes.md"]
-    userdocs: ["docs/operations/instance-settings.md", "docs/operations/service-closure.md"]
+    userdocs: ["docs/operations/instance-settings.md", "docs/operations/service-closure.md", "docs/operations/privacy-policy-template.md", "docs/operations/processing-record-template.md"]
   - name: module-webhook
     paths: ["internal/domain/webhook/**", "internal/app/webhook/**"]
     docs: ["docs/architecture/data-model/04-tables/11-webhook.md#411-webhook", "docs/reference/webhooks.md"]
@@ -506,6 +506,7 @@ entries:
   - name: schema
     paths: ["schema/**", "queries/**", "sqlc.yaml", "scripts/db-lint.sh", "scripts/db-lint-test.sh"]
     docs: ["docs/architecture/data-model/01-conventions.md#1-共通規約", "docs/adr/0020-data-modeling-principles.md", "docs/adr/0023-declarative-schema-management.md"]
+    userdocs: ["docs/operations/privacy-policy-template.md", "docs/operations/processing-record-template.md"]
     checks: [schema, go]
     shared: true
     notes:
