@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Creates a new ADR from docs/adr/template.md. Its number is one more than the largest number of the ADRs in the
-# working tree and of the ADR files the open pull requests of mycroblog/my add, so that parallel pull requests
-# do not pick the same number (ADR-0081). Without a working gh, it uses the working tree only and says so.
+# working tree, of the retired numbers in docs/adr/aliases.yaml, and of the ADR files the open pull requests of
+# mycroblog/my add, so that parallel pull requests do not pick the same number and no number is used twice
+# (ADR-0081). Without a working gh, it uses the working tree only and says so.
 # Usage: scripts/adr-new.sh "Title of the decision" [kebab-slug]
 set -euo pipefail
 
@@ -39,6 +40,9 @@ open_pr_adrs() {
 }
 
 names="$(find "$dir" -maxdepth 1 -name '[0-9][0-9][0-9][0-9]-*.md' -printf '%f\n')"
+if [[ -f "$dir/aliases.yaml" ]]; then
+  names+=$'\n'"$(sed -n -E 's/^[[:space:]]*ADR-([0-9]{4}):.*/\1-retired/p' "$dir/aliases.yaml")"
+fi
 if ! command -v gh >/dev/null 2>&1; then
   echo "warning: gh is not installed; the number ignores the ADRs of open pull requests" >&2
 elif pr_names="$(open_pr_adrs)"; then

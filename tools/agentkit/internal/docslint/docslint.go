@@ -54,6 +54,11 @@ type Config struct {
 		Japanese    []string `yaml:"japanese"`     // English-only files still in Japanese
 		DesignLinks []string `yaml:"design-links"` // operator files that still point at design records
 	} `yaml:"pending"`
+	// ADRs configures the checks of the ADRs and of the citations of them.
+	ADRs struct {
+		Enforce bool     `yaml:"enforce"` // findings fail the lint; otherwise they are warnings
+		Exclude []string `yaml:"exclude"` // files whose ADR-NNNN are not this repository's ADRs
+	} `yaml:"adrs"`
 	// Inventory lists, by inventory, the names that Inventory does not require a document to mention.
 	Inventory struct {
 		Exclude map[string][]string `yaml:"exclude"`

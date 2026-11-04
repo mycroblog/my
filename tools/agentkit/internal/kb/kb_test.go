@@ -170,3 +170,25 @@ func TestShowRefusesPathsOutsideTheRoot(t *testing.T) {
 		}
 	}
 }
+
+func TestRetiredADRNumber(t *testing.T) {
+	k := fixture(t)
+	p := filepath.Join(k.S.Repo.Root, "docs", "adr", "aliases.yaml")
+	if err := os.WriteFile(p, []byte("aliases:\n  ADR-0124: {to: ADR-0070}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ns, err := k.Resolve("ADR-0124#decision")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ns) != 1 || !strings.Contains(ns[0].Path, "0070-split") {
+		t.Fatalf("Resolve = %+v", ns)
+	}
+	var b bytes.Buffer
+	if err := k.Show(&b, "ADR-0124", 30000); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(b.String(), "ADR-0124 was merged: this is ADR-0070") || !strings.Contains(b.String(), "申請を別のリソースにする") {
+		t.Errorf("Show = %s", b.String())
+	}
+}

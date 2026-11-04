@@ -10,15 +10,21 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mycroblog/my/tools/agentkit/internal/adr"
 	"github.com/mycroblog/my/tools/agentkit/internal/gh"
 	"github.com/mycroblog/my/tools/agentkit/internal/text"
 )
 
 var reStatus = regexp.MustCompile(`(?m)^- Status:\s*([A-Za-z]+)`)
 
-// ADRStatus reads the status of ADR id (ADR-0070) from docs/adr in root; "" when the ADR does not exist.
+// ADRStatus reads the status of ADR id (ADR-0070) from docs/adr in root, following a retired number to the ADR
+// that holds it now; "" when the ADR does not exist.
 func ADRStatus(root, id string) string {
-	num := strings.TrimPrefix(id, "ADR-")
+	aliases, err := adr.LoadAliases(root)
+	if err != nil {
+		return "unknown"
+	}
+	num := strings.TrimPrefix(aliases.Current(id), "ADR-")
 	ms, _ := filepath.Glob(filepath.Join(root, "docs", "adr", num+"-*.md"))
 	if len(ms) == 0 {
 		return ""

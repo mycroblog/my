@@ -81,7 +81,15 @@ than a document that every change of a wide area flags.
   repository's issues and pull requests, nor cite `ADR-NNNN`, `FR-NNN`, or `#NNN` outside code;
 - the files of `maintainer-terms.files` use none of its `terms`, the words of the development of the project, in prose or
   in code;
-- the index (`index.file`, `docs/README.md`) links every file of `index.files` (`docs/operations/`, `docs/reference/`).
+- the index (`index.file`, `docs/README.md`) links every file of `index.files` (`docs/operations/`, `docs/reference/`);
+- each `ADR-NNNN` and `ADR-NNNN §k` of the repository resolves and is not a number retired in `docs/adr/aliases.yaml`, a
+  `§k` inside an ADR that names no other document is a heading of that ADR, and an ADR has the sections of the template
+  and no quotations. These print as warnings until `adrs.enforce` is set; `adrs.exclude` names the files where
+  `ADR-NNNN` means something else.
+
+`docs/adr/aliases.yaml` maps the number of an ADR merged into another to the ADR that holds it and how its sections
+moved (`to`, and `sections`, `section`, `offset`, `anchors`). `show`, `find`, `refs`, `ctx`, and `issue claim` follow it,
+so an old issue that cites a retired number still reads; a repository without the file has no retired numbers.
 
 [docs/lint.yaml](../../docs/lint.yaml) lists the files each rule covers and, under `pending`, the files that do not
 follow a rule yet. A pending entry fails the check once its file follows the rule (or is gone), so the lists only

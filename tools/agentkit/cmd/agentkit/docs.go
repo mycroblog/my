@@ -52,6 +52,17 @@ func runDocsRules(r *repo.Repo, cmd string) error {
 	if err != nil {
 		return err
 	}
+	if cmd == "lint" {
+		adrs, err := docslint.ADRs(r.Root, paths, c)
+		if err != nil {
+			return err
+		}
+		if c.ADRs.Enforce {
+			findings = append(findings, adrs...)
+		} else {
+			printADRWarnings(adrs)
+		}
+	}
 	for _, f := range findings {
 		fmt.Println("error: " + f.String())
 	}
@@ -60,6 +71,17 @@ func runDocsRules(r *repo.Repo, cmd string) error {
 	}
 	fmt.Printf("agentkit docs %s: no problems\n", cmd)
 	return nil
+}
+
+// printADRWarnings shows the ADR findings that do not fail the lint yet: the first few, and how many there are.
+func printADRWarnings(fs []docslint.Finding) {
+	const shown = 20
+	for _, f := range fs[:min(len(fs), shown)] {
+		fmt.Println("warning: " + f.String())
+	}
+	if len(fs) > 0 {
+		fmt.Printf("agentkit docs lint: %d ADR warnings (they fail once adrs.enforce is set in %s)\n", len(fs), docslint.File)
+	}
 }
 
 // runDocsImpact prints the user and operator documents that describe the paths changed since the base; with
