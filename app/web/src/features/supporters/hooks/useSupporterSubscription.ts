@@ -17,6 +17,7 @@ import {
   instanceQueryOptions,
   openPortalMutation,
   ownSupporterSubscriptionQueryOptions,
+  refreshSubscription,
   type SubscriptionCommand,
   startCheckoutMutation,
   subscriptionCommandMutation,
@@ -133,6 +134,10 @@ function subscriptionFailure(t: Translate, error: unknown): string {
         return t("client:supporter.error.same_plan");
       case supporterProblems.subscriptionEnded:
         return t("client:supporter.error.ended");
+      case supporterProblems.paymentFailed:
+        return t("client:supporter.error.payment_failed");
+      case supporterProblems.paymentProcessing:
+        return t("client:supporter.error.payment_processing");
     }
   }
   return errorMessage(error);
@@ -188,6 +193,14 @@ const commandDone = {
   cancel_scheduled_change: "client:supporter.subscription.unscheduled",
 } as const;
 
+/** Whether a change failed because of its payment: the plan stays, and the page says what to do beside the form. */
+function paymentProblem(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    (error.type === supporterProblems.paymentFailed || error.type === supporterProblems.paymentProcessing)
+  );
+}
+
 /** The changes of the user's subscription; each one answers the subscription after it, which replaces the cached one. */
 export function useSubscriptionCommands() {
   const api = useApi();
@@ -203,22 +216,33 @@ export function useSubscriptionCommands() {
       setStatus(message);
       notice.inPlace(message);
     },
+    onError: async (error) => {
+      if (paymentProblem(error)) await refreshSubscription(api, queryClient);
+    },
   });
   return {
     status,
-    /** Sends a command and reports whether it succeeded, so that its dialog closes only then. */
+    /** Sends a command and reports whether its dialog closes: it succeeded, or its payment failed (`paymentError`). */
     run: async (command: SubscriptionCommand): Promise<boolean> => {
       setStatus(undefined);
       try {
         await mutation.mutateAsync(command);
         return true;
-      } catch {
-        return false;
+      } catch (error) {
+        return paymentProblem(error);
       }
     },
     pending: mutation.isPending ? mutation.variables.kind : undefined,
     error: mutation.isError ? subscriptionFailure(t, mutation.error) : undefined,
     failed: mutation.isError ? mutation.variables.kind : undefined,
+    /** Why the payment of a change failed, and whether updating the card can help. */
+    paymentError:
+      mutation.isError && paymentProblem(mutation.error)
+        ? {
+            message: subscriptionFailure(t, mutation.error),
+            updateCard: (mutation.error as ApiError).type === supporterProblems.paymentFailed,
+          }
+        : undefined,
   };
 }
 

@@ -52,6 +52,8 @@ const (
 	CommandCancelNow Command = "cancel_now"
 	// CommandCancelAtPeriodEnd withdraws a scheduled change and cancels at the end of the period.
 	CommandCancelAtPeriodEnd Command = "cancel_at_period_end"
+	// CommandDropUnpaidChange removes what a failed change at once left collectible.
+	CommandDropUnpaidChange Command = "drop_unpaid_change"
 )
 
 // snapshotOf resolves the provider's prices of snap to ours: a price that is not ours is "".
@@ -159,6 +161,12 @@ func (s *Service) applySnapshot(ctx context.Context, provider string, snap Subsc
 				return s.enqueueCommand(ctx, tx, rec.ID, CommandCancelNow, "", "orphan")
 			}
 			return nil
+		}
+		if snap.UnpaidChange != "" {
+			// A failure part of the way through a change: the use case could not clean it up.
+			if err := s.enqueueCommand(ctx, tx, rec.ID, CommandDropUnpaidChange, "", snap.UnpaidChange); err != nil {
+				return err
+			}
 		}
 		ds, err := s.snapshotOf(ctx, tx, provider, snap)
 		if err != nil {
@@ -566,6 +574,12 @@ func (s *Service) RunCommand(ctx context.Context, p commandPayload, key string) 
 		if err = prov.CancelScheduledChange(ctx, rec.Link, attempt+":scheduled"); err == nil {
 			err = prov.CancelAtPeriodEnd(ctx, rec.Link, attempt)
 		}
+	case CommandDropUnpaidChange:
+		if rec.Current.State.Final() {
+			return queue.Done()
+		}
+		// A new key for every attempt: Stripe replays a stored failure under a key.
+		err = prov.DropUnpaidChange(ctx, rec.Link, key+":"+s.d.IDs.NewID())
 	default:
 		return queue.Fail(fmt.Errorf("supporters: unknown command %q", p.Command))
 	}

@@ -571,6 +571,22 @@
     "defaultMessage": "[Řḗḗŧīřḗḗ ŧħḗḗ ƥŀȧȧƞş ȧȧƞḓ ẇȧȧīŧ ƒǿǿř ŧħḗḗīř şŭŭƀşƈřīƥŧīǿǿƞş ŧǿǿ ḗḗƞḓ ƀḗḗƒǿǿřḗḗ ḓīşȧȧƀŀīƞɠ ŧħḗḗ ƥřǿǿɠřȧȧḿ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.supporters.payment_failed": {
+    "defaultMessage": "[Ŧħḗḗ ƥȧȧẏḿḗḗƞŧ ƒǿǿř ŧħīş ƈħȧȧƞɠḗḗ ƒȧȧīŀḗḗḓ, şǿǿ ẏǿǿŭŭř ƥŀȧȧƞ ħȧȧş ƞǿǿŧ ƈħȧȧƞɠḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.payment_failed_detail": {
+    "defaultMessage": "[Ƞǿǿŧħīƞɠ ẇȧȧş ƈħȧȧřɠḗḗḓ. Ŭƥḓȧȧŧḗḗ ẏǿǿŭŭř ƈȧȧřḓ ȧȧƞḓ ŧřẏ ȧȧɠȧȧīƞ. Ȧ ƈȧȧřḓ ŧħȧȧŧ ȧȧşķş ƒǿǿř ȧȧŭŭŧħḗḗƞŧīƈȧȧŧīǿǿƞ ǿǿƞ ḗḗȧȧƈħ ƥȧȧẏḿḗḗƞŧ ƈȧȧƞƞǿǿŧ ƥȧȧẏ ƒǿǿř ȧȧ ƈħȧȧƞɠḗḗ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.payment_processing": {
+    "defaultMessage": "[Ŧħḗḗ ƥȧȧẏḿḗḗƞŧ ƒǿǿř ŧħīş ƈħȧȧƞɠḗḗ īş şŧīŀŀ ƥřǿǿƈḗḗşşīƞɠ, şǿǿ ẏǿǿŭŭř ƥŀȧȧƞ ħȧȧş ƞǿǿŧ ƈħȧȧƞɠḗḗḓ ẏḗḗŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.payment_processing_detail": {
+    "defaultMessage": "[Ŧħḗḗ ƥŀȧȧƞ ƈħȧȧƞɠḗḗş īƒ ŧħḗḗ ƥȧȧẏḿḗḗƞŧ şŭŭƈƈḗḗḗḗḓş. Ẏǿǿŭŭ ḓǿǿ ƞǿǿŧ ƞḗḗḗḗḓ ŧǿǿ ḓǿǿ ȧȧƞẏŧħīƞɠ ƞǿǿẇ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.supporters.plan_invalid": {
     "defaultMessage": "[Ŧħḗḗ şŭŭƥƥǿǿřŧḗḗř ƥŀȧȧƞ ƈȧȧƞƞǿǿŧ ƀḗḗ şȧȧṽḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."

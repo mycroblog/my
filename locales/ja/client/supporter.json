@@ -296,7 +296,7 @@
     "description": "Heading of the section that changes the plan."
   },
   "supporter.change.description": {
-    "defaultMessage": "上位のプランや年払いへの変更はすぐに始まり、期間の残りの差額をいま請求します。下位のプランや月払いへの変更は期間の終わりに始まります。",
+    "defaultMessage": "上位のプランや年払いへの変更は、期間の残りの差額をいま請求し、支払いが済むと始まります。下位のプランや月払いへの変更は期間の終わりに始まります。",
     "description": "How changes of plan apply."
   },
   "supporter.change.price_kept": {
@@ -312,7 +312,7 @@
     "description": "Title of the dialog that confirms a change. plan is the new plan's name."
   },
   "supporter.change.now": {
-    "defaultMessage": "変更はいますぐ始まり、期間の残りの差額をすぐに請求します。",
+    "defaultMessage": "期間の残りの差額をいま請求し、支払いが済むと変更が始まります。",
     "description": "A change that applies at once."
   },
   "supporter.change.period_end": {
@@ -320,7 +320,7 @@
     "description": "A change that applies at the end of the period."
   },
   "supporter.change.rules": {
-    "defaultMessage": "上位のプランや年払いへの変更はいますぐ始まり差額をすぐに請求します。下位のプランや月払いへの変更は期間の終わりに始まります。",
+    "defaultMessage": "上位のプランや年払いへの変更は、差額をすぐに請求し、支払いが済むと始まります。下位のプランや月払いへの変更は期間の終わりに始まります。",
     "description": "A change whose timing the page cannot tell."
   },
   "supporter.change.unchanged": {
@@ -346,6 +346,14 @@
   "supporter.error.same_plan": {
     "defaultMessage": "今のプランと支払いの間隔です。",
     "description": "Problem: the change chose the current plan and interval."
+  },
+  "supporter.error.payment_failed": {
+    "defaultMessage": "支払いに失敗したので、プランは変わっていません。請求はしていません。カードを更新してもう一度試してください。支払いのたびに認証を求めるカードでは変更の支払いができません。",
+    "description": "Problem: the payment of the change failed; the page offers the way to update the card."
+  },
+  "supporter.error.payment_processing": {
+    "defaultMessage": "支払いはまだ処理中なので、プランはまだ変わっていません。支払いが成功するとプランが変わります。",
+    "description": "Problem: the payment of the change has not settled."
   },
   "supporter.error.ended": {
     "defaultMessage": "加入は終わっています。",

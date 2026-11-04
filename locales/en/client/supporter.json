@@ -296,7 +296,7 @@
     "description": "Heading of the section that changes the plan."
   },
   "supporter.change.description": {
-    "defaultMessage": "A higher plan or yearly payment starts at once, and the difference for the rest of the period is charged now. A lower plan or monthly payment starts at the end of the period.",
+    "defaultMessage": "A higher plan or yearly payment starts once the difference for the rest of the period is paid, which is charged at once. A lower plan or monthly payment starts at the end of the period.",
     "description": "How changes of plan apply."
   },
   "supporter.change.price_kept": {
@@ -312,7 +312,7 @@
     "description": "Title of the dialog that confirms a change. plan is the new plan's name."
   },
   "supporter.change.now": {
-    "defaultMessage": "The change starts now, and the difference for the rest of the period is charged at once.",
+    "defaultMessage": "The difference for the rest of the period is charged now, and the change starts once it is paid.",
     "description": "A change that applies at once."
   },
   "supporter.change.period_end": {
@@ -320,7 +320,7 @@
     "description": "A change that applies at the end of the period."
   },
   "supporter.change.rules": {
-    "defaultMessage": "A higher plan or yearly payment starts now with the difference charged at once; a lower plan or monthly payment starts at the end of the period.",
+    "defaultMessage": "A higher plan or yearly payment starts once the difference, charged at once, is paid; a lower plan or monthly payment starts at the end of the period.",
     "description": "A change whose timing the page cannot tell."
   },
   "supporter.change.unchanged": {
@@ -346,6 +346,14 @@
   "supporter.error.same_plan": {
     "defaultMessage": "This is your current plan and payment interval.",
     "description": "Problem: the change chose the current plan and interval."
+  },
+  "supporter.error.payment_failed": {
+    "defaultMessage": "The payment failed, so your plan has not changed. Nothing was charged. Update your card and try again. A card that asks for authentication on each payment cannot pay for a change.",
+    "description": "Problem: the payment of the change failed; the page offers the way to update the card."
+  },
+  "supporter.error.payment_processing": {
+    "defaultMessage": "The payment is still processing, so your plan has not changed yet. It changes if the payment succeeds.",
+    "description": "Problem: the payment of the change has not settled."
   },
   "supporter.error.ended": {
     "defaultMessage": "The subscription has ended.",

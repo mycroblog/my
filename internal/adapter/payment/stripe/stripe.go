@@ -286,6 +286,8 @@ func classify(ctx context.Context, err error) error {
 		desc += ": " + se.Msg
 	case s == http.StatusNotFound:
 		kind = supporters.ErrPaymentNotFound
+	case s == http.StatusPaymentRequired:
+		kind = supporters.ErrPaymentDeclined
 	case s == http.StatusTooManyRequests:
 		kind = supporters.ErrPaymentThrottled
 	case s == http.StatusConflict || s >= http.StatusInternalServerError:

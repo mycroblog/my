@@ -310,6 +310,8 @@ func kindOfStatus(status int) error {
 		return supporters.ErrPaymentPermission
 	case status == http.StatusNotFound:
 		return supporters.ErrPaymentNotFound
+	case status == http.StatusPaymentRequired:
+		return supporters.ErrPaymentDeclined
 	case status == http.StatusTooManyRequests:
 		return supporters.ErrPaymentThrottled
 	case status >= http.StatusInternalServerError:

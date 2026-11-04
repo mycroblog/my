@@ -61,6 +61,19 @@ func TestPaymentProviderContract(t *testing.T) {
 		return testkit.PaymentUnderTest{
 			Provider: p, Deliver: f.deliver(testSigningKey), CheckoutHosts: []string{CheckoutHost}, PortalHosts: []string{PortalHost},
 			TimedSignature: true,
+			DeclineChanges: func(sub supporters.SubscriptionRef, declined bool) {
+				f.mu.Lock()
+				defer f.mu.Unlock()
+				f.sub(string(sub)).payment = ""
+				if declined {
+					f.sub(string(sub)).payment = fakeCardDeclines
+				}
+			},
+			ChangeCharges: func() int {
+				f.mu.Lock()
+				defer f.mu.Unlock()
+				return f.changeCharges
+			},
 		}
 	})
 }
@@ -505,6 +518,178 @@ func TestChangeNowRetryReleasesASecondSchedule(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantPrices(t, p, higher, "")
+}
+
+// setCard sets what sub_1's card does with an invoice.
+func setCard(f *fakeAPI, payment string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.sub("sub_1").payment = payment
+}
+
+// A card that fails in any way leaves the plan and a change waiting for the period's end as they
+// were and nothing collectible, and a good card then pays once, under the same key.
+func TestChangeNowFailedPaymentThenGoodCard(t *testing.T) {
+	for name, card := range map[string]string{
+		"declined": fakeCardDeclines, "needs authentication": fakeCardAuthenticate, "refused with a 402": fakeCardRefuses,
+	} {
+		t.Run(name, func(t *testing.T) {
+			p, f, lower, higher := onPlan(t, "")
+			ctx := t.Context()
+			if err := p.ChangePrice(ctx, "sub_1", lower, supporters.ChangeAtPeriodEnd, "change:later"); err != nil {
+				t.Fatal(err)
+			}
+			setCard(f, card)
+			if err := p.ChangePrice(ctx, "sub_1", higher, supporters.ChangeNowProrated, "change:now"); !errors.Is(err, supporters.ErrPaymentDeclined) {
+				t.Fatalf("ChangePrice = %v, want ErrPaymentDeclined", err)
+			}
+			wantPrices(t, p, "price_1", lower)
+			snap, err := p.GetSubscription(ctx, "sub_1")
+			if err != nil || snap.Status != supporters.StatusActive || !snap.LatestPaymentFailed.IsZero() || snap.UnpaidChange != "" {
+				t.Errorf("after the failure: %+v, %v", snap, err)
+			}
+			f.mu.Lock()
+			for id, inv := range f.invoices {
+				if inv["status"] == "open" {
+					t.Errorf("invoice %s stays collectible", id)
+				}
+			}
+			f.mu.Unlock()
+			// A second failure makes a new attempt, not a replay.
+			before := f.countRequests("POST /v1/invoices/")
+			if err := p.ChangePrice(ctx, "sub_1", higher, supporters.ChangeNowProrated, "change:now"); !errors.Is(err, supporters.ErrPaymentDeclined) {
+				t.Fatalf("ChangePrice again = %v, want ErrPaymentDeclined", err)
+			}
+			if card != fakeCardRefuses && f.countRequests("POST /v1/invoices/") != before+1 {
+				t.Error("the second attempt replayed the first")
+			}
+			setCard(f, "")
+			for range 2 {
+				if err := p.ChangePrice(ctx, "sub_1", higher, supporters.ChangeNowProrated, "change:now"); err != nil && card != fakeCardRefuses {
+					t.Fatalf("ChangePrice with a good card = %v", err)
+				}
+			}
+			if card == fakeCardRefuses {
+				return // the same minute replays the refusal; TestChangeNowStoredFailure has the next one.
+			}
+			wantPrices(t, p, higher, "")
+			f.mu.Lock()
+			defer f.mu.Unlock()
+			if f.changeCharges != 1 {
+				t.Errorf("%d charges, want 1", f.changeCharges)
+			}
+		})
+	}
+}
+
+// A payment that has not settled stays: no void and no second update, and the plan moves if it
+// succeeds.
+func TestChangeNowProcessingPayment(t *testing.T) {
+	p, f, _, higher := onPlan(t, "")
+	ctx := t.Context()
+	setCard(f, fakeCardProcesses)
+	for range 2 {
+		if err := p.ChangePrice(ctx, "sub_1", higher, supporters.ChangeNowProrated, "change:now"); !errors.Is(err, supporters.ErrPaymentProcessing) {
+			t.Fatalf("ChangePrice = %v, want ErrPaymentProcessing", err)
+		}
+	}
+	if n := f.countRequests("POST /v1/subscriptions/sub_1"); n != 1 {
+		t.Errorf("%d updates, want 1", n)
+	}
+	if n := f.countRequests("POST /v1/invoices/"); n != 0 {
+		t.Errorf("%d voids of a processing payment", n)
+	}
+	snap, err := p.GetSubscription(ctx, "sub_1")
+	if err != nil || snap.Price != "price_1" || snap.UnpaidChange == "" || snap.Status != supporters.StatusActive {
+		t.Errorf("while processing: %+v, %v", snap, err)
+	}
+	if err := p.DropUnpaidChange(ctx, "sub_1", "drop:1"); err != nil {
+		t.Errorf("DropUnpaidChange = %v", err)
+	}
+	if n := f.countRequests("POST /v1/invoices/"); n != 0 {
+		t.Errorf("DropUnpaidChange voided a processing payment")
+	}
+}
+
+// The void fails after the decline: the snapshot does not show a late payment, whatever Stripe says
+// of the status, it names the unpaid change, and DropUnpaidChange removes it.
+func TestUnpaidChangeIsNotALatePayment(t *testing.T) {
+	p, f, _, higher := onPlan(t, "")
+	ctx := t.Context()
+	setCard(f, fakeCardDeclines)
+	f.mu.Lock()
+	f.pastDueOnFailure = true
+	f.before = func(r *http.Request) int {
+		if strings.HasSuffix(r.URL.Path, "/void") {
+			f.before = nil
+			return http.StatusInternalServerError
+		}
+		return 0
+	}
+	f.mu.Unlock()
+	if err := p.ChangePrice(ctx, "sub_1", higher, supporters.ChangeNowProrated, "change:now"); err == nil {
+		t.Fatal("ChangePrice with the void refused succeeded")
+	}
+	snap, err := p.GetSubscription(ctx, "sub_1")
+	if err != nil || snap.Status != supporters.StatusActive || !snap.LatestPaymentFailed.IsZero() || snap.UnpaidChange == "" || snap.Price != "price_1" {
+		t.Fatalf("with the invoice open: %+v, %v", snap, err)
+	}
+	page, err := p.ListSubscriptions(ctx, "")
+	if err != nil || len(page.Subscriptions) != 1 || page.Subscriptions[0].Status != supporters.StatusActive || page.Subscriptions[0].UnpaidChange == "" {
+		t.Errorf("listed with the invoice open: %+v, %v", page, err)
+	}
+	if err := p.DropUnpaidChange(ctx, "sub_1", "drop:1"); err != nil {
+		t.Fatal(err)
+	}
+	snap, err = p.GetSubscription(ctx, "sub_1")
+	if err != nil || snap.UnpaidChange != "" || snap.Status != supporters.StatusActive {
+		t.Errorf("after DropUnpaidChange: %+v, %v", snap, err)
+	}
+	if err := p.DropUnpaidChange(ctx, "sub_1", "drop:2"); err != nil {
+		t.Errorf("DropUnpaidChange again = %v", err)
+	}
+}
+
+// Stripe keeps a 500 under its key: a new attempt in the same minute gets it again, and one later
+// goes through with a new key. A renewal's failed invoice stays a late payment.
+func TestChangeNowStoredFailure(t *testing.T) {
+	p, f, _, higher := onPlan(t, "")
+	ctx := t.Context()
+	at := p.o.Now()
+	o := p.o
+	o.Now = func() time.Time { return at }
+	p, err := New(ctx, o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.mu.Lock()
+	f.storeFailure = true
+	f.mu.Unlock()
+	for range 2 {
+		if err := p.ChangePrice(ctx, "sub_1", higher, supporters.ChangeNowProrated, "change:now"); !errors.Is(err, supporters.ErrPaymentUnavailable) {
+			t.Fatalf("ChangePrice = %v, want unavailable", err)
+		}
+	}
+	at = at.Add(time.Minute)
+	if err := p.ChangePrice(ctx, "sub_1", higher, supporters.ChangeNowProrated, "change:now"); err != nil {
+		t.Fatalf("ChangePrice a minute later = %v", err)
+	}
+	wantPrices(t, p, higher, "")
+}
+
+// A failed renewal, without a pending update, is the late payment that it always was.
+func TestFailedRenewalIsLate(t *testing.T) {
+	s := scenario()
+	failed := s.Now.Add(-time.Hour).Truncate(time.Second)
+	s.Subscriptions = []supporters.SubscriptionSnapshot{{
+		Ref: "sub_1", Customer: "cus_1", LocalID: "01890a5d-ac96-7000-8000-000000000002", Price: "price_1", Status: supporters.StatusPastDue,
+		PeriodStart: s.Now, PeriodEnd: s.Now.AddDate(0, 1, 0), LatestPaymentFailed: failed,
+	}}
+	p, _, _ := newOnFake(t, s)
+	snap, err := p.GetSubscription(t.Context(), "sub_1")
+	if err != nil || snap.Status != supporters.StatusPastDue || !snap.LatestPaymentFailed.Equal(failed) || snap.UnpaidChange != "" {
+		t.Errorf("failed renewal: %+v, %v", snap, err)
+	}
 }
 
 // A notice of an invoice resolves to its subscription and the payment of its charge; the events

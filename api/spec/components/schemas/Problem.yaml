@@ -153,6 +153,11 @@ description: |
     allow the operation.
   - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
     already.
+  - `/api/v1/problems/supporter-payment-failed` (402): the payment of a change of plan failed,
+    or the card needs an authentication that the change cannot ask for. The plan stays and
+    nothing was charged; update the card and try again.
+  - `/api/v1/problems/supporter-payment-processing` (409): the payment of a change of plan has
+    not settled. The plan stays, and moves if the payment succeeds.
   - `/api/v1/problems/voice-not-eligible` (403): the user may not host voice chat rooms.
   - `/api/v1/problems/voice-not-host` (403): only the host of the voice chat room may do this.
   - `/api/v1/problems/voice-room-full` (409): the voice chat room holds as many people as the

@@ -17,7 +17,8 @@ One server can use only one provider. To switch to another provider later, ask t
 - **Customer portal**: On first use, the server creates through the API a portal configuration (`metadata.my=1`) that enables only updating payment methods, the invoice history, and cancellation at the end of the period. Plan changes are made on this server's screens, not in the portal.
   A cancellation in the portal shows on this server as scheduled to cancel, and the user can undo it from the server's screen. A plan change is refused until it is undone.
 - **A cancellation date set by hand**: The portal sets the subscription's `cancel_at`, not `cancel_at_period_end`, and the server reads both. A `cancel_at` you set in the dashboard or through the API counts the same when it is not after the end of the current period. When it is before that end, the server shows that date as the end of the subscription, and the user keeps the role until then. A later `cancel_at` is not a cancellation yet: the subscription stays active until the period that holds the date.
-- **Plan changes**: An upgrade switches at once and bills the difference prorated (`proration_behavior=always_invoice`). A downgrade, and a change from yearly to monthly, switch at the end of the period through a Subscription Schedule.
+- **Plan changes**: An upgrade, and a change from monthly to yearly, bills the difference prorated at once (`proration_behavior=always_invoice`) and switches only when that invoice is paid (`payment_behavior=pending_if_incomplete`). A downgrade, and a change from yearly to monthly, switch at the end of the period through a Subscription Schedule.
+- **A failed plan change**: When the payment of a change fails or the card asks for authentication, the server voids that invoice, which discards the change, and the user sees an error. The subscription stays on its plan and active, with no grace period and no failed-payment notification. The user can update the card in the portal and try again, and is charged once. If the payment is still processing, the server leaves it, and the plan switches when it succeeds. Renewals are not affected: a failed renewal goes to the grace period as described below.
 - **Reading state back**: The server treats a webhook as a signal and reads the subscription, the Checkout session, and the money movements back from the Stripe API to decide the state.
   In addition, a reconciliation every `payments_reconcile_interval` (default 6 hours) reads the event list, the unfinished Checkout sessions, the balance transactions, and a sweep of all subscriptions, and repairs any webhook the server missed.
 - **Income**: The server records the gross amount, the fee, and the net of each balance transaction. Fees such as Billing's 0.7% appear as separate `stripe_fee` transactions and are subtracted from the income.
@@ -55,7 +56,7 @@ Give a restricted key these permissions (**not yet verified**: the exact names a
 | Customer portal | Write | `GET`, `POST /v1/billing_portal/configurations`, `POST /v1/billing_portal/sessions` |
 | Subscriptions | Write | `GET /v1/subscriptions`, `POST`, `DELETE /v1/subscriptions/{id}` |
 | Subscription Schedules (part of Subscriptions) | Write | `POST /v1/subscription_schedules`, `POST /v1/subscription_schedules/{id}`, `POST /v1/subscription_schedules/{id}/release` |
-| Invoices | Read | `GET /v1/invoices/{id}`, `GET /v1/invoice_payments` |
+| Invoices | Write | `GET /v1/invoices/{id}`, `GET /v1/invoice_payments`, `POST /v1/invoices/{id}/void` |
 | Charges, Refunds, Disputes | Read | `GET /v1/charges/{id}`, `GET /v1/refunds` |
 | Balance transaction sources | Read | `GET /v1/balance_transactions` |
 | Events | Read | `GET /v1/events` |
@@ -161,4 +162,8 @@ The following behaviors come from Stripe's documentation and are to be confirmed
 - The list of permissions a restricted key needs (the table in section 2).
 - The table of minimum charge amounts per currency, and the currencies that Stripe treats with different decimal places from ISO 4217 (ISK, HUF, TWD, UGX, and others).
 - The exact values of the read rate limits.
+- That a declined upgrade with `payment_behavior=pending_if_incomplete` answers with `pending_update` or a `402`, leaves the price and the status `active`, and leaves no invoice open after the void, with no retry by Smart Retries.
+- That a card that asks for authentication (`4000 0027 6000 3184`) behaves as a decline in that flow, and that a change from monthly to yearly works the same way, with the billing date moving only after the payment.
+- That a change charges once when it is tried again with a good card after a decline.
+- What an upgrade does for a subscription paying with a method that pending updates do not list (ACH, SEPA, and Bacs direct debits). Keep those methods off in the dashboard until this is confirmed.
 - That `cancel_at_period_end=false` and `cancel_at=` (empty) clear a cancellation made through either field, and that `cancel_at_period_end=true` replaces a `cancel_at` in a later period.

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strconv"
 
@@ -297,10 +298,11 @@ func (s *Service) linkedLive(ctx context.Context, userID string, states ...suppo
 }
 
 // ChangePlan changes the plan or the interval of a user's active subscription (ADR-0072 §8):
-// to a higher plan or to the yearly price at once with proration, and to a lower plan or to the
-// monthly price at the end of the period; the role follows the snapshot. It fails with
-// ErrSubscriptionState unless the subscription is active, with ErrPlanUnavailable for a plan
-// that takes no subscriptions or of another currency, and with ErrSameChoice for no change.
+// to a higher plan or to the yearly price with proration, once the payment is confirmed, and to a
+// lower plan or to the monthly price at the end of the period; the role follows the snapshot. It
+// fails with ErrSubscriptionState unless the subscription is active, with ErrPlanUnavailable for a
+// plan that takes no subscriptions or of another currency, with ErrSameChoice for no change, and
+// with ErrPaymentDeclined or ErrPaymentProcessing when the plan stays because of the payment.
 func (s *Service) ChangePlan(ctx context.Context, userID, planID string, interval supporters.Interval) (SubscriptionView, error) {
 	v, err := s.linkedLive(ctx, userID, supporters.StateActive)
 	if err != nil {
@@ -335,6 +337,15 @@ func (s *Service) ChangePlan(ctx context.Context, userID, planID string, interva
 		}
 		return SubscriptionView{}, ErrSubscriptionState
 	}
+	if errors.Is(err, ErrPaymentDeclined) || errors.Is(err, ErrPaymentProcessing) {
+		// The plan did not move. The re-read queues the clean-up of anything that the provider
+		// could not clean up itself; the answer is the failure, whatever the re-read does.
+		if _, rerr := s.resync(ctx, v.SubscriptionRecord); rerr != nil {
+			s.d.Logger.WarnContext(ctx, "could not re-read a subscription after a failed change",
+				slog.String("subscription", v.ID), slog.Any("error", rerr))
+		}
+		return SubscriptionView{}, err
+	}
 	if err != nil {
 		return SubscriptionView{}, err
 	}
@@ -347,7 +358,8 @@ func (s *Service) ChangePlan(ctx context.Context, userID, planID string, interva
 // the way (the difference charged, the plan not switched yet) does not charge again. It names the
 // subscription, the price it pays now, the new price, and the end of the current period: a
 // subscription cannot change from one price to another at once twice in one period, since it
-// moves at once only up.
+// moves at once only up. The provider tells a new attempt after a failed payment from such a
+// retry, so the same key does not replay the failure (PaymentProvider.ChangePrice).
 //
 // A change at the period's end has a new key for every attempt: it can be withdrawn and made again
 // in one period, and a repeated key would replay the first one, whose schedule is gone. It charges

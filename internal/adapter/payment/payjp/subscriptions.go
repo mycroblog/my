@@ -106,9 +106,10 @@ func parseOffsetCursor(cursor string, now time.Time) (until int64, offset int, e
 }
 
 // ChangePrice implements supporters.PaymentProvider (ADR-0099 §2). Now: it charges the prorated
-// difference of the rest of the period (U1) once, by the key in the charge's metadata, and
-// switches the plan with trial_end at the period's end, so that PAY.JP charges the new plan's
-// full amount then rather than now. At the period's end: next_cycle_plan.
+// difference of the rest of the period (U1) once, by the key in the charge's metadata, and only
+// after that charge succeeds switches the plan with trial_end at the period's end, so that PAY.JP
+// charges the new plan's full amount then rather than now. A declined charge returns
+// ErrPaymentDeclined with nothing changed. At the period's end: next_cycle_plan.
 func (p *Provider) ChangePrice(ctx context.Context, ref supporters.SubscriptionRef, to supporters.PriceRef, when supporters.ChangeTiming, key string) error {
 	s, err := p.getSubscription(ctx, ref)
 	if err != nil {
@@ -184,8 +185,9 @@ func addInterval(t time.Time, interval string) time.Time {
 	return t.AddDate(0, 1, 0)
 }
 
-// chargeDifference charges the customer of s the difference of a change, unless a charge of key
-// is there already.
+// chargeDifference charges the customer of s the difference of a change, unless a paid charge of
+// key is there already: a retry after the plan failed to switch does not charge again, and a retry
+// after a declined charge, which may be listed with its metadata, does charge.
 func (p *Provider) chargeDifference(ctx context.Context, s subscription, amount int64, key string, end time.Time) error {
 	if key != "" {
 		since := p.o.Now().Add(-changeLookback).Unix()
@@ -199,7 +201,7 @@ func (p *Provider) chargeDifference(ctx context.Context, s subscription, amount 
 				return err
 			}
 			for _, c := range page.Data {
-				if c.Metadata[metaChange] == key {
+				if c.Metadata[metaChange] == key && c.Paid && !c.Refunded {
 					return nil
 				}
 			}
@@ -215,7 +217,20 @@ func (p *Provider) chargeDifference(ctx context.Context, s subscription, amount 
 		"metadata[" + metaChange + "]":         {key},
 		"metadata[" + metaPeriodEnd + "]":      {strconv.FormatInt(end.Unix(), 10)},
 	}
-	return p.post(ctx, "charge the difference of a change", "/charges", form, nil)
+	var c charge
+	if err := p.post(ctx, "charge the difference of a change", "/charges", form, &c); err != nil {
+		return err
+	}
+	if !c.Paid {
+		return fmt.Errorf("payjp: %w: charge %s", supporters.ErrPaymentDeclined, c.ID)
+	}
+	return nil
+}
+
+// DropUnpaidChange implements supporters.PaymentProvider: the plan moves only after the charge, so
+// a failed change leaves nothing to collect.
+func (p *Provider) DropUnpaidChange(context.Context, supporters.SubscriptionRef, string) error {
+	return nil
 }
 
 // CancelScheduledChange implements supporters.PaymentProvider.

@@ -91,6 +91,9 @@ type Provider struct {
 	planNames    map[string]string // by plan ID
 	portals      map[string]*portal
 	changeKeys   map[string]string // the parameters of each key of ChangePrice
+	// changePayment fails the payment of a change at once (FailChangePayments); nil pays it.
+	changePayment error
+	changeCharges int
 }
 
 type price struct {
@@ -552,6 +555,10 @@ func (p *Provider) ChangePrice(ctx context.Context, sub supporters.SubscriptionR
 		if !p.activePrice(to) {
 			return fmt.Errorf("%w: price %s is not active", supporters.ErrPaymentInvalidRequest, to)
 		}
+		if when == supporters.ChangeNowProrated && to != s.Price && p.changePayment != nil {
+			// The key stays free: a new attempt after a failed payment does not replay the failure.
+			return fmt.Errorf("%w: subscription %s", p.changePayment, s.Ref)
+		}
 		if key != "" {
 			params := string(s.Ref) + " " + string(to) + " " + string(when)
 			if seen, ok := p.changeKeys[key]; ok {
@@ -564,6 +571,9 @@ func (p *Provider) ChangePrice(ctx context.Context, sub supporters.SubscriptionR
 		}
 		switch when {
 		case supporters.ChangeNowProrated:
+			if to != s.Price {
+				p.changeCharges++
+			}
 			s.Price, s.ScheduledPrice = to, ""
 		case supporters.ChangeAtPeriodEnd:
 			s.ScheduledPrice = to
@@ -573,6 +583,29 @@ func (p *Provider) ChangePrice(ctx context.Context, sub supporters.SubscriptionR
 		default:
 			return fmt.Errorf("%w: timing %q", supporters.ErrPaymentInvalidRequest, when)
 		}
+		return nil
+	})
+}
+
+// FailChangePayments makes the payment of every change at once fail with err
+// (supporters.ErrPaymentDeclined or supporters.ErrPaymentProcessing), until a nil pays them again.
+func (p *Provider) FailChangePayments(err error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.changePayment = err
+}
+
+// ChangeCharges returns how many changes at once were paid.
+func (p *Provider) ChangeCharges() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.changeCharges
+}
+
+// DropUnpaidChange implements supporters.PaymentProvider.
+func (p *Provider) DropUnpaidChange(ctx context.Context, sub supporters.SubscriptionRef, _ string) error {
+	return p.command(ctx, sub, false, func(s *supporters.SubscriptionSnapshot) error {
+		s.UnpaidChange = ""
 		return nil
 	})
 }

@@ -67,6 +67,19 @@ func (p *Provider) snapshot(ctx context.Context, s *stripe.Subscription) (suppor
 	snap.Status = status
 	snap.ScheduledPrice = scheduledPrice(s, item.CurrentPeriodEnd)
 	snap.LatestPaymentFailed = paymentFailed(s.LatestInvoice)
+	if s.PendingUpdate != nil {
+		// The latest invoice is the change's, not a renewal's: only an active subscription changes
+		// at once, and a pending update expires by the period's end. Its failure is not a late
+		// payment, whatever status Stripe gives it meanwhile, which its documentation does not say.
+		snap.LatestPaymentFailed = time.Time{}
+		if snap.Status == supporters.StatusPastDue {
+			snap.Status = supporters.StatusActive
+		}
+		snap.UnpaidChange = s.ID
+		if s.LatestInvoice != nil {
+			snap.UnpaidChange = s.LatestInvoice.ID
+		}
+	}
 	return snap, nil
 }
 
@@ -188,10 +201,8 @@ func (p *Provider) ListSubscriptions(ctx context.Context, cursor string) (suppor
 	return page, nil
 }
 
-// ChangePrice implements supporters.PaymentProvider (ADR-0074 §2). ChangeNowProrated replaces
-// the price of the subscription's item and invoices the prorated difference at once
-// (proration_behavior=always_invoice), dropping a change that waited for the period's end.
-// ChangeAtPeriodEnd puts the subscription on a schedule whose next phase, from the end of the
+// ChangePrice implements supporters.PaymentProvider (ADR-0074 §2). ChangeNowProrated: see
+// changeNow. ChangeAtPeriodEnd puts the subscription on a schedule whose next phase, from the end of the
 // current period, has the new price; the schedule releases the subscription after that phase.
 func (p *Provider) ChangePrice(ctx context.Context, ref supporters.SubscriptionRef, to supporters.PriceRef, when supporters.ChangeTiming, key string) error {
 	if to == "" {
@@ -216,17 +227,7 @@ func (p *Provider) ChangePrice(ctx context.Context, ref supporters.SubscriptionR
 			// The same price: only a change waiting for the period's end may be left to drop.
 			return p.release(ctx, s, key)
 		}
-		if err := p.release(ctx, s, key); err != nil {
-			return err
-		}
-		return p.do(ctx, "change the price of "+string(ref), func() (err error) {
-			_, err = p.sc.V1Subscriptions.Update(ctx, s.ID, &stripe.SubscriptionUpdateParams{
-				Params:            idempotency(key, "change_now"),
-				Items:             []*stripe.SubscriptionUpdateItemParams{{ID: stripe.String(item.ID), Price: stripe.String(string(to))}},
-				ProrationBehavior: stripe.String("always_invoice"),
-			})
-			return err
-		})
+		return p.changeNow(ctx, s, to, key)
 	case supporters.ChangeAtPeriodEnd:
 		if current == to {
 			return p.release(ctx, s, key)
@@ -238,6 +239,136 @@ func (p *Provider) ChangePrice(ctx context.Context, ref supporters.SubscriptionR
 	default:
 		return fmt.Errorf("stripe: %w: unknown timing %q", supporters.ErrPaymentInvalidRequest, when)
 	}
+}
+
+// changeNow replaces the price of the subscription's item and invoices the prorated difference at
+// once (proration_behavior=always_invoice). With payment_behavior=pending_if_incomplete the new
+// price applies only when that invoice is paid; otherwise Stripe keeps it in pending_update, and
+// this voids the invoice, which also discards the update (ADR-0074 §2): nothing stays collectible.
+//
+// The key of the update names the latest invoice and the minute of the attempt. A new attempt after
+// a failed payment follows another invoice, so it does not replay the failure, and a stored 500
+// goes away in a minute; two submissions at once share the key. Each attempt reads the subscription
+// first, so one after a success sends nothing and none charges twice.
+//
+// A change that waited for the period's end is released first, since a schedule's next phase would
+// discard the update, and made again when the payment fails.
+func (p *Provider) changeNow(ctx context.Context, s *stripe.Subscription, to supporters.PriceRef, key string) error {
+	if s.PendingUpdate != nil {
+		processing, err := p.invoiceProcessing(ctx, s.LatestInvoice)
+		if err != nil {
+			return err
+		}
+		if processing {
+			return fmt.Errorf("stripe: %w: subscription %s", supporters.ErrPaymentProcessing, s.ID)
+		}
+	}
+	item := s.Items.Data[0]
+	scheduled := scheduledPrice(s, item.CurrentPeriodEnd)
+	if err := p.release(ctx, s, key); err != nil {
+		return err
+	}
+	latest := ""
+	if s.LatestInvoice != nil {
+		latest = s.LatestInvoice.ID
+	}
+	op := fmt.Sprintf("change_now:%s:%d", latest, p.o.Now().Unix()/60)
+	refused := p.do(ctx, "change the price of "+s.ID, func() (err error) {
+		_, err = p.sc.V1Subscriptions.Update(ctx, s.ID, &stripe.SubscriptionUpdateParams{
+			Params:            idempotency(key, op),
+			Items:             []*stripe.SubscriptionUpdateItemParams{{ID: stripe.String(item.ID), Price: stripe.String(string(to))}},
+			ProrationBehavior: stripe.String("always_invoice"),
+			PaymentBehavior:   stripe.String("pending_if_incomplete"),
+		})
+		return err
+	})
+	if refused != nil && !errors.Is(refused, supporters.ErrPaymentDeclined) {
+		return refused
+	}
+	after, err := p.subscription(ctx, supporters.SubscriptionRef(s.ID))
+	if err != nil {
+		return err
+	}
+	if after.PendingUpdate == nil && supporters.PriceRef(after.Items.Data[0].Price.ID) == to {
+		return nil
+	}
+	if after.PendingUpdate == nil && refused == nil {
+		return fmt.Errorf("stripe: %w: subscription %s neither changed nor waits for its payment", supporters.ErrInvalidPaymentResponse, s.ID)
+	}
+	processing, err := p.dropUnpaid(ctx, after, key)
+	if err != nil {
+		return err
+	}
+	if processing {
+		return fmt.Errorf("stripe: %w: subscription %s", supporters.ErrPaymentProcessing, s.ID)
+	}
+	if scheduled != "" {
+		// The key names the schedule released here: each attempt makes a schedule of its own.
+		if err := p.scheduleChange(ctx, after, scheduled, key+":restore:"+pendingSchedule(s).ID); err != nil {
+			p.log.WarnContext(ctx, "could not make again the scheduled change that a failed change released",
+				slog.String("subscription", s.ID), slog.Any("error", err))
+		}
+	}
+	return fmt.Errorf("stripe: %w: subscription %s", supporters.ErrPaymentDeclined, s.ID)
+}
+
+// invoiceProcessing reports whether the payment of an open invoice has not settled yet. Voiding it
+// then could lose a payment that still succeeds.
+func (p *Provider) invoiceProcessing(ctx context.Context, inv *stripe.Invoice) (bool, error) {
+	if inv == nil || inv.Status != stripe.InvoiceStatusOpen {
+		return false, nil
+	}
+	var list *stripe.V1List[*stripe.InvoicePayment]
+	err := p.do(ctx, "list the payments of the invoice "+inv.ID, func() error {
+		list = p.sc.V1InvoicePayments.List(ctx, &stripe.InvoicePaymentListParams{
+			ListParams: stripe.ListParams{Limit: stripe.Int64(supporters.PageSize), Single: true},
+			Invoice:    stripe.String(inv.ID), Expand: expand("data.", []string{"payment.payment_intent"}),
+		})
+		return list.Err()
+	})
+	if err != nil {
+		return false, err
+	}
+	for _, ip := range list.Data() {
+		if ip.Payment != nil && ip.Payment.PaymentIntent != nil && ip.Payment.PaymentIntent.Status == stripe.PaymentIntentStatusProcessing {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// dropUnpaid voids the open invoice of the pending update of s, read with subscriptionExpand, which
+// is how Stripe documents canceling one, unless its payment is processing, which it reports. An
+// invoice that it can no longer void was voided or paid meanwhile, which needs nothing more.
+func (p *Provider) dropUnpaid(ctx context.Context, s *stripe.Subscription, key string) (processing bool, err error) {
+	inv := s.LatestInvoice
+	if s.PendingUpdate == nil || inv == nil || inv.Status != stripe.InvoiceStatusOpen {
+		return false, nil
+	}
+	if processing, err = p.invoiceProcessing(ctx, inv); err != nil || processing {
+		return processing, err
+	}
+	err = p.do(ctx, "void the invoice "+inv.ID, func() (err error) {
+		_, err = p.sc.V1Invoices.VoidInvoice(ctx, inv.ID, &stripe.InvoiceVoidInvoiceParams{Params: idempotency(key, "void:"+inv.ID)})
+		return err
+	})
+	if errors.Is(err, supporters.ErrPaymentInvalidRequest) {
+		return false, nil
+	}
+	return false, err
+}
+
+// DropUnpaidChange implements supporters.PaymentProvider.
+func (p *Provider) DropUnpaidChange(ctx context.Context, ref supporters.SubscriptionRef, key string) error {
+	s, err := p.subscription(ctx, ref)
+	if err != nil {
+		return err
+	}
+	if ended(s) {
+		return nil
+	}
+	_, err = p.dropUnpaid(ctx, s, key)
+	return err
 }
 
 // scheduleChange sets the schedule of s to two phases: the current price until the period's

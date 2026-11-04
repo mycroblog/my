@@ -2551,6 +2551,34 @@ func (l *Localizer) ServerErrorsSupportersLiveSubscriptionsDetail() string {
 	return l.format("server:errors.supporters.live_subscriptions_detail", nil)
 }
 
+// ServerErrorsSupportersPaymentFailed formats "server:errors.supporters.payment_failed". API error title for HTTP 402 when the payment of a change of supporter plan failed.
+//
+//	en: The payment for this change failed, so your plan has not changed.
+func (l *Localizer) ServerErrorsSupportersPaymentFailed() string {
+	return l.format("server:errors.supporters.payment_failed", nil)
+}
+
+// ServerErrorsSupportersPaymentFailedDetail formats "server:errors.supporters.payment_failed_detail". API error detail for HTTP 402 when the payment of a change of supporter plan failed.
+//
+//	en: Nothing was charged. Update your card and try again. A card that asks for authentication on each payment cannot pay for a change.
+func (l *Localizer) ServerErrorsSupportersPaymentFailedDetail() string {
+	return l.format("server:errors.supporters.payment_failed_detail", nil)
+}
+
+// ServerErrorsSupportersPaymentProcessing formats "server:errors.supporters.payment_processing". API error title for HTTP 409 when the payment of a change of supporter plan has not settled.
+//
+//	en: The payment for this change is still processing, so your plan has not changed yet.
+func (l *Localizer) ServerErrorsSupportersPaymentProcessing() string {
+	return l.format("server:errors.supporters.payment_processing", nil)
+}
+
+// ServerErrorsSupportersPaymentProcessingDetail formats "server:errors.supporters.payment_processing_detail". API error detail for HTTP 409 when the payment of a change of supporter plan has not settled.
+//
+//	en: The plan changes if the payment succeeds. You do not need to do anything now.
+func (l *Localizer) ServerErrorsSupportersPaymentProcessingDetail() string {
+	return l.format("server:errors.supporters.payment_processing_detail", nil)
+}
+
 // ServerErrorsSupportersPlanInvalid formats "server:errors.supporters.plan_invalid". API error title for HTTP 422 when a supporter plan breaks a rule; the detail says which (ADR-0072 §3 to §5).
 //
 //	en: The supporter plan cannot be saved.

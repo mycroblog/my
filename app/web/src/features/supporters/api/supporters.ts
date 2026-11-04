@@ -32,6 +32,8 @@ export const supporterProblems = {
   planUnavailable: "/api/v1/problems/supporter-plan-unavailable",
   subscriptionState: "/api/v1/problems/supporter-subscription-state",
   samePlan: "/api/v1/problems/supporter-same-plan",
+  paymentFailed: "/api/v1/problems/supporter-payment-failed",
+  paymentProcessing: "/api/v1/problems/supporter-payment-processing",
   subscriptionEnded: "/api/v1/problems/subscription-ended",
 } as const;
 
@@ -126,6 +128,11 @@ export function subscriptionCommandMutation(api: Api) {
       return data;
     },
   };
+}
+
+/** Marks the user's subscription to be read again after a change whose payment failed, which answers no subscription. */
+export async function refreshSubscription(api: Api, queryClient: QueryClient): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: ownSupporterSubscriptionQueryOptions(api).queryKey });
 }
 
 /**

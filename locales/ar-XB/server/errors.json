@@ -571,6 +571,22 @@
     "defaultMessage": "‮ᴚǝʇıɹǝ ʇɥǝ dʅɐus ɐup ʍɐıʇ ɟoɹ ʇɥǝıɹ snqsɔɹıdʇıous ʇo ǝup qǝɟoɹǝ pısɐqʅıuƃ ʇɥǝ dɹoƃɹɐɯ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.supporters.payment_failed": {
+    "defaultMessage": "‮⊥ɥǝ dɐʎɯǝuʇ ɟoɹ ʇɥıs ɔɥɐuƃǝ ɟɐıʅǝp, so ʎonɹ dʅɐu ɥɐs uoʇ ɔɥɐuƃǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.payment_failed_detail": {
+    "defaultMessage": "‮Noʇɥıuƃ ʍɐs ɔɥɐɹƃǝp. ∩dpɐʇǝ ʎonɹ ɔɐɹp ɐup ʇɹʎ ɐƃɐıu. ∀ ɔɐɹp ʇɥɐʇ ɐsʞs ɟoɹ ɐnʇɥǝuʇıɔɐʇıou ou ǝɐɔɥ dɐʎɯǝuʇ ɔɐuuoʇ dɐʎ ɟoɹ ɐ ɔɥɐuƃǝ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.payment_processing": {
+    "defaultMessage": "‮⊥ɥǝ dɐʎɯǝuʇ ɟoɹ ʇɥıs ɔɥɐuƃǝ ıs sʇıʅʅ dɹoɔǝssıuƃ, so ʎonɹ dʅɐu ɥɐs uoʇ ɔɥɐuƃǝp ʎǝʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.payment_processing_detail": {
+    "defaultMessage": "‮⊥ɥǝ dʅɐu ɔɥɐuƃǝs ıɟ ʇɥǝ dɐʎɯǝuʇ snɔɔǝǝps. ⅄on po uoʇ uǝǝp ʇo po ɐuʎʇɥıuƃ uoʍ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.supporters.plan_invalid": {
     "defaultMessage": "‮⊥ɥǝ snddoɹʇǝɹ dʅɐu ɔɐuuoʇ qǝ sɐʌǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."

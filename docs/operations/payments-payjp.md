@@ -131,6 +131,10 @@ Open the payment and card pages on this server's origin (they also work on `http
 - **PAY.JP's paid-plan fees and transfer fees** are not subtracted from the income. Record them as costs in `finance`.
 - When reconciliations often hit the request limit, raise `payments_reconcile_max_requests` or lengthen `payments_reconcile_interval`.
 
+## Plan changes
+
+An upgrade charges the prorated difference first and moves the plan only after that charge succeeds. When the charge is declined, the plan stays and the user sees an error with the way to update the card, with no grace period and no failed-payment notification, and trying again with a good card charges once. If the plan fails to move after the charge, trying again does not charge again. A difference below the 50 yen minimum, and a change to the yearly price of the same plan, which has no positive difference, charge nothing now and move at once; the new price is charged at the end of the period, and a failure then is a failed renewal.
+
 ## Items to verify
 
 The following behaviors come from PAY.JP's documentation and are to be confirmed in test mode.
@@ -141,3 +145,4 @@ The following behaviors come from PAY.JP's documentation and are to be confirmed
 - Whether deleting a Plan affects existing subscriptions (the server never deletes one), and the maximum length of a Plan ID.
 - The CSP origins that the iframe type of payjp.js needs for 3-D Secure.
 - Whether payjp-cli can forward v1 events.
+- Whether a declined charge of the difference of a plan change is listed by `GET /v1/charges` with its metadata (the server ignores one that is not paid), and that a charge of a customer's saved card asks for no 3-D Secure unless the request does.

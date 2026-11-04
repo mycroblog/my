@@ -64,6 +64,8 @@ func SupporterRepositoryContract(t *testing.T, newHarness SupporterFactory) {
 		{"ChangesPlansAtOnceOrAtThePeriodEnd", supporterChanges},
 		{"RetriesAChangeWithItsKey", supporterChangeRetry},
 		{"MakesAWithdrawnChangeAgain", supporterChangeAgain},
+		{"KeepsThePlanWhenTheChangesPaymentFails", supporterChangePayment},
+		{"DropsWhatAFailedChangeLeftCollectible", supporterUnpaidChange},
 		{"RefusesAChangeThatMeetsACancellationAtTheProvider", supporterChangeMeetsCancellation},
 		{"SendsACancellationAgainWithANewKey", supporterCancelRetry},
 		{"AppliesNoSnapshotOlderThanTheApplied", supporterSnapshotOrder},
@@ -118,6 +120,12 @@ func (u *supporterUsers) put(user supporters.User) {
 type subscriptionWorld interface {
 	PaymentWorld
 	Subscription(ref supporters.SubscriptionRef) (supporters.SubscriptionSnapshot, bool)
+}
+
+// changePayments is the world's control of the payments of changes at once.
+type changePayments interface {
+	FailChangePayments(err error)
+	ChangeCharges() int
 }
 
 type supporterEnv struct {
@@ -879,6 +887,78 @@ func supporterChangeRetry(t *testing.T, e *supporterEnv) {
 	}
 	if len(rec.keys) != 3 || rec.keys[2] == rec.keys[0] {
 		t.Errorf("key of another change = %q, want a new one", rec.keys)
+	}
+}
+
+// supporterChangePayment changes to a higher plan with a card that fails: the subscription, its
+// role, and its waiting change stay, with no grace period; a good card then moves it. A payment
+// that has not settled leaves the plan too, until the provider reports the new price.
+func supporterChangePayment(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	lower := e.plan(t, "lower", 1, 10, 300)
+	basic := e.plan(t, "basic", 2, 20, 500)
+	gold := e.plan(t, "gold", 3, 30, 1000)
+	alice := e.user("alice")
+	id, ref := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	if _, err := e.svc.ChangePlan(ctx, alice, lower.ID, domain.IntervalMonth); err != nil {
+		t.Fatal(err)
+	}
+	world := e.world.(changePayments)
+	world.FailChangePayments(supporters.ErrPaymentDeclined)
+	for range 2 {
+		if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrPaymentDeclined) {
+			t.Fatalf("ChangePlan with a declining card = %v", err)
+		}
+		v := e.expect(t, id, domain.StateActive, basic, true)
+		if v.Current.Grace != nil || v.Current.Scheduled == nil || e.holds(t, alice, gold.RoleID) {
+			t.Fatalf("after the declined payment: %+v, holds gold %v", v.Current, e.holds(t, alice, gold.RoleID))
+		}
+	}
+	e.sync(t, id)
+	e.expect(t, id, domain.StateActive, basic, true)
+	world.FailChangePayments(supporters.ErrPaymentProcessing)
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); !errors.Is(err, supporters.ErrPaymentProcessing) {
+		t.Fatalf("ChangePlan with a slow payment = %v", err)
+	}
+	e.expect(t, id, domain.StateActive, basic, true)
+	world.FailChangePayments(nil)
+	if _, err := e.svc.ChangePlan(ctx, alice, gold.ID, domain.IntervalMonth); err != nil {
+		t.Fatalf("ChangePlan with a good card = %v", err)
+	}
+	v := e.expect(t, id, domain.StateActive, gold, true)
+	if v.Current.Scheduled != nil || e.holds(t, alice, basic.RoleID) {
+		t.Errorf("after the paid change: %+v", v.Current)
+	}
+	if n := world.ChangeCharges(); n != 1 {
+		t.Errorf("%d payments of the change, want 1", n)
+	}
+	// A renewal that fails still starts the grace period.
+	e.change(t, id, ref, func(s *supporters.SubscriptionSnapshot) {
+		s.Status, s.LatestPaymentFailed = supporters.StatusPastDue, e.clock.Now()
+	})
+	if v := e.expect(t, id, domain.StatePastDue, gold, true); v.Current.Grace == nil {
+		t.Errorf("a failed renewal has no grace period: %+v", v.Current)
+	}
+}
+
+// supporterUnpaidChange re-reads a subscription with an unpaid change that its use case could not
+// clean up, as a webhook or the reconciliation does: a job removes it, and the state stays.
+func supporterUnpaidChange(t *testing.T, e *supporterEnv) {
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	alice := e.user("alice")
+	id, ref := e.subscribe(t, alice, basic, domain.IntervalMonth)
+	before := e.sub(t, id)
+	e.change(t, id, ref, func(s *supporters.SubscriptionSnapshot) { s.UnpaidChange = "in_change" })
+	e.run(t)
+	s, _ := e.world.Subscription(ref)
+	if s.UnpaidChange != "" {
+		t.Errorf("the unpaid change stayed: %+v", s)
+	}
+	after := e.expect(t, id, domain.StateActive, basic, true)
+	if after.Current.ID != before.Current.ID {
+		t.Errorf("the unpaid change recorded a transition: %+v", after.Current)
 	}
 }
 
