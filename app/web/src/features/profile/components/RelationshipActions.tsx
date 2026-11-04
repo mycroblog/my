@@ -4,13 +4,13 @@
 // action; Requested, Following, Blocked, quiet with their icons), and that keeps its place while the relationship
 // loads, and
 // a bell toggle button (WAI-ARIA APG, button pattern, `aria-pressed`) that turns on and off the notifications of the
-// account's new posts (ADR-0123) at once; on the profile of an account of another server that the viewer does not
+// account's new posts (ADR-0086) at once; on the profile of an account of another server that the viewer does not
 // follow, it is shown turned off and cannot be pressed, with the line that says to follow first, and
 // a menu button (WAI-ARIA APG, menu button pattern) with "Add to list" for an account the viewer follows
 // (features/lists), mute, block and report (features/report). Undoing
 // a follow or a request, blocking and unblocking ask first in an alert dialog (WAI-ARIA APG, alert dialog
 // pattern). A follow request to an account of another server says which server it waits for, and no new follow of
-// such an account is offered while the instance does not follow other servers (ADR-0076). A list of
+// such an account is offered while the instance does not follow other servers (ADR-0006). A list of
 // accounts (the notifications) can show the follow button alone, and leave mute, block and report to the
 // profile.
 import {
@@ -113,7 +113,7 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
   });
   const [isReporting, setIsReporting] = useState(false);
   const [isAddingToList, setIsAddingToList] = useState(false);
-  // Only an account the viewer follows, accepted, can be put in a list (ADR-0122 §2).
+  // Only an account the viewer follows, accepted, can be put in a list (ADR-0013 §11).
   const offersLists = state.follow === "following";
   const confirm = (kind: ConfirmableRelationshipChange) => {
     setDialog({ isOpen: true, kind });
@@ -126,10 +126,10 @@ function OtherActions({ account, name, state, showMenu, size }: OtherActionsProp
   // request is pending, and the button's description names the server it waits for.
   const pendingId = useId();
   const pendingRemote = state.follow === "requested" && account.acct.includes("@");
-  // While the instance does not follow other servers (ADR-0076), no new follow of their accounts is offered; the
+  // While the instance does not follow other servers (ADR-0006), no new follow of their accounts is offered; the
   // line that says so takes the button's place.
   const offersFollow = state.follow !== "none" || state.canFollow;
-  // The bell of the account's new posts (ADR-0123): only on the profile, with the menu. While a change of it is on its
+  // The bell of the account's new posts (ADR-0086): only on the profile, with the menu. While a change of it is on its
   // way, it shows the state asked for.
   const subscribeId = useId();
   const showSubscribe = showMenu && state.subscribe !== "hidden";

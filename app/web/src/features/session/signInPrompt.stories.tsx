@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The way to sign in that a page needing a session shows in its place (SignInPrompt; web-client/10-api-client-and-auth.md
-// §10), in the states of ADR-0112 §1: the home timeline opened while the server cannot be reached to resume the session,
+// §10), in the states of ADR-0079 §13: the home timeline opened while the server cannot be reached to resume the session,
 // with no posts kept on this browser (web-client/11-pwa.md §11). The pages that need a session send a browser that is
 // signed out to sign in instead (signIn.stories.tsx).
 import type { Meta, StoryObj } from "@storybook/react-vite";

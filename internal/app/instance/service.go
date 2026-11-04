@@ -37,7 +37,7 @@ type Deps struct {
 	ClosureCounts ClosureCounts
 	// ClosureDeliveries reads the progress of the closure's Deletes; nil reads none.
 	ClosureDeliveries ClosureDeliveries
-	// Blobs stores the files of the brand images (ADR-0116); nil saves none and serves none.
+	// Blobs stores the files of the brand images (ADR-0059); nil saves none and serves none.
 	Blobs blob.Store
 	// Sealer seals the secrets of the instance (MediaProxyKey); nil keeps none.
 	Sealer *kernel.Sealer
@@ -142,7 +142,7 @@ func (s *Service) AuthorizedFetch(ctx context.Context) (bool, error) {
 	return settings.AuthorizedFetch(), nil
 }
 
-// FederationMode returns the current value of the federation_mode setting (FR-413, ADR-0076).
+// FederationMode returns the current value of the federation_mode setting (FR-413, ADR-0006).
 // It is read per request and per job, so that a change applies at once.
 func (s *Service) FederationMode(ctx context.Context) (instance.FederationMode, error) {
 	settings, err := s.Settings(ctx)
@@ -458,7 +458,7 @@ func checkLimit(limit int) error {
 	return nil
 }
 
-// audit returns the audit log entry of one of this module's operations (ADR-0037), with a new
+// audit returns the audit log entry of one of this module's operations (ADR-0058), with a new
 // ID, performed by byUserID ("" for the CLI). The operation emits it in its transaction.
 func (s *Service) audit(action appmoderation.AuditAction, kind appmoderation.AuditTargetKind, targetID, label, sourceID, byUserID string, at time.Time) appmoderation.AuditRecorded {
 	actor, user := appmoderation.AuditActor(byUserID)

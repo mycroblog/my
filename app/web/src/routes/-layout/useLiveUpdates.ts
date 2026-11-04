@@ -2,7 +2,7 @@
 // The layout keeps the one event stream of the app open (web-client/README.md S10, FR-207) and routes its events
 // to the features that own the cached data: new home entries wait behind the home timeline's "N new
 // posts" button (or join its cache while no page shows it), and so do the new entries of a loaded list's timeline
-// (`list_update`, ADR-0122 §4); notifications update the unread badge and play the
+// (`list_update`, ADR-0013 §13); notifications update the unread badge and play the
 // notification sound where this device has it on for their type (lib/notificationSound), and a moderator's notifications of a new report or
 // registration read the Moderation entry's counts again, and the server's announcements join, change, or leave
 // the list above the home timeline. After a reconnect, all of them read again what the

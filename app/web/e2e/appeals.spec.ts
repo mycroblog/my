@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The appeals screens in every width × locale project (ADR-0027, FR-707, NFR-MOD-7): the appeals awaiting review
+// The appeals screens in every width × locale project (ADR-0110, FR-707, NFR-MOD-7): the appeals awaiting review
 // by an account with a long name, an appeal's page next to its action, and overturning it through its alert
 // dialog with an explanation, after which the action shows as lifted; each passing axe without scrolling
 // sideways. `vite preview` has no API, so each test plays the server of a signed-in moderator with page.route;

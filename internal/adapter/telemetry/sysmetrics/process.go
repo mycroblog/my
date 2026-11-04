@@ -12,7 +12,7 @@ import (
 // LabelCPUMode is the label of ProcessCPUTime: user or system.
 const LabelCPUMode = "cpu.mode"
 
-// The process metrics of ADR-0056 §1, named after the OpenTelemetry semantic conventions. The
+// The process metrics of ADR-0055 §10, named after the OpenTelemetry semantic conventions. The
 // CPU time, the memory, and the file descriptors are read on Linux only; elsewhere only the
 // uptime is reported. The role and the version are the resource of ADR-0055 §6, not metrics.
 var (

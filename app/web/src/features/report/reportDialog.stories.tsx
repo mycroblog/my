@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The report dialog (features/report; web-client/screens/moderation.md), opened from a post's menu and from a
-// profile's menu, at each of its steps and in the states of ADR-0112 §1. Each story opens the dialog in its play.
+// profile's menu, at each of its steps and in the states of ADR-0079 §13 Each story opens the dialog in its play.
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect, waitFor, within } from "storybook/test";

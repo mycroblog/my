@@ -73,7 +73,7 @@ CREATE TABLE notifications (
 CREATE UNIQUE INDEX notifications_recipient_account_id_dedupe_key ON notifications (recipient_account_id, dedupe_key);
 CREATE INDEX notifications_recipient_account_id_id ON notifications (recipient_account_id, id);
 CREATE INDEX notifications_recipient_account_id_type_id ON notifications (recipient_account_id, type, id);
--- The retention purge keeps a remote status that a notification is about (ADR-0034).
+-- The retention purge keeps a remote status that a notification is about (ADR-0006).
 CREATE INDEX notifications_status_id ON notifications (status_id);
 
 -- Current value: how many admin_error_group notices the instance made in the hour that starts
@@ -156,7 +156,7 @@ CREATE TABLE push_subscription_alerts (
 ) STRICT;
 
 -- Current value: a local account's choice of a channel of a group of notification types (FR-210,
--- ADR-0109 §2, §6). A row exists once the user chose; until then the group's default applies
+-- ADR-0086 §9, §13). A row exists once the user chose; until then the group's default applies
 -- (notification.Groups). Only the channels the user can choose have rows: the instance's notices
 -- are always in the app, and the service closure and supporter emails always sent. The group of
 -- an email is also the category of its unsubscribe link, which turns its email row off.
@@ -177,7 +177,7 @@ CREATE TABLE notification_settings (
   CHECK (notification_group NOT IN ('status', 'announcement') OR channel = 'in_app')
 ) STRICT;
 
--- Current value: a local account's subscription to the new posts of another account (ADR-0123
+-- Current value: a local account's subscription to the new posts of another account (ADR-0086
 -- §1): each new post of the target that the subscriber may see notifies the subscriber
 -- (status). A local target needs no follow; a remote one only while the subscriber's follow of it
 -- is active. The target is never told. At most 1,000 per subscriber.
@@ -194,7 +194,7 @@ CREATE INDEX post_subscriptions_account_created_at_target ON post_subscriptions 
 CREATE INDEX post_subscriptions_target_account ON post_subscriptions (target_account_id, account_id);
 
 -- Current value: a subscription asked for with a follow of a remote account that awaits its
--- server's Accept (ADR-0123 §1). The acceptance turns it into a post_subscriptions row; the end
+-- server's Accept (ADR-0086 §14). The acceptance turns it into a post_subscriptions row; the end
 -- or the rejection of the follow deletes it.
 CREATE TABLE post_subscription_requests (
   account_id TEXT NOT NULL,

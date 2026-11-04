@@ -5,7 +5,7 @@
 //
 // Node ids:
 //
-//	doc:<path>#<anchor>     a Markdown section (also ADR-0007, ADR-0007#<anchor>, FR-001, NFR-COST-1)
+//	doc:<path>#<anchor>     a Markdown section (also ADR-0016#<anchor>, FR-001, NFR-COST-1)
 //	sym:<dir>.<Name>        a Go declaration (sym:<dir>.<Recv>.<Name> for methods)
 //	ts:<path>:<Name>        a top-level TypeScript declaration
 //	table:<name>            a table of schema/<dialect>/*.sql

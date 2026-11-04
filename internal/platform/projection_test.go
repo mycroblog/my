@@ -69,7 +69,7 @@ func TestProjectionsVerifyAndRebuild(t *testing.T) {
 }
 
 // fillDeactivations leaves an account deactivated and another that came back, with a post each, for
-// the feed restrictions and the search terms (ADR-0145 §5).
+// the feed restrictions and the search terms (ADR-0089 §15).
 func fillDeactivations(t *testing.T, a *platform.App) {
 	t.Helper()
 	ctx := t.Context()
@@ -407,7 +407,7 @@ func fillIdentity(t *testing.T, a *platform.App, bob string) {
 			t.Fatalf("DecideRegistration = %v", err)
 		}
 	}
-	// A relay joined from the CLI (ADR-0061); its Follow waits in the queue.
+	// A relay joined from the CLI (ADR-0006); its Follow waits in the queue.
 	if _, err := a.Relays.Add(ctx, appfederation.RelayInput{Protocol: domfederation.RelayMastodon, URL: "https://relay.example/inbox"}, ""); err != nil {
 		t.Fatalf("Relays.Add = %v", err)
 	}

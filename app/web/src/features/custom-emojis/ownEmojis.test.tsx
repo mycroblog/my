@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's page of their custom emoji through the whole app (web-client/README.md T4, ADR-0070 §1–§3, ADR-0124): a user
+// The user's page of their custom emoji through the whole app (web-client/README.md T4, ADR-0070 §1–§3, ADR-0070): a user
 // whose roles have create_custom_emojis finds it in the settings, sees what they used of their monthly limit and when it
 // resets, requests an emoji with an
 // image, is told why a request is refused, withdraws a pending request, changes and deletes an emoji they made, and

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The mirror of a text field (ADR-0092 §3 and §4, C1): an aria-hidden box behind the native textarea (or input) that
+// The mirror of a text field (ADR-0092 §3 and §4): an aria-hidden box behind the native textarea (or input) that
 // lays out the same text with the control's own computed font, letter and word spacing, line height, padding, border
 // widths and tab size, under `white-space: pre-wrap`, `overflow-wrap: break-word` and `dir="auto"` (`white-space: pre`
 // on one line, centred in the box's height as an input centres its line), so every character lands where the control

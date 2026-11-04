@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package queuepush serves the internal endpoints that a platform's queue and scheduler call
-// (ADR-0120 §2, §4, §5): POST /_internal/jobs, whose body is the ID of a job of the database
+// (ADR-0004 §10, §12, §13): POST /_internal/jobs, whose body is the ID of a job of the database
 // queue for the push receiver to claim and run, and POST /_internal/tick, the external trigger of
 // the periodic jobs and of the sweep queue.wake. No user calls them, and they are not part of the
 // client API.

@@ -263,7 +263,7 @@ func (s *Interactions) remoteVisibleStatus(ctx context.Context, accountID, statu
 // remoteCountedStatus is remoteVisibleStatus for a boost, a favourite, or a reaction, which remote
 // servers that still show a post may send: it counts on a status that only its author's deactivation
 // hides, so that the numbers are right when the account comes back, and the notification
-// projector tells the deactivated author nothing (ADR-0145 §6).
+// projector tells the deactivated author nothing (ADR-0089 §16).
 func (s *Interactions) remoteCountedStatus(ctx context.Context, accountID, statusID string) (content.Status, error) {
 	st, err := s.remoteVisibleStatus(ctx, accountID, statusID)
 	if !errors.Is(err, ErrNotFound) {

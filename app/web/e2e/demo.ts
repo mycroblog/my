@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Helpers of the demo server's specs (e2e/demo-*.spec.ts, ADR-0117): the people of the demo scenario, the client's
+// Helpers of the demo server's specs (e2e/demo-*.spec.ts, ADR-0015): the people of the demo scenario, the client's
 // messages, signing in through the app, and the client API as one of the people.
 import { createHash, randomBytes } from "node:crypto";
 import { type APIRequestContext, type APIResponse, type Page, request } from "@playwright/test";

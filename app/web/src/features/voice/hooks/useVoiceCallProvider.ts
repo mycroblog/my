@@ -170,7 +170,7 @@ export function useVoiceCallProvider(maintenance: Maintenance): VoiceCallState {
   const call = signedIn ? active : null;
   const snapshot = useSyncExternalStore(call?.subscribe ?? noSubscription, call?.getSnapshot ?? noSnapshot);
   const inCall = snapshot !== undefined && snapshot.phase !== "ended";
-  // A required update does not reload during the call, and a stale tab's toast waits for its end (ADR-0141).
+  // A required update does not reload during the call, and a stale tab's toast waits for its end (ADR-0028).
   useEffect(() => {
     reportCallActive(inCall);
     return () => {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The OAuth apps admin screen in every width × locale project (ADR-0027, ADR-0090 §1): an administrator with
+// The OAuth apps admin screen in every width × locale project (ADR-0110, ADR-0090 §1): an administrator with
 // manage_oauth_apps disables an app after the alert dialog and enables it again, passing axe without scrolling
 // sideways. `vite preview` has no API, so the test plays the server of a signed-in operator with page.route; names
 // change with the locale, so they come from the project's locale catalog.

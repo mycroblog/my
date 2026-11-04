@@ -101,7 +101,7 @@ func TestWebClient(t *testing.T) {
 					t.Errorf("shell CSP = %q", csp)
 				}
 			case "signin":
-				// The server-rendered screens load the stylesheet the web build makes for them (ADR-0030).
+				// The server-rendered screens load the stylesheet the web build makes for them (ADR-0090).
 				body := rec.Body.String()
 				if !strings.Contains(body, `<link rel="stylesheet" href="/assets/server-pages-FFFF.css">`) || strings.Contains(body, "index-CCCC.css") ||
 					strings.Contains(body, `id="config"`) {

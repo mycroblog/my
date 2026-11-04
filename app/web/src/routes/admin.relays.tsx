@@ -6,7 +6,7 @@ import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
 import { PageHeading } from "./-layout/PageHeading";
 
-/** The federation relays (ADR-0061): registering and joining them, leaving, joining again and deleting them, for manage_settings. */
+/** The federation relays (ADR-0006): registering and joining them, leaving, joining again and deleting them, for manage_settings. */
 export const Route = createFileRoute("/admin/relays")({
   staticData: { title: "client:admin.relays.title" },
   beforeLoad: requireSignIn,

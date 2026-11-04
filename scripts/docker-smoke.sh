@@ -142,7 +142,7 @@ curl -fsS -o /dev/null "$base$entry" || fail "the entry module $entry is not ser
 curl -fsS "$base/manifest.webmanifest" | jq -e --arg name "$MY_HOST" '.name == $name' >/dev/null ||
 	fail "unexpected Web App Manifest"
 
-# Sign in without a browser, as the web client does (OAuth 2.0 authorization code with PKCE, ADR-0030): the shell's
+# Sign in without a browser, as the web client does (OAuth 2.0 authorization code with PKCE, ADR-0090): the shell's
 # apiOrigin, the authorization endpoint, the sign-in form, the redirect back with a code and the issuer, the token
 # endpoint, and an API call with the access token. Over plain HTTP on localhost, every step stays on http://.
 config="$(echo "$shell" | sed -n 's|.*<script type="application/json" id="config">\([^<]*\)</script>.*|\1|p')"

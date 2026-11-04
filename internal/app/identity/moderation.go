@@ -120,7 +120,7 @@ func RegisterModerationProjectors(r *uow.Projectors, repo Repository, accounts A
 // revoked with the reason account_deleted in the transaction of the deletion (data-model §4.1),
 // so that a user who signed in while the deletion was scheduled (a ban) is signed out by it. When
 // its owner deactivates it, they end with logout and user, the reasons of what a user does to
-// their own sessions and tokens (ADR-0145 §1). Either way, every token of the clients the user
+// their own sessions and tokens (ADR-0089 §11). Either way, every token of the clients the user
 // registered is revoked with client_disabled (ADR-0090 §1).
 func RegisterLifecycleProjectors(r *uow.Projectors, repo Repository, accounts Accounts, clock kernel.Clock) {
 	r.Register(account.EventLifecycleEventRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {

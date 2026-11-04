@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server settings screen below its heading (manage_settings, FR-705): the instance's name and descriptions, how
-// to reach its operators and its thumbnail (#663), its own icon and logos (BrandSettings, ADR-0116), then its policies (who may sign up, the default language, the
-// public timelines, who may create invites of their own and their caps (ADR-0108 §1, §2), whether images need a description, the federation, who may read the list of the domain
+// to reach its operators and its thumbnail (#663), its own icon and logos (BrandSettings, ADR-0059), then its policies (who may sign up, the default language, the
+// public timelines, who may create invites of their own and their caps (ADR-0106 §14, §15), whether images need a description, the federation, who may read the list of the domain
 // actions, how much of the costs is published and shown to the holders of view_finance, how much of the income is published, and voice chat while the server offers it) in one form saved together. The name, the descriptions and the thumbnail's alt text hold one value each,
 // written in any language and shown as it is in every language; the labels are the app's. The name stands in for
 // the domain where the instance is named to people; the domain stays in handles and links. The browser keeps a
@@ -833,7 +833,7 @@ type NarrowingDialogProps = {
 };
 
 /**
- * Asks before the federation mode narrows (ADR-0076, "設定"): an alert dialog (WAI-ARIA APG) that lists what stops
+ * Asks before the federation mode narrows (ADR-0006, "設定"): an alert dialog (WAI-ARIA APG) that lists what stops
  * flowing, says that the relations with other servers stay connected with nothing flowing, and, for `off`, that
  * deletions made meanwhile never reach other servers. The cancel button has the focus first.
  */

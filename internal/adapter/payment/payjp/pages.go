@@ -22,7 +22,7 @@ import (
 )
 
 // The pages stand in for the hosted checkout and customer portal that PAY.JP API v1 lacks
-// (ADR-0099 §3). They take the state that StartCheckout and PortalURL signed into their URL,
+// (ADR-0074 §11). They take the state that StartCheckout and PortalURL signed into their URL,
 // load payjp.js, which takes the card in PAY.JP's own iframe and runs its 3-D Secure in an
 // iframe, and receive only the token of the card: never its number, expiry, or code. The
 // templates are embedded, the only scripts are payjp.js and the page's own with a nonce, and

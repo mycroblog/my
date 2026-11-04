@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The database schema (ADR-0023, ADR-0126; the schema context of scripts/changed-contexts.sh): db:apply, db:diff and
+# The database schema (ADR-0023; the schema context of scripts/changed-contexts.sh): db:apply, db:diff and
 # db:reset apply it with `my schema apply` of the working tree, as deployments do; db:check verifies the result, and
 # db:lint and db:lint-test check changes, with Atlas Community Edition, pinned and checksum-verified by
 # scripts/install-atlas.sh; db:up runs the dev PostgreSQL container.
@@ -28,7 +28,7 @@ vars:
   # db:lint's dev database, apart from DB_DEV_URL so that db:lint and db:check can run at once.
   DB_LINT_DEV_URL: >-
     {{if .DB_LINT_DEV_URL}}{{.DB_LINT_DEV_URL}}{{else if eq .DB_DIALECT "postgres"}}postgres://my:my@localhost:{{.PG_PORT}}/my_lint?sslmode=disable&search_path=public{{else}}sqlite://lint?mode=memory{{end}}
-  # The dialect's schema: one file per module, which Atlas executes in name order (ADR-0082).
+  # The dialect's schema: one file per module, which Atlas executes in name order (ADR-0081).
   DB_SCHEMA: schema/{{.DB_DIALECT}}
 
 tasks:

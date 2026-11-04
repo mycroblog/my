@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The main navigation through the whole app (web-client/README.md T4, ADR-0039): the local and the federated timeline as
+// The main navigation through the whole app (web-client/README.md T4, ADR-0110): the local and the federated timeline as
 // items of their own, the phones' tab bar with Menu, and the menu's sheet. jsdom applies no styles, so the items
 // that only the tab bar or only the rail shows are all in the document; e2e/shell.spec.ts checks which ones each
 // width shows.

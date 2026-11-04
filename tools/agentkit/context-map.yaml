@@ -66,12 +66,12 @@ entries:
     checks: [docs]
   - name: build-and-ci
     paths: ["Taskfile.yml", "tasks/**", ".github/**", "scripts/**", ".claude/**"]
-    docs: ["docs/agents/workflow.md#what-ci-runs-where", "docs/adr/0079-ci-single-gate-merge-queue.md", "docs/adr/0080-task-runner-go-task.md", "docs/adr/0083-ci-steps-not-tasks.md", "docs/agents/releasing.md"]
+    docs: ["docs/agents/workflow.md#what-ci-runs-where", "docs/adr/0079-ci-single-gate-merge-queue.md", "docs/adr/0081-generated-files-policy.md", "docs/adr/0079-ci-single-gate-merge-queue.md", "docs/agents/releasing.md"]
     checks: [docs, go, i18n, api, ui, web, docker, agentkit, mykit]
     shared: true
     notes:
       - "Taskfile.yml, tasks/, workflows and scripts/changed-contexts.sh select every check context: run `scripts/task.sh check`."
-      - "Each job of .github/workflows/ci.yml runs its checks as parallel steps, each calling one area task (ADR-0083): a new check in a `<context>:check` task also needs a step, or `docs:ci-coverage` fails."
+      - "Each job of .github/workflows/ci.yml runs its checks as parallel steps, each calling one area task (ADR-0079): a new check in a `<context>:check` task also needs a step, or `docs:ci-coverage` fails."
   - name: tasks
     paths: ["Taskfile.yml", "tasks/**"]
     userdocs: ["docs/reference/commands.md"]
@@ -100,17 +100,17 @@ entries:
     checks: [docs]
     shared: true
     notes:
-      - "Documents describe the present (ADR-0021): no history, no changelog wording."
+      - "Documents describe the present (ADR-0000): no history, no changelog wording."
   - name: design-doc-sections
     paths: ["docs/architecture/web-client/**", "docs/architecture/data-model/**"]
-    docs: ["AGENTS.md#hard-rules", "docs/adr/0082-conflict-free-file-layout.md"]
+    docs: ["AGENTS.md#hard-rules", "docs/adr/0081-generated-files-policy.md"]
     checks: [docs]
     notes:
-      - "One file per section (ADR-0082): a change goes into its section's file; a new section is a new <NN>-<slug>.md listed in the directory's README.md."
-      - "Documents describe the present (ADR-0021): no history, no changelog wording."
+      - "One file per section (ADR-0081): a change goes into its section's file; a new section is a new <NN>-<slug>.md listed in the directory's README.md."
+      - "Documents describe the present (ADR-0000): no history, no changelog wording."
   - name: agent-docs
     paths: ["docs/agents/**"]
-    docs: ["docs/adr/0014-task-management-and-agent-workflow.md", "AGENTS.md#documentation"]
+    docs: ["docs/adr/0000-record-architecture-decisions.md", "AGENTS.md#documentation"]
     checks: [docs]
     notes:
       - "Written in English (AGENTS.md#documentation)."
@@ -152,7 +152,7 @@ entries:
     checks: [i18n, go, web]
     shared: true
     notes:
-      - "Add messages to locales/en and locales/ja, each key in the file of its area: locales/<locale>/<namespace>/<first segment>.json, or <namespace>/admin/<second segment>.json under admin (ADR-0082); a new area is a new file."
+      - "Add messages to locales/en and locales/ja, each key in the file of its area: locales/<locale>/<namespace>/<first segment>.json, or <namespace>/admin/<second segment>.json under admin (ADR-0081); a new area is a new file."
       - "Then `scripts/task.sh i18n:gen` and commit the files Go reads (client pseudo-locales and TS accessors are not committed)."
       - "Call each thing by the term of tools/i18n/glossary.json (web-client G21); `i18n:check` rejects the variants it lists, and a new term goes there."
   - name: mail-templates
@@ -191,7 +191,7 @@ entries:
     userdocs: ["docs/reference/build-tags.md"]
   - name: fake-push-service
     paths: ["internal/adapter/pushservice/**", "cmd/my/dev_push_service.go"]
-    docs: ["docs/adr/0118-demo-web-push.md", "docs/adr/0117-demo-environment.md", "CONTRIBUTING.md#the-fake-push-service"]
+    docs: ["docs/adr/0015-testing-strategy.md", "docs/adr/0015-testing-strategy.md", "CONTRIBUTING.md#the-fake-push-service"]
     userdocs: ["docs/reference/build-tags.md#test-builds"]
     notes:
       - "Only the test builds (build tag e2e_fakes) link it, through cmd/my/dev_push_service.go; scripts/go-build-tags.sh and depguard check it."
@@ -256,7 +256,7 @@ entries:
       - "Visibility checks go through the single domain policy function; never re-implement them."
   - name: link-card-crawler
     paths: ["internal/app/content/link_card*.go", "internal/domain/content/link_card*.go", "internal/domain/content/robots*.go", "app/web/src/features/about/components/LinkCardCrawler.tsx"]
-    docs: ["docs/adr/0062-link-preview-cards.md#decision決定", "docs/adr/0131-link-card-robots-txt.md#decision決定", "docs/architecture/web-client/screens/about-crawler.md"]
+    docs: ["docs/adr/0062-link-preview-cards.md#decision決定", "docs/adr/0062-link-preview-cards.md#decision決定", "docs/architecture/web-client/screens/about-crawler.md"]
     notes:
       - "The page at /about/crawler states what this code does to site operators: a change of what the crawler sends, fetches, or obeys changes the page (locales: about.link_card_crawler.*) too."
     userdocs: ["docs/operations/link-previews.md#cards-of-links-in-posts", "docs/operations/crawlers.md#this-servers-own-fetching"]
@@ -281,7 +281,7 @@ entries:
     docs: ["docs/architecture/data-model/04-tables/06-timeline.md#46-timeline", "docs/architecture/data-model/06-timeline-queries.md#6-タイムラインのクエリ", "docs/adr/0013-timeline-strategy.md"]
   - name: lists
     paths: ["internal/domain/timeline/list.go", "internal/app/timeline/lists.go", "internal/adapter/db/*/timeline_lists.go", "internal/interface/clientapi/lists.go", "pkg/testkit/timeline_lists_contract.go", "api/spec/paths/lists*.yaml", "api/spec/paths/accounts_{id}_lists.yaml", "api/spec/paths/timelines_list_{id}.yaml", "app/web/src/features/lists/**", "app/web/src/routes/lists.tsx", "app/web/src/routes/lists_.$id.tsx", "app/web/e2e/lists.spec.ts"]
-    docs: ["docs/adr/0122-lists.md#decision決定", "docs/architecture/data-model/04-tables/06-timeline.md#リスト", "docs/architecture/web-client/screens/lists.md", "docs/architecture/web-client/screens/list-timeline.md"]
+    docs: ["docs/adr/0013-timeline-strategy.md#decision決定", "docs/architecture/data-model/04-tables/06-timeline.md#リスト", "docs/architecture/web-client/screens/lists.md", "docs/architecture/web-client/screens/list-timeline.md"]
     notes:
       - "Only the owner reads a list: every other account gets ErrNotFound (a 404), never a 403."
       - "A member is an active follow (feed_follow_edges); the projector of graph.follow_terminated removes it in the same update that deletes the follow edge, and RebuildProjections removes the members whose follow is gone."
@@ -290,7 +290,7 @@ entries:
     docs: ["docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
   - name: post-subscriptions
     paths: ["internal/domain/notification/subscription.go", "internal/app/notification/subscription.go", "internal/adapter/db/*/notification_subscription.go", "queries/*/notification_subscription.sql", "internal/interface/clientapi/subscriptions.go", "api/spec/paths/accounts_{id}_subscribe.yaml", "api/spec/paths/accounts_{id}_unsubscribe.yaml", "api/spec/paths/subscriptions.yaml", "pkg/testkit/post_subscription_contract.go", "internal/platform/post_subscriptions_test.go"]
-    docs: ["docs/adr/0123-post-notifications.md#decision決定", "docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
+    docs: ["docs/adr/0086-email-delivery.md#14-投稿の通知の購読", "docs/architecture/data-model/04-tables/07-notification.md#47-notification"]
     notes:
       - "A local account is subscribed to with or without a follow, a remote one only while graph.Follows is true; a notify with a pending follow of a remote account is a post_subscription_requests row that graph.follow_accepted turns into the subscription."
       - "graph.follow_terminated of a remote followee and graph.blocked (both ways) delete the subscriptions; the follow_preferences of the graph module keep no notify."
@@ -310,14 +310,14 @@ entries:
     userdocs: ["docs/reference/webhooks.md", "docs/operations/webhooks.md"]
   - name: module-finance
     paths: ["internal/domain/finance/**", "internal/app/finance/**"]
-    docs: ["docs/architecture/data-model/04-tables/12-finance.md#412-finance", "docs/adr/0067-finance-cost-records.md", "docs/adr/0068-billing-import.md", "docs/adr/0073-income-records-and-publication.md"]
+    docs: ["docs/architecture/data-model/04-tables/12-finance.md#412-finance", "docs/adr/0067-finance-cost-records.md", "docs/adr/0068-billing-import.md", "docs/adr/0067-finance-cost-records.md"]
   - name: module-supporters
     paths: ["internal/domain/supporters/**", "internal/app/supporters/**", "cmd/my/supporters.go"]
     docs: ["docs/architecture/data-model/04-tables/13-supporters.md#413-supporters", "docs/adr/0072-supporter-plans-and-roles.md", "docs/operations/supporters.md"]
     userdocs: ["docs/operations/supporters.md"]
   - name: module-voice
     paths: ["internal/domain/voice/**", "internal/app/voice/**", "internal/platform/voice.go", "internal/adapter/voice/**", "internal/adapter/db/*/voice.go", "internal/interface/voice/**", "schema/*/14-voice.sql", "queries/*/voice.sql", "pkg/testkit/voice_*contract.go", "pkg/testkit/livekittest/**", "internal/platform/adapters_*voice_livekit.go", "internal/platform/adapters_*voice_sora.go", "internal/platform/config/adapters_no_voice_*.go", "internal/interface/clientapi/voice*.go", "api/spec/paths/voice_*.yaml", "api/spec/components/*/Voice*.yaml", "app/web/src/features/voice/**"]
-    docs: ["docs/architecture/data-model/04-tables/14-voice.md#414-voice", "docs/architecture/data-model/05-states-and-policies.md#55-通話のルームの判定", "docs/adr/0100-voice-chat-rooms.md", "docs/adr/0101-voice-chat-transport.md", "docs/adr/0102-voice-chat-sfu-adapters.md"]
+    docs: ["docs/architecture/data-model/04-tables/14-voice.md#414-voice", "docs/architecture/data-model/05-states-and-policies.md#55-通話のルームの判定", "docs/adr/0100-voice-chat-rooms.md", "docs/adr/0101-voice-chat-transport.md", "docs/adr/0101-voice-chat-transport.md"]
     notes:
       - "Every place that shows a room or lets someone join or speak goes through voice.CanSee and voice.CanSpeakFreely (ADR-0100 §4); internal/app/voice gathers the facts."
       - "A command writes the rows of its events, then emits the matching voice event in the same transaction; the projectors rebuild voice_room_heads and voice_room_participants with the same SQL as the rebuild."
@@ -339,13 +339,13 @@ entries:
       - "Every external resource goes through a port, and every adapter passes the port's contract suite (pkg/testkit)."
   - name: data-upgrade
     paths: ["internal/app/dbupgrade/**", "internal/platform/setup_dbupgrade.go", "cmd/my/db.go", "cmd/my/db_test.go", "internal/adapter/db/*/data_upgrade*.go"]
-    docs: ["docs/adr/0087-schema-changes-after-launch.md", "docs/architecture/data-model/04-tables/10-infrastructure.md#410-基盤アダプタ所有", "docs/agents/releasing.md"]
+    docs: ["docs/adr/0023-declarative-schema-management.md", "docs/architecture/data-model/04-tables/10-infrastructure.md#410-基盤アダプタ所有", "docs/agents/releasing.md"]
     userdocs: ["docs/operations/database.md#upgrading", "docs/operations/backup.md#sqlite"]
     notes:
       - "A data upgrade step keeps its key once released, is idempotent, and works in small transactions without external I/O; after its contract it stays registered with Run nil."
   - name: schema-apply
     paths: ["cmd/my/schema*.go", "internal/adapter/db/schemaapply/**", "internal/adapter/db/*/schema_apply*.go"]
-    docs: ["docs/adr/0126-embedded-schema-apply.md", "docs/adr/0023-declarative-schema-management.md"]
+    docs: ["docs/adr/0023-declarative-schema-management.md", "docs/adr/0023-declarative-schema-management.md"]
     userdocs: ["docs/operations/database.md#with-my-schema-apply", "docs/reference/build-tags.md"]
     checks: [go, schema]
     notes:
@@ -374,24 +374,24 @@ entries:
       - "docs/reference/jobs.md lists every job type and schedule (agentkit docs inventory: job-types, job-schedules); a new or changed job updates its row."
   - name: queue-cloudtasks
     paths: ["internal/adapter/queue/cloudtasks/**", "internal/interface/queuepush/**", "internal/adapter/oidc/service.go", "internal/app/queue/pushauth.go", "internal/platform/adapters_*cloudtasks.go", "internal/platform/config/adapters_*cloudtasks.go", "internal/platform/config/queue.go", "internal/platform/queue_cloudtasks_test.go"]
-    docs: ["docs/adr/0120-external-queue-wake-up-signals.md", "docs/adr/0004-job-queue-abstraction.md"]
+    docs: ["docs/adr/0004-job-queue-abstraction.md", "docs/adr/0004-job-queue-abstraction.md"]
     userdocs: ["docs/operations/running.md#the-job-queue-and-failed-dead-jobs", "docs/operations/maintenance.md#push-queues", "docs/reference/build-tags.md"]
     notes:
       - "queue = cloudtasks keeps the jobs in the database queue (queue/db with Options.Waker); internal/adapter/queue/cloudtasks creates one unnamed HTTP-target task per signal (body = job ID, scheduleTime = At clamped to MaxDelay, OIDC token) and checks the Google OIDC ID tokens (Authenticator, over oidc.Client.VerifyServiceToken). internal/interface/queuepush serves POST /_internal/jobs (queue.PushReceiver) and POST /_internal/tick (queue.Trigger) on the roles all and worker: 2xx once recorded, 401 for a bad token, 5xx otherwise; no pull runner and no in-process scheduler run."
       - "Tests fake the Cloud Tasks gRPC API in-process and sign tokens with testkit.FakeOIDCProvider; the platform test injects AppOptions.Waker and PushAuthenticator. Nothing reaches Google Cloud. The build tag no_cloudtasks leaves the adapter and cloud.google.com/go/cloudtasks out."
   - name: queue-sqs
     paths: ["internal/adapter/queue/sqs/**", "internal/interface/queuepush/lambda*.go", "internal/platform/adapters_*sqs.go", "internal/platform/config/adapters_*sqs.go", "internal/platform/queue_sqs_test.go"]
-    docs: ["docs/adr/0120-external-queue-wake-up-signals.md", "docs/adr/0004-job-queue-abstraction.md", "docs/adr/0084-maintenance-mode.md"]
+    docs: ["docs/adr/0004-job-queue-abstraction.md", "docs/adr/0004-job-queue-abstraction.md", "docs/adr/0088-service-shutdown-modes.md"]
     userdocs: ["docs/operations/running.md#the-job-queue-and-failed-dead-jobs", "docs/operations/maintenance.md#push-queues", "docs/reference/build-tags.md"]
     notes:
-      - "queue = sqs keeps the jobs in the database queue (queue/db with Options.Waker); internal/adapter/queue/sqs sends one message per signal to a standard queue (body = job ID, DelaySeconds = the seconds until At rounded up, at most 900), SendMessage for one and SendMessageBatch of at most 10 for several, in the region of queue_sqs_queue_url. Nothing polls SQS (ADR-0120 §6): no pull runner and no in-process scheduler run. queuepush.LambdaHandler serves POST queue_sqs_events_path (default /events = AWS_LWA_PASS_THROUGH_PATH) on the roles all and worker, only for x-amzn-request-context exactly null (Lambda Web Adapter pass-through; 404 otherwise); records run in order (job ID -> queue.PushReceiver, body {\"type\":\"tick\"} -> queue.Trigger, once a batch) while the deadline of x-amzn-lambda-context (or queue_sqs_events_budget) leaves lease + 30s; the answer is always JSON {\"batchItemFailures\":[...]} because LWA keeps only the body. The maintenance mode answers any pass-through POST with every record failed (queuepush.FailEvent)."
+      - "queue = sqs keeps the jobs in the database queue (queue/db with Options.Waker); internal/adapter/queue/sqs sends one message per signal to a standard queue (body = job ID, DelaySeconds = the seconds until At rounded up, at most 900), SendMessage for one and SendMessageBatch of at most 10 for several, in the region of queue_sqs_queue_url. Nothing polls SQS (ADR-0004 §14): no pull runner and no in-process scheduler run. queuepush.LambdaHandler serves POST queue_sqs_events_path (default /events = AWS_LWA_PASS_THROUGH_PATH) on the roles all and worker, only for x-amzn-request-context exactly null (Lambda Web Adapter pass-through; 404 otherwise); records run in order (job ID -> queue.PushReceiver, body {\"type\":\"tick\"} -> queue.Trigger, once a batch) while the deadline of x-amzn-lambda-context (or queue_sqs_events_budget) leaves lease + 30s; the answer is always JSON {\"batchItemFailures\":[...]} because LWA keeps only the body. The maintenance mode answers any pass-through POST with every record failed (queuepush.FailEvent)."
       - "Tests fake the two SQS calls behind the adapter's Client interface; the platform test injects AppOptions.Waker and posts LWA-shaped SQS events. Nothing reaches AWS. The build tag no_sqs leaves the adapter out, and with no_sns also github.com/aws/aws-sdk-go-v2/service/sqs."
   - name: adapter-messaging
     paths: ["internal/adapter/stream/**", "internal/adapter/valkey/**", "internal/adapter/telemetry/**"]
     docs: ["docs/adr/0050-stream-pubsub-across-processes.md", "docs/architecture/deployment-targets.md#ストリームプロセス間の知らせ"]
   - name: adapter-media
     paths: ["internal/adapter/blob/**", "internal/adapter/media/**", "pkg/testkit/s3test/**", "internal/platform/adapters_*s3.go", "internal/platform/config/adapters_no_s3.go", "internal/platform/adapters_*gcs.go", "internal/platform/config/adapters_no_gcs.go"]
-    docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/adr/0054-media-variants-video-audio.md", "docs/operations/cdn.md", "docs/operations/backup.md#media-in-a-bucket"]
+    docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/adr/0005-blob-storage-and-media.md", "docs/operations/cdn.md", "docs/operations/backup.md#media-in-a-bucket"]
     userdocs: ["docs/operations/cdn.md", "docs/operations/backup.md"]
     notes:
       - "blob = s3 (internal/adapter/blob/s3) uses the AWS SDK for Amazon S3 against any S3-compatible endpoint; the bucket stays private and the server serves media/ under /media/. Its unit tests run testkit.BlobStoreContract on an in-memory fake of S3; the contract also runs on a Garage container (pkg/testkit/s3test) only with TEST_S3=container: `scripts/task.sh go:test-blob` (CI job blob-contract in the slow suite)."
@@ -404,14 +404,14 @@ entries:
     userdocs: ["docs/operations/key-management.md"]
   - name: keymanager-gcpkms
     paths: ["internal/adapter/keymanager/gcpkms/**", "internal/platform/adapters_*gcpkms.go", "internal/platform/config/adapters_*gcpkms.go", "internal/platform/keymanager_gcpkms_test.go"]
-    docs: ["docs/adr/0121-kms-key-managers.md#decision決定"]
+    docs: ["docs/adr/0019-security-baseline.md#decision決定"]
     userdocs: ["docs/operations/key-management.md#google-cloud-kms", "docs/reference/build-tags.md"]
     notes:
       - "key_manager = gcpkms (internal/adapter/keymanager/gcpkms) wraps DEKs with Cloud KMS Encrypt / Decrypt on the CryptoKey named in kms_key, without a version, passing the AAD as additionalAuthenticatedData; the key ID is gcpkms:<CryptoKey name>. Decrypt INVALID_ARGUMENT maps to kernel.ErrDecrypt; the other codes are returned with their gRPC status. The platform wraps it in kernel.NewDEKCache and kernel.NewKeyRouter; with key_manager = local, Cloud KMS keys in kms_key / kms_key_previous only unwrap."
       - "Tests run on gcpkmstest, an in-process gRPC stand-in for Cloud KMS (versions, disabled versions, CRC32C checks, injected codes); nothing reaches Google Cloud. The build tag no_gcpkms leaves the adapter and cloud.google.com/go/kms out."
   - name: keymanager-awskms
     paths: ["internal/adapter/keymanager/awskms/**", "internal/platform/adapters_*awskms.go", "internal/platform/config/adapters_*awskms.go", "internal/platform/keymanager_awskms_test.go"]
-    docs: ["docs/adr/0121-kms-key-managers.md#decision決定"]
+    docs: ["docs/adr/0019-security-baseline.md#decision決定"]
     userdocs: ["docs/operations/key-management.md#aws-kms", "docs/reference/build-tags.md"]
     notes:
       - "key_manager = awskms (internal/adapter/keymanager/awskms) wraps DEKs with AWS KMS Encrypt / Decrypt on the symmetric key of kms_key, which New resolves to its ARN with DescribeKey (an alias can move, so it is never the key ID); Decrypt passes KeyId. The AAD goes into the encryption context {\"my-aad\": base64url(aad)}; the key ID is awskms:<key ARN>. InvalidCiphertextException / IncorrectKeyException map to kernel.ErrDecrypt; the other errors keep the SDK's smithy.APIError. The platform loads the SDK's default chain and wraps it in kernel.NewDEKCache and kernel.NewKeyRouter; with key_manager = local, AWS KMS keys in kms_key / kms_key_previous only unwrap."
@@ -453,7 +453,7 @@ entries:
     userdocs: ["docs/operations/billing-import.md"]
   - name: adapter-payment
     paths: ["internal/adapter/payment/**"]
-    docs: ["docs/adr/0074-payment-provider-port.md", "docs/adr/0099-payjp-payment-adapter.md", "docs/operations/payments-stripe.md", "docs/operations/payments-payjp.md"]
+    docs: ["docs/adr/0074-payment-provider-port.md", "docs/adr/0074-payment-provider-port.md", "docs/operations/payments-stripe.md", "docs/operations/payments-payjp.md"]
   - name: payment-stripe
     paths: ["internal/adapter/payment/stripe/**"]
     userdocs: ["docs/operations/payments-stripe.md"]
@@ -480,11 +480,11 @@ entries:
     docs: ["docs/architecture/federation.md#3-受信inbox", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get"]
   - name: maintenance
     paths: ["internal/interface/maintenance/**", "internal/platform/maintenance.go", "cmd/my/maintenance*.go", "cmd/my/closure_export*.go"]
-    docs: ["docs/adr/0084-maintenance-mode.md#decision決定", "docs/adr/0085-uptime-monitoring-status-page.md#4-メンテナンスモードとの関係", "docs/adr/0088-service-shutdown-modes.md#6-停止の後", "docs/operations/maintenance.md", "docs/operations/service-closure.md"]
+    docs: ["docs/adr/0088-service-shutdown-modes.md#8-メンテナンスモードの切り替え", "docs/adr/0088-service-shutdown-modes.md#18-メンテナンスモードとの関係", "docs/adr/0088-service-shutdown-modes.md#6-停止の後", "docs/operations/maintenance.md", "docs/operations/service-closure.md"]
     userdocs: ["docs/operations/maintenance.md", "docs/operations/service-closure.md#6-switching-to-the-static-page", "docs/operations/monitoring.md#telling-the-maintenance-mode-from-an-outage", "docs/operations/admin-cli.md#exporting-the-maintenance-page"]
     notes:
       - "internal/interface/maintenance depends only on the standard library and internal/i18n; the maintenance mode opens no adapter (platform.NewMaintenanceApp never calls NewApp)."
-      - "The maintenance responses (ADR-0084 §3), `my maintenance export`, and the static closure page of `my admin closure export-html` (ADR-0088 §6, maintenance.RenderClosure) render the same template (templates/page.html)."
+      - "The maintenance responses (ADR-0088 §10), `my maintenance export`, and the static closure page of `my admin closure export-html` (ADR-0088 §6, maintenance.RenderClosure) render the same template (templates/page.html)."
       - "The front ends' configuration examples of the closure (templates/closure/*.tmpl) answer maintenance.ClosureGonePaths and ClosureGonePrefixes with 410; keep them in step with the federation routes."
   - name: mail-events
     paths: ["internal/interface/mailevents/**", "internal/platform/setup_mailevents.go"]
@@ -515,10 +515,10 @@ entries:
   # --- Test kits ------------------------------------------------------------------------------------------
   - name: testkit
     paths: ["pkg/testkit/**"]
-    docs: ["docs/adr/0015-testing-strategy.md", "docs/adr/0041-postgres-tests-on-pgmem.md"]
+    docs: ["docs/adr/0015-testing-strategy.md", "docs/adr/0015-testing-strategy.md"]
   - name: testkit-backends
     paths: ["pkg/testkit/pgtest/**", "pkg/testkit/valkeytest/**", "pkg/testkit/awstest/**", "pkg/testkit/mailpittest/**", "pkg/testkit/fixtures/**"]
-    docs: ["docs/adr/0041-postgres-tests-on-pgmem.md"]
+    docs: ["docs/adr/0015-testing-strategy.md"]
 
   # --- Client libraries -----------------------------------------------------------------------------------
   - name: mykit
@@ -531,7 +531,7 @@ entries:
       - "pkg/mykit/integration is an unpublished test module (MIT headers, as all of pkg/mykit) that joins the server and pkg/mykit by `replace`; its tests start the server with internal/platform/platformtest (which pkg/testkit may not import, ADR-0002) and drive it with the Go client only. Run `scripts/task.sh mykit:integration-test`."
   - name: mykit-ts
     paths: ["pkg/mykit/ts/**"]
-    docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/adr/0029-api-code-generation.md"]
+    docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/adr/0016-client-api-style.md"]
     checks: [mykit]
     notes:
       - "@mycroblog/mykit (pkg/mykit/ts) is an MIT npm package of the client workspace (app/package.json `workspaces`): ESM only, openapi-fetch its only dependency, no Node.js built-in module in src/ (tsconfig.lib.json has no Node.js types; .oxlintrc.json `import/no-nodejs-modules`); `scripts/task.sh mykit:check` runs its ts-* tasks."
@@ -539,26 +539,26 @@ entries:
       - "app/web consumes the source through the `@mycroblog/source` export condition (ADR-0093 §3), so a change for the web client is a change of the library's public API."
   - name: mybot
     paths: ["pkg/mybot/**"]
-    docs: ["docs/adr/0094-bot-library-mybot.md", "docs/adr/0093-api-client-library-mykit.md"]
+    docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/adr/0093-api-client-library-mykit.md"]
     checks: [mykit]
     notes:
       - "pkg/mybot is a Go module of its own under MIT (`// SPDX-License-Identifier: MIT`) that requires pkg/mykit alone, replaced with ../mykit, and never the server module; the mykit context checks it (`scripts/task.sh mykit:check`, the mybot-* tasks)."
-      - "What mykit lacks (stream reconnection, token rotation, retries) goes into mykit, never into mybot (ADR-0094 §2); mybot holds the receiving (catch-up, dedupe, Store), handlers, middleware, manners, and the send budget."
+      - "What mykit lacks (stream reconnection, token rotation, retries) goes into mykit, never into mybot (ADR-0093 §10); mybot holds the receiving (catch-up, dedupe, Store), handlers, middleware, manners, and the send budget."
       - "@mycroblog/mybot (pkg/mybot/ts) is the MIT npm package of the same library, a package of the client workspace that depends on @mycroblog/mykit alone (`workspace:*`): ESM only, no static Node.js built-in import in src/ (FileStore loads node:fs/promises dynamically, for Node.js, Bun, and Deno); its names, options, defaults, idempotency keys, and state file match the Go library, and a difference goes into its README. `scripts/task.sh mykit:check` runs its mybot-ts-* tasks; `mykit:mybot-ts-runtimes` (Node.js 22 and Deno) runs in CI."
-      - "Every parses its five-field cron expressions in pkg/mybot itself (schedule.go, no dependency; ADR-0094 §5); pkg/mybot/testdata/cron.json holds the accepted and refused expressions and their times, shared with the TypeScript mybot so that both take the same range. The TypeScript mybot (pkg/mybot/ts/src/schedule.ts) refuses the same expressions itself and uses croner only to compute the times, skipping a time that croner moves out of a daylight saving gap and the second occurrence of a repeated time; its schedule.test.ts runs the same fixture."
-      - "pkg/mybot/mybottest is the fake server for the authors' tests (ADR-0094 §10): it answers only the operations that mybot calls, with the types of api/openapi.yaml; a new call of mybot needs its operation there, and pkg/mybot/integration checks the fake against the spec. @mycroblog/mybot/testing (pkg/mybot/ts/src/testing, a subpath export) mirrors it as a fetch-level fake with a Clock: a new call of the TS mybot needs its operation there too."
+      - "Every parses its five-field cron expressions in pkg/mybot itself (schedule.go, no dependency; ADR-0093 §13); pkg/mybot/testdata/cron.json holds the accepted and refused expressions and their times, shared with the TypeScript mybot so that both take the same range. The TypeScript mybot (pkg/mybot/ts/src/schedule.ts) refuses the same expressions itself and uses croner only to compute the times, skipping a time that croner moves out of a daylight saving gap and the second occurrence of a repeated time; its schedule.test.ts runs the same fixture."
+      - "pkg/mybot/mybottest is the fake server for the authors' tests (ADR-0093 §18): it answers only the operations that mybot calls, with the types of api/openapi.yaml; a new call of mybot needs its operation there, and pkg/mybot/integration checks the fake against the spec. @mycroblog/mybot/testing (pkg/mybot/ts/src/testing, a subpath export) mirrors it as a fetch-level fake with a Clock: a new call of the TS mybot needs its operation there too."
       - "pkg/mybot/integration is an unpublished test module (MIT headers) that joins the server, pkg/mykit, and pkg/mybot by `replace`; an echo bot runs against internal/platform/platformtest across a cut stream and a restart, and the fake of mybottest is checked with internal/interface/clientapi/apitest. Run `scripts/task.sh mykit:mybot-integration-test`."
       - "The example bots, echo, schedule, and commands, live in pkg/mybot/examples (Go, package main, tested against mybottest; with examples/login, the Authorization Code + PKCE flow on a loopback redirect) and pkg/mybot/ts/examples (TS, tested against @mycroblog/mybot/testing, typechecked by tsconfig.examples.json): keep the two sets doing the same, and the READMEs (pkg/mybot/README.md, pkg/mybot/ts/README.md) naming them. pkg/mybot/examples/Dockerfile builds a Go example from the repository root (`docker build -f pkg/mybot/examples/Dockerfile --build-arg EXAMPLE=echo .`), with its context kept by Dockerfile.dockerignore; its image pins match the root Dockerfile's."
 
   # --- Clients --------------------------------------------------------------------------------------------
   - name: client-workspace
     paths: ["app/*", "app/oxlint/**", "bunfig.toml", ".prettierignore"]
-    docs: ["docs/adr/0025-web-client-stack.md", "docs/adr/0049-client-lint-oxlint.md", "docs/adr/0107-typescript-formatter-bun-fmt.md"]
+    docs: ["docs/adr/0025-web-client-stack.md", "docs/adr/0025-web-client-stack.md", "docs/adr/0081-generated-files-policy.md"]
     checks: [web]
     shared: true
   - name: ui-emoji-fonts
     paths: ["app/ui/src/fonts/emoji/**", "app/ui/src/emoji.css", "scripts/emoji-fonts/**"]
-    docs: ["docs/adr/0095-noto-color-emoji.md", "app/ui/README.md#typography"]
+    docs: ["docs/adr/0091-composer-emoji-picker.md", "app/ui/README.md#typography"]
     checks: [ui, web]
     notes:
       - "app/ui/src/emoji.css and the WOFF2 files and OFL.txt of app/ui/src/fonts/emoji/ are generated by `scripts/task.sh emoji:generate` (tasks/emoji.yml, scripts/emoji-fonts through uv); never edit them by hand. The text symbols left out of unicode-range are TEXT_CODE_POINTS in scripts/emoji-fonts/emoji_fonts.py."
@@ -579,17 +579,17 @@ entries:
     docs: ["docs/architecture/web-client/README.md#テストの置き場所と道具"]
   - name: web-l4
     paths: ["app/web/l4/**", ".github/workflows/nightly.yml", ".github/actions/start-mailpit/**"]
-    docs: ["docs/adr/0114-l4-task-tests-nightly.md", "docs/adr/0115-ci-claude-workload-identity.md", "docs/adr/0117-demo-environment.md", "docs/architecture/web-client/screens/README.md"]
+    docs: ["docs/adr/0015-testing-strategy.md", "docs/adr/0079-ci-single-gate-merge-queue.md", "docs/adr/0015-testing-strategy.md", "docs/architecture/web-client/screens/README.md"]
     userdocs: ["docs/reference/commands.md"]
     notes:
       - "The L4 task tests (`scripts/task.sh web:l4`) read the task tables of screens/*.md and run on the demo server (`node e2e/server.ts demo`, the scenario of app/web/demo/); the front matter of each screen's L1 (parsed by app/web/l4/screens.ts, documented in screens/README.md) gives its start, the person of the scenario it signs in as (or none), the code that SINCE watches, the changes to the scenario its tasks need, the tasks that read email in Mailpit, and the tasks the demo server cannot set up with the reason, so a new screen touches only its own L1 file (check with DRY_RUN=1; l4/screens.test.ts checks every L1's front matter)."
-      - "The Claude API is reached only by Workload Identity Federation, in the `l4` job of nightly.yml (environment `ux-nightly`) and the `release-notes-prose` job of release.yml (environment `release-notes`), each with `id-token: write`; never add an API key or another job that calls it (ADR-0115)."
+      - "The Claude API is reached only by Workload Identity Federation, in the `l4` job of nightly.yml (environment `ux-nightly`) and the `release-notes-prose` job of release.yml (environment `release-notes`), each with `id-token: write`; never add an API key or another job that calls it (ADR-0079)."
   - name: web-demo
     paths: ["app/web/demo/**"]
-    docs: ["docs/adr/0117-demo-environment.md"]
+    docs: ["docs/adr/0015-testing-strategy.md"]
     userdocs: ["docs/reference/commands.md"]
     notes:
-      - "The demo scenario (scenario.ts, data only) is applied by seed.ts through `bin/my` and @mycroblog/mykit only, never SQL; a new item finds itself again on a second run (`node e2e/server.ts demo`, E2E_DEMO=1 runs e2e/demo-smoke.spec.ts, which checks that a second run adds nothing). URLs use only `.test` / `.invalid` hosts, and images are drawn by assets/draw.ts (ADR-0117 §1)."
+      - "The demo scenario (scenario.ts, data only) is applied by seed.ts through `bin/my` and @mycroblog/mykit only, never SQL; a new item finds itself again on a second run (`node e2e/server.ts demo`, E2E_DEMO=1 runs e2e/demo-smoke.spec.ts, which checks that a second run adds nothing). URLs use only `.test` / `.invalid` hosts, and images are drawn by assets/draw.ts (ADR-0015 §5)."
   - name: web-shell
     paths: ["app/web/src/*", "app/web/src/routes/**", "app/web/sw/**", "app/web/public/**", "app/web/vite-plugins/**", "app/web/scripts/**", "app/web/*"]
     docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/architecture/web-client/11-pwa.md#11-pwa"]
@@ -601,7 +601,7 @@ entries:
     docs: ["docs/architecture/web-client/08-server-rendered-pages.md#8-サーバーが描画する画面"]
   - name: web-lib
     paths: ["app/web/src/lib/api/**", "app/web/src/lib/auth/**", "app/web/src/lib/sse/**"]
-    docs: ["docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証", "docs/adr/0030-web-client-token-handling.md", "docs/adr/0045-client-server-cache-policy.md", "docs/adr/0093-api-client-library-mykit.md"]
+    docs: ["docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証", "docs/adr/0090-third-party-oauth-apps.md", "docs/adr/0028-html-shell-link-previews-and-pwa.md", "docs/adr/0093-api-client-library-mykit.md"]
     notes:
       - "The API client, the token refresh after a 401, problem parsing, and the event stream are @mycroblog/mykit's (pkg/mykit/ts); app/web keeps the wording, the reports to lib/network and lib/maintenance, and openapi-react-query. The API types come from `@mycroblog/mykit`."
   - name: web-feature-admin
@@ -609,7 +609,7 @@ entries:
     docs: ["docs/architecture/web-client/14-admin.md#14-管理画面"]
   - name: web-feature-compose
     paths: ["app/web/src/features/compose/**"]
-    docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0039-mobile-navigation-and-compose-entry.md"]
+    docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0110-web-experience-principles.md"]
   - name: web-feature-status
     paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**", "app/web/src/features/relationship/**"]
     docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠"]
@@ -618,10 +618,10 @@ entries:
     docs: ["docs/architecture/web-client/21-experience-principles.md#21-体験の原則"]
   - name: web-feature-emoji
     paths: ["app/web/src/features/emoji/**", "app/web/src/features/custom-emojis/**"]
-    docs: ["docs/adr/0051-custom-emoji.md", "docs/adr/0052-emoji-reactions.md", "docs/adr/0070-permission-split-emoji-finance.md", "docs/adr/0091-composer-emoji-picker.md"]
+    docs: ["docs/adr/0051-custom-emoji.md", "docs/adr/0051-custom-emoji.md", "docs/adr/0070-permission-split-emoji-finance.md", "docs/adr/0091-composer-emoji-picker.md"]
     notes:
       - "features/emoji/unicode/*.gen.json are generated by `scripts/task.sh emoji:generate` (tasks/emoji.yml, scripts/emoji-table) with the server's emoji_table.gen.go; never edit them by hand."
-      - "Unicode emoji are drawn with the Noto Color Emoji web font of @my/ui/emoji.css everywhere (ADR-0095), never with an OS-font check: the fonts cover every emoji of EMOJI_VERSION."
+      - "Unicode emoji are drawn with the Noto Color Emoji web font of @my/ui/emoji.css everywhere (ADR-0091), never with an OS-font check: the fonts cover every emoji of EMOJI_VERSION."
   - name: web-feature-search
     paths: ["app/web/src/features/search/**"]
     docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー"]
@@ -633,10 +633,10 @@ entries:
     docs: ["docs/architecture/web-client/19-import-and-export.md#19-インポートとエクスポート", "docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証"]
   - name: web-feature-supporters
     paths: ["app/web/src/features/supporters/**"]
-    docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0071-role-badges-and-supporter-list.md", "docs/operations/supporters.md"]
+    docs: ["docs/adr/0072-supporter-plans-and-roles.md", "docs/adr/0070-permission-split-emoji-finance.md", "docs/operations/supporters.md"]
   - name: web-feature-public
     paths: ["app/web/src/features/about/**", "app/web/src/features/landing/**", "app/web/src/features/costs/**"]
-    docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/adr/0073-income-records-and-publication.md"]
+    docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/adr/0067-finance-cost-records.md"]
 
   # --- Deployment -----------------------------------------------------------------------------------------
   - name: deploy

@@ -8,8 +8,8 @@ import { useT } from "../lib/i18n";
 import { SettingsHeading } from "./-layout/SettingsHeading";
 
 /**
- * What the profile shows besides what the profile form edits: the badges of the user's roles (ADR-0071) and, for a
- * member of a supporter plan, whether to be on the supporter list (ADR-0071 §4). Every choice here is saved as soon as
+ * What the profile shows besides what the profile form edits: the badges of the user's roles (ADR-0070) and, for a
+ * member of a supporter plan, whether to be on the supporter list (ADR-0070 §13). Every choice here is saved as soon as
  * it changes, so the page has no save button (ADR-0110 P1: one way of saving per page).
  */
 export const Route = createFileRoute("/settings/badges")({

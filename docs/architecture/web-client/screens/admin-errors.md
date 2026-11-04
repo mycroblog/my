@@ -8,7 +8,7 @@ unavailable: {"増えているエラーを見つける": "the demo scenario reco
 ## エラー（`/admin/errors`・`/admin/errors/{id}`）
 
 `manage_errors` を持つ管理者が、サーバーと Web クライアントが報告したエラーのグループを見て、増えているものを見つけ、直したものを解決にする画面（ADR-0103 §8、[§14](../14-admin.md)）。
-一覧の各行は件数の文と、直近 7 日の `Sparkline` を持つ。詳細は直近 48 時間の `TrendChart` を持つ（ADR-0113）。
+一覧の各行は件数の文と、直近 7 日の `Sparkline` を持つ。詳細は直近 48 時間の `TrendChart` を持つ（ADR-0110）。
 
 ### 1. 使う人と頻度
 

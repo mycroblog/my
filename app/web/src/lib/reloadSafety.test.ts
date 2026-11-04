@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The safe moment of ADR-0141 §5, one condition at a time, on a document of its own.
+// The safe moment of ADR-0028 §13, one condition at a time, on a document of its own.
 import { describe, expect, test } from "vitest";
 import { isSafeToReload, registerReloadBlocker, reportCallActive } from "./reloadSafety";
 

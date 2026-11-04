@@ -417,7 +417,7 @@
   },
   "admin.settings.federation.mode": {
     "defaultMessage": "Federation direction",
-    "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0076): which way posts flow between this server and other servers."
+    "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0006): which way posts flow between this server and other servers."
   },
   "admin.settings.federation.mode.description": {
     "defaultMessage": "Which way posts, follows and reactions flow between this server and other servers. The change takes effect at once.",

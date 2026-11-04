@@ -58,7 +58,7 @@ type ErasureDeps struct {
 // projection as the author's deletion does but sends no Delete (the Delete of the actor stands
 // for them, federation.md §7.1); then its rows, every boost, favourite, reaction, bookmark, and pin of it,
 // and the notifications about it go. A status that a report or an action points at keeps its
-// rows (ADR-0038) until a later run finds the record gone.
+// rows (ADR-0058) until a later run finds the record gone.
 type StatusEraser struct{ d ErasureDeps }
 
 // NewStatusEraser returns the content module's eraser of statuses on d.

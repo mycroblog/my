@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package sysmetrics declares the system metrics of ADR-0056 §1 on kernel.Meter and measures
+// Package sysmetrics declares the system metrics of ADR-0055 §10 on kernel.Meter and measures
 // them at the boundary of the adapters: the process (RegisterProcess), the connection pools of
 // the database adapters (their RegisterMetrics), the operations of the queue, key-value,
 // stream, and blob adapters (the KV, Blobs, Bus, Jobs, and Source decorators), the long-lived
@@ -9,7 +9,7 @@
 //
 // Names follow the OpenTelemetry semantic conventions where they define the metric and start
 // with "my." otherwise (ADR-0055 §3). Labels never carry a remote host, an account, a URL, or a
-// blob key (ADR-0056 §1). The totals that the kernel and the pools keep (CPU time, connection
+// blob key (ADR-0055 §10). The totals that the kernel and the pools keep (CPU time, connection
 // waits) are observable counters, which only grow until the process restarts.
 //
 // The domain and application layers never see these metrics: the platform wraps the adapters
@@ -38,7 +38,7 @@ const (
 	OutcomeError   = "error"
 )
 
-// The adapter operation metrics of ADR-0056 §1. The failures are the measurements of
+// The adapter operation metrics of ADR-0055 §10 The failures are the measurements of
 // AdapterOperationDuration whose my.outcome is error.
 var (
 	AdapterOperationDuration = kernel.Instrument{

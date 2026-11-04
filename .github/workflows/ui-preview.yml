@@ -1,6 +1,6 @@
 name: UI preview
 
-# Builds the UI preview (ADR-0112 §3): the static app/web Storybook of the screens with the @my/ui Storybook under ui/
+# Builds the UI preview (ADR-0079 §15): the static app/web Storybook of the screens with the @my/ui Storybook under ui/
 # (`scripts/task.sh web:storybook-build`), uploaded as the artifact `ui-preview`. ui-preview-deploy.yml publishes it
 # when this workflow completes: a pull request's build on its Preview, main's on the Worker itself. This workflow holds
 # no secret and no write permission, so it runs the same for pull requests from forks; it is not part of the required

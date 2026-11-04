@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// Retention of the sign-in and registration origins (ADR-0038, data-model §4.1, §8).
+// Retention of the sign-in and registration origins (ADR-0058, data-model §4.1, §8).
 const (
 	// JobPurgeOrigins deletes the session and registration origins past their retention; no
 	// payload.
@@ -73,7 +73,7 @@ type OriginRetentionPolicy struct {
 	// RegistrationPeriod is how long a registration origin is kept; zero means
 	// DefaultRegistrationOriginRetention.
 	RegistrationPeriod time.Duration
-	// HeldUserIDs are the users whose local account a retention hold preserves (ADR-0038).
+	// HeldUserIDs are the users whose local account a retention hold preserves (ADR-0058).
 	HeldUserIDs []string
 }
 
@@ -96,7 +96,7 @@ type OriginPurgeDeps struct {
 }
 
 // OriginPurger runs JobPurgeOrigins: it deletes the session origins and the registration
-// origins older than their periods, except those of held users (ADR-0038). The sessions and
+// origins older than their periods, except those of held users (ADR-0058). The sessions and
 // users have purges and erasures of their own. Each statement deletes a bounded batch in a
 // transaction of its own.
 type OriginPurger struct{ d OriginPurgeDeps }

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// This file holds the rules of the relays the instance joins (ADR-0061, federation.md §13): the
+// This file holds the rules of the relays the instance joins (ADR-0006, federation.md §13): the
 // registration, the events of its membership and the state they lead to, and the activities the
 // instance actor sends to a relay.
 
@@ -261,14 +261,14 @@ func RelayUndoDocument(undo, follow, instanceActor IRI, r Relay, followedAt, at 
 
 // FollowAnswerDocument returns the Accept or Reject (t) of the instance actor with the id id
 // that answers the Follow follow of the remote actor follower: a LitePub relay follows the
-// instance actor back once it accepts the instance's Follow (ADR-0061).
+// instance actor back once it accepts the instance's Follow (ADR-0006).
 func FollowAnswerDocument(id IRI, t ActivityType, instanceActor, follower, follow IRI, at time.Time) ActivityDocument {
 	embedded := NewActivityDocument(follow, ActivityFollow, follower, time.Time{}, Audience{}, instanceActor).Embedded()
 	return NewActivityDocument(id, t, instanceActor, at, Audience{To: []IRI{follower}}, embedded)
 }
 
 // SignsLinkedData reports whether the document of outbound activity a carries a linked data
-// signature (RsaSignature2017, ADR-0061): the Create, Update, and Delete of a status addressed
+// signature (RsaSignature2017, ADR-0006): the Create, Update, and Delete of a status addressed
 // to the Public collection in to, that is, of a public status, which relays forward as they are.
 func SignsLinkedData(a OutboundActivity, aud Audience) bool {
 	if a.ObjectKind != OutboundStatus {

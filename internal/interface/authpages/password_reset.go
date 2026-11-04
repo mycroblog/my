@@ -122,7 +122,7 @@ func (h *Handler) forgotPassword(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, kernel.ErrHumanCheckFailed):
 		p.Error = p.L.ServerAuthHumanCheckFailed()
 	case errors.Is(err, kernel.ErrHumanCheckUnavailable):
-		// A request sends email, so it fails closed as a sign-up does (ADR-0042 §4).
+		// A request sends email, so it fails closed as a sign-up does (ADR-0106 §10).
 		status = http.StatusServiceUnavailable
 		p.Error = p.L.ServerAuthHumanCheckUnavailable()
 	default:

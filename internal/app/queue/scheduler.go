@@ -33,7 +33,7 @@ const DefaultSchedulerTick = time.Minute
 // processes with a scheduler enqueue one job per slot while it is pending.
 //
 // Platforms with their own scheduler (Cloud Scheduler, EventBridge Scheduler) call Tick through
-// a Trigger instead of running it in the process (ADR-0120 §4).
+// a Trigger instead of running it in the process (ADR-0004 §12).
 type Scheduler struct {
 	q      JobQueue
 	clock  kernel.Clock
@@ -120,7 +120,7 @@ const schedulerSlotNamespace = "queue.schedule_slot"
 // schedule's period as the TTL) before it enqueues its job, so that the job of a slot is enqueued
 // once also when the ticks of one slot reach different processes, or reach one after the job
 // completed, which the idempotency key, kept only while the job is pending, does not prevent.
-// The external trigger of the scheduler (Trigger, ADR-0120 §4) needs it, with a kv that the
+// The external trigger of the scheduler (Trigger, ADR-0004 §12) needs it, with a kv that the
 // processes share (db or valkey). Call it at startup, before Tick.
 func (s *Scheduler) UseSharedSlots(kv kernel.KeyValueStore) {
 	s.mu.Lock()

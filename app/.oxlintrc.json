@@ -1,4 +1,4 @@
-// Oxlint for the client workspace (ADR-0049). Each override implements rows of the 強制 column in
+// Oxlint for the client workspace (ADR-0025). Each override implements rows of the 強制 column in
 // docs/architecture/web-client/README.md; the row IDs (R1, A5, ...) are noted next to them. The rule sets of the
 // presets (ESLint recommended, typescript-eslint strict-type-checked, @eslint-react strict-type-checked,
 // TanStack Query recommended-strict, TanStack Router recommended, Testing Library react, better-tailwindcss
@@ -613,7 +613,7 @@
               },
               {
                 "regex": "^react-icons(/|$)",
-                "message": "Icons come from the @my/ui icon set: only app/ui/src/Icons.tsx imports react-icons, and only Phosphor (react-icons/pi) (ADR-0043, web-client/16-look-states-and-wording.md G10)."
+                "message": "Icons come from the @my/ui icon set: only app/ui/src/Icons.tsx imports react-icons, and only Phosphor (react-icons/pi) (ADR-0025, web-client/16-look-states-and-wording.md G10)."
               }
             ]
           }
@@ -705,7 +705,7 @@
           },
           {
             "selector": "Property[key.name='staleTime'][value.value='static']",
-            "message": "Do not use staleTime: \"static\"; it ignores invalidation. A loader reads with staleTime: Infinity (web-client/README.md S7, ADR-0045)."
+            "message": "Do not use staleTime: \"static\"; it ignores invalidation. A loader reads with staleTime: Infinity (web-client/README.md S7, ADR-0028)."
           },
           {
             "selector": "CallExpression > MemberExpression.callee[property.name=/^ensure(Infinite)?QueryData$/]",
@@ -724,7 +724,7 @@
           "error",
           {
             "selector": "JSXOpeningElement[name.name=/^(svg|g|path|circle|ellipse|line|polygon|polyline|rect|text|tspan|textPath|defs|use|symbol|marker|mask|clipPath|pattern|linearGradient|radialGradient|stop|filter|foreignObject|image)$/]",
-            "message": "Do not draw SVG; use an icon of @my/ui (Icons.tsx), and add a row to its table for a new one (ADR-0043, web-client/16-look-states-and-wording.md G10)."
+            "message": "Do not draw SVG; use an icon of @my/ui (Icons.tsx), and add a row to its table for a new one (ADR-0025, web-client/16-look-states-and-wording.md G10)."
           }
         ],
         "restrict/storage": [
@@ -886,7 +886,7 @@
             "patterns": [
               {
                 "regex": "^react-icons(/|$)",
-                "message": "Icons come from the @my/ui icon set: only app/ui/src/Icons.tsx imports react-icons, and only Phosphor (react-icons/pi) (ADR-0043, web-client/16-look-states-and-wording.md G10)."
+                "message": "Icons come from the @my/ui icon set: only app/ui/src/Icons.tsx imports react-icons, and only Phosphor (react-icons/pi) (ADR-0025, web-client/16-look-states-and-wording.md G10)."
               }
             ]
           }
@@ -1060,7 +1060,7 @@
               },
               {
                 "group": ["react-icons", "react-icons/*", "!react-icons/pi"],
-                "message": "Icons come from the @my/ui icon set: only app/ui/src/Icons.tsx imports react-icons, and only Phosphor (react-icons/pi) (ADR-0043, web-client/16-look-states-and-wording.md G10)."
+                "message": "Icons come from the @my/ui icon set: only app/ui/src/Icons.tsx imports react-icons, and only Phosphor (react-icons/pi) (ADR-0025, web-client/16-look-states-and-wording.md G10)."
               }
             ]
           }
@@ -1076,7 +1076,7 @@
     // - Avatar: the silhouette that fills an avatar without an image, at a fraction of the avatar's size.
     // - QrCode: a QR code that the server encoded, drawn from its path data; a picture of data, not an icon.
     // - EmptyState.stories: a stand-in for the illustration a caller passes, which is a picture and not an icon.
-    // - TrendChart, Sparkline: the data charts of ADR-0113, which draw values (bars, lines, grid lines) and not icons.
+    // - TrendChart, Sparkline: the data charts of ADR-0110, which draw values (bars, lines, grid lines) and not icons.
     // Tests are exempt too (below): they render stand-in children.
     {
       "files": [
@@ -1131,7 +1131,7 @@
     // everything; rtc (web/src/features/*/rtc) is a feature's plain TypeScript for WebRTC, which only that feature's
     // hooks import and which imports nothing of the app (ADR-0101 §7); test (web/src/test) holds the test helpers and the MSW setup, feature-test a feature's default
     // MSW handlers and fixtures, ui-test the helpers of the @my/ui component tests. T4: only tests, and the screen stories of app/web
-    // (ADR-0112 §1, which render with the same MSW handlers), import them.
+    // (ADR-0079 §13, which render with the same MSW handlers), import them.
     // A2: @my/ui knows only React, React Aria, TanStack Virtual (for Feed), the Tailwind helpers and Phosphor
     // (in Icons.tsx); T5: its stories and tests also import Storybook, Testing Library and Vitest.
     {
@@ -1404,7 +1404,7 @@
                     }
                   }
                 },
-                "message": "Only features/*/rtc loads the browser SDKs of the SFU methods, with import() once the grant names the method, so that no other chunk carries them (ADR-0102 §6)."
+                "message": "Only features/*/rtc loads the browser SDKs of the SFU methods, with import() once the grant names the method, so that no other chunk carries them (ADR-0101 §15)."
               },
               {
                 "from": {

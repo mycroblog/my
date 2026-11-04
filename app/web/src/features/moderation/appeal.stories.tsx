@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // An appeal's page (/moderation/appeals/{id}; web-client/screens/moderation.md): the appeal, the action it is about,
-// and the decision, in the states of ADR-0112 §1.
+// and the decision, in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
 import { appealsApi, storyAppeals } from "./test/appealStories";

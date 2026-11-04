@@ -464,7 +464,7 @@ func financeChanges(t *testing.T, e *financeEnv) {
 }
 
 // financeProviderSpelling checks that the spellings of a provider share one breakdown line, which
-// shows the provider of the newest label revision among the items of the period (ADR-0098).
+// shows the provider of the newest label revision among the items of the period (ADR-0067).
 func financeProviderSpelling(t *testing.T, e *financeEnv) {
 	ctx := t.Context()
 	monthly := finance.Recurrence{Schedule: finance.ScheduleMonths, Interval: 1}

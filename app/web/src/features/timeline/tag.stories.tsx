@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The timeline of a hashtag (/tags/{tag}; FR-203) in the states of ADR-0112 §1.
+// The timeline of a hashtag (/tags/{tag}; FR-203) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { type Schemas, statusPage } from "../../test/fixtures";

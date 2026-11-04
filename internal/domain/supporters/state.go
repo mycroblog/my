@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// The state of a subscription (ADR-0072 §7, T1, G1) follows from the provider's snapshot,
+// The state of a subscription (ADR-0072 §7) follows from the provider's snapshot,
 // re-read on every signal, and from our own facts: a full refund or a chargeback, and the
 // deadlines that our Scheduler keeps. Derive is a function of what it is given, so the order,
 // duplicates, and losses of the provider's events change nothing; a transition is recorded only
@@ -149,7 +149,7 @@ func EndReasonOf(state State, reason Reason) EndReason {
 }
 
 // GracePeriod is how long after the first failed payment a past-due subscription keeps its role
-// (ADR-0072 §7, G1). It does not depend on the provider's retries.
+// (ADR-0072 §7). It does not depend on the provider's retries.
 const GracePeriod = 7 * 24 * time.Hour
 
 // CheckoutTimeout is how long a subscription may stay pending before the Scheduler re-reads it
@@ -388,7 +388,7 @@ func DeadlineOf(t Transition, startedAt time.Time) (Deadline, time.Time, bool) {
 // RoleChange is what a transition does to the roles of the subscriber.
 type RoleChange struct {
 	// Revoke and Grant are plans whose roles to revoke and grant; both set is a change of plan,
-	// whose badge choice moves to the new role (ADR-0071 §2).
+	// whose badge choice moves to the new role (ADR-0070 §11).
 	Revoke, Grant string
 }
 

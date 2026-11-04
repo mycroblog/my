@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The pure parts of the room form (web-client/README.md T4): reading the hashtags typed in its field, and which
-// visibilities have a start post (ADR-0100 §9, 回答 13).
+// visibilities have a start post (ADR-0100 §9).
 import { describe, expect, test } from "vitest";
 import { characterCount, isValidRoomName, offersStartPost, parseHashtags } from "./useVoiceRoomForm";
 

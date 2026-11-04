@@ -316,7 +316,7 @@ func (s *Server) GetHashtagTimeline(ctx context.Context, req GetHashtagTimelineR
 // 404 here too. The viewer's
 // timeline languages do not apply: a profile shows the account in every language. The first
 // page of a logged-in viewer may start fetching the recent posts of a remote account
-// (Options.Outboxes, ADR-0044).
+// (Options.Outboxes, ADR-0006).
 func (s *Server) ListAccountStatuses(ctx context.Context, req ListAccountStatusesRequestObject) (ListAccountStatusesResponseObject, error) {
 	cv, v := timelineViewer(ctx)
 	if p := s.plainPageProblem(ctx, req.Params.Cursor, req.Params.Limit); p != nil {

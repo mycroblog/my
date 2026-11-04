@@ -21,7 +21,7 @@ export type ProfileView = {
   handle: string;
   /** The profile text as the server sanitized it, or null when there is none. */
   note: SanitizedHtml | null;
-  /** The role badges that the account shows, highest role first (ADR-0071); their labels are the staff's text. */
+  /** The role badges that the account shows, highest role first (ADR-0070); their labels are the staff's text. */
   badges: { id: string; label: string; color: BadgeColor }[];
   /** The metadata fields: a plain-text name and a sanitized value. */
   fields: { key: string; name: string; value: SanitizedHtml }[];

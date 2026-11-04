@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The timelines in every width × locale project (ADR-0027): the feed of the local and hashtag timelines,
+// The timelines in every width × locale project (ADR-0110): the feed of the local and hashtag timelines,
 // its paging and keys, and the empty state. `vite preview` has no client API, so the spec answers the
 // timeline operations itself with pages shaped like api/openapi.yaml's StatusPage.
 import type { Page } from "@playwright/test";

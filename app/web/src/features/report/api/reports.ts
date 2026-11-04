@@ -52,7 +52,7 @@ export function createReportMutation(api: Api) {
 }
 
 /**
- * Marks what a new report changes (ADR-0045): for a moderator, the admin screen's lists of reports and its
+ * Marks what a new report changes (ADR-0028): for a moderator, the admin screen's lists of reports and its
  * counts of open work, which are cached only once they have opened it. They are marked stale, to be fetched again when they open.
  */
 export function cacheFiledReport(queryClient: QueryClient): Promise<void> {

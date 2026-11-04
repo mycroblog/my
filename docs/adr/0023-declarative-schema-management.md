@@ -1,68 +1,203 @@
-# ADR-0023: DB スキーマは宣言的に管理し、Atlas（Community Edition）で適用する
+# ADR-0023: DB スキーマを宣言的に管理し、my schema apply で適用し、更新でデータを引き継ぐ
 
-- Status: Accepted（v0 の破壊的変更の扱いを ADR-0087（実運用開始後のスキーマ変更とデータの引き継ぎ）が、スキーマの適用を Atlas の CLI で行い単一バイナリに組み込まないことを ADR-0126（スキーマの適用を my に組み込み、Atlas の Go ライブラリで my schema apply する）が置き換える）
+- Status: Accepted
 - Date: 2026-10-16
 - Deciders: @rosylilly
-- Issue: —
+- Issue: #1028, #1888
 
-## Context
+## Decision（決定）
 
-DB スキーマは方言ごとに `schema/<dialect>.sql` を持つ（ADR-0003）。v0 はマイグレーション履歴を持たず、破壊的変更を許容する（ADR-0012）。
-このスキーマファイルを実際の DB にどう反映するかを決める必要がある。
+### 1. 目標スキーマを正とする
 
-- 毎回 DB を作り直す（`db reset`）だけでは、開発中の DB やテスト運用のインスタンスのデータを、変更のたびに失う。
-- 手書きのマイグレーション SQL は、スキーマファイルとの二重管理になり、方言ごとに書き分ける手間も増える。
-- 「あるべきスキーマ」をファイルで宣言し、現在の DB との差分をツールに計算させれば、スキーマファイルだけを正として扱える。
-
-## Decision Drivers
-
-1. スキーマの正が 1 つ（方言ごとの目標スキーマファイル）であること
-2. SQLite と PostgreSQL の両方に対応していること
-3. OSS（AGPL-3.0）のコントリビュータが、無償・ログインなしで同じ手順を使えること
-4. 目標スキーマを sqlc（ADR-0003）とも共有できる形式（SQL）で書けること
-5. v1 以降に、目標スキーマからバージョン付きのマイグレーションを生成する道があること
-
-## Considered Options
-
-1. **Atlas Community Edition**（Apache-2.0）: 目標スキーマを SQL または HCL で書き、`atlas schema apply` で差分を計算して適用する。差分は開発用 DB（dev database）に目標スキーマを実際に流して正規化してから計算する。`atlas migrate diff` で、目標スキーマからバージョン付きのマイグレーションも生成できる。
-2. Atlas 標準配布版: Community Edition の機能に加え、`schema plan` / `schema lint` や、ビュー・トリガー・拡張機能などを扱える。ただし一部の機能は `atlas login` と、試用期間後のライセンスが必要。
-3. sqldef（MIT。同梱の SQL パーサは Apache-2.0）: 目標スキーマを SQL で書き、自前のパーサで差分を計算する。開発用 DB は要らないが、パーサが対応していない構文は扱えない。
-4. 宣言的にせず、手書きのマイグレーション（goose など）。
-
-## Decision
-
-**1. Atlas Community Edition を採用し、DB スキーマを宣言的に管理する。**
-
-- **スキーマの正は、方言ごとの目標スキーマファイル `schema/sqlite.sql` / `schema/postgres.sql`（SQL）** とする。
+- **スキーマの正は、方言ごとの目標スキーマファイル `schema/<dialect>/<NN>-<module>.sql`（SQL。ADR-0081）** とする。
   - 同じファイルを sqlc のスキーマ入力にも使う。
-  - 論理データモデル（`docs/architecture/data-model.md`）との乖離は CI で検査する（ADR-0003）。
-- **スキーマの変更は目標スキーマファイルの編集だけで行う。** マイグレーション SQL は手で書かない。
-- 適用は `atlas schema apply`（目標スキーマ → 対象 DB）で行う。
-  - 開発用 DB は、SQLite ならインメモリ（`sqlite://dev?mode=memory`）、PostgreSQL ならコンテナを使う。
-  - 差分の確認は `atlas schema diff` / `atlas schema apply --dry-run` で行う。
-- Makefile に `db-apply`・`db-diff`・`db-reset` などのターゲットを用意し、Atlas の CLI を直接叩かなくても済むようにする（M1）。
-- **使うのは Community Edition だけ** とする。標準配布版の機能や `atlas login` が必要な機能に依存しない。
-  - CI とコンテナイメージには Community Edition のバイナリを入れる（`arigaio/atlas:<version>-community`、または `atlasgo.sh` の `--community`）。
-  - バージョンは固定する。
+  - 論理データモデル（`docs/architecture/data-model/`）との乖離は CI で検査する（ADR-0003）。
+- **スキーマの変更は目標スキーマファイルの編集だけで行う。** マイグレーション SQL は手で書かない。コミットするマイグレーションのファイルも持たない。
+
+### 2. Atlas Community Edition だけを使う
+
+- 差分の計算と適用には Atlas Community Edition（Apache-2.0）を使う。**標準配布版の機能や `atlas login` が必要な機能に依存しない。**
+- CI には Community Edition のバイナリを入れる（`arigaio/atlas:<version>-community`、または `atlasgo.sh` の `--community`）。バージョンは固定する（§12）。
+- CI の CLI の開発用 DB は、SQLite ならインメモリ（`sqlite://dev?mode=memory`）、PostgreSQL ならコンテナを使う。本番の適用の開発用 DB は §10 のとおり。
 - **Community Edition で扱えないもの**（拡張機能、シーケンス、パーティショニング、ビュー、トリガーなど）は、目標スキーマに書かない。
-  - 必要な拡張機能は、Atlas の前に実行する冪等な準備 SQL（`schema/postgres.bootstrap.sql`、`CREATE EXTENSION IF NOT EXISTS …`）で作る。
+  - 必要な拡張機能は、適用の前に実行する冪等な準備 SQL（`schema/postgres.bootstrap.sql`、`CREATE EXTENSION IF NOT EXISTS …`）で作る。
   - ID は UUIDv7 をアプリで生成するので（ADR-0003）、シーケンスは使わない。
-- **v0 の破壊的変更**（ADR-0012）:
-  - カラムの削除など、データを失う変更も `schema apply` で反映してよい。
-  - 差分の適用に失敗する場合や、整合性を保てない場合は、`db-reset`（DB を作り直してから適用）を使う。
+
+### 3. 版付きのマイグレーションへの移行
+
 - **v1 以降**: 目標スキーマは引き続き正とし、`atlas migrate diff` で目標スキーマからバージョン付きのマイグレーションを生成して、本番に適用する。生成物の運用（レビュー・適用手順）は、v1 に向けた ADR で決める。
+- それまでは §5 の形で、宣言的なまま更新でデータを失わない変更だけを許す。破壊的な変更は 2 段階に分ける手間がかかるが、その手間は破壊的な変更をするときだけで、多くの変更（表・列・索引の追加）には要らない。
+- 見直す条件: データの書き換えを伴う変更が頻繁になる（目安としてマイナー版ごとに複数）か、版を飛ばした更新を保証する必要が出たら
+  （メンテナ以外の運営者が増えるなど）、版付きのマイグレーションに移る ADR を書く。v1 に予定している移行を前倒しすることになる。
 
-## Consequences
+### 4. いつから効くか
 
-- スキーマの変更は、目標スキーマファイルの差分としてレビューできる。手書きのマイグレーションとの二重管理がない。
-- 開発中やテスト運用のインスタンスでも、変更のたびに DB を作り直さずに済む。
-- Community Edition には `schema lint` / `schema plan` がないので、破壊的変更の検出は `schema apply --dry-run` の出力を CI で確認する形で行う。
-- Aurora DSQL のドライバは Community Edition にない。DSQL を使う場合に Atlas の PostgreSQL ドライバで適用できるかは、未検証である（ADR-0003 の Open Questions の DSQL 検証に含める）。
-- サーバーの単一バイナリには Atlas を組み込まない。スキーマの適用はデプロイ手順の一部として、Atlas の CLI で行う。
-  - Self-hosted の最小構成でも、Atlas の CLI（またはそれを含むコンテナイメージ）が必要になる。
-  - デプロイテンプレート（ADR-0010）に、適用ステップとして含める（docker compose の一回限りのサービス、Kubernetes の Job / initContainer、Cloud Run のジョブなど）。
+- **最初のリリース `v0.1.0` から効く。** メンテナのインスタンスはリリースの版だけを動かし、`main` を直接は動かさない。
+- `v0.1.0` より前は、DB を作り直してよい（`db:reset`）。データを失う差分も適用してよく、データ移行ツールは提供しない。設定キー・内部インターフェイス・ディレクトリ構成も任意に変えてよく、互換の層は残さない。クライアント API は §8 のとおり ADR-0090 §8 に従い、ActivityPub の外部仕様と連合の識別子は §9 のとおり壊さない。運用開始の前に済ませたい破壊的なスキーマ変更は、`v0.1.0` の前に入れる。
+- `v0.1.0` 以降に `main` に入る PR は、**1 つ 1 つが「直前の `main` から更新できる」スキーマ変更である**ことを求める。
+  リリースの時にまとめて揃える形にすると、並行の作業で溜まった変更をリリースの直前に組み直すことになるため。CI の検査（§6）も PR ごとに効かせる。
 
-## 参考
+### 5. 変更の分類と扱い
 
-- [Atlas](https://atlasgo.io/) / [Community Edition](https://atlasgo.io/community-edition)
-- [sqldef](https://github.com/sqldef/sqldef)
+| 分類 | 例 | 扱い |
+| --- | --- | --- |
+| A. 追加 | 表・索引の追加、NULL 可の列や `DEFAULT` のある列の追加、制約を緩める | そのまま適用してよい |
+| B. 投影の作り直し | ADR-0020 の投影の表の列の変更・削除・作り直し | 許す。更新の手順（§7）で `my projection rebuild` を実行し、元のイベントから作り直す |
+| C. データを失う・書き換える | リソース・イベント・現在値の表の列や表の削除、型の変更、列の分割、既存の行が満たさないかもしれない `NOT NULL`・`UNIQUE`・`CHECK` の追加 | 1 つの PR では行わない。下の 2 段階に分ける |
+
+C の 2 段階:
+
+1. **expand（版 N）**: 新しい表・列を A の形で足す。サーバーは新しい側に書き、読むときは新しい側を使う。
+   既存の行の書き換えは、`my` に組み込んだ**更新の手順**（Go。キー付き・冪等・小さなトランザクションの繰り返し）で行う。
+   手順を実行したことは、イベントの表（`10-infrastructure.sql` に置く。例: `data_upgrade_runs`、手順のキーと完了時刻）に記録する（ADR-0020 規約 1）。
+2. **contract（版 N より後のマイナー版）**: 古い列・表を目標スキーマから消す。contract を含む版は、前提とする更新の手順のキーを `my` に持つ。
+
+- 新しい版のサーバーが動く前に、古い版のサーバーが新しいスキーマで短い間動くことがある（スキーマの適用 → サーバーの入れ替え）。
+  そのため A の追加は、古い版の書き込みを壊さない形にする（`NOT NULL` の列には `DEFAULT` を付けるか、新しい表に置く）。
+  無停止の入れ替えは保証しない。更新の間はメンテナンスモード（ADR-0088）を使える。
+- 戻すときは、更新の前に取ったバックアップから戻す。逆向きのマイグレーションは作らない。
+
+### 6. CI での検出
+
+- Atlas Community Edition の `migrate lint` で、破壊的な差分を検出する。CI の中で一時的なマイグレーションのディレクトリを作り
+  （空 → 比べる元の目標スキーマ、比べる元 → PR の目標スキーマ、の 2 つを `atlas migrate diff` で生成）、最新の 1 つを `migrate lint --latest 1` にかける。
+  コミットするマイグレーションのファイルは作らない（§1）。
+- Atlas Community Edition 1.3.0 の `migrate lint` は `atlas login` なしに動く。報告の範囲は次のとおり（2026-10-23 に SQLite と PostgreSQL 18 で確認）。
+
+| 変更 | SQLite | PostgreSQL |
+| --- | --- | --- |
+| 表の削除・列の削除（列の名前の変更も、削除と追加の差分になる） | エラー（`DS102`・`DS103`、終了コード 1） | 同左 |
+| `NOT NULL` にする、`NOT NULL` で `DEFAULT` のない列の追加、一意の索引の追加 | 警告だけ（終了コード 0） | 同左 |
+| 型の変更 | 報告しない（表の作り直しで行をコピーする） | 暗黙に変換できる型（`integer` → `bigint`、`text` → `varchar(10)` の縮小も）は報告しない。変換できない型（`text` → `uuid`）は dev DB での実行の失敗として終了コード 1 |
+| `CHECK` の追加 | 報告しない | 報告しない |
+
+- そのため CI は、`migrate lint` の終了コードだけでなく、警告を含むすべての診断を失敗として扱う。さらに、比べる元と PR の `atlas schema inspect` を比べ、既存の列の型と `CHECK` の変化も失敗として扱う。
+- 比べる元は、PR では `main`、Merge Queue では queue の先頭の基準のコミットの目標スキーマ。SQLite と PostgreSQL の両方で行う。
+- 投影の表（B）への破壊的な差分と、contract の PR（C の 2 段階目）は、決定者の承認があるときだけ通す。承認の印は PR のラベルで、PR の実行の検査がラベルを確かめる。
+  ラベルがなければ、破壊的な差分の検査は落ちる。
+- Merge Queue では承認を確かめ直さない。`merge_group` の event は `head_sha`・`head_ref`・`base_sha`・`base_ref`・`head_commit` だけを持ち、PR の番号やラベルの欄を持たない
+  （2026-10-23 に [octokit/webhooks の `merge_group` の schema](https://github.com/octokit/webhooks/blob/aa80c24a3f55354465b8b1438d33dd5602956d0d/payload-schemas/api.github.com/merge_group/checks_requested.schema.json) で確認）。
+  Merge Queue は、PR の実行で承認された差分を通し、後から `main` に入った変更と合わせて目標スキーマが適用できることだけを確かめる。
+- `docs/operations/database.md` の手順は、適用の前に `my schema apply -dry-run` で流れる SQL を確かめることを勧める。
+
+### 7. 版の間の更新
+
+- **保証するのは、同じマイナー版の中の更新と、1 つ前のマイナー版（の最新のパッチ）からの更新。** マイナー版を飛ばすときは、各マイナー版の最新のパッチを順に通る。
+  contract はマイナー版でだけ行い、パッチ版はスキーマを A・B の範囲でしか変えない。
+- 更新の手順（運営者向け、`docs/operations/database.md` に書く）:
+  1. バックアップを取る（SQLite はファイルの複製、PostgreSQL は `pg_dump`）
+  2. 新しい版の `my db upgrade --check`: この DB に、新しい版の contract が前提とする更新の手順が記録されているかを確かめる。足りなければ、通るべき版を示して止まる
+  3. 新しい版の `my schema apply`（§10）
+  4. 新しい版の `my db upgrade`: 未実行の更新の手順と、作り直しの要る投影の `my projection rebuild` を実行する
+  5. サーバーを起動する。readiness は「スキーマが適用済み」に加え、必要な更新の手順が済んでいることを確かめる
+- `my db upgrade --check` と `my db upgrade` は、運営者が適用の前後に動かす一回限りのジョブとする（Cloud Run のジョブ、Kubernetes の Job、Compose の一回限りのサービス）。
+  `my serve` の起動時には実行しない。複数のインスタンスが同時に起動しても、更新の手順が並んで走らないようにするため。
+- Compose では 2〜4 を一回限りのサービスとして `schema` の前後に並べ、`docker compose up -d` だけで済むようにする。
+- `db:reset`（作り直し）は、公開して連合しているインスタンスでは使わない手順として残す（開発・検証用）。
+
+### 8. スキーマ以外の変更
+
+`v0.1.0` 以降も v0.x の間は次を許す。ただしリリースノートに書く。
+
+- 設定キーの変更・削除: 起動時の設定の検査で、消えた・名前の変わったキーを新しい名前とともにエラーにする（黙って無視しない）
+- 内部インタフェイス・ディレクトリ構成の変更: 制限しない
+
+クライアント API（`/api/v1`）の安定性は ADR-0090 §8 が決める（M5 以降は追加を既定とし、破壊的変更は
+`Deprecation`・`Sunset` のヘッダを付けて少なくとも 1 つのマイナー版の間残す）。この ADR は API の扱いを決めない。
+
+リリースノートには、自動で作る変更の一覧（`!` の付いたコミットを含む）に加えて、次の 2 節を必ず置く: **更新の手順**（その版で要る `my db upgrade` と、通るべき版）、
+**破壊的変更**（設定キー・API・スキーマの contract）。
+
+### 9. いつも守るもの
+
+- **ActivityPub の外部仕様**: 外部実装との互換性は「後方互換性」ではなく「仕様準拠」なので壊さない。
+- **連合の識別子**（Actor URI・投稿 URI）: 形式を変えると連合先で別人扱いになるので、v0 でも変えない。変更する場合は ADR を書く。
+- 破壊的変更は PR タイトルに `!`（Conventional Commits: `feat!:`）を付け、リリースノートに記載する。
+- FR-801 は「`v0.1.0` 以降は適用と `my db upgrade` で更新する」とする。
+
+### 10. `my schema apply`
+
+Atlas の Go ライブラリ（`ariga.io/atlas`、Apache-2.0）を `my` に組み込む。目標スキーマを開発用 DB に流して読み取り（inspect）、対象 DB を読み取って差分を取り（`SchemaDiff`）、計画を作って流す（`PlanChanges` / `ApplyChanges`）。CLI の `atlas schema apply` と同じエンジンなので、CI の `db:lint` が確かめた差分がそのまま本番で流れる。
+
+```text
+my schema apply [-dry-run] [-allow-destructive] [-config <file>]
+```
+
+- 設定（`db`・`database_url`）はサーバーと同じものを読む。適用するのは、そのバイナリに埋め込んだ目標スキーマ（`schema.SQLite` / `schema.Postgres`）。
+- 手順:
+  1. PostgreSQL では、準備 SQL（`schema.PostgresBootstrap`）を対象 DB に流す。運用者が `psql` を使う手順はない。
+  2. 開発用 DB を用意し、目標スキーマを流して読み取る。
+     - SQLite はインメモリの DB（接続ごとに別の DB になるので、接続は 1 つ）。
+     - PostgreSQL は、対象 DB の中に実行ごとに名前の違う一時スキーマを作り、`search_path` をそのスキーマ（と拡張機能のある `public`）にした 1 つの接続で目標スキーマを流して読み取る。
+       読み取った結果のスキーマ名を対象のスキーマ（`public`）に置き換えてから差分を取る。一時スキーマは、失敗したときも含めて消す。
+       対象 DB に `CREATE` の権限がない環境のために、別の空の DB を指す設定（例: `database_dev_url`）も受ける。
+  3. 対象 DB を読み取り、差分を取り、計画を作る。差分がなければ何もしない（何度実行してもよい）。
+  4. 計画を 1 つのトランザクションで流す。途中で失敗したら全体を戻す。
+     - PostgreSQL は DDL もトランザクションの中で戻る。
+     - SQLite は Atlas の `sqlite.OpenTx` を使う。対象 DB はサーバーと同じ接続の設定（`foreign_keys(1)`）で開き、`OpenTx` が外部キーの強制を外してトランザクションを開き、
+       コミットの前に `PRAGMA foreign_key_check` の違反が増えていないことを確かめる（増えていたら戻す）。表の作り直し（新しい表を作り、行を写し、古い表を消して名前を替える）もこの中で行う。
+  5. `-dry-run` は計画の SQL を表示するだけで流さない。
+- **破壊的な差分は既定で拒む。** 差分（`schema.Change`）に表・列の削除（`DropTable`・`DropColumn` など）が含まれるときは、`-allow-destructive` がない限り何も流さずに失敗する。
+  計画の SQL の文字列では判定しない（SQLite の表の作り直しは、データを失わなくても `DROP TABLE` を含む）。
+  §5 の B・C（投影の作り直し・contract）を運用者が意図して流すときだけ付ける。CI の `db:lint` の検査はそのまま残す。
+- 同時に複数が動いても壊れないように、PostgreSQL では適用の間 advisory lock（セッション単位）を取る。SQLite は書き込みのロックで直列になる。
+- `my serve` はスキーマを適用しない。起動のたびの差分計算（scale-to-zero の起動の遅れ）と、複数のインスタンスの同時の適用を避けるため。
+
+### 11. 置き場所
+
+- Atlas の方言のドライバは DB の SDK と同じく外部への依存なので、`internal/adapter/db` の方言ごとのアダプタに置く。`no_sqlite` / `no_postgres` のビルドタグで、その方言の Atlas のドライバも外れる。
+- `cmd/my` がコマンドを組み立てる。ドメイン・アプリケーション層は Atlas を import しない（ADR-0002）。
+
+### 12. CLI とライブラリの版
+
+- CI の `db:lint`・`db:lint-test` は Atlas の CLI（`migrate diff` / `migrate lint`）を使う。
+- `go.mod` の `ariga.io/atlas` の版と `scripts/install-atlas.sh` の `ATLAS_VERSION` を同じにし、`scripts/task.sh check` でずれを検査する。Dependabot が片方だけを上げても通らない。
+
+### 13. デプロイと文書
+
+- `Dockerfile` に `schema` ステージと `schema` イメージを持たない。Docker Compose の `schema` サービスはサーバーのイメージで `my schema apply` を動かす。
+- デプロイテンプレート（ADR-0010）は、適用を一回限りのステップとして含める（Docker Compose の一回限りのサービス、Kubernetes の Job / initContainer、Cloud Run のジョブなど）。
+- 開発用のタスク（`db:apply`・`db:diff`・`db:reset`）は `my schema apply` を使う。
+- `docs/operations/database.md` の初期化と更新の手順は `my schema apply` で書く。
+
+### 14. `my schema apply` を見直す条件
+
+- Atlas のライブラリの API（`sql/schema`・`sql/migrate`・方言のドライバ）が Community Edition の範囲から外される、または互換性を大きく壊す変更が続く。
+- sqldef が今の目標スキーマを書き換えずに読め、PostgreSQL でも収束するようになり、開発用 DB を不要にする利点が上回る。
+
+## 経緯
+
+スキーマを実際の DB に反映する方法として、毎回の作り直しはデータを失い、手書きのマイグレーションはスキーマファイルとの二重管理になる。そこで目標スキーマをファイルで宣言し、差分をツールに計算させることにした。基準は、正が 1 つであること、SQLite と PostgreSQL の両方に対応すること、コントリビュータが無償・ログインなしで使えること、sqlc と SQL を共有できること、v1 以降に版付きへ移る道があることである。
+
+v0 ははじめ、スキーマも設定も API も任意に変えてよく、マイグレーション履歴を持たず、DB を作り直す方針だった。M5 の受け入れ基準が「メンテナのインスタンスが実運用されている」になると、これでは更新で利用者のデータが消える。Atlas CE 1.3.0 の `schema apply --auto-approve` は列の削除を警告なしに適用し（2026-10-23 確認）、作り直すと鍵暗号化鍵で包んだアカウントの鍵が消えて同じ URI の Actor の鍵が変わるので、データの消失より悪い。そこで最初の更新の前に、宣言的なまま expand / contract に分け、データの書き換えを `my` の手順で行う形に決めた（#1028）。
+
+適用ははじめ Atlas の CLI で行い、単一バイナリに組み込まない決定だった。`schema` イメージ、`psql` での準備 SQL、`--dev-url` の開発用 DB を運用者が用意することになり、版ごとの手順と M6 のテンプレートが重くなるので、`my` に組み込んだ（#1888、NFR-COST-3）。2026-10-30 の手元の試作（Go 1.27、`CGO_ENABLED=0`、PostgreSQL 18、Atlas v1.3.0）で、623 文の目標スキーマを両方言で書き換えずに適用でき、2 回目の差分が 0 で、一時スキーマ・トランザクション・破壊的な差分の判定・SQLite の表の作り直しが CLI と同じ結果になることを確かめた。
+
+## 採らなかった案
+
+- Atlas 標準配布版: `schema plan` / `schema lint` やビュー・トリガーを扱えるが、一部は `atlas login` と試用期間後のライセンスが要る。
+- 手書きのマイグレーション（goose など）: スキーマファイルとの二重管理になり、方言ごとに書き分ける。
+- 今のまま破壊的な差分も適用し、適用できなければ作り直す: 手間は増えないが、実運用のデータを失い、連合先と鍵が食い違う。
+- 今から版付きのマイグレーション: 業界で標準で（Mastodon、GoToSocial、Misskey）、版を飛ばした更新も自然に扱え、データの書き換えを同じ SQL に書ける（最も強い案）。ただし PR ごとのファイルと `atlas.sum` が並行の作業で必ず衝突し（ADR-0081 と逆行）、データの書き換えを方言ごとの SQL で手書きすることになる。
+- 開発は宣言的、リリースの時に版付き: PR の衝突はないが、データの書き換えの設計がリリースの直前に集中し、`main` の途中からの更新の経路は試されず、正が 2 つになる。
+- sqldef（v3.11.28）を組み込む: 開発用 DB が要らないのが最大の利点。ただし SQLite で 24 文、PostgreSQL で 7 文を読めず、読めた文でも 2 回目に 61 文の差分が出て収束せず、`CHECK` の括弧を落とした SQL を出す。目標スキーマの書き換えと上流の修正待ちが要る。
+- Atlas の CLI をサーバーのイメージに同梱する: 実装は最も小さいが、開発用 DB と準備 SQL の扱いは運用者に残り、別の実行ファイルの版を持ち続ける。
+- 別の `schema` イメージのまま: 変更は要らないが、運用者の手順とイメージが減らない。
+
+## Consequences（影響）
+
+- スキーマの変更は、目標スキーマファイルの差分としてレビューできる。PR ごとのマイグレーションのファイルも `atlas.sum` もないので、並行の作業で衝突しない（ADR-0081）。
+- 実運用のインスタンスで、利用者のデータと Actor の鍵・フォロー関係を、更新で失わない。多くの変更（追加）は目標スキーマを編集するだけで済む。
+- 運用者に要るのはサーバーのイメージ 1 つになる。バイナリに埋め込んだスキーマを適用するので、版と目標スキーマの組み合わせを運用者が取り違えない。
+- 列の削除や型の変更は、2 つのマイナー版にまたがり、間の版では古い列を持ち続ける。データの書き換えを Go の手順で書くので、SQL 1 文で済む変換でも手順のコードと記録の表が要る。
+- マイナー版を飛ばした更新は保証しない。長く更新しなかった運営者は、版を順に通る必要がある。
+- `migrate lint` の検出は Atlas の解析器の範囲に限られるので `schema inspect` の比較を自前で足す。意味の変わる変更（値の解釈を変えるなど）はどちらでも検出できず、レビューで見る。
+- 古い版のサーバーが新しいスキーマで動く間の互換は「追加は書き込みを壊さない」という規則に頼り、検査は CI の外（レビュー）になる。
+- 承認は PR の実行だけで確かめるので、ラベルを付けた後の差分の変化はレビューで見る。
+- バイナリが大きくなる。Atlas と一緒に `hashicorp/hcl/v2`（MPL-2.0。`GO_ALLOWED_LICENSES` に含まれる）・`zclconf/go-cty` などが入る。この増分は判断に入れない。
+- CLI の `atlas schema apply` が `file://` と `--dev-url` で行っている処理を `my` が自前で持つ。CLI と振る舞いがずれないことは、テストで確かめ続ける必要がある。
+- Atlas の版の更新は、`go.mod` と CLI の 2 か所を一緒に上げる手間がかかる。
+
+## Open Questions / 要検証
+
+- 版を飛ばした更新を将来保証するなら、更新の手順と contract の対応から、通る版を自動で選べるか

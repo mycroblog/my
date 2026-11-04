@@ -278,7 +278,7 @@ func (s *Service) GrantManagedRole(ctx context.Context, tx uow.Tx, userID, roleI
 	if err := s.d.Repository.InsertRoleGrant(ctx, tx, g); err != nil {
 		return false, err
 	}
-	// A new grant starts with the badge hidden (ADR-0071 §2).
+	// A new grant starts with the badge hidden (ADR-0070 §11).
 	if err := s.d.Repository.SetRoleBadgeDisplayed(ctx, tx, userID, role.ID, false, at); err != nil {
 		return false, err
 	}
@@ -303,7 +303,7 @@ func (s *Service) RevokeManagedRole(ctx context.Context, tx uow.Tx, userID, role
 	if err := s.d.Repository.InsertRoleRevocation(ctx, tx, identity.RoleRevocation{GrantID: grantID, RevokedAt: at}); err != nil {
 		return false, err
 	}
-	// The choice to show the badge goes with the role (ADR-0071 §2).
+	// The choice to show the badge goes with the role (ADR-0070 §11).
 	if err := s.d.Repository.SetRoleBadgeDisplayed(ctx, tx, userID, role.ID, false, at); err != nil {
 		return false, err
 	}
@@ -311,7 +311,7 @@ func (s *Service) RevokeManagedRole(ctx context.Context, tx uow.Tx, userID, role
 }
 
 // ReplaceManagedRole revokes one managed role from a user and grants another inside tx, for a
-// change of plan (ADR-0072 §8): as ReplaceRole does (ADR-0071 §2), a user who shows the badge of
+// change of plan (ADR-0072 §8): as ReplaceRole does (ADR-0070 §11), a user who shows the badge of
 // the old role shows the badge of the new one, and the choice goes away when the new role has no
 // badge. It fails like GrantManagedRole.
 func (s *Service) ReplaceManagedRole(ctx context.Context, tx uow.Tx, userID, fromRoleID, toRoleID string, at time.Time) error {

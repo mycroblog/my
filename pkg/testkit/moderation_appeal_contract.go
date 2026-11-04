@@ -20,7 +20,7 @@ import (
 )
 
 // AppealContract verifies the appeals of a database adapter's moderation repository through the
-// moderation use cases (FR-707, ADR-0038): a local account appeals an action on it once, within
+// moderation use cases (FR-707, ADR-0058): a local account appeals an action on it once, within
 // the instance's appeal window (a ban, also only before the account's deletion: no later than
 // moderation.BanDeletionDelay and never once the account is deleted), never an action on another
 // account, with a text of at most moderation.MaxAppealText characters; its own actions show the

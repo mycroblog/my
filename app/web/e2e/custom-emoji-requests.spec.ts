@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The custom emoji requests in every width × locale project (ADR-0070 §2, §3, ADR-0027): a user whose roles have
+// The custom emoji requests in every width × locale project (ADR-0070 §2, §3, ADR-0110): a user whose roles have
 // create_custom_emojis and no staff permission opens their custom emoji page from the settings, sees their limit,
 // requests an emoji with an image, and withdraws a request; an administrator with manage_custom_emojis opens the
 // requests tab from the address that their notification links to and rejects a request with a reason. Every screen

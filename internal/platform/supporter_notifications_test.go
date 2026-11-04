@@ -124,7 +124,7 @@ func testSupporterNotifications(t *testing.T, dialect string) {
 
 // TestSupporterNotificationsSkipADeactivatedAccount has the provider change the subscription of an
 // account that its owner deactivated: nothing is created, and nothing is there on coming back
-// (ADR-0145 §6). The refusal of a deactivation with a live subscription leaves this to a race and
+// (ADR-0089 §16). The refusal of a deactivation with a live subscription leaves this to a race and
 // to what a provider sends late, so the test records the deactivation through the account module.
 func TestSupporterNotificationsSkipADeactivatedAccount(t *testing.T) {
 	t.Parallel()

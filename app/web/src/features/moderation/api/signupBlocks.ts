@@ -135,7 +135,7 @@ export function liftSignupBlockMutation(api: Api) {
 
 /**
  * Writes the lifted block from the answer into the cached lists of sign-up blocks, which show it right
- * (ADR-0045): those of the blocks in effect drop it, the others show it lifted.
+ * (ADR-0028): those of the blocks in effect drop it, the others show it lifted.
  */
 export function cacheLiftedSignupBlock(queryClient: QueryClient, lifted: SignupBlock): void {
   for (const query of queryClient

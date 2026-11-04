@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// This file holds the emoji reactions of local accounts (FR-116, ADR-0052 §1, §2) and the Like
+// This file holds the emoji reactions of local accounts (FR-116, ADR-0051 §6, §7) and the Like
 // slot they share with favourites: a local account has, on each status, a favourite or one
 // reaction, never both and never two reactions, so that the one Like it sends to the status's
 // server always says what it has. Taking one fills the slot and takes back what was in it, in the
@@ -23,7 +23,7 @@ import (
 // React makes accountID react to statusID with emoji and returns the reaction. emoji is a Unicode
 // emoji, or the shortcode (with or without colons) of an enabled custom emoji of this instance
 // whose image can be shown; anything else, a custom emoji of another server among them, fails
-// with content.ErrInvalidReaction (ADR-0052 §2). Reacting takes back the account's favourite of
+// with content.ErrInvalidReaction (ADR-0051 §7). Reacting takes back the account's favourite of
 // the status and its reaction with another emoji; reacting again with the same emoji returns the
 // existing reaction and changes nothing. The checks are those of Favourite: a status the account
 // cannot see fails with ErrNotFound, and an account under the interact restriction with
@@ -200,7 +200,7 @@ func (s *Interactions) ReactionEmoji(ctx context.Context, name string) (string, 
 }
 
 // LocalEmoji returns the emoji that a local account gives a voice chat room as its icon
-// (FR-923), under the rules of the emoji it reacts with (ADR-0052 §2): a Unicode emoji,
+// (FR-923), under the rules of the emoji it reacts with (ADR-0051 §7): a Unicode emoji,
 // normalized, or the ID of an enabled custom emoji of this instance whose image can be shown.
 // Anything else fails with content.ErrInvalidReaction.
 func (s *Interactions) LocalEmoji(ctx context.Context, name string) (unicode, customEmojiID string, err error) {
@@ -211,7 +211,7 @@ func (s *Interactions) LocalEmoji(ctx context.Context, name string) (unicode, cu
 	return e.Unicode, e.CustomEmojiID, nil
 }
 
-// localReactionEmoji returns the emoji that a local account reacts with (ADR-0052 §2), with the
+// localReactionEmoji returns the emoji that a local account reacts with (ADR-0051 §7), with the
 // Emoji tag of a custom emoji: a Unicode emoji, normalized, or an enabled custom emoji of this
 // instance whose image can be shown.
 func (s *Interactions) localReactionEmoji(ctx context.Context, name string) (content.ReactionEmoji, *EmojiTag, error) {

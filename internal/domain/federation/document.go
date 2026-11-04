@@ -112,7 +112,7 @@ func (d ActivityDocument) Embedded() ActivityDocument {
 func (d ActivityDocument) Marshal() ([]byte, error) { return json.Marshal(d) }
 
 // ReactionLDContext returns the JSON-LD context of the Like of an emoji reaction: LDContext with
-// Misskey's _misskey_reaction (ADR-0052 §3).
+// Misskey's _misskey_reaction (ADR-0051 §8).
 func ReactionLDContext() []any {
 	c := LDContext()
 	terms := c[len(c)-1].(map[string]any)
@@ -121,7 +121,7 @@ func ReactionLDContext() []any {
 	return c
 }
 
-// LikeDocument is the Like of an emoji reaction (ADR-0052 §3): the Like of a favourite with the
+// LikeDocument is the Like of an emoji reaction (ADR-0051 §8): the Like of a favourite with the
 // emoji as its content and its _misskey_reaction, the same string (the Unicode emoji, or
 // ":shortcode:" of a custom emoji), and the Emoji tag of a custom emoji. Misskey and Akkoma read
 // it as a reaction, Mastodon and GoToSocial as a favourite.
@@ -384,7 +384,7 @@ const ImageType ObjectType = "Image"
 // AttachmentDocument is a media attachment of a Note. Name is the alternative text. FocalPoint is x, y from -1.0 to 1.0, left out at
 // the center; Width, Height, and Blurhash are left out when unknown. A video or audio file has
 // its poster as Icon, left out when it has none, and its length as Duration, an xsd:duration
-// such as "PT12.5S", as Mastodon sends them (ADR-0054 §5).
+// such as "PT12.5S", as Mastodon sends them (ADR-0005 §8).
 type AttachmentDocument struct {
 	Type       ObjectType     `json:"type"`
 	MediaType  string         `json:"mediaType"`
@@ -506,7 +506,7 @@ func (d ActorDocument) Embedded() ActorDocument {
 	return d
 }
 
-// Suspend returns d as a suspended actor is published (federation.md §11.1, ADR-0036): marked
+// Suspend returns d as a suspended actor is published (federation.md §11.1, ADR-0058): marked
 // suspended, with the profile emptied (name, summary, fields, tags, aliases) and nothing that
 // invites following or discovery, while the id, the collections, the inboxes, and the key stay,
 // so that servers can still address the actor and verify its signatures.
@@ -527,7 +527,7 @@ func (d ActorDocument) Suspend() ActorDocument {
 	return d
 }
 
-// PublicKeyDocument is the publicKey of an actor document (ADR-0032).
+// PublicKeyDocument is the publicKey of an actor document (ADR-0006).
 type PublicKeyDocument struct {
 	ID           string `json:"id"`
 	Owner        IRI    `json:"owner"`

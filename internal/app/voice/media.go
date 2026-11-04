@@ -19,10 +19,10 @@ import (
 )
 
 // The events of a media server and the reconciliation of its media path with the rooms
-// (ADR-0101 §2, ADR-0102 §4). The room domain is the source of truth: the events only make
+// (ADR-0101 §2, ADR-0101 §13). The room domain is the source of truth: the events only make
 // the reconciliation of voice.sweep come sooner, and nothing assumes they arrive.
 
-// JobMediaEvent applies one verified event of a media server (ADR-0102 §4): a session that
+// JobMediaEvent applies one verified event of a media server (ADR-0101 §13): a session that
 // joined the media path and is not a live session of the room is removed from it, and a live one
 // loses its older connections (SessionDeduplicator) and gets the room's current state; a session of the room that left, and is not connected again
 // with another connection, is taken away and disconnected as by ADR-0100 §6; a media room
@@ -109,7 +109,7 @@ type mediaPayload struct {
 
 // ReceiveMediaEvents verifies a delivery of the media server of the voice chat's method and
 // queues a JobMediaEvent for each of its events. The events are not recorded otherwise
-// (ADR-0102 §4).
+// (ADR-0101 §13).
 func (s *Service) ReceiveMediaEvents(ctx context.Context, req MediaWebhook) (MediaWebhookResult, error) {
 	src, ok := s.d.Transport.(EventSource)
 	if !s.Enabled() || !ok || string(s.d.Config.Transport) != req.Transport {
@@ -184,7 +184,7 @@ func (s *Service) MediaEvent(ctx context.Context, j queue.Job) queue.Result {
 
 // mediaJoined handles a session that joined the media path: one that is not a live session of
 // the room is removed (banned, gone, replaced by another device, or never joined: a
-// self-hosted LiveKit lets a removed participant connect again with its token, ADR-0102 §4);
+// self-hosted LiveKit lets a removed participant connect again with its token, ADR-0101 §13);
 // a live one gets the room's current state applied, since its grant may predate a change.
 func (s *Service) mediaJoined(ctx context.Context, room RoomRef, session string) error {
 	p, live, err := s.liveParticipant(ctx, room.ID, session)
@@ -196,7 +196,7 @@ func (s *Service) mediaJoined(ctx context.Context, room RoomRef, session string)
 	}
 	if d, ok := s.d.Transport.(SessionDeduplicator); ok {
 		// A session that connected again, to change its role on Sora, keeps its new
-		// connection (ADR-0102 §3).
+		// connection (ADR-0101 §12).
 		if err := d.Deduplicate(ctx, room, Session{ID: session, AccountID: p.AccountID}); err != nil {
 			return err
 		}
@@ -317,7 +317,7 @@ func (s *Service) pending(ctx context.Context, session string) (bool, error) {
 // for 2 × mediaConnectGrace: a room that stays empty after that is not opened again until then.
 const kvMediaReopened = "voice.media_reopened"
 
-// reconcile compares the media path of an open room with the room (ADR-0101 §2, ADR-0102 §4),
+// reconcile compares the media path of an open room with the room (ADR-0101 §2, ADR-0101 §13),
 // on a transport whose media server holds the sessions, with one call of Sessions per room:
 //
 //   - a media path that sees nobody while live sessions of the room should be on it has likely
@@ -325,7 +325,7 @@ const kvMediaReopened = "voice.media_reopened"
 //     live sessions get mediaConnectGrace to connect again;
 //   - every live session of the room that the media path sees gets the room's current state
 //     again (applyState), which puts right a change that the media server lost or that a
-//     client ignored (ADR-0102 §3);
+//     client ignored (ADR-0101 §12);
 //   - a live session that the media path does not see past mediaConnectGrace is taken away
 //     (takeAway), so that the evaluation of voice.sweep disconnects it (a host enters the grace)
 //     even if its client still sends heartbeats;

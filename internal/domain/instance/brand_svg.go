@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-// The SVG sanitizer of the brand images (ADR-0116 §2). It reads the tokens of the upload with
+// The SVG sanitizer of the brand images (ADR-0059 §9). It reads the tokens of the upload with
 // encoding/xml and writes a new document from the allowed elements and attributes only, so nothing
 // of the input reaches the output unless a rule lets it through. The output is served on the
 // server's own origin, so a missed construct is script on that origin: the rules are an allowlist,
@@ -48,7 +48,7 @@ const (
 )
 
 // brandElements are the SVG elements kept; every other element is dropped with its content,
-// except text and tspan, which are rejected (ADR-0116 §2).
+// except text and tspan, which are rejected (ADR-0059 §9).
 var brandElements = map[string]bool{
 	"svg": true, "g": true, "defs": true, "symbol": true, "use": true, "title": true, "desc": true,
 	"path": true, "rect": true, "circle": true, "ellipse": true, "line": true, "polyline": true, "polygon": true,
@@ -116,7 +116,7 @@ type svgAttr struct {
 	name, value string
 }
 
-// SanitizeBrandSVG checks and rebuilds an uploaded SVG of kind (ADR-0116 §2). It fails with a
+// SanitizeBrandSVG checks and rebuilds an uploaded SVG of kind (ADR-0059 §9). It fails with a
 // *BrandError when the upload breaks a rule that dropping cannot mend: malformed XML, a DOCTYPE or
 // an entity declaration, a root other than svg, a missing or unreadable viewBox, the size, element,
 // depth, and use limits, the aspect ratio of the kind, text that is not outlined, and CSS that may
@@ -407,7 +407,7 @@ func urlsAreFragments(s string) bool {
 }
 
 // cssForbidden are the constructs that make CSS load something, run script in old engines, or
-// escape the checks (ADR-0116 §2). The CSS is lowercased first. An escape (\) is forbidden, so no
+// escape the checks (ADR-0059 §9). The CSS is lowercased first. An escape (\) is forbidden, so no
 // keyword below can be spelled another way.
 var cssForbidden = []string{
 	"@import", "@font-face", "@namespace", "expression(", `\`, "<",

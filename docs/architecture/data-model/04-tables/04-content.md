@@ -4,7 +4,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `statuses` | リソース | `id`, `uri`, `url`（NULL 可。リモートの投稿の表示用 URL だけを持ち、ローカルの投稿の表示用 URL は読むときに作る。ADR-0053）, `author_account_id`, `is_local`（`bool`）, `visibility`（`enum(public, local, unlisted, private, direct)`）, `in_reply_to_uri`（NULL 可）, `conversation_uri`（NULL 可）, `published_at` | 一意 `(uri)`。インデックス `(author_account_id, id)`, `(in_reply_to_uri)`, `(conversation_uri, id)`。CHECK `visibility <> 'local' OR is_local` |
+| `statuses` | リソース | `id`, `uri`, `url`（NULL 可。リモートの投稿の表示用 URL だけを持ち、ローカルの投稿の表示用 URL は読むときに作る。ADR-0018）, `author_account_id`, `is_local`（`bool`）, `visibility`（`enum(public, local, unlisted, private, direct)`）, `in_reply_to_uri`（NULL 可）, `conversation_uri`（NULL 可）, `published_at` | 一意 `(uri)`。インデックス `(author_account_id, id)`, `(in_reply_to_uri)`, `(conversation_uri, id)`。CHECK `visibility <> 'local' OR is_local` |
 | `local_statuses` | リソース（部分型） | `status_id`（PK）, `author_account_id`, `oauth_client_id`（NULL 可。`oauth_clients.id`）, `idempotency_key`（NULL 可） | 一意 `(author_account_id, idempotency_key)` |
 | `status_revisions` | イベント（版） | `id`, `status_id`, `seq`（`int`、1 始まり）, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`）, `revised_at` | 一意 `(status_id, seq)` |
 | `status_revision_bodies` | イベント（版の子） | `revision_id`, `language`（`lang`）, `content_html` | PK `(revision_id, language)`。AP の `contentMap` を正規化したもの。`content` だけのものは版の `language` で 1 行（NFR-I18N-5） |
@@ -21,7 +21,7 @@
   親を後から取得しても、投稿の行を更新する必要はありません。スレッド表示を速くするために、投影 `status_reply_links` を持ちます。
 - ローカル投稿も `uri` を生成して保存します（ADR-0018 の規約）。
 - リモートの投稿の公開範囲は、宛先（`to` / `cc`）から決めます（[federation.md §4](../../federation.md#4-as2-の正規化)）。
-- `origin = retention`（保持期間による消去、[ADR-0034](../../../adr/0034-remote-content-scope-and-retention.md)）の削除は、同じ URI の取得し直しを妨げません。それ以外の削除は tombstone として、遅れて届いた `Create` / `Update` と取得を拒みます。
+- `origin = retention`（保持期間による消去、[ADR-0006](../../../adr/0006-federation-protocol-scope.md)）の削除は、同じ URI の取得し直しを妨げません。それ以外の削除は tombstone として、遅れて届いた `Create` / `Update` と取得を拒みます。
   取得し直した投稿は新しい `id` の行になり、後でまた消えることがあるので、1 つの URI が `retention` の削除を複数持てます。tombstone になる削除は URI ごとに 1 つです（部分一意）。URI で削除を引くときは tombstone を優先し、無ければ最新の `retention` の削除を返します。
   `retention` の削除しか無い URI への `Delete` は、未知のオブジェクトへの `Delete` として `remote_object_tombstones` を残します。
 
@@ -83,7 +83,7 @@
 
 #### リモート投稿のコマンド
 
-受信した `Create` / `Update` / `Delete` の投稿は、`federation` のハンドラ（[federation.md §3.4](../../federation.md#34-アクティビティごとのハンドラ)）が、取り込み範囲（[ADR-0034](../../../adr/0034-remote-content-scope-and-retention.md)）を判定してから `content` の公開 API（`IngestRemoteStatus` / `ReviseRemoteStatus` / `DeleteRemoteStatus`）を 1 つのトランザクションの中で呼びます。
+受信した `Create` / `Update` / `Delete` の投稿は、`federation` のハンドラ（[federation.md §3.4](../../federation.md#34-アクティビティごとのハンドラ)）が、取り込み範囲（[ADR-0006](../../../adr/0006-federation-protocol-scope.md)）を判定してから `content` の公開 API（`IngestRemoteStatus` / `ReviseRemoteStatus` / `DeleteRemoteStatus`）を 1 つのトランザクションの中で呼びます。
 ローカル投稿と同じドメインイベント（`content.status_created` / `content.status_revised` / `content.status_deleted`）を発行するので、投稿の投影・`feed_*`・メンションの通知は同じ projector で更新されます。
 
 - **投稿の行**: `id` は `published` の時刻の UUIDv7（§1.3）、`is_local` は偽です。公開範囲は宛先から決め（`local` にはならない）、`url` は表示用 URL が `id` と異なるときだけ持ちます。
@@ -100,17 +100,17 @@
 
 #### リモート投稿の保持期間
 
-1 時間ごとの消去ジョブ `content.purge_remote_statuses` が、保持期間を過ぎたリモートの投稿を消します（[ADR-0034](../../../adr/0034-remote-content-scope-and-retention.md)、FR-803）。
+1 時間ごとの消去ジョブ `content.purge_remote_statuses` が、保持期間を過ぎたリモートの投稿を消します（[ADR-0006](../../../adr/0006-federation-protocol-scope.md)、FR-803）。
 
 - 対象は、公開からインスタンス設定 `remote_status_retention_days`（既定 90 日）を過ぎ、ローカルからの参照が無いリモートの投稿です。参照は、削除されていないローカルの返信、削除されていないローカルの投稿を含むスレッド（同じ `conversation_uri`）、取り消されていないローカルのブースト、お気に入り、ブックマーク、ピン留め、その投稿についての通知です。
   通知は `notification` の公開 API（`StatusNotified`）で、同じトランザクションの中で調べます。
 - インスタンス設定 `remote_status_max_retention_days`（既定は上限なし）を設定すると、公開からその期間を過ぎたリモートの投稿は、参照があっても対象です。
-- 通報か投稿単位の処分が指す投稿（`report_statuses`・`moderation_action_statuses`）と、効いている保全（§4.3）のある作者の投稿は、最大の期間を過ぎても対象にしません（ADR-0038）。判定は `moderation` の公開 API（`StatusRetained`）で行い、その記録が消えた後の回で対象になります。
+- 通報か投稿単位の処分が指す投稿（`report_statuses`・`moderation_action_statuses`）と、効いている保全（§4.3）のある作者の投稿は、最大の期間を過ぎても対象にしません（ADR-0058）。判定は `moderation` の公開 API（`StatusRetained`）で行い、その記録が消えた後の回で対象になります。
 - 対象の投稿ごとに `status_deletions`（`origin = retention`）を記録して `content.status_deleted` を発行し（投影・`feed_*` から外れ、通知は隠れる）、同じトランザクションで投稿の行・版と子テーブル・投票（選択肢・回答・観測・集計）・リモートのアカウントのブーストを物理削除します。
   `status_deletions`、ローカルのアカウントのブースト・お気に入り・ブックマーク・ピン留めは残し、読み取りでは対象の投稿を削除済みとして扱います（一覧から外れる）。
 - 1 トランザクションで消すのは 100 件まで、1 回のジョブで 10 トランザクションまでです。続きはカーソル（投稿の `id`）を持った次のジョブが読みます。
   リモートの投稿の `id` は公開日時の UUIDv7（§1.3）なので、走査は主キーの範囲（期限の UUIDv7 の下限より前）で止まります。
-- リレーだけが運んだ投稿（[ADR-0061](../../../adr/0061-federation-relays.md)）は、取り込みのトランザクションで `relayed_statuses` に記録します。
+- リレーだけが運んだ投稿（[ADR-0006](../../../adr/0006-federation-protocol-scope.md)）は、取り込みのトランザクションで `relayed_statuses` に記録します。
   1 時間ごとの消去ジョブ `content.purge_relayed_statuses` が、`relayed_statuses` にあり、公開から設定 `relay_status_retention_days`（既定 7 日）を過ぎ、上と同じくローカルからの参照が無く、作者をローカルのアカウントがフォローしていない投稿を、同じ規則（`origin = retention`、保全と通報の対象を残す）で消します。
   フォローは `graph` の公開 API（フォロワーの数）でトランザクションの外で調べ、消すトランザクションで候補を読み直して、その間に参照されたものを残します。走査は `relayed_statuses` の主キーで行い、残ったものは `content.purge_remote_statuses` の対象になります。
 
@@ -173,13 +173,13 @@
 | `reactions` | 現在値 | `id`, `account_id`, `status_id`, `emoji_key`（Unicode 絵文字なら fully-qualified の形の絵文字、カスタム絵文字なら `custom_emojis.id`）, `custom_emoji_id`（NULL 可。Unicode 絵文字なら NULL）, `uri`（`Like` / `EmojiReact` の IRI）, `created_at` | 一意 `(account_id, status_id, emoji_key)`, `(uri)`。インデックス `(status_id, emoji_key, id)`（絵文字で絞った一覧）, `(status_id, id)`（一覧）, `(custom_emoji_id)`（リモートの絵文字の消去）。CHECK `custom_emoji_id IS NULL OR custom_emoji_id = emoji_key` |
 | `status_reaction_counts` | 投影 | `status_id`, `emoji_key`, `custom_emoji_id`（NULL 可）, `count`（`bigint`、1 以上） | PK `(status_id, emoji_key)`。インデックス `(status_id, count DESC, emoji_key)`（多い順の上位 20） |
 
-- 絵文字リアクション（FR-116、ADR-0052）は、お気に入りとは別の資源です。1 人が 1 投稿に絵文字ごとに 1 つ付けられ、取り消すと行を消して `content.unreacted` を発行します（取り消した後の付け直しは新しい行）。
+- 絵文字リアクション（FR-116、ADR-0051）は、お気に入りとは別の資源です。1 人が 1 投稿に絵文字ごとに 1 つ付けられ、取り消すと行を消して `content.unreacted` を発行します（取り消した後の付け直しは新しい行）。
 - `status_reaction_counts` は削除されていない投稿のリアクションを絵文字ごとに数え、`reactions` の行を実際に挿入・削除したときだけ増減します。件数が 0 になった行は消し、投稿の削除イベントでその投稿の行を消します。再構築は、削除されていない投稿の `reactions` を絵文字ごとに数えます。
 - Unicode 絵文字は、Unicode の `emoji-test.txt`（`scripts/task.sh emoji:generate` が生成する `internal/domain/content/emoji_table.gen.go`）の fully-qualified の形に正規化してから `emoji_key` にします。異体字セレクタ（U+FE0F）の有無が違う同じ絵文字は、同じ件数に数えます。
 - **リモートのリアクション**: 受信した `EmojiReact` と、絵文字の付いた `Like`（[federation.md §3.4](../../federation.md#34-アクティビティごとのハンドラ)）を、`content` の公開 API（`RecordRemoteReaction` / `RemoveRemoteReaction`）で記録します。リモートのアカウントがリアクションできるのは、お気に入りと同じく閲覧できる（`ContextObjectFetch`）ローカルの投稿だけで、交流の禁止（`interact`）の制限があれば記録しません。リアクションの `id` は活動の `published`（無い・未来なら受信時刻）の UUIDv7 です。
   - カスタム絵文字は、投稿のカスタム絵文字と同じく `custom_emojis` と `custom_emoji_images` に取り込み、画像はリアクションした人のリモートのメディアです。ドメインは `Emoji` の `id` のホスト（`id` が無ければリアクションした人のドメイン）で、第三のサーバーの絵文字はそのサーバーの絵文字になります。
   - `Undo` は、`reactions (uri)`、`favourites (uri)` の順に引き、どちらにも無ければ埋め込みの活動の投稿と絵文字で主体のリアクション（またはお気に入り）を消します。
-- **ローカルの人のリアクションと `Like` の枠**（ADR-0052 §1、§2）: ローカルの人は 1 投稿にお気に入りかリアクション 1 つのどちらか一方だけを持ちます。`content.Interactions.React` は、同じトランザクションで同じ投稿へのお気に入り（`content.unfavourited`）と別の絵文字のリアクション（`content.unreacted`）を消してから行を挿入し（`content.reacted`）、`Favourite` も同じくリアクションを消してからお気に入りを挿入します。同じ絵文字で付け直しても何も変えません。`Unreact` はその人のリアクションを消します。
+- **ローカルの人のリアクションと `Like` の枠**（ADR-0051 §6, §7）: ローカルの人は 1 投稿にお気に入りかリアクション 1 つのどちらか一方だけを持ちます。`content.Interactions.React` は、同じトランザクションで同じ投稿へのお気に入り（`content.unfavourited`）と別の絵文字のリアクション（`content.unreacted`）を消してから行を挿入し（`content.reacted`）、`Favourite` も同じくリアクションを消してからお気に入りを挿入します。同じ絵文字で付け直しても何も変えません。`Unreact` はその人のリアクションを消します。
   - 使える絵文字は、Unicode 絵文字（fully-qualified の形に正規化）と、このサーバーの有効な（`custom_emoji_settings.enabled`）画像のあるカスタム絵文字です。リモートのカスタム絵文字は使えません。閲覧の可否・ブロック・交流の禁止（`interact`）はお気に入りと同じ規則です。
   - リモートの投稿へのリアクションは、イベントにカスタム絵文字の `Emoji` タグの材料（ショートコード・画像）を持たせ、`federation` が絵文字付きの `Like` と `Undo Like` を組み立てて保存します（[federation.md §7.1](../../federation.md#71-記録)）。
 
@@ -191,7 +191,7 @@
 | `uploaded_media` | リソース（部分型） | `media_id`（PK）, `blob_key`, `content_type`, `file_size`（`bigint`） | |
 | `remote_media` | リソース（部分型） | `media_id`（PK）, `owner_account_id`（`media_files` の値を写す）, `remote_url`, `declared_content_type`（NULL 可。AP の `mediaType`）, `declared_media_type`（`enum(image, gifv, video, audio, unknown)`）, `purpose`（`enum(attachment, avatar, header, emoji)`。記録した用途で、メディアプロキシの `small` の大きさを決める）, `width` / `height`（NULL 可）, `blurhash`（NULL 可）, `focus_x` / `focus_y`（`real`、-1.0〜1.0、NULL 可。範囲外の宣言は取り込み時に丸める）, `description`（`text`、NULL 可） | 一意 `(owner_account_id, remote_url)`。受信した文書が宣言した値で、ファイルは取得しない（[federation.md §9](../../federation.md#9-リモートメディア)） |
 | `media_processing_results` | イベント | `id`, `media_id`, `purpose`（`enum(attachment, avatar, header, emoji)`）, `outcome`（`enum(ready, failed)`）, `media_type`（`enum(image, gifv, video, audio, unknown)`）, `width` / `height` / `duration_ms`（NULL 可）, `blurhash`（NULL 可）, `processed_at` | インデックス `(media_id, id DESC)`。最新行が現在の処理結果 |
-| `media_variants` | イベント（結果の子） | `result_id`, `size`（`enum(small, medium, large)`）, `motion`（`enum(still, animated)`）, `blob_key`, `content_type`, `file_size`（`bigint`）, `width` / `height`（`int`） | PK `(result_id, size, motion)`（[ADR-0054](../../../adr/0054-media-variants-video-audio.md)） |
+| `media_variants` | イベント（結果の子） | `result_id`, `size`（`enum(small, medium, large)`）, `motion`（`enum(still, animated)`）, `blob_key`, `content_type`, `file_size`（`bigint`）, `width` / `height`（`int`） | PK `(result_id, size, motion)`（[ADR-0005](../../../adr/0005-blob-storage-and-media.md)） |
 | `media_focus` | 現在値 | `media_id`（PK）, `focus_x` / `focus_y`（`real`、-1.0〜1.0） | 行がなければ中央 |
 | `media_descriptions` | 現在値 | `media_id`（PK）, `description`（`text`、空でない、1,500 文字まで） | 行がなければ説明なし。投稿が添付するときに `status_revision_attachments.description` へ写す |
 | `remote_media_cache` | 現在値（キャッシュ） | `url`（PK。メディアプロキシの `small` は `{URL}#small-{purpose}-{箱}`、箱が切り抜くときは焦点も加える。[federation.md §9](../../federation.md#9-リモートメディア)）, `blob_key`（`remote/{url の SHA-256}-{乱数}`。取得し直すたびに新しいキー）, `content_type`（中身で判定した形式）, `file_size`（`bigint`）, `fetched_at`, `expires_at`, `last_accessed_at`（1 時間単位で更新） | FR-409, NFR-COST-4。インデックス `(expires_at)`, `(last_accessed_at)`。メディアプロキシが書き、`media.purge_remote_cache` が期限切れと容量超過の分を消す（federation.md §9） |
@@ -232,14 +232,14 @@
 
 - アップロードは同期で受け付けます。形式は中身から判定し（申告された `Content-Type` とファイル名は信用しない）、サイズと寸法の上限は全体をデコードする前にヘッダで検査します（ADR-0019 §8）。
   `uploaded_media.content_type` は判定した形式で、`blob_key`（`uploads/<id>`）は受け取ったままの非公開のファイルです。
-- 処理はジョブ `media.process` が非同期に行います。アップロードの用途（`purpose`。API の `MediaUpload.purpose`、既定 `attachment`）の大きさで、再エンコードでメタデータ（EXIF の位置情報など）を落とした `media_variants` を作り（[ADR-0054](../../../adr/0054-media-variants-video-audio.md) §1〜§3）、
+- 処理はジョブ `media.process` が非同期に行います。アップロードの用途（`purpose`。API の `MediaUpload.purpose`、既定 `attachment`）の大きさで、再エンコードでメタデータ（EXIF の位置情報など）を落とした `media_variants` を作り（[ADR-0005](../../../adr/0005-blob-storage-and-media.md) §4〜§6）、
   処理結果ごとの公開のキー（`media/<id>/<result_id>/<size>.<ext>`、アニメーションの動く版は `media/<id>/<result_id>/<size>-animated.<ext>`）に書き、結果を記録してから受け取ったままのファイルを Blob から削除します（位置情報を残さない）。
   キーは処理結果を含むので同じキーが別の中身を指すことはなく、`Cache-Control: public, max-age=31536000, immutable` で配ります。
   - 静止版は `small` / `medium` / `large` の 3 つです。`large` は不透明なら JPEG、透過があれば PNG で、`small` / `medium` は WebP です。アニメーション（GIF、アニメーション WebP）は、最初のフレームの静止版と、動く版（`large` は GIF、`small` / `medium` はアニメーション WebP）の 6 つです。
   - 用途ごとの大きさ: 投稿の画像は面積 640×360 / 1920×1080 / 3840×2160 まで、アイコンは焦点（`media_focus`、なければ中央）に合わせて正方形に切り抜いた 96 / 192 / 400 px、ヘッダーは 750×250 / 1500×500 / 3000×1000 の箱、カスタム絵文字は 64 / 128 / 256 px の箱に収めます。元より大きくはしません。
   - 別の用途で使う（投稿の画像をアバターにするなど）と、`content.MediaService.CheckProfileImage` が新しい用途の `media.process` を投入し、現在の結果の `large`（アニメーションなら動く版）から処理し直して新しい結果を記録します。それまでは前の結果の版を表示します。古い結果の Blob は残ります。
   ジョブは冪等です。最新の結果が同じ用途のファイルは受け取ったままのファイルの削除だけを繰り返し、消去済みのファイルは何もしません。初めての処理で処理できない中身は `outcome = failed`（版なし）の結果として記録します。処理し直しが失敗したときは記録せず、前の結果が残ります。
-- 動画・音声（投稿の添付だけ）はトランスコードしません（[ADR-0054](../../../adr/0054-media-variants-video-audio.md) §6）。アップロードのときに container を解析して codec・長さ・寸法を検査し（上限は設定 `media_max_av_bytes`・`media_max_video_duration`・`media_max_audio_duration`、[設定リファレンス](../../../reference/configuration.md)）、
+- 動画・音声（投稿の添付だけ）はトランスコードしません（[ADR-0005](../../../adr/0005-blob-storage-and-media.md) §9）。アップロードのときに container を解析して codec・長さ・寸法を検査し（上限は設定 `media_max_av_bytes`・`media_max_video_duration`・`media_max_audio_duration`、[設定リファレンス](../../../reference/configuration.md)）、
   クライアントが送ったポスター（API の `thumbnail`）を `uploads/<id>.poster` に置きます。`media.process` は、メタデータを落として並べ直した（remux）ファイルを `size = large`・`motion = animated` の版（`media/<id>/<result_id>/large-animated.<ext>`）にし、
   ポスター（なければファイルに埋め込まれたカバー画像）を投稿の画像として処理した静止版 3 つと blurhash を同じ結果に入れます。ポスターのない動画・音声は静止版を持ちません。結果の `media_type` は `video` / `audio`、`duration_ms` は長さで、受け取ったままのファイルとポスターは処理のあとに消します。
   動画・音声はほかの用途（アバター・ヘッダー・カスタム絵文字）に使えません。
@@ -281,7 +281,7 @@
   審査中の `create` は shortcode を予約し（`reserved_shortcode` の一意と、ローカルの絵文字の作成のときの照合）、`image` は 1 つの絵文字に 1 つまでです。審査中の申請の画像は申請者の未添付のアップロードのままで、未使用のアップロードの掃除はそれを残します（`content.PendingCustomEmojiRequestMedia`）。アカウントの消去は消します。
   承認は同じトランザクションで結果の行を書き、`custom_emojis`（作成者は申請者）・`custom_emoji_images` を作ります。画像は申請者のアップロードの処理結果をインスタンスの Actor のアップロードとして複製したもので、申請者のアップロードは未使用に戻ります。承認のときに申請者が `create_custom_emojis` を持たないか、shortcode がローカルの絵文字にあれば承認は失敗します。
   作成者は、`create_custom_emojis` を持ち、アカウントが使える間だけ、自分の絵文字の別名・カテゴリ・ピッカーに出すかを変え、削除できます。絵文字の削除は、その絵文字の審査中の `image` の申請を `lapsed` で閉じます。
-  作成数の上限はポート `content.CustomEmojiQuota` が返し（プランのロールは `supporters.Service.EmojiLimit`、ADR-0072 §11）、その UTC の暦月（1 日 00:00 UTC から翌月 1 日 00:00 UTC まで）に作成者が出した `create` の申請のうち、承認された（`approved`）ものと審査中のものの数が上限以上なら新しい `create` を断ります（ADR-0124）。月は申請の `created_at` で決め、月をまたいで承認された申請は出した月に数えます。却下・取り下げ・失効した申請は数えず、承認した絵文字を後で削除しても数は減りません。`image` の申請と管理画面・CLI で作った絵文字は数えません。上限なし（既定）のときは数えません。使った数の API は次のリセットの時刻（翌月 1 日 00:00 UTC）も返します。
+  作成数の上限はポート `content.CustomEmojiQuota` が返し（プランのロールは `supporters.Service.EmojiLimit`、ADR-0072 §11）、その UTC の暦月（1 日 00:00 UTC から翌月 1 日 00:00 UTC まで）に作成者が出した `create` の申請のうち、承認された（`approved`）ものと審査中のものの数が上限以上なら新しい `create` を断ります（ADR-0070）。月は申請の `created_at` で決め、月をまたいで承認された申請は出した月に数えます。却下・取り下げ・失効した申請は数えず、承認した絵文字を後で削除しても数は減りません。`image` の申請と管理画面・CLI で作った絵文字は数えません。上限なし（既定）のときは数えません。使った数の API は次のリセットの時刻（翌月 1 日 00:00 UTC）も返します。
 - リモートの絵文字の消去（ADR-0051 §1、FR-803）: 1 日ごとのジョブ `content.purge_remote_emojis` が、どの投稿の版（`status_revision_emojis`）・プロフィールの版（`account_profile_revision_emojis`、`account` の公開 API `IsEmojiReferenced`）・
   リアクション（`reactions.custom_emoji_id`）からも参照されないリモートの絵文字を消します。保持期間（下の「リモート投稿の保持期間」）とプロフィールの整理で版が消えた後に絵文字を残さないためです。
   管理者が無効にした絵文字は、参照が無くても行・画像・設定ごと残します。消すと次に届いたときに有効として記録し直され、`(shortcode, domain)` に対する無効化が失われるからです。
@@ -311,6 +311,6 @@
 
 - お気に入り・ブックマーク・ピン留めは、閲覧できる（`canView`）削除されていない投稿にだけ付けられます。閲覧できない投稿は、存在しない投稿と同じく見つからないものとして扱います。
 - どれも `INSERT … ON CONFLICT DO NOTHING` と `DELETE` で書き、実際に行が変わったかどうかを返します。繰り返しても結果は変わりません。
-- リモートのアカウントの `status_pins` は、そのアカウントの `featured` コレクションの写しです（[federation.md §6.2](../../federation.md#62-actor-とハンドル)、ADR-0044）。Actor の取得・取り直しのたびに `content.Interactions.ReplaceRemotePins` が 1 つのトランザクションで全部を消して入れ直し（`id` はコレクションの順を保つ）、ローカルのピン留めのコマンドは書きません。上限と `slot` の規則はローカルと同じです。
+- リモートのアカウントの `status_pins` は、そのアカウントの `featured` コレクションの写しです（[federation.md §6.2](../../federation.md#62-actor-とハンドル)、ADR-0006）。Actor の取得・取り直しのたびに `content.Interactions.ReplaceRemotePins` が 1 つのトランザクションで全部を消して入れ直し（`id` はコレクションの順を保つ）、ローカルのピン留めのコマンドは書きません。上限と `slot` の規則はローカルと同じです。
 - ローカルのアカウントのピン留めは自分の投稿だけで、`direct` は除きます。1 アカウント 5 件までで、各ピン留めは空いている最小の `slot` に入ります。一意 `(account_id, slot)` と `slot` の CHECK が上限をスキーマで保証するので、同時のピン留めでも 5 件を超えません。同時の挿入に `slot` を取られたら（行が増えず、そのピン留めも無く、空きがあるとき）次の空きで挿入し直し、空きがなければ上限超過として拒否します。
 - 投稿が削除されても行はすぐには消さず、消去ジョブが物理削除します（§8）。削除された投稿は `status_counters` を持たないので、件数は変わりません。

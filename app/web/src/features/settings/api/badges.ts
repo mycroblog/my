@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The queries and mutations of the badges on the user's profile (web-client/README.md S1, ADR-0071): the roles with a
+// The queries and mutations of the badges on the user's profile (web-client/README.md S1, ADR-0070): the roles with a
 // badge that the user holds and whether each badge is shown (GET /preferences/badges), and showing or hiding one
 // (PUT /preferences/badges/{role_id}). A badge is hidden until the user shows it, and shows on the profile only.
 import type { QueryClient } from "@tanstack/react-query";
@@ -33,7 +33,7 @@ export function updateBadgeChoiceMutation(api: Api) {
 }
 
 /**
- * Puts the choice as the server answered it into the list (web-client/README.md S1, ADR-0045), and marks the viewer's account
+ * Puts the choice as the server answered it into the list (web-client/README.md S1, ADR-0028), and marks the viewer's account
  * and the profiles, whose badges it changes; those shown now are fetched again and awaited.
  */
 export async function cacheBadgeChoice(api: Api, queryClient: QueryClient, saved: BadgeChoice): Promise<void> {

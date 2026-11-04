@@ -8,7 +8,7 @@ import "time"
 // and keeps sealed in the database.
 type SecretName string
 
-// SecretMediaProxyKey is the HMAC-SHA256 key that signs the media proxy URLs (ADR-0121 §2).
+// SecretMediaProxyKey is the HMAC-SHA256 key that signs the media proxy URLs (ADR-0019 §12).
 const SecretMediaProxyKey SecretName = "media_proxy_key"
 
 // Secret is a stored secret of the instance. Sealed is the secret sealed with the Sealer, bound

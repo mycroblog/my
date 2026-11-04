@@ -5,7 +5,7 @@
 // It is the one OfflineBanner (a role="status" region in the page from the start), so that the change is announced;
 // on a short screen it scrolls away with the page instead of sticking to the top edge (OfflineBanner).
 // Offline, which includes a server that does not answer, the bar links to the instance's status page as last read
-// (lib/statusPage, ADR-0085 §6), after the message and outside its live region, so that the announcement stays the message.
+// (lib/statusPage, ADR-0088 §20), after the message and outside its live region, so that the announcement stays the message.
 import { ExternalLink, OfflineBanner } from "@my/ui";
 import { useIntl } from "react-intl";
 import { useT } from "../../lib/i18n";

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The prompt to turn on Web Push at the top of the notifications page (ADR-0137). Nothing is asked of the browser and
+// The prompt to turn on Web Push at the top of the notifications page (ADR-0086). Nothing is asked of the browser and
 // nothing is subscribed until the button is pressed; closing it subscribes nothing and is remembered.
 import { useNotice } from "@my/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +13,7 @@ import { rememberPushPromptDismissed, usePushPromptDismissed } from "./pushPromp
 import { pushBrowser, usePushNotifications } from "./usePushNotifications";
 
 export type PushPrompt =
-  /** Nothing to offer on this device, nothing known yet, or the account said no (ADR-0137 §1). */
+  /** Nothing to offer on this device, nothing known yet, or the account said no (ADR-0086 §18). */
   | { status: "hidden" }
   | {
       status: "offered";

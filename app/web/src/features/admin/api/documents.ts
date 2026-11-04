@@ -48,7 +48,7 @@ export function setDocumentMutation(api: Api) {
 }
 
 /**
- * Marks what a new text changes (ADR-0045): the texts and the instance's links to the documents' pages (which
+ * Marks what a new text changes (ADR-0028): the texts and the instance's links to the documents' pages (which
  * every page shows); the queries shown now are fetched again and awaited, the others by their route's loader when
  * opened. The audit log records the change, and its route reads its cache as it is (`staleTime: "static"`), so it
  * is fetched again at once, like after every audited write (refreshAuditLog).

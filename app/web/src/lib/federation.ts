@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The direction the instance federates in (FR-413, ADR-0076), from GET /instance (`federation.mode`), and what it
+// The direction the instance federates in (FR-413, ADR-0006), from GET /instance (`federation.mode`), and what it
 // lets the app offer: following and finding accounts of other servers needs the instance to take their posts in
 // (`inbound`, `both`), and what the viewer does to posts of other servers reaches them only while the instance sends
 // out (`outbound`, `both`). The server decides every request; the app only leaves out what the server would refuse
@@ -41,7 +41,7 @@ export type FederationReach = {
   reachesRemote: boolean;
 };
 
-/** What `mode` lets through (ADR-0076, "流れの分類"). */
+/** What `mode` lets through (ADR-0006, "流れの分類"). */
 export function federationReachOf(mode: FederationMode): FederationReach {
   return {
     mode,

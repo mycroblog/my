@@ -201,7 +201,7 @@ export async function refreshPaymentStatus(queryClient: QueryClient): Promise<vo
 }
 
 /**
- * Marks what a change of the program, a plan or a subscription changes (ADR-0045): the program (whose count of live
+ * Marks what a change of the program, a plan or a subscription changes (ADR-0028): the program (whose count of live
  * subscriptions a change of a subscription changes), the plans (their members), the subscriptions, the roles (whose
  * position and permissions a plan's form changes) and the audit log; the queries shown now are fetched again and
  * awaited.

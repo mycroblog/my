@@ -16,7 +16,7 @@ import (
 
 // Granting and revoking roles (FR-720, manage_roles). A grant or a revocation writes its event
 // (user_role_grants, user_role_revocations), updates the user's current roles (user_roles), and
-// records its audit log entry (ADR-0037) in one transaction. Permissions are read from the
+// records its audit log entry (ADR-0058) in one transaction. Permissions are read from the
 // current roles on every request (Permissions), so a change applies from the user's next
 // request, and the moderator notifications go to whoever holds the permission when they are
 // made.
@@ -144,7 +144,7 @@ func (s *Service) GrantRole(ctx context.Context, in RoleChangeInput) (bool, erro
 		if err := s.d.Repository.InsertRoleGrant(ctx, tx, g); err != nil {
 			return err
 		}
-		// A new grant starts with the badge hidden (ADR-0071 §2).
+		// A new grant starts with the badge hidden (ADR-0070 §11).
 		if err := s.d.Repository.SetRoleBadgeDisplayed(ctx, tx, in.UserID, role.ID, false, c.at); err != nil {
 			return err
 		}
@@ -193,7 +193,7 @@ func (s *Service) RevokeRole(ctx context.Context, in RoleChangeInput) (bool, err
 		if err := s.d.Repository.InsertRoleRevocation(ctx, tx, r); err != nil {
 			return err
 		}
-		// The user no longer shows the role's badge (ADR-0071 §2).
+		// The user no longer shows the role's badge (ADR-0070 §11).
 		if err := s.d.Repository.SetRoleBadgeDisplayed(ctx, tx, in.UserID, role.ID, false, c.at); err != nil {
 			return err
 		}

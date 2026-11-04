@@ -6,7 +6,7 @@ import { catchUpPublicTimeline, type PublicStreamedTimeline, receivePublicTimeli
 
 /**
  * Keeps the stream of the local or the federated timeline open while its screen is shown and a user is signed in
- * (ADR-0127 §5): its new posts wait for the reader like the home timeline's (newStatuses.ts), and after a reconnect the
+ * (ADR-0013 §21): its new posts wait for the reader like the home timeline's (newStatuses.ts), and after a reconnect the
  * timeline's first page is read again, since the server replays nothing. Leaving the screen closes the stream.
  */
 export function usePublicTimelineStream(timeline: PublicStreamedTimeline): void {

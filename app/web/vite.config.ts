@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Vite 8 build of the web client (ADR-0025). React Compiler runs through oxc-transform-react in a plugin of
-// our own, which also fails the build on the functions the compiler skips (ADR-0065, web-client/README.md R4).
+// our own, which also fails the build on the functions the compiler skips (ADR-0025, web-client/README.md R4).
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
@@ -19,7 +19,7 @@ const localesDir = fileURLToPath(new URL("../../locales", import.meta.url));
 
 /**
  * The license notices of bundled data that are not npm dependencies, copied into dist/licenses/: the Unicode emoji data
- * (ADR-0091 §1) and the Noto Color Emoji fonts of @my/ui (ADR-0095 §6).
+ * (ADR-0091 §1) and the Noto Color Emoji fonts of @my/ui (ADR-0091 §13).
  */
 const licenseFiles = [
   fileURLToPath(new URL("src/features/emoji/unicode/LICENSE-Unicode.txt", import.meta.url)),
@@ -38,7 +38,7 @@ export default defineConfig({
     assetsInlineLimit: 0,
     rolldownOptions: {
       // The SPA, the stylesheet of the pages the Go server renders without JavaScript
-      // (src/server-pages.css, ADR-0030), and the script of the sign-in page's passkey button, which
+      // (src/server-pages.css, ADR-0090), and the script of the sign-in page's passkey button, which
       // the page works without (src/server-pages/passkey-sign-in.ts). Go finds them by these manifest keys.
       input: {
         index: fileURLToPath(new URL("index.html", import.meta.url)),
@@ -107,7 +107,7 @@ export default defineConfig({
         // index.html is the stand-in shell of `vite preview` (the worker precaches the server's shell at /
         // instead), and the stylesheet and the passkey script of the server-rendered pages are never loaded by the app.
         // The Noto Color Emoji splits (@my/ui/emoji.css, about 6 MB in both formats) are cached at run time when a
-        // page uses them instead (sw/sw.ts, ADR-0095 §3).
+        // page uses them instead (sw/sw.ts, ADR-0091 §10).
         globIgnores: [
           "index.html",
           "sw.js",

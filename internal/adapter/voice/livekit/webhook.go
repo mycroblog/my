@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/app/voice"
 )
 
-// The webhooks of LiveKit (ADR-0102 §4): LiveKit signs each delivery with a JWT of the API key
+// The webhooks of LiveKit (ADR-0101 §13): LiveKit signs each delivery with a JWT of the API key
 // in the Authorization header, whose sha256 claim is the base64 SHA-256 of the body. A
 // delivery carries one event; the events that tell who is on the media path become
 // voice.Events, and the others none.

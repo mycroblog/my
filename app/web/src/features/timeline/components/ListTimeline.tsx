@@ -10,7 +10,7 @@ export type ListTimelineProps = {
 };
 
 /**
- * The timeline of one of the user's lists (web-client/screens/list-timeline.md, ADR-0122 §4): the home timeline's feed
+ * The timeline of one of the user's lists (web-client/screens/list-timeline.md, ADR-0013 §13): the home timeline's feed
  * with its "N new posts" button, whose new entries the stream's `list_update` delivers under the same auto-insert
  * setting. The route loads its first page.
  */

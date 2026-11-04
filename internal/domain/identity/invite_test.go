@@ -12,7 +12,7 @@ import (
 
 // A user creates invites of their own while the registration is open to invites, the account
 // is active, approved, and unrestricted, and everyone may or the user holds create_invites
-// (ADR-0108 §1, §3, §4).
+// (ADR-0106 §14, §16, §17).
 func TestMayCreateInvites(t *testing.T) {
 	ok := identity.InviterFacts{Mode: identity.RegistrationApproval, HasPermission: true, Active: true, Approved: true}
 	if !identity.MayCreateInvites(ok) {
@@ -39,7 +39,7 @@ func TestMayCreateInvites(t *testing.T) {
 }
 
 // A member's invite is one use for a week unless the caps are lower, never unlimited, and
-// within the caps (ADR-0108 §2).
+// within the caps (ADR-0106 §15).
 func TestMemberInviteCapsResolve(t *testing.T) {
 	caps := identity.MemberInviteCaps{MaxActive: 5, MaxUses: 10, MaxExpiresIn: 30 * 24 * time.Hour}
 	if uses, in, err := caps.Resolve(0, 0); err != nil || uses != 1 || in != 7*24*time.Hour {

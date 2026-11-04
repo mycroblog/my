@@ -68,13 +68,13 @@ func (e LifecycleEventRecorded) ClosesLocalAccount() bool {
 }
 
 // Deactivates reports whether the event hides a local account from everyone at its owner's wish
-// (ADR-0145).
+// (ADR-0089).
 func (e LifecycleEventRecorded) Deactivates() bool {
 	return e.Event.Kind == account.LifecycleDeactivated
 }
 
 // Reactivates reports whether the event brings back a local account that its owner deactivated
-// (ADR-0145).
+// (ADR-0089).
 func (e LifecycleEventRecorded) Reactivates() bool {
 	return e.Event.Kind == account.LifecycleReactivated
 }

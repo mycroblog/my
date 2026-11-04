@@ -153,7 +153,7 @@ func postInbox(t *testing.T, c *statusesClient, signer remoteActor, activity map
 }
 
 // TestRelays joins a Mastodon-style relay and a LitePub one through the admin API with the inline
-// queue (ADR-0061): the instance actor's Follow, the relay's Accept, public posts to the relay
+// queue (ADR-0006): the instance actor's Follow, the relay's Accept, public posts to the relay
 // with their linked data signature (and nothing else), the posts the relay forwards fetched from
 // their origin into the federated timeline within the hourly limit, the LitePub relay's
 // Announce, the Undo that leaves, the deletion, and the audit log.

@@ -3,7 +3,7 @@
 // show them (ADR-0067 §4, §5, FR-902, FR-903, ADR-0070 §5): the choice of the basis and the tabs of the granularity,
 // the table of the periods, newest first, with their totals by currency, where the overview's chart does not show them
 // (FinanceOverview), the breakdown of the current period by provider (a BreakdownBar when its costs are in one
-// currency, ADR-0113) when it may be shown, the lines of its items on the finances page, and the rules that cut the
+// currency, ADR-0110) when it may be shown, the lines of its items on the finances page, and the rules that cut the
 // periods. Providers, names and memos are the operators' words, shown with dir="auto".
 import {
   type BreakdownItem,

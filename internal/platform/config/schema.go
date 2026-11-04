@@ -34,7 +34,7 @@ const EnvConfigFile = EnvPrefix + "CONFIG"
 // DefaultSourceURL is the repository of the unmodified server, the default of source_url.
 const DefaultSourceURL = "https://github.com/mycroblog/my"
 
-// releaseVersion matches the version of a release's tag, vX.Y.Z or vX.Y.Z-<pre-release> (ADR-0142 §7). Neither a commit
+// releaseVersion matches the version of a release's tag, vX.Y.Z or vX.Y.Z-<pre-release> (ADR-0010 §10). Neither a commit
 // after a tag (git describe's v0.1.0-3-gabcdef0, whose "-" this rejects) nor a dirty tree is a release; see VersionedSourceURL.
 var releaseVersion = regexp.MustCompile(`^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$`)
 
@@ -79,7 +79,7 @@ type field struct {
 	set func(*Config, string)
 }
 
-// maintenanceKeys are the settings LoadMaintenance reads: the maintenance mode (ADR-0084 §2)
+// maintenanceKeys are the settings LoadMaintenance reads: the maintenance mode (ADR-0088 §9)
 // reads only these and never the adapters' keys.
 var maintenanceKeys = map[string]bool{
 	"host": true, "account_domain": true, "web_origin": true, "listen": true,
@@ -1695,10 +1695,10 @@ func checkStatusPageURL(v string) error {
 	return nil
 }
 
-// MaxMaintenanceMessage is the most characters maintenance_message may have (ADR-0084 §2).
+// MaxMaintenanceMessage is the most characters maintenance_message may have (ADR-0088 §9).
 const MaxMaintenanceMessage = 2000
 
-// MaxRetryAfter is the longest a maintenance response asks clients to wait (ADR-0084 §3).
+// MaxRetryAfter is the longest a maintenance response asks clients to wait (ADR-0088 §10).
 const MaxRetryAfter = 24 * time.Hour
 
 func checkMaintenanceServerName(v string) error {

@@ -5,7 +5,7 @@ import { useSaveLabels } from "../hooks/saveState";
 import { type BadgeSwitch, useBadgeChoices } from "../hooks/useBadgeChoices";
 
 /**
- * The badges of the user's roles on their profile (ADR-0071; the APG switch pattern): one switch per badge, named by
+ * The badges of the user's roles on their profile (ADR-0070; the APG switch pattern): one switch per badge, named by
  * the badge itself, saved as soon as it changes, on the badges page outside any form. Without a role that has a badge,
  * the section says so.
  */

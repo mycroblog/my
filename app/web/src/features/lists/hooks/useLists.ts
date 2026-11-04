@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's lists on their page (web-client/screens/lists.md, ADR-0122): the lists, the form that creates one, renaming
+// The user's lists on their page (web-client/screens/lists.md, ADR-0013): the lists, the form that creates one, renaming
 // one in its row, and deleting one after asking. Every change takes effect at once; deleting asks first, since the
 // members' choice is lost. The hooks return no JSX.
 import { useNotice } from "@my/ui";

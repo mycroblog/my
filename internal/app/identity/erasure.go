@@ -22,7 +22,7 @@ type ErasureRepository interface {
 	// revocations, preferences, the choices to show role badges, timeline languages,
 	// registration application with its decisions and state, and the links to external
 	// identities with their unlinks and the external identities that no other user linked. The user, the origins of its sessions and registration (erased after
-	// their retention, ADR-0038), its invites and role grants stay.
+	// their retention, ADR-0058), its invites and role grants stay.
 	EraseUserData(ctx context.Context, tx uow.Tx, userID string) error
 	// ListOwnedOAuthClientIDs returns, in tx, the clients that the user registered.
 	ListOwnedOAuthClientIDs(ctx context.Context, tx uow.Tx, userID string) ([]string, error)

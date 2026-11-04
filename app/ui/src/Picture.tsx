@@ -5,7 +5,7 @@ import { type ComponentPropsWithRef, createContext, use, useState } from "react"
 export type ImageCandidate = { url: string; width?: number | undefined };
 
 /**
- * The renditions of an image to choose from: the still ones, and for an animation the moving ones (ADR-0054 §3).
+ * The renditions of an image to choose from: the still ones, and for an animation the moving ones (ADR-0005 §6).
  * The browser picks one by the width it shows the image at (`srcset` and `sizes`).
  */
 export type ImageSources = {

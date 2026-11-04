@@ -62,7 +62,7 @@ func (a *App) setUpMeter(ctx context.Context, cfg *config.Config, opts AppOption
 // processStart is when the process started, as near as the platform knows it.
 var processStart = time.Now()
 
-// ReadinessFailures counts the readiness checks that failed (ADR-0056 §3): the check itself
+// ReadinessFailures counts the readiness checks that failed (ADR-0055 §12): the check itself
 // never looks at a metric.
 var ReadinessFailures = kernel.Instrument{
 	Name: "my.readiness.failures", Unit: "{check}", Description: "Readiness checks that failed.",
@@ -72,7 +72,7 @@ var ReadinessFailures = kernel.Instrument{
 // not prometheus.
 func (a *App) MetricsHandler() http.Handler { return a.metricsHandler }
 
-// The surfaces of the HTTP server, the my.surface label (ADR-0055 §3, ADR-0075).
+// The surfaces of the HTTP server, the my.surface label (ADR-0055 §3, ADR-0055).
 const (
 	surfaceClientAPI   = "client_api"
 	surfaceActivityPub = "activitypub"
@@ -82,9 +82,9 @@ const (
 	surfaceAdmin       = "admin"
 	// surfacePayments is the endpoint that the payment provider calls (ADR-0074 §3).
 	surfacePayments = "payments"
-	// surfaceVoice is the endpoints that the media servers of the voice chat call (ADR-0102 §4).
+	// surfaceVoice is the endpoints that the media servers of the voice chat call (ADR-0101 §13).
 	surfaceVoice = "voice"
-	// surfaceQueue is the endpoints that the platform's queue and scheduler call (ADR-0120 §5).
+	// surfaceQueue is the endpoints that the platform's queue and scheduler call (ADR-0004 §13).
 	surfaceQueue = "queue"
 )
 

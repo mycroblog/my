@@ -18,7 +18,7 @@ import (
 )
 
 // TestAccountSuspensionFederates checks the propagation of a local account's suspension
-// through the composition root (federation.md §11.1, ADR-0036): the suspension, its lift, and
+// through the composition root (federation.md §11.1, ADR-0058): the suspension, its lift, and
 // its expiry each record an Update of the actor with its fan-out in the action's transaction,
 // and GET of the actor serves the emptied actor marked suspended while the suspension lasts.
 func TestAccountSuspensionFederates(t *testing.T) {

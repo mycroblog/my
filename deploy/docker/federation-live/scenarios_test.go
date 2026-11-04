@@ -428,7 +428,7 @@ func TestBoost(t *testing.T) {
 // TestFavourite: favourites and their undo in both directions (Like, Undo Like) change the count
 // on the author's side. A Misskey favourite is a reaction (a Like with _misskey_reaction): this
 // server counts it among the reactions with its emoji, not among the favourites, and notifies it
-// as a reaction (ADR-0052).
+// as a reaction (ADR-0051).
 func TestFavourite(t *testing.T) {
 	interactionScenario(t, "favourite", func(s status) int { return s.FavouritesCount })
 }
@@ -451,7 +451,7 @@ func interactionScenario(t *testing.T, action string, count func(status) int) {
 					t.Fatal(err)
 				}
 				// A peer whose favourite is an emoji reaction (Misskey) makes a reaction on this
-				// server, and no favourite (ADR-0052).
+				// server, and no favourite (ADR-0051).
 				what, got := action, count
 				emoji := ""
 				if action == "favourite" && p.favouriteReaction != "" {
@@ -506,7 +506,7 @@ func interactionScenario(t *testing.T, action string, count func(status) int) {
 }
 
 // TestReaction: an emoji reaction from this server (a Like with content and _misskey_reaction,
-// ADR-0052 §3) is a reaction with the emoji on a peer whose favourite is a reaction (Misskey), and
+// ADR-0051 §8) is a reaction with the emoji on a peer whose favourite is a reaction (Misskey), and
 // a favourite on the others (Mastodon, GoToSocial); its Undo takes it back. Changing the emoji
 // sends the Undo of the first one before the new Like, so the peer keeps one.
 func TestReaction(t *testing.T) {
@@ -671,7 +671,7 @@ func TestDelete(t *testing.T) {
 // alice posts with every visibility, mentioning the peer's stranger (a user who never follows
 // her); the peer user follows her. public, unlisted, and private reach both, direct reaches the
 // stranger only, and local reaches the follower only: the stranger can neither see it nor gets a
-// notification, although the post reaches the stranger's server (ADR-0017, ADR-0035). Then the
+// notification, although the post reaches the stranger's server (ADR-0017). Then the
 // peer user posts with every visibility of the Mastodon client API, mentioning alice in the
 // direct one, and each reaches alice with that visibility.
 func TestVisibilityAudiences(t *testing.T) {
@@ -840,7 +840,7 @@ func TestReportForwarding(t *testing.T) {
 	}
 }
 
-// TestSignatureProfile checks the rows of ADR-0032 that only a real server shows:
+// TestSignatureProfile checks the rows of ADR-0006 that only a real server shows:
 //
 //   - every peer signs its deliveries with draft-cavage first, and this server verifies them;
 //   - a Mastodon delivery that the inbox refuses with 401 comes back signed with RFC 9421, which

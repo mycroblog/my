@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Prepares a picked file for upload in the browser. An image is drawn again without its metadata (prepareImage). A
-// video or audio file is sent as it is: the server removes its metadata without decoding it (ADR-0054 §6), so for a
+// video or audio file is sent as it is: the server removes its metadata without decoding it (ADR-0005 §9), so for a
 // video the client also draws a frame of it on a canvas and uploads it as its `thumbnail` (the uploadMedia operation),
 // which the server processes as the poster. An audio file takes the cover in it, if any, as its poster on the server.
 //

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Deactivating one's own account (ADR-0145) against a real `my serve` (e2e/server.ts), in every width × locale project:
+// Deactivating one's own account (ADR-0089) against a real `my serve` (e2e/server.ts), in every width × locale project:
 // the status page that a deactivated account signs in to, with axe, in both themes and without JavaScript, and the
 // confirmations through the app and the real client API that the MSW and page.route tests only play: a code of the
 // authenticator app, and a passkey on Chromium's virtual authenticator.
 //
-// The CLI cannot deactivate an account, on purpose: only its owner does (ADR-0145 §1). So the spec does what an owner
+// The CLI cannot deactivate an account, on purpose: only its owner does (ADR-0089 §11). So the spec does what an owner
 // does, through the client API with the web client's token, and adds nothing to the server. Every test creates a user
 // of its own (a random name), so a retry and the other projects never meet it; the server's first administrator stays,
 // so the user is never the last one, which the deactivation refuses.

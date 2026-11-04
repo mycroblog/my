@@ -14,12 +14,12 @@ import (
 )
 
 // healthCacheTTL is how long PathInstanceHealth answers with the result of one check. It is
-// fixed, not a setting (ADR-0085 §1).
+// fixed, not a setting (ADR-0088 §15).
 const healthCacheTTL = 60 * time.Second
 
-// readyCheck runs the readiness check (App.Ready) once for the concurrent calls (ADR-0085 §2),
+// readyCheck runs the readiness check (App.Ready) once for the concurrent calls (ADR-0088 §16),
 // within readinessTimeout. The check runs without the caller's cancellation, since it serves
-// every caller that joined it. It logs and counts a failed check (ADR-0056 §3), once per check
+// every caller that joined it. It logs and counts a failed check (ADR-0055 §12), once per check
 // rather than per caller.
 func (a *App) readyCheck(ctx context.Context) error {
 	_, err, _ := a.readyFlight.Do("ready", func() (any, error) {

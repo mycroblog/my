@@ -18,7 +18,7 @@ export function senderOf(account: Account | undefined): string {
 }
 
 /**
- * Runs the jobs: up to its limit at once, those of one sender one after the other in the order they came (ADR-0094
+ * Runs the jobs: up to its limit at once, those of one sender one after the other in the order they came (ADR-0093
  * §4). A notification that is queued or running is not queued again, so that the catch-up and the event stream may
  * both bring it. run must not reject.
  */
@@ -118,7 +118,7 @@ export class Dispatcher {
 }
 
 /**
- * Computes the position of the catch-up (ADR-0094 §3): the newest notification up to which every notification handed
+ * Computes the position of the catch-up (ADR-0093 §11): the newest notification up to which every notification handed
  * to the bot was processed. Handlers end out of order, so a processed notification moves the position only when no
  * older one is still pending; while a catch-up hands out notifications, the position holds still, so that a restart
  * in the middle of it reads them again. Notification IDs are UUIDv7 strings, whose order is the order of time.

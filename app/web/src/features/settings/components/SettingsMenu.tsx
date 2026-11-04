@@ -42,7 +42,7 @@ import { useOwnInvitesEntry } from "../hooks/useOwnInvites";
  * One page of the settings; a page with a `permission` (a member permission, ADR-0070 §1) is listed only for a viewer
  * whose roles have it, and the page of the supporter plans only while the program is enabled, outside the Tauri app
  * (ADR-0072 §14), the voice chat history only while the server has voice chat on (ADR-0100 §13), and the user's
- * invites only while they may create invites (ADR-0108 §5).
+ * invites only while they may create invites (ADR-0106 §18).
  */
 type SettingsPage = {
   href: string;
@@ -130,7 +130,7 @@ const groups: readonly { id: string; heading: ClientMessageKey; pages: readonly 
 /**
  * The links to the pages of the settings, in named groups (`NavMenu`); the page the user is on is current, and the
  * follow requests show how many await the user's approval. Below
- * them, set apart by a line, the help: the link to the instance's status page (FR-810, ADR-0085 §6), which leaves the
+ * them, set apart by a line, the help: the link to the instance's status page (FR-810, ADR-0088 §20), which leaves the
  * app (web-client/README.md Y12); none when the instance has no status page.
  */
 export function SettingsMenu({ pathname }: { pathname: string }) {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the user's page of their custom emoji (web-client/README.md S1, ADR-0070 §2, §3, §6,
-// create_custom_emojis, ADR-0124): the emoji the user made with what they used of their monthly limit and when it
+// create_custom_emojis, ADR-0070): the emoji the user made with what they used of their monthly limit and when it
 // resets (GET /custom_emojis/mine), their
 // requests (GET /custom_emoji_requests), requesting a new emoji or a new image of one with an uploaded image (POST
 // /custom_emoji_requests), withdrawing a pending request (POST .../withdraw), and changing (PATCH) and deleting
@@ -146,7 +146,7 @@ export async function cacheWithdrawnCustomEmojiRequest(
   await queryClient.invalidateQueries({ queryKey: ["get", "/custom_emojis/mine"] });
 }
 
-/** A changed emoji: its row shows the answer at once (ADR-0045), and the picker may offer it differently. */
+/** A changed emoji: its row shows the answer at once (ADR-0028), and the picker may offer it differently. */
 export async function cacheChangedOwnCustomEmoji(queryClient: QueryClient, emoji: OwnCustomEmoji): Promise<void> {
   queryClient.setQueriesData<EmojiPages>(
     { queryKey: ["get", "/custom_emojis/mine"] },

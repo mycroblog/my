@@ -9,7 +9,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// TestAllows is the table of ADR-0076 (流れの分類), row by row: o passes, x does not, and r is
+// TestAllows is the table of ADR-0006 (流れの分類), row by row: o passes, x does not, and r is
 // refused with a Reject (which Allows reports as not passing).
 func TestAllows(t *testing.T) {
 	table := map[federation.Flow]string{

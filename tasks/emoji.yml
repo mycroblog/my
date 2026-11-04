@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # The Unicode emoji data of the server and the web client and the web client's emoji fonts, generated from pinned
-# Unicode, CLDR, and Noto Color Emoji files that the repository does not hold (ADR-0052 §1, ADR-0091 §1, ADR-0095,
+# Unicode, CLDR, and Noto Color Emoji files that the repository does not hold (ADR-0051 §6, ADR-0091 §1, ADR-0091,
 # ADR-0081). Not part of `check` or `generate`: run it by hand after changing a version, and commit what it writes.
 # The fonts are split by scripts/emoji-fonts, which runs in a throwaway Python environment that uv builds from
 # scripts/emoji-fonts/uv.lock (uv must be on PATH); nothing else needs Python.
@@ -23,7 +23,7 @@ vars:
     3d83cf7e4093f7fe77055dc21b1a3a65cd8f48a0249127552d58d3b058dbe4cd  annotationsDerived/ja.json
   # Where the web client's data goes, next to its LICENSE-Unicode.txt.
   WEB_EMOJI_DIR: app/web/src/features/emoji/unicode
-  # Noto Color Emoji (ADR-0095 §1), which must draw every emoji of EMOJI_VERSION: the COLRv1 font of the release
+  # Noto Color Emoji (ADR-0091 §8), which must draw every emoji of EMOJI_VERSION: the COLRv1 font of the release
   # NOTO_EMOJI_RELEASE of googlefonts/noto-emoji (at commit NOTO_EMOJI_COMMIT), and the OpenType-SVG font with its
   # OFL.txt from google/fonts at GOOGLE_FONTS_COMMIT (noto-emoji builds no SVG font).
   NOTO_EMOJI_RELEASE: v2026-09-24-unicode18_0

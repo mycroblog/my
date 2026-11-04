@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 )
 
-// The audit log (FR-704, ADR-0037): one append-only entry per operation of a moderator or an
+// The audit log (FR-704, ADR-0058): one append-only entry per operation of a moderator or an
 // administrator, written in the transaction of the operation. An entry names who did what to
 // which target and copies the target's display name, so that it stays readable after the
 // target is erased; reasons and notes stay in the source event.
@@ -67,7 +67,7 @@ const (
 	// AuditTargetInvite is an invite (ADR-0058); its label is the first characters of its code,
 	// never the whole code, which lets anyone sign up while the invite works.
 	AuditTargetInvite AuditTargetKind = "invite"
-	// AuditTargetRelay is a relay (ADR-0061); its label is its registered URL.
+	// AuditTargetRelay is a relay (ADR-0006); its label is its registered URL.
 	AuditTargetRelay AuditTargetKind = "relay"
 	// AuditTargetBillingSource is a source of the billing imports (ADR-0068); its ID is the
 	// source's name (aws, gcp) and its label the provider's name.
@@ -492,7 +492,7 @@ const MaxAuditTargetLabel = 512
 var ErrInvalidAuditEntry = errors.New("moderation: invalid audit log entry")
 
 // AuditEntry is one entry of the audit log (audit_log_entries, an event). It is never updated;
-// only the retention cleanup deletes it (ADR-0038).
+// only the retention cleanup deletes it (ADR-0058).
 type AuditEntry struct {
 	ID        string
 	ActorKind AuditActorKind

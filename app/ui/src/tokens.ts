@@ -21,7 +21,7 @@ export type ColorPair = { fg: string; bg: string; use: ContrastUse };
 export const surfaces = ["surface", "surface-raised", "surface-sunken"] as const;
 
 /**
- * The colors of role badges (ADR-0071), in the order the staff choose from: the BadgeColor enum of the
+ * The colors of role badges (ADR-0070), in the order the staff choose from: the BadgeColor enum of the
  * client API. Each is a pair of tokens, `badge-<color>` (background) and `badge-<color>-fg` (text).
  */
 export const badgeColors = ["neutral", "red", "orange", "yellow", "green", "teal", "blue", "purple", "pink"] as const;
@@ -39,7 +39,7 @@ export type AvatarTint = (typeof avatarTints)[number];
 /** The kinds of the highlight layer behind a text field (ADR-0092 §4); each is a token `highlight-<kind>` under fg text. */
 const highlightKinds = ["mention", "hashtag", "url", "shortcode", "over"] as const;
 
-/** The series of a chart (ADR-0113), each a token `data-<n>` drawn on the surfaces a chart sits on. */
+/** The series of a chart (ADR-0110), each a token `data-<n>` drawn on the surfaces a chart sits on. */
 const dataSeries = ["data-1", "data-2", "data-3"] as const;
 
 const onEverySurface = (fg: string, use: ContrastUse): ColorPair[] => surfaces.map((bg) => ({ fg, bg, use }));
@@ -133,7 +133,7 @@ export const tokenRules: readonly TokenRule[] = [
  * Tokens of theme.css that a server theme cannot override: the primitive palette, an implementation
  * detail of the semantic colors (override those instead), `--shadow-*`, whose values Tailwind copies
  * into its utilities (override `--elevation-*`, which they refer to), the badge and avatar colors, whose
- * pairs keep their contrast only as they are (ADR-0071), the mango of a raised hand in a voice chat call, a brand mark
+ * pairs keep their contrast only as they are (ADR-0070), the mango of a raised hand in a voice chat call, a brand mark
  * like the logo's spark, `--radius-avatar`, a percentage of the avatar's side, and `--animate-*`, shorthands that name
  * keyframes of theme.css (override their parts, such as `--ease-celebrate`).
  */

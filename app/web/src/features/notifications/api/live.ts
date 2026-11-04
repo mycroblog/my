@@ -3,7 +3,7 @@
 // the read marker, which the navigation's badge shows, and the third column's panel, whose rows change as they come.
 // The lists of the notifications page are only marked stale, not refetched (`refetchType: "none"`): the one on screen
 // does not change under the reader, and the route fetches the marked ones again, and waits for them, when it opens
-// next (web-client/README.md S7, ADR-0045).
+// next (web-client/README.md S7, ADR-0028).
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import {

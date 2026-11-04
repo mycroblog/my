@@ -295,7 +295,7 @@ type IconView struct {
 
 // Icons returns the icons of rooms that can be shown now, keyed by the icon: every Unicode
 // emoji, and the custom emoji that are still enabled with an image. A room whose custom emoji
-// was disabled or deleted shows no icon, as a reaction's emoji is read (ADR-0052).
+// was disabled or deleted shows no icon, as a reaction's emoji is read (ADR-0051).
 func (s *Service) Icons(ctx context.Context, icons []voice.Icon) (map[voice.Icon]IconView, error) {
 	out := make(map[voice.Icon]IconView, len(icons))
 	var ids []string

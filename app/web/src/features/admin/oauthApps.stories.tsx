@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The OAuth apps (/admin/oauth-apps; web-client/screens/admin-oauth-apps.md) in the states of ADR-0112 §1.
+// The OAuth apps (/admin/oauth-apps; web-client/screens/admin-oauth-apps.md) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { accountFixture, type Schemas } from "../../test/fixtures";

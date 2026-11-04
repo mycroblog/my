@@ -15,7 +15,7 @@ const (
 	LabelConnState = "db.client.connection.state"
 )
 
-// The connection pool metrics of ADR-0056 §1, named after the OpenTelemetry semantic
+// The connection pool metrics of ADR-0055 §10, named after the OpenTelemetry semantic
 // conventions. The pools keep their waits as totals since they opened, so WaitTime, Waits, and
 // Timeouts are observable counters of those totals, not histograms.
 var (
@@ -59,7 +59,7 @@ type PoolStats struct {
 }
 
 // RegisterPool reports the connection pool named pool (such as main) from stats, which the
-// gauges and the observable counters call when the exporter collects, so that queries are not measured one by one (ADR-0056 §1).
+// gauges and the observable counters call when the exporter collects, so that queries are not measured one by one (ADR-0055 §10).
 func RegisterPool(m kernel.Meter, pool string, stats func() PoolStats) {
 	if kernel.IsNop(m) {
 		return

@@ -12,10 +12,10 @@ import (
 )
 
 // ProblemTypeCurrentSession is the problem of signing out the browser that asks through the list
-// of browsers (ADR-0136 §3).
+// of browsers (ADR-0090 §12).
 const ProblemTypeCurrentSession = "/api/v1/problems/current-session"
 
-// SignedInBrowsers runs the browsers signed in to the viewer's account (ADR-0136).
+// SignedInBrowsers runs the browsers signed in to the viewer's account (ADR-0090).
 // *appidentity.Service implements it.
 type SignedInBrowsers interface {
 	SignedInBrowsers(ctx context.Context, userID, currentFamilyID string) ([]appidentity.SignedInBrowser, error)

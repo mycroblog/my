@@ -76,7 +76,7 @@ export function closeServiceMutation(api: Api) {
 }
 
 /**
- * Marks what a change of the closure changes (ADR-0045): the screen's state and check, the instance whose
+ * Marks what a change of the closure changes (ADR-0028): the screen's state and check, the instance whose
  * `closure` the notice shows, and the audit log; the queries shown now are fetched again and awaited.
  */
 export async function refreshClosure(queryClient: QueryClient): Promise<void> {

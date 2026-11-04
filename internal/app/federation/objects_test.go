@@ -227,7 +227,7 @@ func (w *objWorld) FindLiveBoost(_ context.Context, id string) (appcontent.Boost
 	return b, nil
 }
 
-// TestObjectsAnnounce checks which boosts GET of the Announce serves (ADR-0144 §5).
+// TestObjectsAnnounce checks which boosts GET of the Announce serves (ADR-0018 §16).
 func TestObjectsAnnounce(t *testing.T) {
 	const (
 		publicID   = "0192f3b0-0000-7000-8000-000000000301"
@@ -397,7 +397,7 @@ func TestObjectsCanView(t *testing.T) {
 }
 
 // TestObjectsPageStatusURI checks the redirect of a post page that asks for ActivityPub
-// (ADR-0053): only a live local status that an anonymous visitor may see has an id to go to.
+// (ADR-0018): only a live local status that an anonymous visitor may see has an id to go to.
 func TestObjectsPageStatusURI(t *testing.T) {
 	w := newObjWorld()
 	public := w.post("0192f3b0-0000-7000-8000-000000000a01", appcontent.VisibilityPublic)
@@ -446,7 +446,7 @@ func TestObjectsDocuments(t *testing.T) {
 	w.revs[st.ID] = rev
 	o := newObjects(w, nil)
 	actor := "https://" + objHost + "/ap/actors/" + authorID
-	// The url is the page under the author's current username, derived on read (ADR-0053).
+	// The url is the page under the author's current username, derived on read (ADR-0018).
 	pageURL := "https://" + objHost + "/@author/status/" + st.ID
 
 	obj, err := o.Status(t.Context(), appfederation.Requester{}, st.ID)

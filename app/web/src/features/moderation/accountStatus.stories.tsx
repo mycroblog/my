@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The account status (/settings/account-status; web-client/screens/account-status.md) in the states of ADR-0112 §1: the
+// The account status (/settings/account-status; web-client/screens/account-status.md) in the states of ADR-0079 §13: the
 // moderation actions on the user's own account in effect and past, with appeals pending, rejected and overturned.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

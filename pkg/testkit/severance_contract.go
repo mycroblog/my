@@ -30,7 +30,7 @@ type SeveranceHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type SeveranceFactory func(t *testing.T, opts uow.Options) SeveranceHarness
 
-// SeveranceContract verifies the follows that suspensions cut (FR-717, ADR-0036) on a database
+// SeveranceContract verifies the follows that suspensions cut (FR-717, ADR-0058) on a database
 // adapter, through the real account, graph, moderation, notification, and federation use cases
 // and projectors: the suspension of a remote account ends its follows with the local accounts
 // in both directions in the action's transaction and sends a Reject of each of its follows and

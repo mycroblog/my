@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's maintenance mode as the app shell handles it (ADR-0084 §3, web-client/09-app-shell.md §9 "メンテナンス"):
+// The server's maintenance mode as the app shell handles it (ADR-0088 §10, web-client/09-app-shell.md §9 "メンテナンス"):
 // the client API and the OAuth endpoints answer every request with the 503 of the maintenance problem
 // (MaintenanceError), the API client and the session report it here, and the shell shows the maintenance in place of
 // the app. Nothing discards a token or signs out for it. The shell tries the API again after Retry-After, and the first

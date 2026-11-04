@@ -2,7 +2,7 @@
 
 決済の事業者の事実を運ぶ経路の記録（FR-910・FR-911、[ADR-0074](../../../adr/0074-payment-provider-port.md) §3・§4）。`internal/app/supporters` が所有します。
 加入・顧客・価格・加入の状態の表は [ADR-0072](../../../adr/0072-supporter-plans-and-roles.md) §15 が決めます。
-`provider` の `fake` は、試験用のビルド（ビルドタグ `e2e_fakes`）の fake の決済だけが書く値です（ADR-0117 §2）。
+`provider` の `fake` は、試験用のビルド（ビルドタグ `e2e_fakes`）の fake の決済だけが書く値です（ADR-0015 §6）。
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
@@ -14,7 +14,7 @@
   同じイベントの行がもうあれば何も書きません。ジョブはイベントの本文の状態を使わず、事業者からサブスクリプション・申し込み・お金の動きを取り直して `Syncer`（`supporters.sync`）に渡すので、重複・順序の入れ替わり・取りこぼしは同じ扱いになります。
 - 定期ジョブ `supporters.reconcile_payments`（`payments_reconcile_interval` ごと）は、試行ごとに `payment_reconcile_runs` の行を 1 つ足します。最新の `succeeded` か `partial` の行のカーソルから、変わったもの（`changes_until` の 5 分前から）・未完了の申し込み・お金の動き・全件の見回しの 4 段を読み、要求が `payments_reconcile_max_requests` に達した段でカーソルを記録して `partial` で止まり、同じトランザクションで続きのジョブ（冪等キー `continue:<run_id>`、1 分後）を積みます。
   見回しのカーソルは最後のページを読むと `''` に戻ります。カーソルは試行ごとの行に残し、上書きする現在値の列を持ちません。事業者の失敗は `failed` として記録し、次の照合は前の `succeeded` か `partial` の行から始めます。
-- 事業者の自前の支払いのページ（ADR-0099 §1）が加入を作るとき、PAY.JP v1 は冪等キーを取らないので、その投稿は 1 つの短いトランザクションで `payment_checkout_claims` の行を取り（行が無いか、`expires_at` を過ぎていれば取れる）、トランザクションの外で事業者を呼び、終われば別のトランザクションで自分の `holder` の行を消します（`supporters.Payments.ClaimCheckout`）。
+- 事業者の自前の支払いのページ（ADR-0074 §9）が加入を作るとき、PAY.JP v1 は冪等キーを取らないので、その投稿は 1 つの短いトランザクションで `payment_checkout_claims` の行を取り（行が無いか、`expires_at` を過ぎていれば取れる）、トランザクションの外で事業者を呼び、終われば別のトランザクションで自分の `holder` の行を消します（`supporters.Payments.ClaimCheckout`）。
   取れなかった投稿は少し待って取り直し、取れたら事業者の加入を探すので、複数のレプリカに届いた同じ申し込みの投稿も加入を 1 つだけ作ります。行の期限は 5 分（`supporters.CheckoutClaimHold`）で、事業者を呼ぶのは 3 分まで（`supporters.CheckoutCallBudget`）なので、止まったプロセスの行は期限で次の投稿に引き継がれます。
 - `payment_webhook_receipts` は 45 日を過ぎた行を、`payment_checkout_claims` は期限を過ぎた行を、毎日の定期ジョブ `supporters.purge_payment_receipts` が消します。
 
@@ -47,7 +47,7 @@
 | `supporter_live_subscriptions` | 投影 | `user_id`（PK）, `subscription_id` | 終端でない加入だけ。利用者ごとに 1 つ。一意 `(subscription_id)` |
 | `supporter_subscription_deadlines` | 投影 | `subscription_id`（PK）, `kind`（`enum(checkout, period_end, grace)`）, `due_at` | インデックス `(due_at)` |
 | `supporter_subscription_reads` | 現在値 | `subscription_id`（PK）, `read_at` | 当てた最新のスナップショットを事業者から読み始めた時刻 |
-| `supporter_listings` | 現在値 | `user_id`（PK）, `created_at` | 参加者の一覧に出る選択（ADR-0071 §6） |
+| `supporter_listings` | 現在値 | `user_id`（PK）, `created_at` | 参加者の一覧に出る選択（ADR-0070 §15） |
 
 - 状態は、webhook・決済画面からの戻り・Scheduler の期限・定期の照合のどれも、事業者からサブスクリプションを取り直して `supporters.Derive` で導きます（`Syncer`、ジョブ `supporters.sync`）。
   導いた状態か、プラン・価格・期間の終わり・猶予・予約された変更が直前の遷移と違うときだけ遷移の行を足し、同じトランザクションで投影と期限、プランのロールの付与・剥奪・入れ替え（`identity` の管理されたロールの操作）を書きます。ロールが外れる遷移は `supporter_listings` の行も消します。

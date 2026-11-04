@@ -15,7 +15,7 @@ import (
 // Tracer is a kernel.Tracer that records every span, sampled, for tests of the code that
 // traces. An attribute whose key the span's spec did not declare, more attributes than
 // kernel.MaxSpanAttrs, or a span ended twice, is a programming error that Err reports
-// (ADR-0063 §1, §4). It is safe for concurrent use.
+// (ADR-0055 §13, §16). It is safe for concurrent use.
 type Tracer struct {
 	mu    sync.Mutex
 	next  uint64

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The queries and mutations of the user's own invites (FR-011, ADR-0108 §5): the invites the user created as a member,
+// The queries and mutations of the user's own invites (FR-011, ADR-0106 §18): the invites the user created as a member,
 // newest first, each page with whether they may create one now, how many usable invites they hold, and the caps of the
 // instance settings (GET /invites); creating one within the caps (POST /invites); and revoking one (POST
 // /invites/{id}/revoke). A user who may not create invites gets a 403 `invites-not-allowed`, one who holds as many usable
@@ -64,7 +64,7 @@ export function refreshOwnInvites(queryClient: QueryClient): Promise<void> {
 }
 
 /**
- * Writes the revoked invite from the answer into the cached list (ADR-0045), which shows it right at once, and marks
+ * Writes the revoked invite from the answer into the cached list (ADR-0028), which shows it right at once, and marks
  * the list stale for the count of usable invites, which the next fetch answers.
  */
 export function cacheRevokedOwnInvite(queryClient: QueryClient, revoked: OwnInvite): Promise<void> {

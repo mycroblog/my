@@ -84,7 +84,7 @@ func runServe(args []string, stderr io.Writer) int {
 	return 0
 }
 
-// serveMaintenance runs the maintenance mode (ADR-0084): it reads only the settings of the
+// serveMaintenance runs the maintenance mode (ADR-0088): it reads only the settings of the
 // maintenance mode and never assembles the normal server, so no adapter is created or connected.
 func serveMaintenance(src config.Source, pseudo bool, stderr io.Writer) int {
 	cfg, _, err := config.LoadMaintenance(src)

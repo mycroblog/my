@@ -16,7 +16,7 @@ import (
 )
 
 // runAdminRelay implements `my admin relay <subcommand>`: the relays the instance joins
-// (ADR-0061, FR-724). The CLI acts as no user: what it does is recorded in the audit log as the
+// (ADR-0006, FR-724). The CLI acts as no user: what it does is recorded in the audit log as the
 // command line's.
 func runAdminRelay(args []string, stdout, stderr io.Writer) int {
 	sub, code := dispatch("admin relay", args, []string{"create", "follow", "unfollow", "remove", "list"}, stderr, adminRelayUsage)

@@ -43,7 +43,7 @@ func TestSignUpPageFollowsTheMode(t *testing.T) {
 		status       int
 		want, unwant []string
 	}{
-		// Every mode but closed takes an invite (ADR-0108 §4): optional in open and approval mode,
+		// Every mode but closed takes an invite (ADR-0106 §17): optional in open and approval mode,
 		// required in invite mode, and filled in from ?invite=.
 		{identity.RegistrationOpen, http.StatusOK, []string{
 			`name="username"`, `name="email"`, `name="password"`,

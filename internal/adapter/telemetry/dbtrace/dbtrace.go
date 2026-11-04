@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package dbtrace holds the database spans of ADR-0063 §1 that the database adapters share:
+// Package dbtrace holds the database spans of ADR-0055 §13 that the database adapters share:
 // one span per attempt of UnitOfWork.Tx (TxSpan) and one per query (QuerySpan), named after the
 // sqlc query. A span carries the database system and the query's name, never the SQL text or
 // its parameters (§4).

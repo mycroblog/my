@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's own icon and logo (ADR-0116): SVGs that its administrators upload, which the server sanitizes and
+// The server's own icon and logo (ADR-0059): SVGs that its administrators upload, which the server sanitizes and
 // serves under /brand/. They are shown only as images (`<img>`), never inline, so that nothing in them runs in the
 // page; `Wordmark` shows a logo, `BrandIcon` an icon.
 import { tv, type VariantProps } from "tailwind-variants";

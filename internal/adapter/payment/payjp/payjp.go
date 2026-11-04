@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package payjp is the supporters.PaymentProvider of PAY.JP on its API v1 (ADR-0099): plans
+// Package payjp is the supporters.PaymentProvider of PAY.JP on its API v1 (ADR-0074): plans
 // with IDs of our own, the subscriptions and their commands, the webhook verifier of the
 // account's fixed token, the lists of the reconciliation over the Events API, and the charges,
 // refunds, chargebacks, and statements as money movements. PAY.JP API v2 has no subscriptions.
 //
 // API v1 has no hosted checkout and no customer portal; the adapter's own pages stand in for
-// them (supporters.PageServer, ADR-0099 §3), and StartCheckout and PortalURL return their URLs.
+// them (supporters.PageServer, ADR-0074 §11), and StartCheckout and PortalURL return their URLs.
 //
-// The adapter calls https://api.pay.jp/v1 with net/http (ADR-0099 R1): Basic authentication with
+// The adapter calls https://api.pay.jp/v1 with net/http (ADR-0074 §10): Basic authentication with
 // the secret key, form bodies, and JSON responses. It reaches only the endpoint of the key that
 // the operator configured, so its HTTP client is not the SSRF-guarded kernel.HTTPClient
 // (ADR-0074 §7, H1). It keeps its requests within RequestsPerSecond and backs off on a 429.
@@ -39,10 +39,10 @@ const Name = "payjp"
 // BaseURL is PAY.JP's API v1.
 const BaseURL = "https://api.pay.jp/v1"
 
-// TokenHeader is the header of the account's webhook token (ADR-0099 §4).
+// TokenHeader is the header of the account's webhook token (ADR-0074 §12).
 const TokenHeader = "X-Payjp-Webhook-Token" //nolint:gosec // G101: a header name, not a credential
 
-// The requests per second that the adapter sends by default (ADR-0099 §2): below PAY.JP's
+// The requests per second that the adapter sends by default (ADR-0074 §10): below PAY.JP's
 // limits for the secret key of 30 per second in live mode and 2 in test mode.
 const (
 	LiveRequestsPerSecond = 20
@@ -102,7 +102,7 @@ type Options struct {
 	Sleep func(ctx context.Context, d time.Duration) error
 }
 
-// ModeOfKey returns the mode of a secret key by its prefix (ADR-0099 §7).
+// ModeOfKey returns the mode of a secret key by its prefix (ADR-0074 §15).
 func ModeOfKey(key string) (supporters.Mode, error) {
 	switch {
 	case strings.HasPrefix(key, "sk_test_"):
@@ -124,7 +124,7 @@ func modeOfPublicKey(key string) (supporters.Mode, error) {
 	return "", errors.New("payjp: the public key must start with pk_test_ or pk_live_")
 }
 
-// CheckKeys reports whether the keys are well formed and of one mode (ADR-0099 §7).
+// CheckKeys reports whether the keys are well formed and of one mode (ADR-0074 §15).
 func CheckKeys(secretKey, publicKey string) error {
 	mode, err := ModeOfKey(secretKey)
 	if err != nil {
@@ -147,7 +147,7 @@ type Provider struct {
 	base    string
 	limiter *limiter
 	log     *slog.Logger
-	// stateKey signs the state of the pages (ADR-0099 §3).
+	// stateKey signs the state of the pages (ADR-0074 §11).
 	stateKey []byte
 }
 
@@ -199,7 +199,7 @@ func (p *Provider) Name() string { return Name }
 func (p *Provider) Mode() supporters.Mode { return p.mode }
 
 // Location implements supporters.PaymentProvider: Japan Standard Time, the time zone of PAY.JP's
-// reports (ADR-0099 §2).
+// reports (ADR-0074 §10).
 func (p *Provider) Location() *time.Location { return tokyo }
 
 // MinimumAmount implements supporters.PaymentProvider: 50 yen; PAY.JP takes no other currency.
@@ -303,7 +303,7 @@ func (p *Provider) send(ctx context.Context, method, path string, form url.Value
 }
 
 // kindOfStatus returns the error of supporters that names the kind of a failed status
-// (ADR-0099 §2).
+// (ADR-0074 §10).
 func kindOfStatus(status int) error {
 	switch {
 	case status == http.StatusUnauthorized || status == http.StatusForbidden:

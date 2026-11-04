@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The page of one list below its heading, the list's name (web-client/screens/list-timeline.md, ADR-0122 §4): the
+// The page of one list below its heading, the list's name (web-client/screens/list-timeline.md, ADR-0013 §13): the
 // heading's line goes on with the number of members and "Manage lists", then the list's timeline (features/timeline,
 // the home timeline's feed with its "N new posts" button). A list without members shows, instead of the feed, the empty
 // state that leads to managing them.

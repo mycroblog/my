@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server's own icon and logos through the whole app (web-client/README.md T4, ADR-0116): an administrator with
+// The server's own icon and logos through the whole app (web-client/README.md T4, ADR-0059): an administrator with
 // manage_settings chooses an SVG, which the server checks; the previews and what the server removed show; saving sends
 // the sanitized SVG with every PNG rendition, and clearing brings the built-in image back. A file the server refuses
 // says why under its button. jsdom draws nothing, so the renditions are stand-in PNGs; their layout is tested in

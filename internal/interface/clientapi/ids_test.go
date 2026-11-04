@@ -17,7 +17,7 @@ import (
 )
 
 // malformedIDs are forms of an ID that PostgreSQL's uuid type accepts or that are no UUID at
-// all; none of them is the canonical UUIDv7 form (ADR-0078 §5).
+// all; none of them is the canonical UUIDv7 form (ADR-0003 §9).
 var malformedIDs = map[string]string{
 	"uppercase":  strings.ToUpper(notificationID(2)),
 	"no hyphens": strings.ReplaceAll(notificationID(2), "-", ""),
@@ -80,7 +80,7 @@ func (a answer) equal(b answer) bool {
 }
 
 // TestMalformedPathID: an ID in the path that is not canonical answers exactly as an ID of
-// nothing does, with the same headers and body (ADR-0078 §5, ADR-0018).
+// nothing does, with the same headers and body (ADR-0003 §9, ADR-0018).
 func TestMalformedPathID(t *testing.T) {
 	e, _ := newNotificationEnv(t)
 	missing := answerOf(t, e.send(t, http.MethodPost, "/notifications/"+notificationID(9)+"/dismiss", "write", ""))

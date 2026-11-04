@@ -31,7 +31,7 @@ type Deps struct {
 	Caps map[string]RequestCaps
 	// Outbox enqueues the manual imports; nil refuses them.
 	Outbox queue.Outbox
-	// Supporters reads the supporters module for the income (ADR-0073 §1); nil reads no plans,
+	// Supporters reads the supporters module for the income (ADR-0067 §11); nil reads no plans,
 	// subscribers, or providers.
 	Supporters SupporterDirectory
 	// Logger logs the imports and the income records; nil means slog.Default().

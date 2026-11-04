@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Video and audio files are never transcoded (ADR-0054 §6): a processor parses their
+// Video and audio files are never transcoded (ADR-0005 §9): a processor parses their
 // container, checks the codecs and limits, and writes the same streams again without metadata
 // (a remux). The accepted containers are MP4 (ISO BMFF, QuickTime included), WebM, MP3, and
 // Ogg; the accepted codecs are H.264, VP8, VP9, and AV1 for video and AAC, Opus, Vorbis, and
@@ -79,7 +79,7 @@ const (
 	AVAudio AVKind = "audio"
 )
 
-// AVLimits bound the video and audio files a processor accepts (ADR-0054 §6).
+// AVLimits bound the video and audio files a processor accepts (ADR-0005 §9).
 type AVLimits struct {
 	// MaxBytes is the longest accepted file.
 	MaxBytes int64
@@ -91,7 +91,7 @@ type AVLimits struct {
 	MaxFrameRate float64
 }
 
-// Default video and audio limits (ADR-0019 §8, ADR-0054 §6).
+// Default video and audio limits (ADR-0019 §8, ADR-0005 §9).
 const (
 	DefaultMaxAVBytes       = 100 << 20
 	DefaultMaxVideoDuration = 5 * time.Minute
@@ -100,7 +100,7 @@ const (
 	DefaultMaxFrameRate     = 120
 )
 
-// DefaultAVLimits returns the limits of ADR-0054 §6.
+// DefaultAVLimits returns the limits of ADR-0005 §9
 func DefaultAVLimits() AVLimits {
 	return AVLimits{
 		MaxBytes: DefaultMaxAVBytes, MaxVideoDuration: DefaultMaxVideoDuration, MaxAudioDuration: DefaultMaxAudioDuration,
@@ -164,7 +164,7 @@ type AVOutput struct {
 	Cover []byte
 }
 
-// AVProcessor is the part of the MediaProcessor port for video and audio files (ADR-0054 §6).
+// AVProcessor is the part of the MediaProcessor port for video and audio files (ADR-0005 §9).
 // Zero fields of AVLimits take their defaults.
 type AVProcessor interface {
 	// InspectAV parses the container of data and checks its codecs and limits without writing

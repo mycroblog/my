@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The role badges of a profile in every width × locale project (ADR-0071, ADR-0027): a named list next to the name,
+// The role badges of a profile in every width × locale project (ADR-0070, ADR-0110): a named list next to the name,
 // with a long badge name and one in a right-to-left script, passing axe without scrolling sideways, and absent from
 // the author lines of the account's posts. `vite preview` has no API, so the spec plays the signed-in user's server
 // with page.route.

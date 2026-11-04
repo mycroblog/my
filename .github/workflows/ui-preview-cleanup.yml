@@ -1,6 +1,6 @@
 name: UI preview cleanup
 
-# Deletes the Cloudflare Previews pr-<number> of closed and merged pull requests (ADR-0112 §4), once every 24 hours and
+# Deletes the Cloudflare Previews pr-<number> of closed and merged pull requests (ADR-0079 §15), once every 24 hours and
 # on demand, with `scripts/ui-preview.sh cleanup`: it lists the Previews of the Worker through the Cloudflare API and
 # asks GitHub for the state of each pull request. A scheduled run and workflow_dispatch both run main's workflow and
 # script in the environment `ui-preview` (deployment branches: main only), which holds the secret CLOUDFLARE_API_TOKEN

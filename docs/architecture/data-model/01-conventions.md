@@ -21,7 +21,7 @@
 
 | 論理型 | 意味 | SQLite 系 | PostgreSQL 系 |
 | --- | --- | --- | --- |
-| `id` | UUIDv7 の正規形文字列（36 文字、小文字） | `TEXT` | `uuid`（16 バイトのバイト順 = 時刻順。[ADR-0078](../../adr/0078-postgres-uuid-columns.md)）。Go では `string`。UUID でない値を持つ列（外部の事業者の ID、公開の `client_id`（`oauth_clients.client_id`、`login_provider_revisions.client_id`）、監査ログの `target_id`、`emoji_key` など）は `text COLLATE "C"` |
+| `id` | UUIDv7 の正規形文字列（36 文字、小文字） | `TEXT` | `uuid`（16 バイトのバイト順 = 時刻順。[ADR-0003](../../adr/0003-database-abstraction.md)）。Go では `string`。UUID でない値を持つ列（外部の事業者の ID、公開の `client_id`（`oauth_clients.client_id`、`login_provider_revisions.client_id`）、監査ログの `target_id`、`emoji_key` など）は `text COLLATE "C"` |
 | `string(n)` | 長さ上限つき文字列（上限はアプリで検証） | `TEXT` | `text` |
 | `text` | 長文 | `TEXT` | `text` |
 | `iri` | URL / ActivityPub の IRI（最大 2048 文字を想定） | `TEXT` | `text` |
@@ -41,7 +41,7 @@
   - 受信した文書の原本は、障害調査とフィクスチャの採取のため、受け取ったバイト列のまま残します。
 - `date` は支払日のように、カードの明細や請求書に書かれた日付そのものです（[ADR-0067 §5](../../adr/0067-finance-cost-records.md)）。時刻の値ではないので、`timestamp` の「UTC で保持」は当たりません。
   SQLite の `date()` は実在する `YYYY-MM-DD` だけを同じ文字列で返すので、`CHECK` は `2026-02-30` や時刻つきの値を拒みます。`TEXT` のままの比較と並べ替えは日付の順と一致します。
-  PostgreSQL の `date` はテストの pgmem（[ADR-0041](../../adr/0041-postgres-tests-on-pgmem.md)）でも実際の PostgreSQL と同じに動き、`testkit.FinanceRepositoryContract` が両方言で確かめます。
+  PostgreSQL の `date` はテストの pgmem（[ADR-0015](../../adr/0015-testing-strategy.md)）でも実際の PostgreSQL と同じに動き、`testkit.FinanceRepositoryContract` が両方言で確かめます。
   Go では `finance.Date`（`internal/domain/finance`）で持ち、方言のアダプタが `YYYY-MM-DD` の文字列と `pgtype.Date` に変えます。
 - 文字列の論理型（`id`・`string(n)`・`text`・`iri`・`lang`・`enum`）の値は、妥当な UTF-8 でヌル文字（U+0000）を含みません。
   PostgreSQL の `text` はヌル文字を保存できず、SQLite は保存できるので、方言で結果が変わらないようにアプリが書く前に守ります。

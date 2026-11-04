@@ -213,7 +213,7 @@ func (s *Server) FollowAccount(ctx context.Context, req FollowAccountRequestObje
 		if err != nil || req.Body == nil || req.Body.Notify == nil || s.o.Subscriptions == nil {
 			return r, err
 		}
-		// The notify of a follow is the subscription to the account's new posts (ADR-0123 §1):
+		// The notify of a follow is the subscription to the account's new posts (ADR-0086 §14):
 		// for a remote account whose follow awaits its server, it starts with the acceptance.
 		if *req.Body.Notify {
 			err = s.o.Subscriptions.SubscribeWithFollow(ctx, v.AccountID, req.Id)
@@ -241,7 +241,7 @@ func (s *Server) followable(ctx context.Context, v Viewer, a appaccount.Actor) (
 }
 
 // followableRemotely refuses a new follow of a remote account while the federation mode does
-// not follow remote accounts (ADR-0076); a follow or request that exists already may still change
+// not follow remote accounts (ADR-0006); a follow or request that exists already may still change
 // its preferences, since nothing goes out for that.
 func (s *Server) followableRemotely(ctx context.Context, v Viewer, a appaccount.Actor) (*problem, error) {
 	if a.Account.IsLocal() {

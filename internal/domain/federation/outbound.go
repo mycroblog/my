@@ -29,7 +29,7 @@ const (
 	// OutboundPollVote is a local account's vote in a remote poll: the Create of the Note that
 	// carries one choice, about the poll's status (ObjectID).
 	OutboundPollVote OutboundObjectKind = "poll_vote"
-	// OutboundRelay is the membership of a relay (ADR-0061): the Follow and Undo that join and
+	// OutboundRelay is the membership of a relay (ADR-0006): the Follow and Undo that join and
 	// leave it, and the Accept or Reject of a Follow of the instance actor. Its object is the
 	// relay, or the remote actor whose Follow of the instance actor is rejected.
 	OutboundRelay OutboundObjectKind = "relay"
@@ -39,7 +39,7 @@ const (
 	// it is recorded, and it goes to one inbox (the payload's).
 	OutboundQuote OutboundObjectKind = "quote"
 	// OutboundRefusal is the Reject of a remote Follow of a local actor that the federation mode
-	// refuses (inbound, ADR-0076), recorded without a follow. Its object is the remote actor; its
+	// refuses (inbound, ADR-0006), recorded without a follow. Its object is the remote actor; its
 	// document is stored when it is recorded, and it goes to one inbox (the payload's).
 	OutboundRefusal OutboundObjectKind = "refusal"
 	// OutboundMove is the Move of a local account to another (ADR-0089): its object is the move

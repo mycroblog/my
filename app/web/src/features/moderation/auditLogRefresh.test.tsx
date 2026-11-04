@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The audit log after each audited write of the admin screens (#475, web-client/README.md S1, ADR-0045): every write that
+// The audit log after each audited write of the admin screens (#475, web-client/README.md S1, ADR-0028): every write that
 // the server records marks the cached log stale, and the route fetches it again before showing it (S7), or going
 // back to the log would show it without the operation until a slow server answered it again. Each case opens the
 // log, goes to the write's screen, makes the write while the log takes a while to come, and goes back.

@@ -28,7 +28,7 @@ const filterTypes: Readonly<Record<Exclude<NotificationFilter, "all">, readonly 
   follows: ["follow", "follow_request", "follow_accepted"],
   boosts: ["boost"],
   favourites: ["favourite"],
-  // The new posts of the accounts that the user subscribes to (ADR-0123).
+  // The new posts of the accounts that the user subscribes to (ADR-0086).
   posts: ["status"],
 };
 
@@ -81,7 +81,7 @@ export async function updateNotificationMarker(api: Api, lastReadId: string): Pr
 }
 
 /**
- * Puts the read marker as the server answered a move of it into the cache (ADR-0045): the navigation's unread
+ * Puts the read marker as the server answered a move of it into the cache (ADR-0028): the navigation's unread
  * count shows it on every page at once. The lists are the same notifications as before, so none is marked.
  */
 export function cacheReadMarker(api: Api, queryClient: QueryClient, marker: NotificationMarker): void {

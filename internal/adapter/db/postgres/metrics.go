@@ -13,7 +13,7 @@ import (
 // PoolName is the db.client.connection.pool.name of the pool of DB.
 const PoolName = "postgres"
 
-// RegisterMetrics reports the connection pool on m from pgxpool's statistics (ADR-0056 §1).
+// RegisterMetrics reports the connection pool on m from pgxpool's statistics (ADR-0055 §10).
 func (d *DB) RegisterMetrics(m kernel.Meter) {
 	sysmetrics.RegisterPool(m, PoolName, func() sysmetrics.PoolStats {
 		s := d.pool.Stat()

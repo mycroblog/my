@@ -210,7 +210,7 @@ func printClosureProgress(w io.Writer, p appinstance.ClosureProgress) {
 }
 
 // printClosureCheck prints the checks before the closure, and on stderr the warnings about the
-// account migrations that have not ended (ADR-0089) and the retention holds (ADR-0038).
+// account migrations that have not ended (ADR-0089) and the retention holds (ADR-0058).
 func printClosureCheck(w, stderr io.Writer, c appinstance.ClosureCheck) {
 	_, _ = fmt.Fprintf(w, "local accounts: %d\ndelivery inboxes: %d\nestimated Delete deliveries: %d\nlive supporter subscriptions: %d\npending migrations: %d\nretention holds: %d\n",
 		c.LocalAccounts, c.DeliveryInboxes, c.EstimatedDeletes, c.LiveSupporterSubscriptions, c.PendingMigrations, c.RetentionHolds)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The prompt to turn on Web Push, a notice at the top of the notifications page (ADR-0137,
+// The prompt to turn on Web Push, a notice at the top of the notifications page (ADR-0086,
 // web-client/screens/notifications.md): a region of the page, never a dialog, so the list stays usable under it.
 import { Button, Cluster, InlineError, Section } from "@my/ui";
 import { useT } from "../../../lib/i18n";

@@ -12,9 +12,9 @@ import (
 )
 
 // The follows that moderation cuts when it suspends a domain or a remote account (FR-717,
-// ADR-0036). The moderation module calls these in the transaction that records what each local
+// ADR-0058). The moderation module calls these in the transaction that records what each local
 // account lost (relationship_severances). The federation module cuts the follows with remote
-// accounts the same way when the operator severs the federation (ADR-0076).
+// accounts the same way when the operator severs the federation (ADR-0006).
 
 // Severed counts the active follows that an account lost to a severance.
 type Severed struct {

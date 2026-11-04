@@ -43,7 +43,7 @@ type RemoteStatuses interface {
 }
 
 // RelayedStatuses records the remote posts that only a relay brought in, which are kept for
-// relay_status_retention_days (ADR-0061); *appcontent.Service implements it.
+// relay_status_retention_days (ADR-0006); *appcontent.Service implements it.
 type RelayedStatuses interface {
 	RecordRelayedStatus(ctx context.Context, tx uow.Tx, statusID, relayID string, at time.Time) error
 }
@@ -66,7 +66,7 @@ type StatusHandlersDeps struct {
 	Actors InboxActors
 	// Fetcher fetches the object of a Create or Update that carries only its id.
 	Fetcher DocumentFetcher
-	// Followers tells whether local accounts follow the author (ADR-0034).
+	// Followers tells whether local accounts follow the author (ADR-0006).
 	Followers Followers
 	// Tombstones tells which URIs a Delete or Undo of an unknown object left (federation.md
 	// §3.3), so that a fetch does not bring them in; nil knows none.
@@ -80,16 +80,16 @@ type StatusHandlersDeps struct {
 	KV     kernel.KeyValueStore
 	// Profiles reads the remote accounts whose outboxes FetchOutbox fetches, Relationships the
 	// blocks between their viewers and them, and Restrictions their federation restriction
-	// (ADR-0044). Without Profiles (and Jobs and KV), outboxes are not fetched; without
+	// (ADR-0006). Without Profiles (and Jobs and KV), outboxes are not fetched; without
 	// Relationships or Restrictions, no block or restriction keeps them.
 	Profiles      OutboxAccounts
 	Relationships Relationships
 	Restrictions  AccountPolicy
-	// Pins mirrors the featured collections of remote accounts (JobFetchFeatured, ADR-0044);
+	// Pins mirrors the featured collections of remote accounts (JobFetchFeatured, ADR-0006);
 	// without Pins (or Profiles), featured collections are not fetched.
 	Pins RemotePins
 	// Relayed records the posts that only a relay brought in, and RelayPolicy keeps out those of
-	// restricted authors (ADR-0061); without Relayed, nothing a relay brings in is stored.
+	// restricted authors (ADR-0006); without Relayed, nothing a relay brings in is stored.
 	Relayed     RelayedStatuses
 	RelayPolicy RelayPolicy
 	// Votes records the votes of remote accounts in local polls; nil takes every Note in reply
@@ -112,7 +112,7 @@ type StatusHandlersDeps struct {
 // StatusHandlers are the inbox handlers of remote posts (federation.md §3.4): Create and Update
 // of Note, Question, and the converted types, Delete of a post, and Add and Remove of the pinned
 // posts. Only posts related to a local
-// account are ingested (ADR-0034).
+// account are ingested (ADR-0006).
 type StatusHandlers struct {
 	d      StatusHandlersDeps
 	origin string
@@ -136,7 +136,7 @@ func (h *StatusHandlers) Register(p *InboxProcessor) {
 	p.Handle(federation.ActivityRemove, h.FeaturedChanged)
 }
 
-// Create ingests the post of a Create when it is in scope (ADR-0034). A post that is stored
+// Create ingests the post of a Create when it is in scope (ADR-0006). A post that is stored
 // already is left as it is, and one that is deleted, or whose URI a deletion keeps, is dropped.
 // A Note with a name in reply to a local status with a poll is a vote in it (vote).
 func (h *StatusHandlers) Create(ctx context.Context, a *InboxActivity) error {
@@ -336,10 +336,10 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 		return err
 	}
 	// A post that no local account relates to is taken in from an accepted relay when it is
-	// public (ADR-0061), without the fetches of its parent and of the unknown actors it mentions.
+	// public (ADR-0006), without the fetches of its parent and of the unknown actors it mentions.
 	relayed := !ok && a.Relay != nil && h.d.Relayed != nil
 	if !ok && !relayed {
-		return fmt.Errorf("%w: %s is not related to a local account (ADR-0034)", ErrDropActivity, obj.ID)
+		return fmt.Errorf("%w: %s is not related to a local account (ADR-0006)", ErrDropActivity, obj.ID)
 	}
 	if !relayed {
 		if err := h.resolveMentions(ctx, mentions); err != nil {
@@ -348,7 +348,7 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 	}
 	in := h.input(a, obj, followers, mentions)
 	if in.Visibility == appcontent.VisibilityDirect && len(mentions.accountIDs) == 0 && mentions.deactivated {
-		return fmt.Errorf("%w: %s is addressed to deactivated accounts only (ADR-0145)", ErrDropActivity, obj.ID)
+		return fmt.Errorf("%w: %s is addressed to deactivated accounts only (ADR-0089)", ErrDropActivity, obj.ID)
 	}
 	if relayed && in.Visibility != appcontent.VisibilityPublic {
 		return fmt.Errorf("%w: the relayed %s is not public", ErrDropActivity, obj.ID)
@@ -380,7 +380,7 @@ func (h *StatusHandlers) recordRelayed(ctx context.Context, tx uow.Tx, st appcon
 	return h.d.Relayed.RecordRelayedStatus(ctx, tx, st.ID, m.RelayID, kernel.Normalize(h.d.Clock.Now()))
 }
 
-// RelayedAnnounce takes in the post that an accepted relay announces (ADR-0061): it is fetched
+// RelayedAnnounce takes in the post that an accepted relay announces (ADR-0006): it is fetched
 // from its origin, whatever the Announce embeds, and stored as a relayed post when it is public
 // and not stored yet. It is never recorded as a boost: the relay is not a reader of it.
 func (h *StatusHandlers) RelayedAnnounce(ctx context.Context, in *InboxActivity) error {
@@ -416,7 +416,7 @@ func (h *StatusHandlers) RelayedAnnounce(ctx context.Context, in *InboxActivity)
 	return err
 }
 
-// inScope reports whether a post is related to a local account (ADR-0034): a local account
+// inScope reports whether a post is related to a local account (ADR-0006): a local account
 // follows its author, it mentions or addresses a local account, or it replies to a local post or
 // into a thread that has one.
 func (h *StatusHandlers) inScope(ctx context.Context, author appaccount.Actor, obj *federation.Object, m *postMentions) (bool, error) {
@@ -492,7 +492,7 @@ func (h *StatusHandlers) mentions(ctx context.Context, obj *federation.Object, f
 		if a.Account.IsLocal() {
 			if !a.Lifecycle.Active() {
 				// Nothing reaches a deactivated account, and it does not read this later
-				// (ADR-0145 §6).
+				// (ADR-0089 §16).
 				m.deactivated = m.deactivated || a.Lifecycle.Deactivated()
 				continue
 			}

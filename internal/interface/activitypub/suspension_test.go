@@ -16,7 +16,7 @@ func (f fakeSuspensions) AccountFederationSuspended(_ context.Context, accountID
 }
 
 // TestDeactivatedActor checks the federation endpoints of a local actor whose owner deactivated it
-// (ADR-0145 §6, §7): GET serves the emptied actor marked suspended, with its key, WebFinger and the
+// (ADR-0089 §16, §17): GET serves the emptied actor marked suspended, with its key, WebFinger and the
 // redirect of the profile page answer, and its inbox takes activities, while its collections are
 // missing.
 func TestDeactivatedActor(t *testing.T) {
@@ -70,7 +70,7 @@ func TestSuspendedActor(t *testing.T) {
 	}
 }
 
-// TestDeletedActorAnswersGone checks ADR-0144 §1: a deleted local actor answers 410, with a
+// TestDeletedActorAnswersGone checks ADR-0018 §12: a deleted local actor answers 410, with a
 // Tombstone of the actor's URI under /ap/, on every way to reach it, and what is merely missing or
 // not active stays 404.
 func TestDeletedActorAnswersGone(t *testing.T) {

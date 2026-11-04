@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/app/media"
 )
 
-// Encoder settings (ADR-0054 §2).
+// Encoder settings (ADR-0005 §5).
 const (
 	// jpegQuality is the quality of the large still variant of an opaque image.
 	jpegQuality = 85

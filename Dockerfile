@@ -3,7 +3,7 @@
 #
 # Container images for cmd/my (ADR-0010): multi-arch (linux/amd64, linux/arm64), static, non-root, distroless.
 #
-#   docker build -t my .    # the server (default target "app"), which also applies the schema (my schema apply, ADR-0126)
+#   docker build -t my .    # the server (default target "app"), which also applies the schema (my schema apply, ADR-0023)
 #
 # Base images are pinned by tag and multi-arch index digest, written in the FROM lines themselves so that Dependabot can
 # update them. The Go, Node.js, and Bun tags must match .tool-versions (docker:dockerfile-check), so they are raised by

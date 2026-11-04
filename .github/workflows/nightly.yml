@@ -6,8 +6,8 @@ name: Nightly
 run-name: ${{ inputs.jobs && inputs.jobs != 'all' && format('Nightly ({0})', inputs.jobs) || 'Nightly' }}
 
 # Every night on the head of main: the slow suite (slow-suite.yml, ADR-0079), so that a regression in the checks too
-# slow for the merge queue is found within a day, the web E2E of the demo server (ADR-0117), and the L4 task tests of
-# the screens (ADR-0114). A scheduled run is skipped when main has not moved since the last successful full run; a run
+# slow for the merge queue is found within a day, the web E2E of the demo server (ADR-0015), and the L4 task tests of
+# the screens (ADR-0015). A scheduled run is skipped when main has not moved since the last successful full run; a run
 # by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=l4`, `-f jobs=demo-e2e`, `-f jobs=slow-suite`, or
 # `-f jobs=image-scan` for one of them). The scan of the published images runs every night, whether or not main moved.
 
@@ -84,7 +84,7 @@ jobs:
       security-events: write
 
   # The published images of the two latest minor versions, which operators upgrade through: a failure means a fixable
-  # HIGH or above in a published version, not a fault of main, and the answer is a patch release (ADR-0142 §5). It runs
+  # HIGH or above in a published version, not a fault of main, and the answer is a patch release (ADR-0010 §8). It runs
   # without a token, so it reads only what an operator can pull, and passes while no image is public.
   image-scan:
     if: inputs.jobs == '' || inputs.jobs == 'all' || inputs.jobs == 'image-scan'
@@ -108,9 +108,9 @@ jobs:
           done
           exit "$status"
 
-  # The web E2E of the demo server (app/web/e2e/demo-*.spec.ts, the project `demo-chromium`, ADR-0117 §4): the demo
+  # The web E2E of the demo server (app/web/e2e/demo-*.spec.ts, the project `demo-chromium`, ADR-0015 §8): the demo
   # scenario signs in, a second run of the seed adds nothing, a password reset arrives in Mailpit, and a reply reaches
-  # the Service Worker as a Web Push notification through the fake push service (ADR-0118 §4). The specs need
+  # the Service Worker as a Web Push notification through the fake push service (ADR-0015 §12). The specs need
   # the test build of `bin/my` (`GO_TAGS=e2e_fakes`) and Mailpit, so they run here every night rather than in the
   # merge queue. The demo server has Web Push on: `node e2e/server.ts demo` starts the test build's fake push service
   # (`my dev push-service`) with the certificate that start-mailpit's scripts/mailpit-cert.sh writes, here and in the
@@ -163,9 +163,9 @@ jobs:
             app/web/test-results/
           retention-days: 14
 
-  # The L4 task tests (ADR-0110 §7, ADR-0114; `scripts/task.sh web:l4`, app/web/l4/run.ts): Claude Code, run
+  # The L4 task tests (ADR-0110 §7, ADR-0015; `scripts/task.sh web:l4`, app/web/l4/run.ts): Claude Code, run
   # non-interactively, does each task of the screens' L1 files through the Playwright MCP server, which gives it ARIA
-  # snapshots and no screenshots, against the demo server (ADR-0117 §4: the test build of `bin/my` with the demo
+  # snapshots and no screenshots, against the demo server (ADR-0015 §8: the test build of `bin/my` with the demo
   # scenario), signed in as the person of the scenario that the front matter of the screen's L1 file names. Mailpit runs in
   # the job (.github/actions/start-mailpit), and a task that reads email reads it in Mailpit's web UI, whose steps are
   # recorded apart from the lostness. A scheduled run measures the screens whose L1 file or the paths of its front matter changed
@@ -173,9 +173,9 @@ jobs:
   #
   # Per-night cap: at most 10 tasks a night (CAP below), taking the selected screens in turn, each a Claude Code session
   # of at most 40 turns and US$1 (L4_MAX_TURNS, L4_BUDGET_USD). The spend limit of the Claude Console workspace that
-  # the federation rule targets bounds the total (ADR-0115).
+  # the federation rule targets bounds the total (ADR-0079).
   #
-  # The job authenticates to the Claude API with Workload Identity Federation (ADR-0115), never an API key: it runs in
+  # The job authenticates to the Claude API with Workload Identity Federation (ADR-0079), never an API key: it runs in
   # the environment `ux-nightly` (main only), which holds the four IDs as variables, and only it has `id-token: write`.
   # Claude Code exchanges the GitHub OIDC token in ANTHROPIC_IDENTITY_TOKEN_FILE; the step writes the file before the
   # tests and every 2 minutes while they run, as GitHub's token expires about 5 minutes after it is issued.

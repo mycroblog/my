@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The invites screen below its heading (FR-001, manage_invites): the form of a new invite, then the invites, newest
 // first, in the admin mode's table form (one page at a time, previous / next), each with who created it (a moderator,
-// the command line, or a member through their own invites, ADR-0108 §5). An invite lets people sign up in every
+// the command line, or a member through their own invites, ADR-0106 §18). An invite lets people sign up in every
 // registration mode but `closed` (a server setting, /admin/settings), which the screen says while it is `closed`. A new invite's code and link stay under the form in a StatusMessage; each
 // usable invite can be copied as its sign-up link or revoked, which takes effect at once and asks nothing first.
 import {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Where the new-post form lives: always in a sheet (a centered dialog from lg), opened by a trigger: the rail's
-// button (from md), the floating button over a feed (below md, ADR-0039), a reply or a quote. The form is never inline
+// button (from md), the floating button over a feed (below md, ADR-0110), a reply or a quote. The form is never inline
 // in a page. Only one form is ever on the page.
 import { FloatingButton, PlusIcon, Sheet } from "@my/ui";
 import { type ReactNode, useId } from "react";

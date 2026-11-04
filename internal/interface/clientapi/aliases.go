@@ -70,7 +70,7 @@ func (s *Server) AddAccountAlias(ctx context.Context, req AddAccountAliasRequest
 		return nil, err
 	}
 	if !found && s.o.Resolver != nil && s.resolvable(acct) {
-		// A mode that takes nothing in finds only the known accounts (ADR-0076).
+		// A mode that takes nothing in finds only the known accounts (ADR-0006).
 		if ok, err := s.federationAllows(ctx, remoteAccountFlows...); err != nil || !ok {
 			if err != nil {
 				return nil, err

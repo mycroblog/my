@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
-// The notification settings (FR-210, ADR-0109 §2, §3, §6): a local account chooses, for each
+// The notification settings (FR-210, ADR-0086 §9, §10, §13): a local account chooses, for each
 // group of notification types it gets, whether it gets them in the app and by email. The
 // projectors read the choices in the transaction that creates a notification: a group turned
 // off in the app creates nothing, so neither Web Push nor email delivers it; the email of a
@@ -81,7 +81,7 @@ func (s *Service) UpdateSettings(ctx context.Context, accountID string, choices 
 }
 
 // TurnOffEmail turns off the email of group g for accountID: the one-click unsubscribe of the
-// group's emails (ADR-0109 §4). It does not check that the account is offered g, since the email
+// group's emails (ADR-0086 §11). It does not check that the account is offered g, since the email
 // came from it. A group whose email the user cannot choose fails with
 // notification.ErrFixedSetting, an unknown one with notification.ErrInvalidSetting.
 func (s *Service) TurnOffEmail(ctx context.Context, accountID string, g notification.Group) error {

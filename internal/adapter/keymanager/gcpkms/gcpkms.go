@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package gcpkms implements the KeyManager port of internal/app/kernel with Google Cloud KMS
-// (`key_manager = gcpkms`, `kms_key`, `kms_key_previous`; ADR-0121 §1).
+// (`key_manager = gcpkms`, `kms_key`, `kms_key_previous`; ADR-0019 §11).
 //
 // It wraps a data-encryption key with the Encrypt method of a symmetric CryptoKey and unwraps it
 // with Decrypt, passing the AAD as additionalAuthenticatedData, so the key-encryption key never

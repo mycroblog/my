@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The voice chat history of the settings (/settings/voice) in the states of ADR-0112 §1.
+// The voice chat history of the settings (/settings/voice) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse, type RequestHandler } from "msw";
 import { expect } from "storybook/test";

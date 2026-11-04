@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 # Runs the @my/ui story tests (`bun run test` in app/ui) inside the pinned Playwright image that CI uses,
-# so screenshots match the committed baselines, which are generated only there (ADR-0027).
+# so screenshots match the committed baselines, which are generated only there (ADR-0110).
 # The workspace's node_modules are container-only volumes, so the host's install is left alone, and the
 # screenshots the run writes are handed back to the calling user.
 # Usage: PLAYWRIGHT_IMAGE=<image@digest> scripts/ui-test-docker.sh [vitest args, e.g. --update]   (needs docker)

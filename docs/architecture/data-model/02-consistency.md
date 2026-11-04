@@ -32,7 +32,7 @@ ADR-0003（短く再実行可能なトランザクション、内部で外部 I/
 | 処分 | `moderation_actions`（＋`moderation_action_statuses`） | `account_restrictions`, `feed_author_restrictions` | 通知・投稿の削除やセンシティブ化（大量なら非同期） |
 | Inbox 処理 | `received_activities` と対象のリソース / イベント | 対象に応じて | 対象に応じて |
 
-表の「outbox」の列は、同じトランザクションで `Outbox.EnqueueTx` が `jobs` に書くジョブです。外部のキューを使うときもジョブは `jobs` に入ります（[ADR-0120](../../adr/0120-external-queue-wake-up-signals.md)）。
+表の「outbox」の列は、同じトランザクションで `Outbox.EnqueueTx` が `jobs` に書くジョブです。外部のキューを使うときもジョブは `jobs` に入ります（[ADR-0004](../../adr/0004-job-queue-abstraction.md)）。
 
 利用者登録は、ログイン主体（`identity`）とそれが名乗るアカウント（`account`）が片方だけ存在する状態を作らないよう、例外として 2 つのモジュールに書き込みます。
 `identity` のコマンドが `account` のアプリケーション層の公開 API（`PrepareLocalAccount` / `WriteLocalAccount`）を同じトランザクションの中で呼び、`account` のテーブルは `account` のコードだけが書きます。
@@ -42,13 +42,13 @@ ADR-0003（短く再実行可能なトランザクション、内部で外部 I/
 `internal/platform` のテストは SQLite の上で別の接続の読み取りを検出すると失敗し（`sqlite.ReportSecondConnections`）、PostgreSQL では接続 1 本のプールで主な経路を動かします（`TestOneConnectionIsEnough`）。
 
 PostgreSQL の並行性の挙動（READ COMMITTED、`SELECT ... FOR UPDATE`、`FOR UPDATE SKIP LOCKED`、トランザクションスコープのアドバイザリロック、デッドロック（40P01）の再実行）は、
-同じコントラクトテストが確かめます。毎 PR では pgmem（PGlite のフォークの PostgreSQL 18）の上で、遅い検査（リリースの関門・nightly・手動）では本物の PostgreSQL のコンテナの上で流します（[ADR-0041](../../adr/0041-postgres-tests-on-pgmem.md)、[ADR-0079](../../adr/0079-ci-single-gate-merge-queue.md)）。
+同じコントラクトテストが確かめます。毎 PR では pgmem（PGlite のフォークの PostgreSQL 18）の上で、遅い検査（リリースの関門・nightly・手動）では本物の PostgreSQL のコンテナの上で流します（[ADR-0015](../../adr/0015-testing-strategy.md)、[ADR-0079](../../adr/0079-ci-single-gate-merge-queue.md)）。
 
 ### 2.2 冪等キーと一意制約
 
 | 対象 | キー | 用途 |
 | --- | --- | --- |
-| 受信アクティビティ | `received_activities (activity_uri)` | Inbox の受信時の重複排除（[ADR-0033](../../adr/0033-inbox-processing-model.md)）。`id` を持たないものは `actor` と本文の SHA-256 から `urn:my:digest:<hex>` を合成する（[federation §3.1](../federation.md#31-同期の部分)） |
+| 受信アクティビティ | `received_activities (activity_uri)` | Inbox の受信時の重複排除（[ADR-0006](../../adr/0006-federation-protocol-scope.md)）。`id` を持たないものは `actor` と本文の SHA-256 から `urn:my:digest:<hex>` を合成する（[federation §3.1](../federation.md#31-同期の部分)） |
 | 順序の入れ替わり | `remote_object_tombstones (uri, actor_uri)`、`remote_follow_tombstones (activity_uri)`、`status_deletions (uri)` | 先に届いた `Delete` / `Undo` の後に届いた `Create` / `Follow` などを捨てる |
 | AP オブジェクト | `accounts (uri)`, `statuses (uri)`, `boosts (uri)`, `follows (uri)`, `follow_resends (uri)`, `blocks (uri)`, `reports (uri)`, `poll_votes (uri)`, `custom_emojis (uri)` | 受信・取得の重複排除 |
 | 版 | `status_revisions (status_id, seq)`, `account_profile_revisions (account_id, seq)` | 同じ `Update` の再処理を no-op にする。リモートの `updated` が現在版以下なら版を作らない |

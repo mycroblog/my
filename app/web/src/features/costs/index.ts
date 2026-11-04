@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The costs feature (FR-902, FR-903, FR-916, FR-917, ADR-0067, ADR-0070, ADR-0073): the totals of the instance's
+// The costs feature (FR-902, FR-903, FR-916, FR-917, ADR-0067, ADR-0070, ADR-0067): the totals of the instance's
 // running costs and of its income by week, month or year as the public costs page (`/about/costs`) shows what the
 // instance settings `finance_visibility` and `income_visibility` publish and the finances page (`/finance`) shows them
 // to the holders of view_finance, with the navigation's entry to it, and the parts of the totals that the

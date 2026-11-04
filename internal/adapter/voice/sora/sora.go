@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package sora is the voice.Transport of voice = sora (ADR-0102): a Sora server of Shiguredo,
+// Package sora is the voice.Transport of voice = sora (ADR-0101): a Sora server of Shiguredo,
 // self-hosted or Sora Cloud, carries the audio of the rooms. The adapter calls Sora's HTTP API
 // with net/http (POST with the header x-sora-target), without an SDK, and it is tested only
 // against an httptest stand-in that follows Sora's documents, never against a real Sora server.
 //
 // A room of my is the Sora channel named by the room's ID (on Sora Cloud "<room>@<project>"),
 // and a session is the Sora client_id that the auth webhook gives the connection; the account's
-// ID never reaches Sora (ADR-0102 §3). Sora asks the auth webhook before every connection
+// ID never reaches Sora (ADR-0101 §12). Sora asks the auth webhook before every connection
 // (voice.ConnectAuthorizer), which checks the join value of the grant that the client sends in
 // the metadata of its connect message and the room.
 //
@@ -93,7 +93,7 @@ type Options struct {
 	JoinSecret string
 	// HTTPClient calls the API: the operator configured the server, which may be on a private
 	// address, so it is the adapter's own client rather than the SSRF-guarded kernel.HTTPClient
-	// (ADR-0102 §1).
+	// (ADR-0101 §10).
 	HTTPClient *http.Client
 	Clock      kernel.Clock
 }
@@ -202,7 +202,7 @@ func (t *Transport) Grant(_ context.Context, room voice.RoomRef, s voice.Session
 }
 
 // SetSpeaking implements voice.Transport: the role of a connection does not change, so the
-// client always connects again with a new grant (ADR-0102 §3). A revoke blocks the audio of the
+// client always connects again with a new grant (ADR-0101 §12). A revoke blocks the audio of the
 // session's connections at once with the channel's forwarding filter; when the session is
 // already revoked, its sendrecv connections are disconnected, for a client that does not
 // connect again recvonly keeps none (JobMediaEvent and voice.sweep apply the role of every live
@@ -296,7 +296,7 @@ func (t *Transport) Close(ctx context.Context, room voice.RoomRef) error {
 
 // Sessions implements voice.Transport with ListChannelConnections. A session with several
 // connections, which Sora allows with default_duplicate_client_id = allow, keeps its newest
-// connection: the others are disconnected (ADR-0102 §3).
+// connection: the others are disconnected (ADR-0101 §12).
 func (t *Transport) Sessions(ctx context.Context, room voice.RoomRef) ([]voice.SessionRef, error) {
 	conns, err := t.connections(ctx, room)
 	if err != nil {
@@ -427,7 +427,7 @@ func (f filter) state() filterState {
 	return st
 }
 
-// change applies fn to the state of the channel's forwarding filter (ADR-0102 §3) and writes the
+// change applies fn to the state of the channel's forwarding filter (ADR-0101 §12) and writes the
 // filter again: one rule whose connection_id, the senders, are the sendrecv connections of the
 // blocked sessions, AND the kind audio. A recvonly connection sends no audio, so it is never
 // blocked; a revoked session without a connection is forgotten, as the room applies the role
@@ -552,7 +552,7 @@ func (e *APIError) Error() string {
 
 // isNotFound reports an error response of Sora for a session or a connection that it does not
 // have: 400 or 404 with an error_type of the form "...-NOT-FOUND" (Sora documents the form of
-// its error types, such as INVALID-VERSION, but not the not-found ones; ADR-0102 §2).
+// its error types, such as INVALID-VERSION, but not the not-found ones; ADR-0101 §11).
 func isNotFound(err error) bool {
 	var e *APIError
 	if !errors.As(err, &e) || (e.Status != http.StatusBadRequest && e.Status != http.StatusNotFound) {

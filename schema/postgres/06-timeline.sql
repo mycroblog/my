@@ -110,7 +110,7 @@ CREATE TABLE feed_domain_restrictions (
 );
 
 -- ---------------------------------------------------------------------------------------------
--- timeline: lists (data-model §4.6, ADR-0122). Owned by internal/app/timeline: the owner's
+-- timeline: lists (data-model §4.6, ADR-0013). Owned by internal/app/timeline: the owner's
 -- commands write them, the projector of graph.follow_terminated takes the ended follows out of
 -- list_members, and only the owner reads them.
 -- ---------------------------------------------------------------------------------------------

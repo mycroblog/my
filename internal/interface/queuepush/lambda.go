@@ -61,7 +61,7 @@ type LambdaOptions struct {
 }
 
 // LambdaHandler receives the SQS events that the Lambda Web Adapter passes through to the
-// server (ADR-0120 §2, §4, §5): each record is a wake-up signal, whose body is the ID of a job of
+// server (ADR-0004 §10, §12, §13): each record is a wake-up signal, whose body is the ID of a job of
 // the database queue for the push receiver to run, or a tick message, which runs the trigger.
 //
 // The records run one after another. The answer lists in batchItemFailures the records whose
@@ -244,7 +244,7 @@ func writeBatch(w http.ResponseWriter, status int, ids []string) {
 
 // FailEvent answers the event of r, a pass-through of the Lambda Web Adapter, with every record
 // of its SQS event in batchItemFailures, for SQS to deliver them again: the answer of the
-// maintenance mode, which runs nothing (ADR-0084), with the status 503.
+// maintenance mode, which runs nothing (ADR-0088), with the status 503.
 func FailEvent(w http.ResponseWriter, r *http.Request) {
 	ev, _ := decodeEvent(w, r)
 	ids := make([]string, 0, len(ev.Records))

@@ -544,7 +544,7 @@ func TestItemizedTotals(t *testing.T) {
 
 // A breakdown line shows its provider as entered: the provider of the newest label revision
 // among the cost items of the line's normalized provider that meet the period, then the larger
-// revision ID, and an imported cost's provider name only without such an item (ADR-0098).
+// revision ID, and an imported cost's provider name only without such an item (ADR-0067).
 func TestBreakdownSpelling(t *testing.T) {
 	at := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
 	item := func(id int, provider string, start string, end *Date, revisedAt time.Time, category Category) CostItem {

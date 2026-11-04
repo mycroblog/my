@@ -229,7 +229,7 @@ describe("an account on another server", () => {
   });
 });
 
-/** Serves GET /instance with the federation direction (ADR-0076): the modes in turn, one for each read, then the last. */
+/** Serves GET /instance with the federation direction (ADR-0006): the modes in turn, one for each read, then the last. */
 function federationServer(...modes: Schemas["InstanceFederation"]["mode"][]) {
   let reads = 0;
   server.use(

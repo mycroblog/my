@@ -95,7 +95,7 @@ describe("the roles screen", () => {
     const [adminRow, moderatorRow, helperRow] = rows as [HTMLElement, HTMLElement, HTMLElement];
     expect(within(adminRow).getByRole("heading", { level: 3, name: "admin" })).toBeInTheDocument();
     expect(within(adminRow).getByText(/Only its badge can be changed/)).toBeInTheDocument();
-    // Admin changes only its badge (ADR-0071).
+    // Admin changes only its badge (ADR-0070).
     expect(
       within(adminRow)
         .getAllByRole("button")

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's own invites (FR-011, ADR-0108 §2, §5): whether the settings offer the page, the invites with what the user
+// The user's own invites (FR-011, ADR-0106 §15, §18): whether the settings offer the page, the invites with what the user
 // may do, the form of a new invite whose choices stay within the caps of the instance settings, copying an invite's
 // sign-up link, and revoking an invite. What each change did is announced and kept in a StatusMessage; a failure stays
 // next to its cause.
@@ -58,7 +58,7 @@ function withinCap(choices: readonly number[], cap: number, preset: number): num
 }
 
 /**
- * Whether the settings list the page of the user's invites: the user may create invites now (ADR-0108 §5). False
+ * Whether the settings list the page of the user's invites: the user may create invites now (ADR-0106 §18). False
  * while signed out, while it loads, and when it fails; the page itself still opens from its address.
  */
 export function useOwnInvitesEntry(): boolean {

@@ -56,7 +56,7 @@ func (s *siteverifyStub) count() int {
 }
 
 // TestHumanCheck drives sign-in and registration with captcha = turnstile against a stub of
-// the service (ADR-0042): both check the token, a valid invite does not skip the check, an
+// the service (ADR-0106): both check the token, a valid invite does not skip the check, an
 // unreachable service lets sign-ins through and refuses sign-ups, and a failed check counts
 // against the client's address only.
 // cspDirective returns the sources of one directive of a Content-Security-Policy, nil when it is absent.

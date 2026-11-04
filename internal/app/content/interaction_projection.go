@@ -22,7 +22,7 @@ var errBoostEdgeExists = errors.New("content: the account already boosts the sta
 //   - local_post_counters counts, besides the statuses that RegisterProjectors counts, each
 //     local account's boosts in boost_edges.
 //   - status_reaction_counts counts the reactions to each status that is not deleted, per emoji
-//     (ADR-0052).
+//     (ADR-0051).
 //
 // The rebuild queries state the same rules in SQL (InteractionRepository.RebuildBoostEdges,
 // InteractionRepository.RebuildReactionCounts, and Repository.RebuildCounters); the property test in testkit.InteractionRepositoryContract

@@ -26,7 +26,7 @@ import (
 //     Like of a remote status.
 //   - EventUnfavourited: a favourite was deleted. This module decrements favourites_count; the
 //     federation module delivers Undo Like.
-//   - EventReacted: an emoji reaction was inserted (ADR-0052). This module increments the count
+//   - EventReacted: an emoji reaction was inserted (ADR-0051). This module increments the count
 //     of its emoji in status_reaction_counts; the notification module notifies the status's
 //     author, and the federation module delivers the Like with the emoji of a remote status.
 //   - EventUnreacted: an emoji reaction was deleted. This module decrements the count of its
@@ -100,7 +100,7 @@ type Reacted struct {
 	Reaction content.Reaction
 	Status   StatusRef
 	// Emoji is the custom emoji of a local account's reaction to a remote status, for the Like
-	// that carries it (ADR-0052 §3); nil otherwise. Its URL is "" when its image cannot be shown.
+	// that carries it (ADR-0051 §8); nil otherwise. Its URL is "" when its image cannot be shown.
 	Emoji *EmojiTag
 }
 

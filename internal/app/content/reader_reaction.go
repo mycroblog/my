@@ -10,7 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// This file holds what the Reader presents of the emoji reactions to a status (ADR-0052 §5): the
+// This file holds what the Reader presents of the emoji reactions to a status (ADR-0051 §10): the
 // counts per emoji on the status, and the list of the accounts that reacted.
 
 // ReactionView is the count of the reactions to a status with one emoji, as a viewer sees it.

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The images of the demo scenario (ADR-0117 §1), drawn by code so that the repository holds no photos of third
+// The images of the demo scenario (ADR-0015 §5), drawn by code so that the repository holds no photos of third
 // parties: each is a PNG (ISO/IEC 15948) of flat shapes over a vertical gradient, the same bytes on every run.
 import { deflateSync } from "node:zlib";
 

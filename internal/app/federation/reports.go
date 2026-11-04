@@ -15,7 +15,7 @@ import (
 )
 
 // The forwarding of reports to the server of the reported account (FR-709, federation.md §11,
-// ADR-0036): a Flag of the instance actor, delivered to the reported account's own inbox.
+// ADR-0058): a Flag of the instance actor, delivered to the reported account's own inbox.
 
 // ReportReader reads the reports that Flags forward; *appmoderation.Service implements it.
 type ReportReader interface {

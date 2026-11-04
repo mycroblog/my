@@ -59,7 +59,7 @@ const (
 )
 
 // MediaPurpose is what a media file is processed for; it picks the sizes of its variants
-// (ADR-0054 §1).
+// (ADR-0005 §4).
 type MediaPurpose string
 
 // Media purposes.

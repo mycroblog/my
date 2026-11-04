@@ -2,7 +2,7 @@
 /*
  * The stylesheet of the pages the Go server renders without JavaScript: sign-in, sign-up, email
  * verification, account status, OAuth consent, and the terms of service and privacy policy
- * (internal/interface/authpages, ADR-0030).
+ * (internal/interface/authpages, ADR-0090).
  * It is a separate entry of the Vite build, so the pages load no SPA CSS, and `my serve` links it
  * from the build manifest (web.Handler.Stylesheet). The templates use only the classes below,
  * so Tailwind scans no source files (source(none)); the rules are built with @apply from the
@@ -75,7 +75,7 @@
   }
 
   /*
-   * The instance's own logo (ADR-0116), which includes its name: an <img> of the SVG, never inline, with the dark
+   * The instance's own logo (ADR-0059), which includes its name: an <img> of the SVG, never inline, with the dark
    * logo as a <source> for a dark ground. As high as the built-in wordmark, and narrower when the screen is.
    */
   .site-own-logo {

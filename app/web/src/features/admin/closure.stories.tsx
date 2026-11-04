@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The service closure (/admin/closure; web-client/screens/admin-closure.md) in the states of ADR-0112 §1. The default
+// The service closure (/admin/closure; web-client/screens/admin-closure.md) in the states of ADR-0079 §13 The default
 // handlers have no closure: the stories answer GET /admin/closure and its check themselves.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

@@ -100,7 +100,7 @@ type PushChange =
   | { enabled: false };
 
 /**
- * Returns whether and how the notification settings offer Web Push on this device (FR-206, ADR-0109 §1). Turning it on
+ * Returns whether and how the notification settings offer Web Push on this device (FR-206, ADR-0086 §8). Turning it on
  * asks the browser for the permission to notify, subscribes with the server's key and registers the subscription for
  * this signed-in app with every type of `offered` (the rows of the notification settings); changing a row registers it
  * again; turning it off deletes the server's subscription and the browser's.
@@ -138,7 +138,7 @@ export function usePushNotifications(
     },
     onSuccess: (saved, change) => {
       cachePushSubscription(api, queryClient, saved);
-      // Whoever turned it on hears of the prompt again when it stops; whoever turned it off said no (ADR-0137 §4).
+      // Whoever turned it on hears of the prompt again when it stops; whoever turned it off said no (ADR-0086 §21).
       if (accountId !== undefined) {
         if (change.enabled) forgetPushPromptDismissed(accountId);
         else rememberPushPromptDismissed(accountId);

@@ -12,7 +12,7 @@ import (
 )
 
 // OwnRecordExport is what a local account's data export (FR-008) holds of its moderation
-// records (ADR-0038): the actions on it as it sees them, with its appeals and their decisions,
+// records (ADR-0058): the actions on it as it sees them, with its appeals and their decisions,
 // and the reports it filed with whether they are open. It has no private note, issuer, report
 // about the account, or reporter. Times are RFC 3339 in UTC.
 type OwnRecordExport struct {

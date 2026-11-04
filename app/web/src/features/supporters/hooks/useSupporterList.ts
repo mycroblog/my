@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The supporter list (ADR-0071 §4): the members who chose to be listed, by plan, a page at a time; the user's own
+// The supporter list (ADR-0070 §13): the members who chose to be listed, by plan, a page at a time; the user's own
 // choice to be on it; and the plans and the list that the information page links to.
 import { useNotice } from "@my/ui";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

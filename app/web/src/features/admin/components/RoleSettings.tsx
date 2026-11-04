@@ -2,7 +2,7 @@
 // The roles screen below its heading (FR-720, manage_roles): the form that creates a role, then the roles, highest
 // position first. Each role shows its position and its permissions by area (ADR-0058); one at or below the viewer's
 // highest role is changed in a dialog (position and permissions; never admin), gets a badge in another dialog (a name
-// and one of the badge colors, with a sample; admin included, ADR-0071) and is deleted after an alert dialog (never a
+// and one of the badge colors, with a sample; admin included, ADR-0070) and is deleted after an alert dialog (never a
 // built-in role, and never one that someone holds). A role above the viewer's says why it has no buttons.
 // Roles are granted on an account's admin page. What a change did stays above the list in a StatusMessage; a refusal
 // stays in the form or the dialog.

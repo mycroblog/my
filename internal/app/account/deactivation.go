@@ -20,7 +20,7 @@ const (
 	DeactivationGap    = account.DeactivationGap
 )
 
-// DeactivationRefusal says why an account cannot be deactivated (ADR-0145 §1, §8).
+// DeactivationRefusal says why an account cannot be deactivated (ADR-0089 §11, §18).
 type DeactivationRefusal string
 
 // Refusals of a deactivation.
@@ -114,7 +114,7 @@ func (s *Service) DeactivationRefused(ctx context.Context, accountID string) err
 
 // DeactivateTx records inside tx that the owner of a local account deactivates it: a deactivated
 // lifecycle event initiated by the account itself, which hides it and its statuses and starts the
-// DeactivationPeriod that ends in its deletion (ADR-0145). The state is read with a lock where the
+// DeactivationPeriod that ends in its deletion (ADR-0089). The state is read with a lock where the
 // database takes one. A remote account fails with ErrNotLocal, and a refused one with a
 // *DeactivationRefusedError. It returns the event.
 func (s *Service) DeactivateTx(ctx context.Context, tx uow.Tx, accountID, eventID string) (account.LifecycleEvent, error) {

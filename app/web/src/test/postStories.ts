@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The posts of the screen stories of the timelines, the post pages, compose, and notifications (ADR-0112 §1): a
+// The posts of the screen stories of the timelines, the post pages, compose, and notifications (ADR-0079 §13): a
 // timeline as people see one, with long and right-to-left names, a content warning, a poll, a link card, a quote, a
 // boost, a reply, and more pictures than a post shows, and the pictures themselves, which MSW's worker draws.
 import { http, HttpResponse } from "msw";

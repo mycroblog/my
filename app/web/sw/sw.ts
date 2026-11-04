@@ -12,9 +12,9 @@
 // - public images under /media/ are cache first, at most 300 entries for 30 days;
 // - the instance theme's stylesheets under /theme/ (ADR-0059), named by their revision, are cache first, at
 //   most 5 entries;
-// - the instance's own icon and logos under /brand/ (ADR-0116), named by their revision, are cache first, at most 30
+// - the instance's own icon and logos under /brand/ (ADR-0059), named by their revision, are cache first, at most 30
 //   entries (the files of the current icon and logos, with room for a change), so that the offline shell shows them;
-// - the Noto Color Emoji splits of the build (ADR-0095 §3), which the precache leaves out (about 6 MB in both
+// - the Noto Color Emoji splits of the build (ADR-0091 §10), which the precache leaves out (about 6 MB in both
 //   formats), are cache first when a page first shows one of their emoji, at most 44 entries (two builds of the
 //   splits of both formats);
 // - the client API (/api), the server-rendered pages (/auth, /oauth) and every other request are not
@@ -62,7 +62,7 @@ const navigationTimeoutSeconds = 3;
 setCacheNameDetails({ prefix: cachePrefix });
 // The first worker takes over the open pages when it activates, so the first visit already works
 // offline. A later version waits until all tabs close, or until a page of its own build finds that no tab of
-// another build runs and sends SKIP_WAITING (lib/pwa, ADR-0141 §2); no page reloads for it.
+// another build runs and sends SKIP_WAITING (lib/pwa, ADR-0028 §10); no page reloads for it.
 clientsClaim();
 
 /**

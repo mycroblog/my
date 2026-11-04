@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The welcome step after sign-up (/welcome; web-client/screens/welcome.md) in the states of ADR-0112 §1. The first run
+// The welcome step after sign-up (/welcome; web-client/screens/welcome.md) in the states of ADR-0079 §13 The first run
 // of the home timeline, which comes after it, is with the home timeline's stories.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";

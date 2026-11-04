@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package pgtest gives tests a PostgreSQL database with the product schema applied (ADR-0041).
+// Package pgtest gives tests a PostgreSQL database with the product schema applied (ADR-0015).
 //
 // One server serves every test of a test binary, and every test gets its own database, copied
 // with CREATE DATABASE ... TEMPLATE from a template database that holds the bootstrap SQL and the

@@ -17,7 +17,7 @@
 | ID | 目標 |
 | --- | --- |
 | G1 | 低コスト: おひとりさま〜数十人規模なら、小さな VM 1 台（$4〜6/月）か、サーバーレス（Cloud Run / Lambda）の無料枠でほぼ収まる |
-| G2 | 可搬性: Google Cloud / AWS / Self-hosted（Docker, microk8s）の 3 系統で同じコードベースが動く（Cloudflare Workers は対象外。[ADR-0001](../adr/0001-server-language-and-runtime.md)） |
+| G2 | 可搬性: Google Cloud / AWS / Self-hosted（Docker, microk8s）の 3 系統で同じコードベースが動く（Cloudflare Workers は対象外。[ADR-0002](../adr/0002-modular-monolith-hexagonal.md)） |
 | G3 | 差し替え可能性: RDB・キュー・ストレージ・メール等を設定で切り替えられ、利用者が独自アダプタを追加できる |
 | G4 | 相互運用性: Mastodon / Misskey / GoToSocial / Pleroma(Akkoma) と問題なく連合できる |
 | G5 | 多言語: UI・通知・投稿メタデータを含め、最初期から i18n / l10n を前提にする |
@@ -28,9 +28,9 @@
 
 - 大規模インスタンス（数万ユーザー以上）向けの最適化
 - ActivityPub C2S（Client-to-Server）プロトコル
-- 全文検索（連合先コンテンツ全体）、グループ（連合リレーへの参加は対象にする。[ADR-0061](../adr/0061-federation-relays.md)）
+- 全文検索（連合先コンテンツ全体）、グループ（連合リレーへの参加は対象にする。[ADR-0006](../adr/0006-federation-protocol-scope.md)）
 - E2EE DM
-- 後方互換性の維持（v0.x の間は設定キー・自前の API・内部インタフェイスの破壊的変更を許容する。DB は `v0.1.0` 以降、版の間の更新でデータを引き継ぐ。[ADR-0087](../adr/0087-schema-changes-after-launch.md)）
+- 後方互換性の維持（v0.x の間は設定キー・自前の API・内部インタフェイスの破壊的変更を許容する。DB は `v0.1.0` 以降、版の間の更新でデータを引き継ぐ。[ADR-0023](../adr/0023-declarative-schema-management.md)）
 
 ## 想定ユーザー（Personas）
 

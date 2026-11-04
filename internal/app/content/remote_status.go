@@ -108,7 +108,7 @@ type RemotePollInput struct {
 // whose time is its published time (#71), and its first revision with the bodies sanitized, the
 // mentions, hashtags, custom emoji, the attachments' declared values, and the poll with its
 // counts. It emits StatusCreated, so that the projections, the timelines, and the notifications
-// see the post. The caller decides that the post is in scope (ADR-0034) and is not tombstoned.
+// see the post. The caller decides that the post is in scope (ADR-0006) and is not tombstoned.
 //
 // A URI that a status already has fails with ErrStatusExists; the transaction must then be
 // abandoned (the status is already there).
@@ -289,7 +289,7 @@ func (s *Service) Tombstoned(ctx context.Context, uri string) (bool, error) {
 
 // LocalStatusInConversation reports whether a local status that is not deleted belongs to the
 // conversation conversationURI ("" is no conversation): a reply into it is in the scope of remote
-// content (ADR-0034).
+// content (ADR-0006).
 func (s *Service) LocalStatusInConversation(ctx context.Context, conversationURI string) (bool, error) {
 	return s.d.Repository.LocalStatusInConversation(ctx, conversationURI)
 }

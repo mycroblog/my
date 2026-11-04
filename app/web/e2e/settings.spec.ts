@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The settings pages in every width × locale project (ADR-0027): the display language switches the whole app
+// The settings pages in every width × locale project (ADR-0110): the display language switches the whole app
 // and <html lang dir> at once, form errors are tied to their fields, and the pages pass axe without
 // scrolling sideways. `vite preview` has no API, so each test plays a signed-in user's server with
 // page.route; names change with the locale, so elements are found by role, structure, autocomplete tokens and,
@@ -29,7 +29,7 @@ const viewer = {
   permissions: [],
 };
 
-/** The role whose badge the profile settings show and hide (ADR-0071). */
+/** The role whose badge the profile settings show and hide (ADR-0070). */
 const supporterBadgeId = "0192f0c4-7a8e-7000-8000-0000000000b1";
 
 /** Another account, as the lists of the settings show it. */
@@ -98,7 +98,7 @@ async function signedInServer(
     keep_min_boosts: 0,
     keep_min_favourites: 0,
   };
-  // The badges of the viewer's roles (ADR-0071): a long name, and one in a right-to-left script.
+  // The badges of the viewer's roles (ADR-0070): a long name, and one in a right-to-left script.
   let badgeChoices = [
     { role_id: supporterBadgeId, label: "Supporter of the medium plan", color: "green", displayed: false },
     { role_id: "0192f0c4-7a8e-7000-8000-0000000000b2", label: "داعم", color: "pink", displayed: true },
@@ -173,7 +173,7 @@ async function signedInServer(
       { id: linkableProvider, kind: "oidc", display_name: "Lab ID", allow_link: true },
     ],
   };
-  // The notification settings (ADR-0109 §2): the ordinary rows, the moderator rows of the viewer's permissions, and
+  // The notification settings (ADR-0086 §9): the ordinary rows, the moderator rows of the viewer's permissions, and
   // the instance's notices, at their defaults. A row without `email` (the new posts) has no email channel.
   const row = (group: string, section: string, types: string[], inApp: Cell, email?: Cell) => ({
     group,
@@ -687,7 +687,7 @@ test("the automatic deletion of old posts is turned on and saved without axe vio
   await expectNoHorizontalScroll(page);
 });
 
-// Deactivating states the date before and after it (ADR-0145 §3), and the page after it stands without a session.
+// Deactivating states the date before and after it (ADR-0089 §13), and the page after it stands without a session.
 test("deactivating the account states the date and ends on its own page", async ({ page, makeAxeBuilder }) => {
   await signedInServer(page, projectLocale());
   await page.goto("/settings/account");
@@ -995,7 +995,7 @@ test.describe("profile form", () => {
     const displayName = page.locator('input[autocomplete="nickname"]');
     await expect(displayName).toBeVisible();
     await displayName.fill("Alice Liddell");
-    // Phones reach the settings from the menu's sheet (ADR-0039), which stays open while the question is asked.
+    // Phones reach the settings from the menu's sheet (ADR-0110), which stays open while the question is asked.
     const nav = page.getByRole("navigation");
     let settingsLink = nav.locator('a[href="/settings"]').filter({ visible: true });
     if ((await settingsLink.count()) === 0) {
@@ -1180,7 +1180,7 @@ test.describe("badges on the badges page", () => {
     const section = page
       .getByRole("main")
       .getByRole("region", { name: message("settings.profile.badges"), exact: true });
-    // The badges' names are the staff's text in any script, the same in every locale (ADR-0071).
+    // The badges' names are the staff's text in any script, the same in every locale (ADR-0070).
     await expect(section).toMatchAriaSnapshot(`
       - region:
         - heading [level=2]

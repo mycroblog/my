@@ -20,7 +20,7 @@ import (
 var noIndexPrefixes = []string{"/api/", "/oauth/", "/auth/", "/mail/", "/ap/", "/.well-known/", "/nodeinfo/"}
 
 // noArchivePaths are the API paths whose responses, problems included, carry X-Robots-Tag:
-// noindex, noarchive whatever the instance states: the supporter list (ADR-0071 §4).
+// noindex, noarchive whatever the instance states: the supporter list (ADR-0070 §13).
 var noArchivePaths = []string{"/api/v1/instance/supporters"}
 
 // noIndexTypes are the media types of documents that are not pages, wherever they are served:

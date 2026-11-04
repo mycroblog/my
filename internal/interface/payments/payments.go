@@ -6,7 +6,7 @@
 // module verifies, records, and queues the delivery.
 //
 // It also hands GET and POST /payments/pages/{provider}/... to the checkout and portal pages of
-// a provider that has no hosted ones (supporters.PageServer, ADR-0099 §1). Those are not part of
+// a provider that has no hosted ones (supporters.PageServer, ADR-0074 §9). Those are not part of
 // the client API either: the browser reaches them through the URLs of StartCheckout and
 // PortalURL.
 package payments

@@ -208,7 +208,7 @@ func (s *Server) newAccountsWith(ctx context.Context, reads presentReads, actors
 }
 
 // newProfile presents an actor as the Account schema with its follow counts and, for a local
-// account, the role badges its user shows (ADR-0071): the answer of the account's own endpoints.
+// account, the role badges its user shows (ADR-0070): the answer of the account's own endpoints.
 func (s *Server) newProfile(ctx context.Context, a appaccount.Actor) (Account, error) {
 	parts, err := s.accountParts(ctx, a)
 	if err != nil {
@@ -402,7 +402,7 @@ func (s *Server) LookupAccount(ctx context.Context, req LookupAccountRequestObje
 		return nil, err
 	}
 	if !found && resolve && s.o.Resolver != nil && s.resolvable(req.Params.Acct) {
-		// A mode that takes nothing in finds only the known accounts (ADR-0076).
+		// A mode that takes nothing in finds only the known accounts (ADR-0006).
 		if ok, err := s.federationAllows(ctx, remoteAccountFlows...); err != nil {
 			return nil, err
 		} else if !ok {

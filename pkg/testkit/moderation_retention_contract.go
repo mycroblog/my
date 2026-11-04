@@ -22,7 +22,7 @@ import (
 )
 
 // ModerationRetentionContract verifies the retention of the moderation records of a database
-// adapter's moderation repository through the moderation use cases (ADR-0038, data-model §4.3,
+// adapter's moderation repository through the moderation use cases (ADR-0058, data-model §4.3,
 // §8): an operator places holds on an account, each released once; the purge erases the actions
 // with their appeals once they ended longer ago than the period (an action without lasting
 // effect when it was issued, a lifted or expired one at its end, an appealed one not before the
@@ -485,7 +485,7 @@ func retentionExports(t *testing.T, e *retentionModEnv) {
 	}
 
 	// The account's own data export has the action as the account sees it, its appeal, and its
-	// own report, without the private notes or the reports about it (ADR-0038).
+	// own report, without the private notes or the reports about it (ADR-0058).
 	var own bytes.Buffer
 	if err := e.svc.WriteOwnRecords(ctx, e.local, &own); err != nil {
 		t.Fatalf("WriteOwnRecords = %v", err)

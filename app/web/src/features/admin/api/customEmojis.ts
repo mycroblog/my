@@ -172,7 +172,7 @@ export async function cacheCreatedCustomEmoji(queryClient: QueryClient): Promise
   ]);
 }
 
-/** A changed emoji: its rows show the answer at once (ADR-0045). */
+/** A changed emoji: its rows show the answer at once (ADR-0028). */
 export async function cacheChangedCustomEmoji(queryClient: QueryClient, emoji: AdminCustomEmoji): Promise<void> {
   queryClient.setQueriesData<EmojiPages>(
     { queryKey: ["get", "/admin/custom_emojis"] },

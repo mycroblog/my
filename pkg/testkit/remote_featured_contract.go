@@ -17,7 +17,7 @@ import (
 )
 
 // The cases of RemoteStatusContract that mirror the featured collections (the pinned posts) of
-// remote accounts when the accounts are fetched or refreshed (federation.md §6.2, ADR-0044):
+// remote accounts when the accounts are fetched or refreshed (federation.md §6.2, ADR-0006):
 // federation.fetch_featured through the real RemoteActors and Fetcher over an in-memory network.
 
 // featuredActor serves the actor uri with the featured collection featured ("" for none),

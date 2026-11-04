@@ -46,7 +46,7 @@ tasks:
       - golangci-lint run --allow-serial-runners ./...
 
   test:
-    desc: Run Go tests (PostgreSQL tests on pgmem, ADR-0041)
+    desc: Run Go tests (PostgreSQL tests on pgmem, ADR-0015)
     cmds:
       - go test ./...
 

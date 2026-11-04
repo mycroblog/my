@@ -296,7 +296,7 @@ WHERE t.user_id = sqlc.arg(user_id) AND t.oauth_client_id = sqlc.arg(oauth_clien
 ON CONFLICT (token_id) DO NOTHING;
 
 -- ListBrowserSessions returns the sessions of a user that are a signed-in browser at now
--- (ADR-0136): the session itself works, or a token family of the first-party client that
+-- (ADR-0090): the session itself works, or a token family of the first-party client that
 -- started from it does, whatever became of the session. Newest first.
 -- name: ListBrowserSessions :many
 SELECT s.id, s.created_at, o.ip, o.user_agent, a.last_seen_at

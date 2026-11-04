@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The voice chat pages in every width × locale project (ADR-0100 §8, §9, ADR-0027): the list of the open rooms opened
+// The voice chat pages in every width × locale project (ADR-0100 §8, §9, ADR-0110): the list of the open rooms opened
 // from the navigation (the rail from md, the menu's sheet below it), each with its emoji icon before its name, the
 // dialog that starts a room (with the field of its icon), a room's page with its stage (the speakers and the
 // listeners) and the notice before joining, the call after joining (its dock clear of the tab bar, a raised hand, and

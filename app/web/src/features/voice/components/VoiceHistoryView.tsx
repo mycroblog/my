@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The voice chat history of the settings (ADR-0100 §13, 回答 32): the rooms the user hosted, newest first, each with
+// The voice chat history of the settings (ADR-0100 §13): the rooms the user hosted, newest first, each with
 // its name (the host's text), when it opened and ended, and why it ended; an open one says it is still open.
 import { Button, Card, DescriptionItem, DescriptionList, EmptyState, Heading, Hint, RegionError, Stack } from "@my/ui";
 import { useT } from "../../../lib/i18n";

@@ -30,7 +30,7 @@ func (h *recordingHTTP) Do(_ context.Context, r *kernel.HTTPRequest) (*kernel.HT
 }
 
 // TestHumanVerifier checks that captcha = none builds no verifier, and that a configured
-// service gets a verifier and widget that send through the App's HTTPClient (ADR-0042).
+// service gets a verifier and widget that send through the App's HTTPClient (ADR-0106).
 func TestHumanVerifier(t *testing.T) {
 	t.Run("none", func(t *testing.T) {
 		client := &recordingHTTP{}

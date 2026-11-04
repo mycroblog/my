@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The costs screen in every width × locale project (ADR-0067, ADR-0068, ADR-0027): an administrator with
+// The costs screen in every width × locale project (ADR-0067, ADR-0068, ADR-0110): an administrator with
 // manage_finance sees the totals by month amortized by default, switches to weeks and to payment dates, records a cost
 // paid every year, and deletes one after its dialog; the billing imports show their state; the money movements show
 // their subscribers by username and narrow to a kind with the keyboard, into the URL. Each step passes axe

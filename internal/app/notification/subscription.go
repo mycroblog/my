@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// The subscriptions to the new posts of an account (ADR-0123): a local account subscribes to a
+// The subscriptions to the new posts of an account (ADR-0086): a local account subscribes to a
 // local account whether it follows it or not, and to a remote account only while it actively
 // follows it. Each new post of the target that the subscriber may see becomes a status
 // notification, in the app and by Web Push, never by email.
@@ -74,7 +74,7 @@ type SubscriptionRelationships interface {
 	BlockedEitherWay(ctx context.Context, tx uow.Tx, a, b string) (bool, error)
 }
 
-// ErrNotSubscribable reports a subscription that ADR-0123 §1 does not allow: to a remote account
+// ErrNotSubscribable reports a subscription that ADR-0086 §14 does not allow: to a remote account
 // that the subscriber does not actively follow (ErrRemoteNotFollowed), or between accounts one of
 // which blocks the other (ErrSubscriptionBlocked).
 var ErrNotSubscribable = errors.New("notification: the account cannot be subscribed to")
@@ -136,7 +136,7 @@ func (s *Subscriptions) Subscribe(ctx context.Context, accountID, targetID strin
 	return s.subscribe(ctx, accountID, targetID, false)
 }
 
-// SubscribeWithFollow is Subscribe for the notify of a follow (ADR-0123 §1): when accountID's
+// SubscribeWithFollow is Subscribe for the notify of a follow (ADR-0086 §14): when accountID's
 // follow of the remote targetID awaits its server's Accept, it records the request, and the
 // acceptance makes the subscription.
 func (s *Subscriptions) SubscribeWithFollow(ctx context.Context, accountID, targetID string) error {
@@ -227,7 +227,7 @@ func (s *Subscriptions) List(ctx context.Context, accountID string, p Subscripti
 }
 
 // registerSubscriptionProjectors registers the projectors that keep the subscriptions in step
-// with the graph module (ADR-0123 §1), and the one that starts the notifications of a new post
+// with the graph module (ADR-0086 §14), and the one that starts the notifications of a new post
 // (§2):
 //
 //   - graph.follow_accepted: a request of the follower turns into a subscription, unless the
@@ -306,7 +306,7 @@ func registerSubscriptionProjectors(r *uow.Projectors, d ProjectorDeps) {
 	})
 }
 
-// JobNotifyPostSubscribers notifies the subscribers of the author of a new post (ADR-0123 §2). The
+// JobNotifyPostSubscribers notifies the subscribers of the author of a new post (ADR-0086 §15). The
 // first job handles them itself up to the size of a fan-out job, and otherwise enqueues jobs of that
 // size, so that an author with many subscribers repeats only a part when a job runs out of its lease.
 const JobNotifyPostSubscribers = "notification.post_subscribers"

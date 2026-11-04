@@ -15,7 +15,7 @@ import (
 )
 
 // timelinePublicEntries checks that LocalEntry and PublicEntry, which the streams of the public
-// timelines ask (ADR-0127 §3), list an entry exactly when Local and Public list it for the same
+// timelines ask (ADR-0013 §19), list an entry exactly when Local and Public list it for the same
 // viewer and timeline languages: visibility (local posts on the local timeline only), boosts
 // (on neither), blocks either way, mutes, domain mutes, discovery restrictions, and languages.
 func timelinePublicEntries(t *testing.T, e *timelineEnv) {

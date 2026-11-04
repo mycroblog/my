@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The user's custom emoji page (/settings/custom-emojis): their emoji with what they used of their monthly limit, its
-// pending part apart, and when it resets, their requests, and the form that requests a new one, in the states of ADR-0112 §1.
+// pending part apart, and when it resets, their requests, and the form that requests a new one, in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";

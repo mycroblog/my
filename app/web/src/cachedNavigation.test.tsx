@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A move without a write, back in the history or to a tab seen before, renders from the cache at once
-// (web-client/README.md E4, ADR-0045): the loaders return what is cached and not marked stale without asking the
+// (web-client/README.md E4, ADR-0028): the loaders return what is cached and not marked stale without asking the
 // server, so the router's blocking reload (defaultStaleReloadMode) has nothing to wait for. The server answers
 // every list slowly, so that a page that waited for it would be seen.
 import type { RouterHistory } from "@tanstack/react-router";

@@ -20,7 +20,7 @@ type Evidence interface {
 // ReportStatuses returns the statuses that a report points at (report_statuses), in the order
 // of its StatusIDs, for the moderators who handle it (FR-710, NFR-MOD-4). They are presented
 // whatever their visibility and also when their author deleted them, because the report keeps
-// them as its evidence (ADR-0038); the statuses that are gone are left out. It shows the
+// them as its evidence (ADR-0058); the statuses that are gone are left out. It shows the
 // moderators statuses past content.CanView, so it reads no status that the report does not
 // point at, and its callers serve it to holders of the manage_reports permission only. An
 // unknown report fails with ErrNotFound.

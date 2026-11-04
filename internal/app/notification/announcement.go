@@ -176,7 +176,7 @@ func notifyOfAnnouncement(ctx context.Context, d AnnouncementDeps, tx uow.Tx, re
 		return err
 	}
 	if !choices.TypeEnabled(notification.TypeAnnouncement, notification.ChannelInApp) {
-		return nil // turned off in the app: not created (ADR-0109 §3)
+		return nil // turned off in the app: not created (ADR-0086 §10)
 	}
 	n := notification.Notification{
 		ID: d.IDs.NewID(), RecipientAccountID: recipientID, Type: notification.TypeAnnouncement,

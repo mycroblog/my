@@ -49,7 +49,7 @@ type Config struct {
 	HTTPClient *http.Client
 
 	// OAuth and RefreshToken make the bot renew its access token with the refresh token (mykit's
-	// RefreshingTokenSource; ADR-0094 §7): the token that the server issued to the bot's own account for an app
+	// RefreshingTokenSource; ADR-0093 §15): the token that the server issued to the bot's own account for an app
 	// registered on its settings page, or that an authorization code was exchanged for. Every renewal rotates the
 	// refresh token, which the bot saves in the Store; when the Store holds one, the bot starts from it rather
 	// than from RefreshToken, which the server has seen used.
@@ -77,7 +77,7 @@ type Config struct {
 	// PollInterval is the interval of Polling. Zero means DefaultPollInterval.
 	PollInterval time.Duration
 	// CatchUpLimit is how old a notification the catch-up still handles: after a long stop, older ones are
-	// skipped. Nil means DefaultCatchUpLimit, and zero turns the catch-up off (ADR-0094 §3), such as
+	// skipped. Nil means DefaultCatchUpLimit, and zero turns the catch-up off (ADR-0093 §11), such as
 	// CatchUpLimit: new(time.Duration(0)).
 	CatchUpLimit *time.Duration
 	// ProcessedRetention is how long the processed notifications are remembered, longer than CatchUpLimit. Zero
@@ -242,7 +242,7 @@ func New(cfg Config) (*Bot, error) {
 func (b *Bot) Store() Store { return b.store }
 
 // requiredScopes are the scopes the bot needs: its own account (verifyCredentials), the notifications and the
-// event stream, and posting (ADR-0094 §7); and write:accounts to set the bot flag.
+// event stream, and posting (ADR-0093 §15); and write:accounts to set the bot flag.
 func (b *Bot) requiredScopes() []string {
 	s := []string{"read:accounts", "read:notifications", "read:statuses", "write:statuses"}
 	if b.cfg.SetBotFlag {
@@ -436,7 +436,7 @@ func (b *Bot) Run(ctx context.Context) error {
 }
 
 // RunOnce starts the bot, handles once what is due, and returns, for a bot that a cron or a job runner such as
-// Cloud Run jobs starts again and again (ADR-0094 §9): the notifications since the Store's position, back to
+// Cloud Run jobs starts again and again (ADR-0093 §17): the notifications since the Store's position, back to
 // Config.CatchUpLimit, and for each scheduled job the newest of its past times after its last run, whatever its
 // CatchUp. It returns when their handlers have returned. When ctx ends first, it shuts down as Run does, and
 // what did not finish is due again on the next run. It returns the errors of starting that Run returns, and that
@@ -620,7 +620,7 @@ func (b *Bot) poll(ctx context.Context) error {
 	}
 }
 
-// catchUp hands the missed notifications to the handlers oldest first (ADR-0094 §3), holding the position while
+// catchUp hands the missed notifications to the handlers oldest first (ADR-0093 §11), holding the position while
 // it does. When reading them fails, it hands out none.
 func (b *Bot) catchUp(ctx context.Context) error {
 	b.tracker.hold()
@@ -776,7 +776,7 @@ func (b *Bot) setPosition(p string) {
 	}
 }
 
-// isMe reports whether a is the bot's own account, whose events never reach a handler (ADR-0094 §8).
+// isMe reports whether a is the bot's own account, whose events never reach a handler (ADR-0093 §16).
 func (b *Bot) isMe(a *mykit.Account) bool { return a != nil && a.Id == b.me.Id }
 
 // chain wraps h in the middleware: the default chain outermost, then those of Use.

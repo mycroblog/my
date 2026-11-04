@@ -27,7 +27,7 @@ import {
 } from "../hooks/useSupporterList";
 
 /**
- * The body of the supporter list (`/about/supporters`, ADR-0071 §4): the members who chose to be listed, under a
+ * The body of the supporter list (`/about/supporters`, ADR-0070 §13): the members who chose to be listed, under a
  * heading per plan, each as their avatar, name and handle linking to their profile, and never an amount, a date or a
  * count. The instance's setting decides who may read it.
  */
@@ -132,7 +132,7 @@ function Member({ member }: { member: SupporterListEntry }) {
 }
 
 /**
- * The supporter program on the information page (ADR-0072 §14, ADR-0071 §4): the plans that take subscriptions with
+ * The supporter program on the information page (ADR-0072 §14, ADR-0070 §13): the plans that take subscriptions with
  * their prices and the way to subscribe, which the Tauri app does not show, and the link to the supporter list while
  * the instance publishes it. Absent when there is neither.
  */
@@ -186,7 +186,7 @@ export function AboutSupportersSection() {
 }
 
 /**
- * The user's choice to be on the supporter list (ADR-0071 §4), on the badges settings page: one switch, saved as soon as
+ * The user's choice to be on the supporter list (ADR-0070 §13), on the badges settings page: one switch, saved as soon as
  * it changes. Shown only to a member of a plan while the instance publishes the list; it stays in the Tauri app.
  */
 export function SupporterListingSettings() {

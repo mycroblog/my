@@ -24,7 +24,7 @@ type RelayHarness struct {
 // factory registers the cleanup of everything it creates with t.Cleanup.
 type RelayFactory func(t *testing.T, opts uow.Options) RelayHarness
 
-// RelayContract verifies the relay repository of a database adapter (ADR-0061, data-model
+// RelayContract verifies the relay repository of a database adapter (ADR-0006, data-model
 // §4.8): a registration once per URL, a relay read with its state, one event of each kind per
 // Follow, the state replaced, the lookups by the current Follow and by the accepted actor, the
 // inboxes of the accepted relays, the deletion with the events and state, and relay_states

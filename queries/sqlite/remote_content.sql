@@ -90,7 +90,7 @@ SELECT CAST(COALESCE(SUM(file_size), 0) AS BIGINT) FROM remote_media_cache;
 DELETE FROM remote_media_cache WHERE url = @url AND fetched_at = @fetched_at;
 
 -- ExistsLocalStatusInConversation reports whether a local status that is not deleted belongs to
--- the conversation, for the scope of remote content (ADR-0034: replies in a thread that has a
+-- the conversation, for the scope of remote content (ADR-0006: replies in a thread that has a
 -- local status).
 -- name: ExistsLocalStatusInConversation :one
 SELECT EXISTS (

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// ProgressMeter (ADR-0113 §1): a known amount as a bar, on React Aria's ProgressBar (`progress`: how far a task with an
+// ProgressMeter (ADR-0110 §16): a known amount as a bar, on React Aria's ProgressBar (`progress`: how far a task with an
 // end has gone, such as the deliveries after a service closes) or Meter (`meter`: how full something is, such as the
 // storage used). Its label and its value in words ("1,234 / 5,000 items") are visible, and the value in words is the
 // `aria-valuetext`. The fill grows from the start of the line, so it mirrors in right-to-left text; forced-colors mode

@@ -121,7 +121,7 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 			return nil
 		}
 		// The followee leaves every list of the follower with the follow, whatever ended it, and
-		// a new follow does not bring it back (ADR-0122 §2).
+		// a new follow does not bring it back (ADR-0013 §11).
 		if err := repo.DeleteListMembersOfFollow(ctx, tx, ev.Follow.FollowerAccountID, ev.Follow.FolloweeAccountID); err != nil {
 			return err
 		}
@@ -178,7 +178,7 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 
 // registerLifecycleProjector registers the projector of the lifecycle of accounts:
 // feed_author_restrictions holds profile_view for each deleted or deactivated account, and a
-// reactivation puts back what moderation has in effect (ADR-0145 §5), so a suspension goes on.
+// reactivation puts back what moderation has in effect (ADR-0089 §15), so a suspension goes on.
 func registerLifecycleProjector(r *uow.Projectors, repo Repository, moderated ModeratedEffects) {
 	r.Register(appaccount.EventLifecycleEventRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appaccount.LifecycleEventRecorded)

@@ -341,7 +341,7 @@ func (s *Service) RevisePlan(ctx context.Context, in PlanUpdate) (PlanView, erro
 	return s.Plan(ctx, in.ID)
 }
 
-// RetirePlan retires a plan for good (ADR-0072 §9, R1): it leaves the offer and the lists, and
+// RetirePlan retires a plan for good (ADR-0072 §9): it leaves the offer and the lists, and
 // every live subscription of it ends: a pending one at once, a lapsed one at once at the
 // provider, and the others at the end of their period (their scheduled change withdrawn), when
 // the role goes. The role becomes an ordinary one again once nobody holds it. PlanRetired tells

@@ -91,7 +91,7 @@ func (h *Handler) quoteAuthorization(w http.ResponseWriter, r *http.Request) {
 	writeBody(w, typeActivityJSON, acc.cache(obj.Public), status, obj.Document)
 }
 
-// activity serves GET /ap/activities/{id}: the Announce of a public or unlisted boost (ADR-0144
+// activity serves GET /ap/activities/{id}: the Announce of a public or unlisted boost (ADR-0018
 // §5). Every other activity, and a request that prefers HTML, gets the same 404 as a missing one.
 func (h *Handler) activity(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Vary", "Accept")

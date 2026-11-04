@@ -31,7 +31,7 @@ const (
 	// published, or withdrawn (FR-726). It goes to every subscriber, which reads whether its
 	// viewer sees the announcement now.
 	KindAnnouncement Kind = "announcement"
-	// KindPublicEntry signals a new post that the public timelines may list (ADR-0127 §4): it
+	// KindPublicEntry signals a new post that the public timelines may list (ADR-0013 §20): it
 	// goes to the timeline subscriptions of the timelines it names (OnLocal, OnFederated), each
 	// of which decides whether its viewer's timeline lists the post.
 	KindPublicEntry Kind = "public_entry"
@@ -51,7 +51,7 @@ const (
 	KindVoiceMute Kind = "voice_mute"
 )
 
-// Timeline names a public timeline whose new posts a timeline subscription receives (ADR-0127).
+// Timeline names a public timeline whose new posts a timeline subscription receives (ADR-0013).
 type Timeline string
 
 const (
@@ -146,7 +146,7 @@ type RoomSubscriber interface {
 	SubscribeRoom(ctx context.Context, roomID, session string) (Subscription, error)
 }
 
-// TimelineSubscriber opens the subscriptions of the public timeline streams (ADR-0127).
+// TimelineSubscriber opens the subscriptions of the public timeline streams (ADR-0013).
 type TimelineSubscriber interface {
 	// SubscribeTimeline opens a subscription of accountID to the KindPublicEntry signals of the
 	// timeline t. It counts toward the subscriptions of the account, as Subscribe does, and

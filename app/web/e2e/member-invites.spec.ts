@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's own invites in every width × locale project (ADR-0108 §5, ADR-0027): a user who may create invites and has
+// The user's own invites in every width × locale project (ADR-0106 §18, ADR-0110): a user who may create invites and has
 // no staff permission opens their invites from the settings, creates an invite within the caps, reads its link, and
 // revokes an invite; the page passes axe without scrolling sideways and asks for no admin data. `vite preview` has no
 // API, so the test plays the server with page.route; names change with the locale, so the elements are found by role,

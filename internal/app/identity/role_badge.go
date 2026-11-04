@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// Role badges and their display on profiles (ADR-0071, FR-913). The badge of a role is a current
+// Role badges and their display on profiles (ADR-0070, FR-913). The badge of a role is a current
 // value (role_badges) that UpdateRole sets and removes; the choice of a user to show it on their
 // profile is another (user_role_badge_displays), off by default. Revoking a role, granting it
 // anew, and removing its badge clear the choice in the same transaction, so that a user who
@@ -133,7 +133,7 @@ type ReplaceRoleInput struct {
 }
 
 // ReplaceRole revokes a role from a user and grants another in one transaction, for a change of
-// plan (ADR-0071 §2): when the user shows the badge of the old role, they show the badge of the
+// plan (ADR-0070 §11): when the user shows the badge of the old role, they show the badge of the
 // new one, and the choice goes away when the new role has no badge. It reports whether it
 // changed anything and records the audit log entries of the revocation and the grant. It fails
 // as RevokeRole and GrantRole do; the roles of the supporter plans change through

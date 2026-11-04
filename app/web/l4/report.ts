@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The issues of an L4 run (ADR-0114): one per screen whose tasks have lostness above the threshold, with the screen's
+// The issues of an L4 run (ADR-0015): one per screen whose tasks have lostness above the threshold, with the screen's
 // name in the title, each task with the path the agent took and the L1's shortest path.
 import type { RunResult, TaskResult } from "./results.ts";
 import { screensDir } from "./tasks.ts";
@@ -62,7 +62,7 @@ export function issueBody(result: RunResult, tasks: readonly TaskResult[], runUR
     `The nightly L4 task test found tasks of this screen with lostness above ${String(result.threshold)}, or not completed, on ` +
       `${result.commit.slice(0, 12)}${runURL === "" ? "" : ` ([run](${runURL}), artifact \`l4-results\`)`}.`,
     `The tasks and their shortest paths are in the L1: [${l1}](https://github.com/${repo}/blob/${result.commit}/${l1}#2-作業).`,
-    "Fix the L1 or the screen, or explain why the path is right (ADR-0110 §7, ADR-0114).",
+    "Fix the L1 or the screen, or explain why the path is right (ADR-0110 §7, ADR-0015).",
   ];
   for (const task of tasks) {
     lines.push(

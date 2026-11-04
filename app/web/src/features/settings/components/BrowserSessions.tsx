@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The browsers signed in to the user's account (ADR-0136, web-client/screens/settings-sessions.md): each with its browser
+// The browsers signed in to the user's account (ADR-0090, web-client/screens/settings-sessions.md): each with its browser
 // and operating system, the IP address it signed in from, when it signed in and when it was last used, this one marked,
 // and a button that signs it out after a confirmation. Above the list, a button signs out all the others.
 import {

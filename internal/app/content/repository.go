@@ -33,7 +33,7 @@ type Repository interface {
 
 	// InsertStatus inserts a status. A URI that another status has fails with ErrStatusExists.
 	InsertStatus(ctx context.Context, tx uow.Tx, s content.Status) error
-	// InsertRelayedStatus records a remote status that only a relay brought in (ADR-0061),
+	// InsertRelayedStatus records a remote status that only a relay brought in (ADR-0006),
 	// unless it is recorded.
 	InsertRelayedStatus(ctx context.Context, tx uow.Tx, statusID, relayID string, receivedAt time.Time) error
 	// InsertLocalStatus inserts the local subtype of a status. An Idempotency-Key that the
@@ -175,7 +175,7 @@ type Repository interface {
 	// that is not deleted, published at since or later, the one that posted last first.
 	ListRecentLocalPosters(ctx context.Context, since time.Time, limit int) ([]string, error)
 
-	// Remote statuses: custom emoji, poll tallies, and the scope of ingestion (ADR-0034).
+	// Remote statuses: custom emoji, poll tallies, and the scope of ingestion (ADR-0006).
 	// InsertRevision also writes a revision's Poll and Remote, and FindRevision reads them.
 
 	// LocalStatusInConversation reports whether a local status that is not deleted belongs to

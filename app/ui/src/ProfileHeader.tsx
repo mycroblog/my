@@ -155,7 +155,7 @@ export type ProfileHeaderImageProps = {
 
 /**
  * An account's header image, or a plain band when it has none or the image fails to load. Either is
- * decorative (`alt=""`, ADR-0027): the name and the profile below it say whose page this is.
+ * decorative (`alt=""`, ADR-0110): the name and the profile below it say whose page this is.
  */
 export function ProfileHeaderImage({ sources, size }: ProfileHeaderImageProps) {
   // The URL that failed, not a flag: a new src is tried again without resetting state in an Effect.

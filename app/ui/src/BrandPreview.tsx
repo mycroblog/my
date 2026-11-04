@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// How a server's own icon or logo will look where it is used (ADR-0116 §3), before an administrator saves it: in a
+// How a server's own icon or logo will look where it is used (ADR-0059 §10), before an administrator saves it: in a
 // browser tab, on a phone's home screen, as a maskable app icon, in the header of an email on a light and on a dark
 // ground, and as a link preview. Each preview is an <img> of a drawn PNG or of the sanitized SVG (never an inline SVG),
 // decorative: the caption under it says what it shows.

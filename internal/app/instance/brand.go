@@ -20,7 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// The instance's own icon and logo (ADR-0116): a sanitized SVG of each kind with the PNG
+// The instance's own icon and logo (ADR-0059): a sanitized SVG of each kind with the PNG
 // renditions that the admin screen draws from it, kept in the BlobStore under keys the server
 // makes, versioned like the settings.
 
@@ -104,7 +104,7 @@ func (s *Service) Brands(ctx context.Context) (instance.Brands, error) {
 	return s.d.Repository.CurrentBrands(ctx)
 }
 
-// SanitizeBrand checks and sanitizes an SVG of kind without saving it (ADR-0116 §2), so that
+// SanitizeBrand checks and sanitizes an SVG of kind without saving it (ADR-0059 §9), so that
 // the admin screen can draw the renditions from the result. It fails with an
 // *instance.BrandError.
 func (s *Service) SanitizeBrand(kind instance.BrandKind, svg []byte) (instance.BrandSVG, error) {

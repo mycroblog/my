@@ -26,7 +26,7 @@ type PublicEntries interface {
 }
 
 // registerTimelineStream registers GET /streaming/timelines/{timeline} (operation
-// streamTimeline), which the strict server does not generate (ADR-0029), behind the same guard
+// streamTimeline), which the strict server does not generate (ADR-0016), behind the same guard
 // as the generated operations.
 func (s *Server) registerTimelineStream(r Router) {
 	r.Handle(timelineStreamPattern, s.guard(timelineStreamPattern, http.HandlerFunc(s.serveTimelineStream)))
@@ -44,7 +44,7 @@ var publicTimelineStreams = map[string]publicTimelineStream{
 }
 
 // serveTimelineStream serves GET /api/v1/streaming/timelines/{timeline}: a Server-Sent Events
-// stream of the new posts of the local or the federated timeline (ADR-0127), event update with
+// stream of the new posts of the local or the federated timeline (ADR-0013), event update with
 // a Status, for logged-in users only. It sends a post when the REST timeline (GET
 // /timelines/local or /timelines/federated) lists it for the viewer at that moment, which
 // LocalEntry and PublicEntry decide with the same policy, and nothing is replayed. It is a 404

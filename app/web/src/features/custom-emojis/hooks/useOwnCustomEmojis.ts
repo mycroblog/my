@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's page of their custom emoji (ADR-0070 §2, §3, ADR-0124, create_custom_emojis): what they used of their
+// The user's page of their custom emoji (ADR-0070 §2, §3, ADR-0070, create_custom_emojis): what they used of their
 // monthly limit,
 // the form that requests a new emoji, their requests with withdrawing a pending one, and the emoji they made with
 // changing their settings, requesting a new image, and deleting them. What each change did is announced and kept in a

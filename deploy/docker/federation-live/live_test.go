@@ -674,7 +674,7 @@ type peerClient struct {
 	noEdits string
 	// favouriteReaction, when set, is the emoji of the peer's favourite: the peer sends it as a
 	// Like with the emoji (_misskey_reaction), which this server records as an emoji reaction,
-	// not as a favourite (ADR-0052, TestFavourite).
+	// not as a favourite (ADR-0051, TestFavourite).
 	favouriteReaction string
 }
 

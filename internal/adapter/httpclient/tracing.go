@@ -18,7 +18,7 @@ const (
 	attrStatus        = "http.response.status_code"
 )
 
-// RequestSpan is the client span of one outbound request (ADR-0063 §1), named after its
+// RequestSpan is the client span of one outbound request (ADR-0055 §13), named after its
 // method. Of the destination it carries the host name alone (server.address, §4), for an
 // operator to find the deliveries that fail: never the URL, its path, or its query.
 var RequestSpan = kernel.SpanSpec{

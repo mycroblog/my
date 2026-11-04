@@ -1,7 +1,7 @@
 # アーキテクチャ概要（基礎設計）
 
 > この文書はサーバーの基礎設計で、Accepted な ADR に従います。判断の根拠は各 ADR を参照してください。
-> サーバーの実装言語は Go です（[ADR-0001](../adr/0001-server-language-and-runtime.md)）。
+> サーバーの実装言語は Go です（[ADR-0002](../adr/0002-modular-monolith-hexagonal.md)）。
 
 ## 1. 全体像
 
@@ -60,7 +60,7 @@ Remote servers ──AP──►│                               │
 | `moderation` | 通報・ドメインブロック・凍結・監査ログ | Report, DomainBlock, AuditLog |
 | `instance` | インスタンス設定・規約・ルール・テーマ・お知らせ・NodeInfo | InstanceSettings |
 | `webhook` | サーバー単位の webhook（宛先・署名・配送と再送、ADR-0060） | WebhookEndpoint, WebhookMessage, WebhookDelivery |
-| `finance` | サーバーの維持費用（費用の項目・支払いの周期・改定・終了・取り消し、週・月・年の集計。集計は読み取りのときに計算する。ADR-0067）と、クラウドの利用料金の取り込み（見込み・確定・修正の版。ADR-0068）と、決済の事業者からの収入の記録と集計（`supporters` が `RecordIncome` で渡し、`finance` は加入者とプランの人数を `SupporterDirectory` で読む。ADR-0073） | CostItem, PriceRevision, ImportedRevision, IncomeMovement |
+| `finance` | サーバーの維持費用（費用の項目・支払いの周期・改定・終了・取り消し、週・月・年の集計。集計は読み取りのときに計算する。ADR-0067）と、クラウドの利用料金の取り込み（見込み・確定・修正の版。ADR-0068）と、決済の事業者からの収入の記録と集計（`supporters` が `RecordIncome` で渡し、`finance` は加入者とプランの人数を `SupporterDirectory` で読む。ADR-0067） | CostItem, PriceRevision, ImportedRevision, IncomeMovement |
 | `supporters` | 管理者が有効にしたときだけ動く課金ユーザー（サポーター。ADR-0072）。課金の有効化・プラン・事業者の価格・加入・加入の状態と猶予・掲載の選択。決済の事業者の事実を運ぶ経路（webhook の受信の記録とジョブ、定期の照合。ADR-0074 §3・§4）。加入の状態は事業者のスナップショットから `Syncer`（`supporters.sync`）が導き、プランのロールを `identity` の管理されたロールの操作で付け外しする | Plan, PlanRevision, Subscription, Transition, WebhookReceipt, ReconcileRun |
 | `voice` | 同じサーバーのローカルの利用者どうしの通話のルーム（ADR-0100）。ルームの設定の版・ホストと共同ホスト・参加と役割・発話の許可・挙手・招待・再入室の禁止・終了。公開範囲・発話・ホストの資格は `internal/domain/voice` の純粋な関数（`CanSee`・`CanSpeakFreely`・`CanHost`）が判定する | Room, Revision, Participation, Participant, Invitation, Ending |
 | `diagnostics` | 報告されたエラーのグループ（ADR-0103 §4 (2)・§7）。`ErrorReporter` の出力の 1 つ `Recorder` が指紋ごとに 1 時間ごとの件数と最新の 1 件を数え、新しいグループと、解決したグループの別の版での再発（`regressed`）をドメインイベントで知らせる。解決・ミュート・ミュートの解除と、90 日より古い件数の定期の削除 | ErrorGroup, ErrorGroupEvent |
@@ -104,7 +104,7 @@ DB アダプタの実装は受け取った `uow.Tx` から自分のトランザ�
 ジョブキューのポート（`JobQueue` / `Outbox` / `JobHandlerRegistry` / `JobRunner`）も全モジュールと全キューアダプタが共有するので `internal/app/queue` に置く。
 ここにはリトライ方針（指数バックオフ + ジッタ）と、キューアダプタの `queue.Source` を駆動する pull runner、プロセス内の `Scheduler` も置く。
 `Scheduler` は定期ジョブを周期ごとの冪等キー付きで enqueue するだけで、worker と all のロールで動く。
-Cloud Tasks・SQS のキュー（[ADR-0120](../adr/0120-external-queue-wake-up-signals.md)）でもジョブは DB の `jobs` に置き、外部のキューはジョブの ID を運ぶ合図（`queue.Waker`）だけを持つ。
+Cloud Tasks・SQS のキュー（[ADR-0004](../adr/0004-job-queue-abstraction.md)）でもジョブは DB の `jobs` に置き、外部のキューはジョブの ID を運ぶ合図（`queue.Waker`）だけを持つ。
 合図を受ける push receiver（`PushReceiver`）・取りこぼした合図を拾う掃除 `queue.wake`（`WakeSweeper`）・外部のスケジューラから `Scheduler.Tick` と掃除を 1 回ずつ動かす tick（`Trigger`）も `internal/app/queue` に置く。
 掃除は合図を運ぶキューを通らないよう、ジョブとして積まず tick の中で動かす。周期の 2 回目の投入は `Scheduler.UseSharedSlots` で KV に記録した周期の枠で防ぐ。
 ジョブの構成・ライフサイクル・fan-out の図は [ジョブの全体像](job-system.md) にまとめる。
@@ -116,25 +116,25 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 | --- | --- | --- | --- |
 | `Repositories` / `UnitOfWork` | 永続化。書き込みは **短く再実行可能なトランザクション** 単位 | sqlite / postgres | [0003](../adr/0003-database-abstraction.md) |
 | `JobQueue` | ジョブ投入（遅延・冪等キー付き） | db | [0004](../adr/0004-job-queue-abstraction.md) |
-| `JobRunner` | ジョブ実行（pull ループ or push 受信。push は合図のジョブを ID で claim する） | db（pull） | [0004](../adr/0004-job-queue-abstraction.md), [0120](../adr/0120-external-queue-wake-up-signals.md) |
-| `Scheduler` | 定期実行のトリガー。常駐しないターゲットでは Cloud Scheduler・EventBridge Scheduler の tick が起こす | in-process cron | [0004](../adr/0004-job-queue-abstraction.md), [0120](../adr/0120-external-queue-wake-up-signals.md) |
+| `JobRunner` | ジョブ実行（pull ループ or push 受信。push は合図のジョブを ID で claim する） | db（pull） | [0004](../adr/0004-job-queue-abstraction.md), [0120](../adr/0004-job-queue-abstraction.md) |
+| `Scheduler` | 定期実行のトリガー。常駐しないターゲットでは Cloud Scheduler・EventBridge Scheduler の tick が起こす | in-process cron | [0004](../adr/0004-job-queue-abstraction.md), [0120](../adr/0004-job-queue-abstraction.md) |
 | `BlobStore` | メディアの保存・署名付き URL | fs | [0005](../adr/0005-blob-storage-and-media.md) |
-| `MediaProcessor` | 用途ごとの S / M / L の版・アニメーションの静止版と動く版・EXIF 除去 | native | [0005](../adr/0005-blob-storage-and-media.md), [0054](../adr/0054-media-variants-video-audio.md) |
+| `MediaProcessor` | 用途ごとの S / M / L の版・アニメーションの静止版と動く版・EXIF 除去 | native | [0005](../adr/0005-blob-storage-and-media.md), [0054](../adr/0005-blob-storage-and-media.md) |
 | `KeyValueStore` | キャッシュ・レート制限・連合ライブラリ用 KV。任意の `valkey` は Valkey か Redis 互換のサーバーに置き、ADR-0003 と ADR-0019 の「Redis」の枠をこのアダプタで満たす | db | [0003](../adr/0003-database-abstraction.md), [0019](../adr/0019-security-baseline.md) |
 | `HTTPClient` | 外部 HTTP（SSRF ガード・用途別の本文上限とタイムアウト・UA 付与） | httpclient（`net/http` + SSRF ガード） | [0006](../adr/0006-federation-protocol-scope.md), [0019](../adr/0019-security-baseline.md) |
 | `Mailer` | メール送信 | none（ログ出力） | [0010](../adr/0010-configuration-and-packaging.md) |
 | `OIDCClient`（identity） | 管理者が設定した OpenID Connect の IdP の Discovery・JWKS・ID トークンの検証（`HTTPClient` の `HTTPPurposeLoginProvider` で取得し、応答のキャッシュ指示に従ってメモリに置く） | oidc（標準ライブラリ） | [0106](../adr/0106-external-login-providers.md) |
-| `HumanVerifier` | サインインと登録の CAPTCHA のトークンの検証（`HTTPClient` で siteverify に送る）。`captcha = none` では使わない（nil） | なし（`captcha = none`） | [0042](../adr/0042-captcha-human-verifier.md) |
+| `HumanVerifier` | サインインと登録の CAPTCHA のトークンの検証（`HTTPClient` で siteverify に送る）。`captcha = none` では使わない（nil） | なし（`captcha = none`） | [0042](../adr/0106-external-login-providers.md) |
 | `PushSender` | Web Push 送信 | webpush | — |
 | `Publisher` / `Subscriber` | リアルタイム更新の通知と購読（§4.4）。設定 `stream` が `hub` なら `stream.Hub`、それ以外は `stream.Relay` | in-process（`stream.Hub`、`stream = hub`） | [0016](../adr/0016-client-api-style.md), [0050](../adr/0050-stream-pubsub-across-processes.md) |
 | `Bus` / `Sweeper` | プロセス間の知らせの同報（`stream.Relay` が使う）と、プロセスが残したブローカーの資源の後始末（§4.4）。アダプタは `postgres` / `valkey` / `sns` / `pubsub`（`sns` と `pubsub` は `Sweeper` も実装）。`stream.MemoryBroker` はテスト用 | なし（`stream = hub`）。複数プロセスは `postgres` | [0050](../adr/0050-stream-pubsub-across-processes.md) |
 | `Clock` / `IdGenerator` | 時刻（UTC・ミリ秒）・ID 生成（テスト容易性のため注入） | system（システム時計 / UUIDv7。どちらもプロセス内では小さく戻った時計で逆行しない） | [0003](../adr/0003-database-abstraction.md) |
 | `KeyManager` | 秘密（アクター秘密鍵など）を包む DEK の wrap / unwrap。暗号化は `kernel.Sealer` が行う | local（設定の KEK） | [0019](../adr/0019-security-baseline.md) |
 | `SearchIndex` | アカウント・タグ検索（将来全文） | db（FTS） | [0009](../adr/0009-internationalization.md) |
-| `Meter` | サービスとシステムの指標の計測。計器（Counter・UpDownCounter・Histogram・Gauge）を名前・単位・許すラベルのキーとともに宣言して記録し、`Begin` でリクエスト・ジョブの区切りを示す。型は標準ライブラリだけで、OTel の型を出さない。アダプタは `none` / `otel`（OpenTelemetry Go SDK。Prometheus の scrape と OTLP/HTTP）/ `emf`（CloudWatch Embedded Metric Format。Gauge は収集されないので、定期ジョブが `GaugeWriter` で書かせる）。ログは port でなく `log/slog` の JSON Lines（標準エラー）で、トレースは `Tracer` が持つ | none（`metrics_exporter = none`） | [0055](../adr/0055-service-observability.md), [0056](../adr/0056-system-observability.md) |
+| `Meter` | サービスとシステムの指標の計測。計器（Counter・UpDownCounter・Histogram・Gauge）を名前・単位・許すラベルのキーとともに宣言して記録し、`Begin` でリクエスト・ジョブの区切りを示す。型は標準ライブラリだけで、OTel の型を出さない。アダプタは `none` / `otel`（OpenTelemetry Go SDK。Prometheus の scrape と OTLP/HTTP）/ `emf`（CloudWatch Embedded Metric Format。Gauge は収集されないので、定期ジョブが `GaugeWriter` で書かせる）。ログは port でなく `log/slog` の JSON Lines（標準エラー）で、トレースは `Tracer` が持つ | none（`metrics_exporter = none`） | [0055](../adr/0055-service-observability.md), [0056](../adr/0055-service-observability.md) |
 | `BillingSource` | クラウドの事業者の利用料金を請求月・サービス・費用の種類ごとに返す（`internal/app/finance`）。型は標準ライブラリと finance のドメインだけで、SDK の型を出さない。課金される要求の数を `MaxRequests` までに抑え、失敗を種類に分ける。事業者のアダプタは `internal/adapter/billing/<source>` に置き、テスト用の fake は `testkit.FakeBillingSource` | なし（`billing_sources` が空） | [0068](../adr/0068-billing-import.md) |
-| `PaymentProvider` | 決済の事業者の側の事実（プランと価格・ホスト型の決済画面・顧客ポータル・プランの変更と解約の命令・webhook の検証・サブスクリプションのスナップショット・一覧・お金の動き）を返す（`internal/app/supporters`）。型は標準ライブラリだけで、SDK の型を出さない。webhook の検証は I/O をせず、失敗を種類に分ける。事業者のアダプタは `internal/adapter/payment/<provider>` に置き、テスト用の fake は `internal/adapter/payment/fake`。契約は `testkit.PaymentProviderContract`。ホスト型の画面を持たない事業者のアダプタは任意の `PageServer` を実装し、決済と顧客ポータルのページを `/payments/pages/<provider>/` に出す | なし（`payments = none`） | [0074](../adr/0074-payment-provider-port.md)・[0099](../adr/0099-payjp-payment-adapter.md) |
-| `Tracer` | 分散トレースの span。span を名前・種類・許す属性のキー（`SpanSpec`）で宣言して始め、`Inject` で今の span の `traceparent` をジョブ（`queue.Job.TraceParent`）に書き、`Linked` でジョブの実行を link 付きの新しいトレースにし、`Continue` で信頼したプロキシの `traceparent` を親にし、`LogIDs` でログの行に `trace_id`・`span_id` を付ける。型は標準ライブラリだけで、OTel の型を出さない。span は HTTP のミドルウェア・ジョブの runner・`HTTPClient`・`UnitOfWork.Tx` とクエリ（`telemetry/dbtrace`、PostgreSQL は pgx の `QueryTracer`）・配送が作る。アダプタは `none` / `otel`（OpenTelemetry Go SDK の OTLP/HTTP） | none（`traces_exporter = none`。信頼したプロキシの trace ID をログに付けるだけ） | [0063](../adr/0063-distributed-tracing.md) |
+| `PaymentProvider` | 決済の事業者の側の事実（プランと価格・ホスト型の決済画面・顧客ポータル・プランの変更と解約の命令・webhook の検証・サブスクリプションのスナップショット・一覧・お金の動き）を返す（`internal/app/supporters`）。型は標準ライブラリだけで、SDK の型を出さない。webhook の検証は I/O をせず、失敗を種類に分ける。事業者のアダプタは `internal/adapter/payment/<provider>` に置き、テスト用の fake は `internal/adapter/payment/fake`。契約は `testkit.PaymentProviderContract`。ホスト型の画面を持たない事業者のアダプタは任意の `PageServer` を実装し、決済と顧客ポータルのページを `/payments/pages/<provider>/` に出す | なし（`payments = none`） | [0074](../adr/0074-payment-provider-port.md)・[0099](../adr/0074-payment-provider-port.md) |
+| `Tracer` | 分散トレースの span。span を名前・種類・許す属性のキー（`SpanSpec`）で宣言して始め、`Inject` で今の span の `traceparent` をジョブ（`queue.Job.TraceParent`）に書き、`Linked` でジョブの実行を link 付きの新しいトレースにし、`Continue` で信頼したプロキシの `traceparent` を親にし、`LogIDs` でログの行に `trace_id`・`span_id` を付ける。型は標準ライブラリだけで、OTel の型を出さない。span は HTTP のミドルウェア・ジョブの runner・`HTTPClient`・`UnitOfWork.Tx` とクエリ（`telemetry/dbtrace`、PostgreSQL は pgx の `QueryTracer`）・配送が作る。アダプタは `none` / `otel`（OpenTelemetry Go SDK の OTLP/HTTP） | none（`traces_exporter = none`。信頼したプロキシの trace ID をログに付けるだけ） | [0063](../adr/0055-service-observability.md) |
 | `ErrorReporter` | 運営者が見るべきエラー（panic・5xx とジョブの `dead` の原因・起動の失敗・Web クライアントの捕まえていないエラー）を、スタックと起きた場所を持つ `ErrorEvent` として受ける。`Recover` は境界で `defer` して panic を報告し、`kernel.Go` は起動した goroutine の panic を報告してからプロセスを止める。型は標準ライブラリだけ。実装は `internal/platform` の `ErrorReporter` 1 つで、版・役割・環境・相関 ID を埋めて、モジュールが `AddSink` で足した出力（ログ・DB のエラーのグループ）と `errors_exporter` の転送先に配る。テストでは `kernel.NopErrorReporter` | ログと DB のグループだけ（`errors_exporter = none`） | [0103](../adr/0103-error-reporting.md) |
 
 各ポートには `pkg/testkit` にアダプタ非依存のコントラクトテスト（`testkit.<名前>Contract`）があり、そのポートのアダプタはすべてそれを通す（NFR-PORT-3）。
@@ -149,7 +149,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 1. Client API の投稿作成 → `PostStatus` ユースケース
 2. ドメインで検証（文字数・公開範囲・メンション解決）→ `Status` を生成
 3. **1 回のトランザクション**（`UnitOfWork.Tx`）で `statuses` + 付随行を書き、同じトランザクションの同期 projector が `outbound_activities`（`Create`）と `jobs`（`federation.fanout` ジョブ）を書く（Transactional Outbox）
-4. コミットした分だけがワーカーに見える。Cloud Tasks・SQS のキューでは、コミットの後にジョブの ID の合図を送る（ADR-0120）
+4. コミットした分だけがワーカーに見える。Cloud Tasks・SQS のキューでは、コミットの後にジョブの ID の合図を送る（ADR-0004）
 5. ワーカー: `federation.fanout` が文書を 1 回だけ組み立て、公開範囲に応じて宛先 inbox を 500 件ずつ算出し（`local` はリモートフォロワーのみ）、**shared inbox 単位** の `deliveries` ごとに `federation.deliver{deliveryId}` を投入
 6. `federation.deliver` が署名付き POST。失敗時はバックオフで再投入、ドメインが連続失敗したら一時停止
 
@@ -170,7 +170,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 
 1. コマンドのトランザクションがコミットされると、`uow.Projectors` に登録したコミットフックが、そのトランザクションで発行したイベントを受け取る（[data-model §2.1](data-model/02-consistency.md#21-トランザクションの規律)）
 2. `timeline` のフックは新しい投稿・ブーストの ID を、`notification` のフックは通知を受け取りうるアカウントを、`stream.Publisher` に知らせる。知らせるのは「何が変わったか」だけで、内容は載せない。
-   ローカル・連合のタイムラインに載りうる投稿は、載りうるタイムラインを添えた「公開のタイムラインの新着」（`stream.KindPublicEntry`）としても知らせる（ADR-0127）
+   ローカル・連合のタイムラインに載りうる投稿は、載りうるタイムラインを添えた「公開のタイムラインの新着」（`stream.KindPublicEntry`）としても知らせる（ADR-0013）
 3. `GET /api/v1/streaming` の各接続は `stream.Subscriber` で自分のアカウントを購読し、知らせを受けるたびにユースケースで読み直す。
    ホームに載るかは `timeline.Service.HomeEntry`（ホームのタイムラインと同じ条件と `CanView`）、通知は前回送ったものより新しい通知の一覧で決める
 4. 結果を SSE のイベント（`update` は `Status`、`notification` は `Notification`）として送る。手順は [client-api.md §5](client-api.md#5-ストリーミング)
@@ -212,11 +212,11 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 - 時刻は UTC で保存、API では RFC 3339。
 - 方言差を吸収するため、型は「共通部分集合」で設計（真偽値は整数、JSON は TEXT 保存も許容、等）。
 - トランザクションは短く再実行可能にし、内部で外部 I/O をしない。重複実行への耐性は「一意制約 + upsert」「冪等キー」で担保（[ADR-0003](../adr/0003-database-abstraction.md)）。
-- マイグレーション履歴を持たず、方言ごとの宣言的なスキーマファイルを適用する。`v0.1.0` 以降はデータを失わない変更だけを許し、データの書き換えは `my db upgrade` で行う（[ADR-0087](../adr/0087-schema-changes-after-launch.md)）。
+- マイグレーション履歴を持たず、方言ごとの宣言的なスキーマファイルを適用する。`v0.1.0` 以降はデータを失わない変更だけを許し、データの書き換えは `my db upgrade` で行う（[ADR-0023](../adr/0023-declarative-schema-management.md)）。
 
 ## 6. リポジトリ構成
 
-サーバーは Go（[ADR-0001](../adr/0001-server-language-and-runtime.md)）、構成は [ADR-0010](../adr/0010-configuration-and-packaging.md) に従う。
+サーバーは Go（[ADR-0002](../adr/0002-modular-monolith-hexagonal.md)）、構成は [ADR-0010](../adr/0010-configuration-and-packaging.md) に従う。
 
 ```text
 cmd/
@@ -232,14 +232,14 @@ internal/
   app/media/         # MediaProcessor ポート、形式の判定、上限の既定値
   app/stream/        # リアルタイム更新の Publisher / Subscriber / Bus / Sweeper ポート、プロセス内ブローカー Hub、プロセス間の中継 Relay、定期ジョブ stream.sweep
   app/projection/    # 投影の再構築と検証（my projection、定期ジョブ projection.verify）と、表を列に依存せず読み書きする Store ポート
-  app/dbupgrade/     # 版の間の更新の手順（my db upgrade、ADR-0087）の実行と記録、contract の前提の検査（my db upgrade --check）、readiness の確認
+  app/dbupgrade/     # 版の間の更新の手順（my db upgrade、ADR-0023）の実行と記録、contract の前提の検査（my db upgrade --check）、readiness の確認
   app/metrics/       # インスタンス全体の指標のスナップショット（KV の名前空間 metrics、定期ジョブ metrics.snapshot。ADR-0055 §4）
   interface/
     clientapi/       # 独自クライアント API（api/openapi.yaml から生成したインターフェイスを実装）。スタッフの操作（/admin/*、ADR-0058）の入口もここだけ
     activitypub/     # inbox / outbox / actor / webfinger / nodeinfo
     media/           # 公開メディア（Blob のキー media/...）の配信 /media/
     payments/        # 決済の事業者が呼ぶ webhook の受け口 POST /payments/webhooks/{provider}（クライアント API の外。ADR-0074 §3）
-    authpages/       # ログイン・ログアウト・登録・メール確認の画面（html/template、JavaScript なし。ADR-0030。CAPTCHA を有効にしたときだけ、ログインと登録の画面がサービスのウィジェットを読む。ADR-0042。ログインの画面は、パスキーに対応したブラウザでだけパスキーのボタンを出す Web ビルドのスクリプトを読む。FR-004）
+    authpages/       # ログイン・ログアウト・登録・メール確認の画面（html/template、JavaScript なし。ADR-0090。CAPTCHA を有効にしたときだけ、ログインと登録の画面がサービスのウィジェットを読む。ADR-0106。ログインの画面は、パスキーに対応したブラウザでだけパスキーのボタンを出す Web ビルドのスクリプトを読む。FR-004）
     web/             # Web クライアントの HTML の外枠（ランディングページ・インスタンスの情報ページ・プロフィール・投稿のリンクプレビューを含む）・ビルド成果物（dist/ を埋め込む）・Web アプリマニフェスト（ADR-0028）
   adapter/
     db/{sqlite,libsql,postgres}/
@@ -256,10 +256,10 @@ internal/
     billing/gcp/     # finance.BillingSource の Google Cloud（Cloud Billing の BigQuery への export を jobs.query で invoice.month × サービス × cost_type に集計、または予算の Pub/Sub 通知を pull して月ごとの合計の概算。ADR-0068 §7）
     payment/fake/    # supporters.PaymentProvider のテスト用の fake（事業者の側をメモリに持ち、webhook に HMAC で署名する。本番の binary に入らない）
     mail/{none,smtp,ses}/
-    telemetry/{none,otel,emf}/ # kernel.Meter（ADR-0055）と kernel.Tracer（none・otel、ADR-0063）の実装。OpenTelemetry と Prometheus のライブラリはここだけが import する
-    telemetry/dbtrace/ # DB のアダプタが共有するトランザクションとクエリの span（ADR-0063 §1）
-    telemetry/sysmetrics/ # システムの指標の計器と、アダプタの境界で測るデコレーター（ADR-0056）
-    captcha/siteverify/ # HumanVerifier の実装（Turnstile / hCaptcha / reCAPTCHA v2 のプリセット。ADR-0042）
+    telemetry/{none,otel,emf}/ # kernel.Meter（ADR-0055）と kernel.Tracer（none・otel、ADR-0055）の実装。OpenTelemetry と Prometheus のライブラリはここだけが import する
+    telemetry/dbtrace/ # DB のアダプタが共有するトランザクションとクエリの span（ADR-0055 §13）
+    telemetry/sysmetrics/ # システムの指標の計器と、アダプタの境界で測るデコレーター（ADR-0055）
+    captcha/siteverify/ # HumanVerifier の実装（Turnstile / hCaptcha / reCAPTCHA v2 のプリセット。ADR-0106）
     system/          # Clock / IDGenerator の本番実装（システム時計・UUIDv7）
     keymanager/local/ # KeyManager の実装（設定の KEK。KMS アダプタは後続）
     htmlsanitizer/   # HTMLSanitizer の実装（bluemonday。リモート HTML の許可リスト。federation.md §5）と、インスタンスの文書の許可リスト
@@ -270,15 +270,15 @@ internal/
   i18n/              # メッセージ整形・ロケール解決（型付きアクセサは tools/i18n が生成）
 pkg/
   testkit/           # コントラクトテスト・フィクスチャ・決定的なフェイク（独自アダプタ作者向けに公開）
-    pgtest/          # テスト用の PostgreSQL（既定は pgmem、テンプレートの複製。ADR-0041）
+    pgtest/          # テスト用の PostgreSQL（既定は pgmem、テンプレートの複製。ADR-0015）
   mykit/             # クライアント API のクライアントライブラリ（MIT。別の Go モジュールと ts/ の npm パッケージ。ADR-0093）
-  mybot/             # mykit の上のボット制作ライブラリ（MIT。別の Go モジュール。ADR-0094）
+  mybot/             # mykit の上のボット制作ライブラリ（MIT。別の Go モジュール。ADR-0093）
 api/                 # spec/（クライアント API の正。パス・components の項目ごとのファイル）、そのバンドル openapi.yaml（生成物）と lint 設定 redocly.yaml。規約は client-api.md
-schema/              # 目標スキーマ sqlite/・postgres/（モジュールごとのファイル。my に埋め込み、my schema apply が Atlas の Go ライブラリで宣言的に適用）と準備 SQL postgres.bootstrap.sql（ADR-0023・ADR-0082・ADR-0126）
+schema/              # 目標スキーマ sqlite/・postgres/（モジュールごとのファイル。my に埋め込み、my schema apply が Atlas の Go ライブラリで宣言的に適用）と準備 SQL postgres.bootstrap.sql（ADR-0023・ADR-0081・ADR-0023）
 queries/             # sqlc 用クエリ（方言別。設定は sqlc.yaml、生成先は internal/adapter/db/<dialect>/。queue/ は internal/adapter/queue/db 用）
 locales/             # ICU MessageFormat カタログ（en がソース。Go と TS で共有。en-XA / ar-XB は生成物）
 tools/               # 開発ツール（Go ツールの go.mod、i18n の生成器・検査を持つ Bun パッケージ tools/i18n）
-app/                 # クライアントの Bun ワークスペース（アプリと共有パッケージ。ADR-0026）
+app/                 # クライアントの Bun ワークスペース（アプリと共有パッケージ。ADR-0025）
   ui/                # 共有 UI キット @my/ui（React Aria Components を包む部品、デザイントークン、Storybook）
   web/               # Web クライアント（PWA、TypeScript）
   mail/              # HTML のメールの外枠を MJML で html/template にする開発時のパッケージ @my/mail（ADR-0086 §2）

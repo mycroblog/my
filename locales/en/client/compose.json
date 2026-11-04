@@ -105,11 +105,11 @@
   },
   "compose.mention.unreached": {
     "defaultMessage": "{count, plural, one {{accounts} is on another server and does not follow you, so they will not receive this post. Outside this server, “This server” posts reach only your followers, who see this mention as a plain link.} other {{accounts} are on other servers and do not follow you, so they will not receive this post. Outside this server, “This server” posts reach only your followers, who see these mentions as plain links.}}",
-    "description": "Warning under a post with the visibility 'This server' that mentions accounts of other servers that do not follow the author (ADR-0017, ADR-0035): those accounts do not receive the post, and the author's followers on other servers see the mention as a plain link, not as a mention. {accounts} is the list of their handles, for example '@carol@remote.example and @dave@other.example'; {count} is how many there are."
+    "description": "Warning under a post with the visibility 'This server' that mentions accounts of other servers that do not follow the author (ADR-0017): those accounts do not receive the post, and the author's followers on other servers see the mention as a plain link, not as a mention. {accounts} is the list of their handles, for example '@carol@remote.example and @dave@other.example'; {count} is how many there are."
   },
   "compose.federation.stays_local": {
     "defaultMessage": "This won't reach other servers: this server does not send posts to them now, so the accounts of other servers that this replies to or mentions will not receive it.",
-    "description": "Warning under a post that replies to or mentions an account of another server while this server sends nothing to other servers (federation direction 'Receive only' or 'Off', ADR-0076)."
+    "description": "Warning under a post that replies to or mentions an account of another server while this server sends nothing to other servers (federation direction 'Receive only' or 'Off', ADR-0006)."
   },
   "compose.missing_description.add": {
     "defaultMessage": "Add descriptions",

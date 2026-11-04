@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Connects to the audio of a room by the method of the grant (ADR-0101 §7, ADR-0102): p2p, livekit, or sora, all behind
-// the same VoiceConnection; the SFU methods load their browser SDK with import() once the grant names them (ADR-0102 §6),
+// Connects to the audio of a room by the method of the grant (ADR-0101 §7, ADR-0101): p2p, livekit, or sora, all behind
+// the same VoiceConnection; the SFU methods load their browser SDK with import() once the grant names them (ADR-0101 §15),
 // and any other method is an UnsupportedVoiceMethodError.
 // The browser's environment plays each remote participant's audio through one AudioContext started from the join
 // button's gesture, muted while the participant does not speak, and asks for the microphone with the constraints of

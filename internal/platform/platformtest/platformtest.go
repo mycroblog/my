@@ -2,7 +2,7 @@
 
 // Package platformtest runs the whole server inside a test process, for the tests that drive it
 // over HTTP as a client would: the integration tests of the client libraries
-// (pkg/mykit/integration, ADR-0093 §8; pkg/mybot/integration, ADR-0094 §10). It lives beside the
+// (pkg/mykit/integration, ADR-0093 §8; pkg/mybot/integration, ADR-0093 §18). It lives beside the
 // composition root because it builds
 // the App, which pkg/testkit may not import (ADR-0002).
 //

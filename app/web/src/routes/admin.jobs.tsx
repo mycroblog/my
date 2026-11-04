@@ -12,7 +12,7 @@ const searchSchema = z.object({
   state: z.enum(jobFilters).exclude(["pending"]).optional().catch(undefined),
 });
 
-/** The queue dashboard (ADR-0064): the job queue's state, its jobs by state with their attempts, and running failed ones again, for manage_jobs. */
+/** The queue dashboard (ADR-0004): the job queue's state, its jobs by state with their attempts, and running failed ones again, for manage_jobs. */
 export const Route = createFileRoute("/admin/jobs")({
   staticData: { title: "client:admin.jobs.title" },
   validateSearch: searchSchema,

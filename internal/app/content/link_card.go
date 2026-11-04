@@ -363,7 +363,7 @@ func (l *LinkCards) checkRedirect(hold *linkCardHostHold, refused func(ctx conte
 // that the next status that links the URL gets a card as soon as the action or the rule is gone.
 // A robots.txt that cannot be read fails with an error wrapping ErrLinkCardRetryLater and leaves
 // everything as it is. A URL that robots.txt refuses is remembered as a failure, and loses the card it has when the
-// file says so, but not when the file only could not be read (ADR-0131 §4).
+// file says so, but not when the file only could not be read (ADR-0062 §12).
 // A fetch that a host's limits hold back, or that the host answered with a 429 or a 503, fails with
 // a *LinkCardPostponed and leaves everything as it is, except that a card that waits for its image
 // keeps the page already read (linkCardPending).
@@ -544,7 +544,7 @@ func (l *LinkCards) fetchPage(ctx context.Context, u string) (linkCardPending, e
 // image returns the media file of the image at imageURL of a card that touches hosts: the one
 // recorded for the URL before, or the image fetched once, checked, and recorded with its size
 // and blurhash. It returns "" when no image is fetched from one of the hosts, robots.txt refuses
-// its URL, or the image cannot be used, so that the card has no image (ADR-0062 §3, §7, ADR-0131 §4).
+// its URL, or the image cannot be used, so that the card has no image (ADR-0062 §3, §7, ADR-0062 §12).
 // A fetch that the limits of a host hold back fails with a *LinkCardPostponed.
 func (l *LinkCards) image(ctx context.Context, hosts []string, imageURL, alt string) (string, error) {
 	for _, host := range hosts {

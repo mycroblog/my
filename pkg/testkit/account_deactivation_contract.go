@@ -50,7 +50,7 @@ func (e *accountEnv) lifecycleOf(t *testing.T, accountID string) account.Lifecyc
 	return a.Lifecycle
 }
 
-// deactivationConfirmsAndEndsSessions checks the deactivation through the use case (ADR-0145 §1):
+// deactivationConfirmsAndEndsSessions checks the deactivation through the use case (ADR-0089 §11):
 // a wrong confirmation changes nothing, the password or a code of the second factor confirms, and
 // every session and token ends in its transaction.
 func deactivationConfirmsAndEndsSessions(t *testing.T, e *accountEnv) {
@@ -106,7 +106,7 @@ func deactivationConfirmsAndEndsSessions(t *testing.T, e *accountEnv) {
 // errorOf drops the value of a call that returns one with its error.
 func errorOf[T any](_ T, err error) error { return err }
 
-// deactivationRefusals checks each refusal of a deactivation (ADR-0145 §1, §8).
+// deactivationRefusals checks each refusal of a deactivation (ADR-0089 §11, §18).
 func deactivationRefusals(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	reg := e.sessionUser(t)
@@ -196,7 +196,7 @@ func (l liveSubscribers) HasLiveSubscription(_ context.Context, userID string) (
 	return l[userID], nil
 }
 
-// deactivationDeletesAfterThePeriod checks the end of the period (ADR-0145 §2): the job deletes a
+// deactivationDeletesAfterThePeriod checks the end of the period (ADR-0089 §12): the job deletes a
 // deactivated account once its date passes, not before, once, and leaves one that came back; a
 // reactivation is refused from the date on, also before the job records the deletion.
 func deactivationDeletesAfterThePeriod(t *testing.T, e *accountEnv) {
@@ -265,7 +265,7 @@ func lastLifecycleEvent(t *testing.T, e *accountEnv, accountID string) account.L
 	return last
 }
 
-// deactivationYieldsToABan checks the precedence of a ban (ADR-0145 §2): it moves a deactivated
+// deactivationYieldsToABan checks the precedence of a ban (ADR-0089 §12): it moves a deactivated
 // account to its own date, which the reactivation and the period no longer touch; cancelling it
 // makes the account active.
 func deactivationYieldsToABan(t *testing.T, e *accountEnv) {
@@ -298,7 +298,7 @@ func deactivationYieldsToABan(t *testing.T, e *accountEnv) {
 	}
 }
 
-// deactivationSendsOneEmail checks the email (ADR-0145 §3): one job of the deactivation, in the
+// deactivationSendsOneEmail checks the email (ADR-0089 §13): one job of the deactivation, in the
 // user's time zone with the date, none without email delivery, and none once the account is back.
 func deactivationSendsOneEmail(t *testing.T, e *accountEnv) {
 	ctx := t.Context()

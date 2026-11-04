@@ -29,7 +29,7 @@ func TestGroupsCoverEveryType(t *testing.T) {
 	}
 }
 
-// TestGroupDefaults checks the defaults and the fixed channels of each section (ADR-0109 §2).
+// TestGroupDefaults checks the defaults and the fixed channels of each section (ADR-0086 §9).
 func TestGroupDefaults(t *testing.T) {
 	none := NewChoices(nil)
 	for _, g := range Groups {

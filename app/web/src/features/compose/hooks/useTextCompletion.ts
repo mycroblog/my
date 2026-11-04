@@ -63,7 +63,7 @@ export function useTextCompletion(kinds: CompletionKinds) {
     const found = await searchAccounts(api, queryClient, query, signal);
     let accounts = found;
     // ADR-0092 §1: the search resolves nothing, so a full handle it does not know is looked up once, and resolved
-    // from its server unless the instance takes nothing in from other servers (ADR-0076).
+    // from its server unless the instance takes nothing in from other servers (ADR-0006).
     if (fullHandle.test(query) && !found.some((account) => account.acct.toLowerCase() === query.toLowerCase())) {
       const looked = await lookUpAccount(api, queryClient, query, followsRemote, signal);
       if (looked !== undefined) accounts = [looked, ...found.filter((account) => account.id !== looked.id)];

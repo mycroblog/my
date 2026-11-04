@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server administration feature (ADR-0058): the server's settings (its name and descriptions in each language
-// and its policies), its rules, its terms of service and privacy policy (#489), the custom emoji (ADR-0051), the announcements (FR-726), the webhooks (ADR-0060), the federation relays (ADR-0061), and the queue dashboard of the job queue with running failed jobs again (ADR-0064). Each screen
+// and its policies), its rules, its terms of service and privacy policy (#489), the custom emoji (ADR-0051), the announcements (FR-726), the webhooks (ADR-0060), the federation relays (ADR-0006), and the queue dashboard of the job queue with running failed jobs again (ADR-0004). Each screen
 // is for a viewer whose roles have its permission (manage_settings, manage_rules, manage_custom_emojis, manage_announcements, manage_webhooks, manage_jobs); the server checks it on every
 // request. The parts and the permissions that the screens share with the moderation screens come from the
 // moderation feature.
 // Routes and other features use it through this file only (web-client/README.md A3).
 export { adminPages, useAdminEntry } from "./components/AdminMenu";
 export { AdminOverview } from "./components/AdminOverview";
-// The queue dashboard: the jobs of the job queue by state, their attempts, and running failed ones again (ADR-0064), for manage_jobs.
+// The queue dashboard: the jobs of the job queue by state, their attempts, and running failed ones again (ADR-0004), for manage_jobs.
 export { type JobFilter, jobFilters, jobQueueQueryOptions, jobsQueryOptions } from "./api/jobs";
 export { JobDashboard } from "./components/JobDashboard";
 // The terms of service and the privacy policy (#489), for manage_settings.
@@ -54,7 +54,7 @@ export { LoginProviderSettings } from "./components/LoginProviderSettings";
 export { webhookDeliveriesQueryOptions, webhookQueryOptions, webhooksQueryOptions } from "./api/webhooks";
 export { WebhookDeliveries } from "./components/WebhookDeliveries";
 export { WebhookSettings } from "./components/WebhookSettings";
-// The federation relays: registering, joining, leaving and deleting them (ADR-0061), for manage_settings.
+// The federation relays: registering, joining, leaving and deleting them (ADR-0006), for manage_settings.
 export { relaysQueryOptions } from "./api/relays";
 export { RelaySettings } from "./components/RelaySettings";
 // The rules of the link card crawler per domain, for manage_settings.

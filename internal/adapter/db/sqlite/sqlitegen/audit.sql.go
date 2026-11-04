@@ -33,8 +33,8 @@ type InsertAuditLogEntryParams struct {
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
-// The audit log (data-model 4.3, ADR-0037). It is append-only: there is no query that updates or
-// deletes an entry, except the retention cleanup (ADR-0038).
+// The audit log (data-model 4.3, ADR-0058). It is append-only: there is no query that updates or
+// deletes an entry, except the retention cleanup (ADR-0058).
 func (q *Queries) InsertAuditLogEntry(ctx context.Context, arg InsertAuditLogEntryParams) error {
 	_, err := q.db.ExecContext(ctx, insertAuditLogEntry,
 		arg.ID,
@@ -146,7 +146,7 @@ SELECT id FROM reports WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)
 `
 
 // The targets of the entries that still exist, for the audit log to tell those that are gone
-// (erased past their retention, ADR-0038). Each returns, in ID order, the records among ids
+// (erased past their retention, ADR-0058). Each returns, in ID order, the records among ids
 // that exist. The ids are a JSON array.
 func (q *Queries) ListExistingReportIDs(ctx context.Context, ids string) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, listExistingReportIDs, ids)

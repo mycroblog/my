@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Fails when the go.mod of a client library, pkg/mykit or pkg/mybot, requires or replaces the server module
-# github.com/mycroblog/my (ADR-0093 §1, §8; ADR-0094 §1): the libraries are modules of their own so that their
+# github.com/mycroblog/my (ADR-0093 §1, §8; ADR-0093 §9): the libraries are modules of their own so that their
 # users' dependency graph never takes in the server's. go.mod lists the indirect requirements too, so a dependency
 # that pulls the server in fails as well. The libraries' own modules (github.com/mycroblog/my/pkg/mykit and
 # .../pkg/mybot) are not the server's: mybot requires mykit, and replaces it with its sibling directory so that both

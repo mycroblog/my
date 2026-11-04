@@ -18,7 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/app/supporters"
 )
 
-// The pages of the adapter under supporters.PagesPath(Name) (ADR-0099 §3).
+// The pages of the adapter under supporters.PagesPath(Name) (ADR-0074 §11).
 const (
 	pageCheckout = "checkout"
 	pagePortal   = "portal"
@@ -36,7 +36,7 @@ const portalLifetime = time.Hour
 const newCustomerPrefix = "my_"
 
 // pageState is what a page needs, which the adapter signs into its URL instead of keeping it
-// (ADR-0099 §3).
+// (ADR-0074 §11).
 type pageState struct {
 	Page     string `json:"pg"`
 	LocalID  string `json:"l,omitempty"`
@@ -136,7 +136,7 @@ func parseCheckoutRef(ref supporters.CheckoutRef) (customer, localID string, exp
 }
 
 // StartCheckout implements supporters.PaymentProvider: the URL of the adapter's checkout page on
-// the origin of SuccessURL, with the state of the checkout signed into it (ADR-0099 §3).
+// the origin of SuccessURL, with the state of the checkout signed into it (ADR-0074 §11).
 func (p *Provider) StartCheckout(ctx context.Context, req supporters.CheckoutRequest) (supporters.Checkout, error) {
 	if req.LocalID == "" || req.Price == "" || !sameOrigin(req.SuccessURL, req.CancelURL) {
 		return supporters.Checkout{}, fmt.Errorf("payjp: %w: a checkout needs our ID, a price, and return URLs on one origin", supporters.ErrPaymentInvalidRequest)
@@ -220,7 +220,7 @@ func (p *Provider) findSubscription(ctx context.Context, cus, localID string) (s
 }
 
 // PortalURL implements supporters.PaymentProvider: the URL of the adapter's portal page on the
-// origin of returnURL (ADR-0099 §3).
+// origin of returnURL (ADR-0074 §11).
 func (p *Provider) PortalURL(_ context.Context, cus supporters.CustomerRef, returnURL string) (string, error) {
 	if cus == "" {
 		return "", fmt.Errorf("payjp: %w: no customer", supporters.ErrPaymentInvalidRequest)

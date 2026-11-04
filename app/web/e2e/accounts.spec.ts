@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The account search and an account's admin page in every width × locale project (ADR-0027, FR-714, FR-703,
+// The account search and an account's admin page in every width × locale project (ADR-0110, FR-714, FR-703,
 // FR-713): a local account with a long name and a remote one on a long domain, showing the email and IP
 // addresses only when asked, lifting an action after its alert dialog, the kinds of action a remote account
 // takes, a ban that blocks sign-ups with the account's email address and shows in the sign-up blocks, and an

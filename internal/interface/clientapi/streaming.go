@@ -62,7 +62,7 @@ type HomeEntries interface {
 }
 
 // registerStreaming registers GET /streaming (operation streamEvents), which the strict server
-// does not generate (ADR-0029), behind the same guard as the generated operations.
+// does not generate (ADR-0016), behind the same guard as the generated operations.
 func (s *Server) registerStreaming(r Router) {
 	r.Handle(streamingPattern, s.guard(streamingPattern, http.HandlerFunc(s.serveStreaming)))
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Real-time updates in every width × locale project (FR-207, ADR-0027, web-client/README.md Y7): a new post from
+// Real-time updates in every width × locale project (FR-207, ADR-0110, web-client/README.md Y7): a new post from
 // GET /api/v1/streaming (or, on the local and the federated timelines, GET /api/v1/streaming/timelines/{timeline})
 // waits behind the "N new posts" button and is not inserted until the button is
 // pressed (or is inserted at once when the reader chose it), and a notification raises the unread badge. `vite preview` has no API, so the spec answers the
@@ -138,7 +138,7 @@ test.describe("new posts in the home timeline", () => {
   });
 });
 
-test.describe("new posts inserted on their own (ADR-0077)", () => {
+test.describe("new posts inserted on their own (ADR-0013)", () => {
   test("appear at the top at once, without a button, when the reader chose it", async ({ page, makeAxeBuilder }) => {
     await signedInServer(page, sse("update", arriving));
     await page.route("**/api/v1/preferences", (route) =>
@@ -170,7 +170,7 @@ test.describe("new posts inserted on their own (ADR-0077)", () => {
   });
 });
 
-test.describe("new posts in the local and the federated timelines (ADR-0127)", () => {
+test.describe("new posts in the local and the federated timelines (ADR-0013)", () => {
   for (const { path, stream, timeline } of [
     { path: "/local", stream: "local", timeline: "local" },
     { path: "/public", stream: "federated", timeline: "federated" },
@@ -255,7 +255,7 @@ async function autoInsertServer(page: Page, many: Status[]) {
   return release;
 }
 
-test.describe("automatic insertion while the reader is away or reading (ADR-0077)", () => {
+test.describe("automatic insertion while the reader is away or reading (ADR-0013)", () => {
   const many = Array.from({ length: 10 }, (_, i) => status(10 - i, `Post number ${String(10 - i)} of the feed.`));
 
   test("keeps the post being read in place when away from the top", async ({ page }) => {

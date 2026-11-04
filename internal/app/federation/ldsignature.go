@@ -18,11 +18,11 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// Linked data signatures (RsaSignature2017) of public posts (ADR-0061, federation.md §7.3): a
+// Linked data signatures (RsaSignature2017) of public posts (ADR-0006, federation.md §7.3): a
 // relay forwards the Create, Update, and Delete of a public post as they are, signed by the
 // relay, and Mastodon and Misskey take such a forwarded activity only when the document carries
 // the author's linked data signature. The signature is made only for this use, never checked on
-// what this server receives (a relayed activity is fetched again from its origin, ADR-0033).
+// what this server receives (a relayed activity is fetched again from its origin, ADR-0006).
 
 // Canonicalizer canonicalizes JSON-LD documents (URDNA2015, as N-Quads), resolving their
 // contexts only from the documents bundled with the server, never from the network. The

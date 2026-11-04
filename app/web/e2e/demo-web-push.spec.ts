@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Web Push on the demo server (ADR-0118 §4, FR-206, FR-210): a person turns Web Push on in the notification settings,
+// Web Push on the demo server (ADR-0015 §12, FR-206, FR-210): a person turns Web Push on in the notification settings,
 // another person replies through the API, the fake push service of the demo server (`my dev push-service`) verifies
 // the VAPID token and decrypts the message, and the message, handed to the real Service Worker over CDP, shows the
 // reply's notification. A row turned off in the Push column sends nothing, and a subscription that the push service

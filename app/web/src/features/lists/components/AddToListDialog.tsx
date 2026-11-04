@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The "Add to list" dialog that the profile's menu opens for an account the user follows (web-client/screens/profile.md
-// §4, ADR-0122): the user's lists, each a checkbox that is checked while the account is in it. Checking or unchecking
+// §4, ADR-0013): the user's lists, each a checkbox that is checked while the account is in it. Checking or unchecking
 // saves at once and keeps focus on the checkbox; the result is announced ("Added to Friends"), and a failure shows next
 // to the checkbox, which goes back. A full list cannot be checked and says why. Without lists, the dialog leads to the
 // lists page; it has only the close button, and "Manage lists" leads there too.

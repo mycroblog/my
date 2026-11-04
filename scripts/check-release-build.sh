@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Keeps the test builds out of the released binaries and images (ADR-0117 §2; docs/reference/build-tags.md). The build
+# Keeps the test builds out of the released binaries and images (ADR-0015 §6; docs/reference/build-tags.md). The build
 # tag e2e_fakes adds fakes, among them a payment provider that records payments as paid without any money moving, so
 # a binary or image that is published must never be built with it.
 #

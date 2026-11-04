@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// StatTile (ADR-0113 §1): one number of a summary (the open reports, the failed jobs, this month's costs) with its name
+// StatTile (ADR-0110 §16): one number of a summary (the open reports, the failed jobs, this month's costs) with its name
 // and its change from the period before. The change shows by an arrow and its text ("+12%"), never by color alone, and a
 // state that needs attention by a pill with an icon and a word in the status colors of Badge. With `href` the whole tile
 // is one link named by its label (the link's hit area covers the tile, as LinkCard's does), for a summary whose numbers

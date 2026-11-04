@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/app/supporters"
 )
 
-// ParseWebhook implements supporters.PaymentProvider (ADR-0099 §4). PAY.JP authenticates a
+// ParseWebhook implements supporters.PaymentProvider (ADR-0074 §12). PAY.JP authenticates a
 // delivery by the account's fixed token only, without a time or a signature of the body, so a
 // replayed delivery passes; the job re-reads what it points at, so a replay changes nothing.
 func (p *Provider) ParseWebhook(header http.Header, body []byte, _ time.Time) (supporters.Notice, error) {

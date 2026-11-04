@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The queries and mutations of the supporter plans as users see them (web-client/README.md S1, ADR-0072 §6, §8, §18,
-// ADR-0071 §4): the plans that take subscriptions (GET /instance/supporter_plans, a 404 while the program is
+// ADR-0070 §13): the plans that take subscriptions (GET /instance/supporter_plans, a 404 while the program is
 // disabled), the user's own subscription and whether they may subscribe (GET /supporter/subscription), starting a
 // subscription at the payment provider's hosted checkout (POST /supporter/checkout), the re-read when the checkout
 // or the portal returns (POST /supporter/subscription/sync), changing the plan, cancelling, resuming and withdrawing
@@ -136,7 +136,7 @@ export async function refreshSubscription(api: Api, queryClient: QueryClient): P
 }
 
 /**
- * Puts the subscription as the server answered a change into the user's subscription (ADR-0045), and marks what the
+ * Puts the subscription as the server answered a change into the user's subscription (ADR-0028), and marks what the
  * change may move: the user's choice to be listed and the supporter list (a member who stops being one leaves it),
  * and the viewer's account (the plan's role and its badge).
  */
@@ -179,7 +179,7 @@ export function updateListingMutation(api: Api) {
   };
 }
 
-/** Puts the choice as the server answered it into the cache, and marks the supporter list, which it changes (ADR-0045). */
+/** Puts the choice as the server answered it into the cache, and marks the supporter list, which it changes (ADR-0028). */
 export async function cacheListing(
   api: Api,
   queryClient: QueryClient,

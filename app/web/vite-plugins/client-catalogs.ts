@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The `client` message catalogs of locales/ (ADR-0009) as one module per locale. A locale's catalog is a directory
-// of area files (ADR-0082); importing each file on its own would make a chunk per file, so this plugin merges them:
+// of area files (ADR-0081); importing each file on its own would make a chunk per file, so this plugin merges them:
 //   virtual:locales/<locale>/client   the default export holds every message of the locale's area files
 //   virtual:locales                   the default export maps each locale with a client catalog to a dynamic
 //                                     import of its module, which the build puts in a chunk of its own

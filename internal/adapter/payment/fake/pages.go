@@ -20,7 +20,7 @@ import (
 )
 
 // The pages of a PageProvider stand in for a provider's hosted checkout and
-// portal in the test builds (build tag e2e_fakes, ADR-0117 §2): the checkout shows the plan, its
+// portal in the test builds (build tag e2e_fakes, ADR-0015 §6): the checkout shows the plan, its
 // price, and that no money moves, and offers to pay, to make the payment fail, or to cancel.
 // They are server-rendered like the PAY.JP pages and run no script.
 

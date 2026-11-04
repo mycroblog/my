@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The emoji reactions under a post (FR-116, ADR-0052 §5): a row of chips, one per emoji with its count. A chip is a toggle
+// The emoji reactions under a post (FR-116, ADR-0051 §10): a row of chips, one per emoji with its count. A chip is a toggle
 // the viewer presses to react with that emoji or to take the reaction back, or, for a custom emoji of another server that
 // nobody here can react with, the same shown only. The row ends with a button that lists the accounts that reacted.
 import type { ReactNode } from "react";

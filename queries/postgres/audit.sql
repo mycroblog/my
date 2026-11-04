@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 
--- The audit log (data-model 4.3, ADR-0037). It is append-only: there is no query that updates or
--- deletes an entry, except the retention cleanup (ADR-0038).
+-- The audit log (data-model 4.3, ADR-0058). It is append-only: there is no query that updates or
+-- deletes an entry, except the retention cleanup (ADR-0058).
 
 -- name: InsertAuditLogEntry :exec
 INSERT INTO audit_log_entries (id, actor_kind, actor_user_id, action, target_kind, target_id, target_label,
@@ -22,7 +22,7 @@ ORDER BY id DESC
 LIMIT sqlc.arg(lim);
 
 -- The targets of the entries that still exist, for the audit log to tell those that are gone
--- (erased past their retention, ADR-0038). Each returns, in ID order, the records among ids
+-- (erased past their retention, ADR-0058). Each returns, in ID order, the records among ids
 -- that exist.
 
 -- name: ListExistingReportIDs :many

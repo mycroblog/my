@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// What the moderation screen stories (ADR-0112 §1) share: a viewer with the moderators' permissions, the accounts
+// What the moderation screen stories (ADR-0079 §13) share: a viewer with the moderators' permissions, the accounts
 // they handle (long, right-to-left and long-domain names among them), and the list handlers that answer a screen's
 // items with the server's own filters (`state`, `active`).
 import { http, HttpResponse, type RequestHandler } from "msw";

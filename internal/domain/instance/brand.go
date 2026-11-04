@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// The instance's own icon and logo (ADR-0116): an SVG that the administrator uploads for each
+// The instance's own icon and logo (ADR-0059): an SVG that the administrator uploads for each
 // kind, sanitized by SanitizeBrandSVG, with PNG renditions of it that the admin screen draws in
 // the browser for the places that take no SVG. Each change is a revision; the current one of each
 // kind is in the instance_brands projection, and an unset kind uses the built-in images.
@@ -56,7 +56,7 @@ const (
 // BrandRendition names one file of a brand revision: the sanitized SVG or one of its PNG renditions.
 type BrandRendition string
 
-// Brand renditions (ADR-0116 §3).
+// Brand renditions (ADR-0059 §10).
 const (
 	RenditionSVG          BrandRendition = "svg"
 	RenditionFavicon32    BrandRendition = "favicon-32"
@@ -360,7 +360,7 @@ func toLowerASCII(s string) string {
 // pngSignature starts every PNG file.
 var pngSignature = []byte("\x89PNG\r\n\x1a\n")
 
-// CheckBrandPNG checks a PNG rendition of an SVG whose viewBox is viewW by viewH (ADR-0116 §3):
+// CheckBrandPNG checks a PNG rendition of an SVG whose viewBox is viewW by viewH (ADR-0059 §10):
 // a PNG by its content, at most MaxBrandPNGBytes, of exactly the rendition's size (a mail logo may
 // be 1 px off, for the rounding of the browser that drew it), and opaque where the rendition
 // must be. It decodes the image and encodes it again with image/png, which drops every chunk of

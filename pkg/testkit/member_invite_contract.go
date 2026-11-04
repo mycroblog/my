@@ -20,7 +20,7 @@ import (
 )
 
 // memberInvites is an identity service whose registration mode, member invite settings, and
-// moderation restrictions the test changes (ADR-0108).
+// moderation restrictions the test changes (ADR-0106).
 type memberInvites struct {
 	*appidentity.Service
 	mu         sync.Mutex
@@ -102,7 +102,7 @@ func (m *memberInvites) create(t *testing.T, userID string, uses int, expiresIn 
 }
 
 // memberInvitesCreate checks who may create invites of their own, the caps, the listing, the
-// revocation, and the audit (ADR-0108 §1, §2, §5, §6).
+// revocation, and the audit (ADR-0106 §14, §15, §18, §19).
 func memberInvitesCreate(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	rec := &auditRecorder{}
@@ -215,7 +215,7 @@ func memberInvitesCreate(t *testing.T, e *accountEnv) {
 }
 
 // memberInvitesSignUp checks the invites at sign-up in every mode, and the creator's check
-// (ADR-0108 §3, §4).
+// (ADR-0106 §16, §17).
 func memberInvitesSignUp(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	m := e.memberInvites(identity.RegistrationApproval)

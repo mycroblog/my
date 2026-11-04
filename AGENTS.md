@@ -16,7 +16,7 @@ a PWA web client (no mobile app in v0), and i18n from day one. Distributed as OS
   library `pkg/mykit` and the bot library `pkg/mybot` (epic [#30](https://github.com/mycroblog/my/issues/30),
   [vision](docs/requirements/00-vision.md)). The mobile app is outside v0. M4.3 — Voice Chat (epic [#1345](https://github.com/mycroblog/my/issues/1345))
   is a precondition of v0.1.0. Deployment templates for GCP / AWS / microk8s belong to M6.
-- The server is Go ([ADR-0001](docs/adr/0001-server-language-and-runtime.md)); clients are TypeScript under `app/` with Bun.
+- The server is Go ([ADR-0002](docs/adr/0002-modular-monolith-hexagonal.md)); clients are TypeScript under `app/` with Bun.
   Cloudflare Workers is **not** a target.
 - **Web client work must follow [docs/architecture/web-client/](docs/architecture/web-client/README.md).** Do not write React from memory or
   from typical online examples; when unsure, check react.dev, the WAI-ARIA APG and the official docs of the library in use.
@@ -25,7 +25,7 @@ a PWA web client (no mobile app in v0), and i18n from day one. Distributed as OS
 - The Go package layout follows [overview §6](docs/architecture/overview.md#6-リポジトリ構成); `cmd/my` is the single binary.
   Build only what an issue asks for.
 - Spike reports go in the spike issue as a comment and spike code stays on an unmerged `spike/<issue>-<slug>` branch;
-  only the resulting ADR / doc updates are merged ([ADR-0022](docs/adr/0022-spike-outputs-outside-repository.md)).
+  only the resulting ADR / doc updates are merged ([ADR-0000](docs/adr/0000-record-architecture-decisions.md)).
 
 ## Source of truth
 
@@ -48,7 +48,7 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
 
 1. Only take issues labeled **`agent:ready`** with no assignee. Never take `status:needs-decision`.
 2. Branch `<type>/<issue>-<slug>`; never push to `main`.
-3. No local `check` run is required before a commit, a push, or a PR ([ADR-0119](docs/adr/0119-merge-queue-only-gate.md)): the merge
+3. No local `check` run is required before a commit, a push, or a PR ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md)): the merge
    queue's full check is the only gate, and the PR's CI runs only a preflight. Run `scripts/task.sh check:changed`, `go:check`, `web:check`, ...
    to reproduce a CI failure or to iterate on what you are writing. When the change touches TypeScript or JavaScript, run
    `scripts/task.sh web:fmt` (`bun fmt`) first, since the preflight checks it; after resolving a conflict in such a file, run it again.
@@ -67,23 +67,23 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
 
 ## Hard rules
 
-- **Boy scout rule** ([ADR-0024](docs/adr/0024-boy-scout-rule.md)): never ignore something broken because it is outside your issue.
+- **Boy scout rule** ([ADR-0000](docs/adr/0000-record-architecture-decisions.md)): never ignore something broken because it is outside your issue.
   Fix small things in a separate commit and list them in the PR; file an issue for anything larger and link it.
 - **Never change an ADR's status to `Accepted`/`Rejected`, or the conclusion of an Accepted ADR, on your own judgment.** Only the human decider
   decides. You may record a decision the decider has explicitly stated (state the conclusion in the PR description; no verbatim quotes).
   You may create and edit *Proposed* ADRs.
 - ADRs are organized by topic: when a decision changes, edit the ADR that owns the topic, moving what it replaces to `経緯` or `採らなかった案`.
   Add a new ADR only for a topic no ADR owns ([writing-adrs.md](docs/agents/writing-adrs.md)).
-- **Every file in the repo describes the present, never its history** ([ADR-0021](docs/adr/0021-documents-describe-present-state.md)).
+- **Every file in the repo describes the present, never its history** ([ADR-0000](docs/adr/0000-record-architecture-decisions.md)).
   No changelog sections, no "previously / in the first draft / old proposal" wording, no `[x]` resolved items in Open Questions —
   fold resolved answers into the body. Explain *why it changed* in the commit message and PR description instead.
   The one exception is the `経緯` and `採らなかった案` sections of an ADR, which say why the decision has its present form.
 - Create ADRs with `scripts/task.sh docs:adr-new`, which picks a number no open PR uses; list them with `scripts/agentkit.sh adr list`.
-- Breaking changes ([ADR-0087](docs/adr/0087-schema-changes-after-launch.md)): before `v0.1.0` the DB may be recreated and nothing keeps compat shims.
+- Breaking changes ([ADR-0023](docs/adr/0023-declarative-schema-management.md)): before `v0.1.0` the DB may be recreated and nothing keeps compat shims.
   From `v0.1.0`, every schema change must upgrade the previous `main` without losing data (drop in a later minor release, rewrite data with `my db upgrade`);
   config keys and internal interfaces may still change in v0.x with release notes, and the client API follows [ADR-0090](docs/adr/0090-third-party-oauth-apps.md) §8.
   ActivityPub wire formats and federated URIs must always stay spec-compliant.
-- Do not add Mastodon *client* API compatibility code ([ADR-0007](docs/adr/0007-client-api.md)). Federation with Mastodon servers is still required.
+- Do not add Mastodon *client* API compatibility code ([ADR-0016](docs/adr/0016-client-api-style.md)). Federation with Mastodon servers is still required.
 - Language: design docs in Japanese during v0, every other document in English ([Documentation](#documentation));
   code, identifiers, code comments, commit messages, and PR titles in English.
 - Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`; `!` for breaking).
@@ -105,7 +105,7 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
 - **Japanese during v0**: design documents — `docs/adr/`, `docs/requirements/`, `docs/architecture/`.
 - **User and operator documents explain the behaviour themselves** (`README.md`, `docs/operations/`, `docs/reference/`
   except the contributor document `commands.md`, and user-facing text such as CLI help): no links to or citations of ADRs, `docs/requirements/`, `docs/architecture/`, or
-  GitHub issues and PRs (`ADR-0001`, `FR-101`, `#123`). Link only the other user and operator documents a reader needs.
+  GitHub issues and PRs (`ADR-0002`, `FR-101`, `#123`). Link only the other user and operator documents a reader needs.
   Contributor documents may cite the ADR a rule comes from.
 - **User and operator documents hold nothing only a developer of `my` needs**: how the project releases, CI jobs, pull
   requests, repository tasks, and how to add to the code go in a contributor document (`CONTRIBUTING.md`, `docs/agents/`,
@@ -177,7 +177,7 @@ Use agentkit (`scripts/agentkit.sh <command>`, [tools/agentkit/README.md](tools/
 `go.work` exists for Dependabot alone: tasks and CI run with `GOWORK=off`, so set it for a bare `go` command outside the root
 (`pkg/mykit`, `pkg/mybot`, `tools`) and for `-modfile`.
 
-Tasks run with go-task through `scripts/task.sh <task>` ([ADR-0080](docs/adr/0080-task-runner-go-task.md)), never a `task` on PATH;
+Tasks run with go-task through `scripts/task.sh <task>` ([ADR-0081](docs/adr/0081-generated-files-policy.md)), never a `task` on PATH;
 the task names are `<area>:<task>` from `tasks/<area>.yml`. Every task and the pinned toolchain:
 [docs/reference/commands.md](docs/reference/commands.md). The common ones (each prefixed with `scripts/task.sh`):
 `check:changed`, `check`, `go:check`, `web:check`, `generate`, `api:generate`, `go:sqlc`, `i18n:gen`,

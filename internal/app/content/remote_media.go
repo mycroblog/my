@@ -151,7 +151,7 @@ type ProxyDeps struct {
 	// which the proxy then does not fetch or serve as images of link cards; nil means none does.
 	LinkCardImages LinkCardImagePolicy
 	// Federation says whether the federation mode lets the proxy fetch a remote media file
-	// (ADR-0076): not at all when it is off, and only the avatars and headers of the remote
+	// (ADR-0006): not at all when it is off, and only the avatars and headers of the remote
 	// followers of local accounts when it is outbound. nil lets every file through.
 	Federation MediaFederation
 	// Logger logs unexpected errors; nil means slog.Default().
@@ -159,7 +159,7 @@ type ProxyDeps struct {
 }
 
 // MediaFederation is the port through which the media proxy asks the federation mode
-// (ADR-0076) whether it fetches a remote media file; federation.MediaGate implements it.
+// (ADR-0006) whether it fetches a remote media file; federation.MediaGate implements it.
 type MediaFederation interface {
 	// ProxiesMedia reports whether a remote media file of the account ownerAccountID ("" for none,
 	// as the images of link cards) may be fetched now; profileImage tells an avatar or a header.
@@ -266,7 +266,7 @@ const (
 	// ProxyFull is the remote file itself.
 	ProxyFull ProxyVariant = "full"
 	// ProxySmall is the small still variant of a remote image within the boxes of the purpose
-	// it was recorded for (ADR-0054 §7): of an animation, its first frame. Video and audio
+	// it was recorded for (ADR-0005 §10): of an animation, its first frame. Video and audio
 	// have none.
 	ProxySmall ProxyVariant = "small"
 )
@@ -445,7 +445,7 @@ func smallCacheURL(m content.RemoteMedia, sizes media.Sizes) string {
 	return sb.String()
 }
 
-// openSmall serves the small still variant of a remote image (ADR-0054 §7). It makes it from the
+// openSmall serves the small still variant of a remote image (ADR-0005 §10). It makes it from the
 // file, which it fetches or reads from its cached copy as the full variant would, on every
 // request; under a policy that caches m, it keeps the variant in the cache too.
 func (p *MediaProxy) openSmall(ctx context.Context, m content.RemoteMedia, ttl time.Duration, cache bool) (*ProxiedMedia, error) {

@@ -21,7 +21,7 @@ import (
 // notification rows, its user's reads of the announcements, its uploads with their blobs, and
 // the names and descriptions of the voice chat room revisions it wrote, and its user's identity
 // data; the account module erases the profile and keys last. A retention hold stops it, and the statuses that the
-// moderation records need stay with their media files (ADR-0038). It comes after the content,
+// moderation records need stay with their media files (ADR-0058). It comes after the content,
 // graph, timeline, notification, and media services, the blob store, and the data exports and imports.
 func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository, statuses content.Repository,
 	follows graph.Repository, feeds timeline.Repository, notifs notification.Repository, medias content.MediaRepository,

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// A profile of an account of another server through the whole app (web-client/README.md T4, ADR-0044): the notice
+// A profile of an account of another server through the whole app (web-client/README.md T4, ADR-0006): the notice
 // that only the posts this server received are shown, with the link to the profile on the account's server,
 // above the posts and in the empty state; and, when the first page started fetching the account's recent
 // posts, the line that says so, announced, until the posts are read again once a few seconds later.

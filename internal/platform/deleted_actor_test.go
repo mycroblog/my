@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/platform"
 )
 
-// TestDeletedLocalActorIsGone deletes a local account on the real database and checks ADR-0144 §1:
+// TestDeletedLocalActorIsGone deletes a local account on the real database and checks ADR-0018 §12:
 // the actor, its WebFinger, and the ActivityPub request of its profile page answer 410 from the
 // deleted event on and after the erasure, and another account is not affected.
 func TestDeletedLocalActorIsGone(t *testing.T) {

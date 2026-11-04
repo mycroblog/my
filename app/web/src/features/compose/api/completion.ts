@@ -75,7 +75,7 @@ export function searchTags(
 
 /**
  * The account of the handle `acct` (`user@domain`) from GET /accounts/lookup, resolved from its server with `resolve`
- * (not while the instance takes nothing in from other servers, ADR-0076); undefined when it is not found (404), the
+ * (not while the instance takes nothing in from other servers, ADR-0006); undefined when it is not found (404), the
  * fetch budget is spent (429) or the request fails.
  */
 export function lookUpAccount(

@@ -100,11 +100,11 @@ type DeliverDeps struct {
 	// documents without one.
 	Proofs ProofKeys
 	// LinkedData canonicalizes the documents of public posts for their linked data signature
-	// (RsaSignature2017, ADR-0061); nil sends them without one.
+	// (RsaSignature2017, ADR-0006); nil sends them without one.
 	LinkedData Canonicalizer
 	// Domains are the domain blocks; nil means NoDomainRestrictions.
 	Domains DomainPolicy
-	// Modes reads the federation mode when each delivery runs (ADR-0076); nil federates both
+	// Modes reads the federation mode when each delivery runs (ADR-0006); nil federates both
 	// ways.
 	Modes ModeSettings
 	// Closure reads the service closure when each delivery runs (ADR-0088 §2); nil never
@@ -119,7 +119,7 @@ type DeliverDeps struct {
 	// Meter records my.delivery.attempts and my.delivery.duration (ADR-0055 §3); nil records
 	// nothing.
 	Meter kernel.Meter
-	// Tracer records the span of each POST to an inbox (DeliverySpan, ADR-0063 §1); nil records
+	// Tracer records the span of each POST to an inbox (DeliverySpan, ADR-0055 §13); nil records
 	// nothing.
 	Tracer kernel.Tracer
 }
@@ -129,12 +129,12 @@ type DeliverDeps struct {
 //
 //  1. When the inbox's server does not get the activity (unavailable, or suspended by a domain
 //     block; federation.Deliverable), or the federation mode at the time does not send it
-//     (federation.Sends, ADR-0076), it records a skipped attempt and is done: a skipped
+//     (federation.Sends, ADR-0006), it records a skipped attempt and is done: a skipped
 //     delivery is never sent again.
 //  2. When the circuit breaker of the host is open, it records a retryable failure without
 //     sending and retries on the schedule.
 //  3. It adds the linked data signature of the actor's key to the stored document of the
-//     Create, Update, or Delete of a public post (ADR-0061), or else the integrity proof of the
+//     Create, Update, or Delete of a public post (ADR-0006), or else the integrity proof of the
 //     actor's Ed25519 key (withProof), signs the request with the actor's key, and POSTs it.
 //  4. It classifies the result (federation.ClassifyResponse) and records the attempt in
 //     delivery_attempts, whose projector updates instance_health in the same transaction.
@@ -264,7 +264,7 @@ func (d *Deliverer) Deliver(ctx context.Context, deliveryID string) queue.Result
 }
 
 // sign returns document with the linked data signature of key when it is the Create, Update, or
-// Delete of a public post (federation.SignsLinkedData), which relays forward as it is (ADR-0061),
+// Delete of a public post (federation.SignsLinkedData), which relays forward as it is (ADR-0006),
 // and with the integrity proof of withProof otherwise. A proof added after the linked data
 // signature would break it, and a proof made before it would need the data integrity context
 // that the receivers' linked data processing does not bundle, so a signed document carries no
@@ -413,7 +413,7 @@ func (d *Deliverer) sends(ctx context.Context, act federation.OutboundActivity) 
 }
 
 // suspendedActorUpdate reports whether document is the Update of an actor marked suspended
-// (ADR-0036).
+// (ADR-0058).
 func suspendedActorUpdate(document []byte) bool {
 	var doc struct {
 		Object struct {

@@ -109,11 +109,11 @@
 | `registration_applications` | リソース | `id`, `user_id`, `reason`（`text`、NULL 可）, `invite_id`（NULL 可）, `submitted_at` | 一意 `(user_id)` |
 | `registration_decisions` | イベント | `id`, `application_id`, `decision`（`enum(approved, rejected)`）, `decided_by`（`enum(moderator, system, service_closure)`）, `decided_by_user_id`（NULL 可 = `system`・`service_closure` または CLI による決定）, `note`（NULL 可。1,000 文字まで）, `decided_at` | インデックス `(application_id, id DESC)`。`open` / `invite` モードと、使える招待のある `approval` モードの登録は `system` が即時に承認する。サービスの終了の予告の開始で、審査待ちの申請を `service_closure` が却下する（ADR-0088 §2） |
 | `user_registration_states` | 投影 | `user_id`（PK）, `state`（`enum(pending, approved, rejected)`）, `since` | インデックス `(state, since)`（承認待ち一覧）。行の無い利用者（CLI で作った管理者など）は承認済み |
-| `registration_origins` | リソース | `user_id`（PK）, `ip`, `recorded_at` | インデックス `(ip)`, `(recorded_at)`。登録画面からの登録だけが作る。登録の拒否リスト（FR-719）と同じ IP のアカウントの検索に使い、保持期間（ADR-0038、既定 180 日）を過ぎた行を消去ジョブが消す |
+| `registration_origins` | リソース | `user_id`（PK）, `ip`, `recorded_at` | インデックス `(ip)`, `(recorded_at)`。登録画面からの登録だけが作る。登録の拒否リスト（FR-719）と同じ IP のアカウントの検索に使い、保持期間（ADR-0058、既定 180 日）を過ぎた行を消去ジョブが消す |
 
 - 登録画面からの登録は、登録モード（インスタンス設定 `registration_mode`、§4.9）に従います。
   `open` は `system` が即時に承認し、`approval` はモデレーターの決定まで `pending` のまま（使える招待があれば `system` が即時に承認）、`invite` は使える招待があれば `system` が即時に承認し、`closed` は受け付けません。
-  `approval` モードでだけ `reason` を受け取ります。招待は `closed` 以外のどのモードでも受け取り、`invite_id` を記録します（[ADR-0108](../../../adr/0108-member-invites.md) §4）。`open` と `approval` では招待は任意ですが、入力された招待が使えなければ招待なしとして通さずに断ります。
+  `approval` モードでだけ `reason` を受け取ります。招待は `closed` 以外のどのモードでも受け取り、`invite_id` を記録します（[ADR-0106](../../../adr/0106-external-login-providers.md) §17）。`open` と `approval` では招待は任意ですが、入力された招待が使えなければ招待なしとして通さずに断ります。
   登録の制限（§4.3、`require_approval`）に当たる登録は、招待があっても `pending` で始まります。
 - メールを届けられない構成（`mail = none`）では、メール確認の代わりにモデレーターの承認を求めます（FR-002）。このとき `open` モードの登録も `pending` で始まり、確認済みでないことはアプリの利用を妨げません。
 - アプリ（クライアント API と OAuth の認可）を使えるのは、`user_registration_states` が `approved`（または行が無い）で、メール確認が必要な構成では主アドレスが確認済みの利用者だけです。
@@ -131,10 +131,10 @@
 | `invites` | リソース | `id`, `code`（80 ビットの乱数の base32、16 文字。照合は大文字・空白とハイフンを除いた形で行う）, `created_by_user_id`（NULL 可 = CLI による作成）, `creator_kind`（`enum(staff, member)`、既定 `staff`）, `max_uses`（NULL 可 = 無制限）, `expires_at`（NULL 可）, `created_at` | 一意 `(code)`、インデックス `(created_by_user_id, id)` |
 | `invite_redemptions` | イベント | `invite_id`, `seq`（`int`、1 始まり）, `user_id`, `redeemed_at` | PK `(invite_id, seq)`。`seq = 既存件数 + 1` で挿入し、一意制約違反なら再試行する。`seq > max_uses` は拒否する |
 | `invite_revocations` | イベント | `invite_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による取り消し）, `revoked_at` | 取り消しは 1 回だけ記録する（2 回目は何もしない） |
-| `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset, email_unsubscribe)`）, `email_address_id`（NULL 可）, `unsubscribe_category`（NULL 可。`enum` は `notification_settings.notification_group` と同じ値。`email_unsubscribe` だけが持ち、ほかは NULL）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。インデックス `(expires_at)`（期限切れの行の消去）, `(user_id)`（アカウントの消去）。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間。この 2 つは `user_token_redemptions` で 1 回だけ使える。配信停止のトークン（ADR-0086 §4）は接頭辞 `my_eut_`、有効期限 90 日で、通知のメールごとにジョブが発行し、期限まで何度使ってもよい。区分は通知の設定のグループ（ADR-0109 §4）で、使うとそのグループのメールの設定をオフにする（§4.7） |
+| `user_tokens` | リソース | `id`, `user_id`, `purpose`（`enum(email_verification, password_reset, email_unsubscribe)`）, `email_address_id`（NULL 可）, `unsubscribe_category`（NULL 可。`enum` は `notification_settings.notification_group` と同じ値。`email_unsubscribe` だけが持ち、ほかは NULL）, `token_hash`（`bytes`。トークンの SHA-256）, `expires_at`, `issued_at` | 一意 `(token_hash)`。インデックス `(expires_at)`（期限切れの行の消去）, `(user_id)`（アカウントの消去）。メール確認のトークンは接頭辞 `my_evt_`、有効期限 24 時間。パスワードリセットのトークンは接頭辞 `my_prt_`、有効期限 1 時間。この 2 つは `user_token_redemptions` で 1 回だけ使える。配信停止のトークン（ADR-0086 §4）は接頭辞 `my_eut_`、有効期限 90 日で、通知のメールごとにジョブが発行し、期限まで何度使ってもよい。区分は通知の設定のグループ（ADR-0086 §11）で、使うとそのグループのメールの設定をオフにする（§4.7） |
 | `user_token_redemptions` | イベント | `token_id`（PK）, `redeemed_at` | 挿入の成否で 1 回性を保証する |
 
-- 招待の作成の経路は `creator_kind` に記録します（[ADR-0108](../../../adr/0108-member-invites.md) §3）。`staff` は `manage_invites` を持つスタッフと CLI の招待で、上限がなく、登録のときに作成者を確かめません。
+- 招待の作成の経路は `creator_kind` に記録します（[ADR-0106](../../../adr/0106-external-login-providers.md) §16）。`staff` は `manage_invites` を持つスタッフと CLI の招待で、上限がなく、登録のときに作成者を確かめません。
   `member` は利用者が自分の招待として作ったもので、インスタンス設定 `member_invite_max_*`（§4.9）の上限の中で回数と期限をいつも持ちます。
   同時に持てる使える招待の数は、作成のトランザクションで `(created_by_user_id, id)` の索引から数えます（同時の作成が上限を 1 つ越えることは許す）。
   利用者の招待での登録は、そのたびに作成者がまだ作れる（`invite_creators` と `create_invites`、凍結・制限・削除されていない、登録が承認済み）かを確かめ、作れなければ使えない招待として断ります。行は変えないので、資格が戻れば期限の中でまた使えます。
@@ -174,7 +174,7 @@
   `admin` はバッジのほかは変えられず（すべての権限と `position` 1000。権限を取り戻す道のため）、`admin` と `moderator` は削除できません。`moderator` の権限と位置は変えられます。
   持っている人がいるロールは削除できない（先に剥奪する）ので、`user_roles` が消えたロールを指すことはありません。消えたロールを指すのは剥奪済みの `user_role_grants` だけです。
   利用者は自分のいちばん高いロール以下のロールだけを作り・変え・消せ（新しい位置も同じ）、自分のロールが持つ権限だけを付け外しできます。CLI は何でもできます。
-- ロールのバッジ（[ADR-0071](../../../adr/0071-role-badges-and-supporter-list.md)、FR-913）は `role_badges` の行で、名前（1〜32 文字の 1 行。管理者が書く文字列で、どのロケールでも同じ値）と色（`@my/ui` のトークンの 9 色の名前）だけを持ちます。
+- ロールのバッジ（[ADR-0070](../../../adr/0070-permission-split-emoji-finance.md)、FR-913）は `role_badges` の行で、名前（1〜32 文字の 1 行。管理者が書く文字列で、どのロケールでも同じ値）と色（`@my/ui` のトークンの 9 色の名前）だけを持ちます。
   組み込みのロールを含めどのロールにも付けられ、既定ではどのロールも持ちません。設定・変更・削除はロールの変更（`role_updated`）で、ロールを削除すると `role_badges` の行も消えます。
 - 利用者は、持っていてバッジのあるロールごとに、プロフィールに出すかを選びます（`user_role_badge_displays`。既定は出さない）。
   剥奪（`user_role_revocations` を足す処理）とバッジの削除は、同じトランザクションでその選択の行を消します。付与も同じトランザクションで古い行を消すので、もう一度付与されれば既定の「出さない」から始まります。
@@ -193,7 +193,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `sessions` | リソース | `id`, `user_id`, `token_hash`（`bytes`。Cookie の値の SHA-256）, `created_at`, `expires_at` | 一意 `(token_hash)`。インデックス `(user_id)`（処分による失効）, `(expires_at)`（期限切れの行の消去） |
-| `session_origins` | リソース（子） | `session_id`（PK）, `user_id`, `ip`（NULL 可）, `user_agent`（`string(512)`、NULL 可）, `created_at` | インデックス `(ip)`（同じ IP のアカウントの検索、FR-714）, `(user_id, created_at DESC)`（アカウントの最近のログイン元、FR-714）, `(created_at)`（保持期間による消去）。保持期間（[ADR-0038](../../../adr/0038-moderation-personal-data-retention.md)、既定 180 日）を過ぎた行を消去ジョブが消す |
+| `session_origins` | リソース（子） | `session_id`（PK）, `user_id`, `ip`（NULL 可）, `user_agent`（`string(512)`、NULL 可）, `created_at` | インデックス `(ip)`（同じ IP のアカウントの検索、FR-714）, `(user_id, created_at DESC)`（アカウントの最近のログイン元、FR-714）, `(created_at)`（保持期間による消去）。保持期間（[ADR-0058](../../../adr/0058-moderation-admin-separation.md)、既定 180 日）を過ぎた行を消去ジョブが消す |
 | `session_revocations` | イベント | `session_id`（PK）, `reason`（`enum(logout, replaced, password_changed, moderation, account_deleted)`）, `revoked_at` | 有効なセッション = 失効イベントが無く `expires_at` を過ぎていないもの。`replaced` は同じブラウザでのログインし直し |
 | `session_activity` | 現在値 | `session_id`（PK）, `last_seen_at` | ログイン時に作り、以後の更新は 1 時間に 1 回に間引く |
 | `oauth_clients` | リソース | `id`, `client_id`, `client_secret_hash`（NULL 可 = 公開クライアント）, `name`, `website`（NULL 可）, `scope`, `registration`（`enum(first_party, user, metadata_document, dynamic)`）, `owner_user_id`（NULL 可）, `created_at` | 一意 `(client_id)`。インデックス `(owner_user_id)`。`registration` は登録の経路で、変わらない。`name`・`website`・`scope`・`client_secret_hash` は登録したときの値 |
@@ -215,9 +215,9 @@
 - 認可したアプリの一覧（ADR-0090 §5、FR-003）は、そのためのテーブルを持たず、有効なトークン（失効のイベントが無く、アクセストークンか更新トークンが期限内）を利用者とクライアントで束ねて導きます。
   付与したスコープは束ねたトークンのスコープの和集合、最初に認可した日時は系列の最初のトークンの `issued_at` の最小、最後に使った日時は `oauth_token_family_last_used` の最大です。
   取り消しは、その利用者とクライアントのトークンすべてに `oauth_token_revocations`（`user`）を記録します。
-- セッションは、サーバーが返す画面（ログイン・登録・認可同意）の Cookie `__Host-my_session` です（ADR-0019 §4、ADR-0030）。
-  ログインのたびに新しいトークンを発行し、ブラウザが持っていた古いセッションは `replaced` で失効させ、そのセッションから始まった一次のクライアントの系列も同じトランザクションで `session_replaced` で失効させます（ADR-0136 §5）。
-- ログイン中のブラウザの一覧（ADR-0136、FR-012）は、そのためのテーブルを持たず、有効なセッションと、まだ使える一次のクライアントの系列が始まったセッション（セッション自体の状態は問わない）を 1 行にして導きます。系列とセッションは `oauth_authorization_code_redemptions.token_id` = `family_id` → `oauth_authorization_codes.session_id` で結びます。
+- セッションは、サーバーが返す画面（ログイン・登録・認可同意）の Cookie `__Host-my_session` です（ADR-0019 §4、ADR-0090）。
+  ログインのたびに新しいトークンを発行し、ブラウザが持っていた古いセッションは `replaced` で失効させ、そのセッションから始まった一次のクライアントの系列も同じトランザクションで `session_replaced` で失効させます（ADR-0090 §14）。
+- ログイン中のブラウザの一覧（ADR-0090、FR-012）は、そのためのテーブルを持たず、有効なセッションと、まだ使える一次のクライアントの系列が始まったセッション（セッション自体の状態は問わない）を 1 行にして導きます。系列とセッションは `oauth_authorization_code_redemptions.token_id` = `family_id` → `oauth_authorization_codes.session_id` で結びます。
   ログインの IP と User-Agent は `session_origins`、最後に使った日時は `session_activity` と束ねた系列の `oauth_token_family_last_used` の新しいほうです。
   1 行のログアウトは、セッションを `logout`、その一次の系列の全トークンを `user` で同じトランザクションで失効させます。サードパーティのアプリの系列は変わりません。
 - ローカルアカウントの `deleted`（§4.2）は、同じトランザクションでその利用者の有効なセッションとトークンを `account_deleted` で失効させます（`identity.RegisterLifecycleProjectors`）。
@@ -274,14 +274,14 @@
 
 | テーブル | カラム | 制約 |
 | --- | --- | --- |
-| `user_preferences` | `user_id`（PK）, `locale`（`lang`）, `default_visibility`（`enum(public, local, unlisted, private, direct)`）, `default_quote_policy`（`enum(public, followers, nobody)`。新しい投稿の引用の許可、ADR-0069 §1）, `default_post_language`（`lang`）, `require_media_description`（`bool`）, `timeline_auto_insert`（`bool`。タイムラインの新着を確認なしで挿入するか、ADR-0077）, `link_card_size`（`enum(large, small)`。リンクのカードの出し方、既定は `large`）, `locale_follows_browser`（`bool`）, `time_zone_follows_browser`（`bool`。Web クライアントがブラウザの言語・タイムゾーンに従うか。`locale` とタイムゾーンは最後に検知した値を持ち、メールや Push が使う）, `updated_at` | |
+| `user_preferences` | `user_id`（PK）, `locale`（`lang`）, `default_visibility`（`enum(public, local, unlisted, private, direct)`）, `default_quote_policy`（`enum(public, followers, nobody)`。新しい投稿の引用の許可、ADR-0069 §1）, `default_post_language`（`lang`）, `require_media_description`（`bool`）, `timeline_auto_insert`（`bool`。タイムラインの新着を確認なしで挿入するか、ADR-0013）, `link_card_size`（`enum(large, small)`。リンクのカードの出し方、既定は `large`）, `locale_follows_browser`（`bool`）, `time_zone_follows_browser`（`bool`。Web クライアントがブラウザの言語・タイムゾーンに従うか。`locale` とタイムゾーンは最後に検知した値を持ち、メールや Push が使う）, `updated_at` | |
 | `user_timeline_languages` | `user_id`, `language`（`lang`） | PK `(user_id, language)`。行が無ければすべての言語を表示（FR-208） |
 | `user_time_zones` | `user_id`（PK）, `time_zone`（IANA 名） | 行が無ければタイムゾーンを選んでいない（日時は UTC。Web クライアントは端末のゾーンを保存する） |
 
 - 登録時に既定値の行を作ります。`locale` は登録時に指定されたロケール、無ければインスタンスの既定（`default_locale`）、それも無ければ `en` です。
   サーバーで描く登録のページは、要求の `Accept-Language` にいちばん合う、カタログのあるロケール（疑似ロケールは除く。`i18n.Resolver.AcceptedLocale`）を指定します。
   合うものが無ければ指定せず、インスタンスの既定になります。
-  `user_time_zones` の行は作らない（タイムゾーンはまだ無い状態で、`UTC` として扱う）。`locale_follows_browser` と `time_zone_follows_browser` は真です。`default_visibility` は `public`、`default_post_language` は `und`（クライアントに任せる）、`require_media_description` は偽、`timeline_auto_insert` は真（ADR-0127 の 6）です。
+  `user_time_zones` の行は作らない（タイムゾーンはまだ無い状態で、`UTC` として扱う）。`locale_follows_browser` と `time_zone_follows_browser` は真です。`default_visibility` は `public`、`default_post_language` は `und`（クライアントに任せる）、`require_media_description` は偽、`timeline_auto_insert` は真（ADR-0013 の 6）です。
 - `lang` の値は BCP 47 として検証し、正規形（`ja-JP`、`zh-Hant-TW`、`iw` → `he`）で保存します。未知のサブタグ、言語を明示しないタグ（`und-JP`、私用の `x-…`）は拒否します。
   `locale` は `und` も拒否します。
 - タイムゾーンを選んだ事実は `user_time_zones` の行の有無で表します（ADR-0020 規約 4。`user_preferences` に NULL 許容の列や「選んだか」の列を置かない）。
@@ -300,7 +300,7 @@
 
 - 本人のデータのアーカイブ（FR-008）です。要求（`POST /api/v1/exports`）が `data_exports` の行とジョブ `identity.build_export` を同じトランザクションで積みます。作成中（結果のない行）の要求があるあいだは、次の要求を受け付けません（`409`）。
   確認と挿入は同じトランザクションで、利用者の行（`users`）を `FOR UPDATE` でロックしてから行うので（SQLite は書き込みのトランザクションが直列）、同時の要求でも作成中の要求は 1 件までです。インポートの開始も同じ行をロックします。
-- ジョブは ZIP のアーカイブを Blob の非公開のキー `exports/{user_id}/{export_id}/{試行ごとの ID}.zip` に書き、そのキーを持つ `ready` の結果を記録します。中身は `actor.json`（Actor）、`outbox.json`（本人の削除されていない投稿すべてを、公開範囲に関わらず `Create` の `OrderedCollection` にしたもの。ブーストは含めない）、`moderation.json`（本人への処分と異議申し立て、本人が出した通報。非公開のメモと通報者は含めない。ADR-0038）と、下の「CSV のエクスポートとインポート」の 4 つの CSV です。
+- ジョブは ZIP のアーカイブを Blob の非公開のキー `exports/{user_id}/{export_id}/{試行ごとの ID}.zip` に書き、そのキーを持つ `ready` の結果を記録します。中身は `actor.json`（Actor）、`outbox.json`（本人の削除されていない投稿すべてを、公開範囲に関わらず `Create` の `OrderedCollection` にしたもの。ブーストは含めない）、`moderation.json`（本人への処分と異議申し立て、本人が出した通報。非公開のメモと通報者は含めない。ADR-0058）と、下の「CSV のエクスポートとインポート」の 4 つの CSV です。
   結果のある行は作り直さないので、再実行してよい。キーは試行ごとに別なので、重なって走った試行が記録済みのアーカイブを上書きしたり消したりすることはなく、記録された `blob_key` と `file_size` は常に同じ Blob を指します。結果を記録できなかった試行（先に別の試行が記録した、要求が消された）は自分の Blob を消します。
   結果の記録は要求の行を `FOR KEY SHARE` でロックしてから行い、要求の削除は要求の行を先に消すので、消された要求に結果が残ることはありません。
   5 回目の構築が失敗すると `failed` を記録します。記録にも失敗したときは、その後の最大 3 回の実行が記録だけをやり直し、それでも結果のない要求は 1 時間ごとのジョブ `identity.expire_exports` が要求から 24 時間後（`identity.ExportStaleAfter`）に `failed` にするので、作成中のまま残りません。

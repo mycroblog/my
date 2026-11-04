@@ -59,7 +59,7 @@ export function setInstanceTextsMutation(api: Api) {
 }
 
 /**
- * Marks what new texts change (ADR-0045): the texts, GET /instance (the navigation, the tab title, the sign-in page
+ * Marks what new texts change (ADR-0028): the texts, GET /instance (the navigation, the tab title, the sign-in page
  * and the about page show the name and the descriptions) and the audit log, the same queries as a new document.
  */
 export function cacheSavedTexts(queryClient: QueryClient): Promise<void> {
@@ -93,7 +93,7 @@ export function updateInstanceSettingsMutation(api: Api) {
 }
 
 /**
- * Writes the settings from the answer of a change (ADR-0045), and marks what they change: GET /instance (the
+ * Writes the settings from the answer of a change (ADR-0028), and marks what they change: GET /instance (the
  * registration mode and the timelines that the navigation offers) and the audit log, fetched again and awaited
  * while shown.
  */
@@ -108,10 +108,10 @@ export async function cacheSavedSettings(
     // What finance_visibility publishes (FR-903), and what the finance_viewer_* settings show (ADR-0070 §5).
     queryClient.invalidateQueries({ queryKey: ["get", "/instance/cost_totals"] }),
     queryClient.invalidateQueries({ queryKey: ["get", "/finance/cost_totals"] }),
-    // What income_visibility publishes, and with it the balance and the plans of every income total (ADR-0073 §7).
+    // What income_visibility publishes, and with it the balance and the plans of every income total (ADR-0067 §17).
     queryClient.invalidateQueries({ queryKey: ["get", "/instance/income_totals"] }),
     queryClient.invalidateQueries({ queryKey: ["get", "/finance/income_totals"] }),
-    // Who may read the supporter list (ADR-0071 §4).
+    // Who may read the supporter list (ADR-0070 §13).
     queryClient.invalidateQueries({ queryKey: ["get", "/instance/supporters"] }),
     // Whether the landing page shows the counts (public_counts).
     queryClient.invalidateQueries({ queryKey: ["get", "/instance/overview"] }),

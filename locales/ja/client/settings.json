@@ -1321,7 +1321,7 @@
   },
   "settings.profile.badges": {
     "defaultMessage": "バッジ",
-    "description": "Heading of the section of the badges settings page that chooses which role badges the profile shows (ADR-0071)."
+    "description": "Heading of the section of the badges settings page that chooses which role badges the profile shows (ADR-0070)."
   },
   "settings.profile.badges.description": {
     "defaultMessage": "ロールのバッジのうち、プロフィールに出すものを選びます。出すと選ぶまでは出ず、出るのはプロフィールだけです。",

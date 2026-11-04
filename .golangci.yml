@@ -134,7 +134,7 @@ linters:
             - github.com/mycroblog/my/internal/domain/timeline
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/i18n
-            # Counting the grapheme clusters of a list's name (ADR-0122 §1): pure-Go Unicode data, not an external resource.
+            # Counting the grapheme clusters of a list's name (ADR-0013 §10): pure-Go Unicode data, not an external resource.
             - github.com/rivo/uniseg
         domain-notification:
           list-mode: strict
@@ -329,7 +329,7 @@ linters:
             - github.com/mycroblog/my/internal/app/projection
             - github.com/mycroblog/my/internal/app/queue
             - github.com/mycroblog/my/internal/app/uow
-        # app/dbupgrade runs and records the data upgrade steps of `my db upgrade` (ADR-0087 §2, §4)
+        # app/dbupgrade runs and records the data upgrade steps of `my db upgrade` (ADR-0023 §5, §7)
         # through step functions and a projection rebuild that the composition root passes; it
         # depends only on kernel (Clock) and uow.
         app-dbupgrade:
@@ -427,7 +427,7 @@ linters:
             - pkg: github.com/yuin/goldmark
               desc: render Markdown through instance.DocumentRenderer (internal/adapter/markdown)
         # The HTTP signature libraries (ADR-0006) stay inside the adapter of federation.Signer and
-        # federation.Verifier, so that every signature goes through the policy of ADR-0032.
+        # federation.Verifier, so that every signature goes through the policy of ADR-0006.
         httpsig:
           list-mode: lax
           files:
@@ -451,7 +451,7 @@ linters:
             - pkg: github.com/go-webauthn
               desc: run WebAuthn ceremonies through identity.PasskeyCeremonies (internal/adapter/webauthn)
         # The OpenTelemetry SDK and the Prometheus client stay inside the adapters of kernel.Meter and kernel.Tracer
-        # (ADR-0055 §1, ADR-0063 §1), so that the core, the interfaces, and the other adapters measure and trace through the ports.
+        # (ADR-0055 §1, ADR-0055 §13), so that the core, the interfaces, and the other adapters measure and trace through the ports.
         # The otlp error exporter (ADR-0103 §4 (3)) sends the error reports as OpenTelemetry log records.
         opentelemetry:
           list-mode: lax
@@ -507,7 +507,7 @@ linters:
             - pkg: github.com/mycroblog/my/internal/platform
               desc: testkit depends only on application ports and domain types
         # The fake payment provider records payments as paid without any money moving: besides the tests, only the
-        # test builds (build tag e2e_fakes) link it, through one file (ADR-0117 §2; scripts/go-build-tags.sh checks it).
+        # test builds (build tag e2e_fakes) link it, through one file (ADR-0015 §6; scripts/go-build-tags.sh checks it).
         payment-fake:
           list-mode: lax
           files:
@@ -519,7 +519,7 @@ linters:
             - pkg: github.com/mycroblog/my/internal/adapter/payment/fake
               desc: only internal/platform/adapters_payments_fake.go (build tag e2e_fakes) and tests import the fake payment provider
         # The fake push service accepts any push message for its own subscriptions: besides the tests, only the test
-        # builds (build tag e2e_fakes) link it, through the one file of my dev push-service (ADR-0118 §1).
+        # builds (build tag e2e_fakes) link it, through the one file of my dev push-service (ADR-0015 §9).
         push-service-fake:
           list-mode: lax
           files:

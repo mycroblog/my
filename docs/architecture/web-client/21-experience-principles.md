@@ -1,6 +1,6 @@
 ## 21. 体験の原則
 
-画面を設計・実装・レビューするときの原則です。根拠は [ADR-0110](../../adr/0110-web-experience-principles.md)、見た目の言語は ADR-0111、見え方の一覧は ADR-0112 です。
+画面を設計・実装・レビューするときの原則です。根拠は [ADR-0110](../../adr/0110-web-experience-principles.md)、見た目の言語は ADR-0110、見え方の一覧は ADR-0079 です。
 UI を変える issue は、この節と、その画面の要件（[screens/](screens/README.md)）に従います。
 
 ### 21.1 原則と優先順位
@@ -39,8 +39,8 @@ UI の PR は、次の 4 観点で点検する。各観点は、画面の要件�
 | L1 画面の要件 | [screens/](screens/README.md) の画面ごとの文書 | UI の issue を `agent:ready` にする条件 |
 | L2 パターンの部品 | 判断を型で強制する `@my/ui` の部品 | 画面（`app/web`）は L2 の部品で組む。足りなければ `@my/ui` に足す |
 | L3 機械検査 | ARIA スナップショット・部品のテスト・lint・文言のカタログ | E2E・部品のテスト・Oxlint・`i18n:check` |
-| L4 課題テスト | L1 の作業を ARIA のツリーだけで行い、手数と lostness を測る | nightly が main に対して行い、0.4 を超えた作業を画面ごとの issue にする（ADR-0114）。PR は作業ごとの最短の手順を書く（[workflow §5](../../agents/workflow.md#5-verify)） |
-| L5 人の批評 | main の一覧（ADR-0112）を決定者が見て issue にする | merge の後（[workflow §7](../../agents/workflow.md#7-merge-through-the-merge-queue)） |
+| L4 課題テスト | L1 の作業を ARIA のツリーだけで行い、手数と lostness を測る | nightly が main に対して行い、0.4 を超えた作業を画面ごとの issue にする（ADR-0015）。PR は作業ごとの最短の手順を書く（[workflow §5](../../agents/workflow.md#5-verify)） |
+| L5 人の批評 | main の一覧（ADR-0079）を決定者が見て issue にする | merge の後（[workflow §7](../../agents/workflow.md#7-merge-through-the-merge-queue)） |
 
 L3 のうち、今ある検査は次のとおり。
 

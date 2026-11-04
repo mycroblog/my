@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The new-post form in every width × locale project (ADR-0027): always a sheet (a dialog), opened by the floating
+// The new-post form in every width × locale project (ADR-0110): always a sheet (a dialog), opened by the floating
 // button below md or the rail's button from md. `vite preview` has no API, so the spec answers the client API and the token refresh itself
 // (Playwright's request routing), as a signed-in session. The client calls the runtime config's apiOrigin,
 // the origin of the page (fixtures.ts); the answers carry CORS headers all the same, as a separate API

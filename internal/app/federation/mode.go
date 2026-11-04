@@ -11,12 +11,12 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// ErrFederationRestricted reports something that the federation mode (FR-413, ADR-0076) does not
+// ErrFederationRestricted reports something that the federation mode (FR-413, ADR-0006) does not
 // let through: a refused inbox request, a fetch that is not made, or an activity that is not
 // sent.
 var ErrFederationRestricted = errors.New("federation: the federation mode does not let this through")
 
-// ModeSettings reads the federation mode, the instance setting federation_mode (ADR-0076). Every
+// ModeSettings reads the federation mode, the instance setting federation_mode (ADR-0006). Every
 // entry point reads it per request and per job, so that a change applies at once, and asks
 // federation.Allows about the flow it handles.
 type ModeSettings interface {
@@ -82,7 +82,7 @@ func allowsAny(mode federation.Mode, flows ...federation.Flow) bool {
 }
 
 // receives reports whether mode lets the received activity act through to its handler
-// (federation.md §3.2, ADR-0076 入口ごとの振る舞い); host is this server's, which tells the local
+// (federation.md §3.2, ADR-0006 入口ごとの振る舞い); host is this server's, which tells the local
 // objects. The handlers of the activities that span several flows decide the rest with the mode
 // of InboxActivity:
 //
@@ -173,7 +173,7 @@ type FollowerReader interface {
 }
 
 // MediaGate tells the media proxy which remote media files the federation mode lets it fetch
-// (ADR-0076, 外の取得): every file when the mode takes content in (ingest), only the avatars and
+// (ADR-0006, 外の取得): every file when the mode takes content in (ingest), only the avatars and
 // headers of the remote accounts that follow local ones when it only identifies them (identify,
 // outbound), and none when it is off. Files without an owner, the images of link cards, are not
 // federation's and always pass. It implements appcontent.MediaFederation.

@@ -10,7 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
-// The CAPTCHA widget of the sign-in, registration, and password reset forms (ADR-0042 §5). With
+// The CAPTCHA widget of the sign-in, registration, and password reset forms (ADR-0106 §11). With
 // Options.HumanCheck set, those three pages, and no other, load the service's script, show its
 // widget with a notice about the data the service receives and links to its documents, and
 // widen their Content-Security-Policy by the service's origins. The form posts the token in
@@ -94,7 +94,7 @@ func (h *Handler) humanCheckToken(r *http.Request) string {
 }
 
 // humanCheckCSP returns the Content-Security-Policy sources that the widget needs, on top of
-// contentSecurityPolicy's; it never adds 'unsafe-inline' or 'unsafe-eval' (ADR-0042 §5).
+// contentSecurityPolicy's; it never adds 'unsafe-inline' or 'unsafe-eval' (ADR-0106 §11).
 func (h *Handler) humanCheckCSP() kernel.HumanCheckCSP {
 	if h.o.HumanCheck == nil {
 		return kernel.HumanCheckCSP{}

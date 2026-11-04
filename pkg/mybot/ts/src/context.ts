@@ -14,7 +14,7 @@ type Visibility = components["schemas"]["Visibility"];
 
 /**
  * The Idempotency-Key of the n-th reply (from 1) that a handler posts for the event source: a notification ID, or for
- * onStatus the ID of the post (ADR-0094 §6). The server keeps the keys of each account, so the same event processed
+ * onStatus the ID of the post (ADR-0093 §14). The server keeps the keys of each account, so the same event processed
  * twice (after a restart in the middle of its handler) posts each reply once. Use it when posting with mykit directly:
  *
  * ```ts
@@ -26,7 +26,7 @@ export function replyIdempotencyKey(source: string, n: number): string {
 }
 
 /**
- * The visibility of a reply to a post of visibility v: never wider than v (ADR-0094 §8), and unlisted for a public
+ * The visibility of a reply to a post of visibility v: never wider than v (ADR-0093 §16), and unlisted for a public
  * post, so that a bot's replies stay out of the public timelines.
  */
 export function replyVisibility(v: Visibility): Visibility {

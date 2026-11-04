@@ -10,7 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 )
 
-// Retention of the dead jobs (FR-803) and of the records of the attempts (ADR-0064 §2).
+// Retention of the dead jobs (FR-803) and of the records of the attempts (ADR-0004 §6).
 const (
 	// JobPurgeDeadJobs deletes the dead jobs and the records of the attempts past their
 	// retention; no payload.

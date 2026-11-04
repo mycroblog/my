@@ -34,7 +34,7 @@ type adminRelay struct {
 	Taken    int    `json:"taken_last_day"`
 }
 
-// TestRelay joins Activity-Relay at its inbox (ADR-0061): alice registers it through the admin API
+// TestRelay joins Activity-Relay at its inbox (ADR-0006): alice registers it through the admin API
 // and the relay accepts the instance actor's Follow; a public post of ivan reaches Mastodon through
 // the relay, which Mastodon takes only with ivan's linked data signature (RsaSignature2017); a
 // public post of judy@mastodon.test reaches this server's federated timeline through the relay,

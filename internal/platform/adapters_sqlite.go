@@ -25,7 +25,7 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 	d.RegisterMetrics(a.Meter)
 	a.dbSize = d
 	d.SetTracer(a.Tracer)
-	// The attempt log is in the database whatever the queue (ADR-0064 §1).
+	// The attempt log is in the database whatever the queue (ADR-0004 §5).
 	dbQueue := queuedb.NewSQLite(d, queueOpts)
 	a.JobAttempts = dbQueue
 	if queueInDatabase(cfg.Queue) {

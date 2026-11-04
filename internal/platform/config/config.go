@@ -39,9 +39,9 @@ type Config struct {
 	Host          string
 	AccountDomain string
 	SourceURL     string
-	// StatusPageURL is the address of the instance's status page, "" for none (ADR-0085 §6).
+	// StatusPageURL is the address of the instance's status page, "" for none (ADR-0088 §20).
 	StatusPageURL string
-	// Maintenance starts the maintenance mode (ADR-0084). MaintenanceServerName, MaintenanceMessage,
+	// Maintenance starts the maintenance mode (ADR-0088). MaintenanceServerName, MaintenanceMessage,
 	// and MaintenanceUntil (zero for none) fill the maintenance page; MaintenanceRetryAfter is the
 	// Retry-After when MaintenanceUntil is zero or past.
 	Maintenance           bool
@@ -79,17 +79,17 @@ type Config struct {
 	// the path of its events from the Lambda Web Adapter, and QueueSQSEventsBudget how long an
 	// event may run when its request carries no deadline of the invocation.
 	// WorkerJobTypes and WorkerJobTypesExcept are the job types this process runs or skips, at
-	// most one of them set (ADR-0138).
+	// most one of them set (ADR-0004).
 	WorkerJobTypes       []string
 	WorkerJobTypesExcept []string
-	// WorkerJobConcurrency is how many jobs this process runs at once (ADR-0140); 0 when the
+	// WorkerJobConcurrency is how many jobs this process runs at once (ADR-0004); 0 when the
 	// setting is not given, which runs one and checks nothing against the database's pool.
 	WorkerJobConcurrency int
 	// DatabaseAcquireTimeout bounds the wait for a connection of the pool of database = postgres; 0
 	// waits without a limit.
 	DatabaseAcquireTimeout time.Duration
 	// QueueSQSRoutes and QueueCloudTasksRoutes send the wake-up signals of some job types to their
-	// own queue (ADR-0139); read them with QueueRoutes.
+	// own queue (ADR-0004); read them with QueueRoutes.
 	QueueSQSRoutes        []QueueRoute
 	QueueCloudTasksRoutes []QueueRoute
 	QueueSQSQueueURL      string
@@ -115,7 +115,7 @@ type Config struct {
 	MediaMaxImageSide   int
 	MediaMaxImagePixels int64
 	MediaUnattachedTTL  time.Duration
-	// Limits of video and audio uploads (ADR-0054 §6).
+	// Limits of video and audio uploads (ADR-0005 §9).
 	MediaMaxAVBytes       int64
 	MediaMaxVideoDuration time.Duration
 	MediaMaxAudioDuration time.Duration
@@ -159,7 +159,7 @@ type Config struct {
 	// SESSNSTopicARN is the SNS topic of the SES notifications; set, it opens
 	// POST /mail/events/ses (ADR-0086 §5).
 	SESSNSTopicARN string
-	// Captcha is the CAPTCHA service, or "none"; the keys configure it (ADR-0042).
+	// Captcha is the CAPTCHA service, or "none"; the keys configure it (ADR-0106).
 	Captcha          string
 	CaptchaSiteKey   string
 	CaptchaSecretKey string
@@ -180,10 +180,10 @@ type Config struct {
 	LoginProviderAllowedPrefixes []netip.Prefix
 	// PushAllowedHosts and PushAllowedPrefixes are the destinations that the Web Push sends may
 	// reach although the SSRF guard refuses them (push_allowed_destinations, development only,
-	// ADR-0118 §3).
+	// ADR-0015 §11).
 	PushAllowedHosts    []string
 	PushAllowedPrefixes []netip.Prefix
-	// RelayIngestHourlyLimit is how many activities each relay may bring in per hour (ADR-0061).
+	// RelayIngestHourlyLimit is how many activities each relay may bring in per hour (ADR-0006).
 	RelayIngestHourlyLimit int
 	// BillingSources are the providers whose usage charges are imported (billing_sources,
 	// ADR-0068), and the AWS caps bound the billed requests by UTC day and month (§4).
@@ -217,7 +217,7 @@ type Config struct {
 	PaymentsStripeSecretKey     string
 	PaymentsStripeWebhookSecret string
 	// PaymentsPayjpSecretKey, PaymentsPayjpPublicKey, and PaymentsPayjpWebhookToken are the keys
-	// and the webhook token of payments = payjp (ADR-0099 §7).
+	// and the webhook token of payments = payjp (ADR-0074 §15).
 	PaymentsPayjpSecretKey       string
 	PaymentsPayjpPublicKey       string
 	PaymentsPayjpWebhookToken    string
@@ -240,13 +240,13 @@ type Config struct {
 	VoiceTURNCloudflareAPIToken string
 	VoiceTURNCredentialTTL      time.Duration
 	VoiceICETransportPolicy     string
-	// The LiveKit server of voice = livekit (ADR-0102 §5); VoiceLiveKitAPIURL defaults to
+	// The LiveKit server of voice = livekit (ADR-0101 §14); VoiceLiveKitAPIURL defaults to
 	// VoiceLiveKitURL over https (http for ws).
 	VoiceLiveKitURL       string
 	VoiceLiveKitAPIURL    string
 	VoiceLiveKitAPIKey    string
 	VoiceLiveKitAPISecret string
-	// The Sora server of voice = sora (ADR-0102 §5): VoiceSoraMode is "self_hosted" or "cloud",
+	// The Sora server of voice = sora (ADR-0101 §14): VoiceSoraMode is "self_hosted" or "cloud",
 	// and VoiceJoinSecret signs the join values that Sora sends back on each connection.
 	VoiceSoraMode            string
 	VoiceSoraSignalingURLs   []string
@@ -261,7 +261,7 @@ type Config struct {
 	// DeadJobRetention is how long a dead job is kept after it failed (FR-803).
 	DeadJobRetention time.Duration
 	// JobAttemptRetention is how long the record of a job's run that did not succeed is kept
-	// after the run (ADR-0064 §2).
+	// after the run (ADR-0004 §6).
 	JobAttemptRetention time.Duration
 	// DynamicClientUnredeemedTTL is how long a dynamically registered OAuth client may wait for
 	// the exchange of its first authorization code, and DynamicClientIdleTTL how long one
@@ -275,7 +275,7 @@ type Config struct {
 	MetricsEMFNamespace  string
 	MetricsEMFDimensions []string
 	// TracesExporter is the Tracer adapter, TracesSampleRatio the share of the root spans that
-	// are recorded, and TracesFlush when the spans are sent (ADR-0063 §5).
+	// are recorded, and TracesFlush when the spans are sent (ADR-0055 §17).
 	TracesExporter    string
 	TracesSampleRatio float64
 	TracesFlush       string
@@ -554,7 +554,7 @@ type Source struct {
 // issue, and the settings are still returned for display.
 func Load(src Source) (*Config, []Setting, error) { return load(src, nil) }
 
-// LoadMaintenance is Load for the maintenance mode (ADR-0084 §2): it reads and validates only the
+// LoadMaintenance is Load for the maintenance mode (ADR-0088 §9): it reads and validates only the
 // settings marked for it (the listen address, the host and origins, the proxies, status_page_url,
 // and the maintenance_* settings), so that a configuration whose adapter settings are wrong or
 // unreachable still starts. The settings it does not read are absent from the returned list.

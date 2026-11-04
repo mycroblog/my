@@ -38,7 +38,7 @@ func TestTracerContract(t *testing.T) {
 var spanSpec = kernel.SpanSpec{Name: "federation.deliver", Kind: kernel.SpanConsumer, AttrKeys: []string{"my.job.type", "my.job.attempt", "my.outcome"}}
 
 // TestTracerAllocatesNothing checks that a span costs no allocation with traces_exporter = none
-// (ADR-0063 §5), so that tracing adds next to nothing to an instance that does not export.
+// (ADR-0055 §17), so that tracing adds next to nothing to an instance that does not export.
 func TestTracerAllocatesNothing(t *testing.T) {
 	tr := none.NewTracer()
 	ctx := t.Context()

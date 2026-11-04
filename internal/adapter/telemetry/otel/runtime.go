@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
-// The Go runtime metrics of ADR-0056 §1 that the contrib runtime instrumentation does not
+// The Go runtime metrics of ADR-0055 §10 that the contrib runtime instrumentation does not
 // report: the GC cycles and the GC pauses.
 const (
 	runtimeScope       = "github.com/mycroblog/my/internal/adapter/telemetry/otel/runtime"
@@ -37,7 +37,7 @@ func runtimeProducers() []sdkmetric.Producer {
 	return []sdkmetric.Producer{otelruntime.NewProducer(), newGCPauseProducer()}
 }
 
-// startRuntime registers the Go runtime metrics on the provider (ADR-0056 §1): the go.*
+// startRuntime registers the Go runtime metrics on the provider (ADR-0055 §10): the go.*
 // metrics of the OpenTelemetry semantic conventions that the contrib runtime instrumentation
 // reports, and go.memory.gc.cycles.
 func startRuntime(p metric.MeterProvider) error {

@@ -28,7 +28,7 @@ type InviteStatus struct {
 }
 
 // Usable reports whether the invite still lets someone sign up at now, before its creator is
-// checked (ADR-0108 §3).
+// checked (ADR-0106 §16).
 func (s InviteStatus) Usable(now time.Time) bool {
 	return !s.Revoked && !s.Expired(now) && !s.Exhausted(s.Uses)
 }
@@ -46,7 +46,7 @@ type CreateInviteInput struct {
 // MaxInviteUses bounds CreateInviteInput.MaxUses (the integer column of invites.max_uses).
 const MaxInviteUses = 1_000_000
 
-// Errors of the invites that members create (ADR-0108).
+// Errors of the invites that members create (ADR-0106).
 var (
 	// ErrInvitesNotAllowed reports a user who may not create invites of their own now: the
 	// instance setting invite_creators and the user's roles do not let them, moderation
@@ -67,7 +67,7 @@ func newInviteCode() string {
 // CreateInvite creates an invite of the staff (a holder of manage_invites, or the CLI) with a
 // new random code; no cap of the members' invites applies to it. It fails with
 // ErrRegistrationClosed while the registration mode is closed, which takes no invite
-// (ADR-0108 §4).
+// (ADR-0106 §17).
 func (s *Service) CreateInvite(ctx context.Context, in CreateInviteInput) (identity.Invite, error) {
 	if in.MaxUses < 0 || in.MaxUses > MaxInviteUses {
 		return identity.Invite{}, fmt.Errorf("identity: max uses must be 0 (no limit) to %d", MaxInviteUses)
@@ -114,7 +114,7 @@ func (s *Service) newInvite(createdBy string, kind identity.InviteCreatorKind, m
 const inviteAuditCodeChars = 4
 
 // inviteAudit returns the audit log entry of an operation on an invite (FR-704), performed by
-// byUserID ("" for the CLI): a staff member, or a member on their own invite (ADR-0108 §6). The
+// byUserID ("" for the CLI): a staff member, or a member on their own invite (ADR-0106 §19). The
 // label is the first characters of the code followed by an ellipsis: enough to tell the invite
 // in the list of invites, while the whole code, which lets anyone sign up, stays with those who
 // manage the invites. The source is the invite, whose ID is also the key of its revocation.
@@ -133,7 +133,7 @@ func inviteAudit(id string, action appmoderation.AuditAction, inv identity.Invit
 // ListInvites returns invites with their usage, newest first, at most limit (1 to
 // MaxListLimit) of them. A before other than "" is the ID of the last invite of the previous
 // page: the list starts after it. The invite of a member who may no longer create invites is
-// InviteCreatorIneligible (ADR-0108 §3).
+// InviteCreatorIneligible (ADR-0106 §16).
 func (s *Service) ListInvites(ctx context.Context, before string, limit int) ([]InviteStatus, error) {
 	if limit < 1 || limit > MaxListLimit {
 		return nil, fmt.Errorf("identity: limit must be 1 to %d", MaxListLimit)
@@ -189,7 +189,7 @@ const (
 	InviteExpired   InviteState = "expired"
 	InviteExhausted InviteState = "exhausted" // used as many times as it allows
 	// InviteCreatorIneligible is the otherwise usable invite of a member who may no longer
-	// create invites (ADR-0108 §3); it works again when the member may.
+	// create invites (ADR-0106 §16); it works again when the member may.
 	InviteCreatorIneligible InviteState = "creator_ineligible"
 )
 
@@ -267,7 +267,7 @@ func (s *Service) RevokeInvite(ctx context.Context, code, revokedByUserID string
 }
 
 // MemberInviteSettings are the instance settings of the invites that members create
-// (ADR-0108 §1, §2).
+// (ADR-0106 §14, §15).
 type MemberInviteSettings struct {
 	// Everyone reports that invite_creators is everyone: every signed-in local user may create
 	// invites, not only the holders of create_invites.
@@ -336,7 +336,7 @@ func (s *Service) inviterFacts(ctx context.Context, userID string, mode identity
 	return f, nil
 }
 
-// creatorEligible reports whether the creator of inv still lets it work (ADR-0108 §3): always
+// creatorEligible reports whether the creator of inv still lets it work (ADR-0106 §16): always
 // for an invite of the staff, and while its creator may create invites for that of a member.
 // The registration mode is the sign-up's to check, so it is not part of the answer.
 func (s *Service) creatorEligible(ctx context.Context, inv identity.Invite, settings MemberInviteSettings) (bool, error) {
@@ -353,7 +353,7 @@ func (s *Service) creatorEligible(ctx context.Context, inv identity.Invite, sett
 	return identity.MayCreateInvites(f), nil
 }
 
-// OwnInvites are a member's own invites (ADR-0108 §5) with what they may do.
+// OwnInvites are a member's own invites (ADR-0106 §18) with what they may do.
 type OwnInvites struct {
 	// Invites are a page of the invites the member created as a member, newest first.
 	Invites []InviteStatus
@@ -412,7 +412,7 @@ func (s *Service) ListOwnInvites(ctx context.Context, userID, before string, lim
 	return out, nil
 }
 
-// CreateOwnInviteInput describes a member's new invite (ADR-0108 §2).
+// CreateOwnInviteInput describes a member's new invite (ADR-0106 §15).
 type CreateOwnInviteInput struct {
 	UserID string
 	// MaxUses is how many sign-ups the invite allows, 1 to the cap; 0 means the default.
@@ -421,7 +421,7 @@ type CreateOwnInviteInput struct {
 	ExpiresIn time.Duration
 }
 
-// CreateOwnInvite creates an invite of a member (ADR-0108 §1, §2), audited with the member as
+// CreateOwnInvite creates an invite of a member (ADR-0106 §14, §15), audited with the member as
 // the actor (§6). It fails with ErrInvitesNotAllowed when the member may not create invites
 // now, with identity.ErrInviteUsesOverCap or identity.ErrInviteExpiryOverCap for a value
 // outside the caps, and with ErrTooManyInvites when the member already holds
@@ -469,7 +469,7 @@ func (s *Service) CreateOwnInvite(ctx context.Context, in CreateOwnInviteInput) 
 }
 
 // RevokeOwnInvite stops an invite that the user userID created as a member from working, as
-// RevokeInviteByID does, audited with the member as the actor (ADR-0108 §6). A member revokes
+// RevokeInviteByID does, audited with the member as the actor (ADR-0106 §19). A member revokes
 // their own invites even when they may no longer create invites. It fails with ErrNotFound when
 // the user created no member invite with the ID.
 func (s *Service) RevokeOwnInvite(ctx context.Context, userID, inviteID string) (InviteStatus, error) {

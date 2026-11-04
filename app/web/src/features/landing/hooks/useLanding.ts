@@ -23,7 +23,7 @@ import {
 /** Who may sign up (GET /instance `registrations.mode`). */
 type RegistrationMode = Instance["registrations"]["mode"];
 
-/** The server-rendered registration page (ADR-0030), which a link loads in place of the app. */
+/** The server-rendered registration page (ADR-0090), which a link loads in place of the app. */
 const signUpPath = "/auth/sign_up";
 
 /** The sample of the local timeline: absent when the instance does not serve it (or has not said yet). */

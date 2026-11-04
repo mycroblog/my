@@ -2,10 +2,10 @@
 @import "tailwindcss";
 /* Semantic design tokens; the only colors components may use (web-client/README.md D8). */
 @import "@my/ui/theme.css";
-/* The Noto Color Emoji web font of every Unicode emoji (ADR-0095); the server-rendered pages keep the OS emoji. */
+/* The Noto Color Emoji web font of every Unicode emoji (ADR-0091); the server-rendered pages keep the OS emoji. */
 @import "@my/ui/emoji.css";
 
-/* @my/ui ships source only, so scan it for the utilities its components use (ADR-0026). */
+/* @my/ui ships source only, so scan it for the utilities its components use (ADR-0025). */
 @source "../../ui/src";
 @source not "../../ui/src/**/*.stories.tsx";
 /* The generated token list holds token names, which look like classes but are not. */

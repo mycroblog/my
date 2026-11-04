@@ -245,7 +245,7 @@ func TestWebPushOff(t *testing.T) {
 }
 
 // TestWebPushQueuedBeforeDeactivation runs, once the recipient has deactivated the account, a job
-// that a mention queued before it: the message stays unsent (ADR-0145 §6).
+// that a mention queued before it: the message stays unsent (ADR-0089 §16).
 func TestWebPushQueuedBeforeDeactivation(t *testing.T) {
 	t.Parallel()
 	const vapidKey = "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw"

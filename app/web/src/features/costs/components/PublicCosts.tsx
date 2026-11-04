@@ -18,7 +18,7 @@ export type PublicCostsProps = Omit<CostTotalsPanelProps, "children"> & {
 };
 
 /**
- * The body of the public costs page (`/about/costs`, FR-903, FR-917, ADR-0067 §8, ADR-0073 §7), under its heading:
+ * The body of the public costs page (`/about/costs`, FR-903, FR-917, ADR-0067 §8, ADR-0067 §17), under its heading:
  * what the instance publishes of its running costs and of its income, by week, month or year, amortized or in cash.
  * The costs come with the breakdown of the current period by provider and category when the instance publishes it;
  * the income with the members of each plan when the instance publishes them, and with the balance only while the
@@ -84,7 +84,7 @@ export function PublicCosts({ today, ...panel }: PublicCostsProps) {
           )}
           {income.status !== "hidden" && (
             <Section surface="card" title={t("client:income.title")}>
-              {/* The balance would tell the costs that the instance keeps to itself (ADR-0073 §7). */}
+              {/* The balance would tell the costs that the instance keeps to itself (ADR-0067 §17). */}
               {costs.status === "hidden" && <Hint size="inherit">{t("client:income.public.no_balance")}</Hint>}
               <IncomeState income={income} table={!charted} />
             </Section>

@@ -10,7 +10,7 @@ import { PageHeading } from "./-layout/PageHeading";
 import { RouteError } from "./-layout/RouteStates";
 
 /**
- * `/@{acct}/status/{id}` (ADR-0053): the author's handle only makes the address readable; the ID finds the
+ * `/@{acct}/status/{id}` (ADR-0018): the author's handle only makes the address readable; the ID finds the
  * post. The `_` keeps the page out of a profile page's layout at `/@{acct}`.
  */
 const paramsSchema = z.object({ acct: z.string().min(1), id: z.string().min(1) });

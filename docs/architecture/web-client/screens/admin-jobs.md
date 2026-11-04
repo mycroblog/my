@@ -6,8 +6,8 @@ paths: ["app/web/src/routes/admin.jobs.tsx", "app/web/src/features/admin/compone
 
 ## ジョブのキュー（`/admin/jobs`）
 
-`manage_jobs` を持つ管理者が、ジョブのキューが滞っていないか、失敗したジョブがないかを知り、失敗したジョブを再実行する画面（ADR-0064、[§14](../14-admin.md)）。
-数は `StatTile` で先に出し（ADR-0113）、一覧はタブで状態ごとに分ける。タブは URL に置く。
+`manage_jobs` を持つ管理者が、ジョブのキューが滞っていないか、失敗したジョブがないかを知り、失敗したジョブを再実行する画面（ADR-0004、[§14](../14-admin.md)）。
+数は `StatTile` で先に出し（ADR-0110）、一覧はタブで状態ごとに分ける。タブは URL に置く。
 
 ### 1. 使う人と頻度
 

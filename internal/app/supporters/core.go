@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/supporters"
 )
 
-// The subscription core (ADR-0072 §7, T1, G1): every signal (a webhook, the return from the
+// The subscription core (ADR-0072 §7): every signal (a webhook, the return from the
 // checkout, a deadline of the Scheduler, the reconciliation) comes down to re-reading the
 // provider's subscription and deriving our state from the snapshot and our own facts
 // (supporters.Derive). A transition is recorded only when the state or what the role depends on

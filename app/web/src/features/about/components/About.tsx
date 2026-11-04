@@ -205,7 +205,7 @@ function Crawlers({
 }
 
 /**
- * What running the server costs and what its supporters bring in (FR-903, FR-917, ADR-0067 §8, ADR-0073 §7): what the
+ * What running the server costs and what its supporters bring in (FR-903, FR-917, ADR-0067 §8, ADR-0067 §17): what the
  * instance publishes of each, whether the balance is published (only when both are), and the link to the page of the
  * totals. Absent when the instance publishes neither.
  */
@@ -249,7 +249,7 @@ function CommerceDisclosure({ url }: { url: string }) {
 }
 
 /**
- * The link to the instance's status page, where its operators tell of outages and maintenance (FR-810, ADR-0085 §6).
+ * The link to the instance's status page, where its operators tell of outages and maintenance (FR-810, ADR-0088 §20).
  * The page is another site, so the link leaves the app (web-client/README.md Y12).
  */
 function StatusPage({ url }: { url: string }) {
@@ -326,7 +326,7 @@ function SourceCode({ url }: { url: string }) {
  * The license notices of the third-party code, data and fonts that the build bundles, which Go serves as plain text at
  * /licenses/ (a page of the server, outside the app): those of the npm packages of the app and of its Service Worker
  * (Vite's build.license) and those of the bundled data that is no npm package (vite-plugins/licenses.ts): the Unicode
- * emoji data (ADR-0091 §1) and the Noto Color Emoji fonts (ADR-0095 §6). Keep it in step with vite.config.ts.
+ * emoji data (ADR-0091 §1) and the Noto Color Emoji fonts (ADR-0091 §13). Keep it in step with vite.config.ts.
  */
 const licenseNotices: readonly { href: string; label: ClientMessageKey }[] = [
   { href: "/licenses/npm-packages.md", label: "client:about.licenses.npm" },

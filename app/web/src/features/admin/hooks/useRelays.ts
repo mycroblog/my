@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The relays of the admin screens (ADR-0061, manage_settings): the list, registering and joining one, leaving it,
+// The relays of the admin screens (ADR-0006, manage_settings): the list, registering and joining one, leaving it,
 // joining it again and deleting its registration. What each change did is announced and kept in a StatusMessage;
 // a refusal is said in the client's words for its reason, next to the field or the list.
 import { useNotice } from "@my/ui";

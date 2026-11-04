@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The audit log screen in every width × locale project (ADR-0027, FR-704): operations by a moderator with a name in
+// The audit log screen in every width × locale project (ADR-0110, FR-704): operations by a moderator with a name in
 // right-to-left letters on an account and a long domain, filtered by a row's actor and by the kind of operation, and
 // loading more, each passing axe without scrolling sideways, with the filters and pages in the URL. `vite preview`
 // has no API, so each test plays the server of a signed-in operator with page.route; names change with the

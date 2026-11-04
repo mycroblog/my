@@ -184,7 +184,7 @@ export function issuePasswordResetLinkMutation(api: Api) {
 }
 
 /**
- * What removing the two-factor authentication of account `id` changes (web-client/README.md S1, ADR-0045): its page, which
+ * What removing the two-factor authentication of account `id` changes (web-client/README.md S1, ADR-0028): its page, which
  * shows whether it has one, and the audit log, which records the removal. Both are marked stale; resolves once those
  * on screen are fetched again.
  */
@@ -253,7 +253,7 @@ export function refreshPublicAccount(
 }
 
 /**
- * What a new moderation action on account `accountId` changes (web-client/README.md S1, ADR-0045): the account's page,
+ * What a new moderation action on account `accountId` changes (web-client/README.md S1, ADR-0028): the account's page,
  * its actions and the searches (refreshAdminAccount), the audit log, the lists of reports when it resolves report
  * `reportId`, and what everyone sees of the account. They are marked stale; resolves once those on screen are fetched again.
  */
@@ -299,7 +299,7 @@ export async function refreshLiftedAccountAction(
   ]);
 }
 
-/** Writes the lifted action from the answer into the cached actions of account `accountId` (ADR-0045). */
+/** Writes the lifted action from the answer into the cached actions of account `accountId` (ADR-0028). */
 export function cacheLiftedAccountAction(
   api: Api,
   queryClient: QueryClient,

@@ -1,6 +1,6 @@
 ## 10. API クライアントと認証
 
-API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱う（ADR-0029、ADR-0030）。機能はこれを作り直さない。
+API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱う（ADR-0016、ADR-0090）。機能はこれを作り直さない。
 トークンの付与と 401 の後の更新・問題の詳細の解釈・ストリーミングの読み取りと再接続は、公開の API クライアントライブラリ `@mycroblog/mykit`（`pkg/mykit/ts`、[ADR-0093](../../adr/0093-api-client-library-mykit.md) §3）に任せ、
 `app/web` には文言の整形（`client*` のメッセージ）・`lib/network` と `lib/maintenance` への報告・openapi-react-query との接続を残す。
 `app/web` はワークスペースの依存（`workspace:*`）として `@mycroblog/mykit` のソースを読む（`tsconfig` の `customConditions` の `@mycroblog/source` と、同じファイルを指す Vite の `resolve.alias`）。Web クライアントのための変更は、ライブラリの公開の API の変更になる。
@@ -20,7 +20,7 @@ API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱�
   - `app/web` のミドルウェアが、失敗した応答を `lib/errors.ts` の `ApiError`（`mykit` の `problemFromResponse` が読んだ RFC 9457 の problem に `message` を足したもの）に、通信の失敗（`mykit` の `NetworkError`）は `lib/errors.ts` の `NetworkError` にして投げる。`mykit` の `ProblemError` より先に投げるので、呼び出し側が受け取るのは `ApiError` だけになる。
     どちらも `message` がローカライズ済みで、そのまま表示できる（`NetworkError` は、ブラウザがオフラインならそう言う文言になる。§9 のオフライン）。応答が届いたか届かなかったかは `lib/network.ts` に伝える。problem でない本文（プロキシの HTML など）と `title` のない problem は、クライアントのカタログの文言（`client:api.error.status`）にする。
     生成された型は失敗をすべて problem と呼ぶので、表示する文言は `errorMessage(error)` で取る。
-  - メンテナンスの Problem（`503`、`type: /api/v1/problems/maintenance`、ADR-0084 §3）は `MaintenanceError`（`ApiError` の一種）にし、`lib/maintenance.ts` に知らせる。その後の 2xx の応答も知らせ、メンテナンスの終わりにする（§9 のメンテナンス）。
+  - メンテナンスの Problem（`503`、`type: /api/v1/problems/maintenance`、ADR-0088 §10）は `MaintenanceError`（`ApiError` の一種）にし、`lib/maintenance.ts` に知らせる。その後の 2xx の応答も知らせ、メンテナンスの終わりにする（§9 のメンテナンス）。
     この 503 は 401 ではないのでトークンを更新しない。401 の後の更新が OAuth の端点でこの 503 に当たったときも、トークンを捨てずに `MaintenanceError` を投げる。
 - **セッション**（`lib/auth/session.ts`）: アクセストークンはこのオブジェクトのメモリにだけ置き、localStorage・sessionStorage・IndexedDB・読める Cookie には書かない。
   リフレッシュトークンは HttpOnly の `__Host-my_rt` Cookie にあり、`POST /oauth/token/refresh`（`X-My-Token-Refresh: 1`、`credentials: "include"`）だけがそれを読む。
@@ -45,8 +45,8 @@ API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱�
     失敗（拒否・`state` の不一致・交換の失敗・通信の失敗）は、そのルートの `errorComponent` が理由とやり直しのリンクを出す。
   - 戻り先（`return_to`）は、1 つの `/` で始まるパスだけを受け付ける（`//example.com` や `javascript:` は捨てる）。
 - **リアルタイム更新**（`lib/sse`、S10、FR-207）: レイアウトの `useLiveUpdates`（`routes/-layout`）が、サインイン中だけ `lib/sse` の `useEventStream` で `GET /streaming` を 1 本開く。
-  ローカル・連合のタイムラインの画面（`features/timeline` の `PublicTimeline`）は、サインイン中で表示している間だけ、同じ `useEventStream` でそのタイムラインのストリーム（`GET /streaming/timelines/{local|federated}`、`mykit` の `runStream` の `timeline`）をもう 1 本開き、画面を離れると Effect の後始末で閉じる（[ADR-0127](../../adr/0127-public-timeline-streaming.md) §5）。
-  サインインしていない閲覧者には開かず、ボタンも出さない（ADR-0127 §2）。このストリームのイベントは `update` だけで、タイムラインの設定が `off` の 404 は、ほかの 4xx と同じく接続し直さずにやめる。
+  ローカル・連合のタイムラインの画面（`features/timeline` の `PublicTimeline`）は、サインイン中で表示している間だけ、同じ `useEventStream` でそのタイムラインのストリーム（`GET /streaming/timelines/{local|federated}`、`mykit` の `runStream` の `timeline`）をもう 1 本開き、画面を離れると Effect の後始末で閉じる（[ADR-0013](../../adr/0013-timeline-strategy.md) §21）。
+  サインインしていない閲覧者には開かず、ボタンも出さない（ADR-0013 §18）。このストリームのイベントは `update` だけで、タイムラインの設定が `off` の 404 は、ほかの 4xx と同じく接続し直さずにやめる。
   `useEventStream` は `Api` の `stream`（`mykit` の `runStream`）を呼ぶ。`EventSource` はヘッダを送れないので、`mykit` が `fetch` の本文を HTML Standard の手順で読む（`id` と `retry` は使わず、`Last-Event-ID` を送らない）。
   トークンはセッションから取り、401 のあとに 1 度だけ更新する。更新がサーバーに届かないときとメンテナンスに当たったときは、通信の失敗として接続し直す。
   ストリームの `fetch` も、応答が届いたか（`lib/network.ts`）とメンテナンスの Problem（`lib/maintenance.ts`）を、ほかの要求と同じく知らせる。
@@ -55,7 +55,7 @@ API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱�
   - `mykit` が知らないイベントを「未知のイベント」（`type: "unknown"`）として渡すので、`useEventStream` はそれを捨てる。
   - サーバーは何も再送しないので、2 本目以降のストリームが開いたら、ホームの最初のページを読み直して新着を数え、未読数を読み直し、通知の一覧を古いことにする（再取得はしない）。
     ローカル・連合のストリームでは、そのタイムラインの最初のページを読み直して新着を数える。
-  - `update` は、まず Query のキャッシュの別の項目（`features/timeline/api/newStatuses.ts`）に待たせる。表示中のタイムライン（ホーム・リスト・ローカル・連合。どれも `NewPostsFeed`）がそれをどう出すかは、利用者の設定 `timeline_auto_insert`（`GET /preferences`、既定は真（[ADR-0127](../../adr/0127-public-timeline-streaming.md) の 6）。設定の「表示・投稿・タイムライン」の `Switch` で選び、変えたとたんに保存する）で決まる（Y7、[ADR-0077](../../adr/0077-timeline-auto-insert.md)）。
+  - `update` は、まず Query のキャッシュの別の項目（`features/timeline/api/newStatuses.ts`）に待たせる。表示中のタイムライン（ホーム・リスト・ローカル・連合。どれも `NewPostsFeed`）がそれをどう出すかは、利用者の設定 `timeline_auto_insert`（`GET /preferences`、既定は真（[ADR-0013](../../adr/0013-timeline-strategy.md) の 6）。設定の「表示・投稿・タイムライン」の `Switch` で選び、変えたとたんに保存する）で決まる（Y7、[ADR-0013](../../adr/0013-timeline-strategy.md)）。
     - 偽のとき: ホームの `NewItemsButton` が、読み込み済みの投稿にないものの数を出し、押されたら最初のページの先頭に差し込んで見出しにフォーカスを移す。
     - 真のとき: 待たせた投稿をすぐ最初のページの先頭に差し込む。先頭にいる（フィードの先頭の目印が `IntersectionObserver` で見えている）ときはそのまま見せる。
       先頭から離れているときは、差し込む前に画面の上端にかかる投稿の位置を測り、`useLayoutEffect` で差の分だけスクロールを足して、その投稿を同じ場所に保つ（安定版の Safari が `overflow-anchor` に対応しないので、フィードは `overflow-anchor: none` にして自分で補う）。

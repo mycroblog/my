@@ -1,6 +1,6 @@
 name: Release image
 
-# Gives the image of a published release its tags (ADR-0142 §1, §6), so that the tags move with the notes that tell
+# Gives the image of a published release its tags (ADR-0010 §4, §9), so that the tags move with the notes that tell
 # operators how to upgrade. It never builds: it reads the digest that release.yml attached to the Release as
 # image-digest.txt, checks that the digest's signed provenance comes from release.yml on the tag's commit, and tags it.
 # A failure before the tagging leaves no tag; the last check, the anonymous pull, fails until the package is public.

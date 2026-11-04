@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The client API client (ADR-0029, ADR-0093 §3): the client of @mycroblog/mykit, typed by the types it generates from
+// The client API client (ADR-0016, ADR-0093 §3): the client of @mycroblog/mykit, typed by the types it generates from
 // api/openapi.yaml, and openapi-react-query on top of it for the `queryOptions` of features/<x>/api
 // (web-client/README.md S1). mykit sends the session's access token as a Bearer token, and after a 401 refreshes it
 // once through the session (a TokenSource) and sends the request again; it sends the locale the app is displayed in
@@ -12,7 +12,7 @@
 // - turns every response with an error status into an ApiError and every network failure into a NetworkError, with a
 //   localized message (errors.ts);
 // - tells lib/network whether the server answered, which decides whether the app is offline (web-client/16-look-states-and-wording.md G17);
-// - tells lib/maintenance when the server answers with its maintenance problem (a MaintenanceError, ADR-0084 §3), and
+// - tells lib/maintenance when the server answers with its maintenance problem (a MaintenanceError, ADR-0088 §10), and
 //   when it answers again after that. The 503 of the maintenance is no failure of the session: it never discards the
 //   token, counts as a failed refresh, or signs out, on a request or on the refresh after a 401.
 //
@@ -97,7 +97,7 @@ function isAbort(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
 }
 
-/** Reads the server's `webClientEpoch` from every answer (ADR-0141 §4). */
+/** Reads the server's `webClientEpoch` from every answer (ADR-0028 §12). */
 function epochMiddleware(reload: () => void): Middleware {
   return {
     onResponse({ response }) {

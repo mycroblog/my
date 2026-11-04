@@ -17,7 +17,7 @@ func FederationSuspended(rows []RestrictionRow, now time.Time) bool {
 
 // SuspensionChange compares the restriction rows of one account before and after a change
 // (an action, a lift, or the cleanup of expired rows) and tells whether the account's
-// suspension changed in a way that other servers must learn (federation.md §11.1, ADR-0036):
+// suspension changed in a way that other servers must learn (federation.md §11.1, ADR-0058):
 //
 //   - The account became suspended: no RestrictFederation row was in effect before, and one is
 //     after.

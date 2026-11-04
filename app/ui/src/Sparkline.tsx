@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Sparkline (ADR-0113 §1): a small line of a value over time inside a row of a list, beside the number it draws. It is
+// Sparkline (ADR-0110 §16): a small line of a value over time inside a row of a list, beside the number it draws. It is
 // decorative (`aria-hidden`): the row always says the number in text, and the full series is the TrendChart's. It is
 // drawn by hand in SVG (an exception to G10, listed in app/.oxlintrc.json); the line spans its box from the lowest to the
 // highest value, the newest point marked, and runs along the line, so the newest point is on the left in right-to-left

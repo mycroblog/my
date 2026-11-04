@@ -21,7 +21,7 @@ const (
 	corsMaxAge        = "600"
 )
 
-// clientAPIEpoch adds the web client's epoch (ADR-0141 §4) to the responses of the client API,
+// clientAPIEpoch adds the web client's epoch (ADR-0028 §12) to the responses of the client API,
 // including its errors: a client too old to work may get nothing else.
 func clientAPIEpoch(next http.Handler) http.Handler {
 	epoch := strconv.Itoa(clientapi.WebClientEpoch)

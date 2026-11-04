@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server's policies (FR-001, FR-105, FR-202, FR-408, FR-409, FR-413, FR-718, FR-725, FR-903, ADR-0009, ADR-0057): who may sign
-// up, who may create invites of their own and the caps of those invites (ADR-0108 §1, §2), the default language, the public timelines, whether images need a description, the federation (its direction,
-// ADR-0076, which asks before it narrows), who may read the
+// up, who may create invites of their own and the caps of those invites (ADR-0106 §14, §15), the default language, the public timelines, whether images need a description, the federation (its direction,
+// ADR-0006, which asks before it narrows), who may read the
 // list of the domain actions, whether the landing page shows the server's numbers and who runs it,
 // what the server states to search engines and AI crawlers, and voice chat (ADR-0100 §2, §9, §13: who may start a
 // room, whether visitors see a room's summary, and how many days the participants' records are kept). They are
@@ -76,7 +76,7 @@ const inviteExpiryChoices: readonly number[] = [
 /**
  * The settings typed as a whole number in a text field, with the bounds to use until the server gives its own: the
  * days to keep the participants' records of voice chat rooms (ADR-0100 §13) and the caps of the members' invites
- * (ADR-0108 §2).
+ * (ADR-0106 §15).
  */
 const numberFields = {
   voice_participants_retention_days: { min: 30, max: 3650 },
@@ -104,7 +104,7 @@ export type NumberField = { min: number; max: number; error: string | undefined 
 export type PolicyChoice = { value: string; label: string };
 
 /**
- * A change of the federation mode that stops something from flowing (ADR-0076, "切り替え"), which the form confirms
+ * A change of the federation mode that stops something from flowing (ADR-0006, "切り替え"), which the form confirms
  * before it saves: what stops reaching other servers, what stops coming in, and whether deletions stop too.
  */
 export type FederationNarrowing = {

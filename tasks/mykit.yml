@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# pkg/mykit and pkg/mybot, the MIT-licensed client libraries of the client API (ADR-0093, ADR-0094; the mykit context
+# pkg/mykit and pkg/mybot, the MIT-licensed client libraries of the client API (ADR-0093; the mykit context
 # of scripts/changed-contexts.sh): the Go module pkg/mykit and the npm package @mycroblog/mykit in pkg/mykit/ts, and
 # the Go module pkg/mybot and the npm package @mycroblog/mybot in pkg/mybot/ts, the bot library on top of mykit. The
 # Go modules are modules of their own, so the root module's `./...`, depguard, and go:check never see them: these
@@ -12,10 +12,10 @@
 # published and joins the server module and pkg/mykit by `replace`: the Go client drives a server that
 # internal/platform/platformtest runs in the test process (ADR-0093 §8). Those of pkg/mybot (mybot-integration-vet,
 # mybot-integration-test) live in pkg/mybot/integration, of the same shape: an echo bot against that server, and the
-# fake server of pkg/mybot/mybottest against the spec (ADR-0094 §10). They are part of this check, so they run in
+# fake server of pkg/mybot/mybottest against the spec (ADR-0093 §18). They are part of this check, so they run in
 # `check:changed` and in the merge queue's `check` (the repo job of ci.yml) whenever the mykit context is selected:
 # a change of the root go.mod or go.sum (a bump by hand that leaves the integration modules untidy, which mod-check and
-# mybot-mod-check catch; Dependabot's bumps tidy them through go.work, ADR-0135), of pkg/mykit, of the spec (api/), of internal/interface/clientapi/ (both through the api context), or of
+# mybot-mod-check catch; Dependabot's bumps tidy them through go.work, ADR-0081), of pkg/mykit, of the spec (api/), of internal/interface/clientapi/ (both through the api context), or of
 # internal/platform/platformtest/. They take seconds after the server's packages are built, so they do not belong
 # to the slow suite (ADR-0079).
 version: "3"

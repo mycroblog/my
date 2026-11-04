@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
-// A user who deactivated their account signs in to the status page only (ADR-0145 §4): it tells
+// A user who deactivated their account signs in to the status page only (ADR-0089 §14): it tells
 // the date of the deletion and offers to reactivate or delete the account. A reactivation leads on
 // to the app unless moderation still keeps the user out.
 

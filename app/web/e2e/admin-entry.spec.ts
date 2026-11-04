@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The navigation's Moderation entry with what awaits the moderators, and the notifications from the instance, in
-// every width × locale project (FR-712, ADR-0027, ADR-0039, ADR-0058). From md the rail (and from lg the sidebar)
+// every width × locale project (FR-712, ADR-0110, ADR-0058). From md the rail (and from lg the sidebar)
 // has Moderation with the count; below md the tab bar's Menu button carries the count and its sheet has the
 // entry. A moderator has no Administration entry. The counts are in the accessible names and drawn as digits.
 // The notifications of a moderator and of a user whose account was acted on lead to the screens that follow them

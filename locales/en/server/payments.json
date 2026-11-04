@@ -1,7 +1,7 @@
 {
   "payments.back": {
     "defaultMessage": "Back",
-    "description": "Link from the PAY.JP checkout or card page back to where the user came from (ADR-0099 §3)."
+    "description": "Link from the PAY.JP checkout or card page back to where the user came from (ADR-0074 §11)."
   },
   "payments.card": {
     "defaultMessage": "Card",
@@ -69,7 +69,7 @@
   },
   "payments.fake.notice": {
     "defaultMessage": "Test build: this checkout stands in for a payment provider, and no money moves.",
-    "description": "Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0117 §2)."
+    "description": "Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6)."
   },
   "payments.fake.pay": {
     "defaultMessage": "Pay",

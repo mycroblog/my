@@ -5,7 +5,7 @@ import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { SettingsHeading } from "./-layout/SettingsHeading";
 
-/** Signed-in browsers (ADR-0136): where the account is signed in, and signing out one browser or the others. */
+/** Signed-in browsers (ADR-0090): where the account is signed in, and signing out one browser or the others. */
 export const Route = createFileRoute("/settings/sessions")({
   staticData: { title: "client:settings.sessions.title" },
   beforeLoad: requireSignIn,

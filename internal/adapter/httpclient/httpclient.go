@@ -70,9 +70,9 @@ type Options struct {
 	// ExemptAddrPorts are treated as public addresses. Tests set it to reach their servers on
 	// loopback with every other check on; the server never sets it.
 	ExemptAddrPorts []netip.AddrPort
-	// Meter records the outbound HTTP metrics of ADR-0056 §1; nil records nothing.
+	// Meter records the outbound HTTP metrics of ADR-0055 §10; nil records nothing.
 	Meter kernel.Meter
-	// Tracer records a client span of each request (RequestSpan, ADR-0063 §1); nil records
+	// Tracer records a client span of each request (RequestSpan, ADR-0055 §13); nil records
 	// nothing. No request carries a traceparent (§3).
 	Tracer kernel.Tracer
 	// Webhook lists the destinations that the requests of kernel.HTTPPurposeWebhook may reach
@@ -82,7 +82,7 @@ type Options struct {
 	// may reach although the guard refuses them (login_provider_allowed_destinations, ADR-0106 §5).
 	LoginProvider Destinations
 	// WebPush lists the destinations that the requests of kernel.HTTPPurposeWebPush may reach
-	// although the guard refuses them (push_allowed_destinations, ADR-0118 §3): the demo
+	// although the guard refuses them (push_allowed_destinations, ADR-0015 §11): the demo
 	// environment's fake push service on loopback. The configuration accepts it only in the
 	// development profile. Unlike the other lists it keeps https, and a request to one of these
 	// destinations never follows a redirect.
@@ -195,7 +195,7 @@ func New(opts Options) *Client {
 	}
 	c.webPush = &http.Client{
 		Transport: c.transport(c.dialExempt(opts.WebPush)),
-		// A redirect never leaves the fake push service for another destination (ADR-0118 §3).
+		// A redirect never leaves the fake push service for another destination (ADR-0015 §11).
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 	return c
@@ -296,7 +296,7 @@ func (c *Client) do(ctx context.Context, r *kernel.HTTPRequest) (*kernel.HTTPRes
 	// The transport asks for gzip and decompresses it only when the caller does not set
 	// Accept-Encoding, and the body limit must apply to the decompressed size.
 	req.Header.Del("Accept-Encoding")
-	// The trace context never leaves for a remote server (ADR-0063 §3).
+	// The trace context never leaves for a remote server (ADR-0055 §15).
 	req.Header.Del("Traceparent")
 	req.Header.Del("Tracestate")
 	req.Header.Set("User-Agent", c.userAgent(r.Agent))

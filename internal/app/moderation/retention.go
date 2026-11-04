@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// The retention of the moderation records (ADR-0038, data-model §4.3, §8): the hourly
+// The retention of the moderation records (ADR-0058, data-model §4.3, §8): the hourly
 // JobPurgeRecords erases the actions on accounts with their appeals, the reports, and the audit
 // log entries past the retention periods of the instance settings, and the sign-up blocks
 // moderation.SignupBlockRetention after they end (internal/domain/moderation retention.go says
@@ -120,7 +120,7 @@ type RetentionRepository interface {
 }
 
 // PlaceRetentionHold records a hold on the erasure of an account's records after their retention
-// (ADR-0038); byUserID is the operator, "" for the CLI. An account may have several holds, each
+// (ADR-0058); byUserID is the operator, "" for the CLI. An account may have several holds, each
 // released on its own.
 func (s *Service) PlaceRetentionHold(ctx context.Context, accountID, reason, byUserID string) (moderation.RetentionHold, error) {
 	switch _, err := s.d.Accounts.FindByID(ctx, accountID); {
@@ -216,7 +216,7 @@ func (s *Service) HeldAccountIDs(ctx context.Context) ([]string, error) {
 
 // StatusRetained reports inside tx whether the purge of statuses must keep a status: a report or
 // an action on statuses points at it, which keeps the evidence for as long as the record that
-// points at it, or a hold preserves its author (ADR-0038).
+// points at it, or a hold preserves its author (ADR-0058).
 func (s *Service) StatusRetained(ctx context.Context, tx uow.Tx, statusID, authorAccountID string) (bool, error) {
 	return s.d.Repository.StatusRetained(ctx, tx, statusID, authorAccountID)
 }

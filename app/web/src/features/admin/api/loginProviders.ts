@@ -134,7 +134,7 @@ export function rotateLoginProviderSecretMutation(api: Api) {
 }
 
 /**
- * Marks what a change of a login provider changes (ADR-0045): the list, whose row the answer shows, and the audit
+ * Marks what a change of a login provider changes (ADR-0028): the list, whose row the answer shows, and the audit
  * log; the queries shown now are fetched again and awaited.
  */
 export async function refreshLoginProviders(queryClient: QueryClient): Promise<void> {

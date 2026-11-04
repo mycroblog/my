@@ -22,7 +22,7 @@ func (unreachableIdentity) Authenticate(context.Context, string) (identity.Sessi
 }
 
 // TestStatusPageLink checks that the sign-in page and the error page of a database outage link to the status page
-// when status_page_url is set (ADR-0085 §6), in each locale, and that no page has the link otherwise.
+// when status_page_url is set (ADR-0088 §20), in each locale, and that no page has the link otherwise.
 func TestStatusPageLink(t *testing.T) {
 	b, err := i18n.Load()
 	if err != nil {

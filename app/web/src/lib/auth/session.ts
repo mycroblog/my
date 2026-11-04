@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The web client's OAuth session (ADR-0019 §4, ADR-0030). The access token lives only in this object's
+// The web client's OAuth session (ADR-0019 §4, ADR-0090). The access token lives only in this object's
 // memory: never in localStorage, sessionStorage, IndexedDB or a readable cookie. The refresh token is in
 // the HttpOnly __Host-my_rt cookie, which only POST /oauth/token/refresh reads; that endpoint returns a
 // new access token and rotates the cookie.
@@ -10,7 +10,7 @@
 // posts the new access token on a BroadcastChannel. A tab that waited for the lock uses the token that
 // arrived meanwhile; if none did, its own refresh sends the cookie that the previous one rotated in.
 //
-// The server's maintenance mode answers the OAuth endpoints with the 503 of the maintenance problem (ADR-0084 §3). The
+// The server's maintenance mode answers the OAuth endpoints with the 503 of the maintenance problem (ADR-0088 §10). The
 // session survives it: a refresh that meets it keeps the token and the cookie, throws the MaintenanceError, and says
 // nothing to the other tabs, as when the server cannot be reached.
 //

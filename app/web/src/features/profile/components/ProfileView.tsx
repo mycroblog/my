@@ -191,7 +191,7 @@ type AccountPostsProps = {
 /**
  * A tab's posts. For an account of another server they are only those this instance has received, which
  * the feed says above them, with a link to the profile on the account's own server; while the server fetches
- * the account's recent posts from there, a line says so until they are read again (ADR-0044).
+ * the account's recent posts from there, a line says so until they are read again (ADR-0006).
  */
 function AccountPosts({ accountId, filter, original, labelledBy }: AccountPostsProps) {
   const t = useT();

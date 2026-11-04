@@ -4,7 +4,7 @@
 // tests and development (ADR-0004). Jobs do not survive the process.
 //
 // Queue implements queue.JobQueue, queue.Source for queue.PullRunner, queue.DeadJobs, and
-// queue.JobInspector for the queue dashboard (ADR-0064), with
+// queue.JobInspector for the queue dashboard (ADR-0004), with
 // the same lease, retry, dead-job, and ordering-key semantics as the database queue. After RunSynchronously,
 // Enqueue runs the due jobs with the given runner before it returns, and RunUntil runs the jobs
 // that become due later in the same way, never concurrently with the run of an Enqueue. Enqueue

@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// The audit log (FR-704, ADR-0037, view_audit): the operations of the moderators and the
+// The audit log (FR-704, ADR-0058, view_audit): the operations of the moderators and the
 // administrators, which their use cases record. It is read-only here, as everywhere.
 
 // AuditLog lists the audit log and tells which targets of its entries are gone.

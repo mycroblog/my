@@ -72,7 +72,7 @@ type MediaDeps struct {
 	Limits media.Limits
 	// Sizes bound the variants; zero fields take media.DefaultSizes.
 	Sizes media.Sizes
-	// AVLimits bound video and audio uploads (ADR-0054 §6); zero fields take
+	// AVLimits bound video and audio uploads (ADR-0005 §9); zero fields take
 	// media.DefaultAVLimits.
 	AVLimits media.AVLimits
 	// UnattachedTTL is how long an upload may stay unattached; zero means DefaultUnattachedTTL.
@@ -91,14 +91,14 @@ type MediaDeps struct {
 // An upload is checked and stored synchronously: the content must be an accepted format
 // detected from its bytes, within the size and dimension limits. The file as received stays in
 // blob storage under a private key (uploads/<id>) until the media.process job has re-encoded
-// it without metadata into public variants for its purpose (ADR-0054): small, medium, and
+// it without metadata into public variants for its purpose (ADR-0005): small, medium, and
 // large still ones, and for an animation also moving ones, under keys that name the
 // processing result (media/<id>/<result>/<size>.<ext> and
 // media/<id>/<result>/<size>-animated.<ext>), so that they never change and can be cached for
 // good. Then the job deletes the file as received, so that no location data is kept. Using a
 // file for another purpose processes its large variant again for that purpose.
 //
-// A video or audio file is never transcoded (ADR-0054 §6): the job remuxes it without metadata
+// A video or audio file is never transcoded (ADR-0005 §9): the job remuxes it without metadata
 // into one large animated variant (media/<id>/<result>/large-animated.<ext>), and processes the
 // poster that the client sent with it, or else the cover embedded in the file, into the still
 // variants and the blurhash of an attachment.
@@ -146,7 +146,7 @@ type UploadInput struct {
 	// content.PurposeAttachment.
 	Purpose content.MediaPurpose
 	// Poster is the image that a video or audio attachment shows before it plays, which the
-	// client takes from the file (ADR-0054 §6); nil for none. It is ignored for an image.
+	// client takes from the file (ADR-0005 §9); nil for none. It is ignored for an image.
 	Poster io.Reader
 }
 
@@ -250,7 +250,7 @@ func (s *MediaService) Upload(ctx context.Context, in UploadInput) (Media, error
 	return s.Media(ctx, file.ID)
 }
 
-// checkAV checks a video or audio upload of the container format against av (ADR-0054 §6): it
+// checkAV checks a video or audio upload of the container format against av (ADR-0005 §9): it
 // must be an attachment whose declared type, if any, is one of the container's, and its poster,
 // if any, an image within the image limits. It returns the media type of the file as served and
 // the poster.
@@ -678,7 +678,7 @@ func (s *MediaService) image(variants []content.MediaVariant) (Image, bool) {
 
 // RemoteImage returns the image of a remote media file through the media proxy (federation.md
 // §9): the file itself as the medium and large variants, with the declared dimensions, and, for
-// a file that may be an image, the proxy's small still variant as the small one (ADR-0054 §7);
+// a file that may be an image, the proxy's small still variant as the small one (ADR-0005 §10);
 // a video or audio file (gifv included) is its Media alone. It returns false when no proxy is
 // configured.
 func (s *MediaService) RemoteImage(m content.RemoteMedia) (Image, bool) {
@@ -883,7 +883,7 @@ func (s *MediaService) recordResult(ctx context.Context, up *content.UploadedMed
 	return s.deleteReceived(ctx, up)
 }
 
-// processAV remuxes a video or audio upload into result (ADR-0054 §6): the file without
+// processAV remuxes a video or audio upload into result (ADR-0005 §9): the file without
 // metadata as its large animated variant, and the poster, or else the cover embedded in the
 // file, as its still variants and blurhash. A poster that is not an accepted image is left out.
 // Content the processor rejects makes result a failure. It returns the job's result when the

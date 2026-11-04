@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/interface/authpages"
 )
 
-// The widgets as the siteverify presets fill them (ADR-0042 §Context).
+// The widgets as the siteverify presets fill them (ADR-0106 §13).
 var (
 	turnstile = kernel.HumanCheckWidget{
 		Service: kernel.HumanCheckTurnstile, Name: "Cloudflare Turnstile", SiteKey: "turnstile-site-key",

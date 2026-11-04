@@ -7,7 +7,7 @@
 | `moderation_actions` | イベント | `id`, `target_account_id`, `kind`（§5.2 の enum）, `reason_category`（`enum(spam, legal, violation, other)`）, `public_reason`（`text`、NULL 可。5,000 文字まで。本人に見せる理由）, `private_note`（`text`、NULL 可。5,000 文字まで）, `report_id`（NULL 可）, `issuer`（`enum(moderator)`）, `issued_by_user_id`（NULL 可）, `notify_target`（`bool`）, `expires_at`（NULL 可 = 無期限）, `issued_at` | インデックス `(target_account_id, id DESC)`, `(report_id)` |
 | `moderation_action_statuses` | イベント（子） | `action_id`, `status_id` | PK `(action_id, status_id)`。投稿単位の処分（`delete_statuses` / `mark_statuses_sensitive`）の対象。処分 1 件につき 1〜100 件で、処分の対象のアカウントの削除されていない投稿だけ（処分のユースケースが検査する）。ほかの種類の処分は持たない。インデックス `(status_id)`（投稿の消去で証拠を残す判定） |
 | `moderation_action_lifts` | イベント | `action_id`（PK）, `lifted_by_user_id`（NULL 可 = システム）, `reason`（`text`、NULL 可。5,000 文字まで）, `lifted_at` | 期限切れは「解除」ではないので記録しない（投影の読み取り時に期限で判定） |
-| `moderation_appeals` | リソース | `id`, `action_id`, `account_id`（申し立てた本人 = 処分の対象）, `body`（1〜2,000 文字。空白だけは不可）, `submitted_at` | 一意 `(action_id)`。ローカルのアカウントへの処分だけが対象。期間（ADR-0038、インスタンス設定 `appeal_window_days`、既定は処分から 180 日。`ban` はアカウントの削除の期日 = 処分から 30 日も過ぎない）を過ぎた処分と、アカウントが削除された `ban` には申し立てられない |
+| `moderation_appeals` | リソース | `id`, `action_id`, `account_id`（申し立てた本人 = 処分の対象）, `body`（1〜2,000 文字。空白だけは不可）, `submitted_at` | 一意 `(action_id)`。ローカルのアカウントへの処分だけが対象。期間（ADR-0058、インスタンス設定 `appeal_window_days`、既定は処分から 180 日。`ban` はアカウントの削除の期日 = 処分から 30 日も過ぎない）を過ぎた処分と、アカウントが削除された `ban` には申し立てられない |
 | `moderation_appeal_decisions` | イベント | `appeal_id`（PK）, `decision`（`enum(upheld, overturned)`）, `public_reason`（`text`、NULL 可。2,000 文字まで。本人に見せる）, `decided_by_user_id`（NULL 可 = CLI）, `decided_at` | 覆った場合は同じトランザクションで `moderation_action_lifts` も記録する。`delete_statuses` を覆しても投稿は戻らない |
 | `appeal_states` | 投影 | `appeal_id`（PK）, `state`（`enum(pending, upheld, overturned)`）, `since` | インデックス `(state, appeal_id)`（審査待ち一覧） |
 
@@ -61,10 +61,10 @@
 | `report_notes` | イベント | `id`, `report_id`, `author_user_id`（NULL 可 = CLI）, `body`（2,000 文字まで）, `written_at` | インデックス `(report_id, id)`。モデレーターだけが見る内部メモ。対象にも通報者にも見せない |
 | `report_states` | 投影 | `report_id`（PK）, `state`（`enum(open, resolved)`）, `outcome`（`enum(actioned, dismissed)`、NULL 可。最後の解決の結果）, `assignee_user_id`（NULL 可）, `since`（受け付けた時刻か、解決した時刻か、再開した時刻） | インデックス `(state, report_id)`（未解決一覧）。`outcome` は `state = resolved` のときだけ値を持つ（`CHECK` 制約）。インデックス `(assignee_user_id, report_id)` |
 
-- 通報者（`reporter_account_id`）は、ローカルの通報ならローカルのアカウント、受信した `Flag` なら送ってきた Actor（多くはリモートのインスタンス Actor）です。通報者は対象に見せません（ADR-0038）。
+- 通報者（`reporter_account_id`）は、ローカルの通報ならローカルのアカウント、受信した `Flag` なら送ってきた Actor（多くはリモートのインスタンス Actor）です。通報者は対象に見せません（ADR-0058）。
 - ローカルの通報者は、自分の通報を `(reporter_account_id, id)` のキーセットで新しい順に引けます。見せるのは通報の内容と状態（`open` / `resolved`）だけで、`outcome`・担当・処分・メモは見せません（FR-711）。
 - 解決はすべて、通報と解決を載せたドメインイベント（`moderation.report_resolved`）を同じトランザクションで発行します。`notification` はそこから `report_resolved` を作り、`dedupe_key` が通報ごとなので、再開のあとの解決では通知し直しません（§4.7）。
-- `forwarded` は、ローカルの通報者がリモートのアカウントの通報で相手のサーバーへの転送を求めたかどうかです（受け付けた時点で決まる事実）。対象がローカルのアカウントなら、求めても `false` です。転送は受け付けのトランザクションで outbox に積みます（[ADR-0036](../../../adr/0036-moderation-federation-propagation.md)）。受信した `Flag` は常に `false` です。
+- `forwarded` は、ローカルの通報者がリモートのアカウントの通報で相手のサーバーへの転送を求めたかどうかです（受け付けた時点で決まる事実）。対象がローカルのアカウントなら、求めても `false` です。転送は受け付けのトランザクションで outbox に積みます（[ADR-0058](../../../adr/0058-moderation-admin-separation.md)）。受信した `Flag` は常に `false` です。
 - ローカルの通報のコメントは 1,000 文字、受信した `Flag` のコメントは 5,000 文字までです。`report_rule_citations` は `category = violation` のときだけ持てます。
 - ローカルの通報が指せる投稿は、対象のアカウントの投稿のうち通報者が見られるもの（単一の閲覧判定 `CanView` を通す）を 20 件まで、引用できるルールは効いているもの（引退していないもの）を 20 件までです。自分自身は通報できません。
 - 通話のルームの通報（ADR-0100 §11）は、通報者に見える（`voice.CanSee`）開いたルームを `report_voice_rooms` で指し、対象のアカウントはその時のホスト、`revision_id` はその時の設定の版です。ルームが見えるか・ホスト・版は `voice` が決め（`voice.Service.ReportTarget`）、クライアント API が `moderation.LocalReports` に渡します。投稿は指せず、転送しません。
@@ -74,7 +74,7 @@
 - モデレーターが開く通報の詳細は、メモを古い順に、対象のほかの通報の数（`reports` の `(target_account_id, id)`）と対象への処分の数（`moderation_actions`。解除・期限切れを含む）とともに示します。
 - 通報の詳細は、通報が指す投稿（`report_statuses`）を公開範囲によらず示します。作者などが削除した投稿も、最後の版の内容を削除の時刻とともに示し、物理削除された投稿は省きます。
   これはモデレーターに閲覧判定 `CanView` を通さずに投稿を見せる経路で、`manage_reports` を持つ人に、その通報が指す投稿だけを返します（ほかの画面では、モデレーターにも公開範囲が効きます）。
-  通報の対応の一部なので、監査ログには記録しません（ADR-0037 が記録する閲覧は、IP アドレスとメールアドレスの表示だけです）。
+  通報の対応の一部なので、監査ログには記録しません（ADR-0058 が記録する閲覧は、IP アドレスとメールアドレスの表示だけです）。
 - 通報と処分が参照する投稿（`report_statuses`・`moderation_action_statuses`）は、作者が削除しても、参照する記録の保持期間まで消去ジョブの物理削除から外します（通報の詳細のほかの表示からは消えます。§8）。
 
 #### 登録の拒否リスト（S）
@@ -88,13 +88,13 @@
 - 管理 API・CLI で作る拒否は即時に効き、追加と解除をそれぞれ監査ログに記録します。解除済みの拒否の解除は何も変えず、記録もしません。
 - 一覧からのまとめての追加（使い捨てメールのドメインの一覧など。1 回に `moderation.MaxSignupBlockImport` = 10,000 件まで）も、値ごとに 1 行の `signup_blocks` と 1 行の監査ログを書きます。読み込みの単位の行は持ちません。
   正しくない値・一覧の中で重なる値・同じ `(kind, value)` で同じかより強い `severity` の拒否が効いている値は足さずに行番号と理由を返し、500 件ずつの短いトランザクションで書きます（効いている拒否の確認も同じトランザクションの中で、インデックス `(kind, value)` を引きます）。
-- 拒否は、解除か期限切れの早い方から 30 日（`moderation.SignupBlockRetention`。インスタンス設定ではない）を過ぎると、消去ジョブ `moderation.purge_records` が解除の行とともに消します（ADR-0038、[記録の保持期間](#記録の保持期間)）。解除も期限も無い拒否は、効いている間ずっと残ります。
+- 拒否は、解除か期限切れの早い方から 30 日（`moderation.SignupBlockRetention`。インスタンス設定ではない）を過ぎると、消去ジョブ `moderation.purge_records` が解除の行とともに消します（ADR-0058、[記録の保持期間](#記録の保持期間)）。解除も期限も無い拒否は、効いている間ずっと残ります。
 - BAN は、モデレーターが求めたとき（`block_email`）に、対象の利用者の主メールアドレスの `email_hash`・`reject` の拒否を同じトランザクションで作り（`moderation_action_id` は BAN）、その追加も監査ログに記録します。ローカルアカウントの BAN 以外と、メールアドレスのない利用者には作れません。
 - 登録画面からの登録は、効いている拒否（解除も期限切れもしていないもの）に当たれば、`reject` なら受け付けず、`require_approval` なら登録モードに関わらず `pending` で始めます。登録できなかった理由は利用者に詳しく示しません。
 
 #### 監査ログ【イベント】
 
-[ADR-0037](../../../adr/0037-audit-log.md) の記録です。
+[ADR-0058](../../../adr/0058-moderation-admin-separation.md) の記録です。
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
@@ -149,7 +149,7 @@
   | `payment_reconcile_queued` | `payment_provider` | 決済の事業者の名前（`stripe`・`payjp`） | 決済の事業者の名前 | なし（元の記録を持たない操作） |
 
   申請と取り下げは申請者（`create_custom_emojis` を持つ利用者）を操作者とし、承認は申請への `custom_emoji_request_approved` と、作った絵文字への `custom_emoji_created`（画像の申請は `custom_emoji_image_replaced`）の 2 行を承認した人を操作者として残します（ADR-0070 §8）。作成者による変更と削除は `custom_emoji_updated`・`custom_emoji_deleted` を作成者を操作者として残します。
-  サーバーが 410 Gone や失敗の継続で宛先を無効にした `webhook_disabled` は `actor_kind = system` です（ADR-0060）。リレーが送った `Accept` / `Reject` の `relay_accepted` / `relay_rejected` は `actor_kind = remote` です（ADR-0061）。
+  サーバーが 410 Gone や失敗の継続で宛先を無効にした `webhook_disabled` は `actor_kind = system` です（ADR-0060）。リレーが送った `Accept` / `Reject` の `relay_accepted` / `relay_rejected` は `actor_kind = remote` です（ADR-0006）。
 
 - ハンドルは、ローカルのアカウントは `@username`、リモートは `@username@domain`、ハンドルの無いアカウントは URI、消えたアカウントは ID です。表示名は 512 文字で切ります。
 - 一覧（`moderation.Service.GoneAuditTargets`）は、ページの行の対象が今もあるかを、対象の種類ごとに 1 回の問い合わせでまとめて確かめます。
@@ -157,7 +157,7 @@
   ロール・カスタム絵文字・その申請・webhook・リレーは、それを持つモジュールが監査ログを発行する側で `moderation` から呼べないため、ポート `moderation.AuditTargets` を通して `identity.Service.ExistingRoleIDs`（`roles`）・`content.CustomEmojiService.ExistingIDs`（`custom_emojis`）・`content.CustomEmojiService.ExistingRequestIDs`（`custom_emoji_requests`。行を消さないので常にある）・`webhook.Service.ExistingIDs`（`webhook_endpoint_heads` の `deleted` でないもの）・`federation.Relays.ExistingIDs`（`relays`）に問い合わせます。
   ほかの種類の対象（ドメイン・利用者・設定・ルール・お知らせ・招待・通話のルーム）は消えません。
 - 新しい管理操作を足すときは、`internal/domain/moderation` の `AuditAction` と対象の種類、スキーマの `CHECK`、API の enum（`AdminAuditAction`）を一緒に増やし、ユースケースから発行します（API の enum と一致することをテストが確かめます）。
-- 更新・削除の API と CLI はありません。保持期間（ADR-0038、既定 730 日）を過ぎた行だけを消去ジョブが消します。
+- 更新・削除の API と CLI はありません。保持期間（ADR-0058、既定 730 日）を過ぎた行だけを消去ジョブが消します。
 
 #### 切れた関係【イベント】
 
@@ -165,7 +165,7 @@
 | --- | --- | --- | --- |
 | `relationship_severances` | イベント | `id`, `domain_action_id`（NULL 可）, `action_id`（NULL 可。リモートのアカウントの凍結）, `account_id`（関係を失ったローカルのアカウント）, `followers_lost`（`int`）, `following_lost`（`int`）, `occurred_at` | インデックス `(account_id, id DESC)`。一意 `(domain_action_id, account_id)`, `(action_id, account_id)`。`domain_action_id` と `action_id` はどちらか一方だけが値を持つ（`CHECK`） |
 
-- ドメインの凍結とリモートのアカウントの凍結は、両方向のフォローを（承認待ちも含めて）`follow_terminations`（`reason = moderation`）で切り、承認済みのフォローを失ったローカルのアカウントごとに 1 行を記録して通知します（FR-717、ADR-0036）。`followers_lost` / `following_lost` は承認済みのフォローの数で、承認待ちだけを失ったアカウントには行を作りません。解除しても関係は戻しません。
+- ドメインの凍結とリモートのアカウントの凍結は、両方向のフォローを（承認待ちも含めて）`follow_terminations`（`reason = moderation`）で切り、承認済みのフォローを失ったローカルのアカウントごとに 1 行を記録して通知します（FR-717、ADR-0058）。`followers_lost` / `following_lost` は承認済みのフォローの数で、承認待ちだけを失ったアカウントには行を作りません。解除しても関係は戻しません。
 - リモートのアカウントの凍結は、凍結を始めた処分のトランザクションで切ります（相手は 1 アカウントなので、ローカルのアカウントの数で済む）。
 - ドメインの凍結は件数に上限がないので、処分のトランザクションで outbox に積んだジョブ `moderation.sever_domain` が、ローカルのアカウント 1 つごとに 1 トランザクションで、そのアカウントとドメイン・サブドメインのアカウントの間のフォローを切ります。処分がジョブの前に解除されても切ります。
 - 一意制約により、同じ処分を処理し直しても行と通知は増えません。リモートのアカウントがすでに凍結中なら 2 つ目の凍結は何も切りません（`account_suspension_changed` が出ないため）。
@@ -178,13 +178,13 @@
 | `retention_hold_releases` | イベント | `hold_id`（PK）, `released_by_user_id`（NULL 可 = CLI）, `released_at` | |
 
 - 保全は解放（`retention_hold_releases`）が無い間だけ効きます。運営者が CLI（`my admin retention hold|release|list`）で置き・解放し、1 つのアカウントに複数を置けます。
-- 効いている保全のあるアカウントのモデレーション記録・ログイン元と登録元の IP・投稿は、保持期間を過ぎても消去ジョブが消しません（ADR-0038）。
+- 効いている保全のあるアカウントのモデレーション記録・ログイン元と登録元の IP・投稿は、保持期間を過ぎても消去ジョブが消しません（ADR-0058）。
   モデレーション記録は、そのアカウントへの処分と異議申し立て、そのアカウントが対象か通報者の通報、対象がそのアカウントかその通報・異議申し立ての監査ログです。
   登録の拒否はアカウントに属さないので保全の対象外ですが、BAN から作られた拒否（`moderation_action_id`）は、その BAN の対象のアカウントに効いている保全があれば残ります。
 
 #### 記録の保持期間
 
-1 時間ごとの消去ジョブ `moderation.purge_records` が、インスタンス設定（§4.9）の保持期間を過ぎたモデレーション記録を、処分 → 通報 → 登録の拒否 → 監査ログの順に消します（ADR-0038、§8）。
+1 時間ごとの消去ジョブ `moderation.purge_records` が、インスタンス設定（§4.9）の保持期間を過ぎたモデレーション記録を、処分 → 通報 → 登録の拒否 → 監査ログの順に消します（ADR-0058、§8）。
 期間は回ごとに読み直します。処分・通報・登録の拒否は 1 トランザクションあたり 100 件、監査ログは 1 文あたり 1,000 行で、それぞれ 20 回まで、古い順（`id` 順）に消し、続きは次の回が消します。
 
 | 記録 | 設定（既定・下限） | 起点 | 消すもの |
@@ -197,4 +197,4 @@
 - 処分が参照する通報は、処分が消えた同じ回に、通報自身の期限を過ぎていれば消えます（処分を先に消すため）。
 - `relationship_severances` と、記録を指す通知（`moderation_action_id`・`report_id`・`appeal_id`）は消しません。指す先の消えた通知は、その記録を埋め込まずに返します。
 - 開示請求には、運営者が CLI（`my admin account export-moderation`）でアカウントの記録をすべて JSON で書き出します。
-  処分（非公開のメモを含む）と異議申し立て、そのアカウントの通報（メモ・担当・解決・再開を含む）、そのアカウントが出した通報（状態だけ）、それらの監査ログを入れ、通報者の身元（`reporter_account_id`・`uri`・`forwarded`）だけを伏せます（ADR-0038）。
+  処分（非公開のメモを含む）と異議申し立て、そのアカウントの通報（メモ・担当・解決・再開を含む）、そのアカウントが出した通報（状態だけ）、それらの監査ログを入れ、通報者の身元（`reporter_account_id`・`uri`・`forwarded`）だけを伏せます（ADR-0058）。

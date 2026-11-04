@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// The instance's income (ADR-0073 §6, §7, §9, FR-916, FR-917): the public totals that the
+// The instance's income (ADR-0067 §16, §17, §19, FR-916, FR-917): the public totals that the
 // instance setting income_visibility publishes, the totals of the finance viewers, and the
 // administrators' totals and money movements. Only the administrators' operations carry the
 // gross, the fees, individual movements, and the subscribers.
@@ -86,7 +86,7 @@ func newMoneys(ms []finance.Money) []Money {
 	return out
 }
 
-// incomeRules presents the rules that cut the periods of the income totals (ADR-0073 §3, §5).
+// incomeRules presents the rules that cut the periods of the income totals (ADR-0067 §13, §15).
 func (s *Server) incomeRules() IncomeTotalsRules {
 	rules := s.o.Income.IncomeRules()
 	out := IncomeTotalsRules{
@@ -99,7 +99,7 @@ func (s *Server) incomeRules() IncomeTotalsRules {
 	return out
 }
 
-// planCounts presents the members of each supporter plan now (ADR-0073 §7).
+// planCounts presents the members of each supporter plan now (ADR-0067 §17).
 func (s *Server) planCounts(ctx context.Context) ([]IncomePlanCount, error) {
 	counts, err := s.o.Income.PlanCounts(ctx)
 	if err != nil {
@@ -125,7 +125,7 @@ func (s *Server) instanceSettings(ctx context.Context) (instance.Settings, error
 }
 
 // GetInstanceIncomeTotals serves GET /api/v1/instance/income_totals: the net income that the
-// instance setting income_visibility publishes to everyone (FR-917, ADR-0073 §7). private is a
+// instance setting income_visibility publishes to everyone (FR-917, ADR-0067 §17). private is a
 // 404, plans adds the members of each plan, the balance is shown only while finance_visibility
 // publishes the costs too, and the periods stop at the one that holds today.
 func (s *Server) GetInstanceIncomeTotals(ctx context.Context, req GetInstanceIncomeTotalsRequestObject) (GetInstanceIncomeTotalsResponseObject, error) {
@@ -152,7 +152,7 @@ func (s *Server) GetInstanceIncomeTotals(ctx context.Context, req GetInstanceInc
 }
 
 // GetFinanceIncomeTotals serves GET /api/v1/finance/income_totals: the net income with its
-// balance for the holders of view_finance (ADR-0073 §6), and the members of each plan while
+// balance for the holders of view_finance (ADR-0067 §16), and the members of each plan while
 // finance_viewer_income or income_visibility shows them; a holder of manage_finance reads them
 // always.
 func (s *Server) GetFinanceIncomeTotals(ctx context.Context, req GetFinanceIncomeTotalsRequestObject) (GetFinanceIncomeTotalsResponseObject, error) {
@@ -200,7 +200,7 @@ func (s *Server) requireIncome(ctx context.Context) (*problem, error) {
 }
 
 // GetIncomeTotals serves GET /api/v1/admin/income_totals: the gross, the fees, the net, and the
-// balance of each period, with the members of each plan (ADR-0073 §6).
+// balance of each period, with the members of each plan (ADR-0067 §16).
 func (s *Server) GetIncomeTotals(ctx context.Context, req GetIncomeTotalsRequestObject) (GetIncomeTotalsResponseObject, error) {
 	if p, err := s.requireIncome(ctx); err != nil || p != nil {
 		if err != nil {

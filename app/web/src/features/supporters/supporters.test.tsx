@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The supporter plans through the whole app (web-client/README.md T4, ADR-0071 §4, ADR-0072 §6, §8, §13, §14): MSW plays
+// The supporter plans through the whole app (web-client/README.md T4, ADR-0070 §13, ADR-0072 §6, §8, §13, §14): MSW plays
 // the server, the user subscribes through the final confirmation to the provider's checkout, comes back, changes,
 // cancels and resumes the subscription, opens the portal, reads the supporter list and chooses to be on it; the Tauri
 // app shows no way to subscribe.

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Signing in with the Authorization Code grant and PKCE (RFC 6749 §4.1, RFC 7636, ADR-0030). The app
+// Signing in with the Authorization Code grant and PKCE (RFC 6749 §4.1, RFC 7636, ADR-0090). The app
 // sends the browser to the server's authorization screen, which redirects back to /login/callback with a
 // code; the callback checks `state` and exchanges the code for an access token (session.ts).
 //

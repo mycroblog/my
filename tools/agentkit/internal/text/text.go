@@ -65,7 +65,7 @@ var (
 // Requirements returns the FR / NFR identifiers in s, deduplicated, in order of appearance.
 func Requirements(s string) []string { return uniq(reFR.FindAllString(s, -1)) }
 
-// ADRs returns the ADR identifiers (ADR-0007) in s.
+// ADRs returns the ADR identifiers (ADR-0016) in s.
 func ADRs(s string) []string { return uniq(reADR.FindAllString(s, -1)) }
 
 // Issues returns the issue and pull request numbers written as #123 in s.

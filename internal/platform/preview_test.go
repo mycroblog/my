@@ -100,7 +100,7 @@ func TestLinkPreviews(t *testing.T) {
 		if noindex := rec.Header().Get("X-Robots-Tag") == "noindex, noarchive"; noindex != (vis == "unlisted") {
 			t.Errorf("%s post: X-Robots-Tag = %q", vis, rec.Header().Get("X-Robots-Tag"))
 		}
-		// A remote server resolving the page's URL (FR-305) is redirected to the post's id (ADR-0053).
+		// A remote server resolving the page's URL (FR-305) is redirected to the post's id (ADR-0018).
 		want := "https://" + cfg.Host + "/ap/objects/" + ids[vis]
 		if rec := getAs("/@alice/status/"+ids[vis], acceptMastodon); rec.Code != http.StatusFound || rec.Header().Get("Location") != want {
 			t.Errorf("%s post, ActivityPub = %d %q, want 302 %q", vis, rec.Code, rec.Header().Get("Location"), want)

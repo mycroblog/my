@@ -13,7 +13,7 @@ import (
 var ErrNoJobTypes = errors.New("queue: the selection leaves no job type to run")
 
 // SelectJobTypes returns which of the registered job types a worker runs, and which it skips
-// (ADR-0138 §1), both sorted. include and except are the patterns of worker_job_types and
+// (ADR-0004 §15), both sorted. include and except are the patterns of worker_job_types and
 // worker_job_types_except, at most one of them set: a pattern is a type or a prefix such as
 // federation.*. A pattern that matches no registered type is an error, to catch a typo or a type
 // that a release renamed at startup.

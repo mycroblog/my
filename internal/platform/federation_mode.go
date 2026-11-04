@@ -11,7 +11,7 @@ import (
 	domaininstance "github.com/mycroblog/my/internal/domain/instance"
 )
 
-// federationModes reads the federation mode (FR-413, ADR-0076) from the instance setting
+// federationModes reads the federation mode (FR-413, ADR-0006) from the instance setting
 // federation_mode, per request and per job, for every entry point of federation. A closed
 // server federates as off (ADR-0088 §2: no fetch, no ingest, no relay), whatever the setting;
 // the closure's own Deletes and the documents that a closed server still serves are decided by
@@ -74,7 +74,7 @@ func (a *App) mediaGate() federation.MediaGate {
 }
 
 // setUpFederationSever builds the severing of the follows with remote accounts that `my admin
-// federation sever` runs (ADR-0076).
+// federation sever` runs (ADR-0006).
 func (a *App) setUpFederationSever() {
 	a.FederationSever = federation.NewSeverance(federation.SeveranceDeps{
 		UnitOfWork: a.UnitOfWork, Graph: a.Graph, Accounts: a.Accounts, Modes: federationModes{a}, Clock: a.Clock,

@@ -15,7 +15,7 @@ import (
 )
 
 // mediaAVCases are the cases of MediaProcessorContract for video and audio files
-// (ADR-0054 §6).
+// (ADR-0005 §9).
 var mediaAVCases = []struct {
 	name string
 	run  func(t *testing.T, p media.Processor)

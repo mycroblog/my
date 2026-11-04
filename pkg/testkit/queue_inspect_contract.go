@@ -11,7 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/app/queue"
 )
 
-// The cases of QueueContract for the queue dashboard (ADR-0064): JobInspector and AttemptLog,
+// The cases of QueueContract for the queue dashboard (ADR-0004): JobInspector and AttemptLog,
 // run when the harness sets them.
 
 const contractOtherType = "testkit.other"

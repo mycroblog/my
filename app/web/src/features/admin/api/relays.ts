@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The queries and mutations of the relays screen (web-client/README.md S1, ADR-0061, manage_settings): the relays the
+// The queries and mutations of the relays screen (web-client/README.md S1, ADR-0006, manage_settings): the relays the
 // server joins or joined (GET /admin/relays), in registration order; registering and joining one, leaving it,
 // joining it again and deleting its registration. An operation that breaks a rule is a 422 `invalid-relay` problem
 // whose `reason` says which. Every change is recorded in the audit log.
@@ -87,7 +87,7 @@ export function deleteRelayMutation(api: Api) {
 }
 
 /**
- * Marks what a change of a relay changes (ADR-0045): the list, whose state the answer shows, and the audit log;
+ * Marks what a change of a relay changes (ADR-0028): the list, whose state the answer shows, and the audit log;
  * the queries shown now are fetched again and awaited.
  */
 export async function refreshRelays(queryClient: QueryClient): Promise<void> {

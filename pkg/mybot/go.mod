@@ -10,5 +10,5 @@ require (
 	github.com/oapi-codegen/runtime v1.7.0 // indirect
 )
 
-// mybot is built and released with the pkg/mykit of the same commit (ADR-0094 §1).
+// mybot is built and released with the pkg/mykit of the same commit (ADR-0093 §9).
 replace github.com/mycroblog/my/pkg/mykit => ../mykit

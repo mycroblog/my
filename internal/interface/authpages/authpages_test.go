@@ -331,7 +331,7 @@ func TestPagesLoadTheThemeStylesheet(t *testing.T) {
 }
 
 // The instance's own logo takes the place of the built-in wordmark and the name, which is its alt
-// text, with the dark logo on a dark ground (ADR-0116).
+// text, with the dark logo on a dark ground (ADR-0059).
 func TestPagesShowTheInstanceLogo(t *testing.T) {
 	b, err := i18n.Load()
 	if err != nil {

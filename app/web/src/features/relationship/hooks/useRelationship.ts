@@ -26,7 +26,7 @@ type Account = components["schemas"]["Account"];
 type FollowState = "none" | "requested" | "following" | "blocking";
 
 /**
- * Whether the viewer can turn on the notifications of the account's new posts (ADR-0123 §1): `available` (an account
+ * Whether the viewer can turn on the notifications of the account's new posts (ADR-0086 §14): `available` (an account
  * of this server, or one of another server that the viewer follows), `follow-first` (an account of another server that
  * the viewer does not follow yet: the button is shown turned off, with the reason), or `hidden` (a blocked account, or
  * one of another server that the instance cannot follow now).
@@ -50,7 +50,7 @@ export type RelationshipState =
       follow: FollowState;
       /**
        * Whether to offer a new follow (`follow` is `none`): not of an account of another server while the instance
-       * does not follow other servers (its federation mode is `off` or `outbound`, ADR-0076), which the server
+       * does not follow other servers (its federation mode is `off` or `outbound`, ADR-0006), which the server
        * refuses. A follow or a request that already exists can still be undone.
        */
       canFollow: boolean;

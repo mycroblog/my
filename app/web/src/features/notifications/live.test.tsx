@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Notifications from the event stream through the whole app (web-client/README.md S10, T4; FR-207): they update
-// the unread badge of the navigation, and play the notification sound where this device has it on (ADR-0109 §5).
+// the unread badge of the navigation, and play the notification sound where this device has it on (ADR-0086 §12).
 import { screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, test, vi } from "vitest";

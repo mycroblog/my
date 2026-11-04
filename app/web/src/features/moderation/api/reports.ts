@@ -240,7 +240,7 @@ export function endVoiceRoomMutation(api: Api) {
 }
 
 /**
- * Marks what ending a room changes (ADR-0045): the report, whose room shows it ended with every participation
+ * Marks what ending a room changes (ADR-0028): the report, whose room shows it ended with every participation
  * ended; the audit log, which records it; the voice chat queries (the list of the open rooms and the room's page),
  * whose answers no longer have the room open; and the reported host's account, whose profile links its open room.
  * Resolves once those on screen are fetched again.

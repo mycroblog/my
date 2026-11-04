@@ -29,7 +29,7 @@ import (
 // co-hosts, the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11), a transport
 // that gives no grant leaving nothing behind, admissions and sessions that a change committed
 // meanwhile does not undo, and, on a media server, the reconciliation of voice.sweep and the events of voice.media_event
-// (ADR-0102 §4).
+// (ADR-0101 §13).
 func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 	t.Helper()
 	cases := []struct {
@@ -999,7 +999,7 @@ func roomsSuspension(t *testing.T, e *roomsEnv) {
 	e.wantEnded(t, r, voice.EndHostIneligible)
 }
 
-// roomsMedia checks a room on a media server (ADR-0101 §2, ADR-0102 §4): voice.sweep removes
+// roomsMedia checks a room on a media server (ADR-0101 §2, ADR-0101 §13): voice.sweep removes
 // the sessions on the media path that are not in the room and disconnects the participants the
 // media path has not seen for longer than the life of a grant, applies the room's state to a
 // session it sees for the first time, and opens a media room again that vanished;
@@ -1251,7 +1251,7 @@ func roomsConcurrent(t *testing.T, e *roomsEnv) {
 }
 
 // roomsConnect checks the decisions of the connections that a media server asks about
-// (ADR-0102 §4): the current, live session of a participant of an open room connects, a
+// (ADR-0101 §13): the current, live session of a participant of an open room connects, a
 // connection that publishes audio only as a speaker; a session that is not live (unknown or
 // replaced), of a banned participant, past the capacity in the order of joining, or of a room
 // that is not open is refused; a request that does not authenticate is rejected; and the

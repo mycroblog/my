@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The server settings screen in every width × locale project (ADR-0027): an administrator names the server once,
+// The server settings screen in every width × locale project (ADR-0110): an administrator names the server once,
 // in any language, and the tab title and the sidebar call the server by that name instead of its domain at once, and
 // changes the registration mode with the keyboard, each step passing axe without scrolling sideways. `vite preview` has no API, so each test plays the server of
 // a signed-in administrator with page.route; names change with the locale, so the structure is checked by role,
@@ -241,7 +241,7 @@ test.describe("server policies", () => {
     await expectNoHorizontalScroll(page);
   });
 
-  test("narrows the federation direction only after confirming what stops (ADR-0076)", async ({
+  test("narrows the federation direction only after confirming what stops (ADR-0006)", async ({
     page,
     makeAxeBuilder,
   }) => {

@@ -156,7 +156,7 @@ CREATE TABLE imported_cost_heads (
   PRIMARY KEY (source, billing_month, service, charge_type)
 ) STRICT;
 
--- Event: a money movement on the payment provider's account (ADR-0073 §2, §8): a payment, a
+-- Event: a money movement on the payment provider's account (ADR-0067 §12, §18): a payment, a
 -- refund, a chargeback, its reversal, or a fee that belongs to no payment, recorded once per
 -- (provider, provider_movement_id) when its amounts are final, with its gross, fee, and net in the minor
 -- unit of its currency. occurred_on is occurred_at as a date in the provider's reporting time

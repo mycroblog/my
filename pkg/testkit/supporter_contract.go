@@ -2038,7 +2038,7 @@ func supporterRebuild(t *testing.T, e *supporterEnv) {
 	_, _ = ida, co
 }
 
-// supporterListings checks the supporter list (ADR-0071 §4, §6): only a member chooses to be
+// supporterListings checks the supporter list (ADR-0070 §13, §15): only a member chooses to be
 // listed; the list shows the listed members of the plans that are not retired, by the plan's
 // rank and newest first, page by page; and the end of a subscription takes its member off.
 func supporterListings(t *testing.T, e *supporterEnv) {

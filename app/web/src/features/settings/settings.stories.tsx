@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The settings page (/settings; web-client/screens/settings.md) with the settings menu (screens/settings-menu.md) in the
-// states of ADR-0112 §1.
+// states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";

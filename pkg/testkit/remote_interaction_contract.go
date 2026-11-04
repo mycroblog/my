@@ -38,7 +38,7 @@ type RemoteInteractionHarness struct {
 type RemoteInteractionFactory func(t *testing.T, opts uow.Options) RemoteInteractionHarness
 
 // RemoteInteractionContract verifies the boosts, favourites, and emoji reactions across servers
-// (federation.md §3.4, §7.1, ADR-0052) on a database adapter, through the inbox processor with
+// (federation.md §3.4, §7.1, ADR-0051) on a database adapter, through the inbox processor with
 // the real Announce, Like, EmojiReact, and Undo handlers, the real content, account, graph,
 // timeline, notification, and federation modules, and the outbound projectors and fan-out: the
 // Announce and Like documents of the major implementations (the federation fixtures) boost and
@@ -558,7 +558,7 @@ func remoteSendsLikes(t *testing.T, e *remoteInteractionEnv) {
 }
 
 // remoteSendsReactions checks the Like and Undo Like of a local account's emoji reactions to a
-// remote post (ADR-0052 §3): each Like carries the emoji as its content and _misskey_reaction,
+// remote post (ADR-0051 §8): each Like carries the emoji as its content and _misskey_reaction,
 // with the Emoji tag of a custom emoji, and filling the Like slot sends the Undo of what was in it
 // before the new Like. Read back, each is the reaction it sends.
 func remoteSendsReactions(t *testing.T, e *remoteInteractionEnv) {

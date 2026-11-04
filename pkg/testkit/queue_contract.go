@@ -35,10 +35,10 @@ type QueueHarness struct {
 	// the re-enqueue chain.
 	MaxDelay time.Duration
 	// Inspector, when set, is the adapter's JobInspector, and the contract checks the listing
-	// and the counts of its jobs (ADR-0064 §3).
+	// and the counts of its jobs (ADR-0004 §7).
 	Inspector queue.JobInspector
 	// Attempts, when set, is an AttemptLog that the contract's runners record into, and the
-	// contract checks the records (ADR-0064 §1).
+	// contract checks the records (ADR-0004 §5).
 	Attempts queue.AttemptLog
 }
 
@@ -67,7 +67,7 @@ func FixedRandom(v float64) func() float64 { return func() float64 { return v } 
 // is claimed again once its lease expires (at-least-once), and the stale worker's result is
 // dropped; concurrent workers run each job once; jobs of one ordering key run one at a time,
 // in enqueue order, even across retries, delays, and concurrent workers; a job keeps its TraceParent
-// (ADR-0063 §2) through runs, retries, the dead jobs, and a requeue; and, where the harness enables them,
+// (ADR-0055 §14) through runs, retries, the dead jobs, and a requeue; and, where the harness enables them,
 // transactional enqueue, survival of a restart, and the re-enqueue chain beyond a delay limit, and
 // the listing of the jobs and the records of the attempts for the queue dashboard.
 func QueueContract(t *testing.T, newHarness QueueFactory) {

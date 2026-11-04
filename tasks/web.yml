@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The web client and the client workspace (ADR-0025, ADR-0026; the web context of scripts/changed-contexts.sh).
+# The web client and the client workspace (ADR-0025; the web context of scripts/changed-contexts.sh).
 # app/ is the Bun workspace of the TypeScript clients (app/ui = @my/ui, app/web). Bun installs the packages and runs
 # their scripts; Vite runs on Node.js from .tool-versions, because the scripts' `vite` is a `#!/usr/bin/env node`
 # bin. Do not add --bun (ADR-0025). The generated files the workspace reads are not committed (ADR-0081): every
@@ -36,7 +36,7 @@ tasks:
     deps: [typecheck, oxlint, knip, dist]
 
   # It skips while app/node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
-  # parallel steps of a CI job, ADR-0083) never install at once after the job's first install.
+  # parallel steps of a CI job, ADR-0079) never install at once after the job's first install.
   install:
     desc: Install the pinned client workspace dependencies (app/bun.lock)
     run: once
@@ -200,7 +200,7 @@ tasks:
   # install the browser once with web:e2e-install. Both servers listen on free ports picked per run
   # (E2E_PREVIEW_PORT / E2E_SERVER_PORT fix them), so parallel runs in several worktrees stay apart;
   # E2E_BASE_URL / E2E_SERVER_URL test servers started elsewhere instead.
-  # The screen stories (ADR-0112 §1): each renders the whole app at a route, with MSW in the browser playing the server
+  # The screen stories (ADR-0079 §13): each renders the whole app at a route, with MSW in the browser playing the server
   # with the features' default handlers. The Storybook composes the @my/ui Storybook: ui:storybook on port 6006 in
   # development, and the static build of web:storybook-build carries the kit's build under ui/.
   storybook:
@@ -232,7 +232,7 @@ tasks:
     cmds:
       - bun run e2e
 
-  # The demo server (ADR-0117 §4): starts the development Mailpit, builds bin/my as the test build (GO_TAGS=e2e_fakes,
+  # The demo server (ADR-0015 §8): starts the development Mailpit, builds bin/my as the test build (GO_TAGS=e2e_fakes,
   # the fake payment provider and the fake push service), and runs `node e2e/server.ts demo` on a fresh database under
   # .tmp/demo on every start, with Web Push on (a VAPID key generated on the spot, `my dev push-service` on
   # https://localhost:8930 as its only push service), which applies the demo scenario (app/web/demo) and prints the URL,
@@ -251,7 +251,7 @@ tasks:
           E2E_PUSH_SERVICE_PORT={{.PUSH_SERVICE_PORT | default "8930"}} node e2e/server.ts demo
         ignore_error: true
 
-  # The L4 task tests (ADR-0110 §7, ADR-0114; app/web/l4/run.ts): Claude Code, non-interactive, does the tasks of the
+  # The L4 task tests (ADR-0110 §7, ADR-0015; app/web/l4/run.ts): Claude Code, non-interactive, does the tasks of the
   # screens' L1 files through the Playwright MCP server (ARIA snapshots only) against the demo server of web:demo
   # (`node e2e/server.ts demo`: the test build with the demo scenario, its email in Mailpit), and the steps,
   # backtracks, and lostness of each task go to .tmp/l4/results.json. SCREEN=<name>[,<name>] picks screens,

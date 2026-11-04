@@ -17,7 +17,7 @@ import (
 )
 
 // runAdminRetention implements `my admin retention <subcommand>`: the holds that stop the erasure
-// of an account's records after their retention (ADR-0038). The CLI acts as no user: the holds
+// of an account's records after their retention (ADR-0058). The CLI acts as no user: the holds
 // it places and releases record no operator.
 func runAdminRetention(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
@@ -114,7 +114,7 @@ func printRetentionHolds(w io.Writer, holds []moderation.RetentionHoldRecord) er
 }
 
 // runAdminAccountExport implements `my admin account export-moderation`: every moderation record
-// about an account as JSON on stdout, for a request of access (ADR-0038). The private notes are
+// about an account as JSON on stdout, for a request of access (ADR-0058). The private notes are
 // in it; the reporters' identities are not.
 func runAdminAccountExport(args []string, stdout, stderr io.Writer) int {
 	c, code := parseSubcommand("my admin account export-moderation", args, 1, stderr, adminAccountExportUsage, nil)

@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 )
 
-// Role badges (ADR-0071, FR-913). A role has no badge or one, made of a label and a color. Any
+// Role badges (ADR-0070, FR-913). A role has no badge or one, made of a label and a color. Any
 // role may have one, the built-in ones included, and none has one by default. The label is the
 // staff's own text, the same in every locale, which clients render as user content; the color
 // is one of the badge colors of the design tokens, whose text and background pairs keep their

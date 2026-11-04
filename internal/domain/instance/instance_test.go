@@ -57,7 +57,7 @@ func TestParse(t *testing.T) {
 		{instance.SettingDefaultLocale, "1a", ""},
 		{instance.SettingDefaultLocale, "en--US", ""},
 		{instance.SettingDefaultLocale, "", ""},
-		// The retention periods may not go below their floors (ADR-0038).
+		// The retention periods may not go below their floors (ADR-0058).
 		{instance.SettingSessionOriginsRetentionDays, "90", "90"},
 		{instance.SettingSessionOriginsRetentionDays, "89", ""},
 		{instance.SettingRegistrationOriginsRetentionDays, "89", ""},
@@ -261,7 +261,7 @@ func TestIntegerSettingsNameTheirUnit(t *testing.T) {
 	}
 }
 
-// The income is private until the setting publishes it, apart from the costs (ADR-0073 §7).
+// The income is private until the setting publishes it, apart from the costs (ADR-0067 §17).
 func TestIncomeVisibility(t *testing.T) {
 	var zero instance.Settings
 	if got := zero.IncomeVisibility(); got != instance.IncomePrivate {
@@ -337,7 +337,7 @@ func TestVoiceSettings(t *testing.T) {
 
 // Only the holders of create_invites create invites of their own, up to 5 usable ones of 10
 // uses and 30 days, until the settings say otherwise; the caps keep to their bounds
-// (ADR-0108 §1, §2).
+// (ADR-0106 §14, §15).
 func TestMemberInviteSettings(t *testing.T) {
 	var zero instance.Settings
 	want := instance.MemberInviteCaps{MaxActive: 5, MaxUses: 10, MaxExpiresIn: 30 * 24 * time.Hour}

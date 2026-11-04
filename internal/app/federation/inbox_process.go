@@ -24,7 +24,7 @@ var (
 	// dropped. For other activities it means the same as ErrDropActivity.
 	ErrUnknownObject = errors.New("federation: the target of the activity is unknown")
 	// ErrDropActivity reports an activity that is not processed and never will be, such as one
-	// outside the scope of remote content (ADR-0034). The job completes.
+	// outside the scope of remote content (ADR-0006). The job completes.
 	ErrDropActivity = errors.New("federation: the activity is dropped")
 	// ErrUnprocessable reports an activity that can never be processed although it should be,
 	// such as one whose document cannot be normalized. The job fails and stays as a dead job.
@@ -44,9 +44,9 @@ type InboxActivity struct {
 	// Actor is the actor of the activity: a remote account.
 	Actor appaccount.Actor
 	// Relay is the accepted relay that brought the activity in, nil for one that no relay
-	// brought (ADR-0061).
+	// brought (ADR-0006).
 	Relay *RelayMembership
-	// Mode is the federation mode when the activity is processed (ADR-0076), which the handlers
+	// Mode is the federation mode when the activity is processed (ADR-0006), which the handlers
 	// of the activities that span several flows ask about theirs; "" is federation.DefaultMode.
 	Mode federation.Mode
 }
@@ -73,7 +73,7 @@ type InboxActors interface {
 	Resolve(ctx context.Context, uri string) (appaccount.Actor, error)
 }
 
-// RelayGate decides whether an activity that a relay brought in is taken in (ADR-0061); *Relays
+// RelayGate decides whether an activity that a relay brought in is taken in (ADR-0006); *Relays
 // implements it.
 type RelayGate interface {
 	// Admit returns the relay of an admitted activity, and fails with an error wrapping
@@ -98,7 +98,7 @@ func (r *RemoteActors) FetchActor(ctx context.Context, uri string) (*Fetched, er
 }
 
 // ActorFetcher fetches an actor from its origin, which the federation mode allows unless it is
-// off (identify, ADR-0076); *Fetcher and *RemoteActors implement it.
+// off (identify, ADR-0006); *Fetcher and *RemoteActors implement it.
 type ActorFetcher interface {
 	FetchActor(ctx context.Context, uri string) (*Fetched, error)
 }
@@ -124,7 +124,7 @@ type InboxProcessorDeps struct {
 	Accounts AccountPolicy
 	// Relays admits the activities that relays bring in; nil processes them as any other.
 	Relays RelayGate
-	// Modes reads the federation mode (ADR-0076); nil federates both ways.
+	// Modes reads the federation mode (ADR-0006); nil federates both ways.
 	Modes ModeSettings
 	// Host is this server's serving domain, which tells the local objects of the activities.
 	Host   string
@@ -139,13 +139,13 @@ type InboxOutcome string
 const (
 	// InboxHandled is an activity that its handler processed.
 	InboxHandled InboxOutcome = "handled"
-	// InboxUnhandled is an activity of a type that no handler takes (ADR-0033): it completes.
+	// InboxUnhandled is an activity of a type that no handler takes (ADR-0006): it completes.
 	InboxUnhandled InboxOutcome = "unhandled"
 	// InboxTombstoned is a Delete or Undo of an unknown target, recorded as a tombstone.
 	InboxTombstoned InboxOutcome = "tombstoned"
 	// InboxDropped is an activity that is not processed: a restricted actor, a tombstoned
 	// object, an activity that could not be confirmed at its origin, one whose flow the
-	// federation mode stops (ADR-0076), or one its handler dropped.
+	// federation mode stops (ADR-0006), or one its handler dropped.
 	InboxDropped InboxOutcome = "dropped"
 )
 
@@ -156,7 +156,7 @@ type inboxRoute struct {
 }
 
 // InboxProcessor is the asynchronous part of receiving an activity (federation.md §3.2,
-// ADR-0033), the handler of JobInbox: it normalizes the stored document, fetches it again when
+// ADR-0006), the handler of JobInbox: it normalizes the stored document, fetches it again when
 // its signer is not its actor, resolves the actor, applies the moderation restrictions and the
 // tombstones, and dispatches the activity to the handler of its type. Activities of types
 // without a handler complete; a Delete or Undo whose target is unknown leaves a tombstone.
@@ -294,7 +294,7 @@ func (p *InboxProcessor) Process(ctx context.Context, activityURI federation.IRI
 }
 
 // ProcessRelayed is Process of an activity that the accepted relay relayID brought in ("" for
-// none): before anything is fetched for it, the relay's gate admits or drops it (ADR-0061).
+// none): before anything is fetched for it, the relay's gate admits or drops it (ADR-0006).
 func (p *InboxProcessor) ProcessRelayed(ctx context.Context, activityURI federation.IRI, trust federation.Trust, relayID string) (InboxOutcome, error) {
 	received, err := p.d.Repository.FindReceivedActivity(ctx, activityURI)
 	if errors.Is(err, ErrNotFound) {
@@ -321,7 +321,7 @@ func (p *InboxProcessor) ProcessRelayed(ctx context.Context, activityURI federat
 	}
 	in := &InboxActivity{Received: received, Activity: act, Document: document}
 
-	// The federation mode at the time of processing, before anything is fetched (ADR-0076).
+	// The federation mode at the time of processing, before anything is fetched (ADR-0006).
 	if in.Mode, err = currentMode(ctx, p.d.Modes); err != nil {
 		return "", err
 	}

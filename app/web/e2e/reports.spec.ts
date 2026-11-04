@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The report queue and a report's page in every width × locale project (ADR-0027, FR-710, NFR-MOD-4/7): the open
+// The report queue and a report's page in every width × locale project (ADR-0110, FR-710, NFR-MOD-4/7): the open
 // reports on an account with a long name and a reporter on a long domain, a report's page with its post, the
 // ban's alert dialog, and an action on the target that resolves the report and takes it off the queue, each
 // passing axe without scrolling sideways. `vite preview` has no API, so each test plays the server of a signed-in

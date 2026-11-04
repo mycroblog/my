@@ -371,7 +371,7 @@ type InsertIncomeMovementParams struct {
 	RecordedAt         time.Time
 }
 
-// The income records (ADR-0073 section 8). income_movements is written once per (provider,
+// The income records (ADR-0067 section 8). income_movements is written once per (provider,
 // provider_movement_id); the totals read it on every request.
 // InsertIncomeMovement writes nothing when the movement is already recorded.
 func (q *Queries) InsertIncomeMovement(ctx context.Context, arg InsertIncomeMovementParams) (int64, error) {

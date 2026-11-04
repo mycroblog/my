@@ -48,7 +48,7 @@ type TimelineFactory func(t *testing.T, opts uow.Options) TimelineHarness
 // home, with the boosts of their posts off home), the language filter, keyset paging,
 // deletions of statuses and of accounts (local and remote), the tag_usage projection and the prefix
 // search of hashtags over it (ADR-0092 §1), the property that incrementally updated projections equal a rebuild from the
-// events the content and graph modules replay, and the lists with their timelines (ADR-0122, timeline_lists_contract.go).
+// events the content and graph modules replay, and the lists with their timelines (ADR-0013, timeline_lists_contract.go).
 func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 	t.Helper()
 	cases := []struct {

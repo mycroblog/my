@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// A part of a page whose animations play together while animations do not play by themselves (ADR-0054 §3): a post or a
+// A part of a page whose animations play together while animations do not play by themselves (ADR-0005 §6): a post or a
 // profile's header. Its avatar, custom emoji and animated images move while the pointer is over it, while keyboard focus
 // is inside it, and from a tap on it until another tap or until it leaves the screen. They still never move while the
 // system asks for reduced motion: the scope only lets the moving renditions in, behind the same media query.

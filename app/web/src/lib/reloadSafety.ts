@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Whether a reload the user did not ask for would lose nothing (ADR-0141 §5), in one place. What the page's DOM does not
+// Whether a reload the user did not ask for would lose nothing (ADR-0028 §13), in one place. What the page's DOM does not
 // show registers here: the route and writes in flight (UpdatePrompt), files not yet uploaded (features/compose), and the
 // call (features/voice), which the update's toast also waits for. The text of a draft is not a blocker: sessionStorage
 // keeps it, and it would keep its author from ever updating.

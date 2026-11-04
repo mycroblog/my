@@ -33,7 +33,7 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 	d.RegisterMetrics(a.Meter)
 	a.dbSize = d
 	d.SetTracer(a.Tracer)
-	// The attempt log is in the database whatever the queue (ADR-0064 §1).
+	// The attempt log is in the database whatever the queue (ADR-0004 §5).
 	dbQueue := queuedb.NewPostgres(d, queueOpts)
 	a.JobAttempts = dbQueue
 	if queueInDatabase(cfg.Queue) {

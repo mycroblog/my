@@ -35,8 +35,8 @@ type Preferences struct {
 	DefaultPostLanguage string
 	// RequireMediaDescription makes clients ask for a description before attaching media.
 	RequireMediaDescription bool
-	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0077);
-	// DefaultTimelineAutoInsert for a new user (ADR-0127 §6).
+	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0013);
+	// DefaultTimelineAutoInsert for a new user (ADR-0013 §22).
 	TimelineAutoInsert bool
 	// LinkCardSize is how the web client shows link cards; DefaultLinkCardSize for a new user.
 	LinkCardSize LinkCardSize
@@ -49,7 +49,7 @@ const (
 	DefaultTimeZone        = "UTC"
 	DefaultPostVisibility  = VisibilityPublic
 	DefaultPostQuotePolicy = QuotePolicyPublic
-	// DefaultTimelineAutoInsert inserts new timeline posts without asking (ADR-0127 §6).
+	// DefaultTimelineAutoInsert inserts new timeline posts without asking (ADR-0013 §22).
 	DefaultTimelineAutoInsert = true
 	DefaultLinkCardSize       = LinkCardLarge
 	UndeterminedLanguage      = "und" // BCP 47 "undetermined" (data-model §1.2, lang)

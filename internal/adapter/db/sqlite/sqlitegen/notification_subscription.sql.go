@@ -95,7 +95,7 @@ type InsertPostSubscriptionParams struct {
 
 // SPDX-License-Identifier: AGPL-3.0-only
 //
-// Subscriptions to the new posts of an account (notification, ADR-0123, data-model section 4.7).
+// Subscriptions to the new posts of an account (notification, ADR-0086, data-model section 4.7).
 // InsertPostSubscription inserts nothing when the account already subscribes to the target.
 func (q *Queries) InsertPostSubscription(ctx context.Context, arg InsertPostSubscriptionParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, insertPostSubscription, arg.AccountID, arg.TargetAccountID, arg.CreatedAt)

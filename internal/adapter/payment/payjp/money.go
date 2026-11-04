@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/app/supporters"
 )
 
-// The money movements of PAY.JP (ADR-0099 §5). A payment is a captured charge of a subscription
+// The money movements of PAY.JP (ADR-0074 §13). A payment is a captured charge of a subscription
 // or of the difference of a change, by the charge's ID; a refund is an event charge.refunded and
 // a chargeback an event dispute.created, by the event's ID; and the fees of a term that differ
 // from the ones the adapter computed are a fee by the ID of the term's statement. PAY.JP returns
@@ -33,7 +33,7 @@ const (
 var feeSubjects = map[string]bool{"fee": true, "refund_fee_offset": true, "chargeback_fee_offset": true}
 
 // feeOf is the fee of amount at a rate in percent with two decimals, such as "3.60", rounded
-// down (ADR-0099 §5).
+// down (ADR-0074 §13).
 func feeOf(amount int64, rate string) (int64, error) {
 	whole, frac, _ := strings.Cut(strings.TrimSpace(rate), ".")
 	if len(frac) > 2 {
@@ -235,7 +235,7 @@ func (p *Provider) disputeOf(ctx context.Context, ev event) ([]supporters.MoneyM
 
 // adjustmentOf returns the fee of a sales statement that the adapter's fees of its term miss:
 // the statement's fees and offsets less the fees of the term's charges, refunds, and chargebacks
-// as the adapter computes them (ADR-0099 §5).
+// as the adapter computes them (ADR-0074 §13).
 func (p *Provider) adjustmentOf(ctx context.Context, st statement) ([]supporters.MoneyMovement, error) {
 	if st.Type != "sales" || st.Term == nil || st.Term.ID == "" || st.Term.EndAt == 0 {
 		return nil, nil
@@ -421,7 +421,7 @@ func (p *Provider) GetMoney(ctx context.Context, id string) (supporters.MoneyMov
 }
 
 // ListMoney implements supporters.PaymentProvider: the movements of the money's events, oldest
-// first, from the cursor's time (ADR-0099 §5).
+// first, from the cursor's time (ADR-0074 §13).
 func (p *Provider) ListMoney(ctx context.Context, since time.Time, cursor string) (supporters.MoneyPage, error) {
 	from, err := timeCursor(cursor, since)
 	if err != nil {

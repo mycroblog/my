@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// The join value of a grant (ADR-0102 §3) is "<payload>.<mac>": the payload is the base64url
+// The join value of a grant (ADR-0101 §12) is "<payload>.<mac>": the payload is the base64url
 // JSON of the room, the session, the role, and the expiry, and the mac its HMAC-SHA256 with the
 // join secret, base64url. The client sends it back in the metadata of its connect message, and
 // the auth webhook verifies it. The access token of Sora Cloud is a JWT, HS256 with the

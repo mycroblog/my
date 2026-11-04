@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Story tests of @my/ui (ADR-0027): every story runs in Chromium through Vitest browser mode and the
+// Story tests of @my/ui (ADR-0110): every story runs in Chromium through Vitest browser mode and the
 // Storybook Vitest addon. A story fails on any axe violation (parameters.a11y.test = 'error' in
 // .storybook/preview.tsx) and on a visual difference from its screenshots (.storybook/vitest.setup.ts).
 // There is one project per direction × theme, so contrast is checked in both themes and layout in RTL.

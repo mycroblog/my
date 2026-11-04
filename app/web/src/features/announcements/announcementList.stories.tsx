@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The list page of the server's announcements (/announcements, web-client/screens/announcements.md), with the ones
-// that show now and the ended ones, in the states of ADR-0112 §1.
+// that show now and the ended ones, in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";

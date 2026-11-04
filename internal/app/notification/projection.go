@@ -24,7 +24,7 @@ type Accounts interface {
 	// DomainOf returns the domain of a remote account, "" for a local or unknown one.
 	DomainOf(ctx context.Context, tx uow.Tx, accountID string) (string, error)
 	// DeactivatedTx reports whether a local account's owner deactivated it: nothing reaches it
-	// until it comes back, and what it missed is not delivered then (ADR-0145 §6).
+	// until it comes back, and what it missed is not delivered then (ADR-0089 §16).
 	DeactivatedTx(ctx context.Context, tx uow.Tx, id string) (bool, error)
 }
 
@@ -60,7 +60,7 @@ type ProjectorDeps struct {
 	// nil emails none.
 	Email *EmailScheduler
 	// PostJobs enqueues JobNotifyPostSubscribers for the new posts of the accounts with
-	// subscribers (ADR-0123 §2); nil notifies no subscriber.
+	// subscribers (ADR-0086 §15); nil notifies no subscriber.
 	PostJobs queue.Outbox
 }
 
@@ -77,7 +77,7 @@ type ProjectorDeps struct {
 //   - content.favourited: favourite, to the status's author.
 //   - content.reacted: reaction, to the status's author, with the reaction's emoji. Its dedupe
 //     key is per emoji (notification.ReactionKey), so a reaction with another emoji notifies
-//     again (ADR-0052 §5).
+//     again (ADR-0051 §10).
 //   - content.poll_closed: poll_closed, to the author of the poll without a source, and to each
 //     account that voted in it from the author, once per poll (notification.PollClosedKey).
 //   - moderation.report_resolved: report_resolved, to the reporter when the reporter is a local
@@ -102,7 +102,7 @@ type ProjectorDeps struct {
 //     (notification.CustomEmojiRequestDecidedKey). A withdrawal and a lapse notify nobody.
 //
 // A notification goes only to a local recipient other than its source, and not to a deactivated
-// recipient (ADR-0145 §6), or when either blocks the other, the recipient mutes the source with hide_notifications or mutes its domain
+// recipient (ADR-0089 §16), or when either blocks the other, the recipient mutes the source with hide_notifications or mutes its domain
 // (FR-304), the source has unsolicited_reach (a limit on it or its domain) and the recipient
 // does not follow it, or the recipient turned the type's group off in the app (FR-210). Each notification
 // has a dedupe key unique per recipient (notification.FollowKey, MentionKey, InteractionKey,
@@ -315,7 +315,7 @@ func registerDeletedStatusProjector(r *uow.Projectors, repo Repository) {
 }
 
 // recordDeletedStatus records a deleted status in notification_deleted_statuses when a
-// notification is about it. Most deletions by the retention purge (ADR-0034) are of remote
+// notification is about it. Most deletions by the retention purge (ADR-0006) are of remote
 // statuses that nobody was notified of, and they need no row.
 func recordDeletedStatus(ctx context.Context, tx uow.Tx, repo Repository, statusID string) error {
 	notified, err := repo.StatusHasNotifications(ctx, tx, statusID)
@@ -441,7 +441,7 @@ func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notifi
 		return err
 	}
 	if !choices.TypeEnabled(n.Type, notification.ChannelInApp) {
-		return nil // turned off in the app: not created, so delivered nowhere (ADR-0109 §3)
+		return nil // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
 	}
 	n.ID = p.d.IDs.NewID()
 	if err := n.Validate(); err != nil {

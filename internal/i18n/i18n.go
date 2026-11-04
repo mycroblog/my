@@ -50,7 +50,7 @@ type Bundle struct {
 // Load compiles the catalogs embedded from locales/.
 func Load(opts ...Option) (*Bundle, error) { return NewBundle(locales.FS, opts...) }
 
-// NewBundle compiles every <locale>/<namespace>/<area>.json catalog file in fsys (ADR-0082): the
+// NewBundle compiles every <locale>/<namespace>/<area>.json catalog file in fsys (ADR-0081): the
 // files of a namespace together hold its keys, each key in the file of its area.
 func NewBundle(fsys fs.FS, opts ...Option) (*Bundle, error) {
 	var o options

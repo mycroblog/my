@@ -10,14 +10,14 @@ name: Release
 # facts in the draft. A failure of those two jobs leaves the facts in place and stops nothing, as the tags exist by then.
 # release-notes-image adds the image's digest once it is attested.
 #
-# The client libraries are released with the server at the same version (ADR-0093 §8, ADR-0094 §1): the release job
+# The client libraries are released with the server at the same version (ADR-0093 §8, ADR-0093 §9): the release job
 # tags the Go module pkg/mykit as pkg/mykit/vX.Y.Z at the same commit, and pkg/mybot as pkg/mybot/vX.Y.Z at a commit
 # made on top of it whose pkg/mybot/go.mod requires pkg/mykit vX.Y.Z (on main it requires a placeholder replaced by
 # ../mykit). The npm job publishes @mycroblog/mykit and then @mycroblog/mybot, which depends on @mycroblog/mykit X.Y.Z
 # exactly, as X.Y.Z with npm's trusted publishing (OIDC, with provenance; no npm token exists), a pre-release to the
 # dist-tag `next`. scripts/release-libraries.sh holds the steps that version them.
 #
-# The container image is built from the same commit (ADR-0142 §6). The image job pushes it to ghcr.io/mycroblog/my by
+# The container image is built from the same commit (ADR-0010 §9). The image job pushes it to ghcr.io/mycroblog/my by
 # digest, with no tag, so that nothing reaches an operator before the notes. image-check runs its binary on each
 # platform, image-attest signs the provenance of the digest and attaches the digest to the draft as image-digest.txt,
 # and image-scan reports its vulnerabilities for the decider to read. release-image.yml tags the digest when the decider
@@ -189,13 +189,13 @@ jobs:
           retention-days: 7
 
   # Writes the prose of the notes (scripts/release-notes.sh prose). Claude's API is reached by Workload Identity
-  # Federation (ADR-0115) in the environment `release-notes`, as the L4 job of nightly.yml does in its own: only here
+  # Federation (ADR-0079) in the environment `release-notes`, as the L4 job of nightly.yml does in its own: only here
   # and in that job. Only `main` deploys to the environment, so a trial on a branch keeps the facts alone. The job reads
   # PR and issue text, which is untrusted input, with no permission to write: the model gets no tool, and the output is
   # an artifact that a program checked and that the next job puts in a draft for the decider to read.
   #
   # Nothing here may fail the release: the job holds its failures and the draft keeps the facts. The cost is bounded by
-  # the bounds of the input, three attempts at most, and the spend limit of the Claude Console workspace (ADR-0115).
+  # the bounds of the input, three attempts at most, and the spend limit of the Claude Console workspace (ADR-0079).
   release-notes-prose:
     needs: [validate, release]
     if: needs.release.outputs.facts == 'true' && github.ref == 'refs/heads/main'

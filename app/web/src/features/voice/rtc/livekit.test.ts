@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The LiveKit method with a mocked livekit-client (ADR-0102 §3, §6): the join with the grant, whose audio plays and is
+// The LiveKit method with a mocked livekit-client (ADR-0101 §12, §15): the join with the grant, whose audio plays and is
 // heard, the microphone once LiveKit lets the session publish, going back to listening, joining again after the room
 // went away, a grant to reconnect with, and leaving.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";

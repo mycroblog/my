@@ -27,7 +27,7 @@ const searchSchema = z.object({
 
 /**
  * The instance's running costs and income as its settings finance_visibility and income_visibility publish them
- * (FR-903, FR-917, ADR-0067 §8, ADR-0073 §7), for everyone, signed in or not. The `_` keeps the page out of the layout of `/about`. The totals end with today's period on the
+ * (FR-903, FR-917, ADR-0067 §8, ADR-0067 §17), for everyone, signed in or not. The `_` keeps the page out of the layout of `/about`. The totals end with today's period on the
  * viewer's device.
  */
 export const Route = createFileRoute("/about_/costs")({

@@ -19,7 +19,7 @@ import (
 // DefaultStatePath is the file of the FileStore that a Bot uses when Config.Store is nil.
 const DefaultStatePath = "./mybot-state.json"
 
-// Store keeps what a bot must remember across restarts (ADR-0094 §6): the notifications it processed, the
+// Store keeps what a bot must remember across restarts (ADR-0093 §14): the notifications it processed, the
 // position of the catch-up, the last runs of the scheduled jobs, and the rotated refresh token. The bot calls it
 // from several goroutines. MemoryStore and FileStore are the implementations of the library; implement Store to
 // keep the state elsewhere, such as in a database. One Store serves one bot process: it needs no locking between
@@ -200,7 +200,7 @@ func (f *FileStore) Path() string { return f.path }
 
 // write replaces the file with s.
 func (f *FileStore) write(s *storeState) error {
-	b, err := json.MarshalIndent(s, "", "  ") //nolint:gosec // G117: saving the refresh token is the purpose of the store (ADR-0094 §7)
+	b, err := json.MarshalIndent(s, "", "  ") //nolint:gosec // G117: saving the refresh token is the purpose of the store (ADR-0093 §15)
 	if err != nil {
 		return err
 	}

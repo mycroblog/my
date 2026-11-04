@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// The unsubscribe case of AccountRepositoryContract (ADR-0086 §4, ADR-0109 §4).
+// The unsubscribe case of AccountRepositoryContract (ADR-0086 §4, ADR-0086 §11).
 
 // stubUnsubscriptions is an in-memory identity.EmailUnsubscriptions: the categories that
 // unsubscribe links turn off, and those each user turned off.

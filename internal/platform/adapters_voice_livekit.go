@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
-// newLiveKitTransport returns the transport of voice = livekit (ADR-0102). The adapter reaches
+// newLiveKitTransport returns the transport of voice = livekit (ADR-0101). The adapter reaches
 // only the LiveKit server that the operator configured, which may be on a private address, so
 // its HTTP client is not the SSRF-guarded kernel.HTTPClient; a call has 5 seconds and follows no
 // redirect.

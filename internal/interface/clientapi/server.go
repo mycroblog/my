@@ -35,9 +35,9 @@ type Options struct {
 	SoftwareVersion string
 	// SourceURL is where users get the server's source code, an https URL or a mailto: address (ADR-0011).
 	SourceURL string
-	// StatusPageURL is the address of the instance's status page, "" for none (ADR-0085 §6).
+	// StatusPageURL is the address of the instance's status page, "" for none (ADR-0088 §20).
 	StatusPageURL string
-	// ServerHealth answers GET /instance/health (ADR-0085 §1); nil answers it as unavailable.
+	// ServerHealth answers GET /instance/health (ADR-0088 §15); nil answers it as unavailable.
 	ServerHealth HealthCheck
 	// Instance reads the instance settings and texts; nil reads every setting as its default
 	// and no text.
@@ -89,7 +89,7 @@ type Options struct {
 	// Preferences reads and changes the viewer's preferences.
 	Preferences UserPreferences
 	// Badges reads the role badges that users show on their profiles and changes the viewer's
-	// choice of them (ADR-0071); nil shows none and answers updateBadgeChoice 404.
+	// choice of them (ADR-0070); nil shows none and answers updateBadgeChoice 404.
 	Badges RoleBadges
 	// AutoDelete reads and replaces the viewer's automatic deletion of their old posts (FR-118);
 	// nil answers its operations 404.
@@ -162,7 +162,7 @@ type Options struct {
 	// Permissions reads the permissions of the viewer's roles, which the admin operations need
 	// (admin.go); nil grants none. InstanceHealth reads and clears the health of remote servers,
 	// and DeadJobs lists and requeues the dead jobs, for the admin operations; Queue reads the
-	// rest of the queue dashboard (admin_jobs.go, ADR-0064).
+	// rest of the queue dashboard (admin_jobs.go, ADR-0004).
 	Permissions    Permissions
 	InstanceHealth InstanceHealth
 	DeadJobs       queue.DeadJobs

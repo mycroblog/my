@@ -143,7 +143,7 @@ SELECT 1 FROM imported_cost_heads
 WHERE source = sqlc.arg(source) AND billing_month = ANY(sqlc.arg(months)::text[])
 FOR UPDATE;
 
--- The income records (ADR-0073 section 8). income_movements is written once per (provider,
+-- The income records (ADR-0067 section 8). income_movements is written once per (provider,
 -- provider_movement_id); the totals read it on every request.
 
 -- InsertIncomeMovement writes nothing when the movement is already recorded.

@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
-// Problem types of lists (ADR-0122 §5, §2).
+// Problem types of lists (ADR-0013 §14, §11).
 const (
 	ProblemTypeTooManyLists       = "/api/v1/problems/too-many-lists"
 	ProblemTypeTooManyListMembers = "/api/v1/problems/too-many-list-members"
@@ -20,7 +20,7 @@ const (
 )
 
 // Lists keeps the viewer's lists of the accounts it follows and reads their timelines
-// (*apptimeline.Service, ADR-0122). Every method fails with apptimeline.ErrNotFound for a list
+// (*apptimeline.Service, ADR-0013). Every method fails with apptimeline.ErrNotFound for a list
 // that the owner does not own, which the handlers answer as a list that does not exist (404).
 type Lists interface {
 	CreateList(ctx context.Context, owner, name string) (apptimeline.List, error)

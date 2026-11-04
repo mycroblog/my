@@ -79,7 +79,7 @@ export function relationshipQueryOptions(api: Api, id: string) {
 
 /**
  * What the viewer can do to their relationship with an account. `subscribe` and `unsubscribe` turn on and off the
- * notifications of the account's new posts (ADR-0123), which the account is not told of.
+ * notifications of the account's new posts (ADR-0086), which the account is not told of.
  */
 export type RelationshipAction =
   "follow" | "unfollow" | "block" | "unblock" | "mute" | "unmute" | "subscribe" | "unsubscribe";

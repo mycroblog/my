@@ -14,7 +14,7 @@ import (
 )
 
 // record records the duration of one request until its response headers, or until it failed
-// (ADR-0056 §1). The destination is never a label.
+// (ADR-0055 §10). The destination is never a label.
 func (c *Client) record(ctx context.Context, r *kernel.HTTPRequest, resp *kernel.HTTPResponse, err error, d time.Duration) {
 	l := kernel.NewLabels(sysmetrics.LabelHTTPPurpose, purposeLabel(r.Purpose), sysmetrics.LabelHTTPMethod, methodLabel(r.Method))
 	if resp != nil {

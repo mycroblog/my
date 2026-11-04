@@ -22,7 +22,7 @@ import (
 // these screens, a banned one until the ban deletes the account (identity.Service.SignIn): the
 // status page lists the actions in effect that keep them out, so that they can see why without
 // an access token (FR-715, NFR-MOD-6), and takes their appeal of each action, once and within
-// its appeal window (FR-707, ADR-0038), since they cannot reach the client API.
+// its appeal window (FR-707, ADR-0058), since they cannot reach the client API.
 
 // Moderation lists the actions on a user's own account as the user sees them, with no private
 // note, report, or issuer, and files the user's appeals of them. *appmoderation.Service

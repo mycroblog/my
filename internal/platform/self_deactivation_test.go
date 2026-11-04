@@ -113,7 +113,7 @@ func (s *deactivationScreens) page() string {
 }
 
 // TestSelfDeactivationThroughTheAPI drives the whole of the feature through the client API and the
-// server-rendered screens (ADR-0145): the confirmation, the date and the one email, the end of
+// server-rendered screens (ADR-0089): the confirmation, the date and the one email, the end of
 // the sessions and tokens, what others no longer see, what the reactivation brings back, the
 // 24-hour gap, and the deletion at the date.
 func TestSelfDeactivationThroughTheAPI(t *testing.T) {
@@ -412,7 +412,7 @@ func typesPosted(posts map[string][]map[string]any, inbox, typ string) []map[str
 }
 
 // TestSelfDeactivationFederates drives what the other servers see and send through the inboxes
-// (ADR-0145 §6, §7): the Update of the actor marked suspended and the Update with the original
+// (ADR-0089 §16, §17): the Update of the actor marked suspended and the Update with the original
 // document, GET of the actor, WebFinger, and the post, the Reject of a new Follow, what stays of the
 // follows, what is dropped, what is counted, and the Delete at the date.
 func TestSelfDeactivationFederates(t *testing.T) {
@@ -607,7 +607,7 @@ func TestSelfDeactivationFederates(t *testing.T) {
 	}
 }
 
-// TestSelfDeactivationAndModeration checks how a deactivation meets moderation (ADR-0145 §1, §2, §4,
+// TestSelfDeactivationAndModeration checks how a deactivation meets moderation (ADR-0089 §11, §12, §14,
 // §7): the actor stays hidden, so a change of either sends nothing, and a reactivation leaves an
 // action in effect; a report still reaches the moderators; a ban takes over.
 func TestSelfDeactivationAndModeration(t *testing.T) {
@@ -731,7 +731,7 @@ func errorsIsNotDeactivated(err error) bool {
 	return err != nil && strings.Contains(err.Error(), appaccount.ErrNotDeactivated.Error())
 }
 
-// TestSelfDeactivationLeavesRooms checks the voice rooms (ADR-0145 §5): a deactivation ends the
+// TestSelfDeactivationLeavesRooms checks the voice rooms (ADR-0089 §15): a deactivation ends the
 // participation of a participant, and the room of a host, as a suspension does.
 func TestSelfDeactivationLeavesRooms(t *testing.T) {
 	t.Parallel()
@@ -764,7 +764,7 @@ func TestSelfDeactivationLeavesRooms(t *testing.T) {
 	e.want(e.do(http.MethodGet, room, carol.token, nil, nil), http.StatusNotFound, "the room after the host left")
 }
 
-// TestSelfDeactivationKeepsFollowRequests checks the table of follows and requests (ADR-0145 §6):
+// TestSelfDeactivationKeepsFollowRequests checks the table of follows and requests (ADR-0089 §16):
 // a request to the account waits and is still there afterwards, a request it made is answered by
 // the remote server meanwhile, a local follow from before stays, and new ones do not come back.
 func TestSelfDeactivationKeepsFollowRequests(t *testing.T) {
@@ -838,7 +838,7 @@ func TestSelfDeactivationKeepsFollowRequests(t *testing.T) {
 	}
 }
 
-// TestSelfDeactivationHidesQuotedPosts checks what a quote shows of a deactivated author (ADR-0145 §5),
+// TestSelfDeactivationHidesQuotedPosts checks what a quote shows of a deactivated author (ADR-0089 §15),
 // and that it shows the post again after the reactivation.
 func TestSelfDeactivationHidesQuotedPosts(t *testing.T) {
 	t.Parallel()

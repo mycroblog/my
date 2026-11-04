@@ -95,7 +95,7 @@ describe("receiving", () => {
     expect(await options2.store.isProcessed(id(5))).toBe(false);
   });
 
-  // ADR-0094 §3: a catch-up limit of 0 turns the catch-up off.
+  // ADR-0093 §11: a catch-up limit of 0 turns the catch-up off.
   test("catchUpLimit 0 turns the catch-up off", async () => {
     const f = new FakeServer();
     f.add(mention(10, account(1, "alice"), "missed"));

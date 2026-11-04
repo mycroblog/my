@@ -32,7 +32,7 @@ export type About = {
    */
   finance: Instance["finance_visibility"] | undefined;
   /**
-   * How much of its income the instance publishes (FR-917, ADR-0073 §7); undefined while the instance has not loaded.
+   * How much of its income the instance publishes (FR-917, ADR-0067 §17); undefined while the instance has not loaded.
    */
   income: Instance["income_visibility"] | undefined;
   /**

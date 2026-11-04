@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# The bundle of api/spec/ that `scripts/task.sh api:generate` writes (ADR-0066): collapsed in pull request diffs.
+# The bundle of api/spec/ that `scripts/task.sh api:generate` writes (ADR-0016): collapsed in pull request diffs.
 api/openapi.yaml linguist-generated=true
 
 # The Unicode emoji data that `scripts/task.sh emoji:generate` writes (ADR-0091): collapsed in pull request diffs.
 app/web/src/features/emoji/unicode/*.gen.json linguist-generated=true
 internal/domain/content/emoji_table.gen.go linguist-generated=true
 
-# The Noto Color Emoji web font that `scripts/task.sh emoji:generate` writes (ADR-0095).
+# The Noto Color Emoji web font that `scripts/task.sh emoji:generate` writes (ADR-0091).
 app/ui/src/emoji.css linguist-generated=true
 app/ui/src/fonts/emoji/*.woff2 binary linguist-generated=true

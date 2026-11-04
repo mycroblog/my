@@ -69,7 +69,7 @@ type Job struct {
 	// LastError describes why the previous attempt did not finish, or is empty.
 	LastError string
 	// TraceParent is the W3C traceparent of the span that enqueued the job, or empty: the span
-	// of each run is the root of a new trace with a link to it (ADR-0063 §2).
+	// of each run is the root of a new trace with a link to it (ADR-0055 §14).
 	TraceParent string
 	CreatedAt   time.Time
 }
@@ -119,7 +119,7 @@ func (n NewJob) Build(id string, now time.Time) (Job, error) {
 }
 
 // TraceJobs sets the TraceParent of the jobs that have none to the span of ctx (Tracer.Inject),
-// for the adapters to call in Enqueue and EnqueueTx (ADR-0063 §2). A nil tracer, or a span that
+// for the adapters to call in Enqueue and EnqueueTx (ADR-0055 §14). A nil tracer, or a span that
 // is not recorded, leaves them empty.
 func TraceJobs(ctx context.Context, t kernel.Tracer, jobs []Job) {
 	if kernel.IsNopTracer(t) {

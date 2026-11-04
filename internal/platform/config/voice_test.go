@@ -20,7 +20,7 @@ func soraSelfHosted() map[string]string {
 		"MY_VOICE_SORA_WEBHOOK_PASSWORD", "hunter2", "MY_VOICE_SORA_JOIN_SECRET", testJoinSecret)
 }
 
-// TestLoadVoice checks the voice settings that start (ADR-0101 §1, ADR-0102 §5).
+// TestLoadVoice checks the voice settings that start (ADR-0101 §1, ADR-0101 §14).
 func TestLoadVoice(t *testing.T) {
 	t.Run("the limits have defaults", func(t *testing.T) {
 		cfg, _, err := Load(source(minimal(), nil))
@@ -121,7 +121,7 @@ func TestLoadVoice(t *testing.T) {
 }
 
 // TestLoadVoiceInvalid checks every start-up check of the voice settings (ADR-0101 §1,
-// ADR-0102 §5): a configuration that cannot connect a room does not start.
+// ADR-0101 §14): a configuration that cannot connect a room does not start.
 func TestLoadVoiceInvalid(t *testing.T) {
 	tests := []struct {
 		name  string

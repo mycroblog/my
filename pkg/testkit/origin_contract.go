@@ -13,7 +13,7 @@ import (
 )
 
 // The origin cases of AccountRepositoryContract and RegistrationRepositoryContract: where
-// sign-ins and registrations came from, and their purge after the retention (ADR-0038).
+// sign-ins and registrations came from, and their purge after the retention (ADR-0058).
 
 // purgeOrigins runs the origin purge with batch rows per statement and returns how many rows it
 // deleted.
@@ -144,7 +144,7 @@ func registrationRecordsOrigins(t *testing.T, e *accountEnv) {
 }
 
 // originPurgeFollowsThePolicy checks that the purge uses the configured periods and keeps every
-// origin of a held user (ADR-0038).
+// origin of a held user (ADR-0058).
 func originPurgeFollowsThePolicy(t *testing.T, e *accountEnv) {
 	ctx := t.Context()
 	alice := e.sessionUser(t)

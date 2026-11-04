@@ -12,10 +12,10 @@ import (
 )
 
 // ProblemTypeFederationRestricted is the problem of an operation on remote accounts or posts that
-// the federation mode (FR-413, ADR-0076) does not let through.
+// the federation mode (FR-413, ADR-0006) does not let through.
 const ProblemTypeFederationRestricted = "/api/v1/problems/federation-restricted"
 
-// The flows that the client API's operations on remote accounts and posts need (ADR-0076, client
+// The flows that the client API's operations on remote accounts and posts need (ADR-0006, client
 // API と Web).
 var (
 	// remoteAccountFlows are those of following and resolving a remote account: its posts come in

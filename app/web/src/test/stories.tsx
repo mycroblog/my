@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The screen stories of app/web (ADR-0112 §1): a story renders the whole app at a route, as an integration test does
+// The screen stories of app/web (ADR-0079 §13): a story renders the whole app at a route, as an integration test does
 // (render.tsx), with MSW's worker in the browser playing the server with the default handlers of every feature
 // (msw/browser.ts) and the story's own overrides. The locale is Storybook's `locale` global (../../.storybook/preview.tsx):
 // the page starts in it, and the signed-in viewer's preferences name it, so the app stays in it after signing in.

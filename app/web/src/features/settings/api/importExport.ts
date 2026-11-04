@@ -80,7 +80,7 @@ const importedPaths: ReadonlySet<unknown> = new Set([
 
 /**
  * The user's latest imports, newest first (GET /imports). When an import that was in progress has finished, the queries of
- * what it changed are marked stale (ADR-0045): the server changed them in the background.
+ * what it changed are marked stale (ADR-0028): the server changed them in the background.
  */
 export function dataImportsQueryOptions(api: Api, queryClient: QueryClient) {
   return queryOptions({
@@ -102,7 +102,7 @@ export function dataImportsQueryOptions(api: Api, queryClient: QueryClient) {
   });
 }
 
-/** Puts a started import at the top of the cached list, as the server answered it (ADR-0045). */
+/** Puts a started import at the top of the cached list, as the server answered it (ADR-0028). */
 export function cacheStartedImport(api: Api, queryClient: QueryClient, started: DataImport): void {
   queryClient.setQueryData(
     dataImportsQueryOptions(api, queryClient).queryKey,

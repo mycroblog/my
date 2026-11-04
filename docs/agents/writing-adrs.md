@@ -33,7 +33,7 @@ An ADR says what was decided, how the decision came to have that form, and what 
 
 ## Revising
 
-- Proposed ADRs: edit freely in a PR, but write only the current proposal. Never add "previously proposed" notes or changelog sections; summarize what changed in the PR description ([ADR-0021](../adr/0021-documents-describe-present-state.md)).
+- Proposed ADRs: edit freely in a PR, but write only the current proposal. Never add "previously proposed" notes or changelog sections; summarize what changed in the PR description ([ADR-0000](../adr/0000-record-architecture-decisions.md)).
 - When an Open Question is resolved, write the answer into Decision / Consequences in the present tense and delete the item. Do not leave `[x]` items.
 - Accepted ADRs: edit the ADR in place when the decider changes a decision or when the code has to follow something new. Rewrite
   the conclusion, and move what it replaces to `経緯` or `採らなかった案` if a reader still needs it. Only the decider changes a

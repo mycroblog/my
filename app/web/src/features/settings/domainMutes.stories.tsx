@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The muted domains (/settings/domain-mutes; web-client/screens/settings-domain-mutes.md) in the states of ADR-0112 §1.
+// The muted domains (/settings/domain-mutes; web-client/screens/settings-domain-mutes.md) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";

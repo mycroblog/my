@@ -5,7 +5,7 @@
 // with code.superseriousbusiness.org/httpsig (ADR-0006). Both libraries stay inside this
 // package. It builds signature bases and checks signatures only; the acceptance policy
 // (required components, time window, digests, keys) is federation.SignatureVerifier's
-// (docs/architecture/federation.md §1.1, ADR-0032).
+// (docs/architecture/federation.md §1.1, ADR-0006).
 package httpsig
 
 import (

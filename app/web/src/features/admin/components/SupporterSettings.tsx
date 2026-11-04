@@ -183,7 +183,7 @@ export function SupporterSettings({ filter, onFilterChange }: SupporterSettingsP
 }
 
 /**
- * Who may read the supporter list (the server setting `supporter_list_visibility`, ADR-0071 §4), next to the
+ * Who may read the supporter list (the server setting `supporter_list_visibility`, ADR-0070 §13), next to the
  * subscriptions it lists (audit A8): its form for a viewer with manage_settings, else what it is now.
  */
 function SupporterListPublication() {

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Starts the real server for the E2E of the server-rendered pages (ADR-0030) and of the main flow: a fresh
+// Starts the real server for the E2E of the server-rendered pages (ADR-0090) and of the main flow: a fresh
 // SQLite database in the run's temporary directory (e2e/server-origin.ts) with schema/sqlite applied,
 // the admin, the documents, and the third-party OAuth client of e2e/server-origin.ts, then
 // `my serve -pseudo-locales` (so that the en-XA and ar-XB projects get their locale) until Playwright stops it.
 // With the argument `voice` (`node e2e/server.ts voice`) it starts the server of e2e/voice-p2p.spec.ts instead:
 // `voice = p2p` on a database and a port of its own, where every user may start a voice chat room
 // (`voice_room_starters = everyone`), so that the other specs keep a server with voice chat off.
-// With the argument `demo` it starts the demo server (ADR-0117 §3, §4): the test build (`GO_TAGS=e2e_fakes`) with the
+// With the argument `demo` it starts the demo server (ADR-0015 §7, §8): the test build (`GO_TAGS=e2e_fakes`) with the
 // fake payment provider and its email sent to the development Mailpit, on a fresh database and a port of its own.
 // Once the server answers, demo/seed.ts (run by Bun, which reads @mycroblog/mykit from its sources) applies the demo
 // scenario, and the script prints "demo: ready", which Playwright and `scripts/task.sh web:demo` wait for. It needs
-// Mailpit (`scripts/task.sh docker:mailpit`) and stops at once without it. The demo server has Web Push on (ADR-0118
+// Mailpit (`scripts/task.sh docker:mailpit`) and stops at once without it. The demo server has Web Push on (ADR-0015
 // §3): a VAPID key generated on every start (`my config vapid-key`), and the fake push service of the test build
 // (`my dev push-service`, with the certificate that docker:mailpit's scripts/mailpit-cert.sh writes), which starts
 // before the server and stops with it; push_allowed_destinations lets the server's Web Push sends reach it alone.
@@ -81,7 +81,7 @@ if (which === "demo") {
     );
     process.exit(1);
   }
-  // A fresh database on every start: the fake provider keeps its side in the server's memory only (ADR-0117 §4).
+  // A fresh database on every start: the fake provider keeps its side in the server's memory only (ADR-0015 §8).
   rmSync(serverDirOf(which), { recursive: true, force: true });
 }
 mkdirSync(env["MY_BLOB_FS_DIR"] ?? "", { recursive: true });
@@ -98,7 +98,7 @@ if (which === "demo") {
   writeFileSync(demoVAPIDKeyFile, vapid, { mode: 0o600 });
 }
 
-// The schema files are plain SQL, executed in name order as Atlas does in production (ADR-0023, ADR-0082).
+// The schema files are plain SQL, executed in name order as Atlas does in production (ADR-0023, ADR-0081).
 const schemaDir = join(root, "schema/sqlite");
 const db = new DatabaseSync(database);
 for (const name of readdirSync(schemaDir)

@@ -3,7 +3,7 @@
 // once or every N weeks, months or years; changing an item's label, revising its price from a date on, setting or
 // removing its end, and canceling it; the totals by week, month or year, amortized (the default) or in cash, with
 // the rules that cut their periods; and the state of the billing imports (ADR-0068), which an administrator can run
-// now; and the income that the payment provider records (ADR-0073 §6): its totals and its money movements, which
+// now; and the income that the payment provider records (ADR-0067 §16): its totals and its money movements, which
 // nobody changes here. Amounts are decimal strings in the API and are formatted with Intl.NumberFormat in the item's currency
 // (ADR-0067 §10). Every change goes to the audit log.
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";

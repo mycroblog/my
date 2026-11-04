@@ -55,7 +55,7 @@ export function changeRoleMutation(api: Api) {
 }
 
 /**
- * What a change of the roles of account `accountId` changes (web-client/README.md S1, ADR-0045): its page shows its role
+ * What a change of the roles of account `accountId` changes (web-client/README.md S1, ADR-0028): its page shows its role
  * keys (the searches show none) and the audit log records the change: both are marked stale, and this waits for
  * those on screen to be fetched again (the log is fetched again when it opens); then the roles as the server
  * answered go into the cache. A change of the viewer's own

@@ -18,7 +18,7 @@ type ObjectBoosts interface {
 	FindLiveBoost(ctx context.Context, id string) (appcontent.Boost, error)
 }
 
-// Announce answers a GET of the id of an activity of this server for req (ADR-0144 §5): the
+// Announce answers a GET of the id of an activity of this server for req (ADR-0018 §16): the
 // Announce of a local boost that is public or unlisted and not retracted, built as the fan-out
 // builds it. Any other activity, a booster that CanView hides or a ceiling restricts, a boost of a
 // deleted status, and a local status that CanView hides from req fail with ErrNotFound alike.

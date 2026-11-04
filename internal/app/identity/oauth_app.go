@@ -15,7 +15,7 @@ import (
 // The OAuth clients that users register for themselves (ADR-0090 §1, §2): a signed-in user
 // registers public and confidential clients, changes and deletes them, issues a confidential
 // client a new secret, and issues tokens of a client to their own account without a redirect
-// (for bots and scripts, ADR-0094). A client stops working while the user who registered it
+// (for bots and scripts, ADR-0093). A client stops working while the user who registered it
 // cannot use the app.
 
 // ClientSecretPrefix marks the secrets of confidential clients for secret scanners

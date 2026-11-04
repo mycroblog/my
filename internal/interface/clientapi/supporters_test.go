@@ -311,7 +311,7 @@ func TestOwnSupporterSubscription(t *testing.T) {
 	}
 }
 
-// TestSupporterListingChoice checks the member's choice to be listed (ADR-0071 §4): only a
+// TestSupporterListingChoice checks the member's choice to be listed (ADR-0070 §13): only a
 // member of a plan has one.
 func TestSupporterListingChoice(t *testing.T) {
 	f := &fakeOwnSupporters{listed: map[string]bool{}}
@@ -332,7 +332,7 @@ func TestSupporterListingChoice(t *testing.T) {
 	}
 }
 
-// TestInstanceSupporters checks the supporter list (ADR-0071 §4): supporter_list_visibility
+// TestInstanceSupporters checks the supporter list (ADR-0070 §13): supporter_list_visibility
 // decides who reads it (off is a 404, signed_in a 401 for an anonymous request); it lists the
 // accounts the viewer may see by plan, with the plans' names only, never an amount, an
 // interval, a date, or a count; and its pages are never for search engines.

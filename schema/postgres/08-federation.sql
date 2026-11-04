@@ -158,7 +158,7 @@ CREATE TABLE instance_health (
 );
 CREATE INDEX instance_health_state ON instance_health (state);
 
--- Resource: a relay the operator registered (ADR-0061). url is what was entered (the inbox of a
+-- Resource: a relay the operator registered (ADR-0006). url is what was entered (the inbox of a
 -- mastodon relay, the actor of a litepub one); inbox_url is where posts are delivered.
 -- created_by_user_id is NULL for the CLI. Deleted with its events and state only when it is
 -- left or rejected.

@@ -30,7 +30,7 @@ export type RoleBadgeProps = Omit<ComponentPropsWithRef<"span">, "children" | "c
   color: BadgeColor;
 };
 
-/** The badge of a role, such as a supporter's plan (ADR-0071): a label on one of the badge colors. */
+/** The badge of a role, such as a supporter's plan (ADR-0070): a label on one of the badge colors. */
 export function RoleBadge({ label, color, className, ...props }: RoleBadgeProps) {
   return (
     <span dir="auto" lang="" {...props} className={roleBadge({ color, className })}>

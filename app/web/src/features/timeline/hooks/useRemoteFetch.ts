@@ -7,12 +7,12 @@ import { useT } from "../../../lib/i18n";
 import type { AccountTimelineFilter } from "../api/timelines";
 import { remoteFetchStarted, rereadRemoteAccountPosts, timelineQueryOptions } from "../api/timelines";
 
-/** How long the server gets to store a remote account's recent posts before they are read again, in ms (ADR-0044). */
+/** How long the server gets to store a remote account's recent posts before they are read again, in ms (ADR-0006). */
 export const remoteFetchRereadDelay = 4000;
 
 /**
  * Whether the server is fetching the recent posts of the remote account `accountId` from its server, as the
- * first page of its posts (`filter`) told (ADR-0044); the route loader has fetched that page. While it is,
+ * first page of its posts (`filter`) told (ADR-0006); the route loader has fetched that page. While it is,
  * the polite live region says so once (web-client/README.md Y7) and, `remoteFetchRereadDelay` ms later, the posts
  * are read again once (rereadRemoteAccountPosts), which ends it. The timer is the external system (R8):
  * leaving the profile before it fires cancels the read, and the next visit reads again.

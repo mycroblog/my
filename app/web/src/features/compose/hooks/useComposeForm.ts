@@ -73,7 +73,7 @@ export type ReadyComposeForm = {
   unreachedMentions: string[];
   /**
    * Whether the post replies to or mentions an account of another server while the instance sends nothing out
-   * (its federation mode is `off` or `inbound`, ADR-0076): the post is posted here but does not reach that server.
+   * (its federation mode is `off` or `inbound`, ADR-0006): the post is posted here but does not reach that server.
    */
   staysLocal: boolean;
   language: string;

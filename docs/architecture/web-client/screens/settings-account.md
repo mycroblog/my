@@ -6,7 +6,7 @@ paths: ["app/web/src/features/settings/components/OwnAccount.tsx", "app/web/src/
 
 ## アカウント（`/settings/account`）と無効化の後の画面（`/deactivated`）
 
-自分のデータのアーカイブと、アカウントの無効化・削除をする画面（FR-008、[ADR-0145](../../../adr/0145-self-deactivation.md)）。
+自分のデータのアーカイブと、アカウントの無効化・削除をする画面（FR-008、[ADR-0089](../../../adr/0089-account-migration-move.md)）。
 無効化を終えると、すべてのセッションが切れるので、ログアウトして `/deactivated` に移る。ログインしていなくても開ける画面で、URL の `deletion_due_at` から削除の日付を出す。
 再有効化は、ログインの後にサーバーが描画する状態の画面（`internal/interface/authpages`）で行う。そこにも削除の日付を出す（[account-status.md](account-status.md)）。
 

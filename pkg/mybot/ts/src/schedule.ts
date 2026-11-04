@@ -95,7 +95,7 @@ function wallMillis(w: Wall): number {
 const widestOffset = 14 * 3_600_000;
 
 /**
- * A parsed cron expression of five fields, minute hour day-of-month month day-of-week, in a time zone (ADR-0094 §5).
+ * A parsed cron expression of five fields, minute hour day-of-month month day-of-week, in a time zone (ADR-0093 §13).
  * Each field is *, a number, a range a-b, a step * /n or a-b/n, or a list of those separated by commas; the day of the
  * week is 0-7, where 0 and 7 are Sunday. When both the day of the month and the day of the week are other than *, a
  * day matches when either does, as in cron. A field of seconds, the aliases such as @daily, names of months and days,

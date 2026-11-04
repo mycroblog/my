@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The edit history of a post (/@{acct}/status/{id}/history; FR-109) in the states of ADR-0112 §1.
+// The edit history of a post (/@{acct}/status/{id}/history; FR-109) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";

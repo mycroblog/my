@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The home timeline (/home; FR-201, web-client/screens/home-first-run.md) in the states of ADR-0112 §1, with the
+// The home timeline (/home; FR-201, web-client/screens/home-first-run.md) in the states of ADR-0079 §13, with the
 // first run of someone who follows nobody yet.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

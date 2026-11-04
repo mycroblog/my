@@ -5,7 +5,7 @@ import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { PageHeading } from "./-layout/PageHeading";
 
-/** The user's lists of the accounts they follow, and their members (web-client/screens/lists.md, ADR-0122). */
+/** The user's lists of the accounts they follow, and their members (web-client/screens/lists.md, ADR-0013). */
 export const Route = createFileRoute("/lists")({
   staticData: { title: "client:lists.title" },
   beforeLoad: requireSignIn,

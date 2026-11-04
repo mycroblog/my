@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The federated timeline in every width × locale project (FR-202, ADR-0027): its navigation item, which
+// The federated timeline in every width × locale project (FR-202, ADR-0110): its navigation item, which
 // the instance setting federated_timeline_visibility takes away, and its feed of posts of this server and of
 // another one. `vite preview` has no client API, so the spec answers GET /instance and the timeline with
 // `page.route`, shaped like api/openapi.yaml. Names change with the locale, so the navigation item is

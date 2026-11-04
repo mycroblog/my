@@ -45,7 +45,7 @@ export type EveryJob = {
 
 /**
  * The Idempotency-Key of the post of the run at (milliseconds since the Unix epoch) of the scheduled job name
- * (ADR-0094 §5): mybot:every:<name>:<the time in RFC 3339, UTC>. Two processes of one bot that run the same time post
+ * (ADR-0093 §13): mybot:every:<name>:<the time in RFC 3339, UTC>. Two processes of one bot that run the same time post
  * once. Use it when posting with mykit directly.
  */
 export function everyIdempotencyKey(name: string, at: number): string {

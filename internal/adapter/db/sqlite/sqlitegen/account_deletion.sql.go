@@ -18,7 +18,7 @@ ORDER BY occurred_at DESC
 LIMIT 1
 `
 
-// FindLatestReactivation returns when an account was last reactivated (ADR-0145 section 8).
+// FindLatestReactivation returns when an account was last reactivated (ADR-0089 section 8).
 func (q *Queries) FindLatestReactivation(ctx context.Context, accountID string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, findLatestReactivation, accountID)
 	var occurred_at int64
@@ -39,7 +39,7 @@ type ListDueDeactivationsParams struct {
 }
 
 // ListDueDeactivations returns up to lim accounts whose owner deactivated them at or before cutoff,
-// longest deactivated first (ADR-0145 section 2).
+// longest deactivated first (ADR-0089 section 2).
 func (q *Queries) ListDueDeactivations(ctx context.Context, arg ListDueDeactivationsParams) ([]AccountLifecycleState, error) {
 	rows, err := q.db.QueryContext(ctx, listDueDeactivations, arg.Cutoff, arg.Lim)
 	if err != nil {

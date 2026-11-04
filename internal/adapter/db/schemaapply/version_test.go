@@ -19,7 +19,7 @@ var (
 
 // atlasVersions returns the version of ariga.io/atlas that goMod requires and the
 // ATLAS_VERSION of the install script, and an error when they differ: `my schema apply` (the
-// library) and CI's lint (the CLI) must plan with the same Atlas (ADR-0126 §3).
+// library) and CI's lint (the CLI) must plan with the same Atlas (ADR-0023 §12).
 func atlasVersions(goMod, script string) (lib, cli string, err error) {
 	m := goModAtlas.FindStringSubmatch(goMod)
 	if m == nil {

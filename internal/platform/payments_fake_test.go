@@ -20,7 +20,7 @@ import (
 )
 
 // TestE2EFakesPaymentsCheckout starts the test build with payments = fake and profile =
-// development, as the demonstration does (ADR-0117 §2): the start warns that this is a test
+// development, as the demonstration does (ADR-0015 §6): the start warns that this is a test
 // build, and a user subscribes to a plan through the fake's checkout page, paying after a failed
 // attempt, and gets the plan's role. The same configuration in the production profile does not
 // start.
@@ -108,7 +108,7 @@ func TestE2EFakesPaymentsCheckout(t *testing.T) {
 	if own.Subscription == nil || own.Subscription.State != clientapi.SupporterSubscriptionStateActive {
 		t.Fatalf("bob's subscription after paying: %+v", own.Subscription)
 	}
-	// A paid subscription keeps the account from being deactivated (ADR-0145 §1).
+	// A paid subscription keeps the account from being deactivated (ADR-0089 §11).
 	res := e.do(http.MethodPost, "/accounts/deactivation", bob.token, map[string]any{"password": "correct horse battery staple"}, nil)
 	if typ := e.want(res, http.StatusConflict, "deactivate with a subscription"); typ != clientapi.ProblemTypeDeactivationRefused {
 		t.Errorf("deactivate with a subscription: %s", typ)

@@ -2,7 +2,7 @@ name: Voice contract
 
 # The voice.Transport contract of voice = livekit on a livekit-server --dev container (pkg/testkit/livekittest): the
 # adapter's calls of LiveKit's Twirp API checked against the real server rather than the httptest stand-in that pull
-# requests and merge groups run (ADR-0102 §2). They need Docker and pull an image, which the offline `check` does not
+# requests and merge groups run (ADR-0101 §11). They need Docker and pull an image, which the offline `check` does not
 # (ADR-0015), so they run in the slow suite (slow-suite.yml, ADR-0079) and by hand on any branch.
 
 on:

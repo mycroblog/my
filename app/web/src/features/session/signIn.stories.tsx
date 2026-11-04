@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Starting to sign in (/login; ADR-0030): the page is only a spinner while the app remembers a new PKCE verifier and
+// Starting to sign in (/login; ADR-0090): the page is only a spinner while the app remembers a new PKCE verifier and
 // state and sends the browser to the server's sign-in screen, which the stories do not leave for. Every sign-in link
 // leads here, and so does a page that needs a session, opened signed out.
 import type { Meta, StoryObj } from "@storybook/react-vite";

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The maintenance of the server in place of the whole app (ADR-0084 §3, web-client/09-app-shell.md §9 "メンテナンス"):
+// The maintenance of the server in place of the whole app (ADR-0088 §10, web-client/09-app-shell.md §9 "メンテナンス"):
 // while the server answers with its maintenance problem (lib/maintenance.ts), the shell shows what it says (the
 // administrators' notice, when the maintenance is expected to end, the status page) instead of the router, tries the
 // server again after Retry-After, and loads the page again once the server answers. "Reload" asks at once.

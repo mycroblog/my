@@ -85,7 +85,7 @@ type FetchSettings interface {
 }
 
 // AcceptSignatureGET is the Accept-Signature field value of a 401 answer to a GET: the
-// RFC 9421 signature that the profile of ADR-0032 requires.
+// RFC 9421 signature that the profile of ADR-0006 requires.
 const AcceptSignatureGET = acceptSignatureGET
 
 // ObjectsDeps are the ports and settings of Objects.
@@ -93,7 +93,7 @@ type ObjectsDeps struct {
 	// Quotes reads the quotes and quote policies that Notes present, and the approvals this
 	// server gives (ADR-0069); nil presents none and serves no QuoteAuthorization.
 	Quotes ObjectQuotes
-	// Boosts reads the boosts whose Announce is served (ADR-0144 §5); nil serves none.
+	// Boosts reads the boosts whose Announce is served (ADR-0018 §16); nil serves none.
 	Boosts   ObjectBoosts
 	Statuses ObjectStatuses
 	Accounts ObjectAccounts
@@ -253,7 +253,7 @@ func (o *Objects) Status(ctx context.Context, req Requester, statusID string) (O
 }
 
 // PageStatusURI returns the ActivityPub id of a local status for a request of its HTML page that
-// asks for ActivityPub, which is redirected to the id (ADR-0053). The page is anonymous, so the
+// asks for ActivityPub, which is redirected to the id (ADR-0018). The page is anonymous, so the
 // status must be one that an anonymous visitor may see; a status that is missing, remote,
 // deleted, or hidden fails with an error wrapping ErrNotFound alike (ADR-0017). The fetch of the
 // id then decides for the signed requester as Status does.
@@ -463,7 +463,7 @@ func (o *Objects) Featured(ctx context.Context, accountID string) ([]federation.
 // viewNote returns the Note of a status as an anonymous visitor sees it, from the parts that the
 // reader resolved. The reader showed the status to an anonymous visitor, so it is public or
 // unlisted and its effective visibility is its own (a ceiling would have made it followers-only):
-// no mention is left out of tag (ADR-0035 is about local statuses). Like every Note, it says what
+// no mention is left out of tag (ADR-0017 is about local statuses). Like every Note, it says what
 // the status quotes and who may quote it.
 func (o *Objects) viewNote(ctx context.Context, v appcontent.StatusView) (federation.NoteDocument, error) {
 	parts, err := o.viewParts(ctx, v)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The demo scenario (ADR-0117 §1): the people, posts, relationships, moderation, roles, supporters, invites, and
+// The demo scenario (ADR-0015 §5): the people, posts, relationships, moderation, roles, supporters, invites, and
 // announcements of a server in use, as data only. demo/seed.ts applies it, in this order, through `bin/my` and the
 // client and admin APIs; every item has a key, which the seed sends as `Idempotency-Key: demo:<key>`. The passwords
 // are fixed so that people and the L4 agent can sign in as anyone; a server takes them only with the fake payments of
@@ -458,7 +458,7 @@ export const follows: readonly Follow[] = [
   { follower: "sam", followee: "ren" },
 ];
 
-/** A list of accounts that its owner follows (ADR-0122), which only the owner sees; found again by its name. */
+/** A list of accounts that its owner follows (ADR-0013), which only the owner sees; found again by its name. */
 export type List = { key: string; owner: string; name: string; members: string[] };
 
 /**

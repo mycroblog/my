@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 )
 
-// The values of traces_flush (ADR-0063 §5).
+// The values of traces_flush (ADR-0055 §17).
 const (
 	// FlushBatch leaves the export to the SDK's batch span processor, which sends periodically.
 	FlushBatch = "batch"
@@ -45,7 +45,7 @@ type TracerOptions struct {
 	Exporter sdktrace.SpanExporter
 }
 
-// Tracer is a kernel.Tracer on an OpenTelemetry TracerProvider (ADR-0063 §1, §5): it exports the
+// Tracer is a kernel.Tracer on an OpenTelemetry TracerProvider (ADR-0055 §13, §17): it exports the
 // spans over OTLP/HTTP (protobuf, gzip) to the receiver that the standard
 // OTEL_EXPORTER_OTLP_TRACES_ENDPOINT and OTEL_EXPORTER_OTLP_* environment variables name
 // (default http://localhost:4318/v1/traces), and samples the root spans by trace ID ratio unless
@@ -97,7 +97,7 @@ func (t *Tracer) Shutdown(ctx context.Context) error { return t.provider.Shutdow
 func (t *Tracer) ForceFlush(ctx context.Context) error { return t.provider.ForceFlush(ctx) }
 
 // linkSampler records a root span that links to a sampled span, so that the jobs of a recorded
-// request are recorded too (ADR-0063 §2), and samples the others by ratio.
+// request are recorded too (ADR-0055 §14), and samples the others by ratio.
 type linkSampler struct{ ratio sdktrace.Sampler }
 
 func (s linkSampler) ShouldSample(p sdktrace.SamplingParameters) sdktrace.SamplingResult {
@@ -156,7 +156,7 @@ func (t *Tracer) Inject(ctx context.Context) string {
 }
 
 // Continue implements kernel.Tracer: the traceparent becomes the remote parent of the next span;
-// a tracestate is never taken (ADR-0063 §3).
+// a tracestate is never taken (ADR-0055 §15).
 func (t *Tracer) Continue(ctx context.Context, traceparent string) context.Context {
 	sc, ok := spanContext(traceparent)
 	if !ok {

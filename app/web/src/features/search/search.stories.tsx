@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The search (/search; FR-305, FR-307, web-client/screens/search.md) in the states of ADR-0112 §1: the accounts whose
+// The search (/search; FR-305, FR-307, web-client/screens/search.md) in the states of ADR-0079 §13: the accounts whose
 // names match the text, and the handle or URL that the server resolves.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

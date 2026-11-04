@@ -11,7 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/interface/clientapi"
 )
 
-// TestWebClientEpochMatchesTheClient checks that the two constants of ADR-0141 §4 move together.
+// TestWebClientEpochMatchesTheClient checks that the two constants of ADR-0028 §12 move together.
 func TestWebClientEpochMatchesTheClient(t *testing.T) {
 	src, err := os.ReadFile("../../../app/web/src/lib/webClientEpoch.ts")
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// The notification settings (FR-210, ADR-0109 §2, §6): for each group of notification types and
+// The notification settings (FR-210, ADR-0086 §9, §13): for each group of notification types and
 // each channel that the server keeps per user (in the app and by email), whether the user gets
 // them. A channel of a group either takes the user's choice, with a default for a user who has
 // not chosen, or is fixed on. Web Push stays the alerts of each subscription and the sound a
@@ -35,7 +35,7 @@ func (c Channel) Valid() bool { return c == ChannelInApp || c == ChannelEmail }
 
 // Group is a row of the notification settings: one or more notification types that the user
 // turns on and off together (notification_settings.notification_group). The ID of an
-// unsubscribable group is also the category of its emails' unsubscribe links (ADR-0109 §4).
+// unsubscribable group is also the category of its emails' unsubscribe links (ADR-0086 §11).
 type Group string
 
 // Groups. The ordinary notifications are one group per type, except the voice chat
@@ -54,7 +54,7 @@ const (
 	GroupAccountMoved   Group = "account_moved"
 	// GroupVoice is voice_room_started and voice_room_invited.
 	GroupVoice Group = "voice"
-	// GroupStatus is the new posts of the accounts that the user subscribes to (ADR-0123 §3); it
+	// GroupStatus is the new posts of the accounts that the user subscribes to (ADR-0086 §16); it
 	// has no email channel.
 	GroupStatus Group = "status"
 
@@ -99,7 +99,7 @@ const (
 )
 
 // EmailDelay is how long after a notification its email waits to see whether the recipient
-// read it (ADR-0109 §4): for the groups whose email is DelayedEmail.
+// read it (ADR-0086 §11): for the groups whose email is DelayedEmail.
 const EmailDelay = 15 * time.Minute
 
 // Rule is how a channel of a group is set: Default is its value until the user chooses, a
@@ -171,7 +171,7 @@ func moderator(t Type) GroupSpec {
 	return GroupSpec{Group: Group(t), Section: SectionModerator, Types: []Type{t}, InApp: moderatorRules[0], Email: moderatorRules[1]}
 }
 
-// Groups are the rows of the settings, in the order of the table (ADR-0109 §2). Every
+// Groups are the rows of the settings, in the order of the table (ADR-0086 §9). Every
 // notification type is in exactly one group.
 var Groups = []GroupSpec{
 	ordinary(GroupMention), ordinary(GroupFollow), ordinary(GroupFollowRequest), ordinary(GroupFollowAccepted),

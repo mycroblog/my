@@ -46,7 +46,7 @@ export function withRelationFrom(status: Status, relation: Relation, from: Statu
 }
 
 /**
- * What fills the viewer's Like slot of a post (ADR-0052 §1): a favourite, a reaction with one emoji, or nothing. A
+ * What fills the viewer's Like slot of a post (ADR-0051 §6): a favourite, a reaction with one emoji, or nothing. A
  * favourite and a reaction never both: setting one takes back the other.
  */
 export type LikeSlot = { kind: "none" } | { kind: "favourite" } | { kind: "reaction"; emoji: ReactionEmoji };

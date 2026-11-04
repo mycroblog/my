@@ -20,7 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
-// MaintenanceApp is the server of the maintenance mode (ADR-0084): it opens no adapter, runs no
+// MaintenanceApp is the server of the maintenance mode (ADR-0088): it opens no adapter, runs no
 // job, and answers every request with the maintenance responses of internal/interface/maintenance.
 // It passes the middleware of the App that needs no adapter: request IDs, the access log, the
 // security headers, and panic recovery.
@@ -55,7 +55,7 @@ func NewMaintenanceApp(cfg *config.Config, opts AppOptions) (*MaintenanceApp, er
 	return &MaintenanceApp{app: a, handler: h}, nil
 }
 
-// MaintenancePage is the maintenance page of cfg (ADR-0084 §4) in the default theme with the
+// MaintenancePage is the maintenance page of cfg (ADR-0088 §11) in the default theme with the
 // overrides of the instance's theme (ADR-0059 §2; nil for none). The server's name is
 // maintenance_server_name, or the host name.
 func MaintenancePage(cfg *config.Config, overrides []instance.ThemeTokenValue) maintenance.Page {

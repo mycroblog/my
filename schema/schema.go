@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package schema embeds the desired-state schema (ADR-0023, ADR-0126) so that Go code can apply it
+// Package schema embeds the desired-state schema (ADR-0023) so that Go code can apply it
 // without depending on the working directory. Each dialect's schema is the directory schema/<dialect>, one
-// file per module (ADR-0082); SQLite and Postgres hold its files concatenated in name order, the
+// file per module (ADR-0081); SQLite and Postgres hold its files concatenated in name order, the
 // order in which Atlas executes them.
 //
 // `my schema apply` applies these files with the Atlas Go library in every real deployment (and in

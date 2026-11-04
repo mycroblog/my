@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's page of the supporter plans and the supporter list in every width × locale project (ADR-0071 §4,
-// ADR-0072 §6, §8, §13, ADR-0027): a user chooses a plan with a name in Arabic (dir="auto"), reads the final
+// The user's page of the supporter plans and the supporter list in every width × locale project (ADR-0070 §13,
+// ADR-0072 §6, §8, §13, ADR-0110): a user chooses a plan with a name in Arabic (dir="auto"), reads the final
 // confirmation and goes to the provider's checkout; a member sees their subscription and its cancel dialog; a visitor
 // reads the supporter list by plan. Each step passes axe without scrolling sideways. `vite preview` has no API, so the
 // test plays the server with page.route; names change with the locale, so the elements are found by role and by the

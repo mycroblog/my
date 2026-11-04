@@ -6,7 +6,7 @@
 export { dataExportsQueryOptions, deactivationPreviewQueryOptions } from "./api/account";
 export { dataImportsQueryOptions } from "./api/importExport";
 export { credentialsQueryOptions, preferencesQueryOptions } from "./api/me";
-// The badges of the user's roles on their profile (ADR-0071).
+// The badges of the user's roles on their profile (ADR-0070).
 export { badgeChoicesQueryOptions } from "./api/badges";
 export { BadgeSettings } from "./components/BadgeSettings";
 export { blocksQueryOptions, followRequestsQueryOptions, mutesQueryOptions } from "./api/relationships";
@@ -19,11 +19,11 @@ export { DataExportsSection, OwnAccount } from "./components/OwnAccount";
 export { PreferencesForm } from "./components/PreferencesForm";
 // What a screen that saves a control at once shows (G24).
 export { saveStateOf, useSaveLabels } from "./hooks/saveState";
-// The notification settings: in the app, Web Push on this device, email, and the sound of this device (FR-210, ADR-0109).
+// The notification settings: in the app, Web Push on this device, email, and the sound of this device (FR-210, ADR-0086).
 export { notificationSettingsQueryOptions } from "./api/notificationSettings";
 export { instanceQueryOptions } from "./api/me";
 export { NotificationSettings } from "./components/NotificationSettings";
-// The prompt to turn on Web Push at the top of the notifications page (ADR-0137).
+// The prompt to turn on Web Push at the top of the notifications page (ADR-0086).
 export { PushPrompt } from "./components/PushPrompt";
 export { ProfileForm } from "./components/ProfileForm";
 // The welcome step after sign-up: the avatar and the display name (web-client/screens/welcome.md).
@@ -60,7 +60,7 @@ export { OAuthAppSettings } from "./components/OAuthAppSettings";
 // The apps the user authorized, and revoking them (ADR-0090 §5).
 export { authorizedAppsQueryOptions } from "./api/authorizedApps";
 export { AuthorizedApps } from "./components/AuthorizedApps";
-// The browsers signed in to the account, and signing them out (ADR-0136).
+// The browsers signed in to the account, and signing them out (ADR-0090).
 export { browserSessionsQueryOptions } from "./api/browserSessions";
 export { BrowserSessions } from "./components/BrowserSessions";
 // The aliases and moving the account to another account (FR-009, ADR-0089).
@@ -72,6 +72,6 @@ export { useUserDisplaySettings } from "./hooks/useUserDisplaySettings";
 export { acceptedImageTypes, type MediaAttachment, MediaProcessingError, uploadImage } from "./api/media";
 // Asking before leaving a form with unsaved changes (web-client/09-app-shell.md §9), which the admin screens' forms share.
 export { useUnsavedChangesGuard } from "./hooks/useUnsavedChangesGuard";
-// The user's own invites (FR-011, ADR-0108 §5).
+// The user's own invites (FR-011, ADR-0106 §18).
 export { ownInvitesQueryOptions } from "./api/invites";
 export { OwnInvites } from "./components/OwnInvites";

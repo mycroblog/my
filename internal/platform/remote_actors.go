@@ -66,7 +66,7 @@ func (a *App) setUpRemoteActors(cfg *config.Config, repo federationRepository) {
 		KV:     a.KV, Clock: a.Clock,
 		Domains: a.ModerationPolicy, Instances: repo,
 		Key: federation.InstanceKey(a.Accounts), Host: cfg.Host,
-		// The federation mode decides what is fetched (ADR-0076).
+		// The federation mode decides what is fetched (ADR-0006).
 		Modes: federationModes{a},
 	})
 	a.RemoteActors = federation.NewRemoteActors(federation.RemoteActorsDeps{

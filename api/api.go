@@ -2,7 +2,7 @@
 
 // Package api embeds the OpenAPI document of the client API (openapi.yaml), the bundle of the split
 // spec in api/spec/ from which the server interface and the client types are generated (ADR-0016,
-// ADR-0029, ADR-0066).
+// ADR-0016).
 package api
 
 import _ "embed"

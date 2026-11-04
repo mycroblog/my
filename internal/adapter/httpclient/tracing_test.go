@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
-// TestTracing checks the client spans of ADR-0063: the method, the destination's host alone,
+// TestTracing checks the client spans of ADR-0055: the method, the destination's host alone,
 // and the status, and no traceparent to the remote server, even when the caller sets one.
 func TestTracing(t *testing.T) {
 	var got http.Header

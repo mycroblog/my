@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
-// TestBrowserSessionQueries runs the queries of the signed-in browsers (ADR-0136) on PostgreSQL,
+// TestBrowserSessionQueries runs the queries of the signed-in browsers (ADR-0090) on PostgreSQL,
 // where the IDs that they join are of different column types: a session counts while it works or
 // a first-party family started from it works, and only first-party tokens are revoked with it.
 func TestBrowserSessionQueries(t *testing.T) {

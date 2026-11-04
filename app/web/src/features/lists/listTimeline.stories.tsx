@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// A list's timeline (/lists/{id}; web-client/screens/list-timeline.md, ADR-0122 §4) in the states of ADR-0112 §1.
+// A list's timeline (/lists/{id}; web-client/screens/list-timeline.md, ADR-0013 §13) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { statusPage } from "../../test/fixtures";

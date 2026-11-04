@@ -4,7 +4,7 @@ import { ApiError } from "./errors";
 import { federationReachOf, isFederationRestricted } from "./federation";
 
 describe("federationReachOf", () => {
-  // ADR-0076, "流れの分類": follow_out and ingest pass in inbound and both; publish passes in outbound and both.
+  // ADR-0006, "流れの分類": follow_out and ingest pass in inbound and both; publish passes in outbound and both.
   test.each([
     ["off", false, false],
     ["inbound", true, false],

@@ -30,7 +30,7 @@ type Statuses interface {
 }
 
 // OutboxFetcher starts fetching the recent posts of a remote account whose profile a viewer
-// opens (ADR-0044), and reports whether it did; the conditions are its own.
+// opens (ADR-0006), and reports whether it did; the conditions are its own.
 // *federation.StatusHandlers implements it.
 type OutboxFetcher interface {
 	FetchOutbox(ctx context.Context, viewerAccountID, accountID string) (bool, error)
@@ -291,7 +291,7 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		FavouritesCount: int(v.Counters.FavouritesCount),
 		Reactions:       newStatusReactions(v.Reactions, v.Relation != nil),
 	}
-	// A local status's page is derived from its author's current username (ADR-0053) and served
+	// A local status's page is derived from its author's current username (ADR-0018) and served
 	// by the web client's origin.
 	if u := appcontent.StatusPageURL(s.o.Host, st, v.Author); u != "" {
 		if st.IsLocal {
@@ -528,7 +528,7 @@ func (s *Server) createdStatus(ctx context.Context, statusID string) (CreateStat
 }
 
 // quotableRemotely refuses a quote of a remote status while the federation mode does not send
-// posts out, since the QuoteRequest cannot go to its server (ADR-0076). A status that the viewer
+// posts out, since the QuoteRequest cannot go to its server (ADR-0006). A status that the viewer
 // cannot see is left to Create, which answers it as any quote of one.
 func (s *Server) quotableRemotely(ctx context.Context, statusID string) (*problem, error) {
 	if ok, err := s.federationAllows(ctx, remoteQuoteFlows...); err != nil || ok {

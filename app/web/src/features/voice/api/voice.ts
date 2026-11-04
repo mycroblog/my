@@ -44,7 +44,7 @@ export const voiceRoomSpeakers = [
 ] as const satisfies readonly VoiceRoomSpeakers[];
 
 /**
- * The limits of a room's settings, as the server checks them (internal/domain/voice, ADR-0100 回答 38): the name in
+ * The limits of a room's settings, as the server checks them (internal/domain/voice, ADR-0100 §3): the name in
  * grapheme clusters (and in code points, `nameCodePoints`), the description and each hashtag in code points.
  */
 export const voiceRoomLimits = {
@@ -182,7 +182,7 @@ function refreshRoomLists(queryClient: QueryClient): Promise<void> {
 }
 
 /**
- * Puts a room as the server answered a write into its query (ADR-0045), and marks stale the lists, which it may enter,
+ * Puts a room as the server answered a write into its query (ADR-0028), and marks stale the lists, which it may enter,
  * leave, or move in, and the user's history after opening one.
  */
 export async function cacheVoiceRoom(

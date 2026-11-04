@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The notification settings through the whole app (web-client/README.md T4; FR-206, FR-210, ADR-0109 §1, §2, §5): MSW
+// The notification settings through the whole app (web-client/README.md T4; FR-206, FR-210, ADR-0086 §8, §9, §12): MSW
 // plays the server, and a stand-in for the browser's Push API (jsdom has none) plays the Service Worker registration's
 // PushManager and the Notifications API.
 import { screen, waitFor, within } from "@testing-library/react";

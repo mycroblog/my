@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The layout of the PNG renditions of a brand image (ADR-0116 §3): each canvas has the size the server asked for, the
+// The layout of the PNG renditions of a brand image (ADR-0059 §10): each canvas has the size the server asked for, the
 // opaque ones are filled with the background first, the maskable icon keeps the mark in the middle 80%, and a logo
 // keeps its proportions, centered, in the link preview and the mail header.
 import { describe, expect, test, vi } from "vitest";

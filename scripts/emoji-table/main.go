@@ -3,7 +3,7 @@
 // Command emoji-table generates, in one run from one emoji-test.txt, the Unicode emoji data of the server and of the
 // web client:
 //
-//   - the table of fully-qualified emoji that the content module normalizes emoji reactions with (ADR-0052 §1), a Go
+//   - the table of fully-qualified emoji that the content module normalizes emoji reactions with (ADR-0051 §6), a Go
 //     file;
 //   - the data of the web client's emoji picker and completion (ADR-0091 §1): a base file of the emoji, their groups,
 //     order, versions, and skin tone variants, and a file per locale of their CLDR names and keywords.

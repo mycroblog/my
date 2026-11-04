@@ -7,7 +7,7 @@
 //
 // The accepted formats are JPEG, PNG (an APNG is read as its default image), GIF, and WebP,
 // the last two animated or not. Every file gets small, medium, and large still variants within
-// the boxes of its purpose (ADR-0054 §1, §2): the large one is JPEG when opaque and PNG
+// the boxes of its purpose (ADR-0005 §4, §5): the large one is JPEG when opaque and PNG
 // otherwise, which every federated server shows (always PNG for a custom emoji, which servers
 // do not take as JPEG, ADR-0051 §2), and the small and medium ones are WebP. An
 // animation also gets moving variants: a GIF for the large one and animated WebP for the
@@ -136,7 +136,7 @@ type Probe struct {
 	Frames int
 }
 
-// Purpose is what a media file is used for; it picks the boxes of its variants (ADR-0054 §1).
+// Purpose is what a media file is used for; it picks the boxes of its variants (ADR-0005 §4).
 type Purpose string
 
 // Purposes.
@@ -195,12 +195,12 @@ func (b Boxes) Box(size Size) Box {
 	return b.Large
 }
 
-// Sizes are the boxes of the variants of each purpose (ADR-0054 §1).
+// Sizes are the boxes of the variants of each purpose (ADR-0005 §4).
 type Sizes struct {
 	Attachment, Avatar, Header, Emoji Boxes
 }
 
-// DefaultSizes returns the boxes of ADR-0054 §1: attachments within 640 × 360, 1920 × 1080,
+// DefaultSizes returns the boxes of ADR-0005 §4: attachments within 640 × 360, 1920 × 1080,
 // and 3840 × 2160 pixels of area; avatars cropped to squares of 96, 192, and 400 pixels;
 // headers within 750 × 250, 1500 × 500, and 3000 × 1000; custom emoji within squares of 64,
 // 128, and 256 pixels.
@@ -275,7 +275,7 @@ func (v Variants) Variant(size Size) Variant {
 	return v.Large
 }
 
-// Output is the result of processing a file (ADR-0054 §1 to §3).
+// Output is the result of processing a file (ADR-0005 §4 to §6).
 type Output struct {
 	// Width and Height are the dimensions of the source after its EXIF orientation.
 	Width, Height int
@@ -305,7 +305,7 @@ type Processor interface {
 	Process(ctx context.Context, data []byte, limits Limits, sizes Sizes, req Request) (Output, error)
 	// Preview inspects data as Inspect does and makes only the variant that Process makes as
 	// Output.Still.Small, decoding no more than the first frame. The media proxy makes it of
-	// remote files (ADR-0054 §7).
+	// remote files (ADR-0005 §10).
 	Preview(ctx context.Context, data []byte, limits Limits, sizes Sizes, req Request) (Variant, error)
 	// AVProcessor checks and remuxes video and audio files.
 	AVProcessor

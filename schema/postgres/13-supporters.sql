@@ -254,7 +254,7 @@ CREATE TABLE supporter_subscription_reads (
   read_at timestamptz NOT NULL
 );
 
--- Current value: the members who chose to be listed on the supporter list (ADR-0071 §6),
+-- Current value: the members who chose to be listed on the supporter list (ADR-0070 §15),
 -- deleted in the transaction that takes their plan's role away and by the erasure of the account.
 CREATE TABLE supporter_listings (
   user_id uuid NOT NULL PRIMARY KEY,
@@ -305,7 +305,7 @@ CREATE TABLE payment_reconcile_runs (
 CREATE UNIQUE INDEX payment_reconcile_runs_run_key ON payment_reconcile_runs (provider, run_key);
 CREATE INDEX payment_reconcile_runs_provider_occurred_at ON payment_reconcile_runs (provider, occurred_at);
 
--- Current value: the claim of a checkout of the payment provider's own pages (ADR-0099 §1) while
+-- Current value: the claim of a checkout of the payment provider's own pages (ADR-0074 §9) while
 -- one server process creates its subscription, so that the posts of one checkout on several
 -- replicas create one subscription when the provider takes no idempotency key (PAY.JP v1). One row
 -- per (provider, provider_checkout_id); holder is the post that holds it. The holder deletes the row when it

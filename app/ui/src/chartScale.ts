@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The geometry of the hand-written charts (ADR-0113 §1): a linear value axis with ticks at steps of 1, 2 or 5 × 10ⁿ,
+// The geometry of the hand-written charts (ADR-0110 §16): a linear value axis with ticks at steps of 1, 2 or 5 × 10ⁿ,
 // and a time axis that runs along the line, so that in right-to-left text the newest period is on the left (§3).
 // The charts draw in a 0–100 box on both axes (an SVG viewBox stretched to the chart's size), so every position here is a
 // share of the box in percent.

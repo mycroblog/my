@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Moderating voice chat in every width × locale project (ADR-0100 §2, §11, §13, ADR-0027): reporting a room from its
+// Moderating voice chat in every width × locale project (ADR-0100 §2, §11, §13, ADR-0110): reporting a room from its
 // page, the voice chat section of the server settings, and a report's page of a room with its records and the
 // confirmation that ends it, each axe-clean and without horizontal scroll. `vite preview` has no API, so the spec
 // answers the token refresh and the client API with `page.route`, as a server with voice chat on would, for Alice,

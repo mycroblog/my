@@ -120,7 +120,7 @@ func TestOwnModerationActions(t *testing.T) {
 // TestAppealFromTheSignInScreens checks, through the composition root, that a suspended user,
 // who has no access token, appeals the suspension from the status page of the sign-in screens,
 // that the other moderators get admin_appeal, and that a second appeal is refused with the
-// reason (FR-707, ADR-0038).
+// reason (FR-707, ADR-0058).
 func TestAppealFromTheSignInScreens(t *testing.T) {
 	t.Parallel()
 	c := newStatusesClient(t, "alice", "bob")
@@ -164,7 +164,7 @@ func TestAppealFromTheSignInScreens(t *testing.T) {
 
 // TestBanAppealFromTheSignInScreens checks, through the composition root, that a banned user
 // signs in to the status page of the sign-in screens until the ban deletes the account, appeals
-// the ban there so that the other moderators get admin_appeal (FR-707, ADR-0038), and is signed
+// the ban there so that the other moderators get admin_appeal (FR-707, ADR-0058), and is signed
 // out by the deletion and cannot sign in again.
 func TestBanAppealFromTheSignInScreens(t *testing.T) {
 	t.Parallel()

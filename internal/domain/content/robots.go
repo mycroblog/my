@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// This file reads robots.txt as RFC 9309 defines it, for the link cards (ADR-0131 §3): the
+// This file reads robots.txt as RFC 9309 defines it, for the link cards (ADR-0062 §11): the
 // groups of user-agent lines, the allow and disallow rules, the special characters, and the
 // matching of URIs. Every other record, Crawl-delay included, is ignored.
 

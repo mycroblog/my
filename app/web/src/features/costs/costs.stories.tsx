@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The public costs and income of the server (/about/costs; web-client/screens/about-costs.md) in the states of ADR-0112 §1.
+// The public costs and income of the server (/about/costs; web-client/screens/about-costs.md) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { http, HttpResponse, type RequestHandler } from "msw";

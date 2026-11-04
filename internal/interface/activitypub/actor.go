@@ -75,14 +75,14 @@ func keyDocumentOf(doc federation.ActorDocument) keyDocument {
 //
 // A local actor that moderation suspends (suspend, ban) is served, not hidden, until it is
 // deleted: its document is emptied and marked suspended, with its key, so that other servers
-// show the suspension and can verify the actor's Delete (federation.md §11, ADR-0036). So is a
-// local actor that its owner deactivated, until it comes back or is deleted (ADR-0145 §7).
+// show the suspension and can verify the actor's Delete (federation.md §11, ADR-0058). So is a
+// local actor that its owner deactivated, until it comes back or is deleted (ADR-0089 §17).
 //
 // A deleted local actor answers 410 with a Tombstone from its deleted event on, also after the
-// erasure, so that a server that missed the Delete can tell gone from missing (ADR-0144 §1). A
+// erasure, so that a server that missed the Delete can tell gone from missing (ADR-0018 §12). A
 // request that prefers HTML gets the 404 of a deleted post instead.
 //
-// The federation mode decides the rest (ADR-0076): Register serves the actors only when it
+// The federation mode decides the rest (ADR-0006): Register serves the actors only when it
 // identifies (404 when it is off), and when it does not publish (inbound) a user's document is
 // the minimal one for everyone, as authorized fetch serves it to an unsigned request, so that
 // remote servers verify the signatures of its Follows without seeing its profile.
@@ -133,7 +133,7 @@ func (h *Handler) actor(w http.ResponseWriter, r *http.Request) {
 }
 
 // closedActor serves GET /ap/actors/{id} while the service closure delivers its Deletes
-// (ADR-0088 §2): a local user's document is the suspended one (ADR-0036: an empty profile marked
+// (ADR-0088 §2): a local user's document is the suspended one (ADR-0058: an empty profile marked
 // suspended, with its key and the movedTo of an actor that moved), so that the receivers of its
 // Delete can verify it and follow its move, to every requester, whatever the federation mode;
 // the instance actor's document is served whole.

@@ -255,7 +255,7 @@ func TestRunOnce(t *testing.T) {
 	}
 }
 
-// CatchUpLimit zero turns the catch-up of the notifications off (ADR-0094 §3).
+// CatchUpLimit zero turns the catch-up of the notifications off (ADR-0093 §11).
 func TestCatchUpLimitZeroTurnsTheCatchUpOff(t *testing.T) {
 	f := newFakeServer(t)
 	f.add(mention(10, account(1, "alice"), "ping", mykit.VisibilityPublic))

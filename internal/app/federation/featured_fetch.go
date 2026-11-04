@@ -17,7 +17,7 @@ import (
 
 // Fetching the pinned posts of a remote account, its featured collection, when the account is
 // fetched or refreshed, or when it sends an Add or Remove whose target is the collection
-// (federation.md §3.4, §6.2, ADR-0044).
+// (federation.md §3.4, §6.2, ADR-0006).
 const (
 	// JobFetchFeatured fetches the featured collection of a remote account and makes its pins
 	// those the collection lists.

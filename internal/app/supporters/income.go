@@ -11,10 +11,10 @@ import (
 )
 
 // The hand-over of the provider's money movements to the finance module's income records
-// (ADR-0073 §1): the only call from this module into finance, through IncomeRecorder.
+// (ADR-0067 §11): the only call from this module into finance, through IncomeRecorder.
 
 // IncomeRecorder takes the provider's final money movements to the finance module's income
-// records (finance.RecordIncome, ADR-0073 §1): *appfinance.Service implements it.
+// records (finance.RecordIncome, ADR-0067 §11): *appfinance.Service implements it.
 type IncomeRecorder interface {
 	RecordIncome(ctx context.Context, ms []appfinance.IncomeMovement) error
 	KnownIncome(ctx context.Context, provider string, ids []string) (map[string]bool, error)

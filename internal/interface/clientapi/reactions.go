@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// The emoji reactions to statuses (FR-116, ADR-0052 §5): their counts on Status, the list of
+// The emoji reactions to statuses (FR-116, ADR-0051 §10): their counts on Status, the list of
 // the accounts that reacted, and the emoji of a reaction notification.
 
 // newReactionEmoji presents the emoji of a reaction as the ReactionEmoji schema.

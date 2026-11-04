@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The list of the user's bookmarks in every width × locale project (FR-113, ADR-0027, ADR-0039): opened from the
+// The list of the user's bookmarks in every width × locale project (FR-113, ADR-0110): opened from the
 // navigation (the rail from md, the menu's sheet below it), its feed and its empty state are axe-clean and do not
 // scroll sideways, and a post whose bookmark is removed is gone when the list opens again. `vite preview` has no
 // API, so the spec answers the token refresh and the client API with `page.route`, as a signed-in user's server

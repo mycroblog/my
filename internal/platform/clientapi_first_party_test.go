@@ -26,7 +26,7 @@ import (
 func set(b *bool) bool { return b != nil && *b }
 
 // TestFirstPartyOnlyOperationsRefuseThirdPartyTokens checks through the real API that a
-// third-party token gets the 403 of a first-party-only operation from each operation of ADR-0143,
+// third-party token gets the 403 of a first-party-only operation from each operation of ADR-0090,
 // whatever its scopes, that the first-party client still reads them, and that the reads the ADR
 // keeps open stay open.
 func TestFirstPartyOnlyOperationsRefuseThirdPartyTokens(t *testing.T) {
@@ -111,7 +111,7 @@ func mention(t *testing.T, c *statusesClient) {
 	}
 }
 
-// TestModeratorNotificationsStayWithFirstPartyClients checks ADR-0143 on a moderator's tokens:
+// TestModeratorNotificationsStayWithFirstPartyClients checks ADR-0090 on a moderator's tokens:
 // the list and the unread count of a third-party token leave the moderator notifications out,
 // also when it asks for their type, and those of the first-party client keep them.
 func TestModeratorNotificationsStayWithFirstPartyClients(t *testing.T) {

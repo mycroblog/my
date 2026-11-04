@@ -30,7 +30,7 @@ import (
 var badTexts = []string{"\x00", "\xff"}
 
 // placeholderID stands for the path parameters that a request does not test, in the canonical
-// form that the client API accepts for an ID (ADR-0078 §5).
+// form that the client API accepts for an ID (ADR-0003 §9).
 const placeholderID = "01890a5d-ac96-774b-bcce-b302099a8057"
 
 // sweepRequest is one request of the sweep: an input that a handler may look up holds a bad

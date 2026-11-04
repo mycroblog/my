@@ -19,7 +19,7 @@ import (
 )
 
 // maxKeyDocuments bounds the separate key documents fetched for one actor: keys that the actor's
-// publicKey names by id only (ADR-0032).
+// publicKey names by id only (ADR-0006).
 const maxKeyDocuments = 2
 
 // keyDocumentTypes are the types of a document that is a key rather than an actor.
@@ -111,7 +111,7 @@ func keyOwner(raw []byte) federation.IRI {
 	return firstIRI(k.Controller)
 }
 
-// actorKeys returns the keys an actor document declares for the actor (ADR-0032): the
+// actorKeys returns the keys an actor document declares for the actor (ADR-0006): the
 // publicKey entries with a PEM, the key documents that publicKey names by id only (fetched, at
 // most maxKeyDocuments), and the Ed25519 keys of FEP-521a assertionMethod Multikey entries. A
 // key must have the actor's origin and be owned by the actor.

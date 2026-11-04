@@ -1,4 +1,4 @@
-// The integration tests of pkg/mybot (ADR-0094 §10): a module of its own, never published, that joins the server
+// The integration tests of pkg/mybot (ADR-0093 §18): a module of its own, never published, that joins the server
 // module, pkg/mykit, and pkg/mybot through the replace directives below, so that neither the root module's go.mod
 // nor the libraries' take in the others.
 module github.com/mycroblog/my/pkg/mybot/integration

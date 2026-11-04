@@ -100,7 +100,7 @@ func TestInstancePreviewImage(t *testing.T) {
 	if err != nil || !processed.Ready() {
 		t.Fatalf("Media = %+v, %v", processed.Result, err)
 	}
-	// An opaque image's large variant is a JPEG (ADR-0054 §2).
+	// An opaque image's large variant is a JPEG (ADR-0005 §5).
 	want := "https://" + cfg.Host + "/media/" + m.File.ID + "/" + processed.Result.ID + "/large.jpg"
 	for path, wantAlt := range map[string]string{profile: "マスコット", status: "マスコット"} {
 		if url, alt, w, ht := image(path); url != want || alt != wantAlt || w != "1200" || ht != "630" {

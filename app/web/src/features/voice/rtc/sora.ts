@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The Sora method of the audio of a call (ADR-0102 §3, §6): one multistream connection of sora-js-sdk to the channel
+// The Sora method of the audio of a call (ADR-0101 §12, §15): one multistream connection of sora-js-sdk to the channel
 // of the room, with the client_id of the session and the grant's signed join value (and, on Sora Cloud, its access
 // token) in the metadata that Sora's auth webhook checks. The SDK is a chunk of its own, loaded with import() only
 // when a grant names Sora.
 //
-// The role of a Sora connection does not change while it is open (ADR-0102 §3): a session joins in the role of its
+// The role of a Sora connection does not change while it is open (ADR-0101 §12): a session joins in the role of its
 // grant, `recvonly` for a listener, and a `grant` event with `reconnect: true` joins again in the role of the new grant
 // with the same client_id (`sendrecv` when the user may speak, `recvonly` when no longer). The grant is short-lived and
 // comes only with the join and those events, so a `sendrecv` join happens then: it takes the microphone, which stays

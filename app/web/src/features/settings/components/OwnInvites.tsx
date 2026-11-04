@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The page of the user's own invites (`/settings/invites`, FR-011, ADR-0108 §2, §5), below its heading: two regions.
+// The page of the user's own invites (`/settings/invites`, FR-011, ADR-0106 §15, §18), below its heading: two regions.
 // "Create an invite" says how many usable invites the user holds against the cap and holds the form of a new invite,
 // whose number of sign-ups and expiry are chosen within the caps of the instance settings; the new invite's link stays
 // under the form. A user who may not create invites now is told so instead of the form. "Your invites" lists the

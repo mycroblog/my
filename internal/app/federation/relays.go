@@ -21,7 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/federation"
 )
 
-// The relays the instance joins (ADR-0061, FR-411, FR-724, federation.md §13): the operator
+// The relays the instance joins (ADR-0006, FR-411, FR-724, federation.md §13): the operator
 // registers a relay and the instance actor follows it; public posts go to the accepted relays as
 // the last phase of their fan-out, and the posts that relays bring in are fetched again from
 // their origin, within an hourly limit per relay.
@@ -267,7 +267,7 @@ func (r *Relays) count(ctx context.Context, id string, t time.Time) (int64, erro
 	return n, nil
 }
 
-// Add registers a relay and joins it (ADR-0061): the instance actor sends its Follow, and the
+// Add registers a relay and joins it (ADR-0006): the instance actor sends its Follow, and the
 // relay is pending until it answers. byUserID is the administrator, "" for the CLI. The URL must
 // be https on a server no domain block suspends; a LitePub relay's actor is fetched for its
 // inbox. It fails with federation.ErrInvalidRelay, ErrRelayExists, ErrRelayDomainSuspended, or
@@ -535,7 +535,7 @@ func (r *Relays) AcceptedRelayOf(ctx context.Context, signer federation.IRI) (st
 }
 
 // Admit decides whether an activity that relay relayID sent is taken in, before anything is
-// fetched for it (ADR-0061, federation.md §13):
+// fetched for it (ADR-0006, federation.md §13):
 //
 //  1. The relay must be accepted and receive what it relays.
 //  2. The relay may bring in HourlyLimit activities per hour (UTC); the rest are dropped.

@@ -502,7 +502,7 @@ func interactionFavourites(t *testing.T, e *interactionEnv) {
 	}
 }
 
-// interactionReactsInTheLikeSlot checks the emoji reactions of local accounts (ADR-0052 §1, §2):
+// interactionReactsInTheLikeSlot checks the emoji reactions of local accounts (ADR-0051 §6, §7):
 // an account has a favourite or one reaction on a status, and filling that Like slot takes back
 // what was in it, each change with its event and counted once.
 func interactionReactsInTheLikeSlot(t *testing.T, e *interactionEnv) {

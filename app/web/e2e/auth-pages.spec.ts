@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The pages the Go server renders without JavaScript (ADR-0030): sign-in, sign-up and OAuth consent,
+// The pages the Go server renders without JavaScript (ADR-0090): sign-in, sign-up and OAuth consent,
 // against a real `my serve` (e2e/server.ts) in every width × locale project. Fields are found by their
 // autocomplete tokens, which are part of what these pages promise (password managers), and stay the same
 // in every locale.

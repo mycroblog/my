@@ -113,7 +113,7 @@ type PushAudience interface {
 	// app, or a revocation by a moderator or a password change, ends its subscription.
 	GrantActive(ctx context.Context, tokenFamilyID string) (bool, error)
 	// Deactivated reports whether the owner of a local account deactivated it: nothing reaches it
-	// until it comes back (ADR-0145 §6). An unknown account is not deactivated.
+	// until it comes back (ADR-0089 §16). An unknown account is not deactivated.
 	Deactivated(ctx context.Context, accountID string) (bool, error)
 	// Locale returns the UI locale of the user of a local account; "" when the user has none.
 	Locale(ctx context.Context, accountID string) (string, error)
@@ -639,5 +639,5 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 // AnnouncementPath is the web client's page of an announcement.
 func AnnouncementPath(id string) string { return "/announcements/" + id }
 
-// statusPath is the web client's page of a status by the account acct (ADR-0053).
+// statusPath is the web client's page of a status by the account acct (ADR-0018).
 func statusPath(acct, statusID string) string { return "/@" + acct + "/status/" + statusID }

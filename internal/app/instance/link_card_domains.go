@@ -14,7 +14,7 @@ import (
 
 // The rules of the link card crawler (FR-117): for a domain and its subdomains, the crawler
 // fetches nothing or fetches no images. The rows are current values, and the audit log entry that
-// each change records in the same transaction (ADR-0037) keeps who changed what and when.
+// each change records in the same transaction (ADR-0058) keeps who changed what and when.
 
 // LinkCardDomainRepository is the persistence port of the rules. It is part of Repository.
 type LinkCardDomainRepository interface {

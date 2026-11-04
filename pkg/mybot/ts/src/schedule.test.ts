@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { parseSchedule, ScheduleError } from "./schedule.js";
 
-/** pkg/mybot/testdata/cron.json, the cases that the Go mybot passes too (ADR-0094 §5). */
+/** pkg/mybot/testdata/cron.json, the cases that the Go mybot passes too (ADR-0093 §13). */
 type CronFixture = {
   next: { name: string; expr: string; tz: string; from: string; next: string[] }[];
   prev: { name: string; expr: string; tz: string; at: string; prev: string }[];

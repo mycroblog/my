@@ -72,7 +72,7 @@ export function disableTotpMutation(api: Api) {
 
 /**
  * What turning two-factor authentication on or off, or replacing the recovery codes, changes (web-client/README.md S1,
- * ADR-0045): where it stands (on since when, how many codes are left). Turning it off answers the new state, which
+ * ADR-0028): where it stands (on since when, how many codes are left). Turning it off answers the new state, which
  * goes into the cache; the others mark it stale, and this resolves once it is fetched again.
  */
 export async function cacheChangedTwoFactor(api: Api, queryClient: QueryClient, answered?: TwoFactor): Promise<void> {

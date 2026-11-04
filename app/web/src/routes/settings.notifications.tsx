@@ -11,7 +11,7 @@ import { useT } from "../lib/i18n";
 import { SettingsHeading } from "./-layout/SettingsHeading";
 
 /**
- * The notification settings (FR-210, ADR-0109 §1): which notifications arrive in the app, by Web Push on this device,
+ * The notification settings (FR-210, ADR-0086 §8): which notifications arrive in the app, by Web Push on this device,
  * by email, and with a sound on this device. The server lists the rows the viewer gets; the preferences say whether
  * emails reach the viewer's address.
  */

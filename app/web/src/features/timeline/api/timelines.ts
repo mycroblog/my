@@ -21,7 +21,7 @@ export type StatusPage = components["schemas"]["StatusPage"];
 
 /**
  * A page of any timeline as its query caches it: the first page of a remote account's posts may also tell
- * that it started fetching the account's recent posts from its server (AccountStatusPage, ADR-0044).
+ * that it started fetching the account's recent posts from its server (AccountStatusPage, ADR-0006).
  */
 export type TimelinePage = components["schemas"]["AccountStatusPage"];
 
@@ -44,7 +44,7 @@ export type Timeline =
   | { kind: "bookmarks" }
   /** The posts that quote the viewer's post `id` (GET /statuses/{id}/quotes, FR-114), newest first. */
   | { kind: "quotes"; id: string }
-  /** The posts of the members of the viewer's list `id` (GET /timelines/list/{id}, ADR-0122 §4), newest first. */
+  /** The posts of the members of the viewer's list `id` (GET /timelines/list/{id}, ADR-0013 §13), newest first. */
   | { kind: "list"; id: string }
   /** The posts of the account `id` on its profile. */
   | { kind: "account"; id: string; filter: AccountTimelineFilter };
@@ -154,14 +154,14 @@ export function timelineQueryOptions(api: Api, timeline: Timeline) {
   });
 }
 
-/** Whether a timeline's first page started fetching its account's recent posts from the account's server (ADR-0044). */
+/** Whether a timeline's first page started fetching its account's recent posts from the account's server (ADR-0006). */
 export function remoteFetchStarted(data: InfiniteData<TimelinePage>): boolean {
   return data.pages[0]?.remote_fetch_started === true;
 }
 
 /**
  * Reads the posts of a remote account again once its recent posts had time to arrive from its server
- * (ADR-0044): every cached list of the account's posts is marked stale and the one shown is fetched again
+ * (ADR-0006): every cached list of the account's posts is marked stale and the one shown is fetched again
  * (S1). Then the shown timeline's first page forgets that it started the fetch, whether the read succeeded or
  * not, so that the page is read again only once and a failure is not told. Resolves once that is done.
  */

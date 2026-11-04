@@ -14,7 +14,7 @@ import (
 // proxy sends it.
 const ContractTraceParent = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 
-// TracerContract verifies a kernel.Tracer adapter (ADR-0063): it starts and ends spans of every
+// TracerContract verifies a kernel.Tracer adapter (ADR-0055): it starts and ends spans of every
 // kind from many goroutines, with attributes, renames, and failures, and survives an attribute
 // that the spec did not declare, all without a panic or a data race; Inject returns a valid
 // traceparent of the current span exactly when the span is recorded, and nothing outside a

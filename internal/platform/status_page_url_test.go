@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/platform"
 )
 
-// TestStatusPageURL checks that GET /instance has status_page_url only when the setting is set (ADR-0085 §6).
+// TestStatusPageURL checks that GET /instance has status_page_url only when the setting is set (ADR-0088 §20).
 func TestStatusPageURL(t *testing.T) {
 	for _, want := range []string{"", "https://status.example.org"} {
 		env := map[string]string{"MY_DATABASE_URL": newDatabase(t, true)}

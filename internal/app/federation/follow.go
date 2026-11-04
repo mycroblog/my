@@ -50,7 +50,7 @@ type FollowReader interface {
 //
 // What the remote side did itself (its Accept, Reject, Undo, or the deletion of either account)
 // sends nothing back, and neither does a termination that is Unannounced (the suspension of a
-// domain, ADR-0036).
+// domain, ADR-0058).
 func registerFollowProjectors(r *uow.Projectors, rec recorder) {
 	sides := func(ctx context.Context, tx uow.Tx, f appgraph.FollowRecord) (followerLocal, followeeLocal bool, err error) {
 		if followerLocal, err = rec.d.Accounts.IsLocal(ctx, tx, f.FollowerAccountID); err != nil {
@@ -249,7 +249,7 @@ type ActorsByURI interface {
 	FindByURI(ctx context.Context, uri string) (appaccount.Actor, error)
 }
 
-// RelayFollows receives the follow activities about the relays (ADR-0061); *Relays implements
+// RelayFollows receives the follow activities about the relays (ADR-0006); *Relays implements
 // it.
 type RelayFollows interface {
 	// ReceiveAnswer handles the Accept or Reject of a relay's Follow and reports whether it was
@@ -269,14 +269,14 @@ type FollowHandlerDeps struct {
 	// Quotes receives the answers to this server's QuoteRequests (ADR-0069 §3); nil takes them
 	// as answers about follows, which drops them.
 	Quotes QuoteAnswers
-	// Refusals answers the Follows that the federation mode refuses with a Reject (ADR-0076),
+	// Refusals answers the Follows that the federation mode refuses with a Reject (ADR-0006),
 	// and the Follows of the local accounts that moved (ADR-0089); nil drops them.
 	Refusals FollowRefuser
 	// Moves tells the local accounts that moved, which refuse new followers; nil means that none
 	// moved.
 	Moves MoveStates
 	// Relationships tells whether a remote account follows a local one or asked to: a Follow sent
-	// again to a deactivated account changes nothing and gets no answer (ADR-0145 §6); nil means
+	// again to a deactivated account changes nothing and gets no answer (ADR-0089 §16); nil means
 	// that none does.
 	Relationships FollowRelationships
 }
@@ -330,10 +330,10 @@ type QuoteAnswers interface {
 //     tombstone (federation.md §3.3).
 //   - Undo of an Accept: graph.RejectRemote, the end of the follow it accepted.
 //   - Accept and Reject of the Follow of a relay, and Follow of the instance actor: Relays
-//     (ADR-0061).
+//     (ADR-0006).
 //   - Accept and Reject of a QuoteRequest this server sent: Quotes (ADR-0069 §3).
 //
-// The federation mode decides the flows (ADR-0076): a Follow that it refuses (follow_in) gets a
+// The federation mode decides the flows (ADR-0006): a Follow that it refuses (follow_in) gets a
 // Reject from Refusals and records nothing, as does a Follow of a local account that moved
 // (ADR-0089); the answers of the relays are about the instance
 // actor's membership, which passes whenever the processor lets them through; the answers to
@@ -445,7 +445,7 @@ func (h followHandlers) follow(ctx context.Context, in *InboxActivity) error {
 	}))
 }
 
-// followOfDeactivated answers a Follow of a local account whose owner deactivated it (ADR-0145 §6):
+// followOfDeactivated answers a Follow of a local account whose owner deactivated it (ADR-0089 §16):
 // a new one gets a Reject and is not recorded, so it does not come back with the account. The
 // sender of one that is already there, active or pending, gets no answer, since a Reject would end
 // on its server a follow that stays here.

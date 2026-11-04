@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// One of the server's own brand images (ADR-0116 §3): the icon, the logo, or the logo for dark backgrounds. Choosing an
+// One of the server's own brand images (ADR-0059 §10): the icon, the logo, or the logo for dark backgrounds. Choosing an
 // SVG sends it to the server to check and sanitize (nothing is saved), draws every PNG rendition the server asks for
 // from the sanitized SVG in this browser, and previews them; saving sends the SVG and the PNGs together, and the
 // built-in image comes back when the image is cleared. What the server refuses shows under the file's button, with

@@ -14,7 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
-// The viewer's appeals of the actions on their own account (FR-707, ADR-0038). The moderation
+// The viewer's appeals of the actions on their own account (FR-707, ADR-0058). The moderation
 // module checks the appeal window and that an action is appealed once.
 
 // Problem types of the appeals.

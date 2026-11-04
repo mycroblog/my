@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The admin screens in every width × locale project (ADR-0027): the remote servers and their history, resuming
+// The admin screens in every width × locale project (ADR-0110): the remote servers and their history, resuming
 // deliveries, and the queue dashboard with a job's attempt history and running a failed job again, each passing axe
 // without scrolling sideways. `vite preview` has
 // no API, so each test plays the server of a signed-in operator with page.route; names change with the

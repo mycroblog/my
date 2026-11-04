@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// A new post is in the lists that no page shows when it is posted (ADR-0045, web-client/README.md S1, S7): the post
+// A new post is in the lists that no page shows when it is posted (ADR-0028, web-client/README.md S1, S7): the post
 // marks them stale, and their route fetches them again, and waits, when it opens next, so the list never
 // shows what it was before the post. The server answers every list slowly, as over a real network, so that a
 // list shown from a stale cache would be seen.

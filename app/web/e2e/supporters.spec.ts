@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The supporters screen in every width × locale project (ADR-0072, ADR-0027): an administrator with
+// The supporters screen in every width × locale project (ADR-0072, ADR-0110): an administrator with
 // manage_supporters sees the program and its warning, the payment provider's state with how to fix its last
 // reconciliation, the plans with a name in Arabic (dir="auto") and the subscriptions, reconciles now and sees why a
 // second one is too soon, enables the program, creates a plan, retires one and ends a subscription after their dialogs. Each

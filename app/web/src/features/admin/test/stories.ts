@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// What the screen stories of the server administration (ADR-0112 §1, `Screens/Admin/*`) share: the signed-in
+// What the screen stories of the server administration (ADR-0079 §13, `Screens/Admin/*`) share: the signed-in
 // administrator whose roles grant every permission of the admin screens, and a viewer without the screen's permission.
 import type { Meta } from "@storybook/react-vite";
 import type { RequestHandler } from "msw";

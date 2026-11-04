@@ -30,7 +30,7 @@ func excludedError(value, tag string) error {
 }
 
 // testOnlyValues maps a setting to its values whose adapter only a test build has, and each such
-// value to the build tag that adds it (ADR-0117 §2). The files of the builds without the tag
+// value to the build tag that adds it (ADR-0015 §6). The files of the builds without the tag
 // fill it in; Load rejects these values.
 var testOnlyValues = map[string]map[string]string{}
 

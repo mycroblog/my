@@ -61,9 +61,9 @@ type FanOutDeps struct {
 	// Reports reads the forwarded reports that Flags are about; nil fails those activities.
 	Reports ReportReader
 	// Relays reads the inboxes of the accepted relays, the last recipients of the Create of a
-	// public status (ADR-0061); nil sends to no relay.
+	// public status (ADR-0006); nil sends to no relay.
 	Relays RelayInboxes
-	// Modes reads the federation mode when each batch runs (ADR-0076); nil federates both ways.
+	// Modes reads the federation mode when each batch runs (ADR-0006); nil federates both ways.
 	Modes ModeSettings
 	// Closure reads the service closure when each batch runs (ADR-0088 §2); nil never closes.
 	Closure ClosureSettings
@@ -97,7 +97,7 @@ type FanOutDeps struct {
 //  5. In one transaction, it inserts the deliveries with ON CONFLICT DO NOTHING, enqueues a
 //     JobDeliver per new row, and enqueues the job of the next batch.
 //
-// Each batch first asks the federation mode at the time it runs (ADR-0076, federation.Sends): an
+// Each batch first asks the federation mode at the time it runs (ADR-0006, federation.Sends): an
 // activity that the mode does not send is skipped, records nothing more, and is never sent again,
 // even when the mode is widened later. A retraction in a mode that does not publish goes only to
 // the inboxes of the original delivery and to the followers at the time, never to every known
@@ -397,7 +397,7 @@ func (s subject) retracting() bool { return s.suspended || s.movedTo != "" }
 // federation.md §7.1).
 //
 //   - Create: the mentioned accounts, then the followers, then, for a public status, the accepted
-//     relays (ADR-0061).
+//     relays (ADR-0006).
 //   - Update and Delete: the inboxes of the Create, then, for a public or unlisted status, the
 //     followers at that time, and, for the Update of a status with a poll, the accounts that
 //     voted in it (FR-112).
@@ -540,7 +540,7 @@ func (f *FanOut) subject(ctx context.Context, act federation.OutboundActivity, p
 // has nothing to send: a later Delete supersedes it. A suspended actor that is not deleted is
 // the exception: its Update tells that it is suspended, also while a ban schedules its
 // deletion (federation.md §11.1), and so is one that its owner deactivated, which publishes the
-// same document (ADR-0145 §7). The Delete of an actor goes out whatever its state, since the
+// same document (ADR-0089 §17). The Delete of an actor goes out whatever its state, since the
 // account row stays after the purge (data-model §8).
 func (f *FanOut) accountSubject(ctx context.Context, s subject) (subject, error) {
 	act := s.act

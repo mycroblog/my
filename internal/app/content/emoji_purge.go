@@ -69,7 +69,7 @@ type EmojiPurgeDeps struct {
 
 // EmojiPurge deletes the remote custom emoji that no status revision, profile revision, or
 // reaction refers to any more (ADR-0051 §1), so that they do not outlive the remote statuses and
-// profiles that the retention purges remove (ADR-0034, FR-803). A disabled emoji stays, referenced
+// profiles that the retention purges remove (ADR-0006, FR-803). A disabled emoji stays, referenced
 // or not, with its images: its row and settings are what keep its (shortcode, domain) disabled
 // when it arrives again, which recording it anew would turn back to enabled. Each emoji goes in a short
 // transaction of its own with its images, settings, and aliases, and with the remote media files

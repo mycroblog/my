@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The session across tabs (ADR-0030): two Session objects with one lock manager and the real
+// The session across tabs (ADR-0090): two Session objects with one lock manager and the real
 // BroadcastChannel act as two tabs of the origin. The refresh endpoint is modelled like the server's:
 // it rotates the refresh token, and a refresh token used by two requests at once revokes the family.
 import { delay, http, HttpResponse } from "msw";

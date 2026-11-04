@@ -17,7 +17,7 @@ import (
 )
 
 // QueueWakeHarness is a database job queue adapter under test that sends wake-up signals
-// (ADR-0120), on its own empty storage.
+// (ADR-0004), on its own empty storage.
 type QueueWakeHarness struct {
 	// Queue, Source, DeadJobs and Finder are the adapter's views of the same queue.
 	Queue    queue.JobQueue
@@ -35,7 +35,7 @@ type QueueWakeHarness struct {
 type QueueWakeFactory func(t *testing.T, clock *Clock, waker queue.Waker) QueueWakeHarness
 
 // QueueWakeContract verifies a database job queue that carries its jobs to an external queue as
-// wake-up signals (ADR-0120): every stored job is signaled at its RunAt, by Enqueue once it
+// wake-up signals (ADR-0004): every stored job is signaled at its RunAt, by Enqueue once it
 // returns and by EnqueueTx only once its transaction commits; Source.ClaimJob claims a job by ID
 // and tells a job not due yet, one its ordering key holds back, and one leased or gone apart; the
 // WakeSweeper signals again the due jobs whose signal was lost; and a queue.PushReceiver on the
@@ -462,7 +462,7 @@ func wakeReceivesEarlySignals(t *testing.T, newHarness QueueWakeFactory) {
 }
 
 // wakeSignalsCarryType checks that every path of a signal knows the job's type, which chooses the
-// queue of the signal (ADR-0139 §2): an enqueue, a transaction, a retry, a job that a queue with a
+// queue of the signal (ADR-0004 §24): an enqueue, a transaction, a retry, a job that a queue with a
 // delay limit delivered early, the next job of an ordering key, a requeued dead job, and the sweep.
 func wakeSignalsCarryType(t *testing.T, newHarness QueueWakeFactory) {
 	f := newWakeFixture(t, newHarness, queue.Retry(time.Minute, errors.New("flaky")), queue.Done())
@@ -542,7 +542,7 @@ func wakeSignalsCarryType(t *testing.T, newHarness QueueWakeFactory) {
 	wantType("RequeueDeadJob", "testkit.dead")
 }
 
-// wakeFindsDueJobsByType checks the reads of the sweep of a route (ADR-0139 §4).
+// wakeFindsDueJobsByType checks the reads of the sweep of a route (ADR-0004 §26).
 func wakeFindsDueJobsByType(t *testing.T, newHarness QueueWakeFactory) {
 	f := newWakeFixture(t, newHarness)
 	now := f.clock.Now()

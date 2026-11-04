@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The notifications page and the unread badge in every width × locale project (FR-205, ADR-0027). The
+// The notifications page and the unread badge in every width × locale project (FR-205, ADR-0110). The
 // built client runs on `vite preview`, which has no API: the specs answer the OAuth refresh and the client
 // API with `page.route`, as a signed-in user's server would. Names change with the locale, so elements are
 // found by role and position.

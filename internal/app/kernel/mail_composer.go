@@ -22,7 +22,7 @@ type MailSite struct {
 	// ContactEmail is the instance's contact_email setting, "" when unset. It is the Reply-To
 	// and appears in the signature.
 	ContactEmail string
-	// Logo is the instance's own logo for the header of the HTML version (ADR-0116), nil for
+	// Logo is the instance's own logo for the header of the HTML version (ADR-0059), nil for
 	// none; LogoDark replaces it on dark backgrounds where the client follows the color scheme.
 	Logo, LogoDark *MailLogo
 }

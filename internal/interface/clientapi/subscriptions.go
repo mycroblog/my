@@ -15,7 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
-// PostSubscriptions runs the viewer's subscriptions to the new posts of accounts (ADR-0123).
+// PostSubscriptions runs the viewer's subscriptions to the new posts of accounts (ADR-0086).
 // *appnotification.Subscriptions implements it.
 type PostSubscriptions interface {
 	Subscribe(ctx context.Context, accountID, targetID string) error

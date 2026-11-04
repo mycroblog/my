@@ -32,7 +32,7 @@ const mediaProxyKeySize = 32
 
 // MediaProxyKey returns the key that signs the media proxy URLs. The first call on a database
 // generates a random key and stores it sealed; every later call, on any process, returns that
-// key, whatever key-encryption key seals it (ADR-0121 §2).
+// key, whatever key-encryption key seals it (ADR-0019 §12).
 func (s *Service) MediaProxyKey(ctx context.Context) ([]byte, error) {
 	return s.secret(ctx, instance.SecretMediaProxyKey, mediaProxyKeySize)
 }

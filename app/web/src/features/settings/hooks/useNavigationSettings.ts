@@ -26,7 +26,7 @@ export type NavigationEntryId = (typeof navigationEntryIds)[number];
 export const alwaysShownEntry: NavigationEntryId = "settings";
 
 /**
- * How many of the shown items the phones' tab bar holds, before its Menu button (ADR-0039: six items fit a 320 px
+ * How many of the shown items the phones' tab bar holds, before its Menu button (ADR-0110: six items fit a 320 px
  * screen in every locale); the others are in the menu's sheet.
  */
 export const tabBarLimit = 5;

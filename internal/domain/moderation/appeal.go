@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Appeals (FR-707, ADR-0038): a local account disputes an action on it once, within the
+// Appeals (FR-707, ADR-0058): a local account disputes an action on it once, within the
 // instance's appeal window from the action (a ban, also before its account is deleted), and a
 // moderator upholds or overturns it. Overturning lifts the action, a ban included, and cancels
 // the deletion a ban scheduled; the statuses that delete_statuses deleted stay deleted.
@@ -56,7 +56,7 @@ func (k AppealDecisionKind) State() AppealState { return AppealState(k) }
 const MaxAppealText = 2000
 
 // DefaultAppealWindow is how long after an action it can be appealed when nothing sets the
-// window: the default of the instance setting appeal_window_days (ADR-0038).
+// window: the default of the instance setting appeal_window_days (ADR-0058).
 const DefaultAppealWindow = 180 * 24 * time.Hour
 
 // AppealDeadline returns the last moment action a can be appealed in a window of window from the

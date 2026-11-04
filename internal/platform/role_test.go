@@ -17,7 +17,7 @@ import (
 
 // TestRoleChangesApplyAndAreAudited checks, through the composition root on SQLite, that a role
 // grant and revocation change the user's permissions for the next check and record their audit
-// log entries (FR-720, ADR-0037).
+// log entries (FR-720, ADR-0058).
 func TestRoleChangesApplyAndAreAudited(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_QUEUE": "inline", "MY_MAIL": "none"})

@@ -6,8 +6,8 @@ paths: ["app/web/src/routes/admin.finance.tsx", "app/web/src/features/admin/comp
 
 ## 費用（`/admin/finance`）
 
-`manage_finance` を持つ管理者が、サーバーの費用と収入を読み、費用を登録し、利用料金の取り込みと支払いの記録を確かめる画面（FR-901・FR-902・FR-904・FR-917、ADR-0067・ADR-0068・ADR-0073、[§14](../14-admin.md)）。
-読む作業と記録する作業を、「概要」と「記録」のタブ（`?tab=records`。既定は概要）に分ける。数は概要の「費用の概要」（`StatTile`・`TrendChart`・`BreakdownBar`。ADR-0113）で先に出す。
+`manage_finance` を持つ管理者が、サーバーの費用と収入を読み、費用を登録し、利用料金の取り込みと支払いの記録を確かめる画面（FR-901・FR-902・FR-904・FR-917、ADR-0067・ADR-0068・ADR-0067、[§14](../14-admin.md)）。
+読む作業と記録する作業を、「概要」と「記録」のタブ（`?tab=records`。既定は概要）に分ける。数は概要の「費用の概要」（`StatTile`・`TrendChart`・`BreakdownBar`。ADR-0110）で先に出す。
 タブ・期間・計上のしかたは URL に置く。
 
 ### 1. 使う人と頻度

@@ -85,7 +85,7 @@ type supporterUsers struct{ a *App }
 // locale of the user of a local account, unless the suppression of the address stops
 // transactional email (ADR-0086 §5): the supporter emails are transactional, so a complaint
 // does not stop them and a hard bounce does. An email queued before its recipient deactivated the
-// account stays unsent (ADR-0145 §6).
+// account stays unsent (ADR-0089 §16).
 func (u supporterUsers) SupporterMailbox(ctx context.Context, accountID string) (notification.Mailbox, bool, error) {
 	userID, err := moderatorStaff(u).userOf(ctx, accountID)
 	if err != nil || userID == "" {

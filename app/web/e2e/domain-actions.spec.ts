@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The domain actions screen in every width × locale project (ADR-0027, NFR-MOD-7): the actions in effect with a
+// The domain actions screen in every width × locale project (ADR-0110, NFR-MOD-7): the actions in effect with a
 // domain in non-Latin letters shown in both of its forms, a suspension taken through its alert dialog, and
 // lifting an action, each passing axe without scrolling sideways. `vite preview` has no API, so each test plays
 // the server of a signed-in operator with page.route; names change with the locale, so the structure is checked

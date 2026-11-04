@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
-// This file obeys robots.txt in the fetches of link cards (ADR-0131 §2, §4): it fetches the file
+// This file obeys robots.txt in the fetches of link cards (ADR-0062 §10, §12): it fetches the file
 // of an origin, keeps the rules that apply to the crawler, and answers whether a URL may be
 // fetched.
 
@@ -142,7 +142,7 @@ func (l *LinkCards) robotsRules(ctx context.Context, hold *linkCardHostHold, ori
 }
 
 // fetchRobots fetches the robots.txt of origin and returns what it means for the crawler and how
-// long that holds (ADR-0131 §2): the rules of a file that was read, no rules for a file that does
+// long that holds (ADR-0062 §10): the rules of a file that was read, no rules for a file that does
 // not exist or redirects too many times, and an assumed complete disallow for a 429, a failure of
 // the server or the network, or a refused redirect. A 429 or a 503 also pauses the host, which
 // changes nothing of that: the pause never outlasts the assumed disallow. The errors, which say

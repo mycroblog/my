@@ -1,6 +1,6 @@
 # Agent workflow playbook
 
-The step-by-step procedure an agent follows for one issue. Policy background: [ADR-0014](../adr/0014-task-management-and-agent-workflow.md).
+The step-by-step procedure an agent follows for one issue. Policy background: [ADR-0000](../adr/0000-record-architecture-decisions.md).
 
 Work runs in one of two modes:
 
@@ -40,19 +40,19 @@ git switch -c <type>/<N>-<short-slug>     # e.g. task/42-sqlite-adapter, spike/1
 
 ## 4. Implement
 
-- Keep the change scoped to the issue, but apply the boy scout rule ([ADR-0024](../adr/0024-boy-scout-rule.md)):
+- Keep the change scoped to the issue, but apply the boy scout rule ([ADR-0000](../adr/0000-record-architecture-decisions.md)):
   fix broken things you find in a separate commit and list them in the PR description; file an issue for anything you cannot fix safely.
 - Update docs that the change makes stale (ADR open questions, architecture overview, i18n catalogs).
 - Keep the user and operator documents true ([AGENTS.md](../../AGENTS.md#documentation)): the context pack lists the
   `userdocs` of the areas the issue touches. Update each one the change makes wrong (a new or changed command, setting,
   metric, webhook event, or behaviour), in English, in the same PR. A new user-visible name goes into its document
   (`agentkit docs inventory`); a new document goes into `docs/README.md` and the `userdocs` of its entries.
-- Spikes ([ADR-0022](../adr/0022-spike-outputs-outside-repository.md)):
+- Spikes ([ADR-0000](../adr/0000-record-architecture-decisions.md)):
   - Push throwaway code to a `spike/<N>-<slug>` branch only. Never open a PR to merge it.
   - Post the findings report as a comment on the issue, linking the code by commit permalink.
   - Put the conclusions into ADRs / docs in the present tense, from a separate `docs/<N>-<slug>` branch and PR, linking the report comment as evidence.
 
-**Web client epoch** ([ADR-0141](../adr/0141-web-client-update-timing.md) §4): a change that breaks open tabs of the web client with no deprecation period (a security fix that removes or changes an API at once)
+**Web client epoch** ([ADR-0028](../adr/0028-html-shell-link-previews-and-pwa.md) §12): a change that breaks open tabs of the web client with no deprecation period (a security fix that removes or changes an API at once)
 raises `clientapi.WebClientEpoch` and `webClientEpoch` in `app/web/src/lib/webClientEpoch.ts` together. Open tabs then reload at the first safe moment, so do not raise them for a change older clients survive.
 
 ## 5. Verify
@@ -65,7 +65,7 @@ scripts/task.sh go:check       # or one context: docs:check, go:check, i18n:chec
 scripts/task.sh check          # every context, when the change touches shared configuration
 ```
 
-No local run is required ([ADR-0119](../adr/0119-merge-queue-only-gate.md)): the merge queue's full check is the only
+No local run is required ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)): the merge queue's full check is the only
 gate. Run these commands to reproduce a CI failure or to iterate on what you are writing; only the formatting
 (`web:fmt`) is worth running first, because the preflight checks it. `agentkit check` also lists the documents that describe the changed paths but are not changed
 (`agentkit docs impact`): update each, or note why it stays true for the PR (§6).
@@ -76,7 +76,7 @@ If a check is wrong or flaky, fix it in a separate commit and explain in the PR.
 
 An issue that changes the UI writes, for each task of the changed screen's L1, the shortest number of steps in the PR.
 The L4 task test itself (steps, backtracks, and lostness of an agent working from ARIA snapshots only) runs nightly on `main`
-([ADR-0114](../adr/0114-l4-task-tests-nightly.md)), not before the PR; a task above 0.4 becomes an issue for its screen.
+([ADR-0015](../adr/0015-testing-strategy.md)), not before the PR; a task above 0.4 becomes an issue for its screen.
 Check the change against the four viewpoints (signifier, feedback, UX writing, information architecture) of the
 [experience principles](../architecture/web-client/21-experience-principles.md).
 
@@ -91,7 +91,7 @@ gh run list -R mycroblog/my --workflow web-e2e.yml --branch <branch> --limit 1
 ### What CI runs where
 
 The layout of [ADR-0079](../adr/0079-ci-single-gate-merge-queue.md) (`.github/workflows/`). Each job of `ci.yml` sets up its tools,
-generates what its checks read, and runs the checks as parallel steps ([ADR-0083](../adr/0083-ci-steps-not-tasks.md)). Each step is named
+generates what its checks read, and runs the checks as parallel steps ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)). Each step is named
 after the one task it runs (`scripts/task.sh go:vet`), so the failed step names the check, and running that task locally reproduces it.
 `docs:ci-coverage` fails when a check of `scripts/task.sh check` runs in no step:
 
@@ -100,7 +100,7 @@ after the one task it runs (`scripts/task.sh go:vet`), so the failed step names 
 | Pull request | `ci.yml` | `preflight`, the checks a PR's own files or lockfiles decide, so stacking PRs cannot break them: markdownlint, shellcheck, gofmt, `bun fmt` (also in the queue's `repo` job), the Go and npm licenses, the Dockerfile and `.tool-versions` versions, the Playwright image version, the design tokens, and the CSS `100vh` check; the `@my/ui` story tests (`ui-test.yml`) when the ui context changes; `lint`, golangci-lint on the lines the PR changes (`only-new-issues`), when Go or `tools/agentkit` changes; `docker-smoke`, the Docker Compose smoke test, when the docker context changes (the images are what it checks: the Go tests already assemble and start the server); and `db-lint`, `db:lint` of both dialects against the PR's base, when the schema changes: it fails on a destructive schema change unless the PR has the `db:destructive` label ([schema/README.md](../../schema/README.md#changing-the-schema)). The required `check` collects the results. A PR labelled `ci:full` also runs the merge queue's jobs; adding or removing the label reruns the checks |
 | Merge queue | `ci.yml` | The full check on the merge group (the PR on top of `main` and of the PRs queued ahead of it), one job per kind of check, each only when the group changes its contexts (`scripts/changed-contexts.sh`): `server-static` (tidy, vet, the build, the generated code Go reads, the schema of both dialects, and `db:lint` against the group's base, which checks only that the schema applies on top of it, not the label) and `server-test` (the Go tests, PostgreSQL on pgmem) for go, schema, api, and i18n; `client-static` (tsc, Oxlint, knip, the Vite build, the i18n catalogs) and `client-test` (Vitest in 2 shards) for ui, web, api, and i18n; `repo` (agentkit's checks but its lint, its context map, the ADR numbers, `docs:ci-coverage`) always. At most 6 jobs; a skipped job counts as passed. golangci-lint and the build tag sets do not run here: stacking rarely adds a lint issue and never breaks the build, and the tag sets break only when adapters or tags change; the slow suite runs both. The queue merges the group when `check` passes |
 | Push to `main` | `main.yml` | No checks: only the caches that pull requests and the queue restore ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)). The Go cache holds exactly what the jobs that restore it read, built one after another with their settings (`CGO_ENABLED=0`, which setup-go sets everywhere): the modules, the builds of the packages and the Go tools, the test binaries, go vet's results, agentkit's builds, and golangci-lint's analysis (run without failing on issues). It is built from empty directories, keyed on the Go version, `go.sum`, `tools/go.sum`, and the date; the Bun caches are keyed on the lockfiles. Each is built only when no cache of its key exists yet |
-| Pull request or push to `main` that changes `app/` or `locales/`; every 24 hours | `ui-preview.yml`, then `ui-preview-deploy.yml`; `ui-preview-cleanup.yml` | The UI preview of [ADR-0112](../adr/0112-pr-ui-preview.md), outside `check` and never a merge condition. `ui-preview.yml` builds the `app/web` Storybook of the screens with the `@my/ui` Storybook composed under `ui/` (`web:storybook-build`) and uploads it, without secrets, so it runs for forks too. When it completes, `ui-preview-deploy.yml` (`workflow_run`: main's workflow in the environment `ui-preview`, the only holder of the Cloudflare token) publishes the build as static files with `scripts/ui-preview.sh`: a pull request's on the Workers Preview `pr-<number>` with one PR comment holding its URL and the stories it adds or changes against `main`, `main`'s on the Worker itself (the full catalogue). `ui-preview-cleanup.yml` (`schedule` once every 24 hours on `main`, and `workflow_dispatch`; the same environment, the Cloudflare token, and a read-only `GITHUB_TOKEN`) deletes the Previews of closed pull requests with `scripts/ui-preview.sh cleanup`; no workflow uses `pull_request_target`. `DRY_RUN=1 scripts/ui-preview.sh deploy-pr app/web/storybook-static <number>` runs the same steps locally without an account, and `DRY_RUN=1 scripts/ui-preview.sh cleanup` lists the Previews it would delete |
+| Pull request or push to `main` that changes `app/` or `locales/`; every 24 hours | `ui-preview.yml`, then `ui-preview-deploy.yml`; `ui-preview-cleanup.yml` | The UI preview of [ADR-0079](../adr/0079-ci-single-gate-merge-queue.md), outside `check` and never a merge condition. `ui-preview.yml` builds the `app/web` Storybook of the screens with the `@my/ui` Storybook composed under `ui/` (`web:storybook-build`) and uploads it, without secrets, so it runs for forks too. When it completes, `ui-preview-deploy.yml` (`workflow_run`: main's workflow in the environment `ui-preview`, the only holder of the Cloudflare token) publishes the build as static files with `scripts/ui-preview.sh`: a pull request's on the Workers Preview `pr-<number>` with one PR comment holding its URL and the stories it adds or changes against `main`, `main`'s on the Worker itself (the full catalogue). `ui-preview-cleanup.yml` (`schedule` once every 24 hours on `main`, and `workflow_dispatch`; the same environment, the Cloudflare token, and a read-only `GITHUB_TOKEN`) deletes the Previews of closed pull requests with `scripts/ui-preview.sh cleanup`; no workflow uses `pull_request_target`. `DRY_RUN=1 scripts/ui-preview.sh deploy-pr app/web/storybook-static <number>` runs the same steps locally without an account, and `DRY_RUN=1 scripts/ui-preview.sh cleanup` lists the Previews it would delete |
 | Release gate, nightly, by hand | `slow-suite.yml` | The slow suite of [ADR-0079](../adr/0079-ci-single-gate-merge-queue.md): the full web E2E matrix on 8 shards (`web-e2e.yml`), the live interoperability test (`federation-live.yml`), the PostgreSQL tests on a real container (`postgres-contract.yml`), the `stream.Bus` contracts on broker containers (`stream-contract.yml`), the `mail = smtp` integration tests on Mailpit (`mail-integration.yml`), the `voice = livekit` transport contract on `livekit-server --dev` (`voice-contract.yml`), the `blob = s3` contract on Garage (`blob-contract.yml`), the smoke test and the arm64 builds (`docker:smoke`, `docker:build-arm64`), the upgrade test (`docker:upgrade-test`: a database of each dialect made and filled by the previous minor version's latest patch, upgraded with the commit's images; skipped when no previous minor version exists; [releasing.md](releasing.md#the-upgrade-test)), golangci-lint over everything with the build tag sets (`go:lint`, `agentkit:lint`, `mykit:lint`, `mykit:mybot-lint`, `go:build-tags`), and CodeQL code scanning (`codeql.yml`; the results go to the Security tab). Its last job, `result`, fails when any of them failed. Never on pull requests or merge groups, and not part of `check` |
 | Release (by hand) | `release.yml` | The slow suite on the dispatched commit, whose upgrade test starts from the previous minor version of the released version; only when it passes, the tag, a draft GitHub Release, and the container image by digest; publishing the draft runs `release-image.yml`, which tags the image ([releasing.md](releasing.md)) |
 | Nightly (03:00 JST) | `nightly.yml` | The slow suite on the head of `main`, whose upgrade test starts from the latest release, skipped when `main` has not moved since the last successful full Nightly run (a run by hand of some of the jobs, titled like `Nightly (l4)`, does not count); every night, the Grype scan of the published images (`image-scan`), which fails on a fixable HIGH or above in a published version ([Vulnerability scan](releasing.md#vulnerability-scan)) |
@@ -141,7 +141,7 @@ EOF
 of `main` and of the PRs queued ahead of it) and the queue merges the group when its required `check` passes.
 
 - The critique (L5) runs after the merge, not before: UI PRs are queued as usual. The decider reviews the catalogue of `main`
-  ([ADR-0112](../adr/0112-pr-ui-preview.md)) and files issues for what to fix.
+  ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)) and files issues for what to fix.
 - Once the PR's CI is green, the orchestrator or the decider queues it: `gh pr merge <PR> -R mycroblog/my --auto --merge`.
 - Merge `main` into the branch only when the PR conflicts or the queue drops it, never just to stay current: the queue
   already checks the PR on top of the latest `main`.

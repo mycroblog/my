@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// What every TrendChart of the app shares (ADR-0113 §2): the form it shows, a chart or its table, which is one choice of
+// What every TrendChart of the app shares (ADR-0110 §17): the form it shows, a chart or its table, which is one choice of
 // this browser for every chart (`my:display:chart-view`), and the strings of the chart's own controls.
 import { useT } from "./i18n";
 import { chartViewKey, useStorage } from "./storage";

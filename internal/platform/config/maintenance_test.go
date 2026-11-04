@@ -9,7 +9,7 @@ import (
 )
 
 // TestLoadMaintenance checks that the maintenance mode starts with adapter settings that are wrong or missing,
-// reading only its own settings (ADR-0084 §2).
+// reading only its own settings (ADR-0088 §9).
 func TestLoadMaintenance(t *testing.T) {
 	env := map[string]string{
 		"MY_HOST": "social.example.org", "MY_MAINTENANCE": "true", "MY_STATUS_PAGE_URL": "https://status.example.org",

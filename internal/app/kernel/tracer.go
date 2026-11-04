@@ -10,17 +10,17 @@ import (
 	"strconv"
 )
 
-// Tracer records the spans of the distributed traces (ADR-0063 §1). A span is declared once,
+// Tracer records the spans of the distributed traces (ADR-0055 §13). A span is declared once,
 // at startup, with a SpanSpec that names it, gives its kind, and lists the attribute keys it
 // accepts, and is then started with Start and ended with Span.End.
 //
 // Attributes take their values from finite sets or from the destination host of an outbound
-// request (ADR-0063 §4): never an account, status, or job ID, a user name, a URL or a path, a
+// request (ADR-0055 §16): never an account, status, or job ID, a user name, a URL or a path, a
 // client IP, a User-Agent, an SQL text, or an error message. An attribute whose key the spec did
 // not declare is a programming error: adapters drop it, and testkit.Tracer reports it so that
 // tests fail.
 //
-// The trace context crosses the process only where ADR-0063 §3 allows: Continue takes the
+// The trace context crosses the process only where ADR-0055 §15 allows: Continue takes the
 // traceparent of a trusted proxy as the parent of the next span, Inject writes the current span
 // into a job (queue.Job.TraceParent), and Linked makes the run of that job a new trace with a
 // link to it. Nothing sends a traceparent to a remote server.
@@ -35,13 +35,13 @@ type Tracer interface {
 	// the Tracer records.
 	Inject(ctx context.Context) string
 	// Continue returns ctx with traceparent as the remote parent of the next span that ctx
-	// starts. Call it only for a traceparent from a trusted proxy (ADR-0063 §3); an invalid
+	// starts. Call it only for a traceparent from a trusted proxy (ADR-0055 §15); an invalid
 	// traceparent leaves ctx as it is.
 	Continue(ctx context.Context, traceparent string) context.Context
 	// Linked returns ctx without a parent: the next span that ctx starts is the root of a new
-	// trace, linked to traceparent when it is valid (a job's TraceParent, ADR-0063 §2).
+	// trace, linked to traceparent when it is valid (a job's TraceParent, ADR-0055 §14).
 	Linked(ctx context.Context, traceparent string) context.Context
-	// LogIDs returns the trace and span IDs that the log lines of ctx carry (ADR-0063 §6): those
+	// LogIDs returns the trace and span IDs that the log lines of ctx carry (ADR-0055 §18): those
 	// of the span in ctx, or else those of the remote parent of Continue; "" outside a trace.
 	LogIDs(ctx context.Context) (traceID, spanID string)
 }
@@ -73,7 +73,7 @@ const (
 	SpanConsumer
 )
 
-// SpanSpec declares a span (ADR-0063 §1).
+// SpanSpec declares a span (ADR-0055 §13).
 type SpanSpec struct {
 	// Name follows the OpenTelemetry semantic conventions where they name the span, and
 	// starts with "my." otherwise.
@@ -196,7 +196,7 @@ func (attrs Attrs) All() func(yield func(int, Attr) bool) {
 }
 
 // ErrorType returns the error.type of err, a name from a finite set: canceled or timeout for an
-// ended context, and _OTHER otherwise. Error messages never become attributes (ADR-0063 §4).
+// ended context, and _OTHER otherwise. Error messages never become attributes (ADR-0055 §16).
 func ErrorType(err error) string {
 	switch {
 	case err == nil:
@@ -264,7 +264,7 @@ func allZeros(s string) bool {
 }
 
 // NopTracer is a Tracer that records nothing, the tracer of traces_exporter = none. It keeps the
-// remote parent of Continue for the log lines (ADR-0063 §6), so that the logs of a request carry
+// remote parent of Continue for the log lines (ADR-0055 §18), so that the logs of a request carry
 // the trace ID of the platform's trace (Cloud Run).
 type NopTracer struct{}
 

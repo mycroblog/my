@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Public surface of @my/ui, the shared UI kit (ADR-0026). The package ships TypeScript
+// Public surface of @my/ui, the shared UI kit (ADR-0025). The package ships TypeScript
 // source with no build step: apps compile it with their own Vite and React Compiler setup,
 // and their Tailwind entry scans it with @source.
 export { Center, type CenterProps } from "./Center";
@@ -149,7 +149,7 @@ export { ActionResult, type ActionResultValue } from "./ActionResult";
 export { FormActionBar, type FormActionBarProps, type FormActionResult } from "./FormActionBar";
 export { VisuallyHidden, type VisuallyHiddenProps } from "./VisuallyHidden";
 
-// Data visualisation (ADR-0113): numbers, trends, shares and amounts, each with its values in text.
+// Data visualisation (ADR-0110): numbers, trends, shares and amounts, each with its values in text.
 export { BreakdownBar, type BreakdownBarProps, type BreakdownItem } from "./BreakdownBar";
 export { ProgressMeter, type ProgressMeterProps } from "./ProgressMeter";
 export { Sparkline, type SparklineProps } from "./Sparkline";
@@ -166,7 +166,7 @@ export {
   type TrendSeries,
 } from "./TrendChart";
 
-// Icons (web-client/16-look-states-and-wording.md §16.3): Phosphor through react-icons/pi (ADR-0043), decorative, sized by the control around them.
+// Icons (web-client/16-look-states-and-wording.md §16.3): Phosphor through react-icons/pi (ADR-0025), decorative, sized by the control around them.
 export {
   AboutIcon,
   CheckIcon,
@@ -318,7 +318,7 @@ export { QuoteCard, type QuoteCardProps } from "./QuoteCard";
 
 // The design tokens a server theme may override (ADR-0059), and the contrast of their colors under a theme.
 export type { TokenKind } from "./tokens";
-// The colors of role badges (ADR-0071), in the order the staff choose from.
+// The colors of role badges (ADR-0070), in the order the staff choose from.
 export { badgeColors, type BadgeColor } from "./tokens";
 export { themeTokens, type ThemeToken } from "./themeTokens.gen";
 export { themeContrast, type ThemeColorValue, type ThemeContrast } from "./themeContrast";

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The entry to the open room of a profile (ADR-0100 §8, 回答 33): while the account hosts a room or speaks in it and
+// The entry to the open room of a profile (ADR-0100 §8): while the account hosts a room or speaks in it and
 // the user sees the room, the room's card in the same look as in the lists of rooms (VoiceRoomCard): the "Live" pill
 // with how many are in it ("Joined" for the room of the user's call), the room's name as a link to its page, and the
 // account with its role. Being a listener is never shown, and nothing shows while voice chat is off.

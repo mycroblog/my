@@ -702,7 +702,7 @@ type ListBrowserSessionsRow struct {
 }
 
 // ListBrowserSessions returns the sessions of a user that are a signed-in browser at now
-// (ADR-0136): the session itself works, or a token family of the first-party client that
+// (ADR-0090): the session itself works, or a token family of the first-party client that
 // started from it does, whatever became of the session. Newest first.
 func (q *Queries) ListBrowserSessions(ctx context.Context, arg ListBrowserSessionsParams) ([]ListBrowserSessionsRow, error) {
 	rows, err := q.db.Query(ctx, listBrowserSessions, arg.UserID, arg.Now)

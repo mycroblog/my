@@ -11,7 +11,7 @@ name: CI
 #   server-test, client-static, client-test (2 shards), and repo, at most 6 jobs.
 # - pull_request labelled `ci:full`: both.
 #
-# Each job sets up its tools and generates what its checks read, then runs the checks as parallel steps (ADR-0083),
+# Each job sets up its tools and generates what its checks read, then runs the checks as parallel steps (ADR-0079),
 # each named after the one task it runs (`scripts/task.sh go:vet`), so that each check keeps its own log and time.
 # Locally `scripts/task.sh check` runs the same tasks; scripts/ci-coverage.sh (docs:ci-coverage, in the repo job) fails
 # when a check of `check` runs in no step. The workflow has no path filter, so it always runs and `check` always
@@ -186,14 +186,14 @@ jobs:
               scripts/task.sh docs:pr-impact BASE=HEAD^1 BODY="$RUNNER_TEMP/pr-body.md"
 
   ui-test:
-    # The @my/ui story tests (ADR-0027), on pull requests alone: a pull request that changes a screenshot fixes its
+    # The @my/ui story tests (ADR-0110), on pull requests alone: a pull request that changes a screenshot fixes its
     # baselines itself, and a change from stacking two of them is rare.
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.ui == 'true'
     uses: ./.github/workflows/ui-test.yml
 
   web-story-test:
-    # The app/web screen stories (ADR-0112 §1): their play functions and axe, on pull requests alone, like ui-test. They
+    # The app/web screen stories (ADR-0079 §13): their play functions and axe, on pull requests alone, like ui-test. They
     # render the whole app with the features' MSW handlers, so any change to the client can break them.
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.client == 'true'
@@ -265,7 +265,7 @@ jobs:
         run: scripts/task.sh docker:web-reproducible
 
   db-lint:
-    # The schema change of a pull request against its base, the first parent of its merge commit (ADR-0087 §3): it
+    # The schema change of a pull request against its base, the first parent of its merge commit (ADR-0023 §6): it
     # fails on a change that can lose or rewrite data of an existing database, unless the decider approved it with the
     # db:destructive label (labelling reruns the checks). The merge queue cannot read labels and checks only that the
     # change applies on top of its base (server-static). db:lint-test runs the lint on its fixtures.
@@ -374,7 +374,7 @@ jobs:
             run: scripts/task.sh mail:gen-check
 
   server-test:
-    # The PostgreSQL tests run on pgmem inside the test processes, without Docker (ADR-0041); the slow suite runs them
+    # The PostgreSQL tests run on pgmem inside the test processes, without Docker (ADR-0015); the slow suite runs them
     # on a real postgres container. The Valkey tests start valkey/valkey on the runner's Docker; TEST_VALKEY_REQUIRED
     # makes a missing Docker fail the job instead of skipping them.
     needs: changes
@@ -550,7 +550,7 @@ jobs:
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:mybot-server-dep-check
           # An echo bot against a server in the test process, and the fake of mybottest against the spec
-          # (pkg/mybot/integration, ADR-0094 §10), as mykit's integration tests.
+          # (pkg/mybot/integration, ADR-0093 §18), as mykit's integration tests.
           - name: mykit:mybot-integration-test
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:mybot-integration-test
@@ -589,7 +589,7 @@ jobs:
             run: scripts/task.sh mykit:mybot-ts-test
 
       # After the parallel checks, whose mykit:ts-build would rewrite mykit's dist/ beside the build of mybot: the ESM
-      # build of @mycroblog/mybot on Node.js 22, the oldest Node.js it supports, and on Deno (ADR-0094 §1), a bot run on
+      # build of @mycroblog/mybot on Node.js 22, the oldest Node.js it supports, and on Deno (ADR-0093 §9), a bot run on
       # each (pkg/mybot/ts/test/runtimes.mjs). Bun runs the unit tests above.
       - name: Set up Node.js 22
         if: needs.changes.outputs.mykit == 'true'

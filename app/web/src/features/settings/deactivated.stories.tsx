@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The page after a user deactivated their account (/deactivated, ADR-0145 §3): signed out, with the date of the deletion.
+// The page after a user deactivated their account (/deactivated, ADR-0089 §13): signed out, with the date of the deletion.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { inLocale, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package schemaapply is what the SQLite and PostgreSQL adapters share to apply the embedded
-// desired-state schema with the Atlas library (`my schema apply`, ADR-0126): the diff of the
+// desired-state schema with the Atlas library (`my schema apply`, ADR-0023): the diff of the
 // inspected schemas, the plan, and the refusal of destructive changes. The dialect drivers
 // stay in the adapters, so that the build tags no_sqlite and no_postgres leave them out.
 //

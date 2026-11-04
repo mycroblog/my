@@ -410,7 +410,7 @@ LIMIT 1
 `
 
 // GetStatusDeletionByURI returns the deletion that keeps a URI from coming back, or else the
-// latest deletion by retention (a URI may have several, ADR-0034).
+// latest deletion by retention (a URI may have several, ADR-0006).
 func (q *Queries) GetStatusDeletionByURI(ctx context.Context, uri string) (StatusDeletion, error) {
 	row := q.db.QueryRowContext(ctx, getStatusDeletionByURI, uri)
 	var i StatusDeletion

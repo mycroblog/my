@@ -17,7 +17,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
 
-// The follows that suspensions cut (FR-717, ADR-0036, data-model §4.3). The suspension of a
+// The follows that suspensions cut (FR-717, ADR-0058, data-model §4.3). The suspension of a
 // remote account ends every follow between it and the local accounts, in both directions, in
 // the transaction of the action, and its server gets a Reject of each of its follows and an
 // Undo of each local follow of it. The suspension of a domain ends every follow between the

@@ -82,7 +82,7 @@ type StatusView struct {
 	Tags     []content.Tag
 	Counters content.Counters
 	// Reactions are the counts of the emoji reactions to the status, the most used
-	// content.MaxStatusReactions emoji first (ADR-0052 §5).
+	// content.MaxStatusReactions emoji first (ADR-0051 §10).
 	Reactions []ReactionView
 	// Poll is the poll of the revision, nil for none (FR-112).
 	Poll *PollView

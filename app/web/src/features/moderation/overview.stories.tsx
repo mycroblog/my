@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The moderation overview (/moderation; web-client/screens/moderation.md) in the states of ADR-0112 §1.
+// The moderation overview (/moderation; web-client/screens/moderation.md) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
   answering,

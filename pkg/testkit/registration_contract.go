@@ -33,7 +33,7 @@ import (
 // per address, the invite listing and revocation, that a sign-up records its origin, which
 // the purge erases after the retention, the count of pending registrations, and the holders of
 // a permission with where their moderator notifications are emailed, and the invites that members
-// create (ADR-0108): who may, the caps, and the check of their creator at every sign-up in the
+// create (ADR-0106): who may, the caps, and the check of their creator at every sign-up in the
 // open, approval, and invite modes. It uses the same harness as AccountRepositoryContract.
 func RegistrationRepositoryContract(t *testing.T, newHarness AccountFactory) {
 	t.Helper()

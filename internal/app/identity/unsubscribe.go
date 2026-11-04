@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 )
 
-// Unsubscribing from email (ADR-0086 §4, ADR-0109 §4). Every notification or announcement email
+// Unsubscribing from email (ADR-0086 §4, ADR-0086 §11). Every notification or announcement email
 // carries its own link (user_tokens, purpose email_unsubscribe), issued by the job that sends it,
 // that turns off the emails of its category, a group of the notification settings: the
 // List-Unsubscribe header and the link of the signature. The link works without signing in, any number of times, for
@@ -31,7 +31,7 @@ const (
 )
 
 // EmailUnsubscriptions is where the categories of the unsubscribe links are kept: the email
-// column of the notification settings, whose groups are the categories (ADR-0109 §4). The
+// column of the notification settings, whose groups are the categories (ADR-0086 §11). The
 // composition root implements it on the notification module.
 type EmailUnsubscriptions interface {
 	// Unsubscribable reports whether category is a category of email that a link turns off.

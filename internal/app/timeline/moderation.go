@@ -24,7 +24,7 @@ type Accounts interface {
 
 // ModeratedEffects reads, in the transaction, the restrictions that moderation has in effect on an
 // account. A reactivation falls back to them: an action in effect stays when the account comes
-// back (ADR-0145 §4). *appmoderation.AccountPolicy implements it.
+// back (ADR-0089 §14). *appmoderation.AccountPolicy implements it.
 type ModeratedEffects interface {
 	AccountEffectsTx(ctx context.Context, tx uow.Tx, accountID string) ([]appmoderation.Effect, error)
 }
@@ -50,7 +50,7 @@ func RegisterModerationProjectors(r *uow.Projectors, repo Repository, accounts A
 			return err
 		case a.Deleted(), a.Lifecycle.Deactivated():
 			// Deletion is final (data-model §8), and a deactivation lasts until the reactivation
-			// (ADR-0145 §5), whatever moderation does meanwhile.
+			// (ADR-0089 §15), whatever moderation does meanwhile.
 			effects = lifecycleHidden(effects)
 		}
 		return replaceRestrictions(effects, func(r timeline.Restriction, until *time.Time) error {

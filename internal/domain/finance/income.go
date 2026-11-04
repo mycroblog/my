@@ -10,11 +10,11 @@ import (
 )
 
 // ErrInvalidIncome reports a money movement that breaks the rules of the income records
-// (ADR-0073 §2): an unknown kind, amounts in different currencies, a net that is not the gross
+// (ADR-0067 §12): an unknown kind, amounts in different currencies, a net that is not the gross
 // less the fee, or a covered period on a movement that is not a payment.
 var ErrInvalidIncome = errors.New("finance: invalid income movement")
 
-// IncomeKind is the kind of a money movement of the payment provider (ADR-0073 §2).
+// IncomeKind is the kind of a money movement of the payment provider (ADR-0067 §12).
 type IncomeKind string
 
 // Income kinds.
@@ -68,7 +68,7 @@ type IncomeMovement struct {
 	Net          Money
 }
 
-// Validate fails with ErrInvalidIncome for a movement that breaks the rules of ADR-0073 §2, and
+// Validate fails with ErrInvalidIncome for a movement that breaks the rules of ADR-0067 §12, and
 // with the errors of ParseCurrency for an unknown currency.
 func (m IncomeMovement) Validate() error {
 	if err := m.Kind.Validate(); err != nil {
@@ -100,7 +100,7 @@ const IncomeAmortizeAfterDays = 31
 func AmortizesIncome(r *DateRange) bool { return r != nil && r.Days() > IncomeAmortizeAfterDays }
 
 // incomeEntries returns the entries that place amount, a part of m in m's currency, under basis
-// (ADR-0073 §5). Cash places it on m's date. Amortized spreads an amortized payment by day over
+// (ADR-0067 §15). Cash places it on m's date. Amortized spreads an amortized payment by day over
 // its period; a refund, a chargeback, or a reversal of an amortized payment puts the part of
 // the payment's days before its own date on its date and spreads the rest by the payment's days,
 // so that it cancels the payment's later days and leaves the past periods as they were; the
@@ -137,7 +137,7 @@ type IncomeTotal struct {
 	Fee    []Money
 }
 
-// IncomeTotals places ms under basis (ADR-0073 §5) and totals each period by currency, never
+// IncomeTotals places ms under basis (ADR-0067 §15) and totals each period by currency, never
 // converting between currencies.
 func IncomeTotals(ms []IncomeMovement, basis Basis, periods []Period) []IncomeTotal {
 	if len(periods) == 0 {
@@ -168,7 +168,7 @@ func IncomeTotals(ms []IncomeMovement, basis Basis, periods []Period) []IncomeTo
 }
 
 // Balance returns the income less the costs of each currency that either has, sorted by
-// currency code (ADR-0073 §7): a currency of only one side shows that side's amount, never
+// currency code (ADR-0067 §17): a currency of only one side shows that side's amount, never
 // converted.
 func Balance(income, costs []Money) []Money {
 	sums := map[Currency]int64{}

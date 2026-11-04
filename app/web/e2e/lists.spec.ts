@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The user's lists in every width × locale project (ADR-0122; web-client/screens/lists.md, list-timeline.md,
+// The user's lists in every width × locale project (ADR-0013; web-client/screens/lists.md, list-timeline.md,
 // profile.md): opened from the navigation (the rail from md, the menu's sheet below it), a list is created, gets a
 // followed account, shows its timeline, is renamed and deleted, axe-clean and without horizontal scroll at every step;
 // a profile of an account the user does not follow has no "Add to list". `vite preview` has no API, so the spec answers

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Publishes the UI preview (ADR-0112 §2-§4): the static build of the app/web Storybook (with the @my/ui Storybook
+# Publishes the UI preview (ADR-0079 §14〜§16): the static build of the app/web Storybook (with the @my/ui Storybook
 # under ui/, `scripts/task.sh web:storybook-build`) on the Cloudflare Worker of scripts/ui-preview/wrangler.jsonc.
 # ui-preview-deploy.yml runs it from main's checkout on the build that ui-preview.yml uploaded. A pull request's build
 # comes from code anyone can write (forks included), so it is only ever data: `stage` checks that it is plain static

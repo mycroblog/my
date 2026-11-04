@@ -126,7 +126,7 @@ func newMediaProxy(cfg *config.Config, repo content.MediaRepository, cards conte
 		UnitOfWork: a.UnitOfWork, Blobs: a.Blobs, Clock: a.Clock, ProfileImages: a.Accounts,
 		EmojiMaxBytes: cfg.RemoteCustomEmojiMaxBytes, Processor: a.MediaProcessor,
 		KeySource: a.Instance.MediaProxyKey, BaseURL: cfg.MediaBaseURL(), Logger: a.Logger,
-		// The federation mode decides which remote files are fetched (ADR-0076).
+		// The federation mode decides which remote files are fetched (ADR-0006).
 		Federation: a.mediaGate(),
 		// The images of link cards are remote files without an owner (ADR-0062 §3).
 		LinkCardMedia: cards,

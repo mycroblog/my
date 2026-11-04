@@ -13,7 +13,7 @@ import (
 
 // The use cases of a local account's own actions (FR-715, NFR-MOD-6): the account sees every
 // action on it, in effect or ended, with what the moderators chose to tell it, and never the
-// private note, the report, or who filed the report or issued the action (ADR-0038).
+// private note, the report, or who filed the report or issued the action (ADR-0058).
 
 // EventAccountActionIssued follows every action on an account, in its transaction.
 const EventAccountActionIssued = "moderation.account_action_issued"

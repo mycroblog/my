@@ -12,7 +12,7 @@ import (
 )
 
 // runAdminFederation implements `my admin federation <subcommand>`: the follows with remote
-// accounts, for the operator who narrows the federation mode (ADR-0076).
+// accounts, for the operator who narrows the federation mode (ADR-0006).
 func runAdminFederation(args []string, stdout, stderr io.Writer) int {
 	sub, code := dispatch("admin federation", args, []string{"sever"}, stderr, adminFederationUsage)
 	if code >= 0 || len(args) == 0 {

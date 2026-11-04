@@ -1,6 +1,6 @@
 # @my/ui
 
-The shared UI kit of the web client and the Tauri app ([ADR-0026](../../docs/adr/0026-client-workspace-and-component-architecture.md)).
+The shared UI kit of the web client and the Tauri app ([ADR-0025](../../docs/adr/0025-web-client-stack.md)).
 It ships TypeScript source and one stylesheet, `@my/ui/theme.css`, which holds the design tokens.
 The rules for writing components are in [web-client/README.md](../../docs/architecture/web-client/README.md).
 
@@ -70,8 +70,8 @@ Colors have two layers in [src/theme.css](src/theme.css):
 | `spark` | The mango mark after a heading (`Spark`); decorative |
 | `hand` / `hand-fg` | A raised hand in a voice chat call: the mango badge of `StageAvatar` and the count of raised hands (`Badge tone="hand"`), with charcoal on it in both themes; fixed, a server theme cannot override them |
 | `pressed` / `pressed-fg` | The pressed button of `Segmented`: charcoal with white in light, coral with charcoal in dark |
-| `badge-<color>` / `badge-<color>-fg` | The background and the text of a role badge (`RoleBadge`, ADR-0071), for each of `neutral`, `red`, `orange`, `yellow`, `green`, `teal`, `blue`, `purple`, `pink` (`badgeColors`) |
-| `data-1` / `data-2` / `data-3` | The series of a chart in order (coral, blue, amber; `dataSeries`): the lines and bars of `TrendChart`, `Sparkline` and the first three parts of `BreakdownBar` (ADR-0113). Each is a meaningful graphic, 3:1 on `surface` and `surface-raised`; a server theme can override them |
+| `badge-<color>` / `badge-<color>-fg` | The background and the text of a role badge (`RoleBadge`, ADR-0070), for each of `neutral`, `red`, `orange`, `yellow`, `green`, `teal`, `blue`, `purple`, `pink` (`badgeColors`) |
+| `data-1` / `data-2` / `data-3` | The series of a chart in order (coral, blue, amber; `dataSeries`): the lines and bars of `TrendChart`, `Sparkline` and the first three parts of `BreakdownBar` (ADR-0110). Each is a meaningful graphic, 3:1 on `surface` and `surface-raised`; a server theme can override them |
 
 ### Using the colors
 
@@ -128,11 +128,11 @@ changes the choice and the attribute together; both use the localStorage key `my
   Chinese and Korean system fonts (Hiragino, Yu Gothic UI, Meiryo, PingFang, Microsoft YaHei UI, Malgun Gothic), Arabic system fonts
   (Geeza Pro, Segoe UI Arabic, Tahoma), the Noto families of Linux and Android, and the OS emoji fonts. `font-mono` also starts with the
   emoji font.
-- Unicode emoji are drawn with Noto Color Emoji everywhere ([ADR-0095](../../docs/adr/0095-noto-color-emoji.md)). `@my/ui/emoji.css`
+- Unicode emoji are drawn with Noto Color Emoji everywhere ([ADR-0091](../../docs/adr/0091-composer-emoji-picker.md)). `@my/ui/emoji.css`
   holds its `@font-face` rules: one per group of `emoji-test.txt`, each with a COLRv1 and an OpenType-SVG WOFF2 of `src/fonts/emoji/`
   that the browser picks with `tech()`, and a `unicode-range` of emoji code points only (not `#`, `*`, the digits, `©`, `®`, `™` and the
   other symbols that body text uses), so a page loads only the splits of the emoji it shows and the OS fonts draw every other character.
-  `theme.css` does not import it: the app and Storybook import it after `theme.css`, and the server-rendered pages do not, and keep the OS emoji ([ADR-0096](../../docs/adr/0096-emoji-css-import.md)). `scripts/task.sh emoji:generate`
+  `theme.css` does not import it: the app and Storybook import it after `theme.css`, and the server-rendered pages do not, and keep the OS emoji ([ADR-0091](../../docs/adr/0091-composer-emoji-picker.md)). `scripts/task.sh emoji:generate`
   writes the fonts and `emoji.css`, never edit them by hand; the fonts are under the SIL Open Font License 1.1 (`src/fonts/emoji/OFL.txt`).
 - `font-serif` is `Georgia, "Noto Serif JP", serif`, for brand moments only: display headlines, page titles, `EmptyState` headings and avatar
   initials. Body text and controls stay `font-sans`.
@@ -206,7 +206,7 @@ The utility is not named `text-*` because `tailwind-variants` would read that as
   shadows of the design are not used.
   Tailwind copies a `--shadow-*` value into its utilities, so the values live in `--elevation-sm|md|lg`, which the `--shadow-*` tokens refer to
   and a server theme overrides (`--elevation-card`, `--elevation-sm|md|lg`).
-- Soft surfaces (ADR-0111): `shadow-soft-raised` (a raised face) and `shadow-soft-inset` (a well: fields, a switch's groove), from
+- Soft surfaces (ADR-0110): `shadow-soft-raised` (a raised face) and `shadow-soft-inset` (a well: fields, a switch's groove), from
   `--elevation-soft-raised|inset`. Where the browser has relative colour of a `light-dark()` colour, `theme.css` derives them from
   `surface` and `surface-raised` (a faint lighter and darker shadow in the light theme; a 1px inner top highlight and a faint darker shadow in the dark one),
   so a theme that changes the surfaces moves them too; elsewhere they are plain warm shadows, and a server theme may set either outright.
@@ -259,7 +259,7 @@ for example `motion-safe:transition-colors`; `scripts/task.sh web:tokens` fails 
 Icons are part of the kit, so that every screen draws the same shapes at the same sizes
 ([web-client/16-look-states-and-wording.md §16.3](../../docs/architecture/web-client/16-look-states-and-wording.md#163-アイコン)):
 
-- The shapes are [Phosphor](https://phosphoricons.com/)'s, through `react-icons/pi` ([ADR-0043](../../docs/adr/0043-icon-set.md)).
+- The shapes are [Phosphor](https://phosphoricons.com/)'s, through `react-icons/pi` ([ADR-0025](../../docs/adr/0025-web-client-stack.md)).
   `src/Icons.tsx` is the only file that imports `react-icons`, and only `react-icons/pi` (lint enforces both). Its
   `iconTable` maps each meaningful name (`ReplyIcon`) to its Phosphor icon off and on and to whether it has a direction;
   each export renders one row, and the `Foundations/Icons` gallery lists the whole table with the Phosphor names.
@@ -352,7 +352,7 @@ the tasks that read `src/themeTokens.gen.ts` (type checks, tests, builds, Storyb
 | Tokens | Kind | Override |
 | --- | --- | --- |
 | `color-*` (but `color-badge-*`, `color-avatar-*`, `color-hand`, `color-hand-fg`) | color | `#rrggbb` per theme (`#rrggbbaa` for `color-overlay`); every contrast pair must keep AA in both themes |
-| `font-sans`, `font-mono`, `font-serif` | font family | Family names, quoted or plain, comma-separated (at most 30); keep `"my Noto Color Emoji"` first in `font-sans` and `font-mono`, or the web client draws emoji with the OS fonts ([ADR-0096](../../docs/adr/0096-emoji-css-import.md)) |
+| `font-sans`, `font-mono`, `font-serif` | font family | Family names, quoted or plain, comma-separated (at most 30); keep `"my Noto Color Emoji"` first in `font-sans` and `font-mono`, or the web client draws emoji with the OS fonts ([ADR-0091](../../docs/adr/0091-composer-emoji-picker.md)) |
 | `text-*` | length | `0` or rem / px, 0.625rem to 3rem |
 | `text-*--line-height` | number | 1 to 2.5 |
 | `spacing` | length | 0.125rem to 0.5rem (half to twice the default step) |
@@ -415,7 +415,7 @@ string through props or children.
   - the count is counted in Unicode code points, like the server ([data-model/README.md](../../docs/architecture/data-model/README.md));
   - the visible count is linked to the text area with `aria-describedby` and hidden from the reading order, so it is read with the field;
   - a visually hidden `role="status"` region announces it when typing pauses for a second, and at once when the remaining count
-    reaches 50, 20 or 0 ([ADR-0027](../../docs/adr/0027-ui-quality-gates.md));
+    reaches 50, 20 or 0 ([ADR-0110](../../docs/adr/0110-web-experience-principles.md));
   - longer text is kept, not cut off: the count turns `danger` and the field becomes invalid.
 - `TextAreaAutocomplete` completes the word after a trigger character (`@`, `#`, `:`) in a native textarea
   ([ADR-0092](../../docs/adr/0092-composer-autocomplete-highlight.md) §3). It knows no domain: it takes `triggers` (each trigger
@@ -501,10 +501,10 @@ announces only changes made after it is in the page. A failure is not a status; 
 
 | Component | Notes |
 | --- | --- |
-| `Picture`, `AutoplayContext` | An image in the rendition that fits (`srcset` / `sizes` from `ImageSources`). An animation's moving rendition is a `<source>` for `prefers-reduced-motion: no-preference` only, and with `AutoplayContext` off it moves only while pointed at or touched, or while the post or profile header it is in plays (`AnimationsPlayContext`; ADR-0054 §3). `Avatar` (`sources`) and `MediaGrid` (`MediaItem.sources`) use it. `PostCard` and `ProfileHeader` are animation scopes (`useAnimationScope`): their animations, custom emoji included, play while hovered or with keyboard focus inside, and from a tap on them (not on a control inside them, a drag or a long press) until another tap or until they leave the screen. |
+| `Picture`, `AutoplayContext` | An image in the rendition that fits (`srcset` / `sizes` from `ImageSources`). An animation's moving rendition is a `<source>` for `prefers-reduced-motion: no-preference` only, and with `AutoplayContext` off it moves only while pointed at or touched, or while the post or profile header it is in plays (`AnimationsPlayContext`; ADR-0005 §6). `Avatar` (`sources`) and `MediaGrid` (`MediaItem.sources`) use it. `PostCard` and `ProfileHeader` are animation scopes (`useAnimationScope`): their animations, custom emoji included, play while hovered or with keyboard focus inside, and from a tap on them (not on a control inside them, a drag or a long press) until another tap or until they leave the screen. |
 | `DescriptionList`, `DescriptionItem` | The facts of a record: a `<dl>` that is its own size container, with up to `columns` (1–4) columns as it widens; values wrap anywhere. |
 | `Section` | A titled region of a screen below its `h1`: a `<section>` named by its `h2` (`title`, required), in the look of a region title. `description` adds a note under the title that describes the region; `surface` is `plain` (default), `card` (a region of a detail page or a pane, on a `Card`), `band` (a notice at the top of a list, with a rule under it), `rows` (full-width rows that bring their own padding; the heading takes the same padding) or `chapter` (a chapter of an editorial page: a rule above, the decorative `number` and a serif title, the content at the page's width); `busy` sets `aria-busy`. With `headingRef` the heading takes focus from script; with `ref` and `focusable` the section does. `headingId` keeps an `id` that a control in the region refers to. Features never write their own `section` with an `h2`, nor give an `h2` a `size`. |
-| `Table`, `TableHead`, `TableColumnHeader`, `TableBody`, `TableRow`, `TableRowHeader`, `TableCell` | A table to read: the native `table`, which needs no dependency beyond ADR-0031's list (a table to select or sort in would wrap React Aria's `Table`). It sits in a focusable `group` named like the table that scrolls sideways by itself when the columns do not fit the width, so the page never does. `caption` names it and is visually hidden; without it, `aria-labelledby` names it by a visible heading. `density`: `regular` (body size, a rule under every row) / `compact` (`text-sm`, fixed columns, rules between rows; `TableColumnHeader`'s `width`: `narrow` `w-16` / `wide` `w-2/5`). `TableCell` takes `numeric`, `wrap="anywhere"` and `align="matchParent"`; `TableRowHeader` the last two. |
+| `Table`, `TableHead`, `TableColumnHeader`, `TableBody`, `TableRow`, `TableRowHeader`, `TableCell` | A table to read: the native `table`, which needs no dependency beyond ADR-0025's list (a table to select or sort in would wrap React Aria's `Table`). It sits in a focusable `group` named like the table that scrolls sideways by itself when the columns do not fit the width, so the page never does. `caption` names it and is visually hidden; without it, `aria-labelledby` names it by a visible heading. `density`: `regular` (body size, a rule under every row) / `compact` (`text-sm`, fixed columns, rules between rows; `TableColumnHeader`'s `width`: `narrow` `w-16` / `wide` `w-2/5`). `TableCell` takes `numeric`, `wrap="anywhere"` and `align="matchParent"`; `TableRowHeader` the last two. |
 | `Segmented`, `SegmentedItem` | A pill switcher for two to four views of the same content (`value` / `onChange` by segment `id`): a React Aria single-selection `ToggleButtonGroup`, so a radiogroup that the arrow keys move through; pressed is `pressed` / `pressed-fg`, and `Highlight` / `HighlightText` in forced-colors mode. |
 | `Tag` | A short word that qualifies the value beside it ("Estimated", `outlined`: `rounded-full border border-border px-2 text-sm text-fg-muted`) or labels an account (`variant="pill"`, `as="li"` in a `ul`). |
 | `StatusBadge` | The state of something in one glance (ADR-0110 P3): a required `icon` from the icon set, the state's `label` always shown beside it, and a `tone` (`neutral` / `accent` / `success` / `warning` / `danger`) that only adds to them, so the state never shows by color alone. |
@@ -520,7 +520,7 @@ announces only changes made after it is in the page. A failure is not a status; 
 
 ## Data visualisation
 
-Numbers, trends, shares and amounts ([ADR-0113](../../docs/adr/0113-data-visualisation-parts.md)), drawn by hand: `TrendChart` and
+Numbers, trends, shares and amounts ([ADR-0110](../../docs/adr/0110-web-experience-principles.md)), drawn by hand: `TrendChart` and
 `Sparkline` in SVG (the two chart exceptions to `restrict/svg`), the others in HTML. The kit has no catalog, so the caller passes every
 string formatted (values, periods, the summary sentence) or a formatting function. Every value is also in text: a chart is never the only
 way to read it (WCAG 1.4.1).
@@ -538,7 +538,7 @@ way to read it (WCAG 1.4.1).
   items and logical sizes, which mirror by themselves. Numbers and dates are in `<bdi dir="ltr">`.
 - **Forced colors**: the series lose their colors, so lines and bars are `CanvasText` and keep their dashes (the bars of the second and
   third series become dashed outlines), the newest points and a meter's fill are `Highlight`, and the bars keep their borders.
-- **Surfaces and motion**: a chart sits on a region's `surface-raised` with grid lines in `border`, and no shadow (ADR-0111). Nothing
+- **Surfaces and motion**: a chart sits on a region's `surface-raised` with grid lines in `border`, and no shadow (ADR-0110). Nothing
   animates as it first draws; the bars of `BreakdownBar` and `ProgressMeter` move to a new value under `motion-safe:` with `duration-fast`
   and `ease-standard`.
 - The geometry (ticks, positions, line paths) is in `src/chartScale.ts`, with its unit tests.

@@ -6,7 +6,7 @@ paths: ["app/web/src/routes/admin.link-card-domains.tsx", "app/web/src/features/
 
 ## リンクのカードのドメイン（`/admin/link-card-domains`）
 
-`manage_settings` を持つ管理者が、特定のドメインへのリンクのカードの取得を止めるか、画像の取得だけを止める画面（[ADR-0132](../../../adr/0132-link-card-domain-rules.md)、[§14](../14-admin.md)）。
+`manage_settings` を持つ管理者が、特定のドメインへのリンクのカードの取得を止めるか、画像の取得だけを止める画面（[ADR-0062](../../../adr/0062-link-preview-cards.md)、[§14](../14-admin.md)）。
 ドメインとの連合と投稿のメディアには効かない（それはドメインへの処分）ので、フォームの最初にその違いを書く。
 
 ### 1. 使う人と頻度

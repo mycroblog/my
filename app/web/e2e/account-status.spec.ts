@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The account status page in every width × locale project (ADR-0027, FR-715, FR-707): the moderation actions
+// The account status page in every width × locale project (ADR-0110, FR-715, FR-707): the moderation actions
 // on the user's own account, in effect and past, and appealing one by keyboard through its alert dialog, each
 // step passing axe without scrolling sideways. `vite preview` has no API, so each test plays the server of a
 // signed-in user with page.route; names change with the locale, so the structure is checked by role and by

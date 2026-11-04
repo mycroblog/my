@@ -7,7 +7,7 @@
 -- ---------------------------------------------------------------------------------------------
 -- 基盤: job queue (data-model/04-tables/10-infrastructure.md §4.10, ADR-0004).
 -- Owned by internal/adapter/queue/db. trace_parent is the W3C traceparent of the span that
--- enqueued the job, which its run links to (ADR-0063 §2); an attribute of the job, not a state.
+-- enqueued the job, which its run links to (ADR-0055 §14); an attribute of the job, not a state.
 -- ---------------------------------------------------------------------------------------------
 
 -- Current value: pending and running jobs of the database queue. A job is deleted when it finishes and moved
@@ -48,7 +48,7 @@ CREATE TABLE dead_jobs (
 );
 CREATE INDEX dead_jobs_failed_at ON dead_jobs (failed_at);
 
--- Event: a run of a job that did not succeed (ADR-0064 §1), written by the runner whatever the
+-- Event: a run of a job that did not succeed (ADR-0004 §5), written by the runner whatever the
 -- queue adapter. outcome is retry (the job runs again) or dead (it failed for good). error is
 -- at most 2,000 bytes; no payload and no handler log. A requeued dead job counts its attempts
 -- again, so finished_at is part of the key. Purged job_attempt_retention after finished_at.

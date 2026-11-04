@@ -121,7 +121,7 @@ func fedBuildsTheNote(t *testing.T, e *fedEnv) {
 		!reflect.DeepEqual(note["contentMap"], map[string]any{"en": "<p>hello</p>", "ja": "<p>こんにちは</p>"}) {
 		t.Errorf("content = %v, contentMap = %v; want the revision's language and every language", note["content"], note["contentMap"])
 	}
-	// A local status's url is derived from its author's current username (ADR-0053).
+	// A local status's url is derived from its author's current username (ADR-0018).
 	e.accounts.mu.Lock()
 	wantURL := content.StatusURL(contractHost, e.accounts.actors[a.author].Local.Username, s.ID)
 	e.accounts.mu.Unlock()
@@ -132,7 +132,7 @@ func fedBuildsTheNote(t *testing.T, e *fedEnv) {
 		t.Errorf("the Note of a Create has updated %v", note["updated"])
 	}
 	wantAttachment := []any{map[string]any{
-		// An animation is sent as its large moving variant (ADR-0054 §5).
+		// An animation is sent as its large moving variant (ADR-0005 §8).
 		"type": "Document", "mediaType": "image/gif", "url": media.Image.Animated.Large.URL, "name": "a cat",
 		"blurhash": "LEHV6nWB2yk8pyo0adR*.7kCMdnj", "focalPoint": []any{0.5, -0.25}, "width": 640.0, "height": 480.0,
 	}}
@@ -174,7 +174,7 @@ func fedLeavesNonFollowersOutOfLocalTags(t *testing.T, e *fedEnv) {
 		})
 	}
 
-	// ADR-0035: a local status names in tag the local accounts and the remote followers, never a
+	// ADR-0017: a local status names in tag the local accounts and the remote followers, never a
 	// remote account that does not follow the author; the link in the content stays.
 	local := post(content.VisibilityLocal)
 	e.drain(t)
@@ -273,7 +273,7 @@ func fedDeliversAutoDelete(t *testing.T, e *fedEnv) {
 	}
 }
 
-// fedSendsVideoAndAudio checks the attachments of video and audio files (ADR-0054 §5): the
+// fedSendsVideoAndAudio checks the attachments of video and audio files (ADR-0005 §8): the
 // file as url with its media type, the poster's large variant as icon when there is one, and
 // the length as duration.
 func fedSendsVideoAndAudio(t *testing.T, e *fedEnv) {

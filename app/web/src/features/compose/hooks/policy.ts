@@ -78,10 +78,10 @@ export const maxDescriptionLength = 1500;
 /** The image types the server accepts (the uploadMedia operation). */
 const acceptedImageTypes: readonly string[] = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
-/** The video types the server accepts: MP4, QuickTime, and WebM (the uploadMedia operation, ADR-0054 §6). */
+/** The video types the server accepts: MP4, QuickTime, and WebM (the uploadMedia operation, ADR-0005 §9). */
 const acceptedVideoTypes: readonly string[] = ["video/mp4", "video/quicktime", "video/webm", "video/x-m4v"];
 
-/** The audio types the server accepts: MP3, Ogg, M4A, and WebM (the uploadMedia operation, ADR-0054 §6). */
+/** The audio types the server accepts: MP3, Ogg, M4A, and WebM (the uploadMedia operation, ADR-0005 §9). */
 const acceptedAudioTypes: readonly string[] = [
   "audio/mpeg",
   "audio/mp3",

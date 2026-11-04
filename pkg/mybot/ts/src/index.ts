@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// @mycroblog/mybot: build bots for mycroblog/my on the API client @mycroblog/mykit (ADR-0094). The author of a bot
+// @mycroblog/mybot: build bots for mycroblog/my on the API client @mycroblog/mykit (ADR-0093). The author of a bot
 // writes the handlers of its events; the library receives the events, so that none is lost or answered twice, and
 // keeps the bot polite by default. It mirrors the Go library github.com/mycroblog/my/pkg/mybot: the same handlers,
 // options, defaults, idempotency keys, and state file.

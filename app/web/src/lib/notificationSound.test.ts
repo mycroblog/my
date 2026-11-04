@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The notification sound (ADR-0109 §5): which notifications play it, the burst rule, and a browser that blocks autoplay.
+// The notification sound (ADR-0086 §12): which notifications play it, the burst rule, and a browser that blocks autoplay.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   notificationSoundQuietMs,

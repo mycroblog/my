@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/internal/app/supporters"
 )
 
-// planRef returns the ID of the PAY.JP plan of a price of our plan (ADR-0099 §2): a new amount
+// planRef returns the ID of the PAY.JP plan of a price of our plan (ADR-0074 §10): a new amount
 // is a new plan, since PAY.JP cannot change a plan's amount.
 func planRef(planID string, pr supporters.PriceSpec) supporters.PriceRef {
 	return supporters.PriceRef(fmt.Sprintf("my_%s_%s_%d", planID, pr.Interval, pr.AmountMinor))

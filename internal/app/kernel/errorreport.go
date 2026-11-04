@@ -80,7 +80,7 @@ type ErrorEvent struct {
 	// empty; the client API sets the one of a web event, which its stack cannot give.
 	Fingerprint string
 
-	// Correlation with the logs and the traces (ADR-0063 §6); the reporter fills RequestID,
+	// Correlation with the logs and the traces (ADR-0055 §18); the reporter fills RequestID,
 	// TraceID, and SpanID from ctx when they are empty.
 	RequestID string
 	JobID     string

@@ -59,7 +59,7 @@ export function removePasswordMutation(api: Api) {
 }
 
 /**
- * What setting or removing the password changes (web-client/README.md S1, ADR-0045): whether the user has one. Resolves once
+ * What setting or removing the password changes (web-client/README.md S1, ADR-0028): whether the user has one. Resolves once
  * it is fetched again.
  */
 export async function refreshPasswordStatus(api: Api, queryClient: QueryClient): Promise<void> {

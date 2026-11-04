@@ -249,7 +249,7 @@ func TestProfilePageServesHTML(t *testing.T) {
 
 // TestPagesAnswerActivityPub checks the web client's pages (Handler.Pages): requests for HTML
 // get the page, and requests for ActivityPub get 404, except that a post page that an anonymous
-// visitor may see redirects to the post's id with 302 (ADR-0053).
+// visitor may see redirects to the post's id with 302 (ADR-0018).
 func TestPagesAnswerActivityPub(t *testing.T) {
 	s := &server{mux: http.NewServeMux(), accounts: newAccounts(t), objects: newObjects()}
 	h := activitypub.New(activitypub.Options{

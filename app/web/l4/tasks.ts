@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The tasks of the L4 task tests (ADR-0110 §7, ADR-0114): the rows of the "作業" table of each screen's L1 file
+// The tasks of the L4 task tests (ADR-0110 §7, ADR-0015): the rows of the "作業" table of each screen's L1 file
 // (docs/architecture/web-client/screens/<screen>.md), and which screens a change touches: a screen is touched when
 // its L1 file changed, or a path of the `paths` of its front matter (screens.ts).
 

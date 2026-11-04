@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package siteverify is the kernel.HumanVerifier for the CAPTCHA services that share the
-// siteverify API (ADR-0042 §1): Cloudflare Turnstile, hCaptcha, and reCAPTCHA v2 with the
+// siteverify API (ADR-0106 §7): Cloudflare Turnstile, hCaptcha, and reCAPTCHA v2 with the
 // checkbox. The browser's widget puts a token into the form; Verify posts the secret key and
 // the token to the service through the SSRF-guarded kernel.HTTPClient and checks the JSON
 // answer. The differences between the services are the presets: the siteverify URL, the
@@ -55,7 +55,7 @@ type preset struct {
 	sendsSiteKey bool
 }
 
-// presets are the services of ADR-0042 §Context, checked against their documentation.
+// presets are the services of ADR-0106 §13, checked against their documentation.
 var presets = map[kernel.HumanCheckService]preset{
 	kernel.HumanCheckTurnstile: {
 		verifyURL: "https://challenges.cloudflare.com/turnstile/v0/siteverify",
@@ -208,7 +208,7 @@ type answer struct {
 // Error codes that mean the server's own keys are wrong, not the token.
 var configErrorCodes = []string{"missing-input-secret", "invalid-input-secret", "sitekey-secret-mismatch"}
 
-// Verify implements kernel.HumanVerifier. It sends no remoteip (ADR-0042 §3: the browser
+// Verify implements kernel.HumanVerifier. It sends no remoteip (ADR-0106 §9: the browser
 // already reached the service itself) and never retries, since a token is valid once.
 func (v *Verifier) Verify(ctx context.Context, token, action string) error {
 	if token == "" {

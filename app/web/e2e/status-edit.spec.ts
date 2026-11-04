@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Editing the viewer's own post and its edit history in every width × locale project (FR-109, ADR-0027): the
+// Editing the viewer's own post and its edit history in every width × locale project (FR-109, ADR-0110): the
 // edit dialog and the history page have no axe violations and do not scroll sideways, the history reads as
 // a list of revisions named by their dates, and an edit saved from the dialog shows on the post with the
 // mark that leads to the history. `vite preview` has no API, so the spec answers the token refresh and the

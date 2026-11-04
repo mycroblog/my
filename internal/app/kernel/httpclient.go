@@ -13,7 +13,7 @@ import (
 
 // HTTPClient sends every outbound HTTP request of the server: federation fetches and
 // deliveries, WebFinger, NodeInfo, the media proxy, link previews, Web Push, CAPTCHA
-// verification, and the metadata documents of OAuth clients (ADR-0019 §1, ADR-0042 §3, docs/architecture/federation.md §1.1). The adapter
+// verification, and the metadata documents of OAuth clients (ADR-0019 §1, ADR-0106 §9, docs/architecture/federation.md §1.1). The adapter
 // lives in internal/adapter/httpclient and passes testkit.HTTPClientContract.
 //
 // The adapter refuses destinations that are not public: addresses outside the global unicast
@@ -49,11 +49,11 @@ const (
 	HTTPPurposeImage
 	// HTTPPurposeVideo fetches remote video and audio.
 	HTTPPurposeVideo
-	// HTTPPurposeHumanCheck posts a CAPTCHA token to the service's siteverify API (ADR-0042 §3).
+	// HTTPPurposeHumanCheck posts a CAPTCHA token to the service's siteverify API (ADR-0106 §9).
 	HTTPPurposeHumanCheck
 	// HTTPPurposeWebPush posts an encrypted Web Push message to a push service (RFC 8030),
 	// whose answer has no body that the server reads. The development profile may exempt some
-	// destinations from the guard for it alone (push_allowed_destinations, ADR-0118 §3); the
+	// destinations from the guard for it alone (push_allowed_destinations, ADR-0015 §11); the
 	// client never follows a redirect from them.
 	HTTPPurposeWebPush
 	// HTTPPurposeWebhook posts a message of the instance's webhooks (ADR-0060). The client never
@@ -70,13 +70,13 @@ const (
 	// as is, and the caller refuses it. The deployment configuration may exempt some destinations
 	// from the guard for it alone (login_provider_allowed_destinations).
 	HTTPPurposeLoginProvider
-	// HTTPPurposeRobots fetches the robots.txt of an origin (ADR-0131 §2). A larger file is not
+	// HTTPPurposeRobots fetches the robots.txt of an origin (ADR-0062 §10). A larger file is not
 	// refused by its Content-Length: the caller reads up to the limit and uses what it read.
 	HTTPPurposeRobots
 )
 
 // LinkCardAgentToken is the product token of the link card crawler: the name that robots.txt
-// addresses it by, and that its User-Agent starts with (ADR-0131 §1).
+// addresses it by, and that its User-Agent starts with (ADR-0062 §9).
 const LinkCardAgentToken = "my-linkcard"
 
 // HTTPAgent names who a request says it is in its User-Agent.
@@ -88,7 +88,7 @@ const (
 	// names no other.
 	HTTPAgentServer HTTPAgent = iota
 	// HTTPAgentLinkCard is the link card crawler, "my-linkcard/<version>": the fetches of a card's
-	// page, its image, and the robots.txt that they obey (ADR-0131 §1).
+	// page, its image, and the robots.txt that they obey (ADR-0062 §9).
 	HTTPAgentLinkCard
 )
 
@@ -104,9 +104,9 @@ type HTTPLimits struct {
 	Timeout time.Duration
 }
 
-// DefaultHTTPLimits returns the limits of ADR-0019 §1 for p (ADR-0042 §3 for
+// DefaultHTTPLimits returns the limits of ADR-0019 §1 for p (ADR-0106 §9 for
 // HTTPPurposeHumanCheck, ADR-0060 for HTTPPurposeWebhook, ADR-0090 §1 for
-// HTTPPurposeClientMetadata, ADR-0106 §5 for HTTPPurposeLoginProvider, ADR-0131 §2 for
+// HTTPPurposeClientMetadata, ADR-0106 §5 for HTTPPurposeLoginProvider, ADR-0062 §10 for
 // HTTPPurposeRobots; HTTPPurposeWebPush reads at most the small error document of a push
 // service), and false for an unknown purpose.
 func DefaultHTTPLimits(p HTTPPurpose) (HTTPLimits, bool) {

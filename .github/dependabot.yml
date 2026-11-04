@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Dependabot version updates (ADR-0046). Security alerts come from the repository's Dependabot Alerts.
+# Dependabot version updates (ADR-0081). Security alerts come from the repository's Dependabot Alerts.
 # The 3-day cooldown matches the rule that no dependency version younger than three days is installed
 # (app/bunfig.toml, tools/i18n/bunfig.toml). Cooldown applies to version updates only, so security updates
 # still open immediately.

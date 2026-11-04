@@ -259,7 +259,7 @@ type Repository interface {
 	// rebuild.
 	DeleteRestrictions(ctx context.Context, tx uow.Tx) error
 
-	// Lists (ADR-0122), written by the owner's commands and the projector of
+	// Lists (ADR-0013), written by the owner's commands and the projector of
 	// graph.follow_terminated.
 
 	// InsertList stores a new list with its name.
@@ -305,7 +305,7 @@ type Repository interface {
 	ListPublic(ctx context.Context, q PublicQuery) ([]Entry, error)
 	ListTag(ctx context.Context, q TagQuery) ([]Entry, error)
 	ListProfile(ctx context.Context, q ProfileQuery) ([]Entry, error)
-	// ListListEntries is the timeline of a list (ADR-0122 §4).
+	// ListListEntries is the timeline of a list (ADR-0013 §13).
 	ListListEntries(ctx context.Context, q ListTimelineQuery) ([]Entry, error)
 	// Facts returns what holds between a viewer and the accounts, domains, and entries of q.
 	Facts(ctx context.Context, q FactsQuery) (Facts, error)

@@ -85,7 +85,7 @@ export function isEmptyDraft(draft: Draft): boolean {
   );
 }
 
-/** Whether a file picked for the draft or the outbox lives only in this page: a reload would lose it (ADR-0141 §5). */
+/** Whether a file picked for the draft or the outbox lives only in this page: a reload would lose it (ADR-0028 §13). */
 export function hasUnuploadedAttachment(state: ComposeState): boolean {
   return [state.draft, ...state.outbox.map((item) => item.draft)].some((draft) =>
     draft.attachments.some((a) => a.mediaId === null),

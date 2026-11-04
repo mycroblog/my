@@ -22,12 +22,12 @@ import (
 )
 
 // MediaProcessorContract verifies an adapter of the MediaProcessor port (ADR-0019 §8,
-// ADR-0054): format detection from content alone, rejection of unsupported, spoofed, oversized,
+// ADR-0005): format detection from content alone, rejection of unsupported, spoofed, oversized,
 // and decompression-bomb files, removal of metadata (EXIF and GPS, PNG text, GIF comments,
 // WebP EXIF), the EXIF orientation, the small, medium, and large variants within the boxes of
 // each purpose (the avatars cropped to squares around the focal point), the still and moving
 // variants of animations, the output formats, a valid blurhash, repeatable output, and
-// cancellation; and for video and audio files (ADR-0054 §6), the remux of MP4, QuickTime, WebM,
+// cancellation; and for video and audio files (ADR-0005 §9), the remux of MP4, QuickTime, WebM,
 // MP3, and Ogg without metadata with their positions rewritten, the codec allowlist (no HEVC),
 // and the size, duration, dimension, and frame rate limits.
 func MediaProcessorContract(t *testing.T, p media.Processor) {
@@ -349,7 +349,7 @@ func mediaResizes(t *testing.T, p media.Processor) {
 		check(src.name+" header large", out.Still.Large, 53, 40)
 	}
 
-	// The default boxes of ADR-0054 §1.
+	// The default boxes of ADR-0005 §4
 	out := mediaProcessFor(t, p, FixturePNG(1000, 500, false), media.Sizes{}, media.Request{Purpose: media.PurposeAvatar})
 	check("default avatar small", out.Still.Small, 96, 96)
 	check("default avatar medium", out.Still.Medium, 192, 192)

@@ -57,7 +57,7 @@ func (a *App) setUpStreams(ctx context.Context, cfg *config.Config, bus stream.B
 	o := stream.RelayOptions{ProcessID: processID, Logger: a.Logger.With(slog.String("component", "stream")), Reporter: a.ErrorReporter}
 	sweeper, sweeps := bus.(stream.Sweeper)
 	if measured {
-		// The adapter operations and the listener's connection of ADR-0056 §1.
+		// The adapter operations and the listener's connection of ADR-0055 §10
 		bus = sysmetrics.Bus(bus, a.Meter, "stream."+cfg.Stream, a.ErrorReporter)
 	}
 	if sweeps {

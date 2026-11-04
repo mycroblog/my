@@ -61,7 +61,7 @@ const (
 )
 
 // HumanVerifierContract verifies a kernel.HumanVerifier that speaks the siteverify API of
-// ADR-0042 against an httptest stub of the service, without the network. It checks that a
+// ADR-0106 against an httptest stub of the service, without the network. It checks that a
 // valid token passes; that an empty, invalid, expired, or used token, a token of another host
 // name, and (when the service reports it) a token of another action fail with
 // kernel.ErrHumanCheckFailed; that a 5xx answer, the service's internal error, an unreadable
@@ -91,10 +91,10 @@ func HumanVerifierContract(t *testing.T, svc HumanVerifierService, newVerifier f
 			t.Errorf("response = %q, want the token", got)
 		}
 		if r.form.Has("remoteip") {
-			t.Error("the request sends remoteip; the browser already reached the service itself (ADR-0042 §3)")
+			t.Error("the request sends remoteip; the browser already reached the service itself (ADR-0106 §9)")
 		}
 		if r.form.Has("idempotency_key") {
-			t.Error("the request sends idempotency_key; a token is never retried (ADR-0042 §3)")
+			t.Error("the request sends idempotency_key; a token is never retried (ADR-0106 §9)")
 		}
 		if svc.SendsSiteKey && r.form.Get("sitekey") != e.stub.SiteKey {
 			t.Errorf("sitekey = %q, want the configured site key", r.form.Get("sitekey"))

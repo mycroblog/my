@@ -27,14 +27,14 @@ import (
 // he sends in the inbound mode, and the federation mode it changes leaves alice's follows alone.
 const modeUser = "otto"
 
-// TestFederationMode drives the federation direction (FR-413, ADR-0076) against every peer: the
+// TestFederationMode drives the federation direction (FR-413, ADR-0006) against every peer: the
 // inbound mode, then outbound, then off, then both again. The mode is the whole server's, so the
 // scenario sets it back to both when it ends; it runs first (the file sorts before the others), when
 // no delivery of another scenario is still queued.
 //
 //   - inbound: otto follows the peer user and the peer accepts, although otto's actor is the minimal
 //     document (no name, no icon, no collections); the peer's posts reach otto. The scenario logs
-//     how the peer shows otto and whether it looked otto up through WebFinger (ADR-0076 leaves it to be verified).
+//     how the peer shows otto and whether it looked otto up through WebFinger (ADR-0006 leaves it to be verified).
 //     The peer user's follow of otto is rejected and does not stay pending on either side.
 //   - outbound: the peer user's follow of otto is accepted and otto's posts reach the peer; the
 //     peer's posts, and its reply and favourite of otto's post, reach the inbox (2xx) and are

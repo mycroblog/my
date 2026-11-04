@@ -27,10 +27,10 @@ function useSettled(value: string, delay: number): string {
  * The handles (`acct`) of the accounts of other servers that `text` mentions and that do not follow the
  * viewer, while `isLocal` (the post's visibility is `local`): a `local` post reaches only the author's
  * followers outside this server, so they will not receive it, and its copy there does not name them as
- * mentioned (ADR-0017 asks the client to warn, ADR-0035).
+ * mentioned (ADR-0017 asks the client to warn, ADR-0017).
  *
  * Each mention with a domain is resolved with GET /accounts/lookup (`resolve`, as the server resolves
- * the mentions of a post, unless the instance takes nothing in from other servers, ADR-0076) once the text
+ * the mentions of a post, unless the instance takes nothing in from other servers, ADR-0006) once the text
  * settles; the accounts it finds outside this server (an `acct` with a domain) are checked with
  * GET /accounts/relationships. Handles that do not resolve are left out: the server leaves them as text.
  * Nothing is reported until the answers are in.

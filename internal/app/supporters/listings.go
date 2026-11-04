@@ -11,7 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
-// The supporter list (ADR-0071 §4, §6): a member of a plan (a subscription in a member state)
+// The supporter list (ADR-0070 §13, §15): a member of a plan (a subscription in a member state)
 // chooses to be listed, nobody is listed by default, and the choice goes with the plan's role
 // (the transition that takes the role away deletes it, a change of plan keeps it). The list
 // shows the members of the plans that are not retired, by the plan's rank and newest first

@@ -17,7 +17,7 @@ type Rate struct {
 	Per time.Duration
 }
 
-// The defaults of the send budget (ADR-0094 §6) and of the reply limits (§8).
+// The defaults of the send budget (ADR-0093 §14) and of the reply limits (ADR-0093 §16).
 var (
 	// DefaultPostRate is the budget of posts, replies included: 60 an hour, six tenths of the server's 300 in
 	// three hours.

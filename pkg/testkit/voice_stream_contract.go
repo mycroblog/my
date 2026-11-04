@@ -182,7 +182,7 @@ func roomsSignals(t *testing.T, e *roomsEnv) {
 			t.Errorf("%s: err = %v, want a signal error of %s", what, err, want)
 		}
 	}
-	// Two listeners do not connect (P1).
+	// Two listeners do not connect (ADR-0101 §4).
 	field("Signal between listeners", e.svc.Signal(ctx, bob, r, appvoice.SignalInput{Session: bobs, To: carols, Kind: appvoice.SignalCandidate, Candidate: `{"candidate":"candidate:1 1 udp 2122260223 192.0.2.1 54321 typ host","sdpMid":"0","sdpMLineIndex":0}`}), "to")
 	field("a malformed candidate", e.svc.Signal(ctx, host, r, appvoice.SignalInput{Session: opened.Session, To: bobs, Kind: appvoice.SignalCandidate, Candidate: "c"}), "candidate")
 	field("a candidate with SDP", e.svc.Signal(ctx, host, r, appvoice.SignalInput{

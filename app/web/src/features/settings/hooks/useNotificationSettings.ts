@@ -140,7 +140,7 @@ function touchesCell(
 }
 
 /**
- * Returns the notification settings as a table of the rows the user gets (FR-210, ADR-0109 §1, §2), on a page whose
+ * Returns the notification settings as a table of the rows the user gets (FR-210, ADR-0086 §8, §9), on a page whose
  * loader has loaded them and the preferences (it suspends until then). The in-app and email cells save themselves at
  * once on the server, and show the value being saved meanwhile (web-client/README.md S8); the Web Push cells register
  * this device's subscription again; the sound cells are kept on this device. A column's checkbox changes the cells of
@@ -337,7 +337,7 @@ export function useNotificationSettings(): NotificationSettingsView {
 export type SoundTest = { status: "idle" | "played" | "blocked"; play: () => void };
 
 /**
- * The button that plays the notification sound once (ADR-0109 §5): a press lets the browser play it when notifications
+ * The button that plays the notification sound once (ADR-0086 §12): a press lets the browser play it when notifications
  * arrive; when the browser does not play it, the settings say so.
  */
 export function useNotificationSoundTest(): SoundTest {

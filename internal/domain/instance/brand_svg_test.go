@@ -16,7 +16,7 @@ const svgOpen = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www
 
 func wrapSVG(body string) string { return svgOpen + body + `</svg>` }
 
-// TestSanitizeBrandSVGRejects covers every rule that rejects the upload (ADR-0116 §2).
+// TestSanitizeBrandSVGRejects covers every rule that rejects the upload (ADR-0059 §9).
 func TestSanitizeBrandSVGRejects(t *testing.T) {
 	deep := strings.Repeat("<g>", instance.MaxBrandSVGDepth) + strings.Repeat("</g>", instance.MaxBrandSVGDepth)
 	tests := []struct {
