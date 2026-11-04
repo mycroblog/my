@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/pkg/testkit"
 )
 
@@ -31,6 +32,14 @@ func newOnScenario(_ *testing.T, s testkit.PaymentScenario) testkit.PaymentUnder
 	p.Fail(s.Failure)
 	return testkit.PaymentUnderTest{
 		Provider: p, Deliver: p.Deliver, CheckoutHosts: []string{CheckoutHost}, PortalHosts: []string{PortalHost}, TimedSignature: true,
+		DeclineChanges: func(_ supporters.SubscriptionRef, declined bool) {
+			if declined {
+				p.FailChangePayments(supporters.ErrPaymentDeclined)
+			} else {
+				p.FailChangePayments(nil)
+			}
+		},
+		ChangeCharges: p.ChangeCharges,
 	}
 }
 

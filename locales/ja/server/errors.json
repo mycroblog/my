@@ -311,6 +311,22 @@
     "defaultMessage": "いまの加入がすでにこのプランと支払いの間隔です。",
     "description": "API error title for HTTP 422 when a user changes their subscription to the plan and interval it has."
   },
+  "errors.supporters.payment_failed": {
+    "defaultMessage": "この変更の支払いに失敗したので、プランは変わっていません。",
+    "description": "API error title for HTTP 402 when the payment of a change of supporter plan failed."
+  },
+  "errors.supporters.payment_failed_detail": {
+    "defaultMessage": "請求はしていません。カードを更新してもう一度試してください。支払いのたびに認証を求めるカードでは変更の支払いができません。",
+    "description": "API error detail for HTTP 402 when the payment of a change of supporter plan failed."
+  },
+  "errors.supporters.payment_processing": {
+    "defaultMessage": "この変更の支払いはまだ処理中なので、プランはまだ変わっていません。",
+    "description": "API error title for HTTP 409 when the payment of a change of supporter plan has not settled."
+  },
+  "errors.supporters.payment_processing_detail": {
+    "defaultMessage": "支払いが成功するとプランが変わります。いまは何もしなくてかまいません。",
+    "description": "API error detail for HTTP 409 when the payment of a change of supporter plan has not settled."
+  },
   "errors.self_relationship": {
     "defaultMessage": "自分のアカウントにはこの操作を行えません。",
     "description": "Detail of the HTTP 422 API error when the user tries to follow, block, or mute their own account."

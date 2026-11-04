@@ -29,15 +29,17 @@ const (
 
 // fakeOwnSupporters is the users' subscriptions of one user, alice, and the supporter list.
 type fakeOwnSupporters struct {
-	disabled    bool
-	ineligible  appsupporters.Eligibility
-	sub         *appsupporters.SubscriptionView
-	checkoutErr error
-	checkouts   []appsupporters.CheckoutInput
-	returned    int
-	listed      map[string]bool
-	list        appsupporters.SupporterList
-	filters     []appsupporters.ListingFilter
+	disabled   bool
+	ineligible appsupporters.Eligibility
+	// changeFailure is what ChangePlan fails with for a plan that it would change to.
+	changeFailure error
+	sub           *appsupporters.SubscriptionView
+	checkoutErr   error
+	checkouts     []appsupporters.CheckoutInput
+	returned      int
+	listed        map[string]bool
+	list          appsupporters.SupporterList
+	filters       []appsupporters.ListingFilter
 }
 
 func (f *fakeOwnSupporters) live(userID string) (appsupporters.SubscriptionView, error) {
@@ -92,7 +94,7 @@ func (f *fakeOwnSupporters) ChangePlan(_ context.Context, userID, planID string,
 	if planID != largePlanID {
 		return v, appsupporters.ErrPlanUnavailable
 	}
-	return v, nil
+	return v, f.changeFailure
 }
 
 func (f *fakeOwnSupporters) Cancel(_ context.Context, userID string) (appsupporters.SubscriptionView, error) {
@@ -271,6 +273,20 @@ func TestOwnSupporterSubscription(t *testing.T) {
 		if res.StatusCode != tc.status || (tc.typ != "" && problemType(t, res) != tc.typ) {
 			t.Errorf("change %s = %d, want %d %s", tc.body, res.StatusCode, tc.status, tc.typ)
 		}
+	}
+	for failure, want := range map[error]struct {
+		status int
+		typ    string
+	}{
+		appsupporters.ErrPaymentDeclined:   {http.StatusPaymentRequired, clientapi.ProblemTypeSupporterPaymentFailed},
+		appsupporters.ErrPaymentProcessing: {http.StatusConflict, clientapi.ProblemTypeSupporterPaymentProcessing},
+	} {
+		f.changeFailure = failure
+		res := e.sendJSON(t, http.MethodPost, "/supporter/subscription/change", "supporters", `{"plan_id":"`+largePlanID+`","interval":"month"}`)
+		if res.StatusCode != want.status || problemType(t, res) != want.typ {
+			t.Errorf("change with %v = %d, want %d %s", failure, res.StatusCode, want.status, want.typ)
+		}
+		f.changeFailure = nil
 	}
 	if res := e.send(t, http.MethodPost, "/supporter/subscription/resume", "supporters", ""); res.StatusCode != http.StatusConflict ||
 		problemType(t, res) != clientapi.ProblemTypeSupporterSubscriptionState {

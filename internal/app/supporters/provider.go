@@ -52,10 +52,17 @@ type PaymentProvider interface {
 	// with the subscription already in the asked state changes nothing. key is the caller's
 	// idempotency key (the job's key and the operation's name), which a change that can be undone
 	// and made again must not repeat. ChangePrice fails with ErrPaymentCanceling while a
-	// cancellation is scheduled, which our state may not show yet.
+	// cancellation is scheduled, which our state may not show yet. A change that charges at once
+	// moves the plan only after the payment is confirmed: it fails with ErrPaymentDeclined, with
+	// the subscription and a change waiting for the period's end as they were and nothing left to
+	// collect, or with ErrPaymentProcessing while the payment has not settled. A repeat with the same
+	// key after a failed payment makes a new attempt, and it never charges twice.
 	ChangePrice(ctx context.Context, sub SubscriptionRef, to PriceRef, when ChangeTiming, key string) error
 	// CancelScheduledChange withdraws the change waiting for the period's end; nothing without one.
 	CancelScheduledChange(ctx context.Context, sub SubscriptionRef, key string) error
+	// DropUnpaidChange removes what a failed change at once left collectible at the provider
+	// (SubscriptionSnapshot.UnpaidChange); nothing without one, or while its payment is processing.
+	DropUnpaidChange(ctx context.Context, sub SubscriptionRef, key string) error
 	CancelAtPeriodEnd(ctx context.Context, sub SubscriptionRef, key string) error
 	ResumeCancellation(ctx context.Context, sub SubscriptionRef, key string) error
 	// CancelNow ends the subscription without a refund; nothing when it already ended.
@@ -163,7 +170,7 @@ type ChangeTiming string
 
 // The timings.
 const (
-	// ChangeNowProrated switches now and charges the prorated difference now.
+	// ChangeNowProrated charges the prorated difference now and switches once it is paid.
 	ChangeNowProrated ChangeTiming = "now_prorated"
 	// ChangeAtPeriodEnd switches at the end of the current period.
 	ChangeAtPeriodEnd ChangeTiming = "period_end"
@@ -299,6 +306,9 @@ type SubscriptionSnapshot struct {
 	CancelAtPeriodEnd bool
 	// ScheduledPrice is the price that a change waiting for PeriodEnd switches to; zero without one.
 	ScheduledPrice PriceRef
+	// UnpaidChange names what a change at once left waiting for its payment at the provider; ""
+	// without one. It does not change the plan or the status, and DropUnpaidChange removes it.
+	UnpaidChange string
 	// LatestPaymentFailed is when the latest invoice's payment failed while it is still unpaid;
 	// zero otherwise.
 	LatestPaymentFailed time.Time

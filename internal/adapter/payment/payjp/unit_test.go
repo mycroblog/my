@@ -4,6 +4,7 @@ package payjp
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -122,11 +123,59 @@ func TestChangeNowRefusedCardKeepsThePlan(t *testing.T) {
 	}, unitNow.Unix())
 	f.customers["cus_1"].DefaultCard = "declined"
 	err := p.ChangePrice(t.Context(), "sub_1", "high", supporters.ChangeNowProrated, "job-1:change")
-	if supporters.ErrorKindOf(err) != supporters.ErrorInvalidRequest {
-		t.Errorf("ChangePrice with a declined card = %v, want invalid_request", err)
+	if !errors.Is(err, supporters.ErrPaymentDeclined) || supporters.ErrorKindOf(err) != supporters.ErrorInvalidRequest {
+		t.Errorf("ChangePrice with a declined card = %v, want ErrPaymentDeclined of the kind invalid_request", err)
 	}
 	if got := f.subs["sub_1"].Plan.ID; got != "low" {
 		t.Errorf("plan after a declined difference = %s, want low", got)
+	}
+	// A failed charge that PAY.JP lists with its metadata, or a refunded one, does not count as
+	// paid: a good card pays the difference, once.
+	f.addCharge(charge{ID: "ch_failed", Amount: 100, Created: unitNow.Unix(), Customer: "cus_1", Metadata: metadata{metaChange: "job-1:change"}}, "")
+	f.addCharge(charge{ID: "ch_refunded", Amount: 100, Paid: true, Refunded: true, Created: unitNow.Unix(), Customer: "cus_1", Metadata: metadata{metaChange: "job-1:change"}}, "")
+	f.customers["cus_1"].DefaultCard = "car_1"
+	if err := p.ChangePrice(t.Context(), "sub_1", "high", supporters.ChangeNowProrated, "job-1:change"); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.subs["sub_1"].Plan.ID; got != "high" {
+		t.Errorf("plan after the good card = %s, want high", got)
+	}
+	paid := 0
+	for _, c := range f.charges {
+		if c.Paid && !c.Refunded {
+			paid++
+		}
+	}
+	if paid != 1 {
+		t.Errorf("%d paid charges, want 1", paid)
+	}
+}
+
+// The plan fails to switch after the difference was charged: the retry finds the paid charge and
+// does not charge again.
+func TestChangeNowRetryAfterTheCharge(t *testing.T) {
+	p, f := newOnFake(t, supporters.ModeTest, unitNow)
+	f.addPlan("low", 500, "month", nil)
+	f.addPlan("high", 3000, "month", nil)
+	f.addSub(subscription{
+		ID: "sub_1", Customer: "cus_1", Plan: f.plans["low"].plan, Status: subActive,
+		CurrentPeriodStart: unitNow.Add(-24 * time.Hour).Unix(), CurrentPeriodEnd: unitNow.Add(29 * 24 * time.Hour).Unix(),
+	}, unitNow.Unix())
+	f.customers["cus_1"].DefaultCard = "car_1"
+	f.mu.Lock()
+	f.failPost = "/subscriptions/sub_1"
+	f.mu.Unlock()
+	if err := p.ChangePrice(t.Context(), "sub_1", "high", supporters.ChangeNowProrated, "job-1:change"); err == nil {
+		t.Fatal("ChangePrice with the switch refused succeeded")
+	}
+	if got := f.subs["sub_1"].Plan.ID; got != "low" || len(f.charges) != 1 {
+		t.Fatalf("plan %s with %d charges, want low and 1", got, len(f.charges))
+	}
+	if err := p.ChangePrice(t.Context(), "sub_1", "high", supporters.ChangeNowProrated, "job-1:change"); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.subs["sub_1"].Plan.ID; got != "high" || len(f.charges) != 1 {
+		t.Errorf("plan %s with %d charges, want high and 1", got, len(f.charges))
 	}
 }
 

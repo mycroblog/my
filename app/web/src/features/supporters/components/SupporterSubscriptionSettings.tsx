@@ -546,6 +546,7 @@ function ChangePlan({
 }) {
   const t = useT();
   const format = useFormatMoney();
+  const portal = usePortal();
   const current = plans.find((p) => p.id === subscription.plan_id);
   const [planId, setPlanId] = useState<string | undefined>(undefined);
   const [interval, setInterval] = useState<SupporterInterval>(subscription.interval);
@@ -584,7 +585,8 @@ function ChangePlan({
             tone="primary"
             isPending={commands.pending === "change"}
             {...(commands.failed === "change" &&
-              commands.error !== undefined && {
+              commands.error !== undefined &&
+              commands.paymentError === undefined && {
                 errorMessage: t("client:supporter.command.failed", { reason: commands.error }),
               })}
             onConfirm={(close) => {
@@ -596,6 +598,21 @@ function ChangePlan({
         </DialogTrigger>
       </div>
       {unchanged && <Hint>{t("client:supporter.change.unchanged")}</Hint>}
+      {commands.paymentError !== undefined && (
+        <>
+          <InlineError alert>{commands.paymentError.message}</InlineError>
+          {commands.paymentError.updateCard && (
+            <div>
+              <Button isPending={portal.isPending} onPress={portal.open}>
+                {t("client:supporter.portal")}
+              </Button>
+            </div>
+          )}
+          {portal.error !== undefined && (
+            <InlineError alert>{t("client:supporter.portal.failed", { reason: portal.error })}</InlineError>
+          )}
+        </>
+      )}
     </Section>
   );
 }

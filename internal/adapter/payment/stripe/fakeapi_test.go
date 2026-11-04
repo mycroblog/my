@@ -64,6 +64,12 @@ type fakeAPI struct {
 	events        []obj
 	// checkoutURL replaces the URL of the checkouts it creates, to test a tampered answer.
 	checkoutURL string
+	// storeFailure makes the next update of a price end in a 500, which is kept under its key.
+	storeFailure bool
+	// pastDueOnFailure marks a subscription past due while its update's payment fails, which
+	// Stripe's documentation does not rule out.
+	pastDueOnFailure bool
+	changeCharges    int
 }
 
 // obj is a Stripe object. A ref value is an expandable field.
@@ -82,10 +88,21 @@ type idemEntry struct {
 }
 
 type fakeSub struct {
-	o        obj // id, customer, metadata, status, cancel_at_period_end, cancel_at, items
+	o        obj // id, customer, metadata, status, cancel_at_period_end, cancel_at, pending_update, items
 	schedule string
 	invoice  obj
+	// payment is what the customer's card does with the invoice of an update (fakeCard*).
+	payment string
 }
+
+// What a card does with the invoice of an update: decline it, ask for an authentication, leave it
+// processing, or refuse the request itself with a 402 and no invoice.
+const (
+	fakeCardDeclines     = "requires_payment_method"
+	fakeCardAuthenticate = "requires_action"
+	fakeCardProcesses    = "processing"
+	fakeCardRefuses      = "402"
+)
 
 type fakeSchedule struct {
 	id       string
@@ -599,6 +616,8 @@ func (f *fakeAPI) route(w http.ResponseWriter, r *http.Request) {
 		} else {
 			f.missing(w, "invoice")
 		}
+	case m == "POST" && parts[0] == "invoices" && len(parts) == 3 && parts[2] == "void":
+		f.voidInvoice(w, r, parts[1])
 	case m == "GET" && parts[0] == "invoice_payments" && len(parts) == 1:
 		var out []any
 		for _, ip := range f.invoicePays {
@@ -950,7 +969,18 @@ func (f *fakeAPI) subscriptions(w http.ResponseWriter, r *http.Request, parts []
 				f.bad(w, "the change is not prorated and invoiced at once")
 				return
 			}
-			f.item(s)["price"] = price
+			if r.Form.Get("payment_behavior") != "pending_if_incomplete" {
+				f.bad(w, "the change would apply without its payment")
+				return
+			}
+			if f.storeFailure {
+				f.storeFailure = false
+				f.fail(w, http.StatusInternalServerError, "api_error", "", "failing")
+				return
+			}
+			if !f.payUpdate(w, s, price) {
+				return
+			}
 		}
 	case "DELETE":
 		if ended {
@@ -972,6 +1002,76 @@ func (f *fakeAPI) subscriptions(w http.ResponseWriter, r *http.Request, parts []
 		return
 	}
 	f.respond(w, r, f.subscriptionObject(s))
+}
+
+// payUpdate invoices the update of s to price at once. Paid, the update applies; otherwise it waits
+// in pending_update with its open invoice, as Stripe documents, replacing an earlier one and voiding
+// that one's invoice. It reports false when it answered with the refusal of a card.
+func (f *fakeAPI) payUpdate(w http.ResponseWriter, s *fakeSub, price string) bool {
+	if s.payment == fakeCardRefuses {
+		f.fail(w, http.StatusPaymentRequired, "card_error", "card_declined", "Your card was declined.")
+		return false
+	}
+	if s.o["pending_update"] != nil {
+		s.invoice["status"] = "void"
+		s.o["pending_update"] = nil
+	}
+	id := f.nextID("in")
+	now := f.now().Unix()
+	inv := obj{"id": id, "object": "invoice", "attempted": true, "attempt_count": 1, "status_transitions": obj{"finalized_at": now}}
+	f.invoices[id] = inv
+	s.invoice = inv
+	if s.payment == "" {
+		inv["status"] = "paid"
+		f.item(s)["price"] = price
+		f.changeCharges++
+		return true
+	}
+	inv["status"] = "open"
+	pi := f.nextID("pi")
+	f.intents[pi] = obj{"id": pi, "object": "payment_intent", "status": s.payment}
+	f.invoicePays = append(f.invoicePays, obj{
+		"id": f.nextID("inpay"), "object": "invoice_payment", "status": "open", "invoice": ref{id: id, get: f.getter(f.invoices, id)},
+		"payment": obj{"type": "payment_intent", "payment_intent": ref{id: pi, get: f.getter(f.intents, pi)}},
+	})
+	s.o["pending_update"] = obj{"expires_at": now + 23*3600, "subscription_items": []any{obj{"id": f.item(s)["id"], "price": price}}}
+	if f.pastDueOnFailure {
+		s.o["status"] = "past_due"
+	}
+	return true
+}
+
+// voidInvoice voids an open invoice, which discards the pending update it pays for. It refuses one
+// whose payment is processing.
+func (f *fakeAPI) voidInvoice(w http.ResponseWriter, r *http.Request, id string) {
+	inv, ok := f.invoices[id]
+	if !ok {
+		f.missing(w, "invoice")
+		return
+	}
+	if inv["status"] != "open" {
+		f.bad(w, "You can only void an open invoice.")
+		return
+	}
+	for _, ip := range f.invoicePays {
+		if i, _ := ip["invoice"].(ref); i.id == id {
+			pi, _ := ip["payment"].(obj)["payment_intent"].(ref)
+			if f.intents[pi.id]["status"] == fakeCardProcesses {
+				f.bad(w, "The invoice's payment is processing.")
+				return
+			}
+		}
+	}
+	inv["status"] = "void"
+	for _, s := range f.subs {
+		if s.invoice["id"] == id {
+			s.o["pending_update"] = nil
+			if s.o["status"] == "past_due" {
+				s.o["status"] = "active"
+			}
+		}
+	}
+	f.respond(w, r, inv)
 }
 
 // attachSchedule puts s on a new schedule of one phase, its current price until the period's end.

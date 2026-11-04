@@ -125,6 +125,10 @@ type PaymentUnderTest struct {
 	// "" sends a wrong token, and the contract skips the cases of a tampered body, the time, and
 	// several signatures.
 	TimedSignature bool
+	// DeclineChanges makes the customer's card of a subscription decline the payments of changes,
+	// or take them again; ChangeCharges counts the payments of changes that succeeded.
+	DeclineChanges func(sub supporters.SubscriptionRef, declined bool)
+	ChangeCharges  func() int
 	// Expected, when not nil, is what the provider reports of a scenario that it cannot hold as
 	// given (PAY.JP API v1, ADR-0099: one currency, no incomplete subscriptions, its own IDs of
 	// checkouts and refunds); nil means the scenario as given.
@@ -187,6 +191,7 @@ func PaymentProviderContract(t *testing.T, newProvider PaymentProviderFactory) {
 		{"EnsuresPlans", paymentPlans},
 		{"StartsCheckouts", paymentCheckouts},
 		{"RepeatsCommands", paymentCommands},
+		{"KeepsThePlanWhenAChangesPaymentIsDeclined", paymentDeclinedChange},
 		{"VerifiesWebhooks", paymentWebhooks},
 		{"ReportsSnapshots", paymentSnapshots},
 		{"ReportsMoney", paymentMoney},
@@ -406,6 +411,62 @@ func paymentCommands(t *testing.T, newProvider PaymentProviderFactory) {
 		func(s supporters.SubscriptionSnapshot) bool { return s.Status == supporters.StatusCanceled })
 	if err := p.CancelAtPeriodEnd(ctx, "sub_unknown", "job-1:unknown"); supporters.ErrorKindOf(err) != supporters.ErrorNotFound {
 		t.Errorf("CancelAtPeriodEnd(unknown) = %v, want not_found", err)
+	}
+}
+
+// paymentDeclinedChange holds a change at once to its payment: declined, the subscription stays
+// as it was with no failed payment on it; with a good card and the same key, it moves, once.
+func paymentDeclinedChange(t *testing.T, newProvider PaymentProviderFactory) {
+	ctx := t.Context()
+	s := paymentScenario(t)
+	s.Subscriptions = []supporters.SubscriptionSnapshot{paymentSub("sub_cmd", NamedID("local-cmd"), supporters.StatusActive)}
+	u := newProvider(t, s)
+	p := u.Provider
+	before, err := p.GetSubscription(ctx, "sub_cmd")
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec := paymentPlanSpec(50000)
+	spec.PlanID = NamedID("plan-higher")
+	high := ensurePlan(t, p, spec).Prices[0].Ref
+	down := ensurePlan(t, p, paymentPlanSpec(500)).Prices[0].Ref
+	if err := p.ChangePrice(ctx, "sub_cmd", down, supporters.ChangeAtPeriodEnd, "job-1:down"); err != nil {
+		t.Fatal(err)
+	}
+	u.DeclineChanges("sub_cmd", true)
+	const key = "job-1:up"
+	if err := p.ChangePrice(ctx, "sub_cmd", high, supporters.ChangeNowProrated, key); !errors.Is(err, supporters.ErrPaymentDeclined) {
+		t.Fatalf("ChangePrice with a declining card = %v, want ErrPaymentDeclined", err)
+	}
+	snap, err := p.GetSubscription(ctx, "sub_cmd")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.Price != before.Price || snap.Status != supporters.StatusActive || !snap.LatestPaymentFailed.IsZero() ||
+		snap.UnpaidChange != "" || snap.ScheduledPrice != down {
+		t.Errorf("after the declined payment: %+v", snap)
+	}
+	if n := u.ChangeCharges(); n != 0 {
+		t.Errorf("%d payments of a declined change", n)
+	}
+	u.DeclineChanges("sub_cmd", false)
+	for range 2 {
+		if err := p.ChangePrice(ctx, "sub_cmd", high, supporters.ChangeNowProrated, key); err != nil {
+			t.Fatalf("ChangePrice with a good card = %v", err)
+		}
+	}
+	snap, err = p.GetSubscription(ctx, "sub_cmd")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.Price != high || snap.Status != supporters.StatusActive || snap.UnpaidChange != "" || snap.ScheduledPrice != "" {
+		t.Errorf("after the paid change: %+v", snap)
+	}
+	if n := u.ChangeCharges(); n != 1 {
+		t.Errorf("%d payments of the change, want 1", n)
+	}
+	if err := p.DropUnpaidChange(ctx, "sub_cmd", "job-1:drop"); err != nil {
+		t.Errorf("DropUnpaidChange without one = %v", err)
 	}
 }
 

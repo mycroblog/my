@@ -4,6 +4,7 @@ package supporters
 
 import (
 	"errors"
+	"fmt"
 )
 
 // ErrorKind classifies a failure of the PaymentProvider (ADR-0074 §1), as the reconciliation
@@ -51,6 +52,13 @@ var (
 	// ErrPaymentCanceling: the subscription waits to end, so its plan cannot change until the
 	// cancellation is withdrawn.
 	ErrPaymentCanceling = errors.New("supporters: the subscription at the payment provider is canceling")
+	// ErrPaymentDeclined: the provider could not take the payment of a change at once, whether it
+	// was declined or needs the customer's authentication, and the plan stays. It is a refused
+	// request of its kind.
+	ErrPaymentDeclined = fmt.Errorf("%w: the payment failed", ErrPaymentInvalidRequest)
+	// ErrPaymentProcessing: the payment of a change at once has not settled. The plan stays, and
+	// moves when the payment succeeds. It is a refused request of its kind.
+	ErrPaymentProcessing = fmt.Errorf("%w: the payment is processing", ErrPaymentInvalidRequest)
 	// ErrPaymentThrottled: the provider throttles the requests (429).
 	ErrPaymentThrottled = errors.New("supporters: the payment provider throttles the requests")
 	// ErrPaymentUnavailable: the provider did not answer (5xx, network).

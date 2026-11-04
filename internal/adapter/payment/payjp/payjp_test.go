@@ -177,6 +177,26 @@ func onScenario(t *testing.T, s testkit.PaymentScenario) testkit.PaymentUnderTes
 	}
 	return testkit.PaymentUnderTest{
 		Provider: p, Deliver: deliver(s.Now), CheckoutHosts: []string{testHost}, PortalHosts: []string{testHost}, Expected: exp,
+		DeclineChanges: func(sub supporters.SubscriptionRef, declined bool) {
+			f.mu.Lock()
+			defer f.mu.Unlock()
+			card := "car_good"
+			if declined {
+				card = "declined"
+			}
+			f.customers[f.subs[string(sub)].Customer].DefaultCard = card
+		},
+		ChangeCharges: func() int {
+			f.mu.Lock()
+			defer f.mu.Unlock()
+			n := 0
+			for _, c := range f.charges {
+				if c.Metadata[metaChange] != "" && c.Paid {
+					n++
+				}
+			}
+			return n
+		},
 	}
 }
 

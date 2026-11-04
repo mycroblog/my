@@ -35,6 +35,8 @@ type fakeAPI struct {
 	statements map[string]statement
 	tokens     map[string]token
 	seq        int
+	// failPost answers the next POST of this path with a 500.
+	failPost string
 
 	srv *httptest.Server
 }
@@ -157,6 +159,11 @@ func (f *fakeAPI) serve(w http.ResponseWriter, r *http.Request) {
 	}
 	if f.failure != 0 {
 		apiFail(w, f.failure, "failure")
+		return
+	}
+	if r.Method == http.MethodPost && f.failPost != "" && r.URL.Path == f.failPost {
+		f.failPost = ""
+		apiFail(w, http.StatusInternalServerError, "failure")
 		return
 	}
 	if err := r.ParseForm(); err != nil {

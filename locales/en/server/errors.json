@@ -311,6 +311,22 @@
     "defaultMessage": "Your subscription has this plan and interval already.",
     "description": "API error title for HTTP 422 when a user changes their subscription to the plan and interval it has."
   },
+  "errors.supporters.payment_failed": {
+    "defaultMessage": "The payment for this change failed, so your plan has not changed.",
+    "description": "API error title for HTTP 402 when the payment of a change of supporter plan failed."
+  },
+  "errors.supporters.payment_failed_detail": {
+    "defaultMessage": "Nothing was charged. Update your card and try again. A card that asks for authentication on each payment cannot pay for a change.",
+    "description": "API error detail for HTTP 402 when the payment of a change of supporter plan failed."
+  },
+  "errors.supporters.payment_processing": {
+    "defaultMessage": "The payment for this change is still processing, so your plan has not changed yet.",
+    "description": "API error title for HTTP 409 when the payment of a change of supporter plan has not settled."
+  },
+  "errors.supporters.payment_processing_detail": {
+    "defaultMessage": "The plan changes if the payment succeeds. You do not need to do anything now.",
+    "description": "API error detail for HTTP 409 when the payment of a change of supporter plan has not settled."
+  },
   "errors.self_relationship": {
     "defaultMessage": "You cannot do this to your own account.",
     "description": "Detail of the HTTP 422 API error when the user tries to follow, block, or mute their own account."

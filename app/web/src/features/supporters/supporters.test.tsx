@@ -212,13 +212,58 @@ describe("the page of the supporter plans", () => {
     await user.click(within(change).getByRole("radio", { name: "ゴールド" }));
     await user.click(within(change).getByRole("button", { name: "Change the plan" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Change to ⁨ゴールド⁩?" });
-    expect(dialog).toHaveAccessibleDescription(/The change starts now/u);
+    expect(dialog).toHaveAccessibleDescription(/charged now, and the change starts once it is paid/u);
     await user.click(within(dialog).getByRole("button", { name: "Change the plan" }));
 
     expect(await screen.findByText("Changed the plan.")).toBeInTheDocument();
     expect(requests).toEqual([
       { path: "/supporter/subscription/change", body: { plan_id: goldId, interval: "month" } },
     ]);
+  });
+
+  test("says that the plan stays when the change's payment fails, and offers the way to update the card", async () => {
+    server.use(enabledInstance(), plansHandler());
+    subscriptionServer({ subscription: ownSubscriptionFixture(basicId, { plan_name: "Basic" }) });
+    server.use(
+      http.post(`${apiBase}/supporter/subscription/change`, ({ request }) =>
+        withViewer(request, () => problem(402, "/api/v1/problems/supporter-payment-failed", "The payment failed")),
+      ),
+    );
+    const { user, leftTo } = await renderApp({ path: "/settings/supporter" });
+
+    const change = await screen.findByRole("region", { name: "Change the plan" });
+    await user.click(within(change).getByRole("radio", { name: "ゴールド" }));
+    await user.click(within(change).getByRole("button", { name: "Change the plan" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Change to ⁨ゴールド⁩?" });
+    await user.click(within(dialog).getByRole("button", { name: "Change the plan" }));
+
+    expect(await within(change).findByText(/The payment failed, so your plan has not changed/u)).toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(screen.queryByText("Changed the plan.")).not.toBeInTheDocument();
+    await user.click(within(change).getByRole("button", { name: "Payment methods and invoices" }));
+    await waitFor(() => {
+      expect(leftTo.map(String)).toEqual([portalUrl]);
+    });
+  });
+
+  test("says that the plan has not changed while the change's payment processes", async () => {
+    server.use(enabledInstance(), plansHandler());
+    subscriptionServer({ subscription: ownSubscriptionFixture(basicId, { plan_name: "Basic" }) });
+    server.use(
+      http.post(`${apiBase}/supporter/subscription/change`, ({ request }) =>
+        withViewer(request, () => problem(409, "/api/v1/problems/supporter-payment-processing", "Processing")),
+      ),
+    );
+    const { user } = await renderApp({ path: "/settings/supporter" });
+
+    const change = await screen.findByRole("region", { name: "Change the plan" });
+    await user.click(within(change).getByRole("radio", { name: "ゴールド" }));
+    await user.click(within(change).getByRole("button", { name: "Change the plan" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Change to ⁨ゴールド⁩?" });
+    await user.click(within(dialog).getByRole("button", { name: "Change the plan" }));
+
+    expect(await within(change).findByText(/still processing, so your plan has not changed yet/u)).toBeInTheDocument();
+    expect(within(change).queryByRole("button", { name: "Payment methods and invoices" })).not.toBeInTheDocument();
   });
 
   test("withdraws a scheduled change", async () => {

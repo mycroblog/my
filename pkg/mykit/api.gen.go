@@ -11298,6 +11298,11 @@ type PreviewDomainBlockImportRequest struct {
 //     allow the operation.
 //   - `/api/v1/problems/supporter-same-plan` (422): the subscription has that plan and interval
 //     already.
+//   - `/api/v1/problems/supporter-payment-failed` (402): the payment of a change of plan failed,
+//     or the card needs an authentication that the change cannot ask for. The plan stays and
+//     nothing was charged; update the card and try again.
+//   - `/api/v1/problems/supporter-payment-processing` (409): the payment of a change of plan has
+//     not settled. The plan stays, and moves if the payment succeeds.
 //   - `/api/v1/problems/voice-not-eligible` (403): the user may not host voice chat rooms.
 //   - `/api/v1/problems/voice-not-host` (403): only the host of the voice chat room may do this.
 //   - `/api/v1/problems/voice-room-full` (409): the voice chat room holds as many people as the
@@ -21152,9 +21157,11 @@ type ClientInterface interface {
 	// ChangeOwnSupporterSubscriptionWithBody Change the plan or the interval of the authenticated user's subscription
 	//
 	// Changes an `active` subscription to another plan or interval: to a higher
-	// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
-	// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
-	// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
+	// plan or to the yearly price once the difference, charged pro rata at once, is paid; to a
+	// lower plan or to the monthly price at the end of the period, as `scheduled_change`. The new
+	// plan's current price applies. A 402 `/api/v1/problems/supporter-payment-failed` when the
+	// payment fails, and a 409 `/api/v1/problems/supporter-payment-processing` while it has not
+	// settled: in both the plan stays. A 409 `/api/v1/problems/supporter-subscription-state` unless the
 	// subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
 	// that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
 	// current plan and interval. An unknown plan is a 404, no subscription a 409
@@ -21170,9 +21177,11 @@ type ClientInterface interface {
 	// ChangeOwnSupporterSubscription Change the plan or the interval of the authenticated user's subscription
 	//
 	// Changes an `active` subscription to another plan or interval: to a higher
-	// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
-	// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
-	// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
+	// plan or to the yearly price once the difference, charged pro rata at once, is paid; to a
+	// lower plan or to the monthly price at the end of the period, as `scheduled_change`. The new
+	// plan's current price applies. A 402 `/api/v1/problems/supporter-payment-failed` when the
+	// payment fails, and a 409 `/api/v1/problems/supporter-payment-processing` while it has not
+	// settled: in both the plan stays. A 409 `/api/v1/problems/supporter-subscription-state` unless the
 	// subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
 	// that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
 	// current plan and interval. An unknown plan is a 404, no subscription a 409
@@ -30787,9 +30796,11 @@ func (c *Client) CancelOwnSupporterScheduledChange(ctx context.Context, reqEdito
 // ChangeOwnSupporterSubscriptionWithBody Change the plan or the interval of the authenticated user's subscription
 //
 // Changes an `active` subscription to another plan or interval: to a higher
-// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
-// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
-// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
+// plan or to the yearly price once the difference, charged pro rata at once, is paid; to a
+// lower plan or to the monthly price at the end of the period, as `scheduled_change`. The new
+// plan's current price applies. A 402 `/api/v1/problems/supporter-payment-failed` when the
+// payment fails, and a 409 `/api/v1/problems/supporter-payment-processing` while it has not
+// settled: in both the plan stays. A 409 `/api/v1/problems/supporter-subscription-state` unless the
 // subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
 // that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
 // current plan and interval. An unknown plan is a 404, no subscription a 409
@@ -30815,9 +30826,11 @@ func (c *Client) ChangeOwnSupporterSubscriptionWithBody(ctx context.Context, con
 // ChangeOwnSupporterSubscription Change the plan or the interval of the authenticated user's subscription
 //
 // Changes an `active` subscription to another plan or interval: to a higher
-// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
-// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
-// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
+// plan or to the yearly price once the difference, charged pro rata at once, is paid; to a
+// lower plan or to the monthly price at the end of the period, as `scheduled_change`. The new
+// plan's current price applies. A 402 `/api/v1/problems/supporter-payment-failed` when the
+// payment fails, and a 409 `/api/v1/problems/supporter-payment-processing` while it has not
+// settled: in both the plan stays. A 409 `/api/v1/problems/supporter-subscription-state` unless the
 // subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
 // that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
 // current plan and interval. An unknown plan is a 404, no subscription a 409
@@ -52902,9 +52915,11 @@ type ClientWithResponsesInterface interface {
 	// ChangeOwnSupporterSubscriptionWithBodyWithResponse Change the plan or the interval of the authenticated user's subscription
 	//
 	// Changes an `active` subscription to another plan or interval: to a higher
-	// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
-	// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
-	// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
+	// plan or to the yearly price once the difference, charged pro rata at once, is paid; to a
+	// lower plan or to the monthly price at the end of the period, as `scheduled_change`. The new
+	// plan's current price applies. A 402 `/api/v1/problems/supporter-payment-failed` when the
+	// payment fails, and a 409 `/api/v1/problems/supporter-payment-processing` while it has not
+	// settled: in both the plan stays. A 409 `/api/v1/problems/supporter-subscription-state` unless the
 	// subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
 	// that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
 	// current plan and interval. An unknown plan is a 404, no subscription a 409
@@ -52920,9 +52935,11 @@ type ClientWithResponsesInterface interface {
 	// ChangeOwnSupporterSubscriptionWithResponse Change the plan or the interval of the authenticated user's subscription
 	//
 	// Changes an `active` subscription to another plan or interval: to a higher
-	// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
-	// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
-	// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
+	// plan or to the yearly price once the difference, charged pro rata at once, is paid; to a
+	// lower plan or to the monthly price at the end of the period, as `scheduled_change`. The new
+	// plan's current price applies. A 402 `/api/v1/problems/supporter-payment-failed` when the
+	// payment fails, and a 409 `/api/v1/problems/supporter-payment-processing` while it has not
+	// settled: in both the plan stays. A 409 `/api/v1/problems/supporter-subscription-state` unless the
 	// subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
 	// that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
 	// current plan and interval. An unknown plan is a 404, no subscription a 409
@@ -84406,9 +84423,11 @@ func (c *ClientWithResponses) CancelOwnSupporterScheduledChangeWithResponse(ctx 
 // ChangeOwnSupporterSubscriptionWithBodyWithResponse Change the plan or the interval of the authenticated user's subscription
 //
 // Changes an `active` subscription to another plan or interval: to a higher
-// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
-// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
-// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
+// plan or to the yearly price once the difference, charged pro rata at once, is paid; to a
+// lower plan or to the monthly price at the end of the period, as `scheduled_change`. The new
+// plan's current price applies. A 402 `/api/v1/problems/supporter-payment-failed` when the
+// payment fails, and a 409 `/api/v1/problems/supporter-payment-processing` while it has not
+// settled: in both the plan stays. A 409 `/api/v1/problems/supporter-subscription-state` unless the
 // subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
 // that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
 // current plan and interval. An unknown plan is a 404, no subscription a 409
@@ -84430,9 +84449,11 @@ func (c *ClientWithResponses) ChangeOwnSupporterSubscriptionWithBodyWithResponse
 // ChangeOwnSupporterSubscriptionWithResponse Change the plan or the interval of the authenticated user's subscription
 //
 // Changes an `active` subscription to another plan or interval: to a higher
-// plan or to the yearly price at once, with the difference charged pro rata; to a lower plan
-// or to the monthly price at the end of the period, as `scheduled_change`. The new plan's
-// current price applies. A 409 `/api/v1/problems/supporter-subscription-state` unless the
+// plan or to the yearly price once the difference, charged pro rata at once, is paid; to a
+// lower plan or to the monthly price at the end of the period, as `scheduled_change`. The new
+// plan's current price applies. A 402 `/api/v1/problems/supporter-payment-failed` when the
+// payment fails, and a 409 `/api/v1/problems/supporter-payment-processing` while it has not
+// settled: in both the plan stays. A 409 `/api/v1/problems/supporter-subscription-state` unless the
 // subscription is `active`, a 422 `/api/v1/problems/supporter-plan-unavailable` for a plan
 // that takes no subscriptions, and a 422 `/api/v1/problems/supporter-same-plan` for the
 // current plan and interval. An unknown plan is a 404, no subscription a 409

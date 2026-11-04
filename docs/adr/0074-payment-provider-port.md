@@ -113,6 +113,7 @@ type PaymentProvider interface {
 
     // Commands our own UI and jobs issue; each is safe to repeat.
     ChangePrice(ctx context.Context, sub SubscriptionRef, to PriceRef, when ChangeTiming, key string) error
+    DropUnpaidChange(ctx context.Context, sub SubscriptionRef, key string) error
     CancelScheduledChange(ctx context.Context, sub SubscriptionRef, key string) error
     CancelAtPeriodEnd(ctx context.Context, sub SubscriptionRef, key string) error
     ResumeCancellation(ctx context.Context, sub SubscriptionRef, key string) error
@@ -179,6 +180,7 @@ type SubscriptionSnapshot struct {
     LocalID             string             // from the subscription's metadata; "" when not ours
     Price               PriceRef
     Status              SubscriptionStatus // incomplete, incomplete_expired, active, past_due, unpaid, paused, canceled
+    UnpaidChange        string             // what a failed change at once left at the provider; "" without one
     PeriodStart         time.Time
     PeriodEnd           time.Time
     CancelAtPeriodEnd   bool
@@ -203,7 +205,10 @@ type MoneyMovement struct {
 
 - `Notice` は `EventID`・`Type`（事業者の種類の名前）・`Kind`（`subscription`・`checkout`・`money`・`ignored`）・`ObjectID` を持つ。`Change` は取り直す `[]SubscriptionRef`、`CheckoutRef`、`[]MoneyMovement` を持つ。
   `SubscriptionPage` は `[]SubscriptionSnapshot` と次のカーソル（空は最後）、`ChangePage` は `[]Notice` と次のカーソルと読み終えた時刻を持つ。一覧の 1 ページは 1 要求で、照合が要求を数える（§4）。
-- `ChangeTiming` は `now_prorated`（すぐ切り替え、差額を日割りですぐ請求する）と `period_end`（期間の終わりに切り替える）。どちらを使うかは ADR-0072 が決め（決定者の回答 5）、adapter は事業者の機能に写す（§6）。
+- `ChangeTiming` は `now_prorated`（差額を日割りですぐ請求し、支払いを確かめてから切り替える）と `period_end`（期間の終わりに切り替える）。どちらを使うかは ADR-0072 が決め（決定者の回答 5）、adapter は事業者の機能に写す（§6）。
+  `now_prorated` の `ChangePrice` は、支払いが断られると `ErrPaymentDeclined`（種類は `invalid_request`）、決済がまだ確定しないと `ErrPaymentProcessing` を返し、どちらもプランを変えない。`ErrPaymentDeclined` のときは、期間の終わりを待つ変更を元のまま残し、回収できるものを事業者に残さない。
+  同じ `key` でも、支払いの失敗の後の呼び出しは新しい試みで、失敗を再生しない。請求は 1 回だけである。
+  `SubscriptionSnapshot.UnpaidChange` は、失敗した変更の片付けが途中で止まったときに事業者に残るものの名前で、プランと状態を変えない。`DropUnpaidChange` がそれを除く（なければ、または決済が確定していなければ何もしない）。
   `CancelScheduledChange` は、期間の終わりを待つ変更を取り下げる。`ScheduledPrice` が空なら何もしない。
 - 状態の名前は Stripe の語を事業者に依存しない意味で使う。`trialing` は試用期間を作らないので `active` に写し、知らない状態は `Status` を `unpaid`（ロールを付けない側）にして警告のログを出す。
 - `MoneyMovement` は ADR-0073 §1 の `IncomeMovement` に、`supporters` が `Subscription` をこちらの加入の ID に写して渡す。`ParentGross` は `supporters` が全額の返金と一部の返金を見分けるために使う（ADR-0072）。
@@ -232,7 +237,18 @@ type MoneyMovement struct {
 - **顧客ポータル**: 起動時に設定（`/v1/billing_portal/configurations`）を `metadata.my=1` で引き、なければ作る。
   有効にする機能は、支払い方法の更新、請求書の履歴、期間の終わりでの解約（`subscription_cancel.mode=at_period_end`）だけで、`subscription_update` は無効にする（P1）。`PortalURL` はこの設定と `return_url` でセッションを作る。
 - **プランの変更**（決定者の回答 5）:
-  - `now_prorated`: サブスクリプションの品目の Price を差し替え、`proration_behavior=always_invoice` で差額をすぐ請求する。月から年への変更は Stripe が請求日を変更の日に移し、その場で年額を請求する。
+  - `now_prorated`: サブスクリプションの品目の Price を差し替え、`proration_behavior=always_invoice` で差額をすぐ請求し、`payment_behavior=pending_if_incomplete` で**支払いが済んだときだけ**新しい Price を適用する。月から年への変更は Stripe が請求日を変更の日に移し、その場で年額を請求する。
+    - **結論**: 支払いが済めば切り替わる。済まなければ、その更新の請求書を void して保留の更新を捨て、`ErrPaymentDeclined` を返す。決済が `processing` のときだけ void せず `ErrPaymentProcessing` を返す。
+    - **経緯**: はじめは `pending_if_incomplete` を付けず、Stripe の既定（`allow_incomplete`）で切り替えた。Stripe はこの既定を「支払いの成否に関わらず適用し、失敗すれば手で戻す」と文書にしている。テストモードで払えないカードの利用者が上位のプランのまま `past_due` になったので、ADR-0072 §8 の決定に合わせて変えた。
+    - **見送った案**: `allow_incomplete` のまま失敗したら価格を戻す案は、一度は切り替わるのでロールが往復し、戻す要求も失敗しうる。`default_incomplete` は支払いを試みないので、確かめる手順をこちらが全部持つことになる。
+      `error_if_incomplete` は失敗を 402 で返して更新しないと文書にあり、片付けが要らないように見える。ただ、失敗した試みの請求書がどうなるかの記述がなく、回収できるものが残らないことを文書で保証できない。`pending_if_incomplete` は、保留の更新・期限・void・置き換えが文書にある。
+      認証のために Stripe の請求書の画面へ送る案は、確かめてから変える決定そのものは満たすが、23 時間のあいだ請求書が開いたままで、後からプランが変わる。ADR-0072 §8 のとおり採らない。
+    - **文書にあること**（Stripe の pending updates と API リファレンス、2026-11-04 に確認）: 失敗すると返す Subscription に `pending_update` があり、変更は適用されない。支払いが成功すると適用される。保留は最長 23 時間で、期限で請求書が void され更新が捨てられる。取り消すには `latest_invoice` を void する。新しい更新は前の保留を置き換え、その請求書を void する。`items`・`metadata`・`proration_behavior` は対応の属性である。
+      `pending_if_incomplete` に対応する支払い方法はカードなどで、ACH・SEPA・Bacs は含まれない。Stripe は 500 の応答も冪等キーに保存して再生し、キーは 24 時間以上たつと消えることがある。
+    - **文書にないので仮定すること**（§2 の要検証。adapter はどちらでも壊れないように書く）: 断られたときの HTTP の状態（200 と `pending_update` でも 402 でも扱う）。認証が要るときも `pending_update` で返ること。失敗の間の Subscription の状態（`active` のはず。`pending_update` があれば `past_due` でも `active` に写し、支払いの失敗の時刻も報告しない。その間の請求書は更新の請求書で、更新の請求はないため）。void が Smart Retries を止めること（void の後は開いた請求書がないので再試行されないはず）。`processing` の請求書の void の扱い。
+    - **冪等**: 更新の `Idempotency-Key` は、呼び出し側の `key` に、最新の請求書の ID と試みの分を足す。失敗の後の試みは新しい請求書の後なので失敗を再生せず、保存された 500 は次の分に消える。同時の 2 つの送信は同じキーを共有する。どの試みも先に読むので、成功の後は更新を送らず二重に請求しない。
+    - **途中の失敗**: void に失敗すると、次の取り直し（webhook か照合）が `UnpaidChange` を見て、ジョブ `supporters.command` の `drop_unpaid_change` が void する。そのため restricted key に Invoices の書き込みが要る。
+    - **待っている変更**: Schedule の段階の移行は保留の更新を捨てるので、更新の前に解放する。支払いが断られたら同じ変更を Schedule に作り直す。
   - `period_end`: Subscription Schedule を作り（既存のサブスクリプションから）、今の期間の終わりから新しい Price の段階を足す。`CancelScheduledChange` は Schedule を解放（release）する。
     Schedule の作り方と、`subscription_update` を使わずに期間の終わりへ回せることは **要検証**（#920 で fake の REST の形を Stripe の文書に合わせる）。
 - **解約**: `CancelAtPeriodEnd` と `ResumeCancellation` は `cancel_at_period_end` を立てる・下ろす。`CancelNow` は `DELETE /v1/subscriptions/{id}`（`prorate=false`、`invoice_now=false`）で、もう終わっていれば何もしない。

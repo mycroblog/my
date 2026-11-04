@@ -31,7 +31,8 @@ Once a plan exists, its role can no longer be granted or revoked by hand, and yo
 ## What users see
 
 - On the web, a user opens "Supporter plans" (`/settings/supporter`), picks a plan and a payment interval (month or year), goes through a final confirmation screen, and moves on to the provider's payment page. Card details never pass through this server. The payment page returns to this screen, which then reads the state of the subscription again.
-  While subscribed, the user can change plans from the same screen (an upgrade applies at once with proration, while a downgrade and a switch from yearly to monthly apply at the end of the period), cancel a scheduled change, cancel the subscription (the benefits last until the end of the period) and undo a cancellation, and open the customer portal for payment methods and invoices.
+  While subscribed, the user can change plans from the same screen (an upgrade and a switch from monthly to yearly apply once their prorated difference is paid, while a downgrade and a switch from yearly to monthly apply at the end of the period), cancel a scheduled change, cancel the subscription (the benefits last until the end of the period) and undo a cancellation, and open the customer portal for payment methods and invoices.
+  When the payment of a change fails, or the card asks for authentication that the change cannot ask for, the plan stays and the user sees an error with the way to update the card. It does not start the grace period or send the failed-payment notification; a failed renewal still does.
 - Only users of this server who have a confirmed email address and an account that is neither suspended nor scheduled for deletion can subscribe. A user can hold one plan at a time.
 - `/about` shows a section with the public plans. In the Tauri app, the subscription screen, the plans section of `/about`, and the links to them do not appear. The benefits (badge, custom emoji, finance) work in the app too.
 

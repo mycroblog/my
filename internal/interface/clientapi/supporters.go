@@ -29,6 +29,11 @@ const (
 	ProblemTypeSupporterSubscribed        = "/api/v1/problems/supporter-subscribed"
 	ProblemTypeSupporterPlanUnavailable   = "/api/v1/problems/supporter-plan-unavailable"
 	ProblemTypeSupporterSubscriptionState = "/api/v1/problems/supporter-subscription-state"
+	// ProblemTypeSupporterPaymentFailed: the payment of a change failed, and the plan stays.
+	ProblemTypeSupporterPaymentFailed = "/api/v1/problems/supporter-payment-failed"
+	// ProblemTypeSupporterPaymentProcessing: the payment of a change has not settled, and the plan
+	// stays until it succeeds.
+	ProblemTypeSupporterPaymentProcessing = "/api/v1/problems/supporter-payment-processing"
 	ProblemTypeSupporterSamePlan          = "/api/v1/problems/supporter-same-plan"
 )
 
@@ -95,6 +100,12 @@ func (s *Server) ownSupporterProblem(ctx context.Context, err error) (problem, b
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeSupporterPlanUnavailable, l.ServerErrorsSupportersPlanUnavailable(), ""), true
 	case errors.Is(err, appsupporters.ErrSubscriptionState):
 		return s.problem(ctx, http.StatusConflict, ProblemTypeSupporterSubscriptionState, l.ServerErrorsSupportersSubscriptionState(), ""), true
+	case errors.Is(err, appsupporters.ErrPaymentDeclined):
+		return s.problem(ctx, http.StatusPaymentRequired, ProblemTypeSupporterPaymentFailed, l.ServerErrorsSupportersPaymentFailed(),
+			l.ServerErrorsSupportersPaymentFailedDetail()), true
+	case errors.Is(err, appsupporters.ErrPaymentProcessing):
+		return s.problem(ctx, http.StatusConflict, ProblemTypeSupporterPaymentProcessing, l.ServerErrorsSupportersPaymentProcessing(),
+			l.ServerErrorsSupportersPaymentProcessingDetail()), true
 	case errors.Is(err, appsupporters.ErrServiceClosing):
 		return s.serviceClosingProblem(ctx), true
 	case errors.Is(err, appsupporters.ErrSameChoice):
