@@ -36,6 +36,13 @@ jobs:
           cache-dependency-path: |
             go.mod
             go.sum
+      # The images of the five servers and their builds fill the runner's disk, which has little room to spare and
+      # differs between runners. Nothing this job uses lives in these directories.
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h /
       - name: Run the live interoperability scenarios
         run: scripts/task.sh docker:federation-live
       - name: Upload the logs and captured activities
