@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
@@ -59,49 +60,9 @@ type QuoteView struct {
 // quote returns the quote of st as viewer sees it, nil when st quotes nothing or its quote was
 // taken away (ADR-0069 §4).
 func (r *Reader) quote(ctx context.Context, viewer Viewer, st content.Status) (*QuoteView, error) {
-	if r.d.Quotes == nil {
-		return nil, nil
-	}
-	q, err := r.d.Quotes.FindQuote(ctx, st.ID)
-	if errors.Is(err, ErrNotFound) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	state, err := r.d.Quotes.FindQuoteState(ctx, st.ID)
-	switch {
-	case errors.Is(err, ErrNotFound):
-		state = content.InitialQuoteState(q)
-	case err != nil:
-		return nil, err
-	}
-	switch state.Approval {
-	case content.QuoteApprovalDetached:
-		return nil, nil
-	case content.QuoteApprovalPending:
-		return &QuoteView{State: QuoteViewPending}, nil
-	case content.QuoteApprovalRejected:
-		return &QuoteView{State: QuoteViewRejected}, nil
-	case content.QuoteApprovalRevoked:
-		return &QuoteView{State: QuoteViewRevoked}, nil
-	}
-	shown := QuoteViewAccepted
-	if state.Approval == content.QuoteApprovalLegacy {
-		shown = QuoteViewLegacy
-	}
-
-	quoted, err := r.d.Statuses.FindStatusByURI(ctx, q.QuotedURI)
-	if errors.Is(err, ErrNotFound) {
-		return &QuoteView{State: QuoteViewPending}, nil // not fetched yet
-	}
-	if err != nil {
-		return nil, err
-	}
-	if _, err := r.aud.live(ctx, quoted.ID); errors.Is(err, ErrNotFound) {
-		return &QuoteView{State: QuoteViewDeleted}, nil
-	} else if err != nil {
-		return nil, err
+	quoted, shown, final, err := r.quotedStatus(ctx, st)
+	if err != nil || shown == "" {
+		return final, err
 	}
 	// A legacy quote of a local status is shown only when its policy would approve the quoting
 	// author's quote (ADR-0069 §2): no approval tells otherwise.
@@ -138,18 +99,77 @@ func (r *Reader) quote(ctx context.Context, viewer Viewer, st content.Status) (*
 			return nil, err
 		}
 	}
+	switch {
+	case muted:
+		shown = QuoteViewMutedAccount
+	case domainMuted:
+		shown = QuoteViewBlockedDomain
+	}
+	return r.presentQuoted(ctx, viewer, quoted, author, shown)
+}
+
+// quotedStatus finds the status that st quotes, for whoever may see it, with the state to show it
+// under. When there is no status to show it returns the empty state and what to answer instead: a
+// QuoteView that says why, or nil when st quotes nothing or its quote was taken away.
+func (r *Reader) quotedStatus(ctx context.Context, st content.Status) (content.Status, QuoteViewState, *QuoteView, error) {
+	none := func(state QuoteViewState) (content.Status, QuoteViewState, *QuoteView, error) {
+		return content.Status{}, "", &QuoteView{State: state}, nil
+	}
+	if r.d.Quotes == nil {
+		return content.Status{}, "", nil, nil
+	}
+	q, err := r.d.Quotes.FindQuote(ctx, st.ID)
+	if errors.Is(err, ErrNotFound) {
+		return content.Status{}, "", nil, nil
+	}
+	if err != nil {
+		return content.Status{}, "", nil, err
+	}
+	state, err := r.d.Quotes.FindQuoteState(ctx, st.ID)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		state = content.InitialQuoteState(q)
+	case err != nil:
+		return content.Status{}, "", nil, err
+	}
+	switch state.Approval {
+	case content.QuoteApprovalDetached:
+		return content.Status{}, "", nil, nil
+	case content.QuoteApprovalPending:
+		return none(QuoteViewPending)
+	case content.QuoteApprovalRejected:
+		return none(QuoteViewRejected)
+	case content.QuoteApprovalRevoked:
+		return none(QuoteViewRevoked)
+	}
+	shown := QuoteViewAccepted
+	if state.Approval == content.QuoteApprovalLegacy {
+		shown = QuoteViewLegacy
+	}
+
+	quoted, err := r.d.Statuses.FindStatusByURI(ctx, q.QuotedURI)
+	if errors.Is(err, ErrNotFound) {
+		return none(QuoteViewPending) // not fetched yet
+	}
+	if err != nil {
+		return content.Status{}, "", nil, err
+	}
+	if _, err := r.aud.live(ctx, quoted.ID); errors.Is(err, ErrNotFound) {
+		return none(QuoteViewDeleted)
+	} else if err != nil {
+		return content.Status{}, "", nil, err
+	}
+	return quoted, shown, nil, nil
+}
+
+// presentQuoted returns the quote that shows quoted under the state shown.
+func (r *Reader) presentQuoted(ctx context.Context, viewer Viewer, quoted content.Status, author appaccount.Actor, shown QuoteViewState) (*QuoteView, error) {
 	view, err := r.presentWith(ctx, viewer, quoted, author, false)
 	if errors.Is(err, ErrNotFound) {
 		return &QuoteView{State: QuoteViewDeleted}, nil // deleted meanwhile
 	}
 	if err != nil {
 		return nil, err
-	}
-	switch {
-	case muted:
-		shown = QuoteViewMutedAccount
-	case domainMuted:
-		shown = QuoteViewBlockedDomain
 	}
 	return &QuoteView{State: shown, Status: &view}, nil
 }

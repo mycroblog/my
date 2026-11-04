@@ -56,7 +56,7 @@ func (a audience) visible(ctx context.Context, viewer content.Viewer, st content
 	}
 
 	var rel content.Relation
-	if viewer.Kind == content.ViewerLocal && st.AuthorAccountID != viewer.AccountID {
+	if viewer.Kind == content.ViewerLocal && viewer.AccountID != "" && st.AuthorAccountID != viewer.AccountID {
 		r, err := a.relationships.Relationship(ctx, viewer.AccountID, st.AuthorAccountID)
 		if err != nil {
 			return false, appaccount.Actor{}, err
@@ -74,6 +74,22 @@ func (a audience) visible(ctx context.Context, viewer content.Viewer, st content
 	}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
 	return content.CanView(content.ContextStatus, viewer, facts, restrictions, rel), author, nil
+}
+
+// reviewable reports whether the moderators, who review a report, may read st, which the report
+// does not point at, and returns its author. They read it when reviewer may under the visibility st
+// was posted with: no relation of a moderator counts, for or against, and the restrictions on its
+// author, which moderators handle, do not hide it. An unknown author leaves nothing to present.
+func (a audience) reviewable(ctx context.Context, st content.Status) (bool, appaccount.Actor, error) {
+	author, err := a.accounts.FindByID(ctx, st.AuthorAccountID)
+	if errors.Is(err, appaccount.ErrNotFound) {
+		return false, appaccount.Actor{}, nil
+	}
+	if err != nil {
+		return false, appaccount.Actor{}, err
+	}
+	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	return content.CanView(content.ContextStatus, reviewer, facts, content.AuthorRestrictions{}, content.Relation{}), author, nil
 }
 
 // visibleStatus returns statusID with its author when viewer may see it. A status that is

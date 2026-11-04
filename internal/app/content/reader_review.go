@@ -13,11 +13,18 @@ import (
 
 // ReviewedStatus is a status as the moderators review it as the evidence of a report.
 type ReviewedStatus struct {
-	// StatusView is the status as it was last; its Relation is nil.
+	// StatusView is the status as it was last; its Relation is nil, so its Poll has no own votes
+	// and it is not Quotable. A deleted status has left the projection of link cards, so it has
+	// no Card; its Poll and Quote stay.
 	StatusView
 	// DeletedAt is when the status was deleted, the zero time when it is not.
 	DeletedAt time.Time
 }
+
+// reviewer is the moderators as the viewer of what a reviewed status refers to: a local account
+// with a moderation permission, and no account of its own, so no moderator's follow, block, mute,
+// or vote has a say and every moderator reads the same.
+var reviewer = content.Viewer{Kind: content.ViewerLocal, Moderator: true}
 
 // Review returns a status for the moderators who handle a report that points at it, whatever
 // its visibility and also when it is deleted (data-model §4.3, ADR-0038: the evidence of a
@@ -63,7 +70,13 @@ func (r *Reader) Review(ctx context.Context, statusID string) (ReviewedStatus, e
 		return ReviewedStatus{}, err
 	}
 	out.Attachments, out.Mentions, out.Tags = parts.Attachments, parts.Mentions, parts.Tags
-	if len(out.Attachments) > 0 && !out.Revision.Sensitive {
+	if r.d.LinkCards != nil {
+		if out.Card, err = r.d.LinkCards.View(ctx, st, rev); err != nil {
+			return ReviewedStatus{}, err
+		}
+	}
+	// The image of a card is shown as sensitive as the attachments are (ADR-0062 §7).
+	if (len(out.Attachments) > 0 || out.Card != nil && out.Card.Image != nil) && !out.Revision.Sensitive {
 		if out.Revision.Sensitive, err = r.forcedSensitive(ctx, st); err != nil {
 			return ReviewedStatus{}, err
 		}
@@ -74,7 +87,33 @@ func (r *Reader) Review(ctx context.Context, statusID string) (ReviewedStatus, e
 	case !errors.Is(err, ErrNotFound):
 		return ReviewedStatus{}, err
 	}
+	if out.Poll, err = r.poll(ctx, rev, ""); err != nil {
+		return ReviewedStatus{}, err
+	}
+	if out.Quote, err = r.reviewedQuote(ctx, st); err != nil {
+		return ReviewedStatus{}, err
+	}
 	return out, nil
+}
+
+// reviewedQuote returns the quote of st for the moderators. The report points at st and not at the
+// status it quotes, so that status stays under content.CanView (audience.reviewable): one that the
+// visibility it was posted with keeps from an unrelated local account is QuoteViewUnauthorized. A
+// legacy quote is shown whatever the policy of the status it quotes, since it is what the author of
+// st posted.
+func (r *Reader) reviewedQuote(ctx context.Context, st content.Status) (*QuoteView, error) {
+	quoted, shown, final, err := r.quotedStatus(ctx, st)
+	if err != nil || shown == "" {
+		return final, err
+	}
+	ok, author, err := r.aud.reviewable(ctx, quoted)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return &QuoteView{State: QuoteViewUnauthorized}, nil
+	}
+	return r.presentQuoted(ctx, reviewer, quoted, author, shown)
 }
 
 // lastRevision returns the current revision of a status, or for a deleted status, which has no

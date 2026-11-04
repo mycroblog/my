@@ -78,6 +78,10 @@ content.EffectiveVisibility(original Visibility, author AuthorRestrictions) Visi
 
 承認待ちのフォローはフォロワーとして数えません。
 
+通報の証拠を見るモデレーターは、この表の外にいます。通報が指す投稿は公開範囲にかかわらず読めます（[ADR-0038](../adr/0038-report-evidence-retention.md)）。
+その投稿が引用する投稿は通報が指していないので、`CanView` を通します。ただし閲覧者はどのモデレーターでもない「作者と関係のないローカルアカウント」で、作者の制限も渡しません。
+つまり投稿されたときの公開範囲だけで決まり、`public` / `local` / `unlisted` は読め、`private` / `direct` は `unauthorized` です。モデレーター自身のブロックと、作者の凍結・サイレンスは隠す理由になりません。
+
 ## 5. 判定表
 
 列は公開範囲（`pub` = `public`、`loc` = `local`、`unl` = `unlisted`、`prv` = `private`、`dir` = `direct`）、Y は閲覧可、- は閲覧不可です。
