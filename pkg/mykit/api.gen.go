@@ -6076,12 +6076,13 @@ type AdminReportState string
 
 // AdminReportStatus A post that a report points at, as a moderator reviews it. `status` is the post as it
 // was last, without the moderator's own relation to it (`favourited`, `boosted`,
-// `bookmarked`, `pinned`, and `quotable` are omitted, and so are `voted` and `own_votes` of
-// its `poll`). What a moderator blocks, what blocks them, and the restrictions on an author
-// hide nothing of it. Its `quote` shows the quoted post unless the post's visibility
-// keeps it from an account with no relation to its author: a followers-only or direct
-// post is `unauthorized`, since the report does not point at it. A deleted post keeps its
-// `poll` and `quote`, and has no `card`; the link stays in its `content`.
+// `bookmarked`, `pinned`, and `quotable` are omitted, and so are `me` of each of its
+// `reactions` and `voted` and `own_votes` of its `poll`). What a moderator blocks, what
+// blocks them, and the restrictions on an author hide nothing of it. Its `quote` shows the
+// quoted post unless the post's visibility keeps it from an account with no relation to its
+// author: a followers-only or direct post is `unauthorized`, since the report does not point
+// at it. A deleted post keeps its `poll` and `quote`, and has no counts, no `reactions`, and
+// no `card` any more; the link stays in its `content`.
 type AdminReportStatus struct {
 	// DeletedAt When the post was deleted, by its author or otherwise; omitted when it is not.
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
@@ -17572,7 +17573,8 @@ type ClientInterface interface {
 	// DeleteCustomEmoji Delete a local custom emoji
 	//
 	// Deletes a local emoji for good, with its images; the posts and profiles that used it
-	// show its `:shortcode:` as text. A new emoji with the same shortcode is another emoji.
+	// show its `:shortcode:` as text, and the reactions with it are no longer shown. A new
+	// emoji with the same shortcode is another emoji.
 	// A remote emoji is a 422 with the reason `remote_emoji` (disable it instead). The
 	// deletion is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_custom_emojis` permission.
@@ -24186,7 +24188,8 @@ func (c *Client) CreateCustomEmoji(ctx context.Context, body CreateCustomEmojiJS
 // DeleteCustomEmoji Delete a local custom emoji
 //
 // Deletes a local emoji for good, with its images; the posts and profiles that used it
-// show its `:shortcode:` as text. A new emoji with the same shortcode is another emoji.
+// show its `:shortcode:` as text, and the reactions with it are no longer shown. A new
+// emoji with the same shortcode is another emoji.
 // A remote emoji is a 422 with the reason `remote_emoji` (disable it instead). The
 // deletion is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_custom_emojis` permission.
@@ -48982,7 +48985,8 @@ type ClientWithResponsesInterface interface {
 	// DeleteCustomEmojiWithResponse Delete a local custom emoji
 	//
 	// Deletes a local emoji for good, with its images; the posts and profiles that used it
-	// show its `:shortcode:` as text. A new emoji with the same shortcode is another emoji.
+	// show its `:shortcode:` as text, and the reactions with it are no longer shown. A new
+	// emoji with the same shortcode is another emoji.
 	// A remote emoji is a 422 with the reason `remote_emoji` (disable it instead). The
 	// deletion is recorded in the audit log. An unknown ID is a 404. Needs the
 	// `manage_custom_emojis` permission.
@@ -78673,7 +78677,8 @@ func (c *ClientWithResponses) CreateCustomEmojiWithResponse(ctx context.Context,
 // DeleteCustomEmojiWithResponse Delete a local custom emoji
 //
 // Deletes a local emoji for good, with its images; the posts and profiles that used it
-// show its `:shortcode:` as text. A new emoji with the same shortcode is another emoji.
+// show its `:shortcode:` as text, and the reactions with it are no longer shown. A new
+// emoji with the same shortcode is another emoji.
 // A remote emoji is a 422 with the reason `remote_emoji` (disable it instead). The
 // deletion is recorded in the audit log. An unknown ID is a 404. Needs the
 // `manage_custom_emojis` permission.
