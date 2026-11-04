@@ -63,6 +63,8 @@ func SupporterRepositoryContract(t *testing.T, newHarness SupporterFactory) {
 		{"RevokesOnFullRefundsAndChargebacks", supporterReversals},
 		{"ChangesPlansAtOnceOrAtThePeriodEnd", supporterChanges},
 		{"RetriesAChangeWithItsKey", supporterChangeRetry},
+		{"MakesAWithdrawnChangeAgain", supporterChangeAgain},
+		{"SendsACancellationAgainWithANewKey", supporterCancelRetry},
 		{"AppliesNoSnapshotOlderThanTheApplied", supporterSnapshotOrder},
 		{"AbandonsUnpaidCheckouts", supporterAbandon},
 		{"SubscribesOnceAndOnlyWhenEligible", supporterEligibility},
@@ -877,6 +879,107 @@ func supporterChangeRetry(t *testing.T, e *supporterEnv) {
 	if len(rec.keys) != 3 || rec.keys[2] == rec.keys[0] {
 		t.Errorf("key of another change = %q, want a new one", rec.keys)
 	}
+}
+
+// supporterChangeAgain withdraws a change at the period's end and makes it again in the same
+// period: it is scheduled again, under a new key, since the provider would replay the first
+// change, whose schedule is gone, or refuse its key.
+func supporterChangeAgain(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	id, _ := e.subscribe(t, alice, gold, domain.IntervalMonth)
+	rec := &changeRecorder{PaymentProvider: e.world}
+	deps := e.deps
+	deps.Provider = rec
+	svc := supporters.NewService(deps)
+	for i := range 2 {
+		if _, err := svc.ChangePlan(ctx, alice, basic.ID, domain.IntervalMonth); err != nil {
+			t.Fatalf("ChangePlan %d = %v", i+1, err)
+		}
+		v := e.expect(t, id, domain.StateActive, gold, true)
+		if v.Current.Scheduled == nil || v.ScheduledPrice == nil || v.ScheduledPrice.PlanID != basic.ID {
+			t.Fatalf("the change %d is not scheduled: %+v", i+1, v.Current.Scheduled)
+		}
+		if _, err := svc.CancelScheduledChange(ctx, alice); err != nil {
+			t.Fatal(err)
+		}
+		if v := e.sub(t, id); v.Current.Scheduled != nil {
+			t.Fatalf("the change %d was not withdrawn: %+v", i+1, v.Current.Scheduled)
+		}
+	}
+	if len(rec.keys) != 2 || rec.keys[0] == rec.keys[1] || rec.keys[0] == "" {
+		t.Errorf("keys of the two changes = %q, want two different keys", rec.keys)
+	}
+}
+
+// cancelRecorder is a provider that records the keys of the writes of a cancellation at the
+// period's end, and fails the next read while failRead is set, as a job that fails after them.
+type cancelRecorder struct {
+	supporters.PaymentProvider
+	keys     []string
+	failRead bool
+}
+
+func (r *cancelRecorder) CancelScheduledChange(ctx context.Context, ref supporters.SubscriptionRef, key string) error {
+	r.keys = append(r.keys, key)
+	return r.PaymentProvider.CancelScheduledChange(ctx, ref, key)
+}
+
+func (r *cancelRecorder) CancelAtPeriodEnd(ctx context.Context, ref supporters.SubscriptionRef, key string) error {
+	r.keys = append(r.keys, key)
+	return r.PaymentProvider.CancelAtPeriodEnd(ctx, ref, key)
+}
+
+func (r *cancelRecorder) GetSubscription(ctx context.Context, ref supporters.SubscriptionRef) (supporters.SubscriptionSnapshot, error) {
+	if r.failRead {
+		r.failRead = false
+		return supporters.SubscriptionSnapshot{}, fmt.Errorf("%w: the read failed", supporters.ErrPaymentUnavailable)
+	}
+	return r.PaymentProvider.GetSubscription(ctx, ref)
+}
+
+// supporterCancelRetry runs a job of a cancellation at the period's end twice, as a retry: no key
+// repeats, since the user may resume between the attempts and the provider would replay the first
+// attempt's cancellation instead of canceling again.
+func supporterCancelRetry(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	plan := e.plan(t, "basic", 1, 10, 500)
+	alice := e.user("alice")
+	id, _ := e.subscribe(t, alice, plan, domain.IntervalMonth)
+	rec := &cancelRecorder{PaymentProvider: e.world, failRead: true}
+	deps := e.deps
+	deps.Provider = rec
+	handlers := &queue.JobHandlerRegistry{}
+	supporters.NewService(deps).RegisterJobs(handlers, nil)
+	run, _, ok := handlers.Lookup(supporters.JobCommand)
+	if !ok {
+		t.Fatalf("no handler of %s", supporters.JobCommand)
+	}
+	job := queue.Job{
+		ID: "job-1", Type: supporters.JobCommand, IdempotencyKey: "command:" + id,
+		Payload: fmt.Appendf(nil, `{"subscription_id":%q,"command":%q}`, id, supporters.CommandCancelAtPeriodEnd),
+	}
+	if r := run(ctx, job); r.IsDone() {
+		t.Fatal("the job ended done with the read failing")
+	}
+	if r := run(ctx, job); !r.IsDone() {
+		t.Fatalf("the retry = %v", r.Err())
+	}
+	if len(rec.keys) != 4 {
+		t.Fatalf("keys = %q, want two writes per attempt", rec.keys)
+	}
+	seen := map[string]bool{}
+	for _, k := range rec.keys {
+		if k == "" || seen[k] {
+			t.Errorf("keys = %q, want four different keys", rec.keys)
+		}
+		seen[k] = true
+	}
+	e.expect(t, id, domain.StateCanceling, plan, true)
 }
 
 func supporterAbandon(t *testing.T, e *supporterEnv) {

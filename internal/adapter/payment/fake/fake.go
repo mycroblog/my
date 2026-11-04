@@ -90,6 +90,7 @@ type Provider struct {
 	changes      []supporters.Notice
 	planNames    map[string]string // by plan ID
 	portals      map[string]*portal
+	changeKeys   map[string]string // the parameters of each key of ChangePrice
 }
 
 type price struct {
@@ -140,7 +141,7 @@ func New(o Options) *Provider {
 	}
 	return &Provider{
 		o: o, products: map[string]supporters.ProductRef{}, checkouts: map[supporters.CheckoutRef]*checkout{},
-		checkoutKeys: map[string]supporters.CheckoutRef{}, planNames: map[string]string{}, portals: map[string]*portal{},
+		checkoutKeys: map[string]supporters.CheckoutRef{}, planNames: map[string]string{}, portals: map[string]*portal{}, changeKeys: map[string]string{},
 	}
 }
 
@@ -540,11 +541,23 @@ func (p *Provider) command(ctx context.Context, ref supporters.SubscriptionRef, 
 	return f(&p.subs[i])
 }
 
-// ChangePrice implements supporters.PaymentProvider.
-func (p *Provider) ChangePrice(ctx context.Context, sub supporters.SubscriptionRef, to supporters.PriceRef, when supporters.ChangeTiming, _ string) error {
+// ChangePrice implements supporters.PaymentProvider. As a real provider does, it replays a key
+// that it has seen with the same parameters, changing nothing, and refuses one with other
+// parameters.
+func (p *Provider) ChangePrice(ctx context.Context, sub supporters.SubscriptionRef, to supporters.PriceRef, when supporters.ChangeTiming, key string) error {
 	return p.command(ctx, sub, false, func(s *supporters.SubscriptionSnapshot) error {
 		if !p.activePrice(to) {
 			return fmt.Errorf("%w: price %s is not active", supporters.ErrPaymentInvalidRequest, to)
+		}
+		if key != "" {
+			params := string(s.Ref) + " " + string(to) + " " + string(when)
+			if seen, ok := p.changeKeys[key]; ok {
+				if seen != params {
+					return fmt.Errorf("%w: the key %s was used with other parameters", supporters.ErrPaymentInvalidRequest, key)
+				}
+				return nil
+			}
+			p.changeKeys[key] = params
 		}
 		switch when {
 		case supporters.ChangeNowProrated:

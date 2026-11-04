@@ -559,8 +559,12 @@ func (s *Service) RunCommand(ctx context.Context, p commandPayload, key string) 
 		if rec.Current.State.Final() {
 			return queue.Done()
 		}
-		if err = prov.CancelScheduledChange(ctx, rec.Link, key+":scheduled"); err == nil {
-			err = prov.CancelAtPeriodEnd(ctx, rec.Link, key)
+		// A new key for every attempt: the user may resume or schedule a change between two
+		// attempts, and a repeated key would replay the first attempt instead of doing this
+		// again. The provider reads the state first, so a retry changes nothing that is done.
+		attempt := key + ":" + s.d.IDs.NewID()
+		if err = prov.CancelScheduledChange(ctx, rec.Link, attempt+":scheduled"); err == nil {
+			err = prov.CancelAtPeriodEnd(ctx, rec.Link, attempt)
 		}
 	default:
 		return queue.Fail(fmt.Errorf("supporters: unknown command %q", p.Command))

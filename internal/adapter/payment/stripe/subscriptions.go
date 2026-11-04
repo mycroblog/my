@@ -4,6 +4,7 @@ package stripe
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -242,7 +243,9 @@ func (p *Provider) scheduleChange(ctx context.Context, s *stripe.Subscription, t
 			return err
 		})
 		if err != nil {
-			return err
+			if sch = p.attachedSchedule(ctx, s, err); sch == nil {
+				return err
+			}
 		}
 	}
 	item := s.Items.Data[0]
@@ -276,7 +279,22 @@ func (p *Provider) scheduleChange(ctx context.Context, s *stripe.Subscription, t
 	})
 }
 
-// release releases the schedule of s that still waits to change it; nothing without one.
+// attachedSchedule returns the schedule that a request running at the same time attached to s
+// after it was read, which is why Stripe refused to create one with err; nil for any other failure.
+func (p *Provider) attachedSchedule(ctx context.Context, s *stripe.Subscription, err error) *stripe.SubscriptionSchedule {
+	if !errors.Is(err, supporters.ErrPaymentInvalidRequest) {
+		return nil
+	}
+	again, rerr := p.subscription(ctx, supporters.SubscriptionRef(s.ID))
+	if rerr != nil {
+		return nil
+	}
+	return pendingSchedule(again)
+}
+
+// release releases the schedule of s that still waits to change it; nothing without one. The key
+// names the schedule: a retried command can meet a second schedule, when a new change at the
+// period's end was made after its first attempt released the first.
 func (p *Provider) release(ctx context.Context, s *stripe.Subscription, key string) error {
 	sch := pendingSchedule(s)
 	if sch == nil {
@@ -284,7 +302,7 @@ func (p *Provider) release(ctx context.Context, s *stripe.Subscription, key stri
 	}
 	return p.do(ctx, "release the schedule of "+s.ID, func() (err error) {
 		_, err = p.sc.V1SubscriptionSchedules.Release(ctx, sch.ID, &stripe.SubscriptionScheduleReleaseParams{
-			Params: idempotency(key, "release"), PreserveCancelDate: stripe.Bool(true),
+			Params: idempotency(key, "release:"+sch.ID), PreserveCancelDate: stripe.Bool(true),
 		})
 		return err
 	})
