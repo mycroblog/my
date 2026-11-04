@@ -443,6 +443,7 @@ func TestPortalChangesTheCardAndResumes(t *testing.T) {
 	e.f.addSub(subscription{ID: "sub_1", Customer: "cus_1", Plan: e.f.plans["p"].plan, Status: subPaused, PausedAt: unitNow.Add(-24 * time.Hour).Unix()}, unitNow.Unix())
 	e.f.customers["cus_1"].Cards.Data = []card{{ID: "car_old", Brand: "Visa", Last4: declinedLast4, ExpMonth: 1, ExpYear: 2027}}
 	e.f.customers["cus_1"].DefaultCard = "car_old"
+	e.f.customers["cus_1"].Email = "alice@example.com"
 	e.f.addCharge(charge{ID: "ch_1", Customer: "cus_1", Amount: 1200, AmountRefunded: 200, Captured: true, Created: unitNow.Add(-40 * 24 * time.Hour).Unix(), FeeRate: "3.00", Subscription: "sub_1"}, "")
 	portal, err := e.p.PortalURL(t.Context(), "cus_1", "https://my.example/supporter")
 	if err != nil {
@@ -454,7 +455,7 @@ func TestPortalChangesTheCardAndResumes(t *testing.T) {
 	rec := httptest.NewRecorder()
 	e.srv.ServeHTTP(rec, req)
 	body := rec.Body.String()
-	for _, want := range []string{"Visa (末尾 0002、有効期限 1/2027)", "加入が止まっています", "1,200 円", "200 円", "2026-09-12", "card-form"} {
+	for _, want := range []string{"Visa (末尾 0002、有効期限 1/2027)", "加入が止まっています", "1,200 円", "200 円", "2026-09-12", "card-form", `value="alice@example.com"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("portal page lacks %q", want)
 		}

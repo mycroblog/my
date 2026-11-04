@@ -515,7 +515,7 @@ func (h *pages) portalView(ctx context.Context, r *http.Request, st pageState, s
 		}
 		v.Charges = append(v.Charges, row)
 	}
-	v.Form = &cardForm{Action: supporters.PagesPath(Name) + pagePortal, PublicKey: h.p.o.PublicKey, State: s, Submit: v.L.ServerPaymentsPortalChangeCard()}
+	v.Form = &cardForm{Action: supporters.PagesPath(Name) + pagePortal, PublicKey: h.p.o.PublicKey, State: s, Email: cus.Email, Submit: v.L.ServerPaymentsPortalChangeCard()}
 	switch r.URL.Query().Get("done") {
 	case doneChanged:
 		v.Notice = v.L.ServerPaymentsPortalChanged()

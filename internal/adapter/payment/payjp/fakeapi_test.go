@@ -548,7 +548,7 @@ func (f *fakeAPI) serveCustomers(w http.ResponseWriter, r *http.Request, rest []
 			apiFail(w, http.StatusBadRequest, "already_exist_id")
 			return
 		}
-		c := &fakeCustomer{customer: customer{ID: id}, created: f.now().Unix()}
+		c := &fakeCustomer{customer: customer{ID: id, Email: r.PostForm.Get("email")}, created: f.now().Unix()}
 		f.customers[id] = c
 		writeJSON(w, c.customer)
 	case len(rest) >= 1:
