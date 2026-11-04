@@ -181,7 +181,7 @@ jobs:
   # tests and every 2 minutes while they run, as GitHub's token expires about 5 minutes after it is issued.
   l4:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'slow-suite' && inputs.jobs != 'demo-e2e'
+    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'slow-suite' && inputs.jobs != 'demo-e2e' && inputs.jobs != 'image-scan'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     environment: ux-nightly
