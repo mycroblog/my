@@ -213,7 +213,7 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
   - HTTP のサーバー: `internal/platform` のミドルウェア（`accessLog` と同じ場所）。名前は `<method> <http.route>`
   - ジョブの実行: `internal/app/queue` の runner（`Meter.Begin` と同じ場所）。名前は `my.job.type`
   - 外向きの HTTP: `internal/adapter/httpclient`（`kernel.HTTPClient`）。連合の取得・配送、WebFinger、メディアのプロキシ、リンクのカード、Web Push
-  - DB: `UnitOfWork.Tx` の 1 回の実行（再試行ごと）と、sqlc の 1 クエリ。PostgreSQL は pgx の `QueryTracer`、SQLite・libSQL は sqlc の `DBTX` を包むラッパーで作る（新しい依存なし）
+  - DB: `UnitOfWork.Tx` の 1 回の実行（再試行ごと）と、sqlc の 1 クエリ。PostgreSQL は pgx の `QueryTracer`、SQLite は sqlc の `DBTX` を包むラッパーで作る（新しい依存なし）
   - Inbox の受理・配送の 1 回・ストリームの publish（`internal/app/federation`・`stream`）は、必要なら port で internal の span を足す
 
 ### 14. ジョブへの引き継ぎ（新しいトレース + link）

@@ -197,7 +197,7 @@ Mastodon と同じ形にする。凍結は `Update(Actor)` に `suspended: true`
 - 悪い: 監査ログは操作ごとに 1 行の書き込みが増える。新しい管理操作を足すとき、`action` の enum と発行を忘れないようにテストで検査する必要がある。`target_label` は個人データ（ハンドル）を含むので、保持期間（§8）の対象になる。
 - 悪い: 365 日より前の処分は再犯の判断に使えない。発信者情報開示の請求が投稿から 180 日を過ぎて届くと、ログイン元の IP は残っていない。
 - `sessions.ip` / `user_agent` は消去の単位を分けるため別の表（`session_origins`）に置き、登録元の IP は `registration_origins` に置く（[data-model §4.1](../architecture/data-model/04-tables/01-identity.md#41-identity)）。
-- 運営者向けに、記録の種類・目的・保持期間・提供先（連合先）を書いたプライバシーポリシーと処理の記録（GDPR 30 条）のひな形を `docs/operations/` に置く。
+- 運営者向けに、記録の種類・目的・保持期間・提供先（連合先）を書いたプライバシーポリシーと処理の記録（GDPR 30 条）のひな形を `docs/operations/` に置く（#2182）。
 
 ## Open Questions / 要検証
 
