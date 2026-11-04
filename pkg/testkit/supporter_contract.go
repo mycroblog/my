@@ -70,6 +70,7 @@ func SupporterRepositoryContract(t *testing.T, newHarness SupporterFactory) {
 		{"SendsACancellationAgainWithANewKey", supporterCancelRetry},
 		{"AppliesNoSnapshotOlderThanTheApplied", supporterSnapshotOrder},
 		{"AbandonsUnpaidCheckouts", supporterAbandon},
+		{"StartsACheckoutTwiceInTheSameHour", supporterCheckoutAgain},
 		{"SubscribesOnceAndOnlyWhenEligible", supporterEligibility},
 		{"ChargesNewPricesToNewSubscriptions", supporterPrices},
 		{"RetiresPlans", supporterRetire},
@@ -1119,6 +1120,90 @@ func supporterAbandon(t *testing.T, e *supporterEnv) {
 	if _, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{UserID: alice, PlanID: plan.ID, Interval: domain.IntervalMonth}); err != nil {
 		t.Errorf("StartCheckout after an abandoned one: %v", err)
 	}
+}
+
+// repeatingCheckouts is a provider whose checkouts of one subscription keep one ref until the test
+// clears it, as PAY.JP's do within an hour, and that records what it was asked.
+type repeatingCheckouts struct {
+	supporters.PaymentProvider
+	ref  supporters.CheckoutRef
+	reqs []supporters.CheckoutRequest
+}
+
+func (r *repeatingCheckouts) StartCheckout(ctx context.Context, req supporters.CheckoutRequest) (supporters.Checkout, error) {
+	c, err := r.PaymentProvider.StartCheckout(ctx, req)
+	if err != nil {
+		return c, err
+	}
+	r.reqs = append(r.reqs, req)
+	if r.ref == "" {
+		r.ref = c.Ref
+	}
+	c.Ref = r.ref
+	return c, nil
+}
+
+// supporterCheckoutAgain starts the checkout of a pending subscription again with a provider that
+// returns the same ref: the user reaches a page each time and one checkout is recorded. Starting
+// on another plan asks the provider for that plan's price while the pending subscription keeps its
+// plan, and the payment moves the subscription to what was paid for.
+func supporterCheckoutAgain(t *testing.T, e *supporterEnv) {
+	ctx := t.Context()
+	e.enable(t)
+	basic := e.plan(t, "basic", 1, 10, 500)
+	gold := e.plan(t, "gold", 2, 20, 1000)
+	alice := e.user("alice")
+	rec := &repeatingCheckouts{PaymentProvider: e.world}
+	deps := e.deps
+	deps.Provider = rec
+	svc := supporters.NewService(deps)
+	start := func(plan supporters.PlanView, interval domain.Interval) supporters.StartedCheckout {
+		t.Helper()
+		co, err := svc.StartCheckout(ctx, supporters.CheckoutInput{
+			UserID: alice, PlanID: plan.ID, Interval: interval, SuccessURL: "https://" + contractHost + "/ok", CancelURL: "https://" + contractHost + "/no",
+		})
+		if err != nil || co.RedirectURL == "" {
+			t.Fatalf("StartCheckout of %s = %+v, %v, want a page to go to", plan.ID, co, err)
+		}
+		return co
+	}
+	first := start(basic, domain.IntervalMonth)
+	opens := func() {
+		t.Helper()
+		refs, err := svc.OpenCheckouts(ctx, paymentProvider, e.clock.Now())
+		if err != nil || !slices.Equal(refs, []supporters.CheckoutRef{rec.ref}) {
+			t.Errorf("OpenCheckouts = %v, %v, want only %s", refs, err, rec.ref)
+		}
+		if sub := e.sub(t, first.SubscriptionID); sub.Checkout == nil || sub.Checkout.Ref != rec.ref {
+			t.Errorf("latest checkout = %+v, want %s", sub.Checkout, rec.ref)
+		}
+	}
+	if again := start(basic, domain.IntervalMonth); again.SubscriptionID != first.SubscriptionID {
+		t.Errorf("subscription of the second start = %s, want %s", again.SubscriptionID, first.SubscriptionID)
+	}
+	opens()
+	if again := start(gold, domain.IntervalYear); again.SubscriptionID != first.SubscriptionID {
+		t.Errorf("subscription of the start on another plan = %s, want %s", again.SubscriptionID, first.SubscriptionID)
+	}
+	if got, want := rec.reqs[2].Price, gold.Prices[domain.IntervalYear].Ref; got != want {
+		t.Errorf("price of the start on another plan = %s, want %s", got, want)
+	}
+	opens()
+	e.expect(t, first.SubscriptionID, domain.StatePending, basic, false)
+	// The next hour's ref is another checkout, which becomes the latest.
+	rec.ref = ""
+	start(gold, domain.IntervalYear)
+	opens()
+	e.seq++
+	ref := supporters.SubscriptionRef(fmt.Sprintf("sub_%d", e.seq))
+	cus := supporters.CustomerRef(fmt.Sprintf("cus_%d", e.seq))
+	e.world.PutCheckout(supporters.CheckoutResult{Ref: rec.ref, Status: supporters.CheckoutCompleted, LocalID: first.SubscriptionID, Customer: cus, Subscription: ref})
+	e.world.PutSubscription(supporters.SubscriptionSnapshot{
+		Ref: ref, Customer: cus, LocalID: first.SubscriptionID, Price: gold.Prices[domain.IntervalYear].Ref, Status: supporters.StatusActive,
+		PeriodStart: e.clock.Now(), PeriodEnd: e.clock.Now().Add(365 * 24 * time.Hour),
+	})
+	e.sync(t, first.SubscriptionID)
+	e.expect(t, first.SubscriptionID, domain.StateActive, gold, true)
 }
 
 func supporterEligibility(t *testing.T, e *supporterEnv) {

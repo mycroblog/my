@@ -116,7 +116,8 @@ func sameOrigin(a, b string) bool {
 }
 
 // checkoutRef is the ref of a checkout: "<customer>/<our subscription>/<expiry>", which
-// GetCheckout reads back without any record of the adapter.
+// GetCheckout reads back without any record of the adapter. Every start of a subscription's
+// checkout in one hour has this ref, whatever its plan, and the state in its URL tells them apart.
 func checkoutRef(customer, localID string, exp int64) supporters.CheckoutRef {
 	return supporters.CheckoutRef(customer + "/" + localID + "/" + strconv.FormatInt(exp, 10))
 }

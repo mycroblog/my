@@ -504,6 +504,7 @@ func (q *Queries) HasSupporterListing(ctx context.Context, userID string) (bool,
 const insertSupporterCheckout = `-- name: InsertSupporterCheckout :exec
 INSERT INTO supporter_checkouts (id, subscription_id, provider, provider_checkout_id, expires_at, created_at)
 VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (provider, provider_checkout_id) DO NOTHING
 `
 
 type InsertSupporterCheckoutParams struct {
@@ -515,6 +516,8 @@ type InsertSupporterCheckoutParams struct {
 	CreatedAt          time.Time
 }
 
+// InsertSupporterCheckout writes nothing for a checkout that is recorded already: a provider
+// may return the same one for a second start.
 func (q *Queries) InsertSupporterCheckout(ctx context.Context, arg InsertSupporterCheckoutParams) error {
 	_, err := q.db.Exec(ctx, insertSupporterCheckout,
 		arg.ID,

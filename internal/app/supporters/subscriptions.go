@@ -182,7 +182,8 @@ type StartedCheckout struct {
 
 // StartCheckout starts a subscription to a plan (ADR-0072 §6): it records the pending
 // subscription and returns the provider's checkout for it; starting again while it is pending
-// makes a new checkout of the same subscription. It fails with ErrDisabled or
+// makes a new checkout of the same subscription for the plan and interval asked now, and the
+// snapshot of the paid checkout moves the subscription to them. It fails with ErrDisabled or
 // ErrProviderMismatch when the program takes no subscriptions, with an *IneligibleError, with
 // ErrPlanUnavailable for a plan that takes no subscriptions (ErrNotFound for an unknown one),
 // with ErrLiveSubscription when the user has a subscription that is not pending, and with

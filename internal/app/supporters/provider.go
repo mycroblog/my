@@ -40,7 +40,9 @@ type PaymentProvider interface {
 	EnsurePlan(ctx context.Context, spec PlanSpec) (PlanRefs, error)
 
 	// StartCheckout creates a hosted checkout and returns the URL to redirect the browser to.
-	// The same Key returns the same checkout.
+	// The same Key returns the same checkout. Another Key returns a URL of what req asks now,
+	// under a new Ref or, for a provider that derives it from the checkout's subscription and
+	// period, under the Ref of the earlier checkout.
 	StartCheckout(ctx context.Context, req CheckoutRequest) (Checkout, error)
 	// GetCheckout reports whether a checkout completed and, if so, what it created.
 	GetCheckout(ctx context.Context, ref CheckoutRef) (CheckoutResult, error)
