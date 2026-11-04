@@ -114,7 +114,7 @@ Test cards ([PAY.JP documentation](https://pay.jp/docs/testcard)):
 
 Use a future expiry date; the security code and the name are arbitrary. In test mode, PAY.JP's test authentication screen for 3-D Secure lets you choose the result.
 
-To try a renewal quickly, set the subscription's `trial_end` a few minutes ahead in the PAY.JP dashboard or API (PAY.JP documents this method for testing). The renewal charge happens at that time.
+To try a renewal quickly, set the subscription's `trial_end` a few minutes ahead with the API. The renewal charge runs some minutes after that time, not at it. Another update of `trial_end` while the first is due restarts the wait.
 To try a payment failure and the grace period, subscribe, change the card on the card page to the card that is declined (`4000 0000 0008 0319`), and then let the subscription renew.
 
 ## 6. Try it locally
@@ -138,12 +138,12 @@ An upgrade charges the prorated difference first and moves the plan only after t
 
 ## Items to verify
 
-The following behaviors come from PAY.JP's documentation and are to be confirmed in test mode.
+The following behaviors are not settled by PAY.JP's documentation or by test mode.
 
-- How fees below one yen are handled, and how the fee returned by a refund or a chargeback is computed.
-- The shape of the body of the `dispute.created` event.
+- How the fee returned by a chargeback is computed, and whether a term's statement matches the server's fees (test mode showed a fee rounded down, and a refund's fee computed from its amount).
+- What a real chargeback does: PAY.JP documents no way to cause one in test mode and no body for `dispute.created`. A test send of the event from the dashboard is answered with `200` and changes nothing.
 - How far back the event list reaches.
 - Whether deleting a Plan affects existing subscriptions (the server never deletes one), and the maximum length of a Plan ID.
-- The CSP origins that the iframe type of payjp.js needs for 3-D Secure.
+- Whether the CSP report on loading the payment page matters: `pay.js` applies an inline style against `style-src 'self'`, while the card fields and 3-D Secure work in Chromium. Other browsers were not checked.
 - Whether payjp-cli can forward v1 events.
-- Whether a declined charge of the difference of a plan change is listed by `GET /v1/charges` with its metadata (the server ignores one that is not paid), and that a charge of a customer's saved card asks for no 3-D Secure unless the request does.
+- That a charge of a customer's saved card asks for no 3-D Secure unless the request does. A declined charge is listed by `GET /v1/charges` with `paid: false`, and the server ignores one that is not paid.
