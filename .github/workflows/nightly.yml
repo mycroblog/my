@@ -1,10 +1,15 @@
 name: Nightly
 
+# A run of some of the jobs is titled for them, as `Nightly (l4)`. A run titled just `Nightly` is a full one: it ran every
+# job, or, on a schedule, skipped them because a full run had already passed on this commit. The `changes` job and the
+# check before a release (docs/agents/releasing.md) read this title.
+run-name: ${{ inputs.jobs && inputs.jobs != 'all' && format('Nightly ({0})', inputs.jobs) || 'Nightly' }}
+
 # Every night on the head of main: the slow suite (slow-suite.yml, ADR-0079), so that a regression in the checks too
 # slow for the merge queue is found within a day, the web E2E of the demo server (ADR-0117), and the L4 task tests of
-# the screens (ADR-0114). A scheduled run is skipped when main has not moved since the last successful Nightly run; a
-# run by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=l4`, `-f jobs=demo-e2e`, `-f jobs=slow-suite`,
-# or `-f jobs=image-scan` for one of them). The scan of the published images runs every night, whether or not main moved.
+# the screens (ADR-0114). A scheduled run is skipped when main has not moved since the last successful full run; a run
+# by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=l4`, `-f jobs=demo-e2e`, `-f jobs=slow-suite`, or
+# `-f jobs=image-scan` for one of them). The scan of the published images runs every night, whether or not main moved.
 
 on:
   schedule:
@@ -41,9 +46,11 @@ jobs:
       run: ${{ steps.compare.outputs.run }}
       since: ${{ steps.compare.outputs.since }}
     steps:
-      # A skipped run succeeds with the same head, so the comparison holds until main moves. `since` is the head of the
-      # last successful run, from which the L4 job picks the screens that changed.
-      - name: Compare main with the last successful run
+      # A skipped run succeeds with the same head, so the comparison holds until main moves. A partial run never counts,
+      # even `slow-suite` alone: the other jobs still have to run on its commit. `since` is the head of the last
+      # successful full run, from which the L4 job picks the screens that changed. When none of the latest 100 successful
+      # runs is a full one, tonight's run is.
+      - name: Compare main with the last successful full run
         id: compare
         env:
           GH_TOKEN: ${{ github.token }}
@@ -55,13 +62,13 @@ jobs:
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          last="$(gh api "repos/$GH_REPO/actions/workflows/nightly.yml/runs?branch=main&status=success&per_page=1" \
-            --jq '.workflow_runs[0].head_sha // ""')"
+          last="$(gh api "repos/$GH_REPO/actions/workflows/nightly.yml/runs?branch=main&status=success&per_page=100" \
+            --jq '[.workflow_runs[] | select(.display_title == "Nightly")][0].head_sha // ""')"
           if [ "$last" = "$HEAD_SHA" ]; then
-            echo "main ($HEAD_SHA) has not moved since the last successful run: skipping the nightly jobs."
+            echo "main ($HEAD_SHA) has not moved since the last successful full run: skipping the nightly jobs."
             echo "run=false" >> "$GITHUB_OUTPUT"
           else
-            echo "Last successful run: ${last:-none}; main: $HEAD_SHA."
+            echo "Last successful full run: ${last:-none}; main: $HEAD_SHA."
             echo "run=true" >> "$GITHUB_OUTPUT"
             echo "since=$last" >> "$GITHUB_OUTPUT"
           fi
@@ -162,7 +169,7 @@ jobs:
   # scenario), signed in as the person of the scenario that the front matter of the screen's L1 file names. Mailpit runs in
   # the job (.github/actions/start-mailpit), and a task that reads email reads it in Mailpit's web UI, whose steps are
   # recorded apart from the lostness. A scheduled run measures the screens whose L1 file or the paths of its front matter changed
-  # since the last successful run; a run by hand measures the `screens` input, or every screen.
+  # since the last successful full run; a run by hand measures the `screens` input, or every screen.
   #
   # Per-night cap: at most 10 tasks a night (CAP below), taking the selected screens in turn, each a Claude Code session
   # of at most 40 turns and US$1 (L4_MAX_TURNS, L4_BUDGET_USD). The spend limit of the Claude Console workspace that
@@ -174,7 +181,7 @@ jobs:
   # tests and every 2 minutes while they run, as GitHub's token expires about 5 minutes after it is issued.
   l4:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'slow-suite' && inputs.jobs != 'demo-e2e'
+    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'slow-suite' && inputs.jobs != 'demo-e2e' && inputs.jobs != 'image-scan'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     environment: ux-nightly
@@ -194,7 +201,7 @@ jobs:
       # The image lacks the unzip that setup-bun extracts Bun with, and the jq that reads the identity token.
       - name: Install unzip and jq
         run: apt-get update && apt-get install -y --no-install-recommends unzip jq
-      # The whole history, for the diff since the last successful run.
+      # The whole history, for the diff since the last successful full run.
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

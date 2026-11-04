@@ -124,7 +124,7 @@ step.
 | Push to `main` | `main.yml` | No checks: it only builds the caches that pull requests and the merge queue restore. The Go cache holds what the restoring jobs read (modules, package and tool builds, test binaries, vet and golangci-lint results), built one after another with the same settings (`CGO_ENABLED=0`) and rebuilt from scratch under a key of the Go version, `go.sum`, `tools/go.sum`, and the date; the Bun cache is keyed by the lockfile. Each is built only when no cache of its key exists yet |
 | Release gate, nightly, by hand | `slow-suite.yml` | The slow suite: the full web E2E matrix (eight shards), the live interoperability tests (`federation-live.yml`), the tests on a real PostgreSQL, the `stream.Bus` contract against broker containers, the smoke test and the linux/arm64 image build, golangci-lint on everything and the build tag combinations, and CodeQL code scanning (`codeql.yml`; results go to the Security tab). Never on pull requests or the merge queue, and not part of `check` |
 | Release (by hand) | `release.yml` | Runs the slow suite on the given commit and, only when it passes, creates the tag and a draft GitHub Release |
-| Nightly (03:00 JST) | `nightly.yml` | Runs the slow suite on the head of `main`, unless `main` has not moved since the last successful nightly |
+| Nightly (03:00 JST) | `nightly.yml` | Runs the slow suite on the head of `main`, unless `main` has not moved since the last successful full nightly (a run by hand of some of the jobs, titled like `Nightly (l4)`, does not count) |
 
 - Pull request CI does not compile, type-check, or test; the merge queue does, and it is the only gate. Running
   `scripts/task.sh check:changed` locally is optional (to reproduce a failure or to iterate).

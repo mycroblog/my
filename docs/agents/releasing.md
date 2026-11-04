@@ -16,11 +16,14 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
 
 ## Steps
 
-1. Check that the latest Nightly passed. If it failed, fix it first ([Failures on main](workflow.md#failures-on-main-orchestrator)).
+1. Check that the latest full Nightly on `main` passed: the newest run titled exactly `Nightly`. If it failed, fix it first ([Failures on main](workflow.md#failures-on-main-orchestrator)).
 
    ```sh
-   gh run list -R mycroblog/my --workflow nightly.yml --limit 3
+   gh run list -R mycroblog/my --workflow nightly.yml --branch main --limit 10
    ```
+
+   A run by hand of some of the jobs is titled for them, such as `Nightly (l4)`, and does not count, whatever its result.
+   A run titled `Nightly` either ran every job, or, on a schedule, skipped them because a full run had already passed on that commit.
 
 2. Run `release.yml` on `main`. The head commit of `main` at that moment is the commit that is checked and tagged.
 
