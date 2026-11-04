@@ -3,6 +3,7 @@
 package payjp
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -278,10 +279,16 @@ func (p *Provider) CancelNow(ctx context.Context, ref supporters.SubscriptionRef
 	return err
 }
 
+// refundWindow is how long after its sale PAY.JP refunds a charge.
+const refundWindow = 180 * 24 * time.Hour
+
 // RefundSubscription implements supporters.PaymentProvider: every paid charge of the subscription
-// that is not refunded yet gets a refund of the whole charge. API v1 takes no idempotency key;
-// a repeat finds the charge refunded. PAY.JP refunds charges for 180 days after their sale.
+// that is not refunded yet gets a refund of the whole charge. API v1 takes no idempotency key; a
+// repeat finds the charge refunded. A charge past PAY.JP's window is left, with a log line, since
+// no attempt could refund it, and one that fails does not stop the others.
 func (p *Provider) RefundSubscription(ctx context.Context, sub supporters.SubscriptionRef, _ string) error {
+	var failed error
+	now := p.o.Now()
 	for offset := 0; ; offset += supporters.PageSize {
 		var page list[charge]
 		q := url.Values{"subscription": {string(sub)}, "limit": {strconv.Itoa(supporters.PageSize)}, "offset": {strconv.Itoa(offset)}}
@@ -292,13 +299,17 @@ func (p *Provider) RefundSubscription(ctx context.Context, sub supporters.Subscr
 			if !c.Paid || c.Refunded {
 				continue
 			}
+			if now.Sub(time.Unix(c.Created, 0)) > refundWindow {
+				p.log.WarnContext(ctx, "a charge is past PAY.JP's refund window; refund it another way", slog.String("charge", c.ID))
+				continue
+			}
 			form := url.Values{"refund_reason": {"a second subscription of one payment"}}
 			if err := p.post(ctx, "refund a charge", "/charges/"+url.PathEscape(c.ID)+"/refund", form, nil); err != nil {
-				return err
+				failed = cmp.Or(failed, err)
 			}
 		}
 		if !page.HasMore || len(page.Data) == 0 {
-			return nil
+			return failed
 		}
 	}
 }

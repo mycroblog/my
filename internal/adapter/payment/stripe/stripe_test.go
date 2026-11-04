@@ -1000,3 +1000,50 @@ func TestRefundSubscriptionLeavesADisputedCharge(t *testing.T) {
 		t.Errorf("RefundSubscription = %v", err)
 	}
 }
+
+// addPaidInvoice adds a paid invoice of a subscription, a renewal, and returns its charge.
+func (f *fakeAPI) addPaidInvoice(sub string) string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	inv, charge := f.nextID("in"), f.nextID("ch")
+	f.invoices[inv] = obj{"id": inv, "object": "invoice", "status": "paid", "my_subscription": sub}
+	f.charges[charge] = obj{"id": charge, "object": "charge"}
+	f.invoicePays = append(f.invoicePays, obj{
+		"id": "inpay_" + inv, "object": "invoice_payment", "status": "paid", "invoice": ref{id: inv},
+		"payment": obj{"type": "charge", "charge": ref{id: charge}},
+	})
+	return charge
+}
+
+// A second subscription gave nothing for any period, so its renewals are refunded too, and a charge
+// that fails does not stop the others: the failure comes back after them for another try.
+func TestRefundSubscriptionTakesRenewalsAndGoesOnAfterAFailure(t *testing.T) {
+	p, f, _, c := oneCheckout(t)
+	sub, first := f.paySession(t, string(c.Ref))
+	renewal := f.addPaidInvoice(sub)
+	f.mu.Lock()
+	f.before = func(r *http.Request) int {
+		if r.Method == http.MethodPost && r.URL.Path == "/v1/refunds" && r.Form.Get("charge") == first {
+			return http.StatusInternalServerError
+		}
+		return 0
+	}
+	f.mu.Unlock()
+	if err := p.RefundSubscription(t.Context(), supporters.SubscriptionRef(sub), "k1"); err == nil {
+		t.Error("RefundSubscription with a failed charge succeeded")
+	}
+	f.mu.Lock()
+	if f.charges[renewal]["refunded"] != true {
+		t.Errorf("the renewal = %v, want refunded after the other charge failed", f.charges[renewal])
+	}
+	f.before = nil
+	f.mu.Unlock()
+	if err := p.RefundSubscription(t.Context(), supporters.SubscriptionRef(sub), "k2"); err != nil {
+		t.Fatal(err)
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.charges[first]["refunded"] != true || len(f.refunds) != 2 {
+		t.Errorf("first charge = %v with %d refunds, want refunded and two", f.charges[first], len(f.refunds))
+	}
+}

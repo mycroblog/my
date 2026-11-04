@@ -3,6 +3,7 @@
 package stripe
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -550,7 +551,8 @@ func (p *Provider) CancelNow(ctx context.Context, ref supporters.SubscriptionRef
 }
 
 // RefundSubscription implements supporters.PaymentProvider: a refund of the whole of each charge of
-// the subscription's paid invoices. Without an amount a refund takes what is left of its charge, and
+// the subscription's paid invoices, renewals included, since a second subscription gave nothing for
+// any of its periods, and a charge that fails does not stop the others. Without an amount a refund takes what is left of its charge, and
 // Stripe refuses a charge with nothing left, so a repeat refunds nothing twice. The refund goes to the
 // card charged and takes Stripe's fee of the charge from nobody: Stripe keeps it.
 func (p *Provider) RefundSubscription(ctx context.Context, ref supporters.SubscriptionRef, key string) error {
@@ -558,6 +560,7 @@ func (p *Provider) RefundSubscription(ctx context.Context, ref supporters.Subscr
 		ListParams:   stripe.ListParams{Limit: stripe.Int64(supporters.PageSize), Single: true},
 		Subscription: stripe.String(string(ref)), Status: stripe.String(string(stripe.InvoiceStatusPaid)),
 	}
+	var failed error
 	for {
 		var list *stripe.V1List[*stripe.Invoice]
 		err := p.do(ctx, "list the paid invoices of "+string(ref), func() error {
@@ -575,12 +578,12 @@ func (p *Provider) RefundSubscription(ctx context.Context, ref supporters.Subscr
 			}
 			for _, charge := range charges {
 				if err := p.refundCharge(ctx, charge, key); err != nil {
-					return err
+					failed = cmp.Or(failed, err)
 				}
 			}
 		}
 		if !list.Meta().HasMore || len(data) == 0 {
-			return nil
+			return failed
 		}
 		params.StartingAfter = stripe.String(data[len(data)-1].ID)
 	}

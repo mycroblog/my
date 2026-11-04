@@ -36,7 +36,8 @@
 | `supporter_subscriptions` | リソース | `id`（事業者に載せるこちらの ID）, `user_id`, `plan_id`, `price_id`（開始のとき）, `provider`, `created_at` | |
 | `supporter_checkouts` | イベント | `id`, `subscription_id`, `provider`, `provider_checkout_id`, `expires_at`, `created_at` | 一意 `(provider, provider_checkout_id)`。インデックス `(subscription_id, id DESC)`, `(provider, expires_at)` |
 | `supporter_duplicate_subscriptions` | イベント | `id`, `subscription_id`, `provider`, `provider_subscription_id`, `detected_at` | 一意 `(provider, provider_subscription_id)`。何も買えなかった事業者のサブスクリプション（ADR-0072 §6） |
-| `supporter_duplicate_settlements` | イベント | `duplicate_id`（PK）, `settled_at` | 解約と返金が済んだ。行がなければ管理者に警告を出す |
+| `supporter_duplicate_cancellations` | イベント | `duplicate_id`（PK）, `decided_at` | サーバーが解約と返金を引き受けた。解約を送る前に書く |
+| `supporter_duplicate_settlements` | イベント | `duplicate_id`（PK）, `settled_at` | することがなくなった（解約と返金が済んだか、すでに事業者の側で終わっていた）。行がなければ管理者に警告を出す |
 | `supporter_subscription_links` | イベント | `subscription_id`（PK）, `provider`, `provider_subscription_id`, `linked_at` | 一意 `(provider, provider_subscription_id)` |
 | `supporter_subscription_transitions` | イベント（版） | `id`, `subscription_id`, `state`（`enum(pending, active, canceling, past_due, lapsed, expired, revoked, abandoned)`）, `plan_id`, `price_id`, `period_ends_at`（NULL 可。`pending`・`abandoned` だけ NULL）, `reason`（`enum(started, synced, grace_expired, reversed, plan_retired, account_closed, account_suspended, staff, service_closed)`）, `occurred_at` | インデックス `(subscription_id, id DESC)` |
 | `supporter_grace_periods` | イベント | `transition_id`（PK。`past_due` の遷移）, `failed_at`, `ends_at`（`failed_at` + 7 日） | |
@@ -57,4 +58,4 @@
 - 事業者への命令（すぐ解約・期間の終わりの解約）は、遷移のトランザクションで積むジョブ `supporters.command` がコミットの後に送り、取り直したスナップショットを当てます。全額の返金とチャージバック、アカウントの削除（BAN の予約を含む）、管理者による解約は、こちらの状態を先に終端にしてから事業者をすぐ解約します。凍結は期間の終わりの解約を予約します。
 - プランの作成と、条件の版を足す変更は、同じトランザクションでジョブ `supporters.ensure_prices`（冪等キー `ensure_prices:<版の ID>`）を積みます。ジョブは事業者に月と年の価格を作らせ（`EnsurePlan`）、`supporter_plan_prices` と今の価格、アーカイブを記録します。今の価格は、事業者が今の条件に返した価格で、プランと間隔ごとにアーカイブされていない最新の価格（作った順）と一致します。金額を以前の金額に戻しても新しい価格として記録するので、プランは毎回使える状態になります。既存の加入はもとの価格のまま続きます。
 - 決済画面の行（`supporter_checkouts`）は ADR-0072 §15 の表にない追加で、`pending` の加入の取り直しと定期の照合（`Syncer.OpenCheckouts`）が読みます。PAY.JP の参照は加入と 1 時間ごとの期限で決まるので、同じ時間に始め直しても行は増えず、書き込みは何もしません（`ON CONFLICT DO NOTHING`）。決済画面の URL は行に持たないので、始め直しのたびに事業者のアダプターが、そのとき頼まれたプランと価格で作ります。
-- 2 つめのサブスクリプションの行（`supporter_duplicate_subscriptions`）は ADR-0072 §15 の表にない追加で、見つけたトランザクションで積むジョブ `supporters.command` が解約して返金し、`supporter_duplicate_settlements` を書きます。済んでいない行は、管理者の支払いの状態（`duplicate_charge`）に出て、照合のたびにジョブを積み直します。
+- 2 つめのサブスクリプションの行（`supporter_duplicate_subscriptions`）は ADR-0072 §15 の表にない追加で、見つけたトランザクションで積むジョブ `supporters.command` が読み直し、まだ続いていれば `supporter_duplicate_cancellations` を書いてから解約して返金し、`supporter_duplicate_settlements` を書きます。すでに終わっていれば返金せずに `supporter_duplicate_settlements` だけを書きます。済んでいない行は、管理者の支払いの状態（`duplicate_charge`）に出て、照合のたびにジョブを積み直します。

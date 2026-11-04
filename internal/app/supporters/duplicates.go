@@ -52,10 +52,17 @@ func (s *Service) RetryDuplicates(ctx context.Context, provider, cause string) e
 	})
 }
 
-// settleDuplicate is the work of CommandSettleDuplicate. It re-reads the provider's subscription,
-// and acts only on one that names our subscription and is not what that subscription runs on. A
-// failure that a retry cannot help leaves the record unsettled for the administrators and the next
-// reconciliation.
+// subscriptionEnded reports whether a provider's subscription can no longer bill.
+func subscriptionEnded(status SubscriptionStatus) bool {
+	return status == StatusCanceled || status == StatusIncompleteExpired
+}
+
+// settleDuplicate is the work of CommandSettleDuplicate. The first attempt re-reads the provider's
+// subscription: one that already ended was ended by someone else, and what they did about its charge
+// stays, and one that is not what the record says is left alone until someone ends it. Otherwise it
+// records the cancellation first, since the provider may then no longer report the subscription
+// (PAY.JP deletes it), and every later attempt goes on from there. A failure that a retry cannot
+// help leaves the record unsettled for the administrators and the next reconciliation.
 func (s *Service) settleDuplicate(ctx context.Context, rec SubscriptionRecord, ref SubscriptionRef, key string) queue.Result {
 	prov, name := s.d.Provider, s.d.Provider.Name()
 	d, err := s.d.Repository.FindDuplicate(ctx, nil, name, ref)
@@ -77,29 +84,42 @@ func (s *Service) settleDuplicate(ctx context.Context, rec SubscriptionRecord, r
 			append(attrs, slog.String("call", what), slog.String("error_kind", string(kind)), slog.Any("error", err))...)
 		return queue.Done()
 	}
-	snap, err := prov.GetSubscription(ctx, ref)
-	switch {
-	case ErrorKindOf(err) == ErrorNotFound:
-		// Nothing is left to bill or to read the charges from.
-	case err != nil:
-		return failed("read", err)
-	case snap.LocalID != rec.ID || (rec.Link == ref && !rec.Current.State.Final()):
-		s.d.Logger.ErrorContext(ctx, "a second subscription is not what it was recorded as; the server leaves it alone", attrs...)
-		return queue.Done()
-	default:
-		if err := prov.CancelNow(ctx, ref, key); err != nil {
-			return failed("cancel", err)
+	settle := func() queue.Result {
+		now := s.now()
+		err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.SettleDuplicate(ctx, tx, d.ID, now) })
+		if err != nil {
+			return queue.Retry(0, err)
 		}
-		// A new key for every attempt: Stripe replays a stored failure under a key, and a refund of
-		// a whole charge cannot run twice.
-		if err := prov.RefundSubscription(ctx, ref, key+":"+s.d.IDs.NewID()); err != nil {
-			return failed("refund", err)
+		return queue.Done()
+	}
+	if !d.Cancelling {
+		snap, err := prov.GetSubscription(ctx, ref)
+		switch {
+		case ErrorKindOf(err) == ErrorNotFound || (err == nil && subscriptionEnded(snap.Status)):
+			s.d.Logger.WarnContext(ctx, "a second subscription had already ended at the provider; the server leaves its charges as they are", attrs...)
+			return settle()
+		case err != nil:
+			return failed("read", err)
+		case snap.LocalID != rec.ID || (rec.Link == ref && !rec.Current.State.Final()):
+			s.d.Logger.ErrorContext(ctx, "a second subscription is not what it was recorded as; the server leaves it alone", attrs...)
+			return queue.Done()
+		}
+		now := s.now()
+		err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.CancelDuplicate(ctx, tx, d.ID, now) })
+		if err != nil {
+			return queue.Retry(0, err)
 		}
 	}
-	now := s.now()
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.SettleDuplicate(ctx, tx, d.ID, now) })
-	if err != nil {
-		return queue.Retry(0, err)
+	if err := prov.CancelNow(ctx, ref, key); err != nil && ErrorKindOf(err) != ErrorNotFound {
+		return failed("cancel", err)
+	}
+	// A new key for every attempt: Stripe replays a stored failure under a key, and a refund of a
+	// whole charge cannot run twice.
+	if err := prov.RefundSubscription(ctx, ref, key+":"+s.d.IDs.NewID()); err != nil {
+		return failed("refund", err)
+	}
+	if r := settle(); !r.IsDone() {
+		return r
 	}
 	s.d.Logger.WarnContext(ctx, "a second subscription was canceled and refunded", attrs...)
 	return queue.Done()

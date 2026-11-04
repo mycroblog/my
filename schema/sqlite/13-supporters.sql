@@ -146,7 +146,15 @@ CREATE TABLE supporter_duplicate_subscriptions (
 ) STRICT;
 CREATE UNIQUE INDEX supporter_duplicate_subscriptions_provider_subscription ON supporter_duplicate_subscriptions (provider, provider_subscription_id);
 
--- Event: a duplicate is canceled and refunded. Without a row the administrators see a warning.
+-- Event: the server took a duplicate on, before it cancels it at the provider: from here it does
+-- not need the provider to report the subscription, which it may delete.
+CREATE TABLE supporter_duplicate_cancellations (
+  duplicate_id TEXT NOT NULL PRIMARY KEY,
+  decided_at INTEGER NOT NULL
+) STRICT;
+
+-- Event: nothing is left to do for a duplicate: it is canceled and refunded, or it had ended at the
+-- provider already. Without a row the administrators see a warning.
 CREATE TABLE supporter_duplicate_settlements (
   duplicate_id TEXT NOT NULL PRIMARY KEY,
   settled_at INTEGER NOT NULL

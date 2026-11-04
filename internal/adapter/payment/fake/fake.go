@@ -97,6 +97,8 @@ type Provider struct {
 	refunds       map[supporters.SubscriptionRef]bool
 	// refundFailure fails RefundSubscription (FailRefunds).
 	refundFailure error
+	// deleteCanceled reports canceled subscriptions as deleted (DeleteCanceled).
+	deleteCanceled bool
 }
 
 type price struct {
@@ -690,6 +692,14 @@ func (p *Provider) RefundSubscription(ctx context.Context, sub supporters.Subscr
 	return nil
 }
 
+// DeleteCanceled makes GetSubscription report a canceled subscription as PAY.JP reports one that it
+// deleted: canceled, with nothing else, our ID included.
+func (p *Provider) DeleteCanceled() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.deleteCanceled = true
+}
+
 // FailRefunds makes RefundSubscription fail with err; nil ends it.
 func (p *Provider) FailRefunds(err error) {
 	p.mu.Lock()
@@ -745,6 +755,9 @@ func (p *Provider) GetSubscription(ctx context.Context, ref supporters.Subscript
 	i := p.subIndex(ref)
 	if i < 0 {
 		return supporters.SubscriptionSnapshot{}, fmt.Errorf("%w: subscription %s", supporters.ErrPaymentNotFound, ref)
+	}
+	if p.deleteCanceled && p.subs[i].Status == supporters.StatusCanceled {
+		return supporters.SubscriptionSnapshot{Ref: ref, Status: supporters.StatusCanceled}, nil
 	}
 	return p.subs[i], nil
 }

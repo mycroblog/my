@@ -320,3 +320,29 @@ func TestRefundSubscription(t *testing.T) {
 		t.Errorf("refunded a charge that failed or of another subscription: %+v, %+v", f.charges["ch_failed"].charge, f.charges["ch_linked"].charge)
 	}
 }
+
+// PAY.JP deletes what CancelNow cancels: the snapshot no longer has our ID, and the refund still
+// finds the charges. A charge past PAY.JP's window is left, without stopping the refund, which no
+// attempt could make succeed.
+func TestRefundSubscriptionAfterItsDeletion(t *testing.T) {
+	now := time.Date(2026, 10, 22, 3, 0, 0, 0, time.UTC)
+	p, f := newOnFake(t, supporters.ModeTest, now)
+	f.addSub(subscription{ID: "sub_second", Customer: "cus_a", Status: subActive, Metadata: metadata{metaSubscriptionID: "local"}}, now.Unix())
+	f.addCharge(charge{ID: "ch_new", Amount: 500, Paid: true, Subscription: "sub_second", Created: now.Unix()}, "evt_a")
+	f.addCharge(charge{ID: "ch_old", Amount: 500, Paid: true, Subscription: "sub_second", Created: now.Add(-181 * 24 * time.Hour).Unix()}, "evt_b")
+	if err := p.CancelNow(t.Context(), "sub_second", "key"); err != nil {
+		t.Fatal(err)
+	}
+	snap, err := p.GetSubscription(t.Context(), "sub_second")
+	if err != nil || snap.Status != supporters.StatusCanceled || snap.LocalID != "" {
+		t.Fatalf("GetSubscription after the deletion = %+v, %v, want canceled without our ID", snap, err)
+	}
+	if err := p.RefundSubscription(t.Context(), "sub_second", "key"); err != nil {
+		t.Fatalf("RefundSubscription = %v", err)
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if !f.charges["ch_new"].Refunded || f.charges["ch_old"].Refunded {
+		t.Errorf("refunded: new %v, old %v, want only the new", f.charges["ch_new"].Refunded, f.charges["ch_old"].Refunded)
+	}
+}

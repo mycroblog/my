@@ -128,7 +128,7 @@ Open the payment and card pages on this server's origin (they also work on `http
 ## 7. Operation
 
 - A reconciliation failure of kind `permission` means a wrong secret key.
-- `duplicate_charge` in the warnings of the "Payment provider" section means that the server could not finish refunding a payment for a closed subscription. The log line `a second subscription could not be canceled and refunded` names the subscription, and each reconciliation tries again. Refund the charge in the dashboard if it goes on: the next try finds it refunded and clears the warning.
+- `duplicate_charge` in the warnings of the "Payment provider" section means that the server could not finish refunding a payment for a closed subscription. The log line `a second subscription could not be canceled and refunded` names the subscription, and each reconciliation tries again, also after the subscription is deleted. Refund the charge in the dashboard if it goes on: the next try finds it refunded and clears the warning. A charge more than 180 days old cannot be refunded: the server logs it and goes on.
 - Other refunds are handled in the PAY.JP dashboard. A full refund and a chargeback remove the role and delete the subscription at once, and a partial refund does not remove the role.
 - **A chargeback cancellation** is not recorded automatically, because PAY.JP emits neither an event nor an API for it. When one happens, record the cancelled amount on the income screen of the costs page (`finance`). The role is not restored automatically.
 - **PAY.JP's paid-plan fees and transfer fees** are not subtracted from the income. Record them as costs in `finance`.
@@ -149,3 +149,4 @@ The following behaviors are not settled by PAY.JP's documentation or by test mod
 - Whether the CSP report on loading the payment page matters: `pay.js` applies an inline style against `style-src 'self'`, while the card fields and 3-D Secure work in Chromium. Other browsers were not checked.
 - Whether payjp-cli can forward v1 events.
 - That a charge of a customer's saved card asks for no 3-D Secure unless the request does. A declined charge is listed by `GET /v1/charges` with `paid: false`, and the server ignores one that is not paid.
+- That `GET /v1/charges` with `subscription` still lists the charges of a deleted subscription, which refunding a payment for a closed subscription relies on. The API reference documents the filter and says nothing about deleted subscriptions. If it does not, `duplicate_charge` stays after the charge is refunded by hand.

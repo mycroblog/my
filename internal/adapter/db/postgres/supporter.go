@@ -423,6 +423,15 @@ func (r *SupporterRepository) InsertDuplicate(ctx context.Context, tx uow.Tx, d 
 	return n > 0, nil
 }
 
+// CancelDuplicate implements supporters.Repository.
+func (r *SupporterRepository) CancelDuplicate(ctx context.Context, tx uow.Tx, duplicateID string, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.InsertSupporterDuplicateCancellation(ctx, postgresgen.InsertSupporterDuplicateCancellationParams{DuplicateID: duplicateID, DecidedAt: at}), "record the cancellation of a supporter duplicate")
+}
+
 // SettleDuplicate implements supporters.Repository.
 func (r *SupporterRepository) SettleDuplicate(ctx context.Context, tx uow.Tx, duplicateID string, at time.Time) error {
 	q, err := r.db.queries(tx)
@@ -444,7 +453,7 @@ func (r *SupporterRepository) FindDuplicate(ctx context.Context, tx uow.Tx, prov
 	}
 	return supporters.Duplicate{
 		ID: row.ID, SubscriptionID: row.SubscriptionID, Provider: row.Provider, Ref: supporters.SubscriptionRef(row.ProviderSubscriptionID),
-		DetectedAt: row.DetectedAt, Settled: row.Settled,
+		DetectedAt: row.DetectedAt, Cancelling: row.Cancelling, Settled: row.Settled,
 	}, nil
 }
 

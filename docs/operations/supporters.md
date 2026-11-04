@@ -26,7 +26,7 @@ Once a plan exists, its role can no longer be granted or revoked by hand, and yo
 - **Deactivation**: A subscriber cannot deactivate their account while the subscription is live, including one set to end at the end of its period. The settings screen leads them to the subscription, so that no one is charged while hidden.
 - **Retries (dunning)**: Seven days after a payment fails, the server removes the role (independently of the provider's retries). Set the provider's retry period to at least 7 days and make the final action "cancel". When the payment succeeds after the grace period, the role comes back.
 - **Customer portal**: The portal is opened for payment methods and invoices. Turn off plan changes in the portal and allow only cancellation at the end of the period. Plan changes and cancellations are made on the server's own screens.
-- **Refunds**: The server never refunds. The operator refunds in the provider's dashboard. A full refund and a chargeback remove the role at once and cancel the provider's subscription at once. A partial refund does not remove the role. Winning a chargeback does not restore the role; the user subscribes again.
+- **Refunds**: The server refunds only a payment that bought nothing: a second subscription of one payment, and a payment for a pending subscription that closed. The provider's guide ([Stripe](payments-stripe.md), [PAY.JP](payments-payjp.md)) describes both. Every other refund is the operator's, in the provider's dashboard. A full refund and a chargeback remove the role at once and cancel the provider's subscription at once. A partial refund does not remove the role. Winning a chargeback does not restore the role; the user subscribes again.
 
 ## What users see
 
@@ -73,7 +73,7 @@ Enabling, disabling, and cancelling are written to the audit log as CLI operatio
 
 ## Accounts and subscriptions
 
-- Deleting an account and banning it (which schedules deletion) cancel its subscriptions at once, without a refund. Reversing a ban does not restore the subscriptions.
+- Deleting an account and banning it (which schedules deletion) cancel its subscriptions at once, without a refund (a payment for a subscription still pending bought nothing, and is refunded). Reversing a ban does not restore the subscriptions.
 - Suspending an account schedules cancellation at the end of the period. Lifting the suspension does not restore it automatically; the user cancels the cancellation before the end of the period or subscribes again.
 - From the list of subscribers in "Supporters", an administrator can cancel one subscription at once (no refund; it is written to the audit log).
 

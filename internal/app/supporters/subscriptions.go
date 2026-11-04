@@ -267,11 +267,14 @@ func (s *Service) StartCheckout(ctx context.Context, in CheckoutInput) (StartedC
 	// Under the subscription's lock, so that of two starts that ran side by side the later one sees
 	// the earlier one's page and expires it, and the earlier one sees nothing of the later.
 	var others []CheckoutRef
-	linked := false
+	linked, closed := false, false
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		rec, err := s.d.Repository.LockSubscription(ctx, tx, subID)
 		if err != nil {
 			return err
+		}
+		if closed = rec.Current.State.Final(); closed {
+			return nil
 		}
 		if linked = rec.Link != ""; linked {
 			return nil
@@ -290,6 +293,11 @@ func (s *Service) StartCheckout(ctx context.Context, in CheckoutInput) (StartedC
 	})
 	if err != nil {
 		return StartedCheckout{}, err
+	}
+	if closed {
+		// It closed while this page was made, and the page would charge for nothing.
+		s.expireQuietly(ctx, subID, co.Ref)
+		return StartedCheckout{}, ErrSubscriptionState
 	}
 	if linked {
 		// A page was paid while this one was made.
