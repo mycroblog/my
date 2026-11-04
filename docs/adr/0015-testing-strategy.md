@@ -14,7 +14,7 @@
 | レベル | 対象 | 実行環境 | 実行タイミング |
 | --- | --- | --- | --- |
 | Unit | domain / application（フェイクのポート使用） | ローカル・CI | 本検査 |
-| Contract | 各ポートの全アダプタ（同一スイート） | SQLite in-memory / pgmem（§3）/ PG（コンテナ）/ MinIO / LocalStack（SQS）/ Cloud Tasks エミュレータ | 本検査は SQLite・pgmem（§3）・メモリの偽物で回す。コンテナの契約（`postgres-contract`・`stream-contract`・`blob-contract`・`voice-contract`・`mail-integration`）は遅い検査。クラウド実体が必要なものは nightly |
+| Contract | 各ポートの全アダプタ（同一スイート） | SQLite in-memory / pgmem（§3）/ PG（コンテナ）/ Garage（S3 互換。`pkg/testkit/s3test`）/ Floci（SNS・SQS。ADR-0050 §5）/ Cloud Tasks エミュレータ | 本検査は SQLite・pgmem（§3）・メモリの偽物で回す。コンテナの契約（`postgres-contract`・`stream-contract`・`blob-contract`・`voice-contract`・`mail-integration`）は遅い検査。クラウド実体が必要なものは nightly |
 | Build matrix | `CGO_ENABLED=0` で linux/amd64・linux/arm64 をビルド、ビルドタグでアダプタを除外してもビルドできる | CI | `CGO_ENABLED=0` のビルドは本検査。ビルドタグの組み合わせと arm64 のイメージは遅い検査 |
 | API conformance | OpenAPI スキーマとサーバー実装・生成クライアントの一致 | CI | 本検査 |
 | Federation fixtures | 実サーバー由来の JSON を入力にした受信・生成の回帰テスト | CI | 本検査 |
@@ -25,7 +25,7 @@
 ### 2. 検査の原則
 
 - `scripts/task.sh check` = lint + 型検査 + Unit + Contract（ローカル完結分）+ i18n 検査 + docs 検査。外部ネットワーク不要。
-- テストは決定的に: `Clock` / `IdGenerator` / `HttpClient` を注入し、ネットワークはフィクスチャで置き換える。
+- テストは決定的に: `Clock` / `IDGenerator` / `HTTPClient` を注入し、ネットワークはフィクスチャで置き換える。
 - カバレッジは指標としてのみ使い、閾値で CI を落とさない（domain 層は高く保つ）。
 
 ### 3. PostgreSQL のテストは pgmem で動かす

@@ -75,7 +75,7 @@ OAuth をサードパーティのアプリに開く。登録の経路は、利�
   - 別名の追加と削除: `addAccountAlias`・`removeAccountAlias`（`alsoKnownAs` として公開される情報なので、読み取り `listAccountAliases` は `read:accounts` のまま）
   - 招待の一覧・作成・取り消し: `listOwnInvites`・`createOwnInvite`・`revokeOwnInvite`
   - 異議申し立てと、本人の処分の一覧: `appealModerationAction`・`listOwnModerationActions`
-- モデレーターの通知は、操作を閉じるのではなく、サードパーティのトークンから種類で隠す。`notification.ModeratorPermission` に属する種類を、利用者の権限にかかわらず、`FirstParty` でないトークンの通知の一覧・ストリーミングで返さない。未読の位置（`notifications_marker`）の件数にも同じ規則を当てる。
+- モデレーターの通知は、操作を閉じるのではなく、サードパーティのトークンから種類で隠す。`notification.ModeratorPermission` に属する種類を、利用者の権限にかかわらず、`FirstParty` でないトークンの通知の一覧・ストリーミングで返さない。未読の位置（`notifications_marker`）の件数にも同じ規則を当てる。Web Push の購読（`putPushSubscription`）でも、そのトークンの `alerts` から黙って落とす。プッシュの本文が同じ情報を運ぶので。
 - サードパーティが要求した一次専用のスコープは、黙って落とさず `invalid_scope` にする。
 - ダイレクトメッセージ（公開範囲 `direct`）の読み取りは `read:statuses` から分けて `read:direct` にする。`read:statuses` では `direct` の投稿は読めない。広いスコープ `read` は引き続き `read:direct` を含む。
   `direct` の投稿の送信は `write:statuses` のまま分けない。

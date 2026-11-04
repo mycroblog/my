@@ -95,7 +95,7 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
 ### 5. goroutine の起動
 
 - `kernel.Go(ctx, name, reporter, fn)` を置き、`fn` の panic を `Recover` で報告してから、プロセスの終了の手順（`serve.go` の停止）に渡す。panic の握りつぶしで壊れた状態のまま動き続けないようにする
-- `internal/` と `cmd/` の `go` 文はこの関数を使う。`go` 文を禁止する検査（golangci-lint の規則か `agentkit` の検査）を足すかは実装の issue で決める
+- `internal/` と `cmd/` の `go` 文はこの関数を使う（テストの補助のパッケージは除く）。`go` 文を禁止する検査（golangci-lint の規則か `agentkit` の検査）を足すかは実装の issue で決める
 
 ### 6. Web クライアントのエラー
 

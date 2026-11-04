@@ -18,7 +18,7 @@ Merge Queue の全検査が、`main` に入る前の唯一の関門である。
 | --- | --- | --- | --- |
 | 手元 | 任意 | `task check:changed`（ADR-0081）。CI の失敗の再現と書いている途中の確認のためのもの（§10） | — |
 | PR の `check`（preflight） | `pull_request` | その PR のファイルだけで結果が決まり、重ねても変わらないもの（§2） | ○ |
-| PR の lint | `pull_request` | golangci-lint（PR が変えた行の指摘だけ。§3） | ○ |
+| PR の lint | `pull_request` | golangci-lint（PR が変えたモジュールの全体。§3）、スキーマを変えた PR の `db-lint`（ADR-0023） | ○ |
 | PR の Docker | `pull_request`（Docker の文脈が変わったとき） | Docker Compose の smoke test（amd64。§4） | ○ |
 | Merge Queue の `check`（本検査） | `merge_group` | 統合した状態で、変わった文脈のコンパイル・型・vet・テスト・生成物（§5） | ○ |
 | main への push | `push` | 検査はしない。キャッシュを作るジョブだけ（§7） | — |
@@ -36,19 +36,21 @@ Merge Queue に入るのは PR の `check` を通ったものだけなので、P
 | 依存のライセンス | go-licenses、npm のライセンス | lockfile で決まる。2 つの PR の依存の和は、それぞれが通った依存の和 |
 | Go の書式 | gofmt | ファイル単位で決まる |
 | TypeScript の書式 | `web:fmt-check`（ADR-0081）。Merge Queue の `repo` でも回す | — |
-| Dockerfile と `.tool-versions` の一致、Playwright の版、デザイントークン、CSS の `100vh` | `docker-check`・`playwright-image-check`・`web-tokens`・CSS の検査 | ファイル単位または lockfile で決まる |
+| Dockerfile と `.tool-versions` の一致、Playwright の版、デザイントークン、CSS の `100vh` | `docker:dockerfile-check`・`web:playwright-image-check`・`web:tokens`・CSS の検査 | ファイル単位または lockfile で決まる |
 | `@my/ui` のスクリーンショットと axe（ui の文脈が変わったときだけ、別ジョブ） | `ui-test` | 基準画像は変えた PR の中で直す必要がある（ADR-0110） |
+| `app/web` の画面のストーリー（クライアントが変わったときだけ、別ジョブ） | `web:story-test` | §13 |
+| メールの型、シェルのテスト、PR の Documentation の節 | `mail:typecheck`・`shell:test`・`docs:pr-impact` | ファイル単位か PR の説明で決まる |
 
 ### 3. PR の golangci-lint
 
-- Go（`tools/agentkit` を含む）が変わった PR で、preflight とは別のジョブ（`lint`）で回す。指摘は golangci-lint-action の `only-new-issues` で PR が変えた行に絞り、PR に注釈として付ける。
+- Go（`tools/agentkit`・`pkg/mykit`・`pkg/mybot` を含む）が変わった PR で、preflight とは別のジョブ（`lint`）で回す。変わったモジュールの全体を、領域のタスク（`scripts/task.sh go:lint` など）で検査する。golangci-lint-action はインストールだけに使う（`install-only`）。並列に動く action のインスタンスがイベントの本文を読み書きして互いに壊し、同じパスへバイナリを落とすため。
 - 解析そのものは全パッケージに対して行うので、速さは main が作る golangci-lint のキャッシュで決まる。
 - Merge Queue では回さない。2 つの PR を重ねて増える指摘は、別々の PR が同じ関数の最後の呼び出し元を 1 つずつ消すような稀な場合に限られ、ビルドは壊さない。
-  その指摘も、PR が変えた行の外に出るものも、遅い検査の golangci-lint（全体）が見つける。
+  その指摘も、遅い検査の golangci-lint（全体）が見つける。
 
 ### 4. PR の Docker smoke test
 
-- Docker Compose の smoke test（amd64）は、Docker の文脈（`Dockerfile`・`.dockerignore`・`deploy/`・`scripts/docker-smoke.sh`）が変わった PR で、別のジョブ（`docker-smoke`）で回す。
+- Docker Compose の smoke test（amd64）は、Docker の文脈（`Dockerfile`・`.dockerignore`・`deploy/`・`scripts/docker-smoke.sh`）が変わった PR で、別のジョブ（`docker-smoke`）で回す。同じジョブで警報の規則の検査（`docker:alert-rules`）も回す。
 - 守るのは、イメージでしか分からないものである。Dockerfile の各段がビルドできること、`.dockerignore` がイメージに要るファイルを落とさないこと、`deploy/docker/compose.yaml` の配線（環境変数による設定、スキーマの適用と起動の順序、ボリューム）、実行用のイメージ（nonroot・`/data` の権限・CLI）である。
 - サーバーの組み立てと起動、WebFinger・Actor・NodeInfo、両方言へのスキーマの適用は、Go のテストと `db-check` がすでに確かめる。そのため、`cmd/` や `internal/platform/` を変えただけの PR では回さない。
 - 結果は PR の Docker の構成のファイルでほぼ決まるので、Merge Queue では回さない。イメージに要る新しいファイルを別の PR が足すといった稀な重なりは、リリースの前に遅い検査が見つける。
@@ -96,11 +98,11 @@ Merge Queue に入るのは PR の `check` を通ったものだけなので、P
 - Go のキャッシュには、復元するジョブが読むものだけを、そのジョブと同じ設定（`CGO_ENABLED=0`。cgo の設定はビルドキャッシュのキーに入る）で、1 つずつ順に作る。
   モジュール、パッケージと Go のツールのビルド、テストのバイナリ、`go vet` の結果、agentkit のビルド、golangci-lint の解析の結果である。
   検査は回さない（golangci-lint は指摘があっても失敗させない）。ライセンスや `go mod tidy` のように何も残さない検査を回したり、検査を並列に回して CPU を取り合わせたりしない。
-- CodeQL は main への push では回さず、毎日の schedule・リリースの関門・手動で回す。
+- CodeQL は main への push では回さず、nightly（`slow-suite.yml` の経由で毎日）・リリースの関門・手動で回す。
 
 ### 8. 遅い検査: リリースの関門・nightly・手動
 
-- 遅い検査の組（E2E の全体〈`matrix: full`、8 シャード〉、`federation-live`、`postgres-contract`、`stream-contract`、amd64 と arm64 のイメージと smoke test、golangci-lint の全体とビルドタグの組み合わせ、CodeQL）を、1 つの再利用ワークフロー `slow-suite.yml` にまとめる。
+- 遅い検査の組（E2E の全体〈`matrix: full`、8 シャード〉、`federation-live`、`postgres-contract`、`stream-contract`、`mail-integration`、`voice-contract`、`blob-contract`、amd64 と arm64 のイメージと smoke test、`upgrade`、`restore-drill`、golangci-lint の全体とビルドタグの組み合わせ、CodeQL）を、1 つの再利用ワークフロー `slow-suite.yml` にまとめる。
 - **リリースの関門**: リリースは `release.yml`（`workflow_dispatch`、入力は版）だけが作る。`release.yml` は、指定したコミットで `slow-suite.yml` を回す。
   すべて通ったときだけ、そのコミットにタグを打ち、GitHub Release を下書きで作る。成果物（イメージの公開・リリースノート）は M5（#30）が足す。
 - **nightly**: `nightly.yml` は `slow-suite.yml` を毎日 18:00 UTC に回す。ただし、前回成功した nightly から main が動いていなければ回さない。GitHub の混雑で 2 時間ほど遅れて起動することがあるが、退行を 1 日以内に見つけるには足りる。
@@ -138,7 +140,7 @@ report（1 ジョブ、if: always()）: blob を集めて playwright merge-repor
 - go-task は、各検査のコマンドの唯一の定義と、手元の入口（`check`・`check:changed`・領域ごとの `*:check`・生成・開発の起動）に徹する。
 - CI のジョブは、ワークフローで組む。準備のステップ（checkout・`setup-go`・`setup-bun`・`setup-task`・生成）の後に、互いに依存しない検査を `parallel` のステップにする。
   各ステップは名前を検査の名前にして、末端のタスクを 1 つ呼ぶ（`scripts/task.sh go:vet`）。
-- 公式の action が注釈やキャッシュで価値を足す検査は、その action をステップに使う（golangci-lint-action）。コマンドの版は `.tool-versions` から読み、タスクと同じ版にする。
+- golangci-lint も、ほかの検査と同じくタスクをステップから呼ぶ。golangci-lint-action はインストールにだけ 1 回使い（§3）、版は `.tool-versions` から読んでタスクと同じ版にする。
 - `ci:*` の集約タスクは持たない。CI 向けの `output: group` と `error_only` の設定も持たない（ステップごとにログが分かれる）。
 - go-task の `deps` が保証する順序は、ワークフローでも保つ。生成は並列のまとまりの前のステップにする。互いに干渉する検査は、同じまとまりに入れないか、`deps` で順序を持つ 1 つのタスクとして呼ぶ。
   干渉する検査の例: `web:lint-rules` は `app/web/src` に一時的なファイルを置く。golangci-lint は同時に 1 つしか動かない。
@@ -159,7 +161,7 @@ report（1 ジョブ、if: always()）: blob を集めて playwright merge-repor
 
 PR ごとの UI のプレビューとして、部品と画面の Storybook を Cloudflare Workers の Previews に置く。
 
-- `app/web` に Storybook を足し、画面のストーリーを置く。ストーリーは機能の部品（`features/<x>/components`）をルートの単位で描き、API は機能のテストの MSW のハンドラ（`features/<x>/test/handlers.ts`）とフィクスチャで差し替える。
+- `app/web` に Storybook を足し、画面のストーリーを置く。ストーリーはアプリ全体をルートで描き（`app/web/src/test/stories.tsx`。結合テストと同じ組み立て）、API は機能のテストの MSW のハンドラ（`features/<x>/test/handlers.ts`）とフィクスチャで差し替える。
   ブラウザの MSW には `msw/browser` を使う（MSW は既存の依存）。
 - 画面のストーリーは、ADR-0110 の L1 の作業ごとに、通常・空・読み込み中・エラー・長い文言（`ja`・`en-XA`）・RTL（`ar-XB`）・320 px の状態を持つ。操作は `play` 関数で書き、Storybook の Interactions のパネルで動きを再生できるようにする。
 - `app/web` の Storybook は、`app/ui` の Storybook を Storybook の composition（`refs`）で取り込み、1 つの URL で部品と画面の両方を見られるようにする。
@@ -174,7 +176,7 @@ PR ごとの UI のプレビューとして、部品と画面の Storybook を C
 
 ### 15. UI のプレビュー: CI の構成
 
-- **ビルド**（`ui-preview.yml`、`pull_request`、`app/**` と `locales/**` を変える PR）: 2 つの Storybook を静的にビルドし、成果物として上げる。秘密情報を持たない。PR の必須の検査にもマージの条件にもしない。
+- **ビルド**（`ui-preview.yml`、`pull_request` と main への `push`。`app/**`・`locales/**` と、ビルドに使う `tasks/ui.yml`・`tasks/web.yml`・`scripts/ui-preview*` が変わったとき）: 2 つの Storybook を静的にビルドし、成果物として上げる。秘密情報を持たない。PR の必須の検査にもマージの条件にもしない。
 - **公開**（`ui-preview-deploy.yml`、ビルドの `workflow_run`）: main の workflow として動き、Cloudflare の API トークン（秘密情報）を持つ。成果物を静的なファイルとしてだけ扱い、中身を実行しない。
   Worker の設定（`wrangler` の設定）は main の側のものを使い、成果物から Worker のコードを読まない。
 - **PR へのコメント**: 公開した URL と、main の Storybook と比べて追加・変更されたストーリー（ビルドの `index.json` の差分）への直接のリンクを、PR の 1 つのコメントにまとめて更新する。
@@ -223,7 +225,7 @@ PR と Merge Queue の失敗はどちらも 1% 前後で、Merge Queue が止め
 Merge Queue の価値は、統合した状態でコンパイル・型検査・テストを通すことにある。そこで本検査を Merge Queue に寄せ、main への push をキャッシュの作成だけにし、遅い検査をリリースの関門にした。
 Free プランの GitHub-hosted runner は同時 20 ジョブ、キャッシュはリポジトリあたり 10 GB である（[Actions limits](https://docs.github.com/en/actions/reference/limits)、2026-10-23 確認）。
 
-その後の Merge Queue の実測を受けて、ビルドタグの組み合わせを遅い検査へ移し、golangci-lint を PR の変えた行に絞り、smoke test を Docker の文脈が変わった PR だけにした。
+その後の Merge Queue の実測を受けて、ビルドタグの組み合わせを遅い検査へ移し、golangci-lint を PR の変えた行に絞り、smoke test を Docker の文脈が変わった PR だけにした。golangci-lint はその後、action を並列に動かすと壊れるので、領域のタスクで変えたモジュールの全体を見る形に変えた（§3）。
 
 本検査を PR の上で初めて回すと（#1069、`ci:full`）`server-static` が 754 秒かかった。ジョブが `task ci:<job>` 1 つの形では、Actions の画面からどの検査が遅いのかが分からなかったので、ジョブをワークフローの `parallel` のステップで組み直した（§11）。
 

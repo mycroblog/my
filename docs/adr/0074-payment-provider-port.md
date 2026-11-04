@@ -333,6 +333,9 @@ PAY.JP でも §1 のポートの形をそのまま使い、足すのは次の 2
   - `ChangePrice(period_end)`: `next_cycle_plan` を新しいプランにする。`CancelScheduledChange` は `next_cycle_plan` を空にする。
   - `CancelAtPeriodEnd`: `POST /v1/subscriptions/:id/cancel`。`ResumeCancellation`: 状態が `canceled` で期間の終わりの前なら `POST /v1/subscriptions/:id/resume`（期間の内なので課金しない）。
   - `CancelNow`: `DELETE /v1/subscriptions/:id`（`prorate=false`）。`404` は済んだものとする。
+  - `ResumeCheckout`: 入力を持たず、`StartCheckout` が今の依頼の URL に署名するので、続ける画面はない（`GetCheckout` の結果だけを返し、`Checkout` は `nil`）。`ExpireCheckout`: 署名した URL は取り消せないので、開いている画面は開いたままで、`GetCheckout` の結果を返す。画面からはこちらの ID を載せた定期課金が 1 つだけできる。
+  - `DropUnpaidChange`: 課金の後でだけプランを動かすので、失敗した変更は何も残さない。何もしない。
+  - `RefundSubscription`: `GET /v1/charges`（`subscription`）で課金を引き、支払い済みで未返金のものに `POST /v1/charges/:id/refund` を送る。売上から 180 日を過ぎた課金は PAY.JP が返金しないので、警告のログを残して飛ばす。課金が 1 つもなければ `ErrInvalidPaymentResponse` を返す。
 - **失敗の種類**（§1）: `401` → `permission`、`404` → `not_found`、`400`・`402` → `invalid_request`、`429` → `throttled`、`5xx` とネットワーク → `unavailable`。
 - **要求の速さ**: ライブで 1 秒 20 件、テストで 1 秒 2 件まで（PAY.JP の秘密鍵の制限 30 件・2 件の内）。`429` は指数バックオフで待つ（`Retry-After` の記載はない）。
 

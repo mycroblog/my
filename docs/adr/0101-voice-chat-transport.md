@@ -102,6 +102,7 @@ type EventSource interface {
   イベント（`EventSource`）は照合を早めるだけで、届くことを前提にしない。受け口とイベントの扱いは §13。
 - **P2P の adapter**: `Capabilities` はすべて偽。`Grant` は §5 の ICE の設定だけを返す。`Open`・`SetSpeaking`（`reconnect` は偽）・`Mute`・`Unmute`・`Remove`・`Close` はメディアを持たないので何もしない。`Sessions` はハートビートの値を返す。
   P2P の強制は §4 のシグナリングの中継と §3 のストリームのイベントが行う。
+- 上のコードは決定の形で、コメントと任意のインターフェース（重複接続の `SessionDeduplicator`。§12）を含む全体は `internal/app/voice/transport.go` にある。
 - adapter の失敗は `voice.apply` が再試行する。再試行を尽くしたら dead job に残し、ルームの状態（DB）は変えない（ルームのドメインが正で、メディアの経路が後から従い、`voice.sweep` の照合が残りを直す）。
 
 ### 3. ルームのストリーム
@@ -179,7 +180,7 @@ ADR-0100 §14 の形に、接続のための次の操作を加える（細部は
 ### 7. Web の実装の置き場所と、ブラウザの前提
 
 - `app/web/src/features/voice/` に置く（[ADR-0025](0025-web-client-stack.md)）。WebRTC の接続を管理するコード（`RTCPeerConnection`・perfect negotiation・受け手の側の再生の制御・方式ごとの差）は React を使わない TypeScript として `features/voice/rtc/` に置き、
-  `features/voice/hooks` のフックだけがそれを使う。`eslint-plugin-boundaries` の設定に `rtc` の要素を足し、`rtc` は `@my/ui`・`api`・`components` を import しない。
+  `features/voice/hooks` のフックだけがそれを使う。Oxlint の依存の境界の設定（`app/.oxlintrc.json`）に `rtc` の要素を足し、`rtc` は `@my/ui`・`api`・`components` を import しない。
   SFU の方式のブラウザの SDK は §15。P2P はブラウザの WebRTC の API だけを使い、依存を足さない。
 - マイクは `getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })`。映像は求めない。HTTPS（secure context）が要る。
 - 参加の操作（ボタンを押す）を利用者の操作として、その中で音声の再生を始める（ブラウザの自動再生の制限）。

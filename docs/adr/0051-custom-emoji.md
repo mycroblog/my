@@ -28,9 +28,9 @@
   過去の版の `status_revision_emojis` / `account_profile_revision_emojis` の行は残し、読み取りでは絵文字の無い参照として飛ばす（本文は `:shortcode:` のまま表示される）。
   同じ shortcode で作り直した絵文字は新しい `id` なので、過去の投稿には付かない。
 - **リモートの絵文字の識別**: `domain` は投稿・プロフィール・リアクションの作者（送り手の Actor）の正規化したホストで、`(shortcode, domain)` で引く（Mastodon・Misskey と同じ）。リアクションの `Emoji` の `id` が別のホストのときの扱いは §6 に従う。
-  `uri` は `Emoji` の `id` が `domain` と同じオリジンのときだけ記録し、違うとき・無いときは NULL にする。他のサーバーの絵文字の `id` を名乗って行を奪わせないため。
+  `uri` は `Emoji` の `id` のホストが `domain` と同じときだけ記録し、違うとき・無いときは NULL にする。他のサーバーの絵文字の `id` を名乗って行を奪わせないため。
   画像の URL が記録と違えば `custom_emoji_images` に行を足す。
-- **リモートの絵文字の消去**: どの版（投稿・プロフィール）とリアクションからも参照されなくなったリモートの絵文字は、1 日ごとのジョブ `content.purge_remote_emojis` が消す（FR-803、ADR-0006 の保持期間で投稿が消えた後に残らないように）。
+- **リモートの絵文字の消去**: どの版（投稿・プロフィール）とリアクションからも参照されなくなったリモートの絵文字は、1 日ごとのジョブ `content.purge_remote_emojis` が消す（FR-803、ADR-0006 の保持期間で投稿が消えた後に残らないように）。管理者が無効にしたものは、参照が無くても残す。消すと、同じ絵文字を次に受けたときに有効な行として作り直し、無効にした判断が失われるからである。
 
 ### 2. 画像の制約（ADR-0005、ADR-0019 §8）
 
@@ -101,7 +101,7 @@
 
 ### 6. リアクションの資源とお気に入りとの関係
 
-- リアクションは `content` モジュールのリソース `reactions` にする（ADR-0020）。行は 1 つのリアクションで、主体・投稿・絵文字・`uri`（`Like` / `EmojiReact` の `id`）・作成時刻を持つ。一意制約は `(account_id, status_id, 絵文字)` と `(uri)`。
+- リアクションは `content` モジュールの現在値 `reactions` にする（ADR-0020）。行は 1 つのリアクションで、主体・投稿・絵文字・`uri`（`Like` / `EmojiReact` の `id`）・作成時刻を持つ。一意制約は `(account_id, status_id, 絵文字)` と `(uri)`。
   絵文字は「Unicode 絵文字の文字列」か「`custom_emojis` の行」のどちらかで、集計に使う正規化した鍵（Unicode はその文字列、カスタム絵文字は `custom_emojis.id`）を持つ。
 - 取り消しは行の削除と `content.unreacted` イベント（お気に入りと同じく、取り消した後の付け直しは新しい行）。絵文字ごとの件数は `content` が持つ投影（`status_reaction_counts (status_id, 絵文字の鍵, count)`）で、行を実際に挿入・削除したときだけ増減する。表と列の詳細は [data-model.md](../architecture/data-model/README.md) に書く。
 - `favourites` と `favourites_count` はリアクションと別に残す。お気に入りとリアクションは別の資源で、API でも別に数える。

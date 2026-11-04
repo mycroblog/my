@@ -38,9 +38,10 @@
 
 | 項目 | 値 | 既定 |
 | --- | --- | --- |
-| 名前 | 必須、1〜100 文字（書記素で数える） | — |
+| 名前 | 必須、1〜100 文字（書記素で数える。少ない書記素に多くのコードポイントを詰められないよう、1,000 コードポイントも上限にする） | — |
+| アイコンの絵文字 | 任意。Unicode 絵文字か、このサーバーの有効なカスタム絵文字（FR-923） | なし |
 | 説明 | 任意、500 文字まで | 空 |
-| ハッシュタグ | 5 個まで。投稿のハッシュタグと同じ正規化（`content` の関数） | なし |
+| ハッシュタグ | 5 個まで、各 100 文字まで。投稿のハッシュタグと同じ正規化（`content` の関数） | なし |
 | 公開範囲 `visibility` | `local`（ローカル全体）/ `followers`（ホストのフォロワー）/ `mutuals`（ホストと相互フォロー）/ `invited`（招待制） | `local` |
 | 発話範囲 `speakers` | `everyone`（参加した誰でも）/ `followers` / `mutuals` / `manual`（手動） | `manual` |
 
@@ -74,7 +75,7 @@
 
 ### 5. 参加者の役割と操作
 
-- 役割: **ホスト**（1 人）、**共同ホスト**（最大 3 人。ホストが指名と解除）、**話者**、**聞き手**。共同ホストは話者でも聞き手でもよい。
+- 役割: **ホスト**（1 人）、**共同ホスト**（最大 3 人。ホストが指名と解除。参加が終わると外れ、再び入っても戻らない）、**話者**、**聞き手**。共同ホストは話者でも聞き手でもよい。
 - 1 人が同時に入れるルームは 1 つ（ホストを含む）。別のルームに入ると前のルームから退出する（理由 `moved`）。同じアカウントの別の端末で入ると、前の端末の接続を切る（参加は 1 つのまま）。
   ホストが別のルームに入るときは、先に §6 のホストの退出の選択を求める。
 - 参加者の操作: 参加して聞く、退出、話者になる（`CanSpeakFreely` が真なら）、聞き手に戻る、挙手と取り下げ、リアクション（§10）、自分のマイクのオン・オフ。
@@ -153,7 +154,7 @@
 | 表 | 分類 | 中身 |
 | --- | --- | --- |
 | `voice_rooms` | リソース | id、開いた人のアカウント、開いた時刻、接続の方式（開いたときの `voice`） |
-| `voice_room_revisions` | イベント | 設定の改版: ルーム、名前、説明、`visibility`、`speakers`、改版した人、時刻。開始の設定が最初の改版 |
+| `voice_room_revisions` | イベント | 設定の改版: ルーム、名前、アイコンの絵文字（`icon_emoji_key`・`icon_custom_emoji_id`）、説明、`visibility`、`speakers`、改版した人、時刻。開始の設定が最初の改版 |
 | `voice_room_revision_hashtags` | リソース（改版の子） | 改版、正規化したタグ、表示の綴り、順序 |
 | `voice_room_host_changes` | イベント | ルーム、新しいホスト、理由（`opened` / `handed_over` / `host_disconnected` / `host_ineligible` / `host_left`）、時刻 |
 | `voice_room_cohost_changes` | イベント | ルーム、アカウント、`assigned` / `removed`、時刻 |
@@ -165,7 +166,7 @@
 | `voice_room_invitations` | リソース | id、ルーム、招待された人、`listener` / `speaker`、招待した人、時刻。（ルーム, 招待された人）で一意 |
 | `voice_room_invitation_revocations` | イベント | 招待、取り消した人、時刻 |
 | `voice_room_bans` | イベント | ルーム、アカウント、操作した人、時刻（退出させる操作が書く） |
-| `voice_room_endings` | イベント | ルーム、理由（`host` / `empty` / `host_disconnected` / `host_ineligible` / `moderator` / `time_limit` / `disabled`）、操作した人（NULL 可: 自動の終了）、時刻。ルームごとに 1 つ（一意） |
+| `voice_room_endings` | イベント | ルーム、理由（`host` / `empty` / `host_disconnected` / `host_ineligible` / `moderator` / `time_limit` / `disabled`）、操作した人（NULL 可: 自動の終了）、理由の文 `note`（§11）、時刻。ルームごとに 1 つ（一意） |
 | `voice_room_heads` | 投影 | ルーム、最新の改版、今のホスト、状態（`open` / `ended`）、参加者の数。一覧はこれを引く |
 | `voice_room_participants` | 投影 | 今の参加: ルーム、アカウント、参加、役割（`speaker` / `listener`）、共同ホストか・その指名の順、挙手しているか。**アカウントで一意**（1 人 1 ルーム、§5） |
 | `voice_room_host_graces` | 現在値 | ホストの猶予の間だけある行: ルーム、猶予の終わり（決定の内容としての期限） |

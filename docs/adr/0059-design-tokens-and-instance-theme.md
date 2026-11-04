@@ -24,7 +24,7 @@
 - 部品の側では、色以外のトークン（文字・余白・角丸・影・動き）も `theme.css` の値と app/ui/README.md の役割の表を正とし、
   `scripts/task.sh web:tokens` は、任意の値の角丸・影・動きの時間（`rounded-[3px]`、`shadow-[…]`、`duration-[…]`）と、README にない余白の段階も拒む。
   部品がトークンだけを使うことで、トークンの上書きが画面全体に一様に効く。
-- Storybook の `Foundations/Tokens` に、上書きの見本（色と余白・角丸を変えたテーマ）を当てた表示を置く。
+- Storybook の `Foundations/Theme sample` に、上書きの見本（色と余白・角丸を変えたテーマ）を当てた表示を置く。
 
 ### 2. 上書きできる範囲
 
@@ -117,7 +117,7 @@
 保存の API はサニタイズした結果だけを保存し、元のファイルは残さない。
 
 - **拒む（422 の Problem）**: XML として壊れているもの、`<!DOCTYPE>` と実体の宣言（XXE と実体の展開を防ぐ）、ルートが `svg` でないもの、
-  `viewBox` がないか数として読めないもの、サニタイズの前で 256 KiB・後で 128 KiB を超えるもの、要素が 5,000 個を超えるもの、入れ子が 32 段を超えるもの、
+  `viewBox` がないか数として読めないもの、サニタイズの前で 256 KiB・後で 128 KiB を超えるもの、要素が 5,000 個を超えるもの、`use` の展開の後の要素が 20,000 個を超えるもの、`viewBox` の数が 1,000,000 を超えるもの、入れ子が 32 段を超えるもの、
   アイコンで `viewBox` の縦横比が 1:1 から 1% 以上ずれるもの、ロゴで横 ÷ 縦が 1 未満か 8 を超えるもの、`text` / `tspan` を含むもの（下記）。
 - **許す要素**: `svg`・`g`・`defs`・`symbol`・`use`・`title`・`desc`・`path`・`rect`・`circle`・`ellipse`・`line`・`polyline`・`polygon`・
   `linearGradient`・`radialGradient`・`stop`・`clipPath`・`mask`・`pattern`・`style`。そのほかの要素（`script`・`foreignObject`・`image`・`a`・`iframe`・`animate*`・`set`・`filter` と `fe*`・`text` など）は、
@@ -168,6 +168,7 @@ instance モジュールが持つ。テーブルの形は `docs/architecture/dat
 - BlobStore のキーはサーバーが作る（`instance/brand/<revision-id>/<版>.<拡張子>`、ADR-0019 §8）。置き換えた古いリビジョンのファイルは、リビジョンの履歴が残る間は消さない
   （履歴の保持と消去は既存の設定のリビジョンと同じ扱い。実装で決める）。BlobStore への書き込みはトランザクションの外で先に行い、DB に記録してから投影を切り替える（ADR-0003）。
 - 権限は `manage_settings`（ADR-0058 のサーバー管理の権限。画面はサーバーの設定 `/admin/settings` に置く）。設定・消去は監査ログ（ADR-0058）に、種類とリビジョンを残す。
+- テーマの CLI は `my instance theme get` と `my instance theme set` を持つ。
 - CLI は `my instance brand show` と `my instance brand clear <kind>` を持つ（壊れた SVG を管理画面なしで外す復旧のため）。設定は PNG を描くので管理画面からだけ行う。
 
 ### 12. 配信（ブランドの画像）

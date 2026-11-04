@@ -17,7 +17,7 @@
 ### 2. Atlas Community Edition だけを使う
 
 - 差分の計算と適用には Atlas Community Edition（Apache-2.0）を使う。**標準配布版の機能や `atlas login` が必要な機能に依存しない。**
-- CI には Community Edition のバイナリを入れる（`arigaio/atlas:<version>-community`、または `atlasgo.sh` の `--community`）。バージョンは固定する（§12）。
+- CI には Community Edition のバイナリを入れる（`scripts/install-atlas.sh` が `release.ariga.io` の `atlas-community` のバイナリを取得し、チェックサムを確かめる）。バージョンは固定する（§12）。
 - CI の CLI の開発用 DB は、SQLite ならインメモリ（`sqlite://dev?mode=memory`）、PostgreSQL ならコンテナを使う。本番の適用の開発用 DB は §10 のとおり。
 - **Community Edition で扱えないもの**（拡張機能、シーケンス、パーティショニング、ビュー、トリガーなど）は、目標スキーマに書かない。
   - 必要な拡張機能は、適用の前に実行する冪等な準備 SQL（`schema/postgres.bootstrap.sql`、`CREATE EXTENSION IF NOT EXISTS …`）で作る。
@@ -86,11 +86,11 @@ C の 2 段階:
   contract はマイナー版でだけ行い、パッチ版はスキーマを A・B の範囲でしか変えない。
 - 更新の手順（運営者向け、`docs/operations/database.md` に書く）:
   1. バックアップを取る（SQLite はファイルの複製、PostgreSQL は `pg_dump`）
-  2. 新しい版の `my db upgrade --check`: この DB に、新しい版の contract が前提とする更新の手順が記録されているかを確かめる。足りなければ、通るべき版を示して止まる
+  2. 新しい版の `my db upgrade -check`: この DB に、新しい版の contract が前提とする更新の手順が記録されているかを確かめる。足りなければ、通るべき版を示して止まる
   3. 新しい版の `my schema apply`（§10）
   4. 新しい版の `my db upgrade`: 未実行の更新の手順と、作り直しの要る投影の `my projection rebuild` を実行する
   5. サーバーを起動する。readiness は「スキーマが適用済み」に加え、必要な更新の手順が済んでいることを確かめる
-- `my db upgrade --check` と `my db upgrade` は、運営者が適用の前後に動かす一回限りのジョブとする（Cloud Run のジョブ、Kubernetes の Job、Compose の一回限りのサービス）。
+- `my db upgrade -check` と `my db upgrade` は、運営者が適用の前後に動かす一回限りのジョブとする（Cloud Run のジョブ、Kubernetes の Job、Compose の一回限りのサービス）。
   `my serve` の起動時には実行しない。複数のインスタンスが同時に起動しても、更新の手順が並んで走らないようにするため。
 - Compose では 2〜4 を一回限りのサービスとして `schema` の前後に並べ、`docker compose up -d` だけで済むようにする。
 - `db:reset`（作り直し）は、公開して連合しているインスタンスでは使わない手順として残す（開発・検証用）。
@@ -123,7 +123,7 @@ Atlas の Go ライブラリ（`ariga.io/atlas`、Apache-2.0）を `my` に組�
 my schema apply [-dry-run] [-allow-destructive] [-config <file>]
 ```
 
-- 設定（`db`・`database_url`）はサーバーと同じものを読む。適用するのは、そのバイナリに埋め込んだ目標スキーマ（`schema.SQLite` / `schema.Postgres`）。
+- 設定（`database`・`database_url`）はサーバーと同じものを読む。適用するのは、そのバイナリに埋め込んだ目標スキーマ（`schema.SQLite` / `schema.Postgres`）。
 - 手順:
   1. PostgreSQL では、準備 SQL（`schema.PostgresBootstrap`）を対象 DB に流す。運用者が `psql` を使う手順はない。
   2. 開発用 DB を用意し、目標スキーマを流して読み取る。
