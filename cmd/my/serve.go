@@ -119,8 +119,8 @@ Stops gracefully on SIGTERM or SIGINT, waiting for in-flight requests and jobs.
 -maintenance (or maintenance = true, MY_MAINTENANCE=true) starts the maintenance mode instead:
 whatever the role, the process opens no database, KV, queue, or blob store, runs no job, and
 answers every request with a 503 that says the server is under maintenance. It reads only the
-listen address, the host and origins, the proxies, status_page_url, and the maintenance_*
-settings, so the other settings may be invalid or unreachable meanwhile.
+listen address, the host and origins, the proxies, the origin_secret settings, status_page_url,
+and the maintenance_* settings, so the other settings may be invalid or unreachable meanwhile.
 
 -dev-vite-origin (development only) makes the web client's HTML load the client from a
 Vite dev server, such as http://localhost:5173, instead of the build embedded in the binary.

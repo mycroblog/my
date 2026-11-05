@@ -309,7 +309,7 @@ func peerHas(t *testing.T, p *peerClient, author, uri string) status {
 
 // setFederationMode changes the instance setting federation_mode through the admin API.
 func (l *localClient) setFederationMode(ctx context.Context, mode string) error {
-	return l.call(ctx, http.MethodPatch, "/admin/settings", map[string]any{"values": map[string]string{"federation_mode": mode}}, nil)
+	return l.api(ctx, http.MethodPatch, "/admin/settings", map[string]any{"values": map[string]string{"federation_mode": mode}}, nil)
 }
 
 // getActivity GETs a URL of this server as a remote server would, unsigned, and returns the status

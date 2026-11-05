@@ -16,7 +16,7 @@ func (l *localClient) report(ctx context.Context, id string, statusIDs []string,
 	var r struct {
 		Forwarded bool `json:"forwarded"`
 	}
-	err := l.call(ctx, http.MethodPost, "/reports", map[string]any{
+	err := l.api(ctx, http.MethodPost, "/reports", map[string]any{
 		"account_id": id, "status_ids": statusIDs, "category": "spam", "comment": comment, "forward": forward,
 	}, &r)
 	return r.Forwarded, err

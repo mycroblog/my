@@ -13,6 +13,7 @@ between this server and Mastodon and Akkoma's LitePub relay, for the live test o
 | `postgres-init.sh` | The roles and databases of this server (which `my schema apply` prepares), of Misskey, and of Akkoma with its extensions |
 | `akkoma/` | The image of Akkoma: its official release zip, pinned by SHA-256, on Debian; the entrypoint trusts the private CA, migrates, and starts it |
 | `*_test.go` | The scenarios (`go test -tags federationlive`), black-box clients of this server's client API, the Mastodon client API (Mastodon and GoToSocial), and the Misskey API (`misskey_test.go`) |
+| `spec_calls_test.go` | No build tag: every pull request runs it (`scripts/task.sh api:live-calls`). It reads the calls of `localClient.api` here and of the slow suite's scripts, and fails on a method and path that `api/openapi.yaml` lacks. It starts no server and checks neither fields nor statuses |
 | `../../scripts/federation-live.sh` | Generates the CA and the secrets, starts the stack, creates the users, runs the scenarios, collects the logs, and removes the stack |
 
 ## How it works

@@ -336,6 +336,24 @@
 - 要検証: Lambda Web Adapter 経由（Function URL / ALB → Lambda）では接続元がアダプタの `127.0.0.1` になる。`trusted_proxies = 127.0.0.1` で
   `X-Forwarded-For` を採れるか、ヘッダが前段で追記されたものかを、Lambda のデプロイテンプレートの作業で確認する。
 
+## CDN を経由しないリクエストの拒否
+
+Cloud Run の ingress は、Cloudflare のようにインターネットから来る CDN の通信を受けるなら `run.app` を閉じられない。Lambda Function URL も同じで、オリジンアクセス制御は連合の相手が POST の本文に署名できないので使えない。
+放っておくと WAF とキャッシュを迂回でき、CDN のアドレスを `trusted_proxies` に入れていれば、CDN のサーバーレス環境（自分の Cloudflare Worker など）から呼ぶ第三者がレート制限の見るクライアント IP を選べる。
+
+設定 `origin_secret`（値）、`origin_secret_header`（ヘッダ名）、`origin_secret_previous`（ローテーション中のもう 1 つの値）で閉じる（ADR-0019 §5）。
+
+- CDN がすべてのリクエストに静的なヘッダを設定する（Cloudflare は全プランの Transform Rules、CloudFront はオリジンのカスタムヘッダ、Google Cloud のロードバランサはカスタムリクエストヘッダ）。ヘッダを足せない経路（Cloud Run のドメインマッピングなど）には効かない。
+- 検査は `internal/platform/origincheck.go` のミドルウェアで、通常の `App.handler` と保守モードの `MaintenanceApp.Handler` の両方の最も外側に置く。リクエスト ID・アクセスログ・`traceparent`・クライアント IP より先に動く。公開しない `metrics_listen` は検査しない。
+- 除外するのは CDN を通らない呼び出しだけで、メソッドまで絞る: `/healthz`・`/readyz`・`/api/v1/instance/health` の `GET` / `HEAD`、`/_internal/` の `POST`（OIDC で認証する）、`queue = sqs` の `queue_sqs_events_path` への SQS イベント（保守モードはキューの設定を読まないので、パスを問わず SQS イベントだけ）。Web クライアントはルートのない `GET` に答えるので、`GET /_internal/...` を除外すると HTML が CDN を迂回して読める。`POST` に絞るのはこのため。
+- 秘密を示していないリクエストは、除外の対象でも信頼するプロキシの言い分を持たない。`X-Forwarded-For` / `Forwarded`・`traceparent`・`X-Request-Id` を消してから進める。
+- 拒否は `403` の問題詳細で、文言は他の `403` と同じ。ヘッダ名は応答にもログにもトレースにも出さない。DB を読まない（ロケールは `Accept-Language` だけで決める）。span は作らず、カウンタ `my.http.origin_refused` とアクセスログ 1 行だけを残す。ログの量はルートのない 404 と変わらない。
+- ヘッダは検査のあと必ず消すので、ハンドラ・ログ・トレース・ログに残るエラーレポートには届かない。
+
+ローテーションでは 2 つの値を受け付ける。CDN の設定とサーバーの全レプリカは同時に変わらないので、値が 1 つだと差が解消するまで全リクエストを拒否する。「短い重なりを文書にする」では 1 つの値で重なりを作れない。設定が 1 つ増える費用より無停止を取る。
+
+設定を誤るとヘルスチェックは 200 のまま全員を拒否する。`my config check` とサーバーの起動時のログは検査の有効を伝えるが、CDN までは確認できないので、復旧手順（`origin_secret` を外してデプロイする）は [CDN の手引き](../operations/cdn.md#refuse-requests-that-did-not-come-through-the-cdn) に書く。
+
 ## コスト見積りの観点（M6 で埋める）
 
 | 観点 | 計測方法 |

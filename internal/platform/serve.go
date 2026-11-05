@@ -179,6 +179,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		a.Logger.InfoContext(ctx, "wake-up signals are routed by job type; every process needs the same routes",
 			slog.String("routes", routes), slog.String("routes_hash", hash))
 	}
+	a.logOriginCheck(ctx)
 	a.Logger.InfoContext(ctx, "started", slog.String("role", string(a.Config.Role)), slog.String("addr", ln.Addr().String()))
 
 	select {

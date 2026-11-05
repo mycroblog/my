@@ -95,6 +95,12 @@ func Readiness(c *Config) []Finding {
 	if c.KV == "memory" && c.Role != RoleAll {
 		warnf("kv", "is memory with role %s: rate limits and caches are per process, so the other processes do not share them; use db or valkey", c.Role)
 	}
+	if c.OriginSecretPrevious != "" {
+		warnf("origin_secret_previous", "is set, so the server accepts a second value; remove it once the CDN sends the value of origin_secret")
+	}
+	if c.OriginSecret != "" && len(c.TrustedProxies) == 0 {
+		warnf("trusted_proxies", "is empty with origin_secret set: behind a CDN every request then shares the CDN's rate limits; list the addresses that connect to the server")
+	}
 	for _, f := range VoiceWarnings(c) {
 		warnf(f.Key, "%s", f.Message)
 	}

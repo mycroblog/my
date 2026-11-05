@@ -46,7 +46,8 @@ const readinessTimeout = 3 * time.Second
 // statements to crawlers of the responses that are not pages, the CORS of the client API, and
 // the client IP of the rate limits, clientIPs). GET requests that
 // no route serves get the web client's HTML (the SPA routes) unless they ask for ActivityPub. Requests whose target or form holds text
-// that no database can look up are a 400 before any route (rejectInvalidText).
+// that no database can look up are a 400 before any route (rejectInvalidText). With origin_secret,
+// the requests that did not come through the CDN are refused before all of it (originCheck).
 // The worker role serves only the health checks, for the platform's probes, and the endpoints of
 // the push receiver and the trigger of queue = cloudtasks and sqs, which the web role does not serve.
 func (a *App) Handler() http.Handler { return a.handler(false) }
@@ -84,7 +85,7 @@ func (a *App) handler(gateDomains bool) http.Handler {
 	h = a.recoverPanics(h)
 	h = securityHeaders(h, a.Voice.Enabled())
 	h = a.accessLog(h)
-	return a.requestIDs(h)
+	return a.originCheck(a.requestIDs(h), sqsEventsExempt(a.Config))
 }
 
 // domainsGate answers 503 to every request but the health checks until the database has confirmed

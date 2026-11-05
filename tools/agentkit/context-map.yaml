@@ -677,6 +677,7 @@ entries:
     checks: [docker, go]
     notes:
       - "The live interoperability scenarios against Mastodon, GoToSocial, Misskey, and Akkoma (build tag federationlive, `scripts/task.sh docker:federation-live`, slow-suite.yml job federation-live): black-box clients of running servers, whose imports depguard limits (.golangci.yml)."
+      - "Every call of this server's client API goes through localClient.api with http.MethodX and a path of literals, url.PathEscape, and x.ID: spec_calls_test.go (no build tag, `scripts/task.sh api:live-calls`, in the preflight of every pull request) reads them, and the `api` calls and curls of scripts/upgrade-test.sh, scripts/restore-drill.sh, and scripts/docker-smoke.sh, and fails on a method and path that api/openapi.yaml lacks. It checks neither fields nor statuses."
   - name: upgrade-test
     paths: ["test/upgrade-test/**", "scripts/upgrade-test.sh", "scripts/previous-minor.sh", "scripts/previous-minor-test.sh", "scripts/web-sign-in.sh"]
     docs: ["docs/agents/releasing.md#the-upgrade-test", "docs/operations/database.md#upgrading"]

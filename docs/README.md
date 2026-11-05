@@ -14,7 +14,7 @@
 - [Backup and restore (database, media, KEK, configuration, and the recovery drill)](operations/backup.md)
 - [Running the server: starting, stopping, and health checks](operations/running.md)
 - [Deploying on Cloud Run](operations/deploy-cloud-run.md)
-- [Serving media through a CDN (media_origin, origin pull, caching and purging)](operations/cdn.md)
+- [Serving media through a CDN, and refusing requests that did not come through it (media_origin, origin pull, caching and purging, origin_secret)](operations/cdn.md)
 - [Maintenance (the maintenance mode and the exported maintenance page)](operations/maintenance.md)
 - [Production checklist (what to verify before going live, and what my config check checks)](operations/production-checklist.md)
 - [Closing the service (announcement, closure, the static closure page, deleting the data)](operations/service-closure.md)
