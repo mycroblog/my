@@ -278,6 +278,7 @@ Do not use them to trigger scaling; use them for alerts and for estimating the i
 | `http.client.request.duration` | Histogram, seconds | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots`), `http.request.method`, `my.http.status_class` (`2xx` and so on), `error.type` (`forbidden_destination` is a refusal by the SSRF guard) |
 | `http.client.open_connections` | UpDownCounter | None |
 | `my.readiness.failures` | Counter | None |
+| `my.http.origin_refused` | Counter | None. One per request refused because it did not come through the CDN ([`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)). Probes of the origin's address raise it slowly; a jump while the traffic stops means the CDN no longer sends the header. The maintenance mode measures nothing, so only its access log shows them |
 
 - Go runtime metrics (`go.*`) are exported only by `prometheus` and `otlp`. With `emf`, a periodic snapshot job writes the process and connection-pool gauges and observable counters.
 - Pool waits and CPU time are Observable Counters: the pool and the kernel keep totals since start, and they are read at collection time. In Prometheus they are `_total` counters (such as `process_cpu_time_seconds_total`), in OTLP they are monotonic sums, and you see their growth with PromQL `rate()`.
@@ -307,10 +308,10 @@ The setting `traces_exporter` (default `none`) exports distributed traces. Its r
 | Outgoing HTTP (client) | `<method>` | `http.request.method`, `server.address` (the destination host name only), `http.response.status_code`. A 4xx or 5xx is a failure |
 
 A failed span has `error.type` (a finite name such as `timeout`, or a status code). Attributes never contain account, post or job IDs, URLs, paths or queries, client IPs, User-Agent values, SQL text or error strings.
-`server.address` leaves the host names of remote servers with the receiver, so you decide how long the receiver keeps them and who can view them. Health checks create no span.
+`server.address` leaves the host names of remote servers with the receiver, so you decide how long the receiver keeps them and who can view them. Health checks and the requests refused by `origin_secret` create no span.
 
 - A job execution is not a child of the span that enqueued it (usually an HTTP request). It is the **root of a new trace** with a link to the enqueuing span. In a viewer, follow the link from the request's trace.
-- An incoming `traceparent` becomes the parent only when the connecting peer is in `trusted_proxies`. Otherwise it is discarded and a new trace starts. `tracestate` is always discarded. Outgoing HTTP (federation, WebFinger, media, Web Push and so on) carries no `traceparent`.
+- An incoming `traceparent` becomes the parent only when the connecting peer is in `trusted_proxies` and, with [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), the request carries the secret. Otherwise it is discarded and a new trace starts. `tracestate` is always discarded. Outgoing HTTP (federation, WebFinger, media, Web Push and so on) carries no `traceparent`.
 - Sampling: a request is recorded if its trusted-proxy parent was recorded, or if the link target of a job was recorded; otherwise it is recorded at the ratio `traces_sample_ratio` (default 0.01). Lowering the ratio never leaves the jobs that continue a recorded request without their trace.
 
 | Target | Settings | Path |
@@ -624,6 +625,10 @@ So a queue that cannot keep up gets up to 500 duplicate signals a minute. They d
 - **Schema applied** means every table that the files in `schema/<dialect>/` declare with `CREATE TABLE` exists
   (SQLite is checked through `sqlite_schema`, PostgreSQL through the connection's `current_schema()`). `my schema apply` applies the whole schema, so a missing table means the schema is not applied or is older than the binary.
   Column and index differences are not checked; `my schema apply -dry-run` prints what would change.
+
+## Requests that bypass the CDN
+
+When the server is behind a CDN and its own address stays public, set `origin_secret` and `origin_secret_header` so that it refuses what did not come through the CDN. The health checks stay reachable. See [Refuse requests that did not come through the CDN](cdn.md#refuse-requests-that-did-not-come-through-the-cdn).
 
 ## Security headers
 

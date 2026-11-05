@@ -36,6 +36,7 @@ detail in English:
   - `stream = hub` or `kv = memory` with a `role` other than `all`: they work within one process only.
   - Voice settings that were likely not meant, such as `voice = p2p` without STUN or TURN.
   - A test-mode key of the payment provider.
+  - `origin_secret` set with an empty `trusted_proxies`, and `origin_secret_previous` left set after a rotation.
   - With `-instance`: the instance texts `name`, `short_description`, `terms`, and `privacy_policy`, the instance settings
     `contact_account`, `contact_email`, and `security_contact` when they are not set, and a server without rules.
     When the database cannot be reached, that is one more warning and the rest of the check still runs.
@@ -73,6 +74,15 @@ for example as a step of the deployment before the new version takes traffic.
   and `my config check` reports no error about `web_origin`. `http://<host>/` redirects to `https`, which the reverse proxy,
   load balancer, or CDN in front of the server does (with Docker Compose, the layer `compose.caddy.yaml` is such a proxy).
 - **Details**: [running the server](running.md), [`web_origin`](../reference/configuration.md#web_origin).
+
+### Not reachable past the CDN
+
+- **Why**: with a CDN in front, and the server's own address still public (`*.run.app` on Cloud Run, a Lambda Function URL), anyone can call the server past the WAF and the cache,
+  and a caller on the CDN's own platform can choose the client IP that the rate limits see. Needed only in that case: not when a firewall or the platform already limits who can connect,
+  and without a CDN there is nothing to bypass.
+- **Verify**: `origin_secret` and `origin_secret_header` are set and the CDN sets the header on every host name. `curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/`
+  answers `403`, its `/healthz` answers `200`, and `https://<host>/` answers `200`.
+- **Details**: [Refuse requests that did not come through the CDN](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), including how to recover when it locks everyone out.
 
 ## Secrets
 

@@ -60,8 +60,14 @@ type Config struct {
 	// TrustedProxyHeader is "x-forwarded-for" or "forwarded".
 	TrustedProxies     []netip.Prefix
 	TrustedProxyHeader string
-	DB                 string
-	DatabaseURL        string
+	// OriginSecret is the value of the header OriginSecretHeader that a request must carry unless
+	// the origin check exempts it, or the value OriginSecretPrevious during a rotation; empty
+	// checks nothing.
+	OriginSecret         string
+	OriginSecretPrevious string
+	OriginSecretHeader   string
+	DB                   string
+	DatabaseURL          string
 	// DatabaseDevURL is the dev database of `my schema apply` on PostgreSQL; empty uses a
 	// temporary schema of the database of DatabaseURL.
 	DatabaseDevURL string
@@ -326,6 +332,8 @@ func (c *Config) LogValue() slog.Value {
 		slog.Time("maintenance_until", c.MaintenanceUntil),
 		slog.Duration("maintenance_retry_after", c.MaintenanceRetryAfter),
 		slog.String("web_origin", c.WebOrigin),
+		slog.String("origin_secret", redact(c.OriginSecret != "")),
+		slog.String("origin_secret_previous", redact(c.OriginSecretPrevious != "")),
 		slog.String("role", string(c.Role)),
 		slog.String("listen", c.Listen),
 		slog.Any("trusted_proxies", c.TrustedProxies),
@@ -699,6 +707,9 @@ func load(src Source, only map[string]bool) (*Config, []Setting, error) {
 	}
 	if only == nil {
 		issues = append(issues, crossChecks(valid, present)...)
+	}
+	if only == nil || only["origin_secret"] {
+		issues = append(issues, originChecks(valid, present)...)
 	}
 	if cfg.AccountDomain == "" {
 		cfg.AccountDomain = cfg.Host

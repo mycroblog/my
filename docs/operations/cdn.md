@@ -6,6 +6,7 @@ A CDN in front of the server (Cloudflare, Google Cloud CDN, CloudFront and so on
 Requests answered from the CDN cache use none of the server's CPU or transfer.
 This guide covers the setup where the server is the CDN's origin (origin pull). It applies to every blob store: with `blob = s3` or `blob = gcs` the server
 reads the files from the private bucket and serves them under `/media/` as with `blob = fs`, so the bucket is never the CDN's origin.
+When the whole server is behind the CDN, it can also [refuse the requests that did not come through it](#refuse-requests-that-did-not-come-through-the-cdn).
 
 ## Configure it
 
@@ -59,3 +60,86 @@ The server does not purge the CDN's cache. If something must disappear right aft
 ## Service Worker
 
 The web client's Service Worker does not cache media from another origin and leaves it to the browser's network handling, so only the CDN's cache applies.
+
+## Refuse requests that did not come through the CDN
+
+A CDN protects the server only from the requests that pass through it. When the origin is also reachable on its own address, as `*.run.app` on Cloud Run with traffic from the internet or a Lambda Function URL always is, anyone can call it directly, past the WAF and the cache.
+If the CDN's addresses are in `trusted_proxies`, a caller on the CDN's own serverless platform (a Cloudflare Worker of their own, say) also connects from a trusted address and can choose the client IP that the rate limits see.
+
+The three settings below close this. The CDN adds a secret header to every request it forwards, and the server answers `403` to any request without it, before it does anything else with the request.
+
+Use it when the server has a public address that the platform cannot close to everything but the CDN. You do not need it when a firewall or the platform already limits who can connect, for example a server that listens only on a private network behind your load balancer.
+
+It cannot help when the platform's own feature forwards the traffic and adds no header you control, such as a Cloud Run domain mapping. Only a CDN or load balancer that can add a request header does.
+
+| Setting | What it holds |
+| --- | --- |
+| [`origin_secret`](../reference/configuration.md#origin_secret) (`MY_ORIGIN_SECRET`) | The value, at least 32 bytes of visible ASCII. A secret, read from the environment or `MY_ORIGIN_SECRET_FILE` |
+| [`origin_secret_header`](../reference/configuration.md#origin_secret_header) (`MY_ORIGIN_SECRET_HEADER`) | The name of the header, your own. Required with `origin_secret`. Names that a CDN refuses to set or that the server or a proxy reads, such as those starting `cf-` or `x-cf-`, are invalid |
+| [`origin_secret_previous`](../reference/configuration.md#origin_secret_previous) (`MY_ORIGIN_SECRET_PREVIOUS`) | A second accepted value, only [during a rotation](#rotate-the-value) |
+
+With none of them set, nothing is checked and the server behaves as if this section did not exist.
+
+### What passes without the header
+
+| Request | Why |
+| --- | --- |
+| `GET` or `HEAD` of `/healthz`, `/readyz`, `/api/v1/instance/health` | The platform's probes and uptime monitors call them directly |
+| `POST` to `/_internal/` paths | Cloud Tasks and Cloud Scheduler call them on the server's own URL. They carry their own signed token |
+| The SQS events that the Lambda Web Adapter passes through to `queue_sqs_events_path` (`queue = sqs`) | They come from inside the Lambda function, and no CDN sees them |
+
+Everything else needs the header, in the maintenance mode too: the web client and its assets, `/media/`, the client API, OAuth, and ActivityPub, including the deliveries of other servers.
+So anything that calls the server directly by its own address, instead of through the CDN, is refused: a webhook of your own, a voice media server, a script. Point it at the CDN's host name.
+
+The metrics port (`metrics_listen`) is a separate listener that is not public and is not checked.
+
+A request that does not carry the secret has no say in the rest of the handling, even when it passes: its client IP is the connection's peer, whatever `X-Forwarded-For` says, and its `traceparent` and `X-Request-Id` are ignored.
+
+### Set it up
+
+Every host name that the CDN forwards to the server needs the header: `host`, the host of `media_origin`, and a separate `account_domain` if the CDN serves it. A media host fronted by the same CDN sets it too, since `/media/` is refused like everything else.
+
+1. Generate the value, and choose a name that nothing else uses:
+
+   ```sh
+   openssl rand -hex 32
+   ```
+
+2. **Set the header at the CDN first.** The server ignores a header it does not know, so this step changes nothing yet.
+   - **Cloudflare**: a request header transform rule (Rules, then Transform Rules, then Modify Request Header), on every plan. Match all incoming requests of the zone, and choose **Set static** with your name and value. It replaces a value a client sent. A rule for only some host names leaves the others locked out.
+   - **Amazon CloudFront**: an origin custom header on the origin of each distribution. It also replaces a viewer's value.
+   - **Google Cloud load balancers**: a custom request header on the backend service.
+   - Any other CDN or proxy: the header must be set, not appended, on every request to the server.
+3. Set `MY_ORIGIN_SECRET` and `MY_ORIGIN_SECRET_HEADER` and deploy. `my config check` validates them and repeats what is checked, but it cannot see the CDN.
+4. Check from outside, with the address of the origin itself:
+
+   ```sh
+   curl -s -o /dev/null -w '%{http_code}\n' https://<host>/                 # 200: through the CDN
+   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/       # 403: directly
+   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/healthz # 200: a health check
+   ```
+
+Also list the CDN's addresses in [`trusted_proxies`](../reference/configuration.md#trusted_proxies), or the server sees one client and every request shares the CDN's rate limits; `my config check` warns about this.
+
+A refused request gets the same `403` problem document as any other forbidden request, with `Cache-Control: no-store`, whichever way the header was wrong. Nothing in the answer names the header.
+
+### When everyone is locked out
+
+A wrong setup refuses every request while the health checks stay `200`, so the platform sees a healthy server and an uptime monitor of `/healthz` sees nothing. The signs are:
+
+- `403` for every page through the CDN.
+- The metric `my.http.origin_refused` rising while the requests of `http.server.request.duration` stop.
+- `http request` lines in the log with the status `403` and no `http.route`. The log and the traces never hold the header, its name, or its value. A refused request creates no trace span.
+
+To recover, deploy without the check: unset `MY_ORIGIN_SECRET` and `MY_ORIGIN_SECRET_HEADER`. Other servers retry their deliveries, but people could not reach the server meanwhile.
+Then compare the name and the value at the CDN with the settings, check that the rule covers every host name, and set them again.
+
+### Rotate the value
+
+The CDN and the server cannot change at the same moment, and every replica of the server restarts at its own pace, so with one accepted value a change would refuse the traffic for as long as they differ. The server therefore accepts two values during a rotation:
+
+1. Set `MY_ORIGIN_SECRET` to the new value and `MY_ORIGIN_SECRET_PREVIOUS` to the old one, and deploy. Both values pass.
+2. Change the value at the CDN, and wait for the change to reach all its locations.
+3. Unset `MY_ORIGIN_SECRET_PREVIOUS` and deploy. `my config check` warns while it is set.
+
+The name of the header does not rotate this way. To change it, repeat [the setup](#set-it-up) with the server's check off for a moment, or set the new name at the CDN alongside the old one before you deploy it.

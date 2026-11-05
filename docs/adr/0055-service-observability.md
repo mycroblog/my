@@ -229,7 +229,7 @@ NFR-OPS-2 の「任意で有効化」は、メトリクスは §2 の `otlp`、�
 
 | 境界 | 受け取る `traceparent` | 送る `traceparent` |
 | --- | --- | --- |
-| 公開のリスナー（クライアント API・Web・OAuth・Inbox・メディア） | 接続の相手が `trusted_proxies`（ADR-0019 §5）のときだけ親として使う。それ以外は捨てて新しいトレースを始める（W3C §3.4 の restart）。`tracestate` は常に捨てる | 応答に付けない |
+| 公開のリスナー（クライアント API・Web・OAuth・Inbox・メディア） | 接続の相手が `trusted_proxies`（ADR-0019 §5）で、`origin_secret` を設定しているならその値も示したときだけ親として使う。それ以外は捨てて新しいトレースを始める（W3C §3.4 の restart）。`origin_secret` で拒否したリクエストには span を作らない。`tracestate` は常に捨てる | 応答に付けない |
 | キューの push の受け口（Cloud Tasks の HTTP の受け口、Lambda の SQS のイベント） | 受け取らない。ジョブの行の `TraceParent` を link に使う（§14） | — |
 | `kernel.HTTPClient`（連合・WebFinger・メディア・リンクのカード・Web Push） | — | **付けない**。リモートのサーバーに自分の trace ID・サンプリングの判断を渡さない（W3C §7.1）。client の span はプロセスの中だけで作る |
 | 運用者が設定したクラウドの API（S3・GCS・Pub/Sub など） | — | 付けない（SDK の計測は入れない。後で必要になれば再検討する） |

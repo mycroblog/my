@@ -84,6 +84,7 @@ type field struct {
 var maintenanceKeys = map[string]bool{
 	"host": true, "account_domain": true, "web_origin": true, "listen": true,
 	"trusted_proxies": true, "trusted_proxy_header": true, "status_page_url": true,
+	"origin_secret": true, "origin_secret_previous": true, "origin_secret_header": true,
 	"maintenance": true, "maintenance_server_name": true, "maintenance_message": true,
 	"maintenance_until": true, "maintenance_retry_after": true,
 }
@@ -229,6 +230,27 @@ var schema = []field{
 			{value: "forwarded", doc: "The `for` parameters of `Forwarded` (RFC 7239)."},
 		},
 		set: func(c *Config, v string) { c.TrustedProxyHeader = v },
+	},
+	{
+		key:    "origin_secret",
+		doc:    "Refuses the requests that did not come through your CDN: a request gets `403` unless it carries the header `origin_secret_header` with this value, which the CDN adds to every request it forwards. Only the health checks and the calls of the platform's queue pass without it. Empty checks nothing. A wrong setup refuses everyone while the health checks stay fine, so read docs/operations/cdn.md first. A random string of at least 32 bytes of visible ASCII without spaces, such as the output of `openssl rand -hex 32`. It does nothing for a platform feature that adds no header, such as a Cloud Run domain mapping.",
+		secret: true,
+		check:  checkOriginSecret,
+		set:    func(c *Config, v string) { c.OriginSecret = v },
+	},
+	{
+		key:    "origin_secret_previous",
+		doc:    "A second value that the check accepts while you rotate `origin_secret`, in the same format, since the CDN and the server cannot change at the same moment. Remove it once the CDN sends the new value (docs/operations/cdn.md).",
+		secret: true,
+		check:  checkOriginSecret,
+		set:    func(c *Config, v string) { c.OriginSecretPrevious = v },
+	},
+	{
+		key:          "origin_secret_header",
+		doc:          "Name of the request header that carries `origin_secret`, which the server removes before anything else reads the request. Letters, digits, and hyphens, and not a name that a CDN refuses to set or that the server or a proxy reads for itself, such as those starting `cf-`, `x-cf-`, `x-amz-`, or `x-forwarded-`, or `authorization`.",
+		requiredWhen: "when `origin_secret` is set",
+		check:        checkOriginSecretHeader,
+		set:          func(c *Config, v string) { c.OriginSecretHeader = v },
 	},
 	{
 		key: "database",
