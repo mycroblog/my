@@ -748,3 +748,105 @@ run "without_cloud_sql_there_is_no_volume" {
     error_message = "a deployment without Cloud SQL must not change"
   }
 }
+
+run "no_vpc_by_default" {
+  command = plan
+
+  assert {
+    condition     = length(google_cloud_run_v2_service.server.template[0].vpc_access) == 0 && length(google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].vpc_access) == 0
+    error_message = "a deployment that asks for no VPC must attach none"
+  }
+}
+
+run "vpc_access_reaches_the_service_and_the_jobs" {
+  command = plan
+
+  variables {
+    console_enabled = true
+    vpc_access      = { network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/r/subnetworks/s" }
+  }
+
+  assert {
+    condition = alltrue([
+      for t in [
+        google_cloud_run_v2_service.server.template[0],
+        google_cloud_run_v2_job.one_off["migrate"].template[0].template[0],
+        google_cloud_run_v2_job.one_off["console"].template[0].template[0],
+      ] : t.vpc_access[0].egress == "PRIVATE_RANGES_ONLY" && t.vpc_access[0].network_interfaces[0].subnetwork == "projects/p/regions/r/subnetworks/s"
+    ])
+    error_message = "the service and every job must take the subnet, for private ranges only"
+  }
+}
+
+# These modules have no resources, so applying them reaches nothing, and run.* can read their outputs below.
+run "kv_external" {
+  command = apply
+
+  module {
+    source = "../kv-external"
+  }
+
+  variables {
+    url_secret_id    = "valkey-url"
+    tls_ca_secret_id = "valkey-ca"
+  }
+}
+
+run "stream_beside_the_kv" {
+  command = apply
+
+  module {
+    source = "../stream-valkey"
+  }
+
+  variables {
+    url_secret_id = null
+  }
+}
+
+run "kv_and_stream_share_one_url" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.kv_external.env, secret_env = run.kv_external.secret_env, secret_files = run.kv_external.secret_files },
+      { env = run.stream_beside_the_kv.env, secret_env = run.stream_beside_the_kv.secret_env, secret_files = run.stream_beside_the_kv.secret_files },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_KV"] == "valkey" && output.env["MY_STREAM"] == "valkey" && output.secret_env["MY_VALKEY_URL"] == "valkey-url"
+    error_message = "the one URL must serve both"
+  }
+
+  assert {
+    condition     = output.env["MY_VALKEY_TLS_CA_FILE"] == "/secrets/my-valkey-tls-ca-file/value" && contains(keys(google_secret_manager_secret_iam_member.server), "valkey-ca")
+    error_message = "the CA must arrive as a mounted file that the service account can read"
+  }
+}
+
+# Replaces the run above of the same module, whose outputs nothing reads after this.
+run "stream_with_its_own_url" {
+  command = apply
+
+  module {
+    source = "../stream-valkey"
+  }
+
+  variables {
+    url_secret_id = "valkey-url"
+  }
+}
+
+run "kv_and_stream_both_naming_the_url_fail" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.kv_external.env, secret_env = run.kv_external.secret_env },
+      { env = run.stream_with_its_own_url.env, secret_env = run.stream_with_its_own_url.secret_env },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}

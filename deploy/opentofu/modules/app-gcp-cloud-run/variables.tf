@@ -66,6 +66,15 @@ variable "service_ingress" {
   }
 }
 
+variable "vpc_access" {
+  description = "A VPC subnet for the service and the jobs to reach private addresses through, for a backend that has only those, such as kv-gcp-memorystore. Null, the default, attaches nothing. Only traffic to private ranges goes through it."
+  type = object({
+    network    = string
+    subnetwork = string
+  })
+  default = null
+}
+
 variable "backends" {
   description = "What each backend module returns. A setting named twice fails the plan."
   type = list(object({

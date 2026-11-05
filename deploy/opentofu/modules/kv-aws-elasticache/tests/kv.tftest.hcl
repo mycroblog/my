@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+
+# On a mocked provider: nothing here reaches AWS.
+
+mock_provider "aws" {
+  mock_resource "aws_security_group" {
+    defaults = {
+      id = "sg-0123456789abcdef0"
+    }
+  }
+  mock_resource "aws_elasticache_serverless_cache" {
+    defaults = {
+      endpoint = [{ address = "my-valkey-abc.serverless.apne1.cache.amazonaws.com", port = 6379 }]
+    }
+  }
+}
+
+variables {
+  vpc_id     = "vpc-1"
+  subnet_ids = ["subnet-1", "subnet-2"]
+}
+
+run "the_settings" {
+  command = apply
+
+  assert {
+    condition     = output.env == { MY_KV = "valkey", MY_VALKEY_URL = "valkeys://my-valkey-abc.serverless.apne1.cache.amazonaws.com:6379" }
+    error_message = "the URL must use TLS, which a serverless cache always has, and hold no password"
+  }
+
+  assert {
+    condition     = length(output.secret_env) == 0 && length(output.permissions) == 0
+    error_message = "the module has no secret and asks for no IAM action"
+  }
+
+  assert {
+    condition     = output.client_security_group_id == aws_security_group.client.id
+    error_message = "the tasks must take the client group"
+  }
+}
+
+run "only_the_clients_reach_the_cache" {
+  command = apply
+
+  assert {
+    condition     = aws_vpc_security_group_ingress_rule.from_client.referenced_security_group_id == aws_security_group.client.id && aws_vpc_security_group_ingress_rule.from_client.cidr_ipv4 == null && aws_vpc_security_group_ingress_rule.from_client.from_port == 6379 && aws_vpc_security_group_ingress_rule.from_client.to_port == 6379
+    error_message = "the cache must take 6379 from the client group alone"
+  }
+
+  assert {
+    condition     = aws_elasticache_serverless_cache.valkey.engine == "valkey" && aws_elasticache_serverless_cache.valkey.user_group_id == null
+    error_message = "the cache must be Valkey, with no user group"
+  }
+}
+
+run "no_subnet_fails" {
+  command = plan
+
+  variables {
+    subnet_ids = []
+  }
+
+  expect_failures = [var.subnet_ids]
+}

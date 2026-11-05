@@ -34,6 +34,7 @@ module "app" {
 | `request_timeout_seconds` | `900` | Longer than the dispatch deadline of the queue |
 | `job_memory_mib`, `job_timeout_seconds` | `1024`, `3600` | Size and limit of the jobs |
 | `console_enabled` | `false` | Creates the console job |
+| `vpc_access` | `null` | `{ network, subnetwork }`: a Direct VPC egress of the service and the jobs, for a backend on private addresses. Only traffic to private ranges takes it |
 | `deletion_protection` | `true` | Refuses to delete the service and the jobs |
 
 ## Outputs

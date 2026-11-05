@@ -14,6 +14,13 @@ deploy/opentofu/
   modules/db-external/            connection URLs in Secret Manager: Neon created by hand, or any PostgreSQL
   modules/db-neon/                a Neon project it creates, with the password in the state: read its README
   modules/db-gcp-cloud-sql/       Cloud SQL, reached through the connector's socket, never applied
+  modules/blob-s3/                any S3-compatible store, given an endpoint and a key
+  modules/blob-cloudflare-r2/     an R2 bucket, with its credentials by reference
+  modules/kv-external/            a Valkey outside this configuration, by a URL in the secret store
+  modules/kv-gcp-memorystore/     Memorystore for Valkey and its VPC, never applied
+  modules/kv-aws-elasticache/     ElastiCache Serverless for Valkey, never applied
+  modules/stream-valkey/          the broker on Valkey Pub/Sub, beside a kv module or alone
+  modules/stream-postgres/        the broker on LISTEN / NOTIFY of the database
   modules/mail-smtp/              email through any SMTP service
   modules/ingress-gcp-domain-mapping/  traffic through a Cloud Run domain mapping
   modules/ingress-gcp-load-balancer/   traffic through a global external Application Load Balancer
@@ -60,6 +67,7 @@ A module is named `<role>-<provider>-<service>`, so that the name says what it i
 | `db` | The database |
 | `queue` | The job queue and what triggers the periodic jobs |
 | `blob` | The media store |
+| `kv` | The key-value store of caches and rate limits, for `kv = valkey`. `kv = db`, the default, needs no module |
 | `stream` | The broker of the real-time updates |
 | `mail` | Email |
 | `secrets` | Secrets, filled by hand or generated |
@@ -71,7 +79,7 @@ not the platform behind it: `ingress-cloudflare-app` takes its origin as an inpu
 
 ## The backend contract
 
-Every `db-*`, `queue-*`, `blob-*`, `stream-*`, `mail-*`, `secrets-*`, and `kek-*` module returns the same outputs, so that changing the database means
+Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, and `kek-*` module returns the same outputs, so that changing the database means
 changing one module block:
 
 | Output | Type | Meaning |
@@ -181,6 +189,21 @@ An ingress closes the origin in one of three ways: on the platform (`ingress-gcp
 Every `app-*` module takes `backends`, `env`, `secret_env`, `secret_files`, `image`, and `host`, provides a console, and returns
 `origin_host`, the host name its service answers on, for an ingress that takes the origin as an input. It is null on a platform
 where the service has no host of its own, such as ECS, whose tasks each have another address: an ingress that needs a host then fails the plan.
+
+### Private networking
+
+Most backends are reached over the internet with the platform's own identity, and need no network of their own. A backend that
+has only private addresses says what the app must attach as an output of its own, outside `backends`, and the operator passes it
+to the app. A setting cannot express this, and the backend still does not name the app.
+
+On Cloud Run, `vpc_access` of `app-gcp-cloud-run` takes `{ network, subnetwork }` and attaches the service and the jobs through
+Direct VPC egress, for traffic to private ranges only. Left null, it attaches nothing. `kv-gcp-memorystore` returns the value as
+`vpc_access`. `kv-aws-elasticache` returns `client_security_group_id` for the tasks to take; `app-aws-lambda` has no input for a VPC,
+so it cannot reach that cache.
+
+The server has one Valkey setting for `kv` and `stream`, so `MY_VALKEY_URL` has one owner: `url_secret_id` of `stream-valkey` is
+null beside a `kv-*` module. Both managed Valkey modules bill while the server is idle, so neither fits a deployment at near zero,
+and each README says what it costs.
 
 ### The console
 
