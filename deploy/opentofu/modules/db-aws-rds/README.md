@@ -72,8 +72,7 @@ locks, `SET`, and `LISTEN` pin a client to one connection, which removes what th
 instance of a function holds its own connections, so bound them with `web_reserved_concurrency`, `worker_max_concurrency`, and a
 small pool. A proxy of your own can still go in through `pooled_url_secret_id` of `db-external`.
 
-`pool_max_conns` cannot go in this URL: `my schema apply` and the one-off work read the same one, and they pass parameters they do
-not know to PostgreSQL, which refuses them.
+To set `pool_max_conns`, name it in `url_parameters`. The one-off work reads the same URL, and only the service opens a pool with it.
 
 ## Reaching it from the app
 

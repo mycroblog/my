@@ -106,9 +106,8 @@ one**, and the service uses the pooled one when `pooled_url_secret_id` is set, w
 The secrets do not follow a change at Neon by themselves. If the password or the host changes there, raise `write_version` of the
 secrets module, which writes both again, and deploy.
 
-To set `pool_max_conns`, add it to the pooled URL where you hand it over:
-`database_url_pooled = "${module.db.connection_uri_pooler}&pool_max_conns=8"`. Never add it to the direct one: `my schema apply` passes
-parameters it does not know to PostgreSQL, which refuses them.
+To set `pool_max_conns`, add it to the URL the service uses where you hand it over:
+`database_url_pooled = "${module.db.connection_uri_pooler}&pool_max_conns=8"`.
 
 ## Coming from db-external
 

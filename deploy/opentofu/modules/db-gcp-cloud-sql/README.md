@@ -70,9 +70,7 @@ session-level lock. There is no pooled connection. Cloud SQL's managed pooling n
 machine type near this price, so this module offers none; `max_instances` of the app and `pool_max_conns` bound the connections
 instead. A pool on `db-f1-micro` must stay small: the instance has 0.6 GB of memory.
 
-`pool_max_conns` cannot go in this URL: `my schema apply` and the jobs read the same one, and they pass parameters they do not
-know to PostgreSQL, which refuses them. Until that changes, a larger pool needs a second secret that holds the same URL with
-the parameter, in `secret_env` of the app module, and this secret in `direct_secret_env` of a backend.
+To set `pool_max_conns`, name it in `url_parameters`. The jobs read the same URL, and only the service opens a pool with it.
 
 ## The password
 

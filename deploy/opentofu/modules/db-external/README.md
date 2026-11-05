@@ -31,8 +31,7 @@ pooler two runs at once hang, so use Neon's direct connection string (the host w
 
 `pooled_url_secret_id` may go through one, for the service alone, as long as the pooler handles protocol-level prepared statements:
 [Through a connection pooler](../../../../docs/operations/database.md#through-a-connection-pooler) has what that takes. Neon's pooled
-string does. It also takes `pool_max_conns`, which the direct one must not hold: `my schema apply` passes parameters it does not know to
-PostgreSQL, which refuses them.
+string does. `pool_max_conns` goes in the URL the service uses.
 
 In practice, changing this block for another database is not a one-block swap: a new database is empty, so it is a data migration,
 which [`db-gcp-cloud-sql`](../db-gcp-cloud-sql/README.md#coming-from-db-external) describes.

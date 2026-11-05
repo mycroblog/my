@@ -39,7 +39,7 @@ and tables, and need `-allow-destructive`. Read the SQL with `-dry-run` before e
 
 ### Through a connection pooler
 
-`my schema apply` must reach the database directly. It holds a session-level lock, which a pooler in transaction mode (PgBouncer's transaction pooling, Neon's pooled connection string) does not keep: through one, two runs at once hung rather than failed. Give it a direct URL as `database_url`, and keep `pool_max_conns` out of that URL, since it passes parameters it does not know to PostgreSQL, which refuses them. `my db upgrade`, `my db upgrade -check`, and the console take the same URL.
+`my schema apply` must reach the database directly. It holds a session-level lock, which a pooler in transaction mode (PgBouncer's transaction pooling, Neon's pooled connection string) does not keep: through one, two runs at once hung rather than failed. Give it a direct URL as `database_url`. `pool_max_conns` and the other `pool_*` parameters may stay in it, and in `database_dev_url` and `stream_postgres_url`: the commands that open no pool ignore them. `my db upgrade`, `my db upgrade -check`, and the console take the same URL.
 
 `my serve` can use a pooler in transaction mode, as long as:
 

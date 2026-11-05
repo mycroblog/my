@@ -133,7 +133,7 @@ variable "password_version" {
 }
 
 variable "url_parameters" {
-  description = "Parameters to add to the URL. Takes effect when password_version is raised, since nothing else rewrites the secret. Leave out pool_max_conns: my schema apply passes unknown parameters to PostgreSQL, which refuses it."
+  description = "Parameters to add to the URL. Takes effect when password_version is raised, since nothing else rewrites the secret. pool_max_conns may be one of them."
   type        = map(string)
   default     = {}
   nullable    = false

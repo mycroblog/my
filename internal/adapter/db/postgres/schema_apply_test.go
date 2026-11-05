@@ -158,6 +158,36 @@ func TestApplySchemaWithADevDatabase(t *testing.T) {
 	}
 }
 
+// A URL the server starts on must also apply the schema: PostgreSQL refuses a startup parameter
+// it does not know, which is what pool_max_conns becomes unless it is taken out first.
+func TestApplySchemaTakesTheParametersOfThePool(t *testing.T) {
+	url, devURL := pgtest.NewEmptyDatabase(t), pgtest.NewEmptyDatabase(t)
+	t.Log(query(t, url, "SELECT version()"))
+	const params = "pool_max_conns=4&pool_min_conns=1&pool_max_conn_lifetime=1h"
+	r, err := ApplySchema(t.Context(), withParams(url, params), withParams(devURL, params), schemaapply.Options{})
+	if err != nil || !r.Applied {
+		t.Fatalf("ApplySchema = %+v, %v; want it applied", r, err)
+	}
+}
+
+func TestOpenSQLRefusesAnInvalidPoolSetting(t *testing.T) {
+	_, err := openSQL("postgres://my:secret@127.0.0.1/my?pool_max_conns=many", "database_url")
+	if err == nil {
+		t.Fatal("openSQL accepted what the server refuses")
+	}
+	if strings.Contains(err.Error(), "secret") {
+		t.Errorf("the error quotes the password: %q", err)
+	}
+}
+
+// withParams adds parameters to the query of a URL.
+func withParams(url, params string) string {
+	if strings.Contains(url, "?") {
+		return url + "&" + params
+	}
+	return url + "?" + params
+}
+
 func TestApplySchemaAddsAColumn(t *testing.T) {
 	url := pgtest.NewEmptyDatabase(t)
 	mustApply(t, url, schema.Postgres, schemaapply.Options{})

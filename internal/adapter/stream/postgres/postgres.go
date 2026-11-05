@@ -74,11 +74,14 @@ func New(o Options) (*Bus, error) {
 	if o.ListenURL == "" {
 		cfg = o.Pool.Config().ConnConfig.Copy()
 	} else {
-		var err error
-		if cfg, err = pgx.ParseConfig(o.ListenURL); err != nil {
+		// As database_url is parsed: pgx.ParseConfig alone would send the pool_* parameters to
+		// PostgreSQL as startup parameters, which PostgreSQL refuses.
+		parsed, err := pgxpool.ParseConfig(o.ListenURL)
+		if err != nil {
 			// The error may quote the URL, which can hold a password; keep only its kind.
 			return nil, errors.New("stream/postgres: stream_postgres_url is not a valid connection string")
 		}
+		cfg = parsed.ConnConfig
 	}
 	if cfg.RuntimeParams == nil {
 		cfg.RuntimeParams = map[string]string{}
