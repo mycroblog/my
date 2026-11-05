@@ -40,7 +40,7 @@ export function serverDirOf(server: E2EServer): string {
 /** The directory of the development CA and certificates of scripts/mailpit-cert.sh (MAILPIT_CERTS). */
 const mailpitCerts = process.env["MAILPIT_CERTS"] ?? join(root, ".tmp/mailpit");
 
-/** The ports of the development Mailpit (deploy/docker/mailpit), which MAILPIT_SMTP_PORT and MAILPIT_UI_PORT move. */
+/** The ports of the development Mailpit (the root compose.yaml), which MAILPIT_SMTP_PORT and MAILPIT_UI_PORT move. */
 export const mailpit = {
   smtpPort: Number(process.env["MAILPIT_SMTP_PORT"] ?? "1025"),
   uiPort: Number(process.env["MAILPIT_UI_PORT"] ?? "8025"),

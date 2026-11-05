@@ -285,6 +285,9 @@ app/                 # クライアントの Bun ワークスペース（アプ�
   mobile/            # モバイルアプリ（Tauri 2）
 deploy/
   docker/ k8s/ gcp/ aws/
-  docker/federation-live/  # ライブの相互運用テスト（Mastodon・GoToSocial との compose とシナリオ。federation.md §12）
+test/                # テストの構成
+  federation-live/   # ライブの相互運用テスト（Mastodon・GoToSocial との compose とシナリオ。federation.md §12）
+  upgrade-test/      # アップグレードのテストと復旧の訓練の compose
+compose.yaml         # 開発の構成（go run のサーバーが使う PostgreSQL と Mailpit）
 docs/
 ```

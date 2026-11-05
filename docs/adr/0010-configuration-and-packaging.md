@@ -26,16 +26,24 @@
 
 ### 3. デプロイテンプレート（`deploy/`）
 
-今あるのは `deploy/docker` の Compose で、ほかは M6 で作る（`deploy/monitoring` は監視の設定）。
+今あるのは `deploy/docker` の Compose で、ほかは M6 で作る（`deploy/monitoring` は監視の設定）。`deploy/` に置くのはインスタンスを動かすものだけで、開発の構成はルートの `compose.yaml`（プロジェクト名 `my-dev`。`go run` のサーバーが使う PostgreSQL と Mailpit）、テストの構成は `test/`（`test/federation-live`、`test/upgrade-test`）に分ける。
 
 | ターゲット | 形式 |
 | --- | --- |
-| Docker | `compose.yaml`（SQLite 最小構成 / PostgreSQL + MinIO 構成） |
+| Docker | `deploy/docker/compose.yaml`（SQLite 最小構成）に `compose.postgres.yaml`・`compose.s3.yaml`・`compose.caddy.yaml` を重ねる |
 | microk8s / k8s | Kustomize（base + overlays）。Helm chart は需要次第 |
 | Google Cloud | OpenTofu モジュール（Cloud Run, Cloud Tasks, GCS, Scheduler） |
 | AWS | OpenTofu モジュール（Lambda, SQS, S3, CloudFront, EventBridge Scheduler） |
 
 IaC は OSS ライセンスの OpenTofu を採用（Terraform 互換）。
+
+Docker の構成は次のとおり。
+
+- **設定**: 運営者は `deploy/docker/example.env` を `.env` にコピーする。`.env` は Compose の変数の展開に読まれ、`env_file` でそのままサーバーのコンテナに渡るので、設定リファレンスのすべての設定を `.env` で設定できる。`example.env` は設定スキーマから生成する（`go:config-docs`。古いと `go:test` が落ちる）。
+- **KEK**: `.env` に書かない。`env_file` は 1 行ずつ環境変数にするので、`secrets/kek` に置き、Docker secret `/run/secrets/my_kek` を `MY_KEK_FILE` で読む。`.env` に `MY_KEK` があると 2 つが揃い、サーバーは起動を拒む。
+- **Compose だけが読む変数**: `MY_VERSION` と `MY_HTTP_PORT` もコンテナに渡るので、未知の変数の警告から外す。
+- **S3 互換ストア**: `compose.s3.yaml` は `blob = s3` にし、外部のストア（`.env` の `MY_BLOB_S3_*`）か、プロファイル `garage` で同じプロジェクトに立てる 1 ノードの Garage を使う。Garage にするのは、アダプタのコントラクトテストが動かすストアであり、公式の MinIO のイメージが匿名で取得できないためである。
+- **一回限りのサービスの順序**: `upgrade-check`・`schema`・`upgrade`・サーバーの順で、重ねるファイルも変えない。
 
 ### 4. イメージのタグ
 

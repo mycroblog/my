@@ -66,9 +66,14 @@ func retiredIssues(path string, file map[string]any, env []string) []Issue {
 // MY_PORT_<PORT>_<PROTOCOL>[_PROTO|_PORT|_ADDR].
 var serviceLinkEnv = regexp.MustCompile(`^MY(_[A-Z0-9_]+)?_(SERVICE_HOST|SERVICE_PORT(_[A-Z0-9_]+)?|PORT(_[0-9]+_(TCP|UDP|SCTP)(_(PROTO|PORT|ADDR))?)?)$`)
 
+// composeEnv lists the variables of the env file of the Compose deployment (deploy/docker/example.env)
+// that only the compose files read: the file reaches the containers whole.
+var composeEnv = []string{EnvPrefix + "VERSION", EnvPrefix + "HTTP_PORT"}
+
 // UnknownEnv returns, sorted, the environment variables of src that start with EnvPrefix but
 // set nothing: not a setting, its NAME_FILE when it is a secret, EnvConfigFile, a retired key
-// (Load reports those as errors), or a variable that Kubernetes adds for a Service. The server
+// (Load reports those as errors), a variable that Kubernetes adds for a Service, or one of
+// composeEnv. The server
 // ignores them; the caller warns about them, since a typo in a variable's name leaves the
 // setting at its default.
 func UnknownEnv(src Source) []string {
@@ -85,7 +90,7 @@ func UnknownEnv(src Source) []string {
 }
 
 func knownEnv(name string) bool {
-	if name == EnvConfigFile {
+	if name == EnvConfigFile || slices.Contains(composeEnv, name) {
 		return true
 	}
 	for i := range schema {

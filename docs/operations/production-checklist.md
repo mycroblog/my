@@ -71,7 +71,7 @@ for example as a step of the deployment before the new version takes traffic.
 - **Why**: other servers fetch the ids at `https://<host>/` on port 443, and browsers send the sign-in cookies only over `https`.
 - **Verify**: `curl -sI https://<host>/healthz` answers `200` from outside your network with a certificate that is valid for `host`,
   and `my config check` reports no error about `web_origin`. `http://<host>/` redirects to `https`, which the reverse proxy,
-  load balancer, or CDN in front of the server does.
+  load balancer, or CDN in front of the server does (with Docker Compose, the layer `compose.caddy.yaml` is such a proxy).
 - **Details**: [running the server](running.md), [`web_origin`](../reference/configuration.md#web_origin).
 
 ## Secrets
@@ -84,7 +84,8 @@ for example as a step of the deployment before the new version takes traffic.
   - It was generated randomly (`openssl rand -base64 32`); `my config check` reports a key that is not random.
   - It is stored somewhere other than the database and its backups, for example in a password manager or the cloud's
     secret store, and at least one other person who runs the server can reach it.
-  - It reaches the server through `MY_KEK` or `MY_KEK_FILE` only (the config file refuses secrets).
+  - It reaches the server through `MY_KEK` or `MY_KEK_FILE` only (the config file refuses secrets). With Docker Compose, it is
+    the file `secrets/kek` and is not in `.env` ([Docker Compose files](running.md#docker-compose-files)).
 - **Details**: [key management](key-management.md).
 
 ### The VAPID key of Web Push
@@ -100,7 +101,7 @@ for example as a step of the deployment before the new version takes traffic.
 - **Verify**: `database_url`, `mail_smtp_password`, `captcha_secret_key`, the payment provider's keys, `valkey_url`, and every other
   setting marked secret in the configuration reference come from environment variables or `<NAME>_FILE` files that the platform's
   secret store fills (Docker or Kubernetes secrets, Secret Manager, Parameter Store). The config file cannot hold them:
-  `my config check` refuses a secret there. Search the repository and the image for the values to make sure no copy is left.
+  `my config check` refuses a secret there. With Docker Compose, they come from `.env`, which only you can read (`chmod 600`). Search the repository and the image for the values to make sure no copy is left.
   `my config check` prints `(redacted)` for every secret that is set.
 - **Details**: [configuration reference](../reference/configuration.md) (the Secret column), [CAPTCHA](captcha.md),
   [Stripe](payments-stripe.md), [PAY.JP](payments-payjp.md).

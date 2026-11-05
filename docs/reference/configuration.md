@@ -22,7 +22,7 @@ A setting that a release renamed or removed is one of those problems, in the con
 the error names the new key, or tells why the setting was removed ([renamed and removed settings](#renamed-and-removed-settings)).
 An unknown key in the config file is an error too. An environment variable that starts with `MY_` but sets nothing
 is ignored with a warning, in the log of `my serve` and in the output of `my config check`, because the platform may add such variables:
-Kubernetes adds `MY_SERVICE_HOST`, `MY_PORT` and the like for a Service named `my`, and those are ignored without a warning.
+Kubernetes adds `MY_SERVICE_HOST`, `MY_PORT` and the like for a Service named `my`, and those are ignored without a warning, as are `MY_VERSION` and `MY_HTTP_PORT`, which the Docker Compose files read from the env file that also reaches the container.
 
 A Kubernetes Service named `my-mail-smtp` is the exception: the variable `MY_MAIL_SMTP_PORT=tcp://...` that it adds is the name of a setting, so the value fails its check and the server does not start.
 Rename the Service, or set `enableServiceLinks: false` on the pod.

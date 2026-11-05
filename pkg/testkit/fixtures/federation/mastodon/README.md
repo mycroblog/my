@@ -12,7 +12,7 @@ See [pkg/testkit/README.md](../../../README.md#federation-fixtures) for the layo
   [peers/mastodon/actor.json](https://github.com/mycroblog/my/blob/main/internal/interface/activitypub/testdata/peers/mastodon/actor.json)
   (hosts, names, and texts already replaced there) with `publicKeyPem` replaced.
 - `4.7/` was captured from Mastodon v4.7.3 by the live interoperability test
-  ([deploy/docker/federation-live](../../../../../deploy/docker/federation-live/README.md)) on 2026-10-17: what Mastodon delivered to
+  ([test/federation-live](../../../../../test/federation-live/README.md)) on 2026-10-17: what Mastodon delivered to
   this server, as this server stored it. Replaced: `mastodon.test` → `mastodon.example`, `my.test` → `remote.example`,
   `publicKeyPem`, and the Linked Data `signatureValue`. The users (`alice`, `bob`) and the texts are the test's own.
 - `4.7/outbox.json` and `4.7/outbox-page.json` are what Mastodon v4.7.3 serves for bob's outbox, rendered from its source

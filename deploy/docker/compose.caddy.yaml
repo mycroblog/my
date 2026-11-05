@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Layer on compose.yaml: Caddy terminates TLS for MY_HOST on the ports 80 and 443 of this machine and passes requests to
+# the server, with a certificate that it gets and renews from a public certificate authority by itself. It needs MY_HOST
+# to be a domain whose DNS points at this machine, with both ports reachable from the internet. Leave MY_WEB_ORIGIN unset
+# in .env, so that browsers use https://{MY_HOST}.
+#
+# The server trusts the X-Forwarded-For of the addresses that Docker gives Compose networks by default, which only Caddy
+# and the loopback port of compose.yaml can connect from. Set MY_TRUSTED_PROXIES in .env for other address pools.
+#
+#   docker compose -f compose.yaml -f compose.caddy.yaml up -d
+
+services:
+  caddy:
+    # Pinned by tag and digest.
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    depends_on:
+      my:
+        condition: service_started
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      # The certificates and the ACME account: keep them, since certificate authorities limit how often they issue.
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+  my:
+    environment:
+      MY_TRUSTED_PROXIES: ${MY_TRUSTED_PROXIES:-172.16.0.0/12,192.168.0.0/16}
+
+configs:
+  caddyfile:
+    content: |
+      ${MY_HOST:?set MY_HOST in .env} {
+        reverse_proxy my:8080
+      }
+
+volumes:
+  caddy_data:
+  caddy_config:

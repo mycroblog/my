@@ -169,7 +169,7 @@ func TestOAuthWebClientFlow(t *testing.T) {
 	}
 }
 
-// TestOAuthWebClientPlainHTTPOnLocalhost checks the local setup of deploy/docker (host localhost:8080,
+// TestOAuthWebClientPlainHTTPOnLocalhost checks the local setup of deploy/docker/example.env (host localhost:8080,
 // web_origin http://localhost:8080): the shell calls the API over plain HTTP, the authorization
 // endpoint answers with that issuer, and the code it returns works at the token endpoint, while the
 // ActivityPub ids stay under https://localhost:8080/.

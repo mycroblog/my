@@ -70,7 +70,7 @@ Which release it starts from:
 - When there is no such tag, as for `v0.1.0`, the job reports "the upgrade test is skipped" in its summary and passes.
 
 `scripts/previous-minor.sh` picks the tag (tested by `scripts/previous-minor-test.sh`, run with `scripts/task.sh shell:test`).
-The test itself is `scripts/upgrade-test.sh` on the stack `deploy/docker/upgrade-test/compose.yaml`. Run it locally with Docker:
+The test itself is `scripts/upgrade-test.sh` on the stack `test/upgrade-test/compose.yaml`. Run it locally with Docker:
 
 ```sh
 scripts/task.sh docker:upgrade-test PREVIOUS=v0.1.3                  # both dialects

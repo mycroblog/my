@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Development only: the services that a `go run ./cmd/my serve` on this machine talks to (CONTRIBUTING.md). To deploy an
+# instance, use deploy/docker. The project is named my-dev, so it never collides with a deployment named my.
+#
+#   scripts/task.sh db:up           PostgreSQL, with the databases of the tools    (localhost:5432, user and password my)
+#   scripts/task.sh docker:mailpit  Mailpit, with its certificate                  (SMTP on 127.0.0.1:1025, UI on :8025)
+#   docker compose down -v          remove them and their data
+#
+# Start the server with the settings of what you need:
+#
+#   mail   MY_MAIL=smtp MY_MAIL_FROM=noreply@localhost MY_MAIL_SMTP_HOST=localhost MY_MAIL_SMTP_PORT=1025
+#          SSL_CERT_FILE=.tmp/mailpit/ca.pem
+#   voice  MY_VOICE=p2p, and MY_WEB_ORIGIN=http://localhost:8080 since browsers allow the microphone only on localhost or
+#          over HTTPS; browsers on this machine connect without a STUN server
+#
+# Third-party images are pinned by tag and digest.
+
+name: my-dev
+
+services:
+  postgres:
+    # The variables are those of the task db:up, which also creates the databases of the tools.
+    container_name: ${PG_CONTAINER:-my-postgres}
+    image: ${PG_IMAGE:-postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873}
+    environment:
+      POSTGRES_USER: my
+      POSTGRES_PASSWORD: my
+      POSTGRES_DB: my
+    ports:
+      - "127.0.0.1:${PG_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "my", "-d", "my", "-h", "127.0.0.1"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  # Mailpit (https://mailpit.axllent.org/, MIT): an SMTP server that keeps every message it receives and shows them in a
+  # web UI, for mail = smtp without sending real email (CONTRIBUTING.md, "Emails"). It offers STARTTLS with the
+  # certificate of scripts/mailpit-cert.sh and requires it, since mail = smtp refuses servers without it, and needs no
+  # authentication.
+  mailpit:
+    # The image of the integration tests (DefaultImage of pkg/testkit/mailpittest).
+    image: axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48
+    environment:
+      MP_SMTP_TLS_CERT: /certs/server.pem
+      MP_SMTP_TLS_KEY: /certs/server.key
+      MP_SMTP_REQUIRE_STARTTLS: "true"
+      MP_SMTP_DISABLE_RDNS: "true"
+      # Keep the latest messages only.
+      MP_MAX_MESSAGES: "500"
+    volumes:
+      - ${MAILPIT_CERTS:-./.tmp/mailpit}:/certs:ro
+    ports:
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    restart: unless-stopped

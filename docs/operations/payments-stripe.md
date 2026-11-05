@@ -154,16 +154,7 @@ stripe listen --forward-to http://localhost:8080/payments/webhooks/stripe \
 
 Put the `whsec_...` that `stripe listen` prints in `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` and start the server (match the port to your `listen` setting).
 
-`deploy/docker/compose.yaml` does not pass `MY_PAYMENTS*` to the container, so setting them in `.env` alone leaves payments off. Add them in `deploy/docker/compose.override.yaml`, which `docker compose` reads by itself unless you name files with `-f`:
-
-```yaml
-services:
-  my:
-    environment:
-      MY_PAYMENTS: stripe
-      MY_PAYMENTS_STRIPE_SECRET_KEY: ${MY_PAYMENTS_STRIPE_SECRET_KEY:?set it in .env}
-      MY_PAYMENTS_STRIPE_WEBHOOK_SECRET: ${MY_PAYMENTS_STRIPE_WEBHOOK_SECRET:?set it in .env}
-```
+With Docker Compose, set `MY_PAYMENTS=stripe`, `MY_PAYMENTS_STRIPE_SECRET_KEY`, and `MY_PAYMENTS_STRIPE_WEBHOOK_SECRET` in `deploy/docker/.env`, then run `docker compose up -d`.
 
 In another terminal, you can fire single events.
 

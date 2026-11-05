@@ -84,6 +84,55 @@ With `metrics_exporter = emf`, these two lines are the EMF lines themselves. The
 plus the `_aws` directive, `service.name`, `service.version` and `my.role`. These three metrics are not written on any other line. Fields you choose in `metrics_emf_dimensions` are written as strings, as EMF requires (for example the dimension `http.response.status_code` is `"200"`).
 Logs go to standard error and the other EMF lines go to standard output. Lambda sends both to CloudWatch Logs, so metrics are extracted from both.
 
+## Docker Compose files
+
+`deploy/docker/` holds what deploys an instance. `compose.yaml` runs alone, and the other files layer on top of it.
+
+| File | Adds | Use it when |
+| --- | --- | --- |
+| `compose.yaml` | The server and its one-off database services, on SQLite and media files in the volume `data` | Always |
+| `compose.postgres.yaml` | PostgreSQL in a container, in the volume `postgres` | You want PostgreSQL on this machine. For a PostgreSQL server elsewhere, leave it out and set `MY_DATABASE` and `MY_DATABASE_URL` in `.env` |
+| `compose.s3.yaml` | Media in an S3-compatible bucket; with `COMPOSE_PROFILES=garage` also a one-node [Garage](https://garagehq.deuxfleurs.fr/) store in the volume `garage` | Media outgrow one disk, or you want them in a bucket. Without the profile, the store is the external one of the `MY_BLOB_S3_*` settings |
+| `compose.caddy.yaml` | Caddy, with TLS certificates on ports 80 and 443 | `MY_HOST` is a public domain and nothing else terminates TLS on this machine |
+| `compose.build.yaml` | Builds the image from a checkout | You run your own build |
+
+Choose the database and the media store before the first start: the data does not move by itself when the files change
+([Backing up](backup.md) shows what has to move).
+
+**Layer files** with `-f` options in that order, or name them once in `.env`, so that every later `docker compose` command
+(`exec`, `logs`, `pull`, and those in the other guides) uses the same files:
+
+```sh
+cd deploy/docker
+cp example.env .env
+# In .env: COMPOSE_FILE=compose.yaml:compose.postgres.yaml:compose.caddy.yaml
+```
+
+A file named `compose.override.yaml` in the directory is read only when neither `-f` nor `COMPOSE_FILE` names files. With
+them, list it as well.
+
+**Settings.** Copy `example.env` to `.env`. Compose reads `.env` to fill in the variables of its files, and hands the whole
+file to the server's containers, so every setting of the [configuration reference](../reference/configuration.md) works by
+being set there. The template lists them all, with a sentence on each.
+
+- The key-encryption key stays out of `.env`, in the file `secrets/kek`, and the containers read it as the Docker secret
+  `/run/secrets/my_kek`, so it never becomes an environment variable. A `MY_KEK` line in `.env` stops the server, which
+  refuses `MY_KEK` and `MY_KEK_FILE` together ([managing the key](key-management.md)).
+- The server runs as the user `65532`, and Compose mounts the file with the permissions it has, so the file has to be
+  readable by others. Keep it in a directory only you can enter, as the commands in `example.env` do.
+- The other secrets reach the containers as environment variables. To pass one as a file instead, mount it with a secret
+  in a `compose.override.yaml` of your own and set its `<NAME>_FILE`, as `compose.yaml` does for the key.
+- `.env` holds secrets: `chmod 600 .env`, and keep a copy with your backups.
+- `MY_LISTEN` stays `:8080`, since the files connect to that port.
+
+**TLS with Caddy.** Set `MY_HOST` to a domain whose DNS points at the machine, with ports 80 and 443 reachable from the
+internet, and remove `MY_WEB_ORIGIN` from `.env`. Caddy gets and renews the certificate by itself on the first request.
+The server trusts the `X-Forwarded-For` of Docker's default address pools; set `MY_TRUSTED_PROXIES` if yours differ.
+
+**The bundled Garage.** `compose.s3.yaml` with `COMPOSE_PROFILES=garage` needs the values that `example.env` lists at its top.
+The one-off service `garage-init` prepares the store on each `up`. It stays inside the Compose network, since the server
+serves the media itself. One node is one disk: back up the volume `garage` or the bucket ([Backing up](backup.md#media-in-a-bucket)).
+
 ## Get the image
 
 The server image is `ghcr.io/mycroblog/my`, public, for `linux/amd64` and `linux/arm64`, with every adapter.
@@ -103,7 +152,7 @@ ghcr.io/mycroblog/my:0.1.0@sha256:...
 
 Where to run it:
 
-- **Docker Compose**: `deploy/docker/compose.yaml` runs the image of `MY_VERSION` in `.env`. To build it from a checkout instead, add the override `compose.build.yaml` (`docker compose -f compose.yaml -f compose.build.yaml up -d --build`), and set `MY_VERSION` to a name of your own, since it names your local image and is what `my version` prints.
+- **Docker Compose**: `deploy/docker/compose.yaml` runs the image of `MY_VERSION` in `.env` ([Docker Compose files](#docker-compose-files)). To build it from a checkout instead, add the override `compose.build.yaml` (`docker compose -f compose.yaml -f compose.build.yaml up -d --build`), and set `MY_VERSION` to a name of your own, since it names your local image and is what `my version` prints.
 - **Kubernetes**: pull it from `ghcr.io` as it is.
 - **Cloud Run**: use the `ghcr.io` image directly. A deployment resolves the tag to a digest.
 - **AWS (ECS, EKS)**: copy the image to Amazon ECR, or use an ECR pull through cache, which needs ghcr.io credentials.

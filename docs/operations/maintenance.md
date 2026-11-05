@@ -158,7 +158,7 @@ Without `Retry-After`, other servers retry on their own schedule, which the wind
 
 ### Docker Compose
 
-`deploy/docker/compose.yaml` passes `MY_MAINTENANCE`, `MY_MAINTENANCE_MESSAGE`, `MY_MAINTENANCE_UNTIL`, and `MY_STATUS_PAGE_URL` from `.env` (or the shell).
+`deploy/docker/compose.yaml` passes the settings of `.env` to the server, and takes `MY_MAINTENANCE`, `MY_MAINTENANCE_MESSAGE`, and `MY_MAINTENANCE_UNTIL` from the shell as well.
 Set them and recreate the `my` service, then unset `MY_MAINTENANCE` and recreate it again after the work.
 `--no-deps` keeps the one-off database services (`upgrade-check`, `schema`, `upgrade`) from running; an upgrade runs them ([Upgrading](database.md#upgrading)):
 

@@ -21,9 +21,10 @@ With Docker and Docker Compose v2, start the smallest setup, backed by SQLite
 
 ```sh
 cd deploy/docker
-cp .env.example .env
-# Set MY_KEK in .env to the output of `openssl rand -base64 32` (and back it up apart from the database)
+cp example.env .env
 # Set MY_VERSION in .env to a version from the releases page, such as 0.1.0
+mkdir -m 700 secrets
+(umask 022; openssl rand -base64 32 > secrets/kek)   # the key encryption key: back it up apart from the database
 docker compose up -d
 ```
 
@@ -35,8 +36,11 @@ docker compose up -d
   on every `up`, so after an upgrade you start the server the same way.
 - The server listens on `127.0.0.1:8080` (the port is `MY_HTTP_PORT` in `.env`). It is ready when
   `curl localhost:8080/readyz` returns `{"status":"ok"}`.
-- The key encryption key (KEK) reaches the server as the Docker secret `/run/secrets/my_kek`, never as an environment
-  variable ([managing the key encryption key](docs/operations/key-management.md)).
+- The key encryption key (KEK) reaches the server from `secrets/kek` as the Docker secret `/run/secrets/my_kek`, never
+  as an environment variable ([managing the key encryption key](docs/operations/key-management.md)).
+- Every other setting of the [configuration reference](docs/reference/configuration.md) is set in `.env`, whose template
+  describes them. PostgreSQL, object storage, and TLS are files to layer on top
+  ([Docker Compose files](docs/operations/running.md#docker-compose-files)).
 
 Create an administrator, then look the account up with WebFinger and fetch its actor. The password is read from the
 first line of standard input.
@@ -49,7 +53,7 @@ curl -H 'Accept: application/activity+json' http://localhost:8080/ap/actors/<the
 
 ### Sign in from a browser
 
-With the pair `MY_HOST=localhost:8080` and `MY_WEB_ORIGIN=http://localhost:8080` of `.env.example`, sign-in, the
+With the pair `MY_HOST=localhost:8080` and `MY_WEB_ORIGIN=http://localhost:8080` of `example.env`, sign-in, the
 client API, and media work over plain HTTP at `http://localhost:8080` (ActivityPub ids stay
 `https://localhost:8080/...`). If you change `MY_HTTP_PORT`, change the port of `MY_HOST` and `MY_WEB_ORIGIN` to match.
 
@@ -63,11 +67,12 @@ client API, and media work over plain HTTP at `http://localhost:8080` (ActivityP
 
 ### Going public
 
-- Set `MY_HOST` in `.env` to your real domain, remove `MY_WEB_ORIGIN` (it defaults to `https://{MY_HOST}`), and put
-  a reverse proxy that terminates TLS (Caddy, for example) in front of the server. `MY_HOST` is stored in the database
-  on first start and cannot be changed later.
-- Behind a reverse proxy, set `MY_TRUSTED_PROXIES` in `.env` so that rate limits such as the one on sign-in apply per
-  client IP rather than to the proxy ([`trusted_proxies`](docs/reference/configuration.md#trusted_proxies)).
+- Set `MY_HOST` in `.env` to your real domain, remove `MY_WEB_ORIGIN` (it defaults to `https://{MY_HOST}`), and terminate
+  TLS in front of the server: the layer `compose.caddy.yaml` runs Caddy for that
+  ([Docker Compose files](docs/operations/running.md#docker-compose-files)). `MY_HOST` is stored in the database on first
+  start and cannot be changed later.
+- Behind a reverse proxy of your own, set `MY_TRUSTED_PROXIES` in `.env` so that rate limits such as the one on sign-in
+  apply per client IP rather than to the proxy ([`trusted_proxies`](docs/reference/configuration.md#trusted_proxies)).
 - `docker compose down` stops the stack. `down -v` also deletes the data volumes.
 
 For every setting see the [configuration reference](docs/reference/configuration.md); for day-to-day operation see

@@ -111,7 +111,7 @@
 
 **メール**:
 
-- Mailpit は、開発の構成と同じ固定のイメージ（`deploy/docker/mailpit/compose.yaml` のタグとダイジェスト）で、同じ設定（`scripts/mailpit-cert.sh` の開発用の CA の証明書で STARTTLS を必須にする）で動かす。
+- Mailpit は、開発の構成と同じ固定のイメージ（ルートの `compose.yaml` のタグとダイジェスト）で、同じ設定（`scripts/mailpit-cert.sh` の開発用の CA の証明書で STARTTLS を必須にする）で動かす。
   `mail = smtp` は STARTTLS と証明書の検証を省かないので、`my serve` は `SSL_CERT_FILE` でその CA を信頼する。`SSL_CERT_FILE` はシステムのルート証明書を置き換え、サーバーは外の HTTPS に繋がらなくなるが、デモ環境は外へ出ないので（`federation_mode = off`）かえって都合がよい。
 - これで、メールのリンクを開く作業（パスワードの再設定、メールアドレスの確認、メールで送る招待）を、手元でも L4 でも利用者と同じ道筋で通せる。
 - **L4 のエージェントは、Mailpit の Web の画面（`http://127.0.0.1:8025`）を別のタブで開いてメールを読む**。利用者がメールのアプリを開いてリンクを押すのと同じ形で、こちらのメールの文面とリンクの分かりやすさも作業に含めて確かめられるからである。
@@ -124,7 +124,7 @@
   起動のたびに DB を作り直す（fake の状態はメモリにだけあり、残した DB と食い違うため）。決定者の手での確認はこれを使う。
 - **L4**: `app/web/e2e/server.ts` に、`voice` と同じく別の DB とポートの `demo` のサーバーを足し、L4（`app/web/l4/run.ts`）はそれを起動する。
   作業は筋書きの人物でログインして始め、シードで測れるようになった作業の `unavailable` を外す。nightly の L4 のジョブも `e2e_fakes` で `bin/my` を作り、Mailpit を同じイメージのダイジェストで動かす。
-  Mailpit は証明書を作ってから起動しなければならないので、ジョブの `services:` ではなく、`scripts/mailpit-cert.sh` の後のステップで `deploy/docker/mailpit/compose.yaml` から起動する（`services:` のコンテナはチェックアウトの前に起動し、証明書を読めない）。
+  Mailpit は証明書を作ってから起動しなければならないので、ジョブの `services:` ではなく、`scripts/mailpit-cert.sh` の後のステップで ルートの `compose.yaml` から起動する（`services:` のコンテナはチェックアウトの前に起動し、証明書を読めない）。
 - **E2E**: 既存の spec は、最小のフィクスチャの `main` のサーバーのままにする（前提を変えない）。本物のデータが要る新しい spec は `demo` のサーバーを使える。E2E と L4 の binary は CI の中だけで使い、公開しない。
 - **画面のストーリー**（ADR-0079）: MSW のフィクスチャは、人物・投稿の文・画像を `scenario.ts` から読んでよい（できるところから）。サーバーの応答を録って生成したフィクスチャはコミットしない（ADR-0081）。
 

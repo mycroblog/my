@@ -4,7 +4,7 @@ version: "2"
 run:
   modules-download-mode: readonly
   tests: true
-  # The live interoperability scenarios (deploy/docker/federation-live) build only with this tag, so that
+  # The live interoperability scenarios (test/federation-live) build only with this tag, so that
   # `go test ./...` never runs them; linting them keeps them compiling between nightly runs.
   build-tags:
     - federationlive
@@ -535,7 +535,7 @@ linters:
         federation-live:
           list-mode: strict
           files:
-            - "**/deploy/docker/federation-live/**"
+            - "**/test/federation-live/**"
           allow:
             - $gostd
             - github.com/jackc/pgx/v5

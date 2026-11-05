@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Layer on compose.yaml: media go to an S3-compatible bucket (MY_BLOB = s3) instead of the volume `data`. The server
+# reads every MY_BLOB_S3_* setting from .env, so the same file serves two setups. The server keeps serving the media
+# itself, so the store is never published to the internet.
+#
+# An external store (Amazon S3, Cloudflare R2, MinIO, Google Cloud Storage with an HMAC key, ...): set MY_BLOB_S3_BUCKET,
+# the endpoint, the region, and the keys in .env.
+#
+# A store in this Compose project: add COMPOSE_PROFILES=garage to .env. It runs Garage (https://garagehq.deuxfleurs.fr/,
+# AGPL-3.0), one node in a named volume, and the one-off service garage-init prepares it on every `up`: the node's role,
+# the key of MY_BLOB_S3_ACCESS_KEY_ID, and the bucket of MY_BLOB_S3_BUCKET. example.env lists the values.
+#
+#   docker compose -f compose.yaml -f compose.s3.yaml up -d
+
+services:
+  garage:
+    profiles: [garage]
+    # Pinned by tag and digest.
+    image: dxflrs/garage:v2.1.0@sha256:4c9b34c113e61358466e83fd6e7d66e6d18657ede14b776eb78a93ee8da7cf6a
+    configs:
+      - source: garage
+        target: /etc/garage.toml
+    volumes:
+      - garage:/var/lib/garage
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    restart: unless-stopped
+
+  garage-init:
+    profiles: [garage]
+    # Pinned by tag and digest. The image of Garage has no shell, so this one calls its admin API.
+    image: alpine:3.22@sha256:2e0b81d60597f449baa56dc25d355367869d2dca4cd57e866f1e2b52af3eb55f
+    depends_on:
+      garage:
+        condition: service_healthy
+    environment:
+      ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:-}
+      KEY_ID: ${MY_BLOB_S3_ACCESS_KEY_ID:-}
+      SECRET_KEY: ${MY_BLOB_S3_SECRET_ACCESS_KEY:-}
+      BUCKET: ${MY_BLOB_S3_BUCKET:-}
+    command:
+      - sh
+      - -euc
+      - |
+        call() {
+          wget -qO- --header "Authorization: Bearer $$ADMIN_TOKEN" --header 'Content-Type: application/json' \
+            $${2:+--post-data "$$2"} "http://garage:3903/v2/$$1"
+        }
+        # One node holds every block. The capacity only weighs nodes against each other; it limits nothing.
+        if call GetClusterLayout | grep -qE '"version": *0\b'; then
+          node="$$(call GetClusterStatus | grep -oE '"id": *"[0-9a-f]{64}"' | head -n 1 | grep -oE '[0-9a-f]{64}')"
+          call UpdateClusterLayout "{\"roles\":[{\"id\":\"$$node\",\"zone\":\"dc1\",\"capacity\":1000000000,\"tags\":[]}]}" >/dev/null
+          call ApplyClusterLayout '{"version":1}' >/dev/null
+        fi
+        # Both fail on the later runs, when the key and the bucket exist; the last two calls then still have to pass.
+        call ImportKey "{\"accessKeyId\":\"$$KEY_ID\",\"secretAccessKey\":\"$$SECRET_KEY\",\"name\":\"my\"}" >/dev/null 2>&1 || true
+        call CreateBucket "{\"globalAlias\":\"$$BUCKET\"}" >/dev/null 2>&1 || true
+        id="$$(call "GetBucketInfo?globalAlias=$$BUCKET" | grep -oE '"id": *"[0-9a-f]{64}"' | head -n 1 | grep -oE '[0-9a-f]{64}')"
+        call AllowBucketKey "{\"bucketId\":\"$$id\",\"accessKeyId\":\"$$KEY_ID\",\"permissions\":{\"read\":true,\"write\":true,\"owner\":true}}" >/dev/null
+        echo "garage-init: bucket $$BUCKET is ready"
+    restart: "no"
+
+  my:
+    depends_on:
+      # Ignored without the profile `garage`.
+      garage-init:
+        condition: service_completed_successfully
+        required: false
+    environment:
+      MY_BLOB: s3
+
+configs:
+  garage:
+    content: |
+      metadata_dir = "/var/lib/garage/meta"
+      data_dir = "/var/lib/garage/data"
+      db_engine = "sqlite"
+      replication_factor = 1
+      rpc_bind_addr = "[::]:3901"
+      rpc_public_addr = "127.0.0.1:3901"
+      rpc_secret = "${GARAGE_RPC_SECRET:-}"
+
+      [s3_api]
+      s3_region = "${MY_BLOB_S3_REGION:-us-east-1}"
+      api_bind_addr = "[::]:3900"
+
+      [admin]
+      api_bind_addr = "[::]:3903"
+      admin_token = "${GARAGE_ADMIN_TOKEN:-}"
+
+volumes:
+  garage:

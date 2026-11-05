@@ -1,15 +1,18 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Minimal self-hosted setup: one `my serve` process with role = all on a SQLite file in a named volume.
-# `docker compose up -d` runs three one-off services in this order before the server, each only after the previous
-# one succeeded, so a failure leaves the server stopped (docs/operations/database.md, "Upgrading"):
+# The deployment of one `my serve` process with role = all, on a SQLite file and media files in a named volume.
+# compose.postgres.yaml, compose.s3.yaml, and compose.caddy.yaml layer on top of it (docs/operations/running.md,
+# "Docker Compose files"). `docker compose up -d` runs three one-off services in this order before the server, each only
+# after the previous one succeeded, so a failure leaves the server stopped (docs/operations/database.md, "Upgrading"):
 #
 #   upgrade-check  my db upgrade -check: stops before the schema would drop data that is not carried over yet
 #   schema         my schema apply: brings the database to this release's schema, which the server image holds
 #   upgrade        my db upgrade: runs the data upgrade steps of this release
 #
 # The same order initializes an empty volume and upgrades an existing one to a new MY_VERSION.
-# Copy .env.example to .env and fill it in first (README.md, "Quick start").
+#
+# Every setting comes from .env, which is passed to the containers whole: copy example.env to .env and read its header.
+# The KEK does not: it lives in the file secrets/kek, which the containers see as /run/secrets/my_kek.
 #
 # It runs the published image of MY_VERSION. There is no `latest`: name a version, as 0.1.0 (for good), 0.1 (the latest
 # patch of v0.1, on the next `docker compose pull`), or 0.1.0@sha256:... (the digest in the release's notes).
@@ -23,23 +26,17 @@ name: my
 # The server image and its settings, shared by the server and the one-off services.
 x-app: &app
   image: ghcr.io/mycroblog/my:${MY_VERSION:?set MY_VERSION in .env to a version such as 0.1.0; there is no latest}
+  env_file: .env
+  # These win over .env. The shell wins over .env for the variables read here, which is how an upgrade turns on the
+  # maintenance mode for one command (docs/operations/maintenance.md).
   environment:
     MY_HOST: ${MY_HOST:?set MY_HOST in .env}
-    # The origin browsers open: http://{MY_HOST} serves sign-in, the client API and media over plain HTTP on
-    # localhost; empty means https://{MY_HOST} behind a TLS-terminating reverse proxy. ActivityPub ids stay https.
-    MY_WEB_ORIGIN: ${MY_WEB_ORIGIN:-}
-    # Reverse proxies whose X-Forwarded-For tells the client IP for the rate limits; empty trusts none.
-    MY_TRUSTED_PROXIES: ${MY_TRUSTED_PROXIES:-}
-    MY_ROLE: all
-    MY_DATABASE: sqlite
-    MY_DATABASE_URL: /data/my.db
+    MY_DATABASE_URL: ${MY_DATABASE_URL:-/data/my.db}
     # Uploaded and processed media, in the same volume as the database (back them up together).
-    MY_BLOB_FS_DIR: /data/blobs
-    # The KEK reaches the container as a Docker secret file, not as an environment variable.
+    MY_BLOB_FS_DIR: ${MY_BLOB_FS_DIR:-/data/blobs}
+    # The KEK reaches the container as a Docker secret file, not as an environment variable. MY_KEK in .env would set
+    # both, which the server refuses.
     MY_KEK_FILE: /run/secrets/my_kek
-    # The status page and the maintenance mode (docs/operations/maintenance.md): MY_MAINTENANCE=true answers every
-    # request with the maintenance page or problem until the service is recreated without it.
-    MY_STATUS_PAGE_URL: ${MY_STATUS_PAGE_URL:-}
     MY_MAINTENANCE: ${MY_MAINTENANCE:-false}
     MY_MAINTENANCE_MESSAGE: ${MY_MAINTENANCE_MESSAGE:-}
     MY_MAINTENANCE_UNTIL: ${MY_MAINTENANCE_UNTIL:-}
@@ -76,14 +73,15 @@ services:
       upgrade:
         condition: service_completed_successfully
     ports:
-      # Loopback only: federation needs HTTPS, so put a TLS-terminating reverse proxy in front.
+      # Loopback only: federation needs HTTPS, so put a TLS-terminating reverse proxy in front (compose.caddy.yaml).
       - "127.0.0.1:${MY_HTTP_PORT:-8080}:8080"
     restart: unless-stopped
 
 secrets:
   my_kek:
-    # Taken from MY_KEK in .env (or the shell) and mounted at /run/secrets/my_kek.
-    environment: MY_KEK
+    # Compose mounts the file as it is: the server runs as the user 65532, which has to be able to read it. example.env
+    # shows how to make it.
+    file: ./secrets/kek
 
 volumes:
   data:
