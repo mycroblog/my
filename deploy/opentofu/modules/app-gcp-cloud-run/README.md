@@ -53,7 +53,7 @@ module "app" {
 | In front | `service_ingress` | Can anyone reach `run.app`? | The client address |
 | --- | --- | --- | --- |
 | `ingress-gcp-load-balancer` | `internal-and-load-balancer` | No: refused from the internet | From `X-Forwarded-For`, past the load balancer's address. A direct caller has no way in |
-| `ingress-gcp-domain-mapping` | `all` | **Yes** | From `X-Forwarded-For`, past Cloud Run's front end, the same on either URL. That `169.254.0.0/16` is that front end is unverified: check the first request logs |
+| `ingress-gcp-domain-mapping` | `all` | **Yes** | From `X-Forwarded-For`, past Cloud Run's front end, the same on either URL. An assumption, as below: check the first request logs |
 | `ingress-cloudflare-app` | `all` | **Yes, so Cloudflare's protections can be gone around** | Trusts Cloudflare's ranges, so a caller of the `run.app` URL from a Cloudflare Worker of their own can choose the address that the rate limits see |
 | Nothing | Your choice: `all` for a public instance | **Yes**, with `all` | As with the domain mapping |
 | Nothing | `internal` | No | No client from the internet at all: federation and browsers cannot reach it, so this is not for a public instance |
@@ -65,7 +65,7 @@ The server has no check that a request came through its ingress, so nothing clos
 ## What it does
 
 - **It keeps the service's default `run.app` URL on**, because Cloud Tasks and Cloud Scheduler call it. Do not disable it: jobs stop.
-- Without an ingress, `MY_TRUSTED_PROXIES` is `169.254.0.0/16`, Cloud Run's front end. A backend or `env` that names `MY_TRUSTED_PROXIES` replaces that.
+- Without an ingress, `MY_TRUSTED_PROXIES` is `169.254.0.0/16`, taken to be Cloud Run's front end. A backend or `env` that names `MY_TRUSTED_PROXIES` replaces that. No document we have read says what Cloud Run adds to `X-Forwarded-For` for a direct request or what peer address a container sees, and the container contract says nothing about either, so `169.254.0.0/16` is an assumption. The external load balancer's documented form is `[<supplied>,]<client-ip>,<lb-ip>`.
 - Request-based billing with min instances 0, a `/readyz` startup probe, and a `/healthz` liveness probe. The startup probe
   keeps a revision from taking traffic until the schema and the data upgrade steps of its release are in place.
 - A plan fails without a KEK when the server needs one: `kek` with `key_manager = local`, or `kms_key` otherwise.

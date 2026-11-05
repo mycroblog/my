@@ -330,8 +330,8 @@
 | AWS Application Load Balancer（EC2 / ECS） | ロードバランサのノード（ALB のサブネットのプライベート IP） | ALB を置いたサブネット（または VPC）の CIDR | `x-forwarded-for`（ALB の `routing.http.xff_header_processing.mode` は既定の `append` のままにする） |
 
 - ロードバランサの背後では、サービスの ingress を `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` にする（`run.app` の URL から回り込めないように）。Cloud Tasks と Cloud Scheduler は既定の `run.app` の URL を呼ぶのでロードバランサを通らず、同じプロジェクトからなら内部のトラフィックとして届く。`deploy/opentofu` の `ingress-*` モジュールがこの違いを持つ。
-- Google Cloud のロードバランサと Cloud Run は `X-Forwarded-For` を `<クライアントが送った値>, <クライアント IP>[, <ロードバランサの IP>]` の形にする。
-  要検証: Cloud Run のコンテナから見た接続元が `169.254.0.0/16` に収まること（最初のデプロイでアクセスログの接続元を確認し、ずれていれば表を直す）。
+- 外部アプリケーションロードバランサの `X-Forwarded-For` は `[<クライアントが送った値>,]<クライアント IP>,<ロードバランサの IP>` と文書にある。一方、直接のリクエストに Cloud Run が何を足すか、コンテナから見た接続元が何かは、読んだ文書のどこにもなく、コンテナの契約のページにもない。`169.254.0.0/16` は仮定である。
+  要検証: 最初のデプロイでアクセスログの接続元を確認し、ずれていれば表を直す。
 - AWS ALB の `append` モードはクライアント IP を `X-Forwarded-For` の右端に追記する。`preserve` は追記しない（クライアントの値がそのまま届く）ので使わない。
 - 要検証: Lambda Web Adapter 経由（Function URL / ALB → Lambda）では接続元がアダプタの `127.0.0.1` になる。`trusted_proxies = 127.0.0.1` で
   `X-Forwarded-For` を採れるか、ヘッダが前段で追記されたものかを、Lambda のデプロイテンプレートの作業で確認する。

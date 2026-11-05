@@ -265,7 +265,7 @@ On a new instance with no data, nothing needs to move.
 
 - **Uploads**: Cloud Run refuses an HTTP/1 request above 32 MiB, and the server speaks HTTP/1.1. The example therefore sets `MY_MEDIA_MAX_AV_BYTES` to 30 MiB, against the default of 100 MiB, so that a larger upload gets the server's own answer.
 - **Streams**: the request timeout, 15 minutes by default, ends an open stream, and the client connects again.
-- **Client addresses**: the rate limits rely on `MY_TRUSTED_PROXIES`, which the app module sets from what the `ingress` module returns. Check the addresses in the first request logs: a client IP that is a `169.254` address or a Google address means that the setting is wrong for your project.
+- **Client addresses**: the rate limits rely on `MY_TRUSTED_PROXIES`, which the app module sets from what the `ingress` module returns. No document we have read says what Cloud Run adds to `X-Forwarded-For` for a direct request or what peer address a container sees, and the container contract says nothing about either, so `169.254.0.0/16` is an assumption. The external load balancer's documented form is `[<supplied>,]<client-ip>,<lb-ip>`. Check the addresses in the first request logs: a client IP that is a `169.254` address or a Google address means that the setting is wrong for your project.
 - **Public access**: the service grants `roles/run.invoker` to `allUsers`, which an organization policy on domain-restricted sharing refuses. Such a project needs an exception.
 
 ## Costs

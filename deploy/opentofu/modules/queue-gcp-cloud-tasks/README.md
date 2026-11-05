@@ -35,6 +35,8 @@ Tasks and ticks call `https://<service_name>-<project number>.<region>.run.app`,
 - Cloud Run counts Cloud Tasks and Cloud Scheduler as internal only from the same project and on the default `run.app` URL, not a custom domain, so this is what lets the service refuse the internet behind a load balancer.
 - **Do not disable the service's default URL**: jobs stop. `app-gcp-cloud-run` keeps it on.
 
+Google's documentation calls both the deterministic and the non-deterministic URL "default `run.app` URLs", and counts these two as internal from the same project on "the default `run.app` URL and not a custom URL or custom domain". So the deterministic URL qualifies by the documentation; the one thing no page states is the case of Cloud Tasks and Cloud Scheduler on that form by name. Confirm it on the first apply behind `internal-and-load-balancer`.
+
 The project's number is read with `data.google_project`, so whoever runs a plan needs `resourcemanager.projects.get`. The app module refuses a plan in which this URL does not name its service and region.
 
 The queue depends on no output of the app module: the URL comes from its inputs, and the invoker is created here. No audience
