@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/account"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -111,7 +112,8 @@ var (
 	// ErrRegistrationClosed reports a sign-up while the registration mode is closed.
 	ErrRegistrationClosed = errors.New("identity: registration is closed")
 	// ErrSignUpRefused reports a sign-up that a sign-up block with severity reject matches
-	// (FR-719). The page does not tell the applicant which block matched, or why.
+	// (FR-719), or that the hook signup.check rejects (ADR-0147 §12). It is one error for both: the
+	// page does not tell the applicant which of them refused, or why.
 	ErrSignUpRefused = errors.New("identity: the sign-up is refused")
 	// ErrInviteRequired reports a sign-up without an invite code in invite mode.
 	ErrInviteRequired = errors.New("identity: an invite is required")
@@ -197,6 +199,8 @@ type SignedUp struct {
 // waits for a moderator as approval mode does. The sign-up block list (FR-719) comes on top:
 // a block in effect that matches the email address or the client address refuses the sign-up
 // (severity reject) or leaves it pending for a moderator in every mode (require_approval).
+// The decision hook signup.check comes after it, for a sign-up without an invite, and does the
+// same with its verdict (ADR-0147 §2).
 //
 // In one transaction it writes the user, password, primary email address, preferences, local
 // account, application, the system's decision, the registration state, the invite's
@@ -303,6 +307,15 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 	if err != nil {
 		return SignedUp{}, err
 	}
+	var verdict apphook.Result
+	if invite == nil {
+		if verdict, err = s.decideSignup(ctx, in, p.acct.Account.ID); err != nil {
+			return SignedUp{}, err
+		}
+		if verdict.Effect == apphook.Reject {
+			return SignedUp{}, ErrSignUpRefused
+		}
+	}
 	now := p.user.CreatedAt
 	email := identity.EmailAddress{
 		ID: s.d.IDs.NewID(), UserID: p.user.ID, Address: in.Email, AddressNormalized: identity.NormalizeEmail(in.Email), AddedAt: now,
@@ -317,7 +330,7 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 	// (ADR-0106 §17). In open mode it only records who invited the user.
 	approve := mode == identity.RegistrationInvite || (mode == identity.RegistrationOpen && s.d.RequireEmailVerification) ||
 		(mode == identity.RegistrationApproval && invite != nil)
-	if approve && severity != appmoderation.SignupRequireApproval {
+	if approve && severity != appmoderation.SignupRequireApproval && verdict.Effect != apphook.RequireApproval {
 		decision = &identity.RegistrationDecision{
 			ID: s.d.IDs.NewID(), ApplicationID: app.ID, Decision: identity.DecisionApproved,
 			DecidedBy: identity.DecidedBySystem, DecidedAt: now,
@@ -386,12 +399,49 @@ func (s *Service) signUp(ctx context.Context, in SignUpInput, ext *externalSignU
 				return err
 			}
 		}
+		if verdict.DecisionID != "" {
+			if err := s.d.Hooks.Applied(ctx, tx, verdict); err != nil {
+				return err
+			}
+		}
 		return s.writeSession(ctx, tx, session)
 	})
 	if err != nil {
 		return SignedUp{}, err
 	}
 	return SignedUp{Registration: p.registration(), State: state.State, Session: session.signedIn()}, nil
+}
+
+// decideSignup asks signup.check about a sign-up, outside any transaction. The ID the account would
+// get is the subject and the account of the decision: it names this attempt alone and holds no email
+// or IP address, and account erasure and holds go by it. An attempt that writes nothing leaves the
+// decision to its retention. The wait is the deadline of the hook's plugin connection, and a failure
+// of the plugin comes back as the Effect that hook_signup_check_on_failure chooses. A hook with no
+// plugin costs nothing. A reject counts only while the operator lets it refuse sign-ups.
+func (s *Service) decideSignup(ctx context.Context, in SignUpInput, accountID string) (apphook.Result, error) {
+	if s.d.Hooks == nil || !s.d.Hooks.Configured(apphook.SignupCheck) {
+		return apphook.Result{}, nil
+	}
+	r, err := s.d.Hooks.Decide(ctx, apphook.Call{
+		Hook: apphook.SignupCheck, SubjectKey: accountID, AccountID: accountID,
+		Subject: apphook.SignupSubject{Email: in.Email, IP: normalizeIP(in.IP)},
+	})
+	if err != nil {
+		return apphook.Result{}, err
+	}
+	if r.Effect != apphook.Reject {
+		return r, nil
+	}
+	rejects := false
+	if s.d.SignupHookRejects != nil {
+		if rejects, err = s.d.SignupHookRejects(ctx); err != nil {
+			return apphook.Result{}, err
+		}
+	}
+	if !rejects {
+		r.Effect = apphook.Allow
+	}
+	return r, nil
 }
 
 // signUpInvite returns the invite with the code for a sign-up, failing with ErrInvalidInvite

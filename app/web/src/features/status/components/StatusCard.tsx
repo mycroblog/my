@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {
   Avatar,
+  Button,
   ContentWarning,
   EmojiText,
   Hint,
+  InlineError,
+  LanguageIcon,
   LinkCard,
   MediaGrid,
   PostCard,
@@ -26,11 +29,13 @@ import type { Status } from "../api/status";
 import { useMediaViewerLabels } from "../hooks/useMediaViewerLabels";
 import { useAudioPlayerLabels } from "../hooks/useAudioPlayerLabels";
 import { useLinkCardSize } from "../hooks/useLinkCardSize";
+import { translatedView, useStatusTranslation } from "../hooks/useStatusTranslation";
 import { useStatusView } from "../hooks/useStatusView";
 import { StatusActions } from "./StatusActions";
 import { QuotedStatus } from "./QuotedStatus";
 import { StatusPoll } from "./StatusPoll";
 import { StatusReactions } from "./StatusReactions";
+import { StatusTranslationNote } from "./StatusTranslationNote";
 
 export type StatusCardProps = {
   status: Status;
@@ -71,6 +76,9 @@ export function StatusCard({
   const t = useT();
   const intl = useIntl();
   const view = useStatusView(status);
+  const translation = useStatusTranslation(status, withActions);
+  const { shown } = translation;
+  const text = translatedView(view, shown);
   const viewerLabels = useMediaViewerLabels();
   const audioLabels = useAudioPlayerLabels();
   const reportBoundaryError = useBoundaryErrorReport();
@@ -97,9 +105,9 @@ export function StatusCard({
     );
   // A post with attachments has no card (ADR-0062 §1); the card takes the place of the media.
   const media =
-    view.media.length > 0 ? (
+    text.media.length > 0 ? (
       <MediaGrid
-        items={view.media}
+        items={text.media}
         sensitive={view.sensitive}
         noDescriptionLabel={t("client:timeline.media.no_description")}
         revealLabel={t("client:timeline.media.reveal")}
@@ -112,15 +120,21 @@ export function StatusCard({
     );
   // The poll goes with the body, under the content warning too (FR-112).
   const poll =
-    (status.boost ?? status).poll === undefined ? undefined : <StatusPoll status={status} canVote={withActions} />;
+    (status.boost ?? status).poll === undefined ? undefined : (
+      <StatusPoll
+        status={status}
+        canVote={withActions}
+        translation={shown === null ? null : { titles: shown.pollOptions, lang: shown.language }}
+      />
+    );
   // The quoted post goes with the body too, after the media (FR-114).
   const quoted = (status.boost ?? status).quote;
   const quote = quoted === undefined ? undefined : <QuotedStatus quote={quoted} />;
   const extras = [poll, media, quote].filter((part) => part !== undefined);
   const body = (
     <PostContent
-      html={view.html}
-      lang={view.lang}
+      html={text.html}
+      lang={text.lang}
       emojis={view.emojis}
       onLinkClick={view.onLinkClick}
       {...(variant === "focused" && { size: "lg" as const })}
@@ -131,6 +145,25 @@ export function StatusCard({
     view.historyPath === null ? null : (
       <PostCardTimeLink href={view.historyPath}>{t("client:status.edited")}</PostCardTimeLink>
     );
+  // One button in one place, which only changes its words, so that the focus stays on it.
+  const translate = translation.action !== null && (
+    <>
+      <Button
+        variant="subtle"
+        size="toolbar"
+        isPending={translation.action.isPending}
+        onPress={translation.action.onPress}
+      >
+        <LanguageIcon />
+        {translation.action.label}
+      </Button>
+      {translation.failure !== null && (
+        <InlineError as="span" alert>
+          {translation.failure}
+        </InlineError>
+      )}
+    </>
+  );
   const time =
     variant === "focused" ? (
       // The relative time as everywhere else (G8); the full date is in the details.
@@ -163,10 +196,19 @@ export function StatusCard({
               <Text numeric>{t("client:status.focused.favourites", { count: view.counts.favourites })}</Text>
             )}
             {edited}
+            {translate}
           </>
         ),
       })}
-      {...(variant === "compact" && edited !== null && { details: edited })}
+      {...(variant === "compact" &&
+        (edited !== null || translate !== false) && {
+          details: (
+            <>
+              {edited}
+              {translate}
+            </>
+          ),
+        })}
       {...(pinned && {
         // Part of the article's name, so that a reader of the feed hears it before the author.
         context: <PostCardContext kind="pin">{t("client:status.pin.label")}</PostCardContext>,
@@ -204,22 +246,26 @@ export function StatusCard({
       time={time}
       visibility={view.visibility}
       content={
-        view.contentWarning === null ? (
-          body
-        ) : (
-          <ContentWarning
-            summary={<EmojiText text={view.contentWarning} emojis={view.emojis} />}
-            summaryLang={view.lang}
-            toggleLabel={t("client:timeline.content_warning.toggle")}
-          >
-            {body}
-            {poll}
-            {media}
-            {quote}
-          </ContentWarning>
-        )
+        <>
+          {/* Above the text and outside the warning, so that nothing translated is read without it. */}
+          {shown !== null && <StatusTranslationNote by={shown.by} />}
+          {text.contentWarning === null ? (
+            body
+          ) : (
+            <ContentWarning
+              summary={<EmojiText text={text.contentWarning} emojis={view.emojis} />}
+              summaryLang={text.contentWarningLang}
+              toggleLabel={t("client:timeline.content_warning.toggle")}
+            >
+              {body}
+              {poll}
+              {media}
+              {quote}
+            </ContentWarning>
+          )}
+        </>
       }
-      {...(view.contentWarning === null &&
+      {...(text.contentWarning === null &&
         extras.length > 0 && {
           media:
             extras.length === 1 ? (

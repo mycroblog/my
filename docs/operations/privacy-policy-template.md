@@ -98,6 +98,7 @@ Each service that receives personal data appears in the policy only if you turne
 | `{{IF turn}}` | `voice_stun_urls`, `voice_turn` | STUN and TURN servers see participants' IP addresses, and a TURN server relays their encrypted audio. |
 | `{{IF webhooks}}` | [Server webhooks](webhooks.md) | Your receiver gets event bodies. Some carry an applicant's email address or a report's comment. |
 | `{{IF follow review}}` | `plugin_inbound_follow_address` is set and `hook_inbound_follow_mode` is not `off` | The addresses of the two accounts of each follow from another server, sent by the server when the follow arrives ([decision hooks](decision-hooks.md)). The recorded decision keeps the activity's address and which account sent it. |
+| `{{IF sign-up review}}` | `plugin_signup_check_address` is set and `hook_signup_check_mode` is not `off` | The email address and IP address of each applicant without an invite, sent by the server when they sign up ([decision hooks](decision-hooks.md#sign-ups)). The recorded decision holds neither. Name the service in section 6 unless you run the plugin yourself. |
 | `{{IF translation}}` | `translation_providers` is not empty | The text of a post when a reader asks to translate it: its body, content warning, poll options, and image descriptions. The post's address, its author, the reader, mentions, and links are not sent. By default a provider receives `public`, `local`, and `unlisted` posts. It works as your service provider, like hosting, so `local` posts reach it although they do not federate: keep the `local` sentence in section 5. A provider that keeps the text for its own use is not a service provider in this sense, and the policy must say so. |
 | `{{IF translation to private and direct}}` | `translation_provider_visibilities` allows a provider `private` or `direct` | The same, for those posts. Use this marker only when you allowed it, per provider. It adds lines to sections 2 and 5, and it makes your promise about those posts wider, so announce it before you change the setting. |
 | `{{IF browser translation}}` | `translation_browser` | Nothing reaches this server or a provider. The browser translates on the reader's device, and what the browser's maker does is up to that browser. |
@@ -208,6 +209,8 @@ Other people here see what you publish. Staff with the right permission can reve
 
 Search engines and AI services: {{DESCRIBE YOUR search_indexing, indexable_default, AND ai_usage SETTINGS. By default we ask them not to index and not to use the content}}. These are requests, and not every crawler follows them. You can change whether your own profile appears in search in your profile settings.
 
+{{IF the full-text search runs on another company's service}} Full-text search: the text of posts in search ({{public / local}} posts of people who chose to appear in search) goes to {{SERVICE}} to make them searchable, and is removed there when the post is deleted or you stop appearing in search. {{SAY HOW LONG ITS BACKUPS KEEP IT}}. {{IF you keep logs that hold search terms}} What you search for can appear in our request logs, which we keep for {{PERIOD}}.
+
 Apps you authorize can read and do what the permissions you granted allow. Their own policies apply. You can revoke them in your settings.
 
 {{IF the list of supporters is public}} If you choose to appear in the list of supporters, it shows your avatar, display name, handle, and plan.
@@ -226,6 +229,7 @@ We use these services to run the instance. {{SAY WHETHER EACH ACTS ON YOUR BEHAL
 | {{IF captcha}} {{CAPTCHA SERVICE}} | Stopping automated sign-ins, sign-ups, and password-reset requests | IP address, browser and device information, cookies, and interactions with the widget. Your browser sends these directly, from the sign-in, sign-up, and password-reset request pages only | {{COUNTRY}} | {{LINK}} |
 | {{IF login providers}} {{PROVIDER}} | Signing in with an account there | That you sign in. We receive their identifier for you, and at sign-up your email address and username | {{COUNTRY}} | {{LINK}} |
 | {{IF follow review}} {{FOLLOW REVIEW SERVICE}} | Screening follows from other servers for abuse | The addresses of your account and of the account on the other server, when someone there follows you | {{COUNTRY}} | {{LINK}} |
+| {{IF sign-up review}} {{SIGN-UP REVIEW SERVICE}} | Screening sign-ups for abuse | The email address and IP address you sign up with, unless you sign up with an invite | {{COUNTRY}} | {{LINK}} |
 | {{IF translation}} {{TRANSLATION SERVICE}} | Translating a post when a reader asks | The text of the post: its body, content warning, poll options, and image descriptions. Not its address, its author, the reader, mentions, or links. Text sent to the service cannot be recalled, and deleting the post does not remove it there: {{HOW LONG THE SERVICE KEEPS IT}} | {{COUNTRY}} | {{LINK}} |
 | {{IF stripe}} Stripe | Taking payments for supporter plans | Your email address and plan. You enter payment details on Stripe's pages | {{COUNTRY}} | <https://stripe.com/privacy> |
 | {{IF payjp}} PAY.JP | Taking payments for supporter plans | Your email address, cardholder name, and plan. You enter card details in PAY.JP's frame, whose script runs on our payment pages | {{COUNTRY}} | {{LINK}} |
@@ -287,7 +291,7 @@ We keep some records even when you ask us to delete them, where we need them for
 
 # 12. Automated decisions
 
-We make no decisions about you by automated means that have legal or similarly significant effects, {{CONFIRM FOR YOUR USE. These are automatic: a sign-up that matches a block is refused or sent for review, the CAPTCHA check, and rate limits. Your staff decide the rest.}}
+We make no decisions about you by automated means that have legal or similarly significant effects, {{CONFIRM FOR YOUR USE. These are automatic: a sign-up that matches a block, or that an external review answers about, is refused or sent for review, the CAPTCHA check, and rate limits. Your staff decide the rest.}}
 
 # 13. Changes
 

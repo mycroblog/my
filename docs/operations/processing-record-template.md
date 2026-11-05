@@ -50,6 +50,7 @@ These names are used under the activities below. List each one you use.
 | {{IF voice}} Voice media server, STUN and TURN | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook receivers | {{...}} | {{...}} |
 | {{IF follow review}} Follow review service | {{...}} | {{...}} |
+| {{IF sign-up review}} Sign-up review service | {{...}} | {{...}} |
 | {{IF translation}} Translation providers | {{...}} | {{...}} |
 | Backup storage | {{...}} | {{...}} |
 | Federated servers | Other servers of the network, run by other controllers, which change over time. `my` keeps the list of known servers | Any country |
@@ -79,8 +80,8 @@ These names are used under the activities below. List each one you use.
 | --- | --- |
 | Purposes | Preventing abuse, finding accounts of the same person during moderation, rate limiting, stopping bots |
 | Data subjects | People with an account, applicants, visitors of the sign-in pages |
-| Personal data | Registration IP address, sign-in IP address and User-Agent, IP address (and for password-reset requests the email address) in rate limit counters, sign-up blocks (email domain, hashed address, IP range). With CAPTCHA: IP address, browser and device information, cookies |
-| Recipients | Hosting, staff with `manage_accounts` (each reveal is in the audit log), CAPTCHA service |
+| Personal data | Registration IP address, sign-in IP address and User-Agent, IP address (and for password-reset requests the email address) in rate limit counters, sign-up blocks (email domain, hashed address, IP range). With CAPTCHA: IP address, browser and device information, cookies. With a sign-up review: the email address and IP address of each applicant without an invite |
+| Recipients | Hosting, staff with `manage_accounts` (each reveal is in the audit log), CAPTCHA service, sign-up review service |
 | Erasure | Registration IP addresses `{{180 days}}`, sign-in origins `{{180 days}}`, counters within twice the window of the limit, sign-up blocks 30 days after the lift or expiry. Stopped by a retention hold |
 | Legal basis | {{e.g. legitimate interests}} |
 
@@ -91,7 +92,7 @@ These names are used under the activities below. List each one you use.
 | Purposes | Publishing profiles and posts, and the interactions people ask for |
 | Data subjects | People with an account, people they mention |
 | Personal data | Profile and its versions, posts and their versions, media, favourites, reactions, boosts, bookmarks, pins, poll votes, follows, blocks, mutes, lists. Posts can hold any data a person writes, including special categories |
-| Recipients | Hosting, CDN, other users, the public web for public content, federated servers (activity 4), search engines and AI crawlers under `search_indexing` and `ai_usage`, apps the person authorized |
+| Recipients | Hosting, CDN, other users, the public web for public content, federated servers (activity 4), search engines and AI crawlers under `search_indexing` and `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, apps the person authorized |
 | Erasure | When the person deletes it, by their automatic deletion policy, or at account erasure. Uploads attached to nothing `{{24 hours}}`. Old versions of images after a newer version replaces them `{{30 days}}`. The record of a deleted post's URI stays |
 | Legal basis | {{e.g. contract}} |
 

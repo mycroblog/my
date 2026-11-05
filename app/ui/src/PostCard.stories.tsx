@@ -12,6 +12,7 @@ import {
   PostCardAvatarLink,
   PostCardContext,
   PostCardNameLink,
+  PostCardNote,
   PostCardOrigin,
   PostCardTimeLink,
 } from "./PostCardParts";
@@ -387,6 +388,23 @@ export const WithOrigin: Story = {
     await expect(canvas.getByRole("link", { name: "Open the post on social.example" })).toHaveAttribute(
       "href",
       "https://social.example/@alice/1",
+    );
+  },
+};
+
+/** A text that is not as its author posted it says so over the text, as part of the article's description. */
+export const WithNote: Story = {
+  args: {
+    content: (
+      <>
+        <PostCardNote>Machine translated by Fake Translate</PostCardNote>
+        <PostContent html={serverSanitizedHtml("<p>Hello everyone</p>")} lang="en" />
+      </>
+    ),
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("article")).toHaveAccessibleDescription(
+      expect.stringContaining("Machine translated by Fake Translate"),
     );
   },
 };

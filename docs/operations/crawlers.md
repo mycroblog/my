@@ -73,6 +73,7 @@ The operators of those sites read about it at `https://<host>/about/crawler`, wh
   Statements on pages served by other servers are left to those servers (no custom ActivityPub extension is sent).
 - `ai_usage = deny` also states a refusal of the actions in which a user of ChatGPT or a similar service has it read a page of this server.
 - The `indexable` of a remote account (Mastodon's `toot:indexable`) is received and stored. Pages of remote accounts are always `noindex` on this server.
+- `indexable` also decides whether a person's posts are in this server's own [full-text search](search.md), on a server with a search engine. There it covers the visibilities of `search_visibilities`, which can include `local`. `search_indexing` has no effect on that search, and what search engines are told stays as this page says.
 
 ## Serving media from object storage or a CDN
 

@@ -84,6 +84,13 @@ func TestTranslationRepositoryContract(t *testing.T) {
 	})
 }
 
+func TestSearchRepositoryContract(t *testing.T) {
+	testkit.SearchRepositoryContract(t, func(t *testing.T) testkit.SearchHarness {
+		db := newTestDB(t, uow.Options{})
+		return testkit.SearchHarness{UnitOfWork: db, Repository: db.SearchRepository()}
+	})
+}
+
 func TestCustomEmojiRepositoryContract(t *testing.T) {
 	testkit.CustomEmojiRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.CustomEmojiHarness {
 		db := newTestDB(t, opts)

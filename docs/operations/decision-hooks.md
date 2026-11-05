@@ -5,8 +5,8 @@ answers with a verdict from a fixed list. It never rewrites anything and it take
 is stop one post, follow, or sign-up, or file a report for your moderators. People decide what happens to an account.
 
 Nothing is reviewed by default. A server with no hook address makes no call and spends no time on them. This version keeps
-the records, the modes, and the admin screens described here. Of the intake paths, only follows from other servers ask a hook
-(`inbound.follow`), and the other hooks are not called yet.
+the records, the modes, and the admin screens described here. Of the intake paths, follows from other servers ask a hook
+(`inbound.follow`) and sign-ups ask `signup.check`; the other hooks are not called yet.
 
 ## The hooks
 
@@ -30,10 +30,33 @@ What each answer does:
   files no report.
 - `mark_sensitive` lets it through and shows its attachments as sensitive until a moderator cancels the decision.
 - `require_approval` holds the sign-up for approval.
-- `reject` refuses it, with fixed text that shows nothing of the plugin's answer.
+- `reject` refuses it, with fixed text that shows nothing of the plugin's answer. On `signup.check` this also takes
+  [the setting below](#sign-ups).
 
 An answer can carry a coded reason (`spam`, `harassment`, `sexual`, `violence`, `illegal`, `malware`, `other`) and a note of
 up to 200 characters for your moderators. An answer the hook does not take counts as a failure.
+
+## Sign-ups
+
+`signup.check` runs on sign-ups from the registration page and through a login provider, after the CAPTCHA and the
+[sign-up block list](moderation.md), so a request either of them refuses never reaches the plugin. A sign-up with an
+invite code never calls it. It sends the email address the applicant entered and the client's IP address; the account does
+not exist yet, so the key of the subject is the ID the account would get, and an applicant who tries again is a new subject.
+
+The answers act as the block list's do when the hook enforces:
+
+- `require_approval` leaves the sign-up waiting under **Moderation** > **Registrations**, as a block with the same severity
+  does, in every registration mode. Approve or reject it there: cancelling the decision does not change the registration.
+- `reject` does nothing until you turn on `hook_signup_check_reject` (**Server settings** > **External review**, off by
+  default). While it is off, a `reject` is recorded and the sign-up goes on. While it is on, the applicant sees the same fixed
+  text as for a block ("This server cannot accept this sign-up."). No account is written, so cancelling such a decision only
+  changes its record, and the applicant signs up again.
+
+Applicants never see the reason or the note of a decision.
+
+The applicant's request waits for the plugin for up to `plugin_signup_check_timeout` (2 seconds by default; keep it short, as
+a person is waiting). The wait is not part of a database transaction. A sign-up that later fails, such as for a taken
+username, keeps its decision until the retention removes it.
 
 ## Modes
 
@@ -103,6 +126,6 @@ it covers, and what is sent to it. The server writes this from your settings.
 Calls and sent data grow with what the server receives. Review what you send before you turn a hook on:
 
 - `inbound.status` and `local.status` send the text of posts, and refuse plain TCP.
-- `signup.check` sends email addresses and IP addresses. It allows plain TCP, which sends them unencrypted.
+- `signup.check` sends the email address and the IP address of each applicant, and refuses plain TCP.
 - `inbound.follow` sends the two parties of a follow.
 - `media.check` sends a small processed version of the media, never the original.

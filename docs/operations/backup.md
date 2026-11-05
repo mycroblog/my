@@ -20,6 +20,7 @@ What does not need a backup:
 - **The job queue** (`queue`). With `queue = db` and `queue = cloudtasks` the jobs are part of the database and come back with it.
   The tasks of Cloud Tasks only carry a signal for a job of the database; after a restore, the server signals the jobs that are due again within a few minutes.
 - **Logs and metrics**, which the server does not read back.
+- **The index of a search engine**, if you have one. `my search rebuild` makes it again from the database. If you do take snapshots of the engine, they hold the text of posts, including posts deleted after the snapshot, so treat them like database backups ([Full-text search](search.md#backups)).
 
 The VAPID key of Web Push is a secret of the configuration. A new key stops push notifications to every existing subscription
 ([Web Push VAPID key](key-management.md#web-push-vapid-key)), so keep it with the configuration.
@@ -278,6 +279,8 @@ on a backup of the same release they change nothing. Then check:
 
 Writes made after the backup are lost: posts, follows, and uploads since then are gone on this instance, while other servers may still have
 the activities they received. That cannot be repaired from here; restore from the newest backup you have.
+
+With a search engine, run `my search rebuild` after the restore, without `--keep`, so that posts newer than the backup leave the index ([Full-text search](search.md#backups)).
 
 ### Without the right KEK
 

@@ -277,7 +277,8 @@ func (h *Handler) signUpFailedWith(w http.ResponseWriter, r *http.Request, p pag
 		status = http.StatusServiceUnavailable
 		p.Error = l.ServerAuthHumanCheckUnavailable()
 	case errors.Is(err, appidentity.ErrSignUpRefused):
-		// The sign-up block list refused it; the page does not say which block or why (FR-719).
+		// The sign-up block list or the hook signup.check refused it; the page says neither which nor
+		// why, and holds nothing of the plugin's answer (FR-719, ADR-0147 §12).
 		status = http.StatusForbidden
 		p.Error = l.ServerAuthSignUpRefused()
 	case errors.Is(err, appaccount.ErrUsernameTaken):

@@ -47,7 +47,7 @@ const (
 	Verdict_VERDICT_MARK_SENSITIVE Verdict = 4
 	// Go on, and hold the sign-up for approval.
 	Verdict_VERDICT_REQUIRE_APPROVAL Verdict = 5
-	// Refuse the subject and tell the person.
+	// Refuse the subject and tell the person, with fixed text that holds nothing of the response.
 	Verdict_VERDICT_REJECT Verdict = 6
 )
 
@@ -173,7 +173,9 @@ type CheckRequest struct {
 	// True for a call of `my plugin test`, which is about no real subject and acts on nothing.
 	Probe bool `protobuf:"varint,3,opt,name=probe,proto3" json:"probe,omitempty"`
 	// The two parties of the follow, for inbound.follow.
-	Follow        *FollowSubject `protobuf:"bytes,5,opt,name=follow,proto3" json:"follow,omitempty"`
+	Follow *FollowSubject `protobuf:"bytes,5,opt,name=follow,proto3" json:"follow,omitempty"`
+	// What signup.check reviews; empty on the calls of the other hooks and on probes.
+	Signup        *SignupSubject `protobuf:"bytes,6,opt,name=signup,proto3" json:"signup,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -236,6 +238,13 @@ func (x *CheckRequest) GetFollow() *FollowSubject {
 	return nil
 }
 
+func (x *CheckRequest) GetSignup() *SignupSubject {
+	if x != nil {
+		return x.Signup
+	}
+	return nil
+}
+
 // What inbound.follow asks about: a follow from another server of an account on this one.
 type FollowSubject struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -291,6 +300,63 @@ func (x *FollowSubject) GetFolloweeUri() string {
 	return ""
 }
 
+// SignupSubject is a sign-up that is not from an invitation, once its CAPTCHA and the sign-up block
+// list passed it. The subject_key of the call is the ID the account would get, which identifies
+// this attempt alone: an applicant who tries again is a new subject.
+type SignupSubject struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The email address the applicant entered.
+	Email string `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	// The client's IP address, empty when the server does not know it.
+	Ip            string `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignupSubject) Reset() {
+	*x = SignupSubject{}
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignupSubject) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignupSubject) ProtoMessage() {}
+
+func (x *SignupSubject) ProtoReflect() protoreflect.Message {
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignupSubject.ProtoReflect.Descriptor instead.
+func (*SignupSubject) Descriptor() ([]byte, []int) {
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SignupSubject) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *SignupSubject) GetIp() string {
+	if x != nil {
+		return x.Ip
+	}
+	return ""
+}
+
 type CheckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
@@ -308,7 +374,7 @@ type CheckResponse struct {
 
 func (x *CheckResponse) Reset() {
 	*x = CheckResponse{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[2]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -320,7 +386,7 @@ func (x *CheckResponse) String() string {
 func (*CheckResponse) ProtoMessage() {}
 
 func (x *CheckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[2]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -333,7 +399,7 @@ func (x *CheckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckResponse.ProtoReflect.Descriptor instead.
 func (*CheckResponse) Descriptor() ([]byte, []int) {
-	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{2}
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CheckResponse) GetVerdict() Verdict {
@@ -361,16 +427,20 @@ var File_my_plugin_hook_v1_hook_proto protoreflect.FileDescriptor
 
 const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\n" +
-	"\x1cmy/plugin/hook/v1/hook.proto\x12\x11my.plugin.hook.v1\"\x93\x01\n" +
+	"\x1cmy/plugin/hook/v1/hook.proto\x12\x11my.plugin.hook.v1\"\xcd\x01\n" +
 	"\fCheckRequest\x12\x12\n" +
 	"\x04hook\x18\x01 \x01(\tR\x04hook\x12\x1f\n" +
 	"\vsubject_key\x18\x02 \x01(\tR\n" +
 	"subjectKey\x12\x14\n" +
 	"\x05probe\x18\x03 \x01(\bR\x05probe\x128\n" +
-	"\x06follow\x18\x05 \x01(\v2 .my.plugin.hook.v1.FollowSubjectR\x06follow\"U\n" +
+	"\x06follow\x18\x05 \x01(\v2 .my.plugin.hook.v1.FollowSubjectR\x06follow\x128\n" +
+	"\x06signup\x18\x06 \x01(\v2 .my.plugin.hook.v1.SignupSubjectR\x06signup\"U\n" +
 	"\rFollowSubject\x12!\n" +
 	"\ffollower_uri\x18\x01 \x01(\tR\vfollowerUri\x12!\n" +
-	"\ffollowee_uri\x18\x02 \x01(\tR\vfolloweeUri\"\x8c\x01\n" +
+	"\ffollowee_uri\x18\x02 \x01(\tR\vfolloweeUri\"5\n" +
+	"\rSignupSubject\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x0e\n" +
+	"\x02ip\x18\x02 \x01(\tR\x02ip\"\x8c\x01\n" +
 	"\rCheckResponse\x124\n" +
 	"\averdict\x18\x01 \x01(\x0e2\x1a.my.plugin.hook.v1.VerdictR\averdict\x121\n" +
 	"\x06reason\x18\x02 \x01(\x0e2\x19.my.plugin.hook.v1.ReasonR\x06reason\x12\x12\n" +
@@ -409,25 +479,27 @@ func file_my_plugin_hook_v1_hook_proto_rawDescGZIP() []byte {
 }
 
 var file_my_plugin_hook_v1_hook_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_my_plugin_hook_v1_hook_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_my_plugin_hook_v1_hook_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_my_plugin_hook_v1_hook_proto_goTypes = []any{
 	(Verdict)(0),          // 0: my.plugin.hook.v1.Verdict
 	(Reason)(0),           // 1: my.plugin.hook.v1.Reason
 	(*CheckRequest)(nil),  // 2: my.plugin.hook.v1.CheckRequest
 	(*FollowSubject)(nil), // 3: my.plugin.hook.v1.FollowSubject
-	(*CheckResponse)(nil), // 4: my.plugin.hook.v1.CheckResponse
+	(*SignupSubject)(nil), // 4: my.plugin.hook.v1.SignupSubject
+	(*CheckResponse)(nil), // 5: my.plugin.hook.v1.CheckResponse
 }
 var file_my_plugin_hook_v1_hook_proto_depIdxs = []int32{
 	3, // 0: my.plugin.hook.v1.CheckRequest.follow:type_name -> my.plugin.hook.v1.FollowSubject
-	0, // 1: my.plugin.hook.v1.CheckResponse.verdict:type_name -> my.plugin.hook.v1.Verdict
-	1, // 2: my.plugin.hook.v1.CheckResponse.reason:type_name -> my.plugin.hook.v1.Reason
-	2, // 3: my.plugin.hook.v1.HookService.Check:input_type -> my.plugin.hook.v1.CheckRequest
-	4, // 4: my.plugin.hook.v1.HookService.Check:output_type -> my.plugin.hook.v1.CheckResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	4, // 1: my.plugin.hook.v1.CheckRequest.signup:type_name -> my.plugin.hook.v1.SignupSubject
+	0, // 2: my.plugin.hook.v1.CheckResponse.verdict:type_name -> my.plugin.hook.v1.Verdict
+	1, // 3: my.plugin.hook.v1.CheckResponse.reason:type_name -> my.plugin.hook.v1.Reason
+	2, // 4: my.plugin.hook.v1.HookService.Check:input_type -> my.plugin.hook.v1.CheckRequest
+	5, // 5: my.plugin.hook.v1.HookService.Check:output_type -> my.plugin.hook.v1.CheckResponse
+	5, // [5:6] is the sub-list for method output_type
+	4, // [4:5] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_my_plugin_hook_v1_hook_proto_init() }
@@ -441,7 +513,7 @@ func file_my_plugin_hook_v1_hook_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_my_plugin_hook_v1_hook_proto_rawDesc), len(file_my_plugin_hook_v1_hook_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

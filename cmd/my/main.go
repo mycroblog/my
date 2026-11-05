@@ -79,6 +79,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runRegistration(fs.Args()[1:], stdout, stderr)
 	case "schema":
 		return runSchema(fs.Args()[1:], stdout, stderr)
+	case "search":
+		return runSearch(fs.Args()[1:], stdout, stderr)
 	case "serve":
 		return runServe(fs.Args()[1:], stderr)
 	case "":
@@ -135,6 +137,8 @@ Commands:
   registration
             Review sign-ups (my registration list|approve|reject)
   schema    Apply this release's schema to the database (my schema apply)
+  search    Rebuild, clear, and check the index of the full-text search of posts
+            (my search rebuild|clear|status)
   serve     Run the server (role web, worker, or all)
   version   Print the version
 `)

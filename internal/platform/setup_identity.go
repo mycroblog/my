@@ -98,6 +98,12 @@ func (a *App) setUpIdentity(cfg *config.Config, repo identity.Repository) error 
 		Mailer: a.Mailer, Outbox: outbox,
 		// The registration page screens sign-ups against the sign-up block list (FR-719).
 		SignupBlocks: a.Moderation,
+		// signup.check comes after it, and its reject refuses only while the setting lets it (ADR-0147 §2).
+		Hooks: a.Hooks,
+		SignupHookRejects: func(ctx context.Context) (bool, error) {
+			s, err := a.Instance.Settings(ctx)
+			return s.HookSignupCheckReject(), err
+		},
 		// Members create invites as the instance settings let them (ADR-0106 §14, §15), read per
 		// operation, while moderation neither suspends nor limits them (§1, §3).
 		MemberInvites:     a.memberInviteSettings,

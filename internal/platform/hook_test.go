@@ -34,8 +34,8 @@ func verdictPlugin(verdict *atomic.Value, calls *atomic.Int64) http.Handler {
 }
 
 // TestDecisionHookThroughTheServer runs the base of the decision hooks on the assembled server: a
-// real plugin over a Unix socket, the settings, the admin API, and the audit log. The test takes
-// the place of the module that owns the subject.
+// real plugin over a Unix socket, the settings, the admin API, and the audit log. The test takes the
+// place of the module that owns a subject.
 func TestDecisionHookThroughTheServer(t *testing.T) {
 	t.Parallel()
 	var verdict atomic.Value

@@ -4,7 +4,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect, waitFor, within } from "storybook/test";
-import { preferencesFixture, type Schemas } from "../../test/fixtures";
+import { instanceFixture, preferencesFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem } from "../../test/msw/http";
 import {
   abdulrahman,
@@ -194,6 +194,80 @@ export const OwnPost: Story = alone(viewerPost);
 export const RemotePost: Story = alone(
   post(66, carol, { content: "<p>Greetings from another server!</p>", boosts_count: 3 }),
 );
+
+/** A post in Arabic, which a reader of the stories' English UI can ask to translate. */
+const arabicPost = post(67, abdulrahman, { content: "<p>صورة من حديقتنا هذا الصباح.</p>", language: "ar" });
+
+/** The page of `arabicPost` on an instance with one provider, which answers a translation with `respond`. */
+function translatable(respond: () => Response) {
+  return {
+    screen: {
+      path: `/@${arabicPost.account.acct}/status/${arabicPost.id}`,
+      handlers: [
+        ...pictureHandlers,
+        http.get(`${apiBase}/instance`, () =>
+          HttpResponse.json({
+            ...instanceFixture,
+            translation: {
+              browser: false,
+              providers: [
+                {
+                  id: "fake",
+                  name: "Fake Translate",
+                  url: "https://translate.example/",
+                  visibilities: ["public", "local", "unlisted"],
+                },
+              ],
+            },
+          }),
+        ),
+        http.post(`${apiBase}/statuses/:id/translation`, respond),
+        statuses(arabicPost),
+        thread({ ancestors: [], descendants: [] }),
+      ],
+    },
+  };
+}
+
+/** Presses the button that translates the post. */
+const pressTranslate: NonNullable<Story["play"]> = async (context) => {
+  const { canvas, userEvent } = context;
+  await settled(context);
+  await userEvent.click(await canvas.findByRole("button", { name: "Translate" }));
+};
+
+const translationAnswer: Schemas["StatusTranslation"] = {
+  language: "en",
+  source_language: "ar",
+  content: "<p>A photo of our garden this morning.</p>",
+  spoiler_text: "",
+  media_attachments: [],
+  poll_options: [],
+  provider: { id: "fake", name: "Fake Translate", url: "https://translate.example/" },
+};
+
+/** A post in another language, with the button that translates it. */
+export const Translatable: Story = {
+  parameters: translatable(() => HttpResponse.json(translationAnswer)),
+};
+
+/** The same post translated: the line that names the provider, and the way back. */
+export const Translated: Story = {
+  parameters: translatable(() => HttpResponse.json(translationAnswer)),
+  play: async (context) => {
+    await pressTranslate(context);
+    await context.canvas.findByRole("button", { name: "Show original" });
+  },
+};
+
+/** The same post when the monthly limit is used up: the message in place, and the original still there. */
+export const TranslationLimit: Story = {
+  parameters: translatable(() => problem(429, "/api/v1/problems/translation-limit", "Too Many Requests")),
+  play: async (context) => {
+    await pressTranslate(context);
+    await context.canvas.findByRole("alert");
+  },
+};
 
 /** Opens the menu of the post the page is about, and waits for the viewer's relationship with its author. */
 const openMenu: NonNullable<Story["play"]> = async (context) => {

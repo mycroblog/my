@@ -34,6 +34,8 @@ type StatusReader interface {
 	// AuthorRestrictions returns the restrictions of an author that bear on who sees its statuses,
 	// with its lifecycle mapped to ProfileView.
 	AuthorRestrictions(ctx context.Context, accountID string) (appcontent.AuthorRestrictions, error)
+	// SearchableStatusIDs pages the public and local statuses of the server in ID order.
+	SearchableStatusIDs(ctx context.Context, after string, limit int) ([]string, error)
 	// AuthorSearchableStatusIDs pages the public and local statuses of an author in ID order.
 	AuthorSearchableStatusIDs(ctx context.Context, authorAccountID, after string, limit int) ([]string, error)
 }
@@ -69,6 +71,12 @@ type Deps struct {
 	Viewing    Viewing
 	// Sanitizer takes the HTML out of the bodies of remote statuses.
 	Sanitizer kernel.HTMLSanitizer
+	// Rebuilds keeps the progress of a rebuild.
+	Rebuilds Repository
+	Clock    kernel.Clock
+	IDs      kernel.IDGenerator
+	// RebuildBatch is how many statuses one job of a rebuild covers. Tests only; rebuildBatch when 0.
+	RebuildBatch int
 }
 
 // Service is the search module. Its index is nil with search = none (ADR-0149 §2).
