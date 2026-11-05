@@ -328,6 +328,7 @@ var operationSecurity = map[string]operationAccess{
 	"POST /api/v1/statuses/{id}/favourite":                                          {Operation: "favouriteStatus", Scopes: []string{"write:favourites"}},
 	"POST /api/v1/statuses/{id}/pin":                                                {Operation: "pinStatus", Scopes: []string{"write:statuses"}},
 	"POST /api/v1/statuses/{id}/poll/votes":                                         {Operation: "voteInPoll", Scopes: []string{"write:statuses"}},
+	"POST /api/v1/statuses/{id}/translation":                                        {Operation: "translateStatus", Scopes: []string{"read:statuses"}},
 	"POST /api/v1/supporter/checkout":                                               {Operation: "startSupporterCheckout", Scopes: []string{"write:supporters"}},
 	"POST /api/v1/supporter/portal":                                                 {Operation: "openSupporterPortal", Scopes: []string{"write:supporters"}},
 	"POST /api/v1/supporter/subscription/cancel":                                    {Operation: "cancelOwnSupporterSubscription", Scopes: []string{"write:supporters"}},

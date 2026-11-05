@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: The alt text of an attached media file in the language of the translation.
+type: object
+required: [id, description]
+properties:
+  id:
+    $ref: ./Id.yaml
+  description:
+    description: The alt text.
+    type: string

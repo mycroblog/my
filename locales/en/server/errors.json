@@ -455,6 +455,22 @@
     "defaultMessage": "{max, plural, one {A post can attach at most # distinct file.} other {A post can attach at most # distinct files.}}",
     "description": "Detail of the HTTP 422 API error when a post attaches too many media files or the same file twice. {max} is the maximum number of files."
   },
+  "errors.translation.failed": {
+    "defaultMessage": "The post could not be translated. Try again later.",
+    "description": "API error title for HTTP 503 when no translation service returned a usable translation of a post."
+  },
+  "errors.translation.limit": {
+    "defaultMessage": "The monthly translation limit is reached. Translation is available again next month.",
+    "description": "API error title for HTTP 429 when a user or the whole server reached the monthly limit on the characters sent to translation services."
+  },
+  "errors.translation.unavailable": {
+    "defaultMessage": "This post cannot be translated on this server.",
+    "description": "API error title for HTTP 422 when no translation service of the server may receive the post: none is enabled, or none is allowed the post's visibility."
+  },
+  "errors.translation.unsupported_language": {
+    "defaultMessage": "The post cannot be translated into that language.",
+    "description": "API error title for HTTP 422 when no translation service of the server translates between the post's language and the language asked for."
+  },
   "errors.streaming.too_many": {
     "defaultMessage": "You have too many streams open. Close one and try again.",
     "description": "Detail of the HTTP 429 API error when the user already has as many real-time update streams (open tabs or devices) as the server allows."

@@ -12,6 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/timeline"
+	"github.com/mycroblog/my/internal/app/translation"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 )
 
@@ -26,7 +27,7 @@ import (
 // graph, timeline, notification, and media services, the blob store, and the data exports and imports.
 func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository, statuses content.Repository,
 	follows graph.Repository, feeds timeline.Repository, notifs notification.Repository, medias content.MediaRepository,
-	rooms appvoice.Repository,
+	rooms appvoice.Repository, translations translation.Repository,
 ) error {
 	identities, okI := ids.(identity.ErasureRepository)
 	profiles, okA := accounts.(account.ErasureRepository)
@@ -71,6 +72,8 @@ func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository,
 			a.Supporters,
 			// The names and descriptions of the revisions of the rooms it wrote (ADR-0100 §13).
 			appvoice.NewEraser(a.UnitOfWork, rooms),
+			// The characters it sent to translation providers (ADR-0148 §10).
+			translation.NewEraser(a.UnitOfWork, translations),
 			identity.NewEraser(a.UnitOfWork, identities, a.Clock, a.IDs),
 		},
 	}).RegisterJobs(a.Handlers, a.Scheduler)

@@ -10,6 +10,8 @@ import (
 	"errors"
 	"regexp"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 )
 
 // UndeterminedLanguage is the source language of a post whose language is unknown (BCP 47 "und").
@@ -84,8 +86,12 @@ func ClosingMarker(n int) string {
 }
 
 // MarkersIntact reports whether every marker of the fragment comes back in the translation
-// exactly once, in any order, as word order differs between languages, and no other marker
-// appears. A translation that fails it is a failure and is not stored (ADR-0148 §8).
+// exactly once, and no other marker appears. A translation that fails it is a failure and is not
+// stored (ADR-0148 §8).
+//
+// The items may move, as word order differs between languages, but a pair stays a pair: it opens
+// before it closes, and pairs nest. A closing marker ahead of its opening one, or pairs that
+// cross, would put markup around the words that the post never had there.
 func MarkersIntact(fragment, translation string) bool {
 	unseen := make(map[string]bool)
 	for _, m := range markerPattern.FindAllString(fragment, -1) {
@@ -94,11 +100,26 @@ func MarkersIntact(fragment, translation string) bool {
 		}
 		unseen[m] = true
 	}
+	var open []string // the closing markers of the pairs that are open, innermost last
 	for _, m := range markerPattern.FindAllString(translation, -1) {
 		if !unseen[m] {
 			return false
 		}
 		unseen[m] = false
+		if strings.HasPrefix(m, "⟦/") {
+			if len(open) == 0 || open[len(open)-1] != m {
+				return false
+			}
+			open = open[:len(open)-1]
+			continue
+		}
+		closing := "⟦/" + strings.TrimPrefix(m, "⟦")
+		if _, pair := unseen[closing]; pair {
+			open = append(open, closing)
+		}
+	}
+	if len(open) > 0 {
+		return false
 	}
 	for _, left := range unseen {
 		if left {
@@ -106,4 +127,14 @@ func MarkersIntact(fragment, translation string) bool {
 		}
 	}
 	return true
+}
+
+// CountCharacters returns the characters (code points) that the fragments send to a provider,
+// the unit of the monthly limits (ADR-0148 §11). Markers are not counted.
+func CountCharacters(fragments []string) int {
+	n := 0
+	for _, f := range fragments {
+		n += utf8.RuneCountInString(markerPattern.ReplaceAllString(f, ""))
+	}
+	return n
 }

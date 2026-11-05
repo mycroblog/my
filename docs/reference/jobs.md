@@ -65,6 +65,7 @@ A job type can also be registered or do its work only with some settings; **Need
 | `content.close_poll` | Closes one poll when its end has passed. A job that runs early waits until the end. | A post with a poll, due at the poll's end | Default | Safe |
 | `content.fetch_link_card` | Fetches the card of the URL a post links. A busy host, or a host that answers 429 or 503, postpones the job without counting as a failure. A `robots.txt` that cannot be read retries an hour later. Details are in [Link previews](../operations/link-previews.md). | A post created or revised, after a delay for a remote post | Default, for failures of this server's stores | Safe |
 | `content.purge_link_cards` | Deletes the cards no post refers to and the images no card uses. | Schedule | Default | Next run |
+| `translation.purge_cache` | Deletes the translations of posts 30 days after they were made, however often they were read, and the counts of translated characters from before last month. | Schedule | Default | Next run |
 | `content.auto_delete_statuses` | Deletes local posts past their authors' automatic deletion policies, as their authors would. | Schedule, then itself for the next batch | Default | Next run |
 | `content.purge_remote_statuses` | Deletes remote posts past their retention, in batches, and after 30 days the records of those deletions that no interaction or notification still needs. | Schedule, then itself | Default | Next run |
 | `content.purge_relayed_statuses` | Deletes the posts that only relays brought in past their retention, in batches. | Schedule, then itself | Default | Next run |
@@ -227,6 +228,7 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `federation.probe_instances` | 24 hours |
 | `finance.import_billing` | 24 hours, one schedule per source of `billing_sources`, named `finance.import_billing.<source>` |
 | `notification.purge_error_group_notices` | 24 hours |
+| `translation.purge_cache` | 24 hours |
 | `projection.verify` | 24 hours |
 | `supporters.purge_payment_receipts` | 24 hours |
 | `supporters.reconcile_payments` | `payments_reconcile_interval` (6 hours by default) |

@@ -2766,6 +2766,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/statuses/{id}/translation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the status. */
+                id: components["parameters"]["StatusId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Translate a post into a language
+         * @description Returns the current version of a post in `target_language`: its text, content warning, the
+         *     alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+         *     for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+         *
+         *     `provider` is omitted when no machine translated the answer: the post already has a body in
+         *     the language, whose author wrote it, or it has no words to translate. Otherwise the server
+         *     answers with a translation that it keeps, or asks the providers that its operator enabled.
+         *     Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+         *     Characters sent count against monthly limits of the user and of the server, whichever app
+         *     asks.
+         *
+         *     A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+         *     is enabled, or none is allowed its visibility. A 422
+         *     `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+         *     language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+         *     `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+         *     `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+         *     may pass.
+         */
+        post: operations["translateStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/statuses/{id}/quote_policy": {
         parameters: {
             query?: never;
@@ -13361,6 +13401,13 @@ export interface components {
          *     - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
          *       `reason` says which.
          *     - `/api/v1/problems/invalid-role` (422): a role change breaks a rule; `reason` says which.
+         *     - `/api/v1/problems/translation-failed` (503): no translation provider returned a usable
+         *       translation; asking again may work.
+         *     - `/api/v1/problems/translation-limit` (429): a monthly limit on translated characters is
+         *       reached, until the next month in UTC.
+         *     - `/api/v1/problems/translation-unavailable` (422): no translation provider may receive the post.
+         *     - `/api/v1/problems/translation-unsupported-language` (422): the translation providers do not
+         *       translate the language.
          *     - `/api/v1/problems/voice-already-invited` (409): the account is already invited to the room.
          *     - `/api/v1/problems/voice-cannot-speak` (403): the participant may not speak in the room.
          *     - `/api/v1/problems/voice-invalid-invitee` (422): the account cannot be invited to the room.
@@ -14012,6 +14059,33 @@ export interface components {
             /** @description The BCP 47 language tag; `und` when it is unknown. */
             language: string;
         };
+        /** @description A post in another language. It belongs to the version of the post that was current when it was asked for. */
+        StatusTranslation: {
+            /** @description The language of this answer, as a BCP 47 tag. */
+            language: string;
+            /** @description The language translated from, which a provider may have detected; `und` when it is not known. */
+            source_language: string;
+            /** @description The text as sanitized HTML, with the mentions, hashtags, links, custom emoji, and code of the post unchanged. */
+            content: string;
+            /** @description The content warning, as plain text; empty when the post has none. */
+            spoiler_text: string;
+            /** @description The alt text of the media that has any, in order. */
+            media_attachments: components["schemas"]["StatusTranslationAttachment"][];
+            /** @description The titles of the poll's options, in the order of the options; empty when the post has no poll. */
+            poll_options: string[];
+            provider?: components["schemas"]["TranslationProvider"];
+        };
+        /** @description The alt text of an attached media file in the language of the translation. */
+        StatusTranslationAttachment: {
+            id: components["schemas"]["Id"];
+            /** @description The alt text. */
+            description: string;
+        };
+        /** @description What to translate a post into. */
+        StatusTranslationRequest: {
+            /** @description The language to translate into, as a BCP 47 tag. */
+            target_language: string;
+        };
         /** @description A hashtag of a status. */
         StatusTag: {
             /** @description The hashtag as written, without `#`. */
@@ -14256,6 +14330,23 @@ export interface components {
              * @description When `setup_token` stops working.
              */
             expires_at: string;
+        };
+        /** @description The service that translated a post, for the attribution next to the translation. */
+        TranslationProvider: {
+            /** @description The identifier of the provider on this server. */
+            id: string;
+            /** @description The name to show. */
+            name: string;
+            /**
+             * Format: uri
+             * @description The address of the provider; omitted when there is none.
+             */
+            url?: string;
+            /**
+             * Format: uri
+             * @description The address of the logo to show, for a provider that asks for one; omitted when there is none.
+             */
+            logo_url?: string;
         };
         /** @description Where the authenticated user's two-factor authentication (TOTP) stands. */
         TwoFactor: {
@@ -18641,6 +18732,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatusReactionPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    translateStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the status. */
+                id: components["parameters"]["StatusId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusTranslationRequest"];
+            };
+        };
+        responses: {
+            /** @description The post in the language. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusTranslation"];
                 };
             };
             default: components["responses"]["Problem"];

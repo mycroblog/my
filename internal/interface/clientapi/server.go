@@ -129,6 +129,9 @@ type Options struct {
 	Statuses     Statuses
 	StatusReader StatusReader
 	Interactions Interactions
+	// Translations translates statuses on a reader's request (translateStatus); nil answers that
+	// no provider is available.
+	Translations Translations
 	// Threads starts fetching the remote parts of a thread that a viewer opens (getStatusContext);
 	// nil fetches none.
 	Threads ThreadFetcher

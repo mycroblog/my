@@ -206,7 +206,7 @@ flowchart TD
 | 6 時間（設定で 15 分〜7 日） | `supporters.reconcile_payments` | |
 | 1 日 | `federation.probe_instances` | 50 件ごとに続き 1 |
 | 1 日 | `account.prune_remote_profiles`、`content.purge_remote_emojis` | 続きがあれば 1 |
-| 1 日 | `content.purge_link_cards`、`projection.verify`、`finance.import_billing`、`notification.purge_error_group_notices`、`diagnostics.purge_error_counts`、`supporters.purge_payment_receipts` | |
+| 1 日 | `content.purge_link_cards`、`projection.verify`、`finance.import_billing`、`notification.purge_error_group_notices`、`diagnostics.purge_error_counts`、`supporters.purge_payment_receipts`、`translation.purge_cache` | |
 
 合図のキューの掃除 `queue.wake` はジョブではなく、tick の中で動きます。
 

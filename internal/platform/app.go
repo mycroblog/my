@@ -46,6 +46,7 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/app/timeline"
+	"github.com/mycroblog/my/internal/app/translation"
 	"github.com/mycroblog/my/internal/app/uow"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/app/webhook"
@@ -181,6 +182,8 @@ type App struct {
 	MediaProxy *content.MediaProxy
 	// LinkCards fetches and presents the cards of the links in statuses (ADR-0062).
 	LinkCards *content.LinkCards
+	// Translation translates posts on a reader's request (ADR-0148).
+	Translation *translation.Service
 	// Previews reads profiles and statuses as an anonymous visitor sees them, for the link
 	// previews of the web client's profile and post pages (ADR-0028).
 	Previews *content.Previews
@@ -362,6 +365,12 @@ type AppOptions struct {
 	// MetricsWriter receives the EMF lines of metrics_exporter = emf; the default is standard
 	// output, which the logs (on standard error) do not share.
 	MetricsWriter io.Writer
+	// TranslationProviders, when set, are the translation providers instead of none. Tests only,
+	// to translate with a fake.
+	TranslationProviders translation.Providers
+	// TranslationLimiter, when set, holds the monthly translation limits instead of limits of 0.
+	// Tests only, to reach the providers.
+	TranslationLimiter translation.Limiter
 	// Meter, when set, records the metrics instead of the adapter that cfg.MetricsExporter
 	// selects. Tests only, to inspect the measurements with testkit.Meter.
 	Meter kernel.Meter
@@ -548,7 +557,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err != nil {
 		return nil, err
 	}
-	if err := a.setUpErasure(repos.identities, repos.accounts, repos.statuses, repos.follows, repos.feeds, repos.notifs, repos.medias, repos.voice); err != nil {
+	if err := a.setUpErasure(repos.identities, repos.accounts, repos.statuses, repos.follows, repos.feeds, repos.notifs, repos.medias, repos.voice, repos.translations); err != nil {
 		return nil, err
 	}
 	a.setUpRemoteActors(cfg, repos.feds)
@@ -556,6 +565,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpInbox(cfg, repos.feds)
 	a.setUpFederationSever()
 	a.setUpStatusReader(repos.statuses, repos.interactions, repos.quotes)
+	a.setUpTranslation(repos.translations, opts)
 	a.setUpLocalReports(repos.mods)
 	a.setUpFanOut(cfg, repos.feds, fedOutbox)
 	a.setUpWebhooks(repos.hooks)
