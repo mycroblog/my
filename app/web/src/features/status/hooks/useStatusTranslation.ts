@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useIntl } from "react-intl";
 import { ApiError, errorMessage } from "../../../lib/errors";
 import { type Translate, useT } from "../../../lib/i18n";
+import { BrowserTranslationError } from "../api/browserTranslation";
 import type { Status } from "../api/status";
 import {
   cacheStatusTranslation,
@@ -39,13 +40,33 @@ function translatedByText(by: TranslatedBy, t: Translate): string {
   switch (by.kind) {
     case "provider":
       return t("client:status.translation.by", { provider: by.name });
+    case "browser":
+      return by.name === null
+        ? t("client:status.translation.by_browser_unnamed")
+        : t("client:status.translation.by_browser", { browser: by.name });
     case "author":
       return t("client:status.translation.author");
   }
 }
 
-/** The sentence for a request that gave no translation: the problems of the API by their type (E2). */
+/** The sentence for a request that gave no translation: the problems of the API by their type (E2), the browser's by their reason. */
 function failureText(error: unknown, t: Translate): string {
+  if (error instanceof BrowserTranslationError) {
+    switch (error.reason) {
+      case "undetected":
+        return t("client:status.translation.browser_undetected");
+      case "same_language":
+        return t("client:status.translation.browser_same_language");
+      case "unsupported":
+        return t("client:status.translation.browser_unsupported");
+      case "not_allowed":
+        return t("client:status.translation.browser_not_allowed");
+      case "model":
+        return t("client:status.translation.browser_model");
+      case "failed":
+        return t("client:status.translation.browser_failed");
+    }
+  }
   if (error instanceof ApiError) {
     switch (error.type) {
       case translationLimitType:
@@ -72,16 +93,24 @@ export function useStatusTranslation(status: Status, enabled: boolean): StatusTr
   const target = useIntl().locale;
   const notice = useNotice();
   const queryClient = useQueryClient();
-  const translator = useTranslator(post);
+  const translator = useTranslator(post, target);
   const options = statusTranslationQueryOptions(post, target);
   const cached = useQuery(options).data;
   // The one version whose translation the card shows, so that an edit goes back to the original by itself.
   const version = JSON.stringify(options.queryKey);
   const [shownVersion, setShownVersion] = useState<string | null>(null);
+  // How much of the browser's model has come, while one downloads; null otherwise, and once it is whole.
+  const [downloaded, setDownloaded] = useState<number | null>(null);
   // A mutation and not a query: it runs only because the reader pressed the button (R7), so nothing sends it again on
   // its own, and a refused one is this button's failure, not a page's (a 429 of the limit is no rate limit to wait out).
   const translate = useMutation({
-    mutationFn: ({ translator: run }: { translator: Translator; version: string }) => run(target),
+    mutationFn: ({ translator: run }: { translator: Translator; version: string }) =>
+      run(target, (loaded) => {
+        setDownloaded(loaded < 1 ? loaded : null);
+      }),
+    onSettled: () => {
+      setDownloaded(null);
+    },
     onSuccess: (answer, variables) => {
       cacheStatusTranslation(queryClient, post, target, answer);
       setShownVersion(variables.version);
@@ -106,7 +135,9 @@ export function useStatusTranslation(status: Status, enabled: boolean): StatusTr
   const offered = enabled && translator !== null && !isInLanguage(post.language, target);
   let label = t("client:status.translation.action");
   if (shown !== null) label = t("client:status.translation.show_original");
-  else if (isPending) label = t("client:status.translation.pending");
+  else if (isPending && downloaded !== null) {
+    label = t("client:status.translation.downloading", { progress: downloaded });
+  } else if (isPending) label = t("client:status.translation.pending");
   return {
     // A translation on show keeps its way back, even if the server stopped offering it since.
     action: offered || shown !== null ? { label, isPending, onPress } : null,
@@ -119,12 +150,12 @@ export function useStatusTranslation(status: Status, enabled: boolean): StatusTr
 export function translatedView(view: StatusView, shown: TranslatedPost | null) {
   if (shown === null) {
     const { html, lang, contentWarning, media } = view;
-    return { html, lang, contentWarning, contentWarningLang: lang, media };
+    return { body: { kind: "html", html } as const, lang, contentWarning, contentWarningLang: lang, media };
   }
   // What a translation lacks stays the author's, in the author's language: above all, a warning never goes away.
   const translatedWarning = shown.contentWarning !== "";
   return {
-    html: shown.body.html,
+    body: shown.body,
     lang: shown.language,
     contentWarning: translatedWarning ? shown.contentWarning : view.contentWarning,
     contentWarningLang: translatedWarning ? shown.language : view.lang,

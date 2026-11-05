@@ -17,6 +17,7 @@ import {
   PostCardOrigin,
   PostCardTimeLink,
   PostContent,
+  PostContentNodes,
   Stack,
   Text,
 } from "@my/ui";
@@ -131,15 +132,18 @@ export function StatusCard({
   const quoted = (status.boost ?? status).quote;
   const quote = quoted === undefined ? undefined : <QuotedStatus quote={quoted} />;
   const extras = [poll, media, quote].filter((part) => part !== undefined);
-  const body = (
-    <PostContent
-      html={text.html}
-      lang={text.lang}
-      emojis={view.emojis}
-      onLinkClick={view.onLinkClick}
-      {...(variant === "focused" && { size: "lg" as const })}
-    />
-  );
+  const bodyProps = {
+    lang: text.lang,
+    emojis: view.emojis,
+    onLinkClick: view.onLinkClick,
+    ...(variant === "focused" && { size: "lg" as const }),
+  };
+  const body =
+    text.body.kind === "html" ? (
+      <PostContent html={text.body.html} {...bodyProps} />
+    ) : (
+      <PostContentNodes nodes={text.body.nodes} {...bodyProps} />
+    );
   // The mark of an edited post leads to its revisions (FR-109); it stays out of the header's one row (G7).
   const edited =
     view.historyPath === null ? null : (
