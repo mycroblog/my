@@ -5,9 +5,9 @@ package testkit
 import (
 	"context"
 	"errors"
-	"sync"
 	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
