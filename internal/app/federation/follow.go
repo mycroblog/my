@@ -11,6 +11,7 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	apphook "github.com/mycroblog/my/internal/app/hook"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
 )
@@ -283,6 +284,11 @@ type FollowHandlerDeps struct {
 	// Hooks asks the inbound.follow hook about a Follow that would be recorded (ADR-0147); nil
 	// asks nothing.
 	Hooks apphook.Gate
+	// Reports files the report of a flag decision against the follower, with Instance as its
+	// reporter, in a transaction of UnitOfWork (ADR-0147 §7); a nil Reports files none.
+	Reports    HookReports
+	Instance   ReviewInstanceActor
+	UnitOfWork uow.UnitOfWork
 }
 
 // FollowRelationships reads how an account stands to another; *appgraph.Service implements it.
@@ -440,37 +446,73 @@ func (h followHandlers) follow(ctx context.Context, in *InboxActivity) error {
 	if followee == "" || refused {
 		return fmt.Errorf("%w: %s is not a local actor", ErrDropActivity, in.Activity.Object().ID)
 	}
-	if err := h.review(ctx, in); err != nil {
+	v, err := h.review(ctx, in)
+	if err != nil {
 		return err
 	}
 	uri := in.Activity.ID
 	if uri == "" {
 		uri = in.Received.ActivityURI
 	}
-	return graphError(h.d.Graph.ReceiveFollow(ctx, appgraph.ReceiveFollowInput{
+	if err := h.d.Graph.ReceiveFollow(ctx, appgraph.ReceiveFollowInput{
 		URI: string(uri), FollowerID: in.Actor.Account.ID, FolloweeID: followee,
-	}))
+	}); err != nil {
+		return graphError(err)
+	}
+	return h.fileFlag(ctx, v, in.Actor.Account.ID)
+}
+
+// fileFlag files the report of a flag decision against the follower, and records in the same
+// transaction that the decision was applied (ADR-0147 §7, §11). It runs after the follow is
+// recorded, so a Follow that the graph module refuses files nothing. The follow and the report are
+// two transactions: a job that fails between them runs again, finds the follow recorded, and files
+// the report then; a decision that has its report files none again, and is not audited twice.
+func (h followHandlers) fileFlag(ctx context.Context, v hookVerdict, followerID string) error {
+	res := v.Result
+	if res.Effect != apphook.Flag || h.d.Reports == nil {
+		return nil
+	}
+	return h.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		filed, err := h.d.Reports.FileHookReport(ctx, tx, appmoderation.HookReportInput{
+			ReporterAccountID: v.reporterAccountID, TargetAccountID: followerID,
+			DecisionID: res.DecisionID, Hook: string(res.Hook), ReasonCode: string(res.Reason), Comment: res.Note,
+		})
+		if err != nil || !filed {
+			return err
+		}
+		return h.d.Hooks.Applied(ctx, tx, res)
+	})
 }
 
 // review asks the inbound.follow hook about a Follow outside any transaction (ADR-0147 §2). A drop
 // fails with ErrDropActivity: the job ends, and the record of the received activity stops a
 // redelivery. A plugin failure under the retry behaviour comes back as apphook.ErrRetryLater, which
 // the job retries. Only the Follow itself asks: the Undo that takes it back has a handler of its own.
-func (h followHandlers) review(ctx context.Context, in *InboxActivity) error {
+// A flag settles its reporter, the instance actor, here, since creating it takes its own
+// transaction.
+func (h followHandlers) review(ctx context.Context, in *InboxActivity) (hookVerdict, error) {
 	if h.d.Hooks == nil || !h.d.Hooks.Configured(apphook.InboundFollow) {
-		return nil
+		return allowed, nil
 	}
 	r, err := h.d.Hooks.Decide(ctx, apphook.Call{
 		Hook: apphook.InboundFollow, SubjectKey: string(in.Received.ActivityURI), AccountID: in.Actor.Account.ID,
 		Subject: apphook.FollowSubject{FollowerURI: in.Actor.Account.URI, FolloweeURI: string(in.Activity.Object().ID)},
 	})
 	if err != nil {
-		return err
+		return hookVerdict{}, err
 	}
-	if r.Effect == apphook.Drop {
-		return fmt.Errorf("%w: inbound.follow dropped %s", ErrDropActivity, in.Received.ActivityURI)
+	v := hookVerdict{Result: r}
+	switch {
+	case r.Effect == apphook.Drop:
+		return hookVerdict{}, fmt.Errorf("%w: inbound.follow dropped %s", ErrDropActivity, in.Received.ActivityURI)
+	case r.Effect == apphook.Flag && h.d.Reports != nil:
+		instance, err := h.d.Instance.EnsureInstanceActor(ctx)
+		if err != nil {
+			return hookVerdict{}, err
+		}
+		v.reporterAccountID = instance.ID
 	}
-	return nil
+	return v, nil
 }
 
 // followOfDeactivated answers a Follow of a local account whose owner deactivated it (ADR-0089 §16):

@@ -27,8 +27,9 @@ What each answer does:
 
 - `drop` stops the subject and stores nothing of it. A wrong `drop` silently hides a post from its followers too, so read
   what a hook would drop in `observe` before you enforce it.
-- `flag` lets it through and files one report per decision. On `inbound.follow` this version only records the decision and
-  files no report.
+- `flag` lets it through and files one report per decision. On `inbound.follow` the report is about the account that sent
+  the follow, names no post, and is filed once the follow is recorded; its reporter, category, and comment are those of
+  [a post's report](#what-inboundstatus-reviews).
 - `mark_sensitive` lets it through and shows its attachments as sensitive until a moderator cancels the decision.
 - `require_approval` holds the sign-up for approval.
 - `reject` refuses it, with fixed text that shows nothing of the plugin's answer. On `signup.check` this also takes

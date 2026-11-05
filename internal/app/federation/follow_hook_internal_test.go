@@ -30,7 +30,7 @@ func (unconfiguredGate) Applied(context.Context, uow.Tx, apphook.Result) error {
 func TestReviewWithoutAPlugin(t *testing.T) {
 	t.Parallel()
 	for name, gate := range map[string]apphook.Gate{"no gate": nil, "no plugin": unconfiguredGate{t}} {
-		if err := (followHandlers{d: FollowHandlerDeps{Hooks: gate}}).review(t.Context(), &InboxActivity{}); err != nil {
+		if _, err := (followHandlers{d: FollowHandlerDeps{Hooks: gate}}).review(t.Context(), &InboxActivity{}); err != nil {
 			t.Errorf("%s: %v", name, err)
 		}
 	}
