@@ -250,7 +250,7 @@ module "kv" {
 }
 ```
 
-Give the app `network = module.network` as well, and add `module.kv` to its `backends`. A backend on private addresses with an app on another network, or on none, fails the plan. Enable the Service Networking and Network Connectivity APIs first, and the Compute Engine API. A network adds to the cold start of an instance: read [what the private network adds](../../deploy/opentofu/modules/kv-gcp-memorystore/README.md#what-the-private-network-adds).
+Give the app `network = module.network` as well, and add `module.kv` to its `backends`. Only private ranges go through the network, so the service reaches the internet as it did, with no Cloud NAT. A backend on private addresses with an app on another network, or on none, fails the plan. Enable the Service Networking and Network Connectivity APIs first, and the Compute Engine API. A network adds to the cold start of an instance: read [what the private network adds](../../deploy/opentofu/modules/kv-gcp-memorystore/README.md#what-the-private-network-adds).
 
 ## How traffic reaches the service
 

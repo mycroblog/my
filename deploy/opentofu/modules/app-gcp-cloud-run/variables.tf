@@ -94,6 +94,23 @@ variable "network" {
   }
 }
 
+variable "vpc_egress" {
+  description = "What goes through the network: PRIVATE_RANGES_ONLY, which keeps the service's own path to the internet, or ALL_TRAFFIC, which sends everything through the VPC and so needs Cloud NAT of the network for the internet that federation reaches."
+  type        = string
+  default     = "PRIVATE_RANGES_ONLY"
+  nullable    = false
+
+  validation {
+    condition     = contains(["PRIVATE_RANGES_ONLY", "ALL_TRAFFIC"], var.vpc_egress)
+    error_message = "vpc_egress must be PRIVATE_RANGES_ONLY or ALL_TRAFFIC."
+  }
+
+  validation {
+    condition     = var.vpc_egress != "ALL_TRAFFIC" || try(var.network.nat, false)
+    error_message = "With vpc_egress = ALL_TRAFFIC the internet is reached only through the VPC, so with no Cloud NAT federation stops. Set nat of the network, or leave vpc_egress at PRIVATE_RANGES_ONLY, which needs none."
+  }
+}
+
 variable "backends" {
   description = "What each backend module returns. A setting named twice fails the plan."
   type = list(object({

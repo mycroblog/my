@@ -613,3 +613,13 @@ run "the_guard_of_outbound_http_stays_on_a_network" {
 
   expect_failures = [aws_iam_role.server]
 }
+
+run "a_network_with_no_nat_fails" {
+  command = plan
+
+  variables {
+    network = { platform = "aws", vpc_id = "vpc-1", private_subnet_ids = ["subnet-a"], nat = false }
+  }
+
+  expect_failures = [var.network]
+}

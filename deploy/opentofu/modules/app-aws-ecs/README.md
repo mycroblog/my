@@ -119,7 +119,7 @@ It starts one task with the command in place of the image's, waits for it howeve
 | Each hour | A public IPv4 address per task | A NAT gateway, and its own public address |
 | Each GB | Nothing for the address | A charge per GB through the gateway, media and federation included |
 
-Use the public subnets unless a policy of yours forbids them: it costs far less and is no more open. It has no default, so that nobody starts paying for either without choosing it.
+With `nat` of the network off, `assign_public_ip = false` fails the plan: such a task would have no way out, and the service would not even pull its image. Use the public subnets unless a policy of yours forbids them: it costs far less and is no more open. It has no default, so that nobody starts paying for either without choosing it.
 
 ## What it costs
 

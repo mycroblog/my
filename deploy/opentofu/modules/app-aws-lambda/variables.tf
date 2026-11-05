@@ -190,6 +190,11 @@ variable "network" {
     condition     = var.network == null ? true : length(var.network.private_subnet_ids) > 0
     error_message = "network.private_subnet_ids is empty, and a function attaches to private subnets: a public subnet gives it no internet."
   }
+
+  validation {
+    condition     = var.network == null ? true : var.network.nat
+    error_message = "A function attached to a VPC has no public address, so it reaches the internet only through what the VPC provides, and nat of the network is off: federation, Secrets Manager, and the queue would stop. Turn it on, or leave network null."
+  }
 }
 
 variable "web_memory_mib" {

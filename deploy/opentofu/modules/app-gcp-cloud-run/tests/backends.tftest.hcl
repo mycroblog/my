@@ -1325,3 +1325,63 @@ run "the_guard_of_outbound_http_stays_on_a_network" {
 
   expect_failures = [google_service_account.server]
 }
+
+run "egress_for_private_ranges_needs_no_nat" {
+  command = plan
+
+  variables {
+    network = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/asia-northeast1/subnetworks/s", nat = false }
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.server.template[0].vpc_access[0].egress == "PRIVATE_RANGES_ONLY"
+    error_message = "the default must keep the service's own path to the internet"
+  }
+}
+
+run "all_traffic_with_no_nat_fails" {
+  command = plan
+
+  variables {
+    vpc_egress = "ALL_TRAFFIC"
+    network    = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/asia-northeast1/subnetworks/s", nat = false }
+  }
+
+  expect_failures = [var.vpc_egress]
+}
+
+run "all_traffic_with_no_network_fails" {
+  command = plan
+
+  variables {
+    vpc_egress = "ALL_TRAFFIC"
+  }
+
+  expect_failures = [var.vpc_egress]
+}
+
+run "all_traffic_with_nat_passes" {
+  command = plan
+
+  variables {
+    vpc_egress = "ALL_TRAFFIC"
+    network    = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/asia-northeast1/subnetworks/s", nat = true }
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.server.template[0].vpc_access[0].egress == "ALL_TRAFFIC" && google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].vpc_access[0].egress == "ALL_TRAFFIC"
+    error_message = "the service and the jobs must take the setting"
+  }
+}
+
+run "all_traffic_with_the_connector_of_cloud_sql_fails" {
+  command = plan
+
+  variables {
+    vpc_egress = "ALL_TRAFFIC"
+    network    = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/asia-northeast1/subnetworks/s", nat = true }
+    backends   = [{ platform = "gcp", cloud_sql_instances = ["p:r:i"] }]
+  }
+
+  expect_failures = [google_service_account.server]
+}

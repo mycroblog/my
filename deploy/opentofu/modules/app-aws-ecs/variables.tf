@@ -70,6 +70,11 @@ variable "network" {
     condition     = length(var.assign_public_ip ? var.network.public_subnet_ids : var.network.private_subnet_ids) > 0
     error_message = "The tasks take network.public_subnet_ids with assign_public_ip = true and network.private_subnet_ids otherwise, and the one they would take is empty."
   }
+
+  validation {
+    condition     = var.assign_public_ip || var.network.nat
+    error_message = "A task needs a way out for the image, the database, and federation. With assign_public_ip = false it takes a private subnet, and nat of the network is off, so it has none. Turn one of them on."
+  }
 }
 
 variable "assign_public_ip" {

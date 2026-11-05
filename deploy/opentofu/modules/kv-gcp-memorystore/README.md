@@ -80,7 +80,7 @@ because that is what the app mounts files from.
 ## What the private network adds
 
 [The network](../network-gcp-vpc/README.md) holds the service connection policy of the class `gcp-memorystore`, which Memorystore
-requires before an instance exists. The app adds Direct VPC egress through its own `network`, on the service and the jobs.
+requires before an instance exists. The app adds Direct VPC egress through its own `network`, on the service and the jobs. With the default `vpc_egress` the internet keeps its own path and takes no Cloud NAT.
 
 - **Money**: Direct VPC egress has no connector to keep running. Cloud Run's guide says only that "network costs scale to zero just
   like the service itself" and lists no price. Whether Private Service Connect adds a charge could not be read.

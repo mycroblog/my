@@ -743,3 +743,38 @@ run "the_guard_of_outbound_http_stays_on_a_network" {
 
   expect_failures = [aws_iam_role.execution]
 }
+
+run "no_public_address_and_no_nat_fails" {
+  command = plan
+
+  variables {
+    assign_public_ip = false
+    network = {
+      platform           = "aws"
+      vpc_id             = "vpc-1"
+      private_subnet_ids = ["subnet-a", "subnet-b"]
+      nat                = false
+    }
+  }
+
+  expect_failures = [var.network]
+}
+
+run "a_public_address_needs_no_nat" {
+  command = plan
+
+  variables {
+    assign_public_ip = true
+    network = {
+      platform          = "aws"
+      vpc_id            = "vpc-1"
+      public_subnet_ids = ["subnet-1", "subnet-2"]
+      nat               = false
+    }
+  }
+
+  assert {
+    condition     = aws_ecs_service.server.network_configuration[0].assign_public_ip
+    error_message = "a task in a public subnet needs its public address to reach the internet"
+  }
+}

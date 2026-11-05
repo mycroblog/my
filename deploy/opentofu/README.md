@@ -284,6 +284,22 @@ Keep every range in RFC 1918: an app with egress for private ranges sends only t
 
 Nothing else takes one. `ingress-gcp-load-balancer` reaches the service through a serverless network endpoint group, and `ingress-aws-cloudfront` through its Function URL, so neither has an address in a VPC.
 
+### The way out to the internet
+
+An instance that runs jobs must reach anyone, since federation does, so **a plan refuses every setting where it could not**:
+
+| App | With `nat` of the network | With it off |
+| --- | --- | --- |
+| `app-gcp-cloud-run` with `vpc_egress = PRIVATE_RANGES_ONLY`, the default | Not used | Fine: only private ranges go into the VPC, and public destinations keep Cloud Run's own path |
+| `app-gcp-cloud-run` with `vpc_egress = ALL_TRAFFIC` | Through Cloud NAT | **Refused** |
+| `app-aws-ecs` with `assign_public_ip = true` | Not used: a public subnet, with the task's own address | Fine |
+| `app-aws-ecs` with `assign_public_ip = false` | A private subnet, through the gateway | **Refused** |
+| `app-aws-lambda` with a network | A private subnet, through the gateway | **Refused**: an attached function has no public address, and a public subnet does not give it one |
+
+`nat` of a VPC of yours is what you say of it: set it when the private subnets, or the subnet of Cloud Run, reach the internet by whatever means. Nothing reads the routes.
+
+Google's guide for Direct VPC egress says that `all-traffic` sends everything through the VPC and that resources need Private Google Access for Google's APIs, which `network-gcp-vpc` sets, and it does not say in so many words that the internet then takes Cloud NAT. That follows from a subnet whose instances have no public address, and it is why the plan requires it. `ALL_TRAFFIC` with the connector of Cloud SQL is refused too: the same guide says to use a private address when all egress goes through the VPC.
+
 ### What stays closed
 
 The server's outbound HTTP to destinations that remote servers influence, such as federation and link previews, goes through a client that refuses private and link-local addresses at connection time, so a network adds no way for a remote server to reach what is on it. `http_allow_private_networks` turns that off, and it is refused in the `production` profile, and an app on a network refuses it at plan. The database and Valkey clients do not go through that client, since their addresses come from the operator, so a private address works for them.

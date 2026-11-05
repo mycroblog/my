@@ -40,6 +40,10 @@ A VPC with DNS on, an internet gateway, a public and a private subnet in each zo
 
 **IPv4 only.** Neither subnet has an IPv6 range, so `ip_address_type = dualstack` of the load balancer needs a VPC of your own, and a server here reaches IPv6-only peers not at all.
 
+## The way out to the internet
+
+A plan refuses what would leave an instance with no way out, as [the table](../../README.md#the-way-out-to-the-internet) says: tasks with no public address need `nat`, tasks with one take the public subnets and need none, and Lambda in a VPC always needs `nat`, since AWS's guide says a public subnet gives a function no internet.
+
 ## Unverified
 
 - Everything against a real account.

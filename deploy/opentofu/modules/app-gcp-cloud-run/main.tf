@@ -129,6 +129,10 @@ resource "google_service_account" "server" {
       error_message = "service_ingress is ${var.service_ingress}, but an ingress module needs ${join(" and ", local.ingress_disagreements)}. A load balancer reaches the service only with internal-and-load-balancer, and it should be the only way in; a domain mapping and Cloudflare come from the internet and need all. Set service_ingress to what the ingress needs."
     }
     precondition {
+      condition     = var.vpc_egress != "ALL_TRAFFIC" || length(local.cloud_sql_instances) == 0
+      error_message = "With vpc_egress = ALL_TRAFFIC, Google's guide says to reach Cloud SQL by a private address. Give db-gcp-cloud-sql the network, or leave vpc_egress at PRIVATE_RANGES_ONLY."
+    }
+    precondition {
       condition     = var.network == null || lookup(local.env, "MY_HTTP_ALLOW_PRIVATE_NETWORKS", "false") != "true"
       error_message = "http_allow_private_networks would let what a remote server names reach this network. Leave it off on a network."
     }
@@ -260,7 +264,7 @@ resource "google_cloud_run_v2_service" "server" {
     dynamic "vpc_access" {
       for_each = var.network == null ? [] : [var.network]
       content {
-        egress = "PRIVATE_RANGES_ONLY"
+        egress = var.vpc_egress
         network_interfaces {
           network    = vpc_access.value.network
           subnetwork = vpc_access.value.subnetwork
@@ -429,7 +433,7 @@ resource "google_cloud_run_v2_job" "one_off" {
       dynamic "vpc_access" {
         for_each = var.network == null ? [] : [var.network]
         content {
-          egress = "PRIVATE_RANGES_ONLY"
+          egress = var.vpc_egress
           network_interfaces {
             network    = vpc_access.value.network
             subnetwork = vpc_access.value.subnetwork

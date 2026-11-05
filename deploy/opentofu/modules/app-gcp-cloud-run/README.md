@@ -36,6 +36,7 @@ module "app" {
 | `job_memory_mib`, `job_timeout_seconds` | `1024`, `3600` | Size and limit of the jobs |
 | `console_enabled` | `false` | Creates the console job |
 | `network` | `null` | Attaches the service and the jobs through Direct VPC egress: a network from [`network-gcp-vpc`](../network-gcp-vpc/README.md), or an object of [its shape](../../README.md#the-network-on-google-cloud). A backend on private addresses must be on the same one. Null attaches nothing, which is all that a deployment on public endpoints needs |
+| `vpc_egress` | `PRIVATE_RANGES_ONLY` | What goes through the network. `ALL_TRAFFIC` needs `nat` of the network, and fails the plan without it. [The way out](../../README.md#the-way-out-to-the-internet) has the table |
 | `deletion_protection` | `true` | Refuses to delete the service and the jobs |
 
 ## Outputs

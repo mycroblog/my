@@ -66,9 +66,14 @@ The project needs the APIs of Compute Engine, Service Networking, and Network Co
 
 **Every range is an RFC 1918 range.** An app with egress for private ranges sends only those through the VPC, so anything else would go to the internet and find nothing. The plan refuses another range.
 
+## The way out to the internet
+
+An app with `vpc_egress = PRIVATE_RANGES_ONLY`, its default, keeps Cloud Run's own path to the internet: Google's guide says that requests to public destinations go directly to the internet. It needs no NAT. `ALL_TRAFFIC` sends everything through the VPC and takes `nat = true`, and the plan refuses it otherwise: [the way out](../../README.md#the-way-out-to-the-internet) has the table.
+
 ## Unverified
 
 - Everything against a real project: that these resources are accepted together, in this order.
+- That `PRIVATE_RANGES_ONLY` carries a federation peer on any public address, IPv6 among them. Google's page says public destinations go directly to the internet, and nothing has shown it.
 - That Cloud Run reaches an address in `<name>-psc`, and one of the reserved range, from `<name>-run`. Google's guide speaks of clients "in this network" and of connecting to "the same VPC network", and neither page shows this path.
 - That the destroy order works. The connection is abandoned on destroy, since Google warns that deleting it cuts off what uses it, and Cloud SQL's hold on the range after an instance goes was not read anywhere: a destroy may leave the peering behind for a time.
 - What private services access, the policy, and the subnets cost: their pricing was not read. Traffic and any Private Service Connect charge come on top of what the modules on the network bill.
