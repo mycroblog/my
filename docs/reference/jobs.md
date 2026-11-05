@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 87 job types. 38 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 88 job types. 39 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 

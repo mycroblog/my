@@ -20565,6 +20565,13 @@ components:
         - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
           `reason` says which.
         - `/api/v1/problems/invalid-role` (422): a role change breaks a rule; `reason` says which.
+        - `/api/v1/problems/translation-failed` (503): no translation provider returned a usable
+          translation; asking again may work.
+        - `/api/v1/problems/translation-limit` (429): a monthly limit on translated characters is
+          reached, until the next month in UTC.
+        - `/api/v1/problems/translation-unavailable` (422): no translation provider may receive the post.
+        - `/api/v1/problems/translation-unsupported-language` (422): the translation providers do not
+          translate the language.
         - `/api/v1/problems/voice-already-invited` (409): the account is already invited to the room.
         - `/api/v1/problems/voice-cannot-speak` (403): the participant may not speak in the room.
         - `/api/v1/problems/voice-invalid-invitee` (422): the account cannot be invited to the room.
@@ -21623,6 +21630,65 @@ components:
         language:
           description: The BCP 47 language tag; `und` when it is unknown.
           type: string
+    StatusTranslation:
+      description: A post in another language. It belongs to the version of the post that was current when it was asked for.
+      type: object
+      required:
+        - language
+        - source_language
+        - content
+        - spoiler_text
+        - media_attachments
+        - poll_options
+      properties:
+        language:
+          description: The language of this answer, as a BCP 47 tag.
+          type: string
+        source_language:
+          description: The language translated from, which a provider may have detected; `und` when it is not known.
+          type: string
+        content:
+          description: The text as sanitized HTML, with the mentions, hashtags, links, custom emoji, and code of the post unchanged.
+          type: string
+        spoiler_text:
+          description: The content warning, as plain text; empty when the post has none.
+          type: string
+        media_attachments:
+          description: The alt text of the media that has any, in order.
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusTranslationAttachment'
+        poll_options:
+          description: The titles of the poll's options, in the order of the options; empty when the post has no poll.
+          type: array
+          items:
+            type: string
+        provider:
+          $ref: '#/components/schemas/TranslationProvider'
+    StatusTranslationAttachment:
+      description: The alt text of an attached media file in the language of the translation.
+      type: object
+      required:
+        - id
+        - description
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        description:
+          description: The alt text.
+          type: string
+    StatusTranslationRequest:
+      description: What to translate a post into.
+      type: object
+      required:
+        - target_language
+      additionalProperties: false
+      properties:
+        target_language:
+          description: The language to translate into, as a BCP 47 tag.
+          type: string
+          minLength: 1
+          maxLength: 35
     StatusTag:
       description: A hashtag of a status.
       type: object
@@ -22049,6 +22115,27 @@ components:
           description: When `setup_token` stops working.
           type: string
           format: date-time
+    TranslationProvider:
+      description: The service that translated a post, for the attribution next to the translation.
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          description: The identifier of the provider on this server.
+          type: string
+        name:
+          description: The name to show.
+          type: string
+        url:
+          description: The address of the provider; omitted when there is none.
+          type: string
+          format: uri
+        logo_url:
+          description: The address of the logo to show, for a provider that asks for one; omitted when there is none.
+          type: string
+          format: uri
     TwoFactor:
       description: Where the authenticated user's two-factor authentication (TOTP) stands.
       type: object
@@ -23157,83 +23244,3 @@ components:
       properties:
         endpoint_id:
           $ref: '#/components/schemas/Id'
-    StatusTranslationRequest:
-      description: What to translate a post into.
-      type: object
-      required:
-        - target_language
-      additionalProperties: false
-      properties:
-        target_language:
-          description: The language to translate into, as a BCP 47 tag.
-          type: string
-          minLength: 1
-          maxLength: 35
-    StatusTranslationAttachment:
-      description: The alt text of an attached media file in the language of the translation.
-      type: object
-      required:
-        - id
-        - description
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        description:
-          description: The alt text.
-          type: string
-    TranslationProvider:
-      description: The service that translated a post, for the attribution next to the translation.
-      type: object
-      required:
-        - id
-        - name
-      properties:
-        id:
-          description: The identifier of the provider on this server.
-          type: string
-        name:
-          description: The name to show.
-          type: string
-        url:
-          description: The address of the provider; omitted when there is none.
-          type: string
-          format: uri
-        logo_url:
-          description: The address of the logo to show, for a provider that asks for one; omitted when there is none.
-          type: string
-          format: uri
-    StatusTranslation:
-      description: A post in another language. It belongs to the version of the post that was current when it was asked for.
-      type: object
-      required:
-        - language
-        - source_language
-        - content
-        - spoiler_text
-        - media_attachments
-        - poll_options
-      properties:
-        language:
-          description: The language of this answer, as a BCP 47 tag.
-          type: string
-        source_language:
-          description: The language translated from, which a provider may have detected; `und` when it is not known.
-          type: string
-        content:
-          description: The text as sanitized HTML, with the mentions, hashtags, links, custom emoji, and code of the post unchanged.
-          type: string
-        spoiler_text:
-          description: The content warning, as plain text; empty when the post has none.
-          type: string
-        media_attachments:
-          description: The alt text of the media that has any, in order.
-          type: array
-          items:
-            $ref: '#/components/schemas/StatusTranslationAttachment'
-        poll_options:
-          description: The titles of the poll's options, in the order of the options; empty when the post has no poll.
-          type: array
-          items:
-            type: string
-        provider:
-          $ref: '#/components/schemas/TranslationProvider'

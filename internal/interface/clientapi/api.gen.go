@@ -11364,6 +11364,13 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
 //     `reason` says which.
 //   - `/api/v1/problems/invalid-role` (422): a role change breaks a rule; `reason` says which.
+//   - `/api/v1/problems/translation-failed` (503): no translation provider returned a usable
+//     translation; asking again may work.
+//   - `/api/v1/problems/translation-limit` (429): a monthly limit on translated characters is
+//     reached, until the next month in UTC.
+//   - `/api/v1/problems/translation-unavailable` (422): no translation provider may receive the post.
+//   - `/api/v1/problems/translation-unsupported-language` (422): the translation providers do not
+//     translate the language.
 //   - `/api/v1/problems/voice-already-invited` (409): the account is already invited to the room.
 //   - `/api/v1/problems/voice-cannot-speak` (403): the participant may not speak in the room.
 //   - `/api/v1/problems/voice-invalid-invitee` (422): the account cannot be invited to the room.

@@ -452,7 +452,7 @@
     "description": "Detail of the HTTP 422 API error when a post attaches too many media files or the same file twice. {max} is the maximum number of files."
   },
   "errors.translation.failed": {
-    "defaultMessage": "投稿を翻訳できませんでした。しばらくしてからもう一度お試しください。",
+    "defaultMessage": "投稿を翻訳できませんでした。しばらくしてからもう一度試してください。",
     "description": "API error title for HTTP 503 when no translation service returned a usable translation of a post."
   },
   "errors.translation.limit": {

@@ -13208,6 +13208,13 @@ export interface components {
          *     - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
          *       `reason` says which.
          *     - `/api/v1/problems/invalid-role` (422): a role change breaks a rule; `reason` says which.
+         *     - `/api/v1/problems/translation-failed` (503): no translation provider returned a usable
+         *       translation; asking again may work.
+         *     - `/api/v1/problems/translation-limit` (429): a monthly limit on translated characters is
+         *       reached, until the next month in UTC.
+         *     - `/api/v1/problems/translation-unavailable` (422): no translation provider may receive the post.
+         *     - `/api/v1/problems/translation-unsupported-language` (422): the translation providers do not
+         *       translate the language.
          *     - `/api/v1/problems/voice-already-invited` (409): the account is already invited to the room.
          *     - `/api/v1/problems/voice-cannot-speak` (403): the participant may not speak in the room.
          *     - `/api/v1/problems/voice-invalid-invitee` (422): the account cannot be invited to the room.
@@ -13859,6 +13866,33 @@ export interface components {
             /** @description The BCP 47 language tag; `und` when it is unknown. */
             language: string;
         };
+        /** @description A post in another language. It belongs to the version of the post that was current when it was asked for. */
+        StatusTranslation: {
+            /** @description The language of this answer, as a BCP 47 tag. */
+            language: string;
+            /** @description The language translated from, which a provider may have detected; `und` when it is not known. */
+            source_language: string;
+            /** @description The text as sanitized HTML, with the mentions, hashtags, links, custom emoji, and code of the post unchanged. */
+            content: string;
+            /** @description The content warning, as plain text; empty when the post has none. */
+            spoiler_text: string;
+            /** @description The alt text of the media that has any, in order. */
+            media_attachments: components["schemas"]["StatusTranslationAttachment"][];
+            /** @description The titles of the poll's options, in the order of the options; empty when the post has no poll. */
+            poll_options: string[];
+            provider?: components["schemas"]["TranslationProvider"];
+        };
+        /** @description The alt text of an attached media file in the language of the translation. */
+        StatusTranslationAttachment: {
+            id: components["schemas"]["Id"];
+            /** @description The alt text. */
+            description: string;
+        };
+        /** @description What to translate a post into. */
+        StatusTranslationRequest: {
+            /** @description The language to translate into, as a BCP 47 tag. */
+            target_language: string;
+        };
         /** @description A hashtag of a status. */
         StatusTag: {
             /** @description The hashtag as written, without `#`. */
@@ -14103,6 +14137,23 @@ export interface components {
              * @description When `setup_token` stops working.
              */
             expires_at: string;
+        };
+        /** @description The service that translated a post, for the attribution next to the translation. */
+        TranslationProvider: {
+            /** @description The identifier of the provider on this server. */
+            id: string;
+            /** @description The name to show. */
+            name: string;
+            /**
+             * Format: uri
+             * @description The address of the provider; omitted when there is none.
+             */
+            url?: string;
+            /**
+             * Format: uri
+             * @description The address of the logo to show, for a provider that asks for one; omitted when there is none.
+             */
+            logo_url?: string;
         };
         /** @description Where the authenticated user's two-factor authentication (TOTP) stands. */
         TwoFactor: {
@@ -14740,50 +14791,6 @@ export interface components {
         /** @description The data of a `webhook.test` message. */
         WebhookTest: {
             endpoint_id: components["schemas"]["Id"];
-        };
-        /** @description What to translate a post into. */
-        StatusTranslationRequest: {
-            /** @description The language to translate into, as a BCP 47 tag. */
-            target_language: string;
-        };
-        /** @description The alt text of an attached media file in the language of the translation. */
-        StatusTranslationAttachment: {
-            id: components["schemas"]["Id"];
-            /** @description The alt text. */
-            description: string;
-        };
-        /** @description The service that translated a post, for the attribution next to the translation. */
-        TranslationProvider: {
-            /** @description The identifier of the provider on this server. */
-            id: string;
-            /** @description The name to show. */
-            name: string;
-            /**
-             * Format: uri
-             * @description The address of the provider; omitted when there is none.
-             */
-            url?: string;
-            /**
-             * Format: uri
-             * @description The address of the logo to show, for a provider that asks for one; omitted when there is none.
-             */
-            logo_url?: string;
-        };
-        /** @description A post in another language. It belongs to the version of the post that was current when it was asked for. */
-        StatusTranslation: {
-            /** @description The language of this answer, as a BCP 47 tag. */
-            language: string;
-            /** @description The language translated from, which a provider may have detected; `und` when it is not known. */
-            source_language: string;
-            /** @description The text as sanitized HTML, with the mentions, hashtags, links, custom emoji, and code of the post unchanged. */
-            content: string;
-            /** @description The content warning, as plain text; empty when the post has none. */
-            spoiler_text: string;
-            /** @description The alt text of the media that has any, in order. */
-            media_attachments: components["schemas"]["StatusTranslationAttachment"][];
-            /** @description The titles of the poll's options, in the order of the options; empty when the post has no poll. */
-            poll_options: string[];
-            provider?: components["schemas"]["TranslationProvider"];
         };
     };
     responses: {

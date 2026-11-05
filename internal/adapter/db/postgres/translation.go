@@ -68,7 +68,7 @@ func (r *TranslationRepository) FindTranslations(ctx context.Context, revisionID
 	for _, row := range rows {
 		t := translation.Stored{
 			ID: row.ID, StatusID: row.StatusID, RevisionID: row.RevisionID, TargetLanguage: row.TargetLanguage, Provider: row.Provider,
-			SourceLanguage: row.SourceLanguage, ContentHTML: row.ContentHtml, SpoilerText: row.SpoilerText, CreatedAt: row.CreatedAt,
+			SourceLanguage: row.SourceLanguage, ContentHTML: row.ContentHtml, SpoilerText: row.SpoilerText, CreatedAt: utc(row.CreatedAt),
 		}
 		attachments, err := q.ListStatusTranslationAttachments(ctx, row.ID)
 		if err != nil {

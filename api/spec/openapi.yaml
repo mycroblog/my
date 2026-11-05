@@ -1826,6 +1826,12 @@ components:
       $ref: ./components/schemas/StatusReactor.yaml
     StatusSource:
       $ref: ./components/schemas/StatusSource.yaml
+    StatusTranslation:
+      $ref: ./components/schemas/StatusTranslation.yaml
+    StatusTranslationAttachment:
+      $ref: ./components/schemas/StatusTranslationAttachment.yaml
+    StatusTranslationRequest:
+      $ref: ./components/schemas/StatusTranslationRequest.yaml
     StatusTag:
       $ref: ./components/schemas/StatusTag.yaml
     StatusText:
@@ -1878,6 +1884,8 @@ components:
       $ref: ./components/schemas/ThemeTokenValue.yaml
     TotpSetup:
       $ref: ./components/schemas/TotpSetup.yaml
+    TranslationProvider:
+      $ref: ./components/schemas/TranslationProvider.yaml
     TwoFactor:
       $ref: ./components/schemas/TwoFactor.yaml
     TwoFactorCodeRequest:
