@@ -13,6 +13,7 @@ import (
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
+	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/domain/notification"
@@ -120,6 +121,10 @@ func (s *Server) ListNotifications(ctx context.Context, req ListNotificationsReq
 // user's report, which tells only that it is resolved. The account of an
 // admin_sign_up is the local account of the user who signed up, and a relationships_severed
 // carries the follows that the user lost, with the suspended account as its account.
+//
+// read:notifications shows the status of a notification and tells what happened through its
+// type; any other object comes only with the scope that reads it elsewhere, and a moderation
+// action only to a first-party client, which alone may list them.
 func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notification.Notification) ([]Notification, error) {
 	accountID := viewer.AccountID
 	severances, err := s.notifiedSeverances(ctx, accountID, ns)
@@ -170,31 +175,38 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 			return nil, fmt.Errorf("clientapi: the account %s of notification %s: %w", id, n.ID, err)
 		}
 	}
-	reports, err := s.notifiedReports(ctx, accountID, ns)
-	if err != nil {
-		return nil, err
-	}
-	var actionIDs []string
-	for _, n := range ns {
-		if n.ModerationActionID != "" {
-			actionIDs = append(actionIDs, n.ModerationActionID)
+	var reports map[string]Report
+	if viewer.Scope.Grants(identity.ScopeReadReports) {
+		if reports, err = s.notifiedReports(ctx, accountID, ns); err != nil {
+			return nil, err
 		}
 	}
-	actions, err := s.noticeActions(ctx, accountID, actionIDs)
-	if err != nil {
-		return nil, err
+	var actions, appealed map[string]ModerationAction
+	if viewer.FirstParty {
+		var actionIDs []string
+		for _, n := range ns {
+			if n.ModerationActionID != "" {
+				actionIDs = append(actionIDs, n.ModerationActionID)
+			}
+		}
+		if actions, err = s.noticeActions(ctx, accountID, actionIDs); err != nil {
+			return nil, err
+		}
+		if appealed, err = s.appealActions(ctx, accountID, ns); err != nil {
+			return nil, err
+		}
 	}
-	appealed, err := s.appealActions(ctx, accountID, ns)
-	if err != nil {
-		return nil, err
+	var emojiRequests map[string]CustomEmojiRequest
+	if viewer.Scope.Grants(identity.ScopeReadCustomEmojis) {
+		if emojiRequests, err = s.notifiedCustomEmojiRequests(ctx, ns); err != nil {
+			return nil, err
+		}
 	}
-	emojiRequests, err := s.notifiedCustomEmojiRequests(ctx, ns)
-	if err != nil {
-		return nil, err
-	}
-	supporterSubs, err := s.notifiedSupporterSubscriptions(ctx, ns)
-	if err != nil {
-		return nil, err
+	var supporterSubs map[string]SupporterSubscription
+	if viewer.Scope.Grants(identity.ScopeReadSupporters) {
+		if supporterSubs, err = s.notifiedSupporterSubscriptions(ctx, ns); err != nil {
+			return nil, err
+		}
 	}
 	closures, err := s.notifiedClosures(ctx, ns)
 	if err != nil {
@@ -253,7 +265,7 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 			}
 			item.ServiceClosure = &c
 		}
-		if sv, ok := severances[n.SeveranceID]; ok {
+		if sv, ok := severances[n.SeveranceID]; ok && viewer.Scope.Grants(identity.ScopeReadFollows) {
 			item.RelationshipSeverance = newRelationshipSeverance(sv)
 		}
 		if m, ok := moves[n.AccountMoveID]; ok {
@@ -284,8 +296,10 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		if n.VoiceRoomID != "" {
 			id := n.VoiceRoomID
 			item.VoiceRoomId = &id
-			if item.VoiceRoom, err = s.notifiedVoiceRoom(ctx, accountID, id, voiceRooms); err != nil {
-				return nil, err
+			if viewer.Scope.Grants(identity.ScopeReadVoice) {
+				if item.VoiceRoom, err = s.notifiedVoiceRoom(ctx, accountID, id, voiceRooms); err != nil {
+					return nil, err
+				}
 			}
 		}
 		out = append(out, item)

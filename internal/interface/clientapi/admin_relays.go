@@ -195,7 +195,7 @@ func (s *Server) FollowRelay(ctx context.Context, req FollowRelayRequestObject) 
 	return FollowRelay200JSONResponse{adminRelayResponse(rv)}, nil
 }
 
-// UnfollowRelay serves POST /api/v1/admin/relays/{id}/unfollow.
+// UnfollowRelay serves DELETE /api/v1/admin/relays/{id}/follow.
 func (s *Server) UnfollowRelay(ctx context.Context, req UnfollowRelayRequestObject) (UnfollowRelayResponseObject, error) {
 	v, p, err := s.requireRelays(ctx)
 	if err != nil {

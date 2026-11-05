@@ -126,7 +126,7 @@ func TestOAuthClientAdministration(t *testing.T) {
 	// Denying the host revokes the tokens of its clients, refuses their authorization requests,
 	// and is audited once however often it is repeated.
 	for range 2 {
-		if err := app.Identity.DenyOAuthClientHost(ctx, "127.0.0.1", admin); err != nil {
+		if _, _, err := app.Identity.DenyOAuthClientHost(ctx, "127.0.0.1", admin); err != nil {
 			t.Fatalf("DenyOAuthClientHost = %v", err)
 		}
 	}

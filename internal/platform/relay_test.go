@@ -314,7 +314,7 @@ func TestRelays(t *testing.T) {
 	}
 
 	// Leaving the Mastodon relay sends the Undo; what it forwards afterwards is dropped.
-	if res := c.do("alice", http.MethodPost, "/admin/relays/"+r.Id+"/unfollow", nil, &r); res.StatusCode != http.StatusOK || r.State != clientapi.RelayStateLeft {
+	if res := c.do("alice", http.MethodDelete, "/admin/relays/"+r.Id+"/follow", nil, &r); res.StatusCode != http.StatusOK || r.State != clientapi.RelayStateLeft {
 		t.Fatalf("unfollow = %d %+v", res.StatusCode, r)
 	}
 	posts = network.taken()["https://relay.example/inbox"]
@@ -328,7 +328,7 @@ func TestRelays(t *testing.T) {
 	if _, err := c.app.Content.FindStatusByURI(ctx, late); err == nil {
 		t.Errorf("a post forwarded after leaving is stored")
 	}
-	if res := c.do("alice", http.MethodPost, "/admin/relays/"+r.Id+"/unfollow", nil, nil); res.StatusCode != http.StatusUnprocessableEntity {
+	if res := c.do("alice", http.MethodDelete, "/admin/relays/"+r.Id+"/follow", nil, nil); res.StatusCode != http.StatusUnprocessableEntity {
 		t.Errorf("leaving a left relay = %d, want 422", res.StatusCode)
 	}
 	// A pending or accepted relay cannot be deleted; a left one can.

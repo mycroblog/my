@@ -376,10 +376,10 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `announcement` | `announcement_created`, `announcement_updated`, `announcement_published`, `announcement_withdrawn` (creating, changing, publishing and withdrawing an announcement) |
 | `invite` | `invite_created`, `invite_revoked` (creating and revoking an invite; the target name is the first 4 characters of the code) |
 | `billing_source` | `billing_import_queued` (a billing import was started by hand; the target name is the provider's name) |
-| `cost_item` | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_canceled` (registering a cost, changing its name and the like, revising its amount, changing its end date, and canceling it; the target name is the item's name) |
+| `cost_item` | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_deleted` (registering a cost, changing its name and the like, revising its amount, changing its end date, and deleting it; the target name is the item's name) |
 | `supporter_program` | `supporter_program_enabled`, `supporter_program_disabled` (enabling and disabling billing; the target name is the payment provider's name) |
 | `supporter_plan` | `supporter_plan_created`, `supporter_plan_revised`, `supporter_plan_retired` (creating, changing and retiring a supporter plan; the target name is the plan's name) |
-| `supporter_subscription` | `supporter_subscription_canceled` (an administrator canceled a subscription; the target name is the plan's name and the user's handle) |
+| `supporter_subscription` | `supporter_subscription_ended` (an administrator ended a subscription at once; the target name is the plan's name and the user's handle) |
 | `custom_emoji_request` | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` (submitting, withdrawing, approving and rejecting a custom emoji request; the target name is the `:shortcode:`) |
 | `payment_provider` | `payment_reconcile_queued` (reconciliation with the payment provider was started by hand; the target name is the provider's name) |
 | `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (disabling and revoking an OAuth client; disabling revokes all its tokens; the target name is the client's name and `client_id`) |

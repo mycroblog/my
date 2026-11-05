@@ -765,13 +765,17 @@ export const handlers = [
     withViewer(request, () => HttpResponse.json({ secret: webhookSecret } satisfies Schemas["AdminWebhookSecret"])),
   ),
   http.post(`${apiBase}/admin/webhooks/:id/test`, ({ request }) =>
-    withViewer(request, () => HttpResponse.json(webhookDeliveryFixture("1", { event_type: "webhook.test" }))),
+    withViewer(request, () =>
+      HttpResponse.json(webhookDeliveryFixture("1", { event_type: "webhook.test" }), { status: 202 }),
+    ),
   ),
   http.get(`${apiBase}/admin/webhooks/:id/deliveries`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminWebhookDeliveryPage"])),
   ),
   http.post(`${apiBase}/admin/webhooks/:id/deliveries/:delivery_id/redeliver`, ({ request, params }) =>
-    withViewer(request, () => HttpResponse.json(webhookDeliveryFixture(String(params["delivery_id"])))),
+    withViewer(request, () =>
+      HttpResponse.json(webhookDeliveryFixture(String(params["delivery_id"])), { status: 202 }),
+    ),
   ),
   // operationIds listAdminLoginProviders, createLoginProvider, getAdminLoginProvider, updateLoginProvider,
   // deleteLoginProvider, enableLoginProvider, disableLoginProvider, rotateLoginProviderSecret: no providers; a new or
@@ -822,7 +826,7 @@ export const handlers = [
     const { actor_uri: _, ...pending } = relayFixture(String(params["id"]), { state: "pending" });
     return withViewer(request, () => HttpResponse.json(pending));
   }),
-  http.post(`${apiBase}/admin/relays/:id/unfollow`, ({ request, params }) => {
+  http.delete(`${apiBase}/admin/relays/:id/follow`, ({ request, params }) => {
     const { actor_uri: _, ...left } = relayFixture(String(params["id"]), { state: "left" });
     return withViewer(request, () => HttpResponse.json(left));
   }),
@@ -860,7 +864,9 @@ export const handlers = [
     withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["AdminOAuthClientHostDenialPage"])),
   ),
   http.post(`${apiBase}/admin/oauth_client_host_denials`, ({ request }) =>
-    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+    withViewer(request, () =>
+      HttpResponse.json(hostDenialFixture("0199f0e0-0000-7000-8000-0000000000f1", "app.example"), { status: 201 }),
+    ),
   ),
   http.delete(`${apiBase}/admin/oauth_client_host_denials/:host`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),

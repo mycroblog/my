@@ -264,9 +264,15 @@ func (r *Reader) viewByURI(ctx context.Context, viewer Viewer, uri string) (cont
 	return st, view, true, nil
 }
 
-// History returns the revisions of a status that viewer may see, oldest first (FR-109).
+// History returns the revisions of a status that viewer may see, oldest first (FR-109). What
+// moderation forces sensitive shows so in every revision with media, as in the current one.
 func (r *Reader) History(ctx context.Context, viewer Viewer, statusID string) ([]RevisionView, error) {
-	if _, _, err := r.aud.visibleStatus(ctx, viewer, statusID); err != nil {
+	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
+	if err != nil {
+		return nil, err
+	}
+	forced, err := r.forcedSensitive(ctx, st)
+	if err != nil {
 		return nil, err
 	}
 	revs, err := r.d.Statuses.ListRevisions(ctx, statusID)
@@ -282,6 +288,9 @@ func (r *Reader) History(ctx context.Context, viewer Viewer, statusID string) ([
 		media, err := r.attachments(ctx, rev.Attachments)
 		if err != nil {
 			return nil, err
+		}
+		if forced && len(media) > 0 {
+			rev.Sensitive = true
 		}
 		out = append(out, RevisionView{Revision: rev, Attachments: media})
 	}

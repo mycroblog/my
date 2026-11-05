@@ -165,7 +165,7 @@ describe("the relays screen", () => {
     let state: Schemas["RelayState"] = "accepted";
     server.use(
       http.get(`${apiBase}/admin/relays`, () => HttpResponse.json({ items: [relayFixture(relayId, { state })] })),
-      http.post(`${apiBase}/admin/relays/:id/unfollow`, () => {
+      http.delete(`${apiBase}/admin/relays/:id/follow`, () => {
         state = "left";
         return HttpResponse.json(relayFixture(relayId, { state }));
       }),

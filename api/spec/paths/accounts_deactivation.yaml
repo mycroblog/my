@@ -59,6 +59,9 @@ post:
   responses:
     "200":
       description: The account is deactivated, and its sessions and tokens have ended.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
       content:
         application/json:
           schema:

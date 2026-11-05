@@ -279,8 +279,8 @@ const (
 	AdminAuditActionAppealOverturned                AdminAuditAction = "appeal_overturned"
 	AdminAuditActionAppealUpheld                    AdminAuditAction = "appeal_upheld"
 	AdminAuditActionBillingImportQueued             AdminAuditAction = "billing_import_queued"
-	AdminAuditActionCostItemCanceled                AdminAuditAction = "cost_item_canceled"
 	AdminAuditActionCostItemCreated                 AdminAuditAction = "cost_item_created"
+	AdminAuditActionCostItemDeleted                 AdminAuditAction = "cost_item_deleted"
 	AdminAuditActionCostItemEndChanged              AdminAuditAction = "cost_item_end_changed"
 	AdminAuditActionCostItemPriceRevised            AdminAuditAction = "cost_item_price_revised"
 	AdminAuditActionCostItemRelabeled               AdminAuditAction = "cost_item_relabeled"
@@ -353,7 +353,7 @@ const (
 	AdminAuditActionSupporterPlanRevised            AdminAuditAction = "supporter_plan_revised"
 	AdminAuditActionSupporterProgramDisabled        AdminAuditAction = "supporter_program_disabled"
 	AdminAuditActionSupporterProgramEnabled         AdminAuditAction = "supporter_program_enabled"
-	AdminAuditActionSupporterSubscriptionCanceled   AdminAuditAction = "supporter_subscription_canceled"
+	AdminAuditActionSupporterSubscriptionEnded      AdminAuditAction = "supporter_subscription_ended"
 	AdminAuditActionTextChanged                     AdminAuditAction = "text_changed"
 	AdminAuditActionTwoFactorDisabled               AdminAuditAction = "two_factor_disabled"
 	AdminAuditActionVoiceRoomEnded                  AdminAuditAction = "voice_room_ended"
@@ -392,9 +392,9 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionBillingImportQueued:
 		return true
-	case AdminAuditActionCostItemCanceled:
-		return true
 	case AdminAuditActionCostItemCreated:
+		return true
+	case AdminAuditActionCostItemDeleted:
 		return true
 	case AdminAuditActionCostItemEndChanged:
 		return true
@@ -540,7 +540,7 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionSupporterProgramEnabled:
 		return true
-	case AdminAuditActionSupporterSubscriptionCanceled:
+	case AdminAuditActionSupporterSubscriptionEnded:
 		return true
 	case AdminAuditActionTextChanged:
 		return true
@@ -4752,6 +4752,9 @@ type AdminAccountRegistration struct {
 	// pending and when the decision has no note.
 	DecisionNote *string `json:"decision_note,omitempty"`
 
+	// Id The ID that `approveRegistration` and `rejectRegistration` take.
+	Id Id `json:"id"`
+
 	// Invite The invite that a local account signed up with, and who created it, which invited the user.
 	Invite *AdminAccountInvite `json:"invite,omitempty"`
 
@@ -4954,12 +4957,12 @@ type AdminAppealPage struct {
 // on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
 // the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
 // `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
-// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_canceled`; the label is
+// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 // the item's name. On the `supporter_program`: `supporter_program_enabled`,
 // `supporter_program_disabled`; the label is the payment provider's name. On a
 // `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
 // `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
-// `supporter_subscription_canceled`, an administrator's cancellation without a refund; the
+// `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
 // label is the plan's name and the subscriber's handle. On a `custom_emoji_request`:
 // `custom_emoji_request_submitted` and `custom_emoji_request_withdrawn` by the requester, and
 // `custom_emoji_request_approved` (which also records the emoji's `custom_emoji_created` or
@@ -5029,12 +5032,12 @@ type AdminAuditEntry struct {
 	// on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
 	// the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
 	// `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
-	// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_canceled`; the label is
+	// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 	// the item's name. On the `supporter_program`: `supporter_program_enabled`,
 	// `supporter_program_disabled`; the label is the payment provider's name. On a
 	// `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
 	// `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
-	// `supporter_subscription_canceled`, an administrator's cancellation without a refund; the
+	// `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
 	// label is the plan's name and the subscriber's handle. On a `custom_emoji_request`:
 	// `custom_emoji_request_submitted` and `custom_emoji_request_withdrawn` by the requester, and
 	// `custom_emoji_request_approved` (which also records the emoji's `custom_emoji_created` or
@@ -9237,7 +9240,7 @@ type Instance struct {
 
 	// Timelines Who may read the public timelines the instance serves: `local` is the instance
 	// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
-	// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+	// setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
 	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 	Timelines InstanceTimelines `json:"timelines"`
 
@@ -9524,7 +9527,7 @@ type InstanceThumbnail struct {
 
 // InstanceTimelines Who may read the public timelines the instance serves: `local` is the instance
 // setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
-// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+// setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
 // timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 type InstanceTimelines struct {
 	// Federated Who may read something public about the instance, the value of the instance settings
@@ -10249,7 +10252,8 @@ type Notification struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// CustomEmojiRequest The custom emoji request that an `admin_custom_emoji_request` or a
-	// `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists.
+	// `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists,
+	// and without `read:custom_emojis`.
 	CustomEmojiRequest *CustomEmojiRequest `json:"custom_emoji_request,omitempty"`
 
 	// ErrorGroup What an `admin_error_group` tells of; omitted for the other types.
@@ -10261,20 +10265,16 @@ type Notification struct {
 	Id Id `json:"id"`
 
 	// ModerationAction The action on the user's account that a `moderation_notice` tells of, or whose
-	// appeal an `appeal_decided` tells of, with the appeal.
+	// appeal an `appeal_decided` tells of, with the appeal; first-party clients only.
 	ModerationAction *ModerationAction `json:"moderation_action,omitempty"`
 
 	// Reaction The emoji of a `reaction`; omitted for the other types.
 	Reaction *ReactionEmoji `json:"reaction,omitempty"`
 
-	// RelationshipSeverance The follows that a `relationships_severed` tells of: the user lost them when the
-	// moderators suspended a server (`domain_suspension`, `domain` is the server) or a remote
-	// account (`account_suspension`, the notification's `account` is the account). Both
-	// directions end, follow requests too, and lifting the suspension does not restore them;
-	// the counts are of the accepted follows.
+	// RelationshipSeverance The follows that a `relationships_severed` tells of; omitted without `read:follows`.
 	RelationshipSeverance *RelationshipSeverance `json:"relationship_severance,omitempty"`
 
-	// Report The user's report that a `report_resolved` tells of.
+	// Report The user's report that a `report_resolved` tells of; omitted without `read:reports`.
 	Report *Report `json:"report,omitempty"`
 
 	// ReportId The report that an `admin_report` is about.
@@ -10294,7 +10294,7 @@ type Notification struct {
 
 	// SupporterSubscription The user's supporter subscription that a `supporter_payment_failed`, a
 	// `supporter_subscription_ended`, or a `supporter_plan_retired` is about, as it is now;
-	// absent when it no longer exists.
+	// absent when it no longer exists, and without `read:supporters`.
 	SupporterSubscription *SupporterSubscription `json:"supporter_subscription,omitempty"`
 
 	// Type The kind of a notification. `account` is the account that acted: the follower
@@ -10364,7 +10364,7 @@ type Notification struct {
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
-	// it is open and the user sees it; omitted otherwise.
+	// it is open and the user sees it; omitted otherwise, and without `read:voice`.
 	VoiceRoom *VoiceRoom `json:"voice_room,omitempty"`
 
 	// VoiceRoomId The voice chat room that a `voice_room_started` or a `voice_room_invited` is about.
@@ -10401,7 +10401,7 @@ type NotificationErrorGroupChange string
 // them that the user turns off in the app (on by default); it has no `email` channel.
 type NotificationGroup string
 
-// NotificationMarker How far the authenticated user has read the notifications.
+// NotificationMarker How far the authenticated user has read the notifications, across all clients.
 type NotificationMarker struct {
 	// LastReadId The newest notification read; omitted when the user has read none.
 	//
@@ -11679,7 +11679,7 @@ type Report struct {
 	StatusIds []Id        `json:"status_ids"`
 
 	// TargetAccount The account reported, as the user would see it through `getAccount`; omitted when that
-	// answers 404, because the account is suspended, deleted, or blocks the user.
+	// answers 404, because the account is suspended, deactivated, deleted, or blocks the user.
 	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// VoiceRoomId The voice chat room reported; omitted for none.
@@ -15123,12 +15123,12 @@ type ServerInterface interface {
 	// DeleteRelay Delete a relay
 	// (DELETE /admin/relays/{id})
 	DeleteRelay(w http.ResponseWriter, r *http.Request, id RelayId)
+	// UnfollowRelay Leave a relay
+	// (DELETE /admin/relays/{id}/follow)
+	UnfollowRelay(w http.ResponseWriter, r *http.Request, id RelayId)
 	// FollowRelay Join a relay again
 	// (POST /admin/relays/{id}/follow)
 	FollowRelay(w http.ResponseWriter, r *http.Request, id RelayId)
-	// UnfollowRelay Leave a relay
-	// (POST /admin/relays/{id}/unfollow)
-	UnfollowRelay(w http.ResponseWriter, r *http.Request, id RelayId)
 	// ListReports List the reports
 	// (GET /admin/reports)
 	ListReports(w http.ResponseWriter, r *http.Request, params ListReportsParams)
@@ -20030,32 +20030,6 @@ func (siw *ServerInterfaceWrapper) DeleteRelay(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// FollowRelay operation middleware
-func (siw *ServerInterfaceWrapper) FollowRelay(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id RelayId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FollowRelay(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // UnfollowRelay operation middleware
 func (siw *ServerInterfaceWrapper) UnfollowRelay(w http.ResponseWriter, r *http.Request) {
 
@@ -20073,6 +20047,32 @@ func (siw *ServerInterfaceWrapper) UnfollowRelay(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UnfollowRelay(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// FollowRelay operation middleware
+func (siw *ServerInterfaceWrapper) FollowRelay(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id RelayId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.FollowRelay(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26423,8 +26423,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/relays", wrapper.ListAdminRelays)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/relays", wrapper.CreateRelay)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/relays/{id}", wrapper.DeleteRelay)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/relays/{id}/follow", wrapper.UnfollowRelay)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/relays/{id}/follow", wrapper.FollowRelay)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/relays/{id}/unfollow", wrapper.UnfollowRelay)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/statuses/{id}/refetch", wrapper.RefetchStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/refetch_statuses", wrapper.RefetchAccountStatuses)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/instances/{domain}/refetch_statuses", wrapper.RefetchInstanceStatuses)
@@ -27127,15 +27127,25 @@ type DeactivateOwnAccountResponseObject interface {
 	VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error
 }
 
-type DeactivateOwnAccount200JSONResponse Deactivation
+type DeactivateOwnAccount200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type DeactivateOwnAccount200JSONResponse struct {
+	Body    Deactivation
+	Headers DeactivateOwnAccount200ResponseHeaders
+}
 
 func (response DeactivateOwnAccount200JSONResponse) VisitDeactivateOwnAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
 	return err
@@ -34431,12 +34441,52 @@ type DenyOAuthClientHostResponseObject interface {
 	VisitDenyOAuthClientHostResponse(w http.ResponseWriter) error
 }
 
-type DenyOAuthClientHost204Response struct {
+type DenyOAuthClientHost200ResponseHeaders struct {
+	CacheControl *string
 }
 
-func (response DenyOAuthClientHost204Response) VisitDenyOAuthClientHostResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
+type DenyOAuthClientHost200JSONResponse struct {
+	Body    AdminOAuthClientHostDenial
+	Headers DenyOAuthClientHost200ResponseHeaders
+}
+
+func (response DenyOAuthClientHost200JSONResponse) VisitDenyOAuthClientHostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DenyOAuthClientHost201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type DenyOAuthClientHost201JSONResponse struct {
+	Body    AdminOAuthClientHostDenial
+	Headers DenyOAuthClientHost201ResponseHeaders
+}
+
+func (response DenyOAuthClientHost201JSONResponse) VisitDenyOAuthClientHostResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type DenyOAuthClientHostdefaultApplicationProblemPlusJSONResponse struct {
@@ -35234,83 +35284,6 @@ func (response DeleteRelaydefaultApplicationProblemPlusJSONResponse) VisitDelete
 	return err
 }
 
-type FollowRelayRequestObject struct {
-	Id RelayId `json:"id"`
-}
-
-type FollowRelayResponseObject interface {
-	VisitFollowRelayResponse(w http.ResponseWriter) error
-}
-
-type FollowRelay200JSONResponse struct{ AdminRelayJSONResponse }
-
-func (response FollowRelay200JSONResponse) VisitFollowRelayResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type FollowRelay422ApplicationProblemPlusJSONResponse struct {
-	RelayProblemApplicationProblemPlusJSONResponse
-}
-
-func (response FollowRelay422ApplicationProblemPlusJSONResponse) VisitFollowRelayResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	w.WriteHeader(422)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type FollowRelaydefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response FollowRelaydefaultApplicationProblemPlusJSONResponse) VisitFollowRelayResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type UnfollowRelayRequestObject struct {
 	Id RelayId `json:"id"`
 }
@@ -35365,6 +35338,83 @@ type UnfollowRelaydefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UnfollowRelaydefaultApplicationProblemPlusJSONResponse) VisitUnfollowRelayResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FollowRelayRequestObject struct {
+	Id RelayId `json:"id"`
+}
+
+type FollowRelayResponseObject interface {
+	VisitFollowRelayResponse(w http.ResponseWriter) error
+}
+
+type FollowRelay200JSONResponse struct{ AdminRelayJSONResponse }
+
+func (response FollowRelay200JSONResponse) VisitFollowRelayResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FollowRelay422ApplicationProblemPlusJSONResponse struct {
+	RelayProblemApplicationProblemPlusJSONResponse
+}
+
+func (response FollowRelay422ApplicationProblemPlusJSONResponse) VisitFollowRelayResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FollowRelaydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response FollowRelaydefaultApplicationProblemPlusJSONResponse) VisitFollowRelayResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -37992,11 +38042,11 @@ type RedeliverWebhookDeliveryResponseObject interface {
 	VisitRedeliverWebhookDeliveryResponse(w http.ResponseWriter) error
 }
 
-type RedeliverWebhookDelivery200JSONResponse struct {
+type RedeliverWebhookDelivery202JSONResponse struct {
 	AdminWebhookDeliveryJSONResponse
 }
 
-func (response RedeliverWebhookDelivery200JSONResponse) VisitRedeliverWebhookDeliveryResponse(w http.ResponseWriter) error {
+func (response RedeliverWebhookDelivery202JSONResponse) VisitRedeliverWebhookDeliveryResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -38006,7 +38056,7 @@ func (response RedeliverWebhookDelivery200JSONResponse) VisitRedeliverWebhookDel
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(202)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -38221,11 +38271,11 @@ type TestWebhookResponseObject interface {
 	VisitTestWebhookResponse(w http.ResponseWriter) error
 }
 
-type TestWebhook200JSONResponse struct {
+type TestWebhook202JSONResponse struct {
 	AdminWebhookDeliveryJSONResponse
 }
 
-func (response TestWebhook200JSONResponse) VisitTestWebhookResponse(w http.ResponseWriter) error {
+func (response TestWebhook202JSONResponse) VisitTestWebhookResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -38235,7 +38285,7 @@ func (response TestWebhook200JSONResponse) VisitTestWebhookResponse(w http.Respo
 	if response.Headers.CacheControl != nil {
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
-	w.WriteHeader(200)
+	w.WriteHeader(202)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -48496,12 +48546,12 @@ type StrictServerInterface interface {
 	// DeleteRelay Delete a relay
 	// (DELETE /admin/relays/{id})
 	DeleteRelay(ctx context.Context, request DeleteRelayRequestObject) (DeleteRelayResponseObject, error)
+	// UnfollowRelay Leave a relay
+	// (DELETE /admin/relays/{id}/follow)
+	UnfollowRelay(ctx context.Context, request UnfollowRelayRequestObject) (UnfollowRelayResponseObject, error)
 	// FollowRelay Join a relay again
 	// (POST /admin/relays/{id}/follow)
 	FollowRelay(ctx context.Context, request FollowRelayRequestObject) (FollowRelayResponseObject, error)
-	// UnfollowRelay Leave a relay
-	// (POST /admin/relays/{id}/unfollow)
-	UnfollowRelay(ctx context.Context, request UnfollowRelayRequestObject) (UnfollowRelayResponseObject, error)
 	// ListReports List the reports
 	// (GET /admin/reports)
 	ListReports(ctx context.Context, request ListReportsRequestObject) (ListReportsResponseObject, error)
@@ -53120,32 +53170,6 @@ func (sh *strictHandler) DeleteRelay(w http.ResponseWriter, r *http.Request, id 
 	}
 }
 
-// FollowRelay operation middleware
-func (sh *strictHandler) FollowRelay(w http.ResponseWriter, r *http.Request, id RelayId) {
-	var request FollowRelayRequestObject
-
-	request.Id = id
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.FollowRelay(ctx, request.(FollowRelayRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "FollowRelay")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(FollowRelayResponseObject); ok {
-		if err := validResponse.VisitFollowRelayResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // UnfollowRelay operation middleware
 func (sh *strictHandler) UnfollowRelay(w http.ResponseWriter, r *http.Request, id RelayId) {
 	var request UnfollowRelayRequestObject
@@ -53165,6 +53189,32 @@ func (sh *strictHandler) UnfollowRelay(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UnfollowRelayResponseObject); ok {
 		if err := validResponse.VisitUnfollowRelayResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// FollowRelay operation middleware
+func (sh *strictHandler) FollowRelay(w http.ResponseWriter, r *http.Request, id RelayId) {
+	var request FollowRelayRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.FollowRelay(ctx, request.(FollowRelayRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "FollowRelay")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(FollowRelayResponseObject); ok {
+		if err := validResponse.VisitFollowRelayResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

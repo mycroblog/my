@@ -166,7 +166,7 @@ func TestDeactivateOwnAccount(t *testing.T) {
 		name, body, problem string
 		status              int
 	}{
-		{"no confirmation", `{}`, "", http.StatusBadRequest},
+		{"no confirmation", `{}`, "", http.StatusUnprocessableEntity},
 		{"wrong password", `{"password":"wrong"}`, clientapi.ProblemTypeWrongPassword, http.StatusUnprocessableEntity},
 		{"wrong code", `{"two_factor_code":"000000"}`, clientapi.ProblemTypeInvalidTwoFactorCode, http.StatusUnprocessableEntity},
 		{"wrong passkey", `{"passkey":{"confirmation_token":"bad","credential":{"id":"x"}}}`, clientapi.ProblemTypeInvalidPasskey, http.StatusUnprocessableEntity},

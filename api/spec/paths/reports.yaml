@@ -7,7 +7,7 @@ get:
     resolved. A report reopened by the moderators is open again. It never tells how
     a report was resolved, which actions it led to, the reasons given to the account, or
     who handles it. A report stays listed when the user may no longer see its target (the
-    account is suspended, deleted, or blocks the user), without `target_account`. A report
+    account is suspended, deactivated, deleted, or blocks the user), without `target_account`. A report
     whose target no longer exists at all is left out, so a page may hold fewer
     reports than `limit` and still have a `next_cursor`.
   tags: [reports]

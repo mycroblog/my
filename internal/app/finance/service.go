@@ -247,7 +247,7 @@ func (s *Service) SetEnd(ctx context.Context, id string, endsOn *finance.Date, b
 // with ErrNotFound for an unknown or already canceled item.
 func (s *Service) Cancel(ctx context.Context, id, byUserID string) error {
 	c := Cancellation{ID: s.d.IDs.NewID(), CostItemID: id, CanceledByUserID: byUserID, CanceledAt: kernel.Normalize(s.d.Clock.Now())}
-	audit := labeled(s.audit(appmoderation.AuditCostItemCanceled, id, "", c.ID, byUserID, c.CanceledAt))
+	audit := labeled(s.audit(appmoderation.AuditCostItemDeleted, id, "", c.ID, byUserID, c.CanceledAt))
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		cur, err := s.d.Repository.CurrentForUpdate(ctx, tx, id)
 		if err != nil {

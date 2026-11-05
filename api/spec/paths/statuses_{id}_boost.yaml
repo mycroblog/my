@@ -7,6 +7,7 @@ post:
   description: |
     Boosting a status that is already boosted changes nothing. A status whose visibility
     does not allow boosting is a 422.
+    A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]

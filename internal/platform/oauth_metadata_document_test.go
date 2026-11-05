@@ -210,7 +210,7 @@ func TestOAuthMetadataDocumentClients(t *testing.T) {
 	}
 
 	// A denied host is refused before any fetch, and so are its clients' token requests.
-	if err := app.Identity.DenyOAuthClientHost(ctx, "127.0.0.1", ""); err != nil {
+	if _, _, err := app.Identity.DenyOAuthClientHost(ctx, "127.0.0.1", ""); err != nil {
 		t.Fatal(err)
 	}
 	fresh := site.json("/fresh.json", `{"client_id":"{{id}}","redirect_uris":["`+metadataRedirect+`"]}`)

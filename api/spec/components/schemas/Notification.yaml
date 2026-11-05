@@ -19,12 +19,12 @@ properties:
       may not see it.
     $ref: ./Status.yaml
   report:
-    description: The user's report that a `report_resolved` tells of.
+    description: The user's report that a `report_resolved` tells of; omitted without `read:reports`.
     $ref: ./Report.yaml
   moderation_action:
     description: |
       The action on the user's account that a `moderation_notice` tells of, or whose
-      appeal an `appeal_decided` tells of, with the appeal.
+      appeal an `appeal_decided` tells of, with the appeal; first-party clients only.
     $ref: ./ModerationAction.yaml
   report_id:
     description: The report that an `admin_report` is about.
@@ -37,15 +37,17 @@ properties:
   custom_emoji_request:
     description: |
       The custom emoji request that an `admin_custom_emoji_request` or a
-      `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists.
+      `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists,
+      and without `read:custom_emojis`.
     $ref: ./CustomEmojiRequest.yaml
   supporter_subscription:
     description: |
       The user's supporter subscription that a `supporter_payment_failed`, a
       `supporter_subscription_ended`, or a `supporter_plan_retired` is about, as it is now;
-      absent when it no longer exists.
+      absent when it no longer exists, and without `read:supporters`.
     $ref: ./SupporterSubscription.yaml
   relationship_severance:
+    description: The follows that a `relationships_severed` tells of; omitted without `read:follows`.
     $ref: ./RelationshipSeverance.yaml
   account_move:
     $ref: ./AccountMove.yaml
@@ -61,7 +63,7 @@ properties:
   voice_room:
     description: |
       The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
-      it is open and the user sees it; omitted otherwise.
+      it is open and the user sees it; omitted otherwise, and without `read:voice`.
     $ref: ./VoiceRoom.yaml
   error_group:
     description: What an `admin_error_group` tells of; omitted for the other types.

@@ -504,7 +504,7 @@ func TestEditAndDeleteOfAnotherAccountsStatus(t *testing.T) {
 			t.Errorf("DELETE another account's status (visible %v) = %d, want %d", tc.visible, res.StatusCode, tc.want)
 		}
 	}
-	f.del = func(string, string) error { return nil }
+	visible, f.del = true, func(string, string) error { return nil }
 	if res := e.send(t, http.MethodDelete, "/statuses/"+sampleStatusID, "write", ""); res.StatusCode != http.StatusNoContent {
 		t.Errorf("DELETE own status = %d, want 204", res.StatusCode)
 	}

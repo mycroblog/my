@@ -155,7 +155,9 @@ describe("the OAuth apps screen", () => {
       ),
       http.post(`${apiBase}/admin/oauth_client_host_denials`, async ({ request }) => {
         denied.push(await request.json());
-        return new HttpResponse(null, { status: 204 });
+        return HttpResponse.json(hostDenialFixture("0199f0e0-0000-7000-8000-0000000000f1", "app.example"), {
+          status: 201,
+        });
       }),
     );
     const { user } = await renderApp({ path: "/admin/oauth-apps" });
@@ -183,7 +185,9 @@ describe("the denied hosts", () => {
     server.use(
       http.post(`${apiBase}/admin/oauth_client_host_denials`, async ({ request }) => {
         denied.push(await request.json());
-        return new HttpResponse(null, { status: 204 });
+        return HttpResponse.json(hostDenialFixture("0199f0e0-0000-7000-8000-0000000000f1", "app.example"), {
+          status: 201,
+        });
       }),
     );
     const { user } = await renderApp({ path: "/admin/oauth-apps?tab=hosts" });

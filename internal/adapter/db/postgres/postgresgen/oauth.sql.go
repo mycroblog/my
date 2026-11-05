@@ -26,6 +26,28 @@ func (q *Queries) DeleteOAuthClientRedirectURI(ctx context.Context, arg DeleteOA
 	return err
 }
 
+const findOAuthClientHostDenial = `-- name: FindOAuthClientHostDenial :one
+SELECT d.id, d.host, d.denied_by_user_id, d.denied_at
+FROM oauth_client_host_denials d
+WHERE d.host = $1::text
+  AND NOT EXISTS (SELECT 1 FROM oauth_client_host_denial_lifts l WHERE l.denial_id = d.id)
+ORDER BY d.id DESC
+LIMIT 1
+`
+
+// FindOAuthClientHostDenial returns the denial of a host that has no lift.
+func (q *Queries) FindOAuthClientHostDenial(ctx context.Context, host string) (OauthClientHostDenial, error) {
+	row := q.db.QueryRow(ctx, findOAuthClientHostDenial, host)
+	var i OauthClientHostDenial
+	err := row.Scan(
+		&i.ID,
+		&i.Host,
+		&i.DeniedByUserID,
+		&i.DeniedAt,
+	)
+	return i, err
+}
+
 const getAccessTokenByAccessHash = `-- name: GetAccessTokenByAccessHash :one
 SELECT t.id, t.family_id, t.oauth_client_id, t.user_id, t.access_token_hash, t.refresh_token_hash, t.scope,
   t.rotated_from_token_id, t.issued_at, t.expires_at, t.refresh_expires_at,

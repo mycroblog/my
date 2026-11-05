@@ -15,8 +15,8 @@ get:
     that it did. It does at most once a day per account, for at most 30 accounts per viewer
     in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 
-    An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
-    deleted account, the instance actor, and an account that blocks the viewer.
+    An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+    deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
   tags: [timelines]
   security:
     - {}

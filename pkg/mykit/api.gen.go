@@ -277,8 +277,8 @@ const (
 	AdminAuditActionAppealOverturned                AdminAuditAction = "appeal_overturned"
 	AdminAuditActionAppealUpheld                    AdminAuditAction = "appeal_upheld"
 	AdminAuditActionBillingImportQueued             AdminAuditAction = "billing_import_queued"
-	AdminAuditActionCostItemCanceled                AdminAuditAction = "cost_item_canceled"
 	AdminAuditActionCostItemCreated                 AdminAuditAction = "cost_item_created"
+	AdminAuditActionCostItemDeleted                 AdminAuditAction = "cost_item_deleted"
 	AdminAuditActionCostItemEndChanged              AdminAuditAction = "cost_item_end_changed"
 	AdminAuditActionCostItemPriceRevised            AdminAuditAction = "cost_item_price_revised"
 	AdminAuditActionCostItemRelabeled               AdminAuditAction = "cost_item_relabeled"
@@ -351,7 +351,7 @@ const (
 	AdminAuditActionSupporterPlanRevised            AdminAuditAction = "supporter_plan_revised"
 	AdminAuditActionSupporterProgramDisabled        AdminAuditAction = "supporter_program_disabled"
 	AdminAuditActionSupporterProgramEnabled         AdminAuditAction = "supporter_program_enabled"
-	AdminAuditActionSupporterSubscriptionCanceled   AdminAuditAction = "supporter_subscription_canceled"
+	AdminAuditActionSupporterSubscriptionEnded      AdminAuditAction = "supporter_subscription_ended"
 	AdminAuditActionTextChanged                     AdminAuditAction = "text_changed"
 	AdminAuditActionTwoFactorDisabled               AdminAuditAction = "two_factor_disabled"
 	AdminAuditActionVoiceRoomEnded                  AdminAuditAction = "voice_room_ended"
@@ -390,9 +390,9 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionBillingImportQueued:
 		return true
-	case AdminAuditActionCostItemCanceled:
-		return true
 	case AdminAuditActionCostItemCreated:
+		return true
+	case AdminAuditActionCostItemDeleted:
 		return true
 	case AdminAuditActionCostItemEndChanged:
 		return true
@@ -538,7 +538,7 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionSupporterProgramEnabled:
 		return true
-	case AdminAuditActionSupporterSubscriptionCanceled:
+	case AdminAuditActionSupporterSubscriptionEnded:
 		return true
 	case AdminAuditActionTextChanged:
 		return true
@@ -4750,6 +4750,9 @@ type AdminAccountRegistration struct {
 	// pending and when the decision has no note.
 	DecisionNote *string `json:"decision_note,omitempty"`
 
+	// Id The ID that `approveRegistration` and `rejectRegistration` take.
+	Id Id `json:"id"`
+
 	// Invite The invite that a local account signed up with, and who created it, which invited the user.
 	Invite *AdminAccountInvite `json:"invite,omitempty"`
 
@@ -4952,12 +4955,12 @@ type AdminAppealPage struct {
 // on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
 // the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
 // `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
-// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_canceled`; the label is
+// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 // the item's name. On the `supporter_program`: `supporter_program_enabled`,
 // `supporter_program_disabled`; the label is the payment provider's name. On a
 // `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
 // `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
-// `supporter_subscription_canceled`, an administrator's cancellation without a refund; the
+// `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
 // label is the plan's name and the subscriber's handle. On a `custom_emoji_request`:
 // `custom_emoji_request_submitted` and `custom_emoji_request_withdrawn` by the requester, and
 // `custom_emoji_request_approved` (which also records the emoji's `custom_emoji_created` or
@@ -5027,12 +5030,12 @@ type AdminAuditEntry struct {
 	// on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
 	// the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
 	// `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
-	// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_canceled`; the label is
+	// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 	// the item's name. On the `supporter_program`: `supporter_program_enabled`,
 	// `supporter_program_disabled`; the label is the payment provider's name. On a
 	// `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
 	// `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
-	// `supporter_subscription_canceled`, an administrator's cancellation without a refund; the
+	// `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
 	// label is the plan's name and the subscriber's handle. On a `custom_emoji_request`:
 	// `custom_emoji_request_submitted` and `custom_emoji_request_withdrawn` by the requester, and
 	// `custom_emoji_request_approved` (which also records the emoji's `custom_emoji_created` or
@@ -9238,7 +9241,7 @@ type Instance struct {
 
 	// Timelines Who may read the public timelines the instance serves: `local` is the instance
 	// setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
-	// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+	// setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
 	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 	Timelines InstanceTimelines `json:"timelines"`
 
@@ -9525,7 +9528,7 @@ type InstanceThumbnail struct {
 
 // InstanceTimelines Who may read the public timelines the instance serves: `local` is the instance
 // setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
-// setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+// setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
 // timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 type InstanceTimelines struct {
 	// Federated Who may read something public about the instance, the value of the instance settings
@@ -10251,7 +10254,8 @@ type Notification struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// CustomEmojiRequest The custom emoji request that an `admin_custom_emoji_request` or a
-	// `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists.
+	// `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists,
+	// and without `read:custom_emojis`.
 	CustomEmojiRequest *CustomEmojiRequest `json:"custom_emoji_request,omitempty"`
 
 	// ErrorGroup What an `admin_error_group` tells of; omitted for the other types.
@@ -10263,20 +10267,16 @@ type Notification struct {
 	Id Id `json:"id"`
 
 	// ModerationAction The action on the user's account that a `moderation_notice` tells of, or whose
-	// appeal an `appeal_decided` tells of, with the appeal.
+	// appeal an `appeal_decided` tells of, with the appeal; first-party clients only.
 	ModerationAction *ModerationAction `json:"moderation_action,omitempty"`
 
 	// Reaction The emoji of a `reaction`; omitted for the other types.
 	Reaction *ReactionEmoji `json:"reaction,omitempty"`
 
-	// RelationshipSeverance The follows that a `relationships_severed` tells of: the user lost them when the
-	// moderators suspended a server (`domain_suspension`, `domain` is the server) or a remote
-	// account (`account_suspension`, the notification's `account` is the account). Both
-	// directions end, follow requests too, and lifting the suspension does not restore them;
-	// the counts are of the accepted follows.
+	// RelationshipSeverance The follows that a `relationships_severed` tells of; omitted without `read:follows`.
 	RelationshipSeverance *RelationshipSeverance `json:"relationship_severance,omitempty"`
 
-	// Report The user's report that a `report_resolved` tells of.
+	// Report The user's report that a `report_resolved` tells of; omitted without `read:reports`.
 	Report *Report `json:"report,omitempty"`
 
 	// ReportId The report that an `admin_report` is about.
@@ -10296,7 +10296,7 @@ type Notification struct {
 
 	// SupporterSubscription The user's supporter subscription that a `supporter_payment_failed`, a
 	// `supporter_subscription_ended`, or a `supporter_plan_retired` is about, as it is now;
-	// absent when it no longer exists.
+	// absent when it no longer exists, and without `read:supporters`.
 	SupporterSubscription *SupporterSubscription `json:"supporter_subscription,omitempty"`
 
 	// Type The kind of a notification. `account` is the account that acted: the follower
@@ -10366,7 +10366,7 @@ type Notification struct {
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
-	// it is open and the user sees it; omitted otherwise.
+	// it is open and the user sees it; omitted otherwise, and without `read:voice`.
 	VoiceRoom *VoiceRoom `json:"voice_room,omitempty"`
 
 	// VoiceRoomId The voice chat room that a `voice_room_started` or a `voice_room_invited` is about.
@@ -10403,7 +10403,7 @@ type NotificationErrorGroupChange string
 // them that the user turns off in the app (on by default); it has no `email` channel.
 type NotificationGroup string
 
-// NotificationMarker How far the authenticated user has read the notifications.
+// NotificationMarker How far the authenticated user has read the notifications, across all clients.
 type NotificationMarker struct {
 	// LastReadId The newest notification read; omitted when the user has read none.
 	//
@@ -11683,7 +11683,7 @@ type Report struct {
 	StatusIds []Id        `json:"status_ids"`
 
 	// TargetAccount The account reported, as the user would see it through `getAccount`; omitted when that
-	// answers 404, because the account is suspended, deleted, or blocks the user.
+	// answers 404, because the account is suspended, deactivated, deleted, or blocks the user.
 	TargetAccount *Account `json:"target_account,omitempty"`
 
 	// VoiceRoomId The voice chat room reported; omitted for none.
@@ -16667,7 +16667,9 @@ type ClientInterface interface {
 	// then `requested` is true until the account accepts it. Following an
 	// account that the viewer already follows or has requested to follow changes only the
 	// preferences in the body. Following an account that the viewer blocks is a 409
-	// `/api/v1/problems/blocking`. A follow of an account on another server is a request
+	// `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+	// moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+	// gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
 	// until that server accepts it. While the instance does not follow remote accounts
 	// (`Instance.federation.mode` `off` or `outbound`), following an account on another
 	// server that the viewer does not follow or request yet is a 403
@@ -16684,7 +16686,9 @@ type ClientInterface interface {
 	// then `requested` is true until the account accepts it. Following an
 	// account that the viewer already follows or has requested to follow changes only the
 	// preferences in the body. Following an account that the viewer blocks is a 409
-	// `/api/v1/problems/blocking`. A follow of an account on another server is a request
+	// `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+	// moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+	// gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
 	// until that server accepts it. While the instance does not follow remote accounts
 	// (`Instance.federation.mode` `off` or `outbound`), following an account on another
 	// server that the viewer does not follow or request yet is a 403
@@ -16770,8 +16774,8 @@ type ClientInterface interface {
 	// that it did. It does at most once a day per account, for at most 30 accounts per viewer
 	// in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 	//
-	// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
-	// deleted account, the instance actor, and an account that blocks the viewer.
+	// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+	// deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
 	//
 	// Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
 	ListAccountStatuses(ctx context.Context, id Id, params *ListAccountStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -18326,7 +18330,7 @@ type ClientInterface interface {
 	// From now on no `client_id` URL on the host is fetched or accepted, and the authorization
 	// requests, token exchanges and refreshes of its clients fail. The tokens that the clients
 	// of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
-	// host revokes again and records nothing new. A host that is empty or malformed, or has a
+	// host revokes again, records nothing new, and answers 200 with the denial it has. A host that is empty or malformed, or has a
 	// port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
 	// permission.
 	//
@@ -18340,7 +18344,7 @@ type ClientInterface interface {
 	// From now on no `client_id` URL on the host is fetched or accepted, and the authorization
 	// requests, token exchanges and refreshes of its clients fail. The tokens that the clients
 	// of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
-	// host revokes again and records nothing new. A host that is empty or malformed, or has a
+	// host revokes again, records nothing new, and answers 200 with the denial it has. A host that is empty or malformed, or has a
 	// port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
 	// permission.
 	//
@@ -18542,6 +18546,17 @@ type ClientInterface interface {
 	// Corresponds with DELETE /admin/relays/{id} (the `DeleteRelay` operationId).
 	DeleteRelay(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnfollowRelay Leave a relay
+	//
+	// Sends the `Undo` of the `Follow` of a `pending` or `accepted` relay; the relay is `left`,
+	// and nothing goes to it or comes from it any more. The posts it brought in stay until
+	// their retention ends. A relay in another state is a 422 `/api/v1/problems/invalid-relay`
+	// (`state`). The `Undo` is recorded in the audit log. An unknown ID is a 404. Needs the
+	// `manage_settings` permission.
+	//
+	// Corresponds with DELETE /admin/relays/{id}/follow (the `UnfollowRelay` operationId).
+	UnfollowRelay(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// FollowRelay Join a relay again
 	//
 	// Sends a new `Follow` to a relay that rejected the instance or that the instance left;
@@ -18551,17 +18566,6 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /admin/relays/{id}/follow (the `FollowRelay` operationId).
 	FollowRelay(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UnfollowRelay Leave a relay
-	//
-	// Sends the `Undo` of the `Follow` of a `pending` or `accepted` relay; the relay is `left`,
-	// and nothing goes to it or comes from it any more. The posts it brought in stay until
-	// their retention ends. A relay in another state is a 422 `/api/v1/problems/invalid-relay`
-	// (`state`). The `Undo` is recorded in the audit log. An unknown ID is a 404. Needs the
-	// `manage_settings` permission.
-	//
-	// Corresponds with POST /admin/relays/{id}/unfollow (the `UnfollowRelay` operationId).
-	UnfollowRelay(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListReports List the reports
 	//
@@ -20258,6 +20262,10 @@ type ClientInterface interface {
 	// clients that report their positions concurrently never move it back. A
 	// `last_read_id` that is not one of the user's notifications is a 404.
 	//
+	// The user has one marker, shared by all clients. Moving it marks everything up to
+	// `last_read_id` as read for every client, including notifications that this client does
+	// not list, such as the moderator notifications that reach first-party clients only.
+	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with PUT /notifications/marker (the `UpdateNotificationMarker` operationId).
@@ -20269,6 +20277,10 @@ type ClientInterface interface {
 	// moves forward: a `last_read_id` older than the current marker changes nothing, so
 	// clients that report their positions concurrently never move it back. A
 	// `last_read_id` that is not one of the user's notifications is a 404.
+	//
+	// The user has one marker, shared by all clients. Moving it marks everything up to
+	// `last_read_id` as read for every client, including notifications that this client does
+	// not list, such as the moderator notifications that reach first-party clients only.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -20450,8 +20462,8 @@ type ClientInterface interface {
 	// Returns the options of a WebAuthn authentication (with user verification) for the
 	// browser's `navigator.credentials.get()`, with a `confirmation_token` that carries them
 	// for 5 minutes, once, in the `passkey` of an operation that a passkey of the user confirms
-	// in place of the current password: deleting the account, moving it, changing or removing
-	// the password, registering a passkey, and linking an identity. Nothing is stored.
+	// in place of the current password: deleting the account, deactivating it, moving it, changing
+	// or removing the password, registering a passkey, and linking an identity. Nothing is stored.
 	//
 	// Corresponds with POST /passkeys/confirmation (the `BeginPasskeyConfirmation` operationId).
 	BeginPasskeyConfirmation(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20750,7 +20762,7 @@ type ClientInterface interface {
 	// resolved. A report reopened by the moderators is open again. It never tells how
 	// a report was resolved, which actions it led to, the reasons given to the account, or
 	// who handles it. A report stays listed when the user may no longer see its target (the
-	// account is suspended, deleted, or blocks the user), without `target_account`. A report
+	// account is suspended, deactivated, deleted, or blocks the user), without `target_account`. A report
 	// whose target no longer exists at all is left out, so a page may hold fewer
 	// reports than `limit` and still have a `next_cursor`.
 	//
@@ -20824,6 +20836,7 @@ type ClientInterface interface {
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -20837,6 +20850,7 @@ type ClientInterface interface {
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -20844,6 +20858,10 @@ type ClientInterface interface {
 	CreateStatus(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteStatus Delete the authenticated user's status
+	//
+	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+	// status is a 404 to a token without `read:direct`, the user's own included, and nothing
+	// is deleted.
 	//
 	// Corresponds with DELETE /statuses/{id} (the `DeleteStatus` operationId).
 	DeleteStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20861,6 +20879,8 @@ type ClientInterface interface {
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
 	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+	// status is a 404 to a token without `read:direct`, the user's own included.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -20873,6 +20893,8 @@ type ClientInterface interface {
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
 	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+	// status is a 404 to a token without `read:direct`, the user's own included.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -20904,6 +20926,7 @@ type ClientInterface interface {
 	//
 	// Boosting a status that is already boosted changes nothing. A status whose visibility
 	// does not allow boosting is a 422.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Corresponds with POST /statuses/{id}/boost (the `BoostStatus` operationId).
 	BoostStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20930,6 +20953,7 @@ type ClientInterface interface {
 	//
 	// Favouriting a status that is already favourited changes nothing. A user has one
 	// favourite or one emoji reaction on a status, so favouriting takes back the reaction.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Corresponds with POST /statuses/{id}/favourite (the `FavouriteStatus` operationId).
 	FavouriteStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -20965,6 +20989,7 @@ type ClientInterface interface {
 	// unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
 	// a poll of another server is sent to that server, whose counts in `poll` include it once
 	// the server reports them again.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -20979,6 +21004,7 @@ type ClientInterface interface {
 	// unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
 	// a poll of another server is sent to that server, whose counts in `poll` include it once
 	// the server reports them again.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -20989,7 +21015,8 @@ type ClientInterface interface {
 	//
 	// Changes the `quote_policy` of a status of the user; the approvals given
 	// before stay, and each is revoked on its own. Another account's status is a 403 when the
-	// user may see it and a 404 otherwise.
+	// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
+	// `read:direct`, the user's own included.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21000,7 +21027,8 @@ type ClientInterface interface {
 	//
 	// Changes the `quote_policy` of a status of the user; the approvals given
 	// before stay, and each is revoked on its own. Another account's status is a 403 when the
-	// user may see it and a 404 otherwise.
+	// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
+	// `read:direct`, the user's own included.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21042,6 +21070,7 @@ type ClientInterface interface {
 	// status, so reacting takes back the favourite and the reaction with another emoji;
 	// reacting again with the same emoji changes nothing. A custom emoji of another server,
 	// or anything else that is not one emoji, is a 422.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21055,6 +21084,7 @@ type ClientInterface interface {
 	// status, so reacting takes back the favourite and the reaction with another emoji;
 	// reacting again with the same emoji changes nothing. A custom emoji of another server,
 	// or anything else that is not one emoji, is a 422.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -22570,7 +22600,9 @@ func (c *Client) UnfollowAccount(ctx context.Context, id AccountId, reqEditors .
 // then `requested` is true until the account accepts it. Following an
 // account that the viewer already follows or has requested to follow changes only the
 // preferences in the body. Following an account that the viewer blocks is a 409
-// `/api/v1/problems/blocking`. A follow of an account on another server is a request
+// `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+// moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+// gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
 // until that server accepts it. While the instance does not follow remote accounts
 // (`Instance.federation.mode` `off` or `outbound`), following an account on another
 // server that the viewer does not follow or request yet is a 403
@@ -22597,7 +22629,9 @@ func (c *Client) FollowAccountWithBody(ctx context.Context, id AccountId, conten
 // then `requested` is true until the account accepts it. Following an
 // account that the viewer already follows or has requested to follow changes only the
 // preferences in the body. Following an account that the viewer blocks is a 409
-// `/api/v1/problems/blocking`. A follow of an account on another server is a request
+// `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+// moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+// gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
 // until that server accepts it. While the instance does not follow remote accounts
 // (`Instance.federation.mode` `off` or `outbound`), following an account on another
 // server that the viewer does not follow or request yet is a 403
@@ -22763,8 +22797,8 @@ func (c *Client) MuteAccount(ctx context.Context, id AccountId, body MuteAccount
 // that it did. It does at most once a day per account, for at most 30 accounts per viewer
 // in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 //
-// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
-// deleted account, the instance actor, and an account that blocks the viewer.
+// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+// deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
 //
 // Corresponds with GET /accounts/{id}/statuses (the `ListAccountStatuses` operationId).
 func (c *Client) ListAccountStatuses(ctx context.Context, id Id, params *ListAccountStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -25569,7 +25603,7 @@ func (c *Client) ListOAuthClientHostDenials(ctx context.Context, params *ListOAu
 // From now on no `client_id` URL on the host is fetched or accepted, and the authorization
 // requests, token exchanges and refreshes of its clients fail. The tokens that the clients
 // of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
-// host revokes again and records nothing new. A host that is empty or malformed, or has a
+// host revokes again, records nothing new, and answers 200 with the denial it has. A host that is empty or malformed, or has a
 // port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
 // permission.
 //
@@ -25593,7 +25627,7 @@ func (c *Client) DenyOAuthClientHostWithBody(ctx context.Context, contentType st
 // From now on no `client_id` URL on the host is fetched or accepted, and the authorization
 // requests, token exchanges and refreshes of its clients fail. The tokens that the clients
 // of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
-// host revokes again and records nothing new. A host that is empty or malformed, or has a
+// host revokes again, records nothing new, and answers 200 with the denial it has. A host that is empty or malformed, or has a
 // port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
 // permission.
 //
@@ -25965,16 +25999,17 @@ func (c *Client) DeleteRelay(ctx context.Context, id RelayId, reqEditors ...Requ
 	return c.Client.Do(req)
 }
 
-// FollowRelay Join a relay again
+// UnfollowRelay Leave a relay
 //
-// Sends a new `Follow` to a relay that rejected the instance or that the instance left;
-// the relay is `pending` again. A relay that is `pending` or `accepted`, or on a suspended
-// server, is a 422 `/api/v1/problems/invalid-relay`. The `Follow` is recorded in the audit
-// log. An unknown ID is a 404. Needs the `manage_settings` permission.
+// Sends the `Undo` of the `Follow` of a `pending` or `accepted` relay; the relay is `left`,
+// and nothing goes to it or comes from it any more. The posts it brought in stay until
+// their retention ends. A relay in another state is a 422 `/api/v1/problems/invalid-relay`
+// (`state`). The `Undo` is recorded in the audit log. An unknown ID is a 404. Needs the
+// `manage_settings` permission.
 //
-// Corresponds with POST /admin/relays/{id}/follow (the `FollowRelay` operationId).
-func (c *Client) FollowRelay(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewFollowRelayRequest(c.Server, id)
+// Corresponds with DELETE /admin/relays/{id}/follow (the `UnfollowRelay` operationId).
+func (c *Client) UnfollowRelay(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnfollowRelayRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -25985,17 +26020,16 @@ func (c *Client) FollowRelay(ctx context.Context, id RelayId, reqEditors ...Requ
 	return c.Client.Do(req)
 }
 
-// UnfollowRelay Leave a relay
+// FollowRelay Join a relay again
 //
-// Sends the `Undo` of the `Follow` of a `pending` or `accepted` relay; the relay is `left`,
-// and nothing goes to it or comes from it any more. The posts it brought in stay until
-// their retention ends. A relay in another state is a 422 `/api/v1/problems/invalid-relay`
-// (`state`). The `Undo` is recorded in the audit log. An unknown ID is a 404. Needs the
-// `manage_settings` permission.
+// Sends a new `Follow` to a relay that rejected the instance or that the instance left;
+// the relay is `pending` again. A relay that is `pending` or `accepted`, or on a suspended
+// server, is a 422 `/api/v1/problems/invalid-relay`. The `Follow` is recorded in the audit
+// log. An unknown ID is a 404. Needs the `manage_settings` permission.
 //
-// Corresponds with POST /admin/relays/{id}/unfollow (the `UnfollowRelay` operationId).
-func (c *Client) UnfollowRelay(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUnfollowRelayRequest(c.Server, id)
+// Corresponds with POST /admin/relays/{id}/follow (the `FollowRelay` operationId).
+func (c *Client) FollowRelay(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFollowRelayRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -29091,6 +29125,10 @@ func (c *Client) GetNotificationMarker(ctx context.Context, reqEditors ...Reques
 // clients that report their positions concurrently never move it back. A
 // `last_read_id` that is not one of the user's notifications is a 404.
 //
+// The user has one marker, shared by all clients. Moving it marks everything up to
+// `last_read_id` as read for every client, including notifications that this client does
+// not list, such as the moderator notifications that reach first-party clients only.
+//
 // Takes any type of body and a specified content type.
 //
 // Corresponds with PUT /notifications/marker (the `UpdateNotificationMarker` operationId).
@@ -29112,6 +29150,10 @@ func (c *Client) UpdateNotificationMarkerWithBody(ctx context.Context, contentTy
 // moves forward: a `last_read_id` older than the current marker changes nothing, so
 // clients that report their positions concurrently never move it back. A
 // `last_read_id` that is not one of the user's notifications is a 404.
+//
+// The user has one marker, shared by all clients. Moving it marks everything up to
+// `last_read_id` as read for every client, including notifications that this client does
+// not list, such as the moderator notifications that reach first-party clients only.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -29443,8 +29485,8 @@ func (c *Client) CreatePasskey(ctx context.Context, body CreatePasskeyJSONReques
 // Returns the options of a WebAuthn authentication (with user verification) for the
 // browser's `navigator.credentials.get()`, with a `confirmation_token` that carries them
 // for 5 minutes, once, in the `passkey` of an operation that a passkey of the user confirms
-// in place of the current password: deleting the account, moving it, changing or removing
-// the password, registering a passkey, and linking an identity. Nothing is stored.
+// in place of the current password: deleting the account, deactivating it, moving it, changing
+// or removing the password, registering a passkey, and linking an identity. Nothing is stored.
 //
 // Corresponds with POST /passkeys/confirmation (the `BeginPasskeyConfirmation` operationId).
 func (c *Client) BeginPasskeyConfirmation(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -29993,7 +30035,7 @@ func (c *Client) PutPushSubscription(ctx context.Context, body PutPushSubscripti
 // resolved. A report reopened by the moderators is open again. It never tells how
 // a report was resolved, which actions it led to, the reasons given to the account, or
 // who handles it. A report stays listed when the user may no longer see its target (the
-// account is suspended, deleted, or blocks the user), without `target_account`. A report
+// account is suspended, deactivated, deleted, or blocks the user), without `target_account`. A report
 // whose target no longer exists at all is left out, so a page may hold fewer
 // reports than `limit` and still have a `next_cursor`.
 //
@@ -30127,6 +30169,7 @@ func (c *Client) RevokeSession(ctx context.Context, id Id, reqEditors ...Request
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -30150,6 +30193,7 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -30167,6 +30211,10 @@ func (c *Client) CreateStatus(ctx context.Context, params *CreateStatusParams, b
 }
 
 // DeleteStatus Delete the authenticated user's status
+//
+// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+// status is a 404 to a token without `read:direct`, the user's own included, and nothing
+// is deleted.
 //
 // Corresponds with DELETE /statuses/{id} (the `DeleteStatus` operationId).
 func (c *Client) DeleteStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30204,6 +30252,8 @@ func (c *Client) GetStatus(ctx context.Context, id StatusId, reqEditors ...Reque
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
 // otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+// status is a 404 to a token without `read:direct`, the user's own included.
 //
 // Takes any type of body and a specified content type.
 //
@@ -30226,6 +30276,8 @@ func (c *Client) EditStatusWithBody(ctx context.Context, id StatusId, contentTyp
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
 // otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+// status is a 404 to a token without `read:direct`, the user's own included.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -30297,6 +30349,7 @@ func (c *Client) UnboostStatus(ctx context.Context, id StatusId, reqEditors ...R
 //
 // Boosting a status that is already boosted changes nothing. A status whose visibility
 // does not allow boosting is a 422.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Corresponds with POST /statuses/{id}/boost (the `BoostStatus` operationId).
 func (c *Client) BoostStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30353,6 +30406,7 @@ func (c *Client) UnfavouriteStatus(ctx context.Context, id StatusId, reqEditors 
 //
 // Favouriting a status that is already favourited changes nothing. A user has one
 // favourite or one emoji reaction on a status, so favouriting takes back the reaction.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Corresponds with POST /statuses/{id}/favourite (the `FavouriteStatus` operationId).
 func (c *Client) FavouriteStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -30428,6 +30482,7 @@ func (c *Client) PinStatus(ctx context.Context, id StatusId, reqEditors ...Reque
 // unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
 // a poll of another server is sent to that server, whose counts in `poll` include it once
 // the server reports them again.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -30452,6 +30507,7 @@ func (c *Client) VoteInPollWithBody(ctx context.Context, id StatusId, contentTyp
 // unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
 // a poll of another server is sent to that server, whose counts in `poll` include it once
 // the server reports them again.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -30472,7 +30528,8 @@ func (c *Client) VoteInPoll(ctx context.Context, id StatusId, body VoteInPollJSO
 //
 // Changes the `quote_policy` of a status of the user; the approvals given
 // before stay, and each is revoked on its own. Another account's status is a 403 when the
-// user may see it and a 404 otherwise.
+// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
+// `read:direct`, the user's own included.
 //
 // Takes any type of body and a specified content type.
 //
@@ -30493,7 +30550,8 @@ func (c *Client) SetStatusQuotePolicyWithBody(ctx context.Context, id StatusId, 
 //
 // Changes the `quote_policy` of a status of the user; the approvals given
 // before stay, and each is revoked on its own. Another account's status is a 403 when the
-// user may see it and a 404 otherwise.
+// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
+// `read:direct`, the user's own included.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -30575,6 +30633,7 @@ func (c *Client) UnreactToStatus(ctx context.Context, id StatusId, reqEditors ..
 // status, so reacting takes back the favourite and the reaction with another emoji;
 // reacting again with the same emoji changes nothing. A custom emoji of another server,
 // or anything else that is not one emoji, is a 422.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes any type of body and a specified content type.
 //
@@ -30598,6 +30657,7 @@ func (c *Client) ReactToStatusWithBody(ctx context.Context, id StatusId, content
 // status, so reacting takes back the favourite and the reaction with another emoji;
 // reacting again with the same emoji changes nothing. A custom emoji of another server,
 // or anything else that is not one emoji, is a 422.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -38306,8 +38366,8 @@ func NewDeleteRelayRequest(server string, id RelayId) (*http.Request, error) {
 	return req, nil
 }
 
-// NewFollowRelayRequest constructs an http.Request for the FollowRelay method
-func NewFollowRelayRequest(server string, id RelayId) (*http.Request, error) {
+// NewUnfollowRelayRequest constructs an http.Request for the UnfollowRelay method
+func NewUnfollowRelayRequest(server string, id RelayId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -38332,7 +38392,7 @@ func NewFollowRelayRequest(server string, id RelayId) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -38340,8 +38400,8 @@ func NewFollowRelayRequest(server string, id RelayId) (*http.Request, error) {
 	return req, nil
 }
 
-// NewUnfollowRelayRequest constructs an http.Request for the UnfollowRelay method
-func NewUnfollowRelayRequest(server string, id RelayId) (*http.Request, error) {
+// NewFollowRelayRequest constructs an http.Request for the FollowRelay method
+func NewFollowRelayRequest(server string, id RelayId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -38356,7 +38416,7 @@ func NewUnfollowRelayRequest(server string, id RelayId) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/admin/relays/%s/unfollow", pathParam0)
+	operationPath := fmt.Sprintf("/admin/relays/%s/follow", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -48015,7 +48075,9 @@ type ClientWithResponsesInterface interface {
 	// then `requested` is true until the account accepts it. Following an
 	// account that the viewer already follows or has requested to follow changes only the
 	// preferences in the body. Following an account that the viewer blocks is a 409
-	// `/api/v1/problems/blocking`. A follow of an account on another server is a request
+	// `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+	// moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+	// gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
 	// until that server accepts it. While the instance does not follow remote accounts
 	// (`Instance.federation.mode` `off` or `outbound`), following an account on another
 	// server that the viewer does not follow or request yet is a 403
@@ -48032,7 +48094,9 @@ type ClientWithResponsesInterface interface {
 	// then `requested` is true until the account accepts it. Following an
 	// account that the viewer already follows or has requested to follow changes only the
 	// preferences in the body. Following an account that the viewer blocks is a 409
-	// `/api/v1/problems/blocking`. A follow of an account on another server is a request
+	// `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+	// moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+	// gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
 	// until that server accepts it. While the instance does not follow remote accounts
 	// (`Instance.federation.mode` `off` or `outbound`), following an account on another
 	// server that the viewer does not follow or request yet is a 403
@@ -48128,8 +48192,8 @@ type ClientWithResponsesInterface interface {
 	// that it did. It does at most once a day per account, for at most 30 accounts per viewer
 	// in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 	//
-	// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
-	// deleted account, the instance actor, and an account that blocks the viewer.
+	// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+	// deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -49826,7 +49890,7 @@ type ClientWithResponsesInterface interface {
 	// From now on no `client_id` URL on the host is fetched or accepted, and the authorization
 	// requests, token exchanges and refreshes of its clients fail. The tokens that the clients
 	// of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
-	// host revokes again and records nothing new. A host that is empty or malformed, or has a
+	// host revokes again, records nothing new, and answers 200 with the denial it has. A host that is empty or malformed, or has a
 	// port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
 	// permission.
 	//
@@ -49840,7 +49904,7 @@ type ClientWithResponsesInterface interface {
 	// From now on no `client_id` URL on the host is fetched or accepted, and the authorization
 	// requests, token exchanges and refreshes of its clients fail. The tokens that the clients
 	// of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
-	// host revokes again and records nothing new. A host that is empty or malformed, or has a
+	// host revokes again, records nothing new, and answers 200 with the denial it has. A host that is empty or malformed, or has a
 	// port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
 	// permission.
 	//
@@ -50062,6 +50126,19 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /admin/relays/{id} (the `DeleteRelay` operationId).
 	DeleteRelayWithResponse(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*DeleteRelayResponse, error)
 
+	// UnfollowRelayWithResponse Leave a relay
+	//
+	// Sends the `Undo` of the `Follow` of a `pending` or `accepted` relay; the relay is `left`,
+	// and nothing goes to it or comes from it any more. The posts it brought in stay until
+	// their retention ends. A relay in another state is a 422 `/api/v1/problems/invalid-relay`
+	// (`state`). The `Undo` is recorded in the audit log. An unknown ID is a 404. Needs the
+	// `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /admin/relays/{id}/follow (the `UnfollowRelay` operationId).
+	UnfollowRelayWithResponse(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*UnfollowRelayResponse, error)
+
 	// FollowRelayWithResponse Join a relay again
 	//
 	// Sends a new `Follow` to a relay that rejected the instance or that the instance left;
@@ -50073,19 +50150,6 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /admin/relays/{id}/follow (the `FollowRelay` operationId).
 	FollowRelayWithResponse(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*FollowRelayResponse, error)
-
-	// UnfollowRelayWithResponse Leave a relay
-	//
-	// Sends the `Undo` of the `Follow` of a `pending` or `accepted` relay; the relay is `left`,
-	// and nothing goes to it or comes from it any more. The posts it brought in stay until
-	// their retention ends. A relay in another state is a 422 `/api/v1/problems/invalid-relay`
-	// (`state`). The `Undo` is recorded in the audit log. An unknown ID is a 404. Needs the
-	// `manage_settings` permission.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /admin/relays/{id}/unfollow (the `UnfollowRelay` operationId).
-	UnfollowRelayWithResponse(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*UnfollowRelayResponse, error)
 
 	// ListReportsWithResponse List the reports
 	//
@@ -51942,6 +52006,10 @@ type ClientWithResponsesInterface interface {
 	// clients that report their positions concurrently never move it back. A
 	// `last_read_id` that is not one of the user's notifications is a 404.
 	//
+	// The user has one marker, shared by all clients. Moving it marks everything up to
+	// `last_read_id` as read for every client, including notifications that this client does
+	// not list, such as the moderator notifications that reach first-party clients only.
+	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with PUT /notifications/marker (the `UpdateNotificationMarker` operationId).
@@ -51953,6 +52021,10 @@ type ClientWithResponsesInterface interface {
 	// moves forward: a `last_read_id` older than the current marker changes nothing, so
 	// clients that report their positions concurrently never move it back. A
 	// `last_read_id` that is not one of the user's notifications is a 404.
+	//
+	// The user has one marker, shared by all clients. Moving it marks everything up to
+	// `last_read_id` as read for every client, including notifications that this client does
+	// not list, such as the moderator notifications that reach first-party clients only.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52146,8 +52218,8 @@ type ClientWithResponsesInterface interface {
 	// Returns the options of a WebAuthn authentication (with user verification) for the
 	// browser's `navigator.credentials.get()`, with a `confirmation_token` that carries them
 	// for 5 minutes, once, in the `passkey` of an operation that a passkey of the user confirms
-	// in place of the current password: deleting the account, moving it, changing or removing
-	// the password, registering a passkey, and linking an identity. Nothing is stored.
+	// in place of the current password: deleting the account, deactivating it, moving it, changing
+	// or removing the password, registering a passkey, and linking an identity. Nothing is stored.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52464,7 +52536,7 @@ type ClientWithResponsesInterface interface {
 	// resolved. A report reopened by the moderators is open again. It never tells how
 	// a report was resolved, which actions it led to, the reasons given to the account, or
 	// who handles it. A report stays listed when the user may no longer see its target (the
-	// account is suspended, deleted, or blocks the user), without `target_account`. A report
+	// account is suspended, deactivated, deleted, or blocks the user), without `target_account`. A report
 	// whose target no longer exists at all is left out, so a page may hold fewer
 	// reports than `limit` and still have a `next_cursor`.
 	//
@@ -52546,6 +52618,7 @@ type ClientWithResponsesInterface interface {
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52559,6 +52632,7 @@ type ClientWithResponsesInterface interface {
 	// a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52566,6 +52640,10 @@ type ClientWithResponsesInterface interface {
 	CreateStatusWithResponse(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateStatusResponse, error)
 
 	// DeleteStatusWithResponse Delete the authenticated user's status
+	//
+	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+	// status is a 404 to a token without `read:direct`, the user's own included, and nothing
+	// is deleted.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52587,6 +52665,8 @@ type ClientWithResponsesInterface interface {
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
 	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+	// status is a 404 to a token without `read:direct`, the user's own included.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52599,6 +52679,8 @@ type ClientWithResponsesInterface interface {
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
 	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+	// status is a 404 to a token without `read:direct`, the user's own included.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52636,6 +52718,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Boosting a status that is already boosted changes nothing. A status whose visibility
 	// does not allow boosting is a 422.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52668,6 +52751,7 @@ type ClientWithResponsesInterface interface {
 	//
 	// Favouriting a status that is already favourited changes nothing. A user has one
 	// favourite or one emoji reaction on a status, so favouriting takes back the reaction.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -52711,6 +52795,7 @@ type ClientWithResponsesInterface interface {
 	// unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
 	// a poll of another server is sent to that server, whose counts in `poll` include it once
 	// the server reports them again.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52725,6 +52810,7 @@ type ClientWithResponsesInterface interface {
 	// unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
 	// a poll of another server is sent to that server, whose counts in `poll` include it once
 	// the server reports them again.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52735,7 +52821,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Changes the `quote_policy` of a status of the user; the approvals given
 	// before stay, and each is revoked on its own. Another account's status is a 403 when the
-	// user may see it and a 404 otherwise.
+	// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
+	// `read:direct`, the user's own included.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52746,7 +52833,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// Changes the `quote_policy` of a status of the user; the approvals given
 	// before stay, and each is revoked on its own. Another account's status is a 403 when the
-	// user may see it and a 404 otherwise.
+	// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
+	// `read:direct`, the user's own included.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52794,6 +52882,7 @@ type ClientWithResponsesInterface interface {
 	// status, so reacting takes back the favourite and the reaction with another emoji;
 	// reacting again with the same emoji changes nothing. A custom emoji of another server,
 	// or anything else that is not one emoji, is a 422.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -52807,6 +52896,7 @@ type ClientWithResponsesInterface interface {
 	// status, so reacting takes back the favourite and the reaction with another emoji;
 	// reacting again with the same emoji changes nothing. A custom emoji of another server,
 	// or anything else that is not one emoji, is a 422.
+	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -53858,6 +53948,11 @@ func (r GetDeactivationPreviewResponse) ContentType() string {
 	return ""
 }
 
+// DeactivateOwnAccountResponse200Headers the declared response headers of an HTTP 200 response for DeactivateOwnAccount
+type DeactivateOwnAccountResponse200Headers struct {
+	CacheControl *string
+}
+
 // DeactivateOwnAccountResponseDefaultHeaders the declared response headers of an HTTP default response for DeactivateOwnAccount
 type DeactivateOwnAccountResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -53873,6 +53968,8 @@ type DeactivateOwnAccountResponse struct {
 	JSON200 *Deactivation
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *DeactivateOwnAccountResponse200Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *DeactivateOwnAccountResponseDefaultHeaders
 }
@@ -61877,6 +61974,16 @@ func (r ListOAuthClientHostDenialsResponse) ContentType() string {
 	return ""
 }
 
+// DenyOAuthClientHostResponse200Headers the declared response headers of an HTTP 200 response for DenyOAuthClientHost
+type DenyOAuthClientHostResponse200Headers struct {
+	CacheControl *string
+}
+
+// DenyOAuthClientHostResponse201Headers the declared response headers of an HTTP 201 response for DenyOAuthClientHost
+type DenyOAuthClientHostResponse201Headers struct {
+	CacheControl *string
+}
+
 // DenyOAuthClientHostResponseDefaultHeaders the declared response headers of an HTTP default response for DenyOAuthClientHost
 type DenyOAuthClientHostResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -61888,10 +61995,28 @@ type DenyOAuthClientHostResponseDefaultHeaders struct {
 type DenyOAuthClientHostResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminOAuthClientHostDenial
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminOAuthClientHostDenial
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *DenyOAuthClientHostResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *DenyOAuthClientHostResponse201Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *DenyOAuthClientHostResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DenyOAuthClientHostResponse) GetJSON200() *AdminOAuthClientHostDenial {
+	return r.JSON200
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r DenyOAuthClientHostResponse) GetJSON201() *AdminOAuthClientHostDenial {
+	return r.JSON201
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -62761,86 +62886,6 @@ func (r DeleteRelayResponse) ContentType() string {
 	return ""
 }
 
-// FollowRelayResponse200Headers the declared response headers of an HTTP 200 response for FollowRelay
-type FollowRelayResponse200Headers struct {
-	CacheControl *string
-}
-
-// FollowRelayResponse422Headers the declared response headers of an HTTP 422 response for FollowRelay
-type FollowRelayResponse422Headers struct {
-	CacheControl    *string
-	ContentLanguage *string
-}
-
-// FollowRelayResponseDefaultHeaders the declared response headers of an HTTP default response for FollowRelay
-type FollowRelayResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type FollowRelayResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminRelay
-	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
-	ApplicationproblemJSON422 *RelayProblem
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *FollowRelayResponse200Headers
-	// Headers422 the parsed response headers for an HTTP 422 response
-	Headers422 *FollowRelayResponse422Headers
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *FollowRelayResponseDefaultHeaders
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r FollowRelayResponse) GetJSON200() *AdminRelay {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
-func (r FollowRelayResponse) GetApplicationproblemJSON422() *RelayProblem {
-	return r.ApplicationproblemJSON422
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r FollowRelayResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r FollowRelayResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r FollowRelayResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r FollowRelayResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r FollowRelayResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
 // UnfollowRelayResponse200Headers the declared response headers of an HTTP 200 response for UnfollowRelay
 type UnfollowRelayResponse200Headers struct {
 	CacheControl *string
@@ -62915,6 +62960,86 @@ func (r UnfollowRelayResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UnfollowRelayResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// FollowRelayResponse200Headers the declared response headers of an HTTP 200 response for FollowRelay
+type FollowRelayResponse200Headers struct {
+	CacheControl *string
+}
+
+// FollowRelayResponse422Headers the declared response headers of an HTTP 422 response for FollowRelay
+type FollowRelayResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// FollowRelayResponseDefaultHeaders the declared response headers of an HTTP default response for FollowRelay
+type FollowRelayResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type FollowRelayResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminRelay
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *RelayProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *FollowRelayResponse200Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *FollowRelayResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *FollowRelayResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r FollowRelayResponse) GetJSON200() *AdminRelay {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r FollowRelayResponse) GetApplicationproblemJSON422() *RelayProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r FollowRelayResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r FollowRelayResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r FollowRelayResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FollowRelayResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r FollowRelayResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -65780,8 +65905,8 @@ func (r ListWebhookDeliveriesResponse) ContentType() string {
 	return ""
 }
 
-// RedeliverWebhookDeliveryResponse200Headers the declared response headers of an HTTP 200 response for RedeliverWebhookDelivery
-type RedeliverWebhookDeliveryResponse200Headers struct {
+// RedeliverWebhookDeliveryResponse202Headers the declared response headers of an HTTP 202 response for RedeliverWebhookDelivery
+type RedeliverWebhookDeliveryResponse202Headers struct {
 	CacheControl *string
 }
 
@@ -65796,19 +65921,19 @@ type RedeliverWebhookDeliveryResponseDefaultHeaders struct {
 type RedeliverWebhookDeliveryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminWebhookDelivery
+	// JSON202 the response for an HTTP 202 `application/json` response
+	JSON202 *AdminWebhookDelivery
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *RedeliverWebhookDeliveryResponse200Headers
+	// Headers202 the parsed response headers for an HTTP 202 response
+	Headers202 *RedeliverWebhookDeliveryResponse202Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *RedeliverWebhookDeliveryResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r RedeliverWebhookDeliveryResponse) GetJSON200() *AdminWebhookDelivery {
-	return r.JSON200
+// GetJSON202 returns the response for an HTTP 202 `application/json` response
+func (r RedeliverWebhookDeliveryResponse) GetJSON202() *AdminWebhookDelivery {
+	return r.JSON202
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -66040,8 +66165,8 @@ func (r RotateWebhookSecretResponse) ContentType() string {
 	return ""
 }
 
-// TestWebhookResponse200Headers the declared response headers of an HTTP 200 response for TestWebhook
-type TestWebhookResponse200Headers struct {
+// TestWebhookResponse202Headers the declared response headers of an HTTP 202 response for TestWebhook
+type TestWebhookResponse202Headers struct {
 	CacheControl *string
 }
 
@@ -66056,19 +66181,19 @@ type TestWebhookResponseDefaultHeaders struct {
 type TestWebhookResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *AdminWebhookDelivery
+	// JSON202 the response for an HTTP 202 `application/json` response
+	JSON202 *AdminWebhookDelivery
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *TestWebhookResponse200Headers
+	// Headers202 the parsed response headers for an HTTP 202 response
+	Headers202 *TestWebhookResponse202Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *TestWebhookResponseDefaultHeaders
 }
 
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r TestWebhookResponse) GetJSON200() *AdminWebhookDelivery {
-	return r.JSON200
+// GetJSON202 returns the response for an HTTP 202 `application/json` response
+func (r TestWebhookResponse) GetJSON202() *AdminWebhookDelivery {
+	return r.JSON202
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -77283,7 +77408,9 @@ func (c *ClientWithResponses) UnfollowAccountWithResponse(ctx context.Context, i
 // then `requested` is true until the account accepts it. Following an
 // account that the viewer already follows or has requested to follow changes only the
 // preferences in the body. Following an account that the viewer blocks is a 409
-// `/api/v1/problems/blocking`. A follow of an account on another server is a request
+// `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+// moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+// gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
 // until that server accepts it. While the instance does not follow remote accounts
 // (`Instance.federation.mode` `off` or `outbound`), following an account on another
 // server that the viewer does not follow or request yet is a 403
@@ -77306,7 +77433,9 @@ func (c *ClientWithResponses) FollowAccountWithBodyWithResponse(ctx context.Cont
 // then `requested` is true until the account accepts it. Following an
 // account that the viewer already follows or has requested to follow changes only the
 // preferences in the body. Following an account that the viewer blocks is a 409
-// `/api/v1/problems/blocking`. A follow of an account on another server is a request
+// `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+// moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+// gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
 // until that server accepts it. While the instance does not follow remote accounts
 // (`Instance.federation.mode` `off` or `outbound`), following an account on another
 // server that the viewer does not follow or request yet is a 403
@@ -77450,8 +77579,8 @@ func (c *ClientWithResponses) MuteAccountWithResponse(ctx context.Context, id Ac
 // that it did. It does at most once a day per account, for at most 30 accounts per viewer
 // in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 //
-// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
-// deleted account, the instance actor, and an account that blocks the viewer.
+// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+// deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -79898,7 +80027,7 @@ func (c *ClientWithResponses) ListOAuthClientHostDenialsWithResponse(ctx context
 // From now on no `client_id` URL on the host is fetched or accepted, and the authorization
 // requests, token exchanges and refreshes of its clients fail. The tokens that the clients
 // of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
-// host revokes again and records nothing new. A host that is empty or malformed, or has a
+// host revokes again, records nothing new, and answers 200 with the denial it has. A host that is empty or malformed, or has a
 // port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
 // permission.
 //
@@ -79918,7 +80047,7 @@ func (c *ClientWithResponses) DenyOAuthClientHostWithBodyWithResponse(ctx contex
 // From now on no `client_id` URL on the host is fetched or accepted, and the authorization
 // requests, token exchanges and refreshes of its clients fail. The tokens that the clients
 // of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
-// host revokes again and records nothing new. A host that is empty or malformed, or has a
+// host revokes again, records nothing new, and answers 200 with the denial it has. A host that is empty or malformed, or has a
 // port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
 // permission.
 //
@@ -80242,6 +80371,25 @@ func (c *ClientWithResponses) DeleteRelayWithResponse(ctx context.Context, id Re
 	return ParseDeleteRelayResponse(rsp)
 }
 
+// UnfollowRelayWithResponse Leave a relay
+//
+// Sends the `Undo` of the `Follow` of a `pending` or `accepted` relay; the relay is `left`,
+// and nothing goes to it or comes from it any more. The posts it brought in stay until
+// their retention ends. A relay in another state is a 422 `/api/v1/problems/invalid-relay`
+// (`state`). The `Undo` is recorded in the audit log. An unknown ID is a 404. Needs the
+// `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /admin/relays/{id}/follow (the `UnfollowRelay` operationId).
+func (c *ClientWithResponses) UnfollowRelayWithResponse(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*UnfollowRelayResponse, error) {
+	rsp, err := c.UnfollowRelay(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnfollowRelayResponse(rsp)
+}
+
 // FollowRelayWithResponse Join a relay again
 //
 // Sends a new `Follow` to a relay that rejected the instance or that the instance left;
@@ -80258,25 +80406,6 @@ func (c *ClientWithResponses) FollowRelayWithResponse(ctx context.Context, id Re
 		return nil, err
 	}
 	return ParseFollowRelayResponse(rsp)
-}
-
-// UnfollowRelayWithResponse Leave a relay
-//
-// Sends the `Undo` of the `Follow` of a `pending` or `accepted` relay; the relay is `left`,
-// and nothing goes to it or comes from it any more. The posts it brought in stay until
-// their retention ends. A relay in another state is a 422 `/api/v1/problems/invalid-relay`
-// (`state`). The `Undo` is recorded in the audit log. An unknown ID is a 404. Needs the
-// `manage_settings` permission.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /admin/relays/{id}/unfollow (the `UnfollowRelay` operationId).
-func (c *ClientWithResponses) UnfollowRelayWithResponse(ctx context.Context, id RelayId, reqEditors ...RequestEditorFn) (*UnfollowRelayResponse, error) {
-	rsp, err := c.UnfollowRelay(ctx, id, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUnfollowRelayResponse(rsp)
 }
 
 // ListReportsWithResponse List the reports
@@ -82968,6 +83097,10 @@ func (c *ClientWithResponses) GetNotificationMarkerWithResponse(ctx context.Cont
 // clients that report their positions concurrently never move it back. A
 // `last_read_id` that is not one of the user's notifications is a 404.
 //
+// The user has one marker, shared by all clients. Moving it marks everything up to
+// `last_read_id` as read for every client, including notifications that this client does
+// not list, such as the moderator notifications that reach first-party clients only.
+//
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with PUT /notifications/marker (the `UpdateNotificationMarker` operationId).
@@ -82985,6 +83118,10 @@ func (c *ClientWithResponses) UpdateNotificationMarkerWithBodyWithResponse(ctx c
 // moves forward: a `last_read_id` older than the current marker changes nothing, so
 // clients that report their positions concurrently never move it back. A
 // `last_read_id` that is not one of the user's notifications is a 404.
+//
+// The user has one marker, shared by all clients. Moving it marks everything up to
+// `last_read_id` as read for every client, including notifications that this client does
+// not list, such as the moderator notifications that reach first-party clients only.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83268,8 +83405,8 @@ func (c *ClientWithResponses) CreatePasskeyWithResponse(ctx context.Context, bod
 // Returns the options of a WebAuthn authentication (with user verification) for the
 // browser's `navigator.credentials.get()`, with a `confirmation_token` that carries them
 // for 5 minutes, once, in the `passkey` of an operation that a passkey of the user confirms
-// in place of the current password: deleting the account, moving it, changing or removing
-// the password, registering a passkey, and linking an identity. Nothing is stored.
+// in place of the current password: deleting the account, deactivating it, moving it, changing
+// or removing the password, registering a passkey, and linking an identity. Nothing is stored.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83736,7 +83873,7 @@ func (c *ClientWithResponses) PutPushSubscriptionWithResponse(ctx context.Contex
 // resolved. A report reopened by the moderators is open again. It never tells how
 // a report was resolved, which actions it led to, the reasons given to the account, or
 // who handles it. A report stays listed when the user may no longer see its target (the
-// account is suspended, deleted, or blocks the user), without `target_account`. A report
+// account is suspended, deactivated, deleted, or blocks the user), without `target_account`. A report
 // whose target no longer exists at all is left out, so a page may hold fewer
 // reports than `limit` and still have a `next_cursor`.
 //
@@ -83854,6 +83991,7 @@ func (c *ClientWithResponses) RevokeSessionWithResponse(ctx context.Context, id 
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83873,6 +84011,7 @@ func (c *ClientWithResponses) CreateStatusWithBodyWithResponse(ctx context.Conte
 // a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83886,6 +84025,10 @@ func (c *ClientWithResponses) CreateStatusWithResponse(ctx context.Context, para
 }
 
 // DeleteStatusWithResponse Delete the authenticated user's status
+//
+// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+// status is a 404 to a token without `read:direct`, the user's own included, and nothing
+// is deleted.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -83919,6 +84062,8 @@ func (c *ClientWithResponses) GetStatusWithResponse(ctx context.Context, id Stat
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
 // otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+// status is a 404 to a token without `read:direct`, the user's own included.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83937,6 +84082,8 @@ func (c *ClientWithResponses) EditStatusWithBodyWithResponse(ctx context.Context
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
 // otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+// status is a 404 to a token without `read:direct`, the user's own included.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83998,6 +84145,7 @@ func (c *ClientWithResponses) UnboostStatusWithResponse(ctx context.Context, id 
 //
 // Boosting a status that is already boosted changes nothing. A status whose visibility
 // does not allow boosting is a 422.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84048,6 +84196,7 @@ func (c *ClientWithResponses) UnfavouriteStatusWithResponse(ctx context.Context,
 //
 // Favouriting a status that is already favourited changes nothing. A user has one
 // favourite or one emoji reaction on a status, so favouriting takes back the reaction.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -84115,6 +84264,7 @@ func (c *ClientWithResponses) PinStatusWithResponse(ctx context.Context, id Stat
 // unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
 // a poll of another server is sent to that server, whose counts in `poll` include it once
 // the server reports them again.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -84135,6 +84285,7 @@ func (c *ClientWithResponses) VoteInPollWithBodyWithResponse(ctx context.Context
 // unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
 // a poll of another server is sent to that server, whose counts in `poll` include it once
 // the server reports them again.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -84151,7 +84302,8 @@ func (c *ClientWithResponses) VoteInPollWithResponse(ctx context.Context, id Sta
 //
 // Changes the `quote_policy` of a status of the user; the approvals given
 // before stay, and each is revoked on its own. Another account's status is a 403 when the
-// user may see it and a 404 otherwise.
+// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
+// `read:direct`, the user's own included.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -84168,7 +84320,8 @@ func (c *ClientWithResponses) SetStatusQuotePolicyWithBodyWithResponse(ctx conte
 //
 // Changes the `quote_policy` of a status of the user; the approvals given
 // before stay, and each is revoked on its own. Another account's status is a 403 when the
-// user may see it and a 404 otherwise.
+// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
+// `read:direct`, the user's own included.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -84240,6 +84393,7 @@ func (c *ClientWithResponses) UnreactToStatusWithResponse(ctx context.Context, i
 // status, so reacting takes back the favourite and the reaction with another emoji;
 // reacting again with the same emoji changes nothing. A custom emoji of another server,
 // or anything else that is not one emoji, is a 422.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -84259,6 +84413,7 @@ func (c *ClientWithResponses) ReactToStatusWithBodyWithResponse(ctx context.Cont
 // status, so reacting takes back the favourite and the reaction with another emoji;
 // reacting again with the same emoji changes nothing. A custom emoji of another server,
 // or anything else that is not one emoji, is a 422.
+// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -85772,6 +85927,16 @@ func ParseDeactivateOwnAccountResponse(rsp *http.Response) (*DeactivateOwnAccoun
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers DeactivateOwnAccountResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
 	case true:
 		var headers DeactivateOwnAccountResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -95391,8 +95556,19 @@ func ParseDenyOAuthClientHostResponse(rsp *http.Response) (*DenyOAuthClientHostR
 	}
 
 	switch {
-	case rsp.StatusCode == 204:
-		break // No content-type
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminOAuthClientHostDenial
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AdminOAuthClientHostDenial
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -95404,6 +95580,26 @@ func ParseDenyOAuthClientHostResponse(rsp *http.Response) (*DenyOAuthClientHostR
 	}
 
 	switch {
+	case rsp.StatusCode == 200:
+		var headers DenyOAuthClientHostResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case rsp.StatusCode == 201:
+		var headers DenyOAuthClientHostResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
 	case true:
 		var headers DenyOAuthClientHostResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -96447,107 +96643,6 @@ func ParseDeleteRelayResponse(rsp *http.Response) (*DeleteRelayResponse, error) 
 	return response, nil
 }
 
-// ParseFollowRelayResponse parses an HTTP response from a FollowRelayWithResponse call
-func ParseFollowRelayResponse(rsp *http.Response) (*FollowRelayResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &FollowRelayResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest AdminRelay
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest RelayProblem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON422 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case rsp.StatusCode == 200:
-		var headers FollowRelayResponse200Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		response.Headers200 = &headers
-	case rsp.StatusCode == 422:
-		var headers FollowRelayResponse422Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		response.Headers422 = &headers
-	case true:
-		var headers FollowRelayResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
 // ParseUnfollowRelayResponse parses an HTTP response from a UnfollowRelayWithResponse call
 func ParseUnfollowRelayResponse(rsp *http.Response) (*UnfollowRelayResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -96615,6 +96710,107 @@ func ParseUnfollowRelayResponse(rsp *http.Response) (*UnfollowRelayResponse, err
 		response.Headers422 = &headers
 	case true:
 		var headers UnfollowRelayResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseFollowRelayResponse parses an HTTP response from a FollowRelayWithResponse call
+func ParseFollowRelayResponse(rsp *http.Response) (*FollowRelayResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FollowRelayResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminRelay
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest RelayProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers FollowRelayResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case rsp.StatusCode == 422:
+		var headers FollowRelayResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers FollowRelayResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -100110,12 +100306,12 @@ func ParseRedeliverWebhookDeliveryResponse(rsp *http.Response) (*RedeliverWebhoo
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
 		var dest AdminWebhookDelivery
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON202 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -100127,8 +100323,8 @@ func ParseRedeliverWebhookDeliveryResponse(rsp *http.Response) (*RedeliverWebhoo
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers RedeliverWebhookDeliveryResponse200Headers
+	case rsp.StatusCode == 202:
+		var headers RedeliverWebhookDeliveryResponse202Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -100136,7 +100332,7 @@ func ParseRedeliverWebhookDeliveryResponse(rsp *http.Response) (*RedeliverWebhoo
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers202 = &headers
 	case true:
 		var headers RedeliverWebhookDeliveryResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
@@ -100418,12 +100614,12 @@ func ParseTestWebhookResponse(rsp *http.Response) (*TestWebhookResponse, error) 
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
 		var dest AdminWebhookDelivery
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON202 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
@@ -100435,8 +100631,8 @@ func ParseTestWebhookResponse(rsp *http.Response) (*TestWebhookResponse, error) 
 	}
 
 	switch {
-	case rsp.StatusCode == 200:
-		var headers TestWebhookResponse200Headers
+	case rsp.StatusCode == 202:
+		var headers TestWebhookResponse202Headers
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -100444,7 +100640,7 @@ func ParseTestWebhookResponse(rsp *http.Response) (*TestWebhookResponse, error) 
 			}
 			headers.CacheControl = &value
 		}
-		response.Headers200 = &headers
+		response.Headers202 = &headers
 	case true:
 		var headers TestWebhookResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {

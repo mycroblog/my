@@ -32,6 +32,7 @@ const bob = adminAccountDetailFixture(otherAccountFixture, {
   state: "limited",
   restrictions: ["public_discovery", "unsolicited_reach"],
   registration: {
+    id: "0192f0c4-7a8e-7000-8000-0000000007a1",
     submitted_at: "2026-09-01T09:00:00Z",
     reason: "I write about local politics and would like to follow the council meetings here.",
     state_changed_at: "2026-09-01T12:00:00Z",

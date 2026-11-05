@@ -180,7 +180,7 @@ func TestWebhooks(t *testing.T) {
 	// The test message fails, is listed as failing, and a redelivery sends it again.
 	recv.answer(http.StatusInternalServerError)
 	var delivery clientapi.AdminWebhookDelivery
-	if code := api(adminToken, http.MethodPost, "/admin/webhooks/"+hook.Id+"/test", nil, &delivery); code != http.StatusOK ||
+	if code := api(adminToken, http.MethodPost, "/admin/webhooks/"+hook.Id+"/test", nil, &delivery); code != http.StatusAccepted ||
 		delivery.EventType != clientapi.WebhookMessageTypeWebhookTest {
 		t.Fatalf("POST test = %d %+v", code, delivery)
 	}
@@ -200,7 +200,7 @@ func TestWebhooks(t *testing.T) {
 	if code := api(adminToken, http.MethodGet, "/admin/webhooks/"+hook.Id, nil, &got); code != http.StatusOK || got.Failure == nil || got.Failure.ConsecutiveFailures != 1 {
 		t.Errorf("GET the failing webhook = %d %+v", code, got)
 	}
-	if code := api(adminToken, http.MethodPost, "/admin/webhooks/"+hook.Id+"/deliveries/"+delivery.Id+"/redeliver", nil, nil); code != http.StatusOK {
+	if code := api(adminToken, http.MethodPost, "/admin/webhooks/"+hook.Id+"/deliveries/"+delivery.Id+"/redeliver", nil, nil); code != http.StatusAccepted {
 		t.Fatalf("POST redeliver = %d", code)
 	}
 	reqs, bodies = recv.take()
@@ -210,7 +210,7 @@ func TestWebhooks(t *testing.T) {
 
 	// 410 Gone disables the webhook as the system, and tells the administrators.
 	recv.answer(http.StatusGone)
-	if code := api(adminToken, http.MethodPost, "/admin/webhooks/"+hook.Id+"/test", nil, nil); code != http.StatusOK {
+	if code := api(adminToken, http.MethodPost, "/admin/webhooks/"+hook.Id+"/test", nil, nil); code != http.StatusAccepted {
 		t.Fatalf("POST test = %d", code)
 	}
 	recv.take()

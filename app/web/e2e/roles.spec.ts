@@ -102,7 +102,11 @@ async function rolesServer(page: Page) {
     state: "active",
     restrictions: [],
     registration_state: "approved",
-    registration: { submitted_at: "2026-10-01T00:00:00Z", state_changed_at: "2026-10-01T01:00:00Z" },
+    registration: {
+      id: "0192f0c4-7a8e-7000-8000-0000000007a1",
+      submitted_at: "2026-10-01T00:00:00Z",
+      state_changed_at: "2026-10-01T01:00:00Z",
+    },
     email_verified: true,
     roles: held.map((role) => role.key),
     actions: [],

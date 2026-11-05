@@ -1968,7 +1968,7 @@ func supporterStaffCancel(t *testing.T, e *supporterEnv) {
 	if err := e.svc.CancelByStaff(ctx, id, ""); !errors.Is(err, supporters.ErrNoLiveSubscription) {
 		t.Errorf("CancelByStaff again = %v", err)
 	}
-	if !slices.Contains(e.actions(), moderation.AuditSupporterSubscriptionCanceled) {
+	if !slices.Contains(e.actions(), moderation.AuditSupporterSubscriptionEnded) {
 		t.Errorf("audit log: %v", e.actions())
 	}
 	page, err := e.svc.Subscriptions(ctx, supporters.SubscriptionFilter{State: domain.StateExpired, Limit: 10})

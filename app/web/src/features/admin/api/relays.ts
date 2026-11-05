@@ -68,7 +68,7 @@ export function setRelayMembershipMutation(api: Api) {
     mutationFn: async ({ id, join }: { id: string; join: boolean }): Promise<Relay> => {
       const { data, error } = join
         ? await api.fetch.POST("/admin/relays/{id}/follow", { params: { path: { id } } })
-        : await api.fetch.POST("/admin/relays/{id}/unfollow", { params: { path: { id } } });
+        : await api.fetch.DELETE("/admin/relays/{id}/follow", { params: { path: { id } } });
       if (data === undefined) throw new ApiError(error);
       return data;
     },

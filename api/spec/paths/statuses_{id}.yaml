@@ -29,6 +29,8 @@ put:
     previous content stays in the edit history. The visibility and reply target never
     change. Attached media must be the user's own uploads that finished processing (422
     otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+    Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+    status is a 404 to a token without `read:direct`, the user's own included.
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]
@@ -53,6 +55,10 @@ put:
 delete:
   operationId: deleteStatus
   summary: Delete the authenticated user's status
+  description: |
+    Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+    status is a 404 to a token without `read:direct`, the user's own included, and nothing
+    is deleted.
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]

@@ -21,7 +21,7 @@ properties:
   target_account:
     description: |
       The account reported, as the user would see it through `getAccount`; omitted when that
-      answers 404, because the account is suspended, deleted, or blocks the user.
+      answers 404, because the account is suspended, deactivated, deleted, or blocks the user.
     allOf:
       - $ref: ./Account.yaml
   status_ids:

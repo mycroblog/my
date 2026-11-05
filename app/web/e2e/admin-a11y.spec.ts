@@ -621,6 +621,7 @@ async function moderatorServer(page: Page) {
     registration_state: "approved",
     // Invited by the moderator through a member invite, which the page names and links.
     registration: {
+      id: "0192f0c4-7a8e-7000-8000-0000000007a1",
       submitted_at: "2026-10-01T00:00:00Z",
       state_changed_at: "2026-10-01T01:00:00Z",
       invite_id: invite.id,

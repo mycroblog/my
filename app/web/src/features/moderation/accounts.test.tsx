@@ -271,6 +271,7 @@ const bobDetail = adminAccountDetailFixture(otherAccountFixture, {
   restrictions: ["visibility_ceiling_private", "public_discovery"],
   roles: ["moderator"],
   registration: {
+    id: "0192f0c4-7a8e-7000-8000-0000000007a1",
     submitted_at: "2026-10-01T00:00:00Z",
     state_changed_at: "2026-10-01T01:00:00Z",
     reason: "I like birds.",
@@ -328,6 +329,7 @@ describe("an account's admin page", () => {
     const decided = {
       ...withoutReports,
       registration: {
+        id: "0192f0c4-7a8e-7000-8000-0000000007a1",
         submitted_at: "2026-10-01T00:00:00Z",
         state_changed_at: "2026-10-01T01:00:00Z",
         decision_note: "Known to the moderators.",
@@ -345,6 +347,7 @@ describe("an account's admin page", () => {
   test("shows the invite the account signed up with and who created it", async () => {
     const invited = adminAccountDetailFixture(otherAccountFixture, {
       registration: {
+        id: "0192f0c4-7a8e-7000-8000-0000000007a1",
         submitted_at: "2026-10-01T00:00:00Z",
         state_changed_at: "2026-10-01T00:00:00Z",
         invite_id: "0192f0c4-7a8e-7000-8000-0000000006a1",
@@ -370,6 +373,7 @@ describe("an account's admin page", () => {
 
     const byCli = adminAccountDetailFixture(otherAccountFixture, {
       registration: {
+        id: "0192f0c4-7a8e-7000-8000-0000000007a1",
         submitted_at: "2026-10-01T00:00:00Z",
         state_changed_at: "2026-10-01T00:00:00Z",
         invite_id: "0192f0c4-7a8e-7000-8000-0000000006a2",

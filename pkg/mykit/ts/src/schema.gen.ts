@@ -1207,8 +1207,8 @@ export interface paths {
          * @description Returns the options of a WebAuthn authentication (with user verification) for the
          *     browser's `navigator.credentials.get()`, with a `confirmation_token` that carries them
          *     for 5 minutes, once, in the `passkey` of an operation that a passkey of the user confirms
-         *     in place of the current password: deleting the account, moving it, changing or removing
-         *     the password, registering a passkey, and linking an identity. Nothing is stored.
+         *     in place of the current password: deleting the account, deactivating it, moving it, changing
+         *     or removing the password, registering a passkey, and linking an identity. Nothing is stored.
          */
         post: operations["beginPasskeyConfirmation"];
         delete?: never;
@@ -1759,7 +1759,9 @@ export interface paths {
          *     then `requested` is true until the account accepts it. Following an
          *     account that the viewer already follows or has requested to follow changes only the
          *     preferences in the body. Following an account that the viewer blocks is a 409
-         *     `/api/v1/problems/blocking`. A follow of an account on another server is a request
+         *     `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+         *     moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+         *     gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
          *     until that server accepts it. While the instance does not follow remote accounts
          *     (`Instance.federation.mode` `off` or `outbound`), following an account on another
          *     server that the viewer does not follow or request yet is a 403
@@ -2363,6 +2365,10 @@ export interface paths {
          *     moves forward: a `last_read_id` older than the current marker changes nothing, so
          *     clients that report their positions concurrently never move it back. A
          *     `last_read_id` that is not one of the user's notifications is a 404.
+         *
+         *     The user has one marker, shared by all clients. Moving it marks everything up to
+         *     `last_read_id` as read for every client, including notifications that this client does
+         *     not list, such as the moderator notifications that reach first-party clients only.
          */
         put: operations["updateNotificationMarker"];
         post?: never;
@@ -2461,6 +2467,7 @@ export interface paths {
          *     a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
          *     finished processing (422 otherwise). A status with a `poll` attaches no media, and a
          *     poll outside the limits of `PollInput` is a 422.
+         *     A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
          */
         post: operations["createStatus"];
         delete?: never;
@@ -2490,10 +2497,17 @@ export interface paths {
          *     previous content stays in the edit history. The visibility and reply target never
          *     change. Attached media must be the user's own uploads that finished processing (422
          *     otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+         *     Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+         *     status is a 404 to a token without `read:direct`, the user's own included.
          */
         put: operations["editStatus"];
         post?: never;
-        /** Delete the authenticated user's status */
+        /**
+         * Delete the authenticated user's status
+         * @description Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+         *     status is a 404 to a token without `read:direct`, the user's own included, and nothing
+         *     is deleted.
+         */
         delete: operations["deleteStatus"];
         options?: never;
         head?: never;
@@ -2543,6 +2557,7 @@ export interface paths {
          * Boost a status
          * @description Boosting a status that is already boosted changes nothing. A status whose visibility
          *     does not allow boosting is a 422.
+         *     A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
          */
         post: operations["boostStatus"];
         /**
@@ -2598,6 +2613,7 @@ export interface paths {
          * Favourite a status
          * @description Favouriting a status that is already favourited changes nothing. A user has one
          *     favourite or one emoji reaction on a status, so favouriting takes back the reaction.
+         *     A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
          */
         post: operations["favouriteStatus"];
         /**
@@ -2682,6 +2698,7 @@ export interface paths {
          *     unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
          *     a poll of another server is sent to that server, whose counts in `poll` include it once
          *     the server reports them again.
+         *     A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
          */
         post: operations["voteInPoll"];
         delete?: never;
@@ -2708,6 +2725,7 @@ export interface paths {
          *     status, so reacting takes back the favourite and the reaction with another emoji;
          *     reacting again with the same emoji changes nothing. A custom emoji of another server,
          *     or anything else that is not one emoji, is a 422.
+         *     A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
          */
         put: operations["reactToStatus"];
         post?: never;
@@ -2763,7 +2781,8 @@ export interface paths {
          * Change who may quote the authenticated user's status
          * @description Changes the `quote_policy` of a status of the user; the approvals given
          *     before stay, and each is revoked on its own. Another account's status is a 403 when the
-         *     user may see it and a 404 otherwise.
+         *     user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
+         *     `read:direct`, the user's own included.
          */
         put: operations["setStatusQuotePolicy"];
         post?: never;
@@ -2873,8 +2892,8 @@ export interface paths {
          *     that it did. It does at most once a day per account, for at most 30 accounts per viewer
          *     in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
          *
-         *     An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
-         *     deleted account, the instance actor, and an account that blocks the viewer.
+         *     An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+         *     deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
          */
         get: operations["listAccountStatuses"];
         put?: never;
@@ -3037,7 +3056,7 @@ export interface paths {
          *     resolved. A report reopened by the moderators is open again. It never tells how
          *     a report was resolved, which actions it led to, the reasons given to the account, or
          *     who handles it. A report stays listed when the user may no longer see its target (the
-         *     account is suspended, deleted, or blocks the user), without `target_account`. A report
+         *     account is suspended, deactivated, deleted, or blocks the user), without `target_account`. A report
          *     whose target no longer exists at all is left out, so a page may hold fewer
          *     reports than `limit` and still have a `next_cursor`.
          */
@@ -3225,7 +3244,7 @@ export interface paths {
          *     Events:
          *
          *     - `update`: a new post of the timeline, as `GET /api/v1/timelines/local` or
-         *       `GET /api/v1/timelines/public` would list it for the user at that moment (the visibility,
+         *       `GET /api/v1/timelines/federated` would list it for the user at that moment (the visibility,
          *       the user's blocks, mutes, and muted domains, and the user's timeline languages apply).
          *       `data` is a `Status`. The local timeline has the public posts of the local accounts and
          *       their `local` posts; the federated timeline has the public posts of local and remote
@@ -6788,7 +6807,7 @@ export interface paths {
          * @description From now on no `client_id` URL on the host is fetched or accepted, and the authorization
          *     requests, token exchanges and refreshes of its clients fail. The tokens that the clients
          *     of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
-         *     host revokes again and records nothing new. A host that is empty or malformed, or has a
+         *     host revokes again, records nothing new, and answers 200 with the denial it has. A host that is empty or malformed, or has a
          *     port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
          *     permission.
          */
@@ -7295,21 +7314,6 @@ export interface paths {
          *     log. An unknown ID is a 404. Needs the `manage_settings` permission.
          */
         post: operations["followRelay"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/relays/{id}/unfollow": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
         /**
          * Leave a relay
          * @description Sends the `Undo` of the `Follow` of a `pending` or `accepted` relay; the relay is `left`,
@@ -7318,8 +7322,7 @@ export interface paths {
          *     (`state`). The `Undo` is recorded in the audit log. An unknown ID is a 404. Needs the
          *     `manage_settings` permission.
          */
-        post: operations["unfollowRelay"];
-        delete?: never;
+        delete: operations["unfollowRelay"];
         options?: never;
         head?: never;
         patch?: never;
@@ -7969,6 +7972,8 @@ export interface components {
         };
         /** @description The registration application of a local account. */
         AdminAccountRegistration: {
+            /** @description The ID that `approveRegistration` and `rejectRegistration` take. */
+            id: components["schemas"]["Id"];
             /** Format: date-time */
             submitted_at: string;
             /** @description Why the applicant wants to join; omitted when not asked or not given. */
@@ -8396,12 +8401,12 @@ export interface components {
          *     on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
          *     the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
          *     `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
-         *     `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_canceled`; the label is
+         *     `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
          *     the item's name. On the `supporter_program`: `supporter_program_enabled`,
          *     `supporter_program_disabled`; the label is the payment provider's name. On a
          *     `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
          *     `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
-         *     `supporter_subscription_canceled`, an administrator's cancellation without a refund; the
+         *     `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
          *     label is the plan's name and the subscriber's handle. On a `custom_emoji_request`:
          *     `custom_emoji_request_submitted` and `custom_emoji_request_withdrawn` by the requester, and
          *     `custom_emoji_request_approved` (which also records the emoji's `custom_emoji_created` or
@@ -8422,7 +8427,7 @@ export interface components {
          *     name.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_canceled" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_canceled" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -11760,7 +11765,7 @@ export interface components {
         /**
          * @description Who may read the public timelines the instance serves: `local` is the instance
          *     setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
-         *     setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+         *     setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
          *     timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
          */
         InstanceTimelines: {
@@ -12217,11 +12222,11 @@ export interface components {
              *     may not see it.
              */
             status?: components["schemas"]["Status"];
-            /** @description The user's report that a `report_resolved` tells of. */
+            /** @description The user's report that a `report_resolved` tells of; omitted without `read:reports`. */
             report?: components["schemas"]["Report"];
             /**
              * @description The action on the user's account that a `moderation_notice` tells of, or whose
-             *     appeal an `appeal_decided` tells of, with the appeal.
+             *     appeal an `appeal_decided` tells of, with the appeal; first-party clients only.
              */
             moderation_action?: components["schemas"]["ModerationAction"];
             /** @description The report that an `admin_report` is about. */
@@ -12230,15 +12235,17 @@ export interface components {
             appeal_id?: components["schemas"]["Id"];
             /**
              * @description The custom emoji request that an `admin_custom_emoji_request` or a
-             *     `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists.
+             *     `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists,
+             *     and without `read:custom_emojis`.
              */
             custom_emoji_request?: components["schemas"]["CustomEmojiRequest"];
             /**
              * @description The user's supporter subscription that a `supporter_payment_failed`, a
              *     `supporter_subscription_ended`, or a `supporter_plan_retired` is about, as it is now;
-             *     absent when it no longer exists.
+             *     absent when it no longer exists, and without `read:supporters`.
              */
             supporter_subscription?: components["schemas"]["SupporterSubscription"];
+            /** @description The follows that a `relationships_severed` tells of; omitted without `read:follows`. */
             relationship_severance?: components["schemas"]["RelationshipSeverance"];
             account_move?: components["schemas"]["AccountMove"];
             service_closure?: components["schemas"]["ServiceClosureNotice"];
@@ -12248,7 +12255,7 @@ export interface components {
             voice_room_id?: components["schemas"]["Id"];
             /**
              * @description The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
-             *     it is open and the user sees it; omitted otherwise.
+             *     it is open and the user sees it; omitted otherwise, and without `read:voice`.
              */
             voice_room?: components["schemas"]["VoiceRoom"];
             /** @description What an `admin_error_group` tells of; omitted for the other types. */
@@ -12271,7 +12278,7 @@ export interface components {
          * @enum {string}
          */
         NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement";
-        /** @description How far the authenticated user has read the notifications. */
+        /** @description How far the authenticated user has read the notifications, across all clients. */
         NotificationMarker: {
             /** @description The newest notification read; omitted when the user has read none. */
             last_read_id?: components["schemas"]["Id"];
@@ -13431,7 +13438,7 @@ export interface components {
             filed_at: string;
             /**
              * @description The account reported, as the user would see it through `getAccount`; omitted when that
-             *     answers 404, because the account is suspended, deleted, or blocks the user.
+             *     answers 404, because the account is suspended, deactivated, deleted, or blocks the user.
              */
             target_account?: components["schemas"]["Account"];
             status_ids: components["schemas"]["Id"][];
@@ -16125,6 +16132,7 @@ export interface operations {
             /** @description The account is deactivated, and its sessions and tokens have ended. */
             200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22588,12 +22596,25 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The host is denied. */
-            204: {
+            /** @description The host was denied already. */
+            200: {
                 headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminOAuthClientHostDenial"];
+                };
+            };
+            /** @description The host is denied. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOAuthClientHostDenial"];
+                };
             };
             default: components["responses"]["Problem"];
         };
@@ -22949,7 +22970,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            200: components["responses"]["AdminWebhookDelivery"];
+            202: components["responses"]["AdminWebhookDelivery"];
             default: components["responses"]["Problem"];
         };
     };
@@ -22997,7 +23018,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            200: components["responses"]["AdminWebhookDelivery"];
+            202: components["responses"]["AdminWebhookDelivery"];
             default: components["responses"]["Problem"];
         };
     };

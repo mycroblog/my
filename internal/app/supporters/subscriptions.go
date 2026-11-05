@@ -688,7 +688,7 @@ func (s *Service) CancelByStaff(ctx context.Context, id, byUserID string) error 
 		if err := s.cancelClosed(ctx, tx, rec, "", "staff"); err != nil {
 			return err
 		}
-		return tx.Emit(ctx, audit(auditID, byUserID, appmoderation.AuditSupporterSubscriptionCanceled,
+		return tx.Emit(ctx, audit(auditID, byUserID, appmoderation.AuditSupporterSubscriptionEnded,
 			appmoderation.AuditTargetSupporterSubscription, rec.ID, plan.Revision.Name+" "+label, rec.ID, now))
 	})
 }

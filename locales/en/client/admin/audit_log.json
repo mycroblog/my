@@ -439,7 +439,7 @@
     "defaultMessage": "Cost end changed",
     "description": "Kind of an audited operation: an administrator set or removed the end of a regular cost."
   },
-  "admin.audit_log.action.cost_item_canceled": {
+  "admin.audit_log.action.cost_item_deleted": {
     "defaultMessage": "Cost deleted",
     "description": "Kind of an audited operation: an administrator removed a cost recorded by mistake from every period."
   },
@@ -467,7 +467,7 @@
     "defaultMessage": "Supporter plan retired",
     "description": "Kind of an audited operation: an administrator retired a supporter plan."
   },
-  "admin.audit_log.action.supporter_subscription_canceled": {
+  "admin.audit_log.action.supporter_subscription_ended": {
     "defaultMessage": "Subscription ended",
     "description": "Kind of an audited operation: an administrator ended a subscription to a supporter plan at once, without a refund."
   },

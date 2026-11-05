@@ -10,6 +10,7 @@ put:
     status, so reacting takes back the favourite and the reaction with another emoji;
     reacting again with the same emoji changes nothing. A custom emoji of another server,
     or anything else that is not one emoji, is a 422.
+    A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
   tags: [statuses]
   security:
     - oauth2: ["write:favourites"]

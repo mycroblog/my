@@ -19,7 +19,7 @@ post:
       schema:
         $ref: ../components/schemas/Id.yaml
   responses:
-    "200":
+    "202":
       $ref: ../components/responses/AdminWebhookDelivery.yaml
     default:
       $ref: ../components/responses/Problem.yaml

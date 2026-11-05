@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: How far the authenticated user has read the notifications.
+description: How far the authenticated user has read the notifications, across all clients.
 type: object
 required: [unread_count]
 properties:

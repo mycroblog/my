@@ -108,7 +108,7 @@ func TestAdminSupportersCommands(t *testing.T) {
 	code, stdout, _ := runCmd(t, adminCmd, "audit", "list")
 	for _, want := range []string{
 		` cli +supporter_program_enabled +supporter_program +stripe `,
-		` cli +supporter_subscription_canceled +supporter_subscription +Gold @carol `,
+		` cli +supporter_subscription_ended +supporter_subscription +Gold @carol `,
 		` cli +supporter_program_disabled +supporter_program +stripe `,
 	} {
 		if code != 0 || !regexp.MustCompile(want).MatchString(stdout) {

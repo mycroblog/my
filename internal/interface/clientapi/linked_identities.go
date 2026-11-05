@@ -106,8 +106,11 @@ func (s *Server) BeginLinkIdentity(ctx context.Context, req BeginLinkIdentityReq
 	if s.o.LinkedIdentities == nil {
 		return BeginLinkIdentitydefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	}
-	if req.Body == nil || req.Body.ProviderId == "" {
+	if req.Body == nil {
 		return BeginLinkIdentitydefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "provider_id")), nil
+	}
+	if req.Body.ProviderId == "" {
+		return BeginLinkIdentitydefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "provider_id")), nil
 	}
 	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password")
 	if !ok {
@@ -136,8 +139,11 @@ func (s *Server) BeginExternalConfirmation(ctx context.Context, req BeginExterna
 	if s.o.LinkedIdentities == nil {
 		return BeginExternalConfirmationdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	}
-	if req.Body == nil || req.Body.ProviderId == "" {
+	if req.Body == nil {
 		return BeginExternalConfirmationdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "provider_id")), nil
+	}
+	if req.Body.ProviderId == "" {
+		return BeginExternalConfirmationdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "provider_id")), nil
 	}
 	op := appidentity.ConfirmedOperation(req.Body.Operation)
 	if !op.Valid() {

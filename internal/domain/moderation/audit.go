@@ -275,14 +275,14 @@ const (
 	// (ADR-0068 §2); the operation has no row of its own.
 	AuditBillingImportQueued AuditAction = "billing_import_queued"
 	// AuditCostItemCreated, AuditCostItemRelabeled, AuditCostItemPriceRevised,
-	// AuditCostItemEndChanged, AuditCostItemCanceled: an administrator recorded a cost item,
+	// AuditCostItemEndChanged, AuditCostItemDeleted: an administrator recorded a cost item,
 	// changed its name, provider, category, or memo, revised its price, changed its end, or
-	// canceled it (ADR-0067 §7).
+	// deleted it (ADR-0067 §7).
 	AuditCostItemCreated      AuditAction = "cost_item_created"
 	AuditCostItemRelabeled    AuditAction = "cost_item_relabeled"
 	AuditCostItemPriceRevised AuditAction = "cost_item_price_revised"
 	AuditCostItemEndChanged   AuditAction = "cost_item_end_changed"
-	AuditCostItemCanceled     AuditAction = "cost_item_canceled"
+	AuditCostItemDeleted      AuditAction = "cost_item_deleted"
 	// AuditSupporterProgramEnabled, AuditSupporterProgramDisabled: an administrator enabled or
 	// disabled the supporter program (supporter_program_changes, ADR-0072 §2).
 	AuditSupporterProgramEnabled  AuditAction = "supporter_program_enabled"
@@ -293,9 +293,9 @@ const (
 	AuditSupporterPlanCreated AuditAction = "supporter_plan_created"
 	AuditSupporterPlanRevised AuditAction = "supporter_plan_revised"
 	AuditSupporterPlanRetired AuditAction = "supporter_plan_retired"
-	// AuditSupporterSubscriptionCanceled: an administrator canceled a subscription at once,
+	// AuditSupporterSubscriptionEnded: an administrator ended a subscription at once,
 	// without a refund (supporter_subscription_transitions, ADR-0072 §10).
-	AuditSupporterSubscriptionCanceled AuditAction = "supporter_subscription_canceled"
+	AuditSupporterSubscriptionEnded AuditAction = "supporter_subscription_ended"
 	// AuditCustomEmojiRequestSubmitted, AuditCustomEmojiRequestWithdrawn,
 	// AuditCustomEmojiRequestApproved, and AuditCustomEmojiRequestRejected: a holder of
 	// create_custom_emojis requested a custom emoji or a new image of one
@@ -427,13 +427,13 @@ var auditActions = []struct {
 	{AuditCostItemRelabeled, AuditTargetCostItem},
 	{AuditCostItemPriceRevised, AuditTargetCostItem},
 	{AuditCostItemEndChanged, AuditTargetCostItem},
-	{AuditCostItemCanceled, AuditTargetCostItem},
+	{AuditCostItemDeleted, AuditTargetCostItem},
 	{AuditSupporterProgramEnabled, AuditTargetSupporterProgram},
 	{AuditSupporterProgramDisabled, AuditTargetSupporterProgram},
 	{AuditSupporterPlanCreated, AuditTargetSupporterPlan},
 	{AuditSupporterPlanRevised, AuditTargetSupporterPlan},
 	{AuditSupporterPlanRetired, AuditTargetSupporterPlan},
-	{AuditSupporterSubscriptionCanceled, AuditTargetSupporterSubscription},
+	{AuditSupporterSubscriptionEnded, AuditTargetSupporterSubscription},
 	{AuditCustomEmojiRequestSubmitted, AuditTargetCustomEmojiRequest},
 	{AuditCustomEmojiRequestWithdrawn, AuditTargetCustomEmojiRequest},
 	{AuditCustomEmojiRequestApproved, AuditTargetCustomEmojiRequest},

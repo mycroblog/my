@@ -42,12 +42,12 @@ description: |
   on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
   the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
   `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
-  `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_canceled`; the label is
+  `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
   the item's name. On the `supporter_program`: `supporter_program_enabled`,
   `supporter_program_disabled`; the label is the payment provider's name. On a
   `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
   `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
-  `supporter_subscription_canceled`, an administrator's cancellation without a refund; the
+  `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
   label is the plan's name and the subscriber's handle. On a `custom_emoji_request`:
   `custom_emoji_request_submitted` and `custom_emoji_request_withdrawn` by the requester, and
   `custom_emoji_request_approved` (which also records the emoji's `custom_emoji_created` or
@@ -133,13 +133,13 @@ enum:
   - cost_item_relabeled
   - cost_item_price_revised
   - cost_item_end_changed
-  - cost_item_canceled
+  - cost_item_deleted
   - supporter_program_enabled
   - supporter_program_disabled
   - supporter_plan_created
   - supporter_plan_revised
   - supporter_plan_retired
-  - supporter_subscription_canceled
+  - supporter_subscription_ended
   - custom_emoji_request_submitted
   - custom_emoji_request_withdrawn
   - custom_emoji_request_approved
