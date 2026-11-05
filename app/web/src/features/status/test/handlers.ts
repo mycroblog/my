@@ -10,7 +10,7 @@
 // (POST /statuses/{id}/poll/votes) answers the post with `pollFixture` and the vote counted in it. A change of who
 // may quote a post (PUT /statuses/{id}/quote_policy) answers the post with that policy; the posts that quote a post
 // (GET /statuses/{id}/quotes) are none; and the revocation of an approval (DELETE /statuses/{id}/quotes/{quote_id}/approval)
-// answers 204.
+// answers 204. A translation (POST /statuses/{id}/translation) is one line of English by the fake provider.
 import { http, HttpResponse } from "msw";
 import { otherAccountFixture, type Schemas, statusFixture } from "../../../test/fixtures";
 import { apiBase, withViewer } from "../../../test/msw/http";
@@ -101,6 +101,19 @@ export const handlers = [
   ),
   http.delete(`${apiBase}/statuses/:id`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  http.post(`${apiBase}/statuses/:id/translation`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json({
+        language: "en",
+        source_language: "fr",
+        content: "<p>The post in English</p>",
+        spoiler_text: "",
+        media_attachments: [],
+        poll_options: [],
+        provider: { id: "fake", name: "Fake Translate" },
+      } satisfies Schemas["StatusTranslation"]),
+    ),
   ),
   http.put(`${apiBase}/statuses/:id/reaction`, async ({ params, request }) => {
     const body = (await request.clone().json()) as Schemas["ReactToStatusRequest"];

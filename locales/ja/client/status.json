@@ -343,6 +343,50 @@
     "defaultMessage": "{count, plural, other {# 票}}",
     "description": "Under a poll whose number of voters is unknown: how many votes it has, one per chosen option."
   },
+  "status.translation.action": {
+    "defaultMessage": "翻訳する",
+    "description": "Button under a post in another language: translates it in place."
+  },
+  "status.translation.author": {
+    "defaultMessage": "機械翻訳ではありません。作者自身が書いた文章です。",
+    "description": "Line above a post after the reader asked for a translation and the server answered with the words the author wrote, so nothing was machine translated."
+  },
+  "status.translation.by": {
+    "defaultMessage": "{provider} による機械翻訳",
+    "description": "Line above a translated post, and what a screen reader hears when the translation appears. {provider} is the name of the translation service."
+  },
+  "status.translation.failed": {
+    "defaultMessage": "今はこの投稿を翻訳できませんでした。少し待ってからもう一度試してください。",
+    "description": "Next to the translate button: the translation service gave no usable answer, which may pass. The original stays in view."
+  },
+  "status.translation.failed_reason": {
+    "defaultMessage": "この投稿を翻訳できませんでした: {reason}",
+    "description": "Next to the translate button: the request failed for another reason, such as no connection. {reason} is the localized reason."
+  },
+  "status.translation.limit": {
+    "defaultMessage": "今月の翻訳の上限に達したため、この投稿は翻訳されませんでした。来月からまた翻訳できます。",
+    "description": "Next to the translate button: the limit of the reader or of the server on translated characters is used up until the next month. The original stays in view."
+  },
+  "status.translation.original_shown": {
+    "defaultMessage": "原文を表示しています。",
+    "description": "What a screen reader hears after the reader went back from a translation to the original."
+  },
+  "status.translation.pending": {
+    "defaultMessage": "翻訳しています…",
+    "description": "The translate button while the translation is on its way."
+  },
+  "status.translation.show_original": {
+    "defaultMessage": "原文を表示",
+    "description": "Button under a translated post: goes back to the author's words."
+  },
+  "status.translation.unavailable": {
+    "defaultMessage": "このサーバーではこの投稿を翻訳できません。",
+    "description": "Next to the translate button: no translation service of the server may receive this post."
+  },
+  "status.translation.unsupported": {
+    "defaultMessage": "このサーバーの翻訳サービスはこの言語に対応していません。",
+    "description": "Next to the translate button: the translation services do not translate this language."
+  },
   "status.unpin.action": {
     "defaultMessage": "プロフィールへの固定を外す",
     "description": "Menu item, on the user's own pinned post, that removes it from the top of their profile."

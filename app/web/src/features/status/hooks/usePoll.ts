@@ -37,6 +37,9 @@ type PollOptionView = {
   ownChoice: boolean;
 };
 
+/** The titles of a poll's options in the language of a translation, in the options' order. */
+export type PollTranslation = { titles: readonly string[]; lang: string };
+
 /** The form that votes in a poll. */
 type PollForm = {
   /** The indexes of the options chosen so far. */
@@ -74,9 +77,10 @@ export type PollView = {
 
 /**
  * Returns the poll of `status` (the boosted post for a boost), or null without one. `canVote` is false where the
- * card offers no actions (a moderator's page); the poll then shows its results only.
+ * card offers no actions (a moderator's page); the poll then shows its results only. `translation` changes only the
+ * words of the options: a vote still names an option by its index.
  */
-export function usePoll(status: Status, canVote: boolean): PollView | null {
+export function usePoll(status: Status, canVote: boolean, translation: PollTranslation | null = null): PollView | null {
   const post = status.boost ?? status;
   const poll = post.poll;
   const api = useApi();
@@ -114,7 +118,7 @@ export function usePoll(status: Status, canVote: boolean): PollView | null {
     const ratio = votes !== null && base > 0 ? Math.min(1, votes / base) : 0;
     return {
       index,
-      title: option.title,
+      title: translation?.titles[index] ?? option.title,
       votes,
       ratio,
       share: votes === null ? null : intl.formatNumber(ratio, { style: "percent", maximumFractionDigits: 0 }),
@@ -127,7 +131,7 @@ export function usePoll(status: Status, canVote: boolean): PollView | null {
     multiple: poll.multiple,
     options,
     emojis: post.emojis,
-    lang: post.language === "und" ? undefined : post.language,
+    lang: translation?.lang ?? (post.language === "und" ? undefined : post.language),
     total:
       poll.voters_count === undefined
         ? t("client:status.poll.votes", { count: poll.votes_count })
