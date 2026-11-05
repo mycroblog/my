@@ -44,7 +44,8 @@ module "app" {
 | `service_name`, `service_uri`, `service_account_email`, `migration_job` | What was created |
 | `service_ingress` | Who may reach the service, as the input says |
 | `origin_host` | Host name of the URL Cloud Run gave the service |
-| `env`, `secret_env` | The merged settings |
+| `env`, `secret_env` | The merged settings of the service |
+| `one_off_secret_env` | The secret settings of the jobs: `secret_env` with `direct_secret_env` over it |
 
 ## Who may reach the service
 

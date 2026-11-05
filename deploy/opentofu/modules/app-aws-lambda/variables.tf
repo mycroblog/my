@@ -49,6 +49,8 @@ variable "backends" {
     env          = optional(map(string), {})
     secret_env   = optional(map(string), {})
     secret_files = optional(map(string), {})
+    # What the one-off functions take in place of a setting of secret_env, which the others keep.
+    direct_secret_env = optional(map(string), {})
     permissions = optional(list(object({
       permission = string
       scope      = string

@@ -37,6 +37,16 @@ my schema apply            # run them
 From `v0.1.0` on, an upgrade between supported releases never contains a difference that loses data; releases before `v0.1.0` may drop columns
 and tables, and need `-allow-destructive`. Read the SQL with `-dry-run` before every upgrade (see [Upgrading](#upgrading)).
 
+### Through a connection pooler
+
+`my schema apply` must reach the database directly. It holds a session-level lock, which a pooler in transaction mode (PgBouncer's transaction pooling, Neon's pooled connection string) does not keep: through one, two runs at once hung rather than failed. Give it a direct URL as `database_url`, and keep `pool_max_conns` out of that URL, since it passes parameters it does not know to PostgreSQL, which refuses them. `my db upgrade`, `my db upgrade -check`, and the console take the same URL.
+
+`my serve` can use a pooler in transaction mode, as long as:
+
+- the pooler handles protocol-level prepared statements, which the server uses for every query: PgBouncer 1.21 or later with `max_prepared_statements` above 0, which Neon's pooled connection string has. Behind a pooler without them, statements fail at random with `prepared statement ... does not exist` or `already exists`: add `default_query_exec_mode=exec` to the URL, which avoids them for one more round trip per query.
+- `stream_postgres_url` holds a direct URL when `stream = postgres`, since `LISTEN` belongs to a session. A listener on a pooled URL connects and then receives nothing.
+- the URL has no `search_path` or other parameter the pooler refuses at connection: PgBouncer closes such a connection unless `ignore_startup_parameters` lists it.
+
 ### Docker Compose
 
 In [`deploy/docker/compose.yaml`](../../deploy/docker/compose.yaml), three one-off services of the server image run in this order, each only

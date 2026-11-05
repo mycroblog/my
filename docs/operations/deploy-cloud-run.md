@@ -39,10 +39,17 @@ gcloud services enable --project="$PROJECT" run.googleapis.com cloudtasks.google
 
 ### 2. Create the database on Neon
 
-In the Neon console, create a project in a region near your Cloud Run region, and copy its connection string.
+There are two ways, and the example uses the first:
 
-- Use the **direct** connection string (the host without `-pooler`). `my schema apply` holds a session-level lock, which does not work through a pooler in transaction mode.
-- Add `pool_max_conns` for the concurrency you expect, for example `postgres://...neon.tech/neondb?sslmode=require&pool_max_conns=8`. The default is 4 per instance, and a Cloud Run instance takes 80 requests at once: see [Waiting for a database connection](running.md#waiting-for-a-database-connection). All instances together must stay under the database's limit, so `max_instances` of the app module matters too.
+- **By hand, with `db-external`.** In the Neon console, create a project in a region near your Cloud Run region, and copy its connection strings. The password stays out of the OpenTofu state.
+- **With [`db-neon`](../../deploy/opentofu/modules/db-neon/README.md)**, which creates the project and writes the URLs into the secrets for you. **The database password then lands in the state**, and the provider is unmaintained: its README says what that means, and a comment on the `db` block in `main.tf` shows the swap.
+
+A project has two connection strings, and the deployment uses each where it belongs:
+
+- The **direct** one (the host without `-pooler`) is required. The migration job and the console always use it: `my schema apply` holds a session-level lock, which a pooler in transaction mode does not keep.
+- The **pooled** one (the host with `-pooler`) is optional, for the service. Neon's pooler handles what the server needs: see [Through a connection pooler](database.md#through-a-connection-pooler). Give it to `pooled_url_secret_id` of the `db` module, in a secret of its own, added to `referenced` of the `secrets` module.
+
+Without a pooled string, the service uses the direct one too, at the database's connection limit, which `max_instances` of the app module bounds. **Never add `pool_max_conns` to the direct string**: `my schema apply` passes parameters it does not know to PostgreSQL, which refuses them, and the migration fails. To raise the pool from its default of 4 per instance, for the 80 requests a Cloud Run instance takes at once, add it to the pooled string, for example `postgres://...-pooler...neon.tech/neondb?sslmode=require&pool_max_conns=8`, or to a second copy of the direct string used the same way. See [Waiting for a database connection](running.md#waiting-for-a-database-connection).
 
 ### 3. Copy the example and set the variables
 
@@ -93,7 +100,7 @@ gcloud secrets versions access latest --secret=my-vapid-key --project="$PROJECT"
 Then add the values that come from elsewhere. An instance whose secret cannot be read does not start, so add them before the app:
 
 ```sh
-printf '%s' 'postgres://...' | gcloud secrets versions add my-database-url --project="$PROJECT" --data-file=-
+printf '%s' 'postgres://...' | gcloud secrets versions add my-database-url --project="$PROJECT" --data-file=- # the direct string
 printf '%s' '<the SMTP password>' | gcloud secrets versions add my-smtp-password --project="$PROJECT" --data-file=-
 ```
 
@@ -198,7 +205,7 @@ To go back after the schema changed, restore the backup: see [Rolling back](data
 
 ## Changing a backend
 
-Replace the module's block in `main.tf`. The app module takes whatever the block returns, so nothing else changes. For example, a database of your own:
+Replace the module's block in `main.tf`. The app module takes whatever the block returns, so nothing else changes. Changing the database also means moving its data, since a new one is empty: [`db-gcp-cloud-sql`](../../deploy/opentofu/modules/db-gcp-cloud-sql/README.md#coming-from-db-external) has the steps. For example, a database of your own:
 
 ```hcl
 module "db" {
@@ -283,7 +290,7 @@ The figures are approximate list prices for one region, from 2026-10 and 2026-11
 | Pub/Sub | $0: 10 GiB free | Only while streams are open |
 | Secret Manager | Cents | A few free versions, then a few cents per version |
 | Load balancer, if you use one | About $18 a month, not confirmed on the pricing page | A charge per GB; see [How traffic reaches the service](#how-traffic-reaches-the-service) |
-| Neon | See below | Storage: 1 GB on the Free plan, then $0.35 per GB-month |
+| Neon | See below | Storage: 1 GB on the Free plan, then $0.35 per GB-month. `db-gcp-cloud-sql` instead has a fixed cost of about $9.40 a month: its README has the breakdown |
 
 Two things decide the real cost:
 

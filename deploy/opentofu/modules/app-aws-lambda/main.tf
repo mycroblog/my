@@ -57,6 +57,15 @@ locals {
   secret_arns  = merge(local.secret_env, { for name, arn in local.secret_files : trimsuffix(name, "_FILE") => arn })
   secret_refs  = { for name, arn in local.secret_arns : "SECRET_ARN_${name}" => arn }
 
+  # The one-off functions differ from the others here: my schema apply holds a session-level lock, which a pooler in
+  # transaction mode does not keep, so they take what a backend names in direct_secret_env.
+  direct_secret_env      = merge([for b in var.backends : b.direct_secret_env]...)
+  direct_names           = flatten([for b in var.backends : keys(b.direct_secret_env)])
+  direct_without_setting = setsubtract(local.direct_names, keys(local.secret_arns))
+  one_off_secret_arns    = merge(local.secret_arns, local.direct_secret_env)
+  one_off_secret_refs    = { for name, arn in local.one_off_secret_arns : "SECRET_ARN_${name}" => arn }
+  all_secret_arns        = distinct(concat(values(local.secret_arns), values(local.direct_secret_env)))
+
   # The server refuses to start without these, but only once it runs: say it at plan time.
   key_manager = lookup(local.env, "MY_KEY_MANAGER", "local")
   kek_missing = (
@@ -96,7 +105,7 @@ locals {
   functions = merge(local.long_running, local.one_off)
 
   function_env = {
-    for key, f in local.functions : key => merge(local.env, local.secret_refs, f.adapter, {
+    for key, f in local.functions : key => merge(local.env, contains(keys(local.one_off), key) ? local.one_off_secret_refs : local.secret_refs, f.adapter, {
       GOMEMLIMIT = "${floor(f.memory * 0.9)}MiB"
       MY_ROLE    = f.role
     })
@@ -129,7 +138,11 @@ resource "aws_iam_role" "server" {
       error_message = "No KEK: with key_manager = ${local.key_manager} the server needs ${local.key_manager == "local" ? "kek" : "kms_key"}. Add a kek-* module to backends."
     }
     precondition {
-      condition     = alltrue([for arn in values(local.secret_arns) : startswith(arn, "arn:")])
+      condition     = length(local.direct_names) == length(distinct(local.direct_names)) && length(local.direct_without_setting) == 0
+      error_message = "direct_secret_env overrides a setting of secret_env for the one-off functions, once: each name must be in secret_env and in one backend's direct_secret_env. Check: ${join(", ", local.direct_names)}."
+    }
+    precondition {
+      condition     = alltrue([for arn in local.all_secret_arns : startswith(arn, "arn:")])
       error_message = "A secret on AWS is named by its full ARN, which is what the role is granted and what the server reads."
     }
   }
@@ -152,11 +165,11 @@ data "aws_iam_policy_document" "server" {
   }
 
   dynamic "statement" {
-    for_each = length(local.secret_arns) > 0 ? [1] : []
+    for_each = length(local.all_secret_arns) > 0 ? [1] : []
     content {
       sid       = "Secrets"
       actions   = ["secretsmanager:GetSecretValue"]
-      resources = values(local.secret_arns)
+      resources = local.all_secret_arns
     }
   }
 

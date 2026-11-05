@@ -49,6 +49,7 @@ module "app" {
 | `role_arn` | Execution role of every function |
 | `console` | What `console.sh` reads, or null |
 | `env`, `secret_env`, `secret_references` | The merged settings |
+| `one_off_secret_env` | The secret settings of the one-off functions: `secret_env` with `direct_secret_env` over it |
 
 ## The image
 
