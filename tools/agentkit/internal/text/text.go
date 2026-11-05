@@ -57,7 +57,7 @@ func Slug(heading string) string {
 var (
 	reFR    = regexp.MustCompile(`\b(?:NFR-[A-Z]+-\d+|NFR-\d{3}|FR-\d{3})\b`)
 	reADR   = regexp.MustCompile(`\bADR-(\d{4})\b`)
-	reIssue = regexp.MustCompile(`(?:^|[\s(（、,])#(\d{1,5})\b`)
+	reIssue = regexp.MustCompile(`(?:^|[\s(（、,*])#(\d{1,5})\b`)
 	reIdent = regexp.MustCompile("`([A-Za-z_][A-Za-z0-9_.:/{}-]{2,80})`")
 	reNum   = regexp.MustCompile(`^(\d+(?:\.\d+)*)\.?\s`)
 )
