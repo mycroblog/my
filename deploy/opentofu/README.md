@@ -19,6 +19,7 @@ deploy/opentofu/
   modules/secrets-gcp-secret-manager/  secrets to fill by hand, or a VAPID key it generates
   modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
   modules/kek-gcp-kms/                 the KEK in Cloud KMS
+  modules/monitoring-gcp/              uptime check, log-based metrics, and alert policies
   examples/gcp-cloud-run-neon/    all of the above, composed, on Git sources at MODULE_REF
   modules/*-aws-*/, examples/aws-lambda-neon/  the same on AWS, never applied: see "AWS: unverified" below
   upgrade.sh                      migration job first, then the service
@@ -61,13 +62,14 @@ A module is named `<role>-<provider>-<service>`, so that the name says what it i
 | `secrets` | Secrets, filled by hand or generated |
 | `kek` | The key that encrypts the secrets in the database |
 | `ingress` | How traffic reaches the app |
+| `monitoring` | The uptime check, the alerts, and the settings of the metrics that they read |
 
 A module with no provider of its own drops that part (`db-external`, `mail-smtp`). The provider is what the module talks to,
 not the platform behind it: `ingress-cloudflare-app` takes its origin as an input, so the same module fronts Cloud Run or AWS. Cloud SQL would be `db-gcp-cloud-sql`.
 
 ## The backend contract
 
-Every `db-*`, `queue-*`, `blob-*`, `stream-*`, `mail-*`, `secrets-*`, and `kek-*` module returns the same outputs, so that changing the database means
+Every `db-*`, `queue-*`, `blob-*`, `stream-*`, `mail-*`, `secrets-*`, `kek-*`, and `monitoring-*` module returns the same outputs, so that changing the database means
 changing one module block:
 
 | Output | Type | Meaning |
@@ -142,6 +144,10 @@ it in `env` beside an ingress that names proxies fails the plan, and so do two i
 An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`), with a header that the server checks (`ingress-cloudflare-app`, `ingress-aws-cloudfront`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
 **That value lands in the state**: neither provider has a write-only form of it. So this is the one place that breaks the rule below that no secret value reaches the state, and the state must be kept private. Two modules must not name those settings twice, so `ingress-cloudflare-media` beside `ingress-cloudflare-app` leaves them out and comes through `extra_rules`.
 
+## The monitoring contract
+
+A `monitoring-*` module is a backend: it returns `env`, with the settings of the metrics that its alerts read, so that a setting of them elsewhere fails the plan. It calls the service from outside and reads what the platform keeps, so it asks for no `permissions`, and it takes `host` as an input rather than an output of the app. It takes `notification_emails`, more channels of the platform as IDs, and the period of its uptime check, since each check wakes what scales to zero. Its alerts carry the names of [the runbook](../../docs/operations/alerts.md), and its README lists each alert of the runbook as covered, covered differently, or not expressible. No alert may fire on the absence of a metric that only traffic produces.
+
 ## The app contract
 
 Every `app-*` module takes `backends`, `env`, `secret_env`, `secret_files`, `image`, and `host`, provides a console, and returns
@@ -193,6 +199,7 @@ run on them yet**: use Google Cloud. `modules/app-aws-lambda/README.md` says in 
 | `secrets-aws-secrets-manager` | `secrets-gcp-secret-manager` |
 | `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
 | `ingress-aws-cloudfront` | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
+| `monitoring-aws` | `monitoring-gcp` |
 
 `db-external`, `mail-smtp`, and `ingress-cloudflare-app` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
 tests show that a block of one platform fails the plan on the other's app. `examples/aws-lambda-neon` composes them, and its tests swap each block
