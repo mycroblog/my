@@ -105,11 +105,11 @@ describe("automated reviews", () => {
     decisionsServer([restorable, gone]);
     await renderApp({ path: "/moderation/hook-decisions" });
     const list = await screen.findByRole("table", { name: "Decisions" });
-    const row = (key: string) => within(list).getByRole("rowheader", { name: key }).closest("tr") as HTMLElement;
+    const row = (key: string) => within(list).getByRole("row", { name: new RegExp(key, "u") });
     expect(await within(list).findByRole("rowheader", { name: restorable.subject_key })).toBeVisible();
-    expect(within(row(restorable.subject_key)).getByText("Can be brought back until")).toBeVisible();
+    expect(within(row("restorable")).getByText("Can be brought back until")).toBeVisible();
     expect(
-      within(row(gone.subject_key)).getByText(
+      within(row("activities/gone")).getByText(
         "Its received copy is gone, so cancelling records the cancellation and brings nothing back.",
       ),
     ).toBeVisible();

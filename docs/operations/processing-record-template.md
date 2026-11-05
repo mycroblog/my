@@ -50,6 +50,7 @@ These names are used under the activities below. List each one you use.
 | {{IF voice}} Voice media server, STUN and TURN | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook receivers | {{...}} | {{...}} |
 | {{IF translation}} Translation providers | {{...}} | {{...}} |
+| {{IF external review of posts}} External review of posts from other servers | {{...}} | {{...}} |
 | Backup storage | {{...}} | {{...}} |
 | Federated servers | Other servers of the network, run by other controllers, which change over time. `my` keeps the list of known servers | Any country |
 | {{IF relays}} Relays | {{EACH RELAY YOU JOINED}} | {{...}} |
