@@ -1684,7 +1684,7 @@ Name of the environment that every error report carries, such as `staging`, to t
 
 ### `plugin_translator_address`
 
-Where the `translator` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `translator` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_TRANSLATOR_ADDRESS`
 - Default: none
@@ -1746,7 +1746,7 @@ Deadline of one call of the `translator` plugin, less than `5m0s`.
 
 ### `plugin_billing_address`
 
-Where the `billing` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `billing` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_BILLING_ADDRESS`
 - Default: none
@@ -1808,7 +1808,7 @@ Deadline of one call of the `billing` plugin, less than `5m0s`.
 
 ### `plugin_mailer_address`
 
-Where the `mailer` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or never `http://`, on loopback neither. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `mailer` plugin listens: `unix:///path/to.sock` or `https://host[:port]`; `http://` is refused, on loopback too. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_MAILER_ADDRESS`
 - Default: none
@@ -1870,7 +1870,7 @@ Deadline of one call of the `mailer` plugin, less than `5m0s`.
 
 ### `plugin_media_address`
 
-Where the `media` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `media` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_MEDIA_ADDRESS`
 - Default: none
@@ -1931,7 +1931,7 @@ Deadline of one call of the `media` plugin, less than `5m0s`.
 
 ### `plugin_key_manager_address`
 
-Where the `key_manager` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or never `http://`, on loopback neither. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `key_manager` plugin listens: `unix:///path/to.sock` or `https://host[:port]`; `http://` is refused, on loopback too. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_KEY_MANAGER_ADDRESS`
 - Default: none
@@ -1993,7 +1993,7 @@ Deadline of one call of the `key_manager` plugin, less than `5m0s`.
 
 ### `plugin_inbound_status_address`
 
-Where the `inbound.status` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or never `http://`, on loopback neither. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `inbound.status` plugin listens: `unix:///path/to.sock` or `https://host[:port]`; `http://` is refused, on loopback too. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_INBOUND_STATUS_ADDRESS`
 - Default: none
@@ -2055,7 +2055,7 @@ Deadline of one call of the `inbound.status` plugin, less than `5m0s`.
 
 ### `plugin_inbound_follow_address`
 
-Where the `inbound.follow` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `inbound.follow` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_INBOUND_FOLLOW_ADDRESS`
 - Default: none
@@ -2117,7 +2117,7 @@ Deadline of one call of the `inbound.follow` plugin, less than `5m0s`.
 
 ### `plugin_signup_check_address`
 
-Where the `signup.check` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `signup.check` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_SIGNUP_CHECK_ADDRESS`
 - Default: none
@@ -2179,7 +2179,7 @@ Deadline of one call of the `signup.check` plugin, less than `5m0s`.
 
 ### `plugin_media_check_address`
 
-Where the `media.check` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `media.check` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_MEDIA_CHECK_ADDRESS`
 - Default: none
@@ -2241,7 +2241,7 @@ Deadline of one call of the `media.check` plugin, less than `5m0s`.
 
 ### `plugin_local_status_address`
 
-Where the `local.status` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or never `http://`, on loopback neither. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `local.status` plugin listens: `unix:///path/to.sock` or `https://host[:port]`; `http://` is refused, on loopback too. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_LOCAL_STATUS_ADDRESS`
 - Default: none

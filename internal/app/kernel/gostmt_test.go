@@ -20,6 +20,7 @@ import (
 var goStatementAllowed = []string{
 	"internal/app/kernel/errorreport.go",
 	"internal/adapter/keymanager/gcpkms/gcpkmstest/",
+	"internal/adapter/plugin/fakeplugin/",
 	"internal/platform/platformtest/",
 }
 

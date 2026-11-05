@@ -34,9 +34,9 @@ func pluginFieldsOf(k kind.Kind) []field {
 		change(&d)
 		c.Plugins[k.Name] = d
 	}
-	plain := "`http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it)"
+	forms := "`unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start"
 	if !k.PlainTCP {
-		plain = "never `http://`, on loopback neither"
+		forms = "`unix:///path/to.sock` or `https://host[:port]`; `http://` is refused, on loopback too"
 	}
 	protocols := []choice{
 		{value: kind.ProtocolJSON, doc: "The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library."},
@@ -49,7 +49,7 @@ func pluginFieldsOf(k kind.Kind) []field {
 	return []field{
 		{
 			key: k.Key(kind.SuffixAddress),
-			doc: "Where the `" + k.Name + "` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or " + plain +
+			doc: "Where the `" + k.Name + "` plugin listens: " + forms +
 				". Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.",
 			check: func(v string) error {
 				_, err := kind.ParseAddress(v)
@@ -88,8 +88,8 @@ func pluginFieldsOf(k kind.Kind) []field {
 			set: func(c *Config, v string) { store(c, func(d *kind.Destination) { d.TLSKeyFile = v }) },
 		},
 		{
-			key: k.Key(kind.SuffixTimeout),
-			doc: "Deadline of one call of the `" + k.Name + "` plugin, less than `" + kind.MaxTimeout.String() + "`.",
+			key:    k.Key(kind.SuffixTimeout),
+			doc:    "Deadline of one call of the `" + k.Name + "` plugin, less than `" + kind.MaxTimeout.String() + "`.",
 			defDoc: "`" + k.Timeout.String() + "`",
 			check: func(v string) error {
 				d, err := time.ParseDuration(v)
