@@ -20,6 +20,18 @@ message CheckRequest {
   string subject_key = 2;
   // True for a call of `my plugin test`, which is about no real subject and acts on nothing.
   bool probe = 3;
+  // What signup.check reviews; empty on the calls of the other hooks and on probes.
+  SignupSubject signup = 6;
+}
+
+// SignupSubject is a sign-up that is not from an invitation, once its CAPTCHA and the sign-up block
+// list passed it. The subject_key of the call is the ID the account would get, which identifies
+// this attempt alone: an applicant who tries again is a new subject.
+message SignupSubject {
+  // The email address the applicant entered.
+  string email = 1;
+  // The client's IP address, empty when the server does not know it.
+  string ip = 2;
 }
 
 message CheckResponse {
@@ -52,7 +64,7 @@ enum Verdict {
   VERDICT_MARK_SENSITIVE = 4;
   // Go on, and hold the sign-up for approval.
   VERDICT_REQUIRE_APPROVAL = 5;
-  // Refuse the subject and tell the person.
+  // Refuse the subject and tell the person, with fixed text that holds nothing of the response.
   VERDICT_REJECT = 6;
 }
 
