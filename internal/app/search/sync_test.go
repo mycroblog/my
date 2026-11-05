@@ -7,14 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"slices"
+	"strconv"
 	"testing"
 	"time"
 
-	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/queue"
-	"github.com/mycroblog/my/internal/domain/account"
-	domcontent "github.com/mycroblog/my/internal/domain/content"
 )
 
 // TestEligible checks the rule of what the index holds (ADR-0149 §5): the setting chooses between
@@ -96,8 +94,8 @@ func (w *syncWorld) AuthorSearchableStatusIDs(_ context.Context, _, after string
 	return out, nil
 }
 
-func (w *syncWorld) FindByID(_ context.Context, id string) (appaccount.Actor, error) {
-	return appaccount.Actor{Account: account.Account{ID: id}, Profile: &account.ProfileRevision{Indexable: w.indexable}}, nil
+func (w *syncWorld) ProfileIndexable(context.Context, string) (bool, error) {
+	return w.indexable, nil
 }
 
 func (w *syncWorld) AccountIDsOnDomain(context.Context, string, string, int) ([]string, error) {
@@ -192,7 +190,7 @@ func TestSyncStatusReadsAgainAfterWriting(t *testing.T) {
 		w.onRead = func(reads int) {
 			if reads == 2 {
 				w.revision.ID = "r2"
-				w.revision.Bodies = []domcontent.Body{{ContentHTML: "newer"}}
+				w.revision.Bodies = []appcontent.Body{{ContentHTML: "newer"}}
 			}
 		}
 		if res := runJob(t, newSyncService(w, x), JobSyncStatus, syncStatusPayload{StatusID: "s1"}); !res.IsDone() {
@@ -224,7 +222,7 @@ func TestSyncStatusReadsAgainAfterWriting(t *testing.T) {
 	})
 	t.Run("never settles", func(t *testing.T) {
 		w, x := publicWorld(), &recordingIndex{}
-		w.onRead = func(reads int) { w.revision.ID = string(rune('a' + reads)) }
+		w.onRead = func(reads int) { w.revision.ID = strconv.Itoa(reads) }
 		res := runJob(t, newSyncService(w, x), JobSyncStatus, syncStatusPayload{StatusID: "s1"})
 		if res.IsDone() || res.Err() == nil {
 			t.Errorf("result %+v, want a retry", res)
@@ -264,10 +262,10 @@ func TestSyncStatusRemovesWhatDoesNotQualify(t *testing.T) {
 func TestDocumentHoldsTheCurrentText(t *testing.T) {
 	w, x := publicWorld(), &recordingIndex{}
 	w.revision.SpoilerText = "warning"
-	w.revision.Source = &domcontent.Source{Text: "typed body"}
-	w.revision.Bodies = []domcontent.Body{{ContentHTML: "<p>rendered</p>"}}
-	w.revision.Attachments = []domcontent.Attachment{{Description: "alt one"}, {Description: ""}, {Description: "alt two"}}
-	w.revision.Poll = &appcontent.Poll{Options: []domcontent.PollOption{{Title: "option"}}}
+	w.revision.Source = &appcontent.Source{Text: "typed body"}
+	w.revision.Bodies = []appcontent.Body{{ContentHTML: "<p>rendered</p>"}}
+	w.revision.Attachments = []appcontent.Attachment{{Description: "alt one"}, {Description: ""}, {Description: "alt two"}}
+	w.revision.Poll = &appcontent.Poll{Options: []appcontent.PollOption{{Title: "option"}}}
 	if res := runJob(t, newSyncService(w, x), JobSyncStatus, syncStatusPayload{StatusID: "s1"}); !res.IsDone() {
 		t.Fatalf("result %+v", res)
 	}

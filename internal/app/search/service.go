@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -40,7 +39,8 @@ type StatusReader interface {
 
 // AccountReader is what the module reads of accounts. *appaccount.Service implements it.
 type AccountReader interface {
-	FindByID(ctx context.Context, id string) (appaccount.Actor, error)
+	// ProfileIndexable reports the indexable of an account's current profile, false without one.
+	ProfileIndexable(ctx context.Context, id string) (bool, error)
 	// AccountIDsOnDomain pages the accounts on a domain or its subdomains in ID order.
 	AccountIDsOnDomain(ctx context.Context, domain, after string, limit int) ([]string, error)
 }
@@ -143,13 +143,9 @@ func mayEverQualify(v appcontent.Visibility) bool {
 
 // authorState reads whether an author can have documents at all.
 func (s *Service) authorState(ctx context.Context, accountID string) (bool, appcontent.AuthorRestrictions, error) {
-	indexable := false
-	switch actor, err := s.d.Accounts.FindByID(ctx, accountID); {
-	case errors.Is(err, appaccount.ErrNotFound):
-	case err != nil:
+	indexable, err := s.d.Accounts.ProfileIndexable(ctx, accountID)
+	if err != nil {
 		return false, appcontent.AuthorRestrictions{}, err
-	default:
-		indexable = actor.Profile != nil && actor.Profile.Indexable
 	}
 	author, err := s.d.Statuses.AuthorRestrictions(ctx, accountID)
 	if err != nil {

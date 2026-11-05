@@ -69,7 +69,7 @@ func TestSearchNone(t *testing.T) {
 	if err := e.app.Accounts.DeleteBySelf(ctx, alice.id); err != nil {
 		t.Fatal(err)
 	}
-	jobs, err :=e.app.JobInspector.ListJobs(t.Context(), time.Now().Add(time.Hour), queue.JobFilter{}, queue.JobPosition{}, 1000)
+	jobs, err := e.app.JobInspector.ListJobs(t.Context(), time.Now().Add(time.Hour), queue.JobFilter{}, queue.JobPosition{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

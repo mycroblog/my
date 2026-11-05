@@ -20,6 +20,12 @@ type (
 	Status = content.Status
 	// Revision is content.Revision.
 	Revision = content.Revision
+	// Body is content.Body.
+	Body = content.Body
+	// Source is content.Source.
+	Source = content.Source
+	// Attachment is content.Attachment.
+	Attachment = content.Attachment
 	// Boost is content.Boost.
 	Boost = content.Boost
 	// Favourite is content.Favourite.
