@@ -120,6 +120,18 @@ func (s *Service) Configured(n hook.Name) bool {
 	return ok
 }
 
+// Active implements Gate.
+func (s *Service) Active(ctx context.Context, n hook.Name) (bool, error) {
+	if !s.Configured(n) {
+		return false, nil
+	}
+	mode, err := s.d.Settings.HookMode(ctx, n)
+	if err != nil {
+		return false, fmt.Errorf("hook: the mode of %s: %w", n, err)
+	}
+	return mode != hook.ModeOff, nil
+}
+
 // Decide implements Gate.
 func (s *Service) Decide(ctx context.Context, c Call) (Result, error) {
 	plugin, ok := s.d.Plugins[c.Hook]
@@ -318,6 +330,21 @@ func (s *Service) OverrideTx(ctx context.Context, tx uow.Tx, rec hook.Record, by
 		return hook.Record{}, err
 	}
 	return rec, nil
+}
+
+// ReplaySensitivityMarks calls mark inside tx for each status that a mark_sensitive decision in force
+// shows as sensitive, with the decision, for the rebuild of status_sensitivity_overrides (ADR-0147 §8).
+func ReplaySensitivityMarks(ctx context.Context, tx uow.Tx, repo Repository, mark func(statusID, decisionID string) error) error {
+	marks, err := repo.ListSensitivityMarks(ctx, tx)
+	if err != nil {
+		return err
+	}
+	for _, m := range marks {
+		if err := mark(m.StatusID, m.DecisionID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // List returns the decisions that q selects, newest first.

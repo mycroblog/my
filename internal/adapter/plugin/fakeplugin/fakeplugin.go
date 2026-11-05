@@ -21,11 +21,13 @@ import (
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/hook/v1/hookv1connect"
 	keymanagerv1connect "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/key_manager/v1/key_managerv1connect"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/mailer/v1/mailerv1connect"
+	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/media/v1/mediav1connect"
 	probev1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1/probev1connect"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/translator/v1/translatorv1connect"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/media"
 	"github.com/mycroblog/my/internal/app/translation"
 )
 
@@ -45,6 +47,11 @@ type Options struct {
 	// Translator is the service behind the fake's translator kind, whose answers it hands on as they are. Without it the fake
 	// does not serve the kind.
 	Translator translation.Translator
+	// Media is the processor behind the fake's media kind, whose output it hands on as it is. Without it the fake does not
+	// serve the kind, which only the Connect form can: its calls stream both ways.
+	Media media.Processor
+	// MediaUnderstate declares each output of the media kind at half its size, as a plugin that lies about it.
+	MediaUnderstate bool
 	// KeyManager is the key store behind the fake's key manager kind, whose answers it hands on as they are, so that a test
 	// can make the fake break the contract. Its key IDs are the plugin's own, without the server's prefix, and an error that
 	// is no result of the port fails the call. Without it the fake does not serve the kind.
@@ -85,6 +92,7 @@ func Connect(o Options) (http.Handler, *Recorder) {
 	billingv1connect.RegisterBillingServiceHandler(server, &billingServer{o: o})
 	mailerv1connect.RegisterMailerServiceHandler(server, &mailerServer{o: o})
 	translatorv1connect.RegisterTranslatorServiceHandler(server, &translatorServer{o: o})
+	mediav1connect.RegisterMediaServiceHandler(server, &mediaServer{o: o})
 	keymanagerv1connect.RegisterKeyManagerServiceHandler(server, &keyManagerServer{o: o})
 	hookv1connect.RegisterHookServiceHandler(server, &hookServer{o: o})
 	mux := http.NewServeMux()

@@ -212,6 +212,11 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 	})
 	r.Register(appmoderation.EventReportResolved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appmoderation.ReportResolved)
+		// The reporter of a report that a hook filed is the instance actor, whom nobody reads
+		// notifications for (ADR-0147 §7).
+		if ev.Report.HookOrigin != nil {
+			return nil
+		}
 		return p.notify(ctx, tx, notification.Notification{
 			RecipientAccountID: ev.Report.ReporterAccountID, Type: notification.TypeReportResolved, ReportID: ev.Report.ID,
 			DedupeKey: notification.ReportResolvedKey(ev.Report.ID), CreatedAt: ev.Resolution.ResolvedAt,

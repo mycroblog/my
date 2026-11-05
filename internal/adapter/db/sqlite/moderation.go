@@ -155,6 +155,16 @@ func (r *ModerationRepository) InsertReport(ctx context.Context, tx uow.Tx, rep 
 	if err != nil {
 		return false, err
 	}
+	// The origin goes first: its unique decision is what keeps a job that runs again from filing a
+	// second report, and the report has no other key for it.
+	if o := rep.HookOrigin; o != nil {
+		n, err := q.InsertReportHookOrigin(ctx, sqlitegen.InsertReportHookOriginParams{
+			ReportID: rep.ID, HookDecisionID: o.DecisionID, Hook: o.Hook, ReasonCode: o.ReasonCode,
+		})
+		if err != nil || n == 0 {
+			return false, wrap(err, "insert report hook origin")
+		}
+	}
 	n, err := q.InsertReport(ctx, sqlitegen.InsertReportParams{
 		ID: rep.ID, Uri: toNullString(rep.URI), ReporterAccountID: rep.ReporterAccountID, TargetAccountID: rep.TargetAccountID,
 		Category: string(rep.Category), Comment: rep.Comment, Forwarded: boolToInt(rep.Forwarded), FiledAt: toMillis(rep.FiledAt),
@@ -372,10 +382,18 @@ func (r *ModerationRepository) reportFrom(ctx context.Context, row sqlitegen.Rep
 	if len(rooms) > 0 {
 		room = &moderation.ReportVoiceRoom{RoomID: rooms[0].RoomID, RevisionID: rooms[0].RevisionID}
 	}
+	origins, err := r.db.reader().GetReportHookOrigin(ctx, row.ID)
+	if err != nil {
+		return moderation.Report{}, wrap(err, "read report hook origin")
+	}
+	var origin *moderation.ReportHookOrigin
+	if len(origins) > 0 {
+		origin = &moderation.ReportHookOrigin{DecisionID: origins[0].HookDecisionID, Hook: origins[0].Hook, ReasonCode: origins[0].ReasonCode}
+	}
 	return moderation.Report{
 		ID: row.ID, URI: row.Uri.String, ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
 		Category: moderation.Category(row.Category), Comment: row.Comment, Forwarded: row.Forwarded != 0,
-		FiledAt: fromMillis(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room,
+		FiledAt: fromMillis(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room, HookOrigin: origin,
 	}, nil
 }
 

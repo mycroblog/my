@@ -191,6 +191,18 @@ func (q *Queries) DeleteDerivableWebhookEndpointFailures(ctx context.Context) er
 	return err
 }
 
+const deleteStatusSensitivityOverridesWithoutStatus = `-- name: DeleteStatusSensitivityOverridesWithoutStatus :exec
+DELETE FROM status_sensitivity_overrides
+WHERE NOT EXISTS (SELECT 1 FROM statuses s WHERE s.id = status_sensitivity_overrides.status_id)
+`
+
+// DeleteStatusSensitivityOverridesWithoutStatus drops what the rebuild recorded for a status with
+// no row: the purge of a status removes its row here, and its decisions and actions can outlast it.
+func (q *Queries) DeleteStatusSensitivityOverridesWithoutStatus(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteStatusSensitivityOverridesWithoutStatus)
+	return err
+}
+
 const listAllAccountRestrictionRows = `-- name: ListAllAccountRestrictionRows :many
 SELECT account_id, restriction, source_action_id, effective_until FROM account_restrictions
 ORDER BY account_id, restriction, source_action_id

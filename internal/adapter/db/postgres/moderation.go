@@ -154,6 +154,16 @@ func (r *ModerationRepository) InsertReport(ctx context.Context, tx uow.Tx, rep 
 	if err != nil {
 		return false, err
 	}
+	// The origin goes first: its unique decision is what keeps a job that runs again from filing a
+	// second report, and the report has no other key for it.
+	if o := rep.HookOrigin; o != nil {
+		n, err := q.InsertReportHookOrigin(ctx, postgresgen.InsertReportHookOriginParams{
+			ReportID: rep.ID, HookDecisionID: o.DecisionID, Hook: o.Hook, ReasonCode: o.ReasonCode,
+		})
+		if err != nil || n == 0 {
+			return false, wrap(err, "insert report hook origin")
+		}
+	}
 	n, err := q.InsertReport(ctx, postgresgen.InsertReportParams{
 		ID: rep.ID, Uri: toNullString(rep.URI), ReporterAccountID: rep.ReporterAccountID, TargetAccountID: rep.TargetAccountID,
 		Category: string(rep.Category), Comment: rep.Comment, Forwarded: rep.Forwarded, FiledAt: rep.FiledAt,
@@ -383,10 +393,18 @@ func (r *ModerationRepository) reportFrom(ctx context.Context, row postgresgen.R
 	if len(rooms) > 0 {
 		room = &moderation.ReportVoiceRoom{RoomID: rooms[0].RoomID, RevisionID: rooms[0].RevisionID}
 	}
+	origins, err := r.db.reader().GetReportHookOrigin(ctx, row.ID)
+	if err != nil {
+		return moderation.Report{}, wrap(err, "read report hook origin")
+	}
+	var origin *moderation.ReportHookOrigin
+	if len(origins) > 0 {
+		origin = &moderation.ReportHookOrigin{DecisionID: origins[0].HookDecisionID, Hook: origins[0].Hook, ReasonCode: origins[0].ReasonCode}
+	}
 	return moderation.Report{
 		ID: row.ID, URI: fromNullString(row.Uri), ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
 		Category: moderation.Category(row.Category), Comment: row.Comment, Forwarded: row.Forwarded,
-		FiledAt: utc(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room,
+		FiledAt: utc(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room, HookOrigin: origin,
 	}, nil
 }
 

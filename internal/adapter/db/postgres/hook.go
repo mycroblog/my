@@ -170,6 +170,23 @@ func (r *HookRepository) ListExpired(ctx context.Context, q apphook.ExpiredQuery
 	return out, nil
 }
 
+// ListSensitivityMarks implements apphook.Repository.
+func (r *HookRepository) ListSensitivityMarks(ctx context.Context, tx uow.Tx) ([]apphook.SensitivityMark, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListHookSensitivityMarks(ctx)
+	if err != nil {
+		return nil, wrap(err, "list hook sensitivity marks")
+	}
+	out := make([]apphook.SensitivityMark, len(rows))
+	for i, row := range rows {
+		out[i] = apphook.SensitivityMark{StatusID: row.StatusID, DecisionID: row.DecisionID}
+	}
+	return out, nil
+}
+
 // DecisionIDsOfAccount implements apphook.Repository.
 func (r *HookRepository) DecisionIDsOfAccount(ctx context.Context, tx uow.Tx, accountID string, limit int) ([]string, error) {
 	q, err := r.db.queries(tx)

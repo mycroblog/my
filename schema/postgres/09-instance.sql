@@ -35,6 +35,7 @@ CREATE TABLE instance_setting_revisions (
     'hook_inbound_status_mode', 'hook_inbound_follow_mode', 'hook_signup_check_mode', 'hook_media_check_mode', 'hook_local_status_mode',
     'hook_inbound_status_on_failure', 'hook_inbound_follow_on_failure', 'hook_signup_check_on_failure', 'hook_media_check_on_failure',
     'hook_signup_check_reject',
+    'hook_inbound_status_unfollowed_direct',
     'retention_hook_decisions'
   )),
   value text NOT NULL,

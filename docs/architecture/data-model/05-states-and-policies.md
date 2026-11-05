@@ -19,7 +19,7 @@
 | 処分 `kind` | 日本語 | 生む制限 | 備考 |
 | --- | --- | --- | --- |
 | `warn` | 警告 | なし | 通知だけ |
-| `mark_statuses_sensitive` | 投稿のセンシティブ化 | なし（対象投稿に `status_sensitivity_overrides`） | `moderation_action_statuses` で対象を指定。期限なし（`expires_at` は NULL）。解除すれば元の表示に戻る |
+| `mark_statuses_sensitive` | 投稿のセンシティブ化 | なし（対象投稿に `status_sensitivity_overrides`） | `moderation_action_statuses` で対象を指定。期限なし（`expires_at` は NULL）。解除すれば、その処分の行が消える。フックの `mark_sensitive` の判定の行は別の出所で、残る（ADR-0147 §8） |
 | `delete_statuses` | 投稿の削除 | なし（対象投稿に `status_deletions`、`origin = moderation`、`moderation_action_id`） | 同上。期限なし。本人の削除と同じく投影から外し、作者にも表示しない。解除しても投稿は戻らない |
 | `force_sensitive` | メディアの強制センシティブ | `media_sensitive` | 以後の添付をすべてセンシティブとして表示 |
 | `limit` | サイレンス | `visibility_ceiling_private`, `public_discovery`, `unsolicited_reach` | 公開範囲の上限がフォロワー限定になる（§5.4） |

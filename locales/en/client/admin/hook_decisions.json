@@ -143,6 +143,14 @@
     "defaultMessage": "Cancelled",
     "description": "Term of a decision: when a moderator cancelled it."
   },
+  "admin.hook_decisions.restorable_until": {
+    "defaultMessage": "Can be brought back until",
+    "description": "Term of a dropped post: until when cancelling the decision takes the post in again."
+  },
+  "admin.hook_decisions.restorable_gone": {
+    "defaultMessage": "Its received copy is gone, so cancelling records the cancellation and brings nothing back.",
+    "description": "Shown on a dropped post whose received copy is gone: cancelling cannot bring it back."
+  },
   "admin.hook_decisions.override": {
     "defaultMessage": "Cancel decision",
     "description": "Button of a row of the list of decisions: cancels the decision."

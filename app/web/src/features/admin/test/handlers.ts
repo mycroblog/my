@@ -310,6 +310,7 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "hook_media_check_mode", kind: "enum", default: "observe", choices: ["off", "observe", "enforce"] },
   { key: "hook_local_status_mode", kind: "enum", default: "observe", choices: ["off", "observe", "enforce"] },
   { key: "hook_inbound_status_on_failure", kind: "enum", default: "pass", choices: ["pass", "retry"] },
+  { key: "hook_inbound_status_unfollowed_direct", kind: "bool", default: "false" },
   { key: "hook_inbound_follow_on_failure", kind: "enum", default: "pass", choices: ["pass", "retry"] },
   { key: "hook_signup_check_on_failure", kind: "enum", default: "pass", choices: ["pass", "require_approval"] },
   { key: "hook_signup_check_reject", kind: "bool", default: "false" },

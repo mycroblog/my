@@ -86,6 +86,7 @@ var pluginAddressRequiredWhen = map[string]string{
 	kind.Billing:    "when `billing_sources` includes `plugin`",
 	kind.Mailer:     "when `mail = plugin`",
 	kind.KeyManager: "when `key_manager = plugin`",
+	kind.Media:      "when `media = plugin`",
 }
 
 func pluginFieldsOf(k kind.Kind) []field {
@@ -184,6 +185,9 @@ func pluginChecks(vals map[string]string, present map[string]bool) []Issue {
 	}
 	if pluginsLeftOutTag == "" && vals["mail"] == "plugin" && !present["plugin_mailer_address"] {
 		issues = append(issues, Issue{Key: "plugin_mailer_address", Missing: true, Message: "required when mail is plugin"})
+	}
+	if pluginsLeftOutTag == "" && vals["media"] == "plugin" && !present["plugin_media_address"] {
+		issues = append(issues, Issue{Key: "plugin_media_address", Missing: true, Message: "required when media is plugin"})
 	}
 	issues = append(issues, pluginKeyManagerChecks(vals, present)...)
 	if pluginsLeftOutTag == "" && present["plugin_translator_address"] && !present["plugin_translator_name"] {

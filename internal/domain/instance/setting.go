@@ -128,6 +128,9 @@ const (
 	// SettingHookSignupCheckReject lets a reject of the hook signup.check refuse a sign-up (ADR-0147 §2).
 	SettingHookSignupCheckReject  SettingKey = "hook_signup_check_reject"
 	SettingRetentionHookDecisions SettingKey = "retention_hook_decisions"
+	// SettingHookInboundStatusUnfollowedDirect decides whether inbound.status also sends the direct
+	// posts of authors no local account follows (ADR-0147 §10).
+	SettingHookInboundStatusUnfollowedDirect SettingKey = "hook_inbound_status_unfollowed_direct"
 	// SettingInviteCreators decides who may create invites of their own (ADR-0106 §14), and
 	// SettingMemberInviteMaxActive, SettingMemberInviteMaxUses, and
 	// SettingMemberInviteMaxLifetimeSeconds bound those invites (§2).
@@ -634,6 +637,10 @@ var definitions = []Definition{
 	hookOnFailureDefinition(SettingHookInboundFollowOnFailure, "inbound.follow", HookRetryOnFailure),
 	hookOnFailureDefinition(SettingHookSignupCheckOnFailure, "signup.check", HookApproveOnFailure),
 	hookOnFailureDefinition(SettingHookMediaCheckOnFailure, "media.check", HookRetryOnFailure),
+	{
+		Key: SettingHookInboundStatusUnfollowedDirect, Kind: KindBool, Default: "false",
+		Doc: "Whether the decision hook inbound.status also sends the direct posts of authors no local account follows (ADR-0147 §10).",
+	},
 	{
 		Key: SettingHookSignupCheckReject, Kind: KindBool, Default: "false",
 		Doc: "Whether a reject of the decision hook signup.check refuses the sign-up while the hook enforces; when off, the verdict is recorded and has no effect (ADR-0147 §2).",

@@ -140,6 +140,12 @@ WHERE NOT EXISTS (
 -- name: DeleteAllStatusSensitivityOverrides :exec
 DELETE FROM status_sensitivity_overrides;
 
+-- DeleteStatusSensitivityOverridesWithoutStatus drops what the rebuild recorded for a status with
+-- no row: the purge of a status removes its row here, and its decisions and actions can outlast it.
+-- name: DeleteStatusSensitivityOverridesWithoutStatus :exec
+DELETE FROM status_sensitivity_overrides
+WHERE NOT EXISTS (SELECT 1 FROM statuses s WHERE s.id = status_sensitivity_overrides.status_id);
+
 -- name: DeleteAllPollTallies :exec
 DELETE FROM poll_tallies;
 

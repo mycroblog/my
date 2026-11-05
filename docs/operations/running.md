@@ -229,6 +229,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.delivery.attempts` | Counter | `my.outcome` (`success` / `retry` / `gone` / `failed`; `gone` covers a 410 and deliveries skipped because the server is unavailable or suspended) |
 | `my.delivery.duration` | Histogram, seconds | `my.outcome` |
 | `my.plugin.failures` | Counter | `my.plugin.kind` (a kind of [plugin](plugins.md)), `my.plugin.code` (the Connect code of the failure) |
+| `my.plugin.slot_wait` | Histogram, seconds | `my.plugin.kind` (how long a call waited for its turn among the calls of that kind that run at once) |
 | `my.hook.decisions` | Counter | `hook`, `mode`, `outcome` (the decisions a [decision hook](decision-hooks.md) recorded) |
 | `my.hook.failures` | Counter | `hook`, `outcome` (`timeout`, `error`, `invalid`, or `breaker_open`) |
 | `my.hook.duration` | Histogram | `hook` (seconds per call of the plugin) |

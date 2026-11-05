@@ -246,6 +246,19 @@ func TestConcurrencyOfAKind(t *testing.T) {
 }
 
 // The text of a plugin reaches no error of the server's, and the metric has the kind and the code (ADR-0146 §10, §15).
+// How long a call waited for its turn is a metric of the kind.
+func TestTheWaitForATurnIsMeasured(t *testing.T) {
+	meter := testkit.NewMeter()
+	inner, _ := fakeplugin.Connect(fakeplugin.Options{})
+	conn := newConn(t, client.Options{Kind: probeKind(t), Destination: kind.Destination{Address: fakeplugin.ServeTCP(t, inner)}, Meter: meter})
+	if _, err := call(t, conn); err != nil {
+		t.Fatal(err)
+	}
+	if got := meter.Measurements("my.plugin.slot_wait", map[string]string{client.LabelKind: kind.Probe}); len(got) != 1 {
+		t.Errorf("slot_wait records = %v, want 1", got)
+	}
+}
+
 func TestAFailureCarriesTheCodeAlone(t *testing.T) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

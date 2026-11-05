@@ -78,3 +78,13 @@ DELETE FROM hook_decision_overrides WHERE decision_id IN (sqlc.slice(ids));
 
 -- name: DeleteHookDecisions :exec
 DELETE FROM hook_decisions WHERE id IN (sqlc.slice(ids));
+
+-- ListHookSensitivityMarks returns the statuses of the mark_sensitive decisions that enforce and that
+-- no moderator cancelled, the source of the rebuild of status_sensitivity_overrides (ADR-0147 8).
+-- name: ListHookSensitivityMarks :many
+SELECT s.status_id, s.decision_id
+FROM hook_decision_statuses s
+JOIN hook_decisions d ON d.id = s.decision_id
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE d.mode = 'enforce' AND d.outcome = 'mark_sensitive' AND o.decision_id IS NULL
+ORDER BY s.decision_id, s.status_id;

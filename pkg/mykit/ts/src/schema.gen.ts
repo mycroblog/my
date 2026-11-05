@@ -9551,6 +9551,7 @@ export interface components {
              *     none.
              */
             voice_room_id?: components["schemas"]["Id"];
+            hook_origin?: components["schemas"]["AdminReportHookOrigin"];
             /**
              * @description The IDs of the instance rules that the report cites, retired ones included; only a
              *     report of the `violation` category cites rules.
@@ -9621,6 +9622,17 @@ export interface components {
             participations: components["schemas"]["AdminVoiceRoomParticipation"][];
             /** @description The accounts removed from the room, who may not join it again. */
             bans: components["schemas"]["AdminVoiceRoomBan"][];
+        };
+        /**
+         * @description The decision hook that filed the report; omitted for a report that a person or another server
+         *     filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
+         *     notified when it is resolved.
+         */
+        AdminReportHookOrigin: {
+            hook: components["schemas"]["HookName"];
+            /** @description The decision that filed the report, which can be gone after its retention. */
+            decision_id: string;
+            reason?: components["schemas"]["HookReason"];
         };
         /** @description An account removed from a voice chat room, who may not join it again. */
         AdminVoiceRoomBan: {
@@ -9856,6 +9868,13 @@ export interface components {
              * @description When a moderator cancelled the decision; absent while it stands.
              */
             overridden_at?: string;
+            /**
+             * Format: date-time
+             * @description For a `drop` of `inbound.status` or `inbound.follow`: until about when cancelling it processes the activity again,
+             *     which needs the document as it was received. After that, cancelling records the cancellation
+             *     and brings nothing back. Absent for any other decision.
+             */
+            restorable_until?: string;
             /**
              * @description Whether a moderator can cancel it here: a verdict in force that stopped or changed
              *     something. A `reject` of `local.status` goes through its appeal instead.
@@ -12160,7 +12179,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_status_on_failure" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_media_check_on_failure" | "retention_hook_decisions" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_media_check_on_failure" | "retention_hook_decisions" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.

@@ -174,6 +174,11 @@ func (r *StatusRepository) DeleteAllSensitivityOverrides(ctx context.Context, tx
 	return r.db.execAll(ctx, tx, "empty status sensitivity overrides", (*postgresgen.Queries).DeleteAllStatusSensitivityOverrides)
 }
 
+// DeleteSensitivityOverridesWithoutStatus implements content.Repository.
+func (r *StatusRepository) DeleteSensitivityOverridesWithoutStatus(ctx context.Context, tx uow.Tx) error {
+	return r.db.execAll(ctx, tx, "drop status sensitivity overrides of gone statuses", (*postgresgen.Queries).DeleteStatusSensitivityOverridesWithoutStatus)
+}
+
 // RebuildPollTallies implements content.Repository.
 func (r *StatusRepository) RebuildPollTallies(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "rebuild poll tallies", (*postgresgen.Queries).DeleteAllPollTallies, (*postgresgen.Queries).RebuildPollTallies)

@@ -229,7 +229,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`plugin_mailer_tls_cert_file`](#plugin_mailer_tls_cert_file) | `MY_PLUGIN_MAILER_TLS_CERT_FILE` | none | no | no |
 | [`plugin_mailer_tls_key_file`](#plugin_mailer_tls_key_file) | `MY_PLUGIN_MAILER_TLS_KEY_FILE` | none | no | no |
 | [`plugin_mailer_timeout`](#plugin_mailer_timeout) | `MY_PLUGIN_MAILER_TIMEOUT` | `30s` | no | no |
-| [`plugin_media_address`](#plugin_media_address) | `MY_PLUGIN_MEDIA_ADDRESS` | none | no | no |
+| [`plugin_media_address`](#plugin_media_address) | `MY_PLUGIN_MEDIA_ADDRESS` | none | when `media = plugin` | no |
 | [`plugin_media_protocol`](#plugin_media_protocol) | `MY_PLUGIN_MEDIA_PROTOCOL` | `proto` | no | no |
 | [`plugin_media_token`](#plugin_media_token) | `MY_PLUGIN_MEDIA_TOKEN` | none | no | yes |
 | [`plugin_media_tls_ca_file`](#plugin_media_tls_ca_file) | `MY_PLUGIN_MEDIA_TLS_CA_FILE` | the system's roots | no | no |
@@ -616,6 +616,7 @@ Media processor adapter.
 | `native` | Pure Go image processing. |
 | `vips` | libvips; needs a cgo build with the adapter's build tag. |
 | `none` | No processing except EXIF removal. |
+| `plugin` | A plugin of yours (`plugin_media_address`) re-encodes images and remuxes video and audio, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin (docs/operations/plugins.md). The build tag `no_plugins` leaves it out. |
 
 ### `blob_fs_dir`
 
@@ -1917,7 +1918,7 @@ Where the `media` plugin listens: `unix:///path/to.sock`, `https://host[:port]`,
 
 - Environment variable: `MY_PLUGIN_MEDIA_ADDRESS`
 - Default: none
-- Required: no
+- Required: when `media = plugin`
 
 ### `plugin_media_protocol`
 

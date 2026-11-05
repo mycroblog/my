@@ -421,6 +421,45 @@ func (q *Queries) ListHookDecisions(ctx context.Context, arg ListHookDecisionsPa
 	return items, nil
 }
 
+const listHookSensitivityMarks = `-- name: ListHookSensitivityMarks :many
+SELECT s.status_id, s.decision_id
+FROM hook_decision_statuses s
+JOIN hook_decisions d ON d.id = s.decision_id
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE d.mode = 'enforce' AND d.outcome = 'mark_sensitive' AND o.decision_id IS NULL
+ORDER BY s.decision_id, s.status_id
+`
+
+type ListHookSensitivityMarksRow struct {
+	StatusID   string
+	DecisionID string
+}
+
+// ListHookSensitivityMarks returns the statuses of the mark_sensitive decisions that enforce and that
+// no moderator cancelled, the source of the rebuild of status_sensitivity_overrides (ADR-0147 8).
+func (q *Queries) ListHookSensitivityMarks(ctx context.Context) ([]ListHookSensitivityMarksRow, error) {
+	rows, err := q.db.QueryContext(ctx, listHookSensitivityMarks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListHookSensitivityMarksRow{}
+	for rows.Next() {
+		var i ListHookSensitivityMarksRow
+		if err := rows.Scan(&i.StatusID, &i.DecisionID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStatusesOfHookDecisions = `-- name: ListStatusesOfHookDecisions :many
 SELECT decision_id, status_id FROM hook_decision_statuses WHERE decision_id IN (/*SLICE:ids*/?) ORDER BY decision_id, status_id
 `

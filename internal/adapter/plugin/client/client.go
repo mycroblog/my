@@ -130,6 +130,13 @@ func New(o Options) (*Conn, error) {
 			Description: "Calls of a plugin that failed, by kind and Connect code",
 			LabelKeys:   []string{LabelKind, LabelCode},
 		}),
+		waits: meter.Histogram(kernel.Instrument{
+			Name:        "my.plugin.slot_wait",
+			Unit:        "s",
+			Description: "How long a call of a plugin waited for its turn among the calls of the kind that run at once, by kind",
+			LabelKeys:   []string{LabelKind},
+			Buckets:     kernel.DurationBuckets,
+		}),
 	}
 	return &Conn{
 		RPC:       connect.NewClient(connecthttp.NewTransport(httpClient, addr.BaseURL, opts...), calls.intercept),
@@ -221,6 +228,7 @@ type calls struct {
 	slots      chan struct{}
 	keepDetail bool
 	failures   kernel.Counter
+	waits      kernel.Histogram
 }
 
 // intercept is the connect.ClientInterceptor of a Conn.
@@ -228,9 +236,12 @@ func (c *calls) intercept(next connect.ClientFunc) connect.ClientFunc {
 	return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
 		// The deadline runs while the call waits for its turn too: the caller's wait is what it bounds.
 		ctx, cancel := context.WithTimeout(ctx, c.timeout)
+		start := time.Now()
 		select {
 		case c.slots <- struct{}{}:
+			c.waits.Record(ctx, time.Since(start).Seconds(), kernel.NewLabels(LabelKind, c.kind))
 		case <-ctx.Done():
+			c.waits.Record(ctx, time.Since(start).Seconds(), kernel.NewLabels(LabelKind, c.kind))
 			err := ctx.Err()
 			cancel()
 			return nil, c.fail(ctx, err)

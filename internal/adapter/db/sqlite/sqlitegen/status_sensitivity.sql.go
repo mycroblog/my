@@ -9,6 +9,7 @@ package sqlitegen
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 )
 
@@ -16,28 +17,53 @@ const deleteStatusSensitivityOverridesOfAction = `-- name: DeleteStatusSensitivi
 DELETE FROM status_sensitivity_overrides WHERE source_action_id = ?
 `
 
-func (q *Queries) DeleteStatusSensitivityOverridesOfAction(ctx context.Context, sourceActionID string) error {
+func (q *Queries) DeleteStatusSensitivityOverridesOfAction(ctx context.Context, sourceActionID sql.NullString) error {
 	_, err := q.db.ExecContext(ctx, deleteStatusSensitivityOverridesOfAction, sourceActionID)
+	return err
+}
+
+const deleteStatusSensitivityOverridesOfHookDecision = `-- name: DeleteStatusSensitivityOverridesOfHookDecision :exec
+DELETE FROM status_sensitivity_overrides WHERE source_hook_decision_id = ?
+`
+
+func (q *Queries) DeleteStatusSensitivityOverridesOfHookDecision(ctx context.Context, sourceHookDecisionID sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, deleteStatusSensitivityOverridesOfHookDecision, sourceHookDecisionID)
 	return err
 }
 
 const insertStatusSensitivityOverride = `-- name: InsertStatusSensitivityOverride :exec
 
 
-INSERT INTO status_sensitivity_overrides (status_id, source_action_id) VALUES (?, ?)
+INSERT INTO status_sensitivity_overrides (status_id, source_action_id) VALUES (?1, ?2)
 ON CONFLICT (status_id, source_action_id) DO NOTHING
 `
 
 type InsertStatusSensitivityOverrideParams struct {
 	StatusID       string
-	SourceActionID string
+	SourceActionID sql.NullString
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
-// Sensitivity overrides of mark_statuses_sensitive (data-model section 4.4) -----------------------------
+// Sensitivity overrides of mark_statuses_sensitive and of the decisions of hooks (data-model section 4.4) ---
 // InsertStatusSensitivityOverride inserts nothing when the action already marks the status.
 func (q *Queries) InsertStatusSensitivityOverride(ctx context.Context, arg InsertStatusSensitivityOverrideParams) error {
 	_, err := q.db.ExecContext(ctx, insertStatusSensitivityOverride, arg.StatusID, arg.SourceActionID)
+	return err
+}
+
+const insertStatusSensitivityOverrideOfHookDecision = `-- name: InsertStatusSensitivityOverrideOfHookDecision :exec
+INSERT INTO status_sensitivity_overrides (status_id, source_hook_decision_id) VALUES (?1, ?2)
+ON CONFLICT (status_id, source_hook_decision_id) DO NOTHING
+`
+
+type InsertStatusSensitivityOverrideOfHookDecisionParams struct {
+	StatusID             string
+	SourceHookDecisionID sql.NullString
+}
+
+// InsertStatusSensitivityOverrideOfHookDecision inserts nothing when the decision already marks the status.
+func (q *Queries) InsertStatusSensitivityOverrideOfHookDecision(ctx context.Context, arg InsertStatusSensitivityOverrideOfHookDecisionParams) error {
+	_, err := q.db.ExecContext(ctx, insertStatusSensitivityOverrideOfHookDecision, arg.StatusID, arg.SourceHookDecisionID)
 	return err
 }
 

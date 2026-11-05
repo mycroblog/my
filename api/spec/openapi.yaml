@@ -1206,6 +1206,8 @@ components:
       $ref: ./components/schemas/AdminReportOutcome.yaml
     AdminReportVoiceRoom:
       $ref: ./components/schemas/AdminReportVoiceRoom.yaml
+    AdminReportHookOrigin:
+      $ref: ./components/schemas/AdminReportHookOrigin.yaml
     AdminVoiceRoomBan:
       $ref: ./components/schemas/AdminVoiceRoomBan.yaml
     AdminVoiceRoomEnd:

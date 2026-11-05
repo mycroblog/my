@@ -62,6 +62,7 @@ const policyKeys = [
   "hook_media_check_mode",
   "hook_local_status_mode",
   "hook_inbound_status_on_failure",
+  "hook_inbound_status_unfollowed_direct",
   "hook_inbound_follow_on_failure",
   "hook_signup_check_on_failure",
   "hook_signup_check_reject",

@@ -315,6 +315,13 @@ In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, 
 - A local reporter gets a notification (`report_resolved`) at the first resolution. Reopening and resolving again adds no notification.
   A reporter can list their own reports with `GET /api/v1/reports` and sees only whether each is open or resolved. The outcome, the action taken, the reason given to the target and the assignee are not shown.
 
+### Reports that an external review filed
+
+A [decision hook](decision-hooks.md) that answers `flag` files a report with your instance actor as the reporter. The report
+says so: `hook_origin` in the admin API and the `report.created` webhook, a line in the report details, and `automated` in
+`my admin report show`. Its comment is the plugin's note, and its category comes from the reason. It is not forwarded and
+never reaches the target, and resolving it notifies nobody. Cancelling the decision leaves the report as it is.
+
 ### Voice chat rooms
 
 - A local user can report an open voice chat room that they can see (`POST /api/v1/reports` with `voice_room_id`, and `account_id` set to the room's host).

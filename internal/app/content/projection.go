@@ -196,23 +196,38 @@ func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) 
 	return nil
 }
 
-// SensitivityMarks calls mark inside tx for each status that a moderation action in force shows
-// as sensitive, with the action: what the moderation module recorded through
-// MarkSensitiveByModeration and has not ended through ClearSensitivityOf. The content module
-// does not read the moderation tables, so the moderation module's public API replays them
-// (appmoderation.ReplaySensitivityMarks).
-type SensitivityMarks func(ctx context.Context, tx uow.Tx, mark func(statusID, actionID string) error) error
+// SensitivitySource is what shows a status as sensitive: a mark_statuses_sensitive action or a
+// mark_sensitive decision of a hook, exactly one of the two.
+type SensitivitySource struct {
+	ActionID       string
+	HookDecisionID string
+}
+
+// SensitivityMarks calls mark inside tx for each status that a source in force shows as sensitive:
+// what the moderation module recorded through MarkSensitiveByModeration and has not ended through
+// ClearSensitivityOf, and what the owners of the hooks recorded through MarkSensitiveByHook and no
+// moderator cancelled. The content module does not read the tables of those modules, so their public
+// APIs replay them (appmoderation.ReplaySensitivityMarks, apphook.ReplaySensitivityMarks).
+type SensitivityMarks func(ctx context.Context, tx uow.Tx, mark func(statusID string, source SensitivitySource) error) error
 
 // RebuildSensitivityOverrides empties status_sensitivity_overrides and records again, in one
-// transaction, the statuses that marks names (data-model §9).
+// transaction, the statuses that marks names (data-model §9). A status with no row is dropped: its
+// purge removed its rows here, and the records of its sources can outlast it (ADR-0147 §8).
 func RebuildSensitivityOverrides(ctx context.Context, u uow.UnitOfWork, repo Repository, marks SensitivityMarks) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		if err := repo.DeleteAllSensitivityOverrides(ctx, tx); err != nil {
 			return err
 		}
-		return marks(ctx, tx, func(statusID, actionID string) error {
-			return repo.InsertSensitivityOverride(ctx, tx, statusID, actionID)
+		err := marks(ctx, tx, func(statusID string, source SensitivitySource) error {
+			if source.HookDecisionID != "" {
+				return repo.InsertSensitivityOverrideOfHookDecision(ctx, tx, statusID, source.HookDecisionID)
+			}
+			return repo.InsertSensitivityOverride(ctx, tx, statusID, source.ActionID)
 		})
+		if err != nil {
+			return err
+		}
+		return repo.DeleteSensitivityOverridesWithoutStatus(ctx, tx)
 	})
 	if err != nil {
 		return fmt.Errorf("rebuild status_sensitivity_overrides: %w", err)
