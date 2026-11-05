@@ -15,7 +15,7 @@ the ones Prometheus sees: dots become underscores, and the unit and counter suff
 | --- | --- | --- |
 | Self-hosted (Docker Compose, Kubernetes, a VM) | `metrics_exporter = prometheus` | Prometheus scrapes `GET /metrics` on `metrics_listen`, Alertmanager routes the alerts. The rules below work as they are |
 | Any target with an OpenTelemetry Collector | `metrics_exporter = otlp` | The Collector forwards to the backend of your choice. A Prometheus-compatible backend that adds the unit and type suffixes (as Prometheus' own OTLP receiver does by default) sees the same names |
-| Google Cloud (Cloud Run) | `metrics_exporter = none` | Cloud Monitoring alerting policies on the platform metrics and on log-based metrics (see [Cloud Run](#google-cloud-cloud-run)) |
+| Google Cloud (Cloud Run) | `metrics_exporter = none` | Cloud Monitoring alerting policies on an uptime check, the platform metrics, and log-based metrics (see [Cloud Run](#google-cloud-cloud-run)) |
 | AWS (Lambda) | `metrics_exporter = emf` | CloudWatch alarms on the metrics that CloudWatch Logs extracts (see [AWS Lambda](#aws-lambda)) |
 
 ### Prometheus and Alertmanager
@@ -66,7 +66,7 @@ With `metrics_exporter = none`, build the alerts from what Cloud Run and Cloud L
 - **Database**: the disk utilization and connection metrics of Cloud SQL, or the usage alerts of your database provider.
 - **Cost**: a Cloud Billing budget with alert thresholds ([Cost and budget](#cost-and-budget)).
 
-The deployment templates of each target will carry ready-made policies; until then, recreate the alerts in the table below by hand.
+The module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) makes these as policies with the names of the table below, and lists each alert it covers differently or cannot express. It has never been applied. A metric that only traffic produces has gaps on a service that scales to zero, so an alert on its absence fires falsely; its uptime check is what notices a dead idle server.
 
 ### AWS Lambda
 
@@ -80,6 +80,8 @@ are not written in EMF; use the Lambda memory and error metrics instead.
 - **Database**: the storage and connection metrics of RDS or Aurora, or the usage alerts of your database provider.
 - **Email** (`mail = ses`): the SES reputation metrics (bounce and complaint rates) in CloudWatch.
 - **Cost**: an AWS Budgets budget with alerts ([Cost and budget](#cost-and-budget)).
+
+The module [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) makes these as alarms with the names of the table below, with the same list. It has never been applied.
 
 ## The alerts
 

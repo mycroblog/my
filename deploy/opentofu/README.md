@@ -31,6 +31,7 @@ deploy/opentofu/
   modules/kek-gcp-kms/                 the KEK in Cloud KMS
   modules/billing-gcp/                 the usage cost import from Google Cloud, never applied
   modules/billing-aws/                 the usage cost import from AWS, never applied
+  modules/monitoring-gcp/              uptime check, log-based metrics, and alert policies
   examples/gcp-cloud-run-neon/    all of the above, composed, on Git sources at MODULE_REF
   modules/*-aws-*/, examples/aws-lambda-neon/, examples/aws-ecs-neon/  the same on AWS, never applied: see "AWS: unverified" below
   upgrade.sh                      migration job first, then the service
@@ -76,6 +77,7 @@ A module is named `<role>-<provider>-<service>`, so that the name says what it i
 | `kek` | The key that encrypts the secrets in the database |
 | `ingress` | How traffic reaches the app |
 | `billing` | What the import of a provider's usage costs reads |
+| `monitoring` | The uptime check, the alerts, and the settings of the metrics that they read |
 
 A module with no provider of its own drops that part (`db-external`, `mail-smtp`). The provider is what the module talks to,
 not the platform behind it: `ingress-cloudflare-app` takes its origin as an input, so the same module fronts Cloud Run or AWS. Cloud SQL would be `db-gcp-cloud-sql`.
@@ -83,7 +85,7 @@ A module that covers a provider's several services for one purpose drops the ser
 
 ## The backend contract
 
-Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, `kek-*`, and `billing-*` module returns the same outputs, so that changing the database means
+Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, `kek-*`, `billing-*`, and `monitoring-*` module returns the same outputs, so that changing the database means
 changing one module block:
 
 | Output | Type | Meaning |
@@ -209,6 +211,10 @@ module, as with an ingress. Its `env` is built from names, so it does not wait f
 
 Neither module has ever been applied, and turning on a billing export or a budget stays a step in the Console: [each README](modules/billing-gcp/README.md#what-stays-manual) says which, and [the guide](../../docs/operations/billing-import.md) what the import does with them.
 
+## The monitoring contract
+
+A `monitoring-*` module is a backend: it returns `env`, with the settings of the metrics that its alerts read, so that a setting of them elsewhere fails the plan. It calls the service from outside and reads what the platform keeps, so it asks for no `permissions`, and it takes `host` as an input rather than an output of the app. It takes `notification_emails`, more channels of the platform as IDs, and the period of its uptime check, since each check wakes what scales to zero. Its alerts carry the names of [the runbook](../../docs/operations/alerts.md), and its README lists each alert of the runbook as covered, covered differently, or not expressible. No alert may fire on the absence of a metric that only traffic produces.
+
 ## The app contract
 
 Every `app-*` module takes `backends`, `env`, `secret_env`, `secret_files`, `image`, and `host`, provides a console, and returns
@@ -281,6 +287,7 @@ The modules for AWS test whether this contract holds on a second platform, in tw
 | `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
 | `ingress-aws-cloudfront` (Lambda), `ingress-aws-alb` (ECS) | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
 | `billing-aws` | Beside `billing-gcp`, on either platform: read [The billing modules](#the-billing-modules) |
+| `monitoring-aws` | `monitoring-gcp` |
 
 `db-external`, `db-neon`, `mail-smtp`, and `ingress-cloudflare-app` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
 tests show that a block of one platform fails the plan on the other's app. `examples/aws-lambda-neon` and `examples/aws-ecs-neon` compose them, and their tests swap each block
