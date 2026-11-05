@@ -226,13 +226,13 @@ LLM を翻訳の提供元にしない。どの版でも同梱しない。
 
 2026-11-05 に公式の文書で確かめたことと、確かめられなかったこと（§15 のアダプタを作るときに読み直す）:
 
-**ブラウザの Translator API**
+### ブラウザの Translator API
 
 - 対応: Chrome 138 以降、Edge 148 以降、Opera 122 以降。Firefox・Safari・モバイルのブラウザは未対応（[caniuse](https://caniuse.com/mdn-api_translator)、[Chrome の文書](https://developer.chrome.com/docs/ai/translator-api)）。Worker では使えない。HTTPS だけ（[MDN](https://developer.mozilla.org/en-US/docs/Web/API/Translator)、実験的な機能と表示）。
 - 仕様は W3C の Community Group のドラフト（2026-10-14 版）で標準化の過程にない。[仕様](https://webmachinelearning.github.io/translation-api/) はモデルがローカルでもクラウドでもあり得る書き方である。オンデバイスと述べているのは実装の文書で、Edge は入力がデバイスを出ないと明記し（[Edge の文書](https://learn.microsoft.com/en-us/microsoft-edge/web-platform/translator-api)）、Chrome は組み込みモデルの一般論として第三者に送らないと書く（[Chrome](https://developer.chrome.com/docs/ai/translate-on-device)）。だから `my` が約束するのは「`my` のサーバーと提供元に送らない」までで、ブラウザの提供者の扱いまでは約束しない。
 - 要検証: モデルのダウンロードで言語の組がブラウザの提供者に分かるか。§8 の印が実際のブラウザで戻るか（戻らなければブラウザの経路は印の位置で文を分ける）。CSP の下で動くかの実機の確認（#2238）。
 
-**提供元の規約とデータの扱い**
+### 提供元の規約とデータの扱い
 
 | 提供元 | 読んだもの | 分かったこと | 読めなかったもの |
 | --- | --- | --- | --- |
