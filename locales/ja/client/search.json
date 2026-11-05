@@ -70,5 +70,61 @@
   "search.results.failed": {
     "defaultMessage": "アカウントを検索できませんでした: {reason}",
     "description": "Shown when the search by name fails. {reason} is the error."
+  },
+  "search.tabs": {
+    "defaultMessage": "検索するもの",
+    "description": "Label of the tabs of the search page, on a server with the search of posts: accounts or posts."
+  },
+  "search.tabs.accounts": {
+    "defaultMessage": "アカウント",
+    "description": "Tab of the search page that finds accounts."
+  },
+  "search.tabs.posts": {
+    "defaultMessage": "投稿",
+    "description": "Tab of the search page that finds posts by their words."
+  },
+  "search.posts.label": {
+    "defaultMessage": "探す言葉",
+    "description": "Label of the field that takes the words of the search of posts."
+  },
+  "search.posts.description": {
+    "defaultMessage": "これらの言葉をすべて含む投稿を、新しい順に探します。",
+    "description": "Help text under the field of the search of posts."
+  },
+  "search.posts.required": {
+    "defaultMessage": "探す言葉を入れてください。",
+    "description": "Error under the field of the search of posts when it is sent empty."
+  },
+  "search.posts.submit": {
+    "defaultMessage": "投稿を検索",
+    "description": "Button that sends the search of posts."
+  },
+  "search.posts.results": {
+    "defaultMessage": "投稿",
+    "description": "Heading of the posts that the search found, and the name of their feed."
+  },
+  "search.posts.results.count": {
+    "defaultMessage": "{count, plural, =0 {投稿は見つかりませんでした} other {これまでに # 件の投稿が見つかりました}}",
+    "description": "Read by screen readers when the search of posts has an answer. More posts may follow."
+  },
+  "search.posts.empty.heading": {
+    "defaultMessage": "投稿は見つかりませんでした",
+    "description": "Heading of the empty state of the search of posts."
+  },
+  "search.posts.empty.description": {
+    "defaultMessage": "{scope, select, public {このサーバーの検索で見つかるのは公開の投稿で、許可しているアカウントのものだけです。投稿した人はプロフィールの設定で外れられます。} local {このサーバーの検索で見つかるのは公開範囲が「このサーバー」の投稿で、許可しているアカウントのものだけです。投稿した人はプロフィールの設定で外れられます。} other {このサーバーの検索で見つかるのは公開の投稿と公開範囲が「このサーバー」の投稿で、許可しているアカウントのものだけです。投稿した人はプロフィールの設定で外れられます。}}",
+    "description": "Empty state of the search of posts: which posts can be found on this server and that authors can opt out. {scope} is the visibilities this server's post search covers: public, local, or public_local."
+  },
+  "search.posts.failed.heading": {
+    "defaultMessage": "投稿を検索できませんでした",
+    "description": "Heading of the error of the search of posts."
+  },
+  "search.posts.rate_limited.heading": {
+    "defaultMessage": "検索の回数が多すぎます",
+    "description": "Heading of the error of the search of posts when the server limits how often the user can search."
+  },
+  "search.posts.rate_limited.reason": {
+    "defaultMessage": "制限が解けると、検索は自動でもう一度実行されます。",
+    "description": "What happens after the server limited how often the user can search posts."
   }
 }

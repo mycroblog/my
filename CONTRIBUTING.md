@@ -228,7 +228,8 @@ fills it with the demo scenario of `app/web/demo/`: people, posts with images an
 request, reactions and boosts, an open report and an appeal, roles with badges, a supporter plan with a subscriber who
 paid through the fake payment provider, cost items, invites, and announcements. Web Push is on: the server gets a
 VAPID key generated on every start and sends its push messages to the fake push service of the test build
-(`my dev push-service` on `https://localhost:8930`, or `PUSH_SERVICE_PORT`), which starts and stops with it. It prints the URL
+(`my dev push-service` on `https://localhost:8930`, or `PUSH_SERVICE_PORT`), which starts and stops with it. The search
+of posts is on too, with the fake search index of the test build, and new accounts allow it. It prints the URL
 (`http://localhost:8787`, or `DEMO_PORT`), Mailpit's web UI (`http://127.0.0.1:8025`, where the server's email
 arrives), and every person's email address and password. The scenario is created through `bin/my` and the client and
 admin APIs only, never SQL (ADR-0015): an item that no command or API can make is an API to add. When you change the

@@ -1030,5 +1030,45 @@
   "admin.settings.login_providers_only.label": {
     "defaultMessage": "ログインと新規登録をログインプロバイダーだけにする",
     "description": "Checkbox in the registration section of the server settings: limits sign-in and registration to login providers."
+  },
+  "admin.settings.search.title": {
+    "defaultMessage": "投稿の検索",
+    "description": "Heading of the section of the server settings about the search of posts, shown only on a server with a search engine."
+  },
+  "admin.settings.search.description": {
+    "defaultMessage": "このサーバーにログインしている人が、言葉で探せる投稿を決めます。対象は許可しているアカウントだけで、未収載・フォロワー・ダイレクトの投稿はどの設定でも対象になりません。検索エンジンへの表明は別の設定です。",
+    "description": "Explanation of the section of the server settings about the search of posts."
+  },
+  "admin.settings.search.visibilities": {
+    "defaultMessage": "対象の投稿",
+    "description": "Label of the radio group of which posts the search covers (search_visibilities)."
+  },
+  "admin.settings.search.visibilities.description": {
+    "defaultMessage": "外した種類の投稿は検索から消えます。足した種類は新しい投稿だけが見つかり、過去の投稿は索引を再構築するまで見つかりません (サーバーで「my search rebuild --keep」を実行します)。",
+    "description": "Help text of which posts the search covers: narrowing takes effect, widening reaches older posts only after a rebuild."
+  },
+  "admin.settings.search.public": {
+    "defaultMessage": "公開の投稿",
+    "description": "Choice of search_visibilities: public posts only."
+  },
+  "admin.settings.search.public.description": {
+    "defaultMessage": "このサーバーと、知っているほかのサーバーのアカウントの公開投稿。",
+    "description": "Description of covering public posts."
+  },
+  "admin.settings.search.local": {
+    "defaultMessage": "公開範囲が「このサーバー」の投稿",
+    "description": "Choice of search_visibilities: posts with the visibility 'This server' only."
+  },
+  "admin.settings.search.local.description": {
+    "defaultMessage": "公開範囲が「このサーバー」の投稿だけで、公開投稿は含みません。すでに許可しているアカウントには確認し直さないので、先に利用者へ知らせてください。",
+    "description": "Description of covering posts with the visibility 'This server' only."
+  },
+  "admin.settings.search.public_local": {
+    "defaultMessage": "両方",
+    "description": "Choice of search_visibilities: public posts and posts with the visibility 'This server'."
+  },
+  "admin.settings.search.public_local.description": {
+    "defaultMessage": "公開投稿と、公開範囲が「このサーバー」の投稿。すでに許可しているアカウントには確認し直さないので、先に利用者へ知らせてください。",
+    "description": "Description of covering public posts and posts with the visibility 'This server'."
   }
 }

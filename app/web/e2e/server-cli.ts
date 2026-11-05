@@ -4,7 +4,7 @@
 // (e2e/main-flow.spec.ts) create users and approve sign-ups with them while the server runs, as an
 // operator does (docs/operations/registration.md). The voice chat server (`node e2e/server.ts voice`) has the same
 // configuration with `voice = p2p`, on a database and a port of its own. The demo server (`node e2e/server.ts demo`,
-// ADR-0015 §7) is the test build with the fake payment provider, in the `development` profile, with `voice = p2p`
+// ADR-0015 §7) is the test build with the fake payment provider and the fake search, in the `development` profile, with `voice = p2p`
 // and its email sent to the development Mailpit on 127.0.0.1 (scripts/task.sh docker:mailpit), and Web Push on
 // with the fake push service of the test build (`my dev push-service`, ADR-0015) as the only push service it reaches.
 import { execFileSync } from "node:child_process";
@@ -91,6 +91,8 @@ export function serverEnv(server: E2EServer = "main"): NodeJS.ProcessEnv {
     ...(server === "demo" && {
       MY_PROFILE: "development",
       MY_PAYMENTS: "fake",
+      // The search of posts of the test build, whose index lives in the server's memory (e2e/demo-search.spec.ts).
+      MY_SEARCH: "fake",
       MY_MAIL: "smtp",
       MY_MAIL_FROM: "noreply@demo.test",
       MY_MAIL_SMTP_HOST: "localhost",

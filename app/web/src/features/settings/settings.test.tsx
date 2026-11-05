@@ -929,7 +929,9 @@ describe("profile", () => {
     );
     const { user } = await renderApp({ path: "/settings/profile" });
     const crawlers = await screen.findByRole("region", { name: "Search engines and AI" });
-    const indexable = within(crawlers).getByRole("checkbox", { name: "Show my profile and public posts in search" });
+    const indexable = within(crawlers).getByRole("checkbox", {
+      name: "Let search engines index my profile and public posts",
+    });
     expect(indexable).toBeChecked();
     expect(
       await within(crawlers).findByText(
@@ -948,6 +950,48 @@ describe("profile", () => {
 
     expect((await screen.findAllByText("Your profile has been saved.")).length).toBeGreaterThan(0);
     expect(changes).toEqual([expect.objectContaining({ indexable: false, ai_opt_out: true })]);
+  });
+
+  test.each([
+    {
+      visibilities: ["public"],
+      label: "Show my profile and public posts in search",
+      description: /post search can find your public posts/,
+    },
+    {
+      visibilities: ["public", "local"],
+      label: "Show my profile, public posts, and posts for this server in search",
+      description: /post search can find your public posts and your posts with the visibility "This server"/,
+    },
+    {
+      visibilities: ["local"],
+      label: "Show my profile and public posts in search engines, and my posts for this server in its search",
+      description: /post search can find your posts with the visibility "This server", not your public ones/,
+    },
+  ])(
+    "says which posts indexable covers when the search covers $visibilities",
+    async ({ visibilities, label, description }) => {
+      profileServer();
+      server.use(
+        http.get(`${apiBase}/instance`, () =>
+          HttpResponse.json({ ...instanceFixture, full_text_search: { available: true, visibilities } }),
+        ),
+      );
+      await renderApp({ path: "/settings/profile" });
+      const crawlers = await screen.findByRole("region", { name: "Search engines and AI" });
+      expect(await within(crawlers).findByRole("checkbox", { name: label })).toHaveAccessibleDescription(description);
+    },
+  );
+
+  test("on a server without a post search, indexable does not read as if it affected the search by name", async () => {
+    profileServer();
+    await renderApp({ path: "/settings/profile" });
+    const crawlers = await screen.findByRole("region", { name: "Search engines and AI" });
+    const indexable = within(crawlers).getByRole("checkbox", {
+      name: "Let search engines index my profile and public posts",
+    });
+    expect(indexable).toHaveAccessibleDescription(/It does not change how people find your account by name/);
+    expect(indexable).not.toHaveAccessibleDescription(/post search/);
   });
 
   test("says nothing about the server when it allows search and AI", async () => {
