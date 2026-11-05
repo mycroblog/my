@@ -249,7 +249,7 @@ ADR-0070 との契約:
 - **監査ログ（ADR-0058）**: `target_kind` に `supporter_program`・`supporter_plan`・`supporter_subscription` を足し、`action` に次を足す。操作者はスタッフか CLI。
   - `supporter_program_enabled`・`supporter_program_disabled`（`target_label` は事業者の名前）
   - `supporter_plan_created`・`supporter_plan_revised`・`supporter_plan_retired`（`target_label` はプランの名前）
-  - `supporter_subscription_canceled`（§10 の管理者による解約。`target_label` はプランの名前と利用者のハンドル）
+  - `supporter_subscription_ended`（§10 の管理者による解約。`target_label` はプランの名前と利用者のハンドル）
 - 利用者自身の加入・変更・解約と、事業者の状態からの遷移はスタッフの操作でないので監査ログに書かない（遷移のイベントに残る）。ロールの付け外しは `identity` が `role_granted`・`role_revoked` を操作者 `system` で書く。プランのフォームからのロールの権限と位置の変更は `role_updated` で残る。特商法の表記の変更は既存の `text_changed` で残る。
 - **通知**（`client*` 以外の名前空間でも ADR-0009 の制約のとおり、`locales/en`・`locales/ja`）:
   - `supporter_payment_failed`: `past_due` に入ったとき本人に。猶予の終わりの日時と、支払い方法を直す画面へのリンク
