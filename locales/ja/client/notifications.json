@@ -403,6 +403,14 @@
     "defaultMessage": "お知らせを開く",
     "description": "Link from a notification of an announcement without a title to the announcement on the list page."
   },
+  "notifications.link.hook_decisions": {
+    "defaultMessage": "自動審査の記録を開く",
+    "description": "Link in a notification to the page of decisions of the external review of submissions."
+  },
+  "notifications.type.admin_hook_failing": {
+    "defaultMessage": "外部の審査の呼び出しが失敗し続けています",
+    "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
+  },
   "notifications.unknown": {
     "defaultMessage": "新しい通知があります。",
     "description": "Sentence of a notification whose type this version of the web client does not know yet."

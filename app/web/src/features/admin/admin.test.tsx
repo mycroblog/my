@@ -83,7 +83,13 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
 
     await screen.findByRole("group", { name: "Moderation" });
     expectMenuGroups(screen.getByRole("navigation", { name: "Admin and moderation" }), {
-      Moderation: ["/moderation", "/moderation/reports", "/moderation/appeals", "/moderation/audit-log"],
+      Moderation: [
+        "/moderation",
+        "/moderation/reports",
+        "/moderation/appeals",
+        "/moderation/hook-decisions",
+        "/moderation/audit-log",
+      ],
       "Accounts and sign-ups": ["/moderation/accounts", "/moderation/registrations", "/moderation/signup-blocks"],
     });
     // The overview: a tile for each queue, a link to it, with a warning word where something waits.
@@ -123,7 +129,13 @@ describe("the staff's entry on the settings page and the mode's menu", () => {
     const admin = screen.getByRole("group", { name: "Administration" });
     expect(moderation.compareDocumentPosition(admin) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expectMenuGroups(screen.getByRole("navigation", { name: "Admin and moderation" }), {
-      Moderation: ["/moderation", "/moderation/reports", "/moderation/appeals", "/moderation/audit-log"],
+      Moderation: [
+        "/moderation",
+        "/moderation/reports",
+        "/moderation/appeals",
+        "/moderation/hook-decisions",
+        "/moderation/audit-log",
+      ],
       "Accounts and sign-ups": [
         "/moderation/accounts",
         "/moderation/registrations",

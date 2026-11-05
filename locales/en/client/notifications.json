@@ -403,6 +403,14 @@
     "defaultMessage": "Open the announcement",
     "description": "Link from a notification of an announcement without a title to the announcement on the list page."
   },
+  "notifications.link.hook_decisions": {
+    "defaultMessage": "Open the automated reviews",
+    "description": "Link in a notification to the page of decisions of the external review of submissions."
+  },
+  "notifications.type.admin_hook_failing": {
+    "defaultMessage": "Calls of an external review keep failing",
+    "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
+  },
   "notifications.unknown": {
     "defaultMessage": "You have a new notification.",
     "description": "Sentence of a notification whose type this version of the web client does not know yet."
