@@ -80,7 +80,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `member_invite_max_active` | integer 0-100 | `5` | How many usable invites (not revoked, expired, or used up) one member may hold at once; `0` lets members create none. Staff invites do not count |
 | `member_invite_max_uses` | integer 1-1000 | `10` | How many people may sign up with one invite that a member creates |
 | `member_invite_max_lifetime_seconds` | integer 3600-31536000 (seconds) | `2592000` (30 days) | How long one invite that a member creates may work at most. Lowering it does not shorten existing invites |
-| `translation_providers` | comma-separated provider IDs | empty | The server-side translation providers that are enabled, the first tried first. When it is empty nothing is sent to any provider. An ID this server has no provider for does nothing |
+| `translation_providers` | comma-separated provider IDs | empty | The server-side translation providers that are enabled, the first tried first. When it is empty nothing is sent to any provider. An ID this server has no provider for does nothing. A [translator plugin](plugins.md#translating-posts) has the ID `plugin` |
 | `translation_provider_visibilities` | comma-separated `provider=visibility\|visibility` pairs | empty | What each provider may receive. A provider not named receives `public`, `local`, and `unlisted` posts; `provider=` with nothing after it receives none. `private` and `direct` go only to a provider named with them, so allowing one provider does not allow the next |
 | `translation_browser` | boolean | `false` | Whether readers may use the translation built into their browser, which sends nothing to this server or to a provider |
 | `translation_user_monthly_characters` | integer 0-1000000000000 | `50000` | How many characters one user's requests may send to translation providers in a UTC month. At `0` nothing is sent. No value means unlimited: set a large number instead |
@@ -273,8 +273,9 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
 - **Web client** ("Translation", `/admin/translation`): the providers this server has, their order and what each may
   receive, the browser's translation, the monthly limits, and how long translations are kept, with the characters sent
   this month and the cache hit rate. Update your privacy policy ([template](privacy-policy-template.md#the-services-you-choose))
-  before you enable a server-side provider: text sent to a provider cannot be recalled. API keys of providers live in the
-  [deployment configuration](../reference/configuration.md); no setting and no answer of the client API holds them.
+  before you enable a server-side provider: text sent to a provider cannot be recalled. API keys of providers and the address of a
+  [translator plugin](plugins.md#translating-posts) live in the [deployment configuration](../reference/configuration.md);
+  no setting and no answer of the client API holds them.
 - **Translation limits.** What counts is the characters sent, in code points: the markers that stand in for mentions,
   links, and the like do not count, and neither do a translation the server already keeps, a post already in the reader's
   language, or the browser's translation. Each call to a provider counts, also one that fails, since the provider may have

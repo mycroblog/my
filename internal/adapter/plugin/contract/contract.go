@@ -30,6 +30,9 @@ type Env struct {
 	// MailTo is the recipient of the cases of the mailer kind that send real mail (--mail-to); empty skips them. MailFrom
 	// is their sender (--mail-from).
 	MailTo, MailFrom string
+	// TranslateFrom and TranslateTo are the languages of the cases of the translator kind (--translate-from, --translate-to),
+	// for a plugin that has only some; empty takes en and ja.
+	TranslateFrom, TranslateTo string
 }
 
 // Case is one contract case.
@@ -49,6 +52,7 @@ var table = map[string][]Case{
 	kind.Probe:         probeCases,
 	kind.Billing:       billingCases,
 	kind.Mailer:        mailerCases,
+	kind.Translator:    translatorCases,
 	kind.InboundStatus: hookCases(kind.InboundStatus, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_DROP, hookv1.Verdict_VERDICT_FLAG, hookv1.Verdict_VERDICT_MARK_SENSITIVE),
 	kind.InboundFollow: hookCases(kind.InboundFollow, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_DROP, hookv1.Verdict_VERDICT_FLAG),
 	kind.SignupCheck:   hookCases(kind.SignupCheck, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_REQUIRE_APPROVAL, hookv1.Verdict_VERDICT_REJECT),

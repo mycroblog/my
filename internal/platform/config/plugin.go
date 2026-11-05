@@ -5,8 +5,11 @@ package config
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 	"github.com/mycroblog/my/internal/domain/finance"
@@ -27,6 +30,9 @@ func pluginFields() []field {
 		fields = append(fields, pluginFieldsOf(k)...)
 		if k.Name == kind.Billing {
 			fields = append(fields, pluginBillingFields()...)
+		}
+		if k.Name == kind.Translator {
+			fields = append(fields, pluginTranslatorName())
 		}
 	}
 	return fields
@@ -50,6 +56,28 @@ func pluginBillingFields() []field {
 			check:        finance.ValidateProvider,
 			set:          func(c *Config, v string) { c.PluginBillingProvider = strings.TrimSpace(v) },
 		},
+	}
+}
+
+// maxPluginTranslatorName bounds plugin_translator_name, which a client shows next to each translation.
+const maxPluginTranslatorName = 100
+
+// pluginTranslatorName returns the setting of the name that readers see on a translation by the plugin. The server cannot
+// tell what the plugin calls, so only the operator can name it (ADR-0148 §14).
+func pluginTranslatorName() field {
+	return field{
+		key: "plugin_translator_name",
+		doc: "The name that readers see next to a translation by the `translator` plugin and that the admin screen lists, such as the service behind your plugin, at most " +
+			strconv.Itoa(maxPluginTranslatorName) + " characters. Clients get this name and never the address.",
+		requiredWhen: "when `plugin_translator_address` is set",
+		check: func(v string) error {
+			name := strings.TrimSpace(v)
+			if name == "" || utf8.RuneCountInString(name) > maxPluginTranslatorName || !utf8.ValidString(name) || strings.ContainsFunc(name, unicode.IsControl) {
+				return fmt.Errorf("must be one line of 1 to %d characters", maxPluginTranslatorName)
+			}
+			return nil
+		},
+		set: func(c *Config, v string) { c.PluginTranslatorName = strings.TrimSpace(v) },
 	}
 }
 
@@ -155,6 +183,9 @@ func pluginChecks(vals map[string]string, present map[string]bool) []Issue {
 	}
 	if pluginsLeftOutTag == "" && vals["mail"] == "plugin" && !present["plugin_mailer_address"] {
 		issues = append(issues, Issue{Key: "plugin_mailer_address", Missing: true, Message: "required when mail is plugin"})
+	}
+	if pluginsLeftOutTag == "" && present["plugin_translator_address"] && !present["plugin_translator_name"] {
+		issues = append(issues, Issue{Key: "plugin_translator_name", Missing: true, Message: "required when plugin_translator_address is set"})
 	}
 	for _, k := range kind.Delegated() {
 		address := k.Key(kind.SuffixAddress)
