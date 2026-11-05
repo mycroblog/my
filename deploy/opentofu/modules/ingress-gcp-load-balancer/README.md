@@ -1,7 +1,8 @@
 # ingress-gcp-load-balancer
 
 Traffic reaches the service through a global external Application Load Balancer, with a serverless network endpoint group,
-a Google-managed certificate for `host`, and a redirect from HTTP to HTTPS. It has a monthly fee. It follows
+a Google-managed certificate for `host`, and a redirect from HTTP to HTTPS. `examples/gcp-cloud-run-neon` uses it. It has a monthly fee:
+[the guide](../../../../docs/operations/deploy-cloud-run.md#how-traffic-reaches-the-service) has the figure. It follows
 [the ingress contract](../../README.md#the-ingress-contract).
 
 ## Source

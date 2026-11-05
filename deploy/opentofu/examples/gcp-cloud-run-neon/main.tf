@@ -118,10 +118,25 @@ module "mail" {
   password_secret_id = module.secrets.ids["smtp_password"]
 }
 
-# To put a global external Application Load Balancer in front instead, replace this block. It costs a monthly fee: the guide
-# has the trade-off. To use the service's own URL or something else in front, remove this block and its line in backends.
+# A global external Application Load Balancer: Google Cloud's recommended way, which closes the run.app URL, at a monthly fee.
 #
-# Or Cloudflare, with an origin that accepts host unless the zone is on the Enterprise plan: the guide has what that means.
+# To try a deployment cheaply, replace this block with a domain mapping and set service_ingress below to "all". It has no
+# monthly fee, but it is a Preview feature that Google Cloud does not recommend for production, and it leaves the run.app URL
+# open: the guide has the trade-off.
+#
+#   module "ingress" {
+#     source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-gcp-domain-mapping?ref=v0.1.0&depth=1"
+#
+#     project_id   = var.project_id
+#     region       = var.region
+#     host         = var.host
+#     service_name = module.app.service_name
+#   }
+#
+# To use the service's own URL or something else in front, remove this block and its line in backends.
+#
+# Or Cloudflare, also with service_ingress = "all", and an origin that accepts host unless the zone is on the Enterprise plan:
+# the guide has what that means.
 #
 #   module "ingress" {
 #     source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-cloudflare-app?ref=v0.1.0&depth=1"
@@ -145,17 +160,8 @@ module "mail" {
 #     host        = "media.example.org"
 #     origin_host = "ghs.googlehosted.com"
 #   }
-#
-#   module "ingress" {
-#     source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-gcp-load-balancer?ref=v0.1.0&depth=1"
-#
-#     project_id   = var.project_id
-#     region       = var.region
-#     host         = var.host
-#     service_name = module.app.service_name
-#   }
 module "ingress" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-gcp-domain-mapping?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-gcp-load-balancer?ref=v0.1.0&depth=1"
 
   project_id   = var.project_id
   region       = var.region
@@ -171,9 +177,9 @@ module "app" {
   image           = var.image
   host            = var.host
   console_enabled = var.console_enabled
-  # What the ingress needs: all for the domain mapping and Cloudflare, whose traffic comes from the internet, and which leave the
-  # run.app URL open to anyone; internal-and-load-balancer for the load balancer, which closes it. A disagreement fails the plan.
-  service_ingress = "all"
+  # What the ingress needs: internal-and-load-balancer for the load balancer, which closes the run.app URL; all for the domain
+  # mapping and Cloudflare, whose traffic comes from the internet, and which leave it open to anyone. A disagreement fails the plan.
+  service_ingress = "internal-and-load-balancer"
 
   backends = [
     module.secrets, module.kek, module.db, module.queue, module.blob, module.stream, module.mail,

@@ -1,6 +1,6 @@
 # Deploying on Cloud Run
 
-How to run `my` on Google Cloud with the OpenTofu modules in [`deploy/opentofu`](../../deploy/opentofu/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage, and Pub/Sub, with a PostgreSQL database on Neon. Nothing runs while nobody uses it, except a tick that wakes the server each minute. Read [Costs](#costs) first: the tick and open streams decide what it costs.
+How to run `my` on Google Cloud with the OpenTofu modules in [`deploy/opentofu`](../../deploy/opentofu/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage, and Pub/Sub, with a PostgreSQL database on Neon, behind a global external Application Load Balancer. The service runs no instance while nobody uses it, except for a tick that wakes the server each minute. A server costs money: expect about $37 a month before storage, traffic, and open streams, and read [Costs](#costs) for what care can reduce.
 
 The modules need OpenTofu 1.11 or later. Terraform is not supported.
 
@@ -9,7 +9,7 @@ The modules need OpenTofu 1.11 or later. Terraform is not supported.
 | Part | Module | Resources |
 | --- | --- | --- |
 | Server | `app-gcp-cloud-run` | A Cloud Run service with `role = all`, a migration job, a console job while you need it, a service account, and public access |
-| Traffic | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer`, or `ingress-cloudflare-app`, and optionally `ingress-cloudflare-media` | A domain mapping, a global external Application Load Balancer with a certificate, or Cloudflare, and a media host |
+| Traffic | `ingress-gcp-load-balancer`, or `ingress-gcp-domain-mapping` or `ingress-cloudflare-app`, and optionally `ingress-cloudflare-media` | A global external Application Load Balancer with a certificate, or a domain mapping, or Cloudflare, and a media host |
 | Jobs | `queue-gcp-cloud-tasks` | A Cloud Tasks queue, a Cloud Scheduler job, and a service account that calls the server |
 | Media | `blob-gcp-gcs` | A private bucket |
 | Real-time updates | `stream-gcp-pubsub` | A topic and a custom role. The server creates and removes its own subscriptions |
@@ -34,10 +34,14 @@ Secret values never reach the OpenTofu plan or state: you add the ones that come
 ```sh
 gcloud services enable --project="$PROJECT" run.googleapis.com cloudtasks.googleapis.com cloudscheduler.googleapis.com \
   pubsub.googleapis.com secretmanager.googleapis.com storage.googleapis.com iam.googleapis.com \
-  iamcredentials.googleapis.com cloudresourcemanager.googleapis.com logging.googleapis.com
+  iamcredentials.googleapis.com cloudresourcemanager.googleapis.com logging.googleapis.com compute.googleapis.com
 ```
 
+`compute.googleapis.com` is for the load balancer.
+
 ### 2. Create the database on Neon
+
+Expect the Launch plan: with the default tick, the compute never stops. The Free plan works too, with the trade-offs under [Costs](#costs).
 
 There are two ways, and the example uses the first:
 
@@ -112,7 +116,7 @@ To keep the KEK in Cloud KMS from the start, replace the `kek` block in `main.tf
 
 ### 5. Create what the migration needs
 
-The service's startup probe waits for `/readyz`, which answers `503` until the schema exists, so the schema has to come first. Create the migration job and what it depends on:
+The service's startup probe waits for `/readyz`, which answers `503` until the schema exists, so the schema has to come first. Create the migration job and what it depends on, which includes the load balancer's address, since the server's settings name it:
 
 ```sh
 tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
@@ -132,11 +136,13 @@ It runs `my config check`, `my db upgrade -check`, `my schema apply`, and `my db
 tofu apply
 ```
 
-### 8. Point the domain at the service
+### 8. Point the domain at the load balancer
 
-`tofu output dns_records` lists the records to add at your DNS provider. Federation and browsers reach the server at `https://{host}`. Jobs do not depend on it: Cloud Tasks and Cloud Scheduler call the service's default `run.app` URL, `https://<service>-<project number>.<region>.run.app`. **Do not disable the default URL**, or jobs stop. Cloud Run counts these two as internal only from the same project and on that URL, not on a custom domain.
+`tofu output dns_records` lists one `A` record, of `host` to the load balancer's address. Add it at your DNS provider. If that provider has a proxy of its own, leave it off for this record.
 
-See [How traffic reaches the service](#how-traffic-reaches-the-service) for what this example uses and what else you can choose.
+The certificate is Google-managed and becomes active only once DNS points at the address, which can take a while. Until then `https://{host}` fails with a TLS error, so federation and browsers cannot reach the server yet. Nothing else waits for it: Cloud Tasks and Cloud Scheduler call the service's default `run.app` URL, `https://<service>-<project number>.<region>.run.app`. **Do not disable the default URL**, or jobs stop. That URL refuses requests from the internet, and Cloud Run counts these two as internal only from the same project and on that URL, not on a custom domain.
+
+See [How traffic reaches the service](#how-traffic-reaches-the-service) for what else you can choose.
 
 ### 9. Create the first administrator
 
@@ -223,21 +229,21 @@ For a store outside Google Cloud, replace the `blob` block with [`blob-s3`](../.
 
 ## How traffic reaches the service
 
-The `ingress` block of `main.tf` decides this, and swapping one for the other changes only that block. In plain terms: the mapping is cheap but not meant for production, and the load balancer is meant for production but costs money every month.
+The `ingress` block of `main.tf` decides this. The example uses the load balancer, which is meant for production. The domain mapping is in a comment beside it, for trying a deployment cheaply: to swap it in, change that block and `service_ingress` of the `app` block, and the plan says if the two disagree.
 
-| | `ingress-gcp-domain-mapping` (the example's default) | `ingress-gcp-load-balancer` |
+| | `ingress-gcp-load-balancer` (the example) | `ingress-gcp-domain-mapping` |
 | --- | --- | --- |
-| Monthly fee | None | About $18 for the forwarding rules, plus a charge per GB. Check the [pricing page](https://cloud.google.com/vpc/network-pricing): this figure could not be confirmed there |
-| Status | A Preview feature that Google Cloud does not recommend for production, because of latency | Google Cloud's recommended way |
-| Regions | `asia-northeast1`, `us-central1`, and a few others | Any |
-| DNS | The records that `tofu output dns_records` lists | An `A` record of the same output |
-| Certificate | Google-managed, up to 24 hours | Google-managed, active once DNS points at the address |
-| Domain ownership | You, and every other account that applies, must be a [verified owner](https://cloud.google.com/run/docs/mapping-custom-domains) before you apply | Nothing beyond DNS |
-| `run.app` URL | Reachable by anyone: a domain mapping cannot add a header, so the origin stays open | Refused from the internet, so nobody goes around the load balancer |
-| `MY_TRUSTED_PROXIES` | `169.254.0.0/16` | `169.254.0.0/16` and the load balancer's address |
-| `service_ingress` of the `app` block | `all` | `internal-and-load-balancer`. A disagreement with the `ingress` block fails the plan |
+| Monthly fee | About $18 for the forwarding rules, plus a charge per GB. Check the [pricing page](https://cloud.google.com/vpc/network-pricing): this figure could not be confirmed there | None |
+| Status | Google Cloud's recommended way | A Preview feature that Google Cloud does not recommend for production, because of latency |
+| Regions | Any | `asia-northeast1`, `us-central1`, and a few others |
+| DNS | An `A` record, from `tofu output dns_records` | The records that the same output lists |
+| Certificate | Google-managed, active once DNS points at the address | Google-managed, up to 24 hours |
+| Domain ownership | Nothing beyond DNS | You, and every other account that applies, must be a [verified owner](https://cloud.google.com/run/docs/mapping-custom-domains) before you apply |
+| `run.app` URL | Refused from the internet, so nobody goes around the load balancer | Reachable by anyone: a domain mapping cannot add a header, so the origin stays open |
+| `MY_TRUSTED_PROXIES` | `169.254.0.0/16` and the load balancer's address | `169.254.0.0/16` |
+| `service_ingress` of the `app` block | `internal-and-load-balancer`. A disagreement with the `ingress` block fails the plan | `all` |
 
-The load balancer also needs `compute.googleapis.com`. Cloud Tasks and Cloud Scheduler arrive through neither: they call the default `run.app` URL directly.
+Cloud Tasks and Cloud Scheduler arrive through neither: they call the default `run.app` URL directly.
 
 To use the service's own URL or something else in front, such as a CDN, remove the `ingress` block and its line in `backends`, and keep `service_ingress` at what you need: it is always your explicit choice, and `all` leaves the `run.app` URL open to anyone. Set `MY_TRUSTED_PROXIES` in `env` to what connects to the server. Whatever you put in front must still answer at `https://{host}`.
 
@@ -283,23 +289,27 @@ On a new instance with no data, nothing needs to move.
 
 ## Costs
 
-The figures are approximate list prices for one region, from 2026-10 and 2026-11. Check them on the [Cloud Run](https://cloud.google.com/run/pricing) and [Neon](https://neon.com/pricing) pricing pages. Compute is free per billing account up to 180,000 vCPU-seconds and 360,000 GiB-seconds a month.
+A server costs money. These figures are a guide to what to expect and to where care reduces it, not limits that the deployment is held to. They are approximate list prices for one region, from 2026-10 and 2026-11. Check them on the [Cloud Run](https://cloud.google.com/run/pricing) and [Neon](https://neon.com/pricing) pricing pages. Compute is free per billing account up to 180,000 vCPU-seconds and 360,000 GiB-seconds a month.
 
 | Part | Idle | What adds to it |
 | --- | --- | --- |
+| Load balancer | About $18 a month, not confirmed on the pricing page | A charge per GB; see [How traffic reaches the service](#how-traffic-reaches-the-service) |
+| Neon, on the Launch plan | About $19 a month, with the default tick | Storage at $0.35 per GB-month. `db-gcp-cloud-sql` instead has a fixed cost of about $9.40 a month, for a smaller machine: its README has the breakdown |
 | Cloud Run | $0: min instances is 0 and CPU is billed only during requests | Each open stream keeps an instance billed; see below |
 | Cloud Tasks | $0 | 1 million operations free, then $0.40 per million. A job takes about 2 |
 | Cloud Scheduler | $0: 3 jobs free per billing account | $0.10 per job above that |
 | Cloud Storage | About $0.02 per GiB a month | 5 GiB are free only in `us-east1`, `us-west1`, and `us-central1`. Media goes out through Cloud Run |
 | Pub/Sub | $0: 10 GiB free | Only while streams are open |
 | Secret Manager | Cents | A few free versions, then a few cents per version |
-| Load balancer, if you use one | About $18 a month, not confirmed on the pricing page | A charge per GB; see [How traffic reaches the service](#how-traffic-reaches-the-service) |
-| Neon | See below | Storage: 1 GB on the Free plan, then $0.35 per GB-month. `db-gcp-cloud-sql` instead has a fixed cost of about $9.40 a month: its README has the breakdown |
 
-Two things decide the real cost:
-
-**The tick keeps Neon awake.** Each tick reads and writes the database, and Neon stops a compute only after 5 minutes without activity, so with the default `* * * * *` the compute never stops. That is 730 hours a month, or 182.5 CU-hours at 0.25 CU, above the 100 CU-hours of Neon's Free plan: the allowance runs out after about 17 days. On the Launch plan it costs about $19 a month.
-
-To stay inside the Free plan, set a longer schedule, such as `tick_schedule = "*/10 * * * *"`: at most half the time awake, about 91 CU-hours, before anything else wakes it. The cost is that periodic jobs run up to 10 minutes late, and that a lost wake-up signal is recovered later. A federated server receives deliveries around the clock, which also wakes the database, so a busy instance needs a paid plan either way.
+**The tick keeps Neon awake.** Each tick reads and writes the database, and Neon stops a compute only after 5 minutes without activity, so with the default `* * * * *` the compute never stops. That is 730 hours a month, or 182.5 CU-hours at 0.25 CU, which is the $19 above. The tick stays at every minute so that periodic jobs run on time, and a lost wake-up signal is recovered soon.
 
 **An open stream keeps an instance billed.** Under request-based billing, an instance is billed while it handles any request, and the real-time updates are one long request. One client that keeps its stream open all month costs one instance around the clock: about $60 a month at 1 vCPU and 512 MiB, after the free allowance. More streams share the instance, up to `concurrency`. If streams stay open most of the time, compare with instance-based billing, or with a small VM and [Docker Compose](../../README.md#quick-start-docker-compose).
+
+### Where care reduces it
+
+- **The domain mapping** in place of the load balancer takes the $18 away, with [the trade-offs above](#how-traffic-reaches-the-service). It suits trying a deployment.
+- **Neon's Free plan** takes the $19 away, and a small instance can run on it, with these trade-offs:
+  - It allows 100 CU-hours a month, which the default tick uses up after about 17 days. Stay inside it with a longer schedule, such as `tick_schedule = "*/10 * * * *"`: at most half the time awake, about 91 CU-hours, before anything else wakes it. Periodic jobs then run up to 10 minutes late, and a lost wake-up signal is recovered later.
+  - A federated server receives deliveries around the clock, which also wakes the database, so a busy instance outgrows it whatever the schedule.
+  - It holds 1 GB per project and a 6-hour history to restore from, and its compute always stops after 5 minutes idle, so the first request after that waits for it.

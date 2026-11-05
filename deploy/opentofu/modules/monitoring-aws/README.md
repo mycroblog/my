@@ -70,7 +70,7 @@ Each run wakes the web function, and through `/readyz` it wakes a scale-to-zero 
 
 The default tick of `queue-aws-sqs`, `rate(1 minute)`, keeps the database awake anyway; then the check adds nothing to Neon's bill. Change the schedule and the two add up, as [the guide's costs](../../../../docs/operations/deploy-cloud-run.md#costs) explain for the tick.
 
-A Route 53 health check would be cheaper to run and is not used, because it has no period to set: at its slowest, 30 seconds, [the endpoint gets a request about every two seconds](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-creating-values.html) on average, and no scale-to-zero database would ever stop.
+A Route 53 health check is cheaper to run. This module does not create one because it has no period to set: at its slowest, 30 seconds, [the endpoint gets a request about every two seconds](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-creating-values.html) on average, so no scale-to-zero database would ever stop. With the default tick that changes nothing, so add one of your own if you prefer it.
 
 The rest of the bill: each custom metric costs $0.30 a month after the first 10, and each metric an alarm reads $0.10 after the first 10, which `alarm_metrics` counts. Every name the server writes, times the values of the dimensions, is a metric, so expect tens of them, or $10 to $30 a month. That figure is an estimate, not a measurement. Log lines cost $0.50 per GB after 5 GB.
 

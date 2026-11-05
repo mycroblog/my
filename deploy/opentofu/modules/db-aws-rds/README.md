@@ -66,7 +66,7 @@ postgres://my:PASSWORD@ENDPOINT:5432/my?sslmode=require
 session-level lock. `sslmode=require` encrypts and does not check the certificate, since the server image does not hold the CA
 bundle of RDS.
 
-There is no pooled connection, and RDS Proxy is deliberately not an option here. It is a recurring cost on top of the instance, its
+There is no pooled connection, and RDS Proxy is deliberately not an option here. Its
 secret must be a JSON document of a user and a password rather than this URL, and AWS's documents say that session-level advisory
 locks, `SET`, and `LISTEN` pin a client to one connection, which removes what the proxy is for. Lambda is where this hurts: each
 instance of a function holds its own connections, so bound them with `web_reserved_concurrency`, `worker_max_concurrency`, and a

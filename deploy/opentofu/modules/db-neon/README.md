@@ -124,6 +124,7 @@ leaves nothing to restore from. Take your own dump first.
 
 ## What it costs
 
-Nothing on Neon's Free plan: $0 a month, with 100 CU-hours and 1 GB per project, a 6-hour history, and a compute that stops after 5 minutes
-idle ([Neon's pricing page](https://neon.com/pricing), 2026-11-05). The paid plans have no monthly minimum and bill by use. **The server's
-tick decides which of these you are on**: read [the guide's costs](../../../../docs/operations/deploy-cloud-run.md#costs).
+Expect the Launch plan, which has no monthly minimum and bills by use: about $19 a month for a compute that the server's default tick
+keeps awake, as [the guide's costs](../../../../docs/operations/deploy-cloud-run.md#costs) explain. The Free plan is possible with the
+trade-offs listed there: $0 a month, with 100 CU-hours and 1 GB per project, a 6-hour history, and a compute that stops after 5 minutes
+idle ([Neon's pricing page](https://neon.com/pricing), 2026-11-05). The module's defaults fit both plans.

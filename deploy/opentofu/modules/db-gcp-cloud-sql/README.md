@@ -63,12 +63,11 @@ postgres://my:PASSWORD@/my?host=/cloudsql/PROJECT:REGION:INSTANCE
 ```
 
 The instance has a public address and allows no network to reach it, so only the connector does, with the identity's Cloud SQL
-Client role. This needs no VPC, which is what would cost money. Google limits a Cloud Run instance to 100 connections to Cloud SQL.
+Client role. This needs no VPC. Google limits a Cloud Run instance to 100 connections to Cloud SQL.
 
 **This is a direct connection**, to the database's own port, as `database_url` must be for `my schema apply`, which holds a
-session-level lock. There is no pooled connection. Cloud SQL's managed pooling needs the Enterprise Plus edition, which has no
-machine type near this price, so this module offers none; `max_instances` of the app and `pool_max_conns` bound the connections
-instead. A pool on `db-f1-micro` must stay small: the instance has 0.6 GB of memory.
+session-level lock. There is no pooled connection. Cloud SQL's managed pooling needs the Enterprise Plus edition, which this
+module does not create; `max_instances` of the app and `pool_max_conns` bound the connections instead. A pool on `db-f1-micro` must stay small: the instance has 0.6 GB of memory.
 
 To set `pool_max_conns`, name it in `url_parameters`. The jobs read the same URL, and only the service opens a pool with it.
 

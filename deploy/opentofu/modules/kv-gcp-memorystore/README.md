@@ -1,8 +1,8 @@
 # kv-gcp-memorystore
 
 The key-value store on Memorystore for Valkey, with the VPC it needs. It follows
-[the backend contract](../../README.md#the-backend-contract). **It breaks the near-zero goal**: see [Cost](#cost). `kv = db` needs no
-module and costs nothing more, so use this only when the database cannot take the load of caches and rate limits.
+[the backend contract](../../README.md#the-backend-contract). It bills while the server is idle: see [Cost](#cost). `kv = db` is the default and needs no
+module. Use this when you want caches and rate limits off the database.
 
 **This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that
 Google Cloud accepts it. Unverified:
@@ -87,5 +87,4 @@ before an instance exists. The app adds Direct VPC egress through `vpc_access`, 
 
 About $0.0318 per hour for the smallest node, so **about $23 a month, whether or not anyone uses the server**. That figure comes from
 this project's design documents, checked on 2026-10-19; Google's pricing page returned no content when read on 2026-11-05, so check
-[it](https://cloud.google.com/memorystore/valkey/pricing) yourself. Cloud Run scales to zero and this does not, so one small instance
-costs more than the rest of a quiet deployment together.
+[it](https://cloud.google.com/memorystore/valkey/pricing) yourself. Cloud Run scales to zero and this does not.

@@ -5,7 +5,7 @@ Human contributors should read [CONTRIBUTING.md](CONTRIBUTING.md); the rules are
 
 ## Project in one paragraph
 
-An ActivityPub-compatible microblog server written in Go, designed to run at near-zero cost on Google Cloud, AWS,
+An ActivityPub-compatible microblog server written in Go, which can run cheaply with care on Google Cloud, AWS,
 or a self-hosted VM (Docker / microk8s), with swappable RDB / queue / storage adapters, its own client API (no Mastodon client API compatibility),
 a PWA web client (no mobile app in v0), and i18n from day one. Distributed as OSS.
 

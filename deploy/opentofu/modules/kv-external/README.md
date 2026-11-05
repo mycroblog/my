@@ -2,7 +2,7 @@
 
 The key-value store on a Valkey, or another server that speaks the Redis protocol, outside this configuration. It creates nothing,
 and follows [the backend contract](../../README.md#the-backend-contract). `kv = valkey` is an option, not the default: `kv = db`
-needs no module and costs nothing more.
+needs no module.
 
 **This module has never been applied.** It has no provider and its tests only check the settings it returns. Whether your service
 accepts what the server sends is what stays unverified.

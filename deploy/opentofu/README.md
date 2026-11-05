@@ -238,8 +238,7 @@ has only private addresses says what the app must attach through `backends`, and
 | Lambda | `security_group_ids` | Every function joins each group, in the subnets of `vpc_subnet_ids`, without which the plan fails. An attached function reaches the internet only through a NAT gateway | `db-aws-rds`, `kv-aws-elasticache` |
 
 The server has one Valkey setting for `kv` and `stream`, so `MY_VALKEY_URL` has one owner: `url_secret_id` of `stream-valkey` is
-null beside a `kv-*` module. Both managed Valkey modules bill while the server is idle, so neither fits a deployment at near zero,
-and each README says what it costs.
+null beside a `kv-*` module. Both managed Valkey modules bill while the server is idle, and each README says what it costs.
 
 ### The console
 

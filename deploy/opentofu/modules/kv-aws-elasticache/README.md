@@ -1,8 +1,8 @@
 # kv-aws-elasticache
 
 The key-value store on ElastiCache Serverless for Valkey, in a VPC you provide. It follows
-[the backend contract](../../README.md#the-backend-contract). **It breaks the near-zero goal**: see [Cost](#cost). `kv = db` needs no
-module and costs nothing more, so use this only when the database cannot take the load of caches and rate limits.
+[the backend contract](../../README.md#the-backend-contract). It bills while the server is idle: see [Cost](#cost). `kv = db` is the default and needs no
+module. Use this when you want caches and rate limits off the database.
 
 **This module has never been applied.** The tests mock the provider, so they show that the configuration is consistent, not that AWS
 accepts it. Unverified:
@@ -60,8 +60,7 @@ security group already decides who connects. For a password, make the cache else
 
 From [ElastiCache's pricing page](https://aws.amazon.com/elasticache/pricing/), read on 2026-11-05, in US East (N. Virginia): $0.084
 per GB-hour of data stored and $0.0023 per million ECPUs, with a minimum of 100 MB per cache. That is **about $6.13 a month, whether
-or not anyone uses the server**. It is the cheapest Valkey here, and it is still a bill for idle time that a deployment at zero
-otherwise does not have.
+or not anyone uses the server**. It is the cheapest Valkey here.
 
 **AWS's documents disagree.** The guide's
 [How ElastiCache works](https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/WhatIs.corecomponents.html) says each serverless cache

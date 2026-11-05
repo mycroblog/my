@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# The app with the load balancer in the place of the example's domain mapping, for the example's tests: the service's name
+# The app with the domain mapping in the place of the example's load balancer, for the example's tests: the service's name
 # goes to the ingress while the ingress's settings go to the app, which must not be a cycle.
 
 terraform {
@@ -20,7 +20,7 @@ terraform {
 }
 
 module "ingress" {
-  source = "../../modules/ingress-gcp-load-balancer"
+  source = "../../modules/ingress-gcp-domain-mapping"
 
   project_id   = "p"
   region       = "asia-northeast1"
@@ -37,7 +37,7 @@ module "app" {
   host         = "social.example.org"
   secret_files = { MY_KEK_FILE = "kek" }
 
-  service_ingress = "internal-and-load-balancer"
+  service_ingress = "all"
 
   backends = [
     { env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
@@ -48,6 +48,6 @@ output "service_ingress" {
   value = module.app.service_ingress
 }
 
-output "dns_records" {
-  value = module.ingress.dns_records
+output "trusted_proxies" {
+  value = module.app.env["MY_TRUSTED_PROXIES"]
 }
