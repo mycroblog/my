@@ -4,7 +4,7 @@
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
 import { ExternalLink } from "./ExternalLink";
-import { BoostIcon, PinIcon } from "./Icons";
+import { BoostIcon, LanguageIcon, PinIcon } from "./Icons";
 import { Link } from "./Link";
 import { PostCardAuthor, type PostCardAuthorProps } from "./PostCard";
 import { Text } from "./Text";
@@ -21,6 +21,8 @@ const parts = tv({
     time: "text-fg-muted no-underline data-hovered:text-fg-muted data-hovered:underline data-focus-visible:underline",
     avatar: "block rounded-full",
     origin: "ms-auto min-w-0 text-sm font-normal text-fg-muted data-hovered:text-fg",
+    note: "mb-2 flex min-w-0 items-center gap-x-1.5 text-sm wrap-anywhere text-fg-muted [&>svg]:size-4 [&>svg]:shrink-0",
+    noteLogo: "h-4 w-auto",
   },
   variants: {
     // A target of at least 24 px (D4), which a time in a header of its own row needs.
@@ -123,6 +125,31 @@ export function PostCardContext({ kind, children }: PostCardContextProps) {
       <Icon />
       <span>{children}</span>
     </>
+  );
+}
+
+export type PostCardNoteProps = {
+  /**
+   * The address of an image that goes with the sentence, such as the logo a translation provider asks for. It is
+   * decorative: the sentence names what it shows.
+   */
+  logo?: string | undefined;
+  /** The sentence, in the UI's language. */
+  children: ReactNode;
+};
+
+/**
+ * One line over the text of a post that says the text is not as its author posted it (a machine translation), for the
+ * top of the content slot, where it is part of the article's description. It stays outside a content warning.
+ */
+export function PostCardNote({ logo, children }: PostCardNoteProps) {
+  const { note, noteLogo } = parts();
+  return (
+    <p className={note()}>
+      <LanguageIcon />
+      {logo !== undefined && <img src={logo} alt="" className={noteLogo()} />}
+      <span>{children}</span>
+    </p>
   );
 }
 

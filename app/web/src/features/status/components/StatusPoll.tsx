@@ -4,18 +4,20 @@
 import { Poll, PollChoices, PollHint, PollResults, PollSummary } from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import type { Status } from "../api/status";
-import { usePoll } from "../hooks/usePoll";
+import { type PollTranslation, usePoll } from "../hooks/usePoll";
 
 export type StatusPollProps = {
   status: Status;
   /** Whether the viewer may vote here; false shows the results only (a moderator's page). */
   canVote: boolean;
+  /** The translated titles of the options and their language while the post shows a translation; null otherwise. */
+  translation?: PollTranslation | null;
 };
 
 /** The poll of `status`, or nothing without one. */
-export function StatusPoll({ status, canVote }: StatusPollProps) {
+export function StatusPoll({ status, canVote, translation = null }: StatusPollProps) {
   const t = useT();
-  const view = usePoll(status, canVote);
+  const view = usePoll(status, canVote, translation);
   if (view === null) return null;
   const { form } = view;
   return (
