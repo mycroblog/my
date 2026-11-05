@@ -101,7 +101,8 @@ tofu -chdir="$dir" plan -input=false -detailed-exitcode > /dev/null || fail "a s
 tofu -chdir="$dir" apply -input=false -auto-approve -var password_version=2 > "$tmp/apply3.out"
 [ "$(wc -l < "$tmp/values")" = 5 ] || fail "want 2 new values for a new password, got: $(cut -d' ' -f1,2 "$tmp/values" | tr '\n' ';')"
 second="$(value user my 2)"
-[ -n "$second" ] && [ "$second" != "$password" ] || fail "raising password_version did not make a new password"
+[ -n "$second" ] || fail "raising password_version wrote no new password"
+[ "$second" != "$password" ] || fail "raising password_version did not make a new password"
 [ "$(value secret my-database-url 2)" = "postgres://my:$second@/my?host=/cloudsql/p:r:my" ] || fail "after a new password, the URL and the user disagree"
 if grep -qaF -- "$second" "$dir/terraform.tfstate" "$tmp/apply3.out"; then
   fail "the new password is in the state or the output"

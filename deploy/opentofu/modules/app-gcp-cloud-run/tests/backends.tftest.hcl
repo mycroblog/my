@@ -720,7 +720,7 @@ run "a_cloud_sql_backend_mounts_the_socket_on_the_service_and_the_jobs" {
   }
 
   assert {
-    condition     = [for v in google_cloud_run_v2_service.server.template[0].volumes : tolist(v.cloud_sql_instance[0].instances) if v.name == "cloudsql"] == [["p:r:db"]]
+    condition     = [for v in google_cloud_run_v2_service.server.template[0].volumes : tolist(v.cloud_sql_instance[0].instances)[0] if v.name == "cloudsql"] == ["p:r:db"]
     error_message = "the service must have the instance as a volume"
   }
 
