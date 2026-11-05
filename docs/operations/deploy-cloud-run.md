@@ -227,6 +227,31 @@ module "db" {
 
 For a store outside Google Cloud, replace the `blob` block with [`blob-s3`](../../deploy/opentofu/modules/blob-s3/README.md), for any S3-compatible service, or [`blob-cloudflare-r2`](../../deploy/opentofu/modules/blob-cloudflare-r2/README.md).
 
+## When you need a network
+
+This guide needs none: Neon, Cloud Tasks, Cloud Storage, and Pub/Sub are all reached over the internet with the service's own identity, so Cloud Run attaches to nothing and there is nothing to pay for or look after.
+
+You need one to put Memorystore in the deployment, since it has only private addresses, or to give Cloud SQL a private address in place of its public one. Add [`network-gcp-vpc`](../../deploy/opentofu/modules/network-gcp-vpc/README.md), or describe a VPC you have as an object of [the same shape](../../deploy/opentofu/README.md#the-network-on-google-cloud), and pass the same one to the app and to each module that takes it:
+
+```hcl
+module "network" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/network-gcp-vpc?ref=v0.1.0&depth=1"
+
+  project_id = var.project_id
+  region     = var.region
+}
+
+module "kv" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/kv-gcp-memorystore?ref=v0.1.0&depth=1"
+
+  project_id = var.project_id
+  region     = var.region
+  network    = module.network
+}
+```
+
+Give the app `network = module.network` as well, and add `module.kv` to its `backends`. A backend on private addresses with an app on another network, or on none, fails the plan. Enable the Service Networking and Network Connectivity APIs first, and the Compute Engine API. A network adds to the cold start of an instance: read [what the private network adds](../../deploy/opentofu/modules/kv-gcp-memorystore/README.md#what-the-private-network-adds).
+
 ## How traffic reaches the service
 
 The `ingress` block of `main.tf` decides this. The example uses the load balancer, which is meant for production. The domain mapping is in a comment beside it, for trying a deployment cheaply: to swap it in, change that block and `service_ingress` of the `app` block, and the plan says if the two disagree.

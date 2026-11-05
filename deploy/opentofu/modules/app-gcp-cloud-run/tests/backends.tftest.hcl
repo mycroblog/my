@@ -956,12 +956,12 @@ run "no_vpc_by_default" {
   }
 }
 
-run "vpc_access_reaches_the_service_and_the_jobs" {
+run "the_network_reaches_the_service_and_the_jobs" {
   command = plan
 
   variables {
     console_enabled = true
-    vpc_access      = { network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/r/subnetworks/s" }
+    network         = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/asia-northeast1/subnetworks/s" }
   }
 
   assert {
@@ -970,7 +970,7 @@ run "vpc_access_reaches_the_service_and_the_jobs" {
         google_cloud_run_v2_service.server.template[0],
         google_cloud_run_v2_job.one_off["migrate"].template[0].template[0],
         google_cloud_run_v2_job.one_off["console"].template[0].template[0],
-      ] : t.vpc_access[0].egress == "PRIVATE_RANGES_ONLY" && t.vpc_access[0].network_interfaces[0].subnetwork == "projects/p/regions/r/subnetworks/s"
+      ] : t.vpc_access[0].egress == "PRIVATE_RANGES_ONLY" && t.vpc_access[0].network_interfaces[0].subnetwork == "projects/p/regions/asia-northeast1/subnetworks/s"
     ])
     error_message = "the service and every job must take the subnet, for private ranges only"
   }
@@ -1198,51 +1198,59 @@ run "the_conditions_of_an_aws_statement_fail" {
   expect_failures = [var.backends]
 }
 
-run "a_backend_on_private_addresses_attaches_the_service_and_the_jobs" {
+run "a_backend_on_the_same_network_passes" {
   command = plan
 
   variables {
-    console_enabled = true
-    backends        = [{ platform = "gcp", vpc_access = { network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/r/subnetworks/s" } }]
-  }
-
-  assert {
-    condition = alltrue([
-      for t in [
-        google_cloud_run_v2_service.server.template[0],
-        google_cloud_run_v2_job.one_off["migrate"].template[0].template[0],
-        google_cloud_run_v2_job.one_off["console"].template[0].template[0],
-      ] : t.vpc_access[0].egress == "PRIVATE_RANGES_ONLY" && t.vpc_access[0].network_interfaces[0].subnetwork == "projects/p/regions/r/subnetworks/s"
-    ])
-    error_message = "a backend's subnet must reach the service and every job"
-  }
-}
-
-run "the_same_subnet_from_the_input_and_a_backend_passes" {
-  command = plan
-
-  variables {
-    vpc_access = { network = "n", subnetwork = "s" }
-    backends   = [{ platform = "gcp", vpc_access = { network = "n", subnetwork = "s" } }]
+    network  = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/asia-northeast1/subnetworks/s" }
+    backends = [{ platform = "gcp", private_network = "projects/p/global/networks/n" }]
   }
 
   assert {
     condition     = length(google_cloud_run_v2_service.server.template[0].vpc_access) == 1
-    error_message = "one subnet named twice is still one subnet"
+    error_message = "the service must attach to the network"
   }
 }
 
-run "two_subnets_fail" {
+run "a_backend_on_private_addresses_with_no_network_fails" {
   command = plan
 
   variables {
-    backends = [
-      { platform = "gcp", vpc_access = { network = "n", subnetwork = "s" } },
-      { platform = "gcp", vpc_access = { network = "n", subnetwork = "t" } },
-    ]
+    backends = [{ platform = "gcp", private_network = "projects/p/global/networks/n" }]
   }
 
   expect_failures = [google_service_account.server]
+}
+
+run "a_backend_on_another_network_fails" {
+  command = plan
+
+  variables {
+    network  = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/asia-northeast1/subnetworks/s" }
+    backends = [{ platform = "gcp", private_network = "projects/p/global/networks/other" }]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_network_of_another_platform_fails" {
+  command = plan
+
+  variables {
+    network = { platform = "aws", vpc_id = "vpc-1" }
+  }
+
+  expect_failures = [var.network]
+}
+
+run "a_subnet_of_another_region_fails" {
+  command = plan
+
+  variables {
+    network = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/elsewhere/subnetworks/s" }
+  }
+
+  expect_failures = [var.network]
 }
 
 run "stream_postgres_on_a_database_url" {
@@ -1302,6 +1310,17 @@ run "two_owners_of_the_listeners_url_fail" {
       { platform = run.db_with_a_pooler.platform, env = run.db_with_a_pooler.env, secret_env = run.db_with_a_pooler.secret_env, direct_secret_env = run.db_with_a_pooler.direct_secret_env },
       { platform = run.stream_postgres_with_its_own_url.platform, env = run.stream_postgres_with_its_own_url.env, secret_env = run.stream_postgres_with_its_own_url.secret_env },
     ]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "the_guard_of_outbound_http_stays_on_a_network" {
+  command = plan
+
+  variables {
+    network = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/asia-northeast1/subnetworks/s" }
+    env     = { MY_HTTP_ALLOW_PRIVATE_NETWORKS = "true" }
   }
 
   expect_failures = [google_service_account.server]

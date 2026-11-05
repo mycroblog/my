@@ -26,20 +26,32 @@ variable "name" {
   nullable    = false
 }
 
-variable "vpc_id" {
-  description = "VPC of the instance and its security groups."
-  type        = string
-  nullable    = false
-}
-
-variable "subnet_ids" {
-  description = "Private subnets of the instance, in at least two Availability Zones, which RDS requires even of a single instance."
-  type        = list(string)
-  nullable    = false
+variable "network" {
+  description = "The network of the instance, from network-aws-vpc or an object of the same shape for a VPC of yours. The instance takes its private subnets, and RDS requires two zones even of a single instance."
+  type = object({
+    platform            = string
+    vpc_id              = optional(string)
+    vpc_cidr            = optional(string)
+    public_subnet_ids   = optional(list(string), [])
+    public_subnet_cidrs = optional(list(string), [])
+    private_subnet_ids  = optional(list(string), [])
+    nat                 = optional(bool, false)
+  })
+  nullable = false
 
   validation {
-    condition     = length(var.subnet_ids) >= 2
-    error_message = "RDS needs subnets in at least two Availability Zones."
+    condition     = var.network.platform == "aws"
+    error_message = "network is of another platform: on AWS use network-aws-vpc, or an object of the shape in the README of deploy/opentofu."
+  }
+
+  validation {
+    condition     = var.network.vpc_id != null
+    error_message = "network.vpc_id is required."
+  }
+
+  validation {
+    condition     = length(var.network.private_subnet_ids) >= 2
+    error_message = "network.private_subnet_ids must name subnets in at least two Availability Zones: RDS needs them."
   }
 }
 
@@ -153,13 +165,13 @@ ephemeral "random_password" "db" {
 
 resource "aws_db_subnet_group" "db" {
   name       = var.name
-  subnet_ids = var.subnet_ids
+  subnet_ids = var.network.private_subnet_ids
 }
 
 resource "aws_security_group" "db" {
   name        = "${var.name}-db"
   description = "The database of my"
-  vpc_id      = var.vpc_id
+  vpc_id      = var.network.vpc_id
 }
 
 # What joins this group can reach the database, and nothing else about it changes: a function also needs a group of its own for
@@ -167,7 +179,7 @@ resource "aws_security_group" "db" {
 resource "aws_security_group" "clients" {
   name        = "${var.name}-db-clients"
   description = "What may connect to the database of my"
-  vpc_id      = var.vpc_id
+  vpc_id      = var.network.vpc_id
 }
 
 resource "aws_vpc_security_group_ingress_rule" "db_from_clients" {
@@ -263,6 +275,11 @@ output "permissions" {
 output "security_group_ids" {
   description = "The group that the app joins to reach the database."
   value       = [aws_security_group.clients.id]
+}
+
+output "private_network" {
+  description = "The VPC of the instance, which must be the app's."
+  value       = var.network.vpc_id
 }
 
 output "url_without_password" {

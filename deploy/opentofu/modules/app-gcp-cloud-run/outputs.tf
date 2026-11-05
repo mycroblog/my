@@ -60,3 +60,8 @@ output "one_off_secret_env" {
   description = "Merged secret settings of the migration and console jobs, which take direct_secret_env over secret_env."
   value       = local.one_off_secret_env
 }
+
+output "subnetwork" {
+  description = "The subnet that the service and the jobs attach to, or null with no network."
+  value       = var.network == null ? null : var.network.subnetwork
+}

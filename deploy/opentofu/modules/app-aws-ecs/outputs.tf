@@ -74,3 +74,8 @@ output "one_off_secret_env" {
   description = "The same for the migration and console tasks, which take what a backend names for one-off work in the place of the service's."
   value       = local.one_off_arns
 }
+
+output "task_subnet_ids" {
+  description = "The subnets of the service and the one-off tasks."
+  value       = local.task_subnet_ids
+}

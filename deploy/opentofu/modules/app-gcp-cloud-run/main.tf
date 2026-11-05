@@ -96,9 +96,8 @@ locals {
   # Cloud SQL instances that the service and the jobs reach through the socket of Cloud Run's connector, at /cloudsql.
   cloud_sql_instances = distinct(flatten([for b in var.backends : b.cloud_sql_instances]))
 
-  # A service has one Direct VPC egress, so every backend that asks for one must name the same subnet.
-  vpc_accesses = distinct(concat(var.vpc_access == null ? [] : [var.vpc_access], [for b in var.backends : b.vpc_access if b.vpc_access != null]))
-  vpc_access   = length(local.vpc_accesses) == 0 ? null : local.vpc_accesses[0]
+  # What private addresses the backends have: the app reaches them only on the same network.
+  private_networks = distinct([for b in var.backends : b.private_network if b.private_network != null])
 
   jobs = merge(
     { migrate = ["db", "upgrade", "-check"] },
@@ -114,8 +113,8 @@ resource "google_service_account" "server" {
   # Here because this resource always exists, and the plan fails before anything is created.
   lifecycle {
     precondition {
-      condition     = length(local.vpc_accesses) <= 1
-      error_message = "vpc_access names more than one subnet across the input and the backends, and a service has one Direct VPC egress."
+      condition     = alltrue([for n in local.private_networks : var.network == null ? false : n == var.network.network])
+      error_message = "A backend has private addresses on ${join(" and ", local.private_networks)}, which the service reaches only when network of the app is that network. Give the app the same network as the backend."
     }
     precondition {
       condition     = length(local.duplicate_settings) == 0
@@ -128,6 +127,10 @@ resource "google_service_account" "server" {
     precondition {
       condition     = length(local.ingress_disagreements) == 0
       error_message = "service_ingress is ${var.service_ingress}, but an ingress module needs ${join(" and ", local.ingress_disagreements)}. A load balancer reaches the service only with internal-and-load-balancer, and it should be the only way in; a domain mapping and Cloudflare come from the internet and need all. Set service_ingress to what the ingress needs."
+    }
+    precondition {
+      condition     = var.network == null || lookup(local.env, "MY_HTTP_ALLOW_PRIVATE_NETWORKS", "false") != "true"
+      error_message = "http_allow_private_networks would let what a remote server names reach this network. Leave it off on a network."
     }
     precondition {
       condition     = length(local.ingress_trust) <= 1
@@ -255,7 +258,7 @@ resource "google_cloud_run_v2_service" "server" {
     }
 
     dynamic "vpc_access" {
-      for_each = local.vpc_access == null ? [] : [local.vpc_access]
+      for_each = var.network == null ? [] : [var.network]
       content {
         egress = "PRIVATE_RANGES_ONLY"
         network_interfaces {
@@ -424,7 +427,7 @@ resource "google_cloud_run_v2_job" "one_off" {
       max_retries = 0
 
       dynamic "vpc_access" {
-        for_each = local.vpc_access == null ? [] : [local.vpc_access]
+        for_each = var.network == null ? [] : [var.network]
         content {
           egress = "PRIVATE_RANGES_ONLY"
           network_interfaces {

@@ -82,10 +82,12 @@ locals {
   queue = lookup(local.env, "MY_QUEUE", "db")
 
   permissions = flatten([for b in var.backends : b.permissions])
-  # Attached to a VPC when a backend lives in one. What the function may reach is the sum of these groups.
-  security_group_ids = distinct(concat(var.vpc_security_group_ids, flatten([for b in var.backends : b.security_group_ids])))
-  vpc_attached       = length(var.vpc_subnet_ids) > 0
-  event_sources      = merge([for b in var.backends : b.event_sources]...)
+  # What the backends need of a VPC, which the plan compares with the network below. What a function may reach is the sum of
+  # its groups: its own, for the way out, and one for each backend in the VPC, which that backend admits.
+  backend_security_group_ids = distinct(flatten([for b in var.backends : b.security_group_ids]))
+  private_networks           = distinct([for b in var.backends : b.private_network if b.private_network != null])
+  vpc_attached               = var.network != null
+  event_sources              = merge([for b in var.backends : b.event_sources]...)
 
   # The same image with other settings: one definition makes every function, as one block makes the jobs on Cloud Run.
   # The adapter's defaults are the server's: port 8080, and /events for the events of the queue.
@@ -142,16 +144,20 @@ resource "aws_iam_role" "server" {
       error_message = "These settings are named more than once across the backends, env, secret_env, secret_files, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
     }
     precondition {
+      condition     = var.network == null || lookup(local.env, "MY_HTTP_ALLOW_PRIVATE_NETWORKS", "false") != "true"
+      error_message = "http_allow_private_networks would let what a remote server names reach this network. Leave it off on a network."
+    }
+    precondition {
       condition     = length(local.ingress_trust) <= 1
       error_message = "More than one backend says what is in front of the function with trusted_proxies. Use one ingress-* module for that; a media host returns none."
     }
     precondition {
-      condition     = local.vpc_attached || length(local.security_group_ids) == 0
-      error_message = "A backend lives in a VPC, or vpc_security_group_ids is set, but vpc_subnet_ids is empty, so the functions cannot reach it. Name the private subnets."
+      condition     = local.vpc_attached || length(local.backend_security_group_ids) == 0
+      error_message = "A backend lives in a VPC, but network is null, so the functions cannot reach it. Give the app the same network as the backend."
     }
     precondition {
-      condition     = !local.vpc_attached || length(local.security_group_ids) > 0
-      error_message = "vpc_subnet_ids needs at least one security group. A function in a VPC reaches only what its groups allow, so give vpc_security_group_ids a group that allows the way out."
+      condition     = alltrue([for n in local.private_networks : var.network == null ? false : n == var.network.vpc_id])
+      error_message = "A backend has private addresses in another VPC than the functions. Give the app the same network as the backend."
     }
     precondition {
       condition     = local.queue != "db"
@@ -255,6 +261,39 @@ resource "aws_iam_role_policy" "server" {
   }
 }
 
+# What every function joins in a VPC: it admits nothing, and allows the way out to the internet.
+resource "aws_security_group" "function" {
+  name        = "${var.name}-function"
+  description = "Functions of ${var.name}"
+  vpc_id      = try(var.network.vpc_id, null)
+
+  lifecycle {
+    enabled = local.vpc_attached
+  }
+}
+
+resource "aws_vpc_security_group_egress_rule" "out_ipv4" {
+  security_group_id = try(aws_security_group.function.id, null)
+  description       = "The database, the cloud's APIs, and federation"
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
+
+  lifecycle {
+    enabled = local.vpc_attached
+  }
+}
+
+resource "aws_vpc_security_group_egress_rule" "out_ipv6" {
+  security_group_id = try(aws_security_group.function.id, null)
+  description       = "The database, the cloud's APIs, and federation"
+  ip_protocol       = "-1"
+  cidr_ipv6         = "::/0"
+
+  lifecycle {
+    enabled = local.vpc_attached
+  }
+}
+
 resource "aws_lambda_function" "server" {
   for_each = local.functions
 
@@ -282,8 +321,8 @@ resource "aws_lambda_function" "server" {
   dynamic "vpc_config" {
     for_each = local.vpc_attached ? [1] : []
     content {
-      subnet_ids         = var.vpc_subnet_ids
-      security_group_ids = local.security_group_ids
+      subnet_ids         = var.network.private_subnet_ids
+      security_group_ids = concat([aws_security_group.function.id], local.backend_security_group_ids)
     }
   }
 
@@ -297,7 +336,7 @@ resource "aws_lambda_function" "server" {
     }
   }
 
-  depends_on = [aws_iam_role_policy.server, aws_cloudwatch_log_group.function]
+  depends_on = [aws_iam_role_policy.server, aws_cloudwatch_log_group.function, aws_vpc_security_group_egress_rule.out_ipv4, aws_vpc_security_group_egress_rule.out_ipv6]
 }
 
 # Open: the server checks what it must itself, and its paths are public, since federation needs them. An origin access control

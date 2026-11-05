@@ -13,12 +13,14 @@ deploy/opentofu/
   modules/stream-gcp-pubsub/      topic and the permissions for the server's own subscriptions
   modules/db-external/            connection URLs in Secret Manager: Neon created by hand, or any PostgreSQL
   modules/db-neon/                a Neon project it creates, with the password in the state: read its README
-  modules/db-gcp-cloud-sql/       Cloud SQL, reached through the connector's socket, never applied
+  modules/db-gcp-cloud-sql/       Cloud SQL, through the connector's socket or on a network, never applied
   modules/blob-s3/                any S3-compatible store, given an endpoint and a key
   modules/blob-cloudflare-r2/     an R2 bucket, with its credentials by reference
   modules/kv-external/            a Valkey outside this configuration, by a URL in the secret store
-  modules/kv-gcp-memorystore/     Memorystore for Valkey and its VPC, never applied
-  modules/kv-aws-elasticache/     ElastiCache Serverless for Valkey, never applied
+  modules/kv-gcp-memorystore/     Memorystore for Valkey, on a network, never applied
+  modules/kv-aws-elasticache/     ElastiCache Serverless for Valkey, on a network, never applied
+  modules/network-gcp-vpc/        a VPC that the others take as network, never applied
+  modules/network-aws-vpc/        the same on AWS, never applied
   modules/stream-valkey/          the broker on Valkey Pub/Sub, beside a kv module or alone
   modules/stream-postgres/        the broker on LISTEN / NOTIFY of the database
   modules/mail-smtp/              email through any SMTP service
@@ -78,6 +80,7 @@ A module is named `<role>-<provider>-<service>`, so that the name says what it i
 | `ingress` | How traffic reaches the app |
 | `billing` | What the import of a provider's usage costs reads |
 | `monitoring` | The uptime check, the alerts, and the settings of the metrics that they read |
+| `network` | The private network that the others take as an input. It is no backend |
 
 A module with no provider of its own drops that part (`db-external`, `mail-smtp`). The provider is what the module talks to,
 not the platform behind it: `ingress-cloudflare-app` takes its origin as an input, so the same module fronts Cloud Run or AWS. Cloud SQL would be `db-gcp-cloud-sql`.
@@ -92,6 +95,8 @@ A module of one cloud works only with that cloud's app. Every module says which 
 | `gcp` | Every module with `gcp` in its name | `app-gcp-cloud-run` |
 | `aws` | Every module with `aws` in its name | `app-aws-ecs`, `app-aws-lambda` |
 | `neutral` | `db-external`, `db-neon`, `mail-smtp`, `blob-s3`, `blob-cloudflare-r2`, `kv-external`, `ingress-cloudflare-*`, `stream-valkey`, `stream-postgres`, `queue-db` | Every app |
+
+A network has a platform too, and every module that takes one refuses another platform's: [The network contract](#the-network-contract).
 
 Mixing them would take identity bridges between clouds, and more combinations that nobody has applied. A store outside the platform is still a neutral module away: on Cloud Run, `blob-s3` with keys takes the place of `blob-aws-s3`.
 
@@ -115,11 +120,11 @@ changing one module block:
 | `permissions` | `list(object({ permission, resource, ... }))`, with `scope` on Google Cloud and `conditions` on AWS | What the app's identity is permitted |
 | `direct_secret_env` (optional) | `map(string)` | What the one-off work takes over a setting of `secret_env`, which the service keeps: `MY_DATABASE_URL` as a direct connection when `secret_env` names a pooled one. Each name must be in `secret_env` |
 | `cloud_sql_instances` (optional) | `list(string)` | Cloud SQL instances, as `<project>:<region>:<instance>`, that Cloud Run mounts at `/cloudsql` on the service and every job |
-| `security_group_ids` (optional) | `list(string)` | Security groups the app joins to reach a backend in a VPC, on AWS, such as those of `db-aws-rds` and `kv-aws-elasticache`. The app takes the subnets as its own input, and a plan fails without them |
+| `security_group_ids` (optional) | `list(string)` | Security groups the app joins to reach a backend in a VPC, on AWS, such as those of `db-aws-rds` and `kv-aws-elasticache` |
+| `private_network` (optional) | `string` | The network on which this backend has private addresses: `network` of the shape on Google Cloud, `vpc_id` on AWS. The app must have the same network, and a plan fails otherwise. Read [The network contract](#the-network-contract) |
 | `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it, on a platform where something calls it |
 | `event_sources` (optional) | `map(object({ arn, visibility_timeout_seconds }))` | Queues that the platform polls to invoke the app, on a platform where the app is invoked that way |
 | `billing_sources` (optional) | `list(string)` | What this module adds to the one setting `MY_BILLING_SOURCES`, which the app sets from all of them |
-| `vpc_access` (optional) | `object({ network, subnetwork })` | The subnet Cloud Run attaches to reach a backend on private addresses. Two different subnets fail the plan |
 
 A permission means what the platform's IAM means: what the identity is permitted, which on Google Cloud is a role, so its shape is the platform's:
 
@@ -177,7 +182,7 @@ Which module has what:
 | --- | --- | --- |
 | `db-external` | `url_secret_id`, required | `pooled_url_secret_id`, optional |
 | `db-neon` | `connection_uri` | `connection_uri_pooler` |
-| `db-gcp-cloud-sql` | The connector's socket | None: its pooling needs the Enterprise Plus edition |
+| `db-gcp-cloud-sql` | The connector's socket, or the private address with a network | None: its pooling needs the Enterprise Plus edition |
 | `db-aws-rds` | The instance's endpoint | None: RDS Proxy pins on what the server does. Its README has why |
 
 The module list above names the database modules; each README says what stays unverified, and what moving your data takes. **Changing the `db` block is one block in the
@@ -215,6 +220,74 @@ it in `env` beside an ingress that names proxies fails the plan, and so do two i
 An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`, `ingress-aws-alb`), with a header that the server checks (`ingress-cloudflare-app`, `ingress-aws-cloudfront`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
 **That value lands in the state**: neither provider has a write-only form of it. So this is the one place that breaks the rule below that no secret value reaches the state, and the state must be kept private. Two modules must not name those settings twice, so `ingress-cloudflare-media` beside `ingress-cloudflare-app` leaves them out and comes through `extra_rules`.
 
+## The network contract
+
+A `network-*` module is **no backend**: it returns no settings, it goes in no `backends`, and an app's `backends` would drop what it returns. It is an input of the others, so that one deployment has one private network it controls:
+
+```hcl
+module "network" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/network-gcp-vpc?ref=v0.1.0&depth=1"
+  # ...
+}
+
+module "db" {
+  # ...
+  network = module.network
+}
+```
+
+**A network depends on nothing else, and the others only read it**, so nothing is circular, and the order follows from the references: its outputs wait for what they promise, so a database that reads `private_services_range` waits for the connection. A module takes `network` and no network of its own.
+
+**A VPC you have already is the same object, with no module.** Write out the fields of your platform below and pass it where `module.network` would go. Nothing checks your VPC against what you say of it, so what you say of it must be true: a field you leave out is what a module that needs it refuses at plan.
+
+A plan fails, with what to use instead:
+
+- when a network of another platform reaches a module, by `platform`;
+- when a field that a module needs is missing or in the wrong form;
+- when a backend's `private_network` is not the app's network. On AWS an ID may be unknown until the apply that creates it, and the comparison waits for then.
+
+### The network on Google Cloud
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `platform` | `string` | `gcp` |
+| `network` | `string` | `projects/<project>/global/networks/<name>` |
+| `subnetwork` | `string` | `projects/<project>/regions/<region>/subnetworks/<name>`, in the app's region, of `/26` or larger: what the service and the jobs attach to |
+| `private_services_range` | `string` | Name of a reserved range with its connection to `servicenetworking.googleapis.com` made, of `/24` or larger, for `db-gcp-cloud-sql`. Null where you have none, which only that module refuses |
+| `memorystore_connection_policy` | `bool` | Whether the VPC has a service connection policy of the class `gcp-memorystore` in this region, for `kv-gcp-memorystore`, which refuses `false` |
+| `nat` | `bool` | Whether the subnet reaches the internet through Cloud NAT |
+
+Keep every range in RFC 1918: an app with egress for private ranges sends only those through the VPC.
+
+### The network on AWS
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `platform` | `string` | `aws` |
+| `vpc_id` | `string` | The VPC |
+| `vpc_cidr` | `string` | Its primary range, which the load balancer's group allows out to reach the tasks |
+| `public_subnet_ids` | `list(string)` | Subnets with a route to an internet gateway: the load balancer's, in two zones or more, and the tasks' with `assign_public_ip` |
+| `public_subnet_cidrs` | `list(string)` | The range of each of those, in the same order, which is what the server trusts behind the load balancer |
+| `private_subnet_ids` | `list(string)` | Subnets for RDS, in two zones or more, ElastiCache, Lambda, and the tasks without `assign_public_ip` |
+| `nat` | `bool` | Whether the private subnets reach the internet, through a NAT gateway or anything else that does it |
+
+### Who takes it
+
+| Module | With a network | With none |
+| --- | --- | --- |
+| `app-gcp-cloud-run` | Direct VPC egress of the service and the jobs | Attaches nothing: enough for everything on public endpoints |
+| `db-gcp-cloud-sql` | A private address alone, reached over TCP | A public address that only the connector reaches, which needs no VPC |
+| `kv-gcp-memorystore` | Required | Refused: only Private Service Connect reaches it |
+| `app-aws-ecs` | Required: a task is always in a VPC | Refused |
+| `app-aws-lambda` | Every function attaches to the private subnets | Attaches nothing: enough for everything on public endpoints |
+| `db-aws-rds`, `kv-aws-elasticache`, `ingress-aws-alb` | Required | Refused: they live in a VPC |
+
+Nothing else takes one. `ingress-gcp-load-balancer` reaches the service through a serverless network endpoint group, and `ingress-aws-cloudfront` through its Function URL, so neither has an address in a VPC.
+
+### What stays closed
+
+The server's outbound HTTP to destinations that remote servers influence, such as federation and link previews, goes through a client that refuses private and link-local addresses at connection time, so a network adds no way for a remote server to reach what is on it. `http_allow_private_networks` turns that off, and it is refused in the `production` profile, and an app on a network refuses it at plan. The database and Valkey clients do not go through that client, since their addresses come from the operator, so a private address works for them.
+
 ## The billing modules
 
 `billing-gcp` works on Google Cloud's app, and `billing-aws` on either platform's: on Cloud Run it is [the one exception](#platforms). Both can sit in the `backends` of Cloud Run. Each module uses
@@ -245,14 +318,13 @@ where the service has no host of its own, such as ECS, whose tasks each have ano
 
 ### Private networking
 
-Most backends are reached over the internet with the platform's own identity, and need no network of their own. A backend that
-has only private addresses says what the app must attach through `backends`, and the backend still does not name the app:
+Most backends are reached over the internet with the platform's own identity, and need no network of their own. A backend that has only private addresses says so through `backends`, and the backend still does not name the app:
 
 | Platform | Field | What the app does | Returned by |
 | --- | --- | --- | --- |
-| Cloud Run | `vpc_access` | Attaches the service and the jobs through Direct VPC egress, for traffic to private ranges only | `kv-gcp-memorystore` |
-| ECS | `security_group_ids` | The service and every one-off task join each group, in the VPC of `vpc_id` | `db-aws-rds`, `kv-aws-elasticache` |
-| Lambda | `security_group_ids` | Every function joins each group, in the subnets of `vpc_subnet_ids`, without which the plan fails. An attached function reaches the internet only through a NAT gateway | `db-aws-rds`, `kv-aws-elasticache` |
+| Google Cloud, AWS | `private_network` | Fails the plan unless its own `network` is that one | `kv-gcp-memorystore`, `db-gcp-cloud-sql` with a network, `db-aws-rds`, `kv-aws-elasticache` |
+| ECS | `security_group_ids` | The service and every one-off task join each group | `db-aws-rds`, `kv-aws-elasticache` |
+| Lambda | `security_group_ids` | Every function joins each group | `db-aws-rds`, `kv-aws-elasticache` |
 
 The server has one Valkey setting for `kv` and `stream`, so `MY_VALKEY_URL` has one owner: `url_secret_id` of `stream-valkey` is
 null beside a `kv-*` module. Both managed Valkey modules bill while the server is idle, and each README says what it costs.

@@ -55,6 +55,8 @@ variable "backends" {
     direct_secret_env = optional(map(string), {})
     # Security groups the functions join to reach a backend in a VPC.
     security_group_ids = optional(list(string), [])
+    # The VPC a backend has private addresses in, which must be the VPC of the functions.
+    private_network = optional(string)
     permissions = optional(list(object({
       permission = string
       resource   = optional(string)
@@ -79,10 +81,6 @@ variable "backends" {
     invokers = optional(list(string), [])
     # Accepted so that they cannot vanish, and refused below: they belong to Google Cloud, and to an app with tasks.
     cloud_sql_instances = optional(list(string), [])
-    vpc_access = optional(object({
-      network    = string
-      subnetwork = string
-    }))
     load_balancer = optional(object({
       target_group_arn  = string
       security_group_id = string
@@ -122,8 +120,8 @@ variable "backends" {
   }
 
   validation {
-    condition     = alltrue([for b in var.backends : length(b.cloud_sql_instances) == 0 && b.vpc_access == null])
-    error_message = "cloud_sql_instances and vpc_access belong to Cloud Run. A backend in a VPC here returns security_group_ids."
+    condition     = alltrue([for b in var.backends : length(b.cloud_sql_instances) == 0])
+    error_message = "cloud_sql_instances belongs to Cloud Run. A backend in a VPC here returns security_group_ids and private_network."
   }
 
   validation {
@@ -165,18 +163,33 @@ variable "secret_files" {
   }
 }
 
-variable "vpc_subnet_ids" {
-  description = "Private subnets to attach every function to, for a backend in a VPC. Empty, they stay outside any VPC of yours. An attached function reaches the internet and AWS's APIs only through what the VPC provides, such as a NAT gateway: read the README."
-  type        = list(string)
-  default     = []
-  nullable    = false
-}
+variable "network" {
+  description = "The network that every function attaches to, in its private subnets, from network-aws-vpc or an object of the same shape for a VPC of yours. Null, the default, keeps them outside any VPC of yours, with the internet, which is all that a deployment on public endpoints needs. An attached function reaches the internet and AWS's APIs only through what the VPC provides: read the README."
+  type = object({
+    platform            = string
+    vpc_id              = optional(string)
+    vpc_cidr            = optional(string)
+    public_subnet_ids   = optional(list(string), [])
+    public_subnet_cidrs = optional(list(string), [])
+    private_subnet_ids  = optional(list(string), [])
+    nat                 = optional(bool, false)
+  })
+  default = null
 
-variable "vpc_security_group_ids" {
-  description = "Security groups of the functions beside the ones the backends return, such as one that allows the way out to the internet."
-  type        = list(string)
-  default     = []
-  nullable    = false
+  validation {
+    condition     = var.network == null ? true : var.network.platform == "aws"
+    error_message = "network is of another platform: on AWS use network-aws-vpc, or an object of the shape in the README of deploy/opentofu."
+  }
+
+  validation {
+    condition     = var.network == null ? true : var.network.vpc_id != null
+    error_message = "network.vpc_id is required."
+  }
+
+  validation {
+    condition     = var.network == null ? true : length(var.network.private_subnet_ids) > 0
+    error_message = "network.private_subnet_ids is empty, and a function attaches to private subnets: a public subnet gives it no internet."
+  }
 }
 
 variable "web_memory_mib" {

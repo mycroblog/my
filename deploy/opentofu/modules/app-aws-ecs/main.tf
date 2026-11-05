@@ -88,10 +88,14 @@ locals {
   load_balancers    = [for b in var.backends : b.load_balancer if b.load_balancer != null]
   has_load_balancer = length(local.load_balancers) > 0
 
+  # A public address is of use only in a public subnet, and a private subnet is what the rest of the network is for.
+  task_subnet_ids  = var.assign_public_ip ? var.network.public_subnet_ids : var.network.private_subnet_ids
+  private_networks = distinct([for b in var.backends : b.private_network if b.private_network != null])
+
   # upgrade.sh and console.sh read this to start a one-off task, the first time before the service exists.
   network = {
     awsvpcConfiguration = {
-      subnets        = var.subnet_ids
+      subnets        = local.task_subnet_ids
       securityGroups = local.task_security_group_ids
       assignPublicIp = var.assign_public_ip ? "ENABLED" : "DISABLED"
     }
@@ -139,6 +143,14 @@ resource "aws_iam_role" "execution" {
     precondition {
       condition     = length(local.duplicate_settings) == 0
       error_message = "These settings are named more than once across the backends, env, secret_env, secret_files, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
+    }
+    precondition {
+      condition     = alltrue([for n in local.private_networks : n == var.network.vpc_id])
+      error_message = "A backend has private addresses in another VPC than the tasks. Give the app the same network as the backend."
+    }
+    precondition {
+      condition     = var.network == null || lookup(local.env, "MY_HTTP_ALLOW_PRIVATE_NETWORKS", "false") != "true"
+      error_message = "http_allow_private_networks would let what a remote server names reach this network. Leave it off on a network."
     }
     precondition {
       condition     = length(local.ingress_trust) <= 1
@@ -275,7 +287,7 @@ resource "aws_cloudwatch_log_group" "tasks" {
 resource "aws_security_group" "task" {
   name        = "${var.name}-task"
   description = "Tasks of ${var.name}"
-  vpc_id      = var.vpc_id
+  vpc_id      = var.network.vpc_id
 }
 
 resource "aws_vpc_security_group_ingress_rule" "from_load_balancer" {
@@ -404,7 +416,7 @@ resource "aws_ecs_service" "server" {
   }
 
   network_configuration {
-    subnets          = var.subnet_ids
+    subnets          = local.task_subnet_ids
     security_groups  = local.task_security_group_ids
     assign_public_ip = var.assign_public_ip
   }

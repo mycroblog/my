@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# Memorystore for Valkey, and the private network it needs. Only Private Service Connect reaches it, through a service
-# connection policy that must exist first, so this module makes a VPC of its own. The server's URL takes a static password
-# or none, and Memorystore's IAM authorization needs a short-lived token on each connection, so authorization stays off:
-# what keeps others out is the network. The URL therefore holds no secret and goes in env.
+# Memorystore for Valkey, on a network it takes from outside. Only Private Service Connect reaches it, through a service
+# connection policy of that network. The server's URL takes a static password or none, and Memorystore's IAM authorization
+# needs a short-lived token on each connection, so authorization stays off: what keeps others out is the network. The URL
+# therefore holds no secret and goes in env.
 
 terraform {
   required_version = ">= 1.11"
@@ -23,13 +23,13 @@ variable "project_id" {
 }
 
 variable "region" {
-  description = "Region of the instance and the subnet. Use the region of the app."
+  description = "Region of the instance. Use the region of the app and of the network's policy."
   type        = string
   nullable    = false
 }
 
 variable "name" {
-  description = "Name of the instance, the network, the subnet, the policy, and the start of the CA secret's ID."
+  description = "Name of the instance, and the start of the CA secret's ID."
   type        = string
   default     = "my-valkey"
   nullable    = false
@@ -40,15 +40,31 @@ variable "name" {
   }
 }
 
-variable "subnet_cidr" {
-  description = "Range of the subnet, which holds the instance's address and the addresses of Cloud Run's instances and jobs. Direct VPC egress needs a /26 or larger, and an instance takes four addresses while it runs."
-  type        = string
-  default     = "10.20.0.0/24"
-  nullable    = false
+variable "network" {
+  description = "The network of the instance, from network-gcp-vpc or an object of the same shape for a VPC of yours. The app must take the same one."
+  type = object({
+    platform                      = string
+    network                       = optional(string)
+    subnetwork                    = optional(string)
+    private_services_range        = optional(string)
+    memorystore_connection_policy = optional(bool, false)
+    nat                           = optional(bool, false)
+  })
+  nullable = false
 
   validation {
-    condition     = can(cidrhost(var.subnet_cidr, 0)) && tonumber(split("/", var.subnet_cidr)[1]) <= 26
-    error_message = "subnet_cidr must be an IPv4 range of /26 or larger."
+    condition     = var.network.platform == "gcp"
+    error_message = "network is of another platform: on Google Cloud use network-gcp-vpc, or an object of the shape in the README of deploy/opentofu."
+  }
+
+  validation {
+    condition     = can(regex("^projects/[^/]+/global/networks/[^/]+$", var.network.network))
+    error_message = "network.network must be projects/<project>/global/networks/<name>."
+  }
+
+  validation {
+    condition     = var.network.memorystore_connection_policy
+    error_message = "network.memorystore_connection_policy is false, and Memorystore connects only through a service connection policy of the class gcp-memorystore in its region, which must exist first. Create one in your VPC and set it to true, or use network-gcp-vpc."
   }
 }
 
@@ -74,11 +90,9 @@ variable "deletion_protection" {
 }
 
 locals {
-  # Built from the inputs so that they are known at plan time: the app module keys its secret bindings on the ID, and
-  # takes its dynamic blocks from vpc_access. The outputs depend on the resources for the order.
-  network    = "projects/${var.project_id}/global/networks/${var.name}"
-  subnetwork = "projects/${var.project_id}/regions/${var.region}/subnetworks/${var.name}"
-  ca_secret  = "${var.name}-ca"
+  # Built from the inputs so that it is known at plan time: the app module keys its secret bindings on the ID. The output
+  # depends on the resources for the order.
+  ca_secret = "${var.name}-ca"
 
   connections = flatten([
     for e in google_memorystore_instance.valkey.endpoints : [for c in e.connections : c.psc_auto_connection]
@@ -89,34 +103,6 @@ locals {
     [for c in local.connections : c if c.connection_type == "CONNECTION_TYPE_PRIMARY"],
     [for c in local.connections : c if c.connection_type == "CONNECTION_TYPE_DISCOVERY"],
   )[0]
-}
-
-resource "google_compute_network" "valkey" {
-  project                 = var.project_id
-  name                    = var.name
-  auto_create_subnetworks = false
-}
-
-resource "google_compute_subnetwork" "valkey" {
-  project       = var.project_id
-  region        = var.region
-  name          = var.name
-  network       = google_compute_network.valkey.id
-  ip_cidr_range = var.subnet_cidr
-}
-
-resource "google_network_connectivity_service_connection_policy" "valkey" {
-  project       = var.project_id
-  location      = var.region
-  name          = var.name
-  service_class = "gcp-memorystore"
-  network       = google_compute_network.valkey.id
-
-  psc_config {
-    subnetworks = [google_compute_subnetwork.valkey.id]
-    # Memorystore's guide: the number of instances in the region, times two.
-    limit = "2"
-  }
 }
 
 # One shard: the adapters keep each of their data sets in one hash slot, so more shards would hold nothing more of them.
@@ -132,12 +118,11 @@ resource "google_memorystore_instance" "valkey" {
   transit_encryption_mode     = "SERVER_AUTHENTICATION"
   deletion_protection_enabled = var.deletion_protection
 
+  # The network's policy comes first: this reads the network's outputs, which wait for it.
   desired_auto_created_endpoints {
-    network    = google_compute_network.valkey.id
+    network    = var.network.network
     project_id = var.project_id
   }
-
-  depends_on = [google_network_connectivity_service_connection_policy.valkey]
 }
 
 resource "google_secret_manager_secret" "ca" {
@@ -185,11 +170,7 @@ output "permissions" {
   value       = []
 }
 
-output "vpc_access" {
-  description = "What the app attaches to reach the instance, through backends."
-  value = {
-    network    = local.network
-    subnetwork = local.subnetwork
-  }
-  depends_on = [google_compute_subnetwork.valkey]
+output "private_network" {
+  description = "The network of the instance, which must be the app's."
+  value       = var.network.network
 }

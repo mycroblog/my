@@ -39,10 +39,17 @@ mock_provider "aws" {
 }
 
 variables {
-  image            = "ghcr.io/mycroblog/my:0.1.0"
-  host             = "social.example.org"
-  vpc_id           = "vpc-1"
-  subnet_ids       = ["subnet-1", "subnet-2"]
+  image = "ghcr.io/mycroblog/my:0.1.0"
+  host  = "social.example.org"
+  network = {
+    platform            = "aws"
+    vpc_id              = "vpc-1"
+    vpc_cidr            = "10.0.0.0/16"
+    public_subnet_ids   = ["subnet-1", "subnet-2"]
+    public_subnet_cidrs = ["10.0.0.0/24", "10.0.1.0/24"]
+    private_subnet_ids  = ["subnet-a", "subnet-b"]
+    nat                 = true
+  }
   assign_public_ip = true
   backends = [
     {
@@ -656,14 +663,46 @@ run "a_field_of_google_cloud_fails" {
   expect_failures = [var.backends]
 }
 
-run "the_subnet_of_cloud_run_fails" {
+run "a_backend_in_another_vpc_fails" {
   command = plan
 
   variables {
-    backends = [{ platform = "aws", vpc_access = { network = "n", subnetwork = "s" } }]
+    backends = [{ platform = "aws", private_network = "vpc-other" }]
   }
 
-  expect_failures = [var.backends]
+  expect_failures = [aws_iam_role.execution]
+}
+
+run "a_network_of_another_platform_fails" {
+  command = plan
+
+  variables {
+    network = { platform = "gcp", network = "projects/p/global/networks/n" }
+  }
+
+  expect_failures = [var.network]
+}
+
+run "a_task_with_a_public_address_takes_the_public_subnets" {
+  command = plan
+
+  assert {
+    condition     = toset(aws_ecs_service.server.network_configuration[0].subnets) == toset(["subnet-1", "subnet-2"]) && toset(jsondecode(aws_ssm_parameter.network.insecure_value).awsvpcConfiguration.subnets) == toset(["subnet-1", "subnet-2"])
+    error_message = "the service and the one-off tasks must take the public subnets"
+  }
+}
+
+run "a_task_with_no_public_address_takes_the_private_subnets" {
+  command = plan
+
+  variables {
+    assign_public_ip = false
+  }
+
+  assert {
+    condition     = toset(aws_ecs_service.server.network_configuration[0].subnets) == toset(["subnet-a", "subnet-b"]) && !aws_ecs_service.server.network_configuration[0].assign_public_ip
+    error_message = "the service must take the private subnets"
+  }
 }
 
 run "the_queue_in_the_database" {
@@ -693,4 +732,14 @@ run "the_queue_in_the_database_passes_here" {
     condition     = output.env["MY_QUEUE"] == "db"
     error_message = "a process here stays up, so this is the queue that fits"
   }
+}
+
+run "the_guard_of_outbound_http_stays_on_a_network" {
+  command = plan
+
+  variables {
+    env = { MY_HTTP_ALLOW_PRIVATE_NETWORKS = "true" }
+  }
+
+  expect_failures = [aws_iam_role.execution]
 }

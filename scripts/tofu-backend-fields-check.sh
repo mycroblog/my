@@ -8,7 +8,10 @@
 #   - every field of the contract tables of README.md is in the `backends` of every app-* module, and nothing else is;
 #   - every such field is read or refused by that module: `b.<field>` is in its configuration;
 #   - every output of the other modules is either in the contract or listed here as being for the operator;
-#   - every other module returns platform, which is what its name says: gcp or aws when the name has it, neutral otherwise.
+#   - every other module returns platform, which is what its name says: gcp or aws when the name has it, neutral otherwise;
+#   - a network-* module is no backend: it returns the fields of its platform's table of the network contract and nothing else;
+#   - every module with an input network, and every app-*, has those same fields in its type: a conversion drops a field that the
+#     type does not name in the same way.
 #
 # Usage: scripts/tofu-backend-fields-check.sh [DIR]   (default: deploy/opentofu)
 set -euo pipefail
@@ -24,12 +27,12 @@ for_the_operator="
   topic_arn uptime_check_id url_without_password
 "
 
-# The first column of the first table of a section, without a marker such as "(optional)".
+# The first column of the first table of a section, named with its hashes, without a marker such as "(optional)".
 # shellcheck disable=SC2016 # the backticks are the table's
 table_fields() {
-  awk -v section="## $2" '
+  awk -v section="$2" '
     $0 == section { in_section = 1; next }
-    in_section && /^## / { exit }
+    in_section && /^#+ / { exit }
     in_section && /^\| / { in_table = 1; print; next }
     in_section && in_table { exit }
   ' "$1" | grep -oE '^\| `[a-z_]+`' | tr -d '|` '
@@ -44,14 +47,30 @@ backends_fields() {
   ' "$1"
 }
 
+# The fields of the object of the network variable of a module, read from all its files.
+network_fields() {
+  cat "$1"/*.tf | awk '
+    /^variable "network"/ { in_var = 1; next }
+    in_var && /^  }\)/ { exit }
+    in_var && /^    [a-z_]+ +=/ { print $1 }
+  '
+}
+
 contract="$(mktemp)"
 trap 'rm -f "$contract"' EXIT
 {
-  table_fields "$dir/README.md" "The backend contract"
-  table_fields "$dir/README.md" "The ingress contract"
+  table_fields "$dir/README.md" "## The backend contract"
+  table_fields "$dir/README.md" "## The ingress contract"
 } | grep -vxF dns_records | sort -u > "$contract"
 [ "$(wc -l < "$contract")" -gt 3 ] || {
   echo "tofu-backend-fields-check: no fields found in the contract tables of $dir/README.md" >&2
+  exit 1
+}
+
+network_gcp="$(table_fields "$dir/README.md" "### The network on Google Cloud" | sort -u)"
+network_aws="$(table_fields "$dir/README.md" "### The network on AWS" | sort -u)"
+[ -n "$network_gcp" ] && [ -n "$network_aws" ] || {
+  echo "tofu-backend-fields-check: no fields found in the network tables of $dir/README.md" >&2
   exit 1
 }
 
@@ -83,17 +102,35 @@ done
 
 for module in "$dir"/modules/*/; do
   name="$(basename "$module")"
-  case "$name" in app-*) continue ;; esac
   case "$name" in
-    *-gcp | *-gcp-*) expected=gcp ;;
-    *-aws | *-aws-*) expected=aws ;;
-    *) expected=neutral ;;
+    *-gcp | *-gcp-*) expected=gcp shape="$network_gcp" ;;
+    *-aws | *-aws-*) expected=aws shape="$network_aws" ;;
+    *) expected=neutral shape="" ;;
+  esac
+  fields="$(network_fields "$module" | sort -u)"
+  case "$name" in app-*) [ -n "$fields" ] || {
+    echo "$name: an app takes the input network, of the type its platform's table in README.md gives" >&2
+    status=1
+  } ;; esac
+  if [ -n "$fields" ] && [ "$fields" != "$shape" ]; then
+    echo "$name: the type of network has the fields: $(echo "$fields" | tr '\n' ' ')which are not those of its platform's table in README.md, so a field would be dropped without a word" >&2
+    status=1
+  fi
+  case "$name" in app-*) continue ;; esac
+  case "$name" in network-*)
+    outputs="$(cat "$module"/*.tf | grep -oE '^output "[a-z_0-9]+"' | cut -d'"' -f2 | sort -u)"
+    if [ "$outputs" != "$shape" ]; then
+      echo "$name: a network returns the fields of its platform's table in README.md and nothing else, and this one returns: $(echo "$outputs" | tr '\n' ' ')" >&2
+      status=1
+    fi
+    ;;
   esac
   platform="$(cat "$module"/*.tf | awk '/^output "platform"/ { in_output = 1; next } in_output && /^}/ { exit } in_output && /^  value +=/ { print $3 }' | tr -d '"')"
   if [ "$platform" != "$expected" ]; then
     echo "$name: its platform is \"$platform\", and its name says $expected: an app refuses a backend of another platform by this" >&2
     status=1
   fi
+  case "$name" in network-*) continue ;; esac
   while IFS= read -r output; do
     grep -qxF "$output" "$contract" && continue
     # shellcheck disable=SC2086 # the list is words on purpose

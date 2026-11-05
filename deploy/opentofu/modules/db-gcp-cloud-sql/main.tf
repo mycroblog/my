@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# PostgreSQL on Cloud SQL, reached from Cloud Run through the socket of its connector. This module has never been applied:
-# read the README. The password is generated at apply through an ephemeral resource and goes to the user and to the URL
+# PostgreSQL on Cloud SQL. With no network, Cloud Run reaches it through the socket of its connector; with a network, on its
+# private address alone. This module has never been applied: read the README. The password is generated at apply through an ephemeral resource and goes to the user and to the URL
 # secret through write-only attributes, so it reaches neither the plan nor the state.
 
 terraform {
@@ -139,13 +139,48 @@ variable "url_parameters" {
   nullable    = false
 }
 
+variable "network" {
+  description = "The network whose private services access gives the instance a private address, from network-gcp-vpc or an object of the same shape for a VPC of yours. With it the instance has no public address, and the app reaches it over TCP. Null, the default, keeps a public address that only the connector reaches."
+  type = object({
+    platform                      = string
+    network                       = optional(string)
+    subnetwork                    = optional(string)
+    private_services_range        = optional(string)
+    memorystore_connection_policy = optional(bool, false)
+    nat                           = optional(bool, false)
+  })
+  default = null
+
+  validation {
+    condition     = var.network == null ? true : var.network.platform == "gcp"
+    error_message = "network is of another platform: on Google Cloud use network-gcp-vpc, or an object of the shape in the README of deploy/opentofu."
+  }
+
+  validation {
+    condition     = var.network == null ? true : can(regex("^projects/[^/]+/global/networks/[^/]+$", var.network.network))
+    error_message = "network.network must be projects/<project>/global/networks/<name>."
+  }
+
+  validation {
+    condition     = var.network == null ? true : var.network.private_services_range != null
+    error_message = "network.private_services_range is null, and a private address on Cloud SQL needs private services access: name the range of the connection, or use network-gcp-vpc."
+  }
+}
+
 locals {
   connection_name = "${var.project_id}:${var.region}:${var.name}"
-  parameters      = merge({ host = "/cloudsql/${local.connection_name}" }, var.url_parameters)
+  private         = var.network != null
+  parameters      = merge(local.private ? { sslmode = "require" } : { host = "/cloudsql/${local.connection_name}" }, var.url_parameters)
   query           = join("&", [for k, v in local.parameters : "${k}=${v}"])
-  # The URL of a Unix socket has no host: pgx takes it from the parameter. Over the socket the connector does the encryption,
-  # and it goes to the database's own port, not to a pooler: my schema apply holds a session-level lock.
-  url_after_password = "@/${var.database}?${local.query}"
+  # The URL of a Unix socket has no host: pgx takes it from the parameter. Over the socket the connector does the encryption.
+  # Over the private address the server does, with sslmode=require: the instance takes encrypted connections only, and the
+  # server image does not hold the instance's CA. Either way it goes to the database's own port, not to a pooler: my schema
+  # apply holds a session-level lock.
+  url_after_password = (
+    local.private
+    ? "@${google_sql_database_instance.db.private_ip_address}:5432/${var.database}?${local.query}"
+    : "@/${var.database}?${local.query}"
+  )
 }
 
 # Letters and digits only, so that the URL needs no escaping; 40 of them are about 238 bits.
@@ -181,12 +216,14 @@ resource "google_sql_database_instance" "db" {
       }
     }
 
-    # A public address, with no network allowed: only the connector reaches it, with the identity's Cloud SQL Client role.
-    # It needs no VPC, which is what would cost money here. Google asks web applications to use this CA mode.
+    # With no network, a public address with no network allowed: only the connector reaches it, with the identity's Cloud SQL
+    # Client role. With a network, a private address alone. Google asks web applications to use this CA mode.
     ip_configuration {
-      ipv4_enabled   = true
-      ssl_mode       = "ENCRYPTED_ONLY"
-      server_ca_mode = "GOOGLE_MANAGED_INTERNAL_CA"
+      ipv4_enabled       = !local.private
+      private_network    = local.private ? var.network.network : null
+      allocated_ip_range = local.private ? var.network.private_services_range : null
+      ssl_mode           = "ENCRYPTED_ONLY"
+      server_ca_mode     = "GOOGLE_MANAGED_INTERNAL_CA"
     }
   }
 
@@ -264,17 +301,22 @@ output "direct_secret_env" {
 }
 
 output "permissions" {
-  description = "What the connector needs of the app's identity. Cloud SQL has no grant on one instance, so it covers the project's."
-  value       = [{ permission = "roles/cloudsql.client", scope = "project", resource = null }]
+  description = "What the connector needs of the app's identity, which covers the project's since Cloud SQL has no grant on one instance. Nothing on a private address, which takes no connector."
+  value       = [for r in [{ permission = "roles/cloudsql.client", scope = "project", resource = null }] : r if !local.private]
 }
 
 output "cloud_sql_instances" {
-  description = "The instance to mount at /cloudsql on the service and the jobs."
-  value       = [local.connection_name]
+  description = "The instance to mount at /cloudsql on the service and the jobs. Nothing on a private address, which takes no connector."
+  value       = local.private ? [] : [local.connection_name]
+}
+
+output "private_network" {
+  description = "The network of the instance's private address, which must be the app's, or null."
+  value       = local.private ? var.network.network : null
 }
 
 output "connection_name" {
-  description = "Connection name of the instance, for the Cloud SQL Auth Proxy from your own machine."
+  description = "Connection name of the instance, for the Cloud SQL Auth Proxy from your own machine. With a network, the proxy must run where the private address can be reached."
   value       = local.connection_name
 }
 

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # One deployment on AWS: ECS with Fargate behind an Application Load Balancer, the jobs in the database, S3, and SNS, with a
-# database created by hand on Neon and email through an SMTP service. It runs the released image as it is, and it needs a VPC
-# of yours. NOTHING HERE HAS BEEN APPLIED: deploy/opentofu/modules/app-aws-ecs/README.md says what stays unverified and what it costs.
+# database created by hand on Neon and email through an SMTP service, on a VPC of its own. It runs the released image as it is.
+# NOTHING HERE HAS BEEN APPLIED: deploy/opentofu/modules/app-aws-ecs/README.md says what stays unverified and what it costs.
 
 terraform {
   required_version = ">= 1.11"
@@ -21,6 +21,17 @@ terraform {
 
 provider "aws" {
   region = var.region
+}
+
+# With public addresses on the tasks there is no NAT gateway to pay for, and without them there must be one, or federation stops.
+#
+# For a VPC that exists already, remove this block and pass network = var.network to the blocks below, an object of the shape in
+# deploy/opentofu/README.md: platform, vpc_id, vpc_cidr, public_subnet_ids, public_subnet_cidrs, private_subnet_ids, and nat.
+module "network" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/network-aws-vpc?ref=v0.1.0&depth=1"
+
+  availability_zones = var.availability_zones
+  nat                = !var.assign_public_ip
 }
 
 # The first apply generates the VAPID key. Add the others with aws secretsmanager put-secret-value before the app.
@@ -94,8 +105,7 @@ module "ingress" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-aws-alb?ref=v0.1.0&depth=1"
 
   host            = var.host
-  vpc_id          = var.vpc_id
-  subnet_ids      = var.load_balancer_subnet_ids
+  network         = module.network
   certificate_arn = var.certificate_arn
   # With a hosted zone in Route 53 the module creates the records, at an apex too. Without one, dns_records says what to create.
   route53_zone_id = var.route53_zone_id
@@ -108,8 +118,7 @@ module "app" {
   image            = var.image
   architecture     = var.architecture
   host             = var.host
-  vpc_id           = var.vpc_id
-  subnet_ids       = var.task_subnet_ids
+  network          = module.network
   assign_public_ip = var.assign_public_ip
   cpu              = var.cpu
   memory_mib       = var.memory_mib

@@ -93,12 +93,22 @@ module "mail_ses" {
   }
 }
 
+locals {
+  network = {
+    platform            = "aws"
+    vpc_id              = "vpc-1"
+    vpc_cidr            = "10.0.0.0/16"
+    public_subnet_ids   = ["subnet-1", "subnet-2"]
+    public_subnet_cidrs = ["10.0.0.0/24", "10.0.1.0/24"]
+    private_subnet_ids  = ["subnet-3", "subnet-4"]
+  }
+}
+
 module "ingress" {
   source = "../../modules/ingress-aws-alb"
 
   host            = "social.example.org"
-  vpc_id          = "vpc-1"
-  subnet_ids      = ["subnet-1", "subnet-2"]
+  network         = local.network
   certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/abc"
 }
 
@@ -107,8 +117,7 @@ module "app" {
 
   image            = "ghcr.io/mycroblog/my:0.1.0"
   host             = "social.example.org"
-  vpc_id           = "vpc-1"
-  subnet_ids       = ["subnet-1", "subnet-2"]
+  network          = local.network
   assign_public_ip = true
 
   backends = concat(

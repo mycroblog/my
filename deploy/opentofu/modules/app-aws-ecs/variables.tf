@@ -43,25 +43,37 @@ variable "profile" {
   nullable    = false
 }
 
-variable "vpc_id" {
-  description = "VPC of the tasks. The module creates no network: the operator decides how the tasks reach the internet, and pays for it. Read the README."
-  type        = string
-  nullable    = false
-}
-
-variable "subnet_ids" {
-  description = "Subnets of the tasks. A task needs a way out for the image, the database, and federation: a public subnet with assign_public_ip, or a private one with a NAT gateway."
-  type        = list(string)
-  nullable    = false
+variable "network" {
+  description = "The network of the tasks, from network-aws-vpc or an object of the same shape for a VPC of yours. A task takes its public subnets with assign_public_ip, and its private subnets otherwise."
+  type = object({
+    platform            = string
+    vpc_id              = optional(string)
+    vpc_cidr            = optional(string)
+    public_subnet_ids   = optional(list(string), [])
+    public_subnet_cidrs = optional(list(string), [])
+    private_subnet_ids  = optional(list(string), [])
+    nat                 = optional(bool, false)
+  })
+  nullable = false
 
   validation {
-    condition     = length(var.subnet_ids) > 0
-    error_message = "subnet_ids needs at least one subnet."
+    condition     = var.network.platform == "aws"
+    error_message = "network is of another platform: on AWS use network-aws-vpc, or an object of the shape in the README of deploy/opentofu."
+  }
+
+  validation {
+    condition     = var.network.vpc_id != null
+    error_message = "network.vpc_id is required."
+  }
+
+  validation {
+    condition     = length(var.assign_public_ip ? var.network.public_subnet_ids : var.network.private_subnet_ids) > 0
+    error_message = "The tasks take network.public_subnet_ids with assign_public_ip = true and network.private_subnet_ids otherwise, and the one they would take is empty."
   }
 }
 
 variable "assign_public_ip" {
-  description = "Gives each task a public IPv4 address, which AWS bills by the hour, for a public subnet. False for a private subnet with a NAT gateway, which AWS bills too. No default: it is the operator's choice and the operator's cost. Inbound traffic is closed either way."
+  description = "Gives each task a public IPv4 address, which AWS bills by the hour, in a public subnet of the network. False takes a private subnet, with the network's NAT gateway as its way out, which AWS bills too. No default: it is the operator's choice and the operator's cost. Inbound traffic is closed either way."
   type        = bool
   nullable    = false
 }
@@ -78,6 +90,8 @@ variable "backends" {
     direct_secret_env = optional(map(string), {})
     # Security groups the tasks join to reach a backend in the VPC.
     security_group_ids = optional(list(string), [])
+    # The VPC a backend has private addresses in, which must be the VPC of the tasks.
+    private_network = optional(string)
     permissions = optional(list(object({
       permission = string
       resource   = optional(string)
@@ -100,10 +114,6 @@ variable "backends" {
     invokers = optional(list(string), [])
     # Accepted so that they cannot vanish, and refused below: they belong to Google Cloud.
     cloud_sql_instances = optional(list(string), [])
-    vpc_access = optional(object({
-      network    = string
-      subnetwork = string
-    }))
     event_sources = optional(map(object({
       arn                        = string
       visibility_timeout_seconds = number
@@ -148,8 +158,8 @@ variable "backends" {
   }
 
   validation {
-    condition     = alltrue([for b in var.backends : length(b.cloud_sql_instances) == 0 && b.vpc_access == null])
-    error_message = "cloud_sql_instances and vpc_access belong to Cloud Run. A backend in a VPC here returns security_group_ids."
+    condition     = alltrue([for b in var.backends : length(b.cloud_sql_instances) == 0])
+    error_message = "cloud_sql_instances belongs to Cloud Run. A backend in a VPC here returns security_group_ids and private_network."
   }
 
   validation {

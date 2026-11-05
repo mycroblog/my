@@ -21,8 +21,8 @@ module "app" {
 | --- | --- | --- |
 | `image` | required | Image at creation. After that `upgrade.sh` changes it, and changing this input does nothing |
 | `host` | required | Public domain |
-| `vpc_id`, `subnet_ids` | required | Where the tasks run. The module creates no network |
-| `assign_public_ip` | required | Whether each task has a public address. Read [The network](#the-network) |
+| `network` | required | Where the tasks run: a network from [`network-aws-vpc`](../network-aws-vpc/README.md), or an object of [its shape](../../README.md#the-network-on-aws). A backend in a VPC must be on the same one |
+| `assign_public_ip` | required | Whether each task has a public address, in a public subnet, or none, in a private one. Read [The network](#the-network) |
 | `architecture` | `x86_64` | Or `arm64`. The released image has both |
 | `name` | `my` | Name of the cluster, the service, and its family, and the `--name` of `upgrade.sh` |
 | `profile` | `production` | `profile` of the server |
@@ -43,6 +43,7 @@ module "app" {
 | `origin_host` | Always null: read below |
 | `security_group_id` | Of the tasks, for a rule of your own |
 | `task_security_group_ids` | Every group a task joins: that one, and those of the backends |
+| `task_subnet_ids` | The subnets of the service and the one-off tasks |
 | `execution_role_arn`, `task_role_arn` | Read [Secrets](#secrets) |
 | `log_group` | `/ecs/<name>` |
 | `console` | What `console.sh` reads, or null |
@@ -110,11 +111,11 @@ It starts one task with the command in place of the image's, waits for it howeve
 
 ## The network
 
-**The module creates no network, and how the tasks reach the internet is yours to choose and to pay for.** A task needs a way out for the image, the database, federation, and the AWS APIs. Inbound traffic is closed either way: the security group admits only the load balancer.
+**The module creates no network, and how the tasks reach the internet is yours to choose and to pay for.** [`network-aws-vpc`](../network-aws-vpc/README.md) makes one. A task needs a way out for the image, the database, federation, and the AWS APIs. Inbound traffic is closed either way: the security group admits only the load balancer.
 
 | | `assign_public_ip = true` | `false` |
 | --- | --- | --- |
-| Subnets | Public | Private, with a NAT gateway you run |
+| Subnets | `public_subnet_ids` of the network | `private_subnet_ids` of the network |
 | Each hour | A public IPv4 address per task | A NAT gateway, and its own public address |
 | Each GB | Nothing for the address | A charge per GB through the gateway, media and federation included |
 

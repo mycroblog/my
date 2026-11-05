@@ -66,13 +66,32 @@ variable "service_ingress" {
   }
 }
 
-variable "vpc_access" {
-  description = "A VPC subnet for the service and the jobs to reach private addresses through, for something of your own. A backend that has only private addresses, such as kv-gcp-memorystore, returns it in backends instead. Null, the default, attaches nothing unless a backend does. Only traffic to private ranges goes through it."
+variable "network" {
+  description = "The network that the service and the jobs attach to through Direct VPC egress, from network-gcp-vpc or an object of the same shape for a VPC of yours. Null, the default, attaches nothing, which is all that a deployment on public endpoints needs. A backend with private addresses, such as kv-gcp-memorystore, fails the plan without the same network."
   type = object({
-    network    = string
-    subnetwork = string
+    platform                      = string
+    network                       = optional(string)
+    subnetwork                    = optional(string)
+    private_services_range        = optional(string)
+    memorystore_connection_policy = optional(bool, false)
+    nat                           = optional(bool, false)
   })
   default = null
+
+  validation {
+    condition     = var.network == null ? true : var.network.platform == "gcp"
+    error_message = "network is of another platform: on Google Cloud use network-gcp-vpc, or an object of the shape in the README of deploy/opentofu."
+  }
+
+  validation {
+    condition     = var.network == null ? true : can(regex("^projects/[^/]+/global/networks/[^/]+$", var.network.network))
+    error_message = "network.network must be projects/<project>/global/networks/<name>."
+  }
+
+  validation {
+    condition     = var.network == null ? true : can(regex("^projects/[^/]+/regions/${var.region}/subnetworks/[^/]+$", var.network.subnetwork))
+    error_message = "network.subnetwork must be projects/<project>/regions/<region>/subnetworks/<name>, in the region of the service: Direct VPC egress needs that."
+  }
 }
 
 variable "backends" {
@@ -105,11 +124,8 @@ variable "backends" {
     trusted_proxies = optional(list(string))
     # What the backend adds to the one setting MY_BILLING_SOURCES.
     billing_sources = optional(list(string), [])
-    # A VPC subnet to reach a backend on private addresses through.
-    vpc_access = optional(object({
-      network    = string
-      subnetwork = string
-    }))
+    # The network a backend has private addresses on, which must be the network of the app.
+    private_network = optional(string)
     # Accepted so that they cannot vanish, and refused below: they belong to AWS.
     security_group_ids = optional(list(string), [])
     event_sources = optional(map(object({
@@ -158,7 +174,7 @@ variable "backends" {
 
   validation {
     condition     = alltrue([for b in var.backends : length(b.security_group_ids) == 0 && length(b.event_sources) == 0 && b.load_balancer == null])
-    error_message = "security_group_ids, event_sources, and load_balancer belong to AWS. A backend on private addresses here returns vpc_access."
+    error_message = "security_group_ids, event_sources, and load_balancer belong to AWS. A backend on private addresses here returns private_network."
   }
 
   validation {

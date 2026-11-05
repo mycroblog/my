@@ -26,6 +26,18 @@ terraform {
   }
 }
 
+locals {
+  aws_network = {
+    platform            = "aws"
+    vpc_id              = "vpc-1"
+    vpc_cidr            = "10.0.0.0/16"
+    public_subnet_ids   = ["subnet-1", "subnet-2"]
+    public_subnet_cidrs = ["10.0.0.0/24", "10.0.1.0/24"]
+    private_subnet_ids  = ["subnet-a", "subnet-b"]
+    nat                 = true
+  }
+}
+
 module "cloud_sql" {
   source = "../../modules/db-gcp-cloud-sql"
 
@@ -87,8 +99,7 @@ module "app_on_neon_gcp" {
 module "rds" {
   source = "../../modules/db-aws-rds"
 
-  vpc_id     = "vpc-1"
-  subnet_ids = ["subnet-a", "subnet-b"]
+  network = local.aws_network
 }
 
 module "app_on_rds" {
@@ -96,13 +107,12 @@ module "app_on_rds" {
 
   env = { MY_QUEUE = "sqs" }
 
-  name                   = "rds"
-  image                  = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
-  host                   = "social.example.org"
-  secret_env             = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek" }
-  vpc_subnet_ids         = ["subnet-c", "subnet-d"]
-  vpc_security_group_ids = ["sg-out"]
-  backends               = [module.rds]
+  name       = "rds"
+  image      = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
+  host       = "social.example.org"
+  secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek" }
+  network    = local.aws_network
+  backends   = [module.rds]
 }
 
 module "neon_on_aws" {
@@ -138,8 +148,7 @@ module "app_on_neon_aws" {
 module "valkey" {
   source = "../../modules/kv-aws-elasticache"
 
-  vpc_id     = "vpc-1"
-  subnet_ids = ["subnet-a", "subnet-b"]
+  network = local.aws_network
 }
 
 # Both reach the tasks by one field of backends, so neither needs the other nor anything of its own on the app.
@@ -149,8 +158,7 @@ module "app_on_rds_and_valkey" {
   name             = "ecs"
   image            = "ghcr.io/mycroblog/my:0.1.0"
   host             = "social.example.org"
-  vpc_id           = "vpc-1"
-  subnet_ids       = ["subnet-a", "subnet-b"]
+  network          = local.aws_network
   assign_public_ip = true
   env              = { MY_BLOB = "s3" }
   secret_env       = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek" }

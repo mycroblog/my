@@ -16,8 +16,15 @@ mock_provider "aws" {
 }
 
 variables {
-  vpc_id     = "vpc-1"
-  subnet_ids = ["subnet-1", "subnet-2"]
+  network = {
+    platform            = "aws"
+    vpc_id              = "vpc-1"
+    vpc_cidr            = "10.0.0.0/16"
+    public_subnet_ids   = ["subnet-1", "subnet-2"]
+    public_subnet_cidrs = ["10.0.0.0/24", "10.0.1.0/24"]
+    private_subnet_ids  = ["subnet-a", "subnet-b"]
+    nat                 = true
+  }
 }
 
 run "the_settings" {
@@ -36,6 +43,11 @@ run "the_settings" {
   assert {
     condition     = length(output.security_group_ids) == 1 && output.security_group_ids[0] == aws_security_group.client.id
     error_message = "the app must take the client group"
+  }
+
+  assert {
+    condition     = output.private_network == "vpc-1" && aws_elasticache_serverless_cache.valkey.subnet_ids == toset(["subnet-a", "subnet-b"])
+    error_message = "the cache must be in the private subnets of the network, and say which"
   }
 }
 
@@ -57,8 +69,8 @@ run "no_subnet_fails" {
   command = plan
 
   variables {
-    subnet_ids = []
+    network = { platform = "aws", vpc_id = "vpc-1" }
   }
 
-  expect_failures = [var.subnet_ids]
+  expect_failures = [var.network]
 }

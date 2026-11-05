@@ -1,6 +1,6 @@
 # db-gcp-cloud-sql
 
-PostgreSQL on Cloud SQL, reached from Cloud Run through the socket of its connector. It creates the instance, the database, the
+PostgreSQL on Cloud SQL, reached from Cloud Run through the socket of its connector, or on a private address when you give it a network. It creates the instance, the database, the
 user, and the secret that holds the connection URL, and follows [the backend contract](../../README.md#the-backend-contract).
 
 **This module has never been applied.** The tests mock the provider, and a test applies it against a local stub of the APIs, so
@@ -12,7 +12,8 @@ they show what OpenTofu and the provider do and nothing of what Cloud SQL does. 
   server then work. The URL's form was run against a real PostgreSQL over a Unix socket, not through the connector;
 - that the user this module creates may create a schema, which `my schema apply` needs. Google's documents say it gets the role
   `cloudsqlsuperuser` and do not mention schemas;
-- that a backup restores.
+- that a backup restores;
+- with a network: that Cloud Run reaches the private address through Direct VPC egress, that `sslmode=require` is accepted with `ssl_mode = ENCRYPTED_ONLY` over it, and that a change of the instance from public to private works in place.
 
 ## Source
 
@@ -43,27 +44,41 @@ module "db" {
 | `deletion_protection` | `true` | Refuses to delete the instance, in OpenTofu and in Google Cloud. `prevent_destroy` refuses it in any case |
 | `password_version` | `1` | Raise it for a new password: read below |
 | `url_parameters` | `{}` | More parameters of the URL |
+| `network` | `null` | A network from [`network-gcp-vpc`](../network-gcp-vpc/README.md), or an object of [its shape](../../README.md#the-network-on-google-cloud). With one, the instance has a private address alone. Read [The connection](#the-connection) |
 
 | Output | Value |
 | --- | --- |
 | `env` | `MY_DATABASE` |
 | `secret_env` | `MY_DATABASE_URL`, by secret ID |
 | `direct_secret_env` | Empty: the only connection is direct |
-| `permissions` | `roles/cloudsql.client` on the project. Cloud SQL has no grant on one instance |
-| `cloud_sql_instances` | The instance, which the app mounts at `/cloudsql` on the service and every job |
-| `connection_name` | For the Cloud SQL Auth Proxy from your own machine |
+| `permissions` | `roles/cloudsql.client` on the project, since Cloud SQL has no grant on one instance. Empty with a network |
+| `cloud_sql_instances` | The instance, which the app mounts at `/cloudsql` on the service and every job. Empty with a network |
+| `private_network` | The network with one, which the app must have too. Otherwise null |
+| `connection_name` | For the Cloud SQL Auth Proxy from your own machine, which with a network must run where the private address can be reached |
 | `url_without_password` | The URL in the secret, with `PASSWORD` in place of the password |
 
 ## The connection
 
-Cloud Run mounts a socket of its connector, so the URL has no host name:
+**With no network**, Cloud Run mounts a socket of its connector, so the URL has no host name:
 
 ```text
 postgres://my:PASSWORD@/my?host=/cloudsql/PROJECT:REGION:INSTANCE
 ```
 
 The instance has a public address and allows no network to reach it, so only the connector does, with the identity's Cloud SQL
-Client role. This needs no VPC. Google limits a Cloud Run instance to 100 connections to Cloud SQL.
+Client role. This needs no VPC.
+
+**With a network**, the instance has a private address alone, from private services access, and the app connects straight to it:
+
+```text
+postgres://my:PASSWORD@10.21.0.3:5432/my?sslmode=require
+```
+
+The app must take the same network, which the plan checks, and it reaches the address through Direct VPC egress. Nothing goes through the connector, so the app gets neither the `/cloudsql` mount nor the Client role: Google's guide for Cloud Run describes the private path over TCP and the socket under public addresses, and it does not say that the socket works with a private address alone. `sslmode=require` encrypts and does not check the certificate, since the server image does not hold the instance's CA, so what keeps others from answering at that address is the network. Whatever is on the network can try to connect, and the password decides. A `pg_dump` must run from inside the network as well.
+
+`url_without_password` and the URL hold the address, which is known only after the apply. If it ever changes, raise `password_version`, which writes the URL again.
+
+Google limits a Cloud Run instance to 100 connections to Cloud SQL.
 
 **This is a direct connection**, to the database's own port, as `database_url` must be for `my schema apply`, which holds a
 session-level lock. There is no pooled connection. Cloud SQL's managed pooling needs the Enterprise Plus edition, which this
@@ -93,7 +108,7 @@ Each raise leaves the previous version of the secret in place, holding a passwor
 **In practice this is not a one-block swap.** The block changes and the app's plan stays consistent, but the new instance is empty,
 and everything your instance knows is in the other database. Moving means, in this order: [the maintenance
 mode](../../../../docs/operations/maintenance.md), `pg_dump` from the old database, `pg_restore` to this one through the Cloud SQL
-Auth Proxy, then swapping the block and applying, then leaving the maintenance mode. Run `my db upgrade -check` before you trust
+Auth Proxy, from inside the network when it has one, then swapping the block and applying, then leaving the maintenance mode. Run `my db upgrade -check` before you trust
 it. Nothing here does this for you, and no one has tried it.
 
 The same goes the other way, and for a move between any two databases.

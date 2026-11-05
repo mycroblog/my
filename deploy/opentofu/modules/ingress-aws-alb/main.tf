@@ -32,20 +32,42 @@ variable "name" {
   }
 }
 
-variable "vpc_id" {
-  description = "VPC of the load balancer and the tasks."
-  type        = string
-  nullable    = false
-}
-
-variable "subnet_ids" {
-  description = "Public subnets of the load balancer, each with a free /27 at least, in two Availability Zones or more. A task in a zone that none of these covers gets no traffic."
-  type        = list(string)
-  nullable    = false
+variable "network" {
+  description = "The network of the load balancer, from network-aws-vpc or an object of the same shape for a VPC of yours: its public subnets, each with a free /27 at least, in two Availability Zones or more. A task in a zone that none of these covers gets no traffic."
+  type = object({
+    platform            = string
+    vpc_id              = optional(string)
+    vpc_cidr            = optional(string)
+    public_subnet_ids   = optional(list(string), [])
+    public_subnet_cidrs = optional(list(string), [])
+    private_subnet_ids  = optional(list(string), [])
+    nat                 = optional(bool, false)
+  })
+  nullable = false
 
   validation {
-    condition     = length(var.subnet_ids) >= 2
-    error_message = "An Application Load Balancer needs subnets in at least two Availability Zones."
+    condition     = var.network.platform == "aws"
+    error_message = "network is of another platform: on AWS use network-aws-vpc, or an object of the shape in the README of deploy/opentofu."
+  }
+
+  validation {
+    condition     = var.network.vpc_id != null
+    error_message = "network.vpc_id is required."
+  }
+
+  validation {
+    condition     = length(var.network.public_subnet_ids) >= 2
+    error_message = "An Application Load Balancer needs network.public_subnet_ids in at least two Availability Zones."
+  }
+
+  validation {
+    condition     = length(var.network.public_subnet_cidrs) == length(var.network.public_subnet_ids)
+    error_message = "network.public_subnet_cidrs must hold the range of each of network.public_subnet_ids: they are what the server trusts."
+  }
+
+  validation {
+    condition     = var.network.vpc_cidr != null
+    error_message = "network.vpc_cidr is required: it is what the load balancer's group allows out to reach the tasks."
   }
 }
 
@@ -138,21 +160,10 @@ locals {
 
 data "aws_region" "current" {}
 
-data "aws_vpc" "this" {
-  id = var.vpc_id
-}
-
-# By position rather than by ID: an ID may be unknown until the apply that creates the subnet.
-data "aws_subnet" "load_balancer" {
-  count = length(var.subnet_ids)
-
-  id = var.subnet_ids[count.index]
-}
-
 resource "aws_security_group" "load_balancer" {
   name        = "${var.name}-alb"
   description = "Load balancer of ${var.host}"
-  vpc_id      = var.vpc_id
+  vpc_id      = var.network.vpc_id
 }
 
 resource "aws_vpc_security_group_ingress_rule" "internet" {
@@ -167,14 +178,14 @@ resource "aws_vpc_security_group_ingress_rule" "internet" {
   cidr_ipv6         = each.value.cidr_ipv6
 }
 
-# The tasks are found by address. The VPC's primary range, since the tasks' subnets are the app's input.
+# The tasks are found by address. The VPC's primary range, since which subnets the tasks take is the app's choice.
 resource "aws_vpc_security_group_egress_rule" "to_tasks" {
   security_group_id = aws_security_group.load_balancer.id
   description       = "To the tasks"
   ip_protocol       = "tcp"
   from_port         = local.target_port
   to_port           = local.target_port
-  cidr_ipv4         = data.aws_vpc.this.cidr_block
+  cidr_ipv4         = var.network.vpc_cidr
 }
 
 resource "aws_lb" "this" {
@@ -182,7 +193,7 @@ resource "aws_lb" "this" {
   load_balancer_type = "application"
   internal           = false
   ip_address_type    = var.ip_address_type
-  subnets            = var.subnet_ids
+  subnets            = var.network.public_subnet_ids
   security_groups    = [aws_security_group.load_balancer.id]
   idle_timeout       = var.idle_timeout
 
@@ -194,7 +205,7 @@ resource "aws_lb" "this" {
 
 resource "aws_lb_target_group" "this" {
   name                 = var.name
-  vpc_id               = var.vpc_id
+  vpc_id               = var.network.vpc_id
   target_type          = "ip"
   protocol             = "HTTP"
   protocol_version     = "HTTP1"
@@ -289,7 +300,7 @@ output "permissions" {
 
 output "trusted_proxies" {
   description = "What connects to the tasks: the load balancer's nodes, from the ranges of its subnets."
-  value       = [for subnet in data.aws_subnet.load_balancer : subnet.cidr_block]
+  value       = var.network.public_subnet_cidrs
 }
 
 output "service_ingress" {
