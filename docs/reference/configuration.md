@@ -204,6 +204,76 @@ An instance setting that has never been set reads as its default, which is defin
 | [`errors_exporter`](#errors_exporter) | `MY_ERRORS_EXPORTER` | `none` | no | no |
 | [`errors_sentry_dsn`](#errors_sentry_dsn) | `MY_ERRORS_SENTRY_DSN` | none | when `errors_exporter` is `sentry` | yes |
 | [`errors_environment`](#errors_environment) | `MY_ERRORS_ENVIRONMENT` | the value of `profile` | no | no |
+| [`plugin_translator_address`](#plugin_translator_address) | `MY_PLUGIN_TRANSLATOR_ADDRESS` | none | no | no |
+| [`plugin_translator_protocol`](#plugin_translator_protocol) | `MY_PLUGIN_TRANSLATOR_PROTOCOL` | `json` | no | no |
+| [`plugin_translator_token`](#plugin_translator_token) | `MY_PLUGIN_TRANSLATOR_TOKEN` | none | no | yes |
+| [`plugin_translator_tls_ca_file`](#plugin_translator_tls_ca_file) | `MY_PLUGIN_TRANSLATOR_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_translator_tls_cert_file`](#plugin_translator_tls_cert_file) | `MY_PLUGIN_TRANSLATOR_TLS_CERT_FILE` | none | no | no |
+| [`plugin_translator_tls_key_file`](#plugin_translator_tls_key_file) | `MY_PLUGIN_TRANSLATOR_TLS_KEY_FILE` | none | no | no |
+| [`plugin_translator_timeout`](#plugin_translator_timeout) | `MY_PLUGIN_TRANSLATOR_TIMEOUT` | `10s` | no | no |
+| [`plugin_billing_address`](#plugin_billing_address) | `MY_PLUGIN_BILLING_ADDRESS` | none | no | no |
+| [`plugin_billing_protocol`](#plugin_billing_protocol) | `MY_PLUGIN_BILLING_PROTOCOL` | `json` | no | no |
+| [`plugin_billing_token`](#plugin_billing_token) | `MY_PLUGIN_BILLING_TOKEN` | none | no | yes |
+| [`plugin_billing_tls_ca_file`](#plugin_billing_tls_ca_file) | `MY_PLUGIN_BILLING_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_billing_tls_cert_file`](#plugin_billing_tls_cert_file) | `MY_PLUGIN_BILLING_TLS_CERT_FILE` | none | no | no |
+| [`plugin_billing_tls_key_file`](#plugin_billing_tls_key_file) | `MY_PLUGIN_BILLING_TLS_KEY_FILE` | none | no | no |
+| [`plugin_billing_timeout`](#plugin_billing_timeout) | `MY_PLUGIN_BILLING_TIMEOUT` | `2m0s` | no | no |
+| [`plugin_mailer_address`](#plugin_mailer_address) | `MY_PLUGIN_MAILER_ADDRESS` | none | no | no |
+| [`plugin_mailer_protocol`](#plugin_mailer_protocol) | `MY_PLUGIN_MAILER_PROTOCOL` | `json` | no | no |
+| [`plugin_mailer_token`](#plugin_mailer_token) | `MY_PLUGIN_MAILER_TOKEN` | none | no | yes |
+| [`plugin_mailer_tls_ca_file`](#plugin_mailer_tls_ca_file) | `MY_PLUGIN_MAILER_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_mailer_tls_cert_file`](#plugin_mailer_tls_cert_file) | `MY_PLUGIN_MAILER_TLS_CERT_FILE` | none | no | no |
+| [`plugin_mailer_tls_key_file`](#plugin_mailer_tls_key_file) | `MY_PLUGIN_MAILER_TLS_KEY_FILE` | none | no | no |
+| [`plugin_mailer_timeout`](#plugin_mailer_timeout) | `MY_PLUGIN_MAILER_TIMEOUT` | `30s` | no | no |
+| [`plugin_media_address`](#plugin_media_address) | `MY_PLUGIN_MEDIA_ADDRESS` | none | no | no |
+| [`plugin_media_protocol`](#plugin_media_protocol) | `MY_PLUGIN_MEDIA_PROTOCOL` | `proto` | no | no |
+| [`plugin_media_token`](#plugin_media_token) | `MY_PLUGIN_MEDIA_TOKEN` | none | no | yes |
+| [`plugin_media_tls_ca_file`](#plugin_media_tls_ca_file) | `MY_PLUGIN_MEDIA_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_media_tls_cert_file`](#plugin_media_tls_cert_file) | `MY_PLUGIN_MEDIA_TLS_CERT_FILE` | none | no | no |
+| [`plugin_media_tls_key_file`](#plugin_media_tls_key_file) | `MY_PLUGIN_MEDIA_TLS_KEY_FILE` | none | no | no |
+| [`plugin_media_timeout`](#plugin_media_timeout) | `MY_PLUGIN_MEDIA_TIMEOUT` | `4m0s` | no | no |
+| [`plugin_key_manager_address`](#plugin_key_manager_address) | `MY_PLUGIN_KEY_MANAGER_ADDRESS` | none | no | no |
+| [`plugin_key_manager_protocol`](#plugin_key_manager_protocol) | `MY_PLUGIN_KEY_MANAGER_PROTOCOL` | `json` | no | no |
+| [`plugin_key_manager_token`](#plugin_key_manager_token) | `MY_PLUGIN_KEY_MANAGER_TOKEN` | none | no | yes |
+| [`plugin_key_manager_tls_ca_file`](#plugin_key_manager_tls_ca_file) | `MY_PLUGIN_KEY_MANAGER_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_key_manager_tls_cert_file`](#plugin_key_manager_tls_cert_file) | `MY_PLUGIN_KEY_MANAGER_TLS_CERT_FILE` | none | no | no |
+| [`plugin_key_manager_tls_key_file`](#plugin_key_manager_tls_key_file) | `MY_PLUGIN_KEY_MANAGER_TLS_KEY_FILE` | none | no | no |
+| [`plugin_key_manager_timeout`](#plugin_key_manager_timeout) | `MY_PLUGIN_KEY_MANAGER_TIMEOUT` | `5s` | no | no |
+| [`plugin_inbound_status_address`](#plugin_inbound_status_address) | `MY_PLUGIN_INBOUND_STATUS_ADDRESS` | none | no | no |
+| [`plugin_inbound_status_protocol`](#plugin_inbound_status_protocol) | `MY_PLUGIN_INBOUND_STATUS_PROTOCOL` | `json` | no | no |
+| [`plugin_inbound_status_token`](#plugin_inbound_status_token) | `MY_PLUGIN_INBOUND_STATUS_TOKEN` | none | no | yes |
+| [`plugin_inbound_status_tls_ca_file`](#plugin_inbound_status_tls_ca_file) | `MY_PLUGIN_INBOUND_STATUS_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_inbound_status_tls_cert_file`](#plugin_inbound_status_tls_cert_file) | `MY_PLUGIN_INBOUND_STATUS_TLS_CERT_FILE` | none | no | no |
+| [`plugin_inbound_status_tls_key_file`](#plugin_inbound_status_tls_key_file) | `MY_PLUGIN_INBOUND_STATUS_TLS_KEY_FILE` | none | no | no |
+| [`plugin_inbound_status_timeout`](#plugin_inbound_status_timeout) | `MY_PLUGIN_INBOUND_STATUS_TIMEOUT` | `3s` | no | no |
+| [`plugin_inbound_follow_address`](#plugin_inbound_follow_address) | `MY_PLUGIN_INBOUND_FOLLOW_ADDRESS` | none | no | no |
+| [`plugin_inbound_follow_protocol`](#plugin_inbound_follow_protocol) | `MY_PLUGIN_INBOUND_FOLLOW_PROTOCOL` | `json` | no | no |
+| [`plugin_inbound_follow_token`](#plugin_inbound_follow_token) | `MY_PLUGIN_INBOUND_FOLLOW_TOKEN` | none | no | yes |
+| [`plugin_inbound_follow_tls_ca_file`](#plugin_inbound_follow_tls_ca_file) | `MY_PLUGIN_INBOUND_FOLLOW_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_inbound_follow_tls_cert_file`](#plugin_inbound_follow_tls_cert_file) | `MY_PLUGIN_INBOUND_FOLLOW_TLS_CERT_FILE` | none | no | no |
+| [`plugin_inbound_follow_tls_key_file`](#plugin_inbound_follow_tls_key_file) | `MY_PLUGIN_INBOUND_FOLLOW_TLS_KEY_FILE` | none | no | no |
+| [`plugin_inbound_follow_timeout`](#plugin_inbound_follow_timeout) | `MY_PLUGIN_INBOUND_FOLLOW_TIMEOUT` | `3s` | no | no |
+| [`plugin_signup_check_address`](#plugin_signup_check_address) | `MY_PLUGIN_SIGNUP_CHECK_ADDRESS` | none | no | no |
+| [`plugin_signup_check_protocol`](#plugin_signup_check_protocol) | `MY_PLUGIN_SIGNUP_CHECK_PROTOCOL` | `json` | no | no |
+| [`plugin_signup_check_token`](#plugin_signup_check_token) | `MY_PLUGIN_SIGNUP_CHECK_TOKEN` | none | no | yes |
+| [`plugin_signup_check_tls_ca_file`](#plugin_signup_check_tls_ca_file) | `MY_PLUGIN_SIGNUP_CHECK_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_signup_check_tls_cert_file`](#plugin_signup_check_tls_cert_file) | `MY_PLUGIN_SIGNUP_CHECK_TLS_CERT_FILE` | none | no | no |
+| [`plugin_signup_check_tls_key_file`](#plugin_signup_check_tls_key_file) | `MY_PLUGIN_SIGNUP_CHECK_TLS_KEY_FILE` | none | no | no |
+| [`plugin_signup_check_timeout`](#plugin_signup_check_timeout) | `MY_PLUGIN_SIGNUP_CHECK_TIMEOUT` | `2s` | no | no |
+| [`plugin_media_check_address`](#plugin_media_check_address) | `MY_PLUGIN_MEDIA_CHECK_ADDRESS` | none | no | no |
+| [`plugin_media_check_protocol`](#plugin_media_check_protocol) | `MY_PLUGIN_MEDIA_CHECK_PROTOCOL` | `json` | no | no |
+| [`plugin_media_check_token`](#plugin_media_check_token) | `MY_PLUGIN_MEDIA_CHECK_TOKEN` | none | no | yes |
+| [`plugin_media_check_tls_ca_file`](#plugin_media_check_tls_ca_file) | `MY_PLUGIN_MEDIA_CHECK_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_media_check_tls_cert_file`](#plugin_media_check_tls_cert_file) | `MY_PLUGIN_MEDIA_CHECK_TLS_CERT_FILE` | none | no | no |
+| [`plugin_media_check_tls_key_file`](#plugin_media_check_tls_key_file) | `MY_PLUGIN_MEDIA_CHECK_TLS_KEY_FILE` | none | no | no |
+| [`plugin_media_check_timeout`](#plugin_media_check_timeout) | `MY_PLUGIN_MEDIA_CHECK_TIMEOUT` | `10s` | no | no |
+| [`plugin_local_status_address`](#plugin_local_status_address) | `MY_PLUGIN_LOCAL_STATUS_ADDRESS` | none | no | no |
+| [`plugin_local_status_protocol`](#plugin_local_status_protocol) | `MY_PLUGIN_LOCAL_STATUS_PROTOCOL` | `json` | no | no |
+| [`plugin_local_status_token`](#plugin_local_status_token) | `MY_PLUGIN_LOCAL_STATUS_TOKEN` | none | no | yes |
+| [`plugin_local_status_tls_ca_file`](#plugin_local_status_tls_ca_file) | `MY_PLUGIN_LOCAL_STATUS_TLS_CA_FILE` | the system's roots | no | no |
+| [`plugin_local_status_tls_cert_file`](#plugin_local_status_tls_cert_file) | `MY_PLUGIN_LOCAL_STATUS_TLS_CERT_FILE` | none | no | no |
+| [`plugin_local_status_tls_key_file`](#plugin_local_status_tls_key_file) | `MY_PLUGIN_LOCAL_STATUS_TLS_KEY_FILE` | none | no | no |
+| [`plugin_local_status_timeout`](#plugin_local_status_timeout) | `MY_PLUGIN_LOCAL_STATUS_TIMEOUT` | `1s` | no | no |
 
 ## Settings
 
@@ -1610,6 +1680,625 @@ Name of the environment that every error report carries, such as `staging`, to t
 
 - Environment variable: `MY_ERRORS_ENVIRONMENT`
 - Default: the value of `profile`
+- Required: no
+
+### `plugin_translator_address`
+
+Where the `translator` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_TRANSLATOR_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_translator_protocol`
+
+What the server sends to the `translator` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_TRANSLATOR_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_translator_token`
+
+Bearer token that the server sends to the `translator` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_TRANSLATOR_TOKEN` or `MY_PLUGIN_TRANSLATOR_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_translator_tls_ca_file`
+
+File of the CA that verifies the `translator` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_TRANSLATOR_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_translator_tls_cert_file`
+
+File of the client certificate that the server shows the `translator` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_TRANSLATOR_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_translator_tls_key_file`
+
+File of the key of that client certificate of the `translator` plugin.
+
+- Environment variable: `MY_PLUGIN_TRANSLATOR_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_translator_timeout`
+
+Deadline of one call of the `translator` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_TRANSLATOR_TIMEOUT`
+- Default: `10s`
+- Required: no
+
+### `plugin_billing_address`
+
+Where the `billing` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_BILLING_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_billing_protocol`
+
+What the server sends to the `billing` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_BILLING_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_billing_token`
+
+Bearer token that the server sends to the `billing` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_BILLING_TOKEN` or `MY_PLUGIN_BILLING_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_billing_tls_ca_file`
+
+File of the CA that verifies the `billing` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_BILLING_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_billing_tls_cert_file`
+
+File of the client certificate that the server shows the `billing` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_BILLING_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_billing_tls_key_file`
+
+File of the key of that client certificate of the `billing` plugin.
+
+- Environment variable: `MY_PLUGIN_BILLING_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_billing_timeout`
+
+Deadline of one call of the `billing` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_BILLING_TIMEOUT`
+- Default: `2m0s`
+- Required: no
+
+### `plugin_mailer_address`
+
+Where the `mailer` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or never `http://`, on loopback neither. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_MAILER_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_mailer_protocol`
+
+What the server sends to the `mailer` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_MAILER_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_mailer_token`
+
+Bearer token that the server sends to the `mailer` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_MAILER_TOKEN` or `MY_PLUGIN_MAILER_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_mailer_tls_ca_file`
+
+File of the CA that verifies the `mailer` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_MAILER_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_mailer_tls_cert_file`
+
+File of the client certificate that the server shows the `mailer` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_MAILER_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_mailer_tls_key_file`
+
+File of the key of that client certificate of the `mailer` plugin.
+
+- Environment variable: `MY_PLUGIN_MAILER_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_mailer_timeout`
+
+Deadline of one call of the `mailer` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_MAILER_TIMEOUT`
+- Default: `30s`
+- Required: no
+
+### `plugin_media_address`
+
+Where the `media` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_MEDIA_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_media_protocol`
+
+What the server sends to the `media` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_MEDIA_PROTOCOL`
+- Default: `proto`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_media_token`
+
+Bearer token that the server sends to the `media` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_MEDIA_TOKEN` or `MY_PLUGIN_MEDIA_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_tls_ca_file`
+
+File of the CA that verifies the `media` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_MEDIA_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_media_tls_cert_file`
+
+File of the client certificate that the server shows the `media` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_MEDIA_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_tls_key_file`
+
+File of the key of that client certificate of the `media` plugin.
+
+- Environment variable: `MY_PLUGIN_MEDIA_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_timeout`
+
+Deadline of one call of the `media` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_MEDIA_TIMEOUT`
+- Default: `4m0s`
+- Required: no
+
+### `plugin_key_manager_address`
+
+Where the `key_manager` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or never `http://`, on loopback neither. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_KEY_MANAGER_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_key_manager_protocol`
+
+What the server sends to the `key_manager` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_KEY_MANAGER_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_key_manager_token`
+
+Bearer token that the server sends to the `key_manager` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_KEY_MANAGER_TOKEN` or `MY_PLUGIN_KEY_MANAGER_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_key_manager_tls_ca_file`
+
+File of the CA that verifies the `key_manager` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_KEY_MANAGER_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_key_manager_tls_cert_file`
+
+File of the client certificate that the server shows the `key_manager` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_KEY_MANAGER_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_key_manager_tls_key_file`
+
+File of the key of that client certificate of the `key_manager` plugin.
+
+- Environment variable: `MY_PLUGIN_KEY_MANAGER_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_key_manager_timeout`
+
+Deadline of one call of the `key_manager` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_KEY_MANAGER_TIMEOUT`
+- Default: `5s`
+- Required: no
+
+### `plugin_inbound_status_address`
+
+Where the `inbound.status` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or never `http://`, on loopback neither. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_INBOUND_STATUS_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_inbound_status_protocol`
+
+What the server sends to the `inbound.status` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_INBOUND_STATUS_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_inbound_status_token`
+
+Bearer token that the server sends to the `inbound.status` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_INBOUND_STATUS_TOKEN` or `MY_PLUGIN_INBOUND_STATUS_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_inbound_status_tls_ca_file`
+
+File of the CA that verifies the `inbound.status` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_INBOUND_STATUS_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_inbound_status_tls_cert_file`
+
+File of the client certificate that the server shows the `inbound.status` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_INBOUND_STATUS_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_inbound_status_tls_key_file`
+
+File of the key of that client certificate of the `inbound.status` plugin.
+
+- Environment variable: `MY_PLUGIN_INBOUND_STATUS_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_inbound_status_timeout`
+
+Deadline of one call of the `inbound.status` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_INBOUND_STATUS_TIMEOUT`
+- Default: `3s`
+- Required: no
+
+### `plugin_inbound_follow_address`
+
+Where the `inbound.follow` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_INBOUND_FOLLOW_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_inbound_follow_protocol`
+
+What the server sends to the `inbound.follow` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_INBOUND_FOLLOW_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_inbound_follow_token`
+
+Bearer token that the server sends to the `inbound.follow` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_INBOUND_FOLLOW_TOKEN` or `MY_PLUGIN_INBOUND_FOLLOW_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_inbound_follow_tls_ca_file`
+
+File of the CA that verifies the `inbound.follow` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_INBOUND_FOLLOW_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_inbound_follow_tls_cert_file`
+
+File of the client certificate that the server shows the `inbound.follow` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_INBOUND_FOLLOW_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_inbound_follow_tls_key_file`
+
+File of the key of that client certificate of the `inbound.follow` plugin.
+
+- Environment variable: `MY_PLUGIN_INBOUND_FOLLOW_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_inbound_follow_timeout`
+
+Deadline of one call of the `inbound.follow` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_INBOUND_FOLLOW_TIMEOUT`
+- Default: `3s`
+- Required: no
+
+### `plugin_signup_check_address`
+
+Where the `signup.check` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_SIGNUP_CHECK_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_signup_check_protocol`
+
+What the server sends to the `signup.check` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_SIGNUP_CHECK_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_signup_check_token`
+
+Bearer token that the server sends to the `signup.check` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_SIGNUP_CHECK_TOKEN` or `MY_PLUGIN_SIGNUP_CHECK_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_signup_check_tls_ca_file`
+
+File of the CA that verifies the `signup.check` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_SIGNUP_CHECK_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_signup_check_tls_cert_file`
+
+File of the client certificate that the server shows the `signup.check` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_SIGNUP_CHECK_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_signup_check_tls_key_file`
+
+File of the key of that client certificate of the `signup.check` plugin.
+
+- Environment variable: `MY_PLUGIN_SIGNUP_CHECK_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_signup_check_timeout`
+
+Deadline of one call of the `signup.check` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_SIGNUP_CHECK_TIMEOUT`
+- Default: `2s`
+- Required: no
+
+### `plugin_media_check_address`
+
+Where the `media.check` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://` (plain TCP, with a warning at start: nothing encrypts or authenticates it). Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_MEDIA_CHECK_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_media_check_protocol`
+
+What the server sends to the `media.check` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_MEDIA_CHECK_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_media_check_token`
+
+Bearer token that the server sends to the `media.check` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_MEDIA_CHECK_TOKEN` or `MY_PLUGIN_MEDIA_CHECK_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_check_tls_ca_file`
+
+File of the CA that verifies the `media.check` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_MEDIA_CHECK_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_media_check_tls_cert_file`
+
+File of the client certificate that the server shows the `media.check` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_MEDIA_CHECK_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_check_tls_key_file`
+
+File of the key of that client certificate of the `media.check` plugin.
+
+- Environment variable: `MY_PLUGIN_MEDIA_CHECK_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_media_check_timeout`
+
+Deadline of one call of the `media.check` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_MEDIA_CHECK_TIMEOUT`
+- Default: `10s`
+- Required: no
+
+### `plugin_local_status_address`
+
+Where the `local.status` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or never `http://`, on loopback neither. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+
+- Environment variable: `MY_PLUGIN_LOCAL_STATUS_ADDRESS`
+- Default: none
+- Required: no
+
+### `plugin_local_status_protocol`
+
+What the server sends to the `local.status` plugin; it must be what the plugin accepts.
+
+- Environment variable: `MY_PLUGIN_LOCAL_STATUS_PROTOCOL`
+- Default: `json`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `json` | The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library. |
+| `proto` | The Connect protocol with binary protobuf, for a server on a Connect library. |
+| `grpc` | gRPC, for a server that speaks only that. |
+
+### `plugin_local_status_token`
+
+Bearer token that the server sends to the `local.status` plugin, over `https://` or `unix://` only.
+
+- Environment variable: `MY_PLUGIN_LOCAL_STATUS_TOKEN` or `MY_PLUGIN_LOCAL_STATUS_TOKEN_FILE`
+- Default: none
+- Required: no
+
+### `plugin_local_status_tls_ca_file`
+
+File of the CA that verifies the `local.status` plugin at an `https://` address.
+
+- Environment variable: `MY_PLUGIN_LOCAL_STATUS_TLS_CA_FILE`
+- Default: the system's roots
+- Required: no
+
+### `plugin_local_status_tls_cert_file`
+
+File of the client certificate that the server shows the `local.status` plugin at an `https://` address (mTLS), with its key file.
+
+- Environment variable: `MY_PLUGIN_LOCAL_STATUS_TLS_CERT_FILE`
+- Default: none
+- Required: no
+
+### `plugin_local_status_tls_key_file`
+
+File of the key of that client certificate of the `local.status` plugin.
+
+- Environment variable: `MY_PLUGIN_LOCAL_STATUS_TLS_KEY_FILE`
+- Default: none
+- Required: no
+
+### `plugin_local_status_timeout`
+
+Deadline of one call of the `local.status` plugin, less than `5m0s`.
+
+- Environment variable: `MY_PLUGIN_LOCAL_STATUS_TIMEOUT`
+- Default: `1s`
 - Required: no
 
 ## Renamed and removed settings

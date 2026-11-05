@@ -315,6 +315,17 @@ entries:
     paths: ["internal/domain/supporters/**", "internal/app/supporters/**", "cmd/my/supporters.go"]
     docs: ["docs/architecture/data-model/04-tables/13-supporters.md#413-supporters", "docs/adr/0072-supporter-plans-and-roles.md", "docs/operations/supporters.md"]
     userdocs: ["docs/operations/supporters.md"]
+  - name: plugins
+    paths: ["api/plugin/**", "internal/adapter/plugin/**", "internal/platform/plugin*.go", "internal/platform/config/plugin*.go", "internal/platform/config/adapters_no_plugins*.go", "cmd/my/plugin*.go", "scripts/plugin-*.sh"]
+    docs: ["docs/adr/0146-plugin-protocol.md", "docs/adr/0147-decision-hooks.md"]
+    checks: [api, go]
+    notes:
+      - "`my` is only a client of a plugin. internal/adapter/plugin/client holds the transport of every kind (protocol, authentication, deadline, limits, concurrency, failures); internal/adapter/plugin/kind holds the table of the kinds and the rules of a destination, with the standard library alone so that the configuration reads it in a no_plugins build."
+      - "Destinations are settings of the configuration file and the environment only (ADR-0146 §5). A new kind is one row of kind.Delegated, which adds the keys; plain TCP is refused only for key_manager, mailer, inbound.status, and local.status (§6)."
+      - "api/plugin/ is MIT and holds one package per kind with no shared types, imports, or well-known types (§8). `scripts/task.sh api:plugin-generate` writes internal/adapter/plugin/gen as AGPL-3.0-only; buf is pinned in tools/buf/go.mod apart from tools/go.mod."
+      - "A port's adapter goes in internal/adapter/<port>/plugin, takes a *client.Conn from platform.NewPluginConn in a !no_plugins file of internal/platform, and reads the `outcome` of the response; its contract cases go in a file of internal/adapter/plugin/contract and one entry of its table, and fakeplugin gains the kind."
+      - "Until the legal review of #2032 is done, no document may say anything about the license of a plugin (ADR-0146 §17)."
+    userdocs: ["docs/operations/plugins.md", "docs/reference/build-tags.md", "docs/operations/running.md"]
   - name: module-voice
     paths: ["internal/domain/voice/**", "internal/app/voice/**", "internal/platform/voice.go", "internal/adapter/voice/**", "internal/adapter/db/*/voice.go", "internal/interface/voice/**", "schema/*/14-voice.sql", "queries/*/voice.sql", "pkg/testkit/voice_*contract.go", "pkg/testkit/livekittest/**", "internal/platform/adapters_*voice_livekit.go", "internal/platform/adapters_*voice_sora.go", "internal/platform/config/adapters_no_voice_*.go", "internal/interface/clientapi/voice*.go", "api/spec/paths/voice_*.yaml", "api/spec/components/*/Voice*.yaml", "app/web/src/features/voice/**"]
     docs: ["docs/architecture/data-model/04-tables/14-voice.md#414-voice", "docs/architecture/data-model/05-states-and-policies.md#55-通話のルームの判定", "docs/adr/0100-voice-chat-rooms.md", "docs/adr/0101-voice-chat-transport.md", "docs/adr/0101-voice-chat-transport.md"]
@@ -709,6 +720,6 @@ entries:
     docs: ["tools/agentkit/README.md"]
     checks: [agentkit]
   - name: go-tools
-    paths: ["tools/go.mod", "tools/go.sum"]
+    paths: ["tools/go.mod", "tools/go.sum", "tools/buf/**"]
     docs: ["docs/reference/commands.md"]
     checks: [go]

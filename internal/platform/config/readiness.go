@@ -104,6 +104,9 @@ func Readiness(c *Config) []Finding {
 	for _, f := range VoiceWarnings(c) {
 		warnf(f.Key, "%s", f.Message)
 	}
+	for _, f := range PluginWarnings(c) {
+		warnf(f.Key, "%s", f.Message)
+	}
 	if c.VAPIDPrivateKey == "" {
 		warnf("vapid_private_key", "is not set, so the server sends no Web Push notifications; generate one with `my config vapid-key`")
 	}

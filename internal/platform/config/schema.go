@@ -1337,7 +1337,7 @@ var schema = []field{
 // vals holds every setting that passed its own validation; present holds every
 // setting that was given a non-empty value, valid or not.
 func crossChecks(vals map[string]string, present map[string]bool) []Issue {
-	var issues []Issue
+	issues := pluginChecks(vals, present)
 	if vals["key_manager"] == "local" {
 		if !present["kek"] {
 			issues = append(issues, Issue{Key: "kek", Missing: true, Message: "required when key_manager is local"})
