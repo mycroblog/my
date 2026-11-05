@@ -39,16 +39,24 @@ func (r *TranslationRepository) InsertTranslation(ctx context.Context, tx uow.Tx
 		return false, nil
 	}
 	for _, a := range t.Attachments {
-		err := q.InsertStatusTranslationAttachment(ctx, postgresgen.InsertStatusTranslationAttachmentParams{
-			TranslationID: t.ID, Position: int32(a.Position), Description: a.Description,
+		position, err := toInt32(a.Position, "attachment position")
+		if err != nil {
+			return false, err
+		}
+		err = q.InsertStatusTranslationAttachment(ctx, postgresgen.InsertStatusTranslationAttachmentParams{
+			TranslationID: t.ID, Position: position, Description: a.Description,
 		})
 		if err != nil {
 			return false, wrap(err, "insert status translation attachment")
 		}
 	}
 	for _, o := range t.PollOptions {
-		err := q.InsertStatusTranslationPollOption(ctx, postgresgen.InsertStatusTranslationPollOptionParams{
-			TranslationID: t.ID, Position: int32(o.Position), Title: o.Title,
+		position, err := toInt32(o.Position, "poll option position")
+		if err != nil {
+			return false, err
+		}
+		err = q.InsertStatusTranslationPollOption(ctx, postgresgen.InsertStatusTranslationPollOptionParams{
+			TranslationID: t.ID, Position: position, Title: o.Title,
 		})
 		if err != nil {
 			return false, wrap(err, "insert status translation poll option")
