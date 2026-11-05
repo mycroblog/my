@@ -96,13 +96,16 @@ const (
 	ContextObjectFetch
 	// ContextDelivery is pushing the status to a remote actor's inbox (data-model §7).
 	ContextDelivery
+	// ContextSearch is a result of the full-text search of statuses (FR-309, ADR-0149 §8). It admits
+	// only signed-in viewers, and nothing but public and local, not even for the author.
+	ContextSearch
 )
 
 // ViewContexts lists every view context.
 func ViewContexts() []ViewContext {
 	return []ViewContext{
 		ContextStatus, ContextHome, ContextLocalTimeline, ContextFederatedTimeline,
-		ContextHashtag, ContextProfile, ContextObjectFetch, ContextDelivery,
+		ContextHashtag, ContextProfile, ContextObjectFetch, ContextDelivery, ContextSearch,
 	}
 }
 
@@ -125,6 +128,8 @@ func (c ViewContext) String() string {
 		return "object fetch"
 	case ContextDelivery:
 		return "delivery"
+	case ContextSearch:
+		return "search"
 	default:
 		return "invalid"
 	}
@@ -173,7 +178,7 @@ func contextAdmits(ctx ViewContext, kind ViewerKind, status StatusFacts) bool {
 		return kind == ViewerAnonymous || kind == ViewerLocal
 	case ContextLocalTimeline:
 		return (kind == ViewerAnonymous || kind == ViewerLocal) && status.AuthorIsLocal
-	case ContextHome:
+	case ContextHome, ContextSearch:
 		return kind == ViewerLocal
 	case ContextObjectFetch:
 		// This server serves only its own objects.
@@ -192,7 +197,7 @@ func contextShows(ctx ViewContext, vis Visibility, isAuthor bool, author AuthorR
 		// Only the viewer's own posts and posts of accounts the viewer follows; direct posts from
 		// others go to the conversation list instead.
 		return isAuthor || rel.Follow == FollowActive
-	case ContextLocalTimeline, ContextHashtag:
+	case ContextLocalTimeline, ContextHashtag, ContextSearch:
 		return !author.PublicDiscovery && (vis == VisibilityPublic || vis == VisibilityLocal)
 	case ContextFederatedTimeline:
 		return !author.PublicDiscovery && vis == VisibilityPublic

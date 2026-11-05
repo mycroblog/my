@@ -11515,6 +11515,10 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
 //     co-hosts of the room.
 //   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+//   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
+//     be searched (`Instance.full_text_search.available`).
+//   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
+//     posts is affected; try again later.
 type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
@@ -14461,6 +14465,18 @@ type CreateStatusParams struct {
 	// posted with it instead of posting again. A key longer than 256 characters, or one
 	// that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SearchStatusesParams defines parameters for SearchStatuses.
+type SearchStatusesParams struct {
+	// Q The words to find, 1 to 200 characters. Anything else is a 400.
+	Q string `form:"q" json:"q"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListStatusQuotesParams defines parameters for ListStatusQuotes.
@@ -21065,6 +21081,38 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /statuses (the `CreateStatus` operationId).
 	CreateStatus(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SearchStatuses Search the text of posts
+	//
+	// The posts that contain every word of `q`, newest first, as `Status` objects like those of a
+	// timeline. It looks in the text, the content warning, and the alternative texts of the current
+	// version of a post. A word's matching, including in Japanese, depends on the search engine of
+	// the server, and there is no order by relevance. `q` is plain text: nothing in it is an operator.
+	//
+	// Read `Instance.full_text_search` before offering this: it says whether the server has a search
+	// engine (`available`) and which visibilities the search covers (`visibilities`). Without one,
+	// the response is a 404 of the type `/api/v1/problems/search-unavailable`. When the engine fails,
+	// it is a 503 of the type `/api/v1/problems/search-failed`, which only this operation answers;
+	// try again later.
+	//
+	// Only signed-in users can search, and only `public` and `local` posts of accounts with
+	// `indexable` turned on are found, within the visibilities the server covers. The results never
+	// include `unlisted`, `private`, or `direct` posts, even the viewer's own. Posts of accounts or
+	// domains that the viewer blocks, mutes, or is blocked by are left out.
+	//
+	// A page can hold fewer posts than `limit`, or none at all, while more follow, because posts are
+	// left out after the search engine answered. Continue while the response has a `next_cursor`, and
+	// stop only when it has none. A cursor works only on the search it came from: changing `q` needs
+	// a new first page. A cursor the search engine did not issue is a 400.
+	//
+	// The query is part of the URL, so a reverse proxy or CDN in front of the server may log it. The
+	// server itself writes it to no log or trace, and the response is `private, no-store`.
+	//
+	// Past 30 searches in 5 minutes by one account, in addition to the limit of the API as a whole,
+	// the response is a 429 with `Retry-After`.
+	//
+	// Corresponds with GET /statuses/search (the `SearchStatuses` operationId).
+	SearchStatuses(ctx context.Context, params *SearchStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteStatus Delete the authenticated user's status
 	//
@@ -30480,6 +30528,48 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 // Corresponds with POST /statuses (the `CreateStatus` operationId).
 func (c *Client) CreateStatus(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateStatusRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SearchStatuses Search the text of posts
+//
+// The posts that contain every word of `q`, newest first, as `Status` objects like those of a
+// timeline. It looks in the text, the content warning, and the alternative texts of the current
+// version of a post. A word's matching, including in Japanese, depends on the search engine of
+// the server, and there is no order by relevance. `q` is plain text: nothing in it is an operator.
+//
+// Read `Instance.full_text_search` before offering this: it says whether the server has a search
+// engine (`available`) and which visibilities the search covers (`visibilities`). Without one,
+// the response is a 404 of the type `/api/v1/problems/search-unavailable`. When the engine fails,
+// it is a 503 of the type `/api/v1/problems/search-failed`, which only this operation answers;
+// try again later.
+//
+// Only signed-in users can search, and only `public` and `local` posts of accounts with
+// `indexable` turned on are found, within the visibilities the server covers. The results never
+// include `unlisted`, `private`, or `direct` posts, even the viewer's own. Posts of accounts or
+// domains that the viewer blocks, mutes, or is blocked by are left out.
+//
+// A page can hold fewer posts than `limit`, or none at all, while more follow, because posts are
+// left out after the search engine answered. Continue while the response has a `next_cursor`, and
+// stop only when it has none. A cursor works only on the search it came from: changing `q` needs
+// a new first page. A cursor the search engine did not issue is a 400.
+//
+// The query is part of the URL, so a reverse proxy or CDN in front of the server may log it. The
+// server itself writes it to no log or trace, and the response is `private, no-store`.
+//
+// Past 30 searches in 5 minutes by one account, in addition to the limit of the API as a whole,
+// the response is a 429 with `Retry-After`.
+//
+// Corresponds with GET /statuses/search (the `SearchStatuses` operationId).
+func (c *Client) SearchStatuses(ctx context.Context, params *SearchStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSearchStatusesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -44862,6 +44952,80 @@ func NewCreateStatusRequestWithBody(server string, params *CreateStatusParams, c
 	return req, nil
 }
 
+// NewSearchStatusesRequest constructs an http.Request for the SearchStatuses method
+func NewSearchStatusesRequest(server string, params *SearchStatusesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/statuses/search")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "q", params.Q, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDeleteStatusRequest constructs an http.Request for the DeleteStatus method
 func NewDeleteStatusRequest(server string, id StatusId) (*http.Request, error) {
 	var err error
@@ -53075,6 +53239,40 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /statuses (the `CreateStatus` operationId).
 	CreateStatusWithResponse(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateStatusResponse, error)
+
+	// SearchStatusesWithResponse Search the text of posts
+	//
+	// The posts that contain every word of `q`, newest first, as `Status` objects like those of a
+	// timeline. It looks in the text, the content warning, and the alternative texts of the current
+	// version of a post. A word's matching, including in Japanese, depends on the search engine of
+	// the server, and there is no order by relevance. `q` is plain text: nothing in it is an operator.
+	//
+	// Read `Instance.full_text_search` before offering this: it says whether the server has a search
+	// engine (`available`) and which visibilities the search covers (`visibilities`). Without one,
+	// the response is a 404 of the type `/api/v1/problems/search-unavailable`. When the engine fails,
+	// it is a 503 of the type `/api/v1/problems/search-failed`, which only this operation answers;
+	// try again later.
+	//
+	// Only signed-in users can search, and only `public` and `local` posts of accounts with
+	// `indexable` turned on are found, within the visibilities the server covers. The results never
+	// include `unlisted`, `private`, or `direct` posts, even the viewer's own. Posts of accounts or
+	// domains that the viewer blocks, mutes, or is blocked by are left out.
+	//
+	// A page can hold fewer posts than `limit`, or none at all, while more follow, because posts are
+	// left out after the search engine answered. Continue while the response has a `next_cursor`, and
+	// stop only when it has none. A cursor works only on the search it came from: changing `q` needs
+	// a new first page. A cursor the search engine did not issue is a 400.
+	//
+	// The query is part of the URL, so a reverse proxy or CDN in front of the server may log it. The
+	// server itself writes it to no log or trace, and the response is `private, no-store`.
+	//
+	// Past 30 searches in 5 minutes by one account, in addition to the limit of the API as a whole,
+	// the response is a 429 with `Retry-After`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /statuses/search (the `SearchStatuses` operationId).
+	SearchStatusesWithResponse(ctx context.Context, params *SearchStatusesParams, reqEditors ...RequestEditorFn) (*SearchStatusesResponse, error)
 
 	// DeleteStatusWithResponse Delete the authenticated user's status
 	//
@@ -72891,6 +73089,71 @@ func (r CreateStatusResponse) ContentType() string {
 	return ""
 }
 
+// SearchStatusesResponse200Headers the declared response headers of an HTTP 200 response for SearchStatuses
+type SearchStatusesResponse200Headers struct {
+	CacheControl *string
+}
+
+// SearchStatusesResponseDefaultHeaders the declared response headers of an HTTP default response for SearchStatuses
+type SearchStatusesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SearchStatusesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *StatusPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SearchStatusesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SearchStatusesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SearchStatusesResponse) GetJSON200() *StatusPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SearchStatusesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SearchStatusesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SearchStatusesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SearchStatusesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SearchStatusesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // DeleteStatusResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteStatus
 type DeleteStatusResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -84658,6 +84921,46 @@ func (c *ClientWithResponses) CreateStatusWithResponse(ctx context.Context, para
 		return nil, err
 	}
 	return ParseCreateStatusResponse(rsp)
+}
+
+// SearchStatusesWithResponse Search the text of posts
+//
+// The posts that contain every word of `q`, newest first, as `Status` objects like those of a
+// timeline. It looks in the text, the content warning, and the alternative texts of the current
+// version of a post. A word's matching, including in Japanese, depends on the search engine of
+// the server, and there is no order by relevance. `q` is plain text: nothing in it is an operator.
+//
+// Read `Instance.full_text_search` before offering this: it says whether the server has a search
+// engine (`available`) and which visibilities the search covers (`visibilities`). Without one,
+// the response is a 404 of the type `/api/v1/problems/search-unavailable`. When the engine fails,
+// it is a 503 of the type `/api/v1/problems/search-failed`, which only this operation answers;
+// try again later.
+//
+// Only signed-in users can search, and only `public` and `local` posts of accounts with
+// `indexable` turned on are found, within the visibilities the server covers. The results never
+// include `unlisted`, `private`, or `direct` posts, even the viewer's own. Posts of accounts or
+// domains that the viewer blocks, mutes, or is blocked by are left out.
+//
+// A page can hold fewer posts than `limit`, or none at all, while more follow, because posts are
+// left out after the search engine answered. Continue while the response has a `next_cursor`, and
+// stop only when it has none. A cursor works only on the search it came from: changing `q` needs
+// a new first page. A cursor the search engine did not issue is a 400.
+//
+// The query is part of the URL, so a reverse proxy or CDN in front of the server may log it. The
+// server itself writes it to no log or trace, and the response is `private, no-store`.
+//
+// Past 30 searches in 5 minutes by one account, in addition to the limit of the API as a whole,
+// the response is a 429 with `Retry-After`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /statuses/search (the `SearchStatuses` operationId).
+func (c *ClientWithResponses) SearchStatusesWithResponse(ctx context.Context, params *SearchStatusesParams, reqEditors ...RequestEditorFn) (*SearchStatusesResponse, error) {
+	rsp, err := c.SearchStatuses(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSearchStatusesResponse(rsp)
 }
 
 // DeleteStatusWithResponse Delete the authenticated user's status
@@ -108733,6 +109036,83 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 		response.Headers201 = &headers
 	case true:
 		var headers CreateStatusResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseSearchStatusesResponse parses an HTTP response from a SearchStatusesWithResponse call
+func ParseSearchStatusesResponse(rsp *http.Response) (*SearchStatusesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SearchStatusesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StatusPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SearchStatusesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers SearchStatusesResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

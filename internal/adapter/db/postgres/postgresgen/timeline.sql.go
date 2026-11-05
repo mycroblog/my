@@ -864,6 +864,36 @@ func (q *Queries) ListFeedDirectEntriesAmong(ctx context.Context, arg ListFeedDi
 	return items, nil
 }
 
+const listFeedDomainMutesAmong = `-- name: ListFeedDomainMutesAmong :many
+SELECT domain FROM feed_domain_mutes
+WHERE viewer_account_id = $1 AND domain = ANY($2::text[])
+`
+
+type ListFeedDomainMutesAmongParams struct {
+	Viewer  string
+	Domains []string
+}
+
+func (q *Queries) ListFeedDomainMutesAmong(ctx context.Context, arg ListFeedDomainMutesAmongParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listFeedDomainMutesAmong, arg.Viewer, arg.Domains)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var domain string
+		if err := rows.Scan(&domain); err != nil {
+			return nil, err
+		}
+		items = append(items, domain)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFeedDomainRestrictionsAmong = `-- name: ListFeedDomainRestrictionsAmong :many
 SELECT domain, restriction FROM feed_domain_restrictions
 WHERE (effective_until IS NULL OR effective_until > $1::timestamptz)

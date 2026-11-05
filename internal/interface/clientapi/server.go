@@ -330,8 +330,8 @@ type Options struct {
 	// LoginProviders runs the external login providers (admin_login_providers.go); nil answers
 	// 404 to their operations.
 	LoginProviders LoginProviders
-	// FullTextSearch says what the full-text search of statuses covers (instance.go); nil with
-	// search = none, which GET /instance tells the clients.
+	// FullTextSearch is the full-text search of statuses (instance.go, status_search.go); nil with
+	// search = none, which GET /instance tells the clients and searchStatuses answers with a 404.
 	FullTextSearch FullTextSearch
 	// Voice runs the voice chat rooms (voice.go); nil, while the voice chat is off, answers 404
 	// to their operations.

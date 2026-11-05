@@ -483,6 +483,18 @@ func timelineDomainMutes(t *testing.T, e *timelineEnv) {
 	// Other viewers are not affected.
 	p, err = e.svc.Public(ctx, viewerOf(bob), q)
 	expectPage(t, "Public of bob", p, err, near.ID, farFollowed.ID, far.ID)
+	// The results of a search leave the domain out too, followed accounts included.
+	candidates := []apptimeline.SearchCandidate{
+		{StatusID: far.ID, AuthorAccountID: other, AuthorDomain: timelineRemoteDomain, Visibility: content.VisibilityPublic},
+		{StatusID: farFollowed.ID, AuthorAccountID: followed, AuthorDomain: timelineRemoteDomain, Visibility: content.VisibilityPublic},
+		{StatusID: near.ID, AuthorAccountID: bob, Visibility: content.VisibilityPublic},
+	}
+	if got, err := e.svc.SearchVisible(ctx, viewerOf(alice), candidates); err != nil || !slices.Equal(got, []string{near.ID}) {
+		t.Errorf("SearchVisible = %v, %v, want %v", got, err, near.ID)
+	}
+	if got, err := e.svc.SearchVisible(ctx, viewerOf(bob), candidates); err != nil || len(got) != 3 {
+		t.Errorf("SearchVisible of bob = %v, %v, want all of them", got, err)
+	}
 
 	// A mute of an unrelated domain hides nothing more, and a domain only ends with a label.
 	if _, err := e.graph.MuteDomain(ctx, alice, "ote.example"); err != nil {

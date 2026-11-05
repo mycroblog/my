@@ -8,6 +8,7 @@ import (
 	"slices"
 	"testing"
 
+	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 )
@@ -15,6 +16,10 @@ import (
 type fakeFullTextSearch []search.Visibility
 
 func (f fakeFullTextSearch) Visibilities(context.Context) ([]search.Visibility, error) { return f, nil }
+
+func (f fakeFullTextSearch) Search(context.Context, appcontent.Viewer, search.Query) (search.Page, error) {
+	return search.Page{}, nil
+}
 
 // TestInstanceFullTextSearch checks that GET /instance tells clients whether the full-text search
 // is available and on which visibilities (ADR-0149 §9), with an empty list, not null, without it.

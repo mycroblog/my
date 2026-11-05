@@ -310,6 +310,8 @@ paths:
     $ref: ./paths/bookmarks.yaml
   /statuses:
     $ref: ./paths/statuses.yaml
+  /statuses/search:
+    $ref: ./paths/statuses_search.yaml
   /statuses/{id}:
     $ref: ./paths/statuses_{id}.yaml
   /statuses/{id}/bookmark:

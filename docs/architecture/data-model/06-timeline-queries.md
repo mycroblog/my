@@ -81,3 +81,4 @@ ORDER BY e.id DESC LIMIT :limit + 1;
   返信を除くときは `NOT is_reply`、ブーストを除くときは `kind = 'post'` で絞ります。言語フィルタは掛けません（プロフィールは作者のすべての言語を見せる）。
   ピン留めした投稿は `timeline` ではなく `content` が `status_pins` から読み、投稿ごとに `canView`（`ContextStatus`）を適用します。
 - **スレッド（FR-106）**: `statuses (conversation_uri, id)` で一括取得し、行ごとに `canView` を適用します。親子関係は `status_reply_links` を使います。
+- **投稿の全文検索（FR-309）**: 候補はこの節のクエリではなく検索エンジンが返す投稿の ID で、`feed_entries` を読みません。投稿ごとに `canView`（`ContextSearch`）を適用し、ブロック・ミュートと制限はホームと同じ `feed_exclusions` と `feed_*_restrictions`、閲覧者がミュートしたドメインは作者のドメインとその親を `feed_domain_mutes` と照らして除外します（フォローしている相手も除外します。[ADR-0149](../../adr/0149-full-text-search.md) §8）。
