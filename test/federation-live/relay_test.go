@@ -56,7 +56,7 @@ func TestRelay(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		ctx := context.Background()
-		_ = e.local.call(ctx, http.MethodPost, "/admin/relays/"+r.ID+"/unfollow", nil, nil)
+		_ = e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID+"/follow", nil, nil)
 		_ = e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID, nil, nil)
 	})
 	eventually(t, deliveryTimeout, "the relay accepts the Follow", func() (bool, string) {
@@ -120,7 +120,7 @@ func TestRelay(t *testing.T) {
 
 	// Leaving sends the Undo; the left relay can be deleted.
 	var left adminRelay
-	if err := e.local.call(ctx, http.MethodPost, "/admin/relays/"+r.ID+"/unfollow", nil, &left); err != nil || left.State != "left" {
+	if err := e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID+"/follow", nil, &left); err != nil || left.State != "left" {
 		t.Fatalf("leaving the relay = %+v, %v", left, err)
 	}
 	if err := e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID, nil, nil); err != nil {

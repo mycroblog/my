@@ -50,7 +50,7 @@ func TestRelayLitePub(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		ctx := context.Background()
-		_ = e.local.call(ctx, http.MethodPost, "/admin/relays/"+r.ID+"/unfollow", nil, nil)
+		_ = e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID+"/follow", nil, nil)
 		_ = e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID, nil, nil)
 	})
 	if r.Protocol != "litepub" {
@@ -115,7 +115,7 @@ func TestRelayLitePub(t *testing.T) {
 
 	// Leaving sends the Undo: Akkoma's relay stops announcing to this server.
 	var left adminRelay
-	if err := e.local.call(ctx, http.MethodPost, "/admin/relays/"+r.ID+"/unfollow", nil, &left); err != nil || left.State != "left" {
+	if err := e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID+"/follow", nil, &left); err != nil || left.State != "left" {
 		t.Fatalf("leaving the relay = %+v, %v", left, err)
 	}
 	time.Sleep(quietPeriod) // the Undo is delivered before kate posts again
