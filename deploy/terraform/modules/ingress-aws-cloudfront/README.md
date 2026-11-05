@@ -36,6 +36,9 @@ It takes the certificate as an input, unlike Google's ingress modules, which obt
 would need a second AWS provider in every configuration, and validating it within the apply would hold the apply until you add records that
 only the apply prints.
 
+Whoever runs a plan needs `cloudfront:ListCachePolicies`, `cloudfront:GetCachePolicy`, `cloudfront:ListOriginRequestPolicies`, and
+`cloudfront:GetOriginRequestPolicy`, because the module looks up AWS's managed policies by name. A read-only role for plans needs them too.
+
 ## What protects the origin: nothing
 
 **The Function URL stays open.** CloudFront can sign its requests to a Function URL with an origin access control, but then whoever sends a `POST` must send the
@@ -59,5 +62,7 @@ viewer's Host header is fine, but `account_domain` other than `host` compares th
 ## Unverified
 
 - Everything against a real account.
+- The names `Managed-CachingDisabled` and `Managed-AllViewerExceptHostHeader`. AWS's guide lists these policies without the prefix, and the provider's documentation
+  says that the API adds it. A wrong name fails the plan.
 - The shape of `X-Forwarded-For` through CloudFront, a Function URL, and the adapter. Check the client addresses in the first request logs.
 - Whether a stream of real-time updates passes through CloudFront as it is sent, with `RESPONSE_STREAM` behind it.

@@ -25,6 +25,16 @@ mock_provider "aws" {
       minified_json = "{}"
     }
   }
+  mock_data "aws_cloudfront_cache_policy" {
+    defaults = {
+      id = "cache-policy-id"
+    }
+  }
+  mock_data "aws_cloudfront_origin_request_policy" {
+    defaults = {
+      id = "origin-request-policy-id"
+    }
+  }
   mock_data "aws_ip_ranges" {
     defaults = {
       cidr_blocks      = ["130.176.0.0/18"]

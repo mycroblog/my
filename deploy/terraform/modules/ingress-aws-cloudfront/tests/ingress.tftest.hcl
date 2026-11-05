@@ -3,6 +3,16 @@
 # On a mocked provider: nothing here reaches AWS.
 
 mock_provider "aws" {
+  mock_data "aws_cloudfront_cache_policy" {
+    defaults = {
+      id = "cache-policy-id"
+    }
+  }
+  mock_data "aws_cloudfront_origin_request_policy" {
+    defaults = {
+      id = "origin-request-policy-id"
+    }
+  }
   mock_data "aws_ip_ranges" {
     defaults = {
       cidr_blocks      = ["130.176.0.0/18"]
@@ -24,12 +34,12 @@ variables {
 
 run "it_serves_host_with_no_cache" {
   assert {
-    condition     = contains(aws_cloudfront_distribution.this.aliases, "social.example.org") && aws_cloudfront_distribution.this.default_cache_behavior[0].cache_policy_id == "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+    condition     = contains(aws_cloudfront_distribution.this.aliases, "social.example.org") && data.aws_cloudfront_cache_policy.caching_disabled.name == "Managed-CachingDisabled" && aws_cloudfront_distribution.this.default_cache_behavior[0].cache_policy_id == "cache-policy-id"
     error_message = "the API, ActivityPub, and HTML must never be cached"
   }
 
   assert {
-    condition     = aws_cloudfront_distribution.this.default_cache_behavior[0].origin_request_policy_id == "b689b0a8-53d0-40ab-baf2-68738e2966ac"
+    condition     = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.name == "Managed-AllViewerExceptHostHeader" && aws_cloudfront_distribution.this.default_cache_behavior[0].origin_request_policy_id == "origin-request-policy-id"
     error_message = "a Function URL routes by Host, so the viewer's must not reach it"
   }
 
