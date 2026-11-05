@@ -56,7 +56,7 @@ tasks:
     desc: Run the tests of deploy/terraform, on mocked providers
     deps: [init]
     cmds:
-      - for: [deploy/terraform/modules/app-gcp-cloud-run, deploy/terraform/modules/mail-smtp, deploy/terraform/modules/secrets-gcp-secret-manager, deploy/terraform/examples/gcp-cloud-run-neon]
+      - for: [deploy/terraform/modules/app-gcp-cloud-run, deploy/terraform/modules/ingress-cloudflare-app, deploy/terraform/modules/ingress-cloudflare-media, deploy/terraform/modules/mail-smtp, deploy/terraform/modules/secrets-gcp-secret-manager, deploy/terraform/examples/gcp-cloud-run-neon]
         cmd: tofu -chdir={{.ITEM}} test
 
   state-test:

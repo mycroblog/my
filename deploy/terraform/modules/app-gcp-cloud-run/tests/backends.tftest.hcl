@@ -476,3 +476,76 @@ run "app_with_the_load_balancer" {
     error_message = "swapping the ingress changed something else"
   }
 }
+
+# A media host beside each ingress: no setting is named twice, since the media module sets no trust.
+run "ingress_media" {
+  command = plan
+
+  module {
+    source = "../ingress-cloudflare-media"
+  }
+
+  variables {
+    zone_id     = "0123456789abcdef0123456789abcdef"
+    host        = "media.example.org"
+    origin_host = "ghs.googlehosted.com"
+  }
+}
+
+run "media_alone" {
+  command = plan
+
+  variables {
+    backends = [{ env = { MY_MEDIA_ORIGIN = "https://media.example.org" } }]
+  }
+
+  assert {
+    condition     = output.env["MY_MEDIA_ORIGIN"] == "https://media.example.org" && output.env["MY_TRUSTED_PROXIES"] == "169.254.0.0/16"
+    error_message = "alone, the media host must leave the trust at Cloud Run's front end"
+  }
+}
+
+run "media_beside_the_domain_mapping" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress },
+      { env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_MEDIA_ORIGIN"] == "https://media.example.org" && output.env["MY_TRUSTED_PROXIES"] == "169.254.0.0/16"
+    error_message = "the media host must sit beside the mapping"
+  }
+}
+
+run "media_beside_the_load_balancer" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress },
+      { env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_MEDIA_ORIGIN"] == "https://media.example.org" && google_cloud_run_v2_service.server.ingress == "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+    error_message = "the media host must sit beside the load balancer"
+  }
+}
+
+run "two_ingresses_that_set_trust_fail" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.ingress_domain_mapping.env },
+      { env = run.ingress_load_balancer.env },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}

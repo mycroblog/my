@@ -1,0 +1,119 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+
+# On a mocked provider, without credentials. The provider still tries its dry run of a ruleset at plan time, which Cloudflare
+# refuses as a warning, so these tests do not show that Cloudflare accepts the rules.
+
+mock_provider "cloudflare" {
+  mock_data "cloudflare_ip_ranges" {
+    defaults = {
+      ipv4_cidrs = ["173.245.48.0/20"]
+      ipv6_cidrs = ["2400:cb00::/32"]
+    }
+  }
+}
+
+variables {
+  zone_id     = "0123456789abcdef0123456789abcdef"
+  host        = "social.example.org"
+  origin_host = "ghs.googlehosted.com"
+}
+
+run "the_contract" {
+  command = plan
+
+  assert {
+    condition     = output.env["MY_TRUSTED_PROXIES"] == "169.254.0.0/16, 173.245.48.0/20, 2400:cb00::/32" && output.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for"
+    error_message = "the server must walk past Cloud Run's front end and Cloudflare"
+  }
+
+  assert {
+    condition     = output.service_ingress == "INGRESS_TRAFFIC_ALL"
+    error_message = "the service cannot be limited to Cloudflare"
+  }
+
+  assert {
+    condition     = cloudflare_dns_record.host.proxied && cloudflare_dns_record.host.type == "CNAME" && cloudflare_dns_record.host.content == "ghs.googlehosted.com"
+    error_message = "the record must be proxied to the origin"
+  }
+
+  assert {
+    condition     = cloudflare_ruleset.cache.phase == "http_request_cache_settings" && !cloudflare_ruleset.cache.rules[0].action_parameters.cache
+    error_message = "the cache must be bypassed for everything"
+  }
+
+  assert {
+    condition     = length(cloudflare_ruleset.firewall) == 0 && length(cloudflare_ruleset.origin) == 0
+    error_message = "the module must add no challenge, and no origin rule unless asked"
+  }
+
+  assert {
+    condition     = cloudflare_ruleset.config.rules[0].action_parameters.ssl == "strict" && !cloudflare_ruleset.config.rules[0].action_parameters.bic
+    error_message = "the origin must be verified, and non-browsers let through"
+  }
+}
+
+run "an_address_makes_an_a_record" {
+  command = plan
+
+  variables {
+    origin_host = "203.0.113.7"
+  }
+
+  assert {
+    condition     = cloudflare_dns_record.host.type == "A"
+    error_message = "an address needs an A record"
+  }
+}
+
+run "a_run_app_origin_without_a_rewrite_fails" {
+  command = plan
+
+  variables {
+    origin_host = "my-abc-an.a.run.app"
+  }
+
+  expect_failures = [cloudflare_dns_record.host]
+}
+
+run "a_rewrite_is_an_origin_rule" {
+  command = plan
+
+  variables {
+    origin_host         = "my-abc-an.a.run.app"
+    rewrite_host_header = true
+  }
+
+  assert {
+    condition     = cloudflare_ruleset.origin[0].rules[0].action == "route" && cloudflare_ruleset.origin[0].rules[0].action_parameters.host_header == "my-abc-an.a.run.app"
+    error_message = "the origin rule must send the origin's Host"
+  }
+}
+
+run "media_in_the_same_zone" {
+  command = plan
+
+  module {
+    source = "../ingress-cloudflare-media"
+  }
+
+  variables {
+    host            = "media.example.org"
+    manage_rulesets = false
+  }
+}
+
+run "shares_the_rulesets_with_media" {
+  command = plan
+
+  variables {
+    extra_rules = {
+      cache    = [{ description = "media", expression = "true", action = "set_cache_settings", action_parameters = { cache = true } }]
+      firewall = [{ description = "media", expression = "true", action = "block" }]
+    }
+  }
+
+  assert {
+    condition     = length(cloudflare_ruleset.cache.rules) == 2 && cloudflare_ruleset.firewall[0].rules[0].action == "block"
+    error_message = "the rules of the media host must join this zone's rulesets"
+  }
+}

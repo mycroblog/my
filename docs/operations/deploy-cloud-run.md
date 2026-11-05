@@ -9,7 +9,7 @@ The modules also work with Terraform 1.11 or later: use `terraform` where this g
 | Part | Module | Resources |
 | --- | --- | --- |
 | Server | `app-gcp-cloud-run` | A Cloud Run service with `role = all`, a migration job, a console job while you need it, a service account, and public access |
-| Traffic | `ingress-gcp-domain-mapping` or `ingress-gcp-load-balancer` | A domain mapping, or a global external Application Load Balancer with a certificate |
+| Traffic | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer`, or `ingress-cloudflare-app`, and optionally `ingress-cloudflare-media` | A domain mapping, a global external Application Load Balancer with a certificate, or Cloudflare, and a media host |
 | Jobs | `queue-gcp-cloud-tasks` | A Cloud Tasks queue, a Cloud Scheduler job, and a service account that calls the server |
 | Media | `blob-gcp-gcs` | A private bucket |
 | Real-time updates | `stream-gcp-pubsub` | A topic and a custom role. The server creates and removes its own subscriptions |
@@ -215,6 +215,29 @@ The `ingress` block of `main.tf` decides this, and swapping one for the other ch
 The load balancer also needs `compute.googleapis.com`. Cloud Tasks and Cloud Scheduler call `https://{host}`, so they arrive through whichever you choose.
 
 To use the service's own URL or something else in front, such as a CDN, remove the `ingress` block and its line in `backends`. Set `MY_TRUSTED_PROXIES` in `env` to what connects to the server. Whatever you put in front must still answer at `https://{host}`.
+
+### Cloudflare
+
+`ingress-cloudflare-app` puts Cloudflare in front of `host`, with the cache bypassed for everything, and `ingress-cloudflare-media` adds a cached media host beside any ingress. Read each module's README first ([app](../../deploy/terraform/modules/ingress-cloudflare-app/README.md), [media](../../deploy/terraform/modules/ingress-cloudflare-media/README.md)). The token goes in `CLOUDFLARE_API_TOKEN`. These modules have run only on mocked providers.
+
+- **Your plan decides the origin.** Cloud Run routes by `Host`, and Cloudflare offers the Host header override on the Enterprise plan only. On any other plan a `*.run.app` origin fails the plan, so the origin must accept your host itself: keep an `ingress-gcp-domain-mapping` of that host, out of `backends`, and set `origin_host = "ghs.googlehosted.com"`. Each host needs a mapping of its own. Whether its certificate is issued and renewed behind the proxy is unverified, so start with `proxied = false`.
+- **Nothing locks the origin.** The service stays open, so anyone can go around Cloudflare through the `run.app` URL. Someone calling that URL from a Cloudflare Worker of their own can also choose the client address the rate limits see, because the server trusts Cloudflare's ranges. Do not treat Cloudflare as a security boundary here.
+- **Turn off Bot Fight Mode** in the dashboard. It covers the whole zone and no rule can skip it, and a challenge on `/ap/`, `/_internal/`, `/.well-known/`, or `/api/` breaks federation and jobs, because other servers and Cloud Tasks are not browsers. The modules add no challenge and turn off Browser Integrity Check, but they do not manage Bot Fight Mode. Do not turn on "I'm Under Attack" for the same reason.
+- **Turn on Always Use HTTPS** in the dashboard if you want `http://` redirected. It covers the whole zone, so the modules leave it to you.
+- **Timeouts**: Cloudflare answers `524` when the origin sends nothing for 125 seconds. A job can run for 5 minutes, so a long job's task is tried again while the job still runs. Streams send a heartbeat every 30 seconds, under the 900-second idle limit. Whether it buffers streams on an ordinary proxied host is unverified.
+- **Uploads**: 100 MB on Free and Pro, above Cloud Run's 32 MiB, which remains the limit.
+- **Video**: Cloudflare's terms restrict serving video and a disproportionate amount of large files on Free, Pro, and Business, and it may redirect the content or take other action. Decide this before you cache video on the media host.
+
+**A deleted file stays cached.** The media host follows the server's `Cache-Control`, so a deleted local file can stay visible for up to a year, and a remote one for `remote_media_cache_ttl_seconds`. The server does not purge it. When something must disappear, purge it by hand, under **Caching > Configuration > Custom Purge** in the dashboard, or:
+
+```sh
+curl https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  -d '{"files": ["https://media.example.org/media/<path>"]}'
+```
+
+A proxy URL holds its `sig` in the query string, which is part of what is cached, so give the whole URL.
 
 ## Changing the KEK backend
 

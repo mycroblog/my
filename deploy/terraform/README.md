@@ -14,6 +14,8 @@ deploy/terraform/
   modules/mail-smtp/              email through any SMTP service
   modules/ingress-gcp-domain-mapping/  traffic through a Cloud Run domain mapping
   modules/ingress-gcp-load-balancer/   traffic through a global external Application Load Balancer
+  modules/ingress-cloudflare-app/      traffic through Cloudflare, for any origin
+  modules/ingress-cloudflare-media/    a media host through Cloudflare, beside any ingress
   modules/secrets-gcp-secret-manager/  secrets to fill by hand, or a VAPID key it generates
   modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
   modules/kek-gcp-kms/                 the KEK in Cloud KMS
@@ -38,7 +40,8 @@ A module is named `<role>-<provider>-<service>`, so that the name says what it i
 | `kek` | The key that encrypts the secrets in the database |
 | `ingress` | How traffic reaches the app |
 
-A module with no provider of its own drops that part (`db-external`, `mail-smtp`). Cloud SQL would be `db-gcp-cloud-sql`.
+A module with no provider of its own drops that part (`db-external`, `mail-smtp`). The provider is what the module talks to,
+not the platform behind it: `ingress-cloudflare-app` takes its origin as an input, so the same module fronts Cloud Run or AWS. Cloud SQL would be `db-gcp-cloud-sql`.
 
 ## The backend contract
 
@@ -93,6 +96,10 @@ so `backends` names those two outputs rather than the whole module:
 ```hcl
 { env = module.ingress.env, service_ingress = module.ingress.service_ingress },
 ```
+
+A module that only adds a host, such as `ingress-cloudflare-media`, returns no `MY_TRUSTED_PROXIES` and no `service_ingress`, so
+it sits beside any other. A Cloudflare zone has one ruleset per phase, so two modules in one zone share them: one owns them, and
+takes the other's `rules` as `extra_rules`.
 
 Swapping one for another changes only the module block. An ingress may also be left out, for a deployment that uses the
 service's own URL or has something else in front. Remove the block and that line: the service is then open

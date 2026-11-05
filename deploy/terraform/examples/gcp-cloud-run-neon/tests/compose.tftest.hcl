@@ -13,6 +13,15 @@ mock_provider "google" {
 
 mock_provider "random" {}
 
+mock_provider "cloudflare" {
+  mock_data "cloudflare_ip_ranges" {
+    defaults = {
+      ipv4_cidrs = ["173.245.48.0/20"]
+      ipv6_cidrs = ["2400:cb00::/32"]
+    }
+  }
+}
+
 variables {
   project_id  = "my-project"
   host        = "social.example.org"
@@ -120,5 +129,18 @@ run "the_load_balancer_swaps_in_one_block" {
   assert {
     condition     = output.service_ingress == "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" && one(output.dns_records).type == "A"
     error_message = "the load balancer must take over how traffic reaches the service"
+  }
+}
+
+run "both_cloudflare_modules_swap_in_by_their_blocks" {
+  command = plan
+
+  module {
+    source = "../../tests/ingress-cloudflare"
+  }
+
+  assert {
+    condition     = output.service_ingress == "INGRESS_TRAFFIC_ALL" && output.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for" && output.env["MY_MEDIA_ORIGIN"] == "https://media.example.org"
+    error_message = "the Cloudflare modules must set the trust and the media origin"
   }
 }

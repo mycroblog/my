@@ -11,6 +11,11 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 7.0"
     }
+    # Declared because the test file that runs this mocks it for every run.
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5.0"
+    }
   }
 }
 

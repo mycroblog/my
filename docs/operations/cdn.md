@@ -39,6 +39,8 @@ MY_MEDIA_ORIGIN=https://media.example.org
 
 Both are returned with `Cross-Origin-Resource-Policy: cross-origin`, so pages from other origins can read them.
 
+On Cloud Run, `ingress-cloudflare-media` sets this up with OpenTofu: see [Deploying on Cloud Run](deploy-cloud-run.md#cloudflare).
+
 ## Who can open media URLs
 
 Media URLs are not access-controlled. Anyone who has the URL of a file can open it, without signing in, whatever the visibility of the post that attaches it.

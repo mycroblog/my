@@ -16,6 +16,11 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.7"
     }
+    # Used only by the Cloudflare modules in the comments below; it then reads CLOUDFLARE_API_TOKEN.
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5.0"
+    }
   }
 }
 
@@ -95,6 +100,26 @@ module "mail" {
 
 # To put a global external Application Load Balancer in front instead, replace this block. It costs a monthly fee: the guide
 # has the trade-off. To use the service's own URL or something else in front, remove this block and its line in backends.
+#
+# Or Cloudflare, with an origin that accepts host unless the zone is on the Enterprise plan: the guide has what that means.
+#
+#   module "ingress" {
+#     source = "../../modules/ingress-cloudflare-app"
+#
+#     zone_id     = "<the zone's ID>"
+#     host        = var.host
+#     origin_host = "ghs.googlehosted.com"
+#   }
+#
+# And a media host beside any of them, which adds { env = module.media.env } to backends:
+#
+#   module "media" {
+#     source = "../../modules/ingress-cloudflare-media"
+#
+#     zone_id     = "<the zone's ID>"
+#     host        = "media.example.org"
+#     origin_host = "ghs.googlehosted.com"
+#   }
 #
 #   module "ingress" {
 #     source = "../../modules/ingress-gcp-load-balancer"
