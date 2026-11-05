@@ -12,9 +12,11 @@ import (
 	"github.com/mycroblog/my/internal/adapter/plugin/fakeplugin"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/federation"
 	"github.com/mycroblog/my/internal/domain/hook"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/platform"
 )
@@ -109,6 +111,29 @@ func TestInboundFollowHook(t *testing.T) {
 		return hook.Record{}
 	}
 
+	hookReports := func() []moderation.ReportRecord {
+		t.Helper()
+		page, err := c.app.Moderation.Reports(ctx, appmoderation.ReportQuery{}, 50)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return page
+	}
+	applied := func(decisionID string) int {
+		t.Helper()
+		audit, err := c.app.Moderation.AuditLog(ctx, appmoderation.AuditQuery{TargetKind: moderation.AuditTargetHookDecision}, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		n := 0
+		for _, e := range audit {
+			if e.Action == moderation.AuditHookDecisionApplied && e.TargetID == decisionID {
+				n++
+			}
+		}
+		return n
+	}
+
 	// observe is the default: the verdict is recorded, and the follow goes on.
 	observer, observerURI := actor("observed")
 	follow(observer, observerURI+"/follow")
@@ -125,6 +150,18 @@ func TestInboundFollowHook(t *testing.T) {
 	if parties, _ := body["follow"].(map[string]any); parties["followerUri"] != observerURI || parties["followeeUri"] != alice {
 		t.Errorf("the parties = %v", body["follow"])
 	}
+
+	// A flag in observe records the decision and files nothing.
+	plugin.verdict.Store("VERDICT_FLAG")
+	quiet, quietURI := actor("quiet")
+	follow(quiet, quietURI+"/follow")
+	if d := decisionOf(quietURI + "/follow").Decision; d.Mode != hook.ModeObserve || d.Outcome != hook.Flag {
+		t.Errorf("the flag in observe = %+v", d)
+	}
+	if got := hookReports(); len(got) != 0 {
+		t.Errorf("a flag in observe filed %+v", got)
+	}
+	plugin.verdict.Store("VERDICT_DROP")
 
 	// An Undo of a follow never asks.
 	calls := plugin.calls.Load()
@@ -185,8 +222,40 @@ func TestInboundFollowHook(t *testing.T) {
 	if !following(flaggedURI) {
 		t.Error("a flag stopped the follow")
 	}
-	if d := decisionOf(flaggedURI + "/follow").Decision; d.Mode != hook.ModeEnforce || d.Outcome != hook.Flag {
-		t.Errorf("the decision of a flag = %+v", d)
+	flaggedDecision := decisionOf(flaggedURI + "/follow").Decision
+	if flaggedDecision.Mode != hook.ModeEnforce || flaggedDecision.Outcome != hook.Flag {
+		t.Errorf("the decision of a flag = %+v", flaggedDecision)
+	}
+	flaggedAccount, err := c.app.Accounts.FindByURI(ctx, flaggedURI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inst, err := c.app.Accounts.EnsureInstanceActor(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reports := hookReports()
+	if len(reports) != 1 {
+		t.Fatalf("reports after a flag = %+v, want one", reports)
+	}
+	if r := reports[0].Report; r.ReporterAccountID != inst.ID || r.TargetAccountID != flaggedAccount.Account.ID || r.URI != "" || r.Forwarded ||
+		r.Category != moderation.CategorySpam || len(r.StatusIDs) != 0 || r.HookOrigin == nil ||
+		r.HookOrigin.DecisionID != flaggedDecision.ID || r.HookOrigin.Hook != "inbound.follow" || r.HookOrigin.ReasonCode != "spam" {
+		t.Errorf("the report of a flag = %+v, origin %+v", r, r.HookOrigin)
+	}
+	if got := applied(flaggedDecision.ID); got != 1 {
+		t.Errorf("hook_decision_applied of the flag = %d, want 1", got)
+	}
+
+	// Running the job again files no second report and audits nothing more.
+	if _, err := c.app.InboxProcessor.Process(ctx, federation.IRI(flaggedURI+"/follow"), federation.TrustSigned); err != nil {
+		t.Errorf("Process the flagged Follow again: %v", err)
+	}
+	if got := len(hookReports()); got != 1 {
+		t.Errorf("reports after a second run = %d, want 1", got)
+	}
+	if got := applied(flaggedDecision.ID); got != 1 {
+		t.Errorf("hook_decision_applied after a second run = %d, want 1", got)
 	}
 
 	// A failure passes by default and is recorded as what it is.
@@ -204,7 +273,7 @@ func TestInboundFollowHook(t *testing.T) {
 	set(instance.SettingHookInboundFollowOnFailure, "retry")
 	retried, retriedURI := actor("retried")
 	follow(retried, retriedURI+"/follow")
-	_, err := c.app.InboxProcessor.Process(ctx, federation.IRI(retriedURI+"/follow"), federation.TrustSigned)
+	_, err = c.app.InboxProcessor.Process(ctx, federation.IRI(retriedURI+"/follow"), federation.TrustSigned)
 	if !errors.Is(err, apphook.ErrRetryLater) {
 		t.Errorf("Process under retry = %v, want ErrRetryLater", err)
 	}
@@ -221,10 +290,6 @@ func TestInboundFollowHook(t *testing.T) {
 
 	// A Follow of the instance actor goes to the relays and does not ask.
 	calls = plugin.calls.Load()
-	inst, err := c.app.Accounts.EnsureInstanceActor(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
 	code = inboxCode(t, c, retried, map[string]any{"id": retriedURI + "/instance", "type": "Follow", "actor": retriedURI, "object": inst.URI})
 	if code != http.StatusAccepted || plugin.calls.Load() != calls {
 		t.Errorf("a Follow of the instance actor = %d, %d more calls", code, plugin.calls.Load()-calls)
