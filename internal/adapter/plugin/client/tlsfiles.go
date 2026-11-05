@@ -44,8 +44,9 @@ func newTLSConfig(d kind.Destination, addr kind.Address) (*tls.Config, *tlsFiles
 			return nil, nil, err
 		}
 		// The CA pool changes, and RootCAs is read only when the handshake starts from this config, so the server is
-		// verified here instead, against the pool of the moment: InsecureSkipVerify only moves the verification.
-		c.InsecureSkipVerify = true //nolint:gosec // VerifyConnection verifies the chain and the name against the CA file
+		// verified here instead, against the pool of the moment: InsecureSkipVerify only moves the verification to
+		// VerifyConnection, which checks the chain and the name.
+		c.InsecureSkipVerify = true
 		c.VerifyConnection = f.verify
 	}
 	if d.TLSCertFile != "" {
@@ -91,7 +92,7 @@ func (f *tlsFiles) verify(cs tls.ConnectionState) error {
 }
 
 func loadCAFile(path string) (*x509.CertPool, error) {
-	pem, err := os.ReadFile(path)
+	pem, err := os.ReadFile(path) //nolint:gosec // G304: the operator's setting names the file
 	if err != nil {
 		return nil, fmt.Errorf("read the CA file: %w", err)
 	}

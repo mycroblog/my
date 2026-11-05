@@ -33,11 +33,11 @@ func serveRenewable(t *testing.T, current *atomic.Pointer[tls.Config]) string {
 // renewal within the file system's resolution of times still counts as a change.
 func overwrite(t *testing.T, src, dst string) {
 	t.Helper()
-	b, err := os.ReadFile(src)
+	b, err := os.ReadFile(src) //nolint:gosec // G304: a file the test wrote
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(dst, b, 0o600); err != nil {
+	if err := os.WriteFile(dst, b, 0o600); err != nil { //nolint:gosec // G703: a file the test wrote
 		t.Fatal(err)
 	}
 	later := time.Now().Add(time.Minute)

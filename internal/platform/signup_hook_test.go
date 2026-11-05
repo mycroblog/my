@@ -148,7 +148,7 @@ func (e *signupHookEnv) decisionOf(accountID string, outcome hook.Outcome) (hook
 // Unix socket, from observe through enforce.
 func TestSignupCheck(t *testing.T) {
 	t.Parallel()
-	e := newSignupHookEnv(t, "30s")
+	e := newSignupHookEnv(t, "20s")
 	ctx := t.Context()
 
 	wantState := func(t *testing.T, want domainidentity.RegistrationState) appidentity.SignedUp {
@@ -380,7 +380,7 @@ func TestSignupCheckAfterCaptcha(t *testing.T) {
 func TestSignupCheckExternalPage(t *testing.T) {
 	t.Parallel()
 	p, addr := newSignupPlugin(t, "VERDICT_REJECT")
-	e := newExternalEnvWith(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_PLUGIN_SIGNUP_CHECK_ADDRESS": addr, "MY_PLUGIN_SIGNUP_CHECK_TIMEOUT": "30s"})
+	e := newExternalEnvWith(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_PLUGIN_SIGNUP_CHECK_ADDRESS": addr, "MY_PLUGIN_SIGNUP_CHECK_TIMEOUT": "20s"})
 	ctx := t.Context()
 	for _, s := range []appinstance.SetSettingInput{
 		{Key: instance.SettingHookSignupCheckMode, Value: string(hook.ModeEnforce)},
