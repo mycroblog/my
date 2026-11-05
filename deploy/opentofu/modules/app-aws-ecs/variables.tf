@@ -92,6 +92,8 @@ variable "backends" {
       target_group_arn  = string
       security_group_id = string
     }))
+    # What the backend adds to the one setting MY_BILLING_SOURCES.
+    billing_sources = optional(list(string), [])
     # Accepted so that a backend of no platform fits, and refused below: nothing calls or invokes this service that way.
     invokers = optional(list(string), [])
     event_sources = optional(map(object({

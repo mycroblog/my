@@ -21,11 +21,14 @@ locals {
   container_name = "my"
   container_port = 8080
 
+  # One setting, which several backends add to. A source named twice is listed below as a setting named twice.
+  billing_sources = flatten([for b in var.backends : b.billing_sources])
   named_settings = concat(
     flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files))]),
     keys(var.env),
     keys(var.secret_env),
     keys(var.secret_files),
+    [for source in local.billing_sources : "billing_sources: ${source}"],
   )
 
   # Nothing of the platform stands in front of a task, so only an ingress names proxies.
@@ -36,6 +39,9 @@ locals {
       MY_PROFILE = var.profile
     },
     length(local.ingress_trust) == 0 ? {} : { MY_TRUSTED_PROXIES = join(", ", flatten(local.ingress_trust)) },
+    length(local.billing_sources) == 0 ? {} : {
+      MY_BILLING_SOURCES = join(",", sort(distinct(local.billing_sources)))
+    },
   )
 
   # Every setting by the name the server reads: MY_KEK and MY_KEK_FILE are one setting.

@@ -26,7 +26,7 @@ module "app" {
 | `architecture` | `x86_64` | Or `arm64`. The released image has both |
 | `name` | `my` | Name of the cluster, the service, and its family, and the `--name` of `upgrade.sh` |
 | `profile` | `production` | `profile` of the server |
-| `backends`, `env`, `secret_env`, `secret_files` | empty | [The backend contract](../../README.md#the-backend-contract). `secret_files` is treated as `secret_env` |
+| `backends`, `env`, `secret_env`, `secret_files` | empty | [The backend contract](../../README.md#the-backend-contract). `secret_files` is treated as `secret_env`. The module sets `MY_BILLING_SOURCES` from what `backends` returns as `billing_sources` |
 | `cpu`, `memory_mib` | `256`, `1024` | Size of a service task, from [the sizes Fargate offers](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html). A size it does not offer fails the apply. `GOMEMLIMIT` is 90% of the memory |
 | `desired_count` | `1` | Tasks of the service. Above 1 needs a stream other than `hub`, which the plan checks |
 | `job_cpu`, `job_memory_mib` | `512`, `1024` | Size of a one-off task, billed only while it runs |

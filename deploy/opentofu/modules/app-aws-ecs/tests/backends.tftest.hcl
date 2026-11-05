@@ -473,3 +473,61 @@ run "a_queue_that_lambda_polls_fails" {
 
   expect_failures = [var.backends]
 }
+
+# Several backends add to the one setting, which is absent while none does.
+run "billing_sources_are_absent_without_a_billing_backend" {
+  command = plan
+
+  assert {
+    condition     = !contains(keys(output.env), "MY_BILLING_SOURCES")
+    error_message = "a deployment without a billing backend must not name the setting"
+  }
+}
+
+run "two_backends_add_to_billing_sources" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { billing_sources = ["gcp"] },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_BILLING_SOURCES"] == "aws,gcp"
+    error_message = "the app must set the one setting from every backend, in a stable order"
+  }
+}
+
+run "a_billing_source_named_twice_fails" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { billing_sources = ["aws"] },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.execution]
+}
+
+run "billing_sources_beside_the_setting_in_env_fail" {
+  command = plan
+
+  variables {
+    env = { MY_BILLING_SOURCES = "gcp" }
+    backends = [
+      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.execution]
+}
