@@ -528,12 +528,12 @@
     "description": "Heading of the part of the profile form about search engines and AI."
   },
   "settings.profile.indexable": {
-    "defaultMessage": "プロフィールと公開投稿を検索に載せる",
-    "description": "Label of the checkbox that lets the profile and public posts appear in search."
+    "defaultMessage": "{scope, select, none {プロフィールと公開投稿を検索エンジンに載せる} public {プロフィールと公開投稿を検索に載せる} local {プロフィールと公開投稿を検索エンジンに、公開範囲が「このサーバー」の投稿をこのサーバーの検索に載せる} other {プロフィール、公開投稿、公開範囲が「このサーバー」の投稿を検索に載せる}}",
+    "description": "Label of the checkbox that lets the profile and posts appear in search. {scope} is what this server's post search covers: none (the server has no post search), public, local, or public_local."
   },
   "settings.profile.indexable.description": {
-    "defaultMessage": "このサーバーの検索と、サーバーが許可していれば検索エンジンが、索引に載せられます。この選択に従うほかのサーバーにも伝わります。",
-    "description": "Help text of the indexable checkbox."
+    "defaultMessage": "{scope, select, none {サーバーが許可していれば、検索エンジンが索引に載せられます。この選択に従うほかのサーバーにも伝わります。名前でアカウントを探せるかどうかは変わりません。} public {このサーバーの投稿の検索で、あなたの公開投稿が見つかるようになります。サーバーが許可していれば、検索エンジンがプロフィールと公開投稿を索引に載せられます。この選択に従うほかのサーバーにも伝わります。} local {このサーバーの投稿の検索で、公開範囲が「このサーバー」のあなたの投稿が見つかるようになります。公開投稿は見つかりません。サーバーが許可していれば、検索エンジンがプロフィールと公開投稿を索引に載せられます。この選択に従うほかのサーバーにも伝わります。} other {このサーバーの投稿の検索で、あなたの公開投稿と公開範囲が「このサーバー」の投稿が見つかるようになります。サーバーが許可していれば、検索エンジンがプロフィールと公開投稿を索引に載せられます。この選択に従うほかのサーバーにも伝わります。}}",
+    "description": "Help text of the indexable checkbox. Only a server with a post search speaks of this server's search; on the others (none) it must not read as if it affected the search by name. {scope} as in settings.profile.indexable."
   },
   "settings.profile.indexable.server_denies": {
     "defaultMessage": "このサーバーはすべてのページを検索エンジンの索引に載せないよう求めているため、許可しても検索エンジンには載りません。",

@@ -112,6 +112,7 @@ async function serveApi(page: Page): Promise<void> {
         source_url: "https://github.com/mycroblog/my",
         registrations: { mode: "open" },
         federation: { mode: "both" },
+        full_text_search: { available: false, visibilities: [] },
         limits: { max_post_characters: 500 },
         timelines: { local: "everyone", federated: "everyone" },
         rules: [],

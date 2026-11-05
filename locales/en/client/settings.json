@@ -528,12 +528,12 @@
     "description": "Heading of the part of the profile form about search engines and AI."
   },
   "settings.profile.indexable": {
-    "defaultMessage": "Show my profile and public posts in search",
-    "description": "Label of the checkbox that lets the profile and public posts appear in search."
+    "defaultMessage": "{scope, select, none {Let search engines index my profile and public posts} public {Show my profile and public posts in search} local {Show my profile and public posts in search engines, and my posts for this server in its search} other {Show my profile, public posts, and posts for this server in search}}",
+    "description": "Label of the checkbox that lets the profile and posts appear in search. {scope} is what this server's post search covers: none (the server has no post search), public, local, or public_local."
   },
   "settings.profile.indexable.description": {
-    "defaultMessage": "Search on this server and, when the server allows it, search engines may index them. Other servers that follow this choice see it too.",
-    "description": "Help text of the indexable checkbox."
+    "defaultMessage": "{scope, select, none {When the server allows it, search engines may index them. Other servers that follow this choice see it too. It does not change how people find your account by name.} public {This server's post search can find your public posts. When the server allows it, search engines may index your profile and public posts. Other servers that follow this choice see it too.} local {This server's post search can find your posts with the visibility \"This server\", not your public ones. When the server allows it, search engines may index your profile and public posts. Other servers that follow this choice see it too.} other {This server's post search can find your public posts and your posts with the visibility \"This server\". When the server allows it, search engines may index your profile and public posts. Other servers that follow this choice see it too.}}",
+    "description": "Help text of the indexable checkbox. Only a server with a post search speaks of this server's search; on the others (none) it must not read as if it affected the search by name. {scope} as in settings.profile.indexable."
   },
   "settings.profile.indexable.server_denies": {
     "defaultMessage": "This server asks search engines not to index any page, so they do not index yours even if you allow it.",
