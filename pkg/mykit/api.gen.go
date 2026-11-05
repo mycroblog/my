@@ -11759,7 +11759,8 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/appeal-window-closed` (422): the time to appeal the moderation
 //     action or the refusal of a post has passed.
 //   - `/api/v1/problems/not-appealable` (422): the moderation action is a ban whose
-//     account is deleted, so it can no longer be appealed or overturned.
+//     account is deleted, so it can no longer be appealed or overturned; or the decision of
+//     the automated review is not a refusal of the user's post that is in force.
 //   - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
 //   - `/api/v1/problems/wrong-password` (422): the password given to confirm the operation is
 //     not the user's current password.
