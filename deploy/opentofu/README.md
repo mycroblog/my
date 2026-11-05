@@ -95,7 +95,7 @@ resources.
 
 The rules:
 
-- No secret value reaches the plan or the state. A backend takes or creates a secret by ID, and the operator adds a value that
+- No secret value reaches the plan or the state, with one exception: the origin secret of an ingress, as its section says. A backend takes or creates a secret by ID, and the operator adds a value that
   comes from elsewhere by hand. What the deployment can generate itself (the KEK, a VAPID key) goes through an ephemeral
   resource and a write-only attribute, whose version number is fixed in the module, never an input: changing it writes a new
   value. `secrets-gcp-secret-manager` exposes the IDs as `ids`; a secret made elsewhere needs only its ID. The app can read every secret in `secret_env` and `secret_files` without a role for it.
@@ -138,6 +138,9 @@ required and has no default, so nothing opens a service by accident: [its README
 because a Function URL has one setting that works: it accepts `all` and refuses the others. An ingress may also be left out, for a deployment that uses the
 service's own URL or has something else in front. Remove the block and that line: `MY_TRUSTED_PROXIES` is then only what the platform puts in front, or what `env` of the app says. Setting
 it in `env` beside an ingress that names proxies fails the plan, and so do two ingresses that both name them.
+
+An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`), with a header that the server checks (`ingress-cloudflare-app`, `ingress-aws-cloudfront`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
+**That value lands in the state**: neither provider has a write-only form of it. So this is the one place that breaks the rule below that no secret value reaches the state, and the state must be kept private. Two modules must not name those settings twice, so `ingress-cloudflare-media` beside `ingress-cloudflare-app` leaves them out and comes through `extra_rules`.
 
 ## The app contract
 

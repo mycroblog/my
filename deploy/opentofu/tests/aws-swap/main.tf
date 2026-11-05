@@ -40,7 +40,7 @@ variable "ingress" {
 module "secrets" {
   source = "../../modules/secrets-aws-secrets-manager"
 
-  referenced = { database_url = "my-database-url", smtp_password = "my-smtp-password" }
+  referenced = { database_url = "my-database-url", smtp_password = "my-smtp-password", origin_secret = "my-origin-secret" }
 }
 
 module "kek_secrets_manager" {
@@ -105,9 +105,11 @@ module "mail_ses" {
 module "ingress_cloudfront" {
   source = "../../modules/ingress-aws-cloudfront"
 
-  host            = "social.example.org"
-  origin_host     = module.app.origin_host
-  certificate_arn = "arn:aws:acm:us-east-1:111122223333:certificate/abc"
+  host             = "social.example.org"
+  origin_host      = module.app.origin_host
+  certificate_arn  = "arn:aws:acm:us-east-1:111122223333:certificate/abc"
+  origin_secret    = "0123456789abcdef0123456789abcdef"
+  origin_secret_id = module.secrets.ids["origin_secret"]
 
   lifecycle {
     enabled = var.ingress == "cloudfront"
@@ -121,6 +123,8 @@ module "ingress_cloudflare" {
   host                = "social.example.org"
   origin_host         = module.app.origin_host
   rewrite_host_header = true
+  origin_secret       = "0123456789abcdef0123456789abcdef"
+  origin_secret_id    = module.secrets.ids["origin_secret"]
 
   lifecycle {
     enabled = var.ingress == "cloudflare"
@@ -140,8 +144,8 @@ module "app" {
     var.mail == "smtp" ? [module.mail_smtp] : [],
     var.mail == "ses" ? [module.mail_ses] : [],
     # Named output by output, as in the example: a reference to the whole module would be a cycle.
-    var.ingress == "cloudfront" ? [{ env = module.ingress_cloudfront.env, service_ingress = module.ingress_cloudfront.service_ingress, trusted_proxies = module.ingress_cloudfront.trusted_proxies }] : [],
-    var.ingress == "cloudflare" ? [{ env = module.ingress_cloudflare.env, service_ingress = module.ingress_cloudflare.service_ingress, trusted_proxies = module.ingress_cloudflare.trusted_proxies }] : [],
+    var.ingress == "cloudfront" ? [{ env = module.ingress_cloudfront.env, secret_env = module.ingress_cloudfront.secret_env, service_ingress = module.ingress_cloudfront.service_ingress, trusted_proxies = module.ingress_cloudfront.trusted_proxies }] : [],
+    var.ingress == "cloudflare" ? [{ env = module.ingress_cloudflare.env, secret_env = module.ingress_cloudflare.secret_env, service_ingress = module.ingress_cloudflare.service_ingress, trusted_proxies = module.ingress_cloudflare.trusted_proxies }] : [],
   )
 }
 

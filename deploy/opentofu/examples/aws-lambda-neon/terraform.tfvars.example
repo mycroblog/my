@@ -7,6 +7,8 @@ image           = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
 certificate_arn = "arn:aws:acm:us-east-1:111122223333:certificate/00000000-0000-0000-0000-000000000000"
 bucket_name     = "social-example-org-media"
 
+# Not here: pass the origin secret with TF_VAR_origin_secret. It lands in the state, so keep the state private.
+
 # Recommended: a public hosted zone of host in Route 53, where the records work at a zone apex too.
 # route53_zone_id = "Z0123456789ABCDEFGHIJ"
 #

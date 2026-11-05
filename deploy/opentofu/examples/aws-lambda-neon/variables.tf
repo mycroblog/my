@@ -27,6 +27,18 @@ variable "certificate_arn" {
   type        = string
 }
 
+variable "origin_secret" {
+  description = "Value of the header that closes the Function URL, at least 32 bytes: openssl rand -hex 32. Pass it with TF_VAR_origin_secret, and put the same value in the secret of origin_secret_name. It lands in the state, so keep the state private."
+  type        = string
+  sensitive   = true
+}
+
+variable "origin_secret_name" {
+  description = "Secret that holds the same value, which the server reads."
+  type        = string
+  default     = "my-origin-secret"
+}
+
 variable "route53_zone_id" {
   description = "Public Route 53 hosted zone of host, in which the ingress creates alias records. Null leaves the records to you: the output dns_records says what to create."
   type        = string

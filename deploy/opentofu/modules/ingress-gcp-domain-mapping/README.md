@@ -30,3 +30,7 @@ module "ingress" {
 | `dns_records` | The records to add at your DNS provider |
 
 Whoever applies must be a verified owner of the domain in Search Console, and the certificate can take up to 24 hours.
+
+## The origin stays open
+
+A domain mapping cannot add a header, and its traffic comes from the internet, so `run.app` stays open to anyone. A load balancer closes it on the platform, and Cloudflare closes it with a header that the server checks. Going from this module to either changes its block and the settings the plan asks for.

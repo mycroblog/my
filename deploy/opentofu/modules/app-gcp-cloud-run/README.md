@@ -53,14 +53,14 @@ module "app" {
 | In front | `service_ingress` | Can anyone reach `run.app`? | The client address |
 | --- | --- | --- | --- |
 | `ingress-gcp-load-balancer` | `internal-and-load-balancer` | No: refused from the internet | From `X-Forwarded-For`, past the load balancer's address. A direct caller has no way in |
-| `ingress-gcp-domain-mapping` | `all` | **Yes** | From `X-Forwarded-For`, past Cloud Run's front end, the same on either URL. An assumption, as below: check the first request logs |
-| `ingress-cloudflare-app` | `all` | **Yes, so Cloudflare's protections can be gone around** | Trusts Cloudflare's ranges, so a caller of the `run.app` URL from a Cloudflare Worker of their own can choose the address that the rate limits see |
+| `ingress-gcp-domain-mapping` | `all` | **Yes: the origin stays open.** A mapping cannot add a header | From `X-Forwarded-For`, past Cloud Run's front end, the same on either URL. An assumption, as below: check the first request logs |
+| `ingress-cloudflare-app` | `all` | They can connect, and the server refuses them with a `403`: **closed by the header** that Cloudflare adds | Trusts Cloudflare's ranges, and only what carries the header gets that far, so a caller's own Cloudflare Worker cannot forge the address |
 | Nothing | Your choice: `all` for a public instance | **Yes**, with `all` | As with the domain mapping |
 | Nothing | `internal` | No | No client from the internet at all: federation and browsers cannot reach it, so this is not for a public instance |
 
 Cloud Tasks and Cloud Scheduler reach the service under every setting, when they are in the same project and call the default `run.app` URL.
 
-The server has no check that a request came through its ingress, so nothing closes `run.app` on the rows that say yes.
+On the rows that say yes, nothing closes `run.app`. For the header, the value is in the state: read the module's README.
 
 ## What it does
 

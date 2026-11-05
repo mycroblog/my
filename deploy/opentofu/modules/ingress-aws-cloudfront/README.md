@@ -21,6 +21,9 @@ module "ingress" {
 | `host` | required | Domain of the server |
 | `origin_host` | required | `module.app.origin_host` |
 | `certificate_arn` | required | A validated certificate for `host`, in `us-east-1` |
+| `origin_secret` | required | The header's value, **which lands in the state**. Pass it with `TF_VAR_origin_secret` |
+| `origin_secret_id` | required | The ARN of the same value in Secrets Manager |
+| `origin_secret_header` | `x-my-origin-secret` | The header's name |
 | `route53_zone_id` | null | Public hosted zone of `host`. Set, the module creates the records: recommended |
 | `host_is_apex` | `false` | Whether `host` is the apex of its zone, for what `dns_records` asks while `route53_zone_id` is null |
 | `origin_read_timeout` | `120` | Seconds it waits for bytes from the origin |
@@ -28,13 +31,14 @@ module "ingress" {
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_TRUSTED_PROXY_HEADER` |
+| `env` | `MY_TRUSTED_PROXY_HEADER`, `MY_ORIGIN_SECRET_HEADER` |
+| `secret_env` | `MY_ORIGIN_SECRET`, by reference |
 | `trusted_proxies` | The ranges of `CLOUDFRONT_ORIGIN_FACING` |
-| `service_ingress` | `all`: the Function URL stays open |
+| `service_ingress` | `all`: anyone can connect to the Function URL, and the server refuses what lacks the header |
 | `dns_records` | What to create elsewhere: read [DNS](#dns) |
 | `dns_note` | What `dns_records` cannot say, or null |
 | `domain_name`, `hosted_zone_id` | Of the distribution, for records made elsewhere |
-| `secret_env`, `permissions` | Empty |
+| `permissions` | Empty |
 
 It takes the certificate as an input, unlike Google's ingress modules, which obtain their own. Create it first: CloudFront takes one only from `us-east-1`, which
 would need a second AWS provider in every configuration, and validating it within the apply would hold the apply until you add records that
@@ -58,14 +62,19 @@ DNS allows no `CNAME` at a zone apex, and an instance often sits on one.
 At an apex elsewhere you need what your provider calls an `ALIAS` or `ANAME` record, or a flattened `CNAME`. **Not every DNS provider has one**, and without one this module cannot serve an apex
 there. `host_is_apex` is an input because the labels of a name cannot tell: `social.example.org` and `example.co.uk` both have three. The module cannot check it, so a wrong `false` asks for a `CNAME` that your provider refuses.
 
-## What protects the origin: nothing
+## What protects the origin: a header
 
-**The Function URL stays open.** CloudFront can sign its requests to a Function URL with an origin access control, but then whoever sends a `POST` must send the
-SHA-256 of its body in `x-amz-content-sha256`, and Lambda takes no unsigned payload. A peer delivering an activity does not, so federation would stop.
+CloudFront sends `origin_secret_header` on every request to the origin, replacing what a viewer sent, and the server refuses a request without it with a `403`. So **a direct caller of the Function URL is refused**, whichever address it writes in `X-Forwarded-For`. Only the
+health checks and `POST` to `/_internal/...` are exempt, and the web function has no event path. The refusal is the server's: Lambda still runs the function for such a request, and bills it.
 
-So anyone can go around CloudFront through the Function URL. The server trusts CloudFront's ranges and the adapter's loopback address, so **how far a direct caller
-can forge its address depends on what a Function URL does to `X-Forwarded-For`, which is unverified**. A shared header that the server checks would close this; the
-server has no such check.
+An origin access control would close the URL in AWS itself, but then whoever sends a `POST` must send the SHA-256 of its body in `x-amz-content-sha256`, and Lambda takes no unsigned payload. A peer delivering an activity does not, so federation would stop.
+
+**The value is in the state.** The provider's `custom_header` has no write-only form, so nothing can keep it out, and generating it through an ephemeral resource would not help. The variable is sensitive, which keeps it out of what `tofu` prints, not out of the state. Keep the state private. Anyone who can
+read the distribution's configuration can read the value too.
+
+**This depends on what the server cannot yet do on Lambda**: it reads `MY_ORIGIN_SECRET` through `SECRET_ARN_MY_ORIGIN_SECRET`, like every secret there, which `app-aws-lambda` says is missing. Nothing has been run, so the `403` is what the server documents rather than what has been seen.
+
+To rotate the value, follow the steps under "Rotate the value" in [the CDN guide](../../../../docs/operations/cdn.md).
 
 ## Limits
 

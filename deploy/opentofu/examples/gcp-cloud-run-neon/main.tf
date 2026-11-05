@@ -108,7 +108,12 @@ module "mail" {
 #     zone_id     = "<the zone's ID>"
 #     host        = var.host
 #     origin_host = "ghs.googlehosted.com"
+#     # Closes the origin. The value lands in the state, so keep the state private: the guide has how.
+#     origin_secret    = var.origin_secret
+#     origin_secret_id = module.secrets.ids["origin_secret"]
 #   }
+#
+# with secret_env = module.ingress.secret_env in its line of backends.
 #
 # And a media host beside any of them, which adds { env = module.media.env } to backends:
 #

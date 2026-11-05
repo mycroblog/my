@@ -104,6 +104,8 @@ variables {
   mail_from          = "noreply@social.example.org"
   mail_smtp_host     = "smtp.example.org"
   mail_smtp_username = "my-smtp-user"
+
+  origin_secret = "0123456789abcdef0123456789abcdef"
 }
 
 # By plan alone, as the example of Google Cloud: prevent_destroy refuses the destroy that follows an apply, as it should. So what
@@ -126,6 +128,7 @@ run "composes_every_setting" {
       "MY_MEDIA_MAX_AV_BYTES",
       "MY_MEDIA_MAX_IMAGE_BYTES",
       "MY_PROFILE",
+      "MY_ORIGIN_SECRET_HEADER",
       "MY_QUEUE",
       "MY_QUEUE_SQS_QUEUE_URL",
       "MY_STREAM",
@@ -148,7 +151,7 @@ run "composes_every_setting" {
   }
 
   assert {
-    condition     = toset(keys(module.app.secret_env)) == toset(["MY_DATABASE_URL", "MY_KEK", "MY_MAIL_SMTP_PASSWORD", "MY_VAPID_PRIVATE_KEY"])
+    condition     = toset(keys(module.app.secret_env)) == toset(["MY_DATABASE_URL", "MY_KEK", "MY_MAIL_SMTP_PASSWORD", "MY_ORIGIN_SECRET", "MY_VAPID_PRIVATE_KEY"])
     error_message = "every secret reaches the app, the two neutral blocks' among them"
   }
 }
@@ -217,7 +220,7 @@ run "the_ingress_can_be_left_out" {
   }
 
   assert {
-    condition     = output.env["MY_TRUSTED_PROXIES"] == "127.0.0.1/32" && !contains(keys(output.env), "MY_TRUSTED_PROXY_HEADER")
+    condition     = output.env["MY_TRUSTED_PROXIES"] == "127.0.0.1/32" && !contains(keys(output.env), "MY_TRUSTED_PROXY_HEADER") && !contains(keys(output.env), "MY_ORIGIN_SECRET_HEADER")
     error_message = "without an ingress only the adapter is trusted"
   }
 }

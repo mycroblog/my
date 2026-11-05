@@ -37,6 +37,7 @@ module "secrets" {
   referenced = {
     database_url  = var.database_url_secret_name
     smtp_password = var.mail_smtp_password_secret_name
+    origin_secret = var.origin_secret_name
   }
 }
 
@@ -103,6 +104,8 @@ module "mail" {
 #     host                = var.host
 #     origin_host         = module.app.origin_host
 #     rewrite_host_header = true
+#     origin_secret       = var.origin_secret
+#     origin_secret_id    = module.secrets.ids["origin_secret"]
 #   }
 module "ingress" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-aws-cloudfront?ref=v0.1.0&depth=1"
@@ -110,6 +113,9 @@ module "ingress" {
   host            = var.host
   origin_host     = module.app.origin_host
   certificate_arn = var.certificate_arn
+  # Closes the Function URL. The value lands in the state: keep the state private.
+  origin_secret    = var.origin_secret
+  origin_secret_id = module.secrets.ids["origin_secret"]
   # With a hosted zone in Route 53 the module creates the records, at an apex too. Without one, dns_records says what to create.
   route53_zone_id = var.route53_zone_id
   host_is_apex    = var.host_is_apex
@@ -126,7 +132,7 @@ module "app" {
   backends = [
     module.secrets, module.kek, module.db, module.queue, module.blob, module.stream, module.mail,
     # Named output by output, as on Google Cloud: the ingress reads the app's origin, so its other outputs depend on the app.
-    { env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
+    { env = module.ingress.env, secret_env = module.ingress.secret_env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
   ]
 
   env = merge(

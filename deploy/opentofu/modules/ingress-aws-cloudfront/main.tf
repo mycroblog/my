@@ -47,6 +47,36 @@ variable "host_is_apex" {
   nullable    = false
 }
 
+variable "origin_secret" {
+  description = "Value of the header that shows the server a request came through CloudFront. THE PROVIDER HAS NO WRITE-ONLY FORM OF A CUSTOM ORIGIN HEADER, SO IT LANDS IN THE STATE: keep the state private. Pass it with TF_VAR_origin_secret, and put the same value in the secret of origin_secret_id."
+  type        = string
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^[!-~]{32,}$", var.origin_secret))
+    error_message = "origin_secret must be at least 32 bytes of visible ASCII with no spaces: openssl rand -hex 32."
+  }
+}
+
+variable "origin_secret_id" {
+  description = "ARN of the same value in Secrets Manager, which the server reads as MY_ORIGIN_SECRET."
+  type        = string
+  nullable    = false
+}
+
+variable "origin_secret_header" {
+  description = "Name of that header, which nothing else uses."
+  type        = string
+  default     = "x-my-origin-secret"
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$", var.origin_secret_header)) && !can(regex("(?i)^(cf-|x-cf-|x-forwarded-|x-amz|x-edge-|x-goog-|sec-|proxy-|if-|access-control-)", var.origin_secret_header))
+    error_message = "origin_secret_header must hold letters, digits, and inner hyphens, and must not be a name that a CDN or a browser sets, such as x-forwarded-*. my config check refuses a few more, such as authorization."
+  }
+}
+
 variable "origin_read_timeout" {
   description = "Seconds CloudFront waits for bytes from the origin, from 1 to 120 without a quota increase. Streams send a heartbeat every 30 seconds."
   type        = number
@@ -97,6 +127,12 @@ resource "aws_cloudfront_distribution" "this" {
   origin {
     origin_id   = local.origin_id
     domain_name = var.origin_host
+
+    # It replaces what a viewer sent, and the server refuses a request without it.
+    custom_header {
+      name  = var.origin_secret_header
+      value = var.origin_secret
+    }
 
     custom_origin_config {
       http_port              = 80
@@ -149,8 +185,11 @@ resource "aws_route53_record" "alias" {
 }
 
 output "env" {
-  description = "The header that the proxies write."
-  value       = { MY_TRUSTED_PROXY_HEADER = "x-forwarded-for" }
+  description = "The header that the proxies write, and the name of the one that shows the server a request came through CloudFront."
+  value = {
+    MY_TRUSTED_PROXY_HEADER = "x-forwarded-for"
+    MY_ORIGIN_SECRET_HEADER = var.origin_secret_header
+  }
 }
 
 output "trusted_proxies" {
@@ -159,13 +198,13 @@ output "trusted_proxies" {
 }
 
 output "service_ingress" {
-  description = "All: nothing can limit a Function URL to CloudFront for this server. Read the README."
+  description = "All: AWS itself cannot limit a Function URL to CloudFront for this server, and the server refuses what lacks the header. Read the README."
   value       = "all"
 }
 
 output "secret_env" {
-  description = "No secrets."
-  value       = {}
+  description = "The secret that the server checks, by reference."
+  value       = { MY_ORIGIN_SECRET = var.origin_secret_id }
 }
 
 output "permissions" {

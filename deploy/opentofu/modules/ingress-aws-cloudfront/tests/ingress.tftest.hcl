@@ -21,6 +21,9 @@ variables {
   host            = "social.example.org"
   origin_host     = "abc.lambda-url.ap-northeast-1.on.aws"
   certificate_arn = "arn:aws:acm:us-east-1:111122223333:certificate/abc"
+
+  origin_secret    = "0123456789abcdef0123456789abcdef"
+  origin_secret_id = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:origin-AbCdEf"
 }
 
 # A mock cannot set the id of these two lookups, which the provider's schema does not mark computed, so the tests check the names.
@@ -49,6 +52,30 @@ run "it_serves_host_with_no_cache" {
     condition     = one(output.dns_records).type == "CNAME" && one(output.dns_records).rrdata == "d111111abcdef8.cloudfront.net"
     error_message = "the host must point at the distribution"
   }
+}
+
+run "the_origin_secret_goes_by_reference_and_by_header" {
+  command = plan
+
+  assert {
+    condition     = output.env["MY_ORIGIN_SECRET_HEADER"] == "x-my-origin-secret" && output.secret_env["MY_ORIGIN_SECRET"] == var.origin_secret_id
+    error_message = "the server takes the header's name, and the secret by reference"
+  }
+
+  assert {
+    condition     = nonsensitive(one(one(aws_cloudfront_distribution.this.origin).custom_header).name) == "x-my-origin-secret"
+    error_message = "CloudFront must send the header"
+  }
+}
+
+run "a_short_secret_fails" {
+  command = plan
+
+  variables {
+    origin_secret = "short"
+  }
+
+  expect_failures = [var.origin_secret]
 }
 
 run "a_subdomain_elsewhere_asks_for_a_cname" {

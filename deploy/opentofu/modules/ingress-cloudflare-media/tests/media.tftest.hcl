@@ -86,3 +86,64 @@ run "a_rewrite_routes_to_the_origin" {
     error_message = "the rule must send the origin's Host"
   }
 }
+
+run "beside_the_app_module_it_names_nothing_of_the_secret" {
+  command = plan
+
+  variables {
+    manage_rulesets = false
+  }
+
+  assert {
+    condition     = one(output.rules.transform) == "http.host eq \"media.example.org\"" && cloudflare_ruleset.transform == null && length(output.secret_env) == 0 && !contains(keys(output.env), "MY_ORIGIN_SECRET_HEADER")
+    error_message = "the app module holds the one secret and names the settings"
+  }
+}
+
+run "alone_it_can_name_the_settings" {
+  command = plan
+
+  variables {
+    origin_secret    = "0123456789abcdef0123456789abcdef"
+    origin_secret_id = "my-origin-secret"
+  }
+
+  assert {
+    condition     = output.secret_env["MY_ORIGIN_SECRET"] == "my-origin-secret" && output.env["MY_ORIGIN_SECRET_HEADER"] == "x-my-origin-secret" && cloudflare_ruleset.transform.phase == "http_request_late_transform"
+    error_message = "the rule and the settings go together"
+  }
+}
+
+run "beside_cloudfront_it_only_sends_the_header" {
+  command = plan
+
+  variables {
+    origin_secret = "0123456789abcdef0123456789abcdef"
+  }
+
+  assert {
+    condition     = length(output.secret_env) == 0 && !contains(keys(output.env), "MY_ORIGIN_SECRET_HEADER") && cloudflare_ruleset.transform.phase == "http_request_late_transform"
+    error_message = "two modules must not name the settings twice"
+  }
+}
+
+run "a_second_secret_beside_the_app_module_fails" {
+  command = plan
+
+  variables {
+    manage_rulesets = false
+    origin_secret   = "0123456789abcdef0123456789abcdef"
+  }
+
+  expect_failures = [cloudflare_dns_record.host]
+}
+
+run "settings_without_the_header_fail" {
+  command = plan
+
+  variables {
+    origin_secret_id = "my-origin-secret"
+  }
+
+  expect_failures = [cloudflare_dns_record.host]
+}

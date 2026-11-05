@@ -145,7 +145,7 @@ run "both_cloudflare_modules_swap_in_by_their_blocks" {
   }
 
   assert {
-    condition     = output.service_ingress == "all" && output.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for" && output.env["MY_MEDIA_ORIGIN"] == "https://media.example.org"
+    condition     = output.service_ingress == "all" && output.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for" && output.env["MY_MEDIA_ORIGIN"] == "https://media.example.org" && output.env["MY_ORIGIN_SECRET_HEADER"] == "x-my-origin-secret"
     error_message = "the Cloudflare modules must set the trust and the media origin"
   }
 }

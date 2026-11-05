@@ -23,6 +23,7 @@ module "ingress" {
 | `origin_host` | required | Host name or IPv4 address Cloudflare connects to |
 | `rewrite_host_header` | `false` | Sends `origin_host` as `Host`. **Enterprise plan only** |
 | `proxied` | `true` | Proxies the record |
+| `origin_secret`, `origin_secret_id`, `origin_secret_header` | null, null, `x-my-origin-secret` | [The header that closes the origin](#the-header-that-closes-the-origin). **The value lands in the state** |
 | `manage_rulesets` | `true` | Creates the zone's rulesets. A zone has one per phase, so set it to `false` beside `ingress-cloudflare-app` in the same zone, and pass the `rules` output to its `extra_rules` |
 | `tiered_cache` | `true` | Smart Tiered Cache, on the zone. It strengthens hits and changes no lifetime |
 
@@ -61,3 +62,15 @@ Pass only `env` to `backends`, as `{ env = module.media.env }`.
 Everything against a real zone: no credentials exist for that. That Cloudflare caches `Cache-Control: immutable` for the full
 `max-age`, since an edge may evict earlier; the behaviour of a domain mapping's certificate behind the proxy; and that
 `ssl` in a configuration rule works on the Free plan.
+
+## The header that closes the origin
+
+A server with `MY_ORIGIN_SECRET` refuses `/media/` like everything else unless the request carries the header, so this host must send it. There must be one secret and one set of settings, whichever modules are in use:
+
+| Beside | `origin_secret` | `origin_secret_id` | What happens |
+| --- | --- | --- | --- |
+| `ingress-cloudflare-app` in the zone, `manage_rulesets = false` | Null | Null | That module's one rule covers this host through `extra_rules`, and it names the settings |
+| `ingress-aws-cloudfront` | The same value | Null | This module sends the header, and CloudFront's module names the settings |
+| `ingress-gcp-load-balancer` or `ingress-gcp-domain-mapping` | Null | Null | No header: the server must have no such check, since its other traffic does not carry one |
+
+The provider has no write-only form of a rule's header value, so **a value given here lands in the state**. Keep the state private.

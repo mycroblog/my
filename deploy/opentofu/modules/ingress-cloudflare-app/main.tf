@@ -47,6 +47,43 @@ variable "proxied" {
   nullable    = false
 }
 
+variable "origin_secret" {
+  description = "Value of the header that shows the server a request came through Cloudflare. THE PROVIDER HAS NO WRITE-ONLY FORM OF A RULE'S HEADER VALUE, SO IT LANDS IN THE STATE: keep the state private. Pass it with TF_VAR_origin_secret, and put the same value in the secret of origin_secret_id."
+  type        = string
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^[!-~]{32,}$", var.origin_secret))
+    error_message = "origin_secret must be at least 32 bytes of visible ASCII with no spaces: openssl rand -hex 32."
+  }
+}
+
+variable "origin_secret_id" {
+  description = "Reference to the same value in the platform's secret store, which the server reads as MY_ORIGIN_SECRET."
+  type        = string
+  nullable    = false
+}
+
+variable "origin_secret_header" {
+  description = "Name of that header, which nothing else uses."
+  type        = string
+  default     = "x-my-origin-secret"
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$", var.origin_secret_header)) && !can(regex("(?i)^(cf-|x-cf-|x-forwarded-|x-amz|x-edge-|x-goog-|sec-|proxy-|if-|access-control-)", var.origin_secret_header))
+    error_message = "origin_secret_header must hold letters, digits, and inner hyphens, and must not be a name that a CDN or a browser sets, such as x-forwarded-*. my config check refuses a few more, such as authorization."
+  }
+}
+
+variable "origin_secret_extra_hosts" {
+  description = "Other host names of this zone that reach the server and so need the header, such as a separate account_domain. A media host beside this module comes through extra_rules instead."
+  type        = list(string)
+  default     = []
+  nullable    = false
+}
+
 variable "extra_rules" {
   description = "The rules output of ingress-cloudflare-media in this zone. A zone has one ruleset per phase, so the two modules share them."
   type = object({
@@ -54,6 +91,8 @@ variable "extra_rules" {
     config   = optional(any, [])
     origin   = optional(any, [])
     firewall = optional(any, [])
+    # Expressions, not rules: one rule carries the one secret to every host.
+    transform = optional(any, [])
   })
   default  = {}
   nullable = false
@@ -81,6 +120,24 @@ locals {
       action_parameters = { ssl = "strict", bic = false }
     },
   ], var.extra_rules.config)
+
+  # Only the hosts of the server: the rest of the zone may go to origins that must not see the value.
+  transform_rules = [
+    {
+      description = "Show the server that the request came through Cloudflare"
+      expression = join(" or ", concat(
+        [local.host_match],
+        [for h in var.origin_secret_extra_hosts : "http.host eq \"${h}\""],
+        var.extra_rules.transform,
+      ))
+      action = "rewrite"
+      action_parameters = {
+        headers = {
+          (var.origin_secret_header) = { operation = "set", value = var.origin_secret }
+        }
+      }
+    },
+  ]
 
   origin_rules = concat(var.rewrite_host_header ? [
     {
@@ -139,6 +196,14 @@ resource "cloudflare_ruleset" "origin" {
   }
 }
 
+resource "cloudflare_ruleset" "transform" {
+  zone_id = var.zone_id
+  name    = "my origin secret"
+  kind    = "zone"
+  phase   = "http_request_late_transform"
+  rules   = local.transform_rules
+}
+
 resource "cloudflare_ruleset" "firewall" {
   zone_id = var.zone_id
   name    = "my firewall"
@@ -152,8 +217,11 @@ resource "cloudflare_ruleset" "firewall" {
 }
 
 output "env" {
-  description = "The header that the proxies write."
-  value       = { MY_TRUSTED_PROXY_HEADER = "x-forwarded-for" }
+  description = "The header that the proxies write, and the name of the one that shows the server a request came through Cloudflare."
+  value = {
+    MY_TRUSTED_PROXY_HEADER = "x-forwarded-for"
+    MY_ORIGIN_SECRET_HEADER = var.origin_secret_header
+  }
 }
 
 output "trusted_proxies" {
@@ -162,8 +230,8 @@ output "trusted_proxies" {
 }
 
 output "secret_env" {
-  description = "No secrets."
-  value       = {}
+  description = "The secret that the server checks, by reference."
+  value       = { MY_ORIGIN_SECRET = var.origin_secret_id }
 }
 
 output "permissions" {
@@ -172,7 +240,7 @@ output "permissions" {
 }
 
 output "service_ingress" {
-  description = "All: Cloudflare's traffic comes from the internet, and no platform can limit its service to Cloudflare, so the service is open to everyone. Read the README."
+  description = "All: Cloudflare's traffic comes from the internet, so the platform lets everyone connect, and the server refuses what lacks the header. Read the README."
   value       = "all"
 }
 

@@ -30,6 +30,8 @@ module "ingress" {
   origin_host         = local.origin_host
   rewrite_host_header = true
   extra_rules         = module.media.rules
+  origin_secret       = "0123456789abcdef0123456789abcdef"
+  origin_secret_id    = "my-origin-secret"
 }
 
 module "media" {
@@ -54,7 +56,7 @@ module "app" {
   service_ingress = "all"
 
   backends = [
-    { env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
+    { env = module.ingress.env, secret_env = module.ingress.secret_env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
     { env = module.media.env },
   ]
 }

@@ -16,6 +16,9 @@ variables {
   zone_id     = "0123456789abcdef0123456789abcdef"
   host        = "social.example.org"
   origin_host = "ghs.googlehosted.com"
+
+  origin_secret    = "0123456789abcdef0123456789abcdef"
+  origin_secret_id = "my-origin-secret"
 }
 
 run "the_contract" {
@@ -97,8 +100,10 @@ run "media_in_the_same_zone" {
   }
 
   variables {
-    host            = "media.example.org"
-    manage_rulesets = false
+    origin_secret    = null
+    origin_secret_id = null
+    host             = "media.example.org"
+    manage_rulesets  = false
   }
 }
 
@@ -116,4 +121,57 @@ run "shares_the_rulesets_with_media" {
     condition     = length(cloudflare_ruleset.cache.rules) == 2 && cloudflare_ruleset.firewall.rules[0].action == "block"
     error_message = "the rules of the media host must join this zone's rulesets"
   }
+}
+
+run "the_origin_secret_goes_by_reference_and_by_rule" {
+  command = plan
+
+  assert {
+    condition     = output.env["MY_ORIGIN_SECRET_HEADER"] == "x-my-origin-secret" && output.secret_env["MY_ORIGIN_SECRET"] == "my-origin-secret"
+    error_message = "the server takes the header's name, and the secret by reference"
+  }
+
+  assert {
+    condition     = !contains(values(output.env), "0123456789abcdef0123456789abcdef") && cloudflare_ruleset.transform.phase == "http_request_late_transform"
+    error_message = "the value goes to the rule alone"
+  }
+
+  assert {
+    condition     = nonsensitive(cloudflare_ruleset.transform.rules[0].expression) == "http.host eq \"social.example.org\"" && nonsensitive(cloudflare_ruleset.transform.rules[0].action_parameters.headers["x-my-origin-secret"].operation) == "set"
+    error_message = "the rule must replace what a client sent, on the server's host alone"
+  }
+}
+
+run "one_rule_covers_the_media_host_and_other_hosts" {
+  command = plan
+
+  variables {
+    origin_secret_extra_hosts = ["example.org"]
+    extra_rules               = { transform = ["http.host eq \"media.example.org\""] }
+  }
+
+  assert {
+    condition     = nonsensitive(cloudflare_ruleset.transform.rules[0].expression) == "http.host eq \"social.example.org\" or http.host eq \"example.org\" or http.host eq \"media.example.org\""
+    error_message = "a host that is not covered is locked out"
+  }
+}
+
+run "a_short_secret_fails" {
+  command = plan
+
+  variables {
+    origin_secret = "short"
+  }
+
+  expect_failures = [var.origin_secret]
+}
+
+run "a_header_a_cdn_sets_fails" {
+  command = plan
+
+  variables {
+    origin_secret_header = "x-forwarded-secret"
+  }
+
+  expect_failures = [var.origin_secret_header]
 }

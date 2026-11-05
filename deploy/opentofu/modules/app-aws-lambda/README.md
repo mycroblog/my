@@ -83,14 +83,12 @@ Lambda runs as can read everything in the image; and whether the adapter gets ou
 | One-off commands | A job, an hour by default | 15 minutes, and a step that takes longer cannot run here |
 | All settings | No limit that matters | 4 KB of environment variables per function, which the plan checks once the values are known |
 | IAM | A binding per kind of resource | One inline policy, up to 10,240 characters, which the plan checks |
-| Who may reach it | An explicit `service_ingress`, and a load balancer can be the only way in | Everyone, with no input to say otherwise: a Function URL has `NONE` or `AWS_IAM`, and `AWS_IAM` with an origin access control needs the SHA-256 of every `POST` body from the client, which a peer does not send. There is one value that works, so an input would be a choice in name only |
+| Who may reach it | An explicit `service_ingress`, and a load balancer can be the only way in | Everyone can connect, and the server refuses what lacks the header that CloudFront adds. A Function URL has `NONE` or `AWS_IAM`, and `AWS_IAM` with an origin access control needs the SHA-256 of every `POST` body from the client, which a peer does not send. There is one value that works, so an input would be a choice in name only |
 
 ## Unverified
 
 - Everything against a real account.
-- The client address. The connection comes from the adapter on loopback, so `127.0.0.1/32` is trusted and `X-Forwarded-For` decides. Whether
-  a Function URL appends the caller's address to that header, or passes on what the caller wrote, is not in AWS's documentation. If it passes it
-  on, anyone can forge their address by calling the URL. Check it before relying on any limit by IP.
+- The client address. The connection comes from the adapter on loopback, so `127.0.0.1/32` is trusted and `X-Forwarded-For` decides. A direct caller of the URL is refused by the origin secret, so it cannot forge an address through it, but the shape of the header through CloudFront is unverified.
 - A stream through `response_stream` on a Function URL, and whether a process frozen between invocations keeps its SNS listener. The server is
   written to recover when its queue was swept away while frozen.
 - Several `Set-Cookie` headers through the adapter and a Function URL.
