@@ -68,6 +68,30 @@ func TestRunConfig(t *testing.T) {
 			wantStderr: []string{"MY_WORKER_JOB_TYPES: cannot run: queue: no job type matches federation.delivr"},
 		},
 		{
+			name:       "the origin check says what it cannot see",
+			args:       []string{"config", "check"},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DATABASE_URL": "file:my.db", "MY_KEK": kek, "MY_ORIGIN_SECRET": "0123456789abcdef0123456789abcdef", "MY_ORIGIN_SECRET_HEADER": "X-Via-Cdn", "LC_ALL": "C"},
+			wantCode:   0,
+			wantStdout: []string{"origin check: on", "X-Via-Cdn", "cannot see the CDN", "configuration OK"},
+			wantAbsent: []string{"0123456789abcdef0123456789abcdef"},
+		},
+		{
+			name:       "the origin check of the maintenance mode",
+			args:       []string{"config", "check", "-maintenance"},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_ORIGIN_SECRET": "0123456789abcdef0123456789abcdef", "MY_ORIGIN_SECRET_HEADER": "X-Via-Cdn", "LC_ALL": "C"},
+			wantCode:   0,
+			wantStdout: []string{"origin check: on", "configuration OK"},
+			wantAbsent: []string{"0123456789abcdef0123456789abcdef"},
+		},
+		{
+			name:       "the origin secret without its header",
+			args:       []string{"config", "check", "-maintenance"},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_ORIGIN_SECRET": "0123456789abcdef0123456789abcdef", "LC_ALL": "C"},
+			wantCode:   1,
+			wantStderr: []string{"MY_ORIGIN_SECRET_HEADER"},
+			wantAbsent: []string{"0123456789abcdef0123456789abcdef"},
+		},
+		{
 			name:       "valid",
 			args:       []string{"config", "check", "-config", file},
 			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DATABASE_URL": "file:my.db", "MY_KEK": kek, "LC_ALL": "C"},
@@ -184,7 +208,7 @@ func TestRunConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("LANGUAGE", "")
 			for _, k := range []string{"MY_CONFIG", "MY_HOST", "MY_DATABASE_URL", "MY_KEK", "MY_DATABASE", "LC_ALL", "MY_CAPTCHA", "MY_CAPTCHA_SITE_KEY", "MY_CAPTCHA_SECRET_KEY",
-				"MY_MAINTENANCE_UNTIL", "MY_MAINTENANCE_RETRY_AFTER", "MY_HSOT", "MY_SERVICE_HOST", "MY_PROFILE", "MY_MAIL", "MY_VAPID_PRIVATE_KEY", "MY_WEB_ORIGIN", "MY_WORKER_JOB_TYPES"} {
+				"MY_MAINTENANCE_UNTIL", "MY_MAINTENANCE_RETRY_AFTER", "MY_ORIGIN_SECRET", "MY_ORIGIN_SECRET_HEADER", "MY_HSOT", "MY_SERVICE_HOST", "MY_PROFILE", "MY_MAIL", "MY_VAPID_PRIVATE_KEY", "MY_WEB_ORIGIN", "MY_WORKER_JOB_TYPES"} {
 				t.Setenv(k, tt.env[k]) // restores the original value after the test
 				if _, ok := tt.env[k]; !ok {
 					if err := os.Unsetenv(k); err != nil {

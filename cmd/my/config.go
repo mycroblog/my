@@ -74,6 +74,7 @@ func runConfig(args []string, stdout, stderr io.Writer) int {
 		printLoadError(stderr, err)
 		return 1
 	}
+	printOriginCheckNote(stdout, cfg)
 	if *maint {
 		_, _ = fmt.Fprintln(stdout, "configuration OK")
 		return 0
@@ -88,6 +89,16 @@ func runConfig(args []string, stdout, stderr io.Writer) int {
 	}
 	_, _ = fmt.Fprintln(stdout, "configuration OK")
 	return 0
+}
+
+// printOriginCheckNote says what origin_secret does and what no command can check from here: that
+// the CDN sends the header. A wrong setup refuses everyone while the health checks stay fine.
+func printOriginCheckNote(w io.Writer, cfg *config.Config) {
+	if cfg.OriginSecret == "" {
+		return
+	}
+	_, _ = fmt.Fprintf(w, "origin check: on. Every request needs the header %s with the secret, except the health checks and the calls of the platform's queue.\n", cfg.OriginSecretHeader)
+	_, _ = fmt.Fprintln(w, "This command cannot see the CDN. After deploying, confirm that the site answers through the CDN; to recover, unset MY_ORIGIN_SECRET and MY_ORIGIN_SECRET_HEADER and deploy.")
 }
 
 // instanceFindings checks the instance settings that a production instance should set, warning

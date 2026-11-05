@@ -65,6 +65,9 @@ An instance setting that has never been set reads as its default, which is defin
 | [`listen`](#listen) | `MY_LISTEN` | `:8080` | no | no |
 | [`trusted_proxies`](#trusted_proxies) | `MY_TRUSTED_PROXIES` | none | no | no |
 | [`trusted_proxy_header`](#trusted_proxy_header) | `MY_TRUSTED_PROXY_HEADER` | `x-forwarded-for` | no | no |
+| [`origin_secret`](#origin_secret) | `MY_ORIGIN_SECRET` | none | no | yes |
+| [`origin_secret_previous`](#origin_secret_previous) | `MY_ORIGIN_SECRET_PREVIOUS` | none | no | yes |
+| [`origin_secret_header`](#origin_secret_header) | `MY_ORIGIN_SECRET_HEADER` | none | when `origin_secret` is set | no |
 | [`database`](#database) | `MY_DATABASE` | `sqlite` | no | no |
 | [`database_url`](#database_url) | `MY_DATABASE_URL` | none | yes | yes |
 | [`database_acquire_timeout`](#database_acquire_timeout) | `MY_DATABASE_ACQUIRE_TIMEOUT` | `60s` | no | no |
@@ -355,6 +358,30 @@ Forwarding header that the `trusted_proxies` append the client IP to. Only this 
 | --- | --- |
 | `x-forwarded-for` | `X-Forwarded-For`, which nginx, Caddy, Traefik, Google Cloud load balancers and Cloud Run, and AWS Application Load Balancers append to. |
 | `forwarded` | The `for` parameters of `Forwarded` (RFC 7239). |
+
+### `origin_secret`
+
+Refuses the requests that did not come through your CDN: a request gets `403` unless it carries the header `origin_secret_header` with this value, which the CDN adds to every request it forwards. Only the health checks and the calls of the platform's queue pass without it. Empty checks nothing. A wrong setup refuses everyone while the health checks stay fine, so read docs/operations/cdn.md first. A random string of at least 32 bytes of visible ASCII without spaces, such as the output of `openssl rand -hex 32`. It does nothing for a platform feature that adds no header, such as a Cloud Run domain mapping.
+
+- Environment variable: `MY_ORIGIN_SECRET` or `MY_ORIGIN_SECRET_FILE`
+- Default: none
+- Required: no
+
+### `origin_secret_previous`
+
+A second value that the check accepts while you rotate `origin_secret`, in the same format, since the CDN and the server cannot change at the same moment. Remove it once the CDN sends the new value (docs/operations/cdn.md).
+
+- Environment variable: `MY_ORIGIN_SECRET_PREVIOUS` or `MY_ORIGIN_SECRET_PREVIOUS_FILE`
+- Default: none
+- Required: no
+
+### `origin_secret_header`
+
+Name of the request header that carries `origin_secret`, which the server removes before anything else reads the request. Letters, digits, and hyphens, and not a name that a CDN refuses to set or that the server or a proxy reads for itself, such as those starting `cf-`, `x-cf-`, `x-amz-`, or `x-forwarded-`, or `authorization`.
+
+- Environment variable: `MY_ORIGIN_SECRET_HEADER`
+- Default: none
+- Required: when `origin_secret` is set
 
 ### `database`
 

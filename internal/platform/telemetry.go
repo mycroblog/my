@@ -55,6 +55,7 @@ func (a *App) setUpMeter(ctx context.Context, cfg *config.Config, opts AppOption
 	}
 	a.http = newHTTPMetrics(a.Meter)
 	a.readinessFailures = a.Meter.Counter(ReadinessFailures)
+	a.originRefused = a.Meter.Counter(OriginRefused)
 	sysmetrics.RegisterProcess(a.Meter, processStart)
 	return nil
 }
