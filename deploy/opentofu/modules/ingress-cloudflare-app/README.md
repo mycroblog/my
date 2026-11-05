@@ -69,8 +69,9 @@ The ranges come from Cloudflare's API at plan time and change only when you appl
 | Upload | 100 MB on Free and Pro, 200 MB on Business | Above Cloud Run's 32 MiB, so that one decides |
 | Zone rulesets | One per phase | A zone with its own cache, configuration, origin, or custom firewall rules conflicts with this module |
 
-The read timeout matters most: a job runs for up to 5 minutes, and Cloudflare answers `524` to Cloud Tasks at about 2, which
-then tries the task again. The job itself continues.
+The read timeout matters most: a job runs for up to 5 minutes, and Cloudflare answers `524` to Cloud Tasks at about 2. The
+dropped connection may cancel the job, and Cloud Tasks tries the task again. How jobs over 125 seconds behave behind Cloudflare
+is unverified.
 
 ## Not a challenge in sight, unless you add one
 
