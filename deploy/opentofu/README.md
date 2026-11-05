@@ -78,13 +78,14 @@ changing one module block:
 | `permissions` | `list(object({ permission, scope, resource, conditions }))` | What the app's identity is permitted |
 | `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it, on a platform where something calls it |
 | `event_sources` (optional) | `map(object({ arn, visibility_timeout_seconds }))` | Queues that the platform polls to invoke the app, on a platform where the app is invoked that way |
+| `billing_sources` (optional) | `list(string)` | What this module adds to the one setting `MY_BILLING_SOURCES`, which the app sets from all of them |
 
 A permission means what the platform's IAM means: what the identity is permitted, which on Google Cloud is a role. `scope` says which kind it is, so a backend of
 one platform handed to the app of another fails the plan instead of granting nothing:
 
 | Platform | `permission` | `scope` | `resource` | `conditions` |
 | --- | --- | --- | --- | --- |
-| Google Cloud | A role, such as `roles/storage.objectUser` | `project` (with `resource` null), `bucket`, `topic`, `queue`, `service_account`, or `crypto_key`, each a different kind of binding | The resource's name | Not available |
+| Google Cloud | A role, such as `roles/storage.objectUser` | `project`, `bucket`, `topic`, `queue`, `service_account`, `crypto_key`, `dataset`, or `subscription`, each a different kind of binding | The resource's name. For `project`, null is the app's project, and otherwise another project's ID. For `dataset`, `projects/<project>/datasets/<dataset>`, and the permission is what an access entry holds | Not available |
 | AWS | One IAM action, such as `sqs:SendMessage` | `policy`: every grant is a statement of one policy | An ARN or an ARN pattern, or `*` | Optional: `{ test, variable, values }` of the statement |
 
 The service and its jobs share one identity, so a grant reaches them all. The app grants each permission on that resource alone, so a
@@ -105,7 +106,8 @@ The rules:
   is circular: the queue calls the service's `run.app` URL, built from the service's name, and its service account exists before the service does.
 - A setting belongs to one place. The same setting named by two backends, by `env` and `secret_env`, by what the app
   module sets itself, or as both `X` and `X_FILE`, fails the plan and lists the names. `merge()` alone would let the last
-  one win without a word.
+  one win without a word. `MY_BILLING_SOURCES` is one setting that lists what several modules read, so no module names it: each
+  returns `billing_sources`. The same source twice, or the setting in `env` beside them, fails the same way.
 
 Anything without a backend (VAPID, CAPTCHA, and every other setting) goes through the `env` and
 `secret_env`, and `secret_files` inputs of the app module, so no setting is out of reach. A backend of your own needs nothing special: any

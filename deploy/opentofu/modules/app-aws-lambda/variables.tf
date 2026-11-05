@@ -68,6 +68,8 @@ variable "backends" {
     service_ingress = optional(string)
     # What an ingress puts in front of the function. The module adds the Web Adapter.
     trusted_proxies = optional(list(string))
+    # What the backend adds to the one setting MY_BILLING_SOURCES.
+    billing_sources = optional(list(string), [])
     # Accepted so that a backend of no platform fits, and refused below: nothing calls the functions.
     invokers = optional(list(string), [])
   }))

@@ -12,11 +12,14 @@ terraform {
 }
 
 locals {
+  # One setting, which several backends add to. A source named twice is listed below as a setting named twice.
+  billing_sources = flatten([for b in var.backends : b.billing_sources])
   named_settings = concat(
     flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files))]),
     keys(var.env),
     keys(var.secret_env),
     keys(var.secret_files),
+    [for source in local.billing_sources : "billing_sources: ${source}"],
   )
   # Cloud Run's own front end connects to the server, and an ingress says what connects to Cloud Run. MY_TRUSTED_PROXIES in
   # env replaces the value only without an ingress: with one, the setting is named twice and fails.
@@ -29,6 +32,9 @@ locals {
     },
     contains(local.named_settings, "MY_TRUSTED_PROXIES") && length(local.ingress_trust) == 0 ? {} : {
       MY_TRUSTED_PROXIES = join(", ", concat(["169.254.0.0/16"], flatten(local.ingress_trust)))
+    },
+    length(local.billing_sources) == 0 ? {} : {
+      MY_BILLING_SOURCES = join(",", sort(distinct(local.billing_sources)))
     },
   )
 
@@ -116,9 +122,10 @@ resource "google_service_account" "server" {
 # Each binding goes on its resource unless the backend says project. The keys are strings known at plan time, which the
 # backend modules build from their inputs.
 resource "google_project_iam_member" "backend" {
-  for_each = { for r in local.permissions : r.permission => r if r.scope == "project" }
+  for_each = { for r in local.permissions : (r.resource == null ? r.permission : "${r.resource}/${r.permission}") => r if r.scope == "project" }
 
-  project = var.project_id
+  # Another project when the backend names one, such as the project that runs the queries of a billing export.
+  project = coalesce(each.value.resource, var.project_id)
   role    = each.value.permission
   member  = google_service_account.server.member
 }
@@ -166,6 +173,28 @@ resource "google_kms_crypto_key_iam_member" "backend" {
   crypto_key_id = each.value.resource
   role          = each.value.permission
   member        = google_service_account.server.member
+}
+
+# An access entry rather than an IAM member: the IAM resources rewrite the dataset's policy, which removes its authorized
+# views, and Google keeps its own entry on a dataset that receives the billing export.
+resource "google_bigquery_dataset_access" "backend" {
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "dataset" }
+
+  # projects/<project>/datasets/<dataset>
+  project       = split("/", each.value.resource)[1]
+  dataset_id    = split("/", each.value.resource)[3]
+  role          = each.value.permission
+  user_by_email = google_service_account.server.email
+}
+
+resource "google_pubsub_subscription_iam_member" "backend" {
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "subscription" }
+
+  # projects/<project>/subscriptions/<subscription>
+  project      = split("/", each.value.resource)[1]
+  subscription = split("/", each.value.resource)[3]
+  role         = each.value.permission
+  member       = google_service_account.server.member
 }
 
 resource "google_secret_manager_secret_iam_member" "server" {

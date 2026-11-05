@@ -41,7 +41,7 @@ module "app" {
 | Output | Meaning |
 | --- | --- |
 | `console` | For `console.sh`, or null while the console is off |
-| `service_name`, `service_uri`, `service_account_email`, `migration_job` | What was created |
+| `service_name`, `service_uri`, `service_account_email`, `service_account_unique_id`, `migration_job` | What was created |
 | `service_ingress` | Who may reach the service, as the input says |
 | `origin_host` | Host name of the URL Cloud Run gave the service |
 | `env`, `secret_env` | The merged settings |

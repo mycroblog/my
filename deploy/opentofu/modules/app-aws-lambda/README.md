@@ -32,7 +32,7 @@ module "app" {
 | `host` | required | Public domain |
 | `name` | `my` | Start of the names |
 | `profile` | `production` | `profile` of the server |
-| `backends`, `env`, `secret_env`, `secret_files` | empty | [The backend contract](../../README.md#the-backend-contract). `secret_files` is treated as `secret_env` |
+| `backends`, `env`, `secret_env`, `secret_files` | empty | [The backend contract](../../README.md#the-backend-contract). `secret_files` is treated as `secret_env`. The module sets `MY_BILLING_SOURCES` from what `backends` returns as `billing_sources` |
 | `web_memory_mib`, `web_timeout_seconds` | `512`, `900` | The web function. The timeout is the longest a stream stays open |
 | `web_reserved_concurrency` | null | Most instances of the web function, which bounds the database connections. An account must keep 100 unreserved |
 | `worker_memory_mib`, `worker_timeout_seconds` | `1024`, `900` | The worker function. From 330 seconds |
