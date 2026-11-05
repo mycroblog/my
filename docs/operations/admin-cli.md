@@ -1,6 +1,6 @@
 # Administrators and roles
 
-A guide for operators: how to create the first administrator, manage roles from the command line, announce and carry out the end of the service, process uploaded images again, and export the maintenance page.
+A guide for operators: how to create the first administrator, manage roles from the command line, announce and carry out the end of the service, process uploaded images again, rebuild the search index, and export the maintenance page.
 
 ## Prerequisites
 
@@ -133,6 +133,20 @@ my admin media reprocess -before 2027-01-31T09:00:00Z
 - Video and audio files are not re-encoded and are left alone. An image that the current limits no longer accept keeps its current version, and the worker logs a warning.
 
 The new version of an image has new URLs. The old files stay for `media_replaced_retention` (30 days by default, [configuration reference](../reference/configuration.md#media_replaced_retention)), so pages that are open and caches keep working, and the hourly job `media.purge_replaced` then deletes them. Other servers are not told about the new URLs: a server that still holds an old URL and has no copy of its own stops showing the image after that time. Allow for the extra storage until the old files go.
+
+## Rebuilding the search index
+
+`my search` handles the index of the full-text search of posts, on a server with a search engine. With `search = none` each command says so, does nothing, and exits with code 0.
+
+```sh
+my search rebuild              # empty the index, then have the worker add every post that qualifies
+my search rebuild --keep       # add them without emptying the index
+my search rebuild --rate 50    # at most 50 posts a second (20 by default, 1000 at most)
+my search clear                # empty the index and end any rebuild
+my search status               # the backend and the progress and failures of the latest rebuild
+```
+
+Run `my search rebuild` again to resume one that stopped. It goes on from the last post handled and does not empty the index again. While one is unfinished, the other mode is refused with exit code 1. [Full-text search of posts](search.md) says when to use each.
 
 ## Exporting the maintenance page
 

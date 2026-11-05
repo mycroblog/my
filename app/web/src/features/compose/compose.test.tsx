@@ -17,6 +17,7 @@ import {
   preferencesFixture,
   relationshipFixture,
   remoteAccountFixture,
+  type Schemas,
   viewerFixture,
   viewerStatusFixture,
 } from "../../test/fixtures";
@@ -475,6 +476,54 @@ describe("the new-post form", () => {
 });
 
 describe("hints before posting", () => {
+  /** Opens the visibility picker on a server with `providers`, and returns its radio group. */
+  async function pickerWith(providers: Schemas["InstanceTranslationProvider"][]) {
+    signedIn();
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, translation: { browser: false, providers } }),
+      ),
+    );
+    const { user } = await renderApp();
+    const sheet = await openSheet(user);
+    await within(sheet).findByRole("textbox", { name: /./ });
+    await waitFor(async () => {
+      await user.click(within(sheet).getByRole("button", { name: /^Visibility:/ }));
+      screen.getByRole("radiogroup", { name: "Who can see this post?" });
+    });
+    return screen.getByRole("radiogroup", { name: "Who can see this post?" });
+  }
+  const provider = { id: "fake", name: "Fake Translate" };
+
+  test("the visibility picker says nothing of translation while no provider may receive a narrow visibility", async () => {
+    const choices = await pickerWith([{ ...provider, visibilities: ["public", "local", "unlisted"] }]);
+    expect(choices).not.toHaveAccessibleDescription();
+  });
+
+  test("the visibility picker says where a reader's request can send a followers-only post", async () => {
+    const choices = await pickerWith([
+      { ...provider, visibilities: ["public", "private"] },
+      { id: "other", name: "Other", visibilities: ["public"] },
+    ]);
+    await waitFor(() => {
+      expect(choices).toHaveAccessibleDescription(
+        "When a reader asks for a translation, the text of a “Followers” post may be sent to Fake Translate.",
+      );
+    });
+  });
+
+  test("the visibility picker names both narrow visibilities and every provider they can go to", async () => {
+    const choices = await pickerWith([
+      { ...provider, visibilities: ["private", "direct"] },
+      { id: "other", name: "Other", visibilities: ["direct"] },
+    ]);
+    await waitFor(() => {
+      expect(choices).toHaveAccessibleDescription(
+        "When a reader asks for a translation, the text of a “Followers” or “Mentioned people” post may be sent to Fake Translate and Other.",
+      );
+    });
+  });
+
   test("a restricted account sees its visibility ceiling and the wider choices disabled, and posts with the ceiling", async () => {
     signedIn();
     server.use(

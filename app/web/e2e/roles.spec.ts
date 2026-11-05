@@ -137,6 +137,7 @@ async function rolesServer(page: Page) {
         registrations: { mode: "open" },
         federation: { mode: "both" },
         full_text_search: { available: false, visibilities: [] },
+        translation: { browser: false, providers: [] },
         limits: { max_post_characters: 500, require_media_description: false },
         timelines: { local: "everyone", federated: "everyone" },
         rules: [],

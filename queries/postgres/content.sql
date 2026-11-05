@@ -235,6 +235,15 @@ SELECT account_id, statuses_count, last_status_at FROM account_post_counters ORD
 
 -- Lookups.
 
+-- ListSearchableStatusIDs pages the public and local statuses of the server in ID order after the ID
+-- after ("" for the first page), deleted ones included.
+-- name: ListSearchableStatusIDs :many
+SELECT id FROM statuses
+WHERE id > COALESCE(sqlc.narg(after)::uuid, '00000000-0000-0000-0000-000000000000')
+  AND visibility IN ('public', 'local')
+ORDER BY id
+LIMIT sqlc.arg(page_limit);
+
 -- ListAuthorSearchableStatusIDs pages the public and local statuses of an author in ID order after
 -- the ID after ("" for the first page), deleted ones included.
 -- name: ListAuthorSearchableStatusIDs :many

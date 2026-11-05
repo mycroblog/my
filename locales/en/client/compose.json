@@ -307,6 +307,14 @@
     "defaultMessage": "Who can see this post?",
     "description": "Label of the list of visibility choices for a post."
   },
+  "compose.visibility.translation.both": {
+    "defaultMessage": "When a reader asks for a translation, the text of a “{first}” or “{second}” post may be sent to {providers}.",
+    "description": "In the visibility picker, on a server that allows a translation provider both narrow visibilities: what can happen to such a post. {first} and {second} are visibility names, {providers} the names of the providers as a list."
+  },
+  "compose.visibility.translation.one": {
+    "defaultMessage": "When a reader asks for a translation, the text of a “{visibility}” post may be sent to {providers}.",
+    "description": "In the visibility picker, on a server that allows a translation provider one narrow visibility: what can happen to such a post. {visibility} is the visibility's name, {providers} the names of the providers as a list."
+  },
   "compose.visibility.unlisted": {
     "defaultMessage": "Unlisted",
     "description": "Visibility of a post: everyone, but kept off the public timelines."

@@ -126,6 +126,7 @@ async function administratorServer(page: Page) {
         timelines: { local: "everyone", federated: "everyone" },
         federation: { mode: settings["federation_mode"] ?? "both" },
         full_text_search: { available: false, visibilities: [] },
+        translation: { browser: false, providers: [] },
         rules: [],
       });
     }

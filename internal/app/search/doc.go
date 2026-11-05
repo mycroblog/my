@@ -15,6 +15,9 @@
 // Service.Search answers a query: the backend narrows the candidates, and each is read again from the
 // database and passes Eligible and the single visibility policy (ADR-0149 §8).
 //
+// my search rebuild refills the index in a chain of jobs at a rate, resumable from the progress in
+// the table search_rebuild; my search clear empties it (ADR-0149 §10, §12).
+//
 // With search = none there is no backend: the server opens no connection to an engine, starts no
 // worker for it, and enqueues no search job (ADR-0149 §2).
 package search

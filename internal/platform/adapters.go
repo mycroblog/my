@@ -24,6 +24,7 @@ import (
 	"github.com/mycroblog/my/internal/app/projection"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/rewrap"
+	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/translation"
@@ -64,6 +65,7 @@ type repositories struct {
 	voice        voice.Repository
 	diagnostics  diagnostics.Repository
 	translations translation.Repository
+	search       search.Repository
 	decisions    apphook.Repository
 	// existingStatuses tells the retention of the decisions which statuses have a row.
 	existingStatuses apphook.Statuses

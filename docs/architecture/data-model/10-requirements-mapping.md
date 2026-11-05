@@ -38,7 +38,7 @@
 | FR-306 アカウントとハッシュタグの前方一致の検索（FR-119 の `@` と `#` の補完） | S | `account_search_terms`, `tags`, `tag_usage` |
 | FR-307 このサーバーのアカウントの部分一致の検索と見つけてもらう設定 | M | `account_search_terms`（`infix`・`exact_username`）, `account_profile_revisions`（`discoverable`） |
 | FR-308 おすすめのアカウント | M | `instance_setting_revisions`（`featured_accounts`）, `local_statuses`, `statuses`, `status_heads`, `account_profile_revisions` |
-| FR-309 投稿の全文検索 | M | 検索エンジンの索引（DB の外）, `instance_setting_revisions`（`search_visibilities`）, `statuses`, `status_revisions`, `account_profile_revisions`（`indexable`）, `account_restrictions`, `domain_restrictions` |
+| FR-309 投稿の全文検索 | M | 検索エンジンの索引（DB の外）, `search_rebuild`, `search_rebuild_failures`, `instance_setting_revisions`（`search_visibilities`）, `statuses`, `status_revisions`, `account_profile_revisions`（`indexable`）, `account_restrictions`, `domain_restrictions` |
 | FR-401〜404 WebFinger・NodeInfo・Actor・署名 | M | `account_handles`, `account_keys`, `local_account_private_keys`, `follow_edges`, `feed_entries` |
 | FR-405 受信アクティビティ | M | `received_activities`, `received_activity_documents`, `remote_object_tombstones` |
 | FR-406 配送・リトライ・一時停止 | M | `outbound_activities`, `outbound_activity_documents`, `deliveries`, `delivery_attempts`, `instance_availability_events`, `instance_health`, `jobs` |

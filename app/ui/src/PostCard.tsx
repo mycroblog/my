@@ -32,7 +32,7 @@ const postCard = tv({
     time: "flex max-w-1/2 min-w-min shrink-0 flex-col items-end text-sm text-fg-muted",
     // A slot whose content renders nothing (a notification of a follow has no body) takes no row and no gap.
     body: "col-span-2 min-w-0 empty:hidden",
-    details: "col-span-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-sm text-fg-muted empty:hidden",
+    details: "col-span-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-fg-muted empty:hidden",
     reactions: "col-span-2 flex min-w-0 flex-wrap items-center gap-1 empty:hidden",
     actions: "col-span-2 flex min-w-0 flex-wrap items-center gap-1 empty:hidden",
     // The thread's line, down the middle of the avatar (1rem of padding and half of its 2.5rem), behind it.
@@ -94,7 +94,7 @@ export type PostCardProps = Omit<FeedArticleProps, "children" | "content" | "ari
   media?: ReactNode;
   /**
    * More about the post, between the body and the actions: items of one wrapping line of secondary text,
-   * such as the full date and the counts in words of the post a page is about.
+   * such as the full date and the counts in words of the post a page is about, and a small button about the text.
    */
   details?: ReactNode;
   /** The emoji reactions to the post, in one wrapping row above the actions. */

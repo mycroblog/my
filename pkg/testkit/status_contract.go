@@ -56,6 +56,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"EnsuresTags", statusEnsuresTags},
 		{"ListsLiveRemoteStatusesOfAnAuthor", statusListsLiveRemote},
 		{"ListsTheSearchableStatusesOfAnAuthor", statusListsSearchable},
+		{"ListsTheSearchableStatusesOfTheServer", statusListsAllSearchable},
 		{"IncrementalProjectionEqualsRebuild", statusProjectionEqualsRebuild},
 		{"LinksAParentAndAReplyCreatedConcurrently", statusLinksConcurrentParentAndReply},
 		{"KeepsADeletionOverAConcurrentRevision", statusDeletionWinsOverConcurrentRevision},
@@ -537,6 +538,35 @@ func statusListsSearchable(t *testing.T, e *statusEnv) {
 	got, err = e.h.Statuses.ListAuthorSearchableStatusIDs(ctx, author, public.ID, 1)
 	if want := []string{local.ID}; err != nil || !slices.Equal(got, want) {
 		t.Errorf("the page after the first = %v, %v; want %v", got, err, want)
+	}
+}
+
+// statusListsAllSearchable checks ListSearchableStatusIDs: the public and local statuses of every
+// author in ID order, deleted ones included, and page by page.
+func statusListsAllSearchable(t *testing.T, e *statusEnv) {
+	ctx := t.Context()
+	post := func(v content.Visibility) content.Status {
+		s := e.newStatus(e.ids.NewID(), v)
+		e.mustCreate(t, s)
+		return s
+	}
+	public, local, deleted := post(content.VisibilityPublic), post(content.VisibilityLocal), post(content.VisibilityPublic)
+	e.mustRemove(t, deleted)
+	post(content.VisibilityUnlisted)
+	post(content.VisibilityPrivate)
+	post(content.VisibilityDirect)
+
+	got, err := e.h.Statuses.ListSearchableStatusIDs(ctx, public.ID, 10)
+	if want := []string{local.ID, deleted.ID}; err != nil || !slices.Equal(got, want) {
+		t.Errorf("ListSearchableStatusIDs after the first = %v, %v; want %v", got, err, want)
+	}
+	got, err = e.h.Statuses.ListSearchableStatusIDs(ctx, public.ID, 1)
+	if want := []string{local.ID}; err != nil || !slices.Equal(got, want) {
+		t.Errorf("the page of 1 = %v, %v; want %v", got, err, want)
+	}
+	got, err = e.h.Statuses.ListSearchableStatusIDs(ctx, "", 100000)
+	if err != nil || !slices.Contains(got, public.ID) || !slices.IsSorted(got) {
+		t.Errorf("the first page = %v, %v; want it sorted, with %s", got, err, public.ID)
 	}
 }
 

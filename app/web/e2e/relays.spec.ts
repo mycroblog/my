@@ -86,6 +86,7 @@ async function administratorServer(page: Page) {
         registrations: { mode: "approval" },
         federation: { mode: "both" },
         full_text_search: { available: false, visibilities: [] },
+        translation: { browser: false, providers: [] },
         limits: { max_post_characters: 500 },
         timelines: { local: "everyone", federated: "everyone" },
         rules: [],

@@ -71,6 +71,7 @@ async function server(page: Page, state: "announced" | "closed", { signedIn }: {
         timelines: { local: "everyone", federated: "everyone" },
         federation: { mode: "both" },
         full_text_search: { available: false, visibilities: [] },
+        translation: { browser: false, providers: [] },
         rules: [],
         closure: {
           state,
