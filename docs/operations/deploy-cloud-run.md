@@ -196,6 +196,10 @@ gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --re
 
 To go back after the schema changed, restore the backup: see [Rolling back](database.md#rolling-back).
 
+## Monitoring and alerts
+
+The module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) adds an uptime check of `/readyz`, alert policies with the names of [the runbook](alerts.md), and email notifications. It has never been applied, so try it once by making a check fail. Enable `monitoring.googleapis.com` first, and read what the check costs in its README: each run wakes an instance, and through `/readyz` the database, which adds to [the tick's trade-off](#costs).
+
 ## Changing a backend
 
 Replace the module's block in `main.tf`. The app module takes whatever the block returns, so nothing else changes. For example, a database of your own:
