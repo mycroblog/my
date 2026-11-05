@@ -90,6 +90,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode` | `off`, `observe`, `enforce` | `observe` | How far each [decision hook](decision-hooks.md#modes) acts while it has a plugin. `off` goes to `enforce` only through `observe`. |
 | `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure` | `pass`, `retry` | `pass` | What the hook does when it enforces and its plugin fails ([details](decision-hooks.md#when-the-plugin-fails)). |
 | `hook_signup_check_on_failure` | `pass`, `require_approval` | `pass` | What `signup.check` does when it enforces and its plugin fails. |
+| `hook_signup_check_reject` | boolean | `false` | Whether a `reject` of `signup.check` [refuses the sign-up](decision-hooks.md#sign-ups) while it enforces. When off, the answer is only recorded. |
 | `retention_hook_decisions` | integer 30-3650 (days) | `90` | How many days to keep the [decisions of the hooks](decision-hooks.md#the-decisions). |
 
 - Values are normalized before they are stored (`TRUE` becomes `true`, `0750` becomes `750`, `ja_jp` becomes `ja-JP`, media IDs are lowercased).

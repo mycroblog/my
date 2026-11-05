@@ -967,6 +967,14 @@
     "defaultMessage": "Sign-ups: when the review fails",
     "description": "Label of the choice of what happens when this external review fails while it enforces."
   },
+  "admin.settings.hooks.signup_check.reject": {
+    "defaultMessage": "Sign-ups: let the review refuse them",
+    "description": "Label of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
+  "admin.settings.hooks.signup_check.reject.description": {
+    "defaultMessage": "When the review enforces and answers reject, the applicant sees a fixed message that the server cannot accept the sign-up. While this is off, that answer is only recorded and the sign-up goes on.",
+    "description": "Help text of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
   "admin.settings.hooks.title": {
     "defaultMessage": "External review",
     "description": "Heading of the section of the server settings about the external reviews of submissions."

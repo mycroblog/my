@@ -64,6 +64,7 @@ const policyKeys = [
   "hook_inbound_status_on_failure",
   "hook_inbound_follow_on_failure",
   "hook_signup_check_on_failure",
+  "hook_signup_check_reject",
   "hook_media_check_on_failure",
   "retention_hook_decisions",
 ] as const satisfies readonly InstanceSettingKey[];

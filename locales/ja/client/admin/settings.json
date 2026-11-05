@@ -967,6 +967,14 @@
     "defaultMessage": "登録: 審査が失敗したとき",
     "description": "Label of the choice of what happens when this external review fails while it enforces."
   },
+  "admin.settings.hooks.signup_check.reject": {
+    "defaultMessage": "登録: 審査による拒否を認める",
+    "description": "Label of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
+  "admin.settings.hooks.signup_check.reject.description": {
+    "defaultMessage": "審査を適用していて拒否の回答が返ると、申請者には登録を受け付けられないという決まった文を表示します。オフの間は回答を記録するだけで、登録はそのまま進みます。",
+    "description": "Help text of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
   "admin.settings.hooks.title": {
     "defaultMessage": "外部の審査",
     "description": "Heading of the section of the server settings about the external reviews of submissions."
