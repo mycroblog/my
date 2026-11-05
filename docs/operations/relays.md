@@ -15,7 +15,7 @@ my admin relay list                                               # every relay,
 my admin relay create [-protocol mastodon|litepub] [-send-only] <url>  # register a relay and send it the Follow
 my admin relay unfollow <relay id>                                # leave a pending or joined relay
 my admin relay follow <relay id>                                  # join again a relay that the instance left or that rejected it
-my admin relay remove <relay id>                                  # delete a relay that the instance left or that rejected it
+my admin relay delete <relay id>                                  # delete a relay that the instance left or that rejected it
 ```
 
 1. Register the relay's URL. There are two protocols:
