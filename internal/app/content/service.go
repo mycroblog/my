@@ -160,7 +160,7 @@ type Deps struct {
 	// value asks nothing.
 	StatusReview StatusReview
 	Clock        kernel.Clock
-	IDs         kernel.IDGenerator
+	IDs          kernel.IDGenerator
 	// Host is the serving domain of the status URIs and pages (ADR-0018).
 	Host string
 	// AccountDomain is the domain of local handles; @user@AccountDomain and @user@Host mention a
