@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The one audited component that renders HTML (web-client/README.md A8), and the one function that parses it
-// (`sanitizedHtmlText`). Lint allows dangerouslySetInnerHTML and the other HTML sinks in this file only
+// The one audited component that renders HTML (web-client/README.md A8), and the one place that parses it
+// (`sanitizedHtmlText`, `sanitizedHtmlNodes`). Lint allows dangerouslySetInnerHTML and the other HTML sinks in this file only
 // (app/.oxlintrc.json). The server sanitizes every post body to its allowlist
 // before it reaches the client; this component trusts that and adds nothing of its own. The app's
 // Content-Security-Policy requires Trusted Types (`require-trusted-types-for 'script'`, ADR-0019 §9), under
@@ -12,10 +12,10 @@
 // The policy passes the HTML through unchanged. That is safe only because every HTML it receives comes
 // out of the server's sanitizer (the allowlist in the Go server); HTML from anywhere else, such as the
 // remote posts that federation brings (M3), must go through the same sanitizer on the server first.
-import { type ComponentPropsWithRef, type RefCallback, use } from "react";
+import { type ComponentPropsWithRef, createElement, type ReactNode, type RefCallback, use } from "react";
 import { mergeRefs } from "react-aria";
 import { tv } from "tailwind-variants";
-import { type CustomEmojiImage, insertCustomEmojis, noCustomEmojis } from "./CustomEmoji";
+import { type CustomEmojiImage, EmojiText, insertCustomEmojis, noCustomEmojis } from "./CustomEmoji";
 import { ExternalLinkContext, type ExternalLinkSettings, externalRel } from "./ExternalLink";
 import { useAnimationsPlay } from "./Picture";
 
@@ -65,6 +65,12 @@ function trustedHtml(html: SanitizedHtml): string {
 /** DOMParser as it takes the TrustedHTML of `trustedHtml`, which its DOM type names a string. */
 type HtmlParser = { parseFromString: (html: string, type: "text/html") => Document };
 
+/** Server-sanitized HTML as an inert document, in which nothing loads or runs, through the policy of `trustedHtml`. */
+function parsedSanitizedHtml(html: SanitizedHtml): Document {
+  const parser: HtmlParser = new DOMParser();
+  return parser.parseFromString(trustedHtml(html), "text/html");
+}
+
 /**
  * The text of server-sanitized HTML without its markup, with its paragraphs and line breaks kept as line
  * breaks: for a place that quotes a post as plain text, such as a link to it. The HTML goes to DOMParser
@@ -72,11 +78,42 @@ type HtmlParser = { parseFromString: (html: string, type: "text/html") => Docume
  * document in which nothing loads or runs.
  */
 export function sanitizedHtmlText(html: SanitizedHtml): string {
-  const parser: HtmlParser = new DOMParser();
-  const doc = parser.parseFromString(trustedHtml(html), "text/html");
+  const doc = parsedSanitizedHtml(html);
   for (const br of doc.body.querySelectorAll("br")) br.replaceWith("\n");
   const blocks = [...doc.body.children].map((element) => element.textContent.trim());
   return (blocks.length > 0 ? blocks.join("\n") : doc.body.textContent).trim();
+}
+
+/** An element of a post body, as `sanitizedHtmlNodes` reads it. */
+export type PostContentElement = {
+  tag: string;
+  attributes: Readonly<Record<string, string>>;
+  children: readonly PostContentNode[];
+};
+
+/** A part of a post body as data: text, which is only ever text, or an element of the body the server sanitized. */
+export type PostContentNode = string | PostContentElement;
+
+function contentNodes(parent: Node): PostContentNode[] {
+  return [...parent.childNodes].flatMap((node): PostContentNode[] => {
+    if (node instanceof Text) return [node.data];
+    if (!(node instanceof Element)) return [];
+    return [
+      {
+        tag: node.localName,
+        attributes: Object.fromEntries([...node.attributes].map(({ name, value }) => [name, value])),
+        children: contentNodes(node),
+      },
+    ];
+  });
+}
+
+/**
+ * The structure of server-sanitized HTML as data, for text that has to go into that structure without ever being read
+ * as HTML (`PostContentNodes`, ADR-0148 §12).
+ */
+export function sanitizedHtmlNodes(html: SanitizedHtml): PostContentNode[] {
+  return contentNodes(parsedSanitizedHtml(html).body);
 }
 
 const postContent = tv({
@@ -239,6 +276,98 @@ function emojiDrawer(
     if (element === null) return;
     return insertCustomEmojis(element, emojis, allowMotion);
   };
+}
+
+/** The elements of the server's allowlist (internal/adapter/htmlsanitizer); anything else draws only its children. */
+const contentTags: ReadonlySet<string> = new Set([
+  "p",
+  "br",
+  "span",
+  "a",
+  "del",
+  "s",
+  "pre",
+  "blockquote",
+  "code",
+  "b",
+  "strong",
+  "u",
+  "i",
+  "em",
+  "ul",
+  "ol",
+  "li",
+  "ruby",
+  "rt",
+  "rp",
+]);
+
+/** What an element keeps of its attributes, by the names of React's props. */
+function contentProps({ attributes }: PostContentElement): Record<string, string | number | boolean> {
+  const { class: className, lang, translate, start, reversed, value } = attributes;
+  return {
+    ...(className !== undefined && { className }),
+    ...(lang !== undefined && { lang }),
+    ...(translate !== undefined && { translate }),
+    ...(start !== undefined && { start: Number(start) }),
+    ...(reversed !== undefined && { reversed: true }),
+    ...(value !== undefined && { value: Number(value) }),
+  };
+}
+
+/** How a link of the body opens: by the rule of `linkTargetSetter`, here for a link that React renders. */
+function contentLinkProps({ attributes }: PostContentElement, { isAppLink }: ExternalLinkSettings) {
+  const { href, rel } = attributes;
+  if (href === undefined) return { external: false, props: {} };
+  try {
+    if (isAppLink(new URL(href))) return { external: false, props: { href } };
+  } catch {
+    return { external: false, props: { href, ...(rel !== undefined && { rel }) } };
+  }
+  return { external: true, props: { href, target: "_blank", rel: externalRel(rel) } };
+}
+
+type ContentRender = { emojis: readonly CustomEmojiImage[]; emojiMotion: boolean; links: ExternalLinkSettings };
+
+/** One node as React elements and text nodes. Code shows what the author typed, colons included. */
+function contentNode(node: PostContentNode, key: number, render: ContentRender, inCode: boolean): ReactNode {
+  if (typeof node === "string") {
+    return inCode ? node : <EmojiText key={key} text={node} emojis={render.emojis} allowMotion={render.emojiMotion} />;
+  }
+  const code = inCode || node.tag === "code" || node.tag === "pre";
+  const children = node.children.map((child, index) => contentNode(child, index, render, code));
+  if (!contentTags.has(node.tag)) return children;
+  if (node.tag === "br") return createElement("br", { key });
+  if (node.tag !== "a") return createElement(node.tag, { key, ...contentProps(node) }, ...children);
+  const { external, props } = contentLinkProps(node, render.links);
+  const { newTabLabel } = render.links;
+  return createElement(
+    "a",
+    { key, ...contentProps(node), ...props },
+    ...children,
+    external && newTabLabel !== undefined && <span className="sr-only"> {newTabLabel}</span>,
+  );
+}
+
+export type PostContentNodesProps = Pick<PostContentProps, "size" | "lang" | "onLinkClick" | "emojis"> & {
+  /** The body as data: its elements from `sanitizedHtmlNodes`, with text from anywhere. */
+  nodes: readonly PostContentNode[];
+};
+
+/**
+ * A post body that React renders, for text that comes from neither the server nor its sanitizer, such as the output of
+ * the browser's translator (ADR-0148 §12). It looks and behaves as `PostContent` does, and text goes in only as React
+ * text nodes, so markup in it shows as text: no HTML sink is involved.
+ */
+export function PostContentNodes({ nodes, size, lang, onLinkClick, emojis = noCustomEmojis }: PostContentNodesProps) {
+  const emojiMotion = useAnimationsPlay();
+  const links = use(ExternalLinkContext);
+  const render = { emojis, emojiMotion, links };
+  return (
+    <div ref={linkClickListener(onLinkClick)} dir="auto" lang={lang} className={postContent({ size })}>
+      {nodes.map((node, index) => contentNode(node, index, render, false))}
+    </div>
+  );
 }
 
 /**

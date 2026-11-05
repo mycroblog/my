@@ -5,7 +5,14 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { ariaSnapshot } from "../test/aria-snapshot";
 import { ExternalLinkContext } from "./ExternalLink";
-import { PostContent, sanitizedHtmlText, serverSanitizedHtml } from "./PostContent";
+import type { PostContentNode } from "./PostContent";
+import {
+  PostContent,
+  PostContentNodes,
+  sanitizedHtmlNodes,
+  sanitizedHtmlText,
+  serverSanitizedHtml,
+} from "./PostContent";
 
 /**
  * The name of a link followed by the hidden "(opens in a new tab)". jsdom lays nothing out, so the name it computes
@@ -128,6 +135,96 @@ describe("PostContent", () => {
     expect(screen.getByText("again")).toBeInTheDocument();
     expect(createPolicy).toHaveBeenCalledOnce();
     expect(createHTML).toHaveBeenCalledWith("<p>trusted</p>");
+  });
+});
+
+describe("sanitizedHtmlNodes", () => {
+  it("reads the structure of the body as data, with its text as text", () => {
+    expect(
+      sanitizedHtmlNodes(
+        serverSanitizedHtml(
+          '<p lang="fr">one &lt;b&gt; <a class="mention" href="https://example.com/">two</a><br></p>',
+        ),
+      ),
+    ).toEqual([
+      {
+        tag: "p",
+        attributes: { lang: "fr" },
+        children: [
+          "one <b> ",
+          { tag: "a", attributes: { class: "mention", href: "https://example.com/" }, children: ["two"] },
+          { tag: "br", attributes: {}, children: [] },
+        ],
+      },
+    ]);
+  });
+});
+
+describe("PostContentNodes", () => {
+  const element = (tag: string, children: PostContentNode[], attributes: Record<string, string> = {}) => ({
+    tag,
+    attributes,
+    children,
+  });
+
+  it("shows markup in text as text", () => {
+    render(<PostContentNodes nodes={[element("p", ['<img src=x onerror="alert(1)"><b>bold</b>'])]} lang="en" />);
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.queryByText("bold", { selector: "b" })).not.toBeInTheDocument();
+    const paragraph = screen.getByText('<img src=x onerror="alert(1)"><b>bold</b>', { selector: "p" });
+    expect(paragraph).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, node) =>
+          node?.getAttribute("dir") === "auto" &&
+          node.getAttribute("lang") === "en" &&
+          node.textContent === paragraph.textContent,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("draws only the elements of the allowlist", () => {
+    render(<PostContentNodes nodes={[element("p", [element("iframe", ["inside"])])]} />);
+    expect(screen.queryByText("inside", { selector: "iframe" })).not.toBeInTheDocument();
+    expect(screen.getByText("inside", { selector: "p" })).toBeInTheDocument();
+  });
+
+  it("opens a link to another site in a new tab, with the words that say so, and one of the app's own pages in place", async () => {
+    const onLinkClick = vi.fn((event: MouseEvent) => {
+      event.preventDefault();
+    });
+    render(
+      withLinks(
+        <PostContentNodes
+          onLinkClick={onLinkClick}
+          nodes={[
+            element("p", [
+              element("a", ["outside"], { href: "https://other.example/", rel: "nofollow" }),
+              element("a", ["#inside"], { href: "https://example.com/tags/inside", target: "_blank" }),
+            ]),
+          ]}
+        />,
+      ),
+    );
+    const outside = screen.getByRole("link", { name: newTab("outside") });
+    expect(outside).toHaveAttribute("target", "_blank");
+    expect(outside).toHaveAttribute("rel", "noopener noreferrer nofollow");
+    const inside = screen.getByRole("link", { name: "#inside" });
+    expect(inside).not.toHaveAttribute("target");
+
+    await userEvent.click(inside);
+    expect(onLinkClick).toHaveBeenCalledOnce();
+  });
+
+  it("draws custom emoji in text and leaves them in code as the author typed them", () => {
+    render(
+      <PostContentNodes
+        emojis={[{ shortcode: "blob", url: "https://example.com/a.png", static_url: "https://example.com/s.png" }]}
+        nodes={[element("p", ["hi :blob:", element("code", [":blob:"])])]}
+      />,
+    );
+    expect(screen.getByAltText(":blob:")).toBeInTheDocument();
+    expect(screen.getByText(":blob:").tagName).toBe("CODE");
   });
 });
 
