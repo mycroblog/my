@@ -175,7 +175,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | アクティビティ | 対象 | 処理 |
 | --- | --- | --- |
 | `Follow` | インスタンス Actor | 参加中のリレーの Actor からのものは `Accept` を、それ以外は `Reject` をインスタンス Actor が送る。フォローとしては記録しない（§13） |
-| `Follow` | ローカルの Actor | `graph.ReceiveFollow`。鍵アカウントでなければ承認し、`Accept` を配送する。鍵アカウントなら承認待ち + 通知。ブロック関係があれば `Reject` を配送する。承認済みのフォローがあれば `follow_resends` に記録して `Accept` を送り直す。移転したアカウントへの `Follow` は記録せず、`Reject`（`object_type = refusal`）を返す（ADR-0089） |
+| `Follow` | ローカルの Actor | トランザクションの前に判定フック `inbound.follow`（ADR-0147。プラグインがなければ呼ばない）に尋ね、`drop` なら捨てる。続けて `graph.ReceiveFollow`。鍵アカウントでなければ承認し、`Accept` を配送する。鍵アカウントなら承認待ち + 通知。ブロック関係があれば `Reject` を配送する。承認済みのフォローがあれば `follow_resends` に記録して `Accept` を送り直す。移転したアカウントへの `Follow` は記録せず、`Reject`（`object_type = refusal`）を返す（ADR-0089） |
 | `Accept` / `Reject` | リレーへの `Follow`（`object` の `id` がリレーの現在の `Follow`） | リレーの状態を `accepted`（主体を記録）/ `rejected` にする（§13）。リレーの Actor でない主体のものは捨てる |
 | `Accept` | 自分が送った `Follow`（URI か埋め込み） | `graph.AcceptRemote`（`follow_acceptances`、`accepted_by = remote`）。`object` の `id` が主体をフォローされる側とするフォローに無ければ、埋め込みの `object.actor`（ローカル）と `actor`（相手）の承認待ち・承認済みのフォローで照合する。埋め込みが `Follow` 以外（GoToSocial の返信の承認など）なら捨てる |
 | `Reject` | 自分が送った `Follow`、または承認済みのフォロー | `graph.RejectRemote`。照合は `Accept` と同じ。承認待ちなら `follow_rejections`（`rejected_by = remote`）、承認済みなら `follow_terminations`（`removed_by_followee`） |

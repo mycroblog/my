@@ -50,8 +50,12 @@ func (p *Plugin) Check(ctx context.Context, r apphook.Request) (apphook.Answer, 
 
 // setSubject writes the description of the subject that a hook sends. Each concrete hook adds a
 // case for its type and a field of CheckRequest.
-func setSubject(_ *hookv1.CheckRequest, subject any) error {
-	if subject == nil {
+func setSubject(req *hookv1.CheckRequest, subject any) error {
+	switch s := subject.(type) {
+	case nil:
+		return nil
+	case apphook.FollowSubject:
+		req.Follow = &hookv1.FollowSubject{FollowerUri: s.FollowerURI, FolloweeUri: s.FolloweeURI}
 		return nil
 	}
 	return fmt.Errorf("hook: no mapping of the subject %T", subject)

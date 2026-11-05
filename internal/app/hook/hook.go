@@ -58,6 +58,12 @@ type Request struct {
 	Subject    any
 }
 
+// FollowSubject is the Subject of InboundFollow: the two parties of a follow from another server.
+type FollowSubject struct {
+	FollowerURI string
+	FolloweeURI string
+}
+
 // Answer is what a plugin returned. Outcome is checked against the hook's spec afterwards.
 type Answer struct {
 	Verdict hook.Outcome
