@@ -30,6 +30,8 @@ func (LocalAccountCreated) EventType() string { return EventLocalAccountCreated 
 // ProfileRevised is emitted when a profile revision is inserted.
 type ProfileRevised struct {
 	Revision account.ProfileRevision
+	// IndexableChanged reports that this revision turned indexable on or off.
+	IndexableChanged bool
 }
 
 // EventType implements uow.Event.

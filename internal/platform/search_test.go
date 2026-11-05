@@ -11,7 +11,12 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/search/fake"
+	appaccount "github.com/mycroblog/my/internal/app/account"
+	appinstance "github.com/mycroblog/my/internal/app/instance"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
@@ -37,7 +42,34 @@ func TestSearchNone(t *testing.T) {
 
 	alice := e.user("alice")
 	e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{"text": "hello", "visibility": "public"}, nil), http.StatusCreated, "POST /statuses")
-	jobs, err := e.app.JobInspector.ListJobs(t.Context(), time.Now().Add(time.Hour), queue.JobFilter{}, queue.JobPosition{}, 1000)
+	// Every other fact the index follows with a backend (search_index_test.go) enqueues nothing either.
+	e.want(e.do(http.MethodPatch, "/accounts/update_credentials", alice.token, map[string]any{"indexable": true}, nil), http.StatusOK, "update_credentials")
+	ctx := t.Context()
+	if _, err := e.app.Moderation.IssueAccountAction(ctx, appmoderation.AccountActionInput{
+		TargetAccountID: alice.id, Kind: moderation.ActionLimit, ReasonCategory: moderation.CategoryOther, Duration: time.Millisecond,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.app.Moderation.IssueDomainAction(ctx, appmoderation.DomainActionInput{Domain: "remote.example", Kind: moderation.DomainLimit, Duration: time.Millisecond}); err != nil {
+		t.Fatal(err)
+	}
+	waitPast(time.Now().Add(5 * time.Millisecond))
+	if _, err := e.app.Moderation.ExpireAccountRestrictions(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.app.Moderation.ExpireDomainRestrictions(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingSearchVisibilities, Value: "local"}); err != nil {
+		t.Fatal(err)
+	}
+	if step, err := e.app.Search.EraseAccountData(ctx, appaccount.ErasureTarget{AccountID: alice.id}, "", 100); err != nil || !step.Done {
+		t.Errorf("EraseAccountData = %+v, %v", step, err)
+	}
+	if err := e.app.Accounts.DeleteBySelf(ctx, alice.id); err != nil {
+		t.Fatal(err)
+	}
+	jobs, err :=e.app.JobInspector.ListJobs(t.Context(), time.Now().Add(time.Hour), queue.JobFilter{}, queue.JobPosition{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

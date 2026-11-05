@@ -65,6 +65,9 @@ const (
 	SettingSearchIndexing   SettingKey = "search_indexing"
 	SettingAIUsage          SettingKey = "ai_usage"
 	SettingIndexableDefault SettingKey = "indexable_default"
+
+	// SettingSearchVisibilities is which visibilities the full-text search covers (ADR-0149 §5).
+	SettingSearchVisibilities SettingKey = "search_visibilities"
 	// SettingSecurityContact is where vulnerabilities are reported (/.well-known/security.txt,
 	// RFC 9116); empty serves no security.txt.
 	SettingSecurityContact SettingKey = "security_contact"
@@ -475,6 +478,11 @@ var definitions = []Definition{
 		Key: SettingSearchIndexing, Kind: KindEnum, Default: string(SearchDeny),
 		Choices: []string{string(SearchAllow), string(SearchDeny)},
 		Doc:     "Whether search engines may index the profiles and public posts of the accounts that allow it (indexable); deny states noindex on every page (FR-725, ADR-0057).",
+	},
+	{
+		Key: SettingSearchVisibilities, Kind: KindEnum, Default: SearchVisibilitiesPublic,
+		Choices: []string{SearchVisibilitiesPublic, SearchVisibilitiesLocal, SearchVisibilitiesPublicLocal},
+		Doc:     "Which posts the full-text search of a server with a search backend covers: public, local, or public,local. Narrowing it removes the posts of the other visibility from the index; widening it finds older posts only after a rebuild (FR-309, ADR-0149).",
 	},
 	{
 		Key: SettingAIUsage, Kind: KindEnum, Default: string(AIDeny),
@@ -987,6 +995,28 @@ func (s Settings) SearchIndexing() SearchIndexing {
 		return SearchAllow
 	}
 	return SearchDeny
+}
+
+// The values of SettingSearchVisibilities. Nothing else is accepted: unlisted, private, and direct
+// posts are never in the index, and turning the search off is what search = none is for.
+const (
+	SearchVisibilitiesPublic      = "public"
+	SearchVisibilitiesLocal       = "local"
+	SearchVisibilitiesPublicLocal = "public,local"
+)
+
+// SearchVisibilities returns the visibilities that SettingSearchVisibilities names; an unexpected
+// value is the default, public.
+func (s Settings) SearchVisibilities() []string {
+	v, _ := s.Value(SettingSearchVisibilities)
+	switch v {
+	case SearchVisibilitiesLocal:
+		return []string{"local"}
+	case SearchVisibilitiesPublicLocal:
+		return []string{"public", "local"}
+	default:
+		return []string{"public"}
+	}
 }
 
 // AIUsage returns the value of SettingAIUsage; an unexpected value denies.

@@ -2328,6 +2328,7 @@ const (
 	InstanceSettingKeyReportsRetentionDays             InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription          InstanceSettingKey = "require_media_description"
 	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
+	InstanceSettingKeySearchVisibilities               InstanceSettingKey = "search_visibilities"
 	InstanceSettingKeySecurityContact                  InstanceSettingKey = "security_contact"
 	InstanceSettingKeySessionOriginsRetentionDays      InstanceSettingKey = "session_origins_retention_days"
 	InstanceSettingKeySupporterListVisibility          InstanceSettingKey = "supporter_list_visibility"
@@ -2428,6 +2429,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyRequireMediaDescription:
 		return true
 	case InstanceSettingKeySearchIndexing:
+		return true
+	case InstanceSettingKeySearchVisibilities:
 		return true
 	case InstanceSettingKeySecurityContact:
 		return true

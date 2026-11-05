@@ -483,6 +483,19 @@ func (r *AccountRepository) AccountsOnDomain(ctx context.Context, tx uow.Tx, dom
 	return out, nil
 }
 
+// ListAccountIDsOnDomain implements account.Repository.
+func (r *AccountRepository) ListAccountIDsOnDomain(ctx context.Context, domain, after string, limit int) ([]string, error) {
+	pageLimit, err := toInt32(limit, "page limit")
+	if err != nil {
+		return nil, err
+	}
+	out, err := r.db.reader().ListAccountIDsOnDomainAfter(ctx, postgresgen.ListAccountIDsOnDomainAfterParams{Domain: domain, After: toNullString(after), PageLimit: pageLimit})
+	if err != nil {
+		return nil, wrap(err, "list accounts on "+domain)
+	}
+	return out, nil
+}
+
 // ListLocalAccountIDs implements account.Repository.
 func (r *AccountRepository) ListLocalAccountIDs(ctx context.Context, after string, limit int) ([]string, error) {
 	pageLimit, err := toInt32(limit, "page limit")

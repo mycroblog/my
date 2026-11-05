@@ -96,6 +96,13 @@ func (s *Service) LiveRevision(ctx context.Context, statusID, revisionID string)
 	return st, rev, nil
 }
 
+// AuthorSearchableStatusIDs returns up to limit IDs of the public and local statuses of an author in
+// ID order, after the ID after ("" for the first page), deleted ones included: the only statuses
+// that the full-text search can ever hold (ADR-0149 §5).
+func (s *Service) AuthorSearchableStatusIDs(ctx context.Context, authorAccountID, after string, limit int) ([]string, error) {
+	return s.d.Repository.ListAuthorSearchableStatusIDs(ctx, authorAccountID, after, limit)
+}
+
 // AuthorRestrictions returns the restrictions of an author that bear on who sees its statuses,
 // as CanView takes them: the moderation restrictions in effect, and profile_view for an author
 // that is missing, suspended, or deleted (data-model §5.1).

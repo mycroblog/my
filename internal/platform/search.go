@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/platform/config"
@@ -37,14 +38,27 @@ func newSearchIndex(ctx context.Context, cfg *config.Config, opts AppOptions, lo
 }
 
 // setUpSearch builds the search module and registers its job types, which exist whatever search
-// says (ADR-0149 §7).
+// says, and with a backend the projector that keeps the index in step with the database; with
+// search = none no fact enqueues a job (ADR-0149 §2, §7). It comes after the account, instance,
+// moderation, and content modules, and before the erasure, which it takes part in.
 func (a *App) setUpSearch(ctx context.Context, cfg *config.Config, opts AppOptions) error {
 	index, err := newSearchIndex(ctx, cfg, opts, a.Logger)
 	if err != nil {
 		return err
 	}
-	a.Search = search.NewService(index)
+	outbox := a.Outbox
+	if outbox == nil {
+		// The inline queue has no transactional enqueue.
+		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
+	}
+	a.Search = search.NewService(search.Deps{
+		Index: index, UnitOfWork: a.UnitOfWork, Outbox: outbox,
+		Statuses: a.Content, Accounts: a.Accounts, Settings: a.Instance, Sanitizer: newHTMLSanitizer(),
+	})
 	a.Search.RegisterJobs(a.Handlers)
+	if a.Search.Enabled() {
+		a.Search.RegisterProjectors(a.Projectors)
+	}
 	return nil
 }
 

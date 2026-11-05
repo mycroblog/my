@@ -129,6 +129,9 @@ type Repository interface {
 	// Lookups.
 
 	FindStatus(ctx context.Context, id string) (content.Status, error)
+	// ListAuthorSearchableStatusIDs returns up to limit IDs of the public and local statuses of an
+	// author in ID order, after the ID after ("" for the first page), deleted ones included.
+	ListAuthorSearchableStatusIDs(ctx context.Context, authorAccountID, after string, limit int) ([]string, error)
 	FindStatusByURI(ctx context.Context, uri string) (content.Status, error)
 	// FindStatusByURITx is FindStatusByURI inside tx.
 	FindStatusByURITx(ctx context.Context, tx uow.Tx, uri string) (content.Status, error)

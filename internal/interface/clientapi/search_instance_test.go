@@ -3,6 +3,7 @@
 package clientapi_test
 
 import (
+	"context"
 	"net/http"
 	"slices"
 	"testing"
@@ -13,7 +14,7 @@ import (
 
 type fakeFullTextSearch []search.Visibility
 
-func (f fakeFullTextSearch) Visibilities() []search.Visibility { return f }
+func (f fakeFullTextSearch) Visibilities(context.Context) ([]search.Visibility, error) { return f, nil }
 
 // TestInstanceFullTextSearch checks that GET /instance tells clients whether the full-text search
 // is available and on which visibilities (ADR-0149 §9), with an empty list, not null, without it.

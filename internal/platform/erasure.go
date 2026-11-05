@@ -20,8 +20,9 @@ import (
 // erasure repositories. The erasers run in order: the statuses first, whose notifications the
 // notification module erases with them, then the account's interactions, follows, timeline and
 // notification rows, its user's reads of the announcements, its uploads with their blobs, and
-// the names and descriptions of the voice chat room revisions it wrote, and its user's identity
-// data; the account module erases the profile and keys last. A retention hold stops it, and the statuses that the
+// the names and descriptions of the voice chat room revisions it wrote, a job that takes its
+// documents out of the search index, and its user's identity data; the account module erases the
+// profile and keys last. A retention hold stops it, and the statuses that the
 // moderation records need stay with their media files (ADR-0058). It comes after the content,
 // graph, timeline, notification, and media services, the blob store, and the data exports and imports.
 func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository, statuses content.Repository,
@@ -69,6 +70,8 @@ func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository,
 			a.Supporters,
 			// The names and descriptions of the revisions of the rooms it wrote (ADR-0100 §13).
 			appvoice.NewEraser(a.UnitOfWork, rooms),
+			// A job for its documents in the search index, never a call of the engine (ADR-0149 §11).
+			a.Search,
 			identity.NewEraser(a.UnitOfWork, identities, a.Clock, a.IDs),
 		},
 	}).RegisterJobs(a.Handlers, a.Scheduler)

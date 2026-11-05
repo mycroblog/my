@@ -55,8 +55,9 @@ func (s *Service) emitSuspension(ctx context.Context, tx uow.Tx, accountID, acti
 }
 
 const (
-	// JobExpireRestrictions removes the restriction rows of accounts that have expired and tells
-	// the end of the suspensions among them (FR-803, federation.md §11.1); no payload.
+	// JobExpireRestrictions removes the restriction rows of accounts and domains that have expired
+	// and tells that they ended, and the end of the suspensions among them (FR-803,
+	// federation.md §11.1); no payload.
 	JobExpireRestrictions = "moderation.expire_restrictions"
 	// ExpiryInterval is the period of the expiry schedule: an expired suspension reaches other
 	// servers within it.
@@ -76,6 +77,9 @@ func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sched
 		if _, err := s.ExpireAccountRestrictions(ctx); err != nil {
 			return queue.Retry(0, err)
 		}
+		if _, err := s.ExpireDomainRestrictions(ctx); err != nil {
+			return queue.Retry(0, err)
+		}
 		return queue.Done()
 	})
 	sched.Add(queue.Schedule{Name: JobExpireRestrictions, Every: ExpiryInterval, Job: queue.NewJob{Type: JobExpireRestrictions}})
@@ -86,7 +90,8 @@ func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sched
 // returns how many it removed. An expired row already restricts nothing (readers check the
 // expiry), so removing it changes no restriction in effect; for each account whose last
 // suspension it removes, it emits AccountSuspensionChanged in the same transaction, so that the
-// end of an expired suspension is sent once, at the first run after the expiry. Each batch is
+// end of an expired suspension is sent once, at the first run after the expiry, and for each
+// account it removes a row of, AccountRestrictionsExpired. Each batch is
 // one short transaction, and one run removes a bounded number of rows; the next run continues.
 // A row that a lift removes first is told by the lift.
 func (s *Service) ExpireAccountRestrictions(ctx context.Context) (int, error) {
@@ -100,6 +105,11 @@ func (s *Service) ExpireAccountRestrictions(ctx context.Context) (int, error) {
 				return err
 			}
 			n = len(rows)
+			for _, id := range rowTargets(rows) {
+				if err := tx.Emit(ctx, AccountRestrictionsExpired{AccountID: id}); err != nil {
+					return err
+				}
+			}
 			byAccount := map[string][]moderation.RestrictionRow{}
 			var accounts []string
 			for _, r := range rows {
@@ -135,4 +145,44 @@ func (s *Service) ExpireAccountRestrictions(ctx context.Context) (int, error) {
 		}
 	}
 	return removed, nil
+}
+
+// ExpireDomainRestrictions is ExpireAccountRestrictions for the rows of domains: for each domain it
+// removes a row of, it emits DomainRestrictionsExpired in the same transaction.
+func (s *Service) ExpireDomainRestrictions(ctx context.Context) (int, error) {
+	removed := 0
+	for range expiryMaxBatches {
+		var n int
+		err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			rows, err := s.d.Repository.DeleteExpiredDomainRestrictions(ctx, tx, kernel.Normalize(s.d.Clock.Now()), expiryBatch)
+			if err != nil {
+				return err
+			}
+			n = len(rows)
+			for _, domain := range rowTargets(rows) {
+				if err := tx.Emit(ctx, DomainRestrictionsExpired{Domain: domain}); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return removed, err
+		}
+		removed += n
+		if n < expiryBatch {
+			break
+		}
+	}
+	return removed, nil
+}
+
+// rowTargets returns the distinct targets of rows, sorted.
+func rowTargets(rows []moderation.RestrictionRow) []string {
+	targets := make([]string, 0, len(rows))
+	for _, r := range rows {
+		targets = append(targets, r.Target)
+	}
+	slices.Sort(targets)
+	return slices.Compact(targets)
 }
