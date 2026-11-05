@@ -61,6 +61,7 @@ func WebhookRepositoryContract(t *testing.T, newHarness WebhookFactory) {
 		{"SendsTheErrorGroupsWithASession", webhookErrorGroups},
 		{"DeliversSignedOnceAndRedelivers", webhookDeliver},
 		{"RetriesAndDisablesAGoneEndpoint", webhookGone},
+		{"RecordsAStatusCodeOutsideHTTPsRange", webhookOddStatus},
 		{"DisablesAnEndpointThatKeepsFailing", webhookFailing},
 		{"SignsWithBothSecretsAfterARotation", webhookRotate},
 		{"PurgesOldMessages", webhookPurge},
@@ -533,6 +534,42 @@ func webhookGone(t *testing.T, e *webhookEnv) {
 	entries := e.audit(t, c.Endpoint.ID)
 	if len(entries) != 2 || entries[0].Action != moderation.AuditWebhookDisabled || entries[0].ActorKind != moderation.AuditActorSystem {
 		t.Errorf("audit = %+v, want the disabling by the system", entries)
+	}
+}
+
+// webhookOddStatus answers with the codes outside 100-599 that Go's client passes on: each attempt
+// is recorded as a connection error, and the failure counts, while the codes at the edges of the
+// range are recorded as they are.
+func webhookOddStatus(t *testing.T, e *webhookEnv) {
+	ctx := t.Context()
+	c := e.create(t, "https://hooks.example.com/in", webhook.EventStatusCreated)
+	d, err := e.svc.Test(ctx, c.Endpoint.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, tc := range []struct {
+		status  int
+		outcome webhook.Outcome
+		code    int
+	}{
+		{600, webhook.OutcomeConnectionError, 0},
+		{999, webhook.OutcomeConnectionError, 0},
+		{99, webhook.OutcomeConnectionError, 0},
+		{599, webhook.OutcomeHTTPError, 599},
+		{100, webhook.OutcomeHTTPError, 100},
+	} {
+		e.http.statuses = []int{tc.status}
+		if res := e.svc.Deliver(ctx, d.Delivery.ID, false); !res.IsRetry() {
+			t.Errorf("Deliver(%d) = %+v, want a retry", tc.status, res)
+		}
+		ds, err := e.svc.Deliveries(ctx, c.Endpoint.ID, "", 10)
+		if err != nil || len(ds) != 1 || ds[0].Attempts != i+1 || ds[0].Last.Outcome != tc.outcome || ds[0].Last.StatusCode != tc.code {
+			t.Errorf("Deliveries after %d = %+v, %v; want attempt %d with %s and code %d", tc.status, ds, err, i+1, tc.outcome, tc.code)
+		}
+		got, err := e.svc.Get(ctx, c.Endpoint.ID)
+		if err != nil || got.Failures == nil || got.Failures.Consecutive != i+1 {
+			t.Errorf("endpoint after %d = %+v, %v; want %d failures", tc.status, got, err, i+1)
+		}
 	}
 }
 

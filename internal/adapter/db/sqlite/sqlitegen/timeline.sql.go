@@ -1539,7 +1539,7 @@ WHERE e.kind = 'post' AND e.visibility = 'public'
       AND (r.effective_until IS NULL OR r.effective_until > CAST(?3 AS INTEGER)))
   AND NOT EXISTS (
     SELECT 1 FROM feed_domain_restrictions dr
-    WHERE dr.restriction IN ('public_discovery', 'visibility_ceiling_private', 'profile_view')
+    WHERE dr.restriction IN ('public_discovery', 'profile_view')
       AND (dr.effective_until IS NULL OR dr.effective_until > CAST(?3 AS INTEGER))
       AND (dr.domain = e.author_domain OR substr(e.author_domain, -(length(dr.domain) + 1)) = '.' || dr.domain))
   AND NOT EXISTS (
@@ -1628,7 +1628,7 @@ WHERE t.tag_id = ?1 AND t.visibility IN ('public', 'local')
       AND (r.effective_until IS NULL OR r.effective_until > CAST(?4 AS INTEGER)))
   AND NOT EXISTS (
     SELECT 1 FROM feed_domain_restrictions dr
-    WHERE dr.restriction IN ('public_discovery', 'visibility_ceiling_private', 'profile_view')
+    WHERE dr.restriction IN ('public_discovery', 'profile_view')
       AND (dr.effective_until IS NULL OR dr.effective_until > CAST(?4 AS INTEGER))
       AND (dr.domain = e.author_domain OR substr(e.author_domain, -(length(dr.domain) + 1)) = '.' || dr.domain))
   AND NOT EXISTS (

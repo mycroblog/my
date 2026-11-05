@@ -119,6 +119,11 @@ func (s *Service) Deliver(ctx context.Context, deliveryID string, redeliver bool
 	if sendErr == nil {
 		// The answer's body is not read beyond what closing it takes.
 		_, _ = resp.ReadAll()
+		if !webhook.StandardStatus(resp.StatusCode) {
+			sendErr = fmt.Errorf("webhook: status code %d outside HTTP's range", resp.StatusCode)
+		}
+	}
+	if sendErr == nil {
 		attempt.StatusCode = resp.StatusCode
 		attempt.Outcome = webhook.OutcomeOf(resp.StatusCode)
 		retryAfter, _ = webhook.RetryAfter(resp.Header.Get("Retry-After"), now)

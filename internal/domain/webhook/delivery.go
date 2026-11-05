@@ -83,6 +83,11 @@ func OutcomeOf(statusCode int) Outcome {
 	return OutcomeHTTPError
 }
 
+// StandardStatus reports whether a response's status code is in the range HTTP defines. Go's client
+// passes on any other three digits (000 to 999) that a server sends. Such an answer is not an HTTP
+// one, so it counts as a connection error and has no status code to record.
+func StandardStatus(statusCode int) bool { return statusCode >= 100 && statusCode <= 599 }
+
 // Gone reports whether a status code disables its endpoint at once: 410 Gone.
 func Gone(statusCode int) bool { return statusCode == http.StatusGone }
 

@@ -92,7 +92,7 @@ func (s *Service) settleDuplicate(ctx context.Context, rec SubscriptionRecord, r
 		}
 		return queue.Done()
 	}
-	if !d.Cancelling {
+	if !d.Canceling {
 		snap, err := prov.GetSubscription(ctx, ref)
 		switch {
 		case ErrorKindOf(err) == ErrorNotFound || (err == nil && subscriptionEnded(snap.Status)):

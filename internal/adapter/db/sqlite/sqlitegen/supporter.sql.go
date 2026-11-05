@@ -236,7 +236,7 @@ func (q *Queries) GetSupporterCustomer(ctx context.Context, arg GetSupporterCust
 
 const getSupporterDuplicate = `-- name: GetSupporterDuplicate :one
 SELECT d.id, d.subscription_id, d.provider, d.provider_subscription_id, d.detected_at,
-  EXISTS (SELECT 1 FROM supporter_duplicate_cancellations x WHERE x.duplicate_id = d.id) AS cancelling,
+  EXISTS (SELECT 1 FROM supporter_duplicate_cancellations x WHERE x.duplicate_id = d.id) AS canceling,
   EXISTS (SELECT 1 FROM supporter_duplicate_settlements x WHERE x.duplicate_id = d.id) AS settled
 FROM supporter_duplicate_subscriptions d
 WHERE d.provider = ? AND d.provider_subscription_id = ?
@@ -253,7 +253,7 @@ type GetSupporterDuplicateRow struct {
 	Provider               string
 	ProviderSubscriptionID string
 	DetectedAt             int64
-	Cancelling             bool
+	Canceling              bool
 	Settled                bool
 }
 
@@ -266,7 +266,7 @@ func (q *Queries) GetSupporterDuplicate(ctx context.Context, arg GetSupporterDup
 		&i.Provider,
 		&i.ProviderSubscriptionID,
 		&i.DetectedAt,
-		&i.Cancelling,
+		&i.Canceling,
 		&i.Settled,
 	)
 	return i, err

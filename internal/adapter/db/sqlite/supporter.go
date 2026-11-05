@@ -440,7 +440,7 @@ func (r *SupporterRepository) FindDuplicate(ctx context.Context, tx uow.Tx, prov
 	}
 	return supporters.Duplicate{
 		ID: row.ID, SubscriptionID: row.SubscriptionID, Provider: row.Provider, Ref: supporters.SubscriptionRef(row.ProviderSubscriptionID),
-		DetectedAt: fromMillis(row.DetectedAt), Cancelling: row.Cancelling, Settled: row.Settled,
+		DetectedAt: fromMillis(row.DetectedAt), Canceling: row.Canceling, Settled: row.Settled,
 	}, nil
 }
 

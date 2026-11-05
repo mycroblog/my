@@ -52,8 +52,8 @@ type RetentionRepository interface {
 	// pins.
 	PurgeStatuses(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// DeleteRetentionDeletionsBefore deletes at most limit deletions by retention recorded before
-	// t whose status has no row and no boost, favourite, reaction, bookmark, or pin, and returns
-	// how many it deleted.
+	// t whose status has no row and no boost, favourite, reaction, bookmark, pin, or notification,
+	// and returns how many it deleted.
 	DeleteRetentionDeletionsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
 }
 
