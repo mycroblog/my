@@ -61,10 +61,13 @@ locals {
   secret_env   = merge(var.secret_env, [for b in var.backends : b.secret_env]...)
   secret_arns  = merge(local.secret_env, { for name, arn in local.secret_files : trimsuffix(name, "_FILE") => arn })
 
-  # The migration and the console take the service's secrets, with what a backend names for one-off work in their place.
-  direct_secret_env = merge([for b in var.backends : b.direct_secret_env]...)
-  one_off_arns      = merge(local.secret_arns, local.direct_secret_env)
-  all_secret_arns   = concat(values(local.secret_arns), values(local.direct_secret_env))
+  # The one-off tasks differ from the service here: my schema apply holds a session-level lock, which a pooler in
+  # transaction mode does not keep, so they take what a backend names in direct_secret_env.
+  direct_secret_env      = merge([for b in var.backends : b.direct_secret_env]...)
+  direct_names           = flatten([for b in var.backends : keys(b.direct_secret_env)])
+  direct_without_setting = setsubtract(local.direct_names, keys(local.secret_arns))
+  one_off_arns           = merge(local.secret_arns, local.direct_secret_env)
+  all_secret_arns        = distinct(concat(values(local.secret_arns), values(local.direct_secret_env)))
 
   # The server refuses to start without these, but only once it runs: say it at plan time.
   key_manager = lookup(local.env, "MY_KEY_MANAGER", "local")
@@ -78,6 +81,10 @@ locals {
   on_disk     = [for name, value in { MY_DATABASE = lookup(local.env, "MY_DATABASE", "sqlite"), MY_BLOB = lookup(local.env, "MY_BLOB", "fs") } : name if contains(["sqlite", "fs"], value)]
   permissions = flatten([for b in var.backends : b.permissions])
 
+  # The task's own group, which admits the load balancer, and one for each backend in the VPC, which that backend admits.
+  # The service and every one-off task join them all: a migration needs the database as much as the service does.
+  task_security_group_ids = distinct(concat([aws_security_group.task.id], flatten([for b in var.backends : b.security_group_ids])))
+
   load_balancers    = [for b in var.backends : b.load_balancer if b.load_balancer != null]
   has_load_balancer = length(local.load_balancers) > 0
 
@@ -85,7 +92,7 @@ locals {
   network = {
     awsvpcConfiguration = {
       subnets        = var.subnet_ids
-      securityGroups = [aws_security_group.task.id]
+      securityGroups = local.task_security_group_ids
       assignPublicIp = var.assign_public_ip ? "ENABLED" : "DISABLED"
     }
   }
@@ -144,6 +151,10 @@ resource "aws_iam_role" "execution" {
     precondition {
       condition     = !local.kek_missing
       error_message = "No KEK: with key_manager = ${local.key_manager} the server needs ${local.key_manager == "local" ? "kek" : "kms_key"}. Add a kek-* module to backends."
+    }
+    precondition {
+      condition     = length(local.direct_names) == length(distinct(local.direct_names)) && length(local.direct_without_setting) == 0
+      error_message = "direct_secret_env overrides a setting of secret_env for the one-off tasks, once: each name must be in secret_env and in one backend's direct_secret_env. Check: ${join(", ", local.direct_names)}."
     }
     precondition {
       condition     = alltrue([for arn in local.all_secret_arns : startswith(arn, "arn:")])
@@ -394,7 +405,7 @@ resource "aws_ecs_service" "server" {
 
   network_configuration {
     subnets          = var.subnet_ids
-    security_groups  = [aws_security_group.task.id]
+    security_groups  = local.task_security_group_ids
     assign_public_ip = var.assign_public_ip
   }
 

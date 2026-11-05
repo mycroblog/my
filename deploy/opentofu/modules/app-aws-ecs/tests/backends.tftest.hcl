@@ -531,3 +531,61 @@ run "billing_sources_beside_the_setting_in_env_fail" {
 
   expect_failures = [aws_iam_role.execution]
 }
+
+run "a_task_joins_the_group_of_every_backend" {
+  command = plan
+
+  override_resource {
+    target = aws_security_group.task
+    values = {
+      id = "sg-task"
+    }
+  }
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, security_group_ids = ["sg-db"] },
+      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { security_group_ids = ["sg-cache"] },
+    ]
+  }
+
+  assert {
+    condition     = toset(aws_ecs_service.server.network_configuration[0].security_groups) == toset(["sg-task", "sg-db", "sg-cache"])
+    error_message = "the service must join its own group and that of every backend"
+  }
+
+  assert {
+    condition     = toset(jsondecode(aws_ssm_parameter.network.insecure_value).awsvpcConfiguration.securityGroups) == toset(["sg-task", "sg-db", "sg-cache"])
+    error_message = "a one-off task must join them too: a migration needs the database"
+  }
+}
+
+run "a_direct_setting_with_nothing_to_override_fails" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:direct-AbCdEf" } },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.execution]
+}
+
+run "the_same_direct_setting_from_two_backends_fails" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:pooled-AbCdEf" } },
+      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:direct-AbCdEf" } },
+      { direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:other-AbCdEf" } },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.execution]
+}

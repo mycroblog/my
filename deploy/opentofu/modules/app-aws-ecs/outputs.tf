@@ -25,6 +25,11 @@ output "security_group_id" {
   value       = aws_security_group.task.id
 }
 
+output "task_security_group_ids" {
+  description = "Every security group a task joins: its own and those the backends name."
+  value       = local.task_security_group_ids
+}
+
 output "execution_role_arn" {
   description = "Role that starts the tasks and reads their secrets."
   value       = aws_iam_role.execution.arn

@@ -72,9 +72,10 @@ variable "backends" {
     env          = optional(map(string), {})
     secret_env   = optional(map(string), {})
     secret_files = optional(map(string), {})
-    # Settings that only the migration and the console take, in the place of the service's: a direct connection to a database
-    # whose service goes through a pooler. Naming a setting of secret_env here is not naming it twice.
+    # What the migration and the console take in place of a setting of secret_env, which the service keeps.
     direct_secret_env = optional(map(string), {})
+    # Security groups the tasks join to reach a backend in the VPC.
+    security_group_ids = optional(list(string), [])
     permissions = optional(list(object({
       permission = string
       scope      = string

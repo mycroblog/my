@@ -103,7 +103,7 @@ output "permissions" {
   value       = []
 }
 
-output "client_security_group_id" {
-  description = "Attach this group to the tasks, in the same VPC: nothing else reaches the cache."
-  value       = aws_security_group.client.id
+output "security_group_ids" {
+  description = "The group that the app joins to reach the cache, in the same VPC: nothing else reaches it."
+  value       = [aws_security_group.client.id]
 }

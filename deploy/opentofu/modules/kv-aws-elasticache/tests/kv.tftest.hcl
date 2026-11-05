@@ -34,8 +34,8 @@ run "the_settings" {
   }
 
   assert {
-    condition     = output.client_security_group_id == aws_security_group.client.id
-    error_message = "the tasks must take the client group"
+    condition     = length(output.security_group_ids) == 1 && output.security_group_ids[0] == aws_security_group.client.id
+    error_message = "the app must take the client group"
   }
 }
 

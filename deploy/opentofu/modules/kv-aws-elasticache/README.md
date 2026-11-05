@@ -35,20 +35,20 @@ module "kv" {
 | `env` | `MY_KV`, `MY_VALKEY_URL` |
 | `secret_env` | Empty |
 | `permissions` | Empty |
-| `client_security_group_id` | The group to attach to the tasks |
+| `security_group_ids` | The group the app joins, through `backends` |
 
 ## What you must provide: the network
 
 - **A VPC and subnets**, which the module takes as inputs and does not create.
-- **The tasks in that VPC, with `client_security_group_id` attached.** The cache takes port 6379 from that group alone.
+- **The app in that VPC.** `backends` hands it `security_group_ids`, and the cache takes port 6379 from that group alone.
 
 On Fargate this adds only the groups, since a task is already in a VPC, and Valkey needs no route to the internet. What the task
 needs for everything else is the same with or without Valkey, and it is the larger cost: a public IPv4 address on each task, $0.005
 per hour (about $3.65 a month), or a NAT gateway, $0.045 per hour (about $33 a month in US East, Ohio) and $0.045 per GB.
 
-**On Lambda this module does not work yet.** `app-aws-lambda` has no VPC input, and a function attached to a VPC reaches the internet
-only through something like that NAT gateway, which federation needs. A public endpoint would avoid it, but it requires IAM
-authentication, and the server takes one static URL.
+**On Lambda this takes a NAT gateway.** A function reaches the cache once `vpc_subnet_ids` of `app-aws-lambda` attach it, without
+which the plan fails, and an attached function reaches the internet only through something like that gateway, which federation needs. A public endpoint
+would avoid it, but it requires IAM authentication, and the server takes one static URL.
 
 ## No password: the network is what keeps others out
 

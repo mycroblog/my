@@ -127,6 +127,32 @@ module "app_on_neon_aws" {
   backends   = [module.secrets_on_aws, module.neon_on_aws]
 }
 
+module "valkey" {
+  source = "../../modules/kv-aws-elasticache"
+
+  vpc_id     = "vpc-1"
+  subnet_ids = ["subnet-a", "subnet-b"]
+}
+
+# Both reach the tasks by one field of backends, so neither needs the other nor anything of its own on the app.
+module "app_on_rds_and_valkey" {
+  source = "../../modules/app-aws-ecs"
+
+  name             = "ecs"
+  image            = "ghcr.io/mycroblog/my:0.1.0"
+  host             = "social.example.org"
+  vpc_id           = "vpc-1"
+  subnet_ids       = ["subnet-a", "subnet-b"]
+  assign_public_ip = true
+  env              = { MY_BLOB = "s3" }
+  secret_env       = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek" }
+  backends         = [module.rds, module.valkey]
+}
+
+output "ecs_task_security_group_ids" {
+  value = module.app_on_rds_and_valkey.task_security_group_ids
+}
+
 output "neon_gcp_service_url" {
   value = module.app_on_neon_gcp.secret_env["MY_DATABASE_URL"]
 }

@@ -34,7 +34,7 @@ module "app" {
 | `console_enabled` | `false` | Creates the console's task definition |
 | `log_retention_days` | `30` | CloudWatch Logs |
 
-A backend may also return `direct_secret_env`: settings that the migration and the console take in the place of the service's, such as a direct connection to a database whose service goes through a pooler. Without it, they take the service's.
+[`direct_secret_env`](../../README.md#the-databases-two-connections) of a backend is what the migration and the console take over a setting of `secret_env`, which the service keeps. Each name must be in `secret_env`, and a plan fails otherwise. `security_group_ids` of a backend are groups that the service and every one-off task join, beside the tasks' own, to reach it in the VPC: `db-aws-rds` and `kv-aws-elasticache` return one each.
 
 | Output | Value |
 | --- | --- |
@@ -42,6 +42,7 @@ A backend may also return `direct_secret_env`: settings that the migration and t
 | `migration_task_definition` | The family `upgrade.sh` runs |
 | `origin_host` | Always null: read below |
 | `security_group_id` | Of the tasks, for a rule of your own |
+| `task_security_group_ids` | Every group a task joins: that one, and those of the backends |
 | `execution_role_arn`, `task_role_arn` | Read [Secrets](#secrets) |
 | `log_group` | `/ecs/<name>` |
 | `console` | What `console.sh` reads, or null |
