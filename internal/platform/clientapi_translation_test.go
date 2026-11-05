@@ -480,7 +480,7 @@ func TestTranslateStatusRefusesBadOutput(t *testing.T) {
 	e.wantProblem("bob", st.Id, http.StatusUnprocessableEntity, clientapi.ProblemTypeTranslationUnsupportedLanguage)
 
 	// Markup in the output is text in the body, and tags do not stay in the plain text.
-	e.one.setAnswer(func(_ context.Context, req translation.Request) (translation.Result, error) {
+	e.one.setAnswer(func(context.Context, translation.Request) (translation.Result, error) {
 		return translation.Result{
 			Translations:     []string{`<script>alert(1)</script><img src=x onerror=y> ⟦1⟧`, `<b>見て</b><script>alert(1)</script>`},
 			DetectedLanguage: "en",
