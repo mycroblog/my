@@ -1006,6 +1006,16 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.PaymentsReconcileMaxRequests, _ = strconv.Atoi(v) },
 	},
 	{
+		key: "search",
+		doc: "The search engine of the full-text search of statuses. The search of accounts and hashtags uses the database and does not depend on this setting.",
+		def: "none",
+		choices: []choice{
+			{value: "none", doc: "No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available."},
+			{value: "fake", doc: "Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it (docs/reference/build-tags.md). It needs no other setting."},
+		},
+		set: func(c *Config, v string) { c.Search = v },
+	},
+	{
 		key: "voice",
 		doc: "How the voice chat rooms connect their participants. With `off`, the voice chat API answers 404, the web client shows no voice chat, and the other `voice_*` settings are not checked at start.",
 		def: "off",
@@ -1457,6 +1467,9 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	}
 	if vals["payments"] == "fake" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "payments", Message: "fake is refused in the production profile: it records payments as paid without any money moving; set profile = development"})
+	}
+	if vals["search"] == "fake" && vals["profile"] != "development" {
+		issues = append(issues, Issue{Key: "search", Message: "fake is refused in the production profile: it is an index in memory for tests; set profile = development"})
 	}
 	if vals["http_allow_private_networks"] == "true" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "http_allow_private_networks", Message: "true is refused in the production profile; set profile = development"})

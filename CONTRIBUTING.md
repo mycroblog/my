@@ -339,8 +339,8 @@ Four checks keep the fakes out of production; each one stops them on its own whe
 
 - **The build check.** `scripts/task.sh go:build-tags` fails when `cmd/my` without the tag (with no tags, or with any
   representative set of `no_*` tags) depends on a fake. Only files with the constraint `//go:build e2e_fakes` import
-  them outside the tests: `internal/platform/adapters_payments_fake.go` the fake payment provider, and
-  `cmd/my/dev_push_service.go` the fake push service.
+  them outside the tests: `internal/platform/adapters_payments_fake.go` the fake payment provider,
+  `internal/platform/adapters_search_fake.go` the fake search index, and `cmd/my/dev_push_service.go` the fake push service.
 - **The container image.** The `Dockerfile` stops when `GO_TAGS` has `e2e_fakes`, before it compiles anything, and
   checks the binary it built as the release check does.
 - **The release.** `scripts/check-release-build.sh BINARY...` fails when the Go build info of a binary

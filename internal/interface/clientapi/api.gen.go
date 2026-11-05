@@ -2242,6 +2242,24 @@ func (e InstanceFederationMode) Valid() bool {
 	}
 }
 
+// Defines values for InstanceFullTextSearchVisibilities.
+const (
+	InstanceFullTextSearchVisibilitiesLocal  InstanceFullTextSearchVisibilities = "local"
+	InstanceFullTextSearchVisibilitiesPublic InstanceFullTextSearchVisibilities = "public"
+)
+
+// Valid indicates whether the value is a known member of the InstanceFullTextSearchVisibilities enum.
+func (e InstanceFullTextSearchVisibilities) Valid() bool {
+	switch e {
+	case InstanceFullTextSearchVisibilitiesLocal:
+		return true
+	case InstanceFullTextSearchVisibilitiesPublic:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceRegistrationsMode.
 const (
 	InstanceRegistrationsModeApproval InstanceRegistrationsMode = "approval"
@@ -9123,6 +9141,11 @@ type Instance struct {
 	// the names, memos, or individual payments of the cost items.
 	FinanceVisibility FinanceVisibility `json:"finance_visibility"`
 
+	// FullTextSearch The full-text search of statuses on this server. It is separate from the search of accounts and
+	// hashtags, which every server has. Clients read this to know whether to show an entry to it,
+	// without a search that fails.
+	FullTextSearch InstanceFullTextSearch `json:"full_text_search"`
+
 	// Icon A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 	// under `/brand/` on the server that name the revision, so their content never changes and
 	// they may be cached for good. Show the SVG only as an image (`<img>` or a CSS background),
@@ -9424,6 +9447,20 @@ type InstanceFederation struct {
 //     refused with the 403 `/api/v1/problems/federation-restricted`.
 //   - `both`: both ways.
 type InstanceFederationMode string
+
+// InstanceFullTextSearch The full-text search of statuses on this server. It is separate from the search of accounts and
+// hashtags, which every server has. Clients read this to know whether to show an entry to it,
+// without a search that fails.
+type InstanceFullTextSearch struct {
+	// Available Whether the server has a search engine, so that statuses can be searched.
+	Available bool `json:"available"`
+
+	// Visibilities The visibilities of the statuses that the search covers; empty while it is not available.
+	Visibilities []InstanceFullTextSearchVisibilities `json:"visibilities"`
+}
+
+// InstanceFullTextSearchVisibilities defines model for InstanceFullTextSearch.Visibilities.
+type InstanceFullTextSearchVisibilities string
 
 // InstanceLimits Limits that clients check before sending a request.
 type InstanceLimits struct {

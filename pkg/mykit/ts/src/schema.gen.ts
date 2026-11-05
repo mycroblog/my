@@ -11504,6 +11504,7 @@ export interface components {
              * @enum {string}
              */
             voice_room_starters: "everyone" | "permitted";
+            full_text_search: components["schemas"]["InstanceFullTextSearch"];
             theme?: components["schemas"]["InstanceTheme"];
             icon?: components["schemas"]["InstanceBrandImage"];
             logo?: components["schemas"]["InstanceBrandImage"];
@@ -11713,6 +11714,17 @@ export interface components {
          * @enum {string}
          */
         InstanceAudience: "off" | "signed_in" | "everyone";
+        /**
+         * @description The full-text search of statuses on this server. It is separate from the search of accounts and
+         *     hashtags, which every server has. Clients read this to know whether to show an entry to it,
+         *     without a search that fails.
+         */
+        InstanceFullTextSearch: {
+            /** @description Whether the server has a search engine, so that statuses can be searched. */
+            available: boolean;
+            /** @description The visibilities of the statuses that the search covers; empty while it is not available. */
+            visibilities: ("public" | "local")[];
+        };
         /**
          * @description The key of an instance setting. New keys may be
          *     added; clients show the ones they know.

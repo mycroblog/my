@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 87 job types. 38 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 92 job types. 38 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -153,6 +153,18 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | `voice.notify_started` | Tells the local followers of a host who can see a room that it opened. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. | A room opening | Default | Safe. Each notification is created once. |
 | `voice.purge_records` | Erases the participants' records of rooms that ended past their retention, except those a report or a hold preserves. | Schedule | Default | Next run |
 
+## Full-text search
+
+Each of these types exists on every server and does nothing: nothing enqueues them yet. A server with `search = none`, the default, never will.
+
+| Job type | What it does | Started by | On failure | Run again |
+| --- | --- | --- | --- | --- |
+| `search.sync_status` | Does nothing. | Nothing | Default | Safe |
+| `search.sync_author` | Does nothing. | Nothing | Default | Safe |
+| `search.sync_domain` | Does nothing. | Nothing | Default | Safe |
+| `search.narrow` | Does nothing. | Nothing | Default | Safe |
+| `search.rebuild` | Does nothing. | Nothing | Default | Safe |
+
 ## Webhooks
 
 | Job type | What it does | Started by | On failure | Run again |
@@ -232,4 +244,4 @@ Most job types exist on every server. These do not:
 
 A job whose type has no handler on the process that claims it, for example after you change one of these settings, counts as a failure, retries with the default waits, and becomes a dead job. It appears as `other` in the `my.job.*` metrics. Restore the setting and run it again, or delete it.
 
-These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments`, and `voice.apply` without a voice transport. The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.
+These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments`, `voice.apply` without a voice transport, and the `search.*` types, which do nothing on any server for now ([Full-text search](#full-text-search)). The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.

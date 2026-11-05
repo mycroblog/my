@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The full-text search of statuses on this server. It is separate from the search of accounts and
+  hashtags, which every server has. Clients read this to know whether to show an entry to it,
+  without a search that fails.
+type: object
+required: [available, visibilities]
+properties:
+  available:
+    description: Whether the server has a search engine, so that statuses can be searched.
+    type: boolean
+  visibilities:
+    description: The visibilities of the statuses that the search covers; empty while it is not available.
+    type: array
+    items:
+      type: string
+      enum: [public, local]
