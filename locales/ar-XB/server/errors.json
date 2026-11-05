@@ -643,6 +643,22 @@
     "defaultMessage": "‮{max,plural,one{{name} ɔɐu ɥɐʌǝ ɐʇ ɯosʇ # ıʇǝɯ.} other{{name} ɔɐu ɥɐʌǝ ɐʇ ɯosʇ # ıʇǝɯs.}}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.translation.failed": {
+    "defaultMessage": "‮⊥ɥǝ dosʇ ɔonʅp uoʇ qǝ ʇɹɐusʅɐʇǝp. ⊥ɹʎ ɐƃɐıu ʅɐʇǝɹ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.translation.limit": {
+    "defaultMessage": "‮⊥ɥǝ ɯouʇɥʅʎ ʇɹɐusʅɐʇıou ʅıɯıʇ ıs ɹǝɐɔɥǝp. ⊥ɹɐusʅɐʇıou ıs ɐʌɐıʅɐqʅǝ ɐƃɐıu uǝxʇ ɯouʇɥ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.translation.unavailable": {
+    "defaultMessage": "‮⊥ɥıs dosʇ ɔɐuuoʇ qǝ ʇɹɐusʅɐʇǝp ou ʇɥıs sǝɹʌǝɹ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.translation.unsupported_language": {
+    "defaultMessage": "‮⊥ɥǝ dosʇ ɔɐuuoʇ qǝ ʇɹɐusʅɐʇǝp ıuʇo ʇɥɐʇ ʅɐuƃnɐƃǝ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.two_factor.code_invalid": {
     "defaultMessage": "‮⊥ɥǝ ɔopǝ ıs ıuɔoɹɹǝɔʇ oɹ ʍɐs ɐʅɹǝɐpʎ nsǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."

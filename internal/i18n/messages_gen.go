@@ -2695,6 +2695,34 @@ func (l *Localizer) ServerErrorsTooMany(args ServerErrorsTooManyArgs) string {
 	return l.format("server:errors.too_many", map[string]any{"max": args.Max, "name": args.Name})
 }
 
+// ServerErrorsTranslationFailed formats "server:errors.translation.failed". API error title for HTTP 503 when no translation service returned a usable translation of a post.
+//
+//	en: The post could not be translated. Try again later.
+func (l *Localizer) ServerErrorsTranslationFailed() string {
+	return l.format("server:errors.translation.failed", nil)
+}
+
+// ServerErrorsTranslationLimit formats "server:errors.translation.limit". API error title for HTTP 429 when a user or the whole server reached the monthly limit on the characters sent to translation services.
+//
+//	en: The monthly translation limit is reached. Translation is available again next month.
+func (l *Localizer) ServerErrorsTranslationLimit() string {
+	return l.format("server:errors.translation.limit", nil)
+}
+
+// ServerErrorsTranslationUnavailable formats "server:errors.translation.unavailable". API error title for HTTP 422 when no translation service of the server may receive the post: none is enabled, or none is allowed the post's visibility.
+//
+//	en: This post cannot be translated on this server.
+func (l *Localizer) ServerErrorsTranslationUnavailable() string {
+	return l.format("server:errors.translation.unavailable", nil)
+}
+
+// ServerErrorsTranslationUnsupportedLanguage formats "server:errors.translation.unsupported_language". API error title for HTTP 422 when no translation service of the server translates between the post's language and the language asked for.
+//
+//	en: The post cannot be translated into that language.
+func (l *Localizer) ServerErrorsTranslationUnsupportedLanguage() string {
+	return l.format("server:errors.translation.unsupported_language", nil)
+}
+
 // ServerErrorsTwoFactorCodeInvalid formats "server:errors.two_factor.code_invalid". Title of the HTTP 422 API error when a two-factor authentication code (six digits from an authenticator app, or a recovery code) is wrong, was used before, or is not a code.
 //
 //	en: The code is incorrect or was already used.

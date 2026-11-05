@@ -1200,6 +1200,18 @@ type StatusRevisionSource struct {
 	SourceFormat string
 }
 
+type StatusTranslation struct {
+	ID             string
+	StatusID       string
+	RevisionID     string
+	TargetLanguage string
+	Provider       string
+	SourceLanguage string
+	ContentHtml    string
+	SpoilerText    string
+	CreatedAt      time.Time
+}
+
 type SupporterCheckout struct {
 	ID                 string
 	SubscriptionID     string

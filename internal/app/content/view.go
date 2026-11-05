@@ -12,6 +12,8 @@ type (
 	Visibility = content.Visibility
 	// Viewer is content.Viewer.
 	Viewer = content.Viewer
+	// Body is content.Body.
+	Body = content.Body
 	// ViewerKind is content.ViewerKind.
 	ViewerKind = content.ViewerKind
 	// ViewContext is content.ViewContext.

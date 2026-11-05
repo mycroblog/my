@@ -11,6 +11,8 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/text/unicode/norm"
+
+	"github.com/mycroblog/my/internal/domain/content"
 )
 
 // This file turns the plain text a local author types into the HTML of a status (FR-103,
@@ -65,6 +67,9 @@ type Hashtag struct {
 func NormalizeTag(name string) string {
 	return strings.ToLower(norm.NFKC.String(name))
 }
+
+// ShortcodeSpans returns the byte ranges [start, end) of every :shortcode: in t, colons included.
+func ShortcodeSpans(t string) [][2]int { return content.ShortcodeSpans(t) }
 
 // ParsedText is the text of a status split into segments.
 type ParsedText struct {

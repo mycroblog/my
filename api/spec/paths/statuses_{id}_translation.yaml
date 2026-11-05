@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/StatusId.yaml
+post:
+  operationId: translateStatus
+  summary: Translate a post into a language
+  description: |
+    Returns the current version of a post in `target_language`: its text, content warning, the
+    alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+    for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+
+    `provider` is omitted when no machine translated the answer: the post already has a body in
+    the language, whose author wrote it, or it has no words to translate. Otherwise the server
+    answers with a translation that it keeps, or asks the providers that its operator enabled.
+    Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+    Characters sent count against monthly limits of the user and of the server, whichever app
+    asks.
+
+    A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+    is enabled, or none is allowed its visibility. A 422
+    `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+    language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+    `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+    `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+    may pass.
+  tags: [statuses]
+  security:
+    - oauth2: ["read:statuses"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/StatusTranslationRequest.yaml
+  responses:
+    "200":
+      description: The post in the language.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/StatusTranslation.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
