@@ -50,7 +50,7 @@ the web client (type checks, build, dependency licenses).
   nightly.
 - The live interoperability tests against Mastodon, GoToSocial, Misskey, and Akkoma are not part of `scripts/task.sh check`
   either: run them with `scripts/task.sh docker:federation-live` (CI runs them nightly; see
-  [deploy/docker/federation-live/README.md](deploy/docker/federation-live/README.md)).
+  [test/federation-live/README.md](test/federation-live/README.md)).
 - The license is AGPL-3.0-only, except for `api/spec/`, `api/openapi.yaml`, `pkg/mykit/`, and `pkg/mybot/`, which are
   MIT. Their files start with `SPDX-License-Identifier: MIT`, every other new source file with `AGPL-3.0-only`, and
   `scripts/task.sh api:license-scope` (part of `api:check`) checks them. The MIT parts depend only on permissive
@@ -218,6 +218,8 @@ MY_HOST=localhost:8080 MY_DATABASE_URL=my.db MY_KEK="$(openssl rand -base64 32)"
   (`script-src 'self'` without a nonce), use a binary built by `scripts/task.sh go:bin`.
 - The runtime configuration's `apiOrigin` is `http://{host}` only in development and when `MY_WEB_ORIGIN` is the
   `http` origin of `host` (such as `http://localhost:8080`).
+- To try the voice chat, add `MY_VOICE=p2p` and `MY_WEB_ORIGIN=http://localhost:8080`: browsers allow the microphone only
+  on `localhost` or over HTTPS, and browsers on this machine connect to each other without a STUN server.
 
 To look at the screens with data in them, start the demo server: `scripts/task.sh web:demo` (needs Docker)
 starts the development Mailpit, builds the test build of `bin/my`, creates a fresh database under `.tmp/demo/`, and
@@ -305,27 +307,19 @@ shows it in a web UI (`http://127.0.0.1:8025`) and a REST API.
   `SSL_CERT_FILE` replaces the system root certificates, so that `my serve` cannot make HTTPS requests to outside servers
   (federation and the like). Use it only for development checks.
 - The image (`axllent/mailpit`) is pinned by tag and digest, the same as in the integration tests
-  (`deploy/docker/mailpit/compose.yaml`).
+  (the service `mailpit` of the root [`compose.yaml`](compose.yaml)).
 
-To add it to the Docker Compose setup ([`deploy/docker/compose.yaml`](deploy/docker/compose.yaml)), layer the override
-[`compose.mailpit.yaml`](deploy/docker/compose.mailpit.yaml) on top. It sets `mail` of `my` to `smtp` and points it at
-Mailpit.
-
-```sh
-scripts/mailpit-cert.sh
-cd deploy/docker
-docker compose -f compose.yaml -f compose.mailpit.yaml up -d
-```
-
-To send from a `my serve` running on your machine, start only Mailpit (`scripts/task.sh docker:mailpit`; stop it with
-`docker compose -f deploy/docker/mailpit/compose.yaml down`) and start with these settings.
+The root `compose.yaml` is for development: it holds the services for a server you run from a checkout, under the project
+`my-dev`, so it never collides with a deployment. What deploys an instance is in `deploy/docker/`
+([Docker Compose files](docs/operations/running.md#docker-compose-files)). Start Mailpit (`scripts/task.sh docker:mailpit`; stop it with
+`docker compose rm -sf mailpit`) and start the server with these settings.
 
 ```sh
 MY_MAIL=smtp MY_MAIL_FROM=noreply@localhost MY_MAIL_SMTP_HOST=localhost MY_MAIL_SMTP_PORT=1025 \
   SSL_CERT_FILE=.tmp/mailpit/ca.pem my serve
 ```
 
-In both setups, ask for a password reset (`/auth/forgot_password`) or register in `open` mode, and the email arrives in the
+Ask for a password reset (`/auth/forgot_password`) or register in `open` mode, and the email arrives in the
 Mailpit UI. Open the link of the email you opened in the UI in your browser.
 
 The integration tests check the headers, encoding, and body of the email the adapter sent and the combinations of STARTTLS

@@ -9,7 +9,7 @@ before you need one. Upgrades take a backup too; [Upgrading](database.md#upgradi
 | --- | --- | --- | --- |
 | The database | the SQLite file (`database_url`) or the PostgreSQL database | [SQLite](#sqlite) or [PostgreSQL](#postgresql) | everything: accounts, posts, follows, settings |
 | The media | the directory `blob_fs_dir` of the `fs` blob store, or the bucket `blob_s3_bucket` of the `s3` blob store or `blob_gcs_bucket` of the `gcs` blob store | [Media](#media) or [Media in a bucket](#media-in-a-bucket) | the uploaded images, videos, and audio files, and the cached remote files |
-| The KEK | wherever you keep `MY_KEK` or the file of `MY_KEK_FILE` (never in the database) | [The KEK](key-management.md#back-it-up), separately from the database | every actor's private key and with it the actor's identity in the fediverse, and the other secrets the database stores |
+| The KEK | wherever you keep `MY_KEK` or the file of `MY_KEK_FILE` (`secrets/kek` with Compose; never in the database) | [The KEK](key-management.md#back-it-up), separately from the database | every actor's private key and with it the actor's identity in the fediverse, and the other secrets the database stores |
 | The configuration | the environment variables, the configuration file (`MY_CONFIG`), the secrets (`MY_VAPID_PRIVATE_KEY`, mail and payment keys), `.env` with Compose | copy them with your deployment files | nothing in the data, but the instance cannot start the same way; changing `host` breaks every federated URL |
 
 What does not need a backup:
@@ -74,6 +74,13 @@ Use `pg_dump` in the custom format, which `pg_restore` reads. It reads one snaps
 
 ```sh
 pg_dump --format=custom --file=my-$(date +%Y%m%d%H%M).dump "postgres://my:...@db.example/my"
+```
+
+With the Compose layer `compose.postgres.yaml`, run it in the database's container (name the layer with `-f` or in `COMPOSE_FILE`):
+
+```sh
+cd deploy/docker
+docker compose exec -T postgres pg_dump --format=custom -U my my > my-$(date +%Y%m%d%H%M).dump
 ```
 
 Use the `pg_dump` of the same major version as the server or a newer one.
@@ -217,6 +224,15 @@ Restore into a new, empty database prepared as for a new instance, but without a
    ```
 
 3. With a managed database's own backup, restore it the provider's way instead, and point `database_url` at the restored instance.
+
+With the Compose layer `compose.postgres.yaml`, start only the database, on a new volume, and restore into it. The container has made the role and the database:
+
+```sh
+cd deploy/docker
+docker compose up -d --wait postgres
+docker compose exec -T postgres pg_restore --exit-on-error --no-owner -U my -d my < my-202601010000.dump
+docker compose up -d
+```
 
 To restore over an existing database instead (rolling back an upgrade), use `pg_restore --clean --if-exists`, as [Rolling back](database.md#rolling-back) shows.
 

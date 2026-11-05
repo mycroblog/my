@@ -232,7 +232,7 @@ classify() {
       ;;
   esac
   case "$path" in
-    Dockerfile | .dockerignore | deploy/* | scripts/docker-smoke.sh | scripts/docker-web-reproducible.sh | scripts/web-sign-in.sh | scripts/upgrade-test.sh | scripts/federation-live.sh)
+    Dockerfile | .dockerignore | compose.yaml | deploy/* | test/upgrade-test/* | test/federation-live/* | scripts/docker-smoke.sh | scripts/docker-web-reproducible.sh | scripts/web-sign-in.sh | scripts/upgrade-test.sh | scripts/federation-live.sh)
       select_contexts docker
       known=1
       ;;

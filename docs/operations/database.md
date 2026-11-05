@@ -45,7 +45,7 @@ after the previous one succeeded, and the server (`my`) starts last:
 | Service | Runs |
 | --- | --- |
 | `upgrade-check` | `my db upgrade -check` (passes on an empty database) |
-| `schema` | `my schema apply` on `/data/my.db` |
+| `schema` | `my schema apply`, on `/data/my.db` or, with the layer `compose.postgres.yaml`, on its PostgreSQL ([Docker Compose files](running.md#docker-compose-files)) |
 | `upgrade` | `my db upgrade` |
 
 ```sh

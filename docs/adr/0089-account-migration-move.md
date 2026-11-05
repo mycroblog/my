@@ -94,7 +94,7 @@ ADR-0006 の流れの表の `retract` は、`Move` の送信を含む。
 
 ### 10. 相互運用の確かめ方
 
-`deploy/docker/federation-live` に、Mastodon・GoToSocial・Misskey それぞれとの往復（こちら → 相手、相手 → こちら）のシナリオを置く: 別名の設定、`Move`、相手のサーバーでフォロワーが移ること、こちらでフォローが移り通知が出ること。Akkoma はこのシナリオの相手ではないので、Akkoma が送る `Move` の JSON のフィクスチャを testkit に置いて回帰テストにする。
+`test/federation-live` に、Mastodon・GoToSocial・Misskey それぞれとの往復（こちら → 相手、相手 → こちら）のシナリオを置く: 別名の設定、`Move`、相手のサーバーでフォロワーが移ること、こちらでフォローが移り通知が出ること。Akkoma はこのシナリオの相手ではないので、Akkoma が送る `Move` の JSON のフィクスチャを testkit に置いて回帰テストにする。
 
 ### 11. 無効化: 本人ができること
 
@@ -225,5 +225,5 @@ Mastodon に利用者向けの無効化はない（2026-11-03 に確認。[移�
 
 ## Open Questions / 要検証
 
-- 要検証: こちらの送る `Move` で、Akkoma の側のフォロワーが実際に移ること。Akkoma は `deploy/docker/federation-live` の `TestMove` の相手ではない。Mastodon・GoToSocial・Misskey は `TestMove` で確かめている。Misskey 2026.10 が移転先が Misskey 自身のアカウントの `Move` の処理に失敗するのは確かめた既知の非互換で、`TestMove` は Misskey では別のサーバーのアカウントへ移す。
+- 要検証: こちらの送る `Move` で、Akkoma の側のフォロワーが実際に移ること。Akkoma は `test/federation-live` の `TestMove` の相手ではない。Mastodon・GoToSocial・Misskey は `TestMove` で確かめている。Misskey 2026.10 が移転先が Misskey 自身のアカウントの `Move` の処理に失敗するのは確かめた既知の非互換で、`TestMove` は Misskey では別のサーバーのアカウントへ移す。
 - 要検証: Misskey・Akkoma・GoToSocial が、`suspended: true` の `Update(Actor)` を受けて隠すか、戻るか。`federation-live` の `TestSuspension` は Mastodon だけを確かめている。

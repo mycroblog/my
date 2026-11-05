@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 # Creates the private development CA and two certificates it signs:
-#   server.pem / server.key              the STARTTLS certificate of the development Mailpit (deploy/docker/mailpit),
+#   server.pem / server.key              the STARTTLS certificate of the development Mailpit (root compose.yaml),
 #                                        valid for the host names that `my serve` reaches it by: mailpit (in the compose
 #                                        stack), localhost, and 127.0.0.1;
 #   push-service.pem / push-service.key  the HTTPS certificate of the fake Web Push service of the test builds

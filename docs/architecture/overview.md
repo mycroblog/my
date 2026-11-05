@@ -286,6 +286,9 @@ app/                 # クライアントの Bun ワークスペース（アプ�
 deploy/
   docker/ k8s/ aws/
   terraform/  # Cloud Run の OpenTofu モジュール（`<role>-<provider>-<service>`）
-  docker/federation-live/  # ライブの相互運用テスト（Mastodon・GoToSocial との compose とシナリオ。federation.md §12）
+test/                # テストの構成
+  federation-live/   # ライブの相互運用テスト（Mastodon・GoToSocial との compose とシナリオ。federation.md §12）
+  upgrade-test/      # アップグレードのテストと復旧の訓練の compose
+compose.yaml         # 開発の構成（go run のサーバーが使う PostgreSQL と Mailpit）
 docs/
 ```

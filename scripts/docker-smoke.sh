@@ -6,7 +6,8 @@
 # NodeInfo, and the embedded web client, and sign in as the web client does over plain HTTP on localhost
 # (README.md, "Quick start"). Then start the stack again on the same volume, as an upgrade does, and check that the
 # one-off services ran in order, that the server is ready with the data kept, and that a failing one-off service
-# keeps the server stopped (docs/operations/database.md, "Upgrading").
+# keeps the server stopped (docs/operations/database.md, "Upgrading"). The settings come from a copy of example.env and
+# the KEK from a secret file, as for an operator; the check of the layers is `docker compose config` on each of them.
 # Prints the logs on failure and always removes the stack and its volume.
 # With SMOKE_PUBLISHED=<image tag> (0.1.0), it pulls that published image instead of building, to check a release.
 # Usage: scripts/docker-smoke.sh   (needs docker with compose, curl, jq, openssl)
@@ -16,7 +17,10 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 port="${SMOKE_HTTP_PORT:-18080}"
 base="http://127.0.0.1:$port"
 
-# Throwaway settings for this run only; the shell environment takes precedence over any deploy/docker/.env.
+# Throwaway settings for this run only, in a project directory of its own, so that a deploy/docker/.env or
+# deploy/docker/secrets stays out of it. It is two levels below the root, as deploy/docker is, for the build context of
+# compose.build.yaml.
+project="$root/.tmp/docker-smoke"
 export MY_HOST="localhost:$port"
 export MY_WEB_ORIGIN="http://$MY_HOST"
 export MY_HTTP_PORT="$port"
@@ -26,13 +30,26 @@ export MY_VERSION="${published:-${MY_VERSION:-smoke}}"
 want_version="$MY_VERSION"
 if [[ -n "$published" ]]; then want_version="v$published"; fi
 published_image="ghcr.io/mycroblog/my:$MY_VERSION"
-MY_KEK="$(openssl rand -base64 32)"
-export MY_KEK
+# A setting that compose.yaml does not name, which reaches the container through the env file alone.
+env_file_setting='MY_RELAY_MAX_ACTIVITIES_PER_HOUR=999'
+
+rm -rf "$project"
+mkdir -p "$project/secrets"
+chmod 700 "$project/secrets"
+(
+	umask 022
+	openssl rand -base64 32 >"$project/secrets/kek"
+)
+{
+	cat "$root/deploy/docker/example.env"
+	printf 'MY_VERSION=%s\nMY_HOST=%s\nMY_WEB_ORIGIN=%s\nMY_HTTP_PORT=%s\n%s\n' \
+		"$MY_VERSION" "$MY_HOST" "$MY_WEB_ORIGIN" "$MY_HTTP_PORT" "$env_file_setting"
+} >"$project/.env"
 
 # shellcheck source=scripts/web-sign-in.sh
 . "$root/scripts/web-sign-in.sh"
 
-compose=(docker compose --project-directory "$root/deploy/docker" -f "$root/deploy/docker/compose.yaml" -p my-smoke)
+compose=(docker compose --project-directory "$project" -f "$root/deploy/docker/compose.yaml" -p my-smoke)
 build=("${compose[@]}" -f "$root/deploy/docker/compose.build.yaml")
 
 fail() {
@@ -49,6 +66,7 @@ cleanup() {
 	fi
 	"${compose[@]}" down -v --remove-orphans >/dev/null 2>&1 || true
 	if [[ -z "$published" ]]; then docker rmi "$published_image" >/dev/null 2>&1 || true; fi
+	rm -rf "$project"
 	exit "$status"
 }
 trap cleanup EXIT
@@ -91,6 +109,14 @@ check_order() {
 	[[ "$out" == *"ok: "*"data upgrade step"* ]] || fail "upgrade did not report ok: $out"
 }
 
+# Each layer, alone and all together, is a valid Compose file with the settings its header asks for.
+echo "docker-smoke: checking the layers" >&2
+for layers in postgres s3 caddy "postgres s3 caddy"; do
+	files=()
+	for layer in $layers; do files+=(-f "$root/deploy/docker/compose.$layer.yaml"); done
+	POSTGRES_PASSWORD=smoke "${compose[@]}" "${files[@]}" config -q
+done
+
 # An image is never a test build: the Dockerfile refuses the test-only build tag e2e_fakes before it compiles anything.
 echo "docker-smoke: checking that the Dockerfile refuses GO_TAGS with e2e_fakes" >&2
 if out="$(docker build --progress=plain --target build --build-arg GO_TAGS=no_valkey,e2e_fakes "$root" 2>&1)"; then
@@ -110,6 +136,22 @@ wait_ready
 check_order "statement(s) applied"
 
 "${compose[@]}" exec -T my my version
+
+# The env file reaches the container, without the KEK; and with the KEK in it the server refuses to start.
+env="$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$("${compose[@]}" ps -q my)")"
+grep -qx "$env_file_setting" <<<"$env" || fail "$env_file_setting of the env file did not reach the container"
+grep -qx 'MY_KEK_FILE=/run/secrets/my_kek' <<<"$env" || fail "the container has no MY_KEK_FILE"
+if grep -q '^MY_KEK=' <<<"$env"; then fail "the KEK reached the container as an environment variable"; fi
+if out="$("${compose[@]}" run --rm --no-deps -e MY_KEK="$(cat "$project/secrets/kek")" my config check 2>&1)"; then
+	fail "the server accepted MY_KEK together with MY_KEK_FILE: $out"
+fi
+[[ "$out" == *"MY_KEK"* ]] || fail "unexpected error with both MY_KEK and MY_KEK_FILE: $out"
+# The variables that only the compose files read do not count as misspelled settings.
+# (It exits with 1 here for being no production setup, such as the host localhost.)
+out="$("${compose[@]}" exec -T my my config check 2>&1 || true)"
+[[ "$out" == *relay_max_activities_per_hour* ]] || fail "unexpected output of my config check: $out"
+if [[ "$out" == *MY_VERSION* || "$out" == *MY_HTTP_PORT* ]]; then fail "my config check warns about a variable of the compose files: $out"; fi
+
 printf 'smoke-test-password\n' | "${compose[@]}" exec -T my my admin create -username alice -email alice@example.com
 
 accept_ap='application/activity+json'

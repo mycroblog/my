@@ -724,12 +724,12 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 | 署名のテストベクタ | RFC 9421 付録 B のテストベクタ、Mastodon と同じ形式の draft-cavage の署名、クエリ文字列・ダイジェストの改ざん | `scripts/task.sh check` |
 | 順序のテスト | 同じアクティビティ列の順序を入れ替え・重複させて処理し、最終的な行が同じになることを確かめる性質テスト（`testkit.InboxProcessingContract` の `OrderAndDuplicates`。ケースは `inboxOrderCases` で、ハンドラを足すときにケースも足す） | `scripts/task.sh check` |
 | SSRF ガード | `testkit.HTTPClientContract`（ADR-0019 §1） | `scripts/task.sh check` |
-| ライブの相互運用 | docker compose で Mastodon（secure mode）・GoToSocial・Misskey・Akkoma（LitePub 方式のリレーだけに使う）とこのサーバーを、私設 CA の TLS とコンテナのネットワークの DNS で立て、WebFinger・Actor の署名付き取得・フォロー（承認・解除）・投稿・返信・ブースト・お気に入り・削除・編集・公開範囲ごとの配送先（ADR-0017 の `local` のメンション先を含む）と、ADR-0006 の署名の各方式（プロキシが 401 を返して RFC 9421 への切り替えを起こす）を往復させ、ローカルのアカウントの凍結とその解除が Mastodon に表示されること（#44、§11.1）と、Activity-Relay のリレーを介して公開投稿が Mastodon と往復すること（Mastodon が LD 署名を検証する。§13）と、Akkoma のリレー用 Actor（LitePub 方式）への参加・脱退、そのフォローし返しへの `Accept`、リレー用 Actor の `Announce` と shared inbox への配送で公開投稿が Akkoma と往復すること（§13）を確かめる。構成・シナリオ・実装ごとの互換性の差異は `deploy/docker/federation-live/`（README.md） | 遅い検査（リリースの関門・nightly）/ 手動（CI ジョブ `federation-live`、`scripts/task.sh docker:federation-live`） |
+| ライブの相互運用 | docker compose で Mastodon（secure mode）・GoToSocial・Misskey・Akkoma（LitePub 方式のリレーだけに使う）とこのサーバーを、私設 CA の TLS とコンテナのネットワークの DNS で立て、WebFinger・Actor の署名付き取得・フォロー（承認・解除）・投稿・返信・ブースト・お気に入り・削除・編集・公開範囲ごとの配送先（ADR-0017 の `local` のメンション先を含む）と、ADR-0006 の署名の各方式（プロキシが 401 を返して RFC 9421 への切り替えを起こす）を往復させ、ローカルのアカウントの凍結とその解除が Mastodon に表示されること（#44、§11.1）と、Activity-Relay のリレーを介して公開投稿が Mastodon と往復すること（Mastodon が LD 署名を検証する。§13）と、Akkoma のリレー用 Actor（LitePub 方式）への参加・脱退、そのフォローし返しへの `Accept`、リレー用 Actor の `Announce` と shared inbox への配送で公開投稿が Akkoma と往復すること（§13）を確かめる。構成・シナリオ・実装ごとの互換性の差異は `test/federation-live/`（README.md） | 遅い検査（リリースの関門・nightly）/ 手動（CI ジョブ `federation-live`、`scripts/task.sh docker:federation-live`） |
 
 - フィクスチャは採取したときのホスト・名前・本文・鍵を例の値に置き換えて保存し、実装と版をディレクトリ名に残します。新しい不具合を直すときは、その文書をフィクスチャに足します（ADR-0006）。
 - 置き換えと追加の手順は [pkg/testkit/README.md](../../pkg/testkit/README.md#federation-fixtures)、各ファイルの出典とライセンスは `pkg/testkit/fixtures/federation/<実装>/README.md` にあります。正規化の golden は `pkg/testkit/testdata/golden/normalize/` にあり、`go test ./pkg/testkit -update` で書き直します。
 - `scripts/task.sh check` のテストはネットワークを使わず、`HTTPClient` をホスト名で振り分けるインメモリの実装に差し替えます（ADR-0015）。
-- ライブの相互運用テストは、このサーバーが受信したアクティビティを保存したとおりに成果物へ書き出します。フィクスチャの採取元にする手順は [deploy/docker/federation-live/README.md](../../deploy/docker/federation-live/README.md#adding-a-captured-activity-as-a-fixture) にあります。
+- ライブの相互運用テストは、このサーバーが受信したアクティビティを保存したとおりに成果物へ書き出します。フィクスチャの採取元にする手順は [test/federation-live/README.md](../../test/federation-live/README.md#adding-a-captured-activity-as-a-fixture) にあります。
 
 ## 13. リレー
 

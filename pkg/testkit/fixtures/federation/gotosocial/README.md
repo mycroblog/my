@@ -10,7 +10,7 @@ The id of `update-person.json`, which the test generates, is an example value.
 `AcceptFollow` embeds it in an `Accept` addressed to the follower, whose id has the form of `uris.GenerateURIForAccept`.
 The follow is the one of `NewTestFollows` in `testrig/testmodels.go`; `remote.example` is the server GoToSocial talks to.
 The files of the second table were captured from GoToSocial v0.22.1 by the live interoperability test
-([deploy/docker/federation-live](../../../../../deploy/docker/federation-live/README.md)) on 2026-10-17: what GoToSocial delivered to this
+([test/federation-live](../../../../../test/federation-live/README.md)) on 2026-10-17: what GoToSocial delivered to this
 server, as this server stored it. Replaced: `gts.test` → `gotosocial.example` and `my.test` → `remote.example`. The users
 (`alice`, `carol`) and the texts are the test's own.
 

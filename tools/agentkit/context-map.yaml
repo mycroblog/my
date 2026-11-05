@@ -56,7 +56,7 @@ userdocs:
     - "**/testdata/**"
     - "**/e2e/**"
     - "pkg/testkit/**"
-    - "deploy/docker/federation-live/**"
+    - "test/federation-live/**"
 
 entries:
   # --- Repository-wide ------------------------------------------------------------------------------
@@ -645,8 +645,16 @@ entries:
     docs: ["docs/architecture/deployment-targets.md#self-hosteddocker--microk8s", "docs/operations/running.md"]
     checks: [docker]
   - name: docker-compose
-    paths: ["deploy/docker/compose.yaml", "deploy/docker/compose.build.yaml", "deploy/docker/.env.example", "Dockerfile"]
-    userdocs: ["README.md#quick-start-docker-compose", "docs/operations/running.md#get-the-image", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
+    paths: ["deploy/docker/compose.yaml", "deploy/docker/compose.build.yaml", "deploy/docker/compose.postgres.yaml", "deploy/docker/compose.s3.yaml", "deploy/docker/compose.caddy.yaml", "deploy/docker/example.env", "Dockerfile"]
+    userdocs: ["README.md#quick-start-docker-compose", "docs/operations/running.md#docker-compose-files", "docs/operations/running.md#get-the-image", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
+    notes:
+      - "deploy/docker/example.env is generated from the config schema (`scripts/task.sh go:config-docs`). The KEK stays out of it: .env reaches the containers whole through env_file, so the key is the file secrets/kek, mounted as a secret."
+  - name: dev-compose
+    paths: ["compose.yaml"]
+    docs: ["CONTRIBUTING.md#emails"]
+    checks: [docker]
+    notes:
+      - "Development only, under the project my-dev: the PostgreSQL of `scripts/task.sh db:up` and the Mailpit of `scripts/task.sh docker:mailpit` and .github/actions/start-mailpit."
   - name: terraform
     paths: ["deploy/terraform/**", "scripts/terraform-*", "tasks/terraform.yml", "docs/operations/deploy-cloud-run.md"]
     docs: ["deploy/terraform/README.md", "docs/operations/deploy-cloud-run.md", "docs/architecture/deployment-targets.md#google-cloud"]
@@ -662,8 +670,14 @@ entries:
     checks: [docker, docs]
     notes:
       - "The alerting rules use the metric names as Prometheus shows them (internal/platform/telemetry.go, internal/app/metrics, internal/adapter/telemetry); a renamed metric or label updates alerts.yml, alerts.test.yml, and docs/operations/alerts.md together. `scripts/task.sh docker:alert-rules` runs promtool on them."
+  - name: federation-live
+    paths: ["test/federation-live/**", "scripts/federation-live.sh"]
+    docs: ["test/federation-live/README.md", "docs/architecture/federation.md#12-テスト"]
+    checks: [docker, go]
+    notes:
+      - "The live interoperability scenarios against Mastodon, GoToSocial, Misskey, and Akkoma (build tag federationlive, `scripts/task.sh docker:federation-live`, slow-suite.yml job federation-live): black-box clients of running servers, whose imports depguard limits (.golangci.yml)."
   - name: upgrade-test
-    paths: ["deploy/docker/upgrade-test/**", "scripts/upgrade-test.sh", "scripts/previous-minor.sh", "scripts/previous-minor-test.sh", "scripts/web-sign-in.sh"]
+    paths: ["test/upgrade-test/**", "scripts/upgrade-test.sh", "scripts/previous-minor.sh", "scripts/previous-minor-test.sh", "scripts/web-sign-in.sh"]
     docs: ["docs/agents/releasing.md#the-upgrade-test", "docs/operations/database.md#upgrading"]
     checks: [docker, shell]
     notes:

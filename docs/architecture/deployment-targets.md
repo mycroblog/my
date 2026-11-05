@@ -323,7 +323,7 @@
 
 | ターゲット | 接続元 | `trusted_proxies` | `trusted_proxy_header` |
 | --- | --- | --- | --- |
-| Docker Compose（`deploy/docker`、ホストのリバースプロキシ） | Compose ネットワークのゲートウェイ（ポートは `127.0.0.1` にだけ公開） | ネットワークのサブネット（`docker network inspect <project>_default`。既定の割り当て範囲全体なら `172.16.0.0/12, 192.168.0.0/16`） | プロキシが追記するヘッダ。Caddy の `reverse_proxy` と Traefik は `X-Forwarded-For`、nginx は `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` で追記する |
+| Docker Compose（`deploy/docker`、ホストのリバースプロキシまたは `compose.caddy.yaml`） | Compose ネットワークのゲートウェイ（ポートは `127.0.0.1` にだけ公開） | ネットワークのサブネット（`docker network inspect <project>_default`。既定の割り当て範囲全体なら `172.16.0.0/12, 192.168.0.0/16`） | プロキシが追記するヘッダ。Caddy の `reverse_proxy` と Traefik は `X-Forwarded-For`、nginx は `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` で追記する |
 | Cloud Run（直接公開） | Google Front End からのリンクローカルアドレス | `169.254.0.0/16` | `x-forwarded-for` |
 | Cloud Run（外部アプリケーションロードバランサの背後） | 同上 | `169.254.0.0/16` に加えてロードバランサの転送ルールの IP | `x-forwarded-for` |
 | AWS Application Load Balancer（EC2 / ECS） | ロードバランサのノード（ALB のサブネットのプライベート IP） | ALB を置いたサブネット（または VPC）の CIDR | `x-forwarded-for`（ALB の `routing.http.xff_header_processing.mode` は既定の `append` のままにする） |

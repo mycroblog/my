@@ -126,6 +126,9 @@ func TestUnknownEnv(t *testing.T) {
 		"MY_HOST_FILE", "/x", // _FILE of a setting that is not a secret
 		"MY_KEK_FILE", "/run/secrets/kek",
 		"MY_CONFIG", "my.toml",
+		// Read by the compose files, from the env file that also reaches the container.
+		"MY_VERSION", "0.1.0",
+		"MY_HTTP_PORT", "8080",
 		"MY_OLD_HOST", "x", // retired: an error of Load, not a warning
 		// Kubernetes service links of Services named "my" and "my-db".
 		"MY_SERVICE_HOST", "10.0.0.1",

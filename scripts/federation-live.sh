@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 # Live interoperability test (ADR-0006, ADR-0015, docs/architecture/federation.md §12): start
-# deploy/docker/federation-live/compose.yaml (this server, Mastodon, GoToSocial, Misskey, Akkoma, Activity-Relay,
+# test/federation-live/compose.yaml (this server, Mastodon, GoToSocial, Misskey, Akkoma, Activity-Relay,
 # a private CA), create
-# the users on each server, and run the scenarios in deploy/docker/federation-live (go test -tags federationlive).
+# the users on each server, and run the scenarios in test/federation-live (go test -tags federationlive).
 #
 # Whatever the outcome, it writes to $FEDERATION_LIVE_OUT (default .tmp/federation-live/out):
 #   logs/<service>.log   the log of every container
@@ -16,7 +16,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-dir="$root/deploy/docker/federation-live"
+dir="$root/test/federation-live"
 work="${FEDERATION_LIVE_DIR:-$root/.tmp/federation-live}"
 out="${FEDERATION_LIVE_OUT:-$work/out}"
 certs="$work/certs"
@@ -266,4 +266,4 @@ env | grep '^FEDERATION_LIVE_' >"$work/scenarios.env"
 cd "$root"
 # The scenarios take longer than go test's default 10 minutes: TestClosure alone waits up to 15 for
 # delivery_completed.
-go test -tags federationlive -count=1 -timeout 45m -v "$@" ./deploy/docker/federation-live 2>&1 | tee "$out/scenarios.log"
+go test -tags federationlive -count=1 -timeout 45m -v "$@" ./test/federation-live 2>&1 | tee "$out/scenarios.log"
