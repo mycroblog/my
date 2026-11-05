@@ -1,7 +1,7 @@
 # secrets-gcp-secret-manager
 
 Secrets in Secret Manager. It never takes a value: you add the values that come from elsewhere by hand, and the first apply
-can generate a VAPID key, so no secret value reaches the plan or the state. It needs OpenTofu or Terraform 1.11 or later, and
+can generate a VAPID key, so no secret value reaches the plan or the state. It needs OpenTofu 1.11 or later, and
 follows [the backend contract](../../README.md#the-backend-contract).
 
 ## Source

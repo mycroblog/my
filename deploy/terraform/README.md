@@ -1,7 +1,7 @@
 # OpenTofu modules
 
 Modules that compose a deployment of `my` from swappable backends. They are written for [OpenTofu](https://opentofu.org)
-and work with Terraform too, from version 1.11 of either. To deploy, follow [Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md);
+and need version 1.11 or later: they use its `lifecycle` `enabled`, ephemeral resources, and write-only attributes. Only OpenTofu is supported. To deploy, follow [Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md);
 this file is the contract for whoever uses or adds a module.
 
 ```text

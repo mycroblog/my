@@ -27,7 +27,7 @@ module "kek" {
 | `env`, `secret_env`, `roles` | Empty: the app module grants access to the secret |
 
 The first apply generates 32 random bytes with an ephemeral resource and sends them through a write-only attribute, so the
-value reaches neither the plan nor the state, and no later apply writes another. It needs OpenTofu or Terraform 1.11 or later.
+value reaches neither the plan nor the state, and no later apply writes another. It needs OpenTofu 1.11 or later.
 
 **Copy the KEK right after the first apply**, and keep the copy apart from the database, as
 [the guide](../../../../docs/operations/deploy-cloud-run.md#4-create-the-secrets-and-add-their-values) shows. Secret

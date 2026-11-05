@@ -2,7 +2,7 @@
 
 How to run `my` on Google Cloud with the OpenTofu modules in [`deploy/terraform`](../../deploy/terraform/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage, and Pub/Sub, with a PostgreSQL database on Neon. Nothing runs while nobody uses it, except a tick that wakes the server each minute. Read [Costs](#costs) first: the tick and open streams decide what it costs.
 
-The modules also work with Terraform 1.11 or later: use `terraform` where this guide says `tofu`. The lock file in the example is for OpenTofu, so `terraform init` adds its own entries to it.
+The modules need OpenTofu 1.11 or later. Terraform is not supported.
 
 ## What it creates
 
