@@ -49,6 +49,7 @@ These names are used under the activities below. List each one you use.
 | {{IF telemetry}} Metrics and tracing service | {{...}} | {{...}} |
 | {{IF voice}} Voice media server, STUN and TURN | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook receivers | {{...}} | {{...}} |
+| {{IF sign-up review}} Sign-up review service | {{...}} | {{...}} |
 | {{IF translation}} Translation providers | {{...}} | {{...}} |
 | Backup storage | {{...}} | {{...}} |
 | Federated servers | Other servers of the network, run by other controllers, which change over time. `my` keeps the list of known servers | Any country |
@@ -78,8 +79,8 @@ These names are used under the activities below. List each one you use.
 | --- | --- |
 | Purposes | Preventing abuse, finding accounts of the same person during moderation, rate limiting, stopping bots |
 | Data subjects | People with an account, applicants, visitors of the sign-in pages |
-| Personal data | Registration IP address, sign-in IP address and User-Agent, IP address (and for password-reset requests the email address) in rate limit counters, sign-up blocks (email domain, hashed address, IP range). With CAPTCHA: IP address, browser and device information, cookies |
-| Recipients | Hosting, staff with `manage_accounts` (each reveal is in the audit log), CAPTCHA service |
+| Personal data | Registration IP address, sign-in IP address and User-Agent, IP address (and for password-reset requests the email address) in rate limit counters, sign-up blocks (email domain, hashed address, IP range). With CAPTCHA: IP address, browser and device information, cookies. With a sign-up review: the email address and IP address of each applicant without an invite |
+| Recipients | Hosting, staff with `manage_accounts` (each reveal is in the audit log), CAPTCHA service, sign-up review service |
 | Erasure | Registration IP addresses `{{180 days}}`, sign-in origins `{{180 days}}`, counters within twice the window of the limit, sign-up blocks 30 days after the lift or expiry. Stopped by a retention hold |
 | Legal basis | {{e.g. legitimate interests}} |
 
