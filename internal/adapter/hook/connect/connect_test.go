@@ -187,6 +187,51 @@ func mustKind(t *testing.T, name string) kind.Kind {
 	return k
 }
 
+// media.check sends the processed image as bytes, which a plugin of JSON alone reads as base64, and
+// may use plain TCP: it sends no text of a post.
+func TestMediaSubject(t *testing.T) {
+	t.Parallel()
+	got := make(chan map[string]any, 1)
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /my.plugin.hook.v1.HookService/Check", func(w http.ResponseWriter, r *http.Request) {
+		var req map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		got <- req
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"verdict":"VERDICT_REJECT"}`))
+	})
+	conn, err := client.New(client.Options{
+		Kind: mustKind(t, kind.MediaCheck), Destination: kind.Destination{Address: fakeplugin.ServeUnix(t, mux)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(conn.Close)
+	a, err := hookconnect.New(conn).Check(t.Context(), apphook.Request{
+		Hook: hook.MediaCheck, SubjectKey: "media-1",
+		Subject: apphook.MediaSubject{
+			Purpose: "attachment", MediaType: "video", Image: []byte("webp"), ImageContentType: "image/webp", ImageWidth: 64, ImageHeight: 36,
+			Width: 1280, Height: 720, Duration: 1500 * time.Millisecond, Animated: true,
+		},
+	})
+	if err != nil || a.Verdict != hook.Reject {
+		t.Fatalf("Check = %+v, %v", a, err)
+	}
+	m, _ := (<-got)["media"].(map[string]any)
+	want := map[string]any{
+		"purpose": "attachment", "mediaType": "video", "image": "d2VicA==", "imageContentType": "image/webp", "imageWidth": 64.0,
+		"imageHeight": 36.0, "width": 1280.0, "height": 720.0, "durationMs": "1500", "animated": true,
+	}
+	for k, v := range want {
+		if m[k] != v {
+			t.Errorf("media.%s = %v, want %v", k, m[k], v)
+		}
+	}
+	if _, err := client.New(client.Options{Kind: mustKind(t, kind.MediaCheck), Destination: kind.Destination{Address: "http://plugin.example"}}); err != nil {
+		t.Errorf("media.check refuses plain TCP: %v", err)
+	}
+}
+
 // inbound.status sends the text of posts, so plain TCP is refused, on loopback too.
 func TestInboundStatusRefusesPlainTCP(t *testing.T) {
 	t.Parallel()

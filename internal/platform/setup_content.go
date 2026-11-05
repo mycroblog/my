@@ -8,6 +8,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/domain/hook"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -35,8 +36,10 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 		LocalEmojis: func(ctx context.Context, texts ...string) ([]string, error) {
 			return a.CustomEmojis.LocalEmojiIDs(ctx, texts...)
 		},
-		Clock: a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
+		MediaReview: a.mediaReview(),
+		Clock:       a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
 	})
+	a.Hooks.RegisterOverrideEffect(hook.MediaCheck, a.Content.UndoMediaReview)
 	// After RegisterProjectors, which creates the counters that these projectors update.
 	content.RegisterInteractionProjectors(a.Projectors, interactions)
 	a.Interactions = content.NewInteractions(content.InteractionDeps{
