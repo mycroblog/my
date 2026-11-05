@@ -26,6 +26,9 @@ type Env struct {
 	Protocol string
 	// Billed runs the cases of the billing kind that may cost money (--billed).
 	Billed bool
+	// MailTo is the recipient of the cases of the mailer kind that send real mail (--mail-to); empty skips them. MailFrom
+	// is their sender (--mail-from).
+	MailTo, MailFrom string
 }
 
 // Case is one contract case.
@@ -34,6 +37,8 @@ type Case struct {
 	Name string
 	// Skip, when set and not empty for this Env, says why the case does not run.
 	Skip func(Env) string
+	// Note, when set, says what a person still has to check after the case passes.
+	Note string
 	// Run returns what the plugin did wrong, or nil.
 	Run func(ctx context.Context, env Env) error
 }
@@ -42,6 +47,7 @@ type Case struct {
 var table = map[string][]Case{
 	kind.Probe:   probeCases,
 	kind.Billing: billingCases,
+	kind.Mailer:  mailerCases,
 }
 
 // noCases is the reason of a kind without an entry in the table.
@@ -61,7 +67,7 @@ const (
 type Result struct {
 	Case    string
 	Outcome Outcome
-	// Detail says why a case failed or was skipped.
+	// Detail says why a case failed or was skipped, or what to check after it passed.
 	Detail string
 }
 
@@ -105,7 +111,7 @@ func Run(ctx context.Context, k kind.Kind, env Env, report func(Result)) []Resul
 			emit(Result{Case: c.Name, Outcome: Fail, Detail: err.Error()})
 			continue
 		}
-		emit(Result{Case: c.Name, Outcome: Pass})
+		emit(Result{Case: c.Name, Outcome: Pass, Detail: c.Note})
 	}
 	return results
 }

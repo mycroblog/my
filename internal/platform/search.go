@@ -53,7 +53,7 @@ func (a *App) setUpSearch(ctx context.Context, cfg *config.Config, repo search.R
 	}
 	a.Search = search.NewService(search.Deps{
 		Index: index, UnitOfWork: a.UnitOfWork, Outbox: outbox,
-		Statuses: a.Content, Accounts: a.Accounts, Settings: a.Instance, Sanitizer: newHTMLSanitizer(),
+		Statuses: a.Content, Accounts: a.Accounts, Settings: a.Instance, Viewing: a.Timeline, Sanitizer: newHTMLSanitizer(),
 		Rebuilds: repo, Clock: a.Clock, IDs: a.IDs, RebuildBatch: opts.SearchRebuildBatch,
 	})
 	a.Search.RegisterJobs(a.Handlers)

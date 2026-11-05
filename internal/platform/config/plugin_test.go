@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+//go:build !no_plugins
+
 package config
 
 import (
 	"errors"
 	"os"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -30,19 +31,6 @@ func loadPlugin(t *testing.T, env map[string]string) (*Config, []Issue) {
 		t.Fatal(err)
 	}
 	return cfg, nil
-}
-
-// withPluginTokens is with, plus an address and a token for every kind.
-func withPluginTokens(base map[string]string, kv ...string) map[string]string {
-	for _, k := range kind.Delegated() {
-		address, token := schemaField(k.Key(kind.SuffixAddress)).env(), schemaField(k.Key(kind.SuffixToken)).env()
-		kv = append(kv, address, "unix:///run/my/plugin.sock", token, "s3cret")
-	}
-	return with(base, kv...)
-}
-
-func schemaField(key string) *field {
-	return &schema[slices.IndexFunc(schema, func(f field) bool { return f.key == key })]
 }
 
 func hasIssue(issues []Issue, key string) bool {
@@ -71,12 +59,13 @@ func TestEveryPluginIsOffByDefault(t *testing.T) {
 
 func TestPlainTCPIsRefusedForTheKindsOfTheRule(t *testing.T) {
 	refused := map[string]string{
+		"translator": "MY_PLUGIN_TRANSLATOR_ADDRESS", "signup.check": "MY_PLUGIN_SIGNUP_CHECK_ADDRESS",
 		"key_manager": "MY_PLUGIN_KEY_MANAGER_ADDRESS", "mailer": "MY_PLUGIN_MAILER_ADDRESS",
 		"inbound.status": "MY_PLUGIN_INBOUND_STATUS_ADDRESS", "local.status": "MY_PLUGIN_LOCAL_STATUS_ADDRESS",
 	}
 	allowed := map[string]string{
-		"translator": "MY_PLUGIN_TRANSLATOR_ADDRESS", "billing": "MY_PLUGIN_BILLING_ADDRESS", "media": "MY_PLUGIN_MEDIA_ADDRESS",
-		"signup.check": "MY_PLUGIN_SIGNUP_CHECK_ADDRESS", "inbound.follow": "MY_PLUGIN_INBOUND_FOLLOW_ADDRESS", "media.check": "MY_PLUGIN_MEDIA_CHECK_ADDRESS",
+		"billing": "MY_PLUGIN_BILLING_ADDRESS", "media": "MY_PLUGIN_MEDIA_ADDRESS",
+		"inbound.follow": "MY_PLUGIN_INBOUND_FOLLOW_ADDRESS", "media.check": "MY_PLUGIN_MEDIA_CHECK_ADDRESS",
 	}
 	if len(refused)+len(allowed) != len(kind.Delegated()) {
 		t.Fatalf("this test names %d kinds of %d", len(refused)+len(allowed), len(kind.Delegated()))
@@ -145,7 +134,7 @@ func TestPluginSettingsThatConflict(t *testing.T) {
 		env     map[string]string
 		wantKey string
 	}{
-		{"a token over plain TCP", map[string]string{"MY_PLUGIN_TRANSLATOR_ADDRESS": "http://127.0.0.1:1", "MY_PLUGIN_TRANSLATOR_TOKEN": "t"}, "plugin_translator_token"},
+		{"a token over plain TCP", map[string]string{"MY_PLUGIN_BILLING_ADDRESS": "http://127.0.0.1:1", "MY_PLUGIN_BILLING_TOKEN": "t"}, "plugin_billing_token"},
 		{"a malformed address", map[string]string{"MY_PLUGIN_BILLING_ADDRESS": "billing:8080"}, "plugin_billing_address"},
 		{"json for a streaming kind", map[string]string{"MY_PLUGIN_MEDIA_ADDRESS": "unix:///s", "MY_PLUGIN_MEDIA_PROTOCOL": "json"}, "plugin_media_protocol"},
 		{"an unknown protocol", map[string]string{"MY_PLUGIN_BILLING_ADDRESS": "unix:///s", "MY_PLUGIN_BILLING_PROTOCOL": "soap"}, "plugin_billing_protocol"},

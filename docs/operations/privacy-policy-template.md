@@ -36,6 +36,7 @@ Review the policy when you change a setting below or a service, and after each u
 | Any remote post | No limit (`0`) | `remote_status_max_retention_days` | 0-3650 | The post's publication |
 | Remote posts only a relay brought | 7 days | `relay_status_retention_days` | 1-3650 | The post's publication |
 | Copies of remote media | 1 day, and none kept while `remote_media_policy` is `none` | `remote_media_cache_ttl_seconds`, `remote_media_policy` | 60-31536000 seconds | The fetch |
+| Translations of posts | 30 days | `translation_retention_days` | 1-3650 | The translation. Reading it does not extend the period, and it goes when the post is deleted |
 
 These are settings of the deployment ([configuration reference](../reference/configuration.md)), not instance settings:
 
@@ -95,6 +96,9 @@ Each service that receives personal data appears in the policy only if you turne
 | `{{IF voice media server}}` | `voice` is `livekit` or `sora` | Participants' IP addresses, their audio while speaking, a session ID, and the room ID. The account's ID is not sent ([voice chat](voice.md)). |
 | `{{IF turn}}` | `voice_stun_urls`, `voice_turn` | STUN and TURN servers see participants' IP addresses, and a TURN server relays their encrypted audio. |
 | `{{IF webhooks}}` | [Server webhooks](webhooks.md) | Your receiver gets event bodies. Some carry an applicant's email address or a report's comment. |
+| `{{IF translation}}` | `translation_providers` is not empty | The text of a post when a reader asks to translate it: its body, content warning, poll options, and image descriptions. The post's address, its author, the reader, mentions, and links are not sent. By default a provider receives `public`, `local`, and `unlisted` posts. It works as your service provider, like hosting, so `local` posts reach it although they do not federate: keep the `local` sentence in section 5. A provider that keeps the text for its own use is not a service provider in this sense, and the policy must say so. |
+| `{{IF translation to private and direct}}` | `translation_provider_visibilities` allows a provider `private` or `direct` | The same, for those posts. Use this marker only when you allowed it, per provider. It adds lines to sections 2 and 5, and it makes your promise about those posts wider, so announce it before you change the setting. |
+| `{{IF browser translation}}` | `translation_browser` | Nothing reaches this server or a provider. The browser translates on the reader's device, and what the browser's maker does is up to that browser. |
 
 The services are your choices, so this template does not say where each is established or what contract covers it. Confirm both yourself.
 
@@ -120,6 +124,8 @@ This policy describes how {{OPERATOR NAME}} ("we") handles personal data on {{IN
 # 2. Whom this covers
 
 This policy covers people with an account here, people who read pages here without an account, and people on other servers whose posts and profiles reach this server.
+
+{{IF translation}} If you are on another server, the text of your posts that reach this server can go to the translation services in section 6 when a reader here asks for a translation. Your server cannot tell you when this happens.
 
 # 3. What we keep, why, and for how long
 
@@ -158,6 +164,8 @@ This policy covers people with an account here, people who read pages here witho
 | {{IF proxy logs}} Logs of our proxy or load balancer: IP addresses and requests | Running and protecting the service | {{PERIOD}} |
 | Error reports, with personal details removed by pattern | Fixing faults | The latest report of each kind of error stays until a newer one replaces it. Hourly counts: 90 days |
 | {{IF webhooks}} Messages to our webhook receivers, which can carry an applicant's email address or a report's comment | Connecting our own tools | 14 days here. {{PERIOD AT THE RECEIVER}} |
+| {{IF translation}} Translations of posts that readers asked for, which every reader who may see the post can reuse | Showing a translation again without sending the post again | {{30 days}} from the translation, and no longer than the post |
+| {{IF translation}} How many characters your requests sent for translation in a month | Keeping translation within its limits | Until the end of the following month, or until your account is erased |
 | Backups of all the above | Restoring the service after a failure | {{PERIOD}}. Data you erased stays in a backup until the backup expires |
 
 We can stop erasure for one account when a court order or a legal request requires it. The records of that account then stay until the hold is released.
@@ -184,9 +192,10 @@ You need an email address {{OR a login provider}} to create an account here, and
 | --- | --- |
 | Your profile, including your avatar, header, and aliases | Anyone, on the web and through other servers |
 | `public` and `unlisted` posts | Anyone with the link. The servers of your followers and of the people you mention. {{IF relays}} `public` posts also go to relays we joined, and through them to other servers |
-| `local` posts | People signed in to this server, and your followers on other servers |
+| `local` posts | People signed in to this server, and your followers on other servers. {{IF translation}} When a reader asks for a translation, the text also goes to the translation services in section 6, which work for us. They do not receive the post's address or your handle |
 | `private` posts | Your followers and the people you mention, on any server |
 | `direct` posts | The people you mention, on any server. They are not end-to-end encrypted: we can technically read them |
+| {{IF translation to private and direct}} {{`private` AND/OR `direct`, AS YOU ALLOWED}} posts | {{TRANSLATION SERVICES YOU ALLOWED THEM}}, when a reader who may see the post asks for a translation. They do not receive the post's address, your handle, the reader, or who is mentioned |
 | Follows, blocks, boosts, favourites, reactions, poll votes, quotes | The other person's server. Boosts also go to your followers' servers |
 | That your account moved, was deactivated, suspended, or deleted | Your followers' servers and, except for a move, other servers we know |
 | A report you chose to forward | The reported account's server receives your comment and the posts named. It does not receive your name, IP address, or email address, so do not put those in the comment |
@@ -203,6 +212,8 @@ Apps you authorize can read and do what the permissions you granted allow. Their
 
 {{IF the list of supporters is public}} If you choose to appear in the list of supporters, it shows your avatar, display name, handle, and plan.
 
+{{IF browser translation}} A reader can also translate a post with the translation built into their browser. That sends nothing to us or to a translation service, and the translation is not stored.
+
 # 6. Service providers
 
 We use these services to run the instance. {{SAY WHETHER EACH ACTS ON YOUR BEHALF AND WHAT CONTRACT APPLIES.}}
@@ -214,6 +225,7 @@ We use these services to run the instance. {{SAY WHETHER EACH ACTS ON YOUR BEHAL
 | {{IF mail}} {{MAIL PROVIDER}} | Sending email | Your address, and the subject and text of each email | {{COUNTRY}} | {{LINK}} |
 | {{IF captcha}} {{CAPTCHA SERVICE}} | Stopping automated sign-ins, sign-ups, and password-reset requests | IP address, browser and device information, cookies, and interactions with the widget. Your browser sends these directly, from the sign-in, sign-up, and password-reset request pages only | {{COUNTRY}} | {{LINK}} |
 | {{IF login providers}} {{PROVIDER}} | Signing in with an account there | That you sign in. We receive their identifier for you, and at sign-up your email address and username | {{COUNTRY}} | {{LINK}} |
+| {{IF translation}} {{TRANSLATION SERVICE}} | Translating a post when a reader asks | The text of the post: its body, content warning, poll options, and image descriptions. Not its address, its author, the reader, mentions, or links. Text sent to the service cannot be recalled, and deleting the post does not remove it there: {{HOW LONG THE SERVICE KEEPS IT}} | {{COUNTRY}} | {{LINK}} |
 | {{IF stripe}} Stripe | Taking payments for supporter plans | Your email address and plan. You enter payment details on Stripe's pages | {{COUNTRY}} | <https://stripe.com/privacy> |
 | {{IF payjp}} PAY.JP | Taking payments for supporter plans | Your email address, cardholder name, and plan. You enter card details in PAY.JP's frame, whose script runs on our payment pages | {{COUNTRY}} | {{LINK}} |
 | {{IF error reports}} {{ERROR TRACKER}} | Fixing faults | Error reports with personal details removed by pattern | {{COUNTRY}} | {{LINK}} |

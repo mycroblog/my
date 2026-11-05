@@ -2290,59 +2290,65 @@ func (e InstanceRegistrationsMode) Valid() bool {
 
 // Defines values for InstanceSettingKey.
 const (
-	InstanceSettingKeyAiUsage                          InstanceSettingKey = "ai_usage"
-	InstanceSettingKeyAppealWindowDays                 InstanceSettingKey = "appeal_window_days"
-	InstanceSettingKeyAuditLogRetentionDays            InstanceSettingKey = "audit_log_retention_days"
-	InstanceSettingKeyAuthorizedFetch                  InstanceSettingKey = "authorized_fetch"
-	InstanceSettingKeyContactAccount                   InstanceSettingKey = "contact_account"
-	InstanceSettingKeyContactEmail                     InstanceSettingKey = "contact_email"
-	InstanceSettingKeyDefaultLocale                    InstanceSettingKey = "default_locale"
-	InstanceSettingKeyDomainActionsRationaleVisibility InstanceSettingKey = "domain_actions_rationale_visibility"
-	InstanceSettingKeyDomainActionsVisibility          InstanceSettingKey = "domain_actions_visibility"
-	InstanceSettingKeyDynamicClientRegistration        InstanceSettingKey = "dynamic_client_registration"
-	InstanceSettingKeyFeaturedAccounts                 InstanceSettingKey = "featured_accounts"
-	InstanceSettingKeyFederatedTimelineVisibility      InstanceSettingKey = "federated_timeline_visibility"
-	InstanceSettingKeyFederationMode                   InstanceSettingKey = "federation_mode"
-	InstanceSettingKeyFinanceViewerIncome              InstanceSettingKey = "finance_viewer_income"
-	InstanceSettingKeyFinanceViewerItemMemos           InstanceSettingKey = "finance_viewer_item_memos"
-	InstanceSettingKeyFinanceViewerItemNames           InstanceSettingKey = "finance_viewer_item_names"
-	InstanceSettingKeyFinanceVisibility                InstanceSettingKey = "finance_visibility"
-	InstanceSettingKeyIncomeVisibility                 InstanceSettingKey = "income_visibility"
-	InstanceSettingKeyIndexableDefault                 InstanceSettingKey = "indexable_default"
-	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
-	InstanceSettingKeyLinkCards                        InstanceSettingKey = "link_cards"
-	InstanceSettingKeyLinkCardsIgnoreRobotsTxt         InstanceSettingKey = "link_cards_ignore_robots_txt"
-	InstanceSettingKeyLocalTimelineVisibility          InstanceSettingKey = "local_timeline_visibility"
-	InstanceSettingKeyLoginProvidersOnly               InstanceSettingKey = "login_providers_only"
-	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
-	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
-	InstanceSettingKeyMemberInviteMaxLifetimeSeconds   InstanceSettingKey = "member_invite_max_lifetime_seconds"
-	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
-	InstanceSettingKeyModerationActionsRetentionDays   InstanceSettingKey = "moderation_actions_retention_days"
-	InstanceSettingKeyOauthClientRateLimits            InstanceSettingKey = "oauth_client_rate_limits"
-	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
-	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
-	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
-	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
-	InstanceSettingKeyRegistrationOriginsRetentionDays InstanceSettingKey = "registration_origins_retention_days"
-	InstanceSettingKeyRelayStatusRetentionDays         InstanceSettingKey = "relay_status_retention_days"
-	InstanceSettingKeyRemoteMediaCacheMaxBytes         InstanceSettingKey = "remote_media_cache_max_bytes"
-	InstanceSettingKeyRemoteMediaCacheTtlSeconds       InstanceSettingKey = "remote_media_cache_ttl_seconds"
-	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
-	InstanceSettingKeyRemoteStatusMaxRetentionDays     InstanceSettingKey = "remote_status_max_retention_days"
-	InstanceSettingKeyRemoteStatusRetentionDays        InstanceSettingKey = "remote_status_retention_days"
-	InstanceSettingKeyReportsRetentionDays             InstanceSettingKey = "reports_retention_days"
-	InstanceSettingKeyRequireMediaDescription          InstanceSettingKey = "require_media_description"
-	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
-	InstanceSettingKeySearchVisibilities               InstanceSettingKey = "search_visibilities"
-	InstanceSettingKeySecurityContact                  InstanceSettingKey = "security_contact"
-	InstanceSettingKeySessionOriginsRetentionDays      InstanceSettingKey = "session_origins_retention_days"
-	InstanceSettingKeySupporterListVisibility          InstanceSettingKey = "supporter_list_visibility"
-	InstanceSettingKeyThumbnail                        InstanceSettingKey = "thumbnail"
-	InstanceSettingKeyUserAppRegistration              InstanceSettingKey = "user_app_registration"
-	InstanceSettingKeyVoiceParticipantsRetentionDays   InstanceSettingKey = "voice_participants_retention_days"
-	InstanceSettingKeyVoicePublicSummary               InstanceSettingKey = "voice_public_summary"
-	InstanceSettingKeyVoiceRoomStarters                InstanceSettingKey = "voice_room_starters"
+	InstanceSettingKeyAiUsage                            InstanceSettingKey = "ai_usage"
+	InstanceSettingKeyAppealWindowDays                   InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyAuditLogRetentionDays              InstanceSettingKey = "audit_log_retention_days"
+	InstanceSettingKeyAuthorizedFetch                    InstanceSettingKey = "authorized_fetch"
+	InstanceSettingKeyContactAccount                     InstanceSettingKey = "contact_account"
+	InstanceSettingKeyContactEmail                       InstanceSettingKey = "contact_email"
+	InstanceSettingKeyDefaultLocale                      InstanceSettingKey = "default_locale"
+	InstanceSettingKeyDomainActionsRationaleVisibility   InstanceSettingKey = "domain_actions_rationale_visibility"
+	InstanceSettingKeyDomainActionsVisibility            InstanceSettingKey = "domain_actions_visibility"
+	InstanceSettingKeyDynamicClientRegistration          InstanceSettingKey = "dynamic_client_registration"
+	InstanceSettingKeyFeaturedAccounts                   InstanceSettingKey = "featured_accounts"
+	InstanceSettingKeyFederatedTimelineVisibility        InstanceSettingKey = "federated_timeline_visibility"
+	InstanceSettingKeyFederationMode                     InstanceSettingKey = "federation_mode"
+	InstanceSettingKeyFinanceViewerIncome                InstanceSettingKey = "finance_viewer_income"
+	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
+	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
+	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyIncomeVisibility                   InstanceSettingKey = "income_visibility"
+	InstanceSettingKeyIndexableDefault                   InstanceSettingKey = "indexable_default"
+	InstanceSettingKeyInviteCreators                     InstanceSettingKey = "invite_creators"
+	InstanceSettingKeyLinkCards                          InstanceSettingKey = "link_cards"
+	InstanceSettingKeyLinkCardsIgnoreRobotsTxt           InstanceSettingKey = "link_cards_ignore_robots_txt"
+	InstanceSettingKeyLocalTimelineVisibility            InstanceSettingKey = "local_timeline_visibility"
+	InstanceSettingKeyLoginProvidersOnly                 InstanceSettingKey = "login_providers_only"
+	InstanceSettingKeyMaxStatusLength                    InstanceSettingKey = "max_status_length"
+	InstanceSettingKeyMemberInviteMaxActive              InstanceSettingKey = "member_invite_max_active"
+	InstanceSettingKeyMemberInviteMaxLifetimeSeconds     InstanceSettingKey = "member_invite_max_lifetime_seconds"
+	InstanceSettingKeyMemberInviteMaxUses                InstanceSettingKey = "member_invite_max_uses"
+	InstanceSettingKeyModerationActionsRetentionDays     InstanceSettingKey = "moderation_actions_retention_days"
+	InstanceSettingKeyOauthClientRateLimits              InstanceSettingKey = "oauth_client_rate_limits"
+	InstanceSettingKeyOauthMetadataDocumentClients       InstanceSettingKey = "oauth_metadata_document_clients"
+	InstanceSettingKeyPreviewImage                       InstanceSettingKey = "preview_image"
+	InstanceSettingKeyPublicCounts                       InstanceSettingKey = "public_counts"
+	InstanceSettingKeyRegistrationMode                   InstanceSettingKey = "registration_mode"
+	InstanceSettingKeyRegistrationOriginsRetentionDays   InstanceSettingKey = "registration_origins_retention_days"
+	InstanceSettingKeyRelayStatusRetentionDays           InstanceSettingKey = "relay_status_retention_days"
+	InstanceSettingKeyRemoteMediaCacheMaxBytes           InstanceSettingKey = "remote_media_cache_max_bytes"
+	InstanceSettingKeyRemoteMediaCacheTtlSeconds         InstanceSettingKey = "remote_media_cache_ttl_seconds"
+	InstanceSettingKeyRemoteMediaPolicy                  InstanceSettingKey = "remote_media_policy"
+	InstanceSettingKeyRemoteStatusMaxRetentionDays       InstanceSettingKey = "remote_status_max_retention_days"
+	InstanceSettingKeyRemoteStatusRetentionDays          InstanceSettingKey = "remote_status_retention_days"
+	InstanceSettingKeyReportsRetentionDays               InstanceSettingKey = "reports_retention_days"
+	InstanceSettingKeyRequireMediaDescription            InstanceSettingKey = "require_media_description"
+	InstanceSettingKeySearchIndexing                     InstanceSettingKey = "search_indexing"
+	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
+	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
+	InstanceSettingKeySessionOriginsRetentionDays        InstanceSettingKey = "session_origins_retention_days"
+	InstanceSettingKeySupporterListVisibility            InstanceSettingKey = "supporter_list_visibility"
+	InstanceSettingKeyThumbnail                          InstanceSettingKey = "thumbnail"
+	InstanceSettingKeyTranslationBrowser                 InstanceSettingKey = "translation_browser"
+	InstanceSettingKeyTranslationProviderVisibilities    InstanceSettingKey = "translation_provider_visibilities"
+	InstanceSettingKeyTranslationProviders               InstanceSettingKey = "translation_providers"
+	InstanceSettingKeyTranslationRetentionDays           InstanceSettingKey = "translation_retention_days"
+	InstanceSettingKeyTranslationServerMonthlyCharacters InstanceSettingKey = "translation_server_monthly_characters"
+	InstanceSettingKeyTranslationUserMonthlyCharacters   InstanceSettingKey = "translation_user_monthly_characters"
+	InstanceSettingKeyUserAppRegistration                InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyVoiceParticipantsRetentionDays     InstanceSettingKey = "voice_participants_retention_days"
+	InstanceSettingKeyVoicePublicSummary                 InstanceSettingKey = "voice_public_summary"
+	InstanceSettingKeyVoiceRoomStarters                  InstanceSettingKey = "voice_room_starters"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKey enum.
@@ -2446,6 +2452,18 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyThumbnail:
 		return true
+	case InstanceSettingKeyTranslationBrowser:
+		return true
+	case InstanceSettingKeyTranslationProviderVisibilities:
+		return true
+	case InstanceSettingKeyTranslationProviders:
+		return true
+	case InstanceSettingKeyTranslationRetentionDays:
+		return true
+	case InstanceSettingKeyTranslationServerMonthlyCharacters:
+		return true
+	case InstanceSettingKeyTranslationUserMonthlyCharacters:
+		return true
 	case InstanceSettingKeyUserAppRegistration:
 		return true
 	case InstanceSettingKeyVoiceParticipantsRetentionDays:
@@ -2461,16 +2479,18 @@ func (e InstanceSettingKey) Valid() bool {
 
 // Defines values for InstanceSettingKind.
 const (
-	InstanceSettingKindAccount      InstanceSettingKind = "account"
-	InstanceSettingKindAccounts     InstanceSettingKind = "accounts"
-	InstanceSettingKindBool         InstanceSettingKind = "bool"
-	InstanceSettingKindClientLimits InstanceSettingKind = "client_limits"
-	InstanceSettingKindEmail        InstanceSettingKind = "email"
-	InstanceSettingKindEnum         InstanceSettingKind = "enum"
-	InstanceSettingKindInt          InstanceSettingKind = "int"
-	InstanceSettingKindLocale       InstanceSettingKind = "locale"
-	InstanceSettingKindMedia        InstanceSettingKind = "media"
-	InstanceSettingKindUri          InstanceSettingKind = "uri"
+	InstanceSettingKindAccount              InstanceSettingKind = "account"
+	InstanceSettingKindAccounts             InstanceSettingKind = "accounts"
+	InstanceSettingKindBool                 InstanceSettingKind = "bool"
+	InstanceSettingKindClientLimits         InstanceSettingKind = "client_limits"
+	InstanceSettingKindEmail                InstanceSettingKind = "email"
+	InstanceSettingKindEnum                 InstanceSettingKind = "enum"
+	InstanceSettingKindInt                  InstanceSettingKind = "int"
+	InstanceSettingKindLocale               InstanceSettingKind = "locale"
+	InstanceSettingKindMedia                InstanceSettingKind = "media"
+	InstanceSettingKindProviderList         InstanceSettingKind = "provider_list"
+	InstanceSettingKindProviderVisibilities InstanceSettingKind = "provider_visibilities"
+	InstanceSettingKindUri                  InstanceSettingKind = "uri"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKind enum.
@@ -2493,6 +2513,10 @@ func (e InstanceSettingKind) Valid() bool {
 	case InstanceSettingKindLocale:
 		return true
 	case InstanceSettingKindMedia:
+		return true
+	case InstanceSettingKindProviderList:
+		return true
+	case InstanceSettingKindProviderVisibilities:
 		return true
 	case InstanceSettingKindUri:
 		return true
@@ -6355,7 +6379,9 @@ type AdminSetting struct {
 	// `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
 	// none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
 	// a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
-	// `client_id=requests` pairs, or empty for none.
+	// `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
+	// provider IDs, the first tried first, or empty for none. `provider_visibilities`:
+	// comma-separated `provider=visibility|visibility` pairs, or empty for none.
 	Kind InstanceSettingKind `json:"kind"`
 
 	// Maximum The greatest value of an `int` setting; omitted for other kinds.
@@ -6651,6 +6677,30 @@ type AdminTheme struct {
 
 	// Tokens The overridden tokens, in the order of the token list.
 	Tokens []ThemeTokenValue `json:"tokens"`
+}
+
+// AdminTranslationOverview How translation is used in the current month, and the providers that this server has.
+type AdminTranslationOverview struct {
+	// CacheHitRate The share of those requests answered from a kept translation, from 0 to 1; omitted before
+	// there is any.
+	CacheHitRate *float64 `json:"cache_hit_rate,omitempty"`
+
+	// CacheHits The requests answered this month from a translation the server kept.
+	CacheHits int64 `json:"cache_hits"`
+
+	// CacheMisses The requests that went to a provider this month.
+	CacheMisses int64 `json:"cache_misses"`
+
+	// Characters The characters of posts sent to providers this month, without the markers that stand in for
+	// mentions, links, and the like. A call to a provider that fails counts too. This is what the
+	// limits count, and it can differ from what a provider bills.
+	Characters int64 `json:"characters"`
+
+	// Month The month that the numbers cover, as `YYYY-MM` in UTC.
+	Month string `json:"month"`
+
+	// Providers Every provider that this server has, enabled or not. API keys are not part of this.
+	Providers []TranslationProvider `json:"providers"`
 }
 
 // AdminVoiceRoomBan An account removed from a voice chat room, who may not join it again.
@@ -9280,6 +9330,10 @@ type Instance struct {
 	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 	Timelines InstanceTimelines `json:"timelines"`
 
+	// Translation What the instance offers for translating posts, and what it sends where. With `browser` false and
+	// no `providers`, nothing can be translated and clients show no action for it.
+	Translation InstanceTranslation `json:"translation"`
+
 	// Version The server version.
 	Version string `json:"version"`
 
@@ -9547,7 +9601,9 @@ type InstanceSettingKey string
 // `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
 // none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
 // a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
-// `client_id=requests` pairs, or empty for none.
+// `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
+// provider IDs, the first tried first, or empty for none. `provider_visibilities`:
+// comma-separated `provider=visibility|visibility` pairs, or empty for none.
 type InstanceSettingKind string
 
 // InstanceTextKey The key of an instance text: the name (one line), the short and full descriptions,
@@ -9593,6 +9649,35 @@ type InstanceTimelines struct {
 	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
 	// a 401; `everyone`, everyone, anonymous visitors included.
 	Local InstanceAudience `json:"local"`
+}
+
+// InstanceTranslation What the instance offers for translating posts, and what it sends where. With `browser` false and
+// no `providers`, nothing can be translated and clients show no action for it.
+type InstanceTranslation struct {
+	// Browser Whether clients may use the translation built into the browser, where the browser has one. It
+	// sends the text of a post to neither this server nor a provider, and works on every visibility.
+	Browser bool `json:"browser"`
+
+	// Providers The enabled providers that run through this server, the first tried first.
+	Providers []InstanceTranslationProvider `json:"providers"`
+}
+
+// InstanceTranslationProvider A provider that this instance sends the text of posts to when a reader asks for a translation.
+type InstanceTranslationProvider struct {
+	// Id The identifier of the provider on this server.
+	Id string `json:"id"`
+
+	// LogoUrl The address of the logo to show, for a provider that asks for one; omitted when there is none.
+	LogoUrl *string `json:"logo_url,omitempty"`
+
+	// Name The name to show.
+	Name string `json:"name"`
+
+	// Url The address of the provider; omitted when there is none.
+	Url *string `json:"url,omitempty"`
+
+	// Visibilities The visibilities of the posts that this provider may receive.
+	Visibilities []Visibility `json:"visibilities"`
 }
 
 // InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
@@ -11430,6 +11515,10 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
 //     co-hosts of the room.
 //   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+//   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
+//     be searched (`Instance.full_text_search.available`).
+//   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
+//     posts is affected; try again later.
 type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
@@ -14376,6 +14465,18 @@ type CreateStatusParams struct {
 	// posted with it instead of posting again. A key longer than 256 characters, or one
 	// that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
+// SearchStatusesParams defines parameters for SearchStatuses.
+type SearchStatusesParams struct {
+	// Q The words to find, 1 to 200 characters. Anything else is a 400.
+	Q string `form:"q" json:"q"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListStatusQuotesParams defines parameters for ListStatusQuotes.
@@ -19293,6 +19394,15 @@ type ClientInterface interface {
 	// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
 	SetAdminTheme(ctx context.Context, body SetAdminThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetAdminTranslationOverview Show how translation is used
+	//
+	// The characters of posts sent to providers in the current month, the cache hit rate, and the
+	// providers that this server has. Months are in UTC. The settings of translation are instance
+	// settings (`GET /admin/settings`). Needs the `manage_settings` permission.
+	//
+	// Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
+	GetAdminTranslationOverview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// EndVoiceRoomAsModeratorWithBody End a voice chat room as a moderator
 	//
 	// Ends an open voice chat room for every participant, with an optional reason for the
@@ -20971,6 +21081,38 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /statuses (the `CreateStatus` operationId).
 	CreateStatus(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SearchStatuses Search the text of posts
+	//
+	// The posts that contain every word of `q`, newest first, as `Status` objects like those of a
+	// timeline. It looks in the text, the content warning, and the alternative texts of the current
+	// version of a post. A word's matching, including in Japanese, depends on the search engine of
+	// the server, and there is no order by relevance. `q` is plain text: nothing in it is an operator.
+	//
+	// Read `Instance.full_text_search` before offering this: it says whether the server has a search
+	// engine (`available`) and which visibilities the search covers (`visibilities`). Without one,
+	// the response is a 404 of the type `/api/v1/problems/search-unavailable`. When the engine fails,
+	// it is a 503 of the type `/api/v1/problems/search-failed`, which only this operation answers;
+	// try again later.
+	//
+	// Only signed-in users can search, and only `public` and `local` posts of accounts with
+	// `indexable` turned on are found, within the visibilities the server covers. The results never
+	// include `unlisted`, `private`, or `direct` posts, even the viewer's own. Posts of accounts or
+	// domains that the viewer blocks, mutes, or is blocked by are left out.
+	//
+	// A page can hold fewer posts than `limit`, or none at all, while more follow, because posts are
+	// left out after the search engine answered. Continue while the response has a `next_cursor`, and
+	// stop only when it has none. A cursor works only on the search it came from: changing `q` needs
+	// a new first page. A cursor the search engine did not issue is a 400.
+	//
+	// The query is part of the URL, so a reverse proxy or CDN in front of the server may log it. The
+	// server itself writes it to no log or trace, and the response is `private, no-store`.
+	//
+	// Past 30 searches in 5 minutes by one account, in addition to the limit of the API as a whole,
+	// the response is a 429 with `Retry-After`.
+	//
+	// Corresponds with GET /statuses/search (the `SearchStatuses` operationId).
+	SearchStatuses(ctx context.Context, params *SearchStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteStatus Delete the authenticated user's status
 	//
@@ -27318,6 +27460,25 @@ func (c *Client) SetAdminTheme(ctx context.Context, body SetAdminThemeJSONReques
 	return c.Client.Do(req)
 }
 
+// GetAdminTranslationOverview Show how translation is used
+//
+// The characters of posts sent to providers in the current month, the cache hit rate, and the
+// providers that this server has. Months are in UTC. The settings of translation are instance
+// settings (`GET /admin/settings`). Needs the `manage_settings` permission.
+//
+// Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
+func (c *Client) GetAdminTranslationOverview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminTranslationOverviewRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // EndVoiceRoomAsModeratorWithBody End a voice chat room as a moderator
 //
 // Ends an open voice chat room for every participant, with an optional reason for the
@@ -30367,6 +30528,48 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 // Corresponds with POST /statuses (the `CreateStatus` operationId).
 func (c *Client) CreateStatus(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateStatusRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SearchStatuses Search the text of posts
+//
+// The posts that contain every word of `q`, newest first, as `Status` objects like those of a
+// timeline. It looks in the text, the content warning, and the alternative texts of the current
+// version of a post. A word's matching, including in Japanese, depends on the search engine of
+// the server, and there is no order by relevance. `q` is plain text: nothing in it is an operator.
+//
+// Read `Instance.full_text_search` before offering this: it says whether the server has a search
+// engine (`available`) and which visibilities the search covers (`visibilities`). Without one,
+// the response is a 404 of the type `/api/v1/problems/search-unavailable`. When the engine fails,
+// it is a 503 of the type `/api/v1/problems/search-failed`, which only this operation answers;
+// try again later.
+//
+// Only signed-in users can search, and only `public` and `local` posts of accounts with
+// `indexable` turned on are found, within the visibilities the server covers. The results never
+// include `unlisted`, `private`, or `direct` posts, even the viewer's own. Posts of accounts or
+// domains that the viewer blocks, mutes, or is blocked by are left out.
+//
+// A page can hold fewer posts than `limit`, or none at all, while more follow, because posts are
+// left out after the search engine answered. Continue while the response has a `next_cursor`, and
+// stop only when it has none. A cursor works only on the search it came from: changing `q` needs
+// a new first page. A cursor the search engine did not issue is a 400.
+//
+// The query is part of the URL, so a reverse proxy or CDN in front of the server may log it. The
+// server itself writes it to no log or trace, and the response is `private, no-store`.
+//
+// Past 30 searches in 5 minutes by one account, in addition to the limit of the API as a whole,
+// the response is a 429 with `Retry-After`.
+//
+// Corresponds with GET /statuses/search (the `SearchStatuses` operationId).
+func (c *Client) SearchStatuses(ctx context.Context, params *SearchStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSearchStatusesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -40220,6 +40423,33 @@ func NewSetAdminThemeRequestWithBody(server string, contentType string, body io.
 	return req, nil
 }
 
+// NewGetAdminTranslationOverviewRequest constructs an http.Request for the GetAdminTranslationOverview method
+func NewGetAdminTranslationOverviewRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/translation")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewEndVoiceRoomAsModeratorRequest calls the generic EndVoiceRoomAsModerator builder with application/json body
 func NewEndVoiceRoomAsModeratorRequest(server string, id VoiceRoomId, body EndVoiceRoomAsModeratorJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -44717,6 +44947,80 @@ func NewCreateStatusRequestWithBody(server string, params *CreateStatusParams, c
 			req.Header.Set("Idempotency-Key", headerParam0)
 		}
 
+	}
+
+	return req, nil
+}
+
+// NewSearchStatusesRequest constructs an http.Request for the SearchStatuses method
+func NewSearchStatusesRequest(server string, params *SearchStatusesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/statuses/search")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "q", params.Q, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
 	}
 
 	return req, nil
@@ -51092,6 +51396,17 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
 	SetAdminThemeWithResponse(ctx context.Context, body SetAdminThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAdminThemeResponse, error)
 
+	// GetAdminTranslationOverviewWithResponse Show how translation is used
+	//
+	// The characters of posts sent to providers in the current month, the cache hit rate, and the
+	// providers that this server has. Months are in UTC. The settings of translation are instance
+	// settings (`GET /admin/settings`). Needs the `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
+	GetAdminTranslationOverviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminTranslationOverviewResponse, error)
+
 	// EndVoiceRoomAsModeratorWithBodyWithResponse End a voice chat room as a moderator
 	//
 	// Ends an open voice chat room for every participant, with an optional reason for the
@@ -52924,6 +53239,40 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /statuses (the `CreateStatus` operationId).
 	CreateStatusWithResponse(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateStatusResponse, error)
+
+	// SearchStatusesWithResponse Search the text of posts
+	//
+	// The posts that contain every word of `q`, newest first, as `Status` objects like those of a
+	// timeline. It looks in the text, the content warning, and the alternative texts of the current
+	// version of a post. A word's matching, including in Japanese, depends on the search engine of
+	// the server, and there is no order by relevance. `q` is plain text: nothing in it is an operator.
+	//
+	// Read `Instance.full_text_search` before offering this: it says whether the server has a search
+	// engine (`available`) and which visibilities the search covers (`visibilities`). Without one,
+	// the response is a 404 of the type `/api/v1/problems/search-unavailable`. When the engine fails,
+	// it is a 503 of the type `/api/v1/problems/search-failed`, which only this operation answers;
+	// try again later.
+	//
+	// Only signed-in users can search, and only `public` and `local` posts of accounts with
+	// `indexable` turned on are found, within the visibilities the server covers. The results never
+	// include `unlisted`, `private`, or `direct` posts, even the viewer's own. Posts of accounts or
+	// domains that the viewer blocks, mutes, or is blocked by are left out.
+	//
+	// A page can hold fewer posts than `limit`, or none at all, while more follow, because posts are
+	// left out after the search engine answered. Continue while the response has a `next_cursor`, and
+	// stop only when it has none. A cursor works only on the search it came from: changing `q` needs
+	// a new first page. A cursor the search engine did not issue is a 400.
+	//
+	// The query is part of the URL, so a reverse proxy or CDN in front of the server may log it. The
+	// server itself writes it to no log or trace, and the response is `private, no-store`.
+	//
+	// Past 30 searches in 5 minutes by one account, in addition to the limit of the API as a whole,
+	// the response is a 429 with `Retry-After`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /statuses/search (the `SearchStatuses` operationId).
+	SearchStatusesWithResponse(ctx context.Context, params *SearchStatusesParams, reqEditors ...RequestEditorFn) (*SearchStatusesResponse, error)
 
 	// DeleteStatusWithResponse Delete the authenticated user's status
 	//
@@ -65786,6 +66135,71 @@ func (r SetAdminThemeResponse) ContentType() string {
 	return ""
 }
 
+// GetAdminTranslationOverviewResponse200Headers the declared response headers of an HTTP 200 response for GetAdminTranslationOverview
+type GetAdminTranslationOverviewResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetAdminTranslationOverviewResponseDefaultHeaders the declared response headers of an HTTP default response for GetAdminTranslationOverview
+type GetAdminTranslationOverviewResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetAdminTranslationOverviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminTranslationOverview
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetAdminTranslationOverviewResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetAdminTranslationOverviewResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAdminTranslationOverviewResponse) GetJSON200() *AdminTranslationOverview {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetAdminTranslationOverviewResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAdminTranslationOverviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminTranslationOverviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminTranslationOverviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAdminTranslationOverviewResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // EndVoiceRoomAsModeratorResponseDefaultHeaders the declared response headers of an HTTP default response for EndVoiceRoomAsModerator
 type EndVoiceRoomAsModeratorResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -72669,6 +73083,71 @@ func (r CreateStatusResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r CreateStatusResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// SearchStatusesResponse200Headers the declared response headers of an HTTP 200 response for SearchStatuses
+type SearchStatusesResponse200Headers struct {
+	CacheControl *string
+}
+
+// SearchStatusesResponseDefaultHeaders the declared response headers of an HTTP default response for SearchStatuses
+type SearchStatusesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SearchStatusesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *StatusPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SearchStatusesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SearchStatusesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SearchStatusesResponse) GetJSON200() *StatusPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SearchStatusesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SearchStatusesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SearchStatusesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SearchStatusesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SearchStatusesResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -81766,6 +82245,23 @@ func (c *ClientWithResponses) SetAdminThemeWithResponse(ctx context.Context, bod
 	return ParseSetAdminThemeResponse(rsp)
 }
 
+// GetAdminTranslationOverviewWithResponse Show how translation is used
+//
+// The characters of posts sent to providers in the current month, the cache hit rate, and the
+// providers that this server has. Months are in UTC. The settings of translation are instance
+// settings (`GET /admin/settings`). Needs the `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
+func (c *ClientWithResponses) GetAdminTranslationOverviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminTranslationOverviewResponse, error) {
+	rsp, err := c.GetAdminTranslationOverview(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminTranslationOverviewResponse(rsp)
+}
+
 // EndVoiceRoomAsModeratorWithBodyWithResponse End a voice chat room as a moderator
 //
 // Ends an open voice chat room for every participant, with an optional reason for the
@@ -84425,6 +84921,46 @@ func (c *ClientWithResponses) CreateStatusWithResponse(ctx context.Context, para
 		return nil, err
 	}
 	return ParseCreateStatusResponse(rsp)
+}
+
+// SearchStatusesWithResponse Search the text of posts
+//
+// The posts that contain every word of `q`, newest first, as `Status` objects like those of a
+// timeline. It looks in the text, the content warning, and the alternative texts of the current
+// version of a post. A word's matching, including in Japanese, depends on the search engine of
+// the server, and there is no order by relevance. `q` is plain text: nothing in it is an operator.
+//
+// Read `Instance.full_text_search` before offering this: it says whether the server has a search
+// engine (`available`) and which visibilities the search covers (`visibilities`). Without one,
+// the response is a 404 of the type `/api/v1/problems/search-unavailable`. When the engine fails,
+// it is a 503 of the type `/api/v1/problems/search-failed`, which only this operation answers;
+// try again later.
+//
+// Only signed-in users can search, and only `public` and `local` posts of accounts with
+// `indexable` turned on are found, within the visibilities the server covers. The results never
+// include `unlisted`, `private`, or `direct` posts, even the viewer's own. Posts of accounts or
+// domains that the viewer blocks, mutes, or is blocked by are left out.
+//
+// A page can hold fewer posts than `limit`, or none at all, while more follow, because posts are
+// left out after the search engine answered. Continue while the response has a `next_cursor`, and
+// stop only when it has none. A cursor works only on the search it came from: changing `q` needs
+// a new first page. A cursor the search engine did not issue is a 400.
+//
+// The query is part of the URL, so a reverse proxy or CDN in front of the server may log it. The
+// server itself writes it to no log or trace, and the response is `private, no-store`.
+//
+// Past 30 searches in 5 minutes by one account, in addition to the limit of the API as a whole,
+// the response is a 429 with `Retry-After`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /statuses/search (the `SearchStatuses` operationId).
+func (c *ClientWithResponses) SearchStatusesWithResponse(ctx context.Context, params *SearchStatusesParams, reqEditors ...RequestEditorFn) (*SearchStatusesResponse, error) {
+	rsp, err := c.SearchStatuses(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSearchStatusesResponse(rsp)
 }
 
 // DeleteStatusWithResponse Delete the authenticated user's status
@@ -100200,6 +100736,83 @@ func ParseSetAdminThemeResponse(rsp *http.Response) (*SetAdminThemeResponse, err
 	return response, nil
 }
 
+// ParseGetAdminTranslationOverviewResponse parses an HTTP response from a GetAdminTranslationOverviewWithResponse call
+func ParseGetAdminTranslationOverviewResponse(rsp *http.Response) (*GetAdminTranslationOverviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminTranslationOverviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminTranslationOverview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetAdminTranslationOverviewResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetAdminTranslationOverviewResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseEndVoiceRoomAsModeratorResponse parses an HTTP response from a EndVoiceRoomAsModeratorWithResponse call
 func ParseEndVoiceRoomAsModeratorResponse(rsp *http.Response) (*EndVoiceRoomAsModeratorResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -108423,6 +109036,83 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 		response.Headers201 = &headers
 	case true:
 		var headers CreateStatusResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseSearchStatusesResponse parses an HTTP response from a SearchStatusesWithResponse call
+func ParseSearchStatusesResponse(rsp *http.Response) (*SearchStatusesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SearchStatusesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StatusPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SearchStatusesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers SearchStatusesResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

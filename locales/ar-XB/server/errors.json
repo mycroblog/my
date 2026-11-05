@@ -391,6 +391,14 @@
     "defaultMessage": "‮Ouʅʎ ʇɥǝ dʅɐu's snqsɔɹıdʇıous ƃɹɐuʇ ɐup ɹǝʌoʞǝ ıʇ, ɐup ıʇs dǝɹɯıssıous ɐup dosıʇıou ɔɥɐuƃǝ ɟɹoɯ ʇɥǝ dʅɐu.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.search.failed": {
+    "defaultMessage": "‮⊥ɥǝ sǝɐɹɔɥ ɔonʅp uoʇ qǝ ɔoɯdʅǝʇǝp. ⊥ɹʎ ɐƃɐıu ʅɐʇǝɹ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.search.unavailable": {
+    "defaultMessage": "‮Ԁosʇs ɔɐuuoʇ qǝ sǝɐɹɔɥǝp ou ʇɥıs sǝɹʌǝɹ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.self_relationship": {
     "defaultMessage": "‮⅄on ɔɐuuoʇ po ʇɥıs ʇo ʎonɹ oʍu ɐɔɔonuʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -310,6 +310,8 @@ paths:
     $ref: ./paths/bookmarks.yaml
   /statuses:
     $ref: ./paths/statuses.yaml
+  /statuses/search:
+    $ref: ./paths/statuses_search.yaml
   /statuses/{id}:
     $ref: ./paths/statuses_{id}.yaml
   /statuses/{id}/bookmark:
@@ -662,6 +664,8 @@ paths:
     $ref: ./paths/admin_link_card_domains.yaml
   /admin/link_card_domains/{domain}:
     $ref: ./paths/admin_link_card_domains_{domain}.yaml
+  /admin/translation:
+    $ref: ./paths/admin_translation.yaml
   /admin/relays:
     $ref: ./paths/admin_relays.yaml
   /admin/relays/{id}:
@@ -1128,6 +1132,12 @@ components:
       $ref: ./components/schemas/LinkCardDomainRule.yaml
     LinkCardDomainRuleList:
       $ref: ./components/schemas/LinkCardDomainRuleList.yaml
+    AdminTranslationOverview:
+      $ref: ./components/schemas/AdminTranslationOverview.yaml
+    InstanceTranslation:
+      $ref: ./components/schemas/InstanceTranslation.yaml
+    InstanceTranslationProvider:
+      $ref: ./components/schemas/InstanceTranslationProvider.yaml
     LoginProviderClaimCondition:
       $ref: ./components/schemas/LoginProviderClaimCondition.yaml
     LoginProviderKind:

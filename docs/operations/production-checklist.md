@@ -148,7 +148,7 @@ or with `my instance set`. `my config check -instance` warns about the texts, co
 
 - **Why**: email verifies addresses and sends password resets and notifications. With `mail = none` no email reaches users.
 - **Verify**:
-  - `mail` is `smtp` or `ses`, and `mail_from` is an address on a domain you control; `my config check` warns about `mail = none`.
+  - `mail` is `smtp`, `ses`, or `plugin`, and `mail_from` is an address on a domain you control; `my config check` warns about `mail = none`.
   - The domain of `mail_from` has SPF, DKIM, and DMARC records, and the provider signs with DKIM. Without them, mail lands in spam.
   - Sign up with a test account and receive the verification email; request a password reset and receive that too.
     Check the headers of the received message for `spf=pass`, `dkim=pass`, and `dmarc=pass`.

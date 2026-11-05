@@ -13,6 +13,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
+	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 )
 
@@ -45,11 +46,18 @@ type AccountReader interface {
 	ProfileIndexable(ctx context.Context, id string) (bool, error)
 	// AccountIDsOnDomain pages the accounts on a domain or its subdomains in ID order.
 	AccountIDsOnDomain(ctx context.Context, domain, after string, limit int) ([]string, error)
+	// AccountDomain returns the domain of an account, "" when it is local.
+	AccountDomain(ctx context.Context, id string) (string, error)
 }
 
 // SettingsReader reads the instance setting search_visibilities. *appinstance.Service implements it.
 type SettingsReader interface {
 	SearchVisibilities(ctx context.Context) ([]string, error)
+}
+
+// Viewing decides which statuses a viewer may see in the search. *apptimeline.Service implements it.
+type Viewing interface {
+	SearchVisible(ctx context.Context, viewer appcontent.Viewer, candidates []apptimeline.SearchCandidate) ([]string, error)
 }
 
 // Deps are what the module needs. With search = none only Index is meaningful, and it is nil.
@@ -60,6 +68,7 @@ type Deps struct {
 	Statuses   StatusReader
 	Accounts   AccountReader
 	Settings   SettingsReader
+	Viewing    Viewing
 	// Sanitizer takes the HTML out of the bodies of remote statuses.
 	Sanitizer kernel.HTMLSanitizer
 	// Rebuilds keeps the progress of a rebuild.

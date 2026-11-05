@@ -308,7 +308,7 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
 ポリシー名は `"ip"` と `"account"` で、例えば `RateLimit-Policy: "account";q=1500;w=300` と `RateLimit: "account";r=1499;t=300` です
 （`q` は窓あたりの上限、`w` は窓の秒数、`r` は残り、`t` は窓が終わるまで、超過時は次の要求が通るまでの秒数）。
 
-操作ごとの制限（投稿 300 / 3 時間、アップロード 30 / 30 分など ADR-0019 §5 の表と、`lookupAccount` の `resolve` によるリモートのアカウントの取得 30 / 5 分、`createReport` の通報 30 / 1 時間）は、ハンドラが `Server.LimitProblem(ctx, limit, v.AccountID)` を呼び、
+操作ごとの制限（投稿 300 / 3 時間、アップロード 30 / 30 分など ADR-0019 §5 の表と、`lookupAccount` の `resolve` によるリモートのアカウントの取得 30 / 5 分、`createReport` の通報 30 / 1 時間、`searchStatuses` の全文検索 30 / 5 分（`api.search`、ADR-0149 §9）の仮の値）は、ハンドラが `Server.LimitProblem(ctx, limit, v.AccountID)` を呼び、
 超過なら返された 429 の問題（`Retry-After` 付き）を `default` 応答で返します。制限は `kernel.Limit` の変数として `clientapi` に置きます。
 
 ## 5. ストリーミング

@@ -321,6 +321,10 @@ SELECT target_account_id, reason FROM feed_exclusions
 WHERE viewer_account_id = sqlc.arg(viewer) AND (expires_at IS NULL OR expires_at > CAST(sqlc.arg(now) AS INTEGER))
   AND target_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)));
 
+-- name: ListFeedDomainMutesAmong :many
+SELECT domain FROM feed_domain_mutes
+WHERE viewer_account_id = sqlc.arg(viewer) AND domain IN (SELECT value FROM json_each(CAST(sqlc.arg(domains) AS TEXT)));
+
 -- name: ListFeedAuthorRestrictionsAmong :many
 SELECT account_id, restriction FROM feed_author_restrictions
 WHERE (effective_until IS NULL OR effective_until > CAST(sqlc.arg(now) AS INTEGER))

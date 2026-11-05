@@ -12,6 +12,9 @@
 // each carrying an ID and reading the current state when it runs (ADR-0149 §7). Eligible is the one
 // rule of what the index may hold.
 //
+// Service.Search answers a query: the backend narrows the candidates, and each is read again from the
+// database and passes Eligible and the single visibility policy (ADR-0149 §8).
+//
 // my search rebuild refills the index in a chain of jobs at a rate, resumable from the progress in
 // the table search_rebuild; my search clear empties it (ADR-0149 §10, §12).
 //

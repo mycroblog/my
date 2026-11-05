@@ -318,6 +318,10 @@ SELECT target_account_id, reason FROM feed_exclusions
 WHERE viewer_account_id = sqlc.arg(viewer) AND (expires_at IS NULL OR expires_at > sqlc.arg(now)::timestamptz)
   AND target_account_id = ANY(sqlc.arg(account_ids)::uuid[]);
 
+-- name: ListFeedDomainMutesAmong :many
+SELECT domain FROM feed_domain_mutes
+WHERE viewer_account_id = sqlc.arg(viewer) AND domain = ANY(sqlc.arg(domains)::text[]);
+
 -- name: ListFeedAuthorRestrictionsAmong :many
 SELECT account_id, restriction FROM feed_author_restrictions
 WHERE (effective_until IS NULL OR effective_until > sqlc.arg(now)::timestamptz)

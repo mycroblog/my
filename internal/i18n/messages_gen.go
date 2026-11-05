@@ -2226,6 +2226,20 @@ func (l *Localizer) ServerErrorsRoleManagedByPlanDetail() string {
 	return l.format("server:errors.role.managed_by_plan_detail", nil)
 }
 
+// ServerErrorsSearchFailed formats "server:errors.search.failed". API error title for HTTP 503 of the full-text search of posts when the search engine cannot answer.
+//
+//	en: The search could not be completed. Try again later.
+func (l *Localizer) ServerErrorsSearchFailed() string {
+	return l.format("server:errors.search.failed", nil)
+}
+
+// ServerErrorsSearchUnavailable formats "server:errors.search.unavailable". API error title for HTTP 404 of the full-text search of posts on a server that has no search engine.
+//
+//	en: Posts cannot be searched on this server.
+func (l *Localizer) ServerErrorsSearchUnavailable() string {
+	return l.format("server:errors.search.unavailable", nil)
+}
+
 // ServerErrorsSelfRelationship formats "server:errors.self_relationship". Detail of the HTTP 422 API error when the user tries to follow, block, or mute their own account.
 //
 //	en: You cannot do this to your own account.

@@ -456,6 +456,16 @@ func (r *TimelineRepository) Facts(ctx context.Context, fq apptimeline.FactsQuer
 	return f, nil
 }
 
+// MutedDomains implements timeline.Repository.
+func (r *TimelineRepository) MutedDomains(ctx context.Context, viewerAccountID string, domains []string) ([]string, error) {
+	list, err := jsonList(domains)
+	if err != nil {
+		return nil, err
+	}
+	muted, err := r.db.reader().ListFeedDomainMutesAmong(ctx, sqlitegen.ListFeedDomainMutesAmongParams{Viewer: viewerAccountID, Domains: list})
+	return muted, wrap(err, "list domain mutes")
+}
+
 // Snapshot implements timeline.Repository.
 func (r *TimelineRepository) Snapshot(ctx context.Context) (apptimeline.Projection, error) {
 	q := r.db.reader()

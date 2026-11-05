@@ -2292,59 +2292,65 @@ func (e InstanceRegistrationsMode) Valid() bool {
 
 // Defines values for InstanceSettingKey.
 const (
-	InstanceSettingKeyAiUsage                          InstanceSettingKey = "ai_usage"
-	InstanceSettingKeyAppealWindowDays                 InstanceSettingKey = "appeal_window_days"
-	InstanceSettingKeyAuditLogRetentionDays            InstanceSettingKey = "audit_log_retention_days"
-	InstanceSettingKeyAuthorizedFetch                  InstanceSettingKey = "authorized_fetch"
-	InstanceSettingKeyContactAccount                   InstanceSettingKey = "contact_account"
-	InstanceSettingKeyContactEmail                     InstanceSettingKey = "contact_email"
-	InstanceSettingKeyDefaultLocale                    InstanceSettingKey = "default_locale"
-	InstanceSettingKeyDomainActionsRationaleVisibility InstanceSettingKey = "domain_actions_rationale_visibility"
-	InstanceSettingKeyDomainActionsVisibility          InstanceSettingKey = "domain_actions_visibility"
-	InstanceSettingKeyDynamicClientRegistration        InstanceSettingKey = "dynamic_client_registration"
-	InstanceSettingKeyFeaturedAccounts                 InstanceSettingKey = "featured_accounts"
-	InstanceSettingKeyFederatedTimelineVisibility      InstanceSettingKey = "federated_timeline_visibility"
-	InstanceSettingKeyFederationMode                   InstanceSettingKey = "federation_mode"
-	InstanceSettingKeyFinanceViewerIncome              InstanceSettingKey = "finance_viewer_income"
-	InstanceSettingKeyFinanceViewerItemMemos           InstanceSettingKey = "finance_viewer_item_memos"
-	InstanceSettingKeyFinanceViewerItemNames           InstanceSettingKey = "finance_viewer_item_names"
-	InstanceSettingKeyFinanceVisibility                InstanceSettingKey = "finance_visibility"
-	InstanceSettingKeyIncomeVisibility                 InstanceSettingKey = "income_visibility"
-	InstanceSettingKeyIndexableDefault                 InstanceSettingKey = "indexable_default"
-	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
-	InstanceSettingKeyLinkCards                        InstanceSettingKey = "link_cards"
-	InstanceSettingKeyLinkCardsIgnoreRobotsTxt         InstanceSettingKey = "link_cards_ignore_robots_txt"
-	InstanceSettingKeyLocalTimelineVisibility          InstanceSettingKey = "local_timeline_visibility"
-	InstanceSettingKeyLoginProvidersOnly               InstanceSettingKey = "login_providers_only"
-	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
-	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
-	InstanceSettingKeyMemberInviteMaxLifetimeSeconds   InstanceSettingKey = "member_invite_max_lifetime_seconds"
-	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
-	InstanceSettingKeyModerationActionsRetentionDays   InstanceSettingKey = "moderation_actions_retention_days"
-	InstanceSettingKeyOauthClientRateLimits            InstanceSettingKey = "oauth_client_rate_limits"
-	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
-	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
-	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
-	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
-	InstanceSettingKeyRegistrationOriginsRetentionDays InstanceSettingKey = "registration_origins_retention_days"
-	InstanceSettingKeyRelayStatusRetentionDays         InstanceSettingKey = "relay_status_retention_days"
-	InstanceSettingKeyRemoteMediaCacheMaxBytes         InstanceSettingKey = "remote_media_cache_max_bytes"
-	InstanceSettingKeyRemoteMediaCacheTtlSeconds       InstanceSettingKey = "remote_media_cache_ttl_seconds"
-	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
-	InstanceSettingKeyRemoteStatusMaxRetentionDays     InstanceSettingKey = "remote_status_max_retention_days"
-	InstanceSettingKeyRemoteStatusRetentionDays        InstanceSettingKey = "remote_status_retention_days"
-	InstanceSettingKeyReportsRetentionDays             InstanceSettingKey = "reports_retention_days"
-	InstanceSettingKeyRequireMediaDescription          InstanceSettingKey = "require_media_description"
-	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
-	InstanceSettingKeySearchVisibilities               InstanceSettingKey = "search_visibilities"
-	InstanceSettingKeySecurityContact                  InstanceSettingKey = "security_contact"
-	InstanceSettingKeySessionOriginsRetentionDays      InstanceSettingKey = "session_origins_retention_days"
-	InstanceSettingKeySupporterListVisibility          InstanceSettingKey = "supporter_list_visibility"
-	InstanceSettingKeyThumbnail                        InstanceSettingKey = "thumbnail"
-	InstanceSettingKeyUserAppRegistration              InstanceSettingKey = "user_app_registration"
-	InstanceSettingKeyVoiceParticipantsRetentionDays   InstanceSettingKey = "voice_participants_retention_days"
-	InstanceSettingKeyVoicePublicSummary               InstanceSettingKey = "voice_public_summary"
-	InstanceSettingKeyVoiceRoomStarters                InstanceSettingKey = "voice_room_starters"
+	InstanceSettingKeyAiUsage                            InstanceSettingKey = "ai_usage"
+	InstanceSettingKeyAppealWindowDays                   InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyAuditLogRetentionDays              InstanceSettingKey = "audit_log_retention_days"
+	InstanceSettingKeyAuthorizedFetch                    InstanceSettingKey = "authorized_fetch"
+	InstanceSettingKeyContactAccount                     InstanceSettingKey = "contact_account"
+	InstanceSettingKeyContactEmail                       InstanceSettingKey = "contact_email"
+	InstanceSettingKeyDefaultLocale                      InstanceSettingKey = "default_locale"
+	InstanceSettingKeyDomainActionsRationaleVisibility   InstanceSettingKey = "domain_actions_rationale_visibility"
+	InstanceSettingKeyDomainActionsVisibility            InstanceSettingKey = "domain_actions_visibility"
+	InstanceSettingKeyDynamicClientRegistration          InstanceSettingKey = "dynamic_client_registration"
+	InstanceSettingKeyFeaturedAccounts                   InstanceSettingKey = "featured_accounts"
+	InstanceSettingKeyFederatedTimelineVisibility        InstanceSettingKey = "federated_timeline_visibility"
+	InstanceSettingKeyFederationMode                     InstanceSettingKey = "federation_mode"
+	InstanceSettingKeyFinanceViewerIncome                InstanceSettingKey = "finance_viewer_income"
+	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
+	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
+	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyIncomeVisibility                   InstanceSettingKey = "income_visibility"
+	InstanceSettingKeyIndexableDefault                   InstanceSettingKey = "indexable_default"
+	InstanceSettingKeyInviteCreators                     InstanceSettingKey = "invite_creators"
+	InstanceSettingKeyLinkCards                          InstanceSettingKey = "link_cards"
+	InstanceSettingKeyLinkCardsIgnoreRobotsTxt           InstanceSettingKey = "link_cards_ignore_robots_txt"
+	InstanceSettingKeyLocalTimelineVisibility            InstanceSettingKey = "local_timeline_visibility"
+	InstanceSettingKeyLoginProvidersOnly                 InstanceSettingKey = "login_providers_only"
+	InstanceSettingKeyMaxStatusLength                    InstanceSettingKey = "max_status_length"
+	InstanceSettingKeyMemberInviteMaxActive              InstanceSettingKey = "member_invite_max_active"
+	InstanceSettingKeyMemberInviteMaxLifetimeSeconds     InstanceSettingKey = "member_invite_max_lifetime_seconds"
+	InstanceSettingKeyMemberInviteMaxUses                InstanceSettingKey = "member_invite_max_uses"
+	InstanceSettingKeyModerationActionsRetentionDays     InstanceSettingKey = "moderation_actions_retention_days"
+	InstanceSettingKeyOauthClientRateLimits              InstanceSettingKey = "oauth_client_rate_limits"
+	InstanceSettingKeyOauthMetadataDocumentClients       InstanceSettingKey = "oauth_metadata_document_clients"
+	InstanceSettingKeyPreviewImage                       InstanceSettingKey = "preview_image"
+	InstanceSettingKeyPublicCounts                       InstanceSettingKey = "public_counts"
+	InstanceSettingKeyRegistrationMode                   InstanceSettingKey = "registration_mode"
+	InstanceSettingKeyRegistrationOriginsRetentionDays   InstanceSettingKey = "registration_origins_retention_days"
+	InstanceSettingKeyRelayStatusRetentionDays           InstanceSettingKey = "relay_status_retention_days"
+	InstanceSettingKeyRemoteMediaCacheMaxBytes           InstanceSettingKey = "remote_media_cache_max_bytes"
+	InstanceSettingKeyRemoteMediaCacheTtlSeconds         InstanceSettingKey = "remote_media_cache_ttl_seconds"
+	InstanceSettingKeyRemoteMediaPolicy                  InstanceSettingKey = "remote_media_policy"
+	InstanceSettingKeyRemoteStatusMaxRetentionDays       InstanceSettingKey = "remote_status_max_retention_days"
+	InstanceSettingKeyRemoteStatusRetentionDays          InstanceSettingKey = "remote_status_retention_days"
+	InstanceSettingKeyReportsRetentionDays               InstanceSettingKey = "reports_retention_days"
+	InstanceSettingKeyRequireMediaDescription            InstanceSettingKey = "require_media_description"
+	InstanceSettingKeySearchIndexing                     InstanceSettingKey = "search_indexing"
+	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
+	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
+	InstanceSettingKeySessionOriginsRetentionDays        InstanceSettingKey = "session_origins_retention_days"
+	InstanceSettingKeySupporterListVisibility            InstanceSettingKey = "supporter_list_visibility"
+	InstanceSettingKeyThumbnail                          InstanceSettingKey = "thumbnail"
+	InstanceSettingKeyTranslationBrowser                 InstanceSettingKey = "translation_browser"
+	InstanceSettingKeyTranslationProviderVisibilities    InstanceSettingKey = "translation_provider_visibilities"
+	InstanceSettingKeyTranslationProviders               InstanceSettingKey = "translation_providers"
+	InstanceSettingKeyTranslationRetentionDays           InstanceSettingKey = "translation_retention_days"
+	InstanceSettingKeyTranslationServerMonthlyCharacters InstanceSettingKey = "translation_server_monthly_characters"
+	InstanceSettingKeyTranslationUserMonthlyCharacters   InstanceSettingKey = "translation_user_monthly_characters"
+	InstanceSettingKeyUserAppRegistration                InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyVoiceParticipantsRetentionDays     InstanceSettingKey = "voice_participants_retention_days"
+	InstanceSettingKeyVoicePublicSummary                 InstanceSettingKey = "voice_public_summary"
+	InstanceSettingKeyVoiceRoomStarters                  InstanceSettingKey = "voice_room_starters"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKey enum.
@@ -2448,6 +2454,18 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyThumbnail:
 		return true
+	case InstanceSettingKeyTranslationBrowser:
+		return true
+	case InstanceSettingKeyTranslationProviderVisibilities:
+		return true
+	case InstanceSettingKeyTranslationProviders:
+		return true
+	case InstanceSettingKeyTranslationRetentionDays:
+		return true
+	case InstanceSettingKeyTranslationServerMonthlyCharacters:
+		return true
+	case InstanceSettingKeyTranslationUserMonthlyCharacters:
+		return true
 	case InstanceSettingKeyUserAppRegistration:
 		return true
 	case InstanceSettingKeyVoiceParticipantsRetentionDays:
@@ -2463,16 +2481,18 @@ func (e InstanceSettingKey) Valid() bool {
 
 // Defines values for InstanceSettingKind.
 const (
-	InstanceSettingKindAccount      InstanceSettingKind = "account"
-	InstanceSettingKindAccounts     InstanceSettingKind = "accounts"
-	InstanceSettingKindBool         InstanceSettingKind = "bool"
-	InstanceSettingKindClientLimits InstanceSettingKind = "client_limits"
-	InstanceSettingKindEmail        InstanceSettingKind = "email"
-	InstanceSettingKindEnum         InstanceSettingKind = "enum"
-	InstanceSettingKindInt          InstanceSettingKind = "int"
-	InstanceSettingKindLocale       InstanceSettingKind = "locale"
-	InstanceSettingKindMedia        InstanceSettingKind = "media"
-	InstanceSettingKindUri          InstanceSettingKind = "uri"
+	InstanceSettingKindAccount              InstanceSettingKind = "account"
+	InstanceSettingKindAccounts             InstanceSettingKind = "accounts"
+	InstanceSettingKindBool                 InstanceSettingKind = "bool"
+	InstanceSettingKindClientLimits         InstanceSettingKind = "client_limits"
+	InstanceSettingKindEmail                InstanceSettingKind = "email"
+	InstanceSettingKindEnum                 InstanceSettingKind = "enum"
+	InstanceSettingKindInt                  InstanceSettingKind = "int"
+	InstanceSettingKindLocale               InstanceSettingKind = "locale"
+	InstanceSettingKindMedia                InstanceSettingKind = "media"
+	InstanceSettingKindProviderList         InstanceSettingKind = "provider_list"
+	InstanceSettingKindProviderVisibilities InstanceSettingKind = "provider_visibilities"
+	InstanceSettingKindUri                  InstanceSettingKind = "uri"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKind enum.
@@ -2495,6 +2515,10 @@ func (e InstanceSettingKind) Valid() bool {
 	case InstanceSettingKindLocale:
 		return true
 	case InstanceSettingKindMedia:
+		return true
+	case InstanceSettingKindProviderList:
+		return true
+	case InstanceSettingKindProviderVisibilities:
 		return true
 	case InstanceSettingKindUri:
 		return true
@@ -6357,7 +6381,9 @@ type AdminSetting struct {
 	// `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
 	// none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
 	// a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
-	// `client_id=requests` pairs, or empty for none.
+	// `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
+	// provider IDs, the first tried first, or empty for none. `provider_visibilities`:
+	// comma-separated `provider=visibility|visibility` pairs, or empty for none.
 	Kind InstanceSettingKind `json:"kind"`
 
 	// Maximum The greatest value of an `int` setting; omitted for other kinds.
@@ -6653,6 +6679,30 @@ type AdminTheme struct {
 
 	// Tokens The overridden tokens, in the order of the token list.
 	Tokens []ThemeTokenValue `json:"tokens"`
+}
+
+// AdminTranslationOverview How translation is used in the current month, and the providers that this server has.
+type AdminTranslationOverview struct {
+	// CacheHitRate The share of those requests answered from a kept translation, from 0 to 1; omitted before
+	// there is any.
+	CacheHitRate *float64 `json:"cache_hit_rate,omitempty"`
+
+	// CacheHits The requests answered this month from a translation the server kept.
+	CacheHits int64 `json:"cache_hits"`
+
+	// CacheMisses The requests that went to a provider this month.
+	CacheMisses int64 `json:"cache_misses"`
+
+	// Characters The characters of posts sent to providers this month, without the markers that stand in for
+	// mentions, links, and the like. A call to a provider that fails counts too. This is what the
+	// limits count, and it can differ from what a provider bills.
+	Characters int64 `json:"characters"`
+
+	// Month The month that the numbers cover, as `YYYY-MM` in UTC.
+	Month string `json:"month"`
+
+	// Providers Every provider that this server has, enabled or not. API keys are not part of this.
+	Providers []TranslationProvider `json:"providers"`
 }
 
 // AdminVoiceRoomBan An account removed from a voice chat room, who may not join it again.
@@ -9279,6 +9329,10 @@ type Instance struct {
 	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 	Timelines InstanceTimelines `json:"timelines"`
 
+	// Translation What the instance offers for translating posts, and what it sends where. With `browser` false and
+	// no `providers`, nothing can be translated and clients show no action for it.
+	Translation InstanceTranslation `json:"translation"`
+
 	// Version The server version.
 	Version string `json:"version"`
 
@@ -9546,7 +9600,9 @@ type InstanceSettingKey string
 // `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
 // none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
 // a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
-// `client_id=requests` pairs, or empty for none.
+// `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
+// provider IDs, the first tried first, or empty for none. `provider_visibilities`:
+// comma-separated `provider=visibility|visibility` pairs, or empty for none.
 type InstanceSettingKind string
 
 // InstanceTextKey The key of an instance text: the name (one line), the short and full descriptions,
@@ -9592,6 +9648,35 @@ type InstanceTimelines struct {
 	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
 	// a 401; `everyone`, everyone, anonymous visitors included.
 	Local InstanceAudience `json:"local"`
+}
+
+// InstanceTranslation What the instance offers for translating posts, and what it sends where. With `browser` false and
+// no `providers`, nothing can be translated and clients show no action for it.
+type InstanceTranslation struct {
+	// Browser Whether clients may use the translation built into the browser, where the browser has one. It
+	// sends the text of a post to neither this server nor a provider, and works on every visibility.
+	Browser bool `json:"browser"`
+
+	// Providers The enabled providers that run through this server, the first tried first.
+	Providers []InstanceTranslationProvider `json:"providers"`
+}
+
+// InstanceTranslationProvider A provider that this instance sends the text of posts to when a reader asks for a translation.
+type InstanceTranslationProvider struct {
+	// Id The identifier of the provider on this server.
+	Id string `json:"id"`
+
+	// LogoUrl The address of the logo to show, for a provider that asks for one; omitted when there is none.
+	LogoUrl *string `json:"logo_url,omitempty"`
+
+	// Name The name to show.
+	Name string `json:"name"`
+
+	// Url The address of the provider; omitted when there is none.
+	Url *string `json:"url,omitempty"`
+
+	// Visibilities The visibilities of the posts that this provider may receive.
+	Visibilities []Visibility `json:"visibilities"`
 }
 
 // InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
@@ -11428,6 +11513,10 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
 //     co-hosts of the room.
 //   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+//   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
+//     be searched (`Instance.full_text_search.available`).
+//   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
+//     posts is affected; try again later.
 type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
@@ -14370,6 +14459,18 @@ type CreateStatusParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// SearchStatusesParams defines parameters for SearchStatuses.
+type SearchStatusesParams struct {
+	// Q The words to find, 1 to 200 characters. Anything else is a 400.
+	Q string `form:"q" json:"q"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListStatusQuotesParams defines parameters for ListStatusQuotes.
 type ListStatusQuotesParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -15352,6 +15453,9 @@ type ServerInterface interface {
 	// SetAdminTheme Replace the instance theme
 	// (PUT /admin/theme)
 	SetAdminTheme(w http.ResponseWriter, r *http.Request)
+	// GetAdminTranslationOverview Show how translation is used
+	// (GET /admin/translation)
+	GetAdminTranslationOverview(w http.ResponseWriter, r *http.Request)
 	// EndVoiceRoomAsModerator End a voice chat room as a moderator
 	// (POST /admin/voice_rooms/{id}/end)
 	EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
@@ -15676,6 +15780,9 @@ type ServerInterface interface {
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(w http.ResponseWriter, r *http.Request, params CreateStatusParams)
+	// SearchStatuses Search the text of posts
+	// (GET /statuses/search)
+	SearchStatuses(w http.ResponseWriter, r *http.Request, params SearchStatusesParams)
 	// DeleteStatus Delete the authenticated user's status
 	// (DELETE /statuses/{id})
 	DeleteStatus(w http.ResponseWriter, r *http.Request, id StatusId)
@@ -21158,6 +21265,20 @@ func (siw *ServerInterfaceWrapper) SetAdminTheme(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// GetAdminTranslationOverview operation middleware
+func (siw *ServerInterfaceWrapper) GetAdminTranslationOverview(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAdminTranslationOverview(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // EndVoiceRoomAsModerator operation middleware
 func (siw *ServerInterfaceWrapper) EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request) {
 
@@ -24005,6 +24126,65 @@ func (siw *ServerInterfaceWrapper) CreateStatus(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// SearchStatuses operation middleware
+func (siw *ServerInterfaceWrapper) SearchStatuses(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchStatusesParams
+
+	// ------------- Required query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SearchStatuses(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteStatus operation middleware
 func (siw *ServerInterfaceWrapper) DeleteStatus(w http.ResponseWriter, r *http.Request) {
 
@@ -26346,6 +26526,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/push/subscription", wrapper.PutPushSubscription)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/bookmarks", wrapper.ListBookmarks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statuses", wrapper.CreateStatus)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/search", wrapper.SearchStatuses)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/statuses/{id}", wrapper.DeleteStatus)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}", wrapper.GetStatus)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statuses/{id}", wrapper.EditStatus)
@@ -26565,6 +26746,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/link_card_domains", wrapper.ListLinkCardDomainRules)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/link_card_domains/{domain}", wrapper.RemoveLinkCardDomainRule)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/link_card_domains/{domain}", wrapper.SetLinkCardDomainRule)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/translation", wrapper.GetAdminTranslationOverview)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/relays", wrapper.ListAdminRelays)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/relays", wrapper.CreateRelay)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/relays/{id}", wrapper.DeleteRelay)
@@ -37744,6 +37926,67 @@ func (response SetAdminThemedefaultApplicationProblemPlusJSONResponse) VisitSetA
 	return err
 }
 
+type GetAdminTranslationOverviewRequestObject struct {
+}
+
+type GetAdminTranslationOverviewResponseObject interface {
+	VisitGetAdminTranslationOverviewResponse(w http.ResponseWriter) error
+}
+
+type GetAdminTranslationOverview200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetAdminTranslationOverview200JSONResponse struct {
+	Body    AdminTranslationOverview
+	Headers GetAdminTranslationOverview200ResponseHeaders
+}
+
+func (response GetAdminTranslationOverview200JSONResponse) VisitGetAdminTranslationOverviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminTranslationOverviewdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetAdminTranslationOverviewdefaultApplicationProblemPlusJSONResponse) VisitGetAdminTranslationOverviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type EndVoiceRoomAsModeratorRequestObject struct {
 	Id   VoiceRoomId `json:"id"`
 	Body *EndVoiceRoomAsModeratorJSONRequestBody
@@ -44197,6 +44440,61 @@ func (response CreateStatusdefaultApplicationProblemPlusJSONResponse) VisitCreat
 	return err
 }
 
+type SearchStatusesRequestObject struct {
+	Params SearchStatusesParams
+}
+
+type SearchStatusesResponseObject interface {
+	VisitSearchStatusesResponse(w http.ResponseWriter) error
+}
+
+type SearchStatuses200JSONResponse struct{ StatusPageJSONResponse }
+
+func (response SearchStatuses200JSONResponse) VisitSearchStatusesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchStatusesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SearchStatusesdefaultApplicationProblemPlusJSONResponse) VisitSearchStatusesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteStatusRequestObject struct {
 	Id StatusId `json:"id"`
 }
@@ -48868,6 +49166,9 @@ type StrictServerInterface interface {
 	// SetAdminTheme Replace the instance theme
 	// (PUT /admin/theme)
 	SetAdminTheme(ctx context.Context, request SetAdminThemeRequestObject) (SetAdminThemeResponseObject, error)
+	// GetAdminTranslationOverview Show how translation is used
+	// (GET /admin/translation)
+	GetAdminTranslationOverview(ctx context.Context, request GetAdminTranslationOverviewRequestObject) (GetAdminTranslationOverviewResponseObject, error)
 	// EndVoiceRoomAsModerator End a voice chat room as a moderator
 	// (POST /admin/voice_rooms/{id}/end)
 	EndVoiceRoomAsModerator(ctx context.Context, request EndVoiceRoomAsModeratorRequestObject) (EndVoiceRoomAsModeratorResponseObject, error)
@@ -49192,6 +49493,9 @@ type StrictServerInterface interface {
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(ctx context.Context, request CreateStatusRequestObject) (CreateStatusResponseObject, error)
+	// SearchStatuses Search the text of posts
+	// (GET /statuses/search)
+	SearchStatuses(ctx context.Context, request SearchStatusesRequestObject) (SearchStatusesResponseObject, error)
 	// DeleteStatus Delete the authenticated user's status
 	// (DELETE /statuses/{id})
 	DeleteStatus(ctx context.Context, request DeleteStatusRequestObject) (DeleteStatusResponseObject, error)
@@ -54441,6 +54745,30 @@ func (sh *strictHandler) SetAdminTheme(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetAdminTranslationOverview operation middleware
+func (sh *strictHandler) GetAdminTranslationOverview(w http.ResponseWriter, r *http.Request) {
+	var request GetAdminTranslationOverviewRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminTranslationOverview(ctx, request.(GetAdminTranslationOverviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminTranslationOverview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAdminTranslationOverviewResponseObject); ok {
+		if err := validResponse.VisitGetAdminTranslationOverviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // EndVoiceRoomAsModerator operation middleware
 func (sh *strictHandler) EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request, id VoiceRoomId) {
 	var request EndVoiceRoomAsModeratorRequestObject
@@ -57379,6 +57707,32 @@ func (sh *strictHandler) CreateStatus(w http.ResponseWriter, r *http.Request, pa
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateStatusResponseObject); ok {
 		if err := validResponse.VisitCreateStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SearchStatuses operation middleware
+func (sh *strictHandler) SearchStatuses(w http.ResponseWriter, r *http.Request, params SearchStatusesParams) {
+	var request SearchStatusesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SearchStatuses(ctx, request.(SearchStatusesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SearchStatuses")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SearchStatusesResponseObject); ok {
+		if err := validResponse.VisitSearchStatusesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

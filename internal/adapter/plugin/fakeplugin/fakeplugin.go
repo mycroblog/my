@@ -17,6 +17,7 @@ import (
 	"connectrpc.com/connect/v2/connecthttp"
 
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/billing/v1/billingv1connect"
+	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/mailer/v1/mailerv1connect"
 	probev1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1/probev1connect"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
@@ -33,6 +34,8 @@ type Options struct {
 	// Billing is what the fake's billing kind reports, under the source's own rules of requests and failures. Without it
 	// the fake does not serve the kind.
 	Billing appfinance.BillingSource
+	// Mailbox is the mail service of the fake's mailer kind. Without it the fake does not serve the kind.
+	Mailbox *Mailbox
 }
 
 // Recorder tells what reached a fake.
@@ -67,6 +70,7 @@ func Connect(o Options) (http.Handler, *Recorder) {
 	server := connect.NewServer()
 	probev1connect.RegisterProbeServiceHandler(server, &probeServer{o: o})
 	billingv1connect.RegisterBillingServiceHandler(server, &billingServer{o: o})
+	mailerv1connect.RegisterMailerServiceHandler(server, &mailerServer{o: o})
 	mux := http.NewServeMux()
 	connecthttp.Mount(mux, server)
 	r := new(Recorder)
@@ -137,6 +141,7 @@ func JSON(o Options) (http.Handler, *Recorder) {
 		})
 	})
 	serveBillingJSON(mux, o)
+	serveMailerJSON(mux, o)
 	r := new(Recorder)
 	return r.wrap(o.Token, mux), r
 }

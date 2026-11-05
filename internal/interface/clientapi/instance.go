@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
+	appcontent "github.com/mycroblog/my/internal/app/content"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -100,6 +101,12 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	// What the link card crawler does on this instance, for the page that tells site operators
 	// about it (ADR-0062).
 	out.LinkCards, out.LinkCardsIgnoreRobotsTxt = settings.LinkCardsEnabled(), settings.LinkCardsIgnoreRobotsTxt()
+	// What translation offers and where it sends the text of posts (ADR-0148 §6).
+	translationInfo, err := s.instanceTranslation(ctx, settings.TranslationBrowser())
+	if err != nil {
+		return nil, err
+	}
+	out.Translation = translationInfo
 	// How much of the costs GET /instance/cost_totals publishes (FR-903, ADR-0067 §8).
 	out.FinanceVisibility = FinanceVisibility(settings.FinanceVisibility())
 	// How much of the income GET /instance/income_totals publishes (FR-917, ADR-0067 §17).
@@ -262,11 +269,13 @@ func (s *Server) GetInstanceDocument(ctx context.Context, req GetInstanceDocumen
 	}, nil
 }
 
-// FullTextSearch says what the full-text search of statuses covers (ADR-0149 §9).
-// *search.Service implements it.
+// FullTextSearch is the full-text search of statuses (ADR-0149 §9). *search.Service implements it.
 type FullTextSearch interface {
 	// Visibilities returns the visibilities the search covers.
 	Visibilities(ctx context.Context) ([]search.Visibility, error)
+	// Search returns one page of the statuses that the viewer may see and q finds, failing with
+	// search.ErrInvalidCursor or search.ErrBackendFailed.
+	Search(ctx context.Context, viewer appcontent.Viewer, q search.Query) (search.Page, error)
 }
 
 // instanceFullTextSearch is the item of GET /instance that tells clients whether to show an entry

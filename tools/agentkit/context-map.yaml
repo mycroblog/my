@@ -337,13 +337,14 @@ entries:
       - "The room streams (voice_stream.go) carry the voice_* signals of stream.Hub / stream.Relay, each at most 1 KiB: a signal or a grant for one session waits in the KeyValueStore (voice.message, 30 s) and only its ID crosses the Bus; mic, reactions, and mutes are never recorded."
     userdocs: ["docs/operations/voice.md"]
   - name: module-search
-    paths: ["internal/app/search/**", "internal/adapter/search/**", "internal/platform/search.go", "internal/platform/adapters_search_*.go", "internal/platform/adapters_no_search_*.go", "pkg/testkit/search_index_contract.go", "pkg/testkit/search_contract.go", "internal/adapter/db/*/search.go", "cmd/my/search.go", "schema/*/18-search.sql", "queries/*/search.sql", "api/spec/components/schemas/InstanceFullTextSearch.yaml"]
+    paths: ["internal/app/search/**", "internal/adapter/search/**", "internal/platform/search.go", "internal/platform/adapters_search_*.go", "internal/platform/adapters_no_search_*.go", "pkg/testkit/search_index_contract.go", "pkg/testkit/search_contract.go", "internal/adapter/db/*/search.go", "cmd/my/search.go", "schema/*/18-search.sql", "queries/*/search.sql", "api/spec/components/schemas/InstanceFullTextSearch.yaml", "api/spec/paths/statuses_search.yaml", "internal/interface/clientapi/status_search.go"]
     docs: ["docs/adr/0149-full-text-search.md", "docs/architecture/data-model/04-tables/18-search.md"]
     notes:
       - "A rebuild is one chain of search.rebuild jobs at a rate, not a queue.FanOut, since the rate holds only if batches do not run side by side. Each job steps the one row of search_rebuild only from the place it read, and enqueues the next in that transaction, so a duplicate does nothing. my search rebuild and clear empty the index in the command, not a job, so a job run twice cannot remove what the walk wrote."
       - "search.Index returns status IDs and a cursor only, and a query is plain text, never the engine's query language (ADR-0149 §4). testkit.SearchIndexContract is what a backend passes."
       - "search = none has no backend: no connection, no worker, and no search job (ADR-0149 §2). The job types stay registered with handlers that succeed doing nothing (§7), and GET /instance says full_text_search.available = false. RegisterProjectors runs only with a backend."
       - "search.Eligible is the one rule of what the index holds (ADR-0149 §5), shared with the API and the rebuild. A job carries an ID, never text, and reads the current state; search.sync_status reads again after writing (§7). Backend calls run outside transactions with indexCallTimeout. The eraser only enqueues (§11)."
+      - "searchStatuses reads each ID the backend returns from the database and drops it in the order of ADR-0149 §8: search.Service.Search applies search.Eligible, and timeline.Service.SearchVisible applies CanView in ContextSearch, the mutes, and the domain mutes. Next is the backend's cursor, so a short or empty page can have one. No query in a log, trace, or error: a backend error reaches the log only as search.ErrBackendFailed with its kind. The response is private, no-store."
       - "The fake, internal/adapter/search/fake, is separate from none. Go tests inject it with AppOptions.SearchIndex; only internal/platform/adapters_search_fake.go (build tag e2e_fakes) links it into the server, as search = fake, refused outside profile = development."
     userdocs: ["docs/reference/jobs.md#full-text-search", "docs/operations/running.md#splitting-workers-by-job-type", "docs/operations/search.md", "docs/operations/admin-cli.md#rebuilding-the-search-index"]
   - name: module-diagnostics
@@ -459,10 +460,11 @@ entries:
       - "OpenID Connect Discovery, the JWKS, and ID token verification use the standard library alone; every request goes through kernel.HTTPClient with HTTPPurposeLoginProvider."
       - "ID tokens accept RS256, ES256, and EdDSA only, never none or an HMAC; the adapter passes testkit.OIDCClientContract."
   - name: translation
-    paths: ["internal/app/translation/**", "internal/adapter/translator/**", "pkg/testkit/translator_contract.go", "pkg/testkit/translation_contract.go", "internal/platform/translation.go", "internal/adapter/db/*/translation.go", "internal/interface/clientapi/statuses_translation.go", "schema/*/17-translation.sql", "queries/*/translation.sql", "api/spec/paths/statuses_{id}_translation.yaml"]
+    userdocs: ["docs/operations/instance-settings.md", "docs/operations/running.md", "docs/operations/privacy-policy-template.md", "docs/operations/processing-record-template.md"]
+    paths: ["internal/app/translation/**", "internal/adapter/translator/**", "pkg/testkit/translator_contract.go", "pkg/testkit/translation_contract.go", "internal/platform/translation.go", "internal/adapter/db/*/translation.go", "internal/interface/clientapi/statuses_translation.go", "schema/*/17-translation.sql", "queries/*/translation.sql", "api/spec/paths/statuses_{id}_translation.yaml", "api/spec/paths/admin_translation.yaml", "api/spec/components/schemas/InstanceTranslation*.yaml", "api/spec/components/schemas/AdminTranslationOverview.yaml", "app/web/src/features/admin/**/*ranslation*", "app/web/src/routes/admin.translation.tsx", "locales/*/client/admin/translation.json"]
     docs: ["docs/adr/0148-post-translation.md#2-構成", "docs/adr/0148-post-translation.md#8-流れと送るものの形", "docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/04-tables/17-translation.md#417-translation"]
     notes:
-      - "translation.Service follows ADR-0148 §8 in order: the view check through content.Reader.Readable before anything else, the author's own language, candidates by content.EffectiveVisibility, the cache, the limit, the lock, the provider outside transactions, the checks, and the row under content.Reader.HoldLive. Providers and Limiter are the seams of the settings (#2232); the default is no provider and limits of 0."
+      - "translation.Service follows ADR-0148 §8 in order: the view check through content.Reader.Readable before anything else, the author's own language, candidates by content.EffectiveVisibility, the cache, the lock, the limit before each call of a provider outside transactions, the checks, and the row under content.Reader.HoldLive. ConfiguredProviders and UsageLimiter read the instance settings per request; a provider adapter adds itself to the registered list in internal/platform/translation.go, with its API key from the deployment configuration, never from a setting or an answer of the API."
       - "A body reaches a provider only as fragments: text with markers (fragment.go). Text in a translation is escaped when it goes back, so a provider cannot add markup; the sanitizer still runs on the whole body before it is stored."
       - "translation.Translator stays small and free of provider options, names, and links (ADR-0148 §2): fragments, source language (possibly und), target language in; translations and the detected language out; errors ErrTemporary, ErrProviderLimit, ErrUnsupportedLanguage."
       - "The markers have one form on the port, ⟦1⟧ and ⟦/1⟧ (translation.Marker, ClosingMarker, MarkersIntact); an adapter whose provider needs another form rewrites them both ways. Every adapter passes testkit.TranslatorContract on a stand-in of its provider."
@@ -470,11 +472,11 @@ entries:
     paths: ["internal/adapter/captcha/**"]
     userdocs: ["docs/operations/captcha.md"]
   - name: adapter-mail
-    paths: ["internal/adapter/mail/**"]
+    paths: ["internal/adapter/mail/**", "internal/platform/adapters_*mail_plugin*.go"]
     docs: ["docs/adr/0086-email-delivery.md#6-mailses", "docs/operations/email.md"]
     userdocs: ["docs/operations/email.md"]
     notes:
-      - "Every mailer sends the message that internal/adapter/mail/internal/message assembles and passes testkit.MailerContract; mail/ses tests run against an httptest stand-in of the SES API, never AWS."
+      - "Every mailer passes testkit.MailerContract. mail/smtp and mail/ses send the message that internal/adapter/mail/internal/message assembles; mail/plugin hands over its parts and the plugin adds the rest. mail/ses tests run against an httptest stand-in of the SES API, never AWS."
       - "mail/smtp also runs on Mailpit containers (mailpit_test.go and internal/platform/mailpit_test.go through pkg/testkit/mailpittest), only with TEST_MAIL=container: `scripts/task.sh go:test-mail` (CI job mail-integration in the slow suite). The development Mailpit is deploy/docker/mailpit with scripts/mailpit-cert.sh; its image pin matches mailpittest.DefaultImage."
   - name: adapter-billing
     paths: ["internal/adapter/billing/**", "internal/platform/adapters_*billing_plugin.go", "internal/platform/billing_import_plugin_test.go"]

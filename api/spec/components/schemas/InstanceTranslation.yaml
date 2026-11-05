@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What the instance offers for translating posts, and what it sends where. With `browser` false and
+  no `providers`, nothing can be translated and clients show no action for it.
+type: object
+required: [browser, providers]
+properties:
+  browser:
+    description: |
+      Whether clients may use the translation built into the browser, where the browser has one. It
+      sends the text of a post to neither this server nor a provider, and works on every visibility.
+    type: boolean
+  providers:
+    description: The enabled providers that run through this server, the first tried first.
+    type: array
+    items:
+      $ref: ./InstanceTranslationProvider.yaml

@@ -14,7 +14,7 @@ key, so `inbound.status` has `plugin_inbound_status_address`.
 
 | Kind | What it carries | Plain TCP (`http://`) | Default protocol | Default deadline |
 | --- | --- | --- | --- | --- |
-| `translator` | The text of a post that a reader asked to translate | Allowed | `json` | 10 s |
+| `translator` | The text of a post that a reader asked to translate | **Refused** | `json` | 10 s |
 | `billing` | The costs of the instance | Allowed | `json` | 2 min |
 | `mailer` | Addresses and secrets such as confirmation links | **Refused** | `json` | 30 s |
 | `media` | Uploads, with their metadata, which may hold a location | Allowed | `proto` | 4 min |
@@ -22,7 +22,7 @@ key, so `inbound.status` has `plugin_inbound_status_address`.
 | `inbound.status` | The text of incoming posts | **Refused** | `json` | 3 s |
 | `local.status` | The text of local posts | **Refused** | `json` | 1 s |
 | `inbound.follow` | The two parties of a follow | Allowed | `json` | 3 s |
-| `signup.check` | Email addresses and IP addresses | Allowed | `json` | 2 s |
+| `signup.check` | Email addresses and IP addresses | **Refused** | `json` | 2 s |
 | `media.check` | A small processed version of the media, never the original | Allowed | `json` | 10 s |
 
 The settings that make the server use a destination belong to each feature. This page covers what they share.
@@ -42,7 +42,7 @@ resolves the name for each connection.
 - `unix:///run/my/mailer.sock`: a Unix socket.
 - `https://mailer.internal:8443`: TLS over TCP. The server always verifies the certificate, against
   `plugin_<kind>_tls_ca_file` or the system's roots, and no setting turns that off.
-- `http://translate.internal:5000`: plain TCP.
+- `http://billing.internal:5000`: plain TCP.
 
 ### Authentication
 
@@ -58,7 +58,7 @@ the server from anyone else who reaches it.
 
 ### Plain TCP
 
-`mailer`, `key_manager`, `inbound.status`, and `local.status` refuse `http://`: the server does not start. That holds on
+`mailer`, `key_manager`, `translator`, `inbound.status`, `local.status`, and `signup.check` refuse `http://`: the server does not start. That holds on
 loopback too (`http://127.0.0.1`), since a loopback address does not keep other processes on the host from reading the
 traffic. Put such a sidecar on a Unix socket in a shared volume.
 
@@ -117,6 +117,10 @@ a flag asks for it. A kind whose contract the version does not have yet reports 
 makes a real fetch of the current and the previous month, and checks the answer as an import does; it may cost money at
 the providers behind the plugin. [Importing cloud usage costs](billing-import.md#a-plugin-billing_sources--plugin) has the
 contract of the kind.
+
+`--kind mailer` makes no call of the RPC unless `--mail-to` names a recipient. With it, the command sends one real message there,
+from `--mail-from` (default: the same address), and checks that the plugin refuses a request with no recipient.
+[Sending email](email.md#a-plugin-mail--plugin) has the contract of the kind.
 
 `probe` is the smallest kind, and the server delegates nothing to it. Serve it first, to check the transport, the
 protocol, and the authentication before you write the rest of the plugin.

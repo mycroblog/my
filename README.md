@@ -94,7 +94,8 @@ conditions.
 - `pkg/mykit/` (the API client library)
 - `pkg/mybot/` (the bot library)
 
-`api/plugin/`, the definitions of the plugin protocol, is under the MIT License too.
+`api/plugin/`, the definitions of the plugin protocol, is under the MIT License too. A plugin runs as a separate process
+and talks to the server only through that protocol, so the AGPL does not extend to it, and it may have any license.
 
 Everything else (the server, the web client, and the code they generate from `api/spec/` and `api/plugin/`) is
 AGPL-3.0-only.

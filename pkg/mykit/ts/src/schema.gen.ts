@@ -2476,6 +2476,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/statuses/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search the text of posts
+         * @description The posts that contain every word of `q`, newest first, as `Status` objects like those of a
+         *     timeline. It looks in the text, the content warning, and the alternative texts of the current
+         *     version of a post. A word's matching, including in Japanese, depends on the search engine of
+         *     the server, and there is no order by relevance. `q` is plain text: nothing in it is an operator.
+         *
+         *     Read `Instance.full_text_search` before offering this: it says whether the server has a search
+         *     engine (`available`) and which visibilities the search covers (`visibilities`). Without one,
+         *     the response is a 404 of the type `/api/v1/problems/search-unavailable`. When the engine fails,
+         *     it is a 503 of the type `/api/v1/problems/search-failed`, which only this operation answers;
+         *     try again later.
+         *
+         *     Only signed-in users can search, and only `public` and `local` posts of accounts with
+         *     `indexable` turned on are found, within the visibilities the server covers. The results never
+         *     include `unlisted`, `private`, or `direct` posts, even the viewer's own. Posts of accounts or
+         *     domains that the viewer blocks, mutes, or is blocked by are left out.
+         *
+         *     A page can hold fewer posts than `limit`, or none at all, while more follow, because posts are
+         *     left out after the search engine answered. Continue while the response has a `next_cursor`, and
+         *     stop only when it has none. A cursor works only on the search it came from: changing `q` needs
+         *     a new first page. A cursor the search engine did not issue is a 400.
+         *
+         *     The query is part of the URL, so a reverse proxy or CDN in front of the server may log it. The
+         *     server itself writes it to no log or trace, and the response is `private, no-store`.
+         *
+         *     Past 30 searches in 5 minutes by one account, in addition to the limit of the API as a whole,
+         *     the response is a 429 with `Retry-After`.
+         */
+        get: operations["searchStatuses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/statuses/{id}": {
         parameters: {
             query?: never;
@@ -7277,6 +7322,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/translation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Show how translation is used
+         * @description The characters of posts sent to providers in the current month, the cache hit rate, and the
+         *     providers that this server has. Months are in UTC. The settings of translation are instance
+         *     settings (`GET /admin/settings`). Needs the `manage_settings` permission.
+         */
+        get: operations["getAdminTranslationOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/relays": {
         parameters: {
             query?: never;
@@ -8889,6 +8956,68 @@ export interface components {
         /** @description The rules, by domain. */
         LinkCardDomainRuleList: {
             items: components["schemas"]["LinkCardDomainRule"][];
+        };
+        /** @description How translation is used in the current month, and the providers that this server has. */
+        AdminTranslationOverview: {
+            /** @description The month that the numbers cover, as `YYYY-MM` in UTC. */
+            month: string;
+            /**
+             * Format: int64
+             * @description The characters of posts sent to providers this month, without the markers that stand in for
+             *     mentions, links, and the like. A call to a provider that fails counts too. This is what the
+             *     limits count, and it can differ from what a provider bills.
+             */
+            characters: number;
+            /**
+             * Format: int64
+             * @description The requests answered this month from a translation the server kept.
+             */
+            cache_hits: number;
+            /**
+             * Format: int64
+             * @description The requests that went to a provider this month.
+             */
+            cache_misses: number;
+            /**
+             * Format: double
+             * @description The share of those requests answered from a kept translation, from 0 to 1; omitted before
+             *     there is any.
+             */
+            cache_hit_rate?: number;
+            /** @description Every provider that this server has, enabled or not. API keys are not part of this. */
+            providers: components["schemas"]["TranslationProvider"][];
+        };
+        /**
+         * @description What the instance offers for translating posts, and what it sends where. With `browser` false and
+         *     no `providers`, nothing can be translated and clients show no action for it.
+         */
+        InstanceTranslation: {
+            /**
+             * @description Whether clients may use the translation built into the browser, where the browser has one. It
+             *     sends the text of a post to neither this server nor a provider, and works on every visibility.
+             */
+            browser: boolean;
+            /** @description The enabled providers that run through this server, the first tried first. */
+            providers: components["schemas"]["InstanceTranslationProvider"][];
+        };
+        /** @description A provider that this instance sends the text of posts to when a reader asks for a translation. */
+        InstanceTranslationProvider: {
+            /** @description The identifier of the provider on this server. */
+            id: string;
+            /** @description The name to show. */
+            name: string;
+            /**
+             * Format: uri
+             * @description The address of the provider; omitted when there is none.
+             */
+            url?: string;
+            /**
+             * Format: uri
+             * @description The address of the logo to show, for a provider that asks for one; omitted when there is none.
+             */
+            logo_url?: string;
+            /** @description The visibilities of the posts that this provider may receive. */
+            visibilities: components["schemas"]["Visibility"][];
         };
         /**
          * @description A condition of an `oidc` provider: a user signs in only when the claim of the ID token
@@ -11564,6 +11693,7 @@ export interface components {
              *     link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
              */
             link_cards_ignore_robots_txt: boolean;
+            translation: components["schemas"]["InstanceTranslation"];
             finance_visibility: components["schemas"]["FinanceVisibility"];
             income_visibility: components["schemas"]["IncomeVisibility"];
         };
@@ -11771,7 +11901,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -11780,10 +11910,12 @@ export interface components {
          *     `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
          *     none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
          *     a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
-         *     `client_id=requests` pairs, or empty for none.
+         *     `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
+         *     provider IDs, the first tried first, or empty for none. `provider_visibilities`:
+         *     comma-separated `provider=visibility|visibility` pairs, or empty for none.
          * @enum {string}
          */
-        InstanceSettingKind: "bool" | "int" | "enum" | "locale" | "media" | "account" | "email" | "uri" | "accounts" | "client_limits";
+        InstanceSettingKind: "bool" | "int" | "enum" | "locale" | "media" | "account" | "email" | "uri" | "accounts" | "client_limits" | "provider_list" | "provider_visibilities";
         /**
          * @description The key of an instance text: the name (one line), the short and full descriptions,
          *     the terms of service and the privacy policy (Markdown), the alternative texts of the
@@ -13236,6 +13368,10 @@ export interface components {
          *     - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
          *       co-hosts of the room.
          *     - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+         *     - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
+         *       be searched (`Instance.full_text_search.available`).
+         *     - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
+         *       posts is affected; try again later.
          */
         Problem: {
             /**
@@ -18209,6 +18345,26 @@ export interface operations {
                     "application/json": components["schemas"]["Status"];
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    searchStatuses: {
+        parameters: {
+            query: {
+                /** @description The words to find, 1 to 200 characters. Anything else is a 400. */
+                q: string;
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["StatusPage"];
             default: components["responses"]["Problem"];
         };
     };
@@ -23224,6 +23380,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getAdminTranslationOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The use of the current month. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminTranslationOverview"];
+                };
             };
             default: components["responses"]["Problem"];
         };

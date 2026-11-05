@@ -106,6 +106,8 @@ func (w *syncWorld) AccountIDsOnDomain(context.Context, string, string, int) ([]
 	return nil, nil
 }
 
+func (w *syncWorld) AccountDomain(context.Context, string) (string, error) { return "", nil }
+
 func (w *syncWorld) SearchVisibilities(context.Context) ([]string, error) { return w.covered, nil }
 
 // recordingIndex records the calls of the backend in order, and fails with err when it is set.

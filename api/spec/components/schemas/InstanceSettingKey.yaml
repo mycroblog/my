@@ -57,3 +57,9 @@ enum:
   - remote_status_max_retention_days
   - relay_status_retention_days
   - oauth_client_rate_limits
+  - translation_providers
+  - translation_provider_visibilities
+  - translation_browser
+  - translation_user_monthly_characters
+  - translation_server_monthly_characters
+  - translation_retention_days

@@ -4,8 +4,10 @@ package testkit
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -165,10 +167,15 @@ func TranslationRepositoryContract(t *testing.T, newHarness func(t *testing.T) T
 		t.Parallel()
 		h := newHarness(t)
 		alice, bob := translationID(300), translationID(301)
+		roomy := translation.Limits{Account: 1000, Server: 1000}
 		add := func(account, month string, n int64) {
 			t.Helper()
 			tx(t, h, func(ctx context.Context, tx uow.Tx) error {
-				return h.Repository.AddUsage(ctx, tx, account, month, n)
+				ok, err := h.Repository.AddUsageWithin(ctx, tx, account, month, n, roomy)
+				if err == nil && !ok {
+					t.Errorf("add %d for %s in %s: over the limits", n, account, month)
+				}
+				return err
 			})
 		}
 		usage := func(account, month string) translation.Usage {
@@ -203,6 +210,138 @@ func TranslationRepositoryContract(t *testing.T, newHarness func(t *testing.T) T
 		}
 		if got, want := usage(bob, "2026-11"), (translation.Usage{Account: 1, Server: 31}); got != want {
 			t.Errorf("usage of the other = %+v, want %+v", got, want)
+		}
+	})
+	t.Run("AddsUsageOnlyWithinTheLimits", func(t *testing.T) {
+		t.Parallel()
+		h := newHarness(t)
+		alice, bob := translationID(310), translationID(311)
+		const month = "2026-11"
+		errOver := errors.New("over")
+		// add ends the transaction with an error when it is over, as the limiter does.
+		add := func(account string, n int64, limits translation.Limits) bool {
+			t.Helper()
+			err := h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+				ok, err := h.Repository.AddUsageWithin(t.Context(), tx, account, month, n, limits)
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return errOver
+				}
+				return nil
+			})
+			if err != nil && !errors.Is(err, errOver) {
+				t.Fatal(err)
+			}
+			return err == nil
+		}
+		usage := func(account string) translation.Usage {
+			t.Helper()
+			u, err := h.Repository.FindUsage(t.Context(), account, month)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return u
+		}
+		limits := translation.Limits{Account: 10, Server: 15}
+		if add(alice, 11, limits) {
+			t.Error("a first request over the account's limit passed")
+		}
+		if got := usage(alice); got != (translation.Usage{}) {
+			t.Errorf("usage after the refusal = %+v, want none", got)
+		}
+		if !add(alice, 10, limits) {
+			t.Error("a request up to the account's limit was refused")
+		}
+		if add(alice, 1, limits) {
+			t.Error("a request past the account's limit passed")
+		}
+		if got, want := usage(alice), (translation.Usage{Account: 10, Server: 10}); got != want {
+			t.Errorf("usage = %+v, want %+v", got, want)
+		}
+		if add(bob, 6, limits) {
+			t.Error("a request past the server's limit passed")
+		}
+		if got, want := usage(bob), (translation.Usage{Server: 10}); got != want {
+			t.Errorf("usage after the server's refusal = %+v, want %+v: the account's row rolled back", got, want)
+		}
+		if !add(bob, 5, limits) {
+			t.Error("a request up to the server's limit was refused")
+		}
+		if add(bob, 1, translation.Limits{Account: 0, Server: 100}) || add(bob, 1, translation.Limits{Account: 100, Server: 0}) {
+			t.Error("a limit of 0 let a character through")
+		}
+	})
+	t.Run("ConcurrentAddsStayWithinTheLimits", func(t *testing.T) {
+		t.Parallel()
+		h := newHarness(t)
+		const month, each, requests = "2026-11", int64(3), 8
+		limits := translation.Limits{Account: 1000, Server: 10}
+		errOver := errors.New("over")
+		var wg sync.WaitGroup
+		for i := range requests {
+			wg.Go(func() {
+				err := h.UnitOfWork.Tx(context.WithoutCancel(t.Context()), func(tx uow.Tx) error {
+					ok, err := h.Repository.AddUsageWithin(context.WithoutCancel(t.Context()), tx, translationID(330+i), month, each, limits)
+					if err == nil && !ok {
+						return errOver
+					}
+					return err
+				})
+				if err != nil && !errors.Is(err, errOver) {
+					t.Errorf("add: %v", err)
+				}
+			})
+		}
+		wg.Wait()
+		u, err := h.Repository.FindServerUsage(t.Context(), month)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if u.Characters != 9 {
+			t.Errorf("characters = %d, want 9: three requests of %d within %d", u.Characters, each, limits.Server)
+		}
+	})
+	t.Run("CountsCacheLookupsByMonth", func(t *testing.T) {
+		t.Parallel()
+		h := newHarness(t)
+		lookup := func(month string, hit bool) {
+			t.Helper()
+			tx(t, h, func(ctx context.Context, tx uow.Tx) error {
+				return h.Repository.AddCacheLookup(ctx, tx, month, hit)
+			})
+		}
+		server := func(month string) translation.ServerUsage {
+			t.Helper()
+			u, err := h.Repository.FindServerUsage(t.Context(), month)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return u
+		}
+		if got := server("2026-11"); got != (translation.ServerUsage{}) {
+			t.Errorf("server usage without a row = %+v", got)
+		}
+		lookup("2026-11", true)
+		lookup("2026-11", true)
+		lookup("2026-11", false)
+		lookup("2026-10", false)
+		tx(t, h, func(ctx context.Context, tx uow.Tx) error {
+			ok, err := h.Repository.AddUsageWithin(ctx, tx, translationID(320), "2026-11", 7, translation.Limits{Account: 7, Server: 7})
+			if err == nil && !ok {
+				t.Error("the first characters of a month with lookups were refused")
+			}
+			return err
+		})
+		if got, want := server("2026-11"), (translation.ServerUsage{Characters: 7, CacheHits: 2, CacheMisses: 1}); got != want {
+			t.Errorf("server usage = %+v, want %+v", got, want)
+		}
+		tx(t, h, func(ctx context.Context, tx uow.Tx) error {
+			return h.Repository.DeleteUsageBefore(ctx, tx, "2026-11")
+		})
+		if got := server("2026-10"); got != (translation.ServerUsage{}) {
+			t.Errorf("server usage of a deleted month = %+v", got)
 		}
 	})
 }

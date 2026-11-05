@@ -49,6 +49,7 @@ These names are used under the activities below. List each one you use.
 | {{IF telemetry}} Metrics and tracing service | {{...}} | {{...}} |
 | {{IF voice}} Voice media server, STUN and TURN | {{...}} | {{...}} |
 | {{IF webhooks}} Webhook receivers | {{...}} | {{...}} |
+| {{IF translation}} Translation providers | {{...}} | {{...}} |
 | Backup storage | {{...}} | {{...}} |
 | Federated servers | Other servers of the network, run by other controllers, which change over time. `my` keeps the list of known servers | Any country |
 | {{IF relays}} Relays | {{EACH RELAY YOU JOINED}} | {{...}} |
@@ -185,6 +186,19 @@ Delete this activity when `payments = none`.
 | Personal data | Logs (paths that can name a username or post, error text), proxy logs with IP addresses, error reports scrubbed by pattern, job records holding IDs, webhook bodies, backups of everything |
 | Recipients | Hosting, reverse proxy, error tracker, metrics and tracing service, webhook receivers, backup storage |
 | Erasure | Failed jobs and run records `{{30 days}}`. Webhook messages 14 days. Hourly error counts 90 days. Application and proxy logs: {{PERIOD}}. The latest report of each error group: replaced by the next one, with no automatic end. Backups: {{PERIOD}}. At the error tracker and the receivers: {{THEIR PERIOD}} |
+| Legal basis | {{e.g. legitimate interests}} |
+
+### 12. Translating posts
+
+Delete this activity when `translation_providers` is empty.
+
+| | |
+| --- | --- |
+| Purposes | Translating a post when a reader asks, and keeping translation within its limits |
+| Data subjects | Authors of posts, here and on other servers, and people the text names. Readers, for the count of characters |
+| Personal data | Whatever the text of a post holds: its body, content warning, poll options, and image descriptions. The post's address, its author, the reader, mentions, and links are replaced or left out before sending. Kept: the translations, and the characters per account and month |
+| Recipients | Translation providers, as your processors: `public`, `local`, and `unlisted` posts by default. {{IF translation to private and direct}} Also `private` and `direct` posts, for {{THE PROVIDERS YOU ALLOWED}} |
+| Erasure | Translations `{{30 days}}` from the translation, and with the post when it is deleted. Characters per account until the end of the following month, or at account erasure. At the providers: what was sent cannot be recalled. {{THEIR PERIODS}} |
 | Legal basis | {{e.g. legitimate interests}} |
 
 ### Security measures (Article 30(1)(g))

@@ -7,4 +7,5 @@ package config
 func init() {
 	pluginsLeftOutTag = "no_plugins"
 	exclude("no_plugins", "billing_sources", "plugin")
+	exclude("no_plugins", "mail", "plugin")
 }

@@ -362,11 +362,13 @@ type AppOptions struct {
 	// MetricsWriter receives the EMF lines of metrics_exporter = emf; the default is standard
 	// output, which the logs (on standard error) do not share.
 	MetricsWriter io.Writer
-	// TranslationProviders, when set, are the translation providers instead of none. Tests only,
-	// to translate with a fake.
+	// TranslationRegistered, when set, are the translation providers that the server has, which the
+	// instance settings then enable. Tests only, to translate with a fake.
+	TranslationRegistered []translation.Provider
+	// TranslationProviders, when set, replaces the instance settings that say which providers are
+	// enabled. Tests only.
 	TranslationProviders translation.Providers
-	// TranslationLimiter, when set, holds the monthly translation limits instead of limits of 0.
-	// Tests only, to reach the providers.
+	// TranslationLimiter, when set, replaces the limits of the instance settings. Tests only.
 	TranslationLimiter translation.Limiter
 	// Meter, when set, records the metrics instead of the adapter that cfg.MetricsExporter
 	// selects. Tests only, to inspect the measurements with testkit.Meter.
@@ -491,7 +493,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	}
 	a.setUpDeadJobPurger(cfg)
 	if a.Mailer = opts.Mailer; a.Mailer == nil {
-		if a.Mailer, err = newMailer(ctx, cfg, a.Logger); err != nil {
+		if a.Mailer, err = newMailer(ctx, cfg, a.Logger, a.Meter); err != nil {
 			return nil, err
 		}
 	}
@@ -604,7 +606,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	return a, nil
 }
 
-func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
+func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger, meter kernel.Meter) (kernel.Mailer, error) {
 	switch cfg.Mail {
 	case "", "none":
 		return mailnone.New(logger, mailnone.Options{LogMessages: cfg.Profile == "development"}), nil
@@ -615,6 +617,8 @@ func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger) (ke
 		})
 	case "ses":
 		return newSESMailer(ctx, cfg)
+	case "plugin":
+		return newPluginMailer(cfg, meter)
 	default:
 		return nil, fmt.Errorf("mail %q is not implemented yet", cfg.Mail)
 	}

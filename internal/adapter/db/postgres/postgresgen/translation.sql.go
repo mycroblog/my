@@ -12,35 +12,68 @@ import (
 	"time"
 )
 
-const addTranslationAccountUsage = `-- name: AddTranslationAccountUsage :exec
-INSERT INTO translation_account_usage (account_id, month, characters) VALUES ($1, $2, $3)
-ON CONFLICT (account_id, month) DO UPDATE SET characters = translation_account_usage.characters + excluded.characters
+const addTranslationAccountUsageWithin = `-- name: AddTranslationAccountUsageWithin :execrows
+UPDATE translation_account_usage SET characters = characters + $1
+WHERE account_id = $2 AND month = $3 AND characters + $1 <= $4
 `
 
-type AddTranslationAccountUsageParams struct {
-	AccountID  string
-	Month      string
-	Characters int64
+type AddTranslationAccountUsageWithinParams struct {
+	Characters    int64
+	AccountID     string
+	Month         string
+	MaxCharacters int64
 }
 
-func (q *Queries) AddTranslationAccountUsage(ctx context.Context, arg AddTranslationAccountUsageParams) error {
-	_, err := q.db.Exec(ctx, addTranslationAccountUsage, arg.AccountID, arg.Month, arg.Characters)
+func (q *Queries) AddTranslationAccountUsageWithin(ctx context.Context, arg AddTranslationAccountUsageWithinParams) (int64, error) {
+	result, err := q.db.Exec(ctx, addTranslationAccountUsageWithin,
+		arg.Characters,
+		arg.AccountID,
+		arg.Month,
+		arg.MaxCharacters,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const addTranslationCacheHit = `-- name: AddTranslationCacheHit :exec
+INSERT INTO translation_server_usage (month, cache_hits) VALUES ($1, 1)
+ON CONFLICT (month) DO UPDATE SET cache_hits = translation_server_usage.cache_hits + 1
+`
+
+func (q *Queries) AddTranslationCacheHit(ctx context.Context, month string) error {
+	_, err := q.db.Exec(ctx, addTranslationCacheHit, month)
 	return err
 }
 
-const addTranslationServerUsage = `-- name: AddTranslationServerUsage :exec
-INSERT INTO translation_server_usage (month, characters) VALUES ($1, $2)
-ON CONFLICT (month) DO UPDATE SET characters = translation_server_usage.characters + excluded.characters
+const addTranslationCacheMiss = `-- name: AddTranslationCacheMiss :exec
+INSERT INTO translation_server_usage (month, cache_misses) VALUES ($1, 1)
+ON CONFLICT (month) DO UPDATE SET cache_misses = translation_server_usage.cache_misses + 1
 `
 
-type AddTranslationServerUsageParams struct {
-	Month      string
-	Characters int64
+func (q *Queries) AddTranslationCacheMiss(ctx context.Context, month string) error {
+	_, err := q.db.Exec(ctx, addTranslationCacheMiss, month)
+	return err
 }
 
-func (q *Queries) AddTranslationServerUsage(ctx context.Context, arg AddTranslationServerUsageParams) error {
-	_, err := q.db.Exec(ctx, addTranslationServerUsage, arg.Month, arg.Characters)
-	return err
+const addTranslationServerUsageWithin = `-- name: AddTranslationServerUsageWithin :execrows
+UPDATE translation_server_usage SET characters = characters + $1
+WHERE month = $2 AND characters + $1 <= $3
+`
+
+type AddTranslationServerUsageWithinParams struct {
+	Characters    int64
+	Month         string
+	MaxCharacters int64
+}
+
+func (q *Queries) AddTranslationServerUsageWithin(ctx context.Context, arg AddTranslationServerUsageWithinParams) (int64, error) {
+	result, err := q.db.Exec(ctx, addTranslationServerUsageWithin, arg.Characters, arg.Month, arg.MaxCharacters)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const deleteStatusTranslation = `-- name: DeleteStatusTranslation :exec
@@ -97,6 +130,31 @@ func (q *Queries) DeleteTranslationServerUsageBefore(ctx context.Context, month 
 	return err
 }
 
+const ensureTranslationAccountUsage = `-- name: EnsureTranslationAccountUsage :exec
+INSERT INTO translation_account_usage (account_id, month, characters) VALUES ($1, $2, 0)
+ON CONFLICT (account_id, month) DO NOTHING
+`
+
+type EnsureTranslationAccountUsageParams struct {
+	AccountID string
+	Month     string
+}
+
+func (q *Queries) EnsureTranslationAccountUsage(ctx context.Context, arg EnsureTranslationAccountUsageParams) error {
+	_, err := q.db.Exec(ctx, ensureTranslationAccountUsage, arg.AccountID, arg.Month)
+	return err
+}
+
+const ensureTranslationServerUsage = `-- name: EnsureTranslationServerUsage :exec
+INSERT INTO translation_server_usage (month) VALUES ($1)
+ON CONFLICT (month) DO NOTHING
+`
+
+func (q *Queries) EnsureTranslationServerUsage(ctx context.Context, month string) error {
+	_, err := q.db.Exec(ctx, ensureTranslationServerUsage, month)
+	return err
+}
+
 const getTranslationAccountUsage = `-- name: GetTranslationAccountUsage :one
 SELECT characters FROM translation_account_usage WHERE account_id = $1 AND month = $2
 `
@@ -114,14 +172,20 @@ func (q *Queries) GetTranslationAccountUsage(ctx context.Context, arg GetTransla
 }
 
 const getTranslationServerUsage = `-- name: GetTranslationServerUsage :one
-SELECT characters FROM translation_server_usage WHERE month = $1
+SELECT characters, cache_hits, cache_misses FROM translation_server_usage WHERE month = $1
 `
 
-func (q *Queries) GetTranslationServerUsage(ctx context.Context, month string) (int64, error) {
+type GetTranslationServerUsageRow struct {
+	Characters  int64
+	CacheHits   int64
+	CacheMisses int64
+}
+
+func (q *Queries) GetTranslationServerUsage(ctx context.Context, month string) (GetTranslationServerUsageRow, error) {
 	row := q.db.QueryRow(ctx, getTranslationServerUsage, month)
-	var characters int64
-	err := row.Scan(&characters)
-	return characters, err
+	var i GetTranslationServerUsageRow
+	err := row.Scan(&i.Characters, &i.CacheHits, &i.CacheMisses)
+	return i, err
 }
 
 const insertStatusTranslation = `-- name: InsertStatusTranslation :execrows
