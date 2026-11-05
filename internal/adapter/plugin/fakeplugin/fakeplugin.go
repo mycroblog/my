@@ -16,6 +16,7 @@ import (
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
 
+	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/mailer/v1/mailerv1connect"
 	probev1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1/probev1connect"
 )
@@ -28,6 +29,8 @@ type Options struct {
 	Broken bool
 	// Block holds every call until its context ends.
 	Block bool
+	// Mailbox is the mail service of the fake's mailer kind. Without it the fake does not serve the kind.
+	Mailbox *Mailbox
 }
 
 // Recorder tells what reached a fake.
@@ -61,6 +64,7 @@ func (r *Recorder) wrap(token string, h http.Handler) http.Handler {
 func Connect(o Options) (http.Handler, *Recorder) {
 	server := connect.NewServer()
 	probev1connect.RegisterProbeServiceHandler(server, &probeServer{o: o})
+	mailerv1connect.RegisterMailerServiceHandler(server, &mailerServer{o: o})
 	mux := http.NewServeMux()
 	connecthttp.Mount(mux, server)
 	r := new(Recorder)
@@ -130,6 +134,7 @@ func JSON(o Options) (http.Handler, *Recorder) {
 			"extra":   "a field the server does not know, which it ignores",
 		})
 	})
+	serveMailerJSON(mux, o)
 	r := new(Recorder)
 	return r.wrap(o.Token, mux), r
 }

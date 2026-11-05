@@ -65,7 +65,7 @@ excluded_packages() {
     no_payments_payjp) echo "$m/payment/payjp" ;;
     no_voice_livekit) echo "$m/voice/livekit" ;;
     no_voice_sora) echo "$m/voice/sora" ;;
-    no_plugins) echo "$m/plugin/client $m/plugin/contract connectrpc.com/connect/v2" ;;
+    no_plugins) echo "$m/plugin/client $m/plugin/contract $m/mail/plugin connectrpc.com/connect/v2" ;;
     no_otel) echo "$m/telemetry/otel $m/telemetry/otel/otlptest go.opentelemetry.io/otel/sdk/metric go.opentelemetry.io/otel/sdk/trace go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp" ;;
     e2e_fakes) ;; # adds the fakes and leaves nothing out
     *)

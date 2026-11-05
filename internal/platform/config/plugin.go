@@ -25,6 +25,9 @@ func pluginFields() []field {
 	return fields
 }
 
+// pluginAddressRequiredWhen documents the kinds whose address another setting requires, which pluginChecks checks.
+var pluginAddressRequiredWhen = map[string]string{kind.Mailer: "when `mail = plugin`"}
+
 func pluginFieldsOf(k kind.Kind) []field {
 	store := func(c *Config, change func(*kind.Destination)) {
 		if c.Plugins == nil {
@@ -51,6 +54,7 @@ func pluginFieldsOf(k kind.Kind) []field {
 			key: k.Key(kind.SuffixAddress),
 			doc: "Where the `" + k.Name + "` plugin listens: " + forms +
 				". Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.",
+			requiredWhen: pluginAddressRequiredWhen[k.Name],
 			check: func(v string) error {
 				_, err := kind.ParseAddress(v)
 				return err
@@ -111,6 +115,9 @@ func pluginFieldsOf(k kind.Kind) []field {
 // pluginChecks applies the rules of a destination to the settings of every kind (ADR-0146 §5, §6).
 func pluginChecks(vals map[string]string, present map[string]bool) []Issue {
 	var issues []Issue
+	if pluginsLeftOutTag == "" && vals["mail"] == "plugin" && !present["plugin_mailer_address"] {
+		issues = append(issues, Issue{Key: "plugin_mailer_address", Missing: true, Message: "required when mail is plugin"})
+	}
 	for _, k := range kind.Delegated() {
 		address := k.Key(kind.SuffixAddress)
 		if !present[address] {

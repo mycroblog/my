@@ -219,7 +219,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`plugin_billing_tls_cert_file`](#plugin_billing_tls_cert_file) | `MY_PLUGIN_BILLING_TLS_CERT_FILE` | none | no | no |
 | [`plugin_billing_tls_key_file`](#plugin_billing_tls_key_file) | `MY_PLUGIN_BILLING_TLS_KEY_FILE` | none | no | no |
 | [`plugin_billing_timeout`](#plugin_billing_timeout) | `MY_PLUGIN_BILLING_TIMEOUT` | `2m0s` | no | no |
-| [`plugin_mailer_address`](#plugin_mailer_address) | `MY_PLUGIN_MAILER_ADDRESS` | none | no | no |
+| [`plugin_mailer_address`](#plugin_mailer_address) | `MY_PLUGIN_MAILER_ADDRESS` | none | when `mail = plugin` | no |
 | [`plugin_mailer_protocol`](#plugin_mailer_protocol) | `MY_PLUGIN_MAILER_PROTOCOL` | `json` | no | no |
 | [`plugin_mailer_token`](#plugin_mailer_token) | `MY_PLUGIN_MAILER_TOKEN` | none | no | yes |
 | [`plugin_mailer_tls_ca_file`](#plugin_mailer_tls_ca_file) | `MY_PLUGIN_MAILER_TLS_CA_FILE` | the system's roots | no | no |
@@ -940,6 +940,7 @@ Mailer adapter for verification emails. With `none`, no email reaches users, so 
 | `none` | Sends nothing and logs each message's category; for instances without email. With `profile = development` it logs the whole message, including its links. |
 | `smtp` | SMTP submission with mandatory STARTTLS (`mail_smtp_host`, `mail_smtp_port`, `mail_smtp_username`, `mail_smtp_password`). |
 | `ses` | The Amazon SES v2 API (`mail_ses_region`, `mail_ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out. |
+| `plugin` | A plugin of yours (`plugin_mailer_address`), for a mail service that offers only an HTTP API. It gets the parts of each message and adds `Message-ID`, `Date`, and `Auto-Submitted` itself (docs/operations/email.md). The build tag `no_plugins` leaves it out. |
 
 ### `mail_from`
 
@@ -1826,7 +1827,7 @@ Where the `mailer` plugin listens: `unix:///path/to.sock` or `https://host[:port
 
 - Environment variable: `MY_PLUGIN_MAILER_ADDRESS`
 - Default: none
-- Required: no
+- Required: when `mail = plugin`
 
 ### `plugin_mailer_protocol`
 

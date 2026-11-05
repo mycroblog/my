@@ -260,7 +260,7 @@ internal/
     translator/fake/ # translation.Translator のテスト用の fake（訳は断片の前に翻訳先の言語を付けたもの。提供元を呼ばない）
     payment/fake/    # supporters.PaymentProvider のテスト用の fake（事業者の側をメモリに持ち、webhook に HMAC で署名する。本番の binary に入らない）
     search/fake/     # search.Index のテスト用の fake（文書をメモリに持つ。本番のビルドには入らず、ビルドタグ e2e_fakes の search = fake だけが使う。ADR-0149 §3）
-    mail/{none,smtp,ses}/
+    mail/{none,smtp,ses,plugin}/
     telemetry/{none,otel,emf}/ # kernel.Meter（ADR-0055）と kernel.Tracer（none・otel、ADR-0055）の実装。OpenTelemetry と Prometheus のライブラリはここだけが import する
     telemetry/dbtrace/ # DB のアダプタが共有するトランザクションとクエリの span（ADR-0055 §13）
     telemetry/sysmetrics/ # システムの指標の計器と、アダプタの境界で測るデコレーター（ADR-0055）

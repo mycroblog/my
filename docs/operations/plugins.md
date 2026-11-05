@@ -113,6 +113,10 @@ The exit code is 1 when a case fails. The flags mean what the settings mean: `--
 `http://` address. The plugin under test can be a real one, so a case that does more than the call itself runs only when
 a flag asks for it. A kind whose contract the version does not have yet reports `reachable` and a `SKIP`.
 
+`--kind mailer` makes no call of the RPC unless `--mail-to` names a recipient. With it, the command sends one real message there,
+from `--mail-from` (default: the same address), and checks that the plugin refuses a request with no recipient.
+[Sending email](email.md#a-plugin-mail--plugin) has the contract of the kind.
+
 `probe` is the smallest kind, and the server delegates nothing to it. Serve it first, to check the transport, the
 protocol, and the authentication before you write the rest of the plugin.
 

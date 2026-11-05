@@ -55,9 +55,11 @@ The setting `mail` chooses how email is sent.
 | `none` (default) | Sends nothing and writes `mail not sent (mail = none)` to the server log with the category of the message. With `profile = development`, the line also holds the addresses, the subject, and the body, links included. For setups that do not use email, and for development |
 | `smtp` | Sends by SMTP submission. It requires STARTTLS and verifies the certificate before authenticating and sending |
 | `ses` | Sends with the Amazon SES v2 API (`SendEmail` with raw content). It authenticates through the AWS SDK's default credential chain (an IAM role, for example) and holds no SMTP password |
+| `plugin` | Hands each message to a [plugin](#a-plugin-mail--plugin) that you run, for a mail service that offers only an HTTP API |
 
 The settings of `smtp` are `mail_from`, `mail_smtp_host`, `mail_smtp_port` (default 587), `mail_smtp_username`, and `mail_smtp_password`. The
-settings of `ses` are `mail_from`, `mail_ses_region`, and `mail_ses_configuration_set`.
+settings of `ses` are `mail_from`, `mail_ses_region`, and `mail_ses_configuration_set`. The settings of `plugin` are `mail_from`
+and `plugin_mailer_address` with the rest of [its destination](plugins.md#the-destination).
 `mail_from` is a bare address such as `noreply@social.example`. `From` becomes `"<server name>" <mail_from>`, and the domain
 of `mail_from` is also the domain of `Message-ID` and the one SPF, DKIM, and DMARC apply to (see below).
 `Reply-To` is the instance setting `contact_email` when it is set ([instance settings](instance-settings.md)).
@@ -91,6 +93,95 @@ email with its own values.
 SES never rejects a recipient synchronously at send time. It accepts a send to an address on the account suppression list and
 then does not deliver it, and the bounce arrives later as a notification (SNS).
 To record bounces and complaints, set up the SES notifications below to arrive through SNS.
+
+### A plugin (`mail = plugin`)
+
+For a mail service that offers only an HTTP API, run a [plugin](plugins.md) of the kind `mailer` and let it call the service.
+
+```sh
+MY_MAIL=plugin
+MY_MAIL_FROM=noreply@social.example
+MY_PLUGIN_MAILER_ADDRESS=unix:///run/my/mailer.sock
+```
+
+`plugin_mailer_address` is required with this value. A message can hold a secret, such as a verification link, so the kind
+refuses `http://`, on loopback too: use a Unix socket or `https://`. The server starts without calling the plugin, even when it
+is down, and the email waits in its job.
+
+With `plugin_mailer_protocol = json`, the default, a plugin needs an HTTP server and a JSON library alone
+([A plugin with no library](plugins.md#a-plugin-with-no-library)). `Send` lasts 30 seconds at most, or `plugin_mailer_timeout`,
+below 5 minutes. A request is at most 2 MiB and a response at most 64 KiB.
+
+```text
+POST /my.plugin.mailer.v1.MailerService/Send
+Content-Type: application/json
+Connect-Protocol-Version: 1
+
+{
+  "category": "CATEGORY_NOTIFICATION",
+  "to": "alice@example.com",
+  "envelopeFrom": "noreply@social.example",
+  "fromName": "My Server",
+  "replyTo": "admin@social.example",
+  "subject": "You have a new follower",
+  "text": "Bob followed you.\n",
+  "html": "<p>Bob followed you.</p>",
+  "headers": {
+    "List-Unsubscribe": "<https://social.example/unsubscribe?token=abc>",
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+  }
+}
+```
+
+```text
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"outcome":"OUTCOME_RECIPIENT_REJECTED","enhancedStatus":"5.1.1"}
+```
+
+The server checks a message before it calls the plugin, so a header cannot be injected through any of these fields. The request
+holds the parts of the message, and the plugin builds what its service needs:
+
+- **The plugin adds three headers:** a `Message-ID` that is unique per message, on the domain of `envelopeFrom`; a `Date`; and
+  `Auto-Submitted: auto-generated`, which keeps automatic replies from looping. A service that writes its own `Message-ID` and
+  `Date` covers those two.
+- `From` is `fromName` and `envelopeFrom`. `fromName`, `replyTo`, `html`, and `headers` may be missing. `headers` holds only the
+  two `List-Unsubscribe` headers.
+- The addresses are UTF-8. A plugin whose service needs ASCII converts the domain to Punycode, and answers `OUTCOME_INVALID` for a
+  local part it cannot send.
+- The same message may come twice, since a job that fails is retried. Do not write a message to a log.
+
+`outcome` says what happened to the message:
+
+| `outcome` | Meaning | The server |
+| --- | --- | --- |
+| `OUTCOME_SENT` | The service took the message | Completes the job |
+| `OUTCOME_INVALID` | It cannot be sent as it is | Fails the job at once |
+| `OUTCOME_RECIPIENT_REJECTED` | The address does not exist | Fails the job at once, and [suppresses the address](#suppression-of-addresses-that-cannot-receive-email) |
+| `OUTCOME_REJECTED` | The service refused it for good, for another reason | Fails the job at once |
+| `OUTCOME_TEMPORARY` | The service refused it for now, or did not answer | Retries the job |
+| Anything else, or none | | Retries the job |
+
+An HTTP error, or Connect's `{"code":"unavailable"}` with the matching status, is also a temporary failure.
+`enhancedStatus` is optional: the enhanced status code of a refusal, such as `5.1.1`. The server keeps a code of class 5 of a
+rejection and of class 4 of `OUTCOME_TEMPORARY`, and ignores anything else. It keeps no text from a plugin, so put no reason there:
+a reason belongs in the plugin's own log.
+
+The server learns of a bounce only from this answer. It has no endpoint for the later bounces and complaints of a plugin's
+service, so a bounce that the service reports afterwards does not suppress the address.
+
+Test the plugin with the `my` binary:
+
+```sh
+my plugin test --kind mailer unix:///run/my/mailer.sock
+my plugin test --kind mailer --mail-to you@example.com --mail-from noreply@social.example unix:///run/my/mailer.sock
+```
+
+The first only checks that the plugin answers, and sends nothing. The second sends a real message to `--mail-to`, and sends the
+plugin a request with no recipient, which it must refuse. The server cannot see the message after the plugin has it, so look at
+the one that arrives: its headers must hold `Message-ID`, `Date`, and `Auto-Submitted: auto-generated`.
+See [Test a plugin](plugins.md#test-a-plugin).
 
 ### Receive SES notifications (SNS)
 
@@ -230,6 +321,9 @@ The types are in the table above.
   (the sending rate limit), `SendingPausedException`, `MailFromDomainNotVerifiedException`, `AccountSuspendedException`, and
   requests that do not reach SES are temporary failures, and a retry succeeds once you fix the account or the permissions.
   Only the SES error code is kept in the error text.
+- With `mail = plugin`, the [`outcome`](#a-plugin-mail--plugin) of the answer decides. A plugin that cannot be reached, or that
+  answers an error, is a temporary failure, and it counts in [`my.plugin.failures`](running.md). Only the outcome and the enhanced
+  status code are kept in the error text, so the reason of a failure is in the plugin's log.
 - A transactional email that is older than a time limit from its request (15 minutes for a reset, 1 hour for a confirmation) is
   completed without being sent. This keeps old links from arriving late; it is not a failure.
 - When the job runs and there is no reason to send (the address is suppressed, it has been confirmed in the meantime, or the user
@@ -243,6 +337,7 @@ A successful send can be followed in the structured `job` log line of each run (
 
 When the SMTP server says the recipient address does not exist (a 5xx to `RCPT TO` with an extended status of `5.1.x`), the
 server records the address as a hard bounce and stops sending to it.
+With `mail = plugin`, `OUTCOME_RECIPIENT_REJECTED` records the same hard bounce, and nothing else does.
 With `mail = smtp`, only this rejection at send time is recorded. Asynchronous bounces that come back after the SMTP server
 accepted the email, and complaint feedback loops, are not received.
 With `mail = ses`, SES never rejects a recipient synchronously, so nothing is recorded at send time; permanent bounces and
