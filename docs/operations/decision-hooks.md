@@ -27,8 +27,8 @@ What each answer does:
 
 - `drop` stops the subject and stores nothing of it. A wrong `drop` silently hides a post from its followers too, so read
   what a hook would drop in `observe` before you enforce it.
-- `flag` lets it through and files one report per decision. On `inbound.follow` and `local.status` this version only records
-  the decision and files no report.
+- `flag` lets it through and files one report per decision. On `inbound.follow` this version only records the decision
+  and files no report.
 - `mark_sensitive` lets it through and shows its attachments as sensitive until a moderator cancels the decision.
 - `require_approval` holds the sign-up for approval.
 - `reject` refuses it, with fixed text that shows nothing of the plugin's answer. On `signup.check` this also takes
@@ -105,7 +105,8 @@ What it sends and when:
 - Starting a voice chat room posts its first post without this hook.
 
 When it enforces, `reject` refuses the post and nothing is stored. The author sees fixed text ("This post was not published.")
-and a way to appeal; never the reason or the note. `flag` lets the post through.
+and a way to appeal; never the reason or the note. `flag` lets the post through and files one report of it, against its
+author.
 
 ### Appeals
 

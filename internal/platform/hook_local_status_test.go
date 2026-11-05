@@ -18,10 +18,12 @@ import (
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/hook"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/platform"
 )
@@ -209,6 +211,37 @@ func TestLocalStatusHook(t *testing.T) {
 		t.Error("an exempt account was sent to the plugin")
 	}
 	rejected("bob", "spam from bob")
+
+	// A flag in enforce posts the post and files one report of it, by the instance actor, with the decision as its origin.
+	plugin.verdict.Store("VERDICT_FLAG")
+	flagged := c.post("bob", text("maybe spam from bob"))
+	plugin.verdict.Store("VERDICT_REJECT")
+	if res := c.do("carol", http.MethodGet, "/statuses/"+flagged.Id, nil, nil); res.StatusCode != http.StatusOK {
+		t.Errorf("GET the flagged post = %d", res.StatusCode)
+	}
+	reports, err := c.app.Moderation.Reports(ctx, appmoderation.ReportQuery{}, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 1 {
+		t.Fatalf("reports = %+v, want one", reports)
+	}
+	instanceActor, err := c.app.Accounts.EnsureInstanceActor(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := reports[0].Report
+	if report.ReporterAccountID != instanceActor.ID || report.TargetAccountID != c.ids["bob"] || report.Category != moderation.CategorySpam ||
+		len(report.StatusIDs) != 1 || report.StatusIDs[0] != flagged.Id {
+		t.Errorf("the report = %+v", report)
+	}
+	flags, err := c.app.Hooks.List(ctx, apphook.ListQuery{Hook: hook.LocalStatus, Outcome: hook.Flag, Limit: 10})
+	if err != nil || len(flags) != 1 || flags[0].Decision.SubjectKey != flagged.Id {
+		t.Fatalf("the flag = %+v, %v", flags, err)
+	}
+	if o := report.HookOrigin; o == nil || o.DecisionID != flags[0].Decision.ID || o.Hook != "local.status" || o.ReasonCode != "spam" {
+		t.Errorf("the origin = %+v", report.HookOrigin)
+	}
 
 	// Established accounts are not sent by default.
 	calls = plugin.calls.Load()

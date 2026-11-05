@@ -9,6 +9,8 @@ import (
 
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/identity"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -46,6 +48,7 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 				}
 				return settings.HookLocalStatusAccountAge(), nil
 			},
+			Reports: localStatusReports{a}, // reads a.Moderation, built after this
 		},
 		Clock: a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
 	})
@@ -61,6 +64,26 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 			return a.Media.EmojiTags(ctx, ids)
 		},
 		Clock: a.Clock, IDs: a.IDs, Host: cfg.Host,
+	})
+}
+
+// localStatusReports files the report of a flag decision of local.status on the moderation module,
+// which the content module may not import: the instance actor reports the author's new post.
+type localStatusReports struct{ a *App }
+
+func (r localStatusReports) ReporterAccountID(ctx context.Context) (string, error) {
+	actor, err := r.a.Accounts.EnsureInstanceActor(ctx)
+	if err != nil {
+		return "", err
+	}
+	return actor.ID, nil
+}
+
+func (r localStatusReports) FileHookReport(ctx context.Context, tx uow.Tx, in content.HookReport) (bool, error) {
+	res := in.Result
+	return r.a.Moderation.FileHookReport(ctx, tx, appmoderation.HookReportInput{
+		ReporterAccountID: in.ReporterAccountID, TargetAccountID: in.AuthorAccountID, StatusIDs: []string{in.StatusID},
+		DecisionID: res.DecisionID, Hook: string(res.Hook), ReasonCode: string(res.Reason), Comment: res.Note,
 	})
 }
 
