@@ -6,14 +6,19 @@
 #
 #   deploy/opentofu/upgrade.sh --project P --region R --image ghcr.io/mycroblog/my:0.2.0 [--name my]
 #   deploy/opentofu/upgrade.sh --platform aws-lambda --region R --image <ECR image> [--name my]
+#   deploy/opentofu/upgrade.sh --platform aws-ecs --region R --image <image> [--name my]
 #       [--maintenance]         switch the service to the maintenance mode first, and back with the new revision
 #       [--allow-destructive]   pass -allow-destructive to my schema apply, when the release notes call for it
 #       [--plan]                only print what the upgrade would run: upgrade-check and my schema apply -dry-run
 #       [--migrate-only]        stop before the service, for the first deployment, when it does not exist yet
 #
 # The order of the steps is the same on every platform; each platform is the functions gcp_* or aws_* below. On aws-lambda
-# nothing has run on AWS, and a step needs an image that answers the function's invocation: read modules/app-aws-lambda.
+# nothing has run on AWS, and a step needs an image that answers the function's invocation: read modules/app-aws-lambda. On
+# aws-ecs nothing has run on AWS either: read modules/app-aws-ecs.
 set -euo pipefail
+
+# shellcheck source=/dev/null # Beside this script, at the same release.
+. "$(dirname "${BASH_SOURCE[0]}")/aws-ecs.sh"
 
 usage() {
   sed -n '/^#   deploy/,/^#       \[--migrate-only/p' "$0" | sed 's/^# \{0,1\}//' >&2
@@ -40,7 +45,7 @@ while [ "$#" -gt 0 ]; do
 done
 case "$platform" in
   gcp-cloud-run) [ -n "$project" ] || usage ;;
-  aws-lambda) ;;
+  aws-lambda | aws-ecs) ;;
   *) usage ;;
 esac
 if [ -z "$region" ] || [ -z "$image" ]; then
@@ -131,9 +136,76 @@ aws_service_takes_image() {
   done
 }
 
+ecs_logs_hint() {
+  echo "aws logs tail /ecs/$name --region $region --since 1h"
+}
+
+# ecs_deploy TASK_DEFINITION moves the service to a revision and waits for the outcome. A deployment that fails goes back on its
+# own, which leaves the service stable on the old revision, so it is the state of this revision's deployment that counts.
+ecs_deploy() {
+  local definition="$1" deployments state polls=0
+  aws ecs update-service --cluster "$name" --service "$name" --task-definition "$definition" --region "$region" > /dev/null || return 1
+  while :; do
+    deployments="$(aws ecs describe-services --cluster "$name" --services "$name" --region "$region" --query 'services[0].deployments' --output json)" || return 1
+    state="$(jq -r --arg definition "$definition" '[.[] | select(.taskDefinition == $definition)][0].rolloutState // "GONE"' <<< "$deployments")"
+    case "$state" in
+      COMPLETED) return 0 ;;
+      FAILED | GONE)
+        echo "upgrade.sh: the deployment of $definition failed and goes back: aws ecs describe-services --cluster $name --services $name --region $region --query 'services[0].events[:10]'" >&2
+        return 1
+        ;;
+    esac
+    polls=$((polls + 1))
+    if [ "$polls" -ge 720 ]; then
+      echo "upgrade.sh: the deployment of $definition is still in progress after an hour" >&2
+      return 1
+    fi
+    sleep "${UPGRADE_POLL_SECONDS:-5}"
+  done
+}
+
+ecs_maintenance_on() {
+  local definition
+  definition="$(ecs_new_revision "$region" "$name" '.environment = ([.environment[] | select(.name != "MY_MAINTENANCE")] + [{name: "MY_MAINTENANCE", value: "true"}])')" || return 1
+  ecs_deploy "$definition"
+}
+
+ecs_one_off_takes_image() {
+  if [ "$(ecs_image "$region" "$job")" != "$image" ]; then
+    # shellcheck disable=SC2016 # For jq.
+    ecs_new_revision "$region" "$job" '.image = $image' --arg image "$image" > /dev/null
+  fi
+}
+
+# ecs_step ARG... runs one my command as a one-off task. Its network is in a parameter, since the service may not exist yet.
+ecs_step() {
+  local network
+  network="$(aws ssm get-parameter --name "/my/$name/network" --region "$region" --query Parameter.Value --output text)" || return 1
+  "$(dirname "$0")/console.sh" "$@" <<< "$(jq -nc --arg region "$region" --arg cluster "$name" --arg family "$job" --arg network "$network" --arg log_group "/ecs/$name" \
+    '{platform: "aws-ecs", region: $region, cluster: $cluster, task_definition: $family, container: "my", network: $network, log_group: $log_group, log_prefix: "migrate"}')"
+}
+
+ecs_plan_hint() {
+  echo "The SQL is in the output above, and in the logs: $(ecs_logs_hint)"
+}
+
+# A new task takes traffic only once the load balancer's health check on /readyz passes, and the old one stays until then. The
+# parameter comes last and is what apply reads: until it changes, apply puts the image back.
+ecs_service_takes_image() {
+  # shellcheck disable=SC2016 # For jq.
+  local filter='.image = $image' definition
+  if [ "$maintenance" = 1 ]; then
+    filter="$filter | .environment |= map(select(.name != \"MY_MAINTENANCE\"))"
+  fi
+  definition="$(ecs_new_revision "$region" "$name" "$filter" --arg image "$image")" || return 1
+  ecs_deploy "$definition" || return 1
+  aws ssm put-parameter --name "/my/$name/image" --value "$image" --type String --overwrite --region "$region" > /dev/null
+}
+
 case "$platform" in
   gcp-cloud-run) prefix=gcp ;;
   aws-lambda) prefix=aws ;;
+  aws-ecs) prefix=ecs ;;
 esac
 
 failed() {

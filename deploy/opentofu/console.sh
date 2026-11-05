@@ -11,6 +11,9 @@
 # the output as JSON and the command, and returns the command's exit code (deploy/opentofu/README.md).
 set -euo pipefail
 
+# shellcheck source=/dev/null # Beside this script, at the same release.
+. "$(dirname "${BASH_SOURCE[0]}")/aws-ecs.sh"
+
 usage() {
   echo "usage: tofu output -json console | console.sh <my command>" >&2
   exit 2
@@ -136,6 +139,87 @@ run_aws_lambda() {
   return "$code"
 }
 
+# run_aws_ecs CONSOLE ARG... runs the command as a one-off task and waits for it, for as long as it takes. The output of a task
+# goes to CloudWatch Logs only, so it is read back from there, which needs logs:FilterLogEvents. No retry of the start: a command
+# must not run twice because a socket closed.
+run_aws_ecs() {
+  local console="$1"
+  shift
+  local region cluster family container network log_group log_prefix service
+  region="$(jq -er .region <<< "$console")" || return 1
+  cluster="$(jq -er .cluster <<< "$console")" || return 1
+  family="$(jq -er .task_definition <<< "$console")" || return 1
+  container="$(jq -er .container <<< "$console")" || return 1
+  network="$(jq -er .network <<< "$console")" || return 1
+  log_group="$(jq -er .log_group <<< "$console")" || return 1
+  log_prefix="$(jq -er .log_prefix <<< "$console")" || return 1
+  service="$(jq -r '.service // empty' <<< "$console")"
+
+  # As on the other platforms: apply follows the upgrade script only through what it reads, and a command of another release must
+  # not touch the database. Absent when the caller has already chosen the image.
+  if [ -n "$service" ]; then
+    local running_definition running current
+    running_definition="$(aws ecs describe-services --cluster "$cluster" --services "$service" --region "$region" --query 'services[0].taskDefinition' --output text)" || return 1
+    running="$(ecs_image "$region" "$running_definition")" || return 1
+    current="$(ecs_image "$region" "$family")" || return 1
+    if [ "$running" != "$current" ]; then
+      # shellcheck disable=SC2016 # For jq.
+      ecs_new_revision "$region" "$family" '.image = $image' --arg image "$running" > /dev/null || return 1
+    fi
+  fi
+
+  local overrides started task
+  overrides="$(printf '%s\0' "$@" | jq -Rsc --arg container "$container" '{containerOverrides: [{name: $container, command: (split("\u0000")[:-1])}]}')" || return 1
+  started="$(AWS_MAX_ATTEMPTS=1 aws ecs run-task --cluster "$cluster" --task-definition "$family" --region "$region" --launch-type FARGATE \
+    --count 1 --started-by console.sh --network-configuration "$network" --overrides "$overrides" --output json)" || return 1
+  task="$(jq -r '.tasks[0].taskArn // empty' <<< "$started")"
+  if [ -z "$task" ]; then
+    echo "console.sh: the task did not start: $(jq -c '.failures' <<< "$started")" >&2
+    return 1
+  fi
+
+  # A failed read does not mean the task failed: it keeps running, so keep asking for a while.
+  local described="" unread=0
+  while :; do
+    if described="$(aws ecs describe-tasks --cluster "$cluster" --tasks "$task" --region "$region" --query 'tasks[0]' --output json)"; then
+      unread=0
+      [ "$(jq -r .lastStatus <<< "$described")" != "STOPPED" ] || break
+    else
+      unread=$((unread + 1))
+      if [ "$unread" -ge 12 ]; then
+        echo "console.sh: cannot read the task, which may still be running: $task" >&2
+        return 1
+      fi
+    fi
+    sleep "${CONSOLE_POLL_SECONDS:-5}"
+  done
+
+  # Logs arrive a little after the task ends: read until two reads in a row agree, for a minute at most.
+  local stream="$log_prefix/$container/${task##*/}" entries="[]" previous="" attempt
+  for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+    entries="$(aws logs filter-log-events --log-group-name "$log_group" --log-stream-names "$stream" --region "$region" --query 'events[].message' --output json)" || entries="[]"
+    if [ "$entries" != "[]" ] && [ "$entries" = "$previous" ]; then
+      break
+    fi
+    previous="$entries"
+    [ "$attempt" = 12 ] || sleep "${CONSOLE_LOG_WAIT_SECONDS:-5}"
+  done
+  if [ "$entries" = "[]" ] || [ "$entries" = "null" ]; then
+    echo "console.sh: no output found in $log_group/$stream yet; reading it needs logs:FilterLogEvents" >&2
+  else
+    jq -r '.[]' <<< "$entries"
+  fi
+
+  # A task that could not start, such as on an image it cannot pull, has no exit code of its own.
+  local code
+  code="$(jq -r --arg container "$container" '.containers[] | select(.name == $container) | .exitCode // empty' <<< "$described")"
+  if [ -z "$code" ]; then
+    echo "console.sh: the task stopped with no exit code: $(jq -r '.stoppedReason // "see the task"' <<< "$described")" >&2
+    return 1
+  fi
+  return "$code"
+}
+
 [ "$#" -gt 0 ] || usage
 [ ! -t 0 ] || usage
 
@@ -150,6 +234,7 @@ code=0
 case "$platform" in
   gcp-cloud-run) run_gcp_cloud_run "$console" "$@" || code=$? ;;
   aws-lambda) run_aws_lambda "$console" "$@" || code=$? ;;
+  aws-ecs) run_aws_ecs "$console" "$@" || code=$? ;;
   *)
     echo "console.sh: this script does not know the platform $platform" >&2
     exit 1
