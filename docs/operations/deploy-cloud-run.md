@@ -8,7 +8,8 @@ The modules also work with Terraform 1.11 or later: use `terraform` where this g
 
 | Part | Module | Resources |
 | --- | --- | --- |
-| Server | `app-gcp-cloud-run` | A Cloud Run service with `role = all`, a migration job, a console job while you need it, a service account, public access, and a domain mapping |
+| Server | `app-gcp-cloud-run` | A Cloud Run service with `role = all`, a migration job, a console job while you need it, a service account, and public access |
+| Traffic | `ingress-gcp-domain-mapping` or `ingress-gcp-load-balancer` | A domain mapping, or a global external Application Load Balancer with a certificate |
 | Jobs | `queue-gcp-cloud-tasks` | A Cloud Tasks queue, a Cloud Scheduler job, and a service account that calls the server |
 | Media | `blob-gcp-gcs` | A private bucket |
 | Real-time updates | `stream-gcp-pubsub` | A topic and a custom role. The server creates and removes its own subscriptions |
@@ -113,15 +114,9 @@ tofu apply
 
 ### 8. Point the domain at the service
 
-`tofu output dns_records` lists the records to add at your DNS provider. The domain mapping has limits:
+`tofu output dns_records` lists the records to add at your DNS provider. The server must answer at `https://{host}`, because Cloud Tasks and Cloud Scheduler call that address. Until the domain works, tasks and ticks fail and are tried again, which costs next to nothing.
 
-- It is a Preview feature that Google Cloud does not recommend for production, because of latency, and it exists in some regions only (`asia-northeast1`, `us-central1`, and a few others).
-- You must be a [verified owner of the domain](https://cloud.google.com/run/docs/mapping-custom-domains) before you apply, and so must every other account that applies.
-- The certificate can take up to 24 hours.
-
-The alternative is a global external Application Load Balancer, which costs a monthly fee. Set `domain_mapping = false` and add its forwarding rule's address to `trusted_proxies` of the app module. Whatever you choose, the server must answer at `https://{host}`, because Cloud Tasks and Cloud Scheduler call that address.
-
-Until the domain works, tasks and ticks fail and are tried again, which costs next to nothing.
+See [How traffic reaches the service](#how-traffic-reaches-the-service) for what this example uses and what else you can choose.
 
 ### 9. Create the first administrator
 
@@ -202,6 +197,25 @@ module "db" {
 
 For a store outside Google Cloud, such as an S3-compatible service, leave the `blob` module out of `backends` and pass its settings through `env` and `secret_env`.
 
+## How traffic reaches the service
+
+The `ingress` block of `main.tf` decides this, and swapping one for the other changes only that block. In plain terms: the mapping is cheap but not meant for production, and the load balancer is meant for production but costs money every month.
+
+| | `ingress-gcp-domain-mapping` (the example's default) | `ingress-gcp-load-balancer` |
+| --- | --- | --- |
+| Monthly fee | None | About $18 for the forwarding rules, plus a charge per GB. Check the [pricing page](https://cloud.google.com/vpc/network-pricing): this figure could not be confirmed there |
+| Status | A Preview feature that Google Cloud does not recommend for production, because of latency | Google Cloud's recommended way |
+| Regions | `asia-northeast1`, `us-central1`, and a few others | Any |
+| DNS | The records that `tofu output dns_records` lists | An `A` record of the same output |
+| Certificate | Google-managed, up to 24 hours | Google-managed, active once DNS points at the address |
+| Domain ownership | You, and every other account that applies, must be a [verified owner](https://cloud.google.com/run/docs/mapping-custom-domains) before you apply | Nothing beyond DNS |
+| `run.app` URL | Reachable by anyone | Refused from the internet, so nobody goes around the load balancer |
+| `MY_TRUSTED_PROXIES` | `169.254.0.0/16` | `169.254.0.0/16` and the load balancer's address |
+
+The load balancer also needs `compute.googleapis.com`. Cloud Tasks and Cloud Scheduler call `https://{host}`, so they arrive through whichever you choose.
+
+To use the service's own URL or something else in front, such as a CDN, remove the `ingress` block and its line in `backends`. Set `MY_TRUSTED_PROXIES` in `env` to what connects to the server. Whatever you put in front must still answer at `https://{host}`.
+
 ## Changing the KEK backend
 
 Replacing the `kek` block is one block in `main.tf`, but on an instance with data it is not free. The database holds secrets wrapped with the current key, so an instance that loses it can no longer read them, and every account's keys are among them.
@@ -214,7 +228,7 @@ On a new instance with no data, nothing needs to move.
 
 - **Uploads**: Cloud Run refuses an HTTP/1 request above 32 MiB, and the server speaks HTTP/1.1. The example therefore sets `MY_MEDIA_MAX_AV_BYTES` to 30 MiB, against the default of 100 MiB, so that a larger upload gets the server's own answer.
 - **Streams**: the request timeout, 15 minutes by default, ends an open stream, and the client connects again.
-- **Client addresses**: the rate limits rely on `trusted_proxies`, `169.254.0.0/16` by default. Check the addresses in the first request logs: a client IP that shows a `169.254` address means that the setting is wrong for your project.
+- **Client addresses**: the rate limits rely on `MY_TRUSTED_PROXIES`, which the `ingress` module sets. Check the addresses in the first request logs: a client IP that is a `169.254` address or a Google address means that the setting is wrong for your project.
 - **Public access**: the service grants `roles/run.invoker` to `allUsers`, which an organization policy on domain-restricted sharing refuses. Such a project needs an exception.
 
 ## Costs
@@ -229,6 +243,7 @@ The figures are approximate list prices for one region, from 2026-10 and 2026-11
 | Cloud Storage | About $0.02 per GiB a month | 5 GiB are free only in `us-east1`, `us-west1`, and `us-central1`. Media goes out through Cloud Run |
 | Pub/Sub | $0: 10 GiB free | Only while streams are open |
 | Secret Manager | Cents | A few free versions, then a few cents per version |
+| Load balancer, if you use one | About $18 a month, not confirmed on the pricing page | A charge per GB; see [How traffic reaches the service](#how-traffic-reaches-the-service) |
 | Neon | See below | Storage: 1 GB on the Free plan, then $0.35 per GB-month |
 
 Two things decide the real cost:

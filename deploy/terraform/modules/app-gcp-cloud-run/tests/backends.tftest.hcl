@@ -357,3 +357,122 @@ run "app_with_the_kms_kek" {
     error_message = "the jobs must run as the account that holds the grant"
   }
 }
+
+run "no_ingress" {
+  command = plan
+
+  assert {
+    condition     = google_cloud_run_v2_service.server.ingress == "INGRESS_TRAFFIC_ALL" && output.env["MY_TRUSTED_PROXIES"] == "169.254.0.0/16"
+    error_message = "without an ingress the service must be open, and trust Cloud Run's front end"
+  }
+}
+
+run "two_ingresses_asking_differently_fail" {
+  command = plan
+
+  variables {
+    backends = [
+      { service_ingress = "INGRESS_TRAFFIC_ALL" },
+      { service_ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "an_unknown_ingress_setting_fails" {
+  command = plan
+
+  variables {
+    backends = [{ service_ingress = "OPEN" }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+# Swapping the ingress: the same app with each ingress-* module.
+run "ingress_domain_mapping" {
+  module {
+    source = "../ingress-gcp-domain-mapping"
+  }
+
+  variables {
+    project_id   = "p"
+    region       = "asia-northeast1"
+    host         = "social.example.org"
+    service_name = "my"
+  }
+
+  assert {
+    condition     = google_cloud_run_domain_mapping.host.spec[0].route_name == "my"
+    error_message = "the mapping must point at the service"
+  }
+}
+
+run "ingress_load_balancer" {
+  module {
+    source = "../ingress-gcp-load-balancer"
+  }
+
+  variables {
+    project_id   = "p"
+    region       = "asia-northeast1"
+    host         = "social.example.org"
+    service_name = "my"
+  }
+
+  assert {
+    condition     = google_compute_region_network_endpoint_group.service.cloud_run[0].service == "my" && google_compute_managed_ssl_certificate.host.managed[0].domains[0] == "social.example.org"
+    error_message = "the load balancer must reach the service, and hold a certificate for host"
+  }
+
+  assert {
+    condition     = google_compute_global_forwarding_rule.https.port_range == "443" && google_compute_global_forwarding_rule.redirect.port_range == "80" && google_compute_url_map.redirect.default_url_redirect[0].https_redirect
+    error_message = "the load balancer must serve HTTPS and redirect HTTP"
+  }
+
+  assert {
+    condition     = one(output.dns_records).type == "A" && one(output.dns_records).rrdata == output.ip_address
+    error_message = "the DNS record must point at the load balancer"
+  }
+}
+
+run "app_with_the_domain_mapping" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress },
+    ]
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.server.ingress == "INGRESS_TRAFFIC_ALL" && output.env["MY_TRUSTED_PROXIES"] == "169.254.0.0/16"
+    error_message = "the mapping must leave the service open, and trust Cloud Run's front end"
+  }
+}
+
+run "app_with_the_load_balancer" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress },
+    ]
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.server.ingress == "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+    error_message = "with a load balancer the service must take traffic from it alone"
+  }
+
+  assert {
+    condition     = startswith(output.env["MY_TRUSTED_PROXIES"], "169.254.0.0/16, ") && length(split(", ", output.env["MY_TRUSTED_PROXIES"])) == 2
+    error_message = "the server must trust the load balancer's address to find the client's"
+  }
+
+  assert {
+    condition     = output.env["MY_HOST"] == "social.example.org" && output.env["MY_KEK_FILE"] == "/secrets/my-kek-file/value"
+    error_message = "swapping the ingress changed something else"
+  }
+}

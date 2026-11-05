@@ -101,12 +101,6 @@ variable "console_enabled" {
   default     = false
 }
 
-variable "domain_mapping" {
-  description = "Maps host to the service with a Cloud Run domain mapping."
-  type        = bool
-  default     = true
-}
-
 output "console" {
   description = "Pipe this to console.sh: tofu output -json console | ../../console.sh <my command>."
   value       = module.app.console
@@ -118,6 +112,6 @@ output "service_uri" {
 }
 
 output "dns_records" {
-  description = "The records to add at the DNS provider for the domain mapping."
-  value       = module.app.dns_records
+  description = "The records to add at the DNS provider."
+  value       = module.ingress.dns_records
 }

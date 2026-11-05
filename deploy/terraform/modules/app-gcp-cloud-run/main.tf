@@ -12,12 +12,24 @@ terraform {
 }
 
 locals {
-  base_env = {
-    MY_HOST            = var.host
-    MY_ROLE            = var.role
-    MY_PROFILE         = var.profile
-    MY_TRUSTED_PROXIES = var.trusted_proxies
-  }
+  # An ingress says who connects to the server. Without one, the connection comes from Cloud Run's own front end.
+  named_settings = concat(
+    flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files))]),
+    keys(var.env),
+    keys(var.secret_env),
+    keys(var.secret_files),
+  )
+  base_env = merge(
+    {
+      MY_HOST    = var.host
+      MY_ROLE    = var.role
+      MY_PROFILE = var.profile
+    },
+    contains(local.named_settings, "MY_TRUSTED_PROXIES") ? {} : { MY_TRUSTED_PROXIES = "169.254.0.0/16" },
+  )
+
+  service_ingresses = distinct(compact([for b in var.backends : b.service_ingress]))
+  service_ingress   = length(local.service_ingresses) == 0 ? "INGRESS_TRAFFIC_ALL" : local.service_ingresses[0]
 
   # Each one is mounted at a directory of its own, and its variable names the path.
   secret_files = merge(var.secret_files, [for b in var.backends : b.secret_files]...)
@@ -32,14 +44,7 @@ locals {
 
   # Every setting by the name the server reads: MY_KEK and MY_KEK_FILE are one setting.
   setting_names = [
-    for name in concat(
-      ["GOMEMLIMIT"],
-      keys(local.base_env),
-      flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files))]),
-      keys(var.env),
-      keys(var.secret_env),
-      keys(var.secret_files),
-    ) : trimsuffix(name, "_FILE")
+    for name in concat(["GOMEMLIMIT"], keys(local.base_env), local.named_settings) : trimsuffix(name, "_FILE")
   ]
   duplicate_settings = [
     for name in distinct(local.setting_names) : name
@@ -77,6 +82,10 @@ resource "google_service_account" "server" {
     precondition {
       condition     = length(local.duplicate_settings) == 0
       error_message = "These settings are named more than once across the backends, env, secret_env, secret_files, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
+    }
+    precondition {
+      condition     = length(local.service_ingresses) <= 1
+      error_message = "The backends ask for different ingress settings of the service: ${join(", ", local.service_ingresses)}. Use one ingress-* module."
     }
     precondition {
       condition     = !local.kek_missing
@@ -153,7 +162,7 @@ resource "google_cloud_run_v2_service" "server" {
   project             = var.project_id
   location            = var.region
   name                = var.name
-  ingress             = "INGRESS_TRAFFIC_ALL"
+  ingress             = local.service_ingress
   deletion_protection = var.deletion_protection
 
   template {
@@ -406,20 +415,4 @@ resource "google_cloud_run_v2_service_iam_member" "invoker" {
   name     = google_cloud_run_v2_service.server.name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${each.value}"
-}
-
-resource "google_cloud_run_domain_mapping" "host" {
-  count = var.domain_mapping ? 1 : 0
-
-  project  = var.project_id
-  location = var.region
-  name     = var.host
-
-  metadata {
-    namespace = var.project_id
-  }
-
-  spec {
-    route_name = google_cloud_run_v2_service.server.name
-  }
 }

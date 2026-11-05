@@ -101,3 +101,24 @@ run "the_operator_can_set_any_other_setting" {
     error_message = "plain settings must reach the server"
   }
 }
+
+run "the_example_keeps_the_domain_mapping" {
+  command = plan
+
+  assert {
+    condition     = module.app.service_ingress == "INGRESS_TRAFFIC_ALL" && module.app.env["MY_TRUSTED_PROXIES"] == "169.254.0.0/16"
+    error_message = "the domain mapping must leave the service open"
+  }
+}
+
+# The same composition with the other block: no cycle, and the ingress's settings reach the service.
+run "the_load_balancer_swaps_in_one_block" {
+  module {
+    source = "../../tests/ingress-load-balancer"
+  }
+
+  assert {
+    condition     = output.service_ingress == "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" && one(output.dns_records).type == "A"
+    error_message = "the load balancer must take over how traffic reaches the service"
+  }
+}

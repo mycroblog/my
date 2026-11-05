@@ -1,6 +1,7 @@
 # app-gcp-cloud-run
 
 The server on Cloud Run: the service, the migration job, the optional console job, the service account, and public access.
+How traffic reaches the service is an [`ingress-*` module](../../README.md#the-ingress-contract).
 It merges what the backends return ([the contract](../../README.md#the-backend-contract)) and follows
 [the app contract](../../README.md#the-app-contract).
 
@@ -16,13 +17,11 @@ It merges what the backends return ([the contract](../../README.md#the-backend-c
 | `secret_files` | `{}` | Secret settings to mount as files: a `_FILE` variable name to secret ID. Backends return the same, and `kek-gcp-secret-manager` delivers the KEK this way |
 | `name` | `my` | The service, `<name>-migrate`, `<name>-console`, and `<name>-server` |
 | `role`, `profile` | `all`, `production` | `MY_ROLE` and `MY_PROFILE`. `web` is refused: it does not serve what Cloud Tasks calls |
-| `trusted_proxies` | `169.254.0.0/16` | `MY_TRUSTED_PROXIES`, the addresses of Cloud Run's front end |
 | `cpu`, `memory_mib` | `1`, `512` | Instance size. `GOMEMLIMIT` follows, at 90% |
 | `max_instances`, `concurrency` | `3`, `80` | With `pool_max_conns` of the database URL, they bound the connections |
 | `request_timeout_seconds` | `900` | Longer than the dispatch deadline of the queue |
 | `job_memory_mib`, `job_timeout_seconds` | `1024`, `3600` | Size and limit of the jobs |
 | `console_enabled` | `false` | Creates the console job |
-| `domain_mapping` | `false` | Maps `host` to the service with a Cloud Run domain mapping |
 | `deletion_protection` | `true` | Refuses to delete the service and the jobs |
 
 ## Outputs
@@ -31,11 +30,12 @@ It merges what the backends return ([the contract](../../README.md#the-backend-c
 | --- | --- |
 | `console` | For `console.sh`, or null while the console is off |
 | `service_name`, `service_uri`, `service_account_email`, `migration_job` | What was created |
-| `dns_records` | The records of the domain mapping |
+| `service_ingress` | Who may reach the service |
 | `env`, `secret_env` | The merged settings |
 
 ## What it does
 
+- Without an ingress, the service takes traffic from anywhere (`INGRESS_TRAFFIC_ALL`) and `MY_TRUSTED_PROXIES` is `169.254.0.0/16`, Cloud Run's front end. A backend or `env` that names `MY_TRUSTED_PROXIES` replaces that.
 - Request-based billing with min instances 0, a `/readyz` startup probe, and a `/healthz` liveness probe. The startup probe
   keeps a revision from taking traffic until the schema and the data upgrade steps of its release are in place.
 - A plan fails without a KEK when the server needs one: `kek` with `key_manager = local`, or `kms_key` otherwise.

@@ -55,13 +55,6 @@ variable "profile" {
   nullable    = false
 }
 
-variable "trusted_proxies" {
-  description = "trusted_proxies: the addresses Cloud Run's front end connects from. Add a load balancer's address if one is in front."
-  type        = string
-  default     = "169.254.0.0/16"
-  nullable    = false
-}
-
 variable "backends" {
   description = "What each backend module returns. A setting named twice fails the plan."
   type = list(object({
@@ -74,6 +67,8 @@ variable "backends" {
       resource = optional(string)
     })), [])
     invokers = optional(list(string), [])
+    # What an ingress needs of the service: who may reach it.
+    service_ingress = optional(string)
   }))
   default  = []
   nullable = false
@@ -88,6 +83,13 @@ variable "backends" {
       ]
     ]))
     error_message = "Each role has a scope of project (without a resource), or bucket, topic, queue, service_account, or crypto_key (with its resource)."
+  }
+
+  validation {
+    condition = alltrue([
+      for b in var.backends : b.service_ingress == null || contains(["INGRESS_TRAFFIC_ALL", "INGRESS_TRAFFIC_INTERNAL_ONLY", "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"], b.service_ingress)
+    ])
+    error_message = "service_ingress must be INGRESS_TRAFFIC_ALL, INGRESS_TRAFFIC_INTERNAL_ONLY, or INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER."
   }
 
   validation {
@@ -175,13 +177,6 @@ variable "job_timeout_seconds" {
 
 variable "console_enabled" {
   description = "Creates the console job. Turn it on for as long as you need it."
-  type        = bool
-  default     = false
-  nullable    = false
-}
-
-variable "domain_mapping" {
-  description = "Maps host to the service with a Cloud Run domain mapping (a Preview feature, in some regions only). Leave it off when a load balancer or another front serves host."
   type        = bool
   default     = false
   nullable    = false

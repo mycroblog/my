@@ -93,6 +93,26 @@ module "mail" {
   password_secret_id = module.secrets.ids["smtp_password"]
 }
 
+# To put a global external Application Load Balancer in front instead, replace this block. It costs a monthly fee: the guide
+# has the trade-off. To use the service's own URL or something else in front, remove this block and its line in backends.
+#
+#   module "ingress" {
+#     source = "../../modules/ingress-gcp-load-balancer"
+#
+#     project_id   = var.project_id
+#     region       = var.region
+#     host         = var.host
+#     service_name = module.app.service_name
+#   }
+module "ingress" {
+  source = "../../modules/ingress-gcp-domain-mapping"
+
+  project_id   = var.project_id
+  region       = var.region
+  host         = var.host
+  service_name = module.app.service_name
+}
+
 module "app" {
   source = "../../modules/app-gcp-cloud-run"
 
@@ -101,9 +121,13 @@ module "app" {
   image           = var.image
   host            = var.host
   console_enabled = var.console_enabled
-  domain_mapping  = var.domain_mapping
 
-  backends = [module.secrets, module.kek, module.db, module.queue, module.blob, module.stream, module.mail]
+  backends = [
+    module.secrets, module.kek, module.db, module.queue, module.blob, module.stream, module.mail,
+    # Named output by output, unlike the rest: the ingress reads the service's name, so its dns_records depend on the app,
+    # and a reference to the whole module would be a cycle. These two outputs do not.
+    { env = module.ingress.env, service_ingress = module.ingress.service_ingress },
+  ]
 
   env = merge(
     # Cloud Run refuses an HTTP/1 request above 32 MiB, and the server speaks HTTP/1.1. var.env can set another value.

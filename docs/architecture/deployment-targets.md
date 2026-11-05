@@ -48,7 +48,7 @@
 
 ## Google Cloud
 
-- **構成**: Cloud Run サービス 1 つ（`role = all`）。Cloud Tasks と Cloud Scheduler が `https://{host}` の `/_internal/jobs` と `/_internal/tick` を HTTP で叩く（push 型）。OpenTofu モジュールは `deploy/terraform`（`app-gcp-cloud-run`、`queue-gcp-cloud-tasks`、`blob-gcp-gcs`、`stream-gcp-pubsub`、`db-external`、`mail-smtp`、`secrets-gcp-secret-manager`、`kek-gcp-secret-manager`、`kek-gcp-kms`）。KEK と VAPID 鍵は最初の apply が ephemeral リソースと write-only 属性で生成し、plan にも state にも値を残さないで、手順は [Deploying on Cloud Run](../operations/deploy-cloud-run.md) にある。
+- **構成**: Cloud Run サービス 1 つ（`role = all`）。Cloud Tasks と Cloud Scheduler が `https://{host}` の `/_internal/jobs` と `/_internal/tick` を HTTP で叩く（push 型）。OpenTofu モジュールは `deploy/terraform`（`app-gcp-cloud-run`、`queue-gcp-cloud-tasks`、`blob-gcp-gcs`、`stream-gcp-pubsub`、`db-external`、`mail-smtp`、`secrets-gcp-secret-manager`、`kek-gcp-secret-manager`、`kek-gcp-kms`、`ingress-gcp-domain-mapping`、`ingress-gcp-load-balancer`）。KEK と VAPID 鍵は最初の apply が ephemeral リソースと write-only 属性で生成し、plan にも state にも値を残さないで、手順は [Deploying on Cloud Run](../operations/deploy-cloud-run.md) にある。
 - **固定費の前提**: 既定の毎分の tick は DB に触るので、Neon のコンピュートが止まらない（0.25 CU で 182.5 CU-hours / 月、Free の 100 CU-hours を超え、Launch で約 $19 / 月）。Free に収めるなら `tick_schedule` を 10 分ごとなどに延ばす。開いたストリームが 1 本でもあればインスタンスに課金が続く（1 vCPU・512 MiB で 1 本を 1 か月開き続けると約 $60 / 月。単価は要検証）。「ほぼ $0」はこの 2 つを抑えたときの値である。
 - **RDB**: Cloud SQL は最小構成でも常時課金のため、低コスト構成では Neon（Postgres）などの外部サーバーレス PostgreSQL を推奨。
   Cloud Run + SQLite は永続ディスクがないため非推奨。
@@ -328,6 +328,7 @@
 | Cloud Run（外部アプリケーションロードバランサの背後） | 同上 | `169.254.0.0/16` に加えてロードバランサの転送ルールの IP | `x-forwarded-for` |
 | AWS Application Load Balancer（EC2 / ECS） | ロードバランサのノード（ALB のサブネットのプライベート IP） | ALB を置いたサブネット（または VPC）の CIDR | `x-forwarded-for`（ALB の `routing.http.xff_header_processing.mode` は既定の `append` のままにする） |
 
+- ロードバランサの背後では、サービスの ingress を `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` にする（`run.app` の URL から回り込めないように）。Cloud Tasks と Cloud Scheduler は `https://{host}` を呼ぶのでロードバランサを通る。`deploy/terraform` の `ingress-*` モジュールがこの違いを持つ。
 - Google Cloud のロードバランサと Cloud Run は `X-Forwarded-For` を `<クライアントが送った値>, <クライアント IP>[, <ロードバランサの IP>]` の形にする。
   要検証: Cloud Run のコンテナから見た接続元が `169.254.0.0/16` に収まること（最初のデプロイでアクセスログの接続元を確認し、ずれていれば表を直す）。
 - AWS ALB の `append` モードはクライアント IP を `X-Forwarded-For` の右端に追記する。`preserve` は追記しない（クライアントの値がそのまま届く）ので使わない。

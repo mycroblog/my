@@ -12,6 +12,8 @@ deploy/terraform/
   modules/stream-gcp-pubsub/      topic and the permissions for the server's own subscriptions
   modules/db-external/            a connection URL in Secret Manager: Neon, or any PostgreSQL
   modules/mail-smtp/              email through any SMTP service
+  modules/ingress-gcp-domain-mapping/  traffic through a Cloud Run domain mapping
+  modules/ingress-gcp-load-balancer/   traffic through a global external Application Load Balancer
   modules/secrets-gcp-secret-manager/  secrets to fill by hand, or a VAPID key it generates
   modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
   modules/kek-gcp-kms/                 the KEK in Cloud KMS
@@ -34,6 +36,7 @@ A module is named `<role>-<provider>-<service>`, so that the name says what it i
 | `mail` | Email |
 | `secrets` | Secrets, filled by hand or generated |
 | `kek` | The key that encrypts the secrets in the database |
+| `ingress` | How traffic reaches the app |
 
 A module with no provider of its own drops that part (`db-external`, `mail-smtp`). Cloud SQL would be `db-gcp-cloud-sql`.
 
@@ -72,6 +75,29 @@ The rules:
 Anything without a backend (VAPID, CAPTCHA, and every other setting) goes through the `env` and
 `secret_env`, and `secret_files` inputs of the app module, so no setting is out of reach. A backend of your own needs nothing special: any
 object with these fields can go in `backends`.
+
+## The ingress contract
+
+An `ingress-*` module decides how traffic reaches the app. It is a backend, with these outputs on top of the usual ones:
+
+| Output | Type | Meaning |
+| --- | --- | --- |
+| `env` | `map(string)` | At least `MY_TRUSTED_PROXIES`: who connects to the server, so that it finds the client's address in `X-Forwarded-For` |
+| `service_ingress` | `string` | Who may reach the service: `INGRESS_TRAFFIC_ALL`, or `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` when only a load balancer may |
+| `dns_records` | `list(object({ name, type, rrdata }))` | What to add at the DNS provider |
+
+It takes the service's name from the app (`service_name = module.app.service_name`) while the app takes its settings, which
+is no cycle as long as `env` and `service_ingress` do not depend on anything that reads the service's name. `dns_records` may,
+so `backends` names those two outputs rather than the whole module:
+
+```hcl
+{ env = module.ingress.env, service_ingress = module.ingress.service_ingress },
+```
+
+Swapping one for another changes only the module block. An ingress may also be left out, for a deployment that uses the
+service's own URL or has something else in front. Remove the block and that line: the service is then open
+(`INGRESS_TRAFFIC_ALL`), and `MY_TRUSTED_PROXIES` is `169.254.0.0/16`, or what `env` of the app says. Two ingresses that ask
+for different settings fail the plan.
 
 ## The app contract
 

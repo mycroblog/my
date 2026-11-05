@@ -31,9 +31,9 @@ output "console" {
   } : null
 }
 
-output "dns_records" {
-  description = "The records to add at the DNS provider for the domain mapping."
-  value       = try(google_cloud_run_domain_mapping.host[0].status[0].resource_records, [])
+output "service_ingress" {
+  description = "Who may reach the service, as the backends asked."
+  value       = local.service_ingress
 }
 
 output "env" {
