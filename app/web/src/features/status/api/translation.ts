@@ -5,7 +5,7 @@
 // when the user changes (lib/auth/userData).
 import { type SanitizedHtml, serverSanitizedHtml } from "@my/ui";
 import type { components } from "@mycroblog/mykit";
-import { queryOptions, skipToken } from "@tanstack/react-query";
+import { type QueryClient, queryOptions, skipToken } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
 
@@ -85,6 +85,16 @@ export function statusTranslationQueryOptions(post: { id: string; edited_at?: st
     queryFn: skipToken,
     staleTime: Infinity,
   });
+}
+
+/** Keeps `translation` of one version of a post in a language (web-client/README.md S1). */
+export function cacheStatusTranslation(
+  queryClient: QueryClient,
+  post: { id: string; edited_at?: string },
+  targetLanguage: string,
+  translation: TranslatedPost,
+): void {
+  queryClient.setQueryData(statusTranslationQueryOptions(post, targetLanguage).queryKey, translation);
 }
 
 /** Whether a BCP 47 tag has a script subtag: four letters after the language. */

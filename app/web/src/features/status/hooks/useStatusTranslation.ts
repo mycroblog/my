@@ -11,6 +11,7 @@ import { ApiError, errorMessage } from "../../../lib/errors";
 import { type Translate, useT } from "../../../lib/i18n";
 import type { Status } from "../api/status";
 import {
+  cacheStatusTranslation,
   isInLanguage,
   statusTranslationQueryOptions,
   type TranslatedBy,
@@ -82,7 +83,7 @@ export function useStatusTranslation(status: Status, enabled: boolean): StatusTr
   const translate = useMutation({
     mutationFn: ({ translator: run }: { translator: Translator; version: string }) => run(target),
     onSuccess: (answer, variables) => {
-      queryClient.setQueryData(options.queryKey, answer);
+      cacheStatusTranslation(queryClient, post, target, answer);
       setShownVersion(variables.version);
       notice.inPlace(translatedByText(answer.by, t));
     },

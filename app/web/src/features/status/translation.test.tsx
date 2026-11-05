@@ -87,6 +87,13 @@ async function openedPost() {
   return screen.findByRole("article", { name: /^Opened post/ });
 }
 
+/** The element with `dir="auto"` that holds exactly `text`: user content in its own direction (Y10). */
+function findUserText(scope: HTMLElement, text: string) {
+  return within(scope).findByText(
+    (_, element) => element?.getAttribute("dir") === "auto" && element.textContent === text,
+  );
+}
+
 /** The announcer's polite live region; the app's offline bar is another status region, empty while online. */
 function announcer() {
   const region = screen.getAllByRole("status").find((element) => element.hasAttribute("data-live-announcer"));
@@ -176,12 +183,10 @@ describe("the translation", () => {
     const button = await within(post).findByRole("button", { name: "Translate" });
     await user.click(button);
 
-    const text = await within(post).findByText(translated);
-    expect(within(post).queryByText(original)).not.toBeInTheDocument();
     // The body says its own language and direction.
-    const body = text.closest("[dir]");
-    expect(body).toHaveAttribute("dir", "auto");
+    const body = await findUserText(post, translated);
     expect(body).toHaveAttribute("lang", "en");
+    expect(within(post).queryByText(original)).not.toBeInTheDocument();
 
     // A machine translation says so, above the text and in the article's description, with a link to the provider.
     const link = within(post).getByRole("link", { name: /Fake Translate/ });
@@ -235,10 +240,13 @@ describe("the translation", () => {
 
     const post = await openedPost();
     await user.click(await within(post).findByRole("button", { name: "Translate" }));
-    const line = (await within(post).findByText("Machine translated by Fake Translate")).closest("p");
+    await within(post).findByText("Machine translated by Fake Translate");
     expect(within(post).queryByRole("link", { name: /Fake Translate/ })).not.toBeInTheDocument();
-    expect(line?.querySelector("img")).toHaveAttribute("src", `https://${instanceFixture.domain}/logo.svg`);
-    expect(line?.querySelector("img")).toHaveAttribute("alt", "");
+    // Decorative: the sentence names what it shows.
+    const logos = within(post)
+      .getAllByAltText("")
+      .filter((image) => image.getAttribute("src") === `https://${instanceFixture.domain}/logo.svg`);
+    expect(logos).toHaveLength(1);
   });
 
   test("translates the content warning and the poll's options, and goes back from both", async () => {
@@ -262,9 +270,7 @@ describe("the translation", () => {
     expect(within(post).getByText("Attention")).toBeVisible();
     await user.click(await within(post).findByRole("button", { name: "Translate" }));
 
-    const warning = await within(post).findByText("Careful");
-    expect(warning.closest("p")).toHaveAttribute("dir", "auto");
-    expect(warning.closest("p")).toHaveAttribute("lang", "en");
+    expect(await findUserText(post, "Careful")).toHaveAttribute("lang", "en");
     // The line that says what this is stays outside the closed warning.
     expect(within(post).getByText(/Machine translated by/)).toBeVisible();
 
