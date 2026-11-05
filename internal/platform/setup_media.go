@@ -46,6 +46,12 @@ func (a *App) setMediaProcessor(cfg *config.Config) error {
 	switch cfg.Media {
 	case "native":
 		a.MediaProcessor = native.New(native.Options{})
+	case "plugin":
+		p, err := newPluginMediaProcessor(cfg, native.New(native.Options{}), a.Meter)
+		if err != nil {
+			return err
+		}
+		a.MediaProcessor = p
 	default:
 		return fmt.Errorf("media %q is not implemented yet", cfg.Media)
 	}
