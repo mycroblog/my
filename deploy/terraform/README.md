@@ -162,6 +162,13 @@ creating the first administrator.
 tofu output -json console | deploy/terraform/console.sh admin create -username alice -email alice@example.com -password-link
 ```
 
+### Upgrading
+
+[`upgrade.sh`](upgrade.sh) runs the same steps in the same order on every platform: the one-off migration takes the new image, then
+`config check`, `db upgrade -check`, `schema apply`, `db upgrade`, and only then the service. Each platform is a few functions there,
+chosen by `--platform`, which is `gcp-cloud-run` unless you say otherwise. What holds a bad image back is the platform's: Cloud Run
+gives a revision no traffic until `/readyz` answers, and Lambda has nothing like that.
+
 ## Checks
 
 `scripts/task.sh terraform:check` runs `tofu fmt -check`, `tofu init -backend=false` and `tofu validate` for each module
