@@ -46,13 +46,36 @@ type StatusReview struct {
 	// sends every account. nil sends every account.
 	MaxAccountAge func(ctx context.Context) (time.Duration, error)
 	// Reports files the report of a flag inside the post's transaction (ADR-0147 §7); nil files
-	// none, and the decision is only recorded.
+	// none, and the decision is only linked to the post.
 	Reports HookReports
 }
 
-// HookReports files the report of a flag decision on a post, in the transaction that writes it.
+// HookReport is the report that a flag decision of local.status files about a new post.
+type HookReport struct {
+	// ReporterAccountID is the instance actor, which ReporterAccountID returned before the
+	// transaction.
+	ReporterAccountID string
+	AuthorAccountID   string
+	StatusID          string
+	Result            apphook.Result
+}
+
+// HookReports files the report of a flag decision on a post; the platform implements it on the
+// moderation module, which this module may not import.
 type HookReports interface {
-	FileHookReport(ctx context.Context, tx uow.Tx, r apphook.Result, authorAccountID, statusID string) error
+	// ReporterAccountID returns the reporter of an automated report, the instance actor. Create
+	// calls it before the transaction, since it may create that account.
+	ReporterAccountID(ctx context.Context) (string, error)
+	// FileHookReport files the report inside the transaction that writes the post, and reports
+	// whether it did: a decision that has a report keeps it.
+	FileHookReport(ctx context.Context, tx uow.Tx, r HookReport) (bool, error)
+}
+
+// reviewVerdict is what Create carries into its transaction: the hook's Result and, for a flag
+// that files a report, its reporter.
+type reviewVerdict struct {
+	apphook.Result
+	reporterAccountID string
 }
 
 // review asks local.status about the post that p holds, and returns the Result to carry into the
@@ -115,9 +138,22 @@ func localStatusSubject(author appaccount.Actor, p PreparedCreate) apphook.Local
 	return out
 }
 
-// reviewed acts inside the post's transaction on a flag in force: it links the decision to the
-// post, and files the report when a reporter is set, which the audit log records.
-func (s *Service) reviewed(ctx context.Context, tx uow.Tx, r apphook.Result, post Post) error {
+// verdict returns what Create carries into its transaction, resolving the reporter of a flag that
+// files a report outside it.
+func (s *Service) verdict(ctx context.Context, r apphook.Result) (reviewVerdict, error) {
+	v := reviewVerdict{Result: r}
+	if r.DecisionID == "" || r.Effect != apphook.Flag || s.d.StatusReview.Reports == nil {
+		return v, nil
+	}
+	var err error
+	v.reporterAccountID, err = s.d.StatusReview.Reports.ReporterAccountID(ctx)
+	return v, err
+}
+
+// reviewed acts inside the post's transaction on a flag in force: it files the report when a
+// reporter is set, links the decision to the post, and records the effect in the audit log.
+func (s *Service) reviewed(ctx context.Context, tx uow.Tx, v reviewVerdict, post Post) error {
+	r := v.Result
 	if r.DecisionID == "" || r.Effect != apphook.Flag {
 		return nil
 	}
@@ -128,7 +164,10 @@ func (s *Service) reviewed(ctx context.Context, tx uow.Tx, r apphook.Result, pos
 	if s.d.StatusReview.Reports == nil {
 		return nil
 	}
-	if err := s.d.StatusReview.Reports.FileHookReport(ctx, tx, r, post.Status.AuthorAccountID, post.Status.ID); err != nil {
+	filed, err := s.d.StatusReview.Reports.FileHookReport(ctx, tx, HookReport{
+		ReporterAccountID: v.reporterAccountID, AuthorAccountID: post.Status.AuthorAccountID, StatusID: post.Status.ID, Result: r,
+	})
+	if err != nil || !filed {
 		return err
 	}
 	return hooks.Applied(ctx, tx, r)

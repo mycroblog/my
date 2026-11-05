@@ -278,13 +278,17 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	if review.Effect == apphook.Reject {
 		return Post{}, &RejectedByReviewError{DecisionID: review.DecisionID, DecidedAt: review.DecidedAt}
 	}
+	verdict, err := s.verdict(ctx, review)
+	if err != nil {
+		return Post{}, err
+	}
 	var post Post
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		var err error
 		if post, err = s.CreateTx(ctx, tx, p); err != nil {
 			return err
 		}
-		return s.reviewed(ctx, tx, review, post)
+		return s.reviewed(ctx, tx, verdict, post)
 	})
 	if errors.Is(err, ErrIdempotencyKeyUsed) {
 		// A concurrent request with the same key won.
