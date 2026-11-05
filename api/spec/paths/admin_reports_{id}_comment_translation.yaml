@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/ReportId.yaml
+post:
+  operationId: translateReportComment
+  summary: Translate the comment of a report into a language
+  description: |
+    Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+    unknown report is a 404. Needs the `manage_reports` permission.
+
+    Only the reporter and the moderators read a comment, so it counts as a private post: the server
+    sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+    providers allowed private posts. The translation is never kept, and the characters sent count
+    against the server's monthly limit only. `provider` is omitted when the comment has no words to
+    translate, and the answer is the comment as it is.
+
+    The problems are those of `POST /statuses/{id}/translation`: a 422
+    `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+    comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+    `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+    `/api/v1/problems/translation-failed`.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/StatusTranslationRequest.yaml
+  responses:
+    "200":
+      description: The comment in the language.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ReportCommentTranslation.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

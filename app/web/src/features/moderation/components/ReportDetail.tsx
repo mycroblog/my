@@ -35,7 +35,7 @@ import {
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
-import { StatusCard } from "../../status";
+import { ReportCommentText, StatusCard } from "../../status";
 import { type AccountAction, type ReportDetail, reportNoteLimit } from "../api/reports";
 import { hookNameLabels } from "../hooks/useHookDecisions";
 import { useHasPermission } from "../hooks/usePermissions";
@@ -213,7 +213,7 @@ function ReportPage({ id }: { id: string }) {
           {/* A room's report points at no posts. */}
           {report.voice_room === undefined && (
             <Section surface="card" title={t("client:admin.report.posts.title")}>
-              <ReportedPosts posts={posts} />
+              <ReportedPosts report={report.id} posts={posts} />
             </Section>
           )}
           <Section surface="card" title={t("client:admin.report.target.title")}>
@@ -354,10 +354,7 @@ function ReportSummary({ report }: { report: ReportDetail }) {
           {report.comment === "" ? (
             <Text tone="muted">{t("client:admin.report.comment.none")}</Text>
           ) : (
-            // Written by the reporter, in any language (Y10).
-            <Text dir="auto" block align="start" wrap="anywhere" whitespace="preWrap">
-              {report.comment}
-            </Text>
+            <ReportCommentText report={report.id} comment={report.comment} />
           )}
         </DescriptionItem>
       </DescriptionList>
@@ -365,7 +362,7 @@ function ReportSummary({ report }: { report: ReportDetail }) {
   );
 }
 
-function ReportedPosts({ posts }: { posts: readonly ReportedStatus[] }) {
+function ReportedPosts({ report, posts }: { report: string; posts: readonly ReportedStatus[] }) {
   const t = useT();
   const intl = useIntl();
   // Refetching a remote post from its server (FR-407) is for a viewer with manage_domains.
@@ -389,7 +386,7 @@ function ReportedPosts({ posts }: { posts: readonly ReportedStatus[] }) {
                     </Hint>
                   </Box>
                 )}
-                <StatusCard status={post.value} withActions={false} />
+                <StatusCard status={post.value} withActions={false} report={report} />
                 {canRefetch && post.deletedAt === undefined && isRemote(post.value.account) && (
                   <Box paddingX="4" paddingBottom="3">
                     <Button

@@ -51,6 +51,7 @@ These names are used under the activities below. List each one you use.
 | {{IF webhooks}} Webhook receivers | {{...}} | {{...}} |
 | {{IF follow review}} Follow review service | {{...}} | {{...}} |
 | {{IF sign-up review}} Sign-up review service | {{...}} | {{...}} |
+| {{IF media review}} Media review service | {{...}} | {{...}} |
 | {{IF translation}} Translation providers | {{...}} | {{...}} |
 | {{IF external review of posts}} External review of posts from other servers | {{...}} | {{...}} |
 | Backup storage | {{...}} | {{...}} |
@@ -93,7 +94,7 @@ These names are used under the activities below. List each one you use.
 | Purposes | Publishing profiles and posts, and the interactions people ask for |
 | Data subjects | People with an account, people they mention |
 | Personal data | Profile and its versions, posts and their versions, media, favourites, reactions, boosts, bookmarks, pins, poll votes, follows, blocks, mutes, lists. Posts can hold any data a person writes, including special categories |
-| Recipients | Hosting, CDN, other users, the public web for public content, federated servers (activity 4), search engines and AI crawlers under `search_indexing` and `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, apps the person authorized |
+| Recipients | Hosting, CDN, media review service (a small processed copy of each upload), other users, the public web for public content, federated servers (activity 4), search engines and AI crawlers under `search_indexing` and `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, apps the person authorized |
 | Erasure | When the person deletes it, by their automatic deletion policy, or at account erasure. Uploads attached to nothing `{{24 hours}}`. Old versions of images after a newer version replaces them `{{30 days}}`. The record of a deleted post's URI stays |
 | Legal basis | {{e.g. contract}} |
 
@@ -197,10 +198,10 @@ Delete this activity when `translation_providers` is empty.
 
 | | |
 | --- | --- |
-| Purposes | Translating a post when a reader asks, and keeping translation within its limits |
-| Data subjects | Authors of posts, here and on other servers, and people the text names. Readers, for the count of characters |
+| Purposes | Translating a post when a reader asks, {{IF translation of reports}} translating a report when a moderator asks, and keeping translation within its limits |
+| Data subjects | Authors of posts, here and on other servers, and people the text names. Readers, for the count of characters. {{IF translation of reports}} Reporters, for the text of their comments |
 | Personal data | Whatever the text of a post holds: its body, content warning, poll options, and image descriptions. The post's address, its author, the reader, mentions, and links are replaced or left out before sending. Kept: the translations, and the characters per account and month |
-| Recipients | Translation providers, as your processors: `public`, `local`, and `unlisted` posts by default. {{IF translation to private and direct}} Also `private` and `direct` posts, for {{THE PROVIDERS YOU ALLOWED}} |
+| Recipients | Translation providers, as your processors: `public`, `local`, and `unlisted` posts by default. {{IF translation to private and direct}} Also `private` and `direct` posts, for {{THE PROVIDERS YOU ALLOWED}}. {{IF translation of reports}} The comments of reports, for the providers allowed `private` posts, and the posts reports name, when a moderator asks |
 | Erasure | Translations `{{30 days}}` from the translation, and with the post when it is deleted. Characters per account until the end of the following month, or at account erasure. At the providers: what was sent cannot be recalled. {{THEIR PERIODS}} |
 | Legal basis | {{e.g. legitimate interests}} |
 

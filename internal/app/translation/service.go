@@ -136,7 +136,8 @@ type Providers interface {
 type Limiter interface {
 	// Reserve counts characters against the limits of the account and of the server, or fails
 	// with ErrLimitReached and counts nothing. Nothing gives them back: a call may have reached
-	// the provider whatever it answers, and the port cannot tell.
+	// the provider whatever it answers, and the port cannot tell. An empty accountID, the
+	// moderators' translations of reports, counts against the server's limit only (ADR-0148 §13).
 	Reserve(ctx context.Context, accountID string, characters int) error
 }
 
@@ -169,6 +170,11 @@ type Deps struct {
 	Meter kernel.Meter
 	// Logger reports provider failures, which never hold the text of a post; nil logs nothing.
 	Logger *slog.Logger
+	// Reports gives the moderators the text of the reports that they translate; nil translates
+	// none.
+	Reports Reports
+	// ReportsToServer returns translation_reports_to_server; nil means off.
+	ReportsToServer func(ctx context.Context) (bool, error)
 }
 
 // Service translates posts on a reader's request (ADR-0148 §8).
@@ -216,32 +222,65 @@ type Translation struct {
 // that the viewer may not see fails with content.ErrNotFound, whatever is cached: every path of
 // this method starts from the view check.
 func (s *Service) Translate(ctx context.Context, viewer appcontent.Viewer, statusID, target string) (Translation, error) {
-	target = i18n.Canonicalize(target)
-	if target == "" || target == UndeterminedLanguage {
-		return Translation{}, ErrInvalidLanguage
+	target, err := targetLanguage(target)
+	if err != nil {
+		return Translation{}, err
 	}
 	post, err := s.d.Statuses.Readable(ctx, viewer, statusID)
 	if err != nil {
 		return Translation{}, err
 	}
+	return s.translate(ctx, post, target, requester{accountID: viewer.AccountID})
+}
+
+// targetLanguage returns the canonical form of a target language, or fails with
+// ErrInvalidLanguage.
+func targetLanguage(target string) (string, error) {
+	target = i18n.Canonicalize(target)
+	if target == "" || target == UndeterminedLanguage {
+		return "", ErrInvalidLanguage
+	}
+	return target, nil
+}
+
+// requester is who asks for a translation, which decides what it counts against and whether it is
+// kept.
+type requester struct {
+	// accountID is the reader's account, whose limit the characters count against with the
+	// server's; empty for the moderators of a report, whose translations count against the
+	// server's limit only (ADR-0148 §13).
+	accountID string
+	// report is set for a moderator's translation of a report, which goes to a provider only while
+	// translation_reports_to_server is on.
+	report bool
+	// deleted is set for a deleted status that a report keeps: its translation is not kept.
+	deleted bool
+}
+
+// translate is what follows the view check of a request: the author's own language, the
+// candidates, the cache, and the request to the providers (ADR-0148 §8).
+func (s *Service) translate(ctx context.Context, post appcontent.ReadableStatus, target string, by requester) (Translation, error) {
 	rev := post.Revision
 	if body, ok := bodyInLanguage(rev.Bodies, target); ok {
 		s.count(ctx, outcomeAuthor)
 		return authorWords(post, body.ContentHTML, target, body.Language), nil
 	}
-	candidates, err := s.candidates(ctx, post.EffectiveVisibility)
+	candidates, err := s.candidates(ctx, post.EffectiveVisibility, by.report)
 	if err != nil {
 		return Translation{}, err
 	}
 	if len(candidates) == 0 {
 		s.count(ctx, outcomeNoProvider)
-		return Translation{}, fmt.Errorf("status %s: %w", statusID, ErrNoProvider)
+		return Translation{}, fmt.Errorf("status %s: %w", post.Status.ID, ErrNoProvider)
 	}
-	if hit, ok, err := s.cached(ctx, post, target, candidates); err != nil {
-		return Translation{}, err
-	} else if ok {
-		s.countHit(ctx)
-		return hit, nil
+	// A deleted status has no translations left (ADR-0148 §10), and gets none.
+	if !by.deleted {
+		if hit, ok, err := s.cached(ctx, post, target, candidates); err != nil {
+			return Translation{}, err
+		} else if ok {
+			s.countHit(ctx)
+			return hit, nil
+		}
 	}
 	d, err := newDraft(post)
 	if err != nil {
@@ -251,7 +290,12 @@ func (s *Service) Translate(ctx context.Context, viewer appcontent.Viewer, statu
 		s.count(ctx, outcomeAuthor)
 		return authorWords(post, d.bodyHTML, target, d.sourceLanguage), nil
 	}
-	out, err := s.request(ctx, viewer.AccountID, post, d, target, candidates)
+	var out Translation
+	if by.deleted {
+		out, err = s.requestUnkept(ctx, post, d, target, candidates)
+	} else {
+		out, err = s.request(ctx, by, post, d, target, candidates)
+	}
 	switch {
 	case err == nil:
 	case errors.Is(err, ErrLimitReached):
@@ -267,7 +311,7 @@ func (s *Service) Translate(ctx context.Context, viewer appcontent.Viewer, statu
 // request is what is left when nothing is cached: the lock, the limit with the provider, and the
 // row. The limit comes after the lock, so that a request that ends up with another one's translation
 // never holds characters that could refuse a third request.
-func (s *Service) request(ctx context.Context, accountID string, post appcontent.ReadableStatus, d *draft, target string, candidates []Provider) (Translation, error) {
+func (s *Service) request(ctx context.Context, by requester, post appcontent.ReadableStatus, d *draft, target string, candidates []Provider) (Translation, error) {
 	key := post.Revision.ID + "|" + target
 	token := []byte(s.d.IDs.NewID())
 	hit, ok, err := s.lock(ctx, key, token, post, target, candidates)
@@ -280,7 +324,7 @@ func (s *Service) request(ctx context.Context, accountID string, post appcontent
 	}
 	defer s.unlock(ctx, key, token)
 
-	provider, stored, err := s.callProviders(ctx, accountID, post, d, target, candidates)
+	provider, stored, err := s.callProviders(ctx, by.accountID, post, d, target, candidates)
 	if err != nil {
 		return Translation{}, err
 	}
@@ -291,6 +335,22 @@ func (s *Service) request(ctx context.Context, accountID string, post appcontent
 		_, err := s.d.Repository.InsertTranslation(ctx, tx, stored)
 		return err
 	})
+	// A report keeps a status that its author deleted meanwhile: its moderators still get the
+	// translation, which is not kept (ADR-0148 §13).
+	if by.report && errors.Is(err, appcontent.ErrNotFound) {
+		err = nil
+	}
+	if err != nil {
+		return Translation{}, err
+	}
+	s.count(ctx, outcomeProvider)
+	return present(post, stored, provider), nil
+}
+
+// requestUnkept asks the providers for a translation that is not kept: that of a deleted status
+// that a report keeps. Nothing is kept to wait for, so it takes no lock.
+func (s *Service) requestUnkept(ctx context.Context, post appcontent.ReadableStatus, d *draft, target string, candidates []Provider) (Translation, error) {
+	provider, stored, err := s.callProviders(ctx, "", post, d, target, candidates)
 	if err != nil {
 		return Translation{}, err
 	}
@@ -347,11 +407,29 @@ func (s *Service) unlock(ctx context.Context, key string, token []byte) {
 // (ADR-0003).
 func (s *Service) callProviders(ctx context.Context, accountID string, post appcontent.ReadableStatus, d *draft, target string, candidates []Provider) (Provider, Stored, error) {
 	req := Request{Fragments: d.fragments(), SourceLanguage: d.sourceLanguage, TargetLanguage: target}
+	var stored Stored
+	p, err := s.ask(ctx, accountID, req, candidates, func(res Result) error {
+		var err error
+		stored, err = d.apply(res, s.d.Sanitizer)
+		return err
+	})
+	if err != nil {
+		return Provider{}, Stored{}, err
+	}
+	stored.ID, stored.StatusID, stored.RevisionID = s.d.IDs.NewID(), post.Status.ID, post.Revision.ID
+	stored.TargetLanguage, stored.Provider, stored.CreatedAt = target, p.ID, s.d.Clock.Now()
+	return p, stored, nil
+}
+
+// ask sends req to the candidates in order until accept takes an answer, and returns the provider
+// of that answer. Each call counts against the limits first; an empty accountID counts against the
+// server's limit only.
+func (s *Service) ask(ctx context.Context, accountID string, req Request, candidates []Provider, accept func(Result) error) (Provider, error) {
 	characters := CountCharacters(req.Fragments)
 	onlyUnsupported := true
 	for i, p := range candidates {
 		if err := s.d.Limiter.Reserve(ctx, accountID, characters); err != nil {
-			return Provider{}, Stored{}, err
+			return Provider{}, err
 		}
 		if i == 0 {
 			s.recordLookup(ctx, false)
@@ -366,23 +444,34 @@ func (s *Service) callProviders(ctx context.Context, accountID string, post appc
 			continue
 		}
 		onlyUnsupported = false
-		stored, err := d.apply(res, s.d.Sanitizer)
-		if err != nil {
+		if err := accept(res); err != nil {
 			s.d.Logger.WarnContext(ctx, "translation output refused", slog.String("provider", p.ID), slog.Any("error", err))
 			continue
 		}
-		stored.ID, stored.StatusID, stored.RevisionID = s.d.IDs.NewID(), post.Status.ID, post.Revision.ID
-		stored.TargetLanguage, stored.Provider, stored.CreatedAt = target, p.ID, s.d.Clock.Now()
-		return p, stored, nil
+		return p, nil
 	}
 	if onlyUnsupported {
-		return Provider{}, Stored{}, fmt.Errorf("%w: %s", ErrUnsupportedLanguage, target)
+		return Provider{}, fmt.Errorf("%w: %s", ErrUnsupportedLanguage, req.TargetLanguage)
 	}
-	return Provider{}, Stored{}, ErrFailed
+	return Provider{}, ErrFailed
 }
 
-// candidates returns the enabled providers allowed the visibility, by priority.
-func (s *Service) candidates(ctx context.Context, v appcontent.Visibility) ([]Provider, error) {
+// candidates returns the enabled providers allowed the visibility, by priority. For a report there
+// are none unless translation_reports_to_server is on, and then the same: a moderator's access lifts
+// no visibility rule (ADR-0148 §13).
+func (s *Service) candidates(ctx context.Context, v appcontent.Visibility, report bool) ([]Provider, error) {
+	if report {
+		on := false
+		if s.d.ReportsToServer != nil {
+			var err error
+			if on, err = s.d.ReportsToServer(ctx); err != nil {
+				return nil, err
+			}
+		}
+		if !on {
+			return nil, nil
+		}
+	}
 	all, err := s.d.Providers.Providers(ctx)
 	if err != nil {
 		return nil, err

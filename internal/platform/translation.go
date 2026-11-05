@@ -62,6 +62,16 @@ func (a *App) setUpTranslation(cfg *config.Config, repo translation.Repository, 
 			}
 			return s.TranslationRetentionDays(), nil
 		},
+		// The moderators translate the reports that the moderation module, built before, holds
+		// (ADR-0148 §13).
+		Reports: a.Moderation,
+		ReportsToServer: func(ctx context.Context) (bool, error) {
+			s, err := a.Instance.Settings(ctx)
+			if err != nil {
+				return false, err
+			}
+			return s.TranslationReportsToServer(), nil
+		},
 	})
 	a.Translation.RegisterJobs(a.Handlers, a.Scheduler)
 	return nil

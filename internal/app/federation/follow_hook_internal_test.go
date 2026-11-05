@@ -22,6 +22,11 @@ func (g unconfiguredGate) Decide(context.Context, apphook.Call) (apphook.Result,
 	return apphook.Result{}, nil
 }
 
+func (g unconfiguredGate) Recorded(context.Context, apphook.Name, string) (apphook.Result, error) {
+	g.t.Error("Recorded called on a hook with no plugin")
+	return apphook.Result{}, nil
+}
+
 func (unconfiguredGate) LinkStatus(context.Context, uow.Tx, string, string) error { return nil }
 
 func (unconfiguredGate) Applied(context.Context, uow.Tx, apphook.Result) error { return nil }
@@ -30,7 +35,7 @@ func (unconfiguredGate) Applied(context.Context, uow.Tx, apphook.Result) error {
 func TestReviewWithoutAPlugin(t *testing.T) {
 	t.Parallel()
 	for name, gate := range map[string]apphook.Gate{"no gate": nil, "no plugin": unconfiguredGate{t}} {
-		if err := (followHandlers{d: FollowHandlerDeps{Hooks: gate}}).review(t.Context(), &InboxActivity{}); err != nil {
+		if _, err := (followHandlers{d: FollowHandlerDeps{Hooks: gate}}).review(t.Context(), &InboxActivity{}); err != nil {
 			t.Errorf("%s: %v", name, err)
 		}
 	}

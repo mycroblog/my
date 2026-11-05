@@ -207,6 +207,8 @@ type App struct {
 	VoiceRooms *appvoice.Service
 	// Hooks runs the decision hooks (ADR-0147). A module that owns a subject takes it as apphook.Gate.
 	Hooks *apphook.Service
+	// mediaCheck is the hook media.check that the media processing and the posts share.
+	mediaCheck *content.MediaReview
 	// Diagnostics groups the error reports in the database and changes the state of the groups
 	// (ADR-0103 §4 (2), §7).
 	Diagnostics *appdiagnostics.Service

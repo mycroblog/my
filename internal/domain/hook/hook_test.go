@@ -12,8 +12,8 @@ import (
 
 func TestSpecsFollowTheDecision(t *testing.T) {
 	media, _ := SpecOf(MediaCheck)
-	if media.Accepts(Reject) {
-		t.Error("media.check takes reject")
+	if !media.Accepts(Reject) || media.Accepts(Drop) {
+		t.Error("media.check takes reject and no drop")
 	}
 	for _, name := range Names() {
 		s, ok := SpecOf(name)

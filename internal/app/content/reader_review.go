@@ -19,6 +19,10 @@ type ReviewedStatus struct {
 	StatusView
 	// DeletedAt is when the status was deleted, the zero time when it is not.
 	DeletedAt time.Time
+	// EffectiveVisibility is the visibility that the server judges it by, as in ReadableStatus:
+	// moderators read it whatever its visibility, but what it may be sent to still follows it
+	// (ADR-0148 §13).
+	EffectiveVisibility Visibility
 }
 
 // reviewer is the moderators as the viewer of what a reviewed status refers to: a local account
@@ -56,6 +60,11 @@ func (r *Reader) Review(ctx context.Context, statusID string) (ReviewedStatus, e
 		return ReviewedStatus{}, err
 	}
 	out.StatusView = StatusView{Status: st, Revision: rev, Author: author, Counters: content.Counters{StatusID: st.ID}}
+	restrictions, err := r.d.Restrictions.Restrictions(ctx, st.AuthorAccountID)
+	if err != nil {
+		return ReviewedStatus{}, err
+	}
+	out.EffectiveVisibility = content.EffectiveVisibility(st.Visibility, restrictions.Author)
 	if st.InReplyToURI != "" {
 		switch parent, err := r.d.Statuses.FindStatusByURI(ctx, st.InReplyToURI); {
 		case errors.Is(err, ErrNotFound):

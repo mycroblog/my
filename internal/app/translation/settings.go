@@ -74,7 +74,7 @@ func (l UsageLimiter) Reserve(ctx context.Context, accountID string, characters 
 	if err != nil {
 		return fmt.Errorf("translation: read the limits: %w", err)
 	}
-	if limits.Account <= 0 || limits.Server <= 0 {
+	if (accountID != "" && limits.Account <= 0) || limits.Server <= 0 {
 		return ErrLimitReached
 	}
 	month := l.Clock.Now().UTC().Format(monthFormat)

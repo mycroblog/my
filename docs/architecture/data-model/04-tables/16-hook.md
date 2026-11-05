@@ -17,3 +17,5 @@
 アカウントの消去（`account.erase_deleted`）は、そのアカウントの判定を消します。消去は保全中のアカウントを飛ばします。
 
 `signup.check` の `subject_key` と `account_id` は、登録がトランザクションの前に生成するアカウントの ID です。メールアドレスも IP アドレスも含みません。`reject` や、後の検証で失敗した登録ではアカウントの行ができないので、その判定は保持期間で消えます。
+
+`media.check` の `subject_key` はメディアファイルの ID、`account_id` はアップロードしたアカウントです。判定は初回の処理（`media.process`）で 1 度だけ作り、別の用途への再処理と、添付する投稿の作成・編集は `Gate.Recorded` で記録を読むだけでプラグインを呼びません。`mark_sensitive` と添付の `flag` は、添付する投稿を書くトランザクションで `status_sensitivity_overrides`・`hook_decision_statuses`・通報を書きます。`reject` の判定はメディアの処理結果を `failed` にし、原本も派生も残りません。

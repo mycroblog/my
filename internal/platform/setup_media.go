@@ -76,6 +76,7 @@ func (a *App) setMedia(cfg *config.Config, repo content.MediaRepository, emojis 
 		// (ADR-0070 §2).
 		Referrers: []content.MediaReferrer{a.Accounts, a.Instance, content.PendingCustomEmojiRequestMedia(emojis)},
 		Proxy:     a.MediaProxy,
+		Review:    a.mediaReview(),
 		Logger:    a.Logger,
 	})
 	a.Media.RegisterJobs(a.Handlers, a.Scheduler)

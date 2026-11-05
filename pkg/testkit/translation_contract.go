@@ -273,6 +273,47 @@ func TranslationRepositoryContract(t *testing.T, newHarness func(t *testing.T) T
 			t.Error("a limit of 0 let a character through")
 		}
 	})
+	t.Run("AddsUsageWithoutAnAccountToTheServerOnly", func(t *testing.T) {
+		t.Parallel()
+		h := newHarness(t)
+		alice := translationID(315)
+		const month = "2026-11"
+		errOver := errors.New("over")
+		add := func(account string, n int64, limits translation.Limits) bool {
+			t.Helper()
+			err := h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+				ok, err := h.Repository.AddUsageWithin(t.Context(), tx, account, month, n, limits)
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return errOver
+				}
+				return nil
+			})
+			if err != nil && !errors.Is(err, errOver) {
+				t.Fatal(err)
+			}
+			return err == nil
+		}
+		// The account's limit does not apply without an account; the server's does.
+		if !add("", 8, translation.Limits{Account: 0, Server: 10}) {
+			t.Error("a request without an account was held to the account's limit")
+		}
+		if add("", 3, translation.Limits{Account: 100, Server: 10}) {
+			t.Error("a request without an account passed the server's limit")
+		}
+		if !add(alice, 2, translation.Limits{Account: 100, Server: 10}) {
+			t.Error("an account's request within the limits was refused")
+		}
+		u, err := h.Repository.FindUsage(t.Context(), alice, month)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := (translation.Usage{Account: 2, Server: 10}); u != want {
+			t.Errorf("usage = %+v, want %+v: only the server's row counts a request without an account", u, want)
+		}
+	})
 	t.Run("ConcurrentAddsStayWithinTheLimits", func(t *testing.T) {
 		t.Parallel()
 		h := newHarness(t)

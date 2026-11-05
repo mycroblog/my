@@ -56,7 +56,7 @@ func (a *App) setUpInboxProcessor(cfg *config.Config, repo federationRepository,
 	// The handlers of each activity type (federation.md §3.4).
 	federation.RegisterFollowHandlers(a.InboxProcessor, federation.FollowHandlerDeps{
 		Graph: a.Graph, Accounts: a.Accounts, Relays: a.Relays, Quotes: a.QuoteHandlers, Moves: a.Accounts, Relationships: a.Graph,
-		Hooks: a.Hooks,
+		Hooks: a.Hooks, Reports: a.Moderation, Instance: a.Accounts, UnitOfWork: a.UnitOfWork,
 		// The Follows that the federation mode refuses get a Reject (ADR-0006).
 		Refusals: federation.NewFollowRefusals(federation.FollowRefusalsDeps{
 			UnitOfWork: a.UnitOfWork, Outbound: repo, Outbox: outbox, Inboxes: a.Accounts,
