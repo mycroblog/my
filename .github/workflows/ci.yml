@@ -5,7 +5,7 @@ name: CI
 #
 # - pull_request: `preflight`, the checks a pull request's own files decide; the @my/ui story tests (ui-test.yml) when
 #   the ui context changes; the app/web screen stories (ui-test.yml with web:story-test) when the client changes; golangci-lint (`lint`) when Go changes; the Docker Compose smoke test (`docker-smoke`) when
-#   the docker context changes; the OpenTofu modules (`terraform`) when the terraform context changes; the destructive changes of the schema against the base (`db-lint`) when the schema
+#   the docker context changes; the OpenTofu modules (`tofu`) when the tofu context changes; the destructive changes of the schema against the base (`db-lint`) when the schema
 #   changes.
 # - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
 #   server-test, client-static, client-test (2 shards), and repo, at most 6 jobs.
@@ -53,7 +53,7 @@ jobs:
       lint-agentkit: ${{ steps.select.outputs.lint-agentkit }}
       mykit: ${{ steps.select.outputs.mykit }}
       schema: ${{ steps.select.outputs.schema }}
-      terraform: ${{ steps.select.outputs.terraform }}
+      tofu: ${{ steps.select.outputs.terraform }}
     steps:
       # A pull request checks out its merge commit, whose first parent is the base branch. A merge group checks out
       # its head commit and compares it with its base, the main commit the group is built on; that base is fetched by
@@ -102,7 +102,7 @@ jobs:
           touches docker docker
           touches mykit mykit
           touches schema schema
-          touches terraform terraform
+          touches tofu tofu
 
   # --- Pull requests --------------------------------------------------------------------------------------------
 
@@ -266,11 +266,11 @@ jobs:
       - name: docker:web-reproducible
         run: scripts/task.sh docker:web-reproducible
 
-  terraform:
-    # The OpenTofu modules of deploy/terraform (ADR-0010). A pull request's own files decide it, so the merge queue does
+  tofu:
+    # The OpenTofu modules of deploy/opentofu (ADR-0010). A pull request's own files decide it, so the merge queue does
     # not run it again. Nothing reaches a cloud: the tests mock the providers.
     needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.terraform == 'true'
+    if: github.event_name == 'pull_request' && needs.changes.outputs.tofu == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out
@@ -285,8 +285,8 @@ jobs:
         with:
           tofu_version: ${{ steps.tofu.outputs.version }}
           tofu_wrapper: false
-      - name: terraform:check
-        run: scripts/task.sh terraform:check
+      - name: tofu:check
+        run: scripts/task.sh tofu:check
 
   db-lint:
     # The schema change of a pull request against its base, the first parent of its merge commit (ADR-0023 §6): it
@@ -638,7 +638,7 @@ jobs:
     # reusable workflow fails when a called job fails, so a failed story test fails `check`. `always()` makes it report
     # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it.
     if: always()
-    needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, terraform, db-lint, server-static, server-test, client-static, client-test, repo]
+    needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, tofu, db-lint, server-static, server-test, client-static, client-test, repo]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a check job failed or was cancelled

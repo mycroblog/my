@@ -1,6 +1,6 @@
 # Deploying on Cloud Run
 
-How to run `my` on Google Cloud with the OpenTofu modules in [`deploy/terraform`](../../deploy/terraform/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage, and Pub/Sub, with a PostgreSQL database on Neon. Nothing runs while nobody uses it, except a tick that wakes the server each minute. Read [Costs](#costs) first: the tick and open streams decide what it costs.
+How to run `my` on Google Cloud with the OpenTofu modules in [`deploy/opentofu`](../../deploy/opentofu/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage, and Pub/Sub, with a PostgreSQL database on Neon. Nothing runs while nobody uses it, except a tick that wakes the server each minute. Read [Costs](#costs) first: the tick and open streams decide what it costs.
 
 The modules need OpenTofu 1.11 or later. Terraform is not supported.
 
@@ -52,7 +52,7 @@ Start from a copy in an empty directory, with the provider lock file, from the r
 VERSION=v0.1.0
 git clone --depth 1 --branch "$VERSION" https://github.com/mycroblog/my.git my-source
 mkdir my-deployment
-cp -r my-source/deploy/terraform/examples/gcp-cloud-run-neon/. my-deployment/
+cp -r my-source/deploy/opentofu/examples/gcp-cloud-run-neon/. my-deployment/
 rm -rf my-source
 cd my-deployment
 cp terraform.tfvars.example terraform.tfvars
@@ -80,7 +80,7 @@ tofu apply -target=module.secrets -target=module.kek
 `tofu init` also fetches `upgrade.sh` and `console.sh` at that release, which the next steps use:
 
 ```sh
-SCRIPTS=.terraform/modules/app/deploy/terraform
+SCRIPTS=.terraform/modules/app/deploy/opentofu
 ```
 
 **Copy the KEK now**, and keep the copy apart from the database, for example in a password manager. Without it a [backup](backup.md) cannot be restored, and the accounts' keys are lost. Do the same with the VAPID key, whose loss ends every Web Push subscription:
@@ -202,7 +202,7 @@ Replace the module's block in `main.tf`. The app module takes whatever the block
 
 ```hcl
 module "db" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/db-external?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/db-external?ref=v0.1.0&depth=1"
 
   url_secret_id = "another-database-url"
 }
@@ -231,7 +231,7 @@ To use the service's own URL or something else in front, such as a CDN, remove t
 
 ### Cloudflare
 
-`ingress-cloudflare-app` puts Cloudflare in front of `host`, with the cache bypassed for everything, and `ingress-cloudflare-media` adds a cached media host beside any ingress. Read each module's README first ([app](../../deploy/terraform/modules/ingress-cloudflare-app/README.md), [media](../../deploy/terraform/modules/ingress-cloudflare-media/README.md)). The token goes in `CLOUDFLARE_API_TOKEN`. These modules have run only on mocked providers.
+`ingress-cloudflare-app` puts Cloudflare in front of `host`, with the cache bypassed for everything, and `ingress-cloudflare-media` adds a cached media host beside any ingress. Read each module's README first ([app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)). The token goes in `CLOUDFLARE_API_TOKEN`. These modules have run only on mocked providers.
 
 - **Your plan decides the origin.** Cloud Run routes by `Host`, and Cloudflare offers the Host header override on the Enterprise plan only. On any other plan a `*.run.app` origin fails the plan, so the origin must accept your host itself: keep an `ingress-gcp-domain-mapping` of that host, out of `backends`, and set `origin_host = "ghs.googlehosted.com"`. Each host needs a mapping of its own. Whether its certificate is issued and renewed behind the proxy is unverified, so start with `proxied = false`.
 - **Nothing locks the origin.** The service stays open, so anyone can go around Cloudflare through the `run.app` URL. Someone calling that URL from a Cloudflare Worker of their own can also choose the client address the rate limits see, because the server trusts Cloudflare's ranges. Do not treat Cloudflare as a security boundary here.

@@ -11,10 +11,10 @@ tasks:
   lint:
     desc: Lint shell scripts with shellcheck
     cmds:
-      - shellcheck scripts/*.sh deploy/terraform/*.sh
+      - shellcheck scripts/*.sh deploy/opentofu/*.sh
 
   test:
-    desc: Test the scripts of the release and the build checks (scripts/release-libraries-test.sh, scripts/release-notes-test.sh, scripts/previous-minor-test.sh, scripts/release-image-test.sh, scripts/check-release-build-test.sh, scripts/go-build-tags-test.sh, scripts/ui-preview-test.sh, scripts/terraform-scripts-test.sh)
+    desc: Test the scripts of the release and the build checks (scripts/release-libraries-test.sh, scripts/release-notes-test.sh, scripts/previous-minor-test.sh, scripts/release-image-test.sh, scripts/check-release-build-test.sh, scripts/go-build-tags-test.sh, scripts/ui-preview-test.sh, scripts/tofu-scripts-test.sh)
     cmds:
       - scripts/release-libraries-test.sh
       - scripts/release-notes-test.sh
@@ -23,4 +23,4 @@ tasks:
       - scripts/check-release-build-test.sh
       - scripts/go-build-tags-test.sh
       - scripts/ui-preview-test.sh
-      - scripts/terraform-scripts-test.sh
+      - scripts/tofu-scripts-test.sh

@@ -26,7 +26,7 @@
 
 ### 3. デプロイテンプレート（`deploy/`）
 
-今あるのは `deploy/docker` の Compose と `deploy/terraform` の Cloud Run の OpenTofu モジュールで、ほかは M6 で作る（`deploy/monitoring` は監視の設定）。`deploy/` に置くのはインスタンスを動かすものだけで、開発の構成はルートの `compose.yaml`（プロジェクト名 `my-dev`。`go run` のサーバーが使う PostgreSQL と Mailpit）、テストの構成は `test/`（`test/federation-live`、`test/upgrade-test`）に分ける。
+今あるのは `deploy/docker` の Compose と `deploy/opentofu` の Cloud Run の OpenTofu モジュールで、ほかは M6 で作る（`deploy/monitoring` は監視の設定）。`deploy/` に置くのはインスタンスを動かすものだけで、開発の構成はルートの `compose.yaml`（プロジェクト名 `my-dev`。`go run` のサーバーが使う PostgreSQL と Mailpit）、テストの構成は `test/`（`test/federation-live`、`test/upgrade-test`）に分ける。
 
 | ターゲット | 形式 |
 | --- | --- |
