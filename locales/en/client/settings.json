@@ -2694,5 +2694,9 @@
   "settings.account.deactivate.refused.last_administrator": {
     "defaultMessage": "This is the only administrator account that can sign in, so it cannot be deactivated. Make someone else an administrator first.",
     "description": "Why the account cannot be deactivated."
+  },
+  "settings.notifications.group.admin_hook_failing": {
+    "defaultMessage": "Failing external reviews",
+    "description": "Row of the notification settings table: (moderators) calls of an external review keep failing."
   }
 }

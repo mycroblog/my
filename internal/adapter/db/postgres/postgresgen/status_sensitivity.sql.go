@@ -40,6 +40,32 @@ func (q *Queries) InsertStatusSensitivityOverride(ctx context.Context, arg Inser
 	return err
 }
 
+const listExistingStatusIDs = `-- name: ListExistingStatusIDs :many
+SELECT id FROM statuses WHERE id = ANY($1::uuid[]) ORDER BY id
+`
+
+// ListExistingStatusIDs returns the statuses among ids that have a row, which the retention of the
+// hook decisions asks (ADR-0147 6).
+func (q *Queries) ListExistingStatusIDs(ctx context.Context, ids []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listExistingStatusIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const purgeStatusSensitivityOverrides = `-- name: PurgeStatusSensitivityOverrides :exec
 DELETE FROM status_sensitivity_overrides WHERE status_id = ANY($1::uuid[])
 `

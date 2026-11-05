@@ -286,6 +286,22 @@ linters:
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/domain/diagnostics
+        domain-hook:
+          list-mode: strict
+          files:
+            - "**/internal/domain/hook/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/domain/hook
+        app-hook:
+          list-mode: strict
+          files:
+            - "**/internal/app/hook/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/domain/hook
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/i18n
         app-diagnostics:
           list-mode: strict
           files:

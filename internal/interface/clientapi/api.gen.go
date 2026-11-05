@@ -299,6 +299,8 @@ const (
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionHookDecisionApplied             AdminAuditAction = "hook_decision_applied"
+	AdminAuditActionHookDecisionOverridden          AdminAuditAction = "hook_decision_overridden"
 	AdminAuditActionInstanceMarkedAvailable         AdminAuditAction = "instance_marked_available"
 	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
@@ -431,6 +433,10 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
+		return true
+	case AdminAuditActionHookDecisionApplied:
+		return true
+	case AdminAuditActionHookDecisionOverridden:
 		return true
 	case AdminAuditActionInstanceMarkedAvailable:
 		return true
@@ -599,6 +605,7 @@ const (
 	AdminAuditTargetKindCustomEmoji           AdminAuditTargetKind = "custom_emoji"
 	AdminAuditTargetKindCustomEmojiRequest    AdminAuditTargetKind = "custom_emoji_request"
 	AdminAuditTargetKindDomain                AdminAuditTargetKind = "domain"
+	AdminAuditTargetKindHookDecision          AdminAuditTargetKind = "hook_decision"
 	AdminAuditTargetKindInstance              AdminAuditTargetKind = "instance"
 	AdminAuditTargetKindInvite                AdminAuditTargetKind = "invite"
 	AdminAuditTargetKindLinkCardDomain        AdminAuditTargetKind = "link_card_domain"
@@ -639,6 +646,8 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindCustomEmojiRequest:
 		return true
 	case AdminAuditTargetKindDomain:
+		return true
+	case AdminAuditTargetKindHookDecision:
 		return true
 	case AdminAuditTargetKindInstance:
 		return true
@@ -2083,6 +2092,168 @@ func (e FinanceVisibility) Valid() bool {
 	}
 }
 
+// Defines values for HookDecisionMode.
+const (
+	HookDecisionModeEnforce HookDecisionMode = "enforce"
+	HookDecisionModeObserve HookDecisionMode = "observe"
+)
+
+// Valid indicates whether the value is a known member of the HookDecisionMode enum.
+func (e HookDecisionMode) Valid() bool {
+	switch e {
+	case HookDecisionModeEnforce:
+		return true
+	case HookDecisionModeObserve:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for HookMode.
+const (
+	HookModeEnforce HookMode = "enforce"
+	HookModeObserve HookMode = "observe"
+	HookModeOff     HookMode = "off"
+)
+
+// Valid indicates whether the value is a known member of the HookMode enum.
+func (e HookMode) Valid() bool {
+	switch e {
+	case HookModeEnforce:
+		return true
+	case HookModeObserve:
+		return true
+	case HookModeOff:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for HookName.
+const (
+	HookNameInboundFollow HookName = "inbound.follow"
+	HookNameInboundStatus HookName = "inbound.status"
+	HookNameLocalStatus   HookName = "local.status"
+	HookNameMediaCheck    HookName = "media.check"
+	HookNameSignupCheck   HookName = "signup.check"
+)
+
+// Valid indicates whether the value is a known member of the HookName enum.
+func (e HookName) Valid() bool {
+	switch e {
+	case HookNameInboundFollow:
+		return true
+	case HookNameInboundStatus:
+		return true
+	case HookNameLocalStatus:
+		return true
+	case HookNameMediaCheck:
+		return true
+	case HookNameSignupCheck:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for HookOnFailure.
+const (
+	HookOnFailurePass            HookOnFailure = "pass"
+	HookOnFailureRequireApproval HookOnFailure = "require_approval"
+	HookOnFailureRetry           HookOnFailure = "retry"
+)
+
+// Valid indicates whether the value is a known member of the HookOnFailure enum.
+func (e HookOnFailure) Valid() bool {
+	switch e {
+	case HookOnFailurePass:
+		return true
+	case HookOnFailureRequireApproval:
+		return true
+	case HookOnFailureRetry:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for HookOutcome.
+const (
+	HookOutcomeAllow           HookOutcome = "allow"
+	HookOutcomeBreakerOpen     HookOutcome = "breaker_open"
+	HookOutcomeDrop            HookOutcome = "drop"
+	HookOutcomeError           HookOutcome = "error"
+	HookOutcomeFlag            HookOutcome = "flag"
+	HookOutcomeInvalid         HookOutcome = "invalid"
+	HookOutcomeMarkSensitive   HookOutcome = "mark_sensitive"
+	HookOutcomeReject          HookOutcome = "reject"
+	HookOutcomeRequireApproval HookOutcome = "require_approval"
+	HookOutcomeTimeout         HookOutcome = "timeout"
+)
+
+// Valid indicates whether the value is a known member of the HookOutcome enum.
+func (e HookOutcome) Valid() bool {
+	switch e {
+	case HookOutcomeAllow:
+		return true
+	case HookOutcomeBreakerOpen:
+		return true
+	case HookOutcomeDrop:
+		return true
+	case HookOutcomeError:
+		return true
+	case HookOutcomeFlag:
+		return true
+	case HookOutcomeInvalid:
+		return true
+	case HookOutcomeMarkSensitive:
+		return true
+	case HookOutcomeReject:
+		return true
+	case HookOutcomeRequireApproval:
+		return true
+	case HookOutcomeTimeout:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for HookReason.
+const (
+	HookReasonHarassment HookReason = "harassment"
+	HookReasonIllegal    HookReason = "illegal"
+	HookReasonMalware    HookReason = "malware"
+	HookReasonOther      HookReason = "other"
+	HookReasonSexual     HookReason = "sexual"
+	HookReasonSpam       HookReason = "spam"
+	HookReasonViolence   HookReason = "violence"
+)
+
+// Valid indicates whether the value is a known member of the HookReason enum.
+func (e HookReason) Valid() bool {
+	switch e {
+	case HookReasonHarassment:
+		return true
+	case HookReasonIllegal:
+		return true
+	case HookReasonMalware:
+		return true
+	case HookReasonOther:
+		return true
+	case HookReasonSexual:
+		return true
+	case HookReasonSpam:
+		return true
+	case HookReasonViolence:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IncomeKind.
 const (
 	IncomeKindChargeback         IncomeKind = "chargeback"
@@ -2309,6 +2480,15 @@ const (
 	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
 	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
 	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyHookInboundFollowMode              InstanceSettingKey = "hook_inbound_follow_mode"
+	InstanceSettingKeyHookInboundFollowOnFailure         InstanceSettingKey = "hook_inbound_follow_on_failure"
+	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
+	InstanceSettingKeyHookInboundStatusOnFailure         InstanceSettingKey = "hook_inbound_status_on_failure"
+	InstanceSettingKeyHookLocalStatusMode                InstanceSettingKey = "hook_local_status_mode"
+	InstanceSettingKeyHookMediaCheckMode                 InstanceSettingKey = "hook_media_check_mode"
+	InstanceSettingKeyHookMediaCheckOnFailure            InstanceSettingKey = "hook_media_check_on_failure"
+	InstanceSettingKeyHookSignupCheckMode                InstanceSettingKey = "hook_signup_check_mode"
+	InstanceSettingKeyHookSignupCheckOnFailure           InstanceSettingKey = "hook_signup_check_on_failure"
 	InstanceSettingKeyIncomeVisibility                   InstanceSettingKey = "income_visibility"
 	InstanceSettingKeyIndexableDefault                   InstanceSettingKey = "indexable_default"
 	InstanceSettingKeyInviteCreators                     InstanceSettingKey = "invite_creators"
@@ -2335,6 +2515,7 @@ const (
 	InstanceSettingKeyRemoteStatusRetentionDays          InstanceSettingKey = "remote_status_retention_days"
 	InstanceSettingKeyReportsRetentionDays               InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription            InstanceSettingKey = "require_media_description"
+	InstanceSettingKeyRetentionHookDecisions             InstanceSettingKey = "retention_hook_decisions"
 	InstanceSettingKeySearchIndexing                     InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
 	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
@@ -2390,6 +2571,24 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyFinanceVisibility:
 		return true
+	case InstanceSettingKeyHookInboundFollowMode:
+		return true
+	case InstanceSettingKeyHookInboundFollowOnFailure:
+		return true
+	case InstanceSettingKeyHookInboundStatusMode:
+		return true
+	case InstanceSettingKeyHookInboundStatusOnFailure:
+		return true
+	case InstanceSettingKeyHookLocalStatusMode:
+		return true
+	case InstanceSettingKeyHookMediaCheckMode:
+		return true
+	case InstanceSettingKeyHookMediaCheckOnFailure:
+		return true
+	case InstanceSettingKeyHookSignupCheckMode:
+		return true
+	case InstanceSettingKeyHookSignupCheckOnFailure:
+		return true
 	case InstanceSettingKeyIncomeVisibility:
 		return true
 	case InstanceSettingKeyIndexableDefault:
@@ -2441,6 +2640,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyReportsRetentionDays:
 		return true
 	case InstanceSettingKeyRequireMediaDescription:
+		return true
+	case InstanceSettingKeyRetentionHookDecisions:
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
@@ -2816,6 +3017,7 @@ const (
 	NotificationGroupAdminAppeal             NotificationGroup = "admin_appeal"
 	NotificationGroupAdminCustomEmojiRequest NotificationGroup = "admin_custom_emoji_request"
 	NotificationGroupAdminErrorGroup         NotificationGroup = "admin_error_group"
+	NotificationGroupAdminHookFailing        NotificationGroup = "admin_hook_failing"
 	NotificationGroupAdminReport             NotificationGroup = "admin_report"
 	NotificationGroupAdminServiceClosureDue  NotificationGroup = "admin_service_closure_due"
 	NotificationGroupAdminSignUp             NotificationGroup = "admin_sign_up"
@@ -2849,6 +3051,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAdminCustomEmojiRequest:
 		return true
 	case NotificationGroupAdminErrorGroup:
+		return true
+	case NotificationGroupAdminHookFailing:
 		return true
 	case NotificationGroupAdminReport:
 		return true
@@ -2939,6 +3143,7 @@ const (
 	NotificationTypeAdminAppeal                NotificationType = "admin_appeal"
 	NotificationTypeAdminCustomEmojiRequest    NotificationType = "admin_custom_emoji_request"
 	NotificationTypeAdminErrorGroup            NotificationType = "admin_error_group"
+	NotificationTypeAdminHookFailing           NotificationType = "admin_hook_failing"
 	NotificationTypeAdminReport                NotificationType = "admin_report"
 	NotificationTypeAdminServiceClosureDue     NotificationType = "admin_service_closure_due"
 	NotificationTypeAdminSignUp                NotificationType = "admin_sign_up"
@@ -2980,6 +3185,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeAdminCustomEmojiRequest:
 		return true
 	case NotificationTypeAdminErrorGroup:
+		return true
+	case NotificationTypeAdminHookFailing:
 		return true
 	case NotificationTypeAdminReport:
 		return true
@@ -4989,6 +5196,9 @@ type AdminAppealPage struct {
 // `appeal_upheld`, `appeal_overturned` (which also records the action's
 // `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
+// `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
+// and left state; the actor is the system), `hook_decision_overridden` (a moderator
+// cancelled the decision). On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
 // `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -5064,6 +5274,9 @@ type AdminAuditEntry struct {
 	// `appeal_upheld`, `appeal_overturned` (which also records the action's
 	// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
+	// `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
+	// and left state; the actor is the system), `hook_decision_overridden` (a moderator
+	// cancelled the decision). On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),
 	// `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -5415,6 +5628,101 @@ type AdminDomainActionPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminHook A decision hook with its settings and the decisions of the period.
+type AdminHook struct {
+	// Configured Whether the hook has a plugin. A hook without one calls nothing, whatever its mode.
+	Configured bool `json:"configured"`
+
+	// Hook A decision hook, where the server asks an external review before it accepts something:
+	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+	Hook HookName `json:"hook"`
+
+	// Mode How far a decision hook acts: `off` calls nothing, `observe` records the verdict and acts on
+	// nothing, `enforce` acts on the verdict.
+	Mode HookMode `json:"mode"`
+
+	// OnFailure What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
+	// fails the job so that it runs again, and `require_approval` holds the sign-up for approval.
+	OnFailure *HookOnFailure `json:"on_failure,omitempty"`
+
+	// Outcomes The decisions per mode and outcome.
+	Outcomes []AdminHookOutcome `json:"outcomes"`
+}
+
+// AdminHookDecision What a decision hook answered about one subject. It holds no text of a post.
+type AdminHookDecision struct {
+	// AccountId The account the subject belongs to; absent when there is none.
+	AccountId *string   `json:"account_id,omitempty"`
+	DecidedAt time.Time `json:"decided_at"`
+
+	// Hook A decision hook, where the server asks an external review before it accepts something:
+	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+	Hook HookName `json:"hook"`
+	Id   string   `json:"id"`
+
+	// LatencyMs How long the call took, in milliseconds.
+	LatencyMs int64 `json:"latency_ms"`
+
+	// Mode The mode of the hook when it made the decision.
+	Mode HookDecisionMode `json:"mode"`
+
+	// Note The plugin's short plain-text note for the moderators; absent when there is none.
+	Note *string `json:"note,omitempty"`
+
+	// Outcome What a decision records: a verdict (`allow`, `drop`, `flag`, `mark_sensitive`,
+	// `require_approval`, `reject`), or a kind of failure, which is not a verdict: `timeout`, `error`,
+	// `invalid` (the answer is outside the hook's vocabulary), `breaker_open` (the server skipped
+	// the plugin after repeated failures).
+	Outcome HookOutcome `json:"outcome"`
+
+	// Overridable Whether a moderator can cancel it here: a verdict in force that stopped or changed
+	// something. A `reject` of `local.status` goes through its appeal instead.
+	Overridable bool `json:"overridable"`
+
+	// OverriddenAt When a moderator cancelled the decision; absent while it stands.
+	OverriddenAt *time.Time `json:"overridden_at,omitempty"`
+
+	// Reason The coded reason of a verdict.
+	Reason *HookReason `json:"reason,omitempty"`
+
+	// SubjectKey What identifies the subject for the hook, such as the URI of a received activity.
+	SubjectKey string `json:"subject_key"`
+}
+
+// AdminHookDecisionPage A page of decisions, the newest first.
+type AdminHookDecisionPage struct {
+	Items []AdminHookDecision `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminHookOutcome How many decisions of one mode and outcome a hook made, and how long they took.
+type AdminHookOutcome struct {
+	AverageLatencyMs int64 `json:"average_latency_ms"`
+	Count            int64 `json:"count"`
+	MaxLatencyMs     int64 `json:"max_latency_ms"`
+
+	// Mode The mode of the hook when it made the decision.
+	Mode HookDecisionMode `json:"mode"`
+
+	// Outcome What a decision records: a verdict (`allow`, `drop`, `flag`, `mark_sensitive`,
+	// `require_approval`, `reject`), or a kind of failure, which is not a verdict: `timeout`, `error`,
+	// `invalid` (the answer is outside the hook's vocabulary), `breaker_open` (the server skipped
+	// the plugin after repeated failures).
+	Outcome HookOutcome `json:"outcome"`
+}
+
+// AdminHookSummary Every decision hook with its settings, and its decisions of the last 7 days.
+type AdminHookSummary struct {
+	Hooks []AdminHook `json:"hooks"`
+
+	// Since The start of the period that the counts cover.
+	Since time.Time `json:"since"`
 }
 
 // AdminIncomePeriodTotal A week, month, or year of the income totals as the administrators see it: the `gross`, the
@@ -8961,6 +9269,31 @@ type FollowAccountRequest struct {
 	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
+// HookDecisionMode The mode of the hook when it made the decision.
+type HookDecisionMode string
+
+// HookMode How far a decision hook acts: `off` calls nothing, `observe` records the verdict and acts on
+// nothing, `enforce` acts on the verdict.
+type HookMode string
+
+// HookName A decision hook, where the server asks an external review before it accepts something:
+// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
+// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+type HookName string
+
+// HookOnFailure What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
+// fails the job so that it runs again, and `require_approval` holds the sign-up for approval.
+type HookOnFailure string
+
+// HookOutcome What a decision records: a verdict (`allow`, `drop`, `flag`, `mark_sensitive`,
+// `require_approval`, `reject`), or a kind of failure, which is not a verdict: `timeout`, `error`,
+// `invalid` (the answer is outside the hook's vocabulary), `breaker_open` (the server skipped
+// the plugin after repeated failures).
+type HookOutcome string
+
+// HookReason The coded reason of a verdict.
+type HookReason string
+
 // Id The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -9191,6 +9524,10 @@ type Instance struct {
 
 	// Domain The domain that serves the instance.
 	Domain string `json:"domain"`
+
+	// ExternalReviews The decision hooks in use: what the server sends to an external review before it accepts it.
+	// Absent when there is none. The information page states this.
+	ExternalReviews *[]HookName `json:"external_reviews,omitempty"`
 
 	// Federation How the instance federates with other servers, so that clients offer only the
 	// operations on remote accounts and posts that can work.
@@ -10455,6 +10792,8 @@ type Notification struct {
 	// `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
 	// `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
 	// answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
+	// `admin_hook_failing` (calls of an external review keep failing; it names none) to those
+	// with `manage_reports`, and
 	// `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
 	// `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
 	// `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -10528,7 +10867,7 @@ type NotificationErrorGroupChange string
 // `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 // `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 // `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
 // `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
@@ -10592,7 +10931,7 @@ type NotificationSettingRow struct {
 	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 	// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
 	// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
@@ -10642,7 +10981,7 @@ type NotificationSettingsUpdate struct {
 		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 		// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
 		// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
@@ -10678,6 +11017,8 @@ type NotificationSettingsUpdateChangesChannel string
 // `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
 // `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
 // answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
+// `admin_hook_failing` (calls of an external review keep failing; it names none) to those
+// with `manage_reports`, and
 // `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
 // `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
 // `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -11493,6 +11834,9 @@ type PreviewDomainBlockImportRequest struct {
 //     is not in the state the operation needs, or was decided meanwhile.
 //   - `/api/v1/problems/email-already-verified` (409): the primary email address is already
 //     confirmed, so no confirmation mail is sent.
+//   - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
+//     had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
+//     its appeal.
 //   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
 //     suppressed, so there is nothing to lift.
 //   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
@@ -14056,6 +14400,24 @@ type ListErrorGroupsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListHookDecisionsParams defines parameters for ListHookDecisions.
+type ListHookDecisionsParams struct {
+	// Hook Keep the decisions of this hook.
+	Hook *HookName `form:"hook,omitempty" json:"hook,omitempty"`
+
+	// Mode Keep the decisions made in this mode.
+	Mode *HookDecisionMode `form:"mode,omitempty" json:"mode,omitempty"`
+
+	// Outcome Keep the decisions with this outcome.
+	Outcome *HookOutcome `form:"outcome,omitempty" json:"outcome,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListIncomeMovementsParams defines parameters for ListIncomeMovements.
 type ListIncomeMovementsParams struct {
 	// From Only the movements on or after this date.
@@ -15204,6 +15566,15 @@ type ServerInterface interface {
 	// UnmuteErrorGroup Unmute an error group
 	// (POST /admin/error_groups/{id}/unmute)
 	UnmuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
+	// ListHookDecisions List the decisions of the decision hooks
+	// (GET /admin/hook_decisions)
+	ListHookDecisions(w http.ResponseWriter, r *http.Request, params ListHookDecisionsParams)
+	// GetHookSummary Summarize the decision hooks
+	// (GET /admin/hook_decisions/summary)
+	GetHookSummary(w http.ResponseWriter, r *http.Request)
+	// OverrideHookDecision Cancel a decision
+	// (POST /admin/hook_decisions/{id}/override)
+	OverrideHookDecision(w http.ResponseWriter, r *http.Request, id string)
 	// ListIncomeMovements List the money movements of the income
 	// (GET /admin/income_movements)
 	ListIncomeMovements(w http.ResponseWriter, r *http.Request, params ListIncomeMovementsParams)
@@ -18897,6 +19268,131 @@ func (siw *ServerInterfaceWrapper) UnmuteErrorGroup(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UnmuteErrorGroup(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListHookDecisions operation middleware
+func (siw *ServerInterfaceWrapper) ListHookDecisions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListHookDecisionsParams
+
+	// ------------- Optional query parameter "hook" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "hook", r.URL.Query(), &params.Hook, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "hook"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "hook", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "mode" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "mode", r.URL.Query(), &params.Mode, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "mode"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "mode", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "outcome" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "outcome", r.URL.Query(), &params.Outcome, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "outcome"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "outcome", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListHookDecisions(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetHookSummary operation middleware
+func (siw *ServerInterfaceWrapper) GetHookSummary(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetHookSummary(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// OverrideHookDecision operation middleware
+func (siw *ServerInterfaceWrapper) OverrideHookDecision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.OverrideHookDecision(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -26625,6 +27121,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/domain_actions", wrapper.ListDomainActions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/domain_actions", wrapper.CreateDomainAction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/domain_actions/{id}", wrapper.GetDomainAction)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_decisions", wrapper.ListHookDecisions)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_decisions/summary", wrapper.GetHookSummary)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/hook_decisions/{id}/override", wrapper.OverrideHookDecision)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/error_groups", wrapper.ListErrorGroups)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/error_groups/{id}", wrapper.GetErrorGroup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/resolve", wrapper.ResolveErrorGroup)
@@ -32848,6 +33347,181 @@ type UnmuteErrorGroupdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UnmuteErrorGroupdefaultApplicationProblemPlusJSONResponse) VisitUnmuteErrorGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListHookDecisionsRequestObject struct {
+	Params ListHookDecisionsParams
+}
+
+type ListHookDecisionsResponseObject interface {
+	VisitListHookDecisionsResponse(w http.ResponseWriter) error
+}
+
+type ListHookDecisions200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListHookDecisions200JSONResponse struct {
+	Body    AdminHookDecisionPage
+	Headers ListHookDecisions200ResponseHeaders
+}
+
+func (response ListHookDecisions200JSONResponse) VisitListHookDecisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListHookDecisionsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListHookDecisionsdefaultApplicationProblemPlusJSONResponse) VisitListHookDecisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetHookSummaryRequestObject struct {
+}
+
+type GetHookSummaryResponseObject interface {
+	VisitGetHookSummaryResponse(w http.ResponseWriter) error
+}
+
+type GetHookSummary200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetHookSummary200JSONResponse struct {
+	Body    AdminHookSummary
+	Headers GetHookSummary200ResponseHeaders
+}
+
+func (response GetHookSummary200JSONResponse) VisitGetHookSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetHookSummarydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetHookSummarydefaultApplicationProblemPlusJSONResponse) VisitGetHookSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OverrideHookDecisionRequestObject struct {
+	Id string `json:"id"`
+}
+
+type OverrideHookDecisionResponseObject interface {
+	VisitOverrideHookDecisionResponse(w http.ResponseWriter) error
+}
+
+type OverrideHookDecision200JSONResponse AdminHookDecision
+
+func (response OverrideHookDecision200JSONResponse) VisitOverrideHookDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OverrideHookDecisiondefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response OverrideHookDecisiondefaultApplicationProblemPlusJSONResponse) VisitOverrideHookDecisionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -48917,6 +49591,15 @@ type StrictServerInterface interface {
 	// UnmuteErrorGroup Unmute an error group
 	// (POST /admin/error_groups/{id}/unmute)
 	UnmuteErrorGroup(ctx context.Context, request UnmuteErrorGroupRequestObject) (UnmuteErrorGroupResponseObject, error)
+	// ListHookDecisions List the decisions of the decision hooks
+	// (GET /admin/hook_decisions)
+	ListHookDecisions(ctx context.Context, request ListHookDecisionsRequestObject) (ListHookDecisionsResponseObject, error)
+	// GetHookSummary Summarize the decision hooks
+	// (GET /admin/hook_decisions/summary)
+	GetHookSummary(ctx context.Context, request GetHookSummaryRequestObject) (GetHookSummaryResponseObject, error)
+	// OverrideHookDecision Cancel a decision
+	// (POST /admin/hook_decisions/{id}/override)
+	OverrideHookDecision(ctx context.Context, request OverrideHookDecisionRequestObject) (OverrideHookDecisionResponseObject, error)
 	// ListIncomeMovements List the money movements of the income
 	// (GET /admin/income_movements)
 	ListIncomeMovements(ctx context.Context, request ListIncomeMovementsRequestObject) (ListIncomeMovementsResponseObject, error)
@@ -52439,6 +53122,82 @@ func (sh *strictHandler) UnmuteErrorGroup(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UnmuteErrorGroupResponseObject); ok {
 		if err := validResponse.VisitUnmuteErrorGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListHookDecisions operation middleware
+func (sh *strictHandler) ListHookDecisions(w http.ResponseWriter, r *http.Request, params ListHookDecisionsParams) {
+	var request ListHookDecisionsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListHookDecisions(ctx, request.(ListHookDecisionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListHookDecisions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListHookDecisionsResponseObject); ok {
+		if err := validResponse.VisitListHookDecisionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetHookSummary operation middleware
+func (sh *strictHandler) GetHookSummary(w http.ResponseWriter, r *http.Request) {
+	var request GetHookSummaryRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetHookSummary(ctx, request.(GetHookSummaryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetHookSummary")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetHookSummaryResponseObject); ok {
+		if err := validResponse.VisitGetHookSummaryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// OverrideHookDecision operation middleware
+func (sh *strictHandler) OverrideHookDecision(w http.ResponseWriter, r *http.Request, id string) {
+	var request OverrideHookDecisionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.OverrideHookDecision(ctx, request.(OverrideHookDecisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "OverrideHookDecision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(OverrideHookDecisionResponseObject); ok {
+		if err := validResponse.VisitOverrideHookDecisionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

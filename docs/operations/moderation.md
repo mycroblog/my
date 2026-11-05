@@ -371,6 +371,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `role` | `role_granted`, `role_revoked` (granting and revoking a role for a user), `role_created`, `role_updated`, `role_deleted` (creating, changing and deleting a role) |
 | `appeal` | `appeal_upheld`, `appeal_overturned` (appeal review; overturning also records `account_action_lifted` for the action, and `account_deletion_canceled` for a `ban`) |
 | `signup_block` | `signup_block_added`, `signup_block_lifted` (adding and lifting a sign-up block) |
+| `hook_decision` | `hook_decision_applied` (the server acted on an external review's verdict and left state; the actor is the system), `hook_decision_overridden` (a moderator cancelled the decision) |
 | `custom_emoji` | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` (registering a custom emoji, replacing its image, copying an emoji from another server, changing, enabling, disabling and deleting it) |
 | `webhook` | `webhook_created`, `webhook_updated`, `webhook_deleted`, `webhook_enabled`, `webhook_disabled`, `webhook_secret_rotated` (creating, changing, deleting, enabling and disabling a webhook, and regenerating its secret) |
 | `announcement` | `announcement_created`, `announcement_updated`, `announcement_published`, `announcement_withdrawn` (creating, changing, publishing and withdrawing an announcement) |
@@ -421,6 +422,7 @@ You can change the periods in the instance settings, but not below the lower lim
 | Audit log | `audit_log_retention_days` | 730 days | 365 days | The record |
 | Sign-up blocks | None (cannot be changed) | 30 days | n/a | The earlier of lifting and expiry |
 | Who took part in a voice chat room (participations, speakers and listeners, raised hands, invitations, removals) | `voice_participants_retention_days` | 90 days | 30 days | The end of the room |
+| The decisions of the [decision hooks](decision-hooks.md#the-decisions) | `retention_hook_decisions` | 90 days | 30 days | The decision |
 
 - Open reports are never removed. A report that an action refers to (`report_id` of the action) stays until that action is removed.
 - The end of an action is the earlier of lifting and expiry. For an action that was appealed, if the review comes later than that, the end is the time of the review, and the action is kept while the appeal waits for review.

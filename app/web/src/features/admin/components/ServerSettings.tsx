@@ -27,6 +27,7 @@ import {
   Select,
   SelectItem,
   Stack,
+  Text,
   TextArea,
   TextField,
 } from "@my/ui";
@@ -260,6 +261,37 @@ const timelineAccessChoices = [
 ] as const satisfies readonly { value: string; label: ClientMessageKey; description: ClientMessageKey }[];
 
 /** The words and the description of each choice of the settings chosen with radio buttons. */
+
+const hookModeChoices = [
+  {
+    value: "off",
+    label: "client:admin.settings.hooks.mode.off",
+    description: "client:admin.settings.hooks.mode.off.description",
+  },
+  {
+    value: "observe",
+    label: "client:admin.settings.hooks.mode.observe",
+    description: "client:admin.settings.hooks.mode.observe.description",
+  },
+  {
+    value: "enforce",
+    label: "client:admin.settings.hooks.mode.enforce",
+    description: "client:admin.settings.hooks.mode.enforce.description",
+  },
+] as const;
+
+const hookPassOnFailure = {
+  value: "pass",
+  label: "client:admin.settings.hooks.failure.pass",
+  description: "client:admin.settings.hooks.failure.pass.description",
+} as const;
+
+const hookRetryOnFailure = {
+  value: "retry",
+  label: "client:admin.settings.hooks.failure.retry",
+  description: "client:admin.settings.hooks.failure.retry.description",
+} as const;
+
 const choices = {
   registration_mode: [
     {
@@ -399,6 +431,22 @@ const choices = {
       description: "client:admin.settings.invites.creators.permitted.description",
     },
   ],
+  hook_inbound_status_mode: hookModeChoices,
+  hook_inbound_follow_mode: hookModeChoices,
+  hook_signup_check_mode: hookModeChoices,
+  hook_media_check_mode: hookModeChoices,
+  hook_local_status_mode: hookModeChoices,
+  hook_inbound_status_on_failure: [hookPassOnFailure, hookRetryOnFailure],
+  hook_inbound_follow_on_failure: [hookPassOnFailure, hookRetryOnFailure],
+  hook_signup_check_on_failure: [
+    hookPassOnFailure,
+    {
+      value: "require_approval",
+      label: "client:admin.settings.hooks.failure.require_approval",
+      description: "client:admin.settings.hooks.failure.require_approval.description",
+    },
+  ],
+  hook_media_check_on_failure: [hookPassOnFailure, hookRetryOnFailure],
   voice_room_starters: [
     {
       value: "everyone",
@@ -712,6 +760,60 @@ function PoliciesForm() {
           onChange={(value) => {
             form.change("security_contact", value);
           }}
+        />
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.hooks.title")}>
+        <Text tone="muted">{t("client:admin.settings.hooks.description")}</Text>
+        <PolicyRadios
+          form={form}
+          setting="hook_inbound_status_mode"
+          label={t("client:admin.settings.hooks.inbound_status.mode")}
+        />
+        <PolicyRadios
+          form={form}
+          setting="hook_inbound_status_on_failure"
+          label={t("client:admin.settings.hooks.inbound_status.on_failure")}
+        />
+        <PolicyRadios
+          form={form}
+          setting="hook_inbound_follow_mode"
+          label={t("client:admin.settings.hooks.inbound_follow.mode")}
+        />
+        <PolicyRadios
+          form={form}
+          setting="hook_inbound_follow_on_failure"
+          label={t("client:admin.settings.hooks.inbound_follow.on_failure")}
+        />
+        <PolicyRadios
+          form={form}
+          setting="hook_signup_check_mode"
+          label={t("client:admin.settings.hooks.signup_check.mode")}
+        />
+        <PolicyRadios
+          form={form}
+          setting="hook_signup_check_on_failure"
+          label={t("client:admin.settings.hooks.signup_check.on_failure")}
+        />
+        <PolicyRadios
+          form={form}
+          setting="hook_media_check_mode"
+          label={t("client:admin.settings.hooks.media_check.mode")}
+        />
+        <PolicyRadios
+          form={form}
+          setting="hook_media_check_on_failure"
+          label={t("client:admin.settings.hooks.media_check.on_failure")}
+        />
+        <PolicyRadios
+          form={form}
+          setting="hook_local_status_mode"
+          label={t("client:admin.settings.hooks.local_status.mode")}
+        />
+        <NumberPolicyField
+          form={form}
+          setting="retention_hook_decisions"
+          label={t("client:admin.settings.hooks.retention")}
+          description={(range) => t("client:admin.settings.hooks.retention.description", range)}
         />
       </Section>
       {voiceAvailable && (

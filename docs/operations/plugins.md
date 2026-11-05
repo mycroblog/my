@@ -25,7 +25,8 @@ key, so `inbound.status` has `plugin_inbound_status_address`.
 | `signup.check` | Email addresses and IP addresses | **Refused** | `json` | 2 s |
 | `media.check` | A small processed version of the media, never the original | Allowed | `json` | 10 s |
 
-The settings that make the server use a destination belong to each feature. This page covers what they share.
+The settings that make the server use a destination belong to each feature: the last five kinds of the table are the
+[decision hooks](decision-hooks.md). This page covers what they share.
 
 The server sends at most a kind's fixed limit per message and reads at most another. A call over the limit fails, and
 the job that made it retries.

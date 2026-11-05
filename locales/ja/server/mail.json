@@ -386,5 +386,21 @@
   "mail.account_deactivated.detail": {
     "defaultMessage": "再有効化するには、ログインしてください。削除の前にこの件のメールをもう一度送ることはありません。心当たりがない場合は、ログインして再有効化し、パスワードを変更してください。",
     "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
+  },
+  "mail.admin_hook_failing.body": {
+    "defaultMessage": "サーバー {instance} の外部の審査の呼び出しが失敗し続けています。動くようになるまで、審査の対象は失敗時の動作に従います。既定では審査なしで通ります。",
+    "description": "First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.admin_hook_failing.detail": {
+    "defaultMessage": "通知を開いて、自動審査の記録で何が失敗したかを確認してください。",
+    "description": "Second paragraph of the email to a moderator about an external review that keeps failing, before the link to the notifications."
+  },
+  "mail.admin_hook_failing.subject": {
+    "defaultMessage": "{instance} の外部の審査が失敗し続けています",
+    "description": "Subject of the email to a moderator who gets moderator notifications by email: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "mail.group.admin_hook_failing": {
+    "defaultMessage": "外部の審査の失敗",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
   }
 }

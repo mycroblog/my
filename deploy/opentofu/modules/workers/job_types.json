@@ -28,6 +28,7 @@
   "finance.import_billing",
   "graph.expire_mutes",
   "graph.migrate_follows",
+  "hook.purge_decisions",
   "identity.build_export",
   "identity.closure_email",
   "identity.closure_email_fanout",

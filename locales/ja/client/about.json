@@ -343,6 +343,34 @@
     "defaultMessage": "特定商取引法に基づく表記を見る",
     "description": "Link from the information page to the server's page of the commerce disclosures of its supporter plans."
   },
+  "about.external_review.inbound_follow": {
+    "defaultMessage": "ほかのサーバーからのフォロー: 誰が誰をフォローするか。",
+    "description": "What the external review of follows covers and what is sent to it."
+  },
+  "about.external_review.inbound_status": {
+    "defaultMessage": "このサーバーが受け取る、ほかのサーバーからの投稿: 本文と送信者。",
+    "description": "What the external review of posts from other servers covers and what is sent to it."
+  },
+  "about.external_review.intro": {
+    "defaultMessage": "このサーバーは、次のものを受け付ける前に、外部のサービスに審査を求めています。審査にできるのは審査の対象を止めるか印を付けることまでで、アカウントへの処分は人が決めます。",
+    "description": "Introduction of the section of the information page about the external review."
+  },
+  "about.external_review.local_status": {
+    "defaultMessage": "このサーバーのアカウントの投稿: 本文。非公開とダイレクトの投稿は送りません。",
+    "description": "What the external review of local posts covers and what is sent to it."
+  },
+  "about.external_review.media_check": {
+    "defaultMessage": "アップロードされたメディア: 処理後の小さな版。原本は送りません。",
+    "description": "What the external review of uploaded media covers and what is sent to it."
+  },
+  "about.external_review.signup_check": {
+    "defaultMessage": "登録: メールアドレスと IP アドレス。",
+    "description": "What the external review of sign-ups covers and what is sent to it."
+  },
+  "about.external_review.title": {
+    "defaultMessage": "外部の審査",
+    "description": "Heading of the section of the information page that says the server uses an external review of submissions."
+  },
   "about.licenses.title": {
     "defaultMessage": "ライセンス",
     "description": "Heading of the section of the server's information page that links to the license notices of the third-party software, data and fonts that the web app bundles."

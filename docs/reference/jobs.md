@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 93 job types. 39 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 94 job types. 40 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -182,6 +182,7 @@ These types keep the index of a [search backend](configuration.md#search) in ste
 | `metrics.snapshot` | Computes the gauges of the instance, stores them, and exports them once. | Schedule | Default | Next run |
 | `projection.verify` | Rebuilds every projection, writing only what drifted, and logs those that did. One that fails does not stop the others. | Schedule | Default | Next run |
 | `diagnostics.purge_error_counts` | Deletes the hourly error counts past their retention. | Schedule | Default | Next run |
+| `hook.purge_decisions` | Deletes the decisions of the [decision hooks](../operations/decision-hooks.md#the-decisions) past `retention_hook_decisions`, except those it keeps. | Schedule | Default | Next run |
 | `stream.sweep` | Deletes the per-process resources that ended processes left on the broker. | Schedule | Default | Next run |
 
 ## Periodic jobs
@@ -223,6 +224,7 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `content.purge_link_cards` | 24 hours |
 | `content.purge_remote_emojis` | 24 hours |
 | `diagnostics.purge_error_counts` | 24 hours |
+| `hook.purge_decisions` | 1 hour |
 | `federation.probe_instances` | 24 hours |
 | `finance.import_billing` | 24 hours, one schedule per source of `billing_sources`, named `finance.import_billing.<source>` |
 | `notification.purge_error_group_notices` | 24 hours |

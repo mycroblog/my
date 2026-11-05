@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: The coded reason of a verdict.
+type: string
+enum: [spam, harassment, sexual, violence, illegal, malware, other]
