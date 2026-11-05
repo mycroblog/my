@@ -8439,7 +8439,7 @@ export interface components {
          *     posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
          *     `account_statuses_refetch_queued` on an `account`, and `domain_statuses_refetch_queued`
          *     on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
-         *     the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
+         *     the ID is the source (`aws`, `gcp`, `plugin`) and the label the provider's name. On a `cost_item`:
          *     `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
          *     `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
          *     the item's name. On the `supporter_program`: `supporter_program_enabled`,
@@ -10112,13 +10112,13 @@ export interface components {
              *     Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
              *     bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
              *     `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
-             *     without a breakdown by service.
+             *     without a breakdown by service; `plugin` (the operator's plugin) what the plugin reports.
              * @enum {string}
              */
-            method: "cost_explorer" | "bigquery" | "budget";
+            method: "cost_explorer" | "bigquery" | "budget" | "plugin";
             /**
-             * @description The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`),
-             *     kept as the provider reports them.
+             * @description The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`, or
+             *     the operator's choice for a plugin), kept as the provider reports them.
              */
             time_zone: string;
             last_run?: components["schemas"]["BillingImportRun"];
@@ -10143,7 +10143,7 @@ export interface components {
             max_requests_per_month?: number;
             /**
              * Format: int64
-             * @description The BigQuery bytes billed this UTC month; 0 for the other sources.
+             * @description The bytes billed this UTC month, of BigQuery or as a plugin reports them; 0 for the other sources.
              */
             bytes_billed_this_month: number;
             /** @description The billing months of the last year with imported costs, newest first. */
@@ -10185,10 +10185,11 @@ export interface components {
             occurred_at: string;
         };
         /**
-         * @description A cloud provider of the billing imports (`billing_sources`).
+         * @description A source of the billing imports (`billing_sources`): a cloud provider, or `plugin`, the
+         *     operator's plugin that aggregates any other providers.
          * @enum {string}
          */
-        BillingSourceName: "aws" | "gcp";
+        BillingSourceName: "aws" | "gcp" | "plugin";
         /**
          * @description A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
          *     of a payment on a card statement or an invoice.
@@ -11770,7 +11771,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.

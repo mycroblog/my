@@ -26,12 +26,12 @@ func TestPageHoldsOnlyIDsAndACursor(t *testing.T) {
 
 // TestNoneHasNoCapability checks what search = none tells the clients (ADR-0149 §2).
 func TestNoneHasNoCapability(t *testing.T) {
-	s := NewService(nil)
+	s := NewService(Deps{})
 	if s.Enabled() {
 		t.Error("Enabled() = true with no backend")
 	}
-	if got := s.Visibilities(); len(got) != 0 {
-		t.Errorf("Visibilities() = %v with no backend", got)
+	if got, err := s.Visibilities(t.Context()); err != nil || len(got) != 0 {
+		t.Errorf("Visibilities() = %v, %v with no backend", got, err)
 	}
 }
 
@@ -39,7 +39,7 @@ func TestNoneHasNoCapability(t *testing.T) {
 // its handler succeeds doing nothing (ADR-0149 §7).
 func TestJobsSucceedWithoutABackend(t *testing.T) {
 	reg := &queue.JobHandlerRegistry{}
-	NewService(nil).RegisterJobs(reg)
+	NewService(Deps{}).RegisterJobs(reg)
 	for _, jobType := range []string{JobSyncStatus, JobSyncAuthor, JobSyncDomain, JobNarrow, JobRebuild} {
 		h, _, ok := reg.Lookup(jobType)
 		if !ok {

@@ -55,6 +55,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"ListsRecentLocalPosters", statusListsRecentLocalPosters},
 		{"EnsuresTags", statusEnsuresTags},
 		{"ListsLiveRemoteStatusesOfAnAuthor", statusListsLiveRemote},
+		{"ListsTheSearchableStatusesOfAnAuthor", statusListsSearchable},
 		{"IncrementalProjectionEqualsRebuild", statusProjectionEqualsRebuild},
 		{"LinksAParentAndAReplyCreatedConcurrently", statusLinksConcurrentParentAndReply},
 		{"KeepsADeletionOverAConcurrentRevision", statusDeletionWinsOverConcurrentRevision},
@@ -512,6 +513,33 @@ func second[T any](_ T, err error) error { return err }
 
 // statusListsLiveRemote checks ListLiveRemoteStatusIDs: the remote statuses of one author that
 // are not deleted, newest first, in keyset pages; local statuses and other authors are left out.
+// statusListsSearchable checks ListAuthorSearchableStatusIDs: an author's public and local statuses
+// in ID order, deleted ones included, and page by page.
+func statusListsSearchable(t *testing.T, e *statusEnv) {
+	ctx := t.Context()
+	author, other := e.ids.NewID(), e.ids.NewID()
+	post := func(author string, v content.Visibility) content.Status {
+		s := e.newStatus(author, v)
+		e.mustCreate(t, s)
+		return s
+	}
+	public, local, deleted := post(author, content.VisibilityPublic), post(author, content.VisibilityLocal), post(author, content.VisibilityPublic)
+	e.mustRemove(t, deleted)
+	post(author, content.VisibilityUnlisted)
+	post(author, content.VisibilityPrivate)
+	post(author, content.VisibilityDirect)
+	post(other, content.VisibilityPublic)
+
+	got, err := e.h.Statuses.ListAuthorSearchableStatusIDs(ctx, author, "", 10)
+	if want := []string{public.ID, local.ID, deleted.ID}; err != nil || !slices.Equal(got, want) {
+		t.Errorf("ListAuthorSearchableStatusIDs = %v, %v; want %v", got, err, want)
+	}
+	got, err = e.h.Statuses.ListAuthorSearchableStatusIDs(ctx, author, public.ID, 1)
+	if want := []string{local.ID}; err != nil || !slices.Equal(got, want) {
+		t.Errorf("the page after the first = %v, %v; want %v", got, err, want)
+	}
+}
+
 func statusListsLiveRemote(t *testing.T, e *statusEnv) {
 	ctx := t.Context()
 	author, other := e.ids.NewID(), e.ids.NewID()

@@ -10,6 +10,7 @@ import (
 
 	billinggcp "github.com/mycroblog/my/internal/adapter/billing/gcp"
 	"github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -19,7 +20,7 @@ func init() { billingSourceAdapters["gcp"] = newGCPBillingSource }
 // billing_gcp_method (ADR-0068 §7, §8). The credentials are the Application Default Credentials
 // (the service account of Cloud Run, GOOGLE_APPLICATION_CREDENTIALS elsewhere). The clients reach
 // only the BigQuery and Pub/Sub APIs, so they do not go through the SSRF-guarded kernel.HTTPClient.
-func newGCPBillingSource(ctx context.Context, cfg *config.Config) (finance.BillingSource, error) {
+func newGCPBillingSource(ctx context.Context, cfg *config.Config, _ kernel.Meter) (finance.BillingSource, error) {
 	switch cfg.BillingGCPMethod {
 	case "", billinggcp.MethodBigQuery:
 		return billinggcp.NewBigQuery(ctx, billinggcp.BigQueryOptions{

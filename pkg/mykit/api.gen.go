@@ -1141,6 +1141,7 @@ const (
 	BillingImportMethodBigquery     BillingImportMethod = "bigquery"
 	BillingImportMethodBudget       BillingImportMethod = "budget"
 	BillingImportMethodCostExplorer BillingImportMethod = "cost_explorer"
+	BillingImportMethodPlugin       BillingImportMethod = "plugin"
 )
 
 // Valid indicates whether the value is a known member of the BillingImportMethod enum.
@@ -1151,6 +1152,8 @@ func (e BillingImportMethod) Valid() bool {
 	case BillingImportMethodBudget:
 		return true
 	case BillingImportMethodCostExplorer:
+		return true
+	case BillingImportMethodPlugin:
 		return true
 	default:
 		return false
@@ -1237,8 +1240,9 @@ func (e BillingImportRunOutcome) Valid() bool {
 
 // Defines values for BillingSourceName.
 const (
-	BillingSourceNameAws BillingSourceName = "aws"
-	BillingSourceNameGcp BillingSourceName = "gcp"
+	BillingSourceNameAws    BillingSourceName = "aws"
+	BillingSourceNameGcp    BillingSourceName = "gcp"
+	BillingSourceNamePlugin BillingSourceName = "plugin"
 )
 
 // Valid indicates whether the value is a known member of the BillingSourceName enum.
@@ -1247,6 +1251,8 @@ func (e BillingSourceName) Valid() bool {
 	case BillingSourceNameAws:
 		return true
 	case BillingSourceNameGcp:
+		return true
+	case BillingSourceNamePlugin:
 		return true
 	default:
 		return false
@@ -2328,6 +2334,7 @@ const (
 	InstanceSettingKeyReportsRetentionDays             InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription          InstanceSettingKey = "require_media_description"
 	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
+	InstanceSettingKeySearchVisibilities               InstanceSettingKey = "search_visibilities"
 	InstanceSettingKeySecurityContact                  InstanceSettingKey = "security_contact"
 	InstanceSettingKeySessionOriginsRetentionDays      InstanceSettingKey = "session_origins_retention_days"
 	InstanceSettingKeySupporterListVisibility          InstanceSettingKey = "supporter_list_visibility"
@@ -2428,6 +2435,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyRequireMediaDescription:
 		return true
 	case InstanceSettingKeySearchIndexing:
+		return true
+	case InstanceSettingKeySearchVisibilities:
 		return true
 	case InstanceSettingKeySecurityContact:
 		return true
@@ -4971,7 +4980,7 @@ type AdminAppealPage struct {
 // posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
 // `account_statuses_refetch_queued` on an `account`, and `domain_statuses_refetch_queued`
 // on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
-// the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
+// the ID is the source (`aws`, `gcp`, `plugin`) and the label the provider's name. On a `cost_item`:
 // `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
 // `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 // the item's name. On the `supporter_program`: `supporter_program_enabled`,
@@ -5046,7 +5055,7 @@ type AdminAuditEntry struct {
 	// posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
 	// `account_statuses_refetch_queued` on an `account`, and `domain_statuses_refetch_queued`
 	// on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
-	// the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
+	// the ID is the source (`aws`, `gcp`, `plugin`) and the label the provider's name. On a `cost_item`:
 	// `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
 	// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 	// the item's name. On the `supporter_program`: `supporter_program_enabled`,
@@ -7046,7 +7055,7 @@ type BadgeColor string
 
 // BillingImport The state of the imports of a billing source.
 type BillingImport struct {
-	// BytesBilledThisMonth The BigQuery bytes billed this UTC month; 0 for the other sources.
+	// BytesBilledThisMonth The bytes billed this UTC month, of BigQuery or as a plugin reports them; 0 for the other sources.
 	BytesBilledThisMonth int64 `json:"bytes_billed_this_month"`
 
 	// LastRun The last attempt of a billing import; omitted before the first.
@@ -7067,7 +7076,7 @@ type BillingImport struct {
 	// Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 	// bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 	// `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
-	// without a breakdown by service.
+	// without a breakdown by service; `plugin` (the operator's plugin) what the plugin reports.
 	Method BillingImportMethod `json:"method"`
 
 	// Months The billing months of the last year with imported costs, newest first.
@@ -7082,11 +7091,12 @@ type BillingImport struct {
 	// RequestsToday The billed requests of the imports this UTC day.
 	RequestsToday int `json:"requests_today"`
 
-	// Source A cloud provider of the billing imports (`billing_sources`).
+	// Source A source of the billing imports (`billing_sources`): a cloud provider, or `plugin`, the
+	// operator's plugin that aggregates any other providers.
 	Source BillingSourceName `json:"source"`
 
-	// TimeZone The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`),
-	// kept as the provider reports them.
+	// TimeZone The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`, or
+	// the operator's choice for a plugin), kept as the provider reports them.
 	TimeZone string `json:"time_zone"`
 }
 
@@ -7094,7 +7104,7 @@ type BillingImport struct {
 // Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 // bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 // `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
-// without a breakdown by service.
+// without a breakdown by service; `plugin` (the operator's plugin) what the plugin reports.
 type BillingImportMethod string
 
 // BillingImportList The billing sources and the state of their imports.
@@ -7142,7 +7152,8 @@ type BillingImportRunErrorKind string
 // BillingImportRunOutcome defines model for BillingImportRun.Outcome.
 type BillingImportRunOutcome string
 
-// BillingSourceName A cloud provider of the billing imports (`billing_sources`).
+// BillingSourceName A source of the billing imports (`billing_sources`): a cloud provider, or `plugin`, the
+// operator's plugin that aggregates any other providers.
 type BillingSourceName string
 
 // BrandDropped Something the server removed from an uploaded SVG: an `element` with everything in it, or an
@@ -7567,7 +7578,8 @@ type CostSchedule string
 type CostSourceRule struct {
 	Provider string `json:"provider"`
 
-	// Source A cloud provider of the billing imports (`billing_sources`).
+	// Source A source of the billing imports (`billing_sources`): a cloud provider, or `plugin`, the
+	// operator's plugin that aggregates any other providers.
 	Source   BillingSourceName `json:"source"`
 	TimeZone string            `json:"time_zone"`
 }

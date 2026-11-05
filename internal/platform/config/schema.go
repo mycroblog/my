@@ -817,7 +817,7 @@ var schema = []field{
 	},
 	{
 		key:   "billing_sources",
-		doc:   "Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request) and `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider (docs/operations/billing-import.md). The build tags `no_billing_aws` and `no_billing_gcp` leave `aws` and `gcp` out. Empty imports nothing.",
+		doc:   "Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request), `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`), and `plugin` (a plugin of yours that aggregates any other providers: `plugin_billing_address`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider (docs/operations/billing-import.md). The build tags `no_billing_aws`, `no_billing_gcp`, and `no_plugins` leave `aws`, `gcp`, and `plugin` out. Empty imports nothing.",
 		check: checkBillingSources,
 		set: func(c *Config, v string) {
 			for s := range strings.SplitSeq(v, ",") {
@@ -1517,7 +1517,7 @@ func checkRatio(v string) error {
 }
 
 // billingSourceNames are the values of billing_sources (ADR-0068).
-var billingSourceNames = []string{"aws", "gcp"}
+var billingSourceNames = []string{"aws", "gcp", "plugin"}
 
 // The defaults of the AWS request caps (ADR-0068 §4); finance.DefaultAWSRequestsPerDay and
 // _PerMonth are the same.
@@ -1532,7 +1532,7 @@ func checkBillingSources(v string) error {
 	for s := range strings.SplitSeq(v, ",") {
 		s = strings.TrimSpace(s)
 		if !slices.Contains(billingSourceNames, s) {
-			return fmt.Errorf("%q is not a billing source; use aws or gcp, comma-separated", s)
+			return fmt.Errorf("%q is not a billing source; use aws, gcp, or plugin, comma-separated", s)
 		}
 		if tag, ok := excludedValues["billing_sources"][s]; ok {
 			return excludedError(s, tag)

@@ -60,7 +60,9 @@ func moderationProjectionEqualsRebuild(t *testing.T, e *moderationEnv) {
 					err = e.svc.LiftDomainAction(ctx, pick(domainActions), "")
 				}
 			case 5:
-				_, err = e.svc.ExpireAccountRestrictions(ctx)
+				if _, err = e.svc.ExpireAccountRestrictions(ctx); err == nil {
+					_, err = e.svc.ExpireDomainRestrictions(ctx)
+				}
 			case 6:
 				var r moderation.Report
 				r, _, err = e.svc.FileRemoteReport(ctx, appmoderation.RemoteReportInput{

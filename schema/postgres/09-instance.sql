@@ -28,7 +28,7 @@ CREATE TABLE instance_setting_revisions (
     'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_lifetime_seconds',
     'public_counts', 'featured_accounts', 'login_providers_only',
     'remote_media_cache_max_bytes', 'remote_status_retention_days', 'remote_status_max_retention_days',
-    'relay_status_retention_days', 'oauth_client_rate_limits'
+    'relay_status_retention_days', 'oauth_client_rate_limits', 'search_visibilities'
   )),
   value text NOT NULL,
   revised_by_user_id uuid,

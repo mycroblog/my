@@ -24,6 +24,8 @@ type Env struct {
 	Conn *client.Conn
 	// Protocol is the protocol that Conn speaks.
 	Protocol string
+	// Billed runs the cases of the billing kind that may cost money (--billed).
+	Billed bool
 	// MailTo is the recipient of the cases of the mailer kind that send real mail (--mail-to); empty skips them. MailFrom
 	// is their sender (--mail-from).
 	MailTo, MailFrom string
@@ -43,8 +45,9 @@ type Case struct {
 
 // table holds the cases of each kind, which follow the common ones.
 var table = map[string][]Case{
-	kind.Probe:  probeCases,
-	kind.Mailer: mailerCases,
+	kind.Probe:   probeCases,
+	kind.Billing: billingCases,
+	kind.Mailer:  mailerCases,
 }
 
 // noCases is the reason of a kind without an entry in the table.

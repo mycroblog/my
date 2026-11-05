@@ -1070,6 +1070,31 @@ func accountFindsByURIAndDomain(t *testing.T, e *accountEnv) {
 		t.Errorf("FindByURI(unknown) = %v, want ErrNotFound", err)
 	}
 
+	subdomain := account.Account{
+		ID: e.ids.NewID(), URI: "https://sub.remote.example/users/s", Domain: "sub.remote.example",
+		ActorType: account.ActorPerson, CreatedAt: e.clock.Now(),
+	}
+	lookalike := account.Account{
+		ID: e.ids.NewID(), URI: "https://notremote.example/users/n", Domain: "notremote.example",
+		ActorType: account.ActorPerson, CreatedAt: e.clock.Now(),
+	}
+	if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := e.h.Accounts.InsertAccount(ctx, tx, subdomain); err != nil {
+			return err
+		}
+		return e.h.Accounts.InsertAccount(ctx, tx, lookalike)
+	}); err != nil {
+		t.Fatalf("InsertAccount: %v", err)
+	}
+	onDomain, err := e.h.Accounts.ListAccountIDsOnDomain(ctx, "remote.example", "", 10)
+	if want := []string{remote.ID, subdomain.ID}; err != nil || !slices.Equal(onDomain, want) {
+		t.Errorf("ListAccountIDsOnDomain = %v, %v; want %v", onDomain, err, want)
+	}
+	onDomain, err = e.h.Accounts.ListAccountIDsOnDomain(ctx, "remote.example", remote.ID, 1)
+	if want := []string{subdomain.ID}; err != nil || !slices.Equal(onDomain, want) {
+		t.Errorf("the page after the first = %v, %v; want %v", onDomain, err, want)
+	}
+
 	missing := e.ids.NewID()
 	for _, tc := range []struct {
 		domain string

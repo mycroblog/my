@@ -8,13 +8,14 @@ import (
 	"io"
 
 	"github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // billingSourceAdapters builds the BillingSource of each name of billing_sources whose adapter is
 // in this build (ADR-0068 §10): the files of the adapters, under their build tags, add theirs.
-var billingSourceAdapters = map[string]func(ctx context.Context, cfg *config.Config) (finance.BillingSource, error){}
+var billingSourceAdapters = map[string]func(ctx context.Context, cfg *config.Config, meter kernel.Meter) (finance.BillingSource, error){}
 
 // setUpFinance builds the finance module (ADR-0067, ADR-0068): its projectors, the service, the
 // sources of billing_sources with the AWS request caps, and the jobs of the billing imports.
@@ -29,7 +30,7 @@ func (a *App) setUpFinance(ctx context.Context, cfg *config.Config, repo finance
 		if !ok {
 			return fmt.Errorf("billing_sources = %s: this build has no adapter of %s", name, name)
 		}
-		src, err := build(ctx, cfg)
+		src, err := build(ctx, cfg, a.Meter)
 		if err != nil {
 			return fmt.Errorf("billing_sources = %s: %w", name, err)
 		}
@@ -46,7 +47,8 @@ func (a *App) setUpFinance(ctx context.Context, cfg *config.Config, repo finance
 	finance.RegisterProjectors(a.Projectors, repo)
 	a.Finance = finance.NewService(finance.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs,
-		Sources: sources,
+		Sources:       sources,
+		ProviderNames: map[string]string{finance.SourcePlugin: cfg.PluginBillingProvider},
 		Caps: map[string]finance.RequestCaps{
 			"aws": {PerDay: cfg.BillingAWSMaxRequestsPerDay, PerMonth: cfg.BillingAWSMaxRequestsPerMonth},
 		},

@@ -702,7 +702,7 @@ func TestLoadInvalid(t *testing.T) {
 		{
 			name: "unknown billing source",
 			env:  with(minimal(), "MY_BILLING_SOURCES", "aws, azure"),
-			want: []string{`billing_sources (MY_BILLING_SOURCES): "azure" is not a billing source; use aws or gcp, comma-separated`},
+			want: []string{`billing_sources (MY_BILLING_SOURCES): "azure" is not a billing source; use aws, gcp, or plugin, comma-separated`},
 		},
 		{
 			name: "repeated billing source",

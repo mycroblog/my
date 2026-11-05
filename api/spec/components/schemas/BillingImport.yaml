@@ -14,13 +14,13 @@ properties:
       Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
       bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
       `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
-      without a breakdown by service.
+      without a breakdown by service; `plugin` (the operator's plugin) what the plugin reports.
     type: string
-    enum: [cost_explorer, bigquery, budget]
+    enum: [cost_explorer, bigquery, budget, plugin]
   time_zone:
     description: |
-      The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`),
-      kept as the provider reports them.
+      The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`, or
+      the operator's choice for a plugin), kept as the provider reports them.
     type: string
   last_run:
     $ref: ./BillingImportRun.yaml
@@ -49,7 +49,7 @@ properties:
     type: integer
     minimum: 1
   bytes_billed_this_month:
-    description: The BigQuery bytes billed this UTC month; 0 for the other sources.
+    description: The bytes billed this UTC month, of BigQuery or as a plugin reports them; 0 for the other sources.
     type: integer
     format: int64
     minimum: 0

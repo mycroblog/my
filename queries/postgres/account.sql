@@ -117,6 +117,16 @@ ORDER BY id;
 -- name: ListExistingAccountIDs :many
 SELECT id FROM accounts WHERE id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY id;
 
+-- ListAccountIDsOnDomainAfter pages the accounts on domain or one of its subdomains in ID order
+-- after the ID after ("" for the first page).
+-- name: ListAccountIDsOnDomainAfter :many
+SELECT id FROM accounts
+WHERE id > COALESCE(sqlc.narg(after)::uuid, '00000000-0000-0000-0000-000000000000')
+  AND (domain = sqlc.arg(domain)
+    OR (length(domain) > length(sqlc.arg(domain)) AND substr(domain, length(domain) - length(sqlc.arg(domain))) = '.' || sqlc.arg(domain)))
+ORDER BY id
+LIMIT sqlc.arg(page_limit);
+
 -- ListLocalAccountIDsAfter pages the local accounts in ID order after the ID after ("" for the
 -- first page).
 -- name: ListLocalAccountIDsAfter :many

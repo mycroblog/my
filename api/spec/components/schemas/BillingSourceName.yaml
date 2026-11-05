@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: MIT
-description: A cloud provider of the billing imports (`billing_sources`).
+description: |
+  A source of the billing imports (`billing_sources`): a cloud provider, or `plugin`, the
+  operator's plugin that aggregates any other providers.
 type: string
-enum: [aws, gcp]
+enum: [aws, gcp, plugin]

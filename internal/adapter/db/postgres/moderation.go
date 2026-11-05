@@ -265,6 +265,27 @@ func (r *ModerationRepository) DeleteExpiredAccountRestrictions(ctx context.Cont
 	return out, nil
 }
 
+// DeleteExpiredDomainRestrictions implements moderation.Repository.
+func (r *ModerationRepository) DeleteExpiredDomainRestrictions(ctx context.Context, tx uow.Tx, now time.Time, limit int) ([]moderation.RestrictionRow, error) {
+	n, err := toInt32(limit, "batch limit")
+	if err != nil {
+		return nil, err
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.DeleteExpiredDomainRestrictions(ctx, postgresgen.DeleteExpiredDomainRestrictionsParams{Now: now, BatchLimit: n})
+	if err != nil {
+		return nil, wrap(err, "delete expired domain restrictions")
+	}
+	out := make([]moderation.RestrictionRow, len(rows))
+	for i, row := range rows {
+		out[i] = restrictionRowsFrom(row.Domain, row.Restriction, row.SourceActionID, row.EffectiveUntil)
+	}
+	return out, nil
+}
+
 // InsertDomainRestriction implements moderation.Repository.
 func (r *ModerationRepository) InsertDomainRestriction(ctx context.Context, tx uow.Tx, row moderation.RestrictionRow) error {
 	q, err := r.db.queries(tx)
