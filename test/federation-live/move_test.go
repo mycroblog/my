@@ -72,7 +72,7 @@ func TestMove(t *testing.T) {
 			// The move goes to arrive@my.test, an account of another server to Misskey.
 			t.Logf("%s: %s moves to %s", misskeyOwnMoveTarget, moveLeaver+p.name, moveArrival+"@"+localHost)
 			target = moveTarget{handle: moveArrival + "@" + localHost, alias: func(ctx context.Context, handle, _ string) error {
-				return arrival.call(ctx, http.MethodPost, "/accounts/aliases", map[string]any{"acct": handle}, nil)
+				return arrival.api(ctx, http.MethodPost, "/accounts/aliases", map[string]any{"acct": handle}, nil)
 			}}
 		}
 		t.Run(p.name+"/out", func(t *testing.T) { e.moveOut(ctx, t, p, target, password) })
@@ -129,7 +129,7 @@ func (e *env) moveOut(ctx context.Context, t *testing.T, p *peerClient, to moveT
 	// This server fetches the target again and refuses the move until its actor names the
 	// leaver; the peer may serve its actor from a cache for a moment.
 	eventually(t, deliveryTimeout, handle+" moves to "+arrive, func() (bool, string) {
-		err := leaver.call(ctx, http.MethodPost, "/accounts/move", map[string]any{"target_account_id": target.ID, "password": password}, nil)
+		err := leaver.api(ctx, http.MethodPost, "/accounts/move", map[string]any{"target_account_id": target.ID, "password": password}, nil)
 		return err == nil, fmt.Sprint(err)
 	})
 
@@ -163,7 +163,7 @@ func (e *env) moveIn(ctx context.Context, t *testing.T, p *peerClient, m peerMov
 		return err == nil && r.Following, fmt.Sprintf("%+v %v", r, err)
 	})
 
-	if err := arrival.call(ctx, http.MethodPost, "/accounts/aliases", map[string]any{"acct": leaver}, nil); err != nil {
+	if err := arrival.api(ctx, http.MethodPost, "/accounts/aliases", map[string]any{"acct": leaver}, nil); err != nil {
 		t.Fatalf("naming %s among the aliases of %s: %v", leaver, arrive, err)
 	}
 	target, err := e.local.resolve(ctx, arrive)

@@ -76,7 +76,7 @@ func TestSuspension(t *testing.T) {
 	var action struct {
 		ID string `json:"id"`
 	}
-	if err := e.local.call(ctx, http.MethodPost, "/admin/accounts/"+url.PathEscape(local.ID)+"/actions",
+	if err := e.local.api(ctx, http.MethodPost, "/admin/accounts/"+url.PathEscape(local.ID)+"/actions",
 		map[string]any{"kind": "suspend", "reason_category": "other", "notify_target": false}, &action); err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestSuspension(t *testing.T) {
 		return suspended, state
 	})
 
-	if err := e.local.call(ctx, http.MethodPost, "/admin/account_actions/"+url.PathEscape(action.ID)+"/lift",
+	if err := e.local.api(ctx, http.MethodPost, "/admin/account_actions/"+url.PathEscape(action.ID)+"/lift",
 		map[string]any{"reason": "live test"}, nil); err != nil {
 		t.Fatal(err)
 	}

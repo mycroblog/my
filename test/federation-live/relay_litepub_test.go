@@ -45,14 +45,10 @@ func TestRelayLitePub(t *testing.T) {
 	kate := &mastodonAPI{host: akkomaHost, token: os.Getenv("FEDERATION_LIVE_AKKOMA_TOKEN"), http: e.http}
 
 	var r adminRelay
-	if err := e.local.call(ctx, http.MethodPost, "/admin/relays", map[string]any{"url": litePubRelayActor}, &r); err != nil {
+	if err := e.local.api(ctx, http.MethodPost, "/admin/relays", map[string]any{"url": litePubRelayActor}, &r); err != nil {
 		t.Fatalf("registering the relay: %v", err)
 	}
-	t.Cleanup(func() {
-		ctx := context.Background()
-		_ = e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID+"/follow", nil, nil)
-		_ = e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID, nil, nil)
-	})
+	t.Cleanup(func() { e.removeRelay(t, r.ID) })
 	if r.Protocol != "litepub" {
 		t.Fatalf("the relay registered with no protocol = %q, want litepub", r.Protocol)
 	}
@@ -115,7 +111,7 @@ func TestRelayLitePub(t *testing.T) {
 
 	// Leaving sends the Undo: Akkoma's relay stops announcing to this server.
 	var left adminRelay
-	if err := e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID+"/follow", nil, &left); err != nil || left.State != "left" {
+	if err := e.local.api(ctx, http.MethodDelete, "/admin/relays/"+r.ID+"/follow", nil, &left); err != nil || left.State != "left" {
 		t.Fatalf("leaving the relay = %+v, %v", left, err)
 	}
 	time.Sleep(quietPeriod) // the Undo is delivered before kate posts again
@@ -127,7 +123,7 @@ func TestRelayLitePub(t *testing.T) {
 	if ok, _ := e.onFederatedTimeline(ctx, after); ok {
 		t.Fatalf("kate's post after leaving the relay reached the federated timeline")
 	}
-	if err := e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID, nil, nil); err != nil {
+	if err := e.local.api(ctx, http.MethodDelete, "/admin/relays/"+r.ID, nil, nil); err != nil {
 		t.Fatalf("deleting the relay: %v", err)
 	}
 }
@@ -137,7 +133,7 @@ func (e *env) adminRelay(ctx context.Context, id string) (adminRelay, error) {
 	var list struct {
 		Items []adminRelay `json:"items"`
 	}
-	if err := e.local.call(ctx, http.MethodGet, "/admin/relays", nil, &list); err != nil {
+	if err := e.local.api(ctx, http.MethodGet, "/admin/relays", nil, &list); err != nil {
 		return adminRelay{}, err
 	}
 	for _, it := range list.Items {
@@ -154,7 +150,7 @@ func (e *env) onFederatedTimeline(ctx context.Context, text string) (bool, strin
 	var page struct {
 		Items []status `json:"items"`
 	}
-	if err := e.local.call(ctx, http.MethodGet, "/timelines/federated?limit=40", nil, &page); err != nil {
+	if err := e.local.api(ctx, http.MethodGet, "/timelines/federated?limit=40", nil, &page); err != nil {
 		return false, err.Error()
 	}
 	for _, s := range page.Items {
