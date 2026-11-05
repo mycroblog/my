@@ -148,7 +148,7 @@
     "description": "Button of a row of the list of decisions: cancels the decision."
   },
   "admin.hook_decisions.override_action": {
-    "defaultMessage": "Cancel the decision of {hook}, {outcome}, on {date}",
+    "defaultMessage": "Cancel decision of {hook}, {outcome}, on {date}",
     "description": "Accessible name of the button that cancels a decision. {hook} names the review, {outcome} the outcome, and {date} when it decided."
   },
   "admin.hook_decisions.override_failed": {

@@ -3,8 +3,16 @@
 // with its counts, and what they stopped, in the states of ADR-0079 §13.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import { apiBase } from "../../test/msw/http";
-import { answering, failingOn, inLocale, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
+import { apiBase, problem } from "../../test/msw/http";
+import {
+  answering,
+  answeringWithErrorPage,
+  inLocale,
+  narrow,
+  renderScreen,
+  screenLoader,
+  settled,
+} from "../../test/stories";
 import { hookDecisionFixture, hookSummaryFixture } from "./test/handlers";
 import { hoursAgo, listing, moderatorViewer, withoutPermission } from "./test/stories";
 
@@ -53,10 +61,14 @@ type Story = StoryObj<typeof meta>;
 export const Normal: Story = {};
 
 /** Nothing was stopped. */
-export const Empty: Story = answering(listing("/admin/hook_decisions", []));
+export const Empty: Story = answering(moderatorViewer, summary, listing("/admin/hook_decisions", []));
 
 /** The list cannot be read. */
-export const Failed: Story = failingOn("get", "/admin/hook_decisions");
+export const Failed: Story = answeringWithErrorPage(
+  moderatorViewer,
+  summary,
+  http.get(`${apiBase}/admin/hook_decisions`, () => problem(500, "about:blank", "Internal Server Error")),
+);
 
 /** Without manage_reports. */
 export const WithoutPermission: Story = withoutPermission;

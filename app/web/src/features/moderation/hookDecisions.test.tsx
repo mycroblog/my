@@ -74,14 +74,14 @@ describe("automated reviews", () => {
     decisionsServer([dropped, observed]);
     const { user } = await renderApp({ path: "/moderation/hook-decisions" });
     const button = await screen.findByRole("button", {
-      name: /Cancel the decision of Posts from other servers, Dropped/u,
+      name: /Cancel decision of Posts from other servers, Dropped/u,
     });
     // The one that had no effect has nothing to cancel.
-    expect(screen.getAllByRole("button", { name: /Cancel the decision/u })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /Cancel decision of/u })).toHaveLength(1);
     await user.click(button);
     expect(await screen.findByText("Cancelled the decision of Posts from other servers: Dropped.")).toBeVisible();
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: /Cancel the decision/u })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Cancel decision of/u })).not.toBeInTheDocument();
     });
   });
 
@@ -93,9 +93,9 @@ describe("automated reviews", () => {
       ),
     );
     const { user } = await renderApp({ path: "/moderation/hook-decisions" });
-    await user.click(await screen.findByRole("button", { name: /Cancel the decision/u }));
+    await user.click(await screen.findByRole("button", { name: /Cancel decision of/u }));
     expect(await screen.findByText(/Could not cancel the decision/u)).toBeVisible();
-    expect(screen.getByRole("button", { name: /Cancel the decision/u })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Cancel decision of/u })).toBeVisible();
   });
 
   test("the filter asks for one review and stays in the URL", async () => {

@@ -44,7 +44,7 @@ import {
   useHookSummary,
   useOverrideHookDecision,
 } from "../hooks/useHookDecisions";
-import { DateTime, RecordTable, Section } from "./parts";
+import { DateTime, RecordTable, RequirePermission, Section } from "./parts";
 
 type HookRow = HookSummary["hooks"][number];
 
@@ -62,45 +62,47 @@ export function HookDecisions({
   const t = useT();
   const [status, setStatus] = useState("");
   return (
-    <Stack gap="6">
-      <Section title={t("client:admin.hook_decisions.summary.title")}>
-        <HookSummaryTable />
-      </Section>
-      <Section title={t("client:admin.hook_decisions.list.title")}>
-        <Stack gap="3">
-          <ListToolbar label={t("client:admin.list.filters")}>
-            <Select
-              variant="toolbar"
-              aria-label={t("client:admin.hook_decisions.filter.label")}
-              value={filter}
-              onChange={(key) => {
-                if (isFilter(key)) onFilterChange(key);
+    <RequirePermission permission="manage_reports">
+      <Stack gap="6">
+        <Section title={t("client:admin.hook_decisions.summary.title")}>
+          <HookSummaryTable />
+        </Section>
+        <Section title={t("client:admin.hook_decisions.list.title")}>
+          <Stack gap="3">
+            <ListToolbar label={t("client:admin.list.filters")}>
+              <Select
+                variant="toolbar"
+                aria-label={t("client:admin.hook_decisions.filter.label")}
+                value={filter}
+                onChange={(key) => {
+                  if (isFilter(key)) onFilterChange(key);
+                }}
+              >
+                {hookDecisionFilters.map((item) => (
+                  <SelectItem key={item} id={item}>
+                    {item === "all" ? t("client:admin.hook_decisions.filter.all") : t(hookNameLabels[item])}
+                  </SelectItem>
+                ))}
+              </Select>
+            </ListToolbar>
+            <StatusMessage>{status}</StatusMessage>
+            {/* Another filter is another list: it starts at its first page. */}
+            <HookDecisionList
+              key={filter}
+              filter={filter}
+              onOverridden={(decision) => {
+                setStatus(
+                  t("client:admin.hook_decisions.overridden", {
+                    hook: t(hookNameLabels[decision.hook]),
+                    outcome: t(hookOutcomeLabels[decision.outcome]),
+                  }),
+                );
               }}
-            >
-              {hookDecisionFilters.map((item) => (
-                <SelectItem key={item} id={item}>
-                  {item === "all" ? t("client:admin.hook_decisions.filter.all") : t(hookNameLabels[item])}
-                </SelectItem>
-              ))}
-            </Select>
-          </ListToolbar>
-          <StatusMessage>{status}</StatusMessage>
-          {/* Another filter is another list: it starts at its first page. */}
-          <HookDecisionList
-            key={filter}
-            filter={filter}
-            onOverridden={(decision) => {
-              setStatus(
-                t("client:admin.hook_decisions.overridden", {
-                  hook: t(hookNameLabels[decision.hook]),
-                  outcome: t(hookOutcomeLabels[decision.outcome]),
-                }),
-              );
-            }}
-          />
-        </Stack>
-      </Section>
-    </Stack>
+            />
+          </Stack>
+        </Section>
+      </Stack>
+    </RequirePermission>
   );
 }
 

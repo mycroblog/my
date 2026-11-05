@@ -148,7 +148,7 @@
     "description": "Button of a row of the list of decisions: cancels the decision."
   },
   "admin.hook_decisions.override_action": {
-    "defaultMessage": "{date} の {hook} の判定 ({outcome}) を取り消す",
+    "defaultMessage": "判定を取り消す: {hook} ({outcome})、{date}",
     "description": "Accessible name of the button that cancels a decision. {hook} names the review, {outcome} the outcome, and {date} when it decided."
   },
   "admin.hook_decisions.override_failed": {
