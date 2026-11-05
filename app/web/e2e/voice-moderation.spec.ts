@@ -200,6 +200,7 @@ async function serveApi(page: Page) {
         rules: [],
         voice_enabled: true,
         voice_room_starters: "permitted",
+        full_text_search: { available: false, visibilities: [] },
       });
     }
     if (key === "GET /accounts/verify_credentials") return json(route, credentials);

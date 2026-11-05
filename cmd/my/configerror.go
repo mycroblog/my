@@ -111,10 +111,17 @@ func findingLine(f config.Finding) string {
 }
 
 // warnReadiness logs a warning for each finding of config.Readiness. my serve starts anyway;
-// `my config check` fails on the errors among them.
+// `my config check` fails on the errors among them. The warnings about the destinations of plugins hold in every profile
+// (ADR-0146 §6), and Readiness has them only in production.
 func warnReadiness(ctx context.Context, logger *slog.Logger, cfg *config.Config) {
 	for _, f := range config.Readiness(cfg) {
 		logger.WarnContext(ctx, "a setting is not ready for production",
 			slog.String("env", f.Env()), slog.String("finding_severity", string(f.Severity)), slog.String("detail", f.Message))
+	}
+	if cfg.Profile == "production" {
+		return
+	}
+	for _, f := range config.PluginWarnings(cfg) {
+		logger.WarnContext(ctx, "a plugin's destination needs attention", slog.String("env", f.Env()), slog.String("detail", f.Message))
 	}
 }

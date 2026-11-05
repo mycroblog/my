@@ -41,6 +41,7 @@ import (
 	"github.com/mycroblog/my/internal/app/projection"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/rewrap"
+	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/app/timeline"
@@ -194,6 +195,8 @@ type App struct {
 	Payments *supporters.Payments
 	// Supporters runs the supporter program, its plans, and their subscriptions (ADR-0072).
 	Supporters *supporters.Service
+	// Search is the full-text search of statuses (ADR-0149), with no backend with search = none.
+	Search *search.Service
 	// Voice is how the voice chat runs: its method, off for none, and the limits of its rooms
 	// (ADR-0101 §1).
 	Voice Voice
@@ -379,6 +382,9 @@ type AppOptions struct {
 	// the fake adapter of internal/adapter/payment/fake.
 	PaymentProvider supporters.PaymentProvider
 	SupporterSync   supporters.Syncer
+	// SearchIndex stands in for the adapter of search. Tests only, with the fake adapter of
+	// internal/adapter/search/fake.
+	SearchIndex search.Index
 	// ClientAPIAccountLimit, when its Max is set, replaces the client API's per-account rate
 	// limit (clientapi.AccountLimit). Tests only, to reach the limit in a few requests and a
 	// short window (pkg/mykit/integration).
@@ -557,6 +563,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpFanOut(cfg, repos.feds, fedOutbox)
 	a.setUpWebhooks(repos.hooks)
 	if err := a.setUpVoice(cfg, repos.voice); err != nil {
+		return nil, err
+	}
+	if err := a.setUpSearch(ctx, cfg, opts); err != nil {
 		return nil, err
 	}
 	if err := a.setUpFinance(ctx, cfg, repos.finance, opts); err != nil {

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+#
+# Run from the repository root by scripts/plugin-generate.sh, which also rewrites the license line the generators copy
+# from each .proto. The Go import path stays here, so that the .proto files name nothing of the server's.
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/mycroblog/my/internal/adapter/plugin/gen
+plugins:
+  - local: [go, tool, -modfile=tools/go.mod, protoc-gen-go]
+    out: internal/adapter/plugin/gen
+    opt: paths=source_relative
+  - local: [go, tool, -modfile=tools/go.mod, protoc-gen-connect-go]
+    out: internal/adapter/plugin/gen
+    opt: paths=source_relative

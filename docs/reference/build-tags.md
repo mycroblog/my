@@ -25,6 +25,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_payments_payjp` | The PAY.JP adapter of the supporters' payments and its checkout and card pages (no third-party library) | `payments = payjp` |
 | `no_voice_livekit` | The LiveKit adapter of the voice chat and the endpoint of its events (no third-party library) | `voice = livekit` |
 | `no_voice_sora` | The Sora adapter of the voice chat and the endpoints of its auth, event, and session webhooks (no third-party library) | `voice = sora` |
+| `no_plugins` | The plugin client (`connect/v2`) and `my plugin test` | Every `plugin_<kind>_address` |
 | `no_otel` | The OpenTelemetry SDK and its Prometheus and OTLP exporters, of the metrics, the traces, and the error reports | `metrics_exporter = prometheus`, `metrics_exporter = otlp`, `traces_exporter = otlp`, `errors_exporter = otlp` |
 
 Leave out the database that the instance does not use, but keep at least one of `no_sqlite` and `no_postgres` off:
@@ -37,17 +38,17 @@ released binary or image has it. Never run a test build for real users.
 
 | Tag | Adds | Settings it allows |
 | --- | --- | --- |
-| `e2e_fakes` | The fake payment provider: its state lives in the server's memory, and its own checkout page under `/payments/pages/fake/` offers to pay, to make the payment fail, or to cancel. Paying records the subscription and its payment as paid without any money moving. The command `my dev push-service`, a fake Web Push service ([contributing guide](../../CONTRIBUTING.md#the-fake-push-service)). | `payments = fake`, with `profile = development` only |
+| `e2e_fakes` | The fake payment provider: its state lives in the server's memory, and its own checkout page under `/payments/pages/fake/` offers to pay, to make the payment fail, or to cancel. Paying records the subscription and its payment as paid without any money moving. The fake search index, whose documents live in the server's memory. The command `my dev push-service`, a fake Web Push service ([contributing guide](../../CONTRIBUTING.md#the-fake-push-service)). | `payments = fake` and `search = fake`, with `profile = development` only |
 
 A fake that records payments as paid would give anyone a supporter's role without paying, so a released binary refuses them.
-A binary without the tag rejects `payments = fake` like a left-out adapter:
+A binary without the tag rejects `payments = fake` and `search = fake` like a left-out adapter:
 
 ```text
 payments (MY_PAYMENTS): "fake" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it (docs/reference/build-tags.md)
 ```
 
 A binary without the tag has no `my dev` command (`my: unknown command "dev"`). A test build refuses
-`payments = fake` and `my dev push-service` unless `profile = development`, and both log a warning at start
+`payments = fake`, `search = fake`, and `my dev push-service` unless `profile = development`, and both log a warning at start
 that it is a test build.
 
 The tag's other safeguards, and how the project's own tests use it, are in the
@@ -76,6 +77,6 @@ Before each release, each of these sets is built and vetted, and the check fails
 
 | Set | Fits |
 | --- | --- |
-| `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_sqs,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe` | A self-hosted instance on SQLite |
+| `no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_sqs,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins` | A self-hosted instance on SQLite |
 | `no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora` | AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, the AWS KMS key manager, the SQS queue, and the Stripe payments, without the Sora voice chat |
 | `no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_sqs,no_billing_aws,no_voice_livekit` | Google Cloud: PostgreSQL, the Pub/Sub broker, the Cloud KMS key manager, and the Cloud Tasks queue, without the LiveKit voice chat |

@@ -71,6 +71,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runLoginProvider(fs.Args()[1:], os.Stdin, stdout, stderr)
 	case "maintenance":
 		return runMaintenance(fs.Args()[1:], stdout, stderr)
+	case "plugin":
+		return runPlugin(fs.Args()[1:], stdout, stderr)
 	case "projection":
 		return runProjection(fs.Args()[1:], stdout, stderr)
 	case "registration":
@@ -126,6 +128,7 @@ Commands:
             (my login-provider list|create|set|rotate-secret|enable|disable|delete)
   maintenance
             Write the maintenance page as static HTML (my maintenance export)
+  plugin    Test a plugin against the contract of its kind (my plugin test)
   projection
             Rebuild and verify the projections
             (my projection list|rebuild|verify)

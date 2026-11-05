@@ -1556,6 +1556,8 @@ components:
       $ref: ./components/schemas/InstanceDocumentKind.yaml
     InstanceAudience:
       $ref: ./components/schemas/InstanceAudience.yaml
+    InstanceFullTextSearch:
+      $ref: ./components/schemas/InstanceFullTextSearch.yaml
     InstanceSettingKey:
       $ref: ./components/schemas/InstanceSettingKey.yaml
     InstanceSettingKind:

@@ -22,6 +22,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/pelletier/go-toml/v2"
+
+	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 )
 
 // Role selects what a process runs.
@@ -215,6 +217,9 @@ type Config struct {
 	BillingGCPLabel              string
 	BillingGCPMaxBytesBilled     int64
 	BillingGCPBudgetSubscription string
+	// Search is the search engine of the full-text search of statuses (ADR-0149 §3): "none" or a
+	// backend's name.
+	Search string
 	// PaymentsProvider is the payment provider of the supporters (ADR-0074 §5): "none" or a
 	// provider's name. PaymentsReconcileInterval and PaymentsReconcileMaxRequests bound the
 	// reconciliation with it (§4).
@@ -230,6 +235,9 @@ type Config struct {
 	PaymentsPayjpWebhookToken    string
 	PaymentsReconcileInterval    time.Duration
 	PaymentsReconcileMaxRequests int
+	// Plugins holds the destination of each delegated kind that has any setting, by the kind's name (ADR-0146 §5); read
+	// it through PluginDestination.
+	Plugins map[string]kind.Destination
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string
@@ -434,6 +442,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("payments_payjp_webhook_token", redact(c.PaymentsPayjpWebhookToken != "")),
 		slog.Duration("payments_reconcile_interval", c.PaymentsReconcileInterval),
 		slog.Int("payments_reconcile_max_requests", c.PaymentsReconcileMaxRequests),
+		slog.String("search", c.Search),
 		slog.String("voice", c.Voice),
 		slog.Int("voice_p2p_max_participants", c.VoiceP2PMaxParticipants),
 		slog.Int("voice_sfu_max_participants", c.VoiceMaxParticipants),

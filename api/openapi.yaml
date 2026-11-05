@@ -17942,6 +17942,7 @@ components:
         - supporter_list_visibility
         - voice_enabled
         - voice_room_starters
+        - full_text_search
       properties:
         domain:
           description: The domain that serves the instance.
@@ -18041,6 +18042,8 @@ components:
           enum:
             - everyone
             - permitted
+        full_text_search:
+          $ref: '#/components/schemas/InstanceFullTextSearch'
         theme:
           $ref: '#/components/schemas/InstanceTheme'
         icon:
@@ -18336,6 +18339,27 @@ components:
         - 'off'
         - signed_in
         - everyone
+    InstanceFullTextSearch:
+      description: |
+        The full-text search of statuses on this server. It is separate from the search of accounts and
+        hashtags, which every server has. Clients read this to know whether to show an entry to it,
+        without a search that fails.
+      type: object
+      required:
+        - available
+        - visibilities
+      properties:
+        available:
+          description: Whether the server has a search engine, so that statuses can be searched.
+          type: boolean
+        visibilities:
+          description: The visibilities of the statuses that the search covers; empty while it is not available.
+          type: array
+          items:
+            type: string
+            enum:
+              - public
+              - local
     InstanceSettingKey:
       description: |
         The key of an instance setting. New keys may be

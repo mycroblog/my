@@ -123,6 +123,7 @@ async function serveApi(
         supporter_list_visibility: "everyone",
         voice_enabled: false,
         voice_room_starters: "permitted",
+        full_text_search: { available: false, visibilities: [] },
         rules: [],
       };
       return json(route, instance);

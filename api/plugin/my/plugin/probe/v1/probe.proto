@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+// The smallest kind: the server delegates nothing to it. A plugin of any kind may serve it to check its transport,
+// protocol, and authentication with `my plugin test --kind probe`, before it implements its own kind.
+package my.plugin.probe.v1;
+
+service ProbeService {
+  // Echo returns what it was given. The call has no side effects.
+  rpc Echo(EchoRequest) returns (EchoResponse);
+}
+
+message EchoRequest {
+  // Base64 in JSON. May be empty.
+  bytes payload = 1;
+  // A decimal string in JSON. May be zero.
+  int64 number = 2;
+}
+
+message EchoResponse {
+  // A name in JSON. Anything but OUTCOME_OK, an empty response included, is a failure.
+  Outcome outcome = 1;
+  // The payload of the request.
+  bytes payload = 2;
+  // The number of the request.
+  int64 number = 3;
+}
+
+enum Outcome {
+  OUTCOME_UNSPECIFIED = 0;
+  OUTCOME_OK = 1;
+}

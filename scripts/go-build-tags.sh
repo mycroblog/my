@@ -5,7 +5,7 @@
 # ADR-0010, ADR-0015 §1) and the test-only tag e2e_fakes, which adds the fakes (ADR-0015 §6, ADR-0015 §9). For each
 # representative set of tags, it builds every package with CGO_ENABLED=0, runs go vet, and fails when cmd/my still
 # depends on a package that a tag of the set leaves out. It fails as well when cmd/my without e2e_fakes (the default
-# build with no tags among them) depends on a fake: a fake that records payments as paid or accepts any push message must never reach a released
+# build with no tags among them) depends on a fake: a fake that records payments as paid, accepts any push message, or keeps a search index in memory must never reach a released
 # binary. The set with e2e_fakes also runs the tests that only that build has (named *E2EFakes*).
 #
 #   scripts/go-build-tags.sh                  every set below
@@ -17,7 +17,7 @@ set -euo pipefail
 # The representative sets: together they use every tag.
 sets=(
   # A self-hosted instance on SQLite with the fs blob store, without a broker or a metrics exporter.
-  "no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_sqs,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe"
+  "no_postgres,no_valkey,no_sns,no_ses,no_s3,no_gcs,no_pubsub,no_gcpkms,no_awskms,no_cloudtasks,no_sqs,no_otel,no_billing_aws,no_billing_gcp,no_payments_stripe,no_plugins"
   # AWS: PostgreSQL, the SNS broker, SES, the EMF metrics, AWS KMS, SQS, the Stripe payments, without the Sora voice chat.
   "no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora"
   # Google Cloud: PostgreSQL, the Pub/Sub broker, Cloud KMS, Cloud Tasks, without the LiveKit voice chat.
@@ -65,6 +65,7 @@ excluded_packages() {
     no_payments_payjp) echo "$m/payment/payjp" ;;
     no_voice_livekit) echo "$m/voice/livekit" ;;
     no_voice_sora) echo "$m/voice/sora" ;;
+    no_plugins) echo "$m/plugin/client $m/plugin/contract connectrpc.com/connect/v2" ;;
     no_otel) echo "$m/telemetry/otel $m/telemetry/otel/otlptest go.opentelemetry.io/otel/sdk/metric go.opentelemetry.io/otel/sdk/trace go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp" ;;
     e2e_fakes) ;; # adds the fakes and leaves nothing out
     *)
@@ -78,6 +79,12 @@ excluded_packages() {
 fake_packages() {
   echo "github.com/mycroblog/my/internal/adapter/payment/fake"
   echo "github.com/mycroblog/my/internal/adapter/pushservice/fake"
+  echo "github.com/mycroblog/my/internal/adapter/search/fake"
+}
+
+# never_linked_packages prints the packages that only tests link, which no build of cmd/my may depend on.
+never_linked_packages() {
+  echo "github.com/mycroblog/my/internal/adapter/plugin/fakeplugin"
 }
 
 # check_deps SET reads the packages that cmd/my built with SET depends on from stdin and fails, printing why, when one
@@ -107,6 +114,12 @@ check_deps() {
       fi
     elif grep -qFx "$pkg" <<<"$deps"; then
       echo "cmd/my built with -tags '$set' depends on the test-only fake $pkg: only a build with e2e_fakes may link it" >&2
+      status=1
+    fi
+  done
+  for pkg in $(never_linked_packages); do
+    if grep -qFx "$pkg" <<<"$deps"; then
+      echo "cmd/my built with -tags '$set' depends on $pkg, which only tests may link" >&2
       status=1
     fi
   done
