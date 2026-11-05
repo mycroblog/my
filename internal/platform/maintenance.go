@@ -17,13 +17,14 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/i18n"
 	"github.com/mycroblog/my/internal/interface/maintenance"
+	"github.com/mycroblog/my/internal/interface/queuepush"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // MaintenanceApp is the server of the maintenance mode (ADR-0088): it opens no adapter, runs no
 // job, and answers every request with the maintenance responses of internal/interface/maintenance.
-// It passes the middleware of the App that needs no adapter: request IDs, the access log, the
-// security headers, and panic recovery.
+// It passes the middleware of the App that needs no adapter: the origin check, request IDs, the
+// access log, the security headers, and panic recovery.
 type MaintenanceApp struct {
 	app     *App
 	handler http.Handler
@@ -109,7 +110,9 @@ func (m *MaintenanceApp) Handler() http.Handler {
 	// The maintenance pages end any voice chat call, so they never allow the microphone.
 	h = securityHeaders(h, false)
 	h = a.accessLog(h)
-	return a.requestIDs(h)
+	// This mode reads no setting of the queue. An SQS event comes to any path here and only gets
+	// its records back, so that the proof of the event alone tells it.
+	return a.originCheck(a.requestIDs(h), queuepush.PassThrough)
 }
 
 // ServeMaintenance runs the maintenance mode until ctx ends, then shuts down gracefully, as
@@ -137,6 +140,7 @@ func ServeMaintenance(ctx context.Context, m *MaintenanceApp, opts ServeOptions)
 	}
 	serveErr := make(chan error, 1)
 	kernel.Go(ctx, "http.serve_maintenance", a.ErrorReporter, func(context.Context) { serveErr <- srv.Serve(ln) })
+	a.logOriginCheck(ctx)
 	a.Logger.InfoContext(ctx, "started in maintenance mode", slog.String("addr", ln.Addr().String()))
 	var err error
 	select {

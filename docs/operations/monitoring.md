@@ -31,6 +31,8 @@ The body never carries a reason, host name, or version. The cause is in the serv
 `checked_at` is the time of the check the answer is based on. The server runs the database check at most once a minute per process and reuses the result,
 so a monitor that polls more often than every 60 s sees the same `checked_at` and gains nothing. With several processes, each runs its own check.
 
+With [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) set, these three paths still answer without the header, so they do not show that the CDN lost it. Monitor a page through the CDN too, such as `https://<host>/about`, if a monitor is your first sign of trouble.
+
 ## Keep the monitoring cheap
 
 - **Scale-to-zero databases.** If the monitor's interval is shorter than the time the database waits before it stops, the database never stops.

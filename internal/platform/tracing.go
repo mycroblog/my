@@ -91,13 +91,14 @@ func traceParentOf(r *http.Request, trusted []netip.Prefix) string {
 // startHTTPSpan starts the span of r, as the child of a trusted proxy's traceparent. It returns
 // r with the span's context and the function that ends the span with the request's route and
 // status, or nil when there is no span: the health checks (isHealthCheck), which the
-// platform's probes and the uptime monitors call constantly, and every request when the Tracer records nothing, which still keeps the trusted
+// platform's probes and the uptime monitors call constantly, the requests that the origin check
+// refused, which anyone can send, and every request when the Tracer records nothing, which still keeps the trusted
 // traceparent for the log lines (ADR-0055 §18).
 func (a *App) startHTTPSpan(r *http.Request) (*http.Request, func(rr *requestRoute, status int)) {
 	if tp := traceParentOf(r, a.Config.TrustedProxies); tp != "" {
 		r = r.WithContext(a.Tracer.Continue(r.Context(), tp))
 	}
-	if kernel.IsNopTracer(a.Tracer) || isHealthCheck(r.URL.Path) {
+	if kernel.IsNopTracer(a.Tracer) || isHealthCheck(r.URL.Path) || originRefused(r.Context()) {
 		return r, nil
 	}
 	ctx := r.Context()

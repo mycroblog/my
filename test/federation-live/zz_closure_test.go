@@ -95,7 +95,7 @@ func TestClosure(t *testing.T) {
 	}
 
 	// The closing date has passed, so the closure may follow the announcement at once.
-	if err := e.local.call(ctx, http.MethodPut, "/admin/closure/announcement",
+	if err := e.local.api(ctx, http.MethodPut, "/admin/closure/announcement",
 		map[string]any{"closes_at": time.Now().Add(-time.Minute).UTC().Format(time.RFC3339)}, nil); err != nil {
 		t.Fatalf("announcing the closure: %v", err)
 	}
@@ -103,7 +103,7 @@ func TestClosure(t *testing.T) {
 	var closure struct {
 		State string `json:"state"`
 	}
-	if err := e.local.call(ctx, http.MethodPost, "/admin/closure/close", map[string]any{"confirm_domain": localHost}, &closure); err != nil || closure.State != "closed" {
+	if err := e.local.api(ctx, http.MethodPost, "/admin/closure/close", map[string]any{"confirm_domain": localHost}, &closure); err != nil || closure.State != "closed" {
 		t.Fatalf("closing %s = %+v %v", localHost, closure, err)
 	}
 	for _, p := range e.peers {
@@ -189,7 +189,7 @@ func TestClosure(t *testing.T) {
 			Progress json.RawMessage `json:"progress"`
 		}
 		eventually(t, closureCompletionTimeout, "delivery_completed", func() (bool, string) {
-			err := e.local.call(ctx, http.MethodGet, "/admin/closure", nil, &got)
+			err := e.local.api(ctx, http.MethodGet, "/admin/closure", nil, &got)
 			return err == nil && got.State == "delivery_completed", fmt.Sprintf("%s %s %v", got.State, got.Progress, err)
 		})
 		t.Logf("the closure's progress: %s", got.Progress)

@@ -303,6 +303,9 @@ type App struct {
 	http *httpMetrics
 	// readinessFailures counts the failed readiness checks (ADR-0055 §12).
 	readinessFailures kernel.Counter
+	// originRefused counts the requests that the origin check refused; nil in the maintenance
+	// mode, which measures nothing.
+	originRefused kernel.Counter
 	// readyFlight runs one readiness check for the concurrent requests (readyCheck).
 	readyFlight singleflight.Group
 	// metricsHandler serves the Prometheus scrape on metrics_listen; nil unless

@@ -119,6 +119,7 @@ OAuth のクライアントの登録などの制限は ADR-0090 §7 が足す。
 
 - 超過時は `429 Too Many Requests` と `Retry-After` を返す。Inbox の `429` は送信側のリトライ（Mastodon は指数バックオフで再送する）に任せる。
 - クライアント IP は、設定した **信頼するプロキシ**（CIDR のリスト）経由の場合だけ `X-Forwarded-For` / `Forwarded` の右端から信頼できる値を採る。既定は接続元 IP のみ。
+- 公開の CDN のアドレスを信頼すると、同じ CDN のサーバーレス環境から呼ぶ第三者もその範囲から接続できる。そこでオリジンが公開のままの構成のために、**CDN が付ける秘密のヘッダを検査して、経由しないリクエストを拒否する** 設定を持つ（`origin_secret`、`origin_secret_header`、ローテーション中の `origin_secret_previous`）。HTTP を提供するすべてのプロセスで、保守モードでも、信頼するプロキシの判定より先に定数時間で比較する。ヘルスチェックと `/_internal/*` と Lambda の SQS イベントだけは CDN を通らないので除外し、秘密を示さないリクエストは除外の対象でも転送ヘッダと `traceparent` を信じない。詳細は [deployment-targets](../architecture/deployment-targets.md#cdn-を経由しないリクエストの拒否)。
 - Inbox はレート制限の前にボディサイズ上限（1 MiB、`http.MaxBytesReader`）を適用し、ドメインブロック済みのドメインは署名検証より前に拒否する。
 
 ### 6. 秘密情報の保管とアクター秘密鍵の暗号化（NFR-SEC-7）

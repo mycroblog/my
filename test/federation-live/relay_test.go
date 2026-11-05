@@ -34,6 +34,21 @@ type adminRelay struct {
 	Taken    int    `json:"taken_last_day"`
 }
 
+// removeRelay leaves and deletes a relay that a scenario may have left behind when it failed. A relay
+// still joined brings the later scenarios' posts in through itself, with trust refetch, so a failure
+// here is reported rather than left to surface in TestSignatureProfile. A relay the scenario already
+// deleted answers 404, which is not one.
+func (e *env) removeRelay(t *testing.T, id string) {
+	t.Helper()
+	ctx := context.Background()
+	if err := e.local.api(ctx, http.MethodDelete, "/admin/relays/"+url.PathEscape(id)+"/follow", nil, nil); err != nil && !isNotFound(err) {
+		t.Errorf("leaving the relay: %v", err)
+	}
+	if err := e.local.api(ctx, http.MethodDelete, "/admin/relays/"+url.PathEscape(id), nil, nil); err != nil && !isNotFound(err) {
+		t.Errorf("deleting the relay: %v", err)
+	}
+}
+
 // TestRelay joins Activity-Relay at its inbox (ADR-0006): alice registers it through the admin API
 // and the relay accepts the instance actor's Follow; a public post of ivan reaches Mastodon through
 // the relay, which Mastodon takes only with ivan's linked data signature (RsaSignature2017); a
@@ -51,19 +66,15 @@ func TestRelay(t *testing.T) {
 	judy := &mastodonAPI{host: mastodonHost, token: os.Getenv("FEDERATION_LIVE_MASTODON_TOKEN_JUDY"), http: e.http}
 
 	var r adminRelay
-	if err := e.local.call(ctx, http.MethodPost, "/admin/relays", map[string]any{"url": relayInbox, "protocol": "mastodon"}, &r); err != nil {
+	if err := e.local.api(ctx, http.MethodPost, "/admin/relays", map[string]any{"url": relayInbox, "protocol": "mastodon"}, &r); err != nil {
 		t.Fatalf("registering the relay: %v", err)
 	}
-	t.Cleanup(func() {
-		ctx := context.Background()
-		_ = e.local.call(ctx, http.MethodPost, "/admin/relays/"+r.ID+"/unfollow", nil, nil)
-		_ = e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID, nil, nil)
-	})
+	t.Cleanup(func() { e.removeRelay(t, r.ID) })
 	eventually(t, deliveryTimeout, "the relay accepts the Follow", func() (bool, string) {
 		var list struct {
 			Items []adminRelay `json:"items"`
 		}
-		if err := e.local.call(ctx, http.MethodGet, "/admin/relays", nil, &list); err != nil {
+		if err := e.local.api(ctx, http.MethodGet, "/admin/relays", nil, &list); err != nil {
 			return false, err.Error()
 		}
 		for _, it := range list.Items {
@@ -107,7 +118,7 @@ func TestRelay(t *testing.T) {
 		var page struct {
 			Items []status `json:"items"`
 		}
-		if err := e.local.call(ctx, http.MethodGet, "/timelines/federated?limit=40", nil, &page); err != nil {
+		if err := e.local.api(ctx, http.MethodGet, "/timelines/federated?limit=40", nil, &page); err != nil {
 			return false, err.Error()
 		}
 		for _, s := range page.Items {
@@ -120,10 +131,10 @@ func TestRelay(t *testing.T) {
 
 	// Leaving sends the Undo; the left relay can be deleted.
 	var left adminRelay
-	if err := e.local.call(ctx, http.MethodPost, "/admin/relays/"+r.ID+"/unfollow", nil, &left); err != nil || left.State != "left" {
+	if err := e.local.api(ctx, http.MethodDelete, "/admin/relays/"+r.ID+"/follow", nil, &left); err != nil || left.State != "left" {
 		t.Fatalf("leaving the relay = %+v, %v", left, err)
 	}
-	if err := e.local.call(ctx, http.MethodDelete, "/admin/relays/"+r.ID, nil, nil); err != nil {
+	if err := e.local.api(ctx, http.MethodDelete, "/admin/relays/"+r.ID, nil, nil); err != nil {
 		t.Fatalf("deleting the relay: %v", err)
 	}
 }

@@ -536,20 +536,23 @@ func findStatus(items []status, uri string) (status, bool) {
 	return status{}, false
 }
 
-func (l *localClient) call(ctx context.Context, method, path string, body, out any) error {
+// api calls this server's client API. Every such call goes through this method, with the method and
+// the path written out, so that TestLiveCallsAreInTheSpec can find them and check them against
+// api/openapi.yaml on pull requests, which do not run these scenarios.
+func (l *localClient) api(ctx context.Context, method, path string, body, out any) error {
 	return call(ctx, l.http, l.token, method, "https://"+localHost+"/api/v1"+path, body, out)
 }
 
 // resolve looks up a handle, fetching it from its server if needed (FR-305).
 func (l *localClient) resolve(ctx context.Context, handle string) (account, error) {
 	var a account
-	err := l.call(ctx, http.MethodGet, "/accounts/lookup?"+url.Values{"acct": {handle}, "resolve": {"true"}}.Encode(), nil, &a)
+	err := l.api(ctx, http.MethodGet, "/accounts/lookup?"+url.Values{"acct": {handle}, "resolve": {"true"}}.Encode(), nil, &a)
 	return a, err
 }
 
 func (l *localClient) follow(ctx context.Context, id string) (relationship, error) {
 	var r relationship
-	err := l.call(ctx, http.MethodPost, "/accounts/"+url.PathEscape(id)+"/follow", nil, &r)
+	err := l.api(ctx, http.MethodPost, "/accounts/"+url.PathEscape(id)+"/follow", nil, &r)
 	return r, err
 }
 
@@ -557,7 +560,7 @@ func (l *localClient) relationship(ctx context.Context, id string) (relationship
 	var rs struct {
 		Items []relationship `json:"items"`
 	}
-	if err := l.call(ctx, http.MethodGet, "/accounts/relationships?"+url.Values{"id": {id}}.Encode(), nil, &rs); err != nil {
+	if err := l.api(ctx, http.MethodGet, "/accounts/relationships?"+url.Values{"id": {id}}.Encode(), nil, &rs); err != nil {
 		return relationship{}, err
 	}
 	if len(rs.Items) != 1 {
@@ -567,12 +570,12 @@ func (l *localClient) relationship(ctx context.Context, id string) (relationship
 }
 
 func (l *localClient) unfollow(ctx context.Context, id string) error {
-	return l.call(ctx, http.MethodDelete, "/accounts/"+url.PathEscape(id)+"/follow", nil, nil)
+	return l.api(ctx, http.MethodDelete, "/accounts/"+url.PathEscape(id)+"/follow", nil, nil)
 }
 
 // setLocked turns the approval of follow requests on or off (update_credentials).
 func (l *localClient) setLocked(ctx context.Context, locked bool) error {
-	return l.call(ctx, http.MethodPatch, "/accounts/update_credentials", map[string]any{"locked": locked}, nil)
+	return l.api(ctx, http.MethodPatch, "/accounts/update_credentials", map[string]any{"locked": locked}, nil)
 }
 
 // followRequests returns the accounts whose follow requests wait for alice's approval.
@@ -580,12 +583,12 @@ func (l *localClient) followRequests(ctx context.Context) ([]account, error) {
 	var page struct {
 		Items []account `json:"items"`
 	}
-	err := l.call(ctx, http.MethodGet, "/follow_requests", nil, &page)
+	err := l.api(ctx, http.MethodGet, "/follow_requests", nil, &page)
 	return page.Items, err
 }
 
 func (l *localClient) authorize(ctx context.Context, id string) error {
-	return l.call(ctx, http.MethodPost, "/follow_requests/"+url.PathEscape(id)+"/accept", nil, nil)
+	return l.api(ctx, http.MethodPost, "/follow_requests/"+url.PathEscape(id)+"/accept", nil, nil)
 }
 
 func (l *localClient) post(ctx context.Context, text, visibility string) (status, error) {
@@ -599,55 +602,60 @@ func (l *localClient) reply(ctx context.Context, text, visibility, inReplyTo str
 		body["in_reply_to_id"] = inReplyTo
 	}
 	var s status
-	err := l.call(ctx, http.MethodPost, "/statuses", body, &s)
+	err := l.api(ctx, http.MethodPost, "/statuses", body, &s)
 	return s, err
 }
 
 func (l *localClient) status(ctx context.Context, id string) (status, error) {
 	var s status
-	err := l.call(ctx, http.MethodGet, "/statuses/"+url.PathEscape(id), nil, &s)
+	err := l.api(ctx, http.MethodGet, "/statuses/"+url.PathEscape(id), nil, &s)
 	return s, err
 }
 
 func (l *localClient) context(ctx context.Context, id string) (thread, error) {
 	var th thread
-	err := l.call(ctx, http.MethodGet, "/statuses/"+url.PathEscape(id)+"/context", nil, &th)
+	err := l.api(ctx, http.MethodGet, "/statuses/"+url.PathEscape(id)+"/context", nil, &th)
 	return th, err
 }
 
 func (l *localClient) edit(ctx context.Context, id, text string) (status, error) {
 	var s status
-	err := l.call(ctx, http.MethodPut, "/statuses/"+url.PathEscape(id), map[string]any{"text": text}, &s)
+	err := l.api(ctx, http.MethodPut, "/statuses/"+url.PathEscape(id), map[string]any{"text": text}, &s)
 	return s, err
 }
 
 func (l *localClient) delete(ctx context.Context, id string) error {
-	return l.call(ctx, http.MethodDelete, "/statuses/"+url.PathEscape(id), nil, nil)
+	return l.api(ctx, http.MethodDelete, "/statuses/"+url.PathEscape(id), nil, nil)
 }
 
 // interact boosts or favourites a status (action "boost" / "favourite"), or undoes it.
 func (l *localClient) interact(ctx context.Context, id, action string, undo bool) error {
-	method := http.MethodPost
-	if undo {
-		method = http.MethodDelete
+	switch {
+	case action == "boost" && undo:
+		return l.api(ctx, http.MethodDelete, "/statuses/"+url.PathEscape(id)+"/boost", nil, nil)
+	case action == "boost":
+		return l.api(ctx, http.MethodPost, "/statuses/"+url.PathEscape(id)+"/boost", nil, nil)
+	case action == "favourite" && undo:
+		return l.api(ctx, http.MethodDelete, "/statuses/"+url.PathEscape(id)+"/favourite", nil, nil)
+	case action == "favourite":
+		return l.api(ctx, http.MethodPost, "/statuses/"+url.PathEscape(id)+"/favourite", nil, nil)
 	}
-	return l.call(ctx, method, "/statuses/"+url.PathEscape(id)+"/"+action, nil, nil)
+	return fmt.Errorf("unknown action %q", action)
 }
 
 // react sets the user's emoji reaction to a status, or takes it back when emoji is "".
 func (l *localClient) react(ctx context.Context, id, emoji string) error {
-	path := "/statuses/" + url.PathEscape(id) + "/reaction"
 	if emoji == "" {
-		return l.call(ctx, http.MethodDelete, path, nil, nil)
+		return l.api(ctx, http.MethodDelete, "/statuses/"+url.PathEscape(id)+"/reaction", nil, nil)
 	}
-	return l.call(ctx, http.MethodPut, path, map[string]any{"emoji": emoji}, nil)
+	return l.api(ctx, http.MethodPut, "/statuses/"+url.PathEscape(id)+"/reaction", map[string]any{"emoji": emoji}, nil)
 }
 
 func (l *localClient) home(ctx context.Context) ([]status, error) {
 	var page struct {
 		Items []status `json:"items"`
 	}
-	err := l.call(ctx, http.MethodGet, "/timelines/home", nil, &page)
+	err := l.api(ctx, http.MethodGet, "/timelines/home", nil, &page)
 	return page.Items, err
 }
 
@@ -655,7 +663,7 @@ func (l *localClient) notifications(ctx context.Context) ([]notification, error)
 	var page struct {
 		Items []notification `json:"items"`
 	}
-	err := l.call(ctx, http.MethodGet, "/notifications", nil, &page)
+	err := l.api(ctx, http.MethodGet, "/notifications", nil, &page)
 	return page.Items, err
 }
 

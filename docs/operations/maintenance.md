@@ -12,10 +12,12 @@ There are two tools:
 ## What the maintenance mode answers
 
 The process reads only the listen address, `host`, `account_domain`, `web_origin`, the proxies (`trusted_proxies`, `trusted_proxy_header`),
-`status_page_url`, and the `maintenance_*` settings ([configuration reference](../reference/configuration.md)).
+the [origin check](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) (`origin_secret`, `origin_secret_previous`, `origin_secret_header`), `status_page_url`, and the `maintenance_*` settings ([configuration reference](../reference/configuration.md)).
 The settings of the database, the queue, the blob store, the KV, mail, and the stream are not read or checked, so they may be wrong or unreachable meanwhile.
 Whatever the `role`, it serves HTTP only: no jobs, no periodic jobs, no stream broker.
 `my config check -maintenance` checks exactly what the maintenance mode reads.
+
+With [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) set, a request that needs the header and lacks it gets the `403` of that check instead of the table below.
 
 | Request | Status | Body |
 | --- | --- | --- |
