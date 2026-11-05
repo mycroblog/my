@@ -511,7 +511,9 @@ export type VisibilityIconProps = {
 
 /** The icon of a visibility: a different shape for each level, so that they are told apart without color. */
 export function VisibilityIcon({ visibility }: VisibilityIconProps) {
-  return renderIcon(visibilityIcons[visibility]);
+  // A level newer than this bundle has no icon: its label still says what it is.
+  const icon = visibilityIcons[visibility] as IconEntry | undefined;
+  return icon === undefined ? null : renderIcon(icon);
 }
 
 /** Two scripts side by side, for the language of a post. */

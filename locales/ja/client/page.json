@@ -2,5 +2,9 @@
   "page.not_built": {
     "defaultMessage": "この画面はまだ準備中です。",
     "description": "Text below the heading of a page whose screen the web client does not have yet."
+  },
+  "page.unknown_value": {
+    "defaultMessage": "不明",
+    "description": "Neutral label for a value the server sent that this version of the web client does not know yet, such as a state added by a newer server."
   }
 }

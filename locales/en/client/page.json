@@ -2,5 +2,9 @@
   "page.not_built": {
     "defaultMessage": "This screen is not ready yet.",
     "description": "Text below the heading of a page whose screen the web client does not have yet."
+  },
+  "page.unknown_value": {
+    "defaultMessage": "Unknown",
+    "description": "Neutral label for a value the server sent that this version of the web client does not know yet, such as a state added by a newer server."
   }
 }

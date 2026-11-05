@@ -34,6 +34,7 @@ import { useIntl } from "react-intl";
 import { useNow } from "../../../lib/clock";
 import { type ClientMessageKey, type Translate, useT } from "../../../lib/i18n";
 import { StatusCard } from "../../status";
+import { known } from "../../../lib/known";
 import {
   appealTextLimit,
   type ModerationAction,
@@ -72,6 +73,9 @@ const stateBadges: Readonly<Record<ModerationActionState, Badge>> = {
   expired: { icon: <WaitingIcon />, tone: "neutral" },
   lifted: { icon: <CheckIcon />, tone: "success" },
 };
+
+/** The shape of a state newer than this bundle. */
+const unknownBadge: Badge = { icon: <WaitingIcon />, tone: "neutral" };
 
 /** The shape of each state of an appeal. */
 const appealStateBadges: Readonly<Record<ModerationAppealState, Badge>> = {
@@ -172,7 +176,7 @@ function ActionListView({ list, form, empty }: { list: ActionList; form: AppealF
 function ActionRow({ action, form }: { action: ModerationAction; form: AppealForm }) {
   const t = useT();
   const now = useNow();
-  const badge = stateBadges[action.state];
+  const badge = known(stateBadges, action.state) ?? unknownBadge;
   // How long an action in effect lasts, first, as the server's status page says it.
   const lasts =
     action.state !== "active"
@@ -324,7 +328,7 @@ function AppealPart({ action, form }: { action: ModerationAction; form: AppealFo
 
 function AppealFacts({ appeal }: { appeal: ModerationAppeal }) {
   const t = useT();
-  const badge = appealStateBadges[appeal.state];
+  const badge = known(appealStateBadges, appeal.state) ?? unknownBadge;
   return (
     <Stack gap="3">
       <div>

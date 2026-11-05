@@ -35,6 +35,7 @@ import type {
 import type { NotificationGroup } from "./groupNotifications";
 import { imageSources } from "../../../lib/images";
 import { isTauriApp } from "../../../lib/platform";
+import { known } from "../../../lib/known";
 
 /** An account in a row: its name in the UI (the username when it has no display name), profile page, and avatar URL. */
 /** An account a row names: its display name with the custom emoji of its profile, its profile page, and its avatar. */
@@ -536,7 +537,8 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
   const formatDate = (value: string) => intl.formatDate(value, { dateStyle: "medium", timeStyle: "short" });
   const announcement = announcementOf(notification);
   return {
-    kind: kinds[notification.type],
+    // A type newer than this bundle is a plain row: the rest of the feed still shows (ADR-0090 §8).
+    kind: known(kinds, notification.type) ?? "notice",
     replyTo: notification.type === "mention" && status !== undefined ? status : null,
     sentence:
       severed?.sentence ??
@@ -545,7 +547,9 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
       errorGroupSentenceOf(notification) ??
       (announcement === null ? null : "client:notifications.announcement.titled") ??
       (target === undefined ? null : "client:notifications.report_resolved.account") ??
-      (others.length > 0 && groupSentence !== undefined ? groupSentence : sentences[notification.type]),
+      (others.length > 0 && groupSentence !== undefined
+        ? groupSentence
+        : (known(sentences, notification.type) ?? "client:notifications.unknown")),
     actor: account === undefined ? null : actorOf(account),
     subject: target === undefined ? null : actorOf(target),
     others,
