@@ -309,6 +309,9 @@ type Repository interface {
 	ListListEntries(ctx context.Context, q ListTimelineQuery) ([]Entry, error)
 	// Facts returns what holds between a viewer and the accounts, domains, and entries of q.
 	Facts(ctx context.Context, q FactsQuery) (Facts, error)
+	// MutedDomains returns those of domains that the viewer mutes. A mute covers its subdomains,
+	// so a caller passes a domain and its parents.
+	MutedDomains(ctx context.Context, viewerAccountID string, domains []string) ([]string, error)
 	// TagUsageOf returns the usage of the tags among tagIDs that have one, ordered by tag ID.
 	TagUsageOf(ctx context.Context, tagIDs []string) ([]TagUsage, error)
 

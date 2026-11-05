@@ -159,6 +159,21 @@ var localAuthorPolicy = []block{
 		"remote mentioned         | -   -   -   -   -",
 		"remote blocked by author | -   -   -   -   -",
 	}},
+	{content.ContextSearch, []string{
+		"anonymous                | -   -   -   -   -",
+		"author                   | Y   Y   -   -   -",
+		"local stranger           | Y   Y   -   -   -",
+		"local pending follower   | Y   Y   -   -   -",
+		"local follower           | Y   Y   -   -   -",
+		"local mentioned          | Y   Y   -   -   -",
+		"local blocking author    | -   -   -   -   -",
+		"local blocked by author  | -   -   -   -   -",
+		"moderator                | Y   Y   -   -   -",
+		"remote stranger          | -   -   -   -   -",
+		"remote follower          | -   -   -   -   -",
+		"remote mentioned         | -   -   -   -   -",
+		"remote blocked by author | -   -   -   -   -",
+	}},
 	{content.ContextHashtag, []string{
 		"anonymous                | Y   -   -   -   -",
 		"author                   | Y   Y   -   -   -",
@@ -272,6 +287,21 @@ var remoteAuthorPolicy = []block{
 	}},
 	{content.ContextFederatedTimeline, []string{
 		"anonymous                | Y   -   -   -   -",
+		"author                   | -   -   -   -   -",
+		"local stranger           | Y   -   -   -   -",
+		"local pending follower   | Y   -   -   -   -",
+		"local follower           | Y   -   -   -   -",
+		"local mentioned          | Y   -   -   -   -",
+		"local blocking author    | -   -   -   -   -",
+		"local blocked by author  | -   -   -   -   -",
+		"moderator                | Y   -   -   -   -",
+		"remote stranger          | -   -   -   -   -",
+		"remote follower          | -   -   -   -   -",
+		"remote mentioned         | -   -   -   -   -",
+		"remote blocked by author | -   -   -   -   -",
+	}},
+	{content.ContextSearch, []string{
+		"anonymous                | -   -   -   -   -",
 		"author                   | -   -   -   -   -",
 		"local stranger           | Y   -   -   -   -",
 		"local pending follower   | Y   -   -   -   -",
@@ -411,14 +441,14 @@ func TestCanViewVisibilityCeiling(t *testing.T) {
 	})
 }
 
-// public_discovery: the author's posts leave the local, federated, and hashtag timelines and
-// nothing else changes.
+// public_discovery: the author's posts leave the local, federated, and hashtag timelines and the
+// full-text search, and nothing else changes.
 func TestCanViewPublicDiscovery(t *testing.T) {
 	limited := content.AuthorRestrictions{PublicDiscovery: true}
 	combos(func(name string, ctx content.ViewContext, v content.Viewer, s content.StatusFacts, rel content.Relation, _ bool) {
 		want := content.CanView(ctx, v, s, content.AuthorRestrictions{}, rel)
 		switch ctx {
-		case content.ContextLocalTimeline, content.ContextFederatedTimeline, content.ContextHashtag:
+		case content.ContextLocalTimeline, content.ContextFederatedTimeline, content.ContextHashtag, content.ContextSearch:
 			want = false
 		}
 		if got := content.CanView(ctx, v, s, limited, rel); got != want {

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -208,17 +209,7 @@ func (s *Service) page(ctx context.Context, vctx appcontent.ViewContext, viewer 
 	if len(rows) == 0 {
 		return p, nil
 	}
-	fq := FactsQuery{ViewerAccountID: w.ViewerAccountID, Now: w.Now}
-	for _, e := range rows {
-		fq.AccountIDs = append(fq.AccountIDs, e.AuthorAccountID, e.OriginalAuthorAccountID)
-		fq.Domains = append(fq.Domains, timeline.DomainAndParents(e.AuthorDomain)...)
-		fq.Domains = append(fq.Domains, timeline.DomainAndParents(e.OriginalAuthorDomain)...)
-		if e.Visibility == appcontent.VisibilityDirect {
-			fq.EntryIDs = append(fq.EntryIDs, e.ID)
-		}
-	}
-	fq.AccountIDs, fq.Domains = uniq(fq.AccountIDs), uniq(fq.Domains)
-	facts, err := s.d.Repository.Facts(ctx, fq)
+	facts, err := s.facts(ctx, w.ViewerAccountID, w.Now, rows)
 	if err != nil {
 		return Page{}, err
 	}
@@ -228,6 +219,78 @@ func (s *Service) page(ctx context.Context, vctx appcontent.ViewContext, viewer 
 		}
 	}
 	return p, nil
+}
+
+// facts reads what canView needs to judge rows for a viewer.
+func (s *Service) facts(ctx context.Context, viewerAccountID string, now time.Time, rows []Entry) (Facts, error) {
+	fq := FactsQuery{ViewerAccountID: viewerAccountID, Now: now}
+	for _, e := range rows {
+		fq.AccountIDs = append(fq.AccountIDs, e.AuthorAccountID, e.OriginalAuthorAccountID)
+		fq.Domains = append(fq.Domains, timeline.DomainAndParents(e.AuthorDomain)...)
+		fq.Domains = append(fq.Domains, timeline.DomainAndParents(e.OriginalAuthorDomain)...)
+		if e.Visibility == appcontent.VisibilityDirect {
+			fq.EntryIDs = append(fq.EntryIDs, e.ID)
+		}
+	}
+	fq.AccountIDs, fq.Domains = uniq(fq.AccountIDs), uniq(fq.Domains)
+	return s.d.Repository.Facts(ctx, fq)
+}
+
+// SearchCandidate is a status that the full-text search found, as the database holds it now.
+type SearchCandidate struct {
+	StatusID        string
+	AuthorAccountID string
+	// AuthorDomain is the author's domain, "" when local.
+	AuthorDomain string
+	// Visibility is the status's stored visibility.
+	Visibility appcontent.Visibility
+}
+
+// SearchVisible returns the IDs of the candidates that the viewer may see in the full-text search,
+// in order (ADR-0149 §8): appcontent.CanView in ContextSearch over the same Facts as a page of a
+// timeline, and the mutes and domain mutes of the viewer. The viewer's timeline languages do not
+// apply.
+func (s *Service) SearchVisible(ctx context.Context, viewer appcontent.Viewer, candidates []SearchCandidate) ([]string, error) {
+	if len(candidates) == 0 || !loggedIn(viewer) {
+		return nil, nil
+	}
+	rows := make([]Entry, 0, len(candidates))
+	var domains []string
+	for _, c := range candidates {
+		rows = append(rows, Entry{
+			ID: c.StatusID, Kind: timeline.KindPost, StatusID: c.StatusID,
+			AuthorAccountID: c.AuthorAccountID, AuthorDomain: c.AuthorDomain,
+			OriginalAuthorAccountID: c.AuthorAccountID, OriginalAuthorDomain: c.AuthorDomain,
+			Visibility: c.Visibility,
+		})
+		domains = append(domains, timeline.DomainAndParents(c.AuthorDomain)...)
+	}
+	facts, err := s.facts(ctx, viewer.AccountID, s.d.Clock.Now(), rows)
+	if err != nil {
+		return nil, err
+	}
+	// The other timelines leave muted domains out in their SQL, so Facts does not hold them.
+	muted := map[string]bool{}
+	if len(domains) > 0 {
+		list, err := s.d.Repository.MutedDomains(ctx, viewer.AccountID, uniq(domains))
+		if err != nil {
+			return nil, err
+		}
+		for _, d := range list {
+			muted[d] = true
+		}
+	}
+	out := make([]string, 0, len(rows))
+	for _, e := range rows {
+		if !facts.canView(appcontent.ContextSearch, viewer, e) {
+			continue
+		}
+		if slices.ContainsFunc(timeline.DomainAndParents(e.AuthorDomain), func(d string) bool { return muted[d] }) {
+			continue
+		}
+		out = append(out, e.StatusID)
+	}
+	return out, nil
 }
 
 // canView applies appcontent.CanView to an entry. A post is judged as itself; a boost is judged

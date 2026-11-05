@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
+	appcontent "github.com/mycroblog/my/internal/app/content"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -262,11 +263,13 @@ func (s *Server) GetInstanceDocument(ctx context.Context, req GetInstanceDocumen
 	}, nil
 }
 
-// FullTextSearch says what the full-text search of statuses covers (ADR-0149 §9).
-// *search.Service implements it.
+// FullTextSearch is the full-text search of statuses (ADR-0149 §9). *search.Service implements it.
 type FullTextSearch interface {
 	// Visibilities returns the visibilities the search covers.
 	Visibilities(ctx context.Context) ([]search.Visibility, error)
+	// Search returns one page of the statuses that the viewer may see and q finds, failing with
+	// search.ErrInvalidCursor or search.ErrBackendFailed.
+	Search(ctx context.Context, viewer appcontent.Viewer, q search.Query) (search.Page, error)
 }
 
 // instanceFullTextSearch is the item of GET /instance that tells clients whether to show an entry

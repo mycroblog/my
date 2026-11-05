@@ -391,6 +391,14 @@
     "defaultMessage": "[Ǿƞŀẏ ŧħḗḗ ƥŀȧȧƞ'ş şŭŭƀşƈřīƥŧīǿǿƞş ɠřȧȧƞŧ ȧȧƞḓ řḗḗṽǿǿķḗḗ īŧ, ȧȧƞḓ īŧş ƥḗḗřḿīşşīǿǿƞş ȧȧƞḓ ƥǿǿşīŧīǿǿƞ ƈħȧȧƞɠḗḗ ƒřǿǿḿ ŧħḗḗ ƥŀȧȧƞ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.search.failed": {
+    "defaultMessage": "[Ŧħḗḗ şḗḗȧȧřƈħ ƈǿǿŭŭŀḓ ƞǿǿŧ ƀḗḗ ƈǿǿḿƥŀḗḗŧḗḗḓ. Ŧřẏ ȧȧɠȧȧīƞ ŀȧȧŧḗḗř.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.search.unavailable": {
+    "defaultMessage": "[Ƥǿǿşŧş ƈȧȧƞƞǿǿŧ ƀḗḗ şḗḗȧȧřƈħḗḗḓ ǿǿƞ ŧħīş şḗḗřṽḗḗř.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.self_relationship": {
     "defaultMessage": "[Ẏǿǿŭŭ ƈȧȧƞƞǿǿŧ ḓǿǿ ŧħīş ŧǿǿ ẏǿǿŭŭř ǿǿẇƞ ȧȧƈƈǿǿŭŭƞŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."

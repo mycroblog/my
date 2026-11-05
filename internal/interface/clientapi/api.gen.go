@@ -11428,6 +11428,10 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
 //     co-hosts of the room.
 //   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+//   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
+//     be searched (`Instance.full_text_search.available`).
+//   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
+//     posts is affected; try again later.
 type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
@@ -14370,6 +14374,18 @@ type CreateStatusParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// SearchStatusesParams defines parameters for SearchStatuses.
+type SearchStatusesParams struct {
+	// Q The words to find, 1 to 200 characters. Anything else is a 400.
+	Q string `form:"q" json:"q"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListStatusQuotesParams defines parameters for ListStatusQuotes.
 type ListStatusQuotesParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -15676,6 +15692,9 @@ type ServerInterface interface {
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(w http.ResponseWriter, r *http.Request, params CreateStatusParams)
+	// SearchStatuses Search the text of posts
+	// (GET /statuses/search)
+	SearchStatuses(w http.ResponseWriter, r *http.Request, params SearchStatusesParams)
 	// DeleteStatus Delete the authenticated user's status
 	// (DELETE /statuses/{id})
 	DeleteStatus(w http.ResponseWriter, r *http.Request, id StatusId)
@@ -24005,6 +24024,65 @@ func (siw *ServerInterfaceWrapper) CreateStatus(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// SearchStatuses operation middleware
+func (siw *ServerInterfaceWrapper) SearchStatuses(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchStatusesParams
+
+	// ------------- Required query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SearchStatuses(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteStatus operation middleware
 func (siw *ServerInterfaceWrapper) DeleteStatus(w http.ResponseWriter, r *http.Request) {
 
@@ -26346,6 +26424,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/push/subscription", wrapper.PutPushSubscription)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/bookmarks", wrapper.ListBookmarks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statuses", wrapper.CreateStatus)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/search", wrapper.SearchStatuses)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/statuses/{id}", wrapper.DeleteStatus)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}", wrapper.GetStatus)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statuses/{id}", wrapper.EditStatus)
@@ -44197,6 +44276,61 @@ func (response CreateStatusdefaultApplicationProblemPlusJSONResponse) VisitCreat
 	return err
 }
 
+type SearchStatusesRequestObject struct {
+	Params SearchStatusesParams
+}
+
+type SearchStatusesResponseObject interface {
+	VisitSearchStatusesResponse(w http.ResponseWriter) error
+}
+
+type SearchStatuses200JSONResponse struct{ StatusPageJSONResponse }
+
+func (response SearchStatuses200JSONResponse) VisitSearchStatusesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchStatusesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SearchStatusesdefaultApplicationProblemPlusJSONResponse) VisitSearchStatusesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteStatusRequestObject struct {
 	Id StatusId `json:"id"`
 }
@@ -49192,6 +49326,9 @@ type StrictServerInterface interface {
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(ctx context.Context, request CreateStatusRequestObject) (CreateStatusResponseObject, error)
+	// SearchStatuses Search the text of posts
+	// (GET /statuses/search)
+	SearchStatuses(ctx context.Context, request SearchStatusesRequestObject) (SearchStatusesResponseObject, error)
 	// DeleteStatus Delete the authenticated user's status
 	// (DELETE /statuses/{id})
 	DeleteStatus(ctx context.Context, request DeleteStatusRequestObject) (DeleteStatusResponseObject, error)
@@ -57379,6 +57516,32 @@ func (sh *strictHandler) CreateStatus(w http.ResponseWriter, r *http.Request, pa
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateStatusResponseObject); ok {
 		if err := validResponse.VisitCreateStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SearchStatuses operation middleware
+func (sh *strictHandler) SearchStatuses(w http.ResponseWriter, r *http.Request, params SearchStatusesParams) {
+	var request SearchStatusesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SearchStatuses(ctx, request.(SearchStatusesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SearchStatuses")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SearchStatusesResponseObject); ok {
+		if err := validResponse.VisitSearchStatusesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

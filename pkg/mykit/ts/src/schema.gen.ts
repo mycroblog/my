@@ -2476,6 +2476,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/statuses/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search the text of posts
+         * @description The posts that contain every word of `q`, newest first, as `Status` objects like those of a
+         *     timeline. It looks in the text, the content warning, and the alternative texts of the current
+         *     version of a post. A word's matching, including in Japanese, depends on the search engine of
+         *     the server, and there is no order by relevance. `q` is plain text: nothing in it is an operator.
+         *
+         *     Read `Instance.full_text_search` before offering this: it says whether the server has a search
+         *     engine (`available`) and which visibilities the search covers (`visibilities`). Without one,
+         *     the response is a 404 of the type `/api/v1/problems/search-unavailable`. When the engine fails,
+         *     it is a 503 of the type `/api/v1/problems/search-failed`, which only this operation answers;
+         *     try again later.
+         *
+         *     Only signed-in users can search, and only `public` and `local` posts of accounts with
+         *     `indexable` turned on are found, within the visibilities the server covers. The results never
+         *     include `unlisted`, `private`, or `direct` posts, even the viewer's own. Posts of accounts or
+         *     domains that the viewer blocks, mutes, or is blocked by are left out.
+         *
+         *     A page can hold fewer posts than `limit`, or none at all, while more follow, because posts are
+         *     left out after the search engine answered. Continue while the response has a `next_cursor`, and
+         *     stop only when it has none. A cursor works only on the search it came from: changing `q` needs
+         *     a new first page. A cursor the search engine did not issue is a 400.
+         *
+         *     The query is part of the URL, so a reverse proxy or CDN in front of the server may log it. The
+         *     server itself writes it to no log or trace, and the response is `private, no-store`.
+         *
+         *     Past 30 searches in 5 minutes by one account, in addition to the limit of the API as a whole,
+         *     the response is a 429 with `Retry-After`.
+         */
+        get: operations["searchStatuses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/statuses/{id}": {
         parameters: {
             query?: never;
@@ -13236,6 +13281,10 @@ export interface components {
          *     - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
          *       co-hosts of the room.
          *     - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+         *     - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
+         *       be searched (`Instance.full_text_search.available`).
+         *     - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
+         *       posts is affected; try again later.
          */
         Problem: {
             /**
@@ -18209,6 +18258,26 @@ export interface operations {
                     "application/json": components["schemas"]["Status"];
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    searchStatuses: {
+        parameters: {
+            query: {
+                /** @description The words to find, 1 to 200 characters. Anything else is a 400. */
+                q: string;
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["StatusPage"];
             default: components["responses"]["Problem"];
         };
     };
