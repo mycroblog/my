@@ -32,7 +32,7 @@ module "ingress" {
 | `dns_records` | The same address as an `A` record |
 
 - **The service takes traffic from the load balancer only.** Otherwise anyone could go around it through the `run.app` URL.
-  Cloud Tasks and Cloud Scheduler call `https://{host}`, so they arrive through the load balancer too.
+  Cloud Tasks and Cloud Scheduler do not come through it: they call that URL, and Cloud Run counts them as internal from the same project. Do not disable the URL.
 - **Client addresses.** The load balancer writes `<what the client sent>,<client>,<its own address>` to `X-Forwarded-For`, so
   the server must trust its address to find the client. Enable `compute.googleapis.com` first.
 - **The certificate** becomes active only after DNS points at the address, which can take a while.

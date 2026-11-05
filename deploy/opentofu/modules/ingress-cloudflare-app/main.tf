@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # Traffic reaches the app through Cloudflare: a proxied DNS record of host, with the cache bypassed for everything, because
-# the API, ActivityPub, and HTML must never be cached. It adds no challenge: peers and Cloud Tasks are not browsers. What
+# the API, ActivityPub, and HTML must never be cached. It adds no challenge: peers are not browsers. What
 # stays open at the origin and what stays unverified is in the README.
 
 terraform {
@@ -72,7 +72,7 @@ locals {
   ], var.extra_rules.cache)
 
   # Strict, since Flexible would talk to the origin over HTTP, which Cloud Run answers with a redirect to itself. No Browser
-  # Integrity Check, since federation peers and Cloud Tasks do not send what it expects of a browser.
+  # Integrity Check, since federation peers do not send what it expects of a browser.
   config_rules = concat([
     {
       description       = "Verify the origin, and let non-browsers through"

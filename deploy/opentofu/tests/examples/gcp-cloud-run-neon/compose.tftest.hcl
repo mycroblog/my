@@ -3,6 +3,11 @@
 # The example as it is composed, on a mocked provider: nothing here reaches Google Cloud.
 
 mock_provider "google" {
+  mock_data "google_project" {
+    defaults = {
+      number = "123456789012"
+    }
+  }
   mock_resource "google_service_account" {
     defaults = {
       email  = "sa@my-project.iam.gserviceaccount.com"
@@ -53,7 +58,7 @@ run "composes_every_setting" {
       MY_QUEUE                             = "cloudtasks"
       MY_QUEUE_CLOUDTASKS_QUEUE            = "projects/my-project/locations/asia-northeast1/queues/my-jobs"
       MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT  = "my-jobs-invoker@my-project.iam.gserviceaccount.com"
-      MY_QUEUE_CLOUDTASKS_URL              = "https://social.example.org"
+      MY_QUEUE_CLOUDTASKS_URL              = "https://my-123456789012.asia-northeast1.run.app"
       MY_ROLE                              = "all"
       MY_STREAM                            = "pubsub"
       MY_STREAM_PUBSUB_SUBSCRIPTION_PREFIX = "my-stream"
@@ -88,11 +93,11 @@ run "the_migration_job_can_be_created_before_the_service" {
   }
 }
 
-run "the_tick_calls_the_public_origin" {
+run "the_tick_calls_the_services_own_url" {
   command = plan
 
   assert {
-    condition     = module.queue.env["MY_QUEUE_CLOUDTASKS_URL"] == "https://social.example.org"
+    condition     = module.queue.env["MY_QUEUE_CLOUDTASKS_URL"] == "https://my-123456789012.asia-northeast1.run.app"
     error_message = "the queue must call the public origin, which no resource has to create first"
   }
 }

@@ -68,18 +68,14 @@ The ranges come from Cloudflare's API at plan time and change only when you appl
 
 | Limit | Value | What it means |
 | --- | --- | --- |
-| Proxy read timeout | 125 seconds (HTTP 524) | A job's request can take longer than this if Cloud Tasks calls through Cloudflare |
+| Proxy read timeout | 125 seconds (HTTP 524) | Not for jobs: Cloud Tasks and Cloud Scheduler call the service's `run.app` URL directly, never through Cloudflare |
 | Proxy idle timeout | 900 seconds | Streams send a heartbeat every 30 seconds |
 | Upload | 100 MB on Free and Pro, 200 MB on Business | Above Cloud Run's 32 MiB, so that one decides |
 | Zone rulesets | One per phase | A zone with its own cache, configuration, origin, or custom firewall rules conflicts with this module |
 
-The read timeout matters most: a job runs for up to 5 minutes, and Cloudflare answers `524` to Cloud Tasks at about 2. The
-dropped connection may cancel the job, and Cloud Tasks tries the task again. How jobs over 125 seconds behave behind Cloudflare
-is unverified.
-
 ## Not a challenge in sight, unless you add one
 
-Peers and Cloud Tasks are not browsers, so `/ap/`, `/_internal/`, `/.well-known/`, and `/api/` must not meet a challenge. This
+Peers are not browsers, so `/ap/`, `/.well-known/`, and `/api/` must not meet a challenge. Jobs do not come through here. This
 module adds none and turns off Browser Integrity Check for `host`. **Bot Fight Mode is zone-wide and cannot be skipped by any
 rule**: turn it off in the dashboard. This module does not manage it, because it would change every host of the zone.
 
@@ -90,4 +86,3 @@ rule**: turn it off in the dashboard. This module does not manage it, because it
 - Whether Cloudflare buffers `text/event-stream` on an ordinary proxied host: the documentation read covers Tunnel only.
 - The shape of `X-Forwarded-For` that reaches the server through Cloudflare and Cloud Run. Check the client addresses in the
   first request logs.
-- Tokens of Cloud Tasks and Cloud Scheduler through Cloudflare, whose addresses may be treated as bots.

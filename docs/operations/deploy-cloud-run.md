@@ -127,7 +127,7 @@ tofu apply
 
 ### 8. Point the domain at the service
 
-`tofu output dns_records` lists the records to add at your DNS provider. The server must answer at `https://{host}`, because Cloud Tasks and Cloud Scheduler call that address. Until the domain works, tasks and ticks fail and are tried again, which costs next to nothing.
+`tofu output dns_records` lists the records to add at your DNS provider. Federation and browsers reach the server at `https://{host}`. Jobs do not depend on it: Cloud Tasks and Cloud Scheduler call the service's default `run.app` URL, `https://<service>-<project number>.<region>.run.app`. **Do not disable the default URL**, or jobs stop. Cloud Run counts these two as internal only from the same project and on that URL, not on a custom domain.
 
 See [How traffic reaches the service](#how-traffic-reaches-the-service) for what this example uses and what else you can choose.
 
@@ -225,7 +225,7 @@ The `ingress` block of `main.tf` decides this, and swapping one for the other ch
 | `run.app` URL | Reachable by anyone | Refused from the internet, so nobody goes around the load balancer |
 | `MY_TRUSTED_PROXIES` | `169.254.0.0/16` | `169.254.0.0/16` and the load balancer's address |
 
-The load balancer also needs `compute.googleapis.com`. Cloud Tasks and Cloud Scheduler call `https://{host}`, so they arrive through whichever you choose.
+The load balancer also needs `compute.googleapis.com`. Cloud Tasks and Cloud Scheduler arrive through neither: they call the default `run.app` URL directly.
 
 To use the service's own URL or something else in front, such as a CDN, remove the `ingress` block and its line in `backends`. Set `MY_TRUSTED_PROXIES` in `env` to what connects to the server. Whatever you put in front must still answer at `https://{host}`.
 
@@ -235,9 +235,9 @@ To use the service's own URL or something else in front, such as a CDN, remove t
 
 - **Your plan decides the origin.** Cloud Run routes by `Host`, and Cloudflare offers the Host header override on the Enterprise plan only. On any other plan a `*.run.app` origin fails the plan, so the origin must accept your host itself: keep an `ingress-gcp-domain-mapping` of that host, out of `backends`, and set `origin_host = "ghs.googlehosted.com"`. Each host needs a mapping of its own. Whether its certificate is issued and renewed behind the proxy is unverified, so start with `proxied = false`.
 - **Nothing locks the origin.** The service stays open, so anyone can go around Cloudflare through the `run.app` URL. Someone calling that URL from a Cloudflare Worker of their own can also choose the client address the rate limits see, because the server trusts Cloudflare's ranges. Do not treat Cloudflare as a security boundary here.
-- **Turn off Bot Fight Mode** in the dashboard. It covers the whole zone and no rule can skip it, and a challenge on `/ap/`, `/_internal/`, `/.well-known/`, or `/api/` breaks federation and jobs, because other servers and Cloud Tasks are not browsers. The modules add no challenge and turn off Browser Integrity Check, but they do not manage Bot Fight Mode. Do not turn on "I'm Under Attack" for the same reason.
+- **Turn off Bot Fight Mode** in the dashboard. It covers the whole zone and no rule can skip it, and a challenge on `/ap/`, `/.well-known/`, or `/api/` breaks federation, because other servers are not browsers. Jobs do not come through Cloudflare. The modules add no challenge and turn off Browser Integrity Check, but they do not manage Bot Fight Mode. Do not turn on "I'm Under Attack" for the same reason.
 - **Turn on Always Use HTTPS** in the dashboard if you want `http://` redirected. It covers the whole zone, so the modules leave it to you.
-- **Timeouts**: Cloudflare answers `524` when the origin sends nothing for 125 seconds. A job can run for 5 minutes. The dropped connection may cancel a longer job, and Cloud Tasks tries the task again. How jobs over 125 seconds behave behind Cloudflare is unverified. Streams send a heartbeat every 30 seconds, under the 900-second idle limit. Whether it buffers streams on an ordinary proxied host is unverified.
+- **Timeouts**: Cloudflare answers `524` when the origin sends nothing for 125 seconds. Jobs are not affected, since they call the `run.app` URL directly. Streams send a heartbeat every 30 seconds, under the 900-second idle limit. Whether it buffers streams on an ordinary proxied host is unverified.
 - **Uploads**: 100 MB on Free and Pro, above Cloud Run's 32 MiB, which remains the limit.
 - **Video**: Cloudflare's terms restrict serving video and a disproportionate amount of large files on Free, Pro, and Business, and it may redirect the content or take other action. Decide this before you cache video on the media host.
 

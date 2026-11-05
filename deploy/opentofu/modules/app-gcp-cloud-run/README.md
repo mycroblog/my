@@ -47,6 +47,7 @@ module "app" {
 
 ## What it does
 
+- **It keeps the service's default `run.app` URL on**, because Cloud Tasks and Cloud Scheduler call it. Do not disable it: jobs stop.
 - Without an ingress, the service takes traffic from anywhere (`INGRESS_TRAFFIC_ALL`) and `MY_TRUSTED_PROXIES` is `169.254.0.0/16`, Cloud Run's front end. A backend or `env` that names `MY_TRUSTED_PROXIES` replaces that.
 - Request-based billing with min instances 0, a `/readyz` startup probe, and a `/healthz` liveness probe. The startup probe
   keeps a revision from taking traffic until the schema and the data upgrade steps of its release are in place.

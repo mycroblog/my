@@ -61,6 +61,8 @@ locals {
 
   secret_ids = toset(concat(values(local.secret_env), values(local.secret_files)))
 
+  jobs_url = lookup(local.env, "MY_QUEUE_CLOUDTASKS_URL", "")
+
   # The server refuses to start without these, but only once it runs: say it at plan time.
   key_manager = lookup(local.env, "MY_KEY_MANAGER", "local")
   kek_missing = (
@@ -94,6 +96,10 @@ resource "google_service_account" "server" {
     precondition {
       condition     = length(local.ingress_trust) <= 1
       error_message = "More than one backend says what is in front of the service with trusted_proxies. Use one ingress-* module for that; a media host returns none."
+    }
+    precondition {
+      condition     = !strcontains(local.jobs_url, ".run.app") || (startswith(local.jobs_url, "https://${var.name}-") && endswith(local.jobs_url, ".${var.region}.run.app"))
+      error_message = "MY_QUEUE_CLOUDTASKS_URL is ${local.jobs_url}, which is not the URL of the service ${var.name} in ${var.region}, so jobs would go nowhere. Give queue-gcp-cloud-tasks the same name and region."
     }
     precondition {
       condition     = !local.kek_missing
@@ -167,11 +173,13 @@ resource "google_secret_manager_secret_iam_member" "server" {
 }
 
 resource "google_cloud_run_v2_service" "server" {
-  project             = var.project_id
-  location            = var.region
-  name                = var.name
-  ingress             = local.service_ingress
-  deletion_protection = var.deletion_protection
+  project  = var.project_id
+  location = var.region
+  name     = var.name
+  ingress  = local.service_ingress
+  # Cloud Tasks and Cloud Scheduler call this URL, and count as internal only on it.
+  default_uri_disabled = false
+  deletion_protection  = var.deletion_protection
 
   template {
     service_account                  = google_service_account.server.email

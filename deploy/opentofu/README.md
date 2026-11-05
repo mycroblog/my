@@ -102,7 +102,7 @@ The rules:
 - Exactly one KEK: a plan fails if the server would need one and no backend provides it (`kek` with `key_manager = local`,
   `kms_key` otherwise).
 - A backend does not name the app. What it needs from the app is an input known in advance, such as `host`, so nothing
-  is circular: the queue calls `https://{host}`, and its service account exists before the service does.
+  is circular: the queue calls the service's `run.app` URL, built from the service's name, and its service account exists before the service does.
 - A setting belongs to one place. The same setting named by two backends, by `env` and `secret_env`, by what the app
   module sets itself, or as both `X` and `X_FILE`, fails the plan and lists the names. `merge()` alone would let the last
   one win without a word.

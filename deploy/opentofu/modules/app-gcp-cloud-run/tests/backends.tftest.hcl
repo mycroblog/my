@@ -562,3 +562,36 @@ run "a_backend_for_aws_fails" {
 
   expect_failures = [var.backends]
 }
+
+run "the_default_url_stays_on_and_jobs_must_name_this_service" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE_CLOUDTASKS_URL = "https://my-123456789012.asia-northeast1.run.app" }
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.server.default_uri_disabled == false
+    error_message = "Cloud Tasks and Cloud Scheduler call the default URL"
+  }
+}
+
+run "jobs_that_call_another_service_fail" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE_CLOUDTASKS_URL = "https://other-123456789012.asia-northeast1.run.app" }
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "jobs_that_call_another_region_fail" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE_CLOUDTASKS_URL = "https://my-123456789012.us-central1.run.app" }
+  }
+
+  expect_failures = [google_service_account.server]
+}

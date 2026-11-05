@@ -70,7 +70,6 @@ module "queue" {
 
   project_id    = var.project_id
   region        = var.region
-  host          = var.host
   tick_schedule = var.tick_schedule
 }
 
