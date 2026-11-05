@@ -83,7 +83,8 @@ jobs:
           if [ -n "$GO_PACKAGES" ]; then
             read -ra packages <<< "$GO_PACKAGES"
           else
-            mapfile -t packages < <(go list ./... | grep -v -x -F "$GO_EXCLUDE")
+            # A package whose only files without a build tag are tests has nothing to build, and naming it fails.
+            mapfile -t packages < <(go list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./... | grep -v -x -F -e '' -e "$GO_EXCLUDE")
           fi
           go build "${packages[@]}"
       - name: Analyze with CodeQL
