@@ -2,7 +2,7 @@
 
 A guide for operators. The configuration keys are described in the [configuration reference](../reference/configuration.md#billing_sources).
 
-The server imports the usage charges of the providers listed in the setting `billing_sources` every 24 hours and adds them to the instance's costs. The default is empty, which imports nothing.
+The server imports the usage charges of the providers listed in the setting `billing_sources`, or of [a plugin](#a-plugin-billing_sources--plugin) for a provider it has no adapter of, every 24 hours and adds them to the instance's costs. The default is empty, which imports nothing.
 It imports the charges of the current and the previous billing month (through the 15th of the month, or until the previous month is final), as one line per service and charge type (usage, credit, refund, tax, support, fee, other).
 Until the provider closes a month, the values are recorded as estimates; after it closes, as final; and when a value changes after it is final, as a correction. Records of the past are never rewritten.
 The state of the imports (the last success, the kind of the last failure, and the number of requests this month) is shown on the costs page of the administration and by `GET /api/v1/admin/billing_imports`.
@@ -24,6 +24,7 @@ The modules [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md)
 | The topic and the pull subscription of a budget, and the subscriber role | `billing-gcp` with `method = "budget"` |
 | Create the budget and connect it to the topic | By hand, in the Google Cloud console, with a role on the billing account |
 | Enable the BigQuery or Pub/Sub API | By hand, as in [Deploying on Cloud Run](deploy-cloud-run.md#1-enable-the-apis) |
+| A plugin | Not by these modules. With no billing module in the `backends`, set `MY_BILLING_SOURCES = plugin` and the settings of [the plugin](#a-plugin-billing_sources--plugin) in the app module's `env`; beside a billing module, the app module refuses `MY_BILLING_SOURCES` in `env`, so add a backend of your own that returns `billing_sources = ["plugin"]` ([the fields of a backend](../../deploy/opentofu/README.md)) |
 
 ## AWS (`billing_sources = aws`)
 
@@ -282,3 +283,96 @@ The build tag `no_billing_gcp` removes this method too. The Pub/Sub client libra
 | `throttled` | `RESOURCE_EXHAUSTED` | The job retries after a pause |
 | `unavailable` | `UNAVAILABLE`, `INTERNAL`, and the like, network failure | The job retries after a pause |
 | `invalid_response` | A message that cannot be read as a budget notification, a budget that is not monthly, two budgets with the same display name | Make the budget monthly, give the budgets distinct display names, and send no other messages to the topic |
+
+## A plugin (`billing_sources = plugin`)
+
+For a provider that the server has no adapter of, such as Azure, Hetzner, or Sakura, run a [plugin](plugins.md) of the kind `billing` and let it read the provider's data. The server has one `plugin` source. A plugin with several providers aggregates them itself and tells them apart by the names of its services.
+
+```toml
+billing_sources = "plugin"
+plugin_billing_address = "unix:///run/my/billing.sock"
+plugin_billing_location = "Europe/Berlin"
+plugin_billing_provider = "Hetzner"
+```
+
+The three settings are required with this source, and the server starts without calling the plugin, even when it is down.
+
+- `plugin_billing_location` is the time zone that cuts the plugin's billing months.
+- `plugin_billing_provider` is the name of the provider in the totals, on the costs page, and in the audit log.
+
+The server asks the plugin for the current month and, as with the other sources, for the previous one through the 15th or until it is final. The caps of the other sources do not apply: `max_requests` is `2147483647`, which means no cap, and the plugin decides what it may spend. It reports the requests and the bytes it was billed for, which the server records and shows.
+
+The kind allows plain TCP, with a warning at start, since it carries only costs. A bearer token needs `https://` or a Unix socket: see [the destination of a plugin](plugins.md#the-destination).
+
+### The call
+
+With `plugin_billing_protocol = json`, the default, a plugin needs an HTTP server and a JSON library alone ([A plugin with no library](plugins.md#a-plugin-with-no-library)). `Fetch` lasts 2 minutes at most, or `plugin_billing_timeout`, below 5 minutes.
+
+```text
+POST /my.plugin.billing.v1.BillingService/Fetch
+Content-Type: application/json
+
+{"months":["2026-09","2026-10"],"maxRequests":2147483647}
+```
+
+```text
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "outcome": "OUTCOME_OK",
+  "requests": 1,
+  "lines": [
+    {
+      "month": "2026-09",
+      "coveredStart": "2026-09-01",
+      "coveredEnd": "2026-09-30",
+      "service": "Hetzner Cloud",
+      "chargeType": "CHARGE_TYPE_USAGE",
+      "category": "CATEGORY_COMPUTE",
+      "amount": "12.3456",
+      "currency": "EUR",
+      "final": true
+    }
+  ]
+}
+```
+
+- A line is one month, service, and charge type, with its offsetting lines, credits, and refunds summed. `service` has at most 200 characters and no control characters.
+- `coveredStart` and `coveredEnd` are inside the month: the whole month when `final` is true, up to the last day with data before.
+- `amount` is an unrounded decimal in major units, which may be negative. `currency` is an ISO 4217 code.
+- `chargeType` is `CHARGE_TYPE_` and one of `USAGE`, `CREDIT`, `REFUND`, `TAX`, `SUPPORT`, `FEE`, `ADJUSTMENT`, `OTHER`.
+- `category` is `CATEGORY_` and one of `COMPUTE`, `DATABASE`, `STORAGE`, `NETWORK`, `DOMAIN`, `EMAIL`, `SOFTWARE`, `OTHER`.
+- `requests` is at most `maxRequests`. `bytesBilled` is a decimal string, for a provider that bills by bytes.
+- A key that `OUTCOME_OK` does not return has no cost in its month, so the server records a revision of 0 for it. A plugin that could not read a provider must report a failure, not leave its lines out.
+- Calls may repeat: a retry of a failed import is the same call again.
+
+`maxRequests` 0 forbids any billed request. The server makes no call when it would send 0, but `my plugin test --kind billing` does, with the field left out as proto3's mapping allows, and expects `OUTCOME_REQUEST_CAP` with no lines and no requests.
+
+### Kinds of failure
+
+A plugin reports a failure in `outcome`. The server keeps the `requests` of a failure, ignores its lines, and leaves the earlier imports as they are, as with the other sources.
+
+| Outcome | Kind | Retried |
+| --- | --- | --- |
+| `OUTCOME_PERMISSION` | `permission` | No |
+| `OUTCOME_NOT_ENABLED` | `not_enabled` | No |
+| `OUTCOME_NOT_FOUND` | `not_found` | No |
+| `OUTCOME_THROTTLED` | `throttled` | Yes |
+| `OUTCOME_REQUEST_CAP` | `request_cap` | No |
+| `OUTCOME_BYTES_CAP` | `bytes_cap` | No |
+| `OUTCOME_INVALID_RESPONSE` | `invalid_response` | No |
+| `OUTCOME_UNAVAILABLE` | `unavailable` | Yes |
+| A missing or unknown outcome, or a line or count that breaks the rules above | `invalid_response` | No |
+| An HTTP or Connect error, a deadline, an answer over 4 MiB, no answer | `unavailable` | Yes |
+
+What is not retried waits for the next daily import. A failure's reason is in the plugin's log, since the server drops the message of an error, and it also counts in [`my.plugin.failures`](running.md).
+
+### Test it
+
+```sh
+my plugin test --kind billing unix:///run/my/billing.sock
+my plugin test --kind billing --billed unix:///run/my/billing.sock
+```
+
+The first makes no billed request if the plugin follows the contract. The second also makes a real fetch, which may cost money at the plugin's providers. See [Test a plugin](plugins.md#test-a-plugin).

@@ -82,13 +82,21 @@ func (l Label) Normalize() Label {
 	return l
 }
 
+// ValidateProvider fails with ErrInvalidProvider for a provider's name that a label cannot hold.
+func ValidateProvider(provider string) error {
+	if !validLine(strings.TrimSpace(provider), MaxProvider) {
+		return ErrInvalidProvider
+	}
+	return nil
+}
+
 // Validate checks a normalized label.
 func (l Label) Validate() error {
 	if !validLine(l.Name, MaxName) {
 		return ErrInvalidName
 	}
-	if !validLine(l.Provider, MaxProvider) {
-		return ErrInvalidProvider
+	if err := ValidateProvider(l.Provider); err != nil {
+		return err
 	}
 	if !l.Category.Valid() {
 		return fmt.Errorf("%w: %q", ErrInvalidCategory, l.Category)

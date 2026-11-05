@@ -1,0 +1,105 @@
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+// The costs of one or more providers that the server has no adapter of. A plugin is one source of the server: it
+// aggregates its providers itself, and tells them apart by the service of a line.
+package my.plugin.billing.v1;
+
+service BillingService {
+  // Fetch returns the costs of the months as the providers report them now. The server calls it about once a day, and
+  // again when a call fails with OUTCOME_THROTTLED, OUTCOME_UNAVAILABLE, or a transport error, so the same call may come
+  // twice. It lasts plugin_billing_timeout at most.
+  rpc Fetch(FetchRequest) returns (FetchResponse);
+}
+
+message FetchRequest {
+  // The billing months to report, YYYY-MM, oldest first, one or two. The plugin_billing_location setting of the server
+  // names the time zone that cuts them.
+  repeated string months = 1;
+  // How many billed requests the plugin may make to its providers. 0 forbids any: answer OUTCOME_REQUEST_CAP. 2147483647
+  // means no cap.
+  int32 max_requests = 2;
+}
+
+message FetchResponse {
+  // A name in JSON. Anything but OUTCOME_OK, an empty response included, is a failure that records no cost: the imported
+  // costs of the server stay as they were.
+  Outcome outcome = 1;
+  // One line per month, service, and charge type. With OUTCOME_OK, a line that an earlier call returned and this one does
+  // not has no cost any more. The server ignores the lines of any other outcome.
+  repeated CostLine lines = 2;
+  // The billed requests made, which the server records even when the outcome is a failure. Never above max_requests.
+  int32 requests = 3;
+  // The bytes billed, if the providers bill by them, as a decimal string in JSON.
+  int64 bytes_billed = 4;
+}
+
+// The result of a call. Connect errors say only that the call failed in transport, which the server retries.
+enum Outcome {
+  OUTCOME_UNSPECIFIED = 0;
+  OUTCOME_OK = 1;
+  // The credentials may not read the billing data. The next daily import tries again, as with every outcome that does
+  // not say the server retries.
+  OUTCOME_PERMISSION = 2;
+  // The provider's billing data is not enabled.
+  OUTCOME_NOT_ENABLED = 3;
+  // The billing data does not exist.
+  OUTCOME_NOT_FOUND = 4;
+  // The provider throttles the requests. The server retries.
+  OUTCOME_THROTTLED = 5;
+  // The call would make more billed requests than max_requests.
+  OUTCOME_REQUEST_CAP = 6;
+  // The call would scan more bytes than the plugin allows itself.
+  OUTCOME_BYTES_CAP = 7;
+  // The provider's answer is not usable.
+  OUTCOME_INVALID_RESPONSE = 8;
+  // The provider did not answer. The server retries.
+  OUTCOME_UNAVAILABLE = 9;
+}
+
+// The cost of a billing month, service, and charge type, with its offsetting lines, credits, and refunds summed.
+message CostLine {
+  // The billing month, YYYY-MM: one of the months of the request.
+  string month = 1;
+  // The first day the amount covers, YYYY-MM-DD, inside the month.
+  string covered_start = 2;
+  // The last day the amount covers, YYYY-MM-DD, inside the month: its last day once final, the last day with data before.
+  string covered_end = 3;
+  // The name of the service, at most 200 characters, without control characters. It may name the provider too.
+  string service = 4;
+  // A name in JSON. Anything but a value below, an empty line included, makes the response invalid.
+  ChargeType charge_type = 5;
+  // A name in JSON. Anything but a value below, an empty line included, makes the response invalid.
+  Category category = 6;
+  // A decimal in major units, unrounded, such as "-1.75".
+  string amount = 7;
+  // An ISO 4217 code.
+  string currency = 8;
+  // The provider has closed the month.
+  bool final = 9;
+}
+
+enum ChargeType {
+  CHARGE_TYPE_UNSPECIFIED = 0;
+  CHARGE_TYPE_USAGE = 1;
+  CHARGE_TYPE_CREDIT = 2;
+  CHARGE_TYPE_REFUND = 3;
+  CHARGE_TYPE_TAX = 4;
+  CHARGE_TYPE_SUPPORT = 5;
+  CHARGE_TYPE_FEE = 6;
+  CHARGE_TYPE_ADJUSTMENT = 7;
+  CHARGE_TYPE_OTHER = 8;
+}
+
+enum Category {
+  CATEGORY_UNSPECIFIED = 0;
+  CATEGORY_COMPUTE = 1;
+  CATEGORY_DATABASE = 2;
+  CATEGORY_STORAGE = 3;
+  CATEGORY_NETWORK = 4;
+  CATEGORY_DOMAIN = 5;
+  CATEGORY_EMAIL = 6;
+  CATEGORY_SOFTWARE = 7;
+  CATEGORY_OTHER = 8;
+}

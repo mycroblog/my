@@ -212,13 +212,15 @@ An instance setting that has never been set reads as its default, which is defin
 | [`plugin_translator_tls_cert_file`](#plugin_translator_tls_cert_file) | `MY_PLUGIN_TRANSLATOR_TLS_CERT_FILE` | none | no | no |
 | [`plugin_translator_tls_key_file`](#plugin_translator_tls_key_file) | `MY_PLUGIN_TRANSLATOR_TLS_KEY_FILE` | none | no | no |
 | [`plugin_translator_timeout`](#plugin_translator_timeout) | `MY_PLUGIN_TRANSLATOR_TIMEOUT` | `10s` | no | no |
-| [`plugin_billing_address`](#plugin_billing_address) | `MY_PLUGIN_BILLING_ADDRESS` | none | no | no |
+| [`plugin_billing_address`](#plugin_billing_address) | `MY_PLUGIN_BILLING_ADDRESS` | none | when `billing_sources` includes `plugin` | no |
 | [`plugin_billing_protocol`](#plugin_billing_protocol) | `MY_PLUGIN_BILLING_PROTOCOL` | `json` | no | no |
 | [`plugin_billing_token`](#plugin_billing_token) | `MY_PLUGIN_BILLING_TOKEN` | none | no | yes |
 | [`plugin_billing_tls_ca_file`](#plugin_billing_tls_ca_file) | `MY_PLUGIN_BILLING_TLS_CA_FILE` | the system's roots | no | no |
 | [`plugin_billing_tls_cert_file`](#plugin_billing_tls_cert_file) | `MY_PLUGIN_BILLING_TLS_CERT_FILE` | none | no | no |
 | [`plugin_billing_tls_key_file`](#plugin_billing_tls_key_file) | `MY_PLUGIN_BILLING_TLS_KEY_FILE` | none | no | no |
 | [`plugin_billing_timeout`](#plugin_billing_timeout) | `MY_PLUGIN_BILLING_TIMEOUT` | `2m0s` | no | no |
+| [`plugin_billing_location`](#plugin_billing_location) | `MY_PLUGIN_BILLING_LOCATION` | none | when `billing_sources` includes `plugin` | no |
+| [`plugin_billing_provider`](#plugin_billing_provider) | `MY_PLUGIN_BILLING_PROVIDER` | none | when `billing_sources` includes `plugin` | no |
 | [`plugin_mailer_address`](#plugin_mailer_address) | `MY_PLUGIN_MAILER_ADDRESS` | none | no | no |
 | [`plugin_mailer_protocol`](#plugin_mailer_protocol) | `MY_PLUGIN_MAILER_PROTOCOL` | `json` | no | no |
 | [`plugin_mailer_token`](#plugin_mailer_token) | `MY_PLUGIN_MAILER_TOKEN` | none | no | yes |
@@ -1104,7 +1106,7 @@ How many activities each relay may bring in per hour. The ones over it are dropp
 
 ### `billing_sources`
 
-Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request) and `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider (docs/operations/billing-import.md). The build tags `no_billing_aws` and `no_billing_gcp` leave `aws` and `gcp` out. Empty imports nothing.
+Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request), `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`), and `plugin` (a plugin of yours that aggregates any other providers: `plugin_billing_address`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider (docs/operations/billing-import.md). The build tags `no_billing_aws`, `no_billing_gcp`, and `no_plugins` leave `aws`, `gcp`, and `plugin` out. Empty imports nothing.
 
 - Environment variable: `MY_BILLING_SOURCES`
 - Default: none
@@ -1764,7 +1766,7 @@ Where the `billing` plugin listens: `unix:///path/to.sock`, `https://host[:port]
 
 - Environment variable: `MY_PLUGIN_BILLING_ADDRESS`
 - Default: none
-- Required: no
+- Required: when `billing_sources` includes `plugin`
 
 ### `plugin_billing_protocol`
 
@@ -1819,6 +1821,22 @@ Deadline of one call of the `billing` plugin, less than `5m0s`.
 - Environment variable: `MY_PLUGIN_BILLING_TIMEOUT`
 - Default: `2m0s`
 - Required: no
+
+### `plugin_billing_location`
+
+IANA time zone that cuts the billing months of `billing_sources = plugin`, such as `UTC` or `Asia/Tokyo`. The imports ask the plugin for the months of this zone.
+
+- Environment variable: `MY_PLUGIN_BILLING_LOCATION`
+- Default: none
+- Required: when `billing_sources` includes `plugin`
+
+### `plugin_billing_provider`
+
+The provider's name that the totals, the costs page, and the audit log show for `billing_sources = plugin`, such as `Hetzner`, at most 100 characters. All the plugin's costs are under this one name, and the services of its lines tell them apart.
+
+- Environment variable: `MY_PLUGIN_BILLING_PROVIDER`
+- Default: none
+- Required: when `billing_sources` includes `plugin`
 
 ### `plugin_mailer_address`
 

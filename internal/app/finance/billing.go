@@ -19,12 +19,12 @@ import (
 // BillingSource is the port of a provider's billing data (ADR-0068 §1). Its types are of the
 // standard library and the finance domain only.
 type BillingSource interface {
-	// Name is the source's identifier: "aws" or "gcp" (billing_sources).
+	// Name is the source's identifier: "aws", "gcp", or "plugin" (billing_sources).
 	Name() string
 	// Location is the time zone of the source's billing periods (UTC, America/Los_Angeles).
 	Location() *time.Location
-	// Method is how the source reads the provider's data: MethodCostExplorer, MethodBigQuery, or
-	// MethodBudget.
+	// Method is how the source reads the provider's data: MethodCostExplorer, MethodBigQuery,
+	// MethodBudget, or MethodPlugin.
 	Method() string
 	// Fetch returns the costs of the given billing months as the provider reports them now. It
 	// makes at most req.MaxRequests billed requests and fails with ErrRequestCap rather than make
@@ -42,7 +42,13 @@ const (
 	// MethodBudget is the notifications of a Cloud Billing budget: one estimated total per
 	// budget and month, without a breakdown by service.
 	MethodBudget = "budget"
+	// MethodPlugin is an operator's plugin, which aggregates its providers itself (ADR-0146 §11).
+	MethodPlugin = "plugin"
 )
+
+// SourcePlugin is the name of the billing source of an operator's plugin: one per destination
+// (ADR-0146 §11).
+const SourcePlugin = "plugin"
 
 // FetchRequest asks a BillingSource for the costs of Months, oldest first, at most 2, in the
 // source's Location, with at most MaxRequests billed requests (0 forbids any).
@@ -52,8 +58,8 @@ type FetchRequest struct {
 }
 
 // Snapshot is what a BillingSource reports: one line per (Month, Service, ChargeType), the billed
-// requests made (Cost Explorer pages, BigQuery queries), and the BigQuery bytes billed (0 for the
-// other sources). A key that it does not return has no cost in its month.
+// requests made (Cost Explorer pages, BigQuery queries, a plugin's report), and the bytes billed
+// (BigQuery's or a plugin's report, 0 for the other sources). A key that it does not return has no cost in its month.
 type Snapshot struct {
 	Lines       []CostLine
 	Requests    int

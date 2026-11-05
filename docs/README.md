@@ -27,7 +27,7 @@
 - [Search engines and AI crawlers (robots.txt, noindex, opting out of AI)](operations/crawlers.md)
 - [Server webhooks](operations/webhooks.md)
 - [Federation relays](operations/relays.md)
-- [Importing cloud usage costs (AWS Cost Explorer, Google Cloud's BigQuery export)](operations/billing-import.md)
+- [Importing cloud usage costs (AWS Cost Explorer, Google Cloud's BigQuery export, a plugin)](operations/billing-import.md)
 - [Supporter payments with Stripe](operations/payments-stripe.md)
 - [Supporter payments with PAY.JP](operations/payments-payjp.md)
 - [Supporters (paid plans)](operations/supporters.md)

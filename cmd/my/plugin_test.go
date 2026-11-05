@@ -10,8 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mycroblog/my/internal/adapter/plugin/fakeplugin"
+	appfinance "github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 func runPluginTest(args ...string) (code int, stdout, stderr string) {
@@ -46,6 +49,41 @@ func TestPluginTestReportsEachFailure(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "warning: address is plain TCP") {
 		t.Errorf("no warning about plain TCP: %s", stderr)
+	}
+}
+
+func TestPluginTestBilling(t *testing.T) {
+	provider := testkit.NewFakeBillingSource(appfinance.SourcePlugin, time.UTC)
+	h, _ := fakeplugin.JSON(fakeplugin.Options{Billing: provider})
+	addr := fakeplugin.ServeTCP(t, h)
+
+	code, stdout, stderr := runPluginTest("--kind", "billing", addr)
+	if code != 0 {
+		t.Fatalf("code = %d\n%s%s", code, stdout, stderr)
+	}
+	for _, want := range []string{"PASS fetch_without_requests\n", "SKIP fetch_billed: ", "2 passed, 0 failed, 1 skipped\n"} {
+		if !strings.Contains(stdout, want) {
+			t.Errorf("stdout lacks %q:\n%s", want, stdout)
+		}
+	}
+	if !strings.Contains(stderr, "warning: address is plain TCP") {
+		t.Errorf("no warning about plain TCP: %s", stderr)
+	}
+	if n := provider.Calls(); n != 0 {
+		t.Errorf("%d billed requests without --billed", n)
+	}
+
+	code, stdout, stderr = runPluginTest("--kind", "billing", "--billed", addr)
+	if code != 0 || !strings.Contains(stdout, "PASS fetch_billed\n") || provider.Calls() != 1 {
+		t.Errorf("--billed: code = %d, %d billed requests\n%s%s", code, provider.Calls(), stdout, stderr)
+	}
+
+	file := filepath.Join(t.TempDir(), "token")
+	if err := os.WriteFile(file, []byte("s3cret\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, stderr := runPluginTest("--kind", "billing", "--token-file", file, addr); code != 1 || !strings.Contains(stderr, "token must not be sent over http://") {
+		t.Errorf("a token over plain TCP: code = %d, %s", code, stderr)
 	}
 }
 

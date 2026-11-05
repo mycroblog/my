@@ -475,7 +475,7 @@ entries:
       - "Every mailer sends the message that internal/adapter/mail/internal/message assembles and passes testkit.MailerContract; mail/ses tests run against an httptest stand-in of the SES API, never AWS."
       - "mail/smtp also runs on Mailpit containers (mailpit_test.go and internal/platform/mailpit_test.go through pkg/testkit/mailpittest), only with TEST_MAIL=container: `scripts/task.sh go:test-mail` (CI job mail-integration in the slow suite). The development Mailpit is deploy/docker/mailpit with scripts/mailpit-cert.sh; its image pin matches mailpittest.DefaultImage."
   - name: adapter-billing
-    paths: ["internal/adapter/billing/**"]
+    paths: ["internal/adapter/billing/**", "internal/platform/adapters_*billing_plugin.go", "internal/platform/billing_import_plugin_test.go"]
     docs: ["docs/adr/0068-billing-import.md", "docs/operations/billing-import.md"]
     userdocs: ["docs/operations/billing-import.md"]
   - name: adapter-payment
