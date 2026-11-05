@@ -240,6 +240,15 @@ function HookDecisionRow({ decision, override }: { decision: HookDecision; overr
               <DateTime value={decision.overridden_at} />
             </DescriptionItem>
           )}
+          {decision.overridable && decision.restorable_until !== undefined && (
+            <DescriptionItem term={t("client:admin.hook_decisions.restorable_until")}>
+              {Date.parse(decision.restorable_until) > Date.now() ? (
+                <DateTime value={decision.restorable_until} />
+              ) : (
+                t("client:admin.hook_decisions.restorable_gone")
+              )}
+            </DescriptionItem>
+          )}
         </DescriptionList>
       </TableCell>
       <TableCell>

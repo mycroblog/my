@@ -10,6 +10,7 @@ import (
 	"time"
 
 	apphook "github.com/mycroblog/my/internal/app/hook"
+	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/domain/hook"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
@@ -64,6 +65,10 @@ func newHookDecision(r hook.Record) AdminHookDecision {
 	}
 	if r.Override != nil {
 		out.OverriddenAt = &r.Override.At
+	}
+	if d.Hook == hook.InboundStatus && d.Outcome == hook.Drop {
+		until := d.DecidedAt.Add(appfederation.ReceivedDocumentRetention)
+		out.RestorableUntil = &until
 	}
 	return out
 }

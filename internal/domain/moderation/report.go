@@ -43,6 +43,9 @@ type Report struct {
 	// VoiceRoom is the voice chat room that a local report points at (report_voice_rooms,
 	// ADR-0100 §11), nil for none; the target is the host of the room when it was reported.
 	VoiceRoom *ReportVoiceRoom
+	// HookOrigin is the decision of a hook that filed the report (report_hook_origins, ADR-0147
+	// §7), nil for a report that a person or another server filed.
+	HookOrigin *ReportHookOrigin
 }
 
 // ReportVoiceRoom is the voice chat room of a report with the revision of its settings when it
@@ -50,6 +53,31 @@ type Report struct {
 type ReportVoiceRoom struct {
 	RoomID     string
 	RevisionID string
+}
+
+// ReportHookOrigin says that a decision of a hook filed a report, with the immutable facts of that
+// decision, which can be gone before the report is. The hook module owns the decisions.
+type ReportHookOrigin struct {
+	DecisionID string
+	Hook       string
+	// ReasonCode is the coded reason of the decision, "" for none.
+	ReasonCode string
+}
+
+// CategoryOfHookReason returns the category of a report that a decision of a hook files, from the
+// coded reason of the decision (ADR-0147 §7). Harassment, sexual content, and violence are what
+// instance rules are about, though such a report cites no rule: only a person can say which one.
+// Malware is abuse of the network like spam, not a legal claim by itself.
+func CategoryOfHookReason(reason string) Category {
+	switch reason {
+	case "spam", "malware":
+		return CategorySpam
+	case "illegal":
+		return CategoryLegal
+	case "harassment", "sexual", "violence":
+		return CategoryViolation
+	}
+	return CategoryOther
 }
 
 // ErrInvalidReport reports a report with a missing or invalid field.
@@ -68,6 +96,10 @@ func (r Report) Validate() error {
 		return fmt.Errorf("%w: the voice chat room has an empty field", ErrInvalidReport)
 	case r.VoiceRoom != nil && (r.URI != "" || r.Forwarded || len(r.StatusIDs) > 0):
 		return fmt.Errorf("%w: a report of a voice chat room is local and points at no statuses", ErrInvalidReport)
+	case r.HookOrigin != nil && (r.HookOrigin.DecisionID == "" || r.HookOrigin.Hook == ""):
+		return fmt.Errorf("%w: the origin in a hook has an empty field", ErrInvalidReport)
+	case r.HookOrigin != nil && (r.URI != "" || r.Forwarded || r.VoiceRoom != nil):
+		return fmt.Errorf("%w: a report of a hook has no URI, no voice chat room, and is not forwarded", ErrInvalidReport)
 	}
 	if err := checkText("comment", r.Comment, MaxReportComment); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalidReport, err)

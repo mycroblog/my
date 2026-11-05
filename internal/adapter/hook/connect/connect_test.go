@@ -129,3 +129,70 @@ func TestContract(t *testing.T) {
 		})
 	}
 }
+
+// The subject reaches the plugin in the protocol's own fields, and the text goes over no plain TCP.
+func TestInboundStatusSubject(t *testing.T) {
+	t.Parallel()
+	got := make(chan *hookv1.CheckRequest, 1)
+	server := connect.NewServer()
+	hookv1connect.RegisterHookServiceHandler(server, &subjectPlugin{got: got})
+	mux := http.NewServeMux()
+	connecthttp.Mount(mux, server)
+	conn, err := client.New(client.Options{
+		Kind: mustKind(t, kind.InboundStatus), Destination: kind.Destination{Address: fakeplugin.ServeUnix(t, mux), Protocol: kind.ProtocolProto},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(conn.Close)
+	published := time.Date(2026, 11, 6, 1, 2, 3, 0, time.UTC)
+	_, err = hookconnect.New(conn).Check(t.Context(), apphook.Request{
+		Hook: hook.InboundStatus, SubjectKey: "https://remote.example/a",
+		Subject: apphook.InboundStatusSubject{
+			ActivityType: "Update", StatusURI: "https://remote.example/s", AuthorURI: "https://remote.example/u", AuthorDomain: "remote.example",
+			Visibility: "direct", AnyLocalFollower: true, PublishedAt: published, MentionCount: 3, LocalMentionCount: 2,
+			Bodies:      []apphook.InboundStatusBody{{Language: "en", HTML: "<p>hello</p>"}},
+			Attachments: []apphook.InboundStatusAttachment{{Type: "Image", URL: "https://remote.example/i.png", ContentType: "image/png", Description: "a cat"}},
+			PollOptions: []string{"yes"}, Hashtags: []string{"tag"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := (<-got).GetInboundStatus()
+	if s.GetActivityType() != "Update" || s.GetStatusUri() != "https://remote.example/s" || s.GetVisibility() != "direct" || !s.GetAnyLocalFollower() ||
+		s.GetPublishedAt() != "2026-11-06T01:02:03Z" || s.GetMentionCount() != 3 || s.GetLocalMentionCount() != 2 ||
+		s.GetBodies()[0].GetHtml() != "<p>hello</p>" || s.GetAttachments()[0].GetDescription() != "a cat" || s.GetPollOptions()[0] != "yes" || s.GetHashtags()[0] != "tag" {
+		t.Errorf("subject = %v", s)
+	}
+}
+
+type subjectPlugin struct {
+	hookv1connect.UnimplementedHookServiceHandler
+
+	got chan *hookv1.CheckRequest
+}
+
+func (p *subjectPlugin) Check(_ context.Context, r *hookv1.CheckRequest) (*hookv1.CheckResponse, error) {
+	p.got <- r
+	return &hookv1.CheckResponse{Verdict: hookv1.Verdict_VERDICT_ALLOW}, nil
+}
+
+func mustKind(t *testing.T, name string) kind.Kind {
+	t.Helper()
+	k, ok := kind.ByName(name)
+	if !ok {
+		t.Fatalf("no kind %s", name)
+	}
+	return k
+}
+
+// inbound.status sends the text of posts, so plain TCP is refused, on loopback too.
+func TestInboundStatusRefusesPlainTCP(t *testing.T) {
+	t.Parallel()
+	for _, addr := range []string{"http://127.0.0.1:1", "http://localhost:1", "http://plugin.example"} {
+		if _, err := client.New(client.Options{Kind: mustKind(t, kind.InboundStatus), Destination: kind.Destination{Address: addr}}); err == nil {
+			t.Errorf("client.New(%s) took plain TCP", addr)
+		}
+	}
+}

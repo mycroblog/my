@@ -11,6 +11,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -95,6 +96,8 @@ type StatusHandlersDeps struct {
 	// Votes records the votes of remote accounts in local polls; nil takes every Note in reply
 	// to a local status as a post.
 	Votes RemotePollVotes
+	// Review is the hook inbound.status; its zero value asks nothing.
+	Review StatusReview
 	// Quotes records the approvals of the quotes of remote posts and takes a Delete of a
 	// QuoteAuthorization as a revocation (ADR-0069); with Outbox, JobVerifyQuote fetches the
 	// quoted posts and verifies the approvals, reading their authors through Profiles. Without
@@ -207,7 +210,8 @@ func (h *StatusHandlers) Update(ctx context.Context, a *InboxActivity) error {
 	if err != nil {
 		return err
 	}
-	switch _, err := h.d.Statuses.FindStatusByURI(ctx, string(obj.ID)); {
+	stored, err := h.d.Statuses.FindStatusByURI(ctx, string(obj.ID))
+	switch {
 	case errors.Is(err, appcontent.ErrNotFound):
 		if obj.Published.IsZero() || h.d.Clock.Now().Sub(obj.Published) > UpdateAsCreateWindow {
 			return fmt.Errorf("%w: Update of an unknown post %s published long ago", ErrDropActivity, obj.ID)
@@ -228,9 +232,23 @@ func (h *StatusHandlers) Update(ctx context.Context, a *InboxActivity) error {
 		return err
 	}
 	in := h.input(a, obj, followers, mentions)
+	verdict, err := h.reviewUpdate(ctx, a, stored, obj, in, mentions)
+	if err != nil {
+		return err
+	}
+	if verdict.Effect == apphook.Drop {
+		return reviewDropped(obj)
+	}
 	err = h.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		if _, err := h.d.Statuses.ReviseRemoteStatus(ctx, tx, in); err != nil {
+		revised, err := h.d.Statuses.ReviseRemoteStatus(ctx, tx, in)
+		if err != nil {
 			return err
+		}
+		// An Update that arrives late makes no revision, and leaves nothing to act on.
+		if revised {
+			if err := h.applyReview(ctx, tx, verdict, stored.ID, a.Actor.Account); err != nil {
+				return err
+			}
 		}
 		return h.verifyQuoteTx(ctx, tx, obj.ID, obj.Quote, true)
 	})
@@ -353,9 +371,27 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 	if relayed && in.Visibility != appcontent.VisibilityPublic {
 		return fmt.Errorf("%w: the relayed %s is not public", ErrDropActivity, obj.ID)
 	}
+	verdict := allowed
+	if !relayed {
+		active, err := h.reviewActive(ctx)
+		if err != nil {
+			return err
+		}
+		if active {
+			if verdict, err = h.review(ctx, a, obj, in, mentions); err != nil {
+				return err
+			}
+		}
+		if verdict.Effect == apphook.Drop {
+			return reviewDropped(obj)
+		}
+	}
 	err = h.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		p, err := h.d.Statuses.IngestRemoteStatus(ctx, tx, in)
 		if err != nil {
+			return err
+		}
+		if err := h.applyReview(ctx, tx, verdict, p.Status.ID, a.Actor.Account); err != nil {
 			return err
 		}
 		if err := h.verifyQuoteTx(ctx, tx, obj.ID, obj.Quote, !relayed); err != nil {
@@ -466,6 +502,8 @@ type postMentions struct {
 	accountIDs []string
 	unknown    []federation.IRI
 	local      bool
+	// localCount is how many of accountIDs are local accounts.
+	localCount int
 	// deactivated is true when the post names a local account that its owner deactivated, which
 	// is left out of accountIDs.
 	deactivated bool
@@ -497,6 +535,7 @@ func (h *StatusHandlers) mentions(ctx context.Context, obj *federation.Object, f
 				continue
 			}
 			m.local = true
+			m.localCount++
 		}
 		m.accountIDs = append(m.accountIDs, a.Account.ID)
 	}

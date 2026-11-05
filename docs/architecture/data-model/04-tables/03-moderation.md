@@ -56,6 +56,7 @@
 | `report_statuses` | リソース（子） | `report_id`, `status_id` | PK `(report_id, status_id)`。インデックス `(status_id)`（投稿の消去で証拠を残す判定） |
 | `report_rule_citations` | リソース（子） | `report_id`, `rule_id` | PK `(report_id, rule_id)`。ルールの文言が改訂されても `rule_id` は変わらない（§4.9） |
 | `report_voice_rooms` | リソース（子） | `report_id`（PK）, `room_id`, `revision_id`（通報の時点の設定の版） | インデックス `(room_id)`。ルームと版の表は `voice` のもの（§4.14、ADR-0100 §11） |
+| `report_hook_origins` | リソース（子） | `report_id`（PK）, `hook_decision_id`, `hook`, `reason_code` | 一意 `(hook_decision_id)`。通報を起票したフックの判定（ADR-0147 §7）。一意制約が再実行での二重の起票を防ぐ。`hook` と `reason_code` は不変の事実の写しで、判定が保持期間で消えても残る |
 | `report_assignments` | イベント | `id`, `report_id`, `assignee_user_id`（NULL 可 = 担当解除）, `assigned_by_user_id`（NULL 可 = CLI）, `assigned_at` | インデックス `(report_id, id DESC)`。担当が変わらない割り当ては記録しない |
 | `report_resolutions` | イベント | `id`, `report_id`, `outcome`（`enum(actioned, dismissed)`）, `resolved_by_user_id`（NULL 可 = CLI）, `resolved_at` | インデックス `(report_id, id DESC)`。処分との関連は `moderation_actions.report_id` で辿る。解決済みの通報の解決は記録しない |
 | `report_reopenings` | イベント | `id`, `report_id`, `reopened_by_user_id`（NULL 可 = CLI）, `reopened_at` | インデックス `(report_id, id DESC)`。未解決の通報の再開は記録しない |
@@ -68,6 +69,7 @@
 - `forwarded` は、ローカルの通報者がリモートのアカウントの通報で相手のサーバーへの転送を求めたかどうかです（受け付けた時点で決まる事実）。対象がローカルのアカウントなら、求めても `false` です。転送は受け付けのトランザクションで outbox に積みます（[ADR-0058](../../../adr/0058-moderation-admin-separation.md)）。受信した `Flag` は常に `false` です。
 - ローカルの通報のコメントは 1,000 文字、受信した `Flag` のコメントは 5,000 文字までです。`report_rule_citations` は `category = violation` のときだけ持てます。
 - ローカルの通報が指せる投稿は、対象のアカウントの投稿のうち通報者が見られるもの（単一の閲覧判定 `CanView` を通す）を 20 件まで、引用できるルールは効いているもの（引退していないもの）を 20 件までです。自分自身は通報できません。
+- フックの `flag` の通報（ADR-0147 §7）は、通報者がインスタンス Actor で、`uri` は NULL、`forwarded` は偽です。カテゴリは判定の理由コードから決め（`spam`・`malware` は `spam`、`illegal` は `legal`、`harassment`・`sexual`・`violence` は `violation`、ほかは `other`）、`comment` はプラグインのメモ（なければ空）です。投稿と同じトランザクションで `moderation.Service.FileHookReport` が書きます。解決しても `report_resolved` を作りません。
 - 通話のルームの通報（ADR-0100 §11）は、通報者に見える（`voice.CanSee`）開いたルームを `report_voice_rooms` で指し、対象のアカウントはその時のホスト、`revision_id` はその時の設定の版です。ルームが見えるか・ホスト・版は `voice` が決め（`voice.Service.ReportTarget`）、クライアント API が `moderation.LocalReports` に渡します。投稿は指せず、転送しません。
   モデレーターが開く通報の詳細は、そのルームの版をすべてと、参加者の記録（参加と退出・退出させた人）を、`voice` の消去が残している間だけ示します（`voice.Service.RoomRecords`）。通報が残る間は、そのルームの参加者の記録は消えません（§4.14）。
 - 通報の状態の投影は、受け付けで `open`、解決で `resolved`（`outcome` を写す）、再開で `open` に戻します（担当は残します）。再開できるのは解決済みの通報だけです。

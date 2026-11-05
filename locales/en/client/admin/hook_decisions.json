@@ -159,6 +159,14 @@
     "defaultMessage": "Reason code",
     "description": "Term of a decision: the coded reason the review gave."
   },
+  "admin.hook_decisions.restorable_gone": {
+    "defaultMessage": "Its received copy is gone, so cancelling records the cancellation and brings nothing back.",
+    "description": "Shown on a dropped post whose received copy is gone: cancelling cannot bring it back."
+  },
+  "admin.hook_decisions.restorable_until": {
+    "defaultMessage": "Can be brought back until",
+    "description": "Term of a dropped post: until when cancelling the decision takes the post in again."
+  },
   "admin.hook_decisions.summary.count": {
     "defaultMessage": "{count, plural, one {# decision} other {# decisions}}, {average} ms on average, {max} ms at most",
     "description": "Value of a count of decisions, with how long the calls took in milliseconds."

@@ -159,6 +159,14 @@
     "defaultMessage": "理由コード",
     "description": "Term of a decision: the coded reason the review gave."
   },
+  "admin.hook_decisions.restorable_gone": {
+    "defaultMessage": "受信した原本がもう残っていないので、取り消しは記録だけになり、投稿は戻りません。",
+    "description": "Shown on a dropped post whose received copy is gone: cancelling cannot bring it back."
+  },
+  "admin.hook_decisions.restorable_until": {
+    "defaultMessage": "取り消して戻せる期限",
+    "description": "Term of a dropped post: until when cancelling the decision takes the post in again."
+  },
   "admin.hook_decisions.summary.count": {
     "defaultMessage": "{count, plural, other {# 件}}、平均 {average} ミリ秒、最大 {max} ミリ秒",
     "description": "Value of a count of decisions, with how long the calls took in milliseconds."

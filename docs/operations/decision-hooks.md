@@ -4,8 +4,9 @@ A decision hook asks a [plugin](plugins.md) of yours whether to accept something
 answers with a verdict from a fixed list. It never rewrites anything and it takes no action on an account: the most it can do
 is stop one post, follow, or sign-up, or file a report for your moderators. People decide what happens to an account.
 
-Nothing is reviewed by default. A server with no hook address makes no call and spends no time on them. This version keeps
-the records, the modes, and the admin screens described here, and no intake path asks a hook yet.
+Nothing is reviewed by default. A server with no hook address makes no call and spends no time on them. In this version
+`inbound.status` asks its plugin; the other hooks keep the records, the modes, and the admin screens described here, and no
+intake path asks them yet.
 
 ## The hooks
 
@@ -32,6 +33,32 @@ What each answer does:
 
 An answer can carry a coded reason (`spam`, `harassment`, `sexual`, `violence`, `illegal`, `malware`, `other`) and a note of
 up to 200 characters for your moderators. An answer the hook does not take counts as a failure.
+
+## What `inbound.status` reviews
+
+The server asks about each `Create` of a post and each `Update` of one that it would take in, before it stores anything. Every
+revision is its own subject with its own decision.
+
+- A post is asked about only when it is related to a local account: a local account follows its author, it names a local
+  account, or it is in a thread with a local post. Whether a local account follows the author does not narrow it further:
+  the plugin gets `any_local_follower` and can weigh it. A post only a relay brought in is never asked about, nor is an
+  `Update` of a stored post that no longer relates to a local account: its revision is stored without a question.
+- A direct post from an author no local account follows is not sent unless you turn on
+  `hook_inbound_status_unfollowed_direct`. Posts of your local accounts are never sent, at any setting.
+- Polls' votes, deletions, undos, likes, reactions, and boosts are never asked about, so stopping a plugin cannot stop a
+  deletion from arriving. A thread fetch or a boost's fetch can still bring in the same post another way.
+
+What each answer does to a post:
+
+- `drop` on a `Create` stores nothing and creates no notification or timeline entry, and a redelivery is ignored as a
+  duplicate. `drop` on an `Update` makes no revision and keeps the previous one.
+- `flag` files one report per decision, with your instance actor as the reporter, the reason's category (`spam` and
+  `malware` as Spam, `illegal` as Legal, `harassment`, `sexual`, and `violence` as Violation, and anything else as Other), and
+  the plugin's note as the comment. The report says that a review filed it. It is not forwarded, and resolving it notifies
+  nobody. Each decision files its own report, so a wave of spam can fill the queue.
+- `mark_sensitive` marks the post, not the revision: the mark stays on later revisions, whatever they are answered, until a
+  moderator cancels the decision. It shows attachments as sensitive and leaves the text alone, so a post with no attachment
+  looks no different, and other servers do not see it.
 
 ## Modes
 
@@ -60,6 +87,10 @@ What happens to the subject then depends on `hook_<hook>_on_failure`:
   After its last run the job becomes a [dead job](running.md#the-job-queue-and-failed-dead-jobs), which releases the others.
 - `require_approval` holds the sign-up for a moderator.
 
+Each process makes at most 8 calls of a plugin at once, and a call that waits its turn past the hook's deadline counts as a
+timeout. Waits show in `my.plugin.slot_wait` ([Running](running.md)). Keep `plugin_inbound_status_timeout` short: while a call
+waits, later jobs from the same actor wait with it.
+
 In `observe` a failure never holds anything up. Moderators get a notification once a day per hook when its calls keep failing.
 The metrics are `my.hook.decisions`, `my.hook.failures`, and `my.hook.duration` ([Running](running.md)).
 
@@ -72,6 +103,11 @@ holds no text of a post, no email address, and no IP address.
 **Moderation** > **Automated reviews** (`manage_reports`) shows the counts and waits of the last 7 days, and what the hooks
 stopped, would have stopped in `observe`, or could not check. Cancelling a decision there goes in the audit log as
 `hook_decision_overridden`. A `reject` of `local.status` is not cancelled there: its author appeals it.
+
+What cancelling does depends on the answer. A `mark_sensitive` loses its mark, and a mark from a moderation action on the same
+post stays. A `flag` keeps its report, which you resolve as usual. A `drop` of `inbound.status` processes the received activity
+again without asking the plugin, but only for the 7 days the server keeps a received activity; after that, the screen says so
+and cancelling only records the cancellation.
 
 An automated effect goes in the audit log, with the system as the actor, only when it leaves state: `mark_sensitive`, a
 filed `flag`, and `require_approval` (`hook_decision_applied`). `drop` and `reject` store nothing, so they stay in the
@@ -89,9 +125,13 @@ it covers, and what is sent to it. The server writes this from your settings.
 
 ## What is sent, and what it costs
 
-Calls and sent data grow with what the server receives. Review what you send before you turn a hook on:
+Calls, their cost, and sent data grow with the volume the server receives, on `inbound.status` above all: every post in scope
+is one call, and every revision another. Review what you send before you turn a hook on:
 
-- `inbound.status` and `local.status` send the text of posts, and refuse plain TCP.
+- `inbound.status` and `local.status` send the text of posts, and refuse plain TCP, on loopback too. `inbound.status` sends
+  what the remote server sent: the text, the content warning, the addresses and descriptions of attachments (no media), poll
+  options, hashtags, the author, the visibility, and how many accounts the post names and how many of them are local.
+  It sends nothing of the post it replies to. The message `InboundStatus` of the `HookService` protocol has the fields.
 - `signup.check` sends email addresses and IP addresses. It allows plain TCP, which sends them unencrypted.
 - `inbound.follow` sends the two parties of a follow.
 - `media.check` sends a small processed version of the media, never the original.

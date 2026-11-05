@@ -562,6 +562,28 @@ func (q *Queries) GetReceivedActivityDocument(ctx context.Context, activityUri s
 	return document, err
 }
 
+const getReceivedActivityWithDocument = `-- name: GetReceivedActivityWithDocument :one
+SELECT a.activity_uri, a.actor_uri, a.type, a.signature_scheme, a.trust, a.received_at
+FROM received_activities a
+JOIN received_activity_documents d ON d.activity_uri = a.activity_uri
+WHERE a.activity_uri = $1
+`
+
+// GetReceivedActivityWithDocument returns a received activity while its document is kept.
+func (q *Queries) GetReceivedActivityWithDocument(ctx context.Context, activityUri string) (ReceivedActivity, error) {
+	row := q.db.QueryRow(ctx, getReceivedActivityWithDocument, activityUri)
+	var i ReceivedActivity
+	err := row.Scan(
+		&i.ActivityUri,
+		&i.ActorUri,
+		&i.Type,
+		&i.SignatureScheme,
+		&i.Trust,
+		&i.ReceivedAt,
+	)
+	return i, err
+}
+
 const hasRemoteObjectTombstone = `-- name: HasRemoteObjectTombstone :one
 SELECT EXISTS (SELECT 1 FROM remote_object_tombstones WHERE uri = $1 AND actor_uri = $2)
 `

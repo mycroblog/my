@@ -70,6 +70,7 @@ func InboxContract(t *testing.T, newHarness InboxFactory) {
 	}{
 		{"RecordsAnActivityOnce", inboxRecordsOnce},
 		{"KeepsTheDocumentByteExact", inboxKeepsDocumentByteExact},
+		{"FindsAnActivityWhileItsDocumentIsKept", inboxFindsKeptActivity},
 		{"SynthesizesTheURIOfAnActivityWithoutID", inboxSynthesizesURI},
 		{"MarksActivitiesOfOtherSignersForRefetch", inboxMarksRefetch},
 		{"RefusesWithoutTouchingTheDatabaseOrTheQueue", inboxRefuses},
@@ -395,6 +396,44 @@ func inboxRecordsOnce(t *testing.T, e *inboxEnv) {
 // with, whatever a JSON column would change: whitespace, key order, a duplicate key (the
 // asynchronous processing reads the first), escapes, and an escaped NUL or lone surrogate, which
 // a PostgreSQL jsonb column refuses.
+func inboxFindsKeptActivity(t *testing.T, e *inboxEnv) {
+	ctx := t.Context()
+	in := e.inbox(kernel.Limit{}, kernel.Limit{})
+	id := federation.IRI(inboxAlice + "/activities/kept")
+	if _, err := e.receive(t, in, inboxPost{body: inboxCreate(t, string(id)), signature: inboxAliceKey + " yes"}); err != nil {
+		t.Fatalf("Receive: %v", err)
+	}
+	find := func(uri federation.IRI) (federation.ReceivedActivity, error) {
+		var got federation.ReceivedActivity
+		err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			var err error
+			got, err = e.h.Inbox.FindKeptReceivedActivityTx(ctx, tx, uri)
+			return err
+		})
+		return got, err
+	}
+	if got, err := find(id); err != nil || got.ActivityURI != id || got.ActorURI != inboxAlice || got.Trust != federation.TrustSigned {
+		t.Errorf("FindKeptReceivedActivityTx = %+v, %v", got, err)
+	}
+	if _, err := find(inboxAlice + "/activities/unknown"); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("an unknown activity: %v, want ErrNotFound", err)
+	}
+	purge, ok := e.h.Inbox.(appfederation.PurgeRepository)
+	if !ok {
+		t.Fatalf("%T does not delete received documents", e.h.Inbox)
+	}
+	err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		_, err := purge.DeleteReceivedDocumentsBefore(ctx, tx, e.clock.Now().Add(time.Hour), 10)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := find(id); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("an activity without its document: %v, want ErrNotFound", err)
+	}
+}
+
 func inboxKeepsDocumentByteExact(t *testing.T, e *inboxEnv) {
 	in := e.inbox(kernel.Limit{}, kernel.Limit{})
 	id := inboxAlice + "/activities/raw"

@@ -32,6 +32,16 @@ func (a *App) setUpHooks(cfg *config.Config, repo apphook.Repository, statuses a
 // hookSettings reads the settings of the hooks on the instance module.
 type hookSettings struct{ a *App }
 
+// ReviewUnfollowedDirect implements federation.ReviewSettings.
+func (s hookSettings) ReviewUnfollowedDirect(ctx context.Context) (bool, error) {
+	settings, err := s.a.Instance.Settings(ctx)
+	if err != nil {
+		return false, err
+	}
+	value, _ := settings.Value(instance.SettingHookInboundStatusUnfollowedDirect)
+	return value == "true", nil
+}
+
 func (s hookSettings) HookMode(ctx context.Context, n hook.Name) (hook.Mode, error) {
 	settings, err := s.a.Instance.Settings(ctx)
 	if err != nil {

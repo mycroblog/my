@@ -345,6 +345,10 @@ func (c reportCommand) show(ctx context.Context, id string) error {
 	if uri == "" {
 		uri = "-"
 	}
+	automated := "-"
+	if o := r.HookOrigin; o != nil {
+		automated = strings.TrimSpace(o.Hook + " " + o.ReasonCode)
+	}
 	tw := tabwriter.NewWriter(c.stdout, 0, 4, 2, ' ', 0)
 	for _, row := range [][2]string{
 		{"id", r.ID},
@@ -356,6 +360,7 @@ func (c reportCommand) show(ctx context.Context, id string) error {
 		{"category", string(r.Category)},
 		{"target", c.handle(ctx, r.TargetAccountID) + " (" + r.TargetAccountID + ")"},
 		{"reporter", c.handle(ctx, r.ReporterAccountID) + " (" + r.ReporterAccountID + ")"},
+		{"automated", automated},
 		{"statuses", strings.Join(r.StatusIDs, " ")},
 		{"history", fmt.Sprintf("%d other reports, %d actions", d.History.Reports, d.History.Actions)},
 	} {

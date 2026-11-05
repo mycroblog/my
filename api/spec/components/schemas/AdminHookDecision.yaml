@@ -33,6 +33,13 @@ properties:
     description: When a moderator cancelled the decision; absent while it stands.
     type: string
     format: date-time
+  restorable_until:
+    description: |
+      For a `drop` of `inbound.status`: until about when cancelling it processes the activity again,
+      which needs the document as it was received. After that, cancelling records the cancellation
+      and brings nothing back. Absent for any other decision.
+    type: string
+    format: date-time
   overridable:
     description: |
       Whether a moderator can cancel it here: a verdict in force that stopped or changed

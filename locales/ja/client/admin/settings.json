@@ -87,6 +87,78 @@
     "defaultMessage": "連絡先とサムネイルはすでに保存されています。",
     "description": "Status after pressing the save button of the contact and thumbnail without changing anything."
   },
+  "admin.settings.crawlers.ai": {
+    "defaultMessage": "AI",
+    "description": "Label of the radio group of what the server states to AI crawlers (ai_usage)."
+  },
+  "admin.settings.crawlers.ai.allow": {
+    "defaultMessage": "許可する",
+    "description": "Choice that reserves nothing against AI."
+  },
+  "admin.settings.crawlers.ai.allow.description": {
+    "defaultMessage": "サーバーとしては AI に対して何も留保しません。アカウントは自分のページについて拒否できます。",
+    "description": "Description of reserving nothing against AI."
+  },
+  "admin.settings.crawlers.ai.deny": {
+    "defaultMessage": "学習と利用を拒否する",
+    "description": "Choice that denies both the training and the use by AI."
+  },
+  "admin.settings.crawlers.ai.deny.description": {
+    "defaultMessage": "人の依頼でページを読む AI の検索・アシスタント・エージェントを含め、AI のクローラーを拒否します。",
+    "description": "Description of denying both the training and the use by AI."
+  },
+  "admin.settings.crawlers.ai.deny_training": {
+    "defaultMessage": "学習を拒否する",
+    "description": "Choice that denies the training of AI models only."
+  },
+  "admin.settings.crawlers.ai.deny_training.description": {
+    "defaultMessage": "AI のモデルの学習のためにデータを集めるクローラーを拒否します。人の依頼でページを読む AI の検索やアシスタントは拒否しません。",
+    "description": "Description of denying the training of AI models only."
+  },
+  "admin.settings.crawlers.description": {
+    "defaultMessage": "サーバーが検索エンジンと AI のクローラーに示す表明です。設定するまでは、どちらも拒否します。サーバーはこの設定と、同梱する既知の AI クローラーの一覧から robots.txt を作り、すべてのページでも表明します。アカウントごとに自分のページについてさらに拒否できますが、許可を広げることはできません。",
+    "description": "Explanation of the section of the server settings about search engines and AI crawlers."
+  },
+  "admin.settings.crawlers.indexable_default": {
+    "defaultMessage": "新しいアカウントで検索への掲載を許可する",
+    "description": "Label of the checkbox of whether new accounts allow search indexing (indexable_default)."
+  },
+  "admin.settings.crawlers.indexable_default.description": {
+    "defaultMessage": "これから登録するアカウントの初めの設定です。登録済みのアカウントの設定は変わりません。",
+    "description": "Help text of the indexable default checkbox."
+  },
+  "admin.settings.crawlers.search": {
+    "defaultMessage": "検索エンジン",
+    "description": "Label of the radio group of whether search engines may index the server's pages (search_indexing)."
+  },
+  "admin.settings.crawlers.search.allow": {
+    "defaultMessage": "索引に載せることを許可する",
+    "description": "Choice that lets search engines index the pages of the accounts that allow it."
+  },
+  "admin.settings.crawlers.search.allow.description": {
+    "defaultMessage": "検索エンジンは、許可したアカウントのプロフィールと公開投稿を索引に載せられます。ほかのページは載せません。",
+    "description": "Description of letting search engines index pages."
+  },
+  "admin.settings.crawlers.search.deny": {
+    "defaultMessage": "索引に載せることを拒否する",
+    "description": "Choice that asks search engines not to index any page."
+  },
+  "admin.settings.crawlers.search.deny.description": {
+    "defaultMessage": "すべてのページで、検索エンジンに索引に載せないよう求めます (noindex)。リンクのプレビューはこれまでどおり表示されます。",
+    "description": "Description of asking search engines not to index any page."
+  },
+  "admin.settings.crawlers.security_contact": {
+    "defaultMessage": "脆弱性の連絡先",
+    "description": "Label of the field of the address to report vulnerabilities to (security_contact)."
+  },
+  "admin.settings.crawlers.security_contact.description": {
+    "defaultMessage": "脆弱性を報告する先です。https か mailto の URI (メールアドレスなら先頭に mailto と半角のコロンを付けたもの) を入れます。設定している間だけ、サーバーは /.well-known/security.txt を返します。",
+    "description": "Help text of the security contact field."
+  },
+  "admin.settings.crawlers.title": {
+    "defaultMessage": "検索エンジンと AI",
+    "description": "Heading of the section of the server settings about search engines and AI crawlers."
+  },
   "admin.settings.descriptions.description": {
     "defaultMessage": "短い説明は、このサーバーについてのページやほかのアプリがサーバーの名前と並べて表示する 1 段落の文です。説明は、このサーバーについてのページで詳しく伝えます。どの言語で書いてもよく、アプリの言語にかかわらず全員にそのまま表示されます。",
     "description": "Description of the server's descriptions."
@@ -126,226 +198,6 @@
   "admin.settings.domain_actions.comments.everyone": {
     "defaultMessage": "一覧を見られる人なら誰でもコメントを見られます。",
     "description": "Description of showing the comments of the domain actions to everyone."
-  },
-  "admin.settings.finance.title": {
-    "defaultMessage": "運営の費用",
-    "description": "Heading of the section of the publication of the running costs in the server settings."
-  },
-  "admin.settings.finance.description": {
-    "defaultMessage": "費用の画面で記録した費用の合計を、情報ページと API で公開できます。項目の名前・メモ・個々の支払いは、どの段階でも公開しません。",
-    "description": "Explanation of the publication of the running costs in the server settings."
-  },
-  "admin.settings.finance.visibility": {
-    "defaultMessage": "公開する範囲",
-    "description": "Label of the radio buttons of how much of the running costs the server publishes."
-  },
-  "admin.settings.finance.private": {
-    "defaultMessage": "公開しない",
-    "description": "Choice of not publishing the running costs."
-  },
-  "admin.settings.finance.private.description": {
-    "defaultMessage": "費用を管理する人だけが見られます。",
-    "description": "Description of not publishing the running costs."
-  },
-  "admin.settings.finance.totals": {
-    "defaultMessage": "合計だけ",
-    "description": "Choice of publishing the totals of the running costs only."
-  },
-  "admin.settings.finance.totals.description": {
-    "defaultMessage": "誰でも、週・月・年ごとの通貨ごとの合計を見られます。",
-    "description": "Description of publishing the totals of the running costs only."
-  },
-  "admin.settings.finance.breakdown": {
-    "defaultMessage": "合計と内訳",
-    "description": "Choice of publishing the running costs with their breakdown by provider and category."
-  },
-  "admin.settings.finance.breakdown.description": {
-    "defaultMessage": "誰でも、事業者と区分ごとの合計も見られます。どの事業者 (クラウドなど) でこのサーバーを動かしているかが知られます。",
-    "description": "Description of publishing the running costs with their breakdown, which reveals the providers that run the server."
-  },
-  "admin.settings.finance.viewer.description": {
-    "defaultMessage": "ロールで会計の閲覧を許された人は、公開の範囲にかかわらず、会計の画面で合計と事業者・区分ごとの内訳を見られます。ほかに見せるものを選びます。",
-    "description": "Introduction of the settings of what the holders of the view_finance permission see, in the costs section of the server settings."
-  },
-  "admin.settings.finance.viewer.item_names": {
-    "defaultMessage": "項目の名前を見せる",
-    "description": "Checkbox of the server setting finance_viewer_item_names."
-  },
-  "admin.settings.finance.viewer.item_names.description": {
-    "defaultMessage": "登録した費用の名前と、取り込んだ料金のサービス名を、その金額とともに見せます。",
-    "description": "Description of the checkbox of the server setting finance_viewer_item_names."
-  },
-  "admin.settings.finance.viewer.item_memos": {
-    "defaultMessage": "項目のメモを見せる",
-    "description": "Checkbox of the server setting finance_viewer_item_memos."
-  },
-  "admin.settings.finance.viewer.item_memos.description": {
-    "defaultMessage": "登録した費用のメモを、その金額とともに見せます。メモには運営者だけに向けた書き込みがあるかもしれません。",
-    "description": "Description of the checkbox of the server setting finance_viewer_item_memos."
-  },
-  "admin.settings.finance.viewer.income": {
-    "defaultMessage": "収入",
-    "description": "Label of the choice of the server setting finance_viewer_income: how much of the income the holders of view_finance see."
-  },
-  "admin.settings.finance.viewer.income.totals": {
-    "defaultMessage": "合計だけ",
-    "description": "Choice of showing the totals of the income only to the holders of view_finance."
-  },
-  "admin.settings.finance.viewer.income.totals.description": {
-    "defaultMessage": "週・月・年ごとの通貨ごとの合計を見せます。",
-    "description": "Description of showing the totals of the income only."
-  },
-  "admin.settings.finance.viewer.income.plans": {
-    "defaultMessage": "合計とプランごとの人数",
-    "description": "Choice of showing the totals of the income and the number of members of each plan to the holders of view_finance."
-  },
-  "admin.settings.finance.viewer.income.plans.description": {
-    "defaultMessage": "加えて、プランごとの加入者の数を見せます。プランごとの金額と、誰が加入しているかは見せません。",
-    "description": "Description of showing the number of members of each plan too."
-  },
-  "admin.settings.income.title": {
-    "defaultMessage": "収入",
-    "description": "Heading of the section of the publication of the income in the server settings."
-  },
-  "admin.settings.income.description": {
-    "defaultMessage": "サポーターのプランからの収入を、決済の事業者の手数料と返金を引いて、情報ページと API で公開できます。誰がいくら払ったか・プランごとの金額・手数料は、どの段階でも公開しません。費用と収入をどちらも公開するときは、収支も公開します。",
-    "description": "Explanation of the publication of the income in the server settings."
-  },
-  "admin.settings.income.visibility": {
-    "defaultMessage": "公開する範囲",
-    "description": "Label of the radio buttons of how much of the income the server publishes."
-  },
-  "admin.settings.income.private": {
-    "defaultMessage": "公開しない",
-    "description": "Choice of not publishing the income."
-  },
-  "admin.settings.income.private.description": {
-    "defaultMessage": "会計を管理する人と閲覧できる人だけが見られます。",
-    "description": "Description of not publishing the income."
-  },
-  "admin.settings.income.totals": {
-    "defaultMessage": "合計だけ",
-    "description": "Choice of publishing the totals of the income only."
-  },
-  "admin.settings.income.totals.description": {
-    "defaultMessage": "誰でも、週・月・年ごとの通貨ごとの収入を見られます。",
-    "description": "Description of publishing the totals of the income only."
-  },
-  "admin.settings.income.plans": {
-    "defaultMessage": "合計とプランごとの加入者の数",
-    "description": "Choice of publishing the totals of the income and the number of members of each plan."
-  },
-  "admin.settings.income.plans.description": {
-    "defaultMessage": "いまのプランごとの加入者の数も見られます。金額は出しません。加入者の少ないプランでは、誰が加入しているかを推測されるかもしれません。",
-    "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
-  },
-  "admin.settings.supporter_list.title": {
-    "defaultMessage": "サポーターの一覧",
-    "description": "Heading of the section of the supporter list in the server settings."
-  },
-  "admin.settings.supporter_list.description": {
-    "defaultMessage": "/about/supporters のサポーターの一覧は、掲載を選んだ参加者をプランごとに、アバター・名前・ハンドルだけで出します。金額や日付は出しません。検索エンジンにはいつも索引しないよう求めます。",
-    "description": "Explanation of the supporter list setting."
-  },
-  "admin.settings.supporter_list.visibility": {
-    "defaultMessage": "サポーターの一覧を見られる人",
-    "description": "Label of the choice of who may read the supporter list."
-  },
-  "admin.settings.supporter_list.off": {
-    "defaultMessage": "誰にも見せない",
-    "description": "Choice: nobody may read the supporter list."
-  },
-  "admin.settings.supporter_list.off.description": {
-    "defaultMessage": "一覧を公開せず、サーバーの情報ページからもリンクしません。",
-    "description": "Description of not publishing the supporter list."
-  },
-  "admin.settings.supporter_list.everyone": {
-    "defaultMessage": "誰でも",
-    "description": "Choice: everyone may read the supporter list."
-  },
-  "admin.settings.supporter_list.everyone.description": {
-    "defaultMessage": "ログインしているかによらず、誰でも一覧を見られます。",
-    "description": "Description of publishing the supporter list to everyone."
-  },
-  "admin.settings.supporter_list.signed_in": {
-    "defaultMessage": "ログインした人",
-    "description": "Choice: only signed-in users may read the supporter list."
-  },
-  "admin.settings.supporter_list.signed_in.description": {
-    "defaultMessage": "このサーバーにログインした人だけが一覧を見られます。",
-    "description": "Description of publishing the supporter list to signed-in users only."
-  },
-  "admin.settings.crawlers.title": {
-    "defaultMessage": "検索エンジンと AI",
-    "description": "Heading of the section of the server settings about search engines and AI crawlers."
-  },
-  "admin.settings.crawlers.description": {
-    "defaultMessage": "サーバーが検索エンジンと AI のクローラーに示す表明です。設定するまでは、どちらも拒否します。サーバーはこの設定と、同梱する既知の AI クローラーの一覧から robots.txt を作り、すべてのページでも表明します。アカウントごとに自分のページについてさらに拒否できますが、許可を広げることはできません。",
-    "description": "Explanation of the section of the server settings about search engines and AI crawlers."
-  },
-  "admin.settings.crawlers.search": {
-    "defaultMessage": "検索エンジン",
-    "description": "Label of the radio group of whether search engines may index the server's pages (search_indexing)."
-  },
-  "admin.settings.crawlers.search.allow": {
-    "defaultMessage": "索引に載せることを許可する",
-    "description": "Choice that lets search engines index the pages of the accounts that allow it."
-  },
-  "admin.settings.crawlers.search.allow.description": {
-    "defaultMessage": "検索エンジンは、許可したアカウントのプロフィールと公開投稿を索引に載せられます。ほかのページは載せません。",
-    "description": "Description of letting search engines index pages."
-  },
-  "admin.settings.crawlers.search.deny": {
-    "defaultMessage": "索引に載せることを拒否する",
-    "description": "Choice that asks search engines not to index any page."
-  },
-  "admin.settings.crawlers.search.deny.description": {
-    "defaultMessage": "すべてのページで、検索エンジンに索引に載せないよう求めます (noindex)。リンクのプレビューはこれまでどおり表示されます。",
-    "description": "Description of asking search engines not to index any page."
-  },
-  "admin.settings.crawlers.indexable_default": {
-    "defaultMessage": "新しいアカウントで検索への掲載を許可する",
-    "description": "Label of the checkbox of whether new accounts allow search indexing (indexable_default)."
-  },
-  "admin.settings.crawlers.indexable_default.description": {
-    "defaultMessage": "これから登録するアカウントの初めの設定です。登録済みのアカウントの設定は変わりません。",
-    "description": "Help text of the indexable default checkbox."
-  },
-  "admin.settings.crawlers.ai": {
-    "defaultMessage": "AI",
-    "description": "Label of the radio group of what the server states to AI crawlers (ai_usage)."
-  },
-  "admin.settings.crawlers.ai.allow": {
-    "defaultMessage": "許可する",
-    "description": "Choice that reserves nothing against AI."
-  },
-  "admin.settings.crawlers.ai.allow.description": {
-    "defaultMessage": "サーバーとしては AI に対して何も留保しません。アカウントは自分のページについて拒否できます。",
-    "description": "Description of reserving nothing against AI."
-  },
-  "admin.settings.crawlers.ai.deny_training": {
-    "defaultMessage": "学習を拒否する",
-    "description": "Choice that denies the training of AI models only."
-  },
-  "admin.settings.crawlers.ai.deny_training.description": {
-    "defaultMessage": "AI のモデルの学習のためにデータを集めるクローラーを拒否します。人の依頼でページを読む AI の検索やアシスタントは拒否しません。",
-    "description": "Description of denying the training of AI models only."
-  },
-  "admin.settings.crawlers.ai.deny": {
-    "defaultMessage": "学習と利用を拒否する",
-    "description": "Choice that denies both the training and the use by AI."
-  },
-  "admin.settings.crawlers.ai.deny.description": {
-    "defaultMessage": "人の依頼でページを読む AI の検索・アシスタント・エージェントを含め、AI のクローラーを拒否します。",
-    "description": "Description of denying both the training and the use by AI."
-  },
-  "admin.settings.crawlers.security_contact": {
-    "defaultMessage": "脆弱性の連絡先",
-    "description": "Label of the field of the address to report vulnerabilities to (security_contact)."
-  },
-  "admin.settings.crawlers.security_contact.description": {
-    "defaultMessage": "脆弱性を報告する先です。https か mailto の URI (メールアドレスなら先頭に mailto と半角のコロンを付けたもの) を入れます。設定している間だけ、サーバーは /.well-known/security.txt を返します。",
-    "description": "Help text of the security contact field."
   },
   "admin.settings.domain_actions.comments.off": {
     "defaultMessage": "コメントは表示しません。",
@@ -391,6 +243,22 @@
     "defaultMessage": "{count, plural, other {# 秒}}",
     "description": "A length of time in seconds."
   },
+  "admin.settings.featured.accounts": {
+    "defaultMessage": "先に出すアカウント",
+    "description": "Label of the field with the usernames of the accounts that the suggestions show first."
+  },
+  "admin.settings.featured.accounts.description": {
+    "defaultMessage": "このサーバーのアカウントのユーザー名を、空白で区切って 20 個まで。",
+    "description": "Help text of the field of the accounts that the suggestions show first."
+  },
+  "admin.settings.featured.description": {
+    "defaultMessage": "利用者には、フォローする人のおすすめが出ます。下のアカウントをこの順に先に、その次にこのサーバーで最近投稿した人を出します。おすすめに出ないようにした人は出しません。",
+    "description": "Note of the suggested accounts section of the server settings."
+  },
+  "admin.settings.featured.title": {
+    "defaultMessage": "おすすめのアカウント",
+    "description": "Heading of the section of the server settings about the accounts suggested to follow."
+  },
   "admin.settings.federation.authorized_fetch": {
     "defaultMessage": "署名のある要求だけに答える (Authorized Fetch)",
     "description": "Checkbox of the authorized fetch setting."
@@ -419,10 +287,6 @@
     "defaultMessage": "連合の向き",
     "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0006): which way posts flow between this server and other servers."
   },
-  "admin.settings.federation.mode.description": {
-    "defaultMessage": "このサーバーとほかのサーバーのあいだで、投稿・フォロー・反応をどちらの向きに流すかを選びます。変更はすぐに効きます。",
-    "description": "Description of the federation direction radio buttons."
-  },
   "admin.settings.federation.mode.both": {
     "defaultMessage": "送受信",
     "description": "Federation direction choice: send to and receive from other servers (the default)."
@@ -430,6 +294,10 @@
   "admin.settings.federation.mode.both.description": {
     "defaultMessage": "利用者はほかのサーバーのアカウントをフォローして読め、このサーバーの投稿はほかのサーバーのフォロワーに届きます。",
     "description": "Description of the federation direction choice 'Both ways'."
+  },
+  "admin.settings.federation.mode.description": {
+    "defaultMessage": "このサーバーとほかのサーバーのあいだで、投稿・フォロー・反応をどちらの向きに流すかを選びます。変更はすぐに効きます。",
+    "description": "Description of the federation direction radio buttons."
   },
   "admin.settings.federation.mode.inbound": {
     "defaultMessage": "受信のみ",
@@ -439,14 +307,6 @@
     "defaultMessage": "利用者はほかのサーバーのアカウントをフォローして読めますが、このサーバーの投稿・プロフィール・反応は外へ出ず、ほかのサーバーからのフォローは断ります。",
     "description": "Description of the federation direction choice 'Receive only'."
   },
-  "admin.settings.federation.mode.outbound": {
-    "defaultMessage": "送信のみ",
-    "description": "Federation direction choice: only send to other servers."
-  },
-  "admin.settings.federation.mode.outbound.description": {
-    "defaultMessage": "ほかのサーバーのアカウントはここの利用者をフォローして投稿を受け取れますが、ほかのサーバーの投稿・反応は取り込まず、利用者はほかのサーバーのアカウントをフォローしたり探したりできません。",
-    "description": "Description of the federation direction choice 'Send only'."
-  },
   "admin.settings.federation.mode.off": {
     "defaultMessage": "オフ",
     "description": "Federation direction choice: no federation at all."
@@ -455,33 +315,13 @@
     "defaultMessage": "ほかのサーバーへ何も送らず、ほかのサーバーから何も取り込みません。このサーバーだけで動きます。",
     "description": "Description of the federation direction choice 'Off'."
   },
-  "admin.settings.federation.narrow.title": {
-    "defaultMessage": "連合の向きを「{mode}」に変えますか？",
-    "description": "Title of the confirmation before saving a federation direction that stops something from flowing. {mode} is the chosen direction, such as 'Receive only'."
+  "admin.settings.federation.mode.outbound": {
+    "defaultMessage": "送信のみ",
+    "description": "Federation direction choice: only send to other servers."
   },
-  "admin.settings.federation.narrow.description": {
-    "defaultMessage": "「{from}」から「{to}」に変えると、保存したときから次のようになります。",
-    "description": "First sentence of the confirmation before narrowing the federation direction, followed by a list of what changes. {from} and {to} are the saved and the chosen directions."
-  },
-  "admin.settings.federation.narrow.sending": {
-    "defaultMessage": "このサーバーの投稿・プロフィール・反応がほかのサーバーに届かなくなります。ほかのサーバーのフォロワーはつながったまま何も受け取らなくなり、そのあいだの投稿は後から配送されません。",
-    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops sending to other servers."
-  },
-  "admin.settings.federation.narrow.receiving": {
-    "defaultMessage": "ほかのサーバーの投稿・反応が届かなくなり、利用者はほかのサーバーのアカウントをフォローしたり探したりできなくなります。すでにしているフォローはつながったまま更新されなくなります。",
-    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops receiving from other servers."
-  },
-  "admin.settings.federation.narrow.deletions": {
-    "defaultMessage": "オフのあいだに削除した投稿やアカウントは、ほかのサーバーには伝わらず、そこにある写しは残ります。",
-    "description": "Item of the list in the confirmation before turning federation off."
-  },
-  "admin.settings.federation.narrow.relations": {
-    "defaultMessage": "ほかのサーバーとのフォロー関係・取り込んだ投稿・配送の記録は消えず、フォローを終える通知も送りません。",
-    "description": "Last item of the list in the confirmation before narrowing the federation direction."
-  },
-  "admin.settings.federation.narrow.widen": {
-    "defaultMessage": "あとで向きを広げ直すと、そのときから流れが再開します。",
-    "description": "Note under the list in the confirmation before narrowing the federation direction."
+  "admin.settings.federation.mode.outbound.description": {
+    "defaultMessage": "ほかのサーバーのアカウントはここの利用者をフォローして投稿を受け取れますが、ほかのサーバーの投稿・反応は取り込まず、利用者はほかのサーバーのアカウントをフォローしたり探したりできません。",
+    "description": "Description of the federation direction choice 'Send only'."
   },
   "admin.settings.federation.narrow.cancel": {
     "defaultMessage": "キャンセル",
@@ -491,9 +331,333 @@
     "defaultMessage": "変更して保存",
     "description": "Button that saves the settings with the narrower federation direction."
   },
+  "admin.settings.federation.narrow.deletions": {
+    "defaultMessage": "オフのあいだに削除した投稿やアカウントは、ほかのサーバーには伝わらず、そこにある写しは残ります。",
+    "description": "Item of the list in the confirmation before turning federation off."
+  },
+  "admin.settings.federation.narrow.description": {
+    "defaultMessage": "「{from}」から「{to}」に変えると、保存したときから次のようになります。",
+    "description": "First sentence of the confirmation before narrowing the federation direction, followed by a list of what changes. {from} and {to} are the saved and the chosen directions."
+  },
+  "admin.settings.federation.narrow.receiving": {
+    "defaultMessage": "ほかのサーバーの投稿・反応が届かなくなり、利用者はほかのサーバーのアカウントをフォローしたり探したりできなくなります。すでにしているフォローはつながったまま更新されなくなります。",
+    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops receiving from other servers."
+  },
+  "admin.settings.federation.narrow.relations": {
+    "defaultMessage": "ほかのサーバーとのフォロー関係・取り込んだ投稿・配送の記録は消えず、フォローを終える通知も送りません。",
+    "description": "Last item of the list in the confirmation before narrowing the federation direction."
+  },
+  "admin.settings.federation.narrow.sending": {
+    "defaultMessage": "このサーバーの投稿・プロフィール・反応がほかのサーバーに届かなくなります。ほかのサーバーのフォロワーはつながったまま何も受け取らなくなり、そのあいだの投稿は後から配送されません。",
+    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops sending to other servers."
+  },
+  "admin.settings.federation.narrow.title": {
+    "defaultMessage": "連合の向きを「{mode}」に変えますか？",
+    "description": "Title of the confirmation before saving a federation direction that stops something from flowing. {mode} is the chosen direction, such as 'Receive only'."
+  },
+  "admin.settings.federation.narrow.widen": {
+    "defaultMessage": "あとで向きを広げ直すと、そのときから流れが再開します。",
+    "description": "Note under the list in the confirmation before narrowing the federation direction."
+  },
   "admin.settings.federation.title": {
     "defaultMessage": "連合",
     "description": "Heading of the section of the federation settings."
+  },
+  "admin.settings.finance.breakdown": {
+    "defaultMessage": "合計と内訳",
+    "description": "Choice of publishing the running costs with their breakdown by provider and category."
+  },
+  "admin.settings.finance.breakdown.description": {
+    "defaultMessage": "誰でも、事業者と区分ごとの合計も見られます。どの事業者 (クラウドなど) でこのサーバーを動かしているかが知られます。",
+    "description": "Description of publishing the running costs with their breakdown, which reveals the providers that run the server."
+  },
+  "admin.settings.finance.description": {
+    "defaultMessage": "費用の画面で記録した費用の合計を、情報ページと API で公開できます。項目の名前・メモ・個々の支払いは、どの段階でも公開しません。",
+    "description": "Explanation of the publication of the running costs in the server settings."
+  },
+  "admin.settings.finance.private": {
+    "defaultMessage": "公開しない",
+    "description": "Choice of not publishing the running costs."
+  },
+  "admin.settings.finance.private.description": {
+    "defaultMessage": "費用を管理する人だけが見られます。",
+    "description": "Description of not publishing the running costs."
+  },
+  "admin.settings.finance.title": {
+    "defaultMessage": "運営の費用",
+    "description": "Heading of the section of the publication of the running costs in the server settings."
+  },
+  "admin.settings.finance.totals": {
+    "defaultMessage": "合計だけ",
+    "description": "Choice of publishing the totals of the running costs only."
+  },
+  "admin.settings.finance.totals.description": {
+    "defaultMessage": "誰でも、週・月・年ごとの通貨ごとの合計を見られます。",
+    "description": "Description of publishing the totals of the running costs only."
+  },
+  "admin.settings.finance.viewer.description": {
+    "defaultMessage": "ロールで会計の閲覧を許された人は、公開の範囲にかかわらず、会計の画面で合計と事業者・区分ごとの内訳を見られます。ほかに見せるものを選びます。",
+    "description": "Introduction of the settings of what the holders of the view_finance permission see, in the costs section of the server settings."
+  },
+  "admin.settings.finance.viewer.income": {
+    "defaultMessage": "収入",
+    "description": "Label of the choice of the server setting finance_viewer_income: how much of the income the holders of view_finance see."
+  },
+  "admin.settings.finance.viewer.income.plans": {
+    "defaultMessage": "合計とプランごとの人数",
+    "description": "Choice of showing the totals of the income and the number of members of each plan to the holders of view_finance."
+  },
+  "admin.settings.finance.viewer.income.plans.description": {
+    "defaultMessage": "加えて、プランごとの加入者の数を見せます。プランごとの金額と、誰が加入しているかは見せません。",
+    "description": "Description of showing the number of members of each plan too."
+  },
+  "admin.settings.finance.viewer.income.totals": {
+    "defaultMessage": "合計だけ",
+    "description": "Choice of showing the totals of the income only to the holders of view_finance."
+  },
+  "admin.settings.finance.viewer.income.totals.description": {
+    "defaultMessage": "週・月・年ごとの通貨ごとの合計を見せます。",
+    "description": "Description of showing the totals of the income only."
+  },
+  "admin.settings.finance.viewer.item_memos": {
+    "defaultMessage": "項目のメモを見せる",
+    "description": "Checkbox of the server setting finance_viewer_item_memos."
+  },
+  "admin.settings.finance.viewer.item_memos.description": {
+    "defaultMessage": "登録した費用のメモを、その金額とともに見せます。メモには運営者だけに向けた書き込みがあるかもしれません。",
+    "description": "Description of the checkbox of the server setting finance_viewer_item_memos."
+  },
+  "admin.settings.finance.viewer.item_names": {
+    "defaultMessage": "項目の名前を見せる",
+    "description": "Checkbox of the server setting finance_viewer_item_names."
+  },
+  "admin.settings.finance.viewer.item_names.description": {
+    "defaultMessage": "登録した費用の名前と、取り込んだ料金のサービス名を、その金額とともに見せます。",
+    "description": "Description of the checkbox of the server setting finance_viewer_item_names."
+  },
+  "admin.settings.finance.visibility": {
+    "defaultMessage": "公開する範囲",
+    "description": "Label of the radio buttons of how much of the running costs the server publishes."
+  },
+  "admin.settings.hooks.description": {
+    "defaultMessage": "審査は、サーバーの運営者がプラグインを設定したときだけ動きます。オフから適用へは観察を経て進みます。先に審査が何を止めるかを読めるようにするためです。",
+    "description": "Explanation of the section of the server settings about the external reviews."
+  },
+  "admin.settings.hooks.failure.pass": {
+    "defaultMessage": "通す",
+    "description": "Choice of what happens when an external review fails."
+  },
+  "admin.settings.hooks.failure.pass.description": {
+    "defaultMessage": "審査なしで受け付けます。審査が止まっている間はスパムが入ることがあります。",
+    "description": "Description of letting a submission through when its external review fails."
+  },
+  "admin.settings.hooks.failure.require_approval": {
+    "defaultMessage": "承認待ちにする",
+    "description": "Choice of what happens when the external review of sign-ups fails."
+  },
+  "admin.settings.hooks.failure.require_approval.description": {
+    "defaultMessage": "登録はモデレーターの承認を待ちます。",
+    "description": "Description of holding a sign-up for approval when its external review fails."
+  },
+  "admin.settings.hooks.failure.retry": {
+    "defaultMessage": "再試行する",
+    "description": "Choice of what happens when an external review fails."
+  },
+  "admin.settings.hooks.failure.retry.description": {
+    "defaultMessage": "ジョブをやり直します。投稿とフォローでは、同じ送信元の後続が、削除も含めて最長で約 4 時間止まります。",
+    "description": "Description of retrying when an external review fails."
+  },
+  "admin.settings.hooks.inbound_follow.mode": {
+    "defaultMessage": "ほかのサーバーからのフォロー",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_follow.on_failure": {
+    "defaultMessage": "ほかのサーバーからのフォロー: 審査が失敗したとき",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.inbound_status.mode": {
+    "defaultMessage": "ほかのサーバーからの投稿",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_status.on_failure": {
+    "defaultMessage": "ほかのサーバーからの投稿: 審査が失敗したとき",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.inbound_status.unfollowed_direct": {
+    "defaultMessage": "外部の審査に、ここの誰もフォローしていない作者のダイレクト投稿も送る",
+    "description": "Label of the setting that sends direct posts from unfollowed authors to the external review."
+  },
+  "admin.settings.hooks.inbound_status.unfollowed_direct.description": {
+    "defaultMessage": "ダイレクト投稿は宛先の人だけのものです。オフのとき、ここの誰もフォローしていない作者からのものは審査せずに宛先に届きます。オンにすると、その本文を外部の審査に送ります。",
+    "description": "Help of the setting that sends direct posts from unfollowed authors to the external review."
+  },
+  "admin.settings.hooks.local_status.mode": {
+    "defaultMessage": "このサーバーの投稿",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.media_check.mode": {
+    "defaultMessage": "アップロードされたメディア",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.media_check.on_failure": {
+    "defaultMessage": "アップロードされたメディア: 審査が失敗したとき",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.mode.enforce": {
+    "defaultMessage": "適用",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.enforce.description": {
+    "defaultMessage": "判定に従います。",
+    "description": "Description of the Enforce mode of an external review."
+  },
+  "admin.settings.hooks.mode.observe": {
+    "defaultMessage": "観察",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.observe.description": {
+    "defaultMessage": "判定を記録するだけで、何も行いません。",
+    "description": "Description of the Observe mode of an external review."
+  },
+  "admin.settings.hooks.mode.off": {
+    "defaultMessage": "オフ",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.off.description": {
+    "defaultMessage": "何も呼びません。",
+    "description": "Description of the Off mode of an external review."
+  },
+  "admin.settings.hooks.retention": {
+    "defaultMessage": "判定を残す日数",
+    "description": "Label of the number of days the records of the decisions of the external reviews stay."
+  },
+  "admin.settings.hooks.retention.description": {
+    "defaultMessage": "{min} 日から {max} 日まで。センシティブの印の元になっている間、アカウントが保全されている間、作者が異議を申し立てられる間は、判定はより長く残ります。",
+    "description": "Description of the number of days the records of decisions stay. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.retention.invalid": {
+    "defaultMessage": "{min} から {max} までの日数を整数で入力してください。",
+    "description": "Error of the number of days the records of decisions stay: not a whole number within {min} and {max}."
+  },
+  "admin.settings.hooks.signup_check.mode": {
+    "defaultMessage": "登録",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.signup_check.on_failure": {
+    "defaultMessage": "登録: 審査が失敗したとき",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.title": {
+    "defaultMessage": "外部の審査",
+    "description": "Heading of the section of the server settings about the external reviews of submissions."
+  },
+  "admin.settings.income.description": {
+    "defaultMessage": "サポーターのプランからの収入を、決済の事業者の手数料と返金を引いて、情報ページと API で公開できます。誰がいくら払ったか・プランごとの金額・手数料は、どの段階でも公開しません。費用と収入をどちらも公開するときは、収支も公開します。",
+    "description": "Explanation of the publication of the income in the server settings."
+  },
+  "admin.settings.income.plans": {
+    "defaultMessage": "合計とプランごとの加入者の数",
+    "description": "Choice of publishing the totals of the income and the number of members of each plan."
+  },
+  "admin.settings.income.plans.description": {
+    "defaultMessage": "いまのプランごとの加入者の数も見られます。金額は出しません。加入者の少ないプランでは、誰が加入しているかを推測されるかもしれません。",
+    "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
+  },
+  "admin.settings.income.private": {
+    "defaultMessage": "公開しない",
+    "description": "Choice of not publishing the income."
+  },
+  "admin.settings.income.private.description": {
+    "defaultMessage": "会計を管理する人と閲覧できる人だけが見られます。",
+    "description": "Description of not publishing the income."
+  },
+  "admin.settings.income.title": {
+    "defaultMessage": "収入",
+    "description": "Heading of the section of the publication of the income in the server settings."
+  },
+  "admin.settings.income.totals": {
+    "defaultMessage": "合計だけ",
+    "description": "Choice of publishing the totals of the income only."
+  },
+  "admin.settings.income.totals.description": {
+    "defaultMessage": "誰でも、週・月・年ごとの通貨ごとの収入を見られます。",
+    "description": "Description of publishing the totals of the income only."
+  },
+  "admin.settings.income.visibility": {
+    "defaultMessage": "公開する範囲",
+    "description": "Label of the radio buttons of how much of the income the server publishes."
+  },
+  "admin.settings.invites.creators": {
+    "defaultMessage": "招待を作成できる人",
+    "description": "Label of the choice of who may create invites of their own."
+  },
+  "admin.settings.invites.creators.everyone": {
+    "defaultMessage": "このサーバーの全員",
+    "description": "Choice of who may create invites: every local user."
+  },
+  "admin.settings.invites.creators.everyone.description": {
+    "defaultMessage": "凍結・制限されていない、このサーバーのログイン中の利用者は誰でも招待を作成できます。登録が承認制のときも招待された人は審査なしで承認されるので、誰でも新しいアカウントを承認できることになります。",
+    "description": "Explanation of the choice that every local user may create invites, with its effect in the approval registration mode."
+  },
+  "admin.settings.invites.creators.permitted": {
+    "defaultMessage": "権限を持つ人だけ",
+    "description": "Choice of who may create invites: the holders of the permission."
+  },
+  "admin.settings.invites.creators.permitted.description": {
+    "defaultMessage": "招待を作成する権限を持つロールの人だけが作成できます。",
+    "description": "Explanation of the choice that only the holders of the permission create_invites may create invites."
+  },
+  "admin.settings.invites.description": {
+    "defaultMessage": "利用者は設定のページで自分の招待を作成します。上限は利用者の招待にだけかかり、モデレーターの招待にはかかりません。上限を下げても、すでにある招待は変わりません。",
+    "description": "Help of the section of member invites on the server settings screen."
+  },
+  "admin.settings.invites.max_active": {
+    "defaultMessage": "1 人が持てる使える招待",
+    "description": "Label of the field of how many usable invites one member may hold at once."
+  },
+  "admin.settings.invites.max_active.description": {
+    "defaultMessage": "1 人が同時に持てる使える招待の数です ({min}〜{max})。0 にすると誰も招待を作成できません。",
+    "description": "Description of the field of how many usable invites one member may hold. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.max_expires_in": {
+    "defaultMessage": "招待の有効期間の上限",
+    "description": "Label of the choice of how long one invite that a member creates may work at most."
+  },
+  "admin.settings.invites.max_expires_in.description": {
+    "defaultMessage": "利用者は招待ごとに、この期間までの有効期間を選びます。",
+    "description": "Description of the choice of how long a member invite may work at most."
+  },
+  "admin.settings.invites.max_uses": {
+    "defaultMessage": "1 つの招待で登録できる人数",
+    "description": "Label of the field of how many people may sign up with one invite a member creates."
+  },
+  "admin.settings.invites.max_uses.description": {
+    "defaultMessage": "1 つの招待で登録できる人数の上限です ({min}〜{max})。",
+    "description": "Description of the field of how many sign-ups one member invite may allow. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.number.invalid": {
+    "defaultMessage": "{min} から {max} までの整数を入力してください。",
+    "description": "Error of a field of the member invites that holds a number out of its bounds."
+  },
+  "admin.settings.invites.title": {
+    "defaultMessage": "利用者の招待",
+    "description": "Heading of the section of the invites that members create on the server settings screen."
+  },
+  "admin.settings.landing.counts": {
+    "defaultMessage": "サーバーの数を見せる",
+    "description": "Checkbox of whether the landing page shows how many members the server has, its public posts of the last 7 days, and since when it runs."
+  },
+  "admin.settings.landing.counts.description": {
+    "defaultMessage": "利用者の数、この 7 日の日ごとの公開の投稿の数、サーバーが動き始めた時期。数えるのは公開の投稿だけで、数は数分ごとに更新します。",
+    "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
+  },
+  "admin.settings.landing.description": {
+    "defaultMessage": "ログインしていない人がこのサーバーのアドレスで見るページに、名前・説明・ルールのほかに何を出すか。",
+    "description": "Explanation of the landing page section of the server settings."
+  },
+  "admin.settings.landing.title": {
+    "defaultMessage": "トップページ",
+    "description": "Heading of the section of the server settings about what the landing page (the root address, for people who are not signed in) shows."
   },
   "admin.settings.language.default": {
     "defaultMessage": "既定の言語",
@@ -506,6 +670,58 @@
   "admin.settings.language.title": {
     "defaultMessage": "言語",
     "description": "Heading of the section of the server's default language."
+  },
+  "admin.settings.login_providers_only.confirm.affected": {
+    "defaultMessage": "{count, plural, =0 {有効な利用者は全員、ログインプロバイダーを連携しています。} other {有効な利用者のうち # 人はログインプロバイダーを連携しておらず、セッションが切れるとログインできなくなります。}}",
+    "description": "In the confirmation dialog: how many active users have no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button in the confirmation dialog that keeps the form as it is."
+  },
+  "admin.settings.login_providers_only.confirm.confirm": {
+    "defaultMessage": "ログインを制限する",
+    "description": "Button in the confirmation dialog that saves the limit."
+  },
+  "admin.settings.login_providers_only.confirm.failed": {
+    "defaultMessage": "ログインできなくなる利用者の数を読み取れませんでした。ログインプロバイダーを連携していない利用者は、セッションが切れるとログインできなくなります。",
+    "description": "In the confirmation dialog when the count of affected users could not be read."
+  },
+  "admin.settings.login_providers_only.confirm.loading": {
+    "defaultMessage": "ログインできなくなる利用者を数えています…",
+    "description": "In the confirmation dialog while the count of affected users loads."
+  },
+  "admin.settings.login_providers_only.confirm.no_provider": {
+    "defaultMessage": "有効なログインプロバイダーがないため、今は何も変わりません。プロバイダーを有効にすると制限が始まります。",
+    "description": "In the confirmation dialog when no login provider is enabled."
+  },
+  "admin.settings.login_providers_only.confirm.recovery": {
+    "defaultMessage": "元に戻すには、ここでオフにするか、サーバーで「my instance set login_providers_only false」を実行します。",
+    "description": "In the confirmation dialog: how to undo the limit."
+  },
+  "admin.settings.login_providers_only.confirm.self": {
+    "defaultMessage": "あなたもそのひとりです。セッションが切れる前に、連携アカウントの画面でログインプロバイダーを連携してください。",
+    "description": "In the confirmation dialog when the administrator who confirms has no link to an enabled login provider."
+  },
+  "admin.settings.login_providers_only.confirm.sessions": {
+    "defaultMessage": "ログイン中のセッションとアプリはそのまま使え、その間にプロバイダーを連携できます。",
+    "description": "In the confirmation dialog: what keeps working."
+  },
+  "admin.settings.login_providers_only.confirm.stops": {
+    "defaultMessage": "パスワードとパスキーではログインできなくなり、パスワードでの新規登録と再設定もできなくなります。",
+    "description": "In the confirmation dialog: what stops."
+  },
+  "admin.settings.login_providers_only.confirm.title": {
+    "defaultMessage": "ログインをログインプロバイダーだけにしますか？",
+    "description": "Title of the dialog that confirms limiting sign-in to login providers."
+  },
+  "admin.settings.login_providers_only.description": {
+    "defaultMessage": "ログインプロバイダーがひとつ以上有効な間は、パスワードとパスキーではログインできなくなり、パスワードでの新規登録と再設定もできなくなります。有効なプロバイダーがないときは、この設定は働きません。",
+    "description": "Description of the checkbox that limits sign-in and registration to login providers."
+  },
+  "admin.settings.login_providers_only.label": {
+    "defaultMessage": "ログインと新規登録をログインプロバイダーだけにする",
+    "description": "Checkbox in the registration section of the server settings: limits sign-in and registration to login providers."
   },
   "admin.settings.name.blank": {
     "defaultMessage": "空白以外の文字を入れるか、空のままにしてください。",
@@ -543,6 +759,38 @@
     "defaultMessage": "名前はすでに保存されています。",
     "description": "Status after pressing Save on the server settings screen without changing a name."
   },
+  "admin.settings.oauth_apps.description": {
+    "defaultMessage": "アプリがクライアント ID を得られる経路を選びます。すべて無効にすると、このサーバー自身のアプリだけが使えます。経路を無効にしても、登録済みのアプリは無効になりません。",
+    "description": "Explains the section of how apps may register."
+  },
+  "admin.settings.oauth_apps.dynamic": {
+    "defaultMessage": "動的クライアント登録",
+    "description": "Checkbox of letting apps register themselves."
+  },
+  "admin.settings.oauth_apps.dynamic.description": {
+    "defaultMessage": "アプリがログインなしで自分を登録します (RFC 7591)。メタデータ文書を使えないツール向けです。",
+    "description": "Description of the checkbox of dynamic client registration."
+  },
+  "admin.settings.oauth_apps.metadata_document": {
+    "defaultMessage": "CIMD のクライアント",
+    "description": "Checkbox of accepting apps whose client ID is the URL of a metadata document."
+  },
+  "admin.settings.oauth_apps.metadata_document.description": {
+    "defaultMessage": "アプリが自分で置いたメタデータ文書の URL をクライアント ID として使います。サーバーがその文書を取得します。",
+    "description": "Description of the checkbox of accepting metadata document apps."
+  },
+  "admin.settings.oauth_apps.title": {
+    "defaultMessage": "アプリ",
+    "description": "Heading of the section of how apps may register on the server settings screen."
+  },
+  "admin.settings.oauth_apps.user": {
+    "defaultMessage": "利用者によるアプリの登録",
+    "description": "Checkbox of letting signed-in users register apps."
+  },
+  "admin.settings.oauth_apps.user.description": {
+    "defaultMessage": "ログインした利用者が設定の画面でアプリを登録できます。自分のボットやスクリプト向けです。",
+    "description": "Description of the checkbox of letting users register apps."
+  },
   "admin.settings.policies.save": {
     "defaultMessage": "設定を保存する",
     "description": "Button that saves the registration, language, timeline, federation and domain action settings together."
@@ -558,6 +806,18 @@
   "admin.settings.policies.unchanged": {
     "defaultMessage": "設定はすでに保存されています。",
     "description": "Status after pressing the save button of the settings without changing one."
+  },
+  "admin.settings.posts.require_media_description": {
+    "defaultMessage": "すべての画像に説明 (代替テキスト) を必須にする",
+    "description": "Checkbox of the instance setting require_media_description: whether every image attached to a post needs an alternative text."
+  },
+  "admin.settings.posts.require_media_description.description": {
+    "defaultMessage": "説明 (代替テキスト) のない画像のある投稿と編集を受け付けません。画像を見られない人も、すべての投稿の内容が分かるようにします。",
+    "description": "Description of the checkbox that requires a description of every image."
+  },
+  "admin.settings.posts.title": {
+    "defaultMessage": "投稿",
+    "description": "Heading of the section of the server settings about posts."
   },
   "admin.settings.registration.approval": {
     "defaultMessage": "承認制",
@@ -643,13 +903,41 @@
     "defaultMessage": "サーバーの名前と説明、登録できる人、既定の言語、タイムライン、連合。",
     "description": "Description of the server settings screen in the administration menu."
   },
-  "admin.settings.timelines.federated": {
-    "defaultMessage": "連合タイムライン",
-    "description": "Label of the radio group that chooses who may read the federated timeline."
+  "admin.settings.supporter_list.description": {
+    "defaultMessage": "/about/supporters のサポーターの一覧は、掲載を選んだ参加者をプランごとに、アバター・名前・ハンドルだけで出します。金額や日付は出しません。検索エンジンにはいつも索引しないよう求めます。",
+    "description": "Explanation of the supporter list setting."
   },
-  "admin.settings.timelines.federated.description": {
-    "defaultMessage": "ほかのサーバーのものを含め、このサーバーに届いた公開の投稿です。誰に見せるかを選びます。",
-    "description": "Description of the radio group that chooses who may read the federated timeline."
+  "admin.settings.supporter_list.everyone": {
+    "defaultMessage": "誰でも",
+    "description": "Choice: everyone may read the supporter list."
+  },
+  "admin.settings.supporter_list.everyone.description": {
+    "defaultMessage": "ログインしているかによらず、誰でも一覧を見られます。",
+    "description": "Description of publishing the supporter list to everyone."
+  },
+  "admin.settings.supporter_list.off": {
+    "defaultMessage": "誰にも見せない",
+    "description": "Choice: nobody may read the supporter list."
+  },
+  "admin.settings.supporter_list.off.description": {
+    "defaultMessage": "一覧を公開せず、サーバーの情報ページからもリンクしません。",
+    "description": "Description of not publishing the supporter list."
+  },
+  "admin.settings.supporter_list.signed_in": {
+    "defaultMessage": "ログインした人",
+    "description": "Choice: only signed-in users may read the supporter list."
+  },
+  "admin.settings.supporter_list.signed_in.description": {
+    "defaultMessage": "このサーバーにログインした人だけが一覧を見られます。",
+    "description": "Description of publishing the supporter list to signed-in users only."
+  },
+  "admin.settings.supporter_list.title": {
+    "defaultMessage": "サポーターの一覧",
+    "description": "Heading of the section of the supporter list in the server settings."
+  },
+  "admin.settings.supporter_list.visibility": {
+    "defaultMessage": "サポーターの一覧を見られる人",
+    "description": "Label of the choice of who may read the supporter list."
   },
   "admin.settings.timelines.access.everyone": {
     "defaultMessage": "誰にでも",
@@ -659,6 +947,14 @@
     "defaultMessage": "ログインしていない訪問者も見られます。ローカルタイムラインなら、ランディングページに見本の投稿が出ます。",
     "description": "Description of the choice that lets everyone read a public timeline."
   },
+  "admin.settings.timelines.access.off": {
+    "defaultMessage": "誰にも",
+    "description": "Choice of who may read a public timeline: nobody, the timeline is off."
+  },
+  "admin.settings.timelines.access.off.description": {
+    "defaultMessage": "タイムラインを止め、誰にも出しません。",
+    "description": "Description of the choice that turns a public timeline off."
+  },
   "admin.settings.timelines.access.signed_in": {
     "defaultMessage": "ログインした利用者に",
     "description": "Choice of who may read a public timeline: only the users signed in to this server."
@@ -667,13 +963,13 @@
     "defaultMessage": "このサーバーにログインした利用者だけが見られます。訪問者にはログインを促します。",
     "description": "Description of the choice that lets only signed-in users read a public timeline."
   },
-  "admin.settings.timelines.access.off": {
-    "defaultMessage": "誰にも",
-    "description": "Choice of who may read a public timeline: nobody, the timeline is off."
+  "admin.settings.timelines.federated": {
+    "defaultMessage": "連合タイムライン",
+    "description": "Label of the radio group that chooses who may read the federated timeline."
   },
-  "admin.settings.timelines.access.off.description": {
-    "defaultMessage": "タイムラインを止め、誰にも出しません。",
-    "description": "Description of the choice that turns a public timeline off."
+  "admin.settings.timelines.federated.description": {
+    "defaultMessage": "ほかのサーバーのものを含め、このサーバーに届いた公開の投稿です。誰に見せるかを選びます。",
+    "description": "Description of the radio group that chooses who may read the federated timeline."
   },
   "admin.settings.timelines.local": {
     "defaultMessage": "ローカルタイムライン",
@@ -687,77 +983,9 @@
     "defaultMessage": "タイムライン",
     "description": "Heading of the section of the public timelines on the server settings screen."
   },
-  "admin.settings.posts.title": {
-    "defaultMessage": "投稿",
-    "description": "Heading of the section of the server settings about posts."
-  },
-  "admin.settings.posts.require_media_description": {
-    "defaultMessage": "すべての画像に説明 (代替テキスト) を必須にする",
-    "description": "Checkbox of the instance setting require_media_description: whether every image attached to a post needs an alternative text."
-  },
-  "admin.settings.posts.require_media_description.description": {
-    "defaultMessage": "説明 (代替テキスト) のない画像のある投稿と編集を受け付けません。画像を見られない人も、すべての投稿の内容が分かるようにします。",
-    "description": "Description of the checkbox that requires a description of every image."
-  },
   "admin.settings.title": {
     "defaultMessage": "サーバーの設定",
     "description": "Title of the server settings screen (the server's name), in the administration menu and as its heading."
-  },
-  "admin.settings.oauth_apps.title": {
-    "defaultMessage": "アプリ",
-    "description": "Heading of the section of how apps may register on the server settings screen."
-  },
-  "admin.settings.oauth_apps.description": {
-    "defaultMessage": "アプリがクライアント ID を得られる経路を選びます。すべて無効にすると、このサーバー自身のアプリだけが使えます。経路を無効にしても、登録済みのアプリは無効になりません。",
-    "description": "Explains the section of how apps may register."
-  },
-  "admin.settings.oauth_apps.user": {
-    "defaultMessage": "利用者によるアプリの登録",
-    "description": "Checkbox of letting signed-in users register apps."
-  },
-  "admin.settings.oauth_apps.user.description": {
-    "defaultMessage": "ログインした利用者が設定の画面でアプリを登録できます。自分のボットやスクリプト向けです。",
-    "description": "Description of the checkbox of letting users register apps."
-  },
-  "admin.settings.oauth_apps.metadata_document": {
-    "defaultMessage": "CIMD のクライアント",
-    "description": "Checkbox of accepting apps whose client ID is the URL of a metadata document."
-  },
-  "admin.settings.oauth_apps.metadata_document.description": {
-    "defaultMessage": "アプリが自分で置いたメタデータ文書の URL をクライアント ID として使います。サーバーがその文書を取得します。",
-    "description": "Description of the checkbox of accepting metadata document apps."
-  },
-  "admin.settings.oauth_apps.dynamic": {
-    "defaultMessage": "動的クライアント登録",
-    "description": "Checkbox of letting apps register themselves."
-  },
-  "admin.settings.oauth_apps.dynamic.description": {
-    "defaultMessage": "アプリがログインなしで自分を登録します (RFC 7591)。メタデータ文書を使えないツール向けです。",
-    "description": "Description of the checkbox of dynamic client registration."
-  },
-  "admin.settings.voice.title": {
-    "defaultMessage": "通話",
-    "description": "Heading of the voice chat section of the server settings."
-  },
-  "admin.settings.voice.starters": {
-    "defaultMessage": "ルームを開ける人",
-    "description": "Label of the choice of who may start voice chat rooms."
-  },
-  "admin.settings.voice.starters.everyone": {
-    "defaultMessage": "このサーバーの全員",
-    "description": "Choice of who may start voice chat rooms: every local user."
-  },
-  "admin.settings.voice.starters.everyone.description": {
-    "defaultMessage": "このサーバーにログインしている人なら誰でもルームを開けます。",
-    "description": "Explanation of the choice that every local user may start voice chat rooms."
-  },
-  "admin.settings.voice.starters.permitted": {
-    "defaultMessage": "権限を持つ人だけ",
-    "description": "Choice of who may start voice chat rooms: the holders of the permission."
-  },
-  "admin.settings.voice.starters.permitted.description": {
-    "defaultMessage": "通話のルームを開く権限をロールで持つ人だけが開けます。",
-    "description": "Explanation of the choice that only the holders of the permission may start voice chat rooms."
   },
   "admin.settings.voice.public_summary": {
     "defaultMessage": "ログインしていない人にもルームの要約を見せる",
@@ -779,248 +1007,28 @@
     "defaultMessage": "{min} から {max} までの日数を整数で入力してください。",
     "description": "Error of the field of how many days the records of voice chat participants are kept."
   },
-  "admin.settings.invites.title": {
-    "defaultMessage": "利用者の招待",
-    "description": "Heading of the section of the invites that members create on the server settings screen."
+  "admin.settings.voice.starters": {
+    "defaultMessage": "ルームを開ける人",
+    "description": "Label of the choice of who may start voice chat rooms."
   },
-  "admin.settings.invites.description": {
-    "defaultMessage": "利用者は設定のページで自分の招待を作成します。上限は利用者の招待にだけかかり、モデレーターの招待にはかかりません。上限を下げても、すでにある招待は変わりません。",
-    "description": "Help of the section of member invites on the server settings screen."
-  },
-  "admin.settings.invites.creators": {
-    "defaultMessage": "招待を作成できる人",
-    "description": "Label of the choice of who may create invites of their own."
-  },
-  "admin.settings.invites.creators.everyone": {
+  "admin.settings.voice.starters.everyone": {
     "defaultMessage": "このサーバーの全員",
-    "description": "Choice of who may create invites: every local user."
+    "description": "Choice of who may start voice chat rooms: every local user."
   },
-  "admin.settings.invites.creators.everyone.description": {
-    "defaultMessage": "凍結・制限されていない、このサーバーのログイン中の利用者は誰でも招待を作成できます。登録が承認制のときも招待された人は審査なしで承認されるので、誰でも新しいアカウントを承認できることになります。",
-    "description": "Explanation of the choice that every local user may create invites, with its effect in the approval registration mode."
+  "admin.settings.voice.starters.everyone.description": {
+    "defaultMessage": "このサーバーにログインしている人なら誰でもルームを開けます。",
+    "description": "Explanation of the choice that every local user may start voice chat rooms."
   },
-  "admin.settings.invites.creators.permitted": {
+  "admin.settings.voice.starters.permitted": {
     "defaultMessage": "権限を持つ人だけ",
-    "description": "Choice of who may create invites: the holders of the permission."
+    "description": "Choice of who may start voice chat rooms: the holders of the permission."
   },
-  "admin.settings.invites.creators.permitted.description": {
-    "defaultMessage": "招待を作成する権限を持つロールの人だけが作成できます。",
-    "description": "Explanation of the choice that only the holders of the permission create_invites may create invites."
+  "admin.settings.voice.starters.permitted.description": {
+    "defaultMessage": "通話のルームを開く権限をロールで持つ人だけが開けます。",
+    "description": "Explanation of the choice that only the holders of the permission may start voice chat rooms."
   },
-  "admin.settings.invites.max_active": {
-    "defaultMessage": "1 人が持てる使える招待",
-    "description": "Label of the field of how many usable invites one member may hold at once."
-  },
-  "admin.settings.invites.max_active.description": {
-    "defaultMessage": "1 人が同時に持てる使える招待の数です ({min}〜{max})。0 にすると誰も招待を作成できません。",
-    "description": "Description of the field of how many usable invites one member may hold. {min} and {max} are the bounds."
-  },
-  "admin.settings.invites.max_uses": {
-    "defaultMessage": "1 つの招待で登録できる人数",
-    "description": "Label of the field of how many people may sign up with one invite a member creates."
-  },
-  "admin.settings.invites.max_uses.description": {
-    "defaultMessage": "1 つの招待で登録できる人数の上限です ({min}〜{max})。",
-    "description": "Description of the field of how many sign-ups one member invite may allow. {min} and {max} are the bounds."
-  },
-  "admin.settings.invites.number.invalid": {
-    "defaultMessage": "{min} から {max} までの整数を入力してください。",
-    "description": "Error of a field of the member invites that holds a number out of its bounds."
-  },
-  "admin.settings.invites.max_expires_in": {
-    "defaultMessage": "招待の有効期間の上限",
-    "description": "Label of the choice of how long one invite that a member creates may work at most."
-  },
-  "admin.settings.invites.max_expires_in.description": {
-    "defaultMessage": "利用者は招待ごとに、この期間までの有効期間を選びます。",
-    "description": "Description of the choice of how long a member invite may work at most."
-  },
-  "admin.settings.landing.title": {
-    "defaultMessage": "トップページ",
-    "description": "Heading of the section of the server settings about what the landing page (the root address, for people who are not signed in) shows."
-  },
-  "admin.settings.landing.description": {
-    "defaultMessage": "ログインしていない人がこのサーバーのアドレスで見るページに、名前・説明・ルールのほかに何を出すか。",
-    "description": "Explanation of the landing page section of the server settings."
-  },
-  "admin.settings.landing.counts": {
-    "defaultMessage": "サーバーの数を見せる",
-    "description": "Checkbox of whether the landing page shows how many members the server has, its public posts of the last 7 days, and since when it runs."
-  },
-  "admin.settings.landing.counts.description": {
-    "defaultMessage": "利用者の数、この 7 日の日ごとの公開の投稿の数、サーバーが動き始めた時期。数えるのは公開の投稿だけで、数は数分ごとに更新します。",
-    "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
-  },
-  "admin.settings.featured.title": {
-    "defaultMessage": "おすすめのアカウント",
-    "description": "Heading of the section of the server settings about the accounts suggested to follow."
-  },
-  "admin.settings.featured.description": {
-    "defaultMessage": "利用者には、フォローする人のおすすめが出ます。下のアカウントをこの順に先に、その次にこのサーバーで最近投稿した人を出します。おすすめに出ないようにした人は出しません。",
-    "description": "Note of the suggested accounts section of the server settings."
-  },
-  "admin.settings.featured.accounts": {
-    "defaultMessage": "先に出すアカウント",
-    "description": "Label of the field with the usernames of the accounts that the suggestions show first."
-  },
-  "admin.settings.featured.accounts.description": {
-    "defaultMessage": "このサーバーのアカウントのユーザー名を、空白で区切って 20 個まで。",
-    "description": "Help text of the field of the accounts that the suggestions show first."
-  },
-  "admin.settings.hooks.description": {
-    "defaultMessage": "審査は、サーバーの運営者がプラグインを設定したときだけ動きます。オフから適用へは観察を経て進みます。先に審査が何を止めるかを読めるようにするためです。",
-    "description": "Explanation of the section of the server settings about the external reviews."
-  },
-  "admin.settings.hooks.failure.pass": {
-    "defaultMessage": "通す",
-    "description": "Choice of what happens when an external review fails."
-  },
-  "admin.settings.hooks.failure.pass.description": {
-    "defaultMessage": "審査なしで受け付けます。審査が止まっている間はスパムが入ることがあります。",
-    "description": "Description of letting a submission through when its external review fails."
-  },
-  "admin.settings.hooks.failure.require_approval": {
-    "defaultMessage": "承認待ちにする",
-    "description": "Choice of what happens when the external review of sign-ups fails."
-  },
-  "admin.settings.hooks.failure.require_approval.description": {
-    "defaultMessage": "登録はモデレーターの承認を待ちます。",
-    "description": "Description of holding a sign-up for approval when its external review fails."
-  },
-  "admin.settings.hooks.failure.retry": {
-    "defaultMessage": "再試行する",
-    "description": "Choice of what happens when an external review fails."
-  },
-  "admin.settings.hooks.failure.retry.description": {
-    "defaultMessage": "ジョブをやり直します。投稿とフォローでは、同じ送信元の後続が、削除も含めて最長で約 4 時間止まります。",
-    "description": "Description of retrying when an external review fails."
-  },
-  "admin.settings.hooks.inbound_follow.mode": {
-    "defaultMessage": "ほかのサーバーからのフォロー",
-    "description": "Label of the choice of the mode of the external review of this kind of submission."
-  },
-  "admin.settings.hooks.inbound_follow.on_failure": {
-    "defaultMessage": "ほかのサーバーからのフォロー: 審査が失敗したとき",
-    "description": "Label of the choice of what happens when this external review fails while it enforces."
-  },
-  "admin.settings.hooks.inbound_status.mode": {
-    "defaultMessage": "ほかのサーバーからの投稿",
-    "description": "Label of the choice of the mode of the external review of this kind of submission."
-  },
-  "admin.settings.hooks.inbound_status.on_failure": {
-    "defaultMessage": "ほかのサーバーからの投稿: 審査が失敗したとき",
-    "description": "Label of the choice of what happens when this external review fails while it enforces."
-  },
-  "admin.settings.hooks.local_status.mode": {
-    "defaultMessage": "このサーバーの投稿",
-    "description": "Label of the choice of the mode of the external review of this kind of submission."
-  },
-  "admin.settings.hooks.media_check.mode": {
-    "defaultMessage": "アップロードされたメディア",
-    "description": "Label of the choice of the mode of the external review of this kind of submission."
-  },
-  "admin.settings.hooks.media_check.on_failure": {
-    "defaultMessage": "アップロードされたメディア: 審査が失敗したとき",
-    "description": "Label of the choice of what happens when this external review fails while it enforces."
-  },
-  "admin.settings.hooks.mode.enforce": {
-    "defaultMessage": "適用",
-    "description": "Choice of the mode of an external review."
-  },
-  "admin.settings.hooks.mode.enforce.description": {
-    "defaultMessage": "判定に従います。",
-    "description": "Description of the Enforce mode of an external review."
-  },
-  "admin.settings.hooks.mode.observe": {
-    "defaultMessage": "観察",
-    "description": "Choice of the mode of an external review."
-  },
-  "admin.settings.hooks.mode.observe.description": {
-    "defaultMessage": "判定を記録するだけで、何も行いません。",
-    "description": "Description of the Observe mode of an external review."
-  },
-  "admin.settings.hooks.mode.off": {
-    "defaultMessage": "オフ",
-    "description": "Choice of the mode of an external review."
-  },
-  "admin.settings.hooks.mode.off.description": {
-    "defaultMessage": "何も呼びません。",
-    "description": "Description of the Off mode of an external review."
-  },
-  "admin.settings.hooks.retention": {
-    "defaultMessage": "判定を残す日数",
-    "description": "Label of the number of days the records of the decisions of the external reviews stay."
-  },
-  "admin.settings.hooks.retention.description": {
-    "defaultMessage": "{min} 日から {max} 日まで。センシティブの印の元になっている間、アカウントが保全されている間、作者が異議を申し立てられる間は、判定はより長く残ります。",
-    "description": "Description of the number of days the records of decisions stay. {min} and {max} are the bounds."
-  },
-  "admin.settings.hooks.retention.invalid": {
-    "defaultMessage": "{min} から {max} までの日数を整数で入力してください。",
-    "description": "Error of the number of days the records of decisions stay: not a whole number within {min} and {max}."
-  },
-  "admin.settings.hooks.signup_check.mode": {
-    "defaultMessage": "登録",
-    "description": "Label of the choice of the mode of the external review of this kind of submission."
-  },
-  "admin.settings.hooks.signup_check.on_failure": {
-    "defaultMessage": "登録: 審査が失敗したとき",
-    "description": "Label of the choice of what happens when this external review fails while it enforces."
-  },
-  "admin.settings.hooks.title": {
-    "defaultMessage": "外部の審査",
-    "description": "Heading of the section of the server settings about the external reviews of submissions."
-  },
-  "admin.settings.login_providers_only.confirm.affected": {
-    "defaultMessage": "{count, plural, =0 {有効な利用者は全員、ログインプロバイダーを連携しています。} other {有効な利用者のうち # 人はログインプロバイダーを連携しておらず、セッションが切れるとログインできなくなります。}}",
-    "description": "In the confirmation dialog: how many active users have no link to an enabled login provider."
-  },
-  "admin.settings.login_providers_only.confirm.cancel": {
-    "defaultMessage": "キャンセル",
-    "description": "Button in the confirmation dialog that keeps the form as it is."
-  },
-  "admin.settings.login_providers_only.confirm.confirm": {
-    "defaultMessage": "ログインを制限する",
-    "description": "Button in the confirmation dialog that saves the limit."
-  },
-  "admin.settings.login_providers_only.confirm.failed": {
-    "defaultMessage": "ログインできなくなる利用者の数を読み取れませんでした。ログインプロバイダーを連携していない利用者は、セッションが切れるとログインできなくなります。",
-    "description": "In the confirmation dialog when the count of affected users could not be read."
-  },
-  "admin.settings.login_providers_only.confirm.loading": {
-    "defaultMessage": "ログインできなくなる利用者を数えています…",
-    "description": "In the confirmation dialog while the count of affected users loads."
-  },
-  "admin.settings.login_providers_only.confirm.no_provider": {
-    "defaultMessage": "有効なログインプロバイダーがないため、今は何も変わりません。プロバイダーを有効にすると制限が始まります。",
-    "description": "In the confirmation dialog when no login provider is enabled."
-  },
-  "admin.settings.login_providers_only.confirm.recovery": {
-    "defaultMessage": "元に戻すには、ここでオフにするか、サーバーで「my instance set login_providers_only false」を実行します。",
-    "description": "In the confirmation dialog: how to undo the limit."
-  },
-  "admin.settings.login_providers_only.confirm.self": {
-    "defaultMessage": "あなたもそのひとりです。セッションが切れる前に、連携アカウントの画面でログインプロバイダーを連携してください。",
-    "description": "In the confirmation dialog when the administrator who confirms has no link to an enabled login provider."
-  },
-  "admin.settings.login_providers_only.confirm.sessions": {
-    "defaultMessage": "ログイン中のセッションとアプリはそのまま使え、その間にプロバイダーを連携できます。",
-    "description": "In the confirmation dialog: what keeps working."
-  },
-  "admin.settings.login_providers_only.confirm.stops": {
-    "defaultMessage": "パスワードとパスキーではログインできなくなり、パスワードでの新規登録と再設定もできなくなります。",
-    "description": "In the confirmation dialog: what stops."
-  },
-  "admin.settings.login_providers_only.confirm.title": {
-    "defaultMessage": "ログインをログインプロバイダーだけにしますか？",
-    "description": "Title of the dialog that confirms limiting sign-in to login providers."
-  },
-  "admin.settings.login_providers_only.description": {
-    "defaultMessage": "ログインプロバイダーがひとつ以上有効な間は、パスワードとパスキーではログインできなくなり、パスワードでの新規登録と再設定もできなくなります。有効なプロバイダーがないときは、この設定は働きません。",
-    "description": "Description of the checkbox that limits sign-in and registration to login providers."
-  },
-  "admin.settings.login_providers_only.label": {
-    "defaultMessage": "ログインと新規登録をログインプロバイダーだけにする",
-    "description": "Checkbox in the registration section of the server settings: limits sign-in and registration to login providers."
+  "admin.settings.voice.title": {
+    "defaultMessage": "通話",
+    "description": "Heading of the voice chat section of the server settings."
   }
 }

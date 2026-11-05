@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"time"
 
 	"connectrpc.com/connect/v2"
 
@@ -50,12 +52,38 @@ func (p *Plugin) Check(ctx context.Context, r apphook.Request) (apphook.Answer, 
 
 // setSubject writes the description of the subject that a hook sends. Each concrete hook adds a
 // case for its type and a field of CheckRequest.
-func setSubject(_ *hookv1.CheckRequest, subject any) error {
-	if subject == nil {
+func setSubject(req *hookv1.CheckRequest, subject any) error {
+	switch v := subject.(type) {
+	case nil:
+		return nil
+	case apphook.InboundStatusSubject:
+		req.Subject = &hookv1.CheckRequest_InboundStatus{InboundStatus: inboundStatus(v)}
 		return nil
 	}
 	return fmt.Errorf("hook: no mapping of the subject %T", subject)
 }
+
+func inboundStatus(s apphook.InboundStatusSubject) *hookv1.InboundStatus {
+	out := &hookv1.InboundStatus{
+		ActivityType: s.ActivityType, StatusUri: s.StatusURI, StatusUrl: s.StatusURL, AuthorUri: s.AuthorURI, AuthorDomain: s.AuthorDomain,
+		Visibility: s.Visibility, AnyLocalFollower: s.AnyLocalFollower, InReplyToUri: s.InReplyToURI, SpoilerText: s.SpoilerText,
+		Sensitive: s.Sensitive, PollOptions: s.PollOptions, Hashtags: s.Hashtags,
+		MentionCount: count32(s.MentionCount), LocalMentionCount: count32(s.LocalMentionCount),
+	}
+	if !s.PublishedAt.IsZero() {
+		out.PublishedAt = s.PublishedAt.UTC().Format(time.RFC3339)
+	}
+	for _, b := range s.Bodies {
+		out.Bodies = append(out.Bodies, &hookv1.InboundStatus_Body{Language: b.Language, Html: b.HTML})
+	}
+	for _, a := range s.Attachments {
+		out.Attachments = append(out.Attachments, &hookv1.InboundStatus_Attachment{Type: a.Type, Url: a.URL, ContentType: a.ContentType, Description: a.Description})
+	}
+	return out
+}
+
+// count32 is a count of what one post names, which federation.MaxTags keeps far below the limit.
+func count32(n int) int32 { return int32(min(n, math.MaxInt32)) } //nolint:gosec // G115: min bounds it
 
 func callError(err error) error {
 	if errors.Is(err, context.DeadlineExceeded) || connect.CodeOf(err) == connect.CodeDeadlineExceeded {

@@ -126,6 +126,9 @@ const (
 	SettingHookSignupCheckOnFailure   SettingKey = "hook_signup_check_on_failure"
 	SettingHookMediaCheckOnFailure    SettingKey = "hook_media_check_on_failure"
 	SettingRetentionHookDecisions     SettingKey = "retention_hook_decisions"
+	// SettingHookInboundStatusUnfollowedDirect decides whether inbound.status also sends the direct
+	// posts of authors no local account follows (ADR-0147 §10).
+	SettingHookInboundStatusUnfollowedDirect SettingKey = "hook_inbound_status_unfollowed_direct"
 	// SettingInviteCreators decides who may create invites of their own (ADR-0106 §14), and
 	// SettingMemberInviteMaxActive, SettingMemberInviteMaxUses, and
 	// SettingMemberInviteMaxLifetimeSeconds bound those invites (§2).
@@ -628,6 +631,10 @@ var definitions = []Definition{
 	hookOnFailureDefinition(SettingHookInboundFollowOnFailure, "inbound.follow", HookRetryOnFailure),
 	hookOnFailureDefinition(SettingHookSignupCheckOnFailure, "signup.check", HookApproveOnFailure),
 	hookOnFailureDefinition(SettingHookMediaCheckOnFailure, "media.check", HookRetryOnFailure),
+	{
+		Key: SettingHookInboundStatusUnfollowedDirect, Kind: KindBool, Default: "false",
+		Doc: "Whether the decision hook inbound.status also sends the direct posts of authors no local account follows (ADR-0147 §10).",
+	},
 	{
 		Key: SettingRetentionHookDecisions, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionHookDecisions), Min: MinRetentionHookDecisions, Max: MaxRetention,
 		Doc: "How many days the records of the decisions of the decision hooks are kept. A decision stays longer while a post's sensitive mark rests on it, a retention hold preserves its account, or its author can still appeal it (ADR-0147 §6).",

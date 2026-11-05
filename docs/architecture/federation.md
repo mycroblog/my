@@ -172,6 +172,14 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 
 ### 3.4 アクティビティごとのハンドラ
 
+`Create` と `Update` の投稿は、取り込みのトランザクションの前にフック `inbound.status` を通します（[ADR-0147](../adr/0147-decision-hooks.md) §3）。プラグインを設定していないか、モードが `off` のときは、何も呼ばず何も読みません。
+
+- `Create` と未知の投稿の `Update`（`ingest`）は、`inScope` が真で、公開範囲が決まり、宛先が無効なアカウントだけの `direct` を落とした後に尋ねます。`relayed` の経路では尋ねません。
+- 既知の投稿の `Update` は、作者本人の版であり、`inScope` が真のときに尋ね、範囲外なら尋ねずに版を保存します。遅れて届いて版を作らない `Update` では、判定に基づいて何もしません。
+- 判定の鍵は受信したアクティビティの URI で、版ごとに別の判定です。ローカルの誰もフォローしていない作者の `direct` は、`hook_inbound_status_unfollowed_direct` がオンのときだけ送ります。
+- `drop` は `ErrDropActivity` を包んで返します。`flag` は `moderation.FileHookReport`、`mark_sensitive` は `content.MarkSensitiveByHook` を取り込みか改訂のトランザクションで呼び、`hook.LinkStatus` と `hook.Applied` を続けます。`apphook.ErrRetryLater` は包まずに返し、ジョブのリトライに任せます。
+- 判定の取り消しは `StatusHandlers.UndoReview` が同じトランザクションで受け、`drop` なら `received_activity_documents` が残っている間だけ `federation.inbox` を積み直します。再実行は取り消しのある判定を `allow` と読みます。
+
 | アクティビティ | 対象 | 処理 |
 | --- | --- | --- |
 | `Follow` | インスタンス Actor | 参加中のリレーの Actor からのものは `Accept` を、それ以外は `Reject` をインスタンス Actor が送る。フォローとしては記録しない（§13） |
