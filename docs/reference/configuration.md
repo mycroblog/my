@@ -163,6 +163,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`payments_payjp_webhook_token`](#payments_payjp_webhook_token) | `MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN` | none | when `payments = payjp` | yes |
 | [`payments_reconcile_interval`](#payments_reconcile_interval) | `MY_PAYMENTS_RECONCILE_INTERVAL` | `6h` | no | no |
 | [`payments_reconcile_max_requests`](#payments_reconcile_max_requests) | `MY_PAYMENTS_RECONCILE_MAX_REQUESTS` | `1000` | no | no |
+| [`search`](#search) | `MY_SEARCH` | `none` | no | no |
 | [`voice`](#voice) | `MY_VOICE` | `off` | no | no |
 | [`voice_p2p_max_participants`](#voice_p2p_max_participants) | `MY_VOICE_P2P_MAX_PARTICIPANTS` | `10` | no | no |
 | [`voice_sfu_max_participants`](#voice_sfu_max_participants) | `MY_VOICE_SFU_MAX_PARTICIPANTS` | `10` | no | no |
@@ -1237,6 +1238,19 @@ How many requests one reconciliation sends to `payments`, a page of a list count
 - Environment variable: `MY_PAYMENTS_RECONCILE_MAX_REQUESTS`
 - Default: `1000`
 - Required: no
+
+### `search`
+
+The search engine of the full-text search of statuses. The search of accounts and hashtags uses the database and does not depend on this setting.
+
+- Environment variable: `MY_SEARCH`
+- Default: `none`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `none` | No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available. |
+| `fake` | Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it (docs/reference/build-tags.md). It needs no other setting. |
 
 ### `voice`
 

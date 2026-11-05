@@ -37,17 +37,17 @@ released binary or image has it. Never run a test build for real users.
 
 | Tag | Adds | Settings it allows |
 | --- | --- | --- |
-| `e2e_fakes` | The fake payment provider: its state lives in the server's memory, and its own checkout page under `/payments/pages/fake/` offers to pay, to make the payment fail, or to cancel. Paying records the subscription and its payment as paid without any money moving. The command `my dev push-service`, a fake Web Push service ([contributing guide](../../CONTRIBUTING.md#the-fake-push-service)). | `payments = fake`, with `profile = development` only |
+| `e2e_fakes` | The fake payment provider: its state lives in the server's memory, and its own checkout page under `/payments/pages/fake/` offers to pay, to make the payment fail, or to cancel. Paying records the subscription and its payment as paid without any money moving. The fake search index, whose documents live in the server's memory. The command `my dev push-service`, a fake Web Push service ([contributing guide](../../CONTRIBUTING.md#the-fake-push-service)). | `payments = fake` and `search = fake`, with `profile = development` only |
 
 A fake that records payments as paid would give anyone a supporter's role without paying, so a released binary refuses them.
-A binary without the tag rejects `payments = fake` like a left-out adapter:
+A binary without the tag rejects `payments = fake` and `search = fake` like a left-out adapter:
 
 ```text
 payments (MY_PAYMENTS): "fake" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it (docs/reference/build-tags.md)
 ```
 
 A binary without the tag has no `my dev` command (`my: unknown command "dev"`). A test build refuses
-`payments = fake` and `my dev push-service` unless `profile = development`, and both log a warning at start
+`payments = fake`, `search = fake`, and `my dev push-service` unless `profile = development`, and both log a warning at start
 that it is a test build.
 
 The tag's other safeguards, and how the project's own tests use it, are in the

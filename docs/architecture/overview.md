@@ -63,6 +63,7 @@ Remote servers ──AP──►│                               │
 | `finance` | サーバーの維持費用（費用の項目・支払いの周期・改定・終了・取り消し、週・月・年の集計。集計は読み取りのときに計算する。ADR-0067）と、クラウドの利用料金の取り込み（見込み・確定・修正の版。ADR-0068）と、決済の事業者からの収入の記録と集計（`supporters` が `RecordIncome` で渡し、`finance` は加入者とプランの人数を `SupporterDirectory` で読む。ADR-0067） | CostItem, PriceRevision, ImportedRevision, IncomeMovement |
 | `supporters` | 管理者が有効にしたときだけ動く課金ユーザー（サポーター。ADR-0072）。課金の有効化・プラン・事業者の価格・加入・加入の状態と猶予・掲載の選択。決済の事業者の事実を運ぶ経路（webhook の受信の記録とジョブ、定期の照合。ADR-0074 §3・§4）。加入の状態は事業者のスナップショットから `Syncer`（`supporters.sync`）が導き、プランのロールを `identity` の管理されたロールの操作で付け外しする | Plan, PlanRevision, Subscription, Transition, WebhookReceipt, ReconcileRun |
 | `voice` | 同じサーバーのローカルの利用者どうしの通話のルーム（ADR-0100）。ルームの設定の版・ホストと共同ホスト・参加と役割・発話の許可・挙手・招待・再入室の禁止・終了。公開範囲・発話・ホストの資格は `internal/domain/voice` の純粋な関数（`CanSee`・`CanSpeakFreely`・`CanHost`）が判定する | Room, Revision, Participation, Participant, Invitation, Ending |
+| `search` | 投稿の全文検索（ADR-0149）。運営者が選ぶ検索エンジンのポート（`search.Index`）と索引のジョブの種類。投稿の ID だけを受け取り、既定の `search = none` ではバックエンドを持たない。アカウントとタグの検索は持たない | （読み取りモデル） |
 | `diagnostics` | 報告されたエラーのグループ（ADR-0103 §4 (2)・§7）。`ErrorReporter` の出力の 1 つ `Recorder` が指紋ごとに 1 時間ごとの件数と最新の 1 件を数え、新しいグループと、解決したグループの別の版での再発（`regressed`）をドメインイベントで知らせる。解決・ミュート・ミュートの解除と、90 日より古い件数の定期の削除 | ErrorGroup, ErrorGroupEvent |
 | `i18n` | ロケール解決・メッセージカタログ・整形 | （横断。`internal/i18n` の 1 パッケージで、`domain` / `app` の層を持たない） |
 
@@ -130,7 +131,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 | `Bus` / `Sweeper` | プロセス間の知らせの同報（`stream.Relay` が使う）と、プロセスが残したブローカーの資源の後始末（§4.4）。アダプタは `postgres` / `valkey` / `sns` / `pubsub`（`sns` と `pubsub` は `Sweeper` も実装）。`stream.MemoryBroker` はテスト用 | なし（`stream = hub`）。複数プロセスは `postgres` | [0050](../adr/0050-stream-pubsub-across-processes.md) |
 | `Clock` / `IdGenerator` | 時刻（UTC・ミリ秒）・ID 生成（テスト容易性のため注入） | system（システム時計 / UUIDv7。どちらもプロセス内では小さく戻った時計で逆行しない） | [0003](../adr/0003-database-abstraction.md) |
 | `KeyManager` | 秘密（アクター秘密鍵など）を包む DEK の wrap / unwrap。暗号化は `kernel.Sealer` が行う | local（設定の KEK） | [0019](../adr/0019-security-baseline.md) |
-| `SearchIndex` | 投稿の全文検索。投稿の ID だけを返す。アカウントとタグの検索はこのポートを通さない | none（`search = none`。全文検索は使えない） | [0149](../adr/0149-full-text-search.md) |
+| `SearchIndex` | 投稿の全文検索（`internal/app/search`、Go 名 `search.Index`）。投稿の ID だけを返す。アカウントとタグの検索はこのポートを通さない。テスト用の fake は `internal/adapter/search/fake`。契約は `testkit.SearchIndexContract` | none（`search = none`。全文検索は使えない） | [0149](../adr/0149-full-text-search.md) |
 | `Translator` | 投稿の翻訳の提供元（`internal/app/translation`）。受け取るのは断片の列・原文の言語（`und` があり得る）・翻訳先の言語で、返すのは訳の列と検出した言語である。メンションやリンクは番号付きの印（`⟦1⟧`、対は `⟦1⟧` と `⟦/1⟧`）に置き換わっている。失敗を一時的な失敗・提供元が報告した上限・対応しない言語に分ける。提供元に固有の選択肢や名前は持たない。テスト用の fake は `internal/adapter/translator/fake` | なし（提供元はすべて無効で始まる） | [0148](../adr/0148-post-translation.md) |
 | `Meter` | サービスとシステムの指標の計測。計器（Counter・UpDownCounter・Histogram・Gauge）を名前・単位・許すラベルのキーとともに宣言して記録し、`Begin` でリクエスト・ジョブの区切りを示す。型は標準ライブラリだけで、OTel の型を出さない。アダプタは `none` / `otel`（OpenTelemetry Go SDK。Prometheus の scrape と OTLP/HTTP）/ `emf`（CloudWatch Embedded Metric Format。Gauge は収集されないので、定期ジョブが `GaugeWriter` で書かせる）。ログは port でなく `log/slog` の JSON Lines（標準エラー）で、トレースは `Tracer` が持つ | none（`metrics_exporter = none`） | [0055](../adr/0055-service-observability.md), [0056](../adr/0055-service-observability.md) |
 | `BillingSource` | クラウドの事業者の利用料金を請求月・サービス・費用の種類ごとに返す（`internal/app/finance`）。型は標準ライブラリと finance のドメインだけで、SDK の型を出さない。課金される要求の数を `MaxRequests` までに抑え、失敗を種類に分ける。事業者のアダプタは `internal/adapter/billing/<source>` に置き、テスト用の fake は `testkit.FakeBillingSource` | なし（`billing_sources` が空） | [0068](../adr/0068-billing-import.md) |
@@ -257,6 +258,7 @@ internal/
     billing/gcp/     # finance.BillingSource の Google Cloud（Cloud Billing の BigQuery への export を jobs.query で invoice.month × サービス × cost_type に集計、または予算の Pub/Sub 通知を pull して月ごとの合計の概算。ADR-0068 §7）
     translator/fake/ # translation.Translator のテスト用の fake（訳は断片の前に翻訳先の言語を付けたもの。提供元を呼ばない）
     payment/fake/    # supporters.PaymentProvider のテスト用の fake（事業者の側をメモリに持ち、webhook に HMAC で署名する。本番の binary に入らない）
+    search/fake/     # search.Index のテスト用の fake（文書をメモリに持つ。本番のビルドには入らず、ビルドタグ e2e_fakes の search = fake だけが使う。ADR-0149 §3）
     mail/{none,smtp,ses}/
     telemetry/{none,otel,emf}/ # kernel.Meter（ADR-0055）と kernel.Tracer（none・otel、ADR-0055）の実装。OpenTelemetry と Prometheus のライブラリはここだけが import する
     telemetry/dbtrace/ # DB のアダプタが共有するトランザクションとクエリの span（ADR-0055 §13）

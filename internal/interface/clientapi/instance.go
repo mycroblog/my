@@ -9,6 +9,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
+	"github.com/mycroblog/my/internal/app/search"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -120,6 +121,7 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	if out.VoiceEnabled && settings.VoiceRoomStarters() == instance.VoiceRoomStartersEveryone {
 		out.VoiceRoomStarters = InstanceVoiceRoomStartersEveryone
 	}
+	out.FullTextSearch = s.instanceFullTextSearch()
 	if key := s.pushServerKey(); key != "" {
 		out.PushServerKey = &key
 	}
@@ -254,4 +256,25 @@ func (s *Server) GetInstanceDocument(ctx context.Context, req GetInstanceDocumen
 		Body:    InstanceDocument{Kind: req.Kind, Html: doc.HTML, RevisedAt: doc.RevisedAt.UTC()},
 		Headers: GetInstanceDocument200ResponseHeaders{CacheControl: &cache},
 	}, nil
+}
+
+// FullTextSearch says what the full-text search of statuses covers (ADR-0149 §9).
+// *search.Service implements it.
+type FullTextSearch interface {
+	// Visibilities returns the visibilities the search covers.
+	Visibilities() []search.Visibility
+}
+
+// instanceFullTextSearch is the item of GET /instance that tells clients whether to show an entry
+// to the full-text search: not available with search = none.
+func (s *Server) instanceFullTextSearch() InstanceFullTextSearch {
+	out := InstanceFullTextSearch{Visibilities: []InstanceFullTextSearchVisibilities{}}
+	if s.o.FullTextSearch == nil {
+		return out
+	}
+	out.Available = true
+	for _, v := range s.o.FullTextSearch.Visibilities() {
+		out.Visibilities = append(out.Visibilities, InstanceFullTextSearchVisibilities(v))
+	}
+	return out
 }

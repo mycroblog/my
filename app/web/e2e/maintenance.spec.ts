@@ -97,6 +97,7 @@ const instance: Schemas["Instance"] = {
   supporter_list_visibility: "off",
   voice_enabled: false,
   voice_room_starters: "permitted",
+  full_text_search: { available: false, visibilities: [] },
   rules: [],
 };
 
