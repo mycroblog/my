@@ -225,7 +225,7 @@ func testGIF(w, h, frames int) []byte {
 		img := image.NewPaletted(image.Rect(0, 0, w, h), palette)
 		for y := range h {
 			for x := range w {
-				img.SetColorIndex(x, y, uint8(1+(x/max(1, w/frames)+i)%2)) //nolint:gosec // 1 or 2
+				img.SetColorIndex(x, y, uint8(1+(x/max(1, w/frames)+i)%2))
 			}
 		}
 		g.Image = append(g.Image, img)
@@ -252,7 +252,7 @@ func testGIF(w, h, frames int) []byte {
 // locationMarker and the cover picture, and an ID3v1 tag.
 func testMP3(frames int, cover []byte) []byte {
 	frame := func(id string, body []byte) []byte {
-		out := append([]byte(id), byte(len(body)>>24), byte(len(body)>>16), byte(len(body)>>8), byte(len(body)))
+		out := binary.BigEndian.AppendUint32([]byte(id), uint32(len(body))) //nolint:gosec // a few hundred bytes
 		return append(append(out, 0, 0), body...)
 	}
 	body := frame("TIT2", append([]byte{0}, locationMarker...))
