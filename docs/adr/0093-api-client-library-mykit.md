@@ -44,11 +44,12 @@ pkg/mykit/
 
 - `pkg/mykit/`・`pkg/mybot/` と、生成元の `api/spec/` とそのバンドル `api/openapi.yaml` を **MIT** にする。生成物は仕様から機械的に作るので、仕様が AGPL のままだと生成物の扱いが曖昧になる。仕様を同じライセンスにしてそれを避ける。
   サーバーの実装（`internal/`・`cmd/`・`app/web` など）は AGPL-3.0-only のまま。MIT は AGPL-3.0 と両立するので、サーバーと Web クライアントが MIT のコードを使うことに問題はない。
+- `api/plugin/`（外部プラグインの proto。ADR-0146 §8）も **MIT** にする。プラグインの作者がそこから自分のコードを生成するので、同じ理由である。サーバーが使う Go の生成物は `internal/adapter/plugin/gen` に置き、`internal/` のほかのコードと同じ AGPL-3.0-only にする。AGPL のポートをなぞる proto を MIT で出すことの法務の確認は、ADR-0146 §17 のとおり `v0.1.0` のタグの条件である。
 - **ADR-0011 との関係**: 上の範囲は ADR-0011 の「リポジトリは AGPL-3.0 とする」の例外である。AGPL 第 13 条のソースの提示などその他の決定は変えない。
 - 置き方: それぞれのディレクトリに MIT の `LICENSE` を置き、ルートの `README.md` のライセンスの節に例外の範囲を書く。
-  SPDX ヘッダは `MIT`（`// SPDX-License-Identifier: MIT`、YAML は `# SPDX-License-Identifier: MIT`）。生成物の見出しも `MIT` にする。
+  SPDX ヘッダは `MIT`（`// SPDX-License-Identifier: MIT`、YAML は `# SPDX-License-Identifier: MIT`）。`pkg/mykit/`・`pkg/mybot/` の生成物の見出しも `MIT` にする。
 - 既存の `api/spec/` の著作者は決定者 1 人（`git shortlog` で確認）なので、決定者の判断で再ライセンスできる。Dependabot の変更は `api/spec/` に及ばない。
-- **依存のライセンスの検査**: `mykit`・`mybot` の依存は MIT・Apache-2.0・BSD・ISC など寛容なものだけにする。AGPL と両立するだけの（GPL 系の）依存は利用者に及ぶので入れない。
+- **依存のライセンスの検査**: `api/plugin/` の proto はほかの proto を import しない（ADR-0146 §8）。`mykit`・`mybot` の依存は MIT・Apache-2.0・BSD・ISC など寛容なものだけにする。AGPL と両立するだけの（GPL 系の）依存は利用者に及ぶので入れない。
   Go は `go-licenses`、npm は `tools/i18n` の検査と同じ仕組みに、寛容なものだけの許可リストを渡す。
 
 ### 3. コード生成
