@@ -134,6 +134,14 @@ ON CONFLICT (report_id) DO NOTHING;
 -- name: GetReportVoiceRoom :many
 SELECT room_id, revision_id FROM report_voice_rooms WHERE report_id = ?;
 
+-- InsertReportHookOrigin inserts nothing when the decision already filed a report.
+-- name: InsertReportHookOrigin :execrows
+INSERT INTO report_hook_origins (report_id, hook_decision_id, hook, reason_code) VALUES (?, ?, ?, ?)
+ON CONFLICT (hook_decision_id) DO NOTHING;
+
+-- name: GetReportHookOrigin :many
+SELECT hook_decision_id, hook, reason_code FROM report_hook_origins WHERE report_id = ?;
+
 -- name: ListReportedVoiceRooms :many
 SELECT DISTINCT room_id FROM report_voice_rooms WHERE room_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY room_id;
 

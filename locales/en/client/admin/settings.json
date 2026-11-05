@@ -911,6 +911,14 @@
     "defaultMessage": "Posts from other servers: when the review fails",
     "description": "Label of the choice of what happens when this external review fails while it enforces."
   },
+  "admin.settings.hooks.inbound_status.unfollowed_direct": {
+    "defaultMessage": "Also review direct posts from authors nobody here follows",
+    "description": "Label of the setting that sends direct posts from unfollowed authors to the external review."
+  },
+  "admin.settings.hooks.inbound_status.unfollowed_direct.description": {
+    "defaultMessage": "A direct post is private to the people it names. Off, those from authors nobody here follows reach the recipient unreviewed; on, their text goes to the external review.",
+    "description": "Help of the setting that sends direct posts from unfollowed authors to the external review."
+  },
   "admin.settings.hooks.local_status.mode": {
     "defaultMessage": "Local posts",
     "description": "Label of the choice of the mode of the external review of this kind of submission."

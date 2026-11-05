@@ -806,6 +806,12 @@ function PoliciesForm() {
           setting="hook_inbound_status_on_failure"
           label={t("client:admin.settings.hooks.inbound_status.on_failure")}
         />
+        <PolicyCheckbox
+          form={form}
+          setting="hook_inbound_status_unfollowed_direct"
+          label={t("client:admin.settings.hooks.inbound_status.unfollowed_direct")}
+          description={t("client:admin.settings.hooks.inbound_status.unfollowed_direct.description")}
+        />
         <PolicyRadios
           form={form}
           setting="hook_inbound_follow_mode"

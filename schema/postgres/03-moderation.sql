@@ -136,6 +136,18 @@ CREATE TABLE report_voice_rooms (
 );
 CREATE INDEX report_voice_rooms_room_id ON report_voice_rooms (room_id);
 
+-- Resource (child of a report): the decision of a hook that filed the report (ADR-0147 §7). The
+-- unique decision keeps a job that runs again from filing a second report. hook and reason_code
+-- are immutable facts copied from the decision, so a report still says it was automated and why
+-- after the decision's retention removed it. reason_code is '' for none.
+CREATE TABLE report_hook_origins (
+  report_id uuid NOT NULL PRIMARY KEY,
+  hook_decision_id uuid NOT NULL,
+  hook text NOT NULL CHECK (hook IN ('inbound.status', 'inbound.follow', 'signup.check', 'media.check', 'local.status')),
+  reason_code text NOT NULL CHECK (reason_code IN ('', 'spam', 'harassment', 'sexual', 'violence', 'illegal', 'malware', 'other'))
+);
+CREATE UNIQUE INDEX report_hook_origins_hook_decision_id ON report_hook_origins (hook_decision_id);
+
 -- Projection: whether a report is open, how it was resolved, and who handles it. outcome is
 -- that of the latest resolution, set exactly when the report is resolved.
 CREATE TABLE report_states (

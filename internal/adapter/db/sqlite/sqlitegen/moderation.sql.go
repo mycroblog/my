@@ -350,6 +350,39 @@ func (q *Queries) GetReportByURI(ctx context.Context, uri sql.NullString) (Repor
 	return i, err
 }
 
+const getReportHookOrigin = `-- name: GetReportHookOrigin :many
+SELECT hook_decision_id, hook, reason_code FROM report_hook_origins WHERE report_id = ?
+`
+
+type GetReportHookOriginRow struct {
+	HookDecisionID string
+	Hook           string
+	ReasonCode     string
+}
+
+func (q *Queries) GetReportHookOrigin(ctx context.Context, reportID string) ([]GetReportHookOriginRow, error) {
+	rows, err := q.db.QueryContext(ctx, getReportHookOrigin, reportID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetReportHookOriginRow{}
+	for rows.Next() {
+		var i GetReportHookOriginRow
+		if err := rows.Scan(&i.HookDecisionID, &i.Hook, &i.ReasonCode); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getReportState = `-- name: GetReportState :one
 SELECT report_id, state, outcome, assignee_user_id, since FROM report_states WHERE report_id = ?
 `
@@ -665,6 +698,32 @@ func (q *Queries) InsertReportAssignment(ctx context.Context, arg InsertReportAs
 		arg.AssignedAt,
 	)
 	return err
+}
+
+const insertReportHookOrigin = `-- name: InsertReportHookOrigin :execrows
+INSERT INTO report_hook_origins (report_id, hook_decision_id, hook, reason_code) VALUES (?, ?, ?, ?)
+ON CONFLICT (hook_decision_id) DO NOTHING
+`
+
+type InsertReportHookOriginParams struct {
+	ReportID       string
+	HookDecisionID string
+	Hook           string
+	ReasonCode     string
+}
+
+// InsertReportHookOrigin inserts nothing when the decision already filed a report.
+func (q *Queries) InsertReportHookOrigin(ctx context.Context, arg InsertReportHookOriginParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertReportHookOrigin,
+		arg.ReportID,
+		arg.HookDecisionID,
+		arg.Hook,
+		arg.ReasonCode,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const insertReportNote = `-- name: InsertReportNote :exec

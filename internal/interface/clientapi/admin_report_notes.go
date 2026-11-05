@@ -38,6 +38,7 @@ func (s *Server) reportDetailResponse(ctx context.Context, d moderation.ReportDe
 		return AdminReportDetailJSONResponse{}, err
 	}
 	body.VoiceRoomId = r.VoiceRoomId
+	body.HookOrigin = r.HookOrigin
 	if body.VoiceRoom, err = s.reportVoiceRoom(ctx, d.Report); err != nil {
 		return AdminReportDetailJSONResponse{}, err
 	}

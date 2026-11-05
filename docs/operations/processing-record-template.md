@@ -52,6 +52,7 @@ These names are used under the activities below. List each one you use.
 | {{IF follow review}} Follow review service | {{...}} | {{...}} |
 | {{IF sign-up review}} Sign-up review service | {{...}} | {{...}} |
 | {{IF translation}} Translation providers | {{...}} | {{...}} |
+| {{IF external review of posts}} External review of posts from other servers | {{...}} | {{...}} |
 | Backup storage | {{...}} | {{...}} |
 | Federated servers | Other servers of the network, run by other controllers, which change over time. `my` keeps the list of known servers | Any country |
 | {{IF relays}} Relays | {{EACH RELAY YOU JOINED}} | {{...}} |

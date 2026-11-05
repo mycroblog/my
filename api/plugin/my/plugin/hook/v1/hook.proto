@@ -20,10 +20,61 @@ message CheckRequest {
   string subject_key = 2;
   // True for a call of `my plugin test`, which is about no real subject and acts on nothing.
   bool probe = 3;
+  // What inbound.status reviews; empty on the calls of the other hooks and on probes.
+  InboundStatus inbound_status = 4;
   // The two parties of the follow, for inbound.follow.
   FollowSubject follow = 5;
   // What signup.check reviews; empty on the calls of the other hooks and on probes.
   SignupSubject signup = 6;
+}
+
+// A post from another server, or a new revision of one, for inbound.status. It holds the post as
+// that server sent it. No field holds anything of a local post or of a local account, and a post
+// is sent only when it is related to a local account: a local account follows its author, it names a
+// local account, or it is in a thread with a local post.
+message InboundStatus {
+  // The type of the activity that carried the post: Create or Update. Every revision is its own subject.
+  string activity_type = 1;
+  string status_uri = 2;
+  // The address of the post for a person; empty when it is the same as status_uri.
+  string status_url = 3;
+  string author_uri = 4;
+  string author_domain = 5;
+  // public, unlisted, private, or direct.
+  string visibility = 6;
+  // Whether a local account follows the author.
+  bool any_local_follower = 7;
+  // The post this one replies to; empty for none. The parent's text is not sent.
+  string in_reply_to_uri = 8;
+  string spoiler_text = 9;
+  // Whether the author marked the post as sensitive.
+  bool sensitive = 10;
+  // When the author published it, in RFC 3339; empty when the post does not say.
+  string published_at = 11;
+  repeated Body bodies = 12;
+  repeated Attachment attachments = 13;
+  repeated string poll_options = 14;
+  repeated string hashtags = 15;
+  // How many accounts the post names, and how many of them are local.
+  int32 mention_count = 16;
+  int32 local_mention_count = 17;
+
+  // The text of the post in one language, as sanitized HTML.
+  message Body {
+    // A language tag; empty when the post does not say.
+    string language = 1;
+    string html = 2;
+  }
+
+  // A media attachment by its URL on the remote server. The server sends no bytes of it.
+  message Attachment {
+    // The ActivityStreams type: Document, Image, Video, or Audio.
+    string type = 1;
+    string url = 2;
+    // The media type, empty when the post does not say.
+    string content_type = 3;
+    string description = 4;
+  }
 }
 
 // What inbound.follow asks about: a follow from another server of an account on this one.

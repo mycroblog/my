@@ -11,6 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/graph"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/moderation"
@@ -36,6 +37,7 @@ type projectionRepositories struct {
 	feeds         timeline.Repository
 	notifications notification.Repository
 	moderation    moderation.Repository
+	decisions     apphook.Repository
 	identities    identity.Repository
 	webhooks      webhook.Repository
 	relays        federation.RelayRepository
@@ -49,7 +51,7 @@ type projectionRepositories struct {
 func (r *repositories) projectionRepositories() projectionRepositories {
 	return projectionRepositories{
 		accounts: r.accounts, instances: r.instances, follows: r.follows, statuses: r.statuses, interactions: r.interactions, emojis: r.emojis,
-		feeds: r.feeds, notifications: r.notifs, moderation: r.mods, identities: r.identities, webhooks: r.hooks, relays: r.feds,
+		feeds: r.feeds, notifications: r.notifs, moderation: r.mods, decisions: r.decisions, identities: r.identities, webhooks: r.hooks, relays: r.feds,
 		finance: r.finance, quotes: r.quotes, supporters: r.supporters, voice: r.voice,
 		diagnostics: r.diagnostics,
 	}
@@ -120,8 +122,16 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				Tables: []string{"status_sensitivity_overrides"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return content.RebuildSensitivityOverrides(ctx, u, r.statuses,
-						func(ctx context.Context, tx uow.Tx, mark func(statusID, actionID string) error) error {
-							return moderation.ReplaySensitivityMarks(ctx, tx, r.moderation, mark)
+						func(ctx context.Context, tx uow.Tx, mark func(string, content.SensitivitySource) error) error {
+							err := moderation.ReplaySensitivityMarks(ctx, tx, r.moderation, func(statusID, actionID string) error {
+								return mark(statusID, content.SensitivitySource{ActionID: actionID})
+							})
+							if err != nil {
+								return err
+							}
+							return apphook.ReplaySensitivityMarks(ctx, tx, r.decisions, func(statusID, decisionID string) error {
+								return mark(statusID, content.SensitivitySource{HookDecisionID: decisionID})
+							})
 						})
 				},
 			},

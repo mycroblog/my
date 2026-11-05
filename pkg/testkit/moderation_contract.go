@@ -888,6 +888,38 @@ func moderationLocalReports(t *testing.T, e *moderationEnv) {
 		t.Errorf("ReportsOf(remote) = %+v, %v; want only the filed report", all, err)
 	}
 
+	// A decision of a hook files one report, which reads back with its origin, and no second one.
+	var filed []bool
+	for range 2 {
+		err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			ok, err := e.svc.FileHookReport(ctx, tx, appmoderation.HookReportInput{
+				ReporterAccountID: reporter, TargetAccountID: e.local, DecisionID: NamedID("decision"), Hook: "inbound.status",
+				ReasonCode: "illegal", Comment: "a note",
+			})
+			filed = append(filed, ok)
+			return err
+		})
+		if err != nil {
+			t.Fatalf("FileHookReport: %v", err)
+		}
+	}
+	if !filed[0] || filed[1] {
+		t.Errorf("FileHookReport = %v, want true and then false", filed)
+	}
+	automated, err := e.svc.Reports(ctx, appmoderation.ReportQuery{Category: moderation.CategoryLegal}, 10)
+	if err != nil || len(automated) != 1 {
+		t.Fatalf("reports of the decision = %+v, %v", automated, err)
+	}
+	byHook := automated[0].Report
+	if o := byHook.HookOrigin; o == nil || o.DecisionID != NamedID("decision") || o.Hook != "inbound.status" || o.ReasonCode != "illegal" ||
+		byHook.URI != "" || byHook.Forwarded || byHook.Comment != "a note" {
+		t.Errorf("report of the decision = %+v, origin %+v", byHook, byHook.HookOrigin)
+	}
+	if _, err := e.svc.ResolveReport(ctx, byHook.ID, moderation.OutcomeDismissed, ""); err != nil {
+		t.Fatal(err)
+	}
+	e.events.take()
+
 	// A report of a voice chat room, whose host the voice module names, points at the room and
 	// its revision, no statuses, and is never forwarded (ADR-0100 §11). Erasing the report
 	// erases the reference, and the room is no longer reported.

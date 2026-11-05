@@ -79,6 +79,18 @@
     "defaultMessage": "Forwarded",
     "description": "Term: whether the report was forwarded to the target's server."
   },
+  "admin.report.hook_origin": {
+    "defaultMessage": "Automated review",
+    "description": "Term of a report: the external review that filed it, instead of a person."
+  },
+  "admin.report.hook_origin.value": {
+    "defaultMessage": "Filed by the review of {hook}, not by a person.",
+    "description": "Value of the term of a report filed by an external review. {hook} is the name of the review."
+  },
+  "admin.report.hook_origin.reason": {
+    "defaultMessage": "Reason of the review: {reason}",
+    "description": "The coded reason the external review gave. {reason} is a code such as spam."
+  },
   "admin.report.forwarded.no": {
     "defaultMessage": "No",
     "description": "The report was not forwarded."

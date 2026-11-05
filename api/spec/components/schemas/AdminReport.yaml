@@ -59,6 +59,8 @@ properties:
       none.
     allOf:
       - $ref: ./Id.yaml
+  hook_origin:
+    $ref: ./AdminReportHookOrigin.yaml
   rule_ids:
     description: |
       The IDs of the instance rules that the report cites, retired ones included; only a

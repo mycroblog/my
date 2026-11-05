@@ -346,7 +346,7 @@ func (c reportCommand) show(ctx context.Context, id string) error {
 		uri = "-"
 	}
 	tw := tabwriter.NewWriter(c.stdout, 0, 4, 2, ' ', 0)
-	for _, row := range [][2]string{
+	rows := [][2]string{
 		{"id", r.ID},
 		{"state", describeReportState(st)},
 		{"since", st.Since.Format(time.RFC3339)},
@@ -358,7 +358,11 @@ func (c reportCommand) show(ctx context.Context, id string) error {
 		{"reporter", c.handle(ctx, r.ReporterAccountID) + " (" + r.ReporterAccountID + ")"},
 		{"statuses", strings.Join(r.StatusIDs, " ")},
 		{"history", fmt.Sprintf("%d other reports, %d actions", d.History.Reports, d.History.Actions)},
-	} {
+	}
+	if o := r.HookOrigin; o != nil {
+		rows = append(rows, [2]string{"automated", strings.TrimSpace(o.Hook + " " + o.ReasonCode)})
+	}
+	for _, row := range rows {
 		_, _ = fmt.Fprintf(tw, "%s:\t%s\n", row[0], row[1])
 	}
 	if err := tw.Flush(); err != nil {

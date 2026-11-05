@@ -573,6 +573,15 @@ func (q *Queries) PurgeReportAssignments(ctx context.Context, ids string) error 
 	return err
 }
 
+const purgeReportHookOrigins = `-- name: PurgeReportHookOrigins :exec
+DELETE FROM report_hook_origins WHERE report_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) PurgeReportHookOrigins(ctx context.Context, ids string) error {
+	_, err := q.db.ExecContext(ctx, purgeReportHookOrigins, ids)
+	return err
+}
+
 const purgeReportNotes = `-- name: PurgeReportNotes :exec
 DELETE FROM report_notes WHERE report_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
 `

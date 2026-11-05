@@ -7,16 +7,19 @@ import (
 	"database/sql"
 	"log/slog"
 	"slices"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/mycroblog/my/internal/adapter/plugin/fakeplugin"
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
@@ -26,6 +29,7 @@ import (
 	domcontent "github.com/mycroblog/my/internal/domain/content"
 	domfederation "github.com/mycroblog/my/internal/domain/federation"
 	domfinance "github.com/mycroblog/my/internal/domain/finance"
+	"github.com/mycroblog/my/internal/domain/hook"
 	domidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/moderation"
@@ -48,8 +52,12 @@ func TestProjectionsVerifyAndRebuild(t *testing.T) {
 			if dialect == "postgres" {
 				dbURL = newPostgresDatabase(t)
 			}
+			var verdict atomic.Value
+			var calls atomic.Int64
+			verdict.Store("VERDICT_MARK_SENSITIVE")
 			cfg := loadConfig(t, map[string]string{
 				"MY_DATABASE": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_MAIL": "none", "MY_BILLING_SOURCES": "aws",
+				"MY_PLUGIN_INBOUND_STATUS_ADDRESS": fakeplugin.ServeUnix(t, verdictPlugin(&verdict, &calls)),
 			})
 			app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{
 				Logger: slog.New(slog.DiscardHandler), BillingSources: map[string]appfinance.BillingSource{"aws": billingFixture()},
@@ -269,6 +277,47 @@ func fillFinance(t *testing.T, a *platform.App) {
 	}
 }
 
+// fillHookMarks leaves on status_sensitivity_overrides what decisions of a hook mark: a post that a
+// moderation action marks too, and a decision a moderator cancelled. The rebuild drops the status
+// that has no row any more, whose decision still names it (ADR-0147 §8).
+func fillHookMarks(t *testing.T, a *platform.App, status string) {
+	t.Helper()
+	ctx := t.Context()
+	if _, err := a.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingHookInboundStatusMode, Value: "enforce"}); err != nil {
+		t.Fatal(err)
+	}
+	decide := func(key string) apphook.Result {
+		t.Helper()
+		r, err := a.Hooks.Decide(ctx, apphook.Call{Hook: hook.InboundStatus, SubjectKey: "https://remote.example/activities/" + key})
+		if err != nil || r.Effect != hook.MarkSensitive {
+			t.Fatalf("Decide(%s) = %+v, %v", key, r, err)
+		}
+		return r
+	}
+	kept, cancelled := decide("kept"), decide("cancelled")
+	gone := a.IDs.NewID()
+	err := a.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		for _, r := range []apphook.Result{kept, cancelled} {
+			if err := a.Content.MarkSensitiveByHook(ctx, tx, status, r.DecisionID); err != nil {
+				return err
+			}
+			if err := a.Hooks.LinkStatus(ctx, tx, r.DecisionID, status); err != nil {
+				return err
+			}
+		}
+		return a.Hooks.LinkStatus(ctx, tx, kept.DecisionID, gone)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.Hooks.Override(ctx, cancelled.DecisionID, ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return a.Content.ClearSensitivityOfHookDecision(ctx, tx, cancelled.DecisionID) }); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // fillModeration fills the moderation projections, status_sensitivity_overrides, and the feed
 // restrictions: actions on accounts and domains (one lifted, one that has expired), a report
 // assigned, resolved, and reopened, and an appeal pending and one decided.
@@ -288,6 +337,7 @@ func fillModeration(t *testing.T, a *platform.App, ids map[string]string, dave, 
 	limit := issue(appmoderation.AccountActionInput{TargetAccountID: carol, Kind: moderation.ActionLimit, Duration: time.Hour})
 	issue(appmoderation.AccountActionInput{TargetAccountID: dave, Kind: moderation.ActionForceSensitive, Duration: time.Millisecond})
 	issue(appmoderation.AccountActionInput{TargetAccountID: bob, Kind: moderation.ActionMarkStatusesSensitive, StatusIDs: []string{hello}})
+	fillHookMarks(t, a, hello)
 	lifted := issue(appmoderation.AccountActionInput{TargetAccountID: bob, Kind: moderation.ActionRestrictPosting})
 	if err := a.Moderation.LiftAccountAction(ctx, lifted.ID, "", ""); err != nil {
 		t.Fatalf("LiftAccountAction = %v", err)

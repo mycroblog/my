@@ -911,6 +911,14 @@
     "defaultMessage": "ほかのサーバーからの投稿: 審査が失敗したとき",
     "description": "Label of the choice of what happens when this external review fails while it enforces."
   },
+  "admin.settings.hooks.inbound_status.unfollowed_direct": {
+    "defaultMessage": "外部の審査に、ここの誰もフォローしていない作者のダイレクト投稿も送る",
+    "description": "Label of the setting that sends direct posts from unfollowed authors to the external review."
+  },
+  "admin.settings.hooks.inbound_status.unfollowed_direct.description": {
+    "defaultMessage": "ダイレクト投稿は宛先の人だけのものです。オフのとき、ここの誰もフォローしていない作者からのものは審査せずに宛先に届きます。オンにすると、その本文を外部の審査に送ります。",
+    "description": "Help of the setting that sends direct posts from unfollowed authors to the external review."
+  },
   "admin.settings.hooks.local_status.mode": {
     "defaultMessage": "このサーバーの投稿",
     "description": "Label of the choice of the mode of the external review of this kind of submission."

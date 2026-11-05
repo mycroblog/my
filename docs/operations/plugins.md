@@ -85,7 +85,8 @@ kind, and they share no types.
 
 ## When a call fails
 
-A call that fails counts in the metric [`my.plugin.failures`](running.md) by kind and Connect code. The server drops the
+A call waits for its turn among the calls of its kind that run at once, and the wait counts in its deadline and in the
+metric [`my.plugin.slot_wait`](running.md). A call that fails counts in the metric [`my.plugin.failures`](running.md) by kind and Connect code. The server drops the
 message that a plugin puts in an error, so a plugin's failures have their reasons in the plugin's own log. The server
 does not retry a call itself: the job that made it does, so a plugin must cope with the same call twice.
 

@@ -709,14 +709,23 @@ CREATE TABLE poll_tallies (
 
 -- moderation and content: actions on statuses (#364, data-model §4.3, §4.4) -------------------
 
--- Projection (content): a status that a mark_statuses_sensitive action shows as sensitive, until
--- the action is lifted.
+-- Projection (content): a status shown as sensitive because of a mark_statuses_sensitive action or
+-- a mark_sensitive decision of a hook, exactly one of the two, until that source ends (ADR-0147 §8).
+-- It has no primary key: a key must not hold NULL, and a surrogate would change at each rebuild,
+-- which `my projection verify` would report as drift.
 CREATE TABLE status_sensitivity_overrides (
   status_id TEXT NOT NULL,
-  source_action_id TEXT NOT NULL,
-  PRIMARY KEY (status_id, source_action_id)
+  source_action_id TEXT,
+  source_hook_decision_id TEXT,
+  CONSTRAINT status_sensitivity_overrides_source_check
+    CHECK ((source_action_id IS NULL) <> (source_hook_decision_id IS NULL))
 ) STRICT;
+CREATE UNIQUE INDEX status_sensitivity_overrides_status_id_source_action_id
+  ON status_sensitivity_overrides (status_id, source_action_id);
+CREATE UNIQUE INDEX status_sensitivity_overrides_status_id_source_hook_decision_id
+  ON status_sensitivity_overrides (status_id, source_hook_decision_id);
 CREATE INDEX status_sensitivity_overrides_source_action_id ON status_sensitivity_overrides (source_action_id);
+CREATE INDEX status_sensitivity_overrides_source_hook_decision_id ON status_sensitivity_overrides (source_hook_decision_id);
 
 -- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
 -- the rows of an account.

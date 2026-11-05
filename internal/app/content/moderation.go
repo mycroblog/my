@@ -40,3 +40,17 @@ func (s *Service) MarkSensitiveByModeration(ctx context.Context, tx uow.Tx, stat
 func (s *Service) ClearSensitivityOf(ctx context.Context, tx uow.Tx, actionID string) error {
 	return s.d.Repository.DeleteSensitivityOverridesOf(ctx, tx, actionID)
 }
+
+// MarkSensitiveByHook records inside tx that the mark_sensitive decision decisionID of a hook shows
+// a status as sensitive until a moderator cancels it (ADR-0147 §8). The mark belongs to the status,
+// so it stays on later revisions, whatever is decided about them.
+func (s *Service) MarkSensitiveByHook(ctx context.Context, tx uow.Tx, statusID, decisionID string) error {
+	return s.d.Repository.InsertSensitivityOverrideOfHookDecision(ctx, tx, statusID, decisionID)
+}
+
+// ClearSensitivityOfHookDecision ends inside tx what a cancelled decision of a hook showed as
+// sensitive. What moderation actions and other decisions mark stays marked, and the author's own
+// Sensitive and the force_sensitive restriction are not touched.
+func (s *Service) ClearSensitivityOfHookDecision(ctx context.Context, tx uow.Tx, decisionID string) error {
+	return s.d.Repository.DeleteSensitivityOverridesOfHookDecision(ctx, tx, decisionID)
+}
