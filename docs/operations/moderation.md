@@ -445,6 +445,7 @@ my admin retention release <hold id>
 - You can place several holds on one account. When you release them all, records past their period are removed on the next run. Releasing an already released hold changes nothing.
 - Holds and their release are done only with the CLI, and the actor in the record is the CLI.
 - The data of a deleted account (one whose `ban` reached its date, one the user deleted, or a remote account that its server deleted) is erased 7 days after deletion by the hourly job `account.erase_deleted`. A remote account's posts go too, including those that local users bookmarked or replied to.
+  A remote account that was marked deleted only because a fetch answered `410 Gone`, without its own signed `Delete`, is fetched once more first. A second `410` erases it. If its server serves it again, it comes back with its posts, and nothing is erased. Any other answer (`404`, or no answer) waits for a later run, and 30 days after the deletion the account is erased anyway.
   An account under a hold is not erased. Posts that a report or action points to stay until that record is removed. The account's URI and username and the action records remain.
   The names and descriptions that the account gave its voice chat rooms are emptied; the rooms stay.
 

@@ -24,3 +24,11 @@ SELECT occurred_at FROM account_lifecycle_events
 WHERE account_id = $1 AND kind = 'reactivated'
 ORDER BY occurred_at DESC
 LIMIT 1;
+
+-- FindNewestRemoteDeletion returns who initiated the newest remote_deleted event of an account:
+-- the actor's signed Delete (remote) or this server after a 410 (system).
+-- name: FindNewestRemoteDeletion :one
+SELECT initiated_by FROM account_lifecycle_events
+WHERE account_id = $1 AND kind = 'remote_deleted'
+ORDER BY id DESC
+LIMIT 1;

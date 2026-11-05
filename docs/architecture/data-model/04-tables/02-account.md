@@ -86,7 +86,7 @@
   `deleted` は既存の購読者を通して、アカウントと投稿を表示から外し、`Delete`（Actor）を送ります（[federation.md §7.1](../../federation.md)）。
 - `deleted` から 7 日（`account.ErasureDelay`。`Delete`（Actor）の配送のリトライが終わるまで、鍵とフォローが要る）を過ぎたローカルのアカウントは、1 時間ごとのジョブ `account.erase_deleted` がデータを消します（§8）。
 - 行が無いアカウントは `active` とみなします。作成時には行を作らず、最初のライフサイクルイベントで作ります（イベントからの再構築と一致させるため）。
-- 投影はイベントを `id` 順に畳み込んで作ります: `deactivated` → `deactivated`、`reactivated` / `deletion_canceled` → `active`、`deletion_scheduled` → `deletion_scheduled`（`deletion_due_at` を写す）、`deleted` / `remote_deleted` → `deleted`。`deleted` は最終状態で、以後のイベントでは変わりません。`since` は最後に状態を変えたイベントの `occurred_at` です。
+- 投影はイベントを `id` 順に畳み込んで作ります: `deactivated` → `deactivated`、`reactivated` / `deletion_canceled` → `active`、`deletion_scheduled` → `deletion_scheduled`（`deletion_due_at` を写す）、`deleted` / `remote_deleted` → `deleted`。`deleted` は最終状態で、以後のイベントでは変わりません。例外は `initiated_by = system` の `reactivated` で、取得への 410 で `remote_deleted` にした Actor をサーバーがまた返したときだけ記録し、`active` に戻します（§8）。`remote_deleted` の `initiated_by` は、署名された `Delete` が `remote`、取得への 410 が `system` です。`since` は最後に状態を変えたイベントの `occurred_at` です。
 - `deletion_due_at` は、イベントでは `kind = deletion_scheduled` のとき、投影では `state = deletion_scheduled` のときだけ値を持ちます（`CHECK` 制約）。
 
 #### 移転（ADR-0089）

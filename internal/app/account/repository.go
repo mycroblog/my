@@ -64,6 +64,10 @@ type Repository interface {
 	// a cancellation) do not both act on the state they read.
 	LifecycleState(ctx context.Context, tx uow.Tx, accountID string) (account.LifecycleState, error)
 	UpsertLifecycleState(ctx context.Context, tx uow.Tx, s account.LifecycleState) error
+	// NewestRemoteDeletion returns who initiated the newest remote_deleted event of an account:
+	// InitiatedByRemote for its signed Delete, InitiatedBySystem for a 410. It fails with
+	// ErrNotFound for an account without such an event. A nil tx reads outside any transaction.
+	NewestRemoteDeletion(ctx context.Context, tx uow.Tx, accountID string) (account.Initiator, error)
 	DeleteAllLifecycleStates(ctx context.Context, tx uow.Tx) error
 	// UpsertRemoteHead points a remote actor's head at its newest snapshot.
 	UpsertRemoteHead(ctx context.Context, tx uow.Tx, h account.RemoteHead) error

@@ -185,10 +185,10 @@ func registerLifecycleProjector(r *uow.Projectors, repo Repository, moderated Mo
 		id := ev.Event.AccountID
 		switch {
 		case ev.Deletes(), ev.Deactivates():
-			// Deletion is final, so its restriction never ends (data-model §4.6, §8), and a
+			// A deletion's restriction has no end of its own (data-model §4.6, §8), and a
 			// deactivation lasts until the reactivation.
 			return repo.UpsertAuthorRestriction(ctx, tx, AuthorRestriction{AccountID: id, Restriction: timeline.RestrictProfileView})
-		case ev.Reactivates():
+		case ev.Reactivates(), ev.RestoresRemoteActor():
 			var effects []appmoderation.Effect
 			if moderated != nil {
 				var err error

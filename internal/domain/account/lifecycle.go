@@ -94,10 +94,12 @@ func InitialLifecycleState(accountID string) LifecycleState {
 }
 
 // Apply returns the state after event e. Deletion is final: once deleted, later events do not
-// change the state. Folding an account's events in order with Apply from InitialLifecycleState
+// change the state, except that this server takes back its own inference that a remote actor is
+// gone (a reactivated event initiated by the system, which the account module records only for
+// an actor marked by a 410 that its server serves again). Folding an account's events in order with Apply from InitialLifecycleState
 // yields its current state, which is how the projection is both updated and rebuilt.
 func (s LifecycleState) Apply(e LifecycleEvent) LifecycleState {
-	if s.State == StateDeleted {
+	if s.State == StateDeleted && (e.Kind != LifecycleReactivated || e.InitiatedBy != InitiatedBySystem) {
 		return s
 	}
 	next := LifecycleState{AccountID: s.AccountID, Since: e.OccurredAt}

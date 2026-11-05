@@ -75,7 +75,7 @@ A job type can also be registered or do its work only with some settings; **Need
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
 | `account.execute_deletions` | Deletes the accounts whose scheduled deletion is due, from a ban or from the owner's request, and the accounts that their owners deactivated 30 days ago. An account that came back, or whose deletion was cancelled meanwhile, is left alone, and so is a deactivated account that is the last administrator, with a warning in the log. | Schedule | Default | Next run |
-| `account.erase_deleted` | Erases the data of deleted accounts, local and remote, in bounded batches. | Schedule, then itself | Default | Next run |
+| `account.erase_deleted` | Erases the data of deleted accounts, local and remote, in bounded batches. First fetches a remote account again when only a `410 Gone` marked it deleted. | Schedule, then itself | Default | Next run |
 | `account.prune_remote_profiles` | Shrinks the profile history of remote accounts that nothing local relates to, in batches, and deletes checks of remote handles after 90 days, keeping the newest of each account. | Schedule, then itself | Default | Next run |
 | `graph.expire_mutes` | Deletes the mutes that have expired. | Schedule | Default | Next run |
 | `graph.migrate_follows` | Moves one page of the relationships of a moved account, waiting 10 seconds between pages to spread its deliveries. | An account move being recorded | Default. A step whose data is gone is dead at once. | Safe. It does nothing once the move is cancelled or replaced. While the move is in force, a run much later also moves the accounts that follow, block, or mute the account by then. |

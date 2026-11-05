@@ -4,6 +4,7 @@ package account_test
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
+	domainaccount "github.com/mycroblog/my/internal/domain/account"
 )
 
 type fixedClock struct{ t time.Time }
@@ -134,5 +136,150 @@ func TestErasureGoesPastRetainedStatuses(t *testing.T) {
 	}
 	if repo.erased["a"] || !repo.erased["b"] {
 		t.Errorf("accounts recorded as erased: %v, want only b (a keeps statuses)", repo.erased)
+	}
+}
+
+// stubRecheck answers RecheckDeletion from a map and counts the questions.
+type stubRecheck struct {
+	got   map[string]account.DeletionRecheck
+	asked map[string]int
+}
+
+func (r stubRecheck) RecheckDeletion(_ context.Context, id string) (account.DeletionRecheck, error) {
+	r.asked[id]++
+	return r.got[id], nil
+}
+
+// TestErasureAsksBeforeErasingARemoteActor: a confirmed actor goes, a restored one stays, a local
+// account is not asked about, and an open question holds until ErasureRecheckLimit.
+func TestErasureAsksBeforeErasingARemoteActor(t *testing.T) {
+	now := time.Date(2026, 1, 31, 0, 0, 0, 0, time.UTC)
+	repo := &erasureRepo{
+		targets: []account.ErasureTarget{
+			{AccountID: "confirmed", DeletedAt: now.Add(-account.ErasureDelay)},
+			{AccountID: "local", UserID: "u", DeletedAt: now.Add(-account.ErasureDelay)},
+			{AccountID: "open", DeletedAt: now.Add(-account.ErasureRecheckLimit + time.Second)},
+			{AccountID: "overdue", DeletedAt: now.Add(-account.ErasureRecheckLimit)},
+			{AccountID: "restored", DeletedAt: now.Add(-account.ErasureRecheckLimit)},
+		},
+		profiles: map[string]bool{}, erased: map[string]bool{},
+	}
+	recheck := stubRecheck{asked: map[string]int{}, got: map[string]account.DeletionRecheck{
+		"confirmed": account.RecheckConfirmed, "restored": account.RecheckRestored,
+		"open": account.RecheckInconclusive, "overdue": account.RecheckInconclusive,
+	}}
+	er := account.NewEraser(account.ErasureDeps{UnitOfWork: directUOW{}, Repository: repo, Clock: fixedClock{now}, Recheck: recheck})
+	if _, err := er.Run(t.Context(), account.ErasureCursor{}); err != nil {
+		t.Fatal(err)
+	}
+	for id, want := range map[string]bool{"confirmed": true, "local": true, "open": false, "overdue": true, "restored": false} {
+		if repo.erased[id] != want {
+			t.Errorf("%s erased = %v, want %v", id, repo.erased[id], want)
+		}
+	}
+	if recheck.asked["local"] != 0 {
+		t.Errorf("asked about a local account %d times", recheck.asked["local"])
+	}
+}
+
+// TestErasureAsksOnceForAnAccountItIsErasing: a job that goes on inside an account does not ask
+// again, and the questions count against the transactions of the job.
+func TestErasureAsksOnceForAnAccountItIsErasing(t *testing.T) {
+	now := time.Date(2026, 1, 31, 0, 0, 0, 0, time.UTC)
+	repo := &erasureRepo{targets: []account.ErasureTarget{{AccountID: "a"}}, profiles: map[string]bool{}, erased: map[string]bool{}}
+	recheck := stubRecheck{asked: map[string]int{}, got: map[string]account.DeletionRecheck{"a": account.RecheckConfirmed}}
+	er := account.NewEraser(account.ErasureDeps{
+		UnitOfWork: directUOW{}, Repository: repo, Clock: fixedClock{now}, Batch: 1, Recheck: recheck,
+		Erasers: []account.DataEraser{retainedEraser{items: map[string]int{"a": 160}}},
+	})
+	cur := account.ErasureCursor{}
+	for run := 0; ; run++ {
+		if run == 10 {
+			t.Fatal("the erasure did not end")
+		}
+		res, err := er.Run(t.Context(), cur)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !res.More {
+			break
+		}
+		cur = res.Next
+	}
+	if recheck.asked["a"] != 1 {
+		t.Errorf("asked %d times, want 1", recheck.asked["a"])
+	}
+}
+
+// TestErasureGoesOnAfterItsBudgetEndsAtAQuestion: an account that the budget left unasked is asked
+// about by the next job.
+func TestErasureGoesOnAfterItsBudgetEndsAtAQuestion(t *testing.T) {
+	now := time.Date(2026, 1, 31, 0, 0, 0, 0, time.UTC)
+	repo := &erasureRepo{profiles: map[string]bool{}, erased: map[string]bool{}}
+	recheck := stubRecheck{asked: map[string]int{}, got: map[string]account.DeletionRecheck{}}
+	for i := range 60 {
+		id := "a" + strconv.Itoa(100+i)
+		repo.targets = append(repo.targets, account.ErasureTarget{AccountID: id})
+		recheck.got[id] = account.RecheckRestored
+	}
+	er := account.NewEraser(account.ErasureDeps{UnitOfWork: directUOW{}, Repository: repo, Clock: fixedClock{now}, Recheck: recheck})
+	res, err := er.Run(t.Context(), account.ErasureCursor{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.More || len(recheck.asked) >= 60 {
+		t.Fatalf("first job: more = %v, asked about %d, want it to stop within its budget", res.More, len(recheck.asked))
+	}
+	if res, err = er.Run(t.Context(), res.Next); err != nil || res.More {
+		t.Fatalf("second job: %+v, %v", res, err)
+	}
+	if len(recheck.asked) != 60 {
+		t.Errorf("asked about %d accounts, want 60", len(recheck.asked))
+	}
+}
+
+// lifecycleRepo holds only the lifecycle events that ReplayLifecycle reads.
+type lifecycleRepo struct {
+	account.Repository
+	events []domainaccount.LifecycleEvent
+}
+
+func (r lifecycleRepo) ListLifecycleEvents(context.Context, uow.Tx) ([]domainaccount.LifecycleEvent, error) {
+	return r.events, nil
+}
+
+// A rebuild must not hide an actor that was restored after a 410, nor miss one marked again.
+func TestReplayLifecycleLeavesOutRestoredActors(t *testing.T) {
+	ev := func(id, acct string, kind domainaccount.LifecycleKind, by domainaccount.Initiator) domainaccount.LifecycleEvent {
+		return domainaccount.LifecycleEvent{ID: id, AccountID: acct, Kind: kind, InitiatedBy: by}
+	}
+	repo := lifecycleRepo{events: []domainaccount.LifecycleEvent{
+		ev("1", "again", domainaccount.LifecycleRemoteDeleted, domainaccount.InitiatedBySystem),
+		ev("2", "again", domainaccount.LifecycleReactivated, domainaccount.InitiatedBySystem),
+		ev("3", "again", domainaccount.LifecycleRemoteDeleted, domainaccount.InitiatedByRemote),
+		ev("4", "restored", domainaccount.LifecycleRemoteDeleted, domainaccount.InitiatedBySystem),
+		ev("5", "restored", domainaccount.LifecycleReactivated, domainaccount.InitiatedBySystem),
+	}}
+	var replayed []string
+	err := account.ReplayLifecycle(t.Context(), noTx{}, repo, func(e uow.Event) error {
+		replayed = append(replayed, e.(account.LifecycleEventRecorded).Event.ID)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"1", "3"}; !slices.Equal(replayed, want) {
+		t.Errorf("replayed %v, want %v", replayed, want)
+	}
+}
+
+func TestLifecycleEventRestoresRemoteActorIsNotAReactivation(t *testing.T) {
+	restore := account.LifecycleEventRecorded{Event: domainaccount.LifecycleEvent{Kind: domainaccount.LifecycleReactivated, InitiatedBy: domainaccount.InitiatedBySystem}}
+	if restore.Reactivates() || !restore.RestoresRemoteActor() {
+		t.Errorf("restore: Reactivates %v, RestoresRemoteActor %v", restore.Reactivates(), restore.RestoresRemoteActor())
+	}
+	own := account.LifecycleEventRecorded{Event: domainaccount.LifecycleEvent{Kind: domainaccount.LifecycleReactivated, InitiatedBy: domainaccount.InitiatedBySelf}}
+	if !own.Reactivates() || own.RestoresRemoteActor() {
+		t.Errorf("own: Reactivates %v, RestoresRemoteActor %v", own.Reactivates(), own.RestoresRemoteActor())
 	}
 }

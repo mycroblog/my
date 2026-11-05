@@ -80,7 +80,8 @@ func (r *RemoteActors) ReceiveActorUpdate(ctx context.Context, act *federation.A
 
 // ReceiveActorDelete handles the Delete of a remote actor by itself (federation.md §3.4): the
 // account becomes remote_deleted (account.MarkRemoteDeleted), which hides its profile and posts
-// at once; the erasure removes its data after the delay of a local account's (account.Eraser). The Delete of an actor that is unknown or local, and a
+// at once; the erasure removes its data after the delay of a local account's (account.Eraser),
+// without asking its server, even when a 410 marked the actor first. The Delete of an actor that is unknown or local, and a
 // Delete handled again, are no-ops. The caller has checked the signer as for ReceiveActorUpdate.
 func (r *RemoteActors) ReceiveActorDelete(ctx context.Context, act *federation.Activity) error {
 	if !IsOwnActorActivity(act) || act.Type != federation.ActivityDelete {

@@ -351,8 +351,9 @@ func (p *InboxProcessor) ProcessRelayed(ctx context.Context, activityURI federat
 		return p.dropped(ctx, in, fmt.Errorf("%w: %s is a local actor", ErrDropActivity, act.Actor))
 	}
 	// A deleted actor's data goes with the erasure: nothing of it is stored again, and what it
-	// would undo goes anyway.
-	if in.Actor.Deleted() {
+	// would undo goes anyway. Its own Delete still counts: it settles an actor that a 410 marked.
+	ownDelete := ownActorActivity(in.Activity) && in.Activity.Type == federation.ActivityDelete
+	if in.Actor.Deleted() && !ownDelete {
 		return p.dropped(ctx, in, fmt.Errorf("%w: %s is deleted", ErrDropActivity, act.Actor))
 	}
 	if err := p.restricted(ctx, in); err != nil {

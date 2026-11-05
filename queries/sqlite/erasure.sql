@@ -8,9 +8,9 @@
 
 -- ListAccountsToErase returns, in account ID order after @after, up to @lim accounts that were
 -- deleted at or before @deleted_before and are not erased yet, local or remote (remote_deleted),
--- with the user of a local one.
+-- with when it was deleted and the user of a local one.
 -- name: ListAccountsToErase :many
-SELECT s.account_id, la.user_id FROM account_lifecycle_states s
+SELECT s.account_id, s.since, la.user_id FROM account_lifecycle_states s
 LEFT JOIN local_accounts la ON la.account_id = s.account_id
 WHERE s.state = 'deleted' AND s.since <= CAST(sqlc.arg(deleted_before) AS INTEGER)
   AND s.account_id > CAST(sqlc.arg(after) AS TEXT)

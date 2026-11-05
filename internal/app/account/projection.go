@@ -50,7 +50,8 @@ type LifecycleEventRecorded struct {
 func (LifecycleEventRecorded) EventType() string { return EventLifecycleEventRecorded }
 
 // Deletes reports whether the event deletes the account: a local account's deletion or a
-// remote actor's deletion on its server. Deletion is final (account.LifecycleState.Apply).
+// remote actor's deletion on its server. Deletion is final, but for a 410 that the actor's server
+// takes back (RestoresRemoteActor, account.LifecycleState.Apply).
 func (e LifecycleEventRecorded) Deletes() bool {
 	return e.Event.Kind == account.LifecycleDeleted || e.Event.Kind == account.LifecycleRemoteDeleted
 }
@@ -76,7 +77,13 @@ func (e LifecycleEventRecorded) Deactivates() bool {
 // Reactivates reports whether the event brings back a local account that its owner deactivated
 // (ADR-0089).
 func (e LifecycleEventRecorded) Reactivates() bool {
-	return e.Event.Kind == account.LifecycleReactivated
+	return e.Event.Kind == account.LifecycleReactivated && e.Event.InitiatedBy != account.InitiatedBySystem
+}
+
+// RestoresRemoteActor reports whether the event brings back a remote actor that a 410 marked
+// deleted and whose server serves it again.
+func (e LifecycleEventRecorded) RestoresRemoteActor() bool {
+	return e.Event.Kind == account.LifecycleReactivated && e.Event.InitiatedBy == account.InitiatedBySystem
 }
 
 // RegisterProjectors registers the account module's synchronous projectors (data-model §9):
@@ -275,8 +282,8 @@ func rebuildLifecycleStates(ctx context.Context, tx uow.Tx, repo Repository) err
 // ReplayLifecycle emits inside tx LifecycleEventRecorded for each lifecycle event that deletes an
 // account (LifecycleEventRecorded.Deletes) and for the deactivated event of each account that is
 // deactivated now, in account and event order, for the rebuild of the projections that other
-// modules derive from them (data-model §9). Deletion is final, so these are the accounts that are
-// deleted or deactivated now.
+// modules derive from them (data-model §9). The events of an actor that was restored since are
+// left out, so these are the accounts that are deleted or deactivated now.
 func ReplayLifecycle(ctx context.Context, tx uow.Tx, repo Repository, emit func(uow.Event) error) error {
 	events, err := repo.ListLifecycleEvents(ctx, tx)
 	if err != nil {
@@ -297,7 +304,8 @@ func ReplayLifecycle(ctx context.Context, tx uow.Tx, repo Repository, emit func(
 	for _, e := range events {
 		ev := LifecycleEventRecorded{Event: e}
 		inForce := last[e.AccountID] == e.ID && states[e.AccountID].Deactivated()
-		if !ev.Deletes() && !inForce {
+		deleted := ev.Deletes() && states[e.AccountID].State == account.StateDeleted
+		if !deleted && !inForce {
 			continue
 		}
 		if err := emit(ev); err != nil {

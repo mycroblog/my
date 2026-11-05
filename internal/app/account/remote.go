@@ -398,29 +398,87 @@ func (s *Service) SaveRemoteActor(ctx context.Context, in RemoteActorInput) (Act
 	return s.actor(ctx, a)
 }
 
-// MarkRemoteDeleted records inside tx that a remote actor was deleted on its server (a Delete
-// of itself, or a fetch answered with 410 Gone). An account that is deleted already is left as
-// it is, so that redelivered deletions are no-ops.
+// MarkRemoteDeleted records inside tx that a remote actor deleted itself with a signed Delete,
+// which the erasure takes as it is. An actor that a 410 marked gets the event too, so that the
+// erasure no longer asks its server; for one that a Delete marked already this does nothing, so
+// that redelivered deletions are no-ops.
 func (s *Service) MarkRemoteDeleted(ctx context.Context, tx uow.Tx, accountID string) error {
-	a, err := s.d.Repository.Account(ctx, tx, accountID)
+	deleted, err := s.remoteDeleted(ctx, tx, accountID)
 	if err != nil {
 		return err
 	}
+	if deleted {
+		switch by, err := s.d.Repository.NewestRemoteDeletion(ctx, tx, accountID); {
+		case errors.Is(err, ErrNotFound):
+			return nil
+		case err != nil:
+			return err
+		case by != account.InitiatedBySystem:
+			return nil
+		}
+	}
+	return s.recordLifecycle(ctx, tx, accountID, account.LifecycleRemoteDeleted, account.InitiatedByRemote)
+}
+
+// MarkRemoteGone records inside tx that a fetch of a remote actor answered 410 Gone. It hides the
+// actor as a Delete does, but the erasure fetches the actor once more first (RecheckDeletion). An
+// account that is deleted already is left as it is.
+func (s *Service) MarkRemoteGone(ctx context.Context, tx uow.Tx, accountID string) error {
+	deleted, err := s.remoteDeleted(ctx, tx, accountID)
+	if err != nil || deleted {
+		return err
+	}
+	return s.recordLifecycle(ctx, tx, accountID, account.LifecycleRemoteDeleted, account.InitiatedBySystem)
+}
+
+// RestoreRemoteActor takes back inside tx the mark of a 410 on an actor whose server serves it
+// again. It fails with ErrActorDeleted when the actor's own Delete marked it, which is final.
+func (s *Service) RestoreRemoteActor(ctx context.Context, tx uow.Tx, accountID string) error {
+	deleted, err := s.remoteDeleted(ctx, tx, accountID)
+	if err != nil || !deleted {
+		return err
+	}
+	switch by, err := s.d.Repository.NewestRemoteDeletion(ctx, tx, accountID); {
+	case err != nil && !errors.Is(err, ErrNotFound):
+		return err
+	case err != nil || by != account.InitiatedBySystem:
+		return fmt.Errorf("account %s: %w", accountID, ErrActorDeleted)
+	}
+	return s.recordLifecycle(ctx, tx, accountID, account.LifecycleReactivated, account.InitiatedBySystem)
+}
+
+// RemoteDeletionUnconfirmed reports whether a 410 is all that marked the account deleted: no
+// signed Delete of the actor followed it.
+func (s *Service) RemoteDeletionUnconfirmed(ctx context.Context, accountID string) (bool, error) {
+	by, err := s.d.Repository.NewestRemoteDeletion(ctx, nil, accountID)
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
+	}
+	return by == account.InitiatedBySystem, err
+}
+
+// remoteDeleted reports whether the remote account is deleted, and fails with ErrNotRemote for a
+// local one.
+func (s *Service) remoteDeleted(ctx context.Context, tx uow.Tx, accountID string) (bool, error) {
+	a, err := s.d.Repository.Account(ctx, tx, accountID)
+	if err != nil {
+		return false, err
+	}
 	if a.IsLocal() {
-		return fmt.Errorf("account %s: %w", accountID, ErrNotRemote)
+		return false, fmt.Errorf("account %s: %w", accountID, ErrNotRemote)
 	}
 	st, err := s.d.Repository.LifecycleState(ctx, tx, accountID)
-	switch {
-	case errors.Is(err, ErrNotFound):
-	case err != nil:
-		return err
-	case st.State == account.StateDeleted:
-		return nil
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
 	}
-	e := account.LifecycleEvent{
-		ID: s.d.IDs.NewID(), AccountID: accountID, Kind: account.LifecycleRemoteDeleted,
-		InitiatedBy: account.InitiatedByRemote, OccurredAt: s.d.Clock.Now(),
+	if err != nil {
+		return false, err
 	}
+	return st.State == account.StateDeleted, nil
+}
+
+func (s *Service) recordLifecycle(ctx context.Context, tx uow.Tx, accountID string, kind account.LifecycleKind, by account.Initiator) error {
+	e := account.LifecycleEvent{ID: s.d.IDs.NewID(), AccountID: accountID, Kind: kind, InitiatedBy: by, OccurredAt: s.d.Clock.Now()}
 	if err := s.d.Repository.InsertLifecycleEvent(ctx, tx, e); err != nil {
 		return err
 	}

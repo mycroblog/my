@@ -38,7 +38,7 @@ func (r *AccountRepository) ListAccountsToErase(ctx context.Context, deletedBefo
 	}
 	out := make([]appaccount.ErasureTarget, len(rows))
 	for i, row := range rows {
-		out[i] = appaccount.ErasureTarget{AccountID: row.AccountID, UserID: row.UserID.String}
+		out[i] = appaccount.ErasureTarget{AccountID: row.AccountID, UserID: row.UserID.String, DeletedAt: fromMillis(row.Since)}
 	}
 	return out, nil
 }

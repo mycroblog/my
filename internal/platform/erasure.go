@@ -3,6 +3,7 @@
 package platform
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mycroblog/my/internal/app/account"
@@ -39,6 +40,7 @@ func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository,
 	notifications := notification.NewEraser(a.UnitOfWork, notes)
 	account.NewEraser(account.ErasureDeps{
 		UnitOfWork: a.UnitOfWork, Repository: profiles, Holds: a.Moderation, Jobs: a.Jobs, Clock: a.Clock,
+		Recheck: deletionRecheck{a},
 		Erasers: []account.DataEraser{
 			content.NewStatusEraser(content.ErasureDeps{
 				UnitOfWork: a.UnitOfWork, Repository: statuses, Erasure: posts, Notifications: notifications,
@@ -71,4 +73,11 @@ func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository,
 		},
 	}).RegisterJobs(a.Handlers, a.Scheduler)
 	return nil
+}
+
+// deletionRecheck asks a.RemoteActors, which setUpRemoteActors builds after the erasure.
+type deletionRecheck struct{ a *App }
+
+func (r deletionRecheck) RecheckDeletion(ctx context.Context, accountID string) (account.DeletionRecheck, error) {
+	return r.a.RemoteActors.RecheckDeletion(ctx, accountID)
 }

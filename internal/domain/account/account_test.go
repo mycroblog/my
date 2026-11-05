@@ -87,6 +87,25 @@ func TestLifecycleApply(t *testing.T) {
 	}
 }
 
+// Only this server's own inference that a remote actor is gone can be taken back.
+func TestLifecycleDeletionIsFinalButForTheSystemsRestore(t *testing.T) {
+	deleted := account.LifecycleState{AccountID: accountB, State: account.StateDeleted}
+	for _, by := range []account.Initiator{account.InitiatedBySelf, account.InitiatedByModerator, account.InitiatedByRemote} {
+		e := account.LifecycleEvent{AccountID: accountB, Kind: account.LifecycleReactivated, InitiatedBy: by}
+		if got := deleted.Apply(e); got.State != account.StateDeleted {
+			t.Errorf("reactivated by %s: %+v, want deleted", by, got)
+		}
+	}
+	e := account.LifecycleEvent{AccountID: accountB, Kind: account.LifecycleDeletionCanceled, InitiatedBy: account.InitiatedBySystem}
+	if got := deleted.Apply(e); got.State != account.StateDeleted {
+		t.Errorf("deletion_canceled by the system: %+v, want deleted", got)
+	}
+	e.Kind = account.LifecycleReactivated
+	if got := deleted.Apply(e); got.State != account.StateActive {
+		t.Errorf("reactivated by the system: %+v, want active", got)
+	}
+}
+
 func TestLifecycleActive(t *testing.T) {
 	for state, want := range map[account.LifecycleStateName]bool{
 		account.StateActive: true, account.StateDeactivated: false, account.StateDeletionScheduled: false, account.StateDeleted: false,
