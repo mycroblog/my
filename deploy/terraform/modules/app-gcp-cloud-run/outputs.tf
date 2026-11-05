@@ -10,6 +10,11 @@ output "service_uri" {
   value       = google_cloud_run_v2_service.server.uri
 }
 
+output "origin_host" {
+  description = "Host name of the URL Cloud Run gave the service, for an ingress that takes its origin as an input."
+  value       = trimprefix(google_cloud_run_v2_service.server.uri, "https://")
+}
+
 output "service_account_email" {
   description = "Service account of the service and the jobs."
   value       = google_service_account.server.email

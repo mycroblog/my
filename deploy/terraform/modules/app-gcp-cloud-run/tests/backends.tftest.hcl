@@ -549,3 +549,16 @@ run "two_ingresses_that_set_trust_fail" {
 
   expect_failures = [google_service_account.server]
 }
+
+# A backend of another platform fails rather than being dropped by the conversion to this module's type.
+run "a_backend_for_aws_fails" {
+  command = plan
+
+  variables {
+    backends = [
+      { roles = [{ role = "sqs:SendMessage", scope = "policy", resource = "arn:aws:sqs:us-east-1:111122223333:my-jobs" }] },
+    ]
+  }
+
+  expect_failures = [var.backends]
+}

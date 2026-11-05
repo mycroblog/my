@@ -16,7 +16,7 @@ module "db" {
 
 | Input | Meaning |
 | --- | --- |
-| `url_secret_id` | Secret in Secret Manager that holds the connection URL, which the operator created by hand |
+| `url_secret_id` | Secret that holds the connection URL, which the operator created by hand: its ID in Secret Manager, its ARN in AWS Secrets Manager |
 
 | Output | Value |
 | --- | --- |

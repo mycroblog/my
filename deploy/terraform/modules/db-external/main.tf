@@ -8,7 +8,7 @@ terraform {
 }
 
 variable "url_secret_id" {
-  description = "Secret Manager secret that holds the connection URL (its ID, or projects/<project>/secrets/<id>)."
+  description = "Secret that holds the connection URL, as the platform's store refers to it: on Google Cloud its ID or projects/<project>/secrets/<id>, on AWS its ARN."
   type        = string
   nullable    = false
 }

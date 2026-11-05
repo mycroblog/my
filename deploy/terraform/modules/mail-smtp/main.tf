@@ -38,7 +38,7 @@ variable "username" {
 }
 
 variable "password_secret_id" {
-  description = "Secret Manager secret that holds the SMTP password (its ID, or projects/<project>/secrets/<id>). Null for a server that needs no authentication."
+  description = "Secret that holds the SMTP password, as the platform's store refers to it: on Google Cloud its ID or projects/<project>/secrets/<id>, on AWS its ARN. Null for a server that needs no authentication."
   type        = string
   default     = null
 

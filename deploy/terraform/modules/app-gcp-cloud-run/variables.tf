@@ -84,7 +84,7 @@ variable "backends" {
         )
       ]
     ]))
-    error_message = "Each role has a scope of project (without a resource), or bucket, topic, queue, service_account, or crypto_key (with its resource)."
+    error_message = "Each role has a scope of project (without a resource), or bucket, topic, queue, service_account, or crypto_key (with its resource). A scope of policy is a backend for AWS."
   }
 
   validation {
