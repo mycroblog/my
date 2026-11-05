@@ -176,6 +176,17 @@ func TestLocalStatusHook(t *testing.T) {
 	if got := plugin.calls.Load(); got != calls {
 		t.Errorf("the appeal and its review called the plugin %d times", got-calls)
 	}
+	// An ID that is not one never reaches the database.
+	for _, path := range []string{"/admin/hook_appeals/x/uphold", "/admin/hook_decisions/x/override"} {
+		if res := c.do("bob", http.MethodPost, path, nil, nil); res.StatusCode != http.StatusNotFound {
+			t.Errorf("POST %s = %d", path, res.StatusCode)
+		}
+	}
+	for _, path := range []string{"/admin/hook_appeals?cursor=eA", "/admin/hook_decisions?cursor=eA"} {
+		if res := c.do("bob", http.MethodGet, path, nil, nil); res.StatusCode != http.StatusBadRequest {
+			t.Errorf("GET %s = %d", path, res.StatusCode)
+		}
+	}
 
 	// Overturning cancels the decision and takes the account out of the hook.
 	second := rejected("alice", "buy now, one more time")

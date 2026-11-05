@@ -10,6 +10,7 @@ import (
 	"time"
 
 	apphook "github.com/mycroblog/my/internal/app/hook"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/hook"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
@@ -75,7 +76,8 @@ func (s *Server) ListHookDecisions(ctx context.Context, req ListHookDecisionsReq
 	} else if p != nil {
 		return ListHookDecisionsdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
-	pq := s.parseOpaquePage(ctx, req.Params.Cursor, req.Params.Limit)
+	// The cursor is a decision's ID, which goes to the database as one (ADR-0003 §9).
+	pq := s.parsePage(ctx, req.Params.Cursor, req.Params.Limit)
 	if pq.problem != nil {
 		return ListHookDecisionsdefaultApplicationProblemPlusJSONResponse(*pq.problem), nil
 	}
@@ -165,6 +167,9 @@ func (s *Server) OverrideHookDecision(ctx context.Context, req OverrideHookDecis
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if !kernel.ValidID(req.Id) {
+		return OverrideHookDecisiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	}
 	record, err := s.o.HookDecisions.Override(ctx, req.Id, v.UserID)
 	switch {
