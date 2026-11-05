@@ -163,7 +163,7 @@ ADR-0058 と [data-model §8](../architecture/data-model/08-deletion-and-purge.m
 
 ここでは編集せず、実装の Issue がそれぞれ変える。
 
-**要件・設計文書**
+要件と設計文書の変更は次のとおりである。
 
 | 文書 | 変更 |
 | --- | --- |
@@ -193,7 +193,7 @@ ADR-0058 と [data-model §8](../architecture/data-model/08-deletion-and-purge.m
 
 **運営者の文書**: `docs/operations/search.md`（有効にする手順、切り替え、§12 の手順、バックアップ、ワーカーの分け方、問い合わせが URL に載ることと前段のログ、バックエンドがまだ無いこと）を足して `docs/README.md` から張る。`crawlers.md`（`indexable`）、`instance-settings.md`、`backup.md`、`service-closure.md`、`privacy-policy-template.md` と `processing-record-template.md`（本文を外部のエンジンに渡す場合）を直す。`docs/reference/jobs.md` に種類を足し、`admin-cli.md` に `my search` を足す。
 
-**実装の Issue**
+実装の Issue の変更は次のとおりである。
 
 | Issue | 変更 |
 | --- | --- |
