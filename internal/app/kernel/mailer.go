@@ -13,8 +13,9 @@ import (
 )
 
 // Mailer sends email (overview §3, the Mailer port). The adapters live in internal/adapter/mail:
-// mail/none logs messages instead of sending them, and mail/smtp sends them over SMTP. Every
-// adapter passes testkit.MailerContract.
+// mail/none logs messages instead of sending them, mail/smtp sends them over SMTP, mail/ses through
+// the SES API, and mail/plugin through an operator's plugin. Every adapter passes
+// testkit.MailerContract.
 //
 // Only job handlers call Send (ADR-0086 §1): a use case enqueues a job of its purpose in the
 // transaction of the fact that the email tells, and the handler builds the message and sends
@@ -59,7 +60,8 @@ const (
 )
 
 // MailMessage is an email to one recipient. MailComposer builds it; the adapter adds the
-// envelope (From with FromName, Reply-To, Message-ID, Date, Auto-Submitted).
+// envelope (From with FromName, Reply-To, Message-ID, Date, Auto-Submitted), or the plugin
+// behind mail/plugin does.
 type MailMessage struct {
 	Category MailCategory
 	// To is a bare address (local@domain).

@@ -152,6 +152,16 @@ func (s *Service) FederationMode(ctx context.Context) (instance.FederationMode, 
 	return settings.FederationMode(), nil
 }
 
+// SearchVisibilities returns the visibilities that the setting search_visibilities names
+// (ADR-0149 §5), read at each call so that a change applies at once.
+func (s *Service) SearchVisibilities(ctx context.Context) ([]string, error) {
+	settings, err := s.Settings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return settings.SearchVisibilities(), nil
+}
+
 // FederationModeTx is FederationMode inside tx.
 func (s *Service) FederationModeTx(ctx context.Context, tx uow.Tx) (instance.FederationMode, error) {
 	cur, err := s.d.Repository.ListCurrentSettingsTx(ctx, tx)

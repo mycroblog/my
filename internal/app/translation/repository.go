@@ -47,6 +47,21 @@ type Usage struct {
 	Server  int64
 }
 
+// ServerUsage is what the whole server did in one month.
+type ServerUsage struct {
+	// Characters are those sent to providers.
+	Characters int64
+	// CacheHits counts the requests answered from a kept translation, and CacheMisses those that
+	// went to a provider.
+	CacheHits, CacheMisses int64
+}
+
+// Limits are the monthly characters that may be sent to providers.
+type Limits struct {
+	Account int64
+	Server  int64
+}
+
 // Repository is the module's persistence. The database adapters implement it and pass
 // testkit.TranslationRepositoryContract.
 type Repository interface {
@@ -63,11 +78,17 @@ type Repository interface {
 	ListExpiredTranslations(ctx context.Context, createdBefore time.Time, limit int) ([]string, error)
 	// DeleteTranslations deletes translations with their child rows by ID.
 	DeleteTranslations(ctx context.Context, tx uow.Tx, ids []string) error
-	// AddUsage adds characters, which are not negative, to the month's rows of the account and of
-	// the server. A month is YYYY-MM in UTC.
-	AddUsage(ctx context.Context, tx uow.Tx, accountID, month string, characters int64) error
+	// AddUsageWithin adds characters, which are not negative, to the month's rows of the account
+	// and of the server, and reports whether the result is within limits. A month is YYYY-MM in
+	// UTC. It decides under the rows' locks, so that concurrent requests cannot pass a limit
+	// together. On false the caller ends tx with an error: the account's row may have grown.
+	AddUsageWithin(ctx context.Context, tx uow.Tx, accountID, month string, characters int64, limits Limits) (bool, error)
+	// AddCacheLookup counts a request of the month as answered from the cache or not.
+	AddCacheLookup(ctx context.Context, tx uow.Tx, month string, hit bool) error
 	// FindUsage returns the month's characters of the account and of the server, zero without a row.
 	FindUsage(ctx context.Context, accountID, month string) (Usage, error)
+	// FindServerUsage returns the month's row of the server, zero without a row.
+	FindServerUsage(ctx context.Context, month string) (ServerUsage, error)
 	// DeleteAccountUsage deletes every row of the account's usage.
 	DeleteAccountUsage(ctx context.Context, tx uow.Tx, accountID string) error
 	// DeleteUsageBefore deletes the rows of the accounts and of the server before month.

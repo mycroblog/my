@@ -34,6 +34,10 @@ ORDER BY s.action_id, s.status_id;
 SELECT account_id, restriction, source_action_id, effective_until FROM account_restrictions
 ORDER BY account_id, restriction, source_action_id;
 
+-- name: ListAllDomainRestrictionRows :many
+SELECT domain, restriction, source_action_id, effective_until FROM domain_restrictions
+ORDER BY domain, restriction, source_action_id;
+
 -- name: DeleteAllAccountRestrictions :exec
 DELETE FROM account_restrictions;
 

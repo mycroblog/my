@@ -16,10 +16,13 @@ import (
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
 
+	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/billing/v1/billingv1connect"
 	hookv1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/hook/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/hook/v1/hookv1connect"
+	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/mailer/v1/mailerv1connect"
 	probev1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1/probev1connect"
+	appfinance "github.com/mycroblog/my/internal/app/finance"
 )
 
 // Options make the fake misbehave or require credentials.
@@ -30,6 +33,11 @@ type Options struct {
 	Broken bool
 	// Block holds every call until its context ends.
 	Block bool
+	// Billing is what the fake's billing kind reports, under the source's own rules of requests and failures. Without it
+	// the fake does not serve the kind.
+	Billing appfinance.BillingSource
+	// Mailbox is the mail service of the fake's mailer kind. Without it the fake does not serve the kind.
+	Mailbox *Mailbox
 }
 
 // Recorder tells what reached a fake.
@@ -63,6 +71,8 @@ func (r *Recorder) wrap(token string, h http.Handler) http.Handler {
 func Connect(o Options) (http.Handler, *Recorder) {
 	server := connect.NewServer()
 	probev1connect.RegisterProbeServiceHandler(server, &probeServer{o: o})
+	billingv1connect.RegisterBillingServiceHandler(server, &billingServer{o: o})
+	mailerv1connect.RegisterMailerServiceHandler(server, &mailerServer{o: o})
 	hookv1connect.RegisterHookServiceHandler(server, &hookServer{o: o})
 	mux := http.NewServeMux()
 	connecthttp.Mount(mux, server)
@@ -151,6 +161,8 @@ func JSON(o Options) (http.Handler, *Recorder) {
 			"extra":   "a field the server does not know, which it ignores",
 		})
 	})
+	serveBillingJSON(mux, o)
+	serveMailerJSON(mux, o)
 	mux.HandleFunc("POST /my.plugin.hook.v1.HookService/Check", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			http.Error(w, "send JSON", http.StatusUnsupportedMediaType)

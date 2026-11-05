@@ -57,9 +57,12 @@ const (
 	DefaultAWSRequestsPerMonth = 120
 )
 
-// SourceProvider returns the provider's name that the totals and the screens show for a source:
-// AWS, Google Cloud, or the source's name for another.
-func SourceProvider(source string) string {
+// sourceProvider returns the provider's name that the totals and the screens show for a source:
+// the name of Deps.ProviderNames, AWS, Google Cloud, or the source's name for another.
+func (s *Service) sourceProvider(source string) string {
+	if name := s.d.ProviderNames[source]; name != "" {
+		return name
+	}
 	switch source {
 	case "aws":
 		return "AWS"
@@ -88,7 +91,7 @@ type Rules struct {
 func (s *Service) Rules() Rules {
 	out := Rules{WeekStart: time.Monday, Sources: make([]SourceRule, 0, len(s.d.Sources))}
 	for _, src := range s.d.Sources {
-		out.Sources = append(out.Sources, SourceRule{Source: src.Name(), Provider: SourceProvider(src.Name()), Location: src.Location()})
+		out.Sources = append(out.Sources, SourceRule{Source: src.Name(), Provider: s.sourceProvider(src.Name()), Location: src.Location()})
 	}
 	return out
 }
@@ -480,7 +483,7 @@ func (s *Service) RequestImport(ctx context.Context, source, byUserID string) er
 	}
 	e := appmoderation.AuditEntry{
 		ID: s.d.IDs.NewID(), Action: appmoderation.AuditBillingImportQueued, TargetKind: appmoderation.AuditTargetBillingSource,
-		TargetID: source, TargetLabel: SourceProvider(source), OccurredAt: now,
+		TargetID: source, TargetLabel: s.sourceProvider(source), OccurredAt: now,
 	}
 	e.ActorKind, e.ActorUserID = appmoderation.AuditActor(byUserID)
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
@@ -548,7 +551,7 @@ func (s *Service) ImportStatuses(ctx context.Context) ([]ImportStatus, error) {
 	now := kernel.Normalize(s.d.Clock.Now())
 	out := make([]ImportStatus, 0, len(s.d.Sources))
 	for _, src := range s.d.Sources {
-		st := ImportStatus{Source: src.Name(), Provider: SourceProvider(src.Name()), Location: src.Location(), Method: src.Method()}
+		st := ImportStatus{Source: src.Name(), Provider: s.sourceProvider(src.Name()), Location: src.Location(), Method: src.Method()}
 		if caps, ok := s.d.Caps[src.Name()]; ok {
 			st.Caps = &caps
 		}
@@ -624,8 +627,8 @@ func (s *Service) importedEntries(ctx context.Context) ([]finance.Entry, error) 
 	out := make([]finance.Entry, len(heads))
 	for i, h := range heads {
 		out[i] = finance.Entry{
-			Range: h.Covered, Amount: h.Amount, Provider: NormalizeProvider(SourceProvider(h.Key.Source)), Category: h.Category,
-			Spelling:  finance.Spelling{Name: SourceProvider(h.Key.Source)},
+			Range: h.Covered, Amount: h.Amount, Provider: NormalizeProvider(s.sourceProvider(h.Key.Source)), Category: h.Category,
+			Spelling:  finance.Spelling{Name: s.sourceProvider(h.Key.Source)},
 			Estimated: h.Kind == finance.KindEstimate,
 			Item:      finance.ItemRef{Key: "import:" + h.Key.Source + ":" + h.Key.Service, Name: h.Key.Service},
 		}

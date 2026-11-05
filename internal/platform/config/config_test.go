@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 )
 
 var (
@@ -700,7 +702,7 @@ func TestLoadInvalid(t *testing.T) {
 		{
 			name: "unknown billing source",
 			env:  with(minimal(), "MY_BILLING_SOURCES", "aws, azure"),
-			want: []string{`billing_sources (MY_BILLING_SOURCES): "azure" is not a billing source; use aws or gcp, comma-separated`},
+			want: []string{`billing_sources (MY_BILLING_SOURCES): "azure" is not a billing source; use aws, gcp, or plugin, comma-separated`},
 		},
 		{
 			name: "repeated billing source",
@@ -1064,6 +1066,22 @@ func skipExcluded(t *testing.T, env map[string]string) {
 	}
 }
 
+// withPluginTokens is with, plus an address and a token for every kind; only with, in a build that refuses a destination.
+func withPluginTokens(base map[string]string, kv ...string) map[string]string {
+	if pluginsLeftOutTag != "" {
+		return with(base, kv...)
+	}
+	for _, k := range kind.Delegated() {
+		address, token := schemaField(k.Key(kind.SuffixAddress)).env(), schemaField(k.Key(kind.SuffixToken)).env()
+		kv = append(kv, address, "unix:///run/my/plugin.sock", token, "s3cret")
+	}
+	return with(base, kv...)
+}
+
+func schemaField(key string) *field {
+	return &schema[slices.IndexFunc(schema, func(f field) bool { return f.key == key })]
+}
+
 func TestLoadSettingsRedactSecrets(t *testing.T) {
 	_, settings, err := Load(source(withPluginTokens(minimal(), "MY_KEK_PREVIOUS", testKEK1, "MY_MAIL_SMTP_PASSWORD", "hunter3",
 		"MY_CAPTCHA", "turnstile", "MY_CAPTCHA_SITE_KEY", "site", "MY_CAPTCHA_SECRET_KEY", "0x5eCrE7",
@@ -1083,6 +1101,9 @@ func TestLoadSettingsRedactSecrets(t *testing.T) {
 	keys := make([]string, len(settings))
 	for i, s := range settings {
 		keys[i] = s.Key
+		if pluginsLeftOutTag != "" && strings.HasPrefix(s.Key, "plugin_") {
+			continue // The build refuses a destination, so these have no value to redact.
+		}
 		if s.Secret && s.Value != "(redacted)" {
 			t.Errorf("%s = %q, want redacted", s.Key, s.Value)
 		}

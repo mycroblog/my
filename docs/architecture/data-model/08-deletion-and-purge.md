@@ -18,6 +18,11 @@
 - `Delete`（Actor）は、`active` なフォロワーの inbox と、既知の shared inbox（削除されていないリモートの Actor の `remote_account_heads.shared_inbox_url`）に送ります。
 - サービスのクローズ（[ADR-0088](../../adr/0088-service-shutdown-modes.md) §3）は、削除されていないローカルのアカウントすべて（凍結中を含み、移転済みは最後）に同じ宛先へ `Delete`（Actor）を送ります。アカウントごとに `closure_deletes` を 1 行記録し、ライフサイクルは変えず、消去ジョブも動かしません（[federation.md §15](../federation.md#15-サービスの終了)）。データはサーバーが自分では消さず、運営者が停止の後に DB・Blob・バックアップを破棄します。
 - 消去は「イベントを記録 → 投影から即時に除外 → 消去ジョブが一定件数ずつ物理削除」の順です。表示から消えるのは即時、物理削除は非同期です。
+- 全文検索の索引（ADR-0149 §11）は投影と同じ位置に置きます。`search` が `none` でないサーバーでは次のとおりで、`none` では何も積みません。
+  - 投稿の削除は、どの経路でも `content.status_deleted` の `search.sync_status` が索引から消します。消去ジョブが記録する削除（`ByAccountErasure`）は積みません。
+  - アカウントの `deleted`・`deactivated`・`remote_deleted` は、`account.lifecycle_event_recorded` の `search.sync_author` が作者の文書をすべて消します。消去ジョブを待たず、保全（§4.3）でも止めません。`reactivated` では同じジョブが入れ直します。
+  - 消去ジョブの `search` の `DataEraser` は `search.sync_author` を積むだけで、エンジンを呼びません。任意のサービスの障害で全アカウントの消去を止めないためです。
+  - 検索結果は DB から読み直して閲覧の方針を通すので、索引の遅れは文書の消去が遅れるだけで、見せてはいけない投稿は出ません。
 - アカウント削除の消去は、1 時間ごとのジョブ `account.erase_deleted` が、`deleted` から 7 日を過ぎた、保全（§4.3）の無いアカウントに、ローカルでもリモートでも（`remote_deleted`）行います。リモートのアカウントの鍵も消します。7 日のあいだにリモートのサーバーの再送は終わるので、遅れて届いたアクティビティの検証に鍵は要りません。
   - 取得への 410 だけで `remote_deleted` になった Actor（最新の `remote_deleted` が `initiated_by = system`）は、消し始める前に一度取得します。もう一度 410 なら消します。文書が返れば Actor を戻し（`reactivated`、`initiated_by = system`）、消しません。ほかの答えなら消さず、次の回に聞き直し、削除から 30 日（`account.ErasureRecheckLimit`）を過ぎたら消します。署名された `Delete`（`initiated_by = remote`）は聞き直しません。消し始めたアカウントは聞き直しません。聞き直しは 1 回のジョブの 50 トランザクションの枠に数えます。
   - モジュールごとの消去（`content` の投稿と操作 → `graph` → `timeline` → `notification` → `instance` のお知らせの既読 → `content` のメディア → `identity` → `account`）を、1 文あたり 100 行（投稿は 100 件）・1 回のジョブで 50 トランザクションまで行い、使い切ったらカーソルを持った次のジョブが続けます。カーソルは最後に終えたアカウントの ID と、途中のアカウントがあればその ID・途中の消去・その消去のカーソル・それまでに残した行があるかで、次のジョブは途中のアカウントの続きから始めます。残す投稿が 1 回のジョブで見きれないほどあっても、毎回先頭から見直さずに後の投稿・後のモジュール・次のアカウントへ進みます。どれも再実行してよい。

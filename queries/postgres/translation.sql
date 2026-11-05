@@ -51,19 +51,35 @@ DELETE FROM status_translation_poll_options WHERE translation_id = @translation_
 -- name: DeleteStatusTranslation :exec
 DELETE FROM status_translations WHERE id = @id;
 
--- name: AddTranslationAccountUsage :exec
-INSERT INTO translation_account_usage (account_id, month, characters) VALUES (@account_id, @month, @characters)
-ON CONFLICT (account_id, month) DO UPDATE SET characters = translation_account_usage.characters + excluded.characters;
+-- name: EnsureTranslationAccountUsage :exec
+INSERT INTO translation_account_usage (account_id, month, characters) VALUES (@account_id, @month, 0)
+ON CONFLICT (account_id, month) DO NOTHING;
 
--- name: AddTranslationServerUsage :exec
-INSERT INTO translation_server_usage (month, characters) VALUES (@month, @characters)
-ON CONFLICT (month) DO UPDATE SET characters = translation_server_usage.characters + excluded.characters;
+-- name: AddTranslationAccountUsageWithin :execrows
+UPDATE translation_account_usage SET characters = characters + @characters
+WHERE account_id = @account_id AND month = @month AND characters + @characters <= @max_characters;
+
+-- name: EnsureTranslationServerUsage :exec
+INSERT INTO translation_server_usage (month) VALUES (@month)
+ON CONFLICT (month) DO NOTHING;
+
+-- name: AddTranslationServerUsageWithin :execrows
+UPDATE translation_server_usage SET characters = characters + @characters
+WHERE month = @month AND characters + @characters <= @max_characters;
+
+-- name: AddTranslationCacheHit :exec
+INSERT INTO translation_server_usage (month, cache_hits) VALUES (@month, 1)
+ON CONFLICT (month) DO UPDATE SET cache_hits = translation_server_usage.cache_hits + 1;
+
+-- name: AddTranslationCacheMiss :exec
+INSERT INTO translation_server_usage (month, cache_misses) VALUES (@month, 1)
+ON CONFLICT (month) DO UPDATE SET cache_misses = translation_server_usage.cache_misses + 1;
 
 -- name: GetTranslationAccountUsage :one
 SELECT characters FROM translation_account_usage WHERE account_id = @account_id AND month = @month;
 
 -- name: GetTranslationServerUsage :one
-SELECT characters FROM translation_server_usage WHERE month = @month;
+SELECT characters, cache_hits, cache_misses FROM translation_server_usage WHERE month = @month;
 
 -- name: DeleteTranslationAccountUsage :exec
 DELETE FROM translation_account_usage WHERE account_id = @account_id;

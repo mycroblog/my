@@ -67,6 +67,11 @@ const (
 	EventDomainRestrictionsChanged = "moderation.domain_restrictions_changed"
 	// EventAccountRestrictionsChanged is EventDomainRestrictionsChanged for an account.
 	EventAccountRestrictionsChanged = "moderation.account_restrictions_changed"
+	// EventDomainRestrictionsExpired follows the removal of the expired restriction rows of a
+	// domain, in the transaction of the removal.
+	EventDomainRestrictionsExpired = "moderation.domain_restrictions_expired"
+	// EventAccountRestrictionsExpired is EventDomainRestrictionsExpired for an account.
+	EventAccountRestrictionsExpired = "moderation.account_restrictions_expired"
 	// EventReportFiled follows a new report.
 	EventReportFiled = "moderation.report_filed"
 	// EventReportResolved follows every resolution of a report, the first one and those after
@@ -133,6 +138,24 @@ type AccountRestrictionsChanged struct {
 
 // EventType implements uow.Event.
 func (AccountRestrictionsChanged) EventType() string { return EventAccountRestrictionsChanged }
+
+// DomainRestrictionsExpired tells that a restriction of one domain (not its parents) reached its
+// end, which changes what is in effect without an action or a lift. Others may still be in effect:
+// a subscriber reads them. It comes at most about ExpiryInterval late.
+type DomainRestrictionsExpired struct {
+	Domain string
+}
+
+// EventType implements uow.Event.
+func (DomainRestrictionsExpired) EventType() string { return EventDomainRestrictionsExpired }
+
+// AccountRestrictionsExpired is DomainRestrictionsExpired for an account.
+type AccountRestrictionsExpired struct {
+	AccountID string
+}
+
+// EventType implements uow.Event.
+func (AccountRestrictionsExpired) EventType() string { return EventAccountRestrictionsExpired }
 
 // ReportFiled carries a new report.
 type ReportFiled struct {

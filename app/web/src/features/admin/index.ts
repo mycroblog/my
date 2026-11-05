@@ -59,6 +59,7 @@ export { relaysQueryOptions } from "./api/relays";
 export { RelaySettings } from "./components/RelaySettings";
 // The rules of the link card crawler per domain, for manage_settings.
 export { LinkCardDomainSettings } from "./components/LinkCardDomainSettings";
+export { TranslationSettings } from "./components/TranslationSettings";
 // The roles: creating them and changing their positions and permissions (FR-720), for manage_roles. Their queries
 // are those of the moderation feature, which shows an account's roles.
 export { RoleSettings } from "./components/RoleSettings";

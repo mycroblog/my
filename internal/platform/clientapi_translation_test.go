@@ -97,11 +97,6 @@ func (l *countingLimiter) Reserve(_ context.Context, _ string, n int) error {
 	return nil
 }
 
-func (l *countingLimiter) Release(_ context.Context, _ string, n int) error {
-	l.reserved.Add(-int64(n))
-	return nil
-}
-
 // translationEnv is a server with a provider "one" enabled, and a user bob who follows alice.
 type translationEnv struct {
 	c         *statusesClient
@@ -465,14 +460,14 @@ func TestTranslateStatusRefusesBadOutput(t *testing.T) {
 	if e.limiter.reserved.Load() == 0 {
 		t.Errorf("no characters counted for answers that the provider gave")
 	}
-	// A failure in which nothing was received counts nothing.
+	// A failure counts too: the port cannot say that the provider did not receive them.
 	e.limiter.reserved.Store(0)
 	e.one.setAnswer(func(context.Context, translation.Request) (translation.Result, error) {
 		return translation.Result{}, translation.ErrTemporary
 	})
 	e.wantProblem("bob", st.Id, http.StatusServiceUnavailable, failed)
-	if got := e.limiter.reserved.Load(); got != 0 {
-		t.Errorf("reserved %d after a failure", got)
+	if got := e.limiter.reserved.Load(); got == 0 {
+		t.Errorf("reserved %d after a failure, want the characters of the call", got)
 	}
 	e.one.setAnswer(func(context.Context, translation.Request) (translation.Result, error) {
 		return translation.Result{}, translation.ErrUnsupportedLanguage
@@ -550,7 +545,7 @@ func TestTranslateStatusConcurrently(t *testing.T) {
 	if n := e.rows("status_translations"); n != 1 {
 		t.Errorf("rows = %d, want 1", n)
 	}
-	// The request that lost the lock gave its characters back.
+	// The request that lost the lock reserved nothing.
 	want := int64(translation.CountCharacters(e.one.requests[0].Fragments))
 	if got := e.limiter.reserved.Load(); got != want {
 		t.Errorf("reserved %d characters, want %d", got, want)
@@ -728,8 +723,9 @@ func TestPurgeTranslationCache(t *testing.T) {
 	if n := e.rows("status_translation_poll_options"); n != 2 {
 		t.Errorf("poll options = %d, want those of the new one", n)
 	}
-	if a, s := e.rows("translation_account_usage"), e.rows("translation_server_usage"); a != 1 || s != 1 {
-		t.Errorf("usage = %d and %d rows, want last month's", a, s)
+	// The server's rows are last month's and this month's, of the requests above.
+	if a, s := e.rows("translation_account_usage"), e.rows("translation_server_usage"); a != 1 || s != 2 {
+		t.Errorf("usage = %d and %d rows, want last month's for the account and this month's too for the server", a, s)
 	}
 }
 
@@ -796,7 +792,7 @@ func TestErasureRemovesTranslationUsage(t *testing.T) {
 	}{
 		{"INSERT INTO translation_account_usage (account_id, month, characters) VALUES (?, '2026-11', 5)", []any{actor.Account.ID}},
 		{"INSERT INTO translation_account_usage (account_id, month, characters) VALUES (?, '2026-11', 7)", []any{c.ids["alice"]}},
-		{"INSERT INTO translation_server_usage (month, characters) VALUES ('2026-11', 12)", nil},
+		{"INSERT INTO translation_server_usage (month, characters) VALUES ('2026-11', 12) ON CONFLICT (month) DO UPDATE SET characters = 12", nil},
 	} {
 		if _, err := db.ExecContext(ctx, q.query, q.args...); err != nil {
 			t.Fatal(err)

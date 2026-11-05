@@ -229,6 +229,16 @@ SELECT account_id, statuses_count, last_status_at FROM account_post_counters ORD
 
 -- Lookups.
 
+-- ListAuthorSearchableStatusIDs pages the public and local statuses of an author in ID order after
+-- the ID after ("" for the first page), deleted ones included.
+-- name: ListAuthorSearchableStatusIDs :many
+SELECT id FROM statuses
+WHERE author_account_id = sqlc.arg(author_account_id)
+  AND id > CAST(sqlc.arg(after) AS TEXT)
+  AND visibility IN ('public', 'local')
+ORDER BY id
+LIMIT sqlc.arg(page_limit);
+
 -- name: GetStatus :one
 SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
 FROM statuses WHERE id = ?;

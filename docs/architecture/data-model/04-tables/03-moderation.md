@@ -42,6 +42,7 @@
 - `domain` は正規化したホスト（IDNA の A-label、[federation.md §1.2](../../federation.md#ホスト名の正規化idn)）です。
 - サブドメインにも効きます。判定は、対象ドメインとその親ドメイン群を列挙して `domain IN (…)` で引きます。
 - 処分と同じトランザクションで、その処分が生む制限の行を `account_restrictions` / `domain_restrictions` に書きます。解除は同じトランザクションでその処分の行（`source_action_id`）を消します。解除の再実行は何もしません。
+- 期限の来た行は読み取りの条件で無効になり、`moderation.expire_restrictions` が `account_restrictions` と同じく消して、`moderation.domain_restrictions_expired` を発行します。
 - ドメイン単位の制限を各アカウントの行に展開することはしません（件数が膨らむため）。判定時に `account_restrictions` と合成します（§5.3）。
 - 処分したドメインの公開（FR-718）は、効いている `limit` / `suspend` の処分を `domain_moderation_actions` から新しい順に、処分ごとに 1 項目で返します。
   返すのはドメイン（`obfuscate` なら伏せ字）・ドメインの SHA-256・種類・`public_comment` で、`private_note` は返しません。

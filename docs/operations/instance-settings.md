@@ -58,6 +58,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `search_indexing` | `allow` / `deny` | `deny` | Whether search engines may index the instance. Even with `allow`, only the profiles of `indexable` accounts and `public` posts are indexed ([search engines and AI crawlers](crawlers.md)) |
 | `ai_usage` | `allow` / `deny_training` / `deny` | `deny` | The statement to AI services. `deny_training` refuses training; `deny` refuses training and use by AI (AI search, assistants, agents) |
 | `indexable_default` | `true` / `false` | `false` | The default of `indexable` for new accounts. Changing it does not change existing accounts |
+| `search_visibilities` | `public` / `local` / `public,local` | `public` | Which posts the full-text search of a server with a search backend covers. `unlisted`, `private`, and `direct` posts are never covered, and only accounts with `indexable` are. Leaving a visibility out removes its posts from the index. Adding one finds only new posts of it, until you rebuild the index. It does nothing with `search = none` |
 | `security_contact` | `https:` or `mailto:` URI (empty = unset) | empty | Where to report security problems of this server: how it is configured and run, and its accounts and data. When set, the server serves `/.well-known/security.txt` (RFC 9116). This is your contact, not the software's: forward a report of a vulnerability in the software itself to the project as its [security policy](../../SECURITY.md) describes |
 | `require_media_description` | `true` / `false` | `false` | Whether every media file (image, video, or audio) attached to a local post needs a description. When `true`, a post or an edit with a file whose description is missing or only whitespace is rejected with 422. It is published as `limits.require_media_description` in `GET /api/v1/instance`, and the web client makes the description field required. It is separate from the per-user setting `require_media_description`, which only checks before sending |
 | `link_cards` | `true` / `false` | `true` | Whether to show cards for links in posts. When `true`, the server fetches the linked page to build a card. When `false`, it stops fetching and also hides cards already built. To stop it only on some domains, see [link card domains](#link-card-domains) |
@@ -79,6 +80,12 @@ default locale, who can see the timelines, the instance name, description, terms
 | `member_invite_max_active` | integer 0-100 | `5` | How many usable invites (not revoked, expired, or used up) one member may hold at once; `0` lets members create none. Staff invites do not count |
 | `member_invite_max_uses` | integer 1-1000 | `10` | How many people may sign up with one invite that a member creates |
 | `member_invite_max_lifetime_seconds` | integer 3600-31536000 (seconds) | `2592000` (30 days) | How long one invite that a member creates may work at most. Lowering it does not shorten existing invites |
+| `translation_providers` | comma-separated provider IDs | empty | The server-side translation providers that are enabled, the first tried first. When it is empty nothing is sent to any provider. An ID this server has no provider for does nothing |
+| `translation_provider_visibilities` | comma-separated `provider=visibility\|visibility` pairs | empty | What each provider may receive. A provider not named receives `public`, `local`, and `unlisted` posts; `provider=` with nothing after it receives none. `private` and `direct` go only to a provider named with them, so allowing one provider does not allow the next |
+| `translation_browser` | boolean | `false` | Whether readers may use the translation built into their browser, which sends nothing to this server or to a provider |
+| `translation_user_monthly_characters` | integer 0-1000000000000 | `50000` | How many characters one user's requests may send to translation providers in a UTC month. At `0` nothing is sent. No value means unlimited: set a large number instead |
+| `translation_server_monthly_characters` | integer 0-1000000000000 | `500000` | How many characters the whole server may send to translation providers in a UTC month. At `0` nothing is sent. No value means unlimited: set a large number instead |
+| `translation_retention_days` | integer 1-3650 (days) | `30` | How many days a translation is kept after it was made. Reading it does not extend this, and it goes with the post |
 | `voice_participants_retention_days` | integer 30-3650 (days) | `90` | How many days after a voice chat room ended to keep the records of who took part in it: the participations, the speakers and listeners, the raised hands, the invitations, and the removals. The room itself (its name, description, hosts, and how it ended) is kept. The records of a reported room are kept as long as the report, and holds apply as to the other records |
 | `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode` | `off`, `observe`, `enforce` | `observe` | How far each [decision hook](decision-hooks.md#modes) acts while it has a plugin. `off` goes to `enforce` only through `observe`. |
 | `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure` | `pass`, `retry` | `pass` | What the hook does when it enforces and its plugin fails ([details](decision-hooks.md#when-the-plugin-fails)). |
@@ -262,7 +269,17 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   thumbnail when you save.
 
   `max_status_length`, `preview_image`, `appeal_window_days`, and the retention periods (`*_retention_days`), `remote_media_cache_max_bytes`, and `oauth_client_rate_limits` do not appear on the screen;
-  change them with the CLI or the client API.
+  change them with the CLI or the client API. The settings of translation have a screen of their own, below.
+- **Web client** ("Translation", `/admin/translation`): the providers this server has, their order and what each may
+  receive, the browser's translation, the monthly limits, and how long translations are kept, with the characters sent
+  this month and the cache hit rate. Update your privacy policy ([template](privacy-policy-template.md#the-services-you-choose))
+  before you enable a server-side provider: text sent to a provider cannot be recalled. API keys of providers live in the
+  [deployment configuration](../reference/configuration.md); no setting and no answer of the client API holds them.
+- **Translation limits.** What counts is the characters sent, in code points: the markers that stand in for mentions,
+  links, and the like do not count, and neither do a translation the server already keeps, a post already in the reader's
+  language, or the browser's translation. Each call to a provider counts, also one that fails, since the provider may have
+  received the text, so the number can differ from what a provider bills. Over a limit the request is refused with a `429`
+  and no provider is called. Months are in UTC.
 - **Client API**: `GET /api/v1/admin/settings` returns every setting with its current value, its default, whether it is set,
   and its type and accepted values (choices or range). `PATCH /api/v1/admin/settings` changes settings together with
   `{"values": {"<key>": "<value>", ...}}`. All values are strings, normalized and stored as with the CLI. If a single key is

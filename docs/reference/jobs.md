@@ -121,7 +121,7 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
 | `moderation.sever_domain` | Cuts the follows of local accounts with a suspended domain, and records what each account lost. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. Running one again repeats nothing it did. | A domain suspension | Default. An action that is gone or is not a domain suspension is dead at once. | Safe |
-| `moderation.expire_restrictions` | Removes expired account restrictions, and tells other servers when a suspension ends. | Schedule | Default | Next run |
+| `moderation.expire_restrictions` | Removes expired account and domain restrictions, tells other servers when a suspension ends, and with a search backend queues `search.sync_author` or `search.sync_domain` for what they restricted. | Schedule | Default | Next run |
 | `moderation.purge_records` | Erases the moderation records past their retention, including released retention holds. | Schedule | Default | Next run |
 | `identity.reject_for_closure` | Rejects the pending registrations when the closure's notice period starts. Stops if the closure is withdrawn. | The closure being recorded | Default | Safe |
 | `instance.closure_delete_actors` | Records the `Delete` of one page of local accounts and passes them to the fan-out. | The closure being recorded, then itself | Default | Safe |
@@ -156,15 +156,15 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 
 ## Full-text search
 
-Each of these types exists on every server and does nothing: nothing enqueues them yet. A server with `search = none`, the default, never will.
+These types keep the index of a [search backend](configuration.md#search) in step with the database. Each job carries an ID and reads the current state when it runs, so repeating or reordering them gives the same index. Every type exists on every server, and with `search = none`, the default, nothing enqueues them and any that remain succeed doing nothing. Each call of the backend has a 10-second limit, outside any database transaction.
 
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
-| `search.sync_status` | Does nothing. | Nothing | Default | Safe |
-| `search.sync_author` | Does nothing. | Nothing | Default | Safe |
-| `search.sync_domain` | Does nothing. | Nothing | Default | Safe |
-| `search.narrow` | Does nothing. | Nothing | Default | Safe |
-| `search.rebuild` | Does nothing. | Nothing | Default | Safe |
+| `search.sync_status` | Writes the document of one post if it qualifies and removes it if not, then reads the post again and repeats if it stopped qualifying or was edited meanwhile. | A post created, edited, or deleted, local or remote, when its visibility is `public` or `local` | Default | Safe. It reads the post as it is now. |
+| `search.sync_author` | Removes every document of an account that cannot be found, and otherwise syncs its posts. Above 200 posts, the first job only queues jobs of the same type for up to 200 each. | An account turning `indexable` on or off, a lifecycle event, a sanction, its lift, its expiry, a job of `search.sync_domain`, or the erasure of a deleted account | Default | Safe. It reads the account and its posts as they are now. |
+| `search.sync_domain` | Queues `search.sync_author` for each account of a domain and its subdomains. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. | A domain action, its lift, or its expiry | Default | Safe. The jobs it queues read the accounts as they are now. |
+| `search.narrow` | Removes every document of a visibility, unless `search_visibilities` includes it again. | A change of `search_visibilities` that leaves `public` or `local` out | Default | Safe. It reads the setting as it is now. |
+| `search.rebuild` | Does nothing yet. | Nothing | Default | Safe |
 
 ## Webhooks
 
@@ -248,4 +248,4 @@ Most job types exist on every server. These do not:
 
 A job whose type has no handler on the process that claims it, for example after you change one of these settings, counts as a failure, retries with the default waits, and becomes a dead job. It appears as `other` in the `my.job.*` metrics. Restore the setting and run it again, or delete it.
 
-These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments`, `voice.apply` without a voice transport, and the `search.*` types, which do nothing on any server for now ([Full-text search](#full-text-search)). The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.
+These types always exist but do nothing without their setting: `supporters.ensure_prices`, `supporters.sync`, and `supporters.command` without `payments`, `voice.apply` without a voice transport, and the `search.*` types with `search = none` ([Full-text search](#full-text-search)). The other `voice.*` jobs run with the voice chat off, so that `voice.sweep` can end rooms left open.

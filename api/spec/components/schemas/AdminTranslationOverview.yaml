@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: MIT
+description: How translation is used in the current month, and the providers that this server has.
+type: object
+required: [month, characters, cache_hits, cache_misses, providers]
+properties:
+  month:
+    description: The month that the numbers cover, as `YYYY-MM` in UTC.
+    type: string
+  characters:
+    description: |
+      The characters of posts sent to providers this month, without the markers that stand in for
+      mentions, links, and the like. A call to a provider that fails counts too. This is what the
+      limits count, and it can differ from what a provider bills.
+    type: integer
+    format: int64
+  cache_hits:
+    description: The requests answered this month from a translation the server kept.
+    type: integer
+    format: int64
+  cache_misses:
+    description: The requests that went to a provider this month.
+    type: integer
+    format: int64
+  cache_hit_rate:
+    description: |
+      The share of those requests answered from a kept translation, from 0 to 1; omitted before
+      there is any.
+    type: number
+    format: double
+  providers:
+    description: Every provider that this server has, enabled or not. API keys are not part of this.
+    type: array
+    items:
+      $ref: ./TranslationProvider.yaml

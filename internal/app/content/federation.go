@@ -20,6 +20,10 @@ type (
 	Status = content.Status
 	// Revision is content.Revision.
 	Revision = content.Revision
+	// Source is content.Source.
+	Source = content.Source
+	// Attachment is content.Attachment.
+	Attachment = content.Attachment
 	// Boost is content.Boost.
 	Boost = content.Boost
 	// Favourite is content.Favourite.
@@ -94,6 +98,13 @@ func (s *Service) LiveRevision(ctx context.Context, statusID, revisionID string)
 		return Status{}, Revision{}, fmt.Errorf("revision %s of status %s: %w", revisionID, statusID, ErrNotFound)
 	}
 	return st, rev, nil
+}
+
+// AuthorSearchableStatusIDs returns up to limit IDs of the public and local statuses of an author in
+// ID order, after the ID after ("" for the first page), deleted ones included: the only statuses
+// that the full-text search can ever hold (ADR-0149 §5).
+func (s *Service) AuthorSearchableStatusIDs(ctx context.Context, authorAccountID, after string, limit int) ([]string, error) {
+	return s.d.Repository.ListAuthorSearchableStatusIDs(ctx, authorAccountID, after, limit)
 }
 
 // AuthorRestrictions returns the restrictions of an author that bear on who sees its statuses,

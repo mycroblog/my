@@ -41,6 +41,17 @@ WHERE rowid IN (
 )
 RETURNING account_id, restriction, source_action_id, effective_until;
 
+-- DeleteExpiredDomainRestrictions is DeleteExpiredAccountRestrictions for the rows of domains.
+-- name: DeleteExpiredDomainRestrictions :many
+DELETE FROM domain_restrictions
+WHERE rowid IN (
+  SELECT r.rowid FROM domain_restrictions AS r
+  WHERE r.effective_until <= CAST(sqlc.arg(now) AS INTEGER)
+  ORDER BY r.effective_until
+  LIMIT sqlc.arg(batch_limit)
+)
+RETURNING domain, restriction, source_action_id, effective_until;
+
 -- ListAccountRestrictionsInEffect returns the distinct restrictions of an account in effect at now.
 -- name: ListAccountRestrictionsInEffect :many
 SELECT DISTINCT restriction FROM account_restrictions

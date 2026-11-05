@@ -110,6 +110,9 @@ type Repository interface {
 	// AccountsOnDomain returns inside tx, in ID order, the accounts among ids that are on domain
 	// or one of its subdomains.
 	AccountsOnDomain(ctx context.Context, tx uow.Tx, domain string, ids []string) ([]string, error)
+	// ListAccountIDsOnDomain returns up to limit IDs of the accounts on domain or one of its
+	// subdomains in order, after the ID after ("" for the first page).
+	ListAccountIDsOnDomain(ctx context.Context, domain, after string, limit int) ([]string, error)
 	// ListLocalAccountIDs returns up to limit local account IDs in order, after the ID after (""
 	// for the first page).
 	ListLocalAccountIDs(ctx context.Context, after string, limit int) ([]string, error)

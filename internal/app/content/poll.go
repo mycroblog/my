@@ -50,6 +50,8 @@ var (
 type (
 	// Poll is content.Poll.
 	Poll = content.Poll
+	// PollOption is content.PollOption.
+	PollOption = content.PollOption
 	// PollVote is content.PollVote.
 	PollVote = content.PollVote
 )

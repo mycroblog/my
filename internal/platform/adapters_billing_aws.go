@@ -12,13 +12,14 @@ import (
 
 	billingaws "github.com/mycroblog/my/internal/adapter/billing/aws"
 	"github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
 func init() { billingSourceAdapters["aws"] = newAWSBillingSource }
 
 // newAWSBillingSource returns the BillingSource of billing_sources = aws (ADR-0068 §6, §8).
-func newAWSBillingSource(ctx context.Context, cfg *config.Config) (finance.BillingSource, error) {
+func newAWSBillingSource(ctx context.Context, cfg *config.Config, _ kernel.Meter) (finance.BillingSource, error) {
 	// The credentials and the HTTP client come from the SDK's default chain (the execution role,
 	// the environment, the shared files), or, with billing_aws_role_arn, from the role assumed
 	// with the Google ID token of the instance. The SDK reaches only the AWS endpoints, so it does

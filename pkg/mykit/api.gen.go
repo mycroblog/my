@@ -1150,6 +1150,7 @@ const (
 	BillingImportMethodBigquery     BillingImportMethod = "bigquery"
 	BillingImportMethodBudget       BillingImportMethod = "budget"
 	BillingImportMethodCostExplorer BillingImportMethod = "cost_explorer"
+	BillingImportMethodPlugin       BillingImportMethod = "plugin"
 )
 
 // Valid indicates whether the value is a known member of the BillingImportMethod enum.
@@ -1160,6 +1161,8 @@ func (e BillingImportMethod) Valid() bool {
 	case BillingImportMethodBudget:
 		return true
 	case BillingImportMethodCostExplorer:
+		return true
+	case BillingImportMethodPlugin:
 		return true
 	default:
 		return false
@@ -1246,8 +1249,9 @@ func (e BillingImportRunOutcome) Valid() bool {
 
 // Defines values for BillingSourceName.
 const (
-	BillingSourceNameAws BillingSourceName = "aws"
-	BillingSourceNameGcp BillingSourceName = "gcp"
+	BillingSourceNameAws    BillingSourceName = "aws"
+	BillingSourceNameGcp    BillingSourceName = "gcp"
+	BillingSourceNamePlugin BillingSourceName = "plugin"
 )
 
 // Valid indicates whether the value is a known member of the BillingSourceName enum.
@@ -1256,6 +1260,8 @@ func (e BillingSourceName) Valid() bool {
 	case BillingSourceNameAws:
 		return true
 	case BillingSourceNameGcp:
+		return true
+	case BillingSourceNamePlugin:
 		return true
 	default:
 		return false
@@ -2455,68 +2461,75 @@ func (e InstanceRegistrationsMode) Valid() bool {
 
 // Defines values for InstanceSettingKey.
 const (
-	InstanceSettingKeyAiUsage                          InstanceSettingKey = "ai_usage"
-	InstanceSettingKeyAppealWindowDays                 InstanceSettingKey = "appeal_window_days"
-	InstanceSettingKeyAuditLogRetentionDays            InstanceSettingKey = "audit_log_retention_days"
-	InstanceSettingKeyAuthorizedFetch                  InstanceSettingKey = "authorized_fetch"
-	InstanceSettingKeyContactAccount                   InstanceSettingKey = "contact_account"
-	InstanceSettingKeyContactEmail                     InstanceSettingKey = "contact_email"
-	InstanceSettingKeyDefaultLocale                    InstanceSettingKey = "default_locale"
-	InstanceSettingKeyDomainActionsRationaleVisibility InstanceSettingKey = "domain_actions_rationale_visibility"
-	InstanceSettingKeyDomainActionsVisibility          InstanceSettingKey = "domain_actions_visibility"
-	InstanceSettingKeyDynamicClientRegistration        InstanceSettingKey = "dynamic_client_registration"
-	InstanceSettingKeyFeaturedAccounts                 InstanceSettingKey = "featured_accounts"
-	InstanceSettingKeyFederatedTimelineVisibility      InstanceSettingKey = "federated_timeline_visibility"
-	InstanceSettingKeyFederationMode                   InstanceSettingKey = "federation_mode"
-	InstanceSettingKeyFinanceViewerIncome              InstanceSettingKey = "finance_viewer_income"
-	InstanceSettingKeyFinanceViewerItemMemos           InstanceSettingKey = "finance_viewer_item_memos"
-	InstanceSettingKeyFinanceViewerItemNames           InstanceSettingKey = "finance_viewer_item_names"
-	InstanceSettingKeyFinanceVisibility                InstanceSettingKey = "finance_visibility"
-	InstanceSettingKeyHookInboundFollowMode            InstanceSettingKey = "hook_inbound_follow_mode"
-	InstanceSettingKeyHookInboundFollowOnFailure       InstanceSettingKey = "hook_inbound_follow_on_failure"
-	InstanceSettingKeyHookInboundStatusMode            InstanceSettingKey = "hook_inbound_status_mode"
-	InstanceSettingKeyHookInboundStatusOnFailure       InstanceSettingKey = "hook_inbound_status_on_failure"
-	InstanceSettingKeyHookLocalStatusMode              InstanceSettingKey = "hook_local_status_mode"
-	InstanceSettingKeyHookMediaCheckMode               InstanceSettingKey = "hook_media_check_mode"
-	InstanceSettingKeyHookMediaCheckOnFailure          InstanceSettingKey = "hook_media_check_on_failure"
-	InstanceSettingKeyHookSignupCheckMode              InstanceSettingKey = "hook_signup_check_mode"
-	InstanceSettingKeyHookSignupCheckOnFailure         InstanceSettingKey = "hook_signup_check_on_failure"
-	InstanceSettingKeyIncomeVisibility                 InstanceSettingKey = "income_visibility"
-	InstanceSettingKeyIndexableDefault                 InstanceSettingKey = "indexable_default"
-	InstanceSettingKeyInviteCreators                   InstanceSettingKey = "invite_creators"
-	InstanceSettingKeyLinkCards                        InstanceSettingKey = "link_cards"
-	InstanceSettingKeyLinkCardsIgnoreRobotsTxt         InstanceSettingKey = "link_cards_ignore_robots_txt"
-	InstanceSettingKeyLocalTimelineVisibility          InstanceSettingKey = "local_timeline_visibility"
-	InstanceSettingKeyLoginProvidersOnly               InstanceSettingKey = "login_providers_only"
-	InstanceSettingKeyMaxStatusLength                  InstanceSettingKey = "max_status_length"
-	InstanceSettingKeyMemberInviteMaxActive            InstanceSettingKey = "member_invite_max_active"
-	InstanceSettingKeyMemberInviteMaxLifetimeSeconds   InstanceSettingKey = "member_invite_max_lifetime_seconds"
-	InstanceSettingKeyMemberInviteMaxUses              InstanceSettingKey = "member_invite_max_uses"
-	InstanceSettingKeyModerationActionsRetentionDays   InstanceSettingKey = "moderation_actions_retention_days"
-	InstanceSettingKeyOauthClientRateLimits            InstanceSettingKey = "oauth_client_rate_limits"
-	InstanceSettingKeyOauthMetadataDocumentClients     InstanceSettingKey = "oauth_metadata_document_clients"
-	InstanceSettingKeyPreviewImage                     InstanceSettingKey = "preview_image"
-	InstanceSettingKeyPublicCounts                     InstanceSettingKey = "public_counts"
-	InstanceSettingKeyRegistrationMode                 InstanceSettingKey = "registration_mode"
-	InstanceSettingKeyRegistrationOriginsRetentionDays InstanceSettingKey = "registration_origins_retention_days"
-	InstanceSettingKeyRelayStatusRetentionDays         InstanceSettingKey = "relay_status_retention_days"
-	InstanceSettingKeyRemoteMediaCacheMaxBytes         InstanceSettingKey = "remote_media_cache_max_bytes"
-	InstanceSettingKeyRemoteMediaCacheTtlSeconds       InstanceSettingKey = "remote_media_cache_ttl_seconds"
-	InstanceSettingKeyRemoteMediaPolicy                InstanceSettingKey = "remote_media_policy"
-	InstanceSettingKeyRemoteStatusMaxRetentionDays     InstanceSettingKey = "remote_status_max_retention_days"
-	InstanceSettingKeyRemoteStatusRetentionDays        InstanceSettingKey = "remote_status_retention_days"
-	InstanceSettingKeyReportsRetentionDays             InstanceSettingKey = "reports_retention_days"
-	InstanceSettingKeyRequireMediaDescription          InstanceSettingKey = "require_media_description"
-	InstanceSettingKeyRetentionHookDecisions           InstanceSettingKey = "retention_hook_decisions"
-	InstanceSettingKeySearchIndexing                   InstanceSettingKey = "search_indexing"
-	InstanceSettingKeySecurityContact                  InstanceSettingKey = "security_contact"
-	InstanceSettingKeySessionOriginsRetentionDays      InstanceSettingKey = "session_origins_retention_days"
-	InstanceSettingKeySupporterListVisibility          InstanceSettingKey = "supporter_list_visibility"
-	InstanceSettingKeyThumbnail                        InstanceSettingKey = "thumbnail"
-	InstanceSettingKeyUserAppRegistration              InstanceSettingKey = "user_app_registration"
-	InstanceSettingKeyVoiceParticipantsRetentionDays   InstanceSettingKey = "voice_participants_retention_days"
-	InstanceSettingKeyVoicePublicSummary               InstanceSettingKey = "voice_public_summary"
-	InstanceSettingKeyVoiceRoomStarters                InstanceSettingKey = "voice_room_starters"
+	InstanceSettingKeyAiUsage                            InstanceSettingKey = "ai_usage"
+	InstanceSettingKeyAppealWindowDays                   InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyAuditLogRetentionDays              InstanceSettingKey = "audit_log_retention_days"
+	InstanceSettingKeyAuthorizedFetch                    InstanceSettingKey = "authorized_fetch"
+	InstanceSettingKeyContactAccount                     InstanceSettingKey = "contact_account"
+	InstanceSettingKeyContactEmail                       InstanceSettingKey = "contact_email"
+	InstanceSettingKeyDefaultLocale                      InstanceSettingKey = "default_locale"
+	InstanceSettingKeyDomainActionsRationaleVisibility   InstanceSettingKey = "domain_actions_rationale_visibility"
+	InstanceSettingKeyDomainActionsVisibility            InstanceSettingKey = "domain_actions_visibility"
+	InstanceSettingKeyDynamicClientRegistration          InstanceSettingKey = "dynamic_client_registration"
+	InstanceSettingKeyFeaturedAccounts                   InstanceSettingKey = "featured_accounts"
+	InstanceSettingKeyFederatedTimelineVisibility        InstanceSettingKey = "federated_timeline_visibility"
+	InstanceSettingKeyFederationMode                     InstanceSettingKey = "federation_mode"
+	InstanceSettingKeyFinanceViewerIncome                InstanceSettingKey = "finance_viewer_income"
+	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
+	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
+	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyHookInboundFollowMode              InstanceSettingKey = "hook_inbound_follow_mode"
+	InstanceSettingKeyHookInboundFollowOnFailure         InstanceSettingKey = "hook_inbound_follow_on_failure"
+	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
+	InstanceSettingKeyHookInboundStatusOnFailure         InstanceSettingKey = "hook_inbound_status_on_failure"
+	InstanceSettingKeyHookLocalStatusMode                InstanceSettingKey = "hook_local_status_mode"
+	InstanceSettingKeyHookMediaCheckMode                 InstanceSettingKey = "hook_media_check_mode"
+	InstanceSettingKeyHookMediaCheckOnFailure            InstanceSettingKey = "hook_media_check_on_failure"
+	InstanceSettingKeyHookSignupCheckMode                InstanceSettingKey = "hook_signup_check_mode"
+	InstanceSettingKeyHookSignupCheckOnFailure           InstanceSettingKey = "hook_signup_check_on_failure"
+	InstanceSettingKeyIncomeVisibility                   InstanceSettingKey = "income_visibility"
+	InstanceSettingKeyIndexableDefault                   InstanceSettingKey = "indexable_default"
+	InstanceSettingKeyInviteCreators                     InstanceSettingKey = "invite_creators"
+	InstanceSettingKeyLinkCards                          InstanceSettingKey = "link_cards"
+	InstanceSettingKeyLinkCardsIgnoreRobotsTxt           InstanceSettingKey = "link_cards_ignore_robots_txt"
+	InstanceSettingKeyLocalTimelineVisibility            InstanceSettingKey = "local_timeline_visibility"
+	InstanceSettingKeyLoginProvidersOnly                 InstanceSettingKey = "login_providers_only"
+	InstanceSettingKeyMaxStatusLength                    InstanceSettingKey = "max_status_length"
+	InstanceSettingKeyMemberInviteMaxActive              InstanceSettingKey = "member_invite_max_active"
+	InstanceSettingKeyMemberInviteMaxLifetimeSeconds     InstanceSettingKey = "member_invite_max_lifetime_seconds"
+	InstanceSettingKeyMemberInviteMaxUses                InstanceSettingKey = "member_invite_max_uses"
+	InstanceSettingKeyModerationActionsRetentionDays     InstanceSettingKey = "moderation_actions_retention_days"
+	InstanceSettingKeyOauthClientRateLimits              InstanceSettingKey = "oauth_client_rate_limits"
+	InstanceSettingKeyOauthMetadataDocumentClients       InstanceSettingKey = "oauth_metadata_document_clients"
+	InstanceSettingKeyPreviewImage                       InstanceSettingKey = "preview_image"
+	InstanceSettingKeyPublicCounts                       InstanceSettingKey = "public_counts"
+	InstanceSettingKeyRegistrationMode                   InstanceSettingKey = "registration_mode"
+	InstanceSettingKeyRegistrationOriginsRetentionDays   InstanceSettingKey = "registration_origins_retention_days"
+	InstanceSettingKeyRelayStatusRetentionDays           InstanceSettingKey = "relay_status_retention_days"
+	InstanceSettingKeyRemoteMediaCacheMaxBytes           InstanceSettingKey = "remote_media_cache_max_bytes"
+	InstanceSettingKeyRemoteMediaCacheTtlSeconds         InstanceSettingKey = "remote_media_cache_ttl_seconds"
+	InstanceSettingKeyRemoteMediaPolicy                  InstanceSettingKey = "remote_media_policy"
+	InstanceSettingKeyRemoteStatusMaxRetentionDays       InstanceSettingKey = "remote_status_max_retention_days"
+	InstanceSettingKeyRemoteStatusRetentionDays          InstanceSettingKey = "remote_status_retention_days"
+	InstanceSettingKeyReportsRetentionDays               InstanceSettingKey = "reports_retention_days"
+	InstanceSettingKeyRequireMediaDescription            InstanceSettingKey = "require_media_description"
+	InstanceSettingKeyRetentionHookDecisions             InstanceSettingKey = "retention_hook_decisions"
+	InstanceSettingKeySearchIndexing                     InstanceSettingKey = "search_indexing"
+	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
+	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
+	InstanceSettingKeySessionOriginsRetentionDays        InstanceSettingKey = "session_origins_retention_days"
+	InstanceSettingKeySupporterListVisibility            InstanceSettingKey = "supporter_list_visibility"
+	InstanceSettingKeyThumbnail                          InstanceSettingKey = "thumbnail"
+	InstanceSettingKeyTranslationBrowser                 InstanceSettingKey = "translation_browser"
+	InstanceSettingKeyTranslationProviderVisibilities    InstanceSettingKey = "translation_provider_visibilities"
+	InstanceSettingKeyTranslationProviders               InstanceSettingKey = "translation_providers"
+	InstanceSettingKeyTranslationRetentionDays           InstanceSettingKey = "translation_retention_days"
+	InstanceSettingKeyTranslationServerMonthlyCharacters InstanceSettingKey = "translation_server_monthly_characters"
+	InstanceSettingKeyTranslationUserMonthlyCharacters   InstanceSettingKey = "translation_user_monthly_characters"
+	InstanceSettingKeyUserAppRegistration                InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyVoiceParticipantsRetentionDays     InstanceSettingKey = "voice_participants_retention_days"
+	InstanceSettingKeyVoicePublicSummary                 InstanceSettingKey = "voice_public_summary"
+	InstanceSettingKeyVoiceRoomStarters                  InstanceSettingKey = "voice_room_starters"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKey enum.
@@ -2630,6 +2643,8 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
+	case InstanceSettingKeySearchVisibilities:
+		return true
 	case InstanceSettingKeySecurityContact:
 		return true
 	case InstanceSettingKeySessionOriginsRetentionDays:
@@ -2637,6 +2652,18 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeySupporterListVisibility:
 		return true
 	case InstanceSettingKeyThumbnail:
+		return true
+	case InstanceSettingKeyTranslationBrowser:
+		return true
+	case InstanceSettingKeyTranslationProviderVisibilities:
+		return true
+	case InstanceSettingKeyTranslationProviders:
+		return true
+	case InstanceSettingKeyTranslationRetentionDays:
+		return true
+	case InstanceSettingKeyTranslationServerMonthlyCharacters:
+		return true
+	case InstanceSettingKeyTranslationUserMonthlyCharacters:
 		return true
 	case InstanceSettingKeyUserAppRegistration:
 		return true
@@ -2653,16 +2680,18 @@ func (e InstanceSettingKey) Valid() bool {
 
 // Defines values for InstanceSettingKind.
 const (
-	InstanceSettingKindAccount      InstanceSettingKind = "account"
-	InstanceSettingKindAccounts     InstanceSettingKind = "accounts"
-	InstanceSettingKindBool         InstanceSettingKind = "bool"
-	InstanceSettingKindClientLimits InstanceSettingKind = "client_limits"
-	InstanceSettingKindEmail        InstanceSettingKind = "email"
-	InstanceSettingKindEnum         InstanceSettingKind = "enum"
-	InstanceSettingKindInt          InstanceSettingKind = "int"
-	InstanceSettingKindLocale       InstanceSettingKind = "locale"
-	InstanceSettingKindMedia        InstanceSettingKind = "media"
-	InstanceSettingKindUri          InstanceSettingKind = "uri"
+	InstanceSettingKindAccount              InstanceSettingKind = "account"
+	InstanceSettingKindAccounts             InstanceSettingKind = "accounts"
+	InstanceSettingKindBool                 InstanceSettingKind = "bool"
+	InstanceSettingKindClientLimits         InstanceSettingKind = "client_limits"
+	InstanceSettingKindEmail                InstanceSettingKind = "email"
+	InstanceSettingKindEnum                 InstanceSettingKind = "enum"
+	InstanceSettingKindInt                  InstanceSettingKind = "int"
+	InstanceSettingKindLocale               InstanceSettingKind = "locale"
+	InstanceSettingKindMedia                InstanceSettingKind = "media"
+	InstanceSettingKindProviderList         InstanceSettingKind = "provider_list"
+	InstanceSettingKindProviderVisibilities InstanceSettingKind = "provider_visibilities"
+	InstanceSettingKindUri                  InstanceSettingKind = "uri"
 )
 
 // Valid indicates whether the value is a known member of the InstanceSettingKind enum.
@@ -2685,6 +2714,10 @@ func (e InstanceSettingKind) Valid() bool {
 	case InstanceSettingKindLocale:
 		return true
 	case InstanceSettingKindMedia:
+		return true
+	case InstanceSettingKindProviderList:
+		return true
+	case InstanceSettingKindProviderVisibilities:
 		return true
 	case InstanceSettingKindUri:
 		return true
@@ -5181,7 +5214,7 @@ type AdminAppealPage struct {
 // posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
 // `account_statuses_refetch_queued` on an `account`, and `domain_statuses_refetch_queued`
 // on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
-// the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
+// the ID is the source (`aws`, `gcp`, `plugin`) and the label the provider's name. On a `cost_item`:
 // `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
 // `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 // the item's name. On the `supporter_program`: `supporter_program_enabled`,
@@ -5259,7 +5292,7 @@ type AdminAuditEntry struct {
 	// posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
 	// `account_statuses_refetch_queued` on an `account`, and `domain_statuses_refetch_queued`
 	// on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
-	// the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
+	// the ID is the source (`aws`, `gcp`, `plugin`) and the label the provider's name. On a `cost_item`:
 	// `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
 	// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 	// the item's name. On the `supporter_program`: `supporter_program_enabled`,
@@ -6654,7 +6687,9 @@ type AdminSetting struct {
 	// `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
 	// none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
 	// a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
-	// `client_id=requests` pairs, or empty for none.
+	// `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
+	// provider IDs, the first tried first, or empty for none. `provider_visibilities`:
+	// comma-separated `provider=visibility|visibility` pairs, or empty for none.
 	Kind InstanceSettingKind `json:"kind"`
 
 	// Maximum The greatest value of an `int` setting; omitted for other kinds.
@@ -6950,6 +6985,30 @@ type AdminTheme struct {
 
 	// Tokens The overridden tokens, in the order of the token list.
 	Tokens []ThemeTokenValue `json:"tokens"`
+}
+
+// AdminTranslationOverview How translation is used in the current month, and the providers that this server has.
+type AdminTranslationOverview struct {
+	// CacheHitRate The share of those requests answered from a kept translation, from 0 to 1; omitted before
+	// there is any.
+	CacheHitRate *float64 `json:"cache_hit_rate,omitempty"`
+
+	// CacheHits The requests answered this month from a translation the server kept.
+	CacheHits int64 `json:"cache_hits"`
+
+	// CacheMisses The requests that went to a provider this month.
+	CacheMisses int64 `json:"cache_misses"`
+
+	// Characters The characters of posts sent to providers this month, without the markers that stand in for
+	// mentions, links, and the like. A call to a provider that fails counts too. This is what the
+	// limits count, and it can differ from what a provider bills.
+	Characters int64 `json:"characters"`
+
+	// Month The month that the numbers cover, as `YYYY-MM` in UTC.
+	Month string `json:"month"`
+
+	// Providers Every provider that this server has, enabled or not. API keys are not part of this.
+	Providers []TranslationProvider `json:"providers"`
 }
 
 // AdminVoiceRoomBan An account removed from a voice chat room, who may not join it again.
@@ -7354,7 +7413,7 @@ type BadgeColor string
 
 // BillingImport The state of the imports of a billing source.
 type BillingImport struct {
-	// BytesBilledThisMonth The BigQuery bytes billed this UTC month; 0 for the other sources.
+	// BytesBilledThisMonth The bytes billed this UTC month, of BigQuery or as a plugin reports them; 0 for the other sources.
 	BytesBilledThisMonth int64 `json:"bytes_billed_this_month"`
 
 	// LastRun The last attempt of a billing import; omitted before the first.
@@ -7375,7 +7434,7 @@ type BillingImport struct {
 	// Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 	// bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 	// `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
-	// without a breakdown by service.
+	// without a breakdown by service; `plugin` (the operator's plugin) what the plugin reports.
 	Method BillingImportMethod `json:"method"`
 
 	// Months The billing months of the last year with imported costs, newest first.
@@ -7390,11 +7449,12 @@ type BillingImport struct {
 	// RequestsToday The billed requests of the imports this UTC day.
 	RequestsToday int `json:"requests_today"`
 
-	// Source A cloud provider of the billing imports (`billing_sources`).
+	// Source A source of the billing imports (`billing_sources`): a cloud provider, or `plugin`, the
+	// operator's plugin that aggregates any other providers.
 	Source BillingSourceName `json:"source"`
 
-	// TimeZone The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`),
-	// kept as the provider reports them.
+	// TimeZone The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`, or
+	// the operator's choice for a plugin), kept as the provider reports them.
 	TimeZone string `json:"time_zone"`
 }
 
@@ -7402,7 +7462,7 @@ type BillingImport struct {
 // Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 // bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 // `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
-// without a breakdown by service.
+// without a breakdown by service; `plugin` (the operator's plugin) what the plugin reports.
 type BillingImportMethod string
 
 // BillingImportList The billing sources and the state of their imports.
@@ -7450,7 +7510,8 @@ type BillingImportRunErrorKind string
 // BillingImportRunOutcome defines model for BillingImportRun.Outcome.
 type BillingImportRunOutcome string
 
-// BillingSourceName A cloud provider of the billing imports (`billing_sources`).
+// BillingSourceName A source of the billing imports (`billing_sources`): a cloud provider, or `plugin`, the
+// operator's plugin that aggregates any other providers.
 type BillingSourceName string
 
 // BrandDropped Something the server removed from an uploaded SVG: an `element` with everything in it, or an
@@ -7875,7 +7936,8 @@ type CostSchedule string
 type CostSourceRule struct {
 	Provider string `json:"provider"`
 
-	// Source A cloud provider of the billing imports (`billing_sources`).
+	// Source A source of the billing imports (`billing_sources`): a cloud provider, or `plugin`, the
+	// operator's plugin that aggregates any other providers.
 	Source   BillingSourceName `json:"source"`
 	TimeZone string            `json:"time_zone"`
 }
@@ -9605,6 +9667,10 @@ type Instance struct {
 	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
 	Timelines InstanceTimelines `json:"timelines"`
 
+	// Translation What the instance offers for translating posts, and what it sends where. With `browser` false and
+	// no `providers`, nothing can be translated and clients show no action for it.
+	Translation InstanceTranslation `json:"translation"`
+
 	// Version The server version.
 	Version string `json:"version"`
 
@@ -9872,7 +9938,9 @@ type InstanceSettingKey string
 // `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
 // none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
 // a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
-// `client_id=requests` pairs, or empty for none.
+// `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
+// provider IDs, the first tried first, or empty for none. `provider_visibilities`:
+// comma-separated `provider=visibility|visibility` pairs, or empty for none.
 type InstanceSettingKind string
 
 // InstanceTextKey The key of an instance text: the name (one line), the short and full descriptions,
@@ -9918,6 +9986,35 @@ type InstanceTimelines struct {
 	// resource is a 404; `signed_in`, the users signed in to this server, and an anonymous request is
 	// a 401; `everyone`, everyone, anonymous visitors included.
 	Local InstanceAudience `json:"local"`
+}
+
+// InstanceTranslation What the instance offers for translating posts, and what it sends where. With `browser` false and
+// no `providers`, nothing can be translated and clients show no action for it.
+type InstanceTranslation struct {
+	// Browser Whether clients may use the translation built into the browser, where the browser has one. It
+	// sends the text of a post to neither this server nor a provider, and works on every visibility.
+	Browser bool `json:"browser"`
+
+	// Providers The enabled providers that run through this server, the first tried first.
+	Providers []InstanceTranslationProvider `json:"providers"`
+}
+
+// InstanceTranslationProvider A provider that this instance sends the text of posts to when a reader asks for a translation.
+type InstanceTranslationProvider struct {
+	// Id The identifier of the provider on this server.
+	Id string `json:"id"`
+
+	// LogoUrl The address of the logo to show, for a provider that asks for one; omitted when there is none.
+	LogoUrl *string `json:"logo_url,omitempty"`
+
+	// Name The name to show.
+	Name string `json:"name"`
+
+	// Url The address of the provider; omitted when there is none.
+	Url *string `json:"url,omitempty"`
+
+	// Visibilities The visibilities of the posts that this provider may receive.
+	Visibilities []Visibility `json:"visibilities"`
 }
 
 // InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
@@ -19670,6 +19767,15 @@ type ClientInterface interface {
 	// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
 	SetAdminTheme(ctx context.Context, body SetAdminThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetAdminTranslationOverview Show how translation is used
+	//
+	// The characters of posts sent to providers in the current month, the cache hit rate, and the
+	// providers that this server has. Months are in UTC. The settings of translation are instance
+	// settings (`GET /admin/settings`). Needs the `manage_settings` permission.
+	//
+	// Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
+	GetAdminTranslationOverview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// EndVoiceRoomAsModeratorWithBody End a voice chat room as a moderator
 	//
 	// Ends an open voice chat room for every participant, with an optional reason for the
@@ -27742,6 +27848,25 @@ func (c *Client) SetAdminThemeWithBody(ctx context.Context, contentType string, 
 // Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
 func (c *Client) SetAdminTheme(ctx context.Context, body SetAdminThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetAdminThemeRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetAdminTranslationOverview Show how translation is used
+//
+// The characters of posts sent to providers in the current month, the cache hit rate, and the
+// providers that this server has. Months are in UTC. The settings of translation are instance
+// settings (`GET /admin/settings`). Needs the `manage_settings` permission.
+//
+// Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
+func (c *Client) GetAdminTranslationOverview(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAdminTranslationOverviewRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -40817,6 +40942,33 @@ func NewSetAdminThemeRequestWithBody(server string, contentType string, body io.
 	return req, nil
 }
 
+// NewGetAdminTranslationOverviewRequest constructs an http.Request for the GetAdminTranslationOverview method
+func NewGetAdminTranslationOverviewRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/translation")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewEndVoiceRoomAsModeratorRequest calls the generic EndVoiceRoomAsModerator builder with application/json body
 func NewEndVoiceRoomAsModeratorRequest(server string, id VoiceRoomId, body EndVoiceRoomAsModeratorJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -51721,6 +51873,17 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /admin/theme (the `SetAdminTheme` operationId).
 	SetAdminThemeWithResponse(ctx context.Context, body SetAdminThemeJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAdminThemeResponse, error)
+
+	// GetAdminTranslationOverviewWithResponse Show how translation is used
+	//
+	// The characters of posts sent to providers in the current month, the cache hit rate, and the
+	// providers that this server has. Months are in UTC. The settings of translation are instance
+	// settings (`GET /admin/settings`). Needs the `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
+	GetAdminTranslationOverviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminTranslationOverviewResponse, error)
 
 	// EndVoiceRoomAsModeratorWithBodyWithResponse End a voice chat room as a moderator
 	//
@@ -66598,6 +66761,71 @@ func (r SetAdminThemeResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SetAdminThemeResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetAdminTranslationOverviewResponse200Headers the declared response headers of an HTTP 200 response for GetAdminTranslationOverview
+type GetAdminTranslationOverviewResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetAdminTranslationOverviewResponseDefaultHeaders the declared response headers of an HTTP default response for GetAdminTranslationOverview
+type GetAdminTranslationOverviewResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetAdminTranslationOverviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminTranslationOverview
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetAdminTranslationOverviewResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetAdminTranslationOverviewResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAdminTranslationOverviewResponse) GetJSON200() *AdminTranslationOverview {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetAdminTranslationOverviewResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAdminTranslationOverviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAdminTranslationOverviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAdminTranslationOverviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAdminTranslationOverviewResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -82633,6 +82861,23 @@ func (c *ClientWithResponses) SetAdminThemeWithResponse(ctx context.Context, bod
 		return nil, err
 	}
 	return ParseSetAdminThemeResponse(rsp)
+}
+
+// GetAdminTranslationOverviewWithResponse Show how translation is used
+//
+// The characters of posts sent to providers in the current month, the cache hit rate, and the
+// providers that this server has. Months are in UTC. The settings of translation are instance
+// settings (`GET /admin/settings`). Needs the `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/translation (the `GetAdminTranslationOverview` operationId).
+func (c *ClientWithResponses) GetAdminTranslationOverviewWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAdminTranslationOverviewResponse, error) {
+	rsp, err := c.GetAdminTranslationOverview(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAdminTranslationOverviewResponse(rsp)
 }
 
 // EndVoiceRoomAsModeratorWithBodyWithResponse End a voice chat room as a moderator
@@ -101256,6 +101501,83 @@ func ParseSetAdminThemeResponse(rsp *http.Response) (*SetAdminThemeResponse, err
 		response.Headers422 = &headers
 	case true:
 		var headers SetAdminThemeResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetAdminTranslationOverviewResponse parses an HTTP response from a GetAdminTranslationOverviewWithResponse call
+func ParseGetAdminTranslationOverviewResponse(rsp *http.Response) (*GetAdminTranslationOverviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAdminTranslationOverviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminTranslationOverview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetAdminTranslationOverviewResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetAdminTranslationOverviewResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

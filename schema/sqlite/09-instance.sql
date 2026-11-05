@@ -27,7 +27,9 @@ CREATE TABLE instance_setting_revisions (
     'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_lifetime_seconds',
     'public_counts', 'featured_accounts', 'login_providers_only',
     'remote_media_cache_max_bytes', 'remote_status_retention_days', 'remote_status_max_retention_days',
-    'relay_status_retention_days', 'oauth_client_rate_limits',
+    'relay_status_retention_days', 'oauth_client_rate_limits', 'search_visibilities',
+    'translation_providers', 'translation_provider_visibilities', 'translation_browser',
+    'translation_user_monthly_characters', 'translation_server_monthly_characters', 'translation_retention_days',
     'hook_inbound_status_mode', 'hook_inbound_follow_mode', 'hook_signup_check_mode', 'hook_media_check_mode', 'hook_local_status_mode',
     'hook_inbound_status_on_failure', 'hook_inbound_follow_on_failure', 'hook_signup_check_on_failure', 'hook_media_check_on_failure',
     'retention_hook_decisions'

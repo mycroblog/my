@@ -221,6 +221,36 @@ func (q *Queries) ListAllAccountRestrictionRows(ctx context.Context) ([]AccountR
 	return items, nil
 }
 
+const listAllDomainRestrictionRows = `-- name: ListAllDomainRestrictionRows :many
+SELECT domain, restriction, source_action_id, effective_until FROM domain_restrictions
+ORDER BY domain, restriction, source_action_id
+`
+
+func (q *Queries) ListAllDomainRestrictionRows(ctx context.Context) ([]DomainRestriction, error) {
+	rows, err := q.db.Query(ctx, listAllDomainRestrictionRows)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DomainRestriction{}
+	for rows.Next() {
+		var i DomainRestriction
+		if err := rows.Scan(
+			&i.Domain,
+			&i.Restriction,
+			&i.SourceActionID,
+			&i.EffectiveUntil,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAllFeedAuthorRestrictions = `-- name: ListAllFeedAuthorRestrictions :many
 
 SELECT account_id, restriction, effective_until FROM feed_author_restrictions ORDER BY account_id, restriction
