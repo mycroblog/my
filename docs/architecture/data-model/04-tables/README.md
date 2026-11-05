@@ -16,6 +16,7 @@
 - [4.14 voice](14-voice.md)
 - [4.15 diagnostics](15-diagnostics.md)
 - [4.17 translation](17-translation.md)
+- [4.18 search](18-search.md)
 
 ### 4.0 所有モジュール
 
@@ -36,4 +37,5 @@
 | `voice` | `voice_rooms`, `voice_room_revisions`, `voice_room_revision_hashtags`, `voice_room_host_changes`, `voice_room_cohost_changes`, `voice_room_participations`, `voice_room_participation_ends`, `voice_room_role_changes`, `voice_room_speak_grants`, `voice_room_hand_raises`, `voice_room_invitations`, `voice_room_invitation_revocations`, `voice_room_bans`, `voice_room_endings` | `voice_room_heads`, `voice_room_participants`, `voice_room_host_graces` |
 | `diagnostics` | `error_groups`, `error_group_events`, `error_group_confirmations` | `error_group_states`, `error_group_counts`, `error_group_samples` |
 | `translation` | | `status_translations`, `status_translation_attachments`, `status_translation_poll_options`, `translation_account_usage`, `translation_server_usage` |
+| `search` | | `search_rebuild`, `search_rebuild_failures` |
 | 基盤 | `job_attempts`, `data_upgrade_runs` | `jobs`, `dead_jobs`, `kv_entries` |

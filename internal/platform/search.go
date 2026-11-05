@@ -41,7 +41,7 @@ func newSearchIndex(ctx context.Context, cfg *config.Config, opts AppOptions, lo
 // says, and with a backend the projector that keeps the index in step with the database; with
 // search = none no fact enqueues a job (ADR-0149 §2, §7). It comes after the account, instance,
 // moderation, and content modules, and before the erasure, which it takes part in.
-func (a *App) setUpSearch(ctx context.Context, cfg *config.Config, opts AppOptions) error {
+func (a *App) setUpSearch(ctx context.Context, cfg *config.Config, repo search.Repository, opts AppOptions) error {
 	index, err := newSearchIndex(ctx, cfg, opts, a.Logger)
 	if err != nil {
 		return err
@@ -54,6 +54,7 @@ func (a *App) setUpSearch(ctx context.Context, cfg *config.Config, opts AppOptio
 	a.Search = search.NewService(search.Deps{
 		Index: index, UnitOfWork: a.UnitOfWork, Outbox: outbox,
 		Statuses: a.Content, Accounts: a.Accounts, Settings: a.Instance, Sanitizer: newHTMLSanitizer(),
+		Rebuilds: repo, Clock: a.Clock, IDs: a.IDs, RebuildBatch: opts.SearchRebuildBatch,
 	})
 	a.Search.RegisterJobs(a.Handlers)
 	if a.Search.Enabled() {

@@ -447,6 +447,15 @@ func (r *StatusRepository) ListPostCounters(ctx context.Context) ([]content.Post
 	return out, nil
 }
 
+// ListSearchableStatusIDs implements content.Repository.
+func (r *StatusRepository) ListSearchableStatusIDs(ctx context.Context, after string, limit int) ([]string, error) {
+	out, err := r.db.reader().ListSearchableStatusIDs(ctx, sqlitegen.ListSearchableStatusIDsParams{After: after, PageLimit: int64(limit)})
+	if err != nil {
+		return nil, wrap(err, "list searchable statuses")
+	}
+	return out, nil
+}
+
 // ListAuthorSearchableStatusIDs implements content.Repository.
 func (r *StatusRepository) ListAuthorSearchableStatusIDs(ctx context.Context, authorAccountID, after string, limit int) ([]string, error) {
 	out, err := r.db.reader().ListAuthorSearchableStatusIDs(ctx, sqlitegen.ListAuthorSearchableStatusIDsParams{

@@ -25,6 +25,7 @@
 - [Error reporting (the error report log line, error groups and notifications, sending reports to Sentry, GlitchTip, Datadog or OpenTelemetry, scrubbing)](operations/error-reporting.md)
 - [Link previews (OGP / X Cards / fediverse:creator)](operations/link-previews.md)
 - [Search engines and AI crawlers (robots.txt, noindex, opting out of AI)](operations/crawlers.md)
+- [Full-text search of posts (what the index holds, rebuilding it, the query in URLs and logs, its backups)](operations/search.md)
 - [Server webhooks](operations/webhooks.md)
 - [Federation relays](operations/relays.md)
 - [Importing cloud usage costs (AWS Cost Explorer, Google Cloud's BigQuery export, a plugin)](operations/billing-import.md)

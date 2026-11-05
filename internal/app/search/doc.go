@@ -12,6 +12,9 @@
 // each carrying an ID and reading the current state when it runs (ADR-0149 §7). Eligible is the one
 // rule of what the index may hold.
 //
+// my search rebuild refills the index in a chain of jobs at a rate, resumable from the progress in
+// the table search_rebuild; my search clear empties it (ADR-0149 §10, §12).
+//
 // With search = none there is no backend: the server opens no connection to an engine, starts no
 // worker for it, and enqueues no search job (ADR-0149 §2).
 package search

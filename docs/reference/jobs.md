@@ -164,7 +164,7 @@ These types keep the index of a [search backend](configuration.md#search) in ste
 | `search.sync_author` | Removes every document of an account that cannot be found, and otherwise syncs its posts. Above 200 posts, the first job only queues jobs of the same type for up to 200 each. | An account turning `indexable` on or off, a lifecycle event, a sanction, its lift, its expiry, a job of `search.sync_domain`, or the erasure of a deleted account | Default | Safe. It reads the account and its posts as they are now. |
 | `search.sync_domain` | Queues `search.sync_author` for each account of a domain and its subdomains. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. | A domain action, its lift, or its expiry | Default | Safe. The jobs it queues read the accounts as they are now. |
 | `search.narrow` | Removes every document of a visibility, unless `search_visibilities` includes it again. | A change of `search_visibilities` that leaves `public` or `local` out | Default | Safe. It reads the setting as it is now. |
-| `search.rebuild` | Does nothing yet. | Nothing | Default | Safe |
+| `search.rebuild` | Handles the next 100 `public` and `local` posts of a [rebuild of the index](../operations/search.md#rebuilding-the-index) the same way as `search.sync_status`, records its progress, and queues the next job at the rate of the rebuild. | `my search rebuild`, and the job before it | Default | Safe. A job that finds the rebuild already past its place does nothing. |
 
 ## Webhooks
 

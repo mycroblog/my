@@ -81,6 +81,13 @@ func TestLinkCardRepositoryContract(t *testing.T) {
 	})
 }
 
+func TestSearchRepositoryContract(t *testing.T) {
+	testkit.SearchRepositoryContract(t, func(t *testing.T) testkit.SearchHarness {
+		db, _ := newTestDB(t, "", uow.Options{})
+		return testkit.SearchHarness{UnitOfWork: db, Repository: db.SearchRepository()}
+	})
+}
+
 func TestTranslationRepositoryContract(t *testing.T) {
 	testkit.TranslationRepositoryContract(t, func(t *testing.T) testkit.TranslationHarness {
 		db, _ := newTestDB(t, "", uow.Options{})
