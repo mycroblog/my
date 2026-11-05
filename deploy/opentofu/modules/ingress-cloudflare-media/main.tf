@@ -243,6 +243,11 @@ resource "cloudflare_tiered_cache" "smart" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works with any app."
+  value       = "neutral"
+}
+
 output "env" {
   description = "Where the server's media URLs point. No trust: this module never names MY_TRUSTED_PROXIES, so it sits beside any other ingress."
   value = merge(

@@ -56,6 +56,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "env" {
   description = "The settings of the blob store. No access key: the server takes its execution role from the AWS SDK's default chain."
   value = {
@@ -73,10 +78,10 @@ output "secret_env" {
 output "permissions" {
   description = "Reading and writing the objects of the bucket. Listing it makes a missing object a 404 rather than a 403."
   value = [
-    { permission = "s3:GetObject", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
-    { permission = "s3:PutObject", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
-    { permission = "s3:DeleteObject", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
-    { permission = "s3:AbortMultipartUpload", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
-    { permission = "s3:ListBucket", scope = "policy", resource = aws_s3_bucket.media.arn },
+    { permission = "s3:GetObject", resource = "${aws_s3_bucket.media.arn}/*" },
+    { permission = "s3:PutObject", resource = "${aws_s3_bucket.media.arn}/*" },
+    { permission = "s3:DeleteObject", resource = "${aws_s3_bucket.media.arn}/*" },
+    { permission = "s3:AbortMultipartUpload", resource = "${aws_s3_bucket.media.arn}/*" },
+    { permission = "s3:ListBucket", resource = aws_s3_bucket.media.arn },
   ]
 }

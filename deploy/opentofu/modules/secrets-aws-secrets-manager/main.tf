@@ -119,6 +119,11 @@ resource "aws_secretsmanager_secret_version" "written" {
   secret_string_wo_version = var.write_version
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "env" {
   description = "No plain settings."
   value       = {}

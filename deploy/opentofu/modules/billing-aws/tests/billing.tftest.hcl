@@ -19,7 +19,7 @@ run "on_an_aws_app_the_app_gets_the_permission" {
   command = plan
 
   assert {
-    condition     = length(output.permissions) == 1 && output.permissions[0].permission == "ce:GetCostAndUsage" && output.permissions[0].scope == "policy" && output.permissions[0].resource == "*"
+    condition     = length(output.permissions) == 1 && output.permissions[0].permission == "ce:GetCostAndUsage" && output.permissions[0].resource == "*"
     error_message = "an AWS app's identity needs ce:GetCostAndUsage"
   }
 

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# Both billing modules in the backends of each app, on mocked providers: nothing here reaches a cloud.
+# The billing modules in the backends of each app, on mocked providers: nothing here reaches a cloud.
 
 mock_provider "google" {
   mock_resource "google_service_account" {
@@ -113,7 +113,7 @@ run "the_budget_method_beside_aws_on_cloud_run" {
   }
 }
 
-run "both_on_lambda" {
+run "on_lambda" {
   command = plan
 
   module {
@@ -121,8 +121,8 @@ run "both_on_lambda" {
   }
 
   assert {
-    condition     = output.env["MY_BILLING_SOURCES"] == "aws,gcp" && !contains(keys(output.env), "MY_BILLING_AWS_ROLE_ARN")
-    error_message = "on AWS both modules sit in backends, and the execution role needs no role to assume"
+    condition     = output.env["MY_BILLING_SOURCES"] == "aws" && !contains(keys(output.env), "MY_BILLING_AWS_ROLE_ARN")
+    error_message = "on AWS the module sits in backends, and the execution role needs no role to assume"
   }
 
   assert {

@@ -83,6 +83,24 @@ A module with no provider of its own drops that part (`db-external`, `mail-smtp`
 not the platform behind it: `ingress-cloudflare-app` takes its origin as an input, so the same module fronts Cloud Run or AWS. Cloud SQL would be `db-gcp-cloud-sql`.
 A module that covers a provider's several services for one purpose drops the service (`billing-gcp`).
 
+## Platforms
+
+A module of one cloud works only with that cloud's app. Every module says which it belongs to in the output `platform`, and an app refuses a backend of another platform at plan, with what to use instead:
+
+| `platform` | Modules | Apps |
+| --- | --- | --- |
+| `gcp` | Every module with `gcp` in its name | `app-gcp-cloud-run` |
+| `aws` | Every module with `aws` in its name | `app-aws-ecs`, `app-aws-lambda` |
+| `neutral` | `db-external`, `db-neon`, `mail-smtp`, `blob-s3`, `blob-cloudflare-r2`, `kv-external`, `ingress-cloudflare-*`, `stream-valkey`, `stream-postgres`, `queue-db` | Every app |
+
+Mixing them would take identity bridges between clouds, and more combinations that nobody has applied. A store outside the platform is still a neutral module away: on Cloud Run, `blob-s3` with keys takes the place of `blob-aws-s3`.
+
+**The one exception** is `billing-aws` with `web_identity = true` on `app-gcp-cloud-run`, since reading another cloud's costs is only an outside API call: [The billing modules](#the-billing-modules) has how. The validation of `backends` in that app is the only place that allows it. `billing-gcp` has no such exception, so a server on AWS does not import Google Cloud's costs through these modules.
+
+**`queue-db` needs a process that stays up**, so being neutral does not make it fit everywhere. `app-aws-ecs` takes it, and `app-aws-lambda` refuses it, since a function runs only during an invocation. `app-gcp-cloud-run` refuses it unless `min_instances` is at least 1 and `cpu_always_allocated` is `true`, which bills an instance all the time. Each refusal covers a deployment that names no queue, since `db` is the server's default.
+
+`scripts/task.sh tofu:backend-fields` fails when a module has no `platform`, or one that its name contradicts.
+
 ## The backend contract
 
 Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, `kek-*`, `billing-*`, and `monitoring-*` module returns the same outputs, so that changing the database means
@@ -90,10 +108,11 @@ changing one module block:
 
 | Output | Type | Meaning |
 | --- | --- | --- |
+| `platform` | `string` | `gcp`, `aws`, or `neutral`: read [Platforms](#platforms). The one field that every backend must have, also one that names its outputs one by one |
 | `env` | `map(string)` | Settings by variable name (`MY_DATABASE`) |
 | `secret_env` | `map(string)` | Secret settings: variable name to a reference to a secret in the platform's store. The reference is the store's own: a secret ID in Secret Manager, a full ARN in AWS Secrets Manager. How the value reaches the server is the app module's business |
 | `secret_files` (optional) | `map(string)` | Secret settings to mount as files: a variable name ending in `_FILE` to the secret's reference. The app sets the variable to the path, on the service and every job. A platform with no mounted secrets treats it as `secret_env` of the name without `_FILE` |
-| `permissions` | `list(object({ permission, scope, resource, conditions }))` | What the app's identity is permitted |
+| `permissions` | `list(object({ permission, resource, ... }))`, with `scope` on Google Cloud and `conditions` on AWS | What the app's identity is permitted |
 | `direct_secret_env` (optional) | `map(string)` | What the one-off work takes over a setting of `secret_env`, which the service keeps: `MY_DATABASE_URL` as a direct connection when `secret_env` names a pooled one. Each name must be in `secret_env` |
 | `cloud_sql_instances` (optional) | `list(string)` | Cloud SQL instances, as `<project>:<region>:<instance>`, that Cloud Run mounts at `/cloudsql` on the service and every job |
 | `security_group_ids` (optional) | `list(string)` | Security groups the app joins to reach a backend in a VPC, on AWS, such as those of `db-aws-rds` and `kv-aws-elasticache`. The app takes the subnets as its own input, and a plan fails without them |
@@ -102,13 +121,12 @@ changing one module block:
 | `billing_sources` (optional) | `list(string)` | What this module adds to the one setting `MY_BILLING_SOURCES`, which the app sets from all of them |
 | `vpc_access` (optional) | `object({ network, subnetwork })` | The subnet Cloud Run attaches to reach a backend on private addresses. Two different subnets fail the plan |
 
-A permission means what the platform's IAM means: what the identity is permitted, which on Google Cloud is a role. `scope` says which kind it is, so a backend of
-one platform handed to the app of another fails the plan instead of granting nothing:
+A permission means what the platform's IAM means: what the identity is permitted, which on Google Cloud is a role, so its shape is the platform's:
 
 | Platform | `permission` | `scope` | `resource` | `conditions` |
 | --- | --- | --- | --- | --- |
 | Google Cloud | A role, such as `roles/storage.objectUser` | `project`, `bucket`, `topic`, `queue`, `service_account`, `crypto_key`, `dataset`, or `subscription`, each a different kind of binding | The resource's name. For `project`, null is the app's project, and otherwise another project's ID. For `dataset`, `projects/<project>/datasets/<dataset>`, and the permission is what an access entry holds | Not available |
-| AWS | One IAM action, such as `sqs:SendMessage` | `policy`: every grant is a statement of one policy | An ARN or an ARN pattern, or `*` | Optional: `{ test, variable, values }` of the statement |
+| AWS | One IAM action, such as `sqs:SendMessage` | None: every grant is a statement of one policy | An ARN or an ARN pattern, or `*` | Optional: `{ test, variable, values }` of the statement |
 
 The service and its jobs share one identity, so a grant reaches them all. The app grants each permission on that resource alone, so a
 backend asks for as little as it can. Google Cloud's app keys one resource on each grant, so it reads the names of `permissions` and
@@ -135,7 +153,7 @@ The rules:
 
 Anything without a backend (VAPID, CAPTCHA, and every other setting) goes through the `env` and
 `secret_env`, and `secret_files` inputs of the app module, so no setting is out of reach. A backend of your own needs nothing special: any
-object with these fields can go in `backends`.
+object with `platform` and these fields can go in `backends`.
 
 **An app takes every field of these tables and either uses it or refuses it**, because OpenTofu drops an unknown field without a word when it converts a module's
 outputs to the type of `backends`, and a backend's settings or security groups would vanish while the plan passes. So a field of another platform fails the plan, and
@@ -177,11 +195,11 @@ An `ingress-*` module decides how traffic reaches the app. It is a backend, with
 | `load_balancer` (optional) | `object({ target_group_arn, security_group_id })` | What the service attaches to, on a platform where the app registers with its load balancer rather than the load balancer naming the app. An app with no way to attach refuses the ingress by its `service_ingress` |
 
 It takes the service's name from the app (`service_name = module.app.service_name`) while the app takes its settings, which
-is no cycle as long as `env`, `service_ingress`, and `trusted_proxies` do not depend on anything that reads the service's name.
-`dns_records` may, so `backends` names those three outputs rather than the whole module:
+is no cycle as long as `platform`, `env`, `service_ingress`, and `trusted_proxies` do not depend on anything that reads the service's name.
+`dns_records` may, so `backends` names those four outputs rather than the whole module:
 
 ```hcl
-{ env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
+{ platform = module.ingress.platform, env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
 ```
 
 A module that only adds a host, such as `ingress-cloudflare-media`, returns no `trusted_proxies` and no `service_ingress`, so
@@ -199,20 +217,19 @@ An ingress closes the origin in one of three ways: on the platform (`ingress-gcp
 
 ## The billing modules
 
-`billing-gcp` and `billing-aws` sit together in `backends`, and each with any app, whichever cloud it runs on. Each module uses
+`billing-gcp` works on Google Cloud's app, and `billing-aws` on either platform's: on Cloud Run it is [the one exception](#platforms). Both can sit in the `backends` of Cloud Run. Each module uses
 the provider of the cloud it reads and no other, and takes what it needs of the other cloud as a string, so the root
-configuration needs the other provider only when it has that block. A permission on the other cloud's resource cannot go through
-`permissions`, since an app refuses another platform's scope, so the module holds it itself:
+configuration needs the other provider only when it has that block. A permission on AWS's resource cannot go through
+`permissions` of Cloud Run's app, so the module holds it itself:
 
 | Block | App | Provider of the block | What holds the permission |
 | --- | --- | --- | --- |
 | `billing-aws` | AWS | `aws`, which the app has | The app's role, through `permissions` |
 | `billing-aws` with `web_identity` | Google Cloud | `aws`, on top of the app's `google` | A role of this module, which trusts the app's service account |
 | `billing-gcp` | Google Cloud | `google`, which the app has | The app's service account, through `permissions` |
-| `billing-gcp` with `external_member` | AWS | `google`, on top of the app's `aws` | That member, granted by this module |
 
 `billing-aws` on Cloud Run takes `module.app.service_account_unique_id`, so name its outputs in `backends` rather than the whole
-module, as with an ingress. Its `env` is built from names, so it does not wait for the role.
+module, as with an ingress. Its `env` is built from names, so it does not wait for the role. Without `web_identity` it asks the app for a permission, and Cloud Run's app refuses it.
 
 Neither module has ever been applied, and turning on a billing export or a budget stays a step in the Console: [each README](modules/billing-gcp/README.md#what-stays-manual) says which, and [the guide](../../docs/operations/billing-import.md) what the import does with them.
 
@@ -290,7 +307,7 @@ The modules for AWS test whether this contract holds on a second platform, in tw
 | `secrets-aws-secrets-manager` | `secrets-gcp-secret-manager` |
 | `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
 | `ingress-aws-cloudfront` (Lambda), `ingress-aws-alb` (ECS) | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
-| `billing-aws` | Beside `billing-gcp`, on either platform: read [The billing modules](#the-billing-modules) |
+| `billing-aws` | `billing-gcp`, and it also runs on Google Cloud's app: read [The billing modules](#the-billing-modules) |
 | `monitoring-aws` | `monitoring-gcp` |
 
 `db-external`, `db-neon`, `mail-smtp`, and `ingress-cloudflare-app` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`

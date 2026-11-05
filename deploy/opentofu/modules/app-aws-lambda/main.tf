@@ -78,6 +78,9 @@ locals {
     local.key_manager == "local" ? !contains(local.setting_names, "MY_KEK") : !contains(local.setting_names, "MY_KMS_KEY")
   )
 
+  # The server's default when nothing names one.
+  queue = lookup(local.env, "MY_QUEUE", "db")
+
   permissions = flatten([for b in var.backends : b.permissions])
   # Attached to a VPC when a backend lives in one. What the function may reach is the sum of these groups.
   security_group_ids = distinct(concat(var.vpc_security_group_ids, flatten([for b in var.backends : b.security_group_ids])))
@@ -149,6 +152,10 @@ resource "aws_iam_role" "server" {
     precondition {
       condition     = !local.vpc_attached || length(local.security_group_ids) > 0
       error_message = "vpc_subnet_ids needs at least one security group. A function in a VPC reaches only what its groups allow, so give vpc_security_group_ids a group that allows the way out."
+    }
+    precondition {
+      condition     = local.queue != "db"
+      error_message = "queue = db runs jobs in a process that stays up, and a function runs only during an invocation, which nothing starts for this queue, so jobs would stop. It is what the server does when nothing names a queue too. Use queue-aws-sqs, or app-aws-ecs for queue-db."
     }
     precondition {
       condition     = !local.kek_missing

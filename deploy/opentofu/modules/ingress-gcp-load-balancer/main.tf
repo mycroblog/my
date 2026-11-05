@@ -129,6 +129,11 @@ resource "google_compute_global_forwarding_rule" "redirect" {
   target                = google_compute_target_http_proxy.redirect.id
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of Google Cloud."
+  value       = "gcp"
+}
+
 output "env" {
   description = "No settings."
   value       = {}

@@ -242,6 +242,11 @@ resource "google_secret_manager_secret_version" "url" {
   depends_on = [google_sql_user.server, google_sql_database.db]
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of Google Cloud."
+  value       = "gcp"
+}
+
 output "env" {
   description = "The settings of the database."
   value       = { MY_DATABASE = "postgres" }

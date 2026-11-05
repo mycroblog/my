@@ -265,6 +265,11 @@ resource "aws_route53_record" "alias" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "env" {
   description = "The header that the load balancer writes."
   value = {

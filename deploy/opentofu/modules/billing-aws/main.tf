@@ -101,6 +101,11 @@ resource "aws_iam_role_policy" "import" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "billing_sources" {
   description = "What this module adds to MY_BILLING_SOURCES."
   value       = ["aws"]
@@ -117,9 +122,9 @@ output "secret_env" {
 }
 
 output "permissions" {
-  description = "The Cost Explorer action for the app's AWS identity. Empty with web_identity: the role here holds it, and a Google Cloud app refuses an IAM action."
+  description = "The Cost Explorer action for the app's AWS identity. Empty with web_identity: the role here holds it."
   value = [
-    for action in ["ce:GetCostAndUsage"] : { permission = action, scope = "policy", resource = "*", conditions = [] } if !var.web_identity
+    for action in ["ce:GetCostAndUsage"] : { permission = action, resource = "*", conditions = [] } if !var.web_identity
   ]
 }
 

@@ -45,6 +45,11 @@ resource "aws_sesv2_email_identity" "domain" {
   email_identity = local.domain
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "env" {
   description = "The settings of the mailer. No region: Lambda sets AWS_REGION, which the server takes when mail_ses_region is empty, so the identity must be in the function's region."
   value = merge(
@@ -64,8 +69,8 @@ output "secret_env" {
 output "permissions" {
   description = "Sending from the identity and, with one, through the configuration set."
   value = concat(
-    [{ permission = "ses:SendEmail", scope = "policy", resource = aws_sesv2_email_identity.domain.arn }],
-    var.configuration_set == null ? [] : [{ permission = "ses:SendEmail", scope = "policy", resource = aws_sesv2_configuration_set.this.arn }],
+    [{ permission = "ses:SendEmail", resource = aws_sesv2_email_identity.domain.arn }],
+    var.configuration_set == null ? [] : [{ permission = "ses:SendEmail", resource = aws_sesv2_configuration_set.this.arn }],
   )
 }
 

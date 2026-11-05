@@ -78,6 +78,8 @@ variable "vpc_access" {
 variable "backends" {
   description = "What each backend module returns. A setting named twice fails the plan."
   type = list(object({
+    # gcp, aws, or neutral: what this module refuses is below.
+    platform     = string
     env          = optional(map(string), {})
     secret_env   = optional(map(string), {})
     secret_files = optional(map(string), {})
@@ -87,7 +89,7 @@ variable "backends" {
     cloud_sql_instances = optional(list(string), [])
     permissions = optional(list(object({
       permission = string
-      scope      = string
+      scope      = optional(string)
       resource   = optional(string)
       # Accepted so that it cannot vanish, and refused below: Google Cloud's roles take no such conditions here.
       conditions = optional(list(object({
@@ -123,20 +125,35 @@ variable "backends" {
   nullable = false
 
   validation {
+    condition     = alltrue([for b in var.backends : contains(["gcp", "aws", "neutral"], b.platform)])
+    error_message = "A backend's platform is gcp, aws, or neutral."
+  }
+
+  # Modules of one cloud work only with that cloud's app: read "Platforms" in the README of deploy/opentofu. The one
+  # exception is stated here and nowhere else: billing-aws with web_identity, since reading another cloud's costs is only an
+  # outside API call. Its role holds the permission, so it asks this app for nothing, and without web_identity it would.
+  validation {
+    condition = alltrue([
+      for b in var.backends : b.platform != "aws" || (join(",", b.billing_sources) == "aws" && length(b.permissions) == 0)
+    ])
+    error_message = "A module of AWS works only with app-aws-ecs or app-aws-lambda, and one is in backends here, naming: ${join(", ", flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files)) if b.platform == "aws"]))}. Use the module of this platform or a neutral one: blob-gcp-gcs, blob-s3 with keys, or blob-cloudflare-r2 in place of blob-aws-s3; db-gcp-cloud-sql, db-external, or db-neon in place of db-aws-rds; queue-gcp-cloud-tasks in place of queue-aws-sqs; stream-gcp-pubsub, stream-valkey, or stream-postgres in place of stream-aws-sns; kv-gcp-memorystore or kv-external in place of kv-aws-elasticache; mail-smtp in place of mail-aws-ses; secrets-gcp-secret-manager in place of secrets-aws-secrets-manager; kek-gcp-secret-manager or kek-gcp-kms in place of kek-aws-*; ingress-gcp-domain-mapping, ingress-gcp-load-balancer, or ingress-cloudflare-app in place of ingress-aws-*; monitoring-gcp in place of monitoring-aws. billing-aws is the one exception, with web_identity = true."
+  }
+
+  validation {
     condition = alltrue(flatten([
       for b in var.backends : [
         for r in b.permissions : (
-          contains(["project", "bucket", "topic", "queue", "service_account", "crypto_key", "dataset", "subscription"], r.scope) &&
+          contains(["project", "bucket", "topic", "queue", "service_account", "crypto_key", "dataset", "subscription"], r.scope == null ? "" : r.scope) &&
           (r.scope == "project" || r.resource != null)
         )
-      ]
+      ] if b.platform != "aws"
     ]))
-    error_message = "Each permission has a scope of project (with another project as its resource, or none for this one), or bucket, topic, queue, service_account, crypto_key, dataset, or subscription (with its resource). A scope of policy is a backend for AWS."
+    error_message = "Each permission has a scope of project (with another project as its resource, or none for this one), or bucket, topic, queue, service_account, crypto_key, dataset, or subscription (with its resource)."
   }
 
   validation {
     condition     = alltrue(flatten([for b in var.backends : [for r in b.permissions : length(r.conditions) == 0]]))
-    error_message = "A permission on Google Cloud has no conditions: those are the statements of an AWS policy."
+    error_message = "A permission on Google Cloud has no conditions: a binding here is a role on a resource."
   }
 
   validation {
@@ -203,6 +220,25 @@ variable "max_instances" {
   description = "Most instances at once. With pool_max_conns in the database URL, it bounds the connections to the database."
   type        = number
   default     = 3
+  nullable    = false
+}
+
+variable "min_instances" {
+  description = "Fewest instances that Cloud Run keeps running. queue = db needs at least 1, together with cpu_always_allocated. Each one kept is billed while idle."
+  type        = number
+  default     = 0
+  nullable    = false
+
+  validation {
+    condition     = var.min_instances >= 0 && floor(var.min_instances) == var.min_instances && var.min_instances <= var.max_instances
+    error_message = "min_instances must be a whole number from 0 to max_instances."
+  }
+}
+
+variable "cpu_always_allocated" {
+  description = "Allocates CPU outside requests as well, which is instance-based billing: an instance is billed at the full rate for as long as it runs. Off, CPU is allocated only during requests. queue = db needs it, together with min_instances of at least 1."
+  type        = bool
+  default     = false
   nullable    = false
 }
 

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# The contract of the backends, on a mocked provider: nothing here reaches AWS.
+# The contract of the backends, on mocked providers: nothing here reaches a cloud.
+
+mock_provider "google" {}
 
 mock_provider "aws" {
   mock_data "aws_iam_policy_document" {
@@ -44,18 +46,20 @@ variables {
   assign_public_ip = true
   backends = [
     {
+      platform   = "aws"
       env        = { MY_DATABASE = "postgres" }
       secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf" }
     },
     {
+      platform   = "aws"
       secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" }
     },
     {
-      env = { MY_BLOB = "s3", MY_QUEUE = "db" }
+      platform = "aws"
+      env      = { MY_BLOB = "s3", MY_QUEUE = "db" }
       permissions = [
         {
           permission = "s3:GetObject"
-          scope      = "policy"
           resource   = "arn:aws:s3:::media/*"
           conditions = [
             { test = "StringEquals", variable = "s3:ExistingObjectTag/x", values = ["y"] },
@@ -161,11 +165,12 @@ run "one_off_tasks_take_the_direct_settings_in_the_place_of_the_services" {
   variables {
     backends = [
       {
+        platform          = "aws"
         env               = { MY_DATABASE = "postgres", MY_BLOB = "s3" }
         secret_env        = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:pooled-AbCdEf" }
         direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:direct-AbCdEf" }
       },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
     ]
     console_enabled = true
   }
@@ -212,8 +217,8 @@ run "no_permission_makes_no_policy" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
     ]
   }
 
@@ -264,9 +269,10 @@ run "an_ingress_attaches_the_service" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
       {
+        platform        = "aws"
         env             = { MY_TRUSTED_PROXY_HEADER = "x-forwarded-for" }
         service_ingress = "load-balancer"
         trusted_proxies = ["10.0.0.0/24", "10.0.1.0/24"]
@@ -317,9 +323,9 @@ run "trust_in_env_beside_an_ingress_fails" {
   variables {
     env = { MY_TRUSTED_PROXIES = "10.0.0.0/8" }
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { service_ingress = "load-balancer", trusted_proxies = ["10.0.0.0/24"] },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", service_ingress = "load-balancer", trusted_proxies = ["10.0.0.0/24"] },
     ]
   }
 
@@ -330,7 +336,7 @@ run "no_kek_fails" {
   command = plan
 
   variables {
-    backends = [{ env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } }]
+    backends = [{ platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } }]
   }
 
   expect_failures = [aws_iam_role.execution]
@@ -341,8 +347,8 @@ run "a_secret_named_other_than_by_arn_fails" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
-      { secret_env = { MY_KEK = "my-kek" } },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "aws", secret_env = { MY_KEK = "my-kek" } },
     ]
   }
 
@@ -354,8 +360,8 @@ run "a_direct_secret_named_other_than_by_arn_fails" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, direct_secret_env = { MY_DATABASE_URL = "direct" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, direct_secret_env = { MY_DATABASE_URL = "direct" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
     ]
   }
 
@@ -367,8 +373,8 @@ run "a_queue_that_needs_a_caller_fails" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3", MY_QUEUE = "sqs" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3", MY_QUEUE = "sqs" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
     ]
   }
 
@@ -403,7 +409,7 @@ run "data_on_the_disk_of_a_task_fails" {
   command = plan
 
   variables {
-    backends = [{ secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } }]
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } }]
   }
 
   expect_failures = [aws_iam_role.execution]
@@ -414,21 +420,71 @@ run "two_load_balancers_fail" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { load_balancer = { target_group_arn = "a", security_group_id = "b" } },
-      { load_balancer = { target_group_arn = "c", security_group_id = "d" } },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", load_balancer = { target_group_arn = "a", security_group_id = "b" } },
+      { platform = "aws", load_balancer = { target_group_arn = "c", security_group_id = "d" } },
     ]
   }
 
   expect_failures = [aws_iam_role.execution]
 }
 
-run "a_backend_for_google_cloud_fails" {
+run "the_bucket_of_google_cloud" {
+  command = apply
+
+  module {
+    source = "../blob-gcp-gcs"
+  }
+
+  variables {
+    project_id  = "p"
+    bucket_name = "media"
+    location    = "asia-northeast1"
+  }
+
+  assert {
+    condition     = output.platform == "gcp"
+    error_message = "the module must say that it belongs to Google Cloud"
+  }
+}
+
+run "a_module_of_google_cloud_fails" {
   command = plan
 
   variables {
-    backends = [{ permissions = [{ permission = "roles/storage.objectUser", scope = "bucket", resource = "b" }] }]
+    backends = [run.the_bucket_of_google_cloud]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "billing_gcp_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "gcp", env = { MY_BILLING_GCP_METHOD = "budget" }, billing_sources = ["gcp"] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "a_backend_of_no_known_platform_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "azure" }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+# A role, whichever platform the backend says it has, is not one IAM action.
+run "a_permission_that_is_no_iam_action_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "aws", permissions = [{ permission = "roles/storage.objectUser", resource = "b" }] }]
   }
 
   expect_failures = [var.backends]
@@ -438,7 +494,7 @@ run "an_ingress_that_needs_a_host_fails" {
   command = plan
 
   variables {
-    backends = [{ service_ingress = "all" }]
+    backends = [{ platform = "aws", service_ingress = "all" }]
   }
 
   expect_failures = [var.backends]
@@ -448,7 +504,7 @@ run "an_ingress_for_cloud_run_fails" {
   command = plan
 
   variables {
-    backends = [{ service_ingress = "internal-and-load-balancer" }]
+    backends = [{ platform = "aws", service_ingress = "internal-and-load-balancer" }]
   }
 
   expect_failures = [var.backends]
@@ -458,7 +514,7 @@ run "invokers_fail" {
   command = plan
 
   variables {
-    backends = [{ invokers = ["invoker@p.iam.gserviceaccount.com"] }]
+    backends = [{ platform = "aws", invokers = ["invoker@p.iam.gserviceaccount.com"] }]
   }
 
   expect_failures = [var.backends]
@@ -468,7 +524,7 @@ run "a_queue_that_lambda_polls_fails" {
   command = plan
 
   variables {
-    backends = [{ event_sources = { jobs = { arn = "arn:aws:sqs:ap-northeast-1:111122223333:my-jobs", visibility_timeout_seconds = 5400 } } }]
+    backends = [{ platform = "aws", event_sources = { jobs = { arn = "arn:aws:sqs:ap-northeast-1:111122223333:my-jobs", visibility_timeout_seconds = 5400 } } }]
   }
 
   expect_failures = [var.backends]
@@ -489,10 +545,10 @@ run "two_backends_add_to_billing_sources" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { billing_sources = ["gcp"] },
-      { billing_sources = ["aws"] },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", billing_sources = ["gcp"] },
+      { platform = "aws", billing_sources = ["aws"] },
     ]
   }
 
@@ -507,10 +563,10 @@ run "a_billing_source_named_twice_fails" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { billing_sources = ["aws"] },
-      { billing_sources = ["aws"] },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", billing_sources = ["aws"] },
+      { platform = "aws", billing_sources = ["aws"] },
     ]
   }
 
@@ -523,9 +579,9 @@ run "billing_sources_beside_the_setting_in_env_fail" {
   variables {
     env = { MY_BILLING_SOURCES = "gcp" }
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { billing_sources = ["aws"] },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", billing_sources = ["aws"] },
     ]
   }
 
@@ -544,9 +600,9 @@ run "a_task_joins_the_group_of_every_backend" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, security_group_ids = ["sg-db"] },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { security_group_ids = ["sg-cache"] },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, security_group_ids = ["sg-db"] },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", security_group_ids = ["sg-cache"] },
     ]
   }
 
@@ -566,9 +622,9 @@ run "a_direct_setting_with_nothing_to_override_fails" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:direct-AbCdEf" } },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:direct-AbCdEf" } },
     ]
   }
 
@@ -580,10 +636,10 @@ run "the_same_direct_setting_from_two_backends_fails" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:pooled-AbCdEf" } },
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:direct-AbCdEf" } },
-      { direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:other-AbCdEf" } },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:pooled-AbCdEf" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:direct-AbCdEf" } },
+      { platform = "aws", direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:other-AbCdEf" } },
     ]
   }
 
@@ -594,7 +650,7 @@ run "a_field_of_google_cloud_fails" {
   command = plan
 
   variables {
-    backends = [{ cloud_sql_instances = ["p:r:db"] }]
+    backends = [{ platform = "aws", cloud_sql_instances = ["p:r:db"] }]
   }
 
   expect_failures = [var.backends]
@@ -604,8 +660,37 @@ run "the_subnet_of_cloud_run_fails" {
   command = plan
 
   variables {
-    backends = [{ vpc_access = { network = "n", subnetwork = "s" } }]
+    backends = [{ platform = "aws", vpc_access = { network = "n", subnetwork = "s" } }]
   }
 
   expect_failures = [var.backends]
+}
+
+run "the_queue_in_the_database" {
+  command = apply
+
+  module {
+    source = "../queue-db"
+  }
+
+  assert {
+    condition     = output.platform == "neutral"
+    error_message = "the module works wherever a process stays up, which each app decides"
+  }
+}
+
+run "the_queue_in_the_database_passes_here" {
+  command = plan
+
+  variables {
+    backends = [
+      run.the_queue_in_the_database,
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_QUEUE"] == "db"
+    error_message = "a process here stays up, so this is the queue that fits"
+  }
 }

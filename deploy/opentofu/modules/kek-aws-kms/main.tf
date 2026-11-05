@@ -58,6 +58,11 @@ resource "aws_kms_alias" "kek" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "env" {
   description = "The settings of the key manager."
   value = {
@@ -74,8 +79,8 @@ output "secret_env" {
 output "permissions" {
   description = "Encrypting and decrypting with this key, not the others of the account."
   value = [
-    { permission = "kms:Encrypt", scope = "policy", resource = local.arn },
-    { permission = "kms:Decrypt", scope = "policy", resource = local.arn },
-    { permission = "kms:DescribeKey", scope = "policy", resource = local.arn },
+    { permission = "kms:Encrypt", resource = local.arn },
+    { permission = "kms:Decrypt", resource = local.arn },
+    { permission = "kms:DescribeKey", resource = local.arn },
   ]
 }

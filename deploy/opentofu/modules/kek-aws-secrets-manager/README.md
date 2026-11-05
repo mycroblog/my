@@ -26,7 +26,7 @@ module "kek" {
 | `secret_env` | `MY_KEK`: the ARN of the secret |
 
 On Google Cloud the KEK is a file, because a mounted secret is the safer form that Cloud Run offers. Here it is `secret_env`: the swap of this block
-for `kek-aws-kms` is what holds, and a swap to the other platform's block is not meant to.
+for `kek-aws-kms` is what holds, and a block of the other platform fails the plan.
 
 ## What protects the value
 

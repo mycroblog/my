@@ -234,6 +234,11 @@ resource "aws_secretsmanager_secret_version" "url" {
   secret_string_wo_version = var.password_version
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "env" {
   description = "The settings of the database."
   value       = { MY_DATABASE = "postgres" }

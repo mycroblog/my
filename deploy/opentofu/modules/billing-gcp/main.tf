@@ -89,16 +89,9 @@ variable "name" {
   }
 }
 
-variable "external_member" {
-  description = "An IAM member for a server outside Google Cloud, such as the principalSet of a workload identity pool, which this module grants the roles itself: the app of another platform cannot. It must be known at plan time. Null returns them as permissions for a Google Cloud app."
-  type        = string
-  default     = null
-}
-
 locals {
   bigquery = var.method == "bigquery"
   budget   = var.method == "budget"
-  external = var.external_member != null
 
   query_project = coalesce(var.query_project, var.project_id)
 
@@ -166,41 +159,9 @@ resource "google_pubsub_subscription" "budget" {
   }
 }
 
-# For a server outside Google Cloud. The app of Google Cloud makes the same grants from the output permissions.
-resource "google_project_iam_member" "external_query" {
-  project = local.query_project
-  role    = "roles/bigquery.jobUser"
-  member  = var.external_member
-
-  lifecycle {
-    enabled = local.external && local.bigquery
-  }
-}
-
-resource "google_bigquery_dataset_access" "external_export" {
-  project    = var.project_id
-  dataset_id = var.dataset_id
-  role       = "READER"
-  iam_member = var.external_member
-
-  depends_on = [google_bigquery_dataset.export]
-
-  lifecycle {
-    enabled = local.external && local.bigquery
-  }
-}
-
-resource "google_pubsub_subscription_iam_member" "external_budget" {
-  project      = var.project_id
-  subscription = var.name
-  role         = "roles/pubsub.subscriber"
-  member       = var.external_member
-
-  depends_on = [google_pubsub_subscription.budget]
-
-  lifecycle {
-    enabled = local.external && local.budget
-  }
+output "platform" {
+  description = "The platform of this module: it works only with an app of Google Cloud."
+  value       = "gcp"
 }
 
 output "billing_sources" {
@@ -225,8 +186,8 @@ output "secret_env" {
 }
 
 output "permissions" {
-  description = "The roles for a Google Cloud app's service account. Empty with external_member, since this module has granted them."
-  value       = local.external ? [] : (local.bigquery ? local.bigquery_permissions : local.budget_permissions)
+  description = "The roles for the app's service account."
+  value       = local.bigquery ? local.bigquery_permissions : local.budget_permissions
   depends_on  = [google_bigquery_dataset.export, google_pubsub_subscription.budget]
 }
 

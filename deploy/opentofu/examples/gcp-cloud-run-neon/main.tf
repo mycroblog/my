@@ -151,7 +151,7 @@ module "mail" {
 #
 # with secret_env = module.ingress.secret_env in its line of backends.
 #
-# And a media host beside any of them, which adds { env = module.media.env } to backends:
+# And a media host beside any of them, which adds { platform = module.media.platform, env = module.media.env } to backends:
 #
 #   module "media" {
 #     source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/ingress-cloudflare-media?ref=v0.1.0&depth=1"
@@ -184,8 +184,8 @@ module "app" {
   backends = [
     module.secrets, module.kek, module.db, module.queue, module.blob, module.stream, module.mail,
     # Named output by output, unlike the rest: the ingress reads the service's name, so its dns_records depend on the app,
-    # and a reference to the whole module would be a cycle. These three outputs do not.
-    { env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
+    # and a reference to the whole module would be a cycle. These four outputs do not.
+    { platform = module.ingress.platform, env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
   ]
 
   env = merge(

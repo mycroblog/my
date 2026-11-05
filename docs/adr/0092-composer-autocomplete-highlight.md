@@ -125,7 +125,7 @@ IME とアクセシビリティを最も確実に守れるのが「ネイティ�
 
 投稿フォームの本文は `@my/ui` の `TextArea` のプレーンテキストで、補完も強調表示もなかった（[web-client §12](../architecture/web-client/12-compose.md)）。`@` のアカウント・`#` のハッシュタグ・`:` のカスタム絵文字を補完し、入力している間からメンションとハッシュタグを目で分かるようにする。関連する要件は FR-101、FR-103、FR-109、FR-111、FR-305、FR-412、FR-413。
 
-サーバーには `GET /accounts/lookup`（`acct` の完全一致、`resolve=true` で外のアカウントを WebFinger で解決。FR-305）しかなかった。本文の読み取りはサーバーの `ParseText`（`internal/app/content/text.go`、FR-103）と `ScanShortcodes`（`internal/domain/content/custom_emoji.go`、ADR-0051）が持ち（プロフィールも `RenderProfileText` で同じ規則）、強調はこれと一致しなければ、強調したのにリンクにならないずれが出る。打つたびに問い合わせが飛ぶので、near-zero cost（NFR-COST）とレート制限（client-api §4.2、アカウント単位 1,500 / 5 分）の中に収める必要があった。
+サーバーには `GET /accounts/lookup`（`acct` の完全一致、`resolve=true` で外のアカウントを WebFinger で解決。FR-305）しかなかった。本文の読み取りはサーバーの `ParseText`（`internal/app/content/text.go`、FR-103）と `ScanShortcodes`（`internal/domain/content/custom_emoji.go`、ADR-0051）が持ち（プロフィールも `RenderProfileText` で同じ規則）、強調はこれと一致しなければ、強調したのにリンクにならないずれが出る。打つたびに問い合わせが飛ぶので、問い合わせの費用を抑え、レート制限（client-api §4.2、アカウント単位 1,500 / 5 分）の中に収める必要があった。
 
 日本語の入力を壊さないこと（IME の変換中に候補を開かず確定の Enter を奪わない、取り消し・スペルチェック・モバイルの入力をブラウザの標準のまま保つ）、WAI-ARIA と APG に沿い ADR-0110 の検査を通ること、ADR-0025 の許可リストの中で独自の編集器を持たないことを基準に選んだ。
 

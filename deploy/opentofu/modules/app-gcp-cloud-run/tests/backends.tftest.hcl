@@ -1,6 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# The contract of the backends, on a mocked provider: nothing here reaches Google Cloud.
+# The contract of the backends, on mocked providers: nothing here reaches a cloud.
+
+mock_provider "aws" {
+  mock_resource "aws_s3_bucket" {
+    defaults = {
+      arn = "arn:aws:s3:::media"
+    }
+  }
+}
 
 mock_provider "google" {
   mock_resource "google_service_account" {
@@ -12,6 +20,8 @@ mock_provider "google" {
 }
 
 variables {
+  env = { MY_QUEUE = "cloudtasks" }
+
   service_ingress = "all"
 
   project_id   = "p"
@@ -21,11 +31,12 @@ variables {
   secret_files = { MY_KEK_FILE = "kek" }
   backends = [
     {
+      platform   = "gcp"
       env        = { MY_DATABASE = "postgres" }
       secret_env = { MY_DATABASE_URL = "db-url" }
     },
     {
-      env      = { MY_QUEUE = "cloudtasks" }
+      platform = "gcp"
       invokers = ["invoker@p.iam.gserviceaccount.com"]
       permissions = [
         { permission = "roles/cloudtasks.enqueuer", scope = "queue", resource = "projects/p/locations/l/queues/q" },
@@ -38,7 +49,7 @@ run "merges_every_source" {
   command = plan
 
   variables {
-    env        = { MY_MAIL = "smtp" }
+    env        = { MY_QUEUE = "cloudtasks", MY_MAIL = "smtp" }
     secret_env = { MY_VAPID_PRIVATE_KEY = "vapid" }
   }
 
@@ -83,11 +94,12 @@ run "swapping_a_backend_changes_only_its_settings" {
   variables {
     backends = [
       {
+        platform   = "gcp"
         env        = { MY_DATABASE = "sqlite" }
         secret_env = { MY_DATABASE_URL = "other-url" }
       },
       {
-        env      = { MY_QUEUE = "cloudtasks" }
+        platform = "gcp"
         invokers = ["invoker@p.iam.gserviceaccount.com"]
         permissions = [
           { permission = "roles/cloudtasks.enqueuer", scope = "queue", resource = "projects/p/locations/l/queues/q" },
@@ -112,8 +124,8 @@ run "a_setting_named_by_two_backends_fails" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres" } },
-      { env = { MY_DATABASE = "sqlite" } },
+      { platform = "gcp", env = { MY_DATABASE = "postgres" } },
+      { platform = "gcp", env = { MY_DATABASE = "sqlite" } },
     ]
   }
 
@@ -124,7 +136,7 @@ run "a_setting_in_env_and_secret_env_fails" {
   command = plan
 
   variables {
-    env        = { MY_VAPID_PRIVATE_KEY = "plain" }
+    env        = { MY_QUEUE = "cloudtasks", MY_VAPID_PRIVATE_KEY = "plain" }
     secret_env = { MY_VAPID_PRIVATE_KEY = "vapid" }
   }
 
@@ -135,7 +147,7 @@ run "a_setting_the_module_owns_fails" {
   command = plan
 
   variables {
-    env = { MY_HOST = "other.example.org" }
+    env = { MY_QUEUE = "cloudtasks", MY_HOST = "other.example.org" }
   }
 
   expect_failures = [google_service_account.server]
@@ -156,7 +168,7 @@ run "a_permission_without_its_scope_fails" {
 
   variables {
     backends = [
-      { permissions = [{ permission = "roles/x", scope = "somewhere", resource = "r" }] },
+      { platform = "gcp", permissions = [{ permission = "roles/x", scope = "somewhere", resource = "r" }] },
     ]
   }
 
@@ -215,7 +227,7 @@ run "a_kms_without_a_key_fails" {
 
   variables {
     secret_files = {}
-    env          = { MY_KEY_MANAGER = "gcpkms" }
+    env          = { MY_QUEUE = "cloudtasks", MY_KEY_MANAGER = "gcpkms" }
   }
 
   expect_failures = [google_service_account.server]
@@ -308,7 +320,7 @@ run "app_with_the_secret_manager_kek" {
   variables {
     secret_files = {}
     backends = [
-      { secret_files = run.kek_in_secret_manager.secret_files },
+      { platform = run.kek_in_secret_manager.platform, secret_files = run.kek_in_secret_manager.secret_files },
     ]
   }
 
@@ -335,7 +347,7 @@ run "app_with_the_kms_kek" {
     secret_files    = {}
     console_enabled = true
     backends = [
-      { env = run.kek_in_kms_made_elsewhere.env, permissions = run.kek_in_kms_made_elsewhere.permissions },
+      { platform = run.kek_in_kms_made_elsewhere.platform, env = run.kek_in_kms_made_elsewhere.env, permissions = run.kek_in_kms_made_elsewhere.permissions },
     ]
   }
 
@@ -374,8 +386,8 @@ run "two_ingresses_asking_differently_fail" {
 
   variables {
     backends = [
-      { service_ingress = "all" },
-      { service_ingress = "internal-and-load-balancer" },
+      { platform = "gcp", service_ingress = "all" },
+      { platform = "gcp", service_ingress = "internal-and-load-balancer" },
     ]
   }
 
@@ -386,7 +398,7 @@ run "an_unknown_ingress_setting_fails" {
   command = plan
 
   variables {
-    backends = [{ service_ingress = "OPEN" }]
+    backends = [{ platform = "gcp", service_ingress = "OPEN" }]
   }
 
   expect_failures = [var.backends]
@@ -444,7 +456,7 @@ run "app_with_the_domain_mapping" {
 
   variables {
     backends = [
-      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress, trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
+      { platform = run.ingress_domain_mapping.platform, env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress, trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
     ]
   }
 
@@ -460,7 +472,7 @@ run "app_with_the_load_balancer" {
   variables {
     service_ingress = "internal-and-load-balancer"
     backends = [
-      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
+      { platform = run.ingress_load_balancer.platform, env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
     ]
   }
 
@@ -499,7 +511,7 @@ run "media_alone" {
   command = plan
 
   variables {
-    backends = [{ env = { MY_MEDIA_ORIGIN = "https://media.example.org" } }]
+    backends = [{ platform = "gcp", env = { MY_MEDIA_ORIGIN = "https://media.example.org" } }]
   }
 
   assert {
@@ -513,8 +525,8 @@ run "media_beside_the_domain_mapping" {
 
   variables {
     backends = [
-      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress, trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
-      { env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
+      { platform = run.ingress_domain_mapping.platform, env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress, trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
+      { platform = "gcp", env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
     ]
   }
 
@@ -530,8 +542,8 @@ run "media_beside_the_load_balancer" {
   variables {
     service_ingress = "internal-and-load-balancer"
     backends = [
-      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
-      { env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
+      { platform = run.ingress_load_balancer.platform, env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
+      { platform = "gcp", env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
     ]
   }
 
@@ -546,8 +558,8 @@ run "two_ingresses_that_set_trust_fail" {
 
   variables {
     backends = [
-      { trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
-      { trusted_proxies = run.ingress_load_balancer.trusted_proxies },
+      { platform = run.ingress_domain_mapping.platform, trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
+      { platform = run.ingress_load_balancer.platform, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
     ]
   }
 
@@ -555,23 +567,207 @@ run "two_ingresses_that_set_trust_fail" {
 }
 
 # A backend of another platform fails rather than being dropped by the conversion to this module's type.
-run "a_backend_for_aws_fails" {
+run "the_bucket_of_aws" {
+  command = apply
+
+  module {
+    source = "../blob-aws-s3"
+  }
+
+  variables {
+    bucket_name = "media"
+  }
+
+  assert {
+    condition     = output.platform == "aws"
+    error_message = "the module must say that it belongs to AWS"
+  }
+}
+
+run "a_module_of_aws_fails" {
   command = plan
 
   variables {
-    backends = [
-      { permissions = [{ permission = "sqs:SendMessage", scope = "policy", resource = "arn:aws:sqs:us-east-1:111122223333:my-jobs" }] },
-    ]
+    backends = [run.the_bucket_of_aws]
   }
 
   expect_failures = [var.backends]
+}
+
+run "a_backend_of_aws_by_platform_alone_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "aws", env = { MY_MAIL = "ses" } }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "a_backend_of_no_known_platform_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "azure" }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+# The one exception, stated in the validation of backends.
+run "billing_aws_with_its_own_role_passes" {
+  command = plan
+
+  variables {
+    backends = [{
+      platform        = "aws"
+      env             = { MY_BILLING_AWS_ROLE_ARN = "arn:aws:iam::111122223333:role/my-billing-import" }
+      billing_sources = ["aws"]
+    }]
+  }
+
+  assert {
+    condition     = output.env["MY_BILLING_SOURCES"] == "aws"
+    error_message = "reading AWS's costs from Cloud Run is the one module of AWS that this app takes"
+  }
+}
+
+run "billing_aws_without_web_identity_fails" {
+  command = plan
+
+  variables {
+    backends = [{
+      platform        = "aws"
+      permissions     = [{ permission = "ce:GetCostAndUsage", resource = "*" }]
+      billing_sources = ["aws"]
+    }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_queue_in_the_database" {
+  command = apply
+
+  module {
+    source = "../queue-db"
+  }
+}
+
+# The queue in the database needs both settings: one keeps an instance running, and the other gives it CPU outside requests.
+run "the_queue_in_the_database_fails_by_default" {
+  command = plan
+
+  variables {
+    env      = {}
+    backends = [run.the_queue_in_the_database]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "the_queue_in_the_database_fails_with_min_instances_alone" {
+  command = plan
+
+  variables {
+    env           = {}
+    backends      = [run.the_queue_in_the_database]
+    min_instances = 1
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "the_queue_in_the_database_fails_with_always_allocated_cpu_alone" {
+  command = plan
+
+  variables {
+    env                  = {}
+    backends             = [run.the_queue_in_the_database]
+    cpu_always_allocated = true
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "the_queue_in_the_database_passes_with_both" {
+  command = plan
+
+  variables {
+    env                  = {}
+    backends             = [run.the_queue_in_the_database]
+    min_instances        = 1
+    cpu_always_allocated = true
+  }
+
+  assert {
+    condition     = output.env["MY_QUEUE"] == "db"
+    error_message = "an instance kept running with its CPU can poll the table"
+  }
+
+  assert {
+    condition = (
+      google_cloud_run_v2_service.server.template[0].scaling[0].min_instance_count == 1 &&
+      google_cloud_run_v2_service.server.template[0].containers[0].resources[0].cpu_idle == false
+    )
+    error_message = "the two inputs must reach the service"
+  }
+}
+
+run "the_service_scales_to_zero_with_cpu_during_requests_by_default" {
+  command = plan
+
+  assert {
+    condition = (
+      google_cloud_run_v2_service.server.template[0].scaling[0].min_instance_count == 0 &&
+      google_cloud_run_v2_service.server.template[0].containers[0].resources[0].cpu_idle == true
+    )
+    error_message = "the defaults must stay what a deployment with queue = cloudtasks needs"
+  }
+}
+
+run "min_instances_above_the_maximum_fail" {
+  command = plan
+
+  variables {
+    min_instances = 4
+  }
+
+  expect_failures = [var.min_instances]
+}
+
+run "no_queue_is_the_queue_in_the_database_and_fails" {
+  command = plan
+
+  variables {
+    env      = {}
+    backends = []
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "no_queue_passes_with_both" {
+  command = plan
+
+  variables {
+    env                  = {}
+    backends             = []
+    min_instances        = 1
+    cpu_always_allocated = true
+  }
+
+  assert {
+    condition     = !contains(keys(output.env), "MY_QUEUE")
+    error_message = "the server's default is the queue in the database, so the two settings cover it too"
+  }
 }
 
 run "the_default_url_stays_on_and_jobs_must_name_this_service" {
   command = plan
 
   variables {
-    env = { MY_QUEUE_CLOUDTASKS_URL = "https://my-123456789012.asia-northeast1.run.app" }
+    env = { MY_QUEUE = "cloudtasks", MY_QUEUE_CLOUDTASKS_URL = "https://my-123456789012.asia-northeast1.run.app" }
   }
 
   assert {
@@ -584,7 +780,7 @@ run "jobs_that_call_another_service_fail" {
   command = plan
 
   variables {
-    env = { MY_QUEUE_CLOUDTASKS_URL = "https://other-123456789012.asia-northeast1.run.app" }
+    env = { MY_QUEUE = "cloudtasks", MY_QUEUE_CLOUDTASKS_URL = "https://other-123456789012.asia-northeast1.run.app" }
   }
 
   expect_failures = [google_service_account.server]
@@ -594,7 +790,7 @@ run "jobs_that_call_another_region_fail" {
   command = plan
 
   variables {
-    env = { MY_QUEUE_CLOUDTASKS_URL = "https://my-123456789012.us-central1.run.app" }
+    env = { MY_QUEUE = "cloudtasks", MY_QUEUE_CLOUDTASKS_URL = "https://my-123456789012.us-central1.run.app" }
   }
 
   expect_failures = [google_service_account.server]
@@ -617,7 +813,7 @@ run "an_ingress_that_disagrees_fails" {
   command = plan
 
   variables {
-    backends = [{ service_ingress = "internal-and-load-balancer" }]
+    backends = [{ platform = "gcp", service_ingress = "internal-and-load-balancer" }]
   }
 
   expect_failures = [google_service_account.server]
@@ -628,7 +824,7 @@ run "a_load_balancer_needs_its_setting" {
 
   variables {
     service_ingress = "internal-and-load-balancer"
-    backends        = [{ service_ingress = "all" }]
+    backends        = [{ platform = "gcp", service_ingress = "all" }]
   }
 
   expect_failures = [google_service_account.server]
@@ -649,6 +845,7 @@ run "the_jobs_take_the_direct_connection_and_the_service_the_pooled_one" {
 
   variables {
     backends = [{
+      platform          = "gcp"
       env               = { MY_DATABASE = "postgres" }
       secret_env        = { MY_DATABASE_URL = "pooled", MY_STREAM_POSTGRES_URL = "direct" }
       direct_secret_env = { MY_DATABASE_URL = "direct" }
@@ -682,6 +879,7 @@ run "the_console_takes_the_direct_connection_too" {
   variables {
     console_enabled = true
     backends = [{
+      platform          = "gcp"
       secret_env        = { MY_DATABASE_URL = "pooled" }
       direct_secret_env = { MY_DATABASE_URL = "direct" }
     }]
@@ -706,7 +904,7 @@ run "a_direct_setting_with_nothing_to_override_fails" {
   command = plan
 
   variables {
-    backends = [{ direct_secret_env = { MY_DATABASE_URL = "direct" } }]
+    backends = [{ platform = "gcp", direct_secret_env = { MY_DATABASE_URL = "direct" } }]
   }
 
   expect_failures = [google_service_account.server]
@@ -716,7 +914,7 @@ run "a_cloud_sql_backend_mounts_the_socket_on_the_service_and_the_jobs" {
   command = plan
 
   variables {
-    backends = [{ cloud_sql_instances = ["p:r:db"] }]
+    backends = [{ platform = "gcp", cloud_sql_instances = ["p:r:db"] }]
   }
 
   assert {
@@ -809,8 +1007,8 @@ run "kv_and_stream_share_one_url" {
 
   variables {
     backends = [
-      { env = run.kv_external.env, secret_env = run.kv_external.secret_env, secret_files = run.kv_external.secret_files },
-      { env = run.stream_beside_the_kv.env, secret_env = run.stream_beside_the_kv.secret_env, secret_files = run.stream_beside_the_kv.secret_files },
+      { platform = run.kv_external.platform, env = run.kv_external.env, secret_env = run.kv_external.secret_env, secret_files = run.kv_external.secret_files },
+      { platform = run.stream_beside_the_kv.platform, env = run.stream_beside_the_kv.env, secret_env = run.stream_beside_the_kv.secret_env, secret_files = run.stream_beside_the_kv.secret_files },
     ]
   }
 
@@ -843,8 +1041,8 @@ run "kv_and_stream_both_naming_the_url_fail" {
 
   variables {
     backends = [
-      { env = run.kv_external.env, secret_env = run.kv_external.secret_env },
-      { env = run.stream_with_its_own_url.env, secret_env = run.stream_with_its_own_url.secret_env },
+      { platform = run.kv_external.platform, env = run.kv_external.env, secret_env = run.kv_external.secret_env },
+      { platform = run.stream_with_its_own_url.platform, env = run.stream_with_its_own_url.env, secret_env = run.stream_with_its_own_url.secret_env },
     ]
   }
 
@@ -866,9 +1064,9 @@ run "two_backends_add_to_billing_sources" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
-      { billing_sources = ["gcp"], env = { MY_BILLING_GCP_METHOD = "budget" } },
-      { billing_sources = ["aws"] },
+      { platform = "gcp", env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
+      { platform = "gcp", billing_sources = ["gcp"], env = { MY_BILLING_GCP_METHOD = "budget" } },
+      { platform = "gcp", billing_sources = ["aws"] },
     ]
   }
 
@@ -883,9 +1081,9 @@ run "a_billing_source_named_twice_fails" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
-      { billing_sources = ["aws"] },
-      { billing_sources = ["aws"] },
+      { platform = "gcp", env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
+      { platform = "gcp", billing_sources = ["aws"] },
+      { platform = "gcp", billing_sources = ["aws"] },
     ]
   }
 
@@ -896,10 +1094,10 @@ run "billing_sources_beside_the_setting_in_env_fail" {
   command = plan
 
   variables {
-    env = { MY_BILLING_SOURCES = "aws" }
+    env = { MY_QUEUE = "cloudtasks", MY_BILLING_SOURCES = "aws" }
     backends = [
-      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
-      { billing_sources = ["gcp"] },
+      { platform = "gcp", env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
+      { platform = "gcp", billing_sources = ["gcp"] },
     ]
   }
 
@@ -912,6 +1110,7 @@ run "the_scopes_of_billing_grant_on_their_resources" {
   variables {
     backends = [
       {
+        platform = "gcp"
         permissions = [
           { permission = "roles/bigquery.jobUser", scope = "project", resource = "other" },
           { permission = "READER", scope = "dataset", resource = "projects/billing/datasets/export" },
@@ -949,7 +1148,7 @@ run "a_project_without_a_resource_is_still_the_apps" {
 
   variables {
     backends = [
-      { permissions = [{ permission = "roles/x", scope = "project" }] },
+      { platform = "gcp", permissions = [{ permission = "roles/x", scope = "project" }] },
     ]
   }
 
@@ -963,7 +1162,7 @@ run "the_security_groups_of_aws_fail" {
   command = plan
 
   variables {
-    backends = [{ security_group_ids = ["sg-1"] }]
+    backends = [{ platform = "gcp", security_group_ids = ["sg-1"] }]
   }
 
   expect_failures = [var.backends]
@@ -973,7 +1172,7 @@ run "a_queue_that_lambda_polls_fails" {
   command = plan
 
   variables {
-    backends = [{ event_sources = { jobs = { arn = "a", visibility_timeout_seconds = 930 } } }]
+    backends = [{ platform = "gcp", event_sources = { jobs = { arn = "a", visibility_timeout_seconds = 930 } } }]
   }
 
   expect_failures = [var.backends]
@@ -983,7 +1182,7 @@ run "the_load_balancer_of_ecs_fails" {
   command = plan
 
   variables {
-    backends = [{ load_balancer = { target_group_arn = "a", security_group_id = "b" } }]
+    backends = [{ platform = "gcp", load_balancer = { target_group_arn = "a", security_group_id = "b" } }]
   }
 
   expect_failures = [var.backends]
@@ -993,7 +1192,7 @@ run "the_conditions_of_an_aws_statement_fail" {
   command = plan
 
   variables {
-    backends = [{ permissions = [{ permission = "roles/x", scope = "project", conditions = [{ test = "t", variable = "v", values = ["x"] }] }] }]
+    backends = [{ platform = "gcp", permissions = [{ permission = "roles/x", scope = "project", conditions = [{ test = "t", variable = "v", values = ["x"] }] }] }]
   }
 
   expect_failures = [var.backends]
@@ -1004,7 +1203,7 @@ run "a_backend_on_private_addresses_attaches_the_service_and_the_jobs" {
 
   variables {
     console_enabled = true
-    backends        = [{ vpc_access = { network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/r/subnetworks/s" } }]
+    backends        = [{ platform = "gcp", vpc_access = { network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/r/subnetworks/s" } }]
   }
 
   assert {
@@ -1024,7 +1223,7 @@ run "the_same_subnet_from_the_input_and_a_backend_passes" {
 
   variables {
     vpc_access = { network = "n", subnetwork = "s" }
-    backends   = [{ vpc_access = { network = "n", subnetwork = "s" } }]
+    backends   = [{ platform = "gcp", vpc_access = { network = "n", subnetwork = "s" } }]
   }
 
   assert {
@@ -1038,8 +1237,8 @@ run "two_subnets_fail" {
 
   variables {
     backends = [
-      { vpc_access = { network = "n", subnetwork = "s" } },
-      { vpc_access = { network = "n", subnetwork = "t" } },
+      { platform = "gcp", vpc_access = { network = "n", subnetwork = "s" } },
+      { platform = "gcp", vpc_access = { network = "n", subnetwork = "t" } },
     ]
   }
 
@@ -1072,8 +1271,8 @@ run "a_pooled_database_names_the_listeners_url_and_stream_postgres_names_nothing
 
   variables {
     backends = [
-      { env = run.db_with_a_pooler.env, secret_env = run.db_with_a_pooler.secret_env, direct_secret_env = run.db_with_a_pooler.direct_secret_env },
-      { env = run.stream_postgres_on_a_database_url.env, secret_env = run.stream_postgres_on_a_database_url.secret_env },
+      { platform = run.db_with_a_pooler.platform, env = run.db_with_a_pooler.env, secret_env = run.db_with_a_pooler.secret_env, direct_secret_env = run.db_with_a_pooler.direct_secret_env },
+      { platform = run.stream_postgres_on_a_database_url.platform, env = run.stream_postgres_on_a_database_url.env, secret_env = run.stream_postgres_on_a_database_url.secret_env },
     ]
   }
 
@@ -1100,8 +1299,8 @@ run "two_owners_of_the_listeners_url_fail" {
 
   variables {
     backends = [
-      { env = run.db_with_a_pooler.env, secret_env = run.db_with_a_pooler.secret_env, direct_secret_env = run.db_with_a_pooler.direct_secret_env },
-      { env = run.stream_postgres_with_its_own_url.env, secret_env = run.stream_postgres_with_its_own_url.secret_env },
+      { platform = run.db_with_a_pooler.platform, env = run.db_with_a_pooler.env, secret_env = run.db_with_a_pooler.secret_env, direct_secret_env = run.db_with_a_pooler.direct_secret_env },
+      { platform = run.stream_postgres_with_its_own_url.platform, env = run.stream_postgres_with_its_own_url.env, secret_env = run.stream_postgres_with_its_own_url.secret_env },
     ]
   }
 

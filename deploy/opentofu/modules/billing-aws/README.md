@@ -27,6 +27,8 @@ module.billing_aws,
 
 ## On Cloud Run
 
+This is the one module of AWS that `app-gcp-cloud-run` takes, and only with `web_identity = true`, since reading another cloud's costs is only an outside API call: [Platforms](../../README.md#platforms).
+
 The role is on AWS and the server on Google Cloud, so the root configuration needs both providers, and credentials for both
 when it plans. The module itself uses only `aws`: it takes the service account's ID as a string. A deployment on Google Cloud
 without this block needs no `aws` provider.
@@ -46,6 +48,7 @@ module "billing_aws" {
 # In backends of the app. Name the outputs, not the whole module: a reference to the whole module waits for the role, which
 # waits for the app's service account, which waits for the backends, and that is a cycle.
 {
+  platform        = module.billing_aws.platform
   env             = module.billing_aws.env
   permissions     = module.billing_aws.permissions
   billing_sources = module.billing_aws.billing_sources

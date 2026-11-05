@@ -71,6 +71,11 @@ resource "aws_secretsmanager_secret_version" "kek" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "env" {
   description = "No plain settings: key_manager stays at its default, local."
   value       = {}

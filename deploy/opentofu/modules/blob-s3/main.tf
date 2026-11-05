@@ -59,6 +59,11 @@ variable "secret_access_key_secret_id" {
   nullable    = false
 }
 
+output "platform" {
+  description = "The platform of this module: it works with any app."
+  value       = "neutral"
+}
+
 output "env" {
   description = "The settings of the blob store."
   value = merge(

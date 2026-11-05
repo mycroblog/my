@@ -81,6 +81,9 @@ locals {
 
   jobs_url = lookup(local.env, "MY_QUEUE_CLOUDTASKS_URL", "")
 
+  # The server's default when nothing names one.
+  queue = lookup(local.env, "MY_QUEUE", "db")
+
   # The server refuses to start without these, but only once it runs: say it at plan time.
   key_manager = lookup(local.env, "MY_KEY_MANAGER", "local")
   kek_missing = (
@@ -133,6 +136,10 @@ resource "google_service_account" "server" {
     precondition {
       condition     = !strcontains(local.jobs_url, ".run.app") || (startswith(local.jobs_url, "https://${var.name}-") && endswith(local.jobs_url, ".${var.region}.run.app"))
       error_message = "MY_QUEUE_CLOUDTASKS_URL is ${local.jobs_url}, which is not the URL of the service ${var.name} in ${var.region}, so jobs would go nowhere. Give queue-gcp-cloud-tasks the same name and region."
+    }
+    precondition {
+      condition     = local.queue != "db" || (var.min_instances >= 1 && var.cpu_always_allocated)
+      error_message = "queue = db runs jobs in a process that stays up, which here takes both min_instances of at least 1 and cpu_always_allocated = true: the first keeps an instance running, and the second gives it CPU outside requests. They are ${var.min_instances} and ${var.cpu_always_allocated}. It is what the server does when nothing names a queue too. Set both, which bills an instance all the time, or use queue-gcp-cloud-tasks."
     }
     precondition {
       condition     = !local.kek_missing
@@ -243,7 +250,7 @@ resource "google_cloud_run_v2_service" "server" {
     max_instance_request_concurrency = var.concurrency
 
     scaling {
-      min_instance_count = 0
+      min_instance_count = var.min_instances
       max_instance_count = var.max_instances
     }
 
@@ -294,9 +301,9 @@ resource "google_cloud_run_v2_service" "server" {
           cpu    = var.cpu
           memory = "${var.memory_mib}Mi"
         }
-        # Request-based billing: CPU only while a request runs. With queue = cloudtasks no process needs it otherwise,
-        # since nothing polls.
-        cpu_idle          = true
+        # Off by default, which is request-based billing: CPU only while a request runs. With queue = cloudtasks no process
+        # needs it otherwise, since nothing polls.
+        cpu_idle          = !var.cpu_always_allocated
         startup_cpu_boost = true
       }
 

@@ -7,7 +7,8 @@
 #
 #   - every field of the contract tables of README.md is in the `backends` of every app-* module, and nothing else is;
 #   - every such field is read or refused by that module: `b.<field>` is in its configuration;
-#   - every output of the other modules is either in the contract or listed here as being for the operator.
+#   - every output of the other modules is either in the contract or listed here as being for the operator;
+#   - every other module returns platform, which is what its name says: gcp or aws when the name has it, neutral otherwise.
 #
 # Usage: scripts/tofu-backend-fields-check.sh [DIR]   (default: deploy/opentofu)
 set -euo pipefail
@@ -83,6 +84,16 @@ done
 for module in "$dir"/modules/*/; do
   name="$(basename "$module")"
   case "$name" in app-*) continue ;; esac
+  case "$name" in
+    *-gcp | *-gcp-*) expected=gcp ;;
+    *-aws | *-aws-*) expected=aws ;;
+    *) expected=neutral ;;
+  esac
+  platform="$(cat "$module"/*.tf | awk '/^output "platform"/ { in_output = 1; next } in_output && /^}/ { exit } in_output && /^  value +=/ { print $3 }' | tr -d '"')"
+  if [ "$platform" != "$expected" ]; then
+    echo "$name: its platform is \"$platform\", and its name says $expected: an app refuses a backend of another platform by this" >&2
+    status=1
+  fi
   while IFS= read -r output; do
     grep -qxF "$output" "$contract" && continue
     # shellcheck disable=SC2086 # the list is words on purpose

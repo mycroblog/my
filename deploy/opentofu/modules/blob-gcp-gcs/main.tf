@@ -38,6 +38,11 @@ resource "google_storage_bucket" "media" {
   public_access_prevention = "enforced"
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of Google Cloud."
+  value       = "gcp"
+}
+
 output "env" {
   description = "The settings of the blob store."
   value = {

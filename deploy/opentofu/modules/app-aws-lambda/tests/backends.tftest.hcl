@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# The contract of the backends, on a mocked provider: nothing here reaches AWS.
+# The contract of the backends, on mocked providers: nothing here reaches a cloud.
+
+mock_provider "google" {}
 
 mock_provider "aws" {
   mock_data "aws_iam_policy_document" {
@@ -32,23 +34,26 @@ mock_provider "aws" {
 }
 
 variables {
+  env = { MY_QUEUE = "sqs" }
+
   image = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
   host  = "social.example.org"
   backends = [
     {
+      platform   = "aws"
       env        = { MY_DATABASE = "postgres" }
       secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf" }
     },
     {
+      platform   = "aws"
       secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" }
     },
     {
-      env = { MY_QUEUE = "sqs" }
+      platform = "aws"
       permissions = [
-        { permission = "sqs:SendMessage", scope = "policy", resource = "arn:aws:sqs:ap-northeast-1:111122223333:my-jobs" },
+        { permission = "sqs:SendMessage", resource = "arn:aws:sqs:ap-northeast-1:111122223333:my-jobs" },
         {
           permission = "sns:Subscribe"
-          scope      = "policy"
           resource   = "arn:aws:sns:ap-northeast-1:111122223333:my-stream"
           conditions = [
             { test = "StringEquals", variable = "sns:Protocol", values = ["sqs"] },
@@ -66,7 +71,7 @@ run "merges_every_source" {
   command = plan
 
   variables {
-    env        = { MY_MAIL = "smtp" }
+    env        = { MY_QUEUE = "sqs", MY_MAIL = "smtp" }
     secret_env = { MY_VAPID_PRIVATE_KEY = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:vapid-AbCdEf" }
   }
 
@@ -191,8 +196,8 @@ run "an_ingress_adds_to_the_adapter" {
 
   variables {
     backends = [
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { trusted_proxies = ["130.176.0.0/18"], env = { MY_TRUSTED_PROXY_HEADER = "x-forwarded-for" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", trusted_proxies = ["130.176.0.0/18"], env = { MY_TRUSTED_PROXY_HEADER = "x-forwarded-for" } },
     ]
   }
 
@@ -206,7 +211,7 @@ run "settings_above_lambdas_limit_fail" {
   command = plan
 
   variables {
-    env = { MY_TRUSTED_PROXIES = join(", ", [for i in range(300) : "130.176.0.0/18"]) }
+    env = { MY_QUEUE = "sqs", MY_TRUSTED_PROXIES = join(", ", [for i in range(300) : "130.176.0.0/18"]) }
   }
 
   expect_failures = [aws_lambda_function.server]
@@ -216,7 +221,7 @@ run "a_setting_named_twice_fails" {
   command = plan
 
   variables {
-    env = { MY_DATABASE = "sqlite" }
+    env = { MY_QUEUE = "sqs", MY_DATABASE = "sqlite" }
   }
 
   expect_failures = [aws_iam_role.server]
@@ -236,7 +241,7 @@ run "no_kek_fails" {
   command = plan
 
   variables {
-    backends = [{ env = { MY_DATABASE = "postgres" } }]
+    backends = [{ platform = "aws", env = { MY_DATABASE = "postgres" } }]
   }
 
   expect_failures = [aws_iam_role.server]
@@ -246,17 +251,67 @@ run "a_secret_named_other_than_by_arn_fails" {
   command = plan
 
   variables {
-    backends = [{ secret_env = { MY_KEK = "my-kek" } }]
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "my-kek" } }]
   }
 
   expect_failures = [aws_iam_role.server]
 }
 
-run "a_backend_for_google_cloud_fails" {
+run "the_bucket_of_google_cloud" {
+  command = apply
+
+  module {
+    source = "../blob-gcp-gcs"
+  }
+
+  variables {
+    project_id  = "p"
+    bucket_name = "media"
+    location    = "asia-northeast1"
+  }
+
+  assert {
+    condition     = output.platform == "gcp"
+    error_message = "the module must say that it belongs to Google Cloud"
+  }
+}
+
+run "a_module_of_google_cloud_fails" {
   command = plan
 
   variables {
-    backends = [{ permissions = [{ permission = "roles/storage.objectUser", scope = "bucket", resource = "b" }] }]
+    backends = [run.the_bucket_of_google_cloud]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "billing_gcp_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "gcp", env = { MY_BILLING_GCP_METHOD = "budget" }, billing_sources = ["gcp"] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "a_backend_of_no_known_platform_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "azure" }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+# A role, whichever platform the backend says it has, is not one IAM action.
+run "a_permission_that_is_no_iam_action_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "aws", permissions = [{ permission = "roles/storage.objectUser", resource = "b" }] }]
   }
 
   expect_failures = [var.backends]
@@ -266,7 +321,7 @@ run "an_ingress_for_cloud_run_fails" {
   command = plan
 
   variables {
-    backends = [{ service_ingress = "internal-and-load-balancer" }]
+    backends = [{ platform = "aws", service_ingress = "internal-and-load-balancer" }]
   }
 
   expect_failures = [var.backends]
@@ -276,7 +331,7 @@ run "invokers_fail" {
   command = plan
 
   variables {
-    backends = [{ invokers = ["invoker@p.iam.gserviceaccount.com"] }]
+    backends = [{ platform = "aws", invokers = ["invoker@p.iam.gserviceaccount.com"] }]
   }
 
   expect_failures = [var.backends]
@@ -307,8 +362,9 @@ run "a_queue_that_hides_messages_for_less_than_the_timeout_fails" {
 
   variables {
     backends = [
-      { secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
       {
+        platform = "aws"
         event_sources = {
           jobs = { arn = "arn:aws:sqs:ap-northeast-1:111122223333:my-jobs", visibility_timeout_seconds = 30 }
         }
@@ -324,6 +380,7 @@ run "the_one_off_functions_take_the_direct_connection_and_the_others_the_pooled_
 
   variables {
     backends = [{
+      platform          = "aws"
       env               = { MY_DATABASE = "postgres" }
       secret_env        = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek", MY_DATABASE_URL = "arn:aws:secretsmanager:r:1:secret:pooled", MY_STREAM_POSTGRES_URL = "arn:aws:secretsmanager:r:1:secret:direct" }
       direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:r:1:secret:direct" }
@@ -355,7 +412,7 @@ run "a_direct_setting_with_nothing_to_override_fails" {
   command = plan
 
   variables {
-    backends = [{ direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:r:1:secret:direct" } }]
+    backends = [{ platform = "aws", direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:r:1:secret:direct" } }]
   }
 
   expect_failures = [aws_iam_role.server]
@@ -368,6 +425,7 @@ run "a_backend_in_a_vpc_attaches_every_function" {
     vpc_subnet_ids         = ["subnet-a", "subnet-b"]
     vpc_security_group_ids = ["sg-out"]
     backends = [{
+      platform           = "aws"
       secret_env         = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" }
       security_group_ids = ["sg-db"]
     }]
@@ -383,7 +441,7 @@ run "a_backend_in_a_vpc_without_subnets_fails" {
   command = plan
 
   variables {
-    backends = [{ security_group_ids = ["sg-db"] }]
+    backends = [{ platform = "aws", security_group_ids = ["sg-db"] }]
   }
 
   expect_failures = [aws_iam_role.server]
@@ -414,9 +472,9 @@ run "two_backends_add_to_billing_sources" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { billing_sources = ["gcp"], env = { MY_BILLING_GCP_METHOD = "budget" } },
-      { billing_sources = ["aws"] },
+      { platform = "aws", env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", billing_sources = ["gcp"], env = { MY_BILLING_GCP_METHOD = "budget" } },
+      { platform = "aws", billing_sources = ["aws"] },
     ]
   }
 
@@ -431,9 +489,9 @@ run "a_billing_source_named_twice_fails" {
 
   variables {
     backends = [
-      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { billing_sources = ["aws"] },
-      { billing_sources = ["aws"] },
+      { platform = "aws", env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", billing_sources = ["aws"] },
+      { platform = "aws", billing_sources = ["aws"] },
     ]
   }
 
@@ -444,10 +502,10 @@ run "billing_sources_beside_the_setting_in_env_fail" {
   command = plan
 
   variables {
-    env = { MY_BILLING_SOURCES = "aws" }
+    env = { MY_QUEUE = "sqs", MY_BILLING_SOURCES = "aws" }
     backends = [
-      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
-      { billing_sources = ["gcp"] },
+      { platform = "aws", env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", billing_sources = ["gcp"] },
     ]
   }
 
@@ -458,7 +516,7 @@ run "a_field_of_google_cloud_fails" {
   command = plan
 
   variables {
-    backends = [{ cloud_sql_instances = ["p:r:db"] }]
+    backends = [{ platform = "aws", cloud_sql_instances = ["p:r:db"] }]
   }
 
   expect_failures = [var.backends]
@@ -468,7 +526,7 @@ run "the_subnet_of_cloud_run_fails" {
   command = plan
 
   variables {
-    backends = [{ vpc_access = { network = "n", subnetwork = "s" } }]
+    backends = [{ platform = "aws", vpc_access = { network = "n", subnetwork = "s" } }]
   }
 
   expect_failures = [var.backends]
@@ -478,8 +536,41 @@ run "the_load_balancer_of_a_service_with_tasks_fails" {
   command = plan
 
   variables {
-    backends = [{ load_balancer = { target_group_arn = "a", security_group_id = "b" } }]
+    backends = [{ platform = "aws", load_balancer = { target_group_arn = "a", security_group_id = "b" } }]
   }
 
   expect_failures = [var.backends]
+}
+
+run "the_queue_in_the_database" {
+  command = apply
+
+  module {
+    source = "../queue-db"
+  }
+}
+
+run "the_queue_in_the_database_fails" {
+  command = plan
+
+  variables {
+    env = {}
+    backends = [
+      run.the_queue_in_the_database,
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "no_queue_is_the_queue_in_the_database_and_fails" {
+  command = plan
+
+  variables {
+    env      = {}
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } }]
+  }
+
+  expect_failures = [aws_iam_role.server]
 }

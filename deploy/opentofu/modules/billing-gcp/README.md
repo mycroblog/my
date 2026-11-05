@@ -2,20 +2,18 @@
 
 The Google Cloud side of the usage cost import, `billing_sources = gcp`, by either `billing_gcp_method`: the dataset of the
 Cloud Billing export to BigQuery, or the topic and the pull subscription of a budget's notifications, each with the roles the
-server needs. It follows [the backend contract](../../README.md#the-backend-contract).
+server needs. It follows [the backend contract](../../README.md#the-backend-contract), and works only with `app-gcp-cloud-run`: [Platforms](../../README.md#platforms).
 [Importing cloud usage costs](../../../../docs/operations/billing-import.md) describes the import itself.
 
 **This module has never been applied, and the import through it has never run on a real account.** The tests mock the
 provider, so they show that the configuration is consistent, not that Google Cloud accepts it. Unverified:
 
 - that a budget connects to this topic and publishes to it, and that the export writes to this dataset, with the module's grants in place;
-- that `READER` in the dataset's access entry shows no difference on the next plan, and that the entry leaves Google's own entry for the export in place;
-- on a server outside Google Cloud, everything past the grants: read [Outside Google Cloud](#outside-google-cloud).
+- that `READER` in the dataset's access entry shows no difference on the next plan, and that the entry leaves Google's own entry for the export in place.
 
 ## Source
 
-Pin it to the release you deploy, like every module of the deployment. It needs the `google` provider, also on an app of
-another platform:
+Pin it to the release you deploy, like every module of the deployment. It needs the `google` provider, which the app has:
 
 ```hcl
 module "billing_gcp" {
@@ -39,14 +37,13 @@ module.billing_gcp,
 | `dataset_location` | `US` | A multi-region receives the current and the previous month when the export starts, and a single region starts the day it is enabled. It cannot change later |
 | `query_project` | `project_id` | The project that runs the queries and is billed for them. Set `MY_BILLING_GCP_QUERY_PROJECT` this way, not through `env` |
 | `name` | `my-billing-budget` | The topic and the subscription, read by this server alone |
-| `external_member` | null | For a server outside Google Cloud: read below |
 
 | Output | Value |
 | --- | --- |
 | `billing_sources` | `["gcp"]`, which the app adds to `MY_BILLING_SOURCES` |
 | `env` | `MY_BILLING_GCP_METHOD`, and `MY_BILLING_GCP_TABLE` (with `MY_BILLING_GCP_QUERY_PROJECT` when set) or `MY_BILLING_GCP_BUDGET_SUBSCRIPTION` |
 | `secret_env` | Empty |
-| `permissions` | `bigquery`: `roles/bigquery.jobUser` on the query project and `READER` on the dataset, which is what the API makes of `roles/bigquery.dataViewer`. `budget`: `roles/pubsub.subscriber` on the subscription. Empty with `external_member` |
+| `permissions` | `bigquery`: `roles/bigquery.jobUser` on the query project and `READER` on the dataset, which is what the API makes of `roles/bigquery.dataViewer`. `budget`: `roles/pubsub.subscriber` on the subscription |
 | `budget_topic` | The topic to connect the budget to, or null. This output is not part of the backend contract |
 
 The filters and the limit (`MY_BILLING_GCP_PROJECTS`, `MY_BILLING_GCP_LABEL`, `MY_BILLING_GCP_MAX_BYTES_BILLED`) go through `env` of the app.
@@ -72,17 +69,3 @@ module, and each needs a role on the billing account, which the identity that ru
 
 Connecting the budget lets Cloud Billing publish, and enabling the export adds Google's service account to the dataset, so
 this module grants neither and manages no policy that would remove them.
-
-## Outside Google Cloud
-
-The app of another platform refuses a Google Cloud role, so with `external_member` this module makes the grants itself and
-returns no `permissions`. The value must be known at plan time, so build it from names rather than from the attributes of a
-resource.
-
-```hcl
-external_member = "principalSet://iam.googleapis.com/projects/<number>/locations/global/workloadIdentityPools/<pool>/attribute.aws_role/<role>"
-```
-
-The rest is yours, and **a server on AWS cannot use this yet**: the pool and its provider are not part of this module, and
-the server finds Application Default Credentials through `GOOGLE_APPLICATION_CREDENTIALS`, the path of a file that AWS's app
-modules have no way to deliver. The file holds no secret, but it would have to be in the image.

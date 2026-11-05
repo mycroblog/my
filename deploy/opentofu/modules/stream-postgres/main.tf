@@ -14,6 +14,11 @@ variable "listen_url_secret_id" {
   default     = null
 }
 
+output "platform" {
+  description = "The platform of this module: it works with any app."
+  value       = "neutral"
+}
+
 output "env" {
   description = "The settings of the stream."
   value       = { MY_STREAM = "postgres" }
