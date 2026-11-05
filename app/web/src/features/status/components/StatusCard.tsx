@@ -59,6 +59,11 @@ export type StatusCardProps = {
   ref?: Ref<HTMLElement>;
   /** Whether the card is one of the pinned posts at the top of a profile, which a line above it says (FR-403). */
   pinned?: boolean;
+  /**
+   * The report that points at the post, on a moderator's page about it: the card offers its translation through the
+   * report (ADR-0148 §13), also without the viewer's actions.
+   */
+  report?: string;
 };
 
 /**
@@ -73,11 +78,12 @@ export function StatusCard({
   withActions = true,
   ref,
   pinned = false,
+  report,
 }: StatusCardProps) {
   const t = useT();
   const intl = useIntl();
   const view = useStatusView(status);
-  const translation = useStatusTranslation(status, withActions);
+  const translation = useStatusTranslation(status, withActions || report !== undefined, report);
   const { shown } = translation;
   const text = translatedView(view, shown);
   const viewerLabels = useMediaViewerLabels();

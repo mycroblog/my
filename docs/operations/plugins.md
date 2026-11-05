@@ -162,6 +162,7 @@ Having an address enables nothing: until the setting names `plugin`, the server 
 
 The plugin is one provider like any other. [`translation_provider_visibilities`](instance-settings.md) decides what it may
 receive, the monthly limits count what it is sent, and a translation it made stays in the server's cache like another.
+With `translation_reports_to_server` on, it also receives what moderators ask to translate in a report, by the same visibilities.
 It can come before or after another provider in the order of `translation_providers`.
 
 ### What the plugin receives

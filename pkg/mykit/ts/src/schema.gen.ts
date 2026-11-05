@@ -9148,8 +9148,9 @@ export interface components {
             /**
              * @description Whether moderators may send the text of a report, its posts and its comment, to the providers.
              *     Each provider still receives only the visibilities it lists, and a comment counts as `private`.
+             *     Absent on a server without translation, where it is false.
              */
-            reports_to_server: boolean;
+            reports_to_server?: boolean;
         };
         /** @description A provider that this instance sends the text of posts to when a reader asks for a translation. */
         InstanceTranslationProvider: {

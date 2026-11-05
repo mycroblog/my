@@ -137,7 +137,7 @@ func TestReportTranslationSendsNothingWhileTheSettingIsOff(t *testing.T) {
 	t.Parallel()
 	e := newReportTranslationEnv(t)
 	var inst clientapi.Instance
-	if res := e.c.do("carol", http.MethodGet, "/instance", nil, &inst); res.StatusCode != http.StatusOK || inst.Translation.ReportsToServer {
+	if res := e.c.do("carol", http.MethodGet, "/instance", nil, &inst); res.StatusCode != http.StatusOK || inst.Translation.ReportsToServer == nil || *inst.Translation.ReportsToServer {
 		t.Fatalf("GET /instance = %d, reports_to_server %v, want false by default", res.StatusCode, inst.Translation.ReportsToServer)
 	}
 	res, _ := e.translateReported(e.public.Id)
@@ -160,6 +160,10 @@ func TestReportTranslationKeepsEachProvidersVisibilities(t *testing.T) {
 	t.Parallel()
 	e := newReportTranslationEnv(t)
 	e.setReportsToServer(true)
+	var inst clientapi.Instance
+	if res := e.c.do("carol", http.MethodGet, "/instance", nil, &inst); res.StatusCode != http.StatusOK || inst.Translation.ReportsToServer == nil || !*inst.Translation.ReportsToServer {
+		t.Fatalf("GET /instance = %d, reports_to_server %v, want true", res.StatusCode, inst.Translation.ReportsToServer)
+	}
 	res, got := e.translateReported(e.public.Id)
 	if res.StatusCode != http.StatusOK || got.Provider == nil || got.Provider.Id != "one" || !strings.Contains(got.Content, "[ja] A public post") {
 		t.Fatalf("translate the public post = %d %+v", res.StatusCode, got)

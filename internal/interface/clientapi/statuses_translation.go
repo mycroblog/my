@@ -117,7 +117,7 @@ func (s *Server) instanceTranslation(ctx context.Context, browser, reportsToServ
 	if s.o.Translations == nil {
 		return out, nil
 	}
-	out.ReportsToServer = reportsToServer
+	out.ReportsToServer = &reportsToServer
 	providers, err := s.o.Translations.EnabledProviders(ctx)
 	if err != nil {
 		return InstanceTranslation{}, fmt.Errorf("clientapi: translation providers: %w", err)

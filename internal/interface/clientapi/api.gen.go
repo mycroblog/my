@@ -10005,7 +10005,8 @@ type InstanceTranslation struct {
 
 	// ReportsToServer Whether moderators may send the text of a report, its posts and its comment, to the providers.
 	// Each provider still receives only the visibilities it lists, and a comment counts as `private`.
-	ReportsToServer bool `json:"reports_to_server"`
+	// Absent on a server without translation, where it is false.
+	ReportsToServer *bool `json:"reports_to_server,omitempty"`
 }
 
 // InstanceTranslationProvider A provider that this instance sends the text of posts to when a reader asks for a translation.
