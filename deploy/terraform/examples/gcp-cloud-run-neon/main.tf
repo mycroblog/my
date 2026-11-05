@@ -32,7 +32,7 @@ provider "google" {
 # The first apply generates the VAPID key. Add the others with gcloud secrets versions add before the app: they come from
 # elsewhere, and the guide has the order.
 module "secrets" {
-  source = "../../modules/secrets-gcp-secret-manager"
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/secrets-gcp-secret-manager?ref=v0.1.0&depth=1"
 
   project_id         = var.project_id
   secrets            = { MY_VAPID_PRIVATE_KEY = var.vapid_secret_id }
@@ -46,27 +46,27 @@ module "secrets" {
 # To keep the KEK in Cloud KMS instead, replace this block. On an instance with data this is a move: read the guide first.
 #
 #   module "kek" {
-#     source = "../../modules/kek-gcp-kms"
+#     source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/kek-gcp-kms?ref=v0.1.0&depth=1"
 #
 #     project_id = var.project_id
 #     location   = var.region
 #   }
 # The first apply generates the KEK. Copy it right away: the guide says how.
 module "kek" {
-  source = "../../modules/kek-gcp-secret-manager"
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/kek-gcp-secret-manager?ref=v0.1.0&depth=1"
 
   project_id = var.project_id
   secret_id  = var.kek_secret_id
 }
 
 module "db" {
-  source = "../../modules/db-external"
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/db-external?ref=v0.1.0&depth=1"
 
   url_secret_id = module.secrets.ids["database_url"]
 }
 
 module "queue" {
-  source = "../../modules/queue-gcp-cloud-tasks"
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/queue-gcp-cloud-tasks?ref=v0.1.0&depth=1"
 
   project_id    = var.project_id
   region        = var.region
@@ -75,7 +75,7 @@ module "queue" {
 }
 
 module "blob" {
-  source = "../../modules/blob-gcp-gcs"
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/blob-gcp-gcs?ref=v0.1.0&depth=1"
 
   project_id  = var.project_id
   bucket_name = var.bucket_name
@@ -83,13 +83,13 @@ module "blob" {
 }
 
 module "stream" {
-  source = "../../modules/stream-gcp-pubsub"
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/stream-gcp-pubsub?ref=v0.1.0&depth=1"
 
   project_id = var.project_id
 }
 
 module "mail" {
-  source = "../../modules/mail-smtp"
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/mail-smtp?ref=v0.1.0&depth=1"
 
   from               = var.mail_from
   host               = var.mail_smtp_host
@@ -104,7 +104,7 @@ module "mail" {
 # Or Cloudflare, with an origin that accepts host unless the zone is on the Enterprise plan: the guide has what that means.
 #
 #   module "ingress" {
-#     source = "../../modules/ingress-cloudflare-app"
+#     source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/ingress-cloudflare-app?ref=v0.1.0&depth=1"
 #
 #     zone_id     = "<the zone's ID>"
 #     host        = var.host
@@ -114,7 +114,7 @@ module "mail" {
 # And a media host beside any of them, which adds { env = module.media.env } to backends:
 #
 #   module "media" {
-#     source = "../../modules/ingress-cloudflare-media"
+#     source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/ingress-cloudflare-media?ref=v0.1.0&depth=1"
 #
 #     zone_id     = "<the zone's ID>"
 #     host        = "media.example.org"
@@ -122,7 +122,7 @@ module "mail" {
 #   }
 #
 #   module "ingress" {
-#     source = "../../modules/ingress-gcp-load-balancer"
+#     source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/ingress-gcp-load-balancer?ref=v0.1.0&depth=1"
 #
 #     project_id   = var.project_id
 #     region       = var.region
@@ -130,7 +130,7 @@ module "mail" {
 #     service_name = module.app.service_name
 #   }
 module "ingress" {
-  source = "../../modules/ingress-gcp-domain-mapping"
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/ingress-gcp-domain-mapping?ref=v0.1.0&depth=1"
 
   project_id   = var.project_id
   region       = var.region
@@ -139,7 +139,7 @@ module "ingress" {
 }
 
 module "app" {
-  source = "../../modules/app-gcp-cloud-run"
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/app-gcp-cloud-run?ref=v0.1.0&depth=1"
 
   project_id      = var.project_id
   region          = var.region

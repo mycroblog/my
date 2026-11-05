@@ -25,23 +25,29 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    A run by hand of some of the jobs is titled for them, such as `Nightly (l4)`, and does not count, whatever its result.
    A run titled `Nightly` either ran every job, or, on a schedule, skipped them because a full run had already passed on that commit.
 
-2. Run `release.yml` on `main`. The head commit of `main` at that moment is the commit that is checked and tagged.
+2. For a stable version, set the module ref of the OpenTofu examples to it, and merge that first: the first job of the release fails while they differ. A prerelease is not checked, and operators of a prerelease set `ref` themselves.
+
+   ```sh
+   scripts/terraform-examples.sh bump v0.1.0
+   ```
+
+3. Run `release.yml` on `main`. The head commit of `main` at that moment is the commit that is checked and tagged.
 
    ```sh
    gh workflow run release.yml -R mycroblog/my --ref main -f version=v0.1.0
    gh run list -R mycroblog/my --workflow release.yml --limit 1
    ```
 
-3. Wait for it to finish. The slow suite (the full E2E, federation, real PostgreSQL, the stream contract, the images, [the upgrade test](#the-upgrade-test), [the restore drill](../operations/backup.md#recovery-drill), CodeQL)
+4. Wait for it to finish. The slow suite (the full E2E, federation, real PostgreSQL, the stream contract, the images, [the upgrade test](#the-upgrade-test), [the restore drill](../operations/backup.md#recovery-drill), CodeQL)
    takes a while even with its jobs in parallel.
    The `release` job does not run if any slow-suite job fails or is cancelled: no tag, no Release, and no library is published.
    On a failure, fix the cause on `main` and run the workflow again with the same version.
    If only the `npm` job or an `image` job fails after `release` passed, fix the cause (for `npm`, usually the trusted publisher registration) and rerun the failed jobs of that run
    (`gh run rerun <run-id> -R mycroblog/my --failed`); versions already published are skipped.
-4. When it passes, open the draft Release (`gh release view v0.1.0 -R mycroblog/my`, or the Releases page) and read its [notes](#release-notes):
+5. When it passes, open the draft Release (`gh release view v0.1.0 -R mycroblog/my`, or the Releases page) and read its [notes](#release-notes):
    the prose is a draft from a model, and the facts after it come from the repository. Fill in what the draft's comments ask for.
-5. [Review the image](#review-the-image-in-the-draft): run its digest and read the `image-scan` report.
-6. Publish the draft. A prerelease is drafted as a prerelease. `release-image.yml` then gives the image its tags within minutes; check that its run passed.
+6. [Review the image](#review-the-image-in-the-draft): run its digest and read the `image-scan` report.
+7. Publish the draft. A prerelease is drafted as a prerelease. `release-image.yml` then gives the image its tags within minutes; check that its run passed.
 
    ```sh
    gh run list -R mycroblog/my --workflow release-image.yml --limit 1

@@ -3,6 +3,17 @@
 The job queue: a Cloud Tasks queue, the Cloud Scheduler job of the tick, and the service account whose token both carry.
 It follows [the backend contract](../../README.md#the-backend-contract).
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "queue" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/queue-gcp-cloud-tasks?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `project_id`, `region` | required | Where everything goes |

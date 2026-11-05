@@ -102,7 +102,7 @@ variable "console_enabled" {
 }
 
 output "console" {
-  description = "Pipe this to console.sh: tofu output -json console | ../../console.sh <my command>."
+  description = "Pipe this to console.sh: tofu output -json console | .terraform/modules/app/deploy/terraform/console.sh <my command>."
   value       = module.app.console
 }
 

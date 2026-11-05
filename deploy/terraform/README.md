@@ -19,10 +19,31 @@ deploy/terraform/
   modules/secrets-gcp-secret-manager/  secrets to fill by hand, or a VAPID key it generates
   modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
   modules/kek-gcp-kms/                 the KEK in Cloud KMS
-  examples/gcp-cloud-run-neon/    all of the above, composed
+  examples/gcp-cloud-run-neon/    all of the above, composed, on Git sources at MODULE_REF
   upgrade.sh                      migration job first, then the service
   console.sh                      runs one my command through an app module's console
 ```
+
+## Using a module
+
+A module is a Git source pinned to a release. A pin is required: an unpinned module could change the KEK's resources under you.
+
+```hcl
+module "db" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/db-external?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
+Keep every block at the same release, the one you deploy, whether stable or a prerelease such as `v0.1.0-rc.4`. A module exists
+only from the first tag that contains it, so an earlier tag has none of them. `.terraform/modules/app/deploy/terraform` holds
+`upgrade.sh` and `console.sh` after `tofu init`, at that release. `examples/gcp-cloud-run-neon` works when copied to an empty
+directory with its lock file: [the guide](../../docs/operations/deploy-cloud-run.md#3-copy-the-example-and-set-the-variables)
+starts that way.
+
+In this repository, `MODULE_REF` holds the release the examples name. Inside the repository the checks test the modules of the
+same commit: `scripts/task.sh terraform:example-test` runs on a copy whose sources are rewritten to local paths, and never
+fetches from GitHub. To update the example's lock file, use `scripts/task.sh terraform:lock`.
 
 ## Naming
 
@@ -137,4 +158,5 @@ and the example, the tests on mocked providers, a check that every `MY_*` name h
 apply against a local stub of Secret Manager, which shows the formats of the generated values, that none reaches the plan or
 the state, and that another apply writes nothing. None of them reaches a cloud, so they show that the configuration is
 consistent, not that an apply on Google Cloud succeeds. Only the example
-pins its providers (`.terraform.lock.hcl`); update it with `scripts/task.sh terraform:lock`.
+pins its providers (`.terraform.lock.hcl`). `terraform:sources` fails on a relative source or a `ref` other than `MODULE_REF`, and
+`terraform:git-source-test` runs `tofu init` on a copy of the example against a local bare repository with the tag.

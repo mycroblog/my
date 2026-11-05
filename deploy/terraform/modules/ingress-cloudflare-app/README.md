@@ -5,6 +5,17 @@ the API, ActivityPub, and HTML must never be cached. It takes the origin as an i
 else. It follows [the ingress contract](../../README.md#the-ingress-contract). **Nothing here has run against Cloudflare:
 the tests mock the provider.**
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "ingress" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/ingress-cloudflare-app?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `zone_id` | required | Zone of `host` |

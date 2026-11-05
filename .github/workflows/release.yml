@@ -57,6 +57,15 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # A stable release must name itself in the sources of the OpenTofu examples; a prerelease is not checked.
+      - name: Check the module ref of the examples
+        env:
+          VERSION: ${{ inputs.version }}
+        run: scripts/terraform-examples.sh check --release "$VERSION"
       - name: Validate the version and check that its tag does not exist
         env:
           GH_TOKEN: ${{ github.token }}

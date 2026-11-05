@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests deploy/terraform/upgrade.sh, deploy/terraform/console.sh, and scripts/terraform-env-check.sh against a gcloud
+# Tests deploy/terraform/upgrade.sh, deploy/terraform/console.sh, scripts/terraform-examples.sh, and scripts/terraform-env-check.sh against a gcloud
 # that records its calls: the order of the steps, stopping at a failure, and passing on an exit code. It shows nothing
 # about Google Cloud itself.
 set -euo pipefail
@@ -132,6 +132,37 @@ echo 'MY_HOST = 1, MY_KEK_FILE = 2, MY_CONFIG = 3' > "$tmp/ok/main.tf"
 echo 'MY_HOST_FILE = 1' > "$tmp/bad/main.tf"
 "$root/scripts/terraform-env-check.sh" -r "$tmp/reference.md" "$tmp/ok" || fail "env check refused known names"
 if "$root/scripts/terraform-env-check.sh" -r "$tmp/reference.md" "$tmp/bad" 2> /dev/null; then fail "env check passed an unknown name"; fi
+
+# terraform-examples: the sources and the release gate, on a small tree.
+tree="$tmp/tree"
+mkdir -p "$tree/deploy/terraform/examples/e" "$tree/deploy/terraform/modules/m" "$tree/docs/operations"
+echo v0.1.0 > "$tree/deploy/terraform/MODULE_REF"
+good='git::https://github.com/mycroblog/my.git//deploy/terraform/modules/m?ref=v0.1.0&depth=1'
+write_example() {
+  printf 'terraform {\n  required_providers {\n    google = {\n      source = "hashicorp/google"\n    }\n  }\n}\nmodule "m" {\n  source = "%s"\n}\n' "$1" > "$tree/deploy/terraform/examples/e/main.tf"
+}
+examples() {
+  TERRAFORM_EXAMPLES_ROOT="$tree" "$root/scripts/terraform-examples.sh" "$@" > /dev/null 2>&1
+}
+write_example "$good"
+examples check || fail "a good source was refused"
+for bad in '../../modules/m' 'git::https://github.com/mycroblog/my.git//deploy/terraform/modules/m' \
+  'git::https://github.com/mycroblog/my.git//deploy/terraform/modules/m?ref=v0.0.9&depth=1' \
+  'git::https://github.com/mycroblog/my.git//deploy/terraform/modules/none?ref=v0.1.0&depth=1' \
+  'git::https://github.com/someone/else.git//deploy/terraform/modules/m?ref=v0.1.0&depth=1'; do
+  write_example "$bad"
+  if examples check; then fail "check passed: $bad"; fi
+done
+write_example "$good"
+printf '#   source = "../../modules/m"\n' >> "$tree/deploy/terraform/examples/e/main.tf"
+if examples check; then fail "check passed a relative source in a comment"; fi
+write_example "$good"
+examples check --release v0.1.0 || fail "the release of MODULE_REF was refused"
+examples check --release v0.2.0-rc.1 || fail "a prerelease was checked"
+if examples check --release v0.2.0; then fail "a stable release passed with another ref"; fi
+examples bump v0.2.0 || fail "bump failed"
+examples check --release v0.2.0 || fail "bump left something behind"
+grep -qF 'ref=v0.2.0&depth=1' "$tree/deploy/terraform/examples/e/main.tf" || fail "bump did not change the source"
 
 if [ "$failures" -gt 0 ]; then
   echo "terraform-scripts-test: $failures failed" >&2

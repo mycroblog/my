@@ -3,6 +3,17 @@
 A PostgreSQL outside this configuration: Neon, or any other. It creates nothing, and follows
 [the backend contract](../../README.md#the-backend-contract).
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "db" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/db-external?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Meaning |
 | --- | --- |
 | `url_secret_id` | Secret in Secret Manager that holds the connection URL, which the operator created by hand |

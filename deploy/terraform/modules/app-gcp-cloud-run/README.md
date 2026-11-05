@@ -7,6 +7,17 @@ It merges what the backends return ([the contract](../../README.md#the-backend-c
 
 ## Inputs
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "app" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/app-gcp-cloud-run?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `project_id`, `region` | required | Where everything goes |

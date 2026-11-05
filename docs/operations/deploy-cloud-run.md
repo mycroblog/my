@@ -44,12 +44,21 @@ In the Neon console, create a project in a region near your Cloud Run region, an
 - Use the **direct** connection string (the host without `-pooler`). `my schema apply` holds a session-level lock, which does not work through a pooler in transaction mode.
 - Add `pool_max_conns` for the concurrency you expect, for example `postgres://...neon.tech/neondb?sslmode=require&pool_max_conns=8`. The default is 4 per instance, and a Cloud Run instance takes 80 requests at once: see [Waiting for a database connection](running.md#waiting-for-a-database-connection). All instances together must stay under the database's limit, so `max_instances` of the app module matters too.
 
-### 3. Set the variables
+### 3. Copy the example and set the variables
+
+Start from a copy in an empty directory, with the provider lock file, from the release you deploy:
 
 ```sh
-cd deploy/terraform/examples/gcp-cloud-run-neon
+VERSION=v0.1.0
+git clone --depth 1 --branch "$VERSION" https://github.com/mycroblog/my.git my-source
+mkdir my-deployment
+cp -r my-source/deploy/terraform/examples/gcp-cloud-run-neon/. my-deployment/
+rm -rf my-source
+cd my-deployment
 cp terraform.tfvars.example terraform.tfvars
 ```
+
+**Set `ref` to that release.** Every module block in `main.tf` names a release with `?ref=`, which a stable release's copy already has right. For a prerelease, set it yourself: `sed -i "s/?ref=[^&]*/?ref=$VERSION/" main.tf`. Modules exist only from the first release that contains them, so an earlier tag has no example to copy. Keep the same release in `ref` and in `image`, and keep this directory: it holds your state and your settings.
 
 Fill in `terraform.tfvars`. `mail_from`, `mail_smtp_host`, `mail_smtp_port` (587 by default; Google Cloud blocks outbound port 25), and `mail_smtp_username` configure [email](email.md). `env` and `secret_env` take any other setting from the [configuration reference](../reference/configuration.md), by value and by secret ID. A setting named in two places fails the plan.
 
@@ -66,6 +75,12 @@ This creates the secrets, and generates the KEK and the VAPID key:
 ```sh
 tofu init
 tofu apply -target=module.secrets -target=module.kek
+```
+
+`tofu init` also fetches `upgrade.sh` and `console.sh` at that release, which the next steps use:
+
+```sh
+SCRIPTS=.terraform/modules/app/deploy/terraform
 ```
 
 **Copy the KEK now**, and keep the copy apart from the database, for example in a password manager. Without it a [backup](backup.md) cannot be restored, and the accounts' keys are lost. Do the same with the VAPID key, whose loss ends every Web Push subscription:
@@ -98,10 +113,8 @@ tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
 
 ### 6. Apply the schema
 
-From the example's directory:
-
 ```sh
-../../upgrade.sh --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.1.0 --migrate-only
+"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.1.0 --migrate-only
 ```
 
 It runs `my config check`, `my db upgrade -check`, `my schema apply`, and `my db upgrade`, each as an execution of the job, and stops at the first that fails. The first command that uses the database records `host` and `account_domain` in it.
@@ -124,7 +137,7 @@ Cloud Run jobs have no terminal and no standard input, so `my admin create` prin
 
 ```sh
 tofu apply -var console_enabled=true
-tofu output -json console | ../../console.sh admin create -username alice -email alice@example.com -password-link
+tofu output -json console | "$SCRIPTS/console.sh" admin create -username alice -email alice@example.com -password-link
 tofu apply -var console_enabled=false
 ```
 
@@ -140,7 +153,7 @@ The console runs one `my` command with the image, settings, and secrets of the s
 
 ```sh
 tofu apply -var console_enabled=true
-tofu output -json console | ../../console.sh instance set registration_mode open
+tofu output -json console | "$SCRIPTS/console.sh" instance set registration_mode open
 tofu apply -var console_enabled=false
 ```
 
@@ -158,10 +171,10 @@ gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --up
 pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
 
 # 2. Read the SQL it would run. This changes nothing but the image of the migration job.
-../../upgrade.sh --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --plan
+"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --plan
 
-# 3. Upgrade.
-../../upgrade.sh --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --maintenance
+# 3. Upgrade. These scripts are of the release your modules name, which is enough: they only run gcloud and my.
+"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --maintenance
 ```
 
 The script does this, and stops at the first step that fails:
@@ -173,7 +186,7 @@ The script does this, and stops at the first step that fails:
 
 Without `--maintenance`, the old revision keeps serving during steps 2 and 3, which [is not guaranteed to work](database.md#the-server-during-an-upgrade). Add `--allow-destructive` when the release notes call for it. Pin a digest with `--image ghcr.io/mycroblog/my:0.2.0@sha256:...`, which the [production checklist](production-checklist.md#operations) recommends.
 
-Then set `image` in `terraform.tfvars` to the same value. `tofu apply` never changes the image of a service or job that exists, so a forgotten `image` does no harm, but the value is what a new job or a recreated service would start from.
+Then set `image` in `terraform.tfvars` to the same value, and `ref` in `main.tf` to the same release, followed by `tofu init` and `tofu plan`. Read that plan before you apply it: a new release's modules may change resources. `tofu apply` never changes the image of a service or job that exists, so a forgotten `image` does no harm, but the value is what a new job or a recreated service would start from.
 
 **When a step fails**, the service stays on its revision, in the maintenance mode if you asked for it. Fix the cause and run the script again: the steps are safe to repeat. To leave the maintenance mode without upgrading, when `my schema apply` has not run:
 
@@ -189,7 +202,7 @@ Replace the module's block in `main.tf`. The app module takes whatever the block
 
 ```hcl
 module "db" {
-  source = "../../modules/db-external"
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/db-external?ref=v0.1.0&depth=1"
 
   url_secret_id = "another-database-url"
 }

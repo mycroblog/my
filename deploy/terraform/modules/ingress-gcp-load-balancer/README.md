@@ -4,6 +4,17 @@ Traffic reaches the service through a global external Application Load Balancer,
 a Google-managed certificate for `host`, and a redirect from HTTP to HTTPS. It has a monthly fee. It follows
 [the ingress contract](../../README.md#the-ingress-contract).
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "ingress" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/ingress-gcp-load-balancer?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `project_id`, `region` | required | Where the service runs |

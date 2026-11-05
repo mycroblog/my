@@ -3,6 +3,17 @@
 The media store: a private Cloud Storage bucket, with uniform access and public access prevention. It follows
 [the backend contract](../../README.md#the-backend-contract).
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "blob" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/blob-gcp-gcs?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Meaning |
 | --- | --- |
 | `project_id` | Project of the bucket |

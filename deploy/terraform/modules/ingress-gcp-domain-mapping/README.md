@@ -4,6 +4,17 @@ Traffic reaches the service directly, on a Cloud Run domain mapping of `host`. I
 that Google Cloud does not recommend for production, because of latency. It follows
 [the ingress contract](../../README.md#the-ingress-contract).
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "ingress" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/ingress-gcp-domain-mapping?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Meaning |
 | --- | --- |
 | `project_id`, `region` | Where the service runs. Domain mappings exist in some regions only |

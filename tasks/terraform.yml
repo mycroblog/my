@@ -6,7 +6,7 @@ version: "3"
 
 vars:
   TERRAFORM_DIRS:
-    sh: printf '%s\n' deploy/terraform/modules/* deploy/terraform/examples/* | tr '\n' ' '
+    sh: printf '%s\n' deploy/terraform/modules/* | tr '\n' ' '
   # One copy of the providers for every directory: each is over 100 MB.
   TF_PLUGIN_CACHE_DIR: "{{.ROOT_DIR}}/.tmp/tofu-plugins"
 
@@ -20,8 +20,11 @@ tasks:
     cmds:
       - task: fmt-check
       - task: env-check
+      - task: sources
       - task: validate
       - task: test
+      - task: example-test
+      - task: git-source-test
       - task: state-test
 
   fmt-check:
@@ -39,14 +42,10 @@ tasks:
     cmds:
       - mkdir -p "$TF_PLUGIN_CACHE_DIR"
       - for: { var: TERRAFORM_DIRS, as: DIR }
-        # An example keeps to the versions of its lock file; a module has none.
-        cmd: >-
-          lock=-lockfile=readonly;
-          case "{{.DIR}}" in deploy/terraform/modules/*) lock= ;; esac;
-          tofu -chdir={{.DIR}} init -backend=false -input=false $lock >/dev/null
+        cmd: tofu -chdir={{.DIR}} init -backend=false -input=false >/dev/null
 
   validate:
-    desc: Run tofu validate on each module and example of deploy/terraform
+    desc: Run tofu validate on each module of deploy/terraform
     deps: [init]
     cmds:
       - for: { var: TERRAFORM_DIRS, as: DIR }
@@ -56,7 +55,7 @@ tasks:
     desc: Run the tests of deploy/terraform, on mocked providers
     deps: [init]
     cmds:
-      - for: [deploy/terraform/modules/app-gcp-cloud-run, deploy/terraform/modules/ingress-cloudflare-app, deploy/terraform/modules/ingress-cloudflare-media, deploy/terraform/modules/mail-smtp, deploy/terraform/modules/secrets-gcp-secret-manager, deploy/terraform/examples/gcp-cloud-run-neon]
+      - for: [deploy/terraform/modules/app-gcp-cloud-run, deploy/terraform/modules/ingress-cloudflare-app, deploy/terraform/modules/ingress-cloudflare-media, deploy/terraform/modules/mail-smtp, deploy/terraform/modules/secrets-gcp-secret-manager]
         cmd: tofu -chdir={{.ITEM}} test
 
   state-test:
@@ -65,10 +64,25 @@ tasks:
       - mkdir -p "$TF_PLUGIN_CACHE_DIR"
       - scripts/terraform-state-test.sh
 
-  lock:
-    desc: Update the lock file of the example for the platforms operators run tofu on
+  sources:
+    desc: Fail when an example or a document of deploy/terraform has a relative module source, or a ref other than MODULE_REF
     cmds:
-      - tofu -chdir=deploy/terraform/examples/gcp-cloud-run-neon init -backend=false -input=false -upgrade >/dev/null
-      - >-
-        tofu -chdir=deploy/terraform/examples/gcp-cloud-run-neon providers lock
-        -platform=linux_amd64 -platform=linux_arm64 -platform=darwin_amd64 -platform=darwin_arm64
+      - scripts/terraform-examples.sh check
+
+  example-test:
+    desc: Run tofu validate and the tests of each example on a copy with local sources, which fetches nothing from GitHub
+    cmds:
+      - mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - scripts/terraform-examples.sh test
+
+  git-source-test:
+    desc: Prove the Git source from a copy of the example against a local bare repository with the tag
+    cmds:
+      - mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - scripts/terraform-examples.sh git-source-test
+
+  lock:
+    desc: Update the lock file of each example for the platforms operators run tofu on
+    cmds:
+      - mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - scripts/terraform-examples.sh lock

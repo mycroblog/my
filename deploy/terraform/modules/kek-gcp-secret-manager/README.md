@@ -4,6 +4,17 @@ The KEK in Secret Manager (`key_manager = local`), which reaches the server, the
 file named by `MY_KEK_FILE`, never as an environment variable. It follows
 [the backend contract](../../README.md#the-backend-contract).
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "kek" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/kek-gcp-secret-manager?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `project_id` | required | Project of the secret |

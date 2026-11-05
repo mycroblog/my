@@ -3,6 +3,17 @@
 Email through any SMTP service, so its name has no provider part. It creates nothing, and follows
 [the backend contract](../../README.md#the-backend-contract).
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "mail" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/mail-smtp?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `from` | required | Sender address, as a bare address. Give its domain SPF, DKIM, and DMARC records |

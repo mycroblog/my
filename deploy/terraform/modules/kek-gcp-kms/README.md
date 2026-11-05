@@ -3,6 +3,17 @@
 The KEK in Cloud KMS, which it never leaves (`key_manager = gcpkms`). A leaked database dump and a leaked configuration
 together still do not expose the secrets. It follows [the backend contract](../../README.md#the-backend-contract).
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "kek" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/kek-gcp-kms?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `project_id`, `location` | required | Where the key goes |

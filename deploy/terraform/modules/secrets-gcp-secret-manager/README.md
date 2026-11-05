@@ -4,6 +4,17 @@ Secrets in Secret Manager. It never takes a value: you add the values that come 
 can generate a VAPID key, so no secret value reaches the plan or the state. It needs OpenTofu or Terraform 1.11 or later, and
 follows [the backend contract](../../README.md#the-backend-contract).
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "secrets" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/secrets-gcp-secret-manager?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `project_id` | required | Project of the secrets |
@@ -22,14 +33,14 @@ Use `referenced` when another backend names the setting, so that no setting is n
 
 ```hcl
 module "secrets" {
-  source     = "../../modules/secrets-gcp-secret-manager"
+  source     = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/secrets-gcp-secret-manager?ref=v0.1.0&depth=1"
   project_id = var.project_id
   secrets    = { MY_VAPID_PRIVATE_KEY = "my-vapid-key" }
   referenced = { smtp_password = "my-smtp-password" }
 }
 
 module "mail" {
-  source             = "../../modules/mail-smtp"
+  source             = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/mail-smtp?ref=v0.1.0&depth=1"
   password_secret_id = module.secrets.ids["smtp_password"]
   # ...
 }

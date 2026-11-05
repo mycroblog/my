@@ -3,6 +3,17 @@
 The broker of the real-time updates: a Pub/Sub topic, and a custom role that lets the server manage its own subscriptions.
 It follows [the backend contract](../../README.md#the-backend-contract).
 
+## Source
+
+Pin it to the release you deploy, like every module of the deployment:
+
+```hcl
+module "stream" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/stream-gcp-pubsub?ref=v0.1.0&depth=1"
+  # ...
+}
+```
+
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `project_id` | required | Project of the topic and the subscriptions |
