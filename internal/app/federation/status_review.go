@@ -120,7 +120,7 @@ func inboundStatusSubject(a *InboxActivity, obj *federation.Object, in appconten
 		s.Bodies = append(s.Bodies, apphook.InboundStatusBody{Language: b.Language, HTML: b.HTML})
 	}
 	for _, at := range in.Attachments {
-		s.Attachments = append(s.Attachments, apphook.InboundStatusAttachment{Type: string(at.Type), URL: at.URL, ContentType: at.ContentType, Description: at.Description})
+		s.Attachments = append(s.Attachments, apphook.InboundStatusAttachment{Type: at.Type, URL: at.URL, ContentType: at.ContentType, Description: at.Description})
 	}
 	if in.Poll != nil {
 		s.PollOptions = in.Poll.Options

@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	apphook "github.com/mycroblog/my/internal/app/hook"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/domain/hook"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
