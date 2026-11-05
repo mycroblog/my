@@ -414,6 +414,37 @@ describe("the server's policies", () => {
     ]);
   });
 
+  test("on a server without a post search, shows nothing of it", async () => {
+    settingsServer();
+    await renderApp({ path: "/admin/settings" });
+    await screen.findByRole("region", { name: "Search engines and AI" });
+    expect(screen.queryByRole("region", { name: "Post search" })).not.toBeInTheDocument();
+  });
+
+  test("offers only public and this server's posts for the search, and says what widening does", async () => {
+    const settings = settingsServer();
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, full_text_search: { available: true, visibilities: ["public"] } }),
+      ),
+    );
+    const { user } = await renderApp({ path: "/admin/settings" });
+    const search = await screen.findByRole("region", { name: "Post search" });
+    const group = within(search).getByRole("radiogroup", { name: "Posts covered" });
+    expect(
+      within(group)
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("value")),
+    ).toEqual(["public", "local", "public,local"]);
+    expect(group).toHaveAccessibleDescription(/older posts are not found until you rebuild the index/);
+
+    await user.click(within(group).getByRole("radio", { name: /^Both/ }));
+    await user.click(screen.getByRole("button", { name: "Save the settings" }));
+
+    expect(await screen.findByText(/^Saved the settings\./)).toBeInTheDocument();
+    expect(settings.patches).toEqual([{ values: { search_visibilities: "public,local" } }]);
+  });
+
   test("sends the default language picked from the app's languages", async () => {
     const settings = settingsServer();
     const { user } = await renderApp({ path: "/admin/settings" });

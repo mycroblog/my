@@ -233,7 +233,7 @@ tasks:
       - bun run e2e
 
   # The demo server (ADR-0015 §8): starts the development Mailpit, builds bin/my as the test build (GO_TAGS=e2e_fakes,
-  # the fake payment provider and the fake push service), and runs `node e2e/server.ts demo` on a fresh database under
+  # the fake payment provider, the fake search index, and the fake push service), and runs `node e2e/server.ts demo` on a fresh database under
   # .tmp/demo on every start, with Web Push on (a VAPID key generated on the spot, `my dev push-service` on
   # https://localhost:8930 as its only push service), which applies the demo scenario (app/web/demo) and prints the URL,
   # Mailpit's web UI, and the people's sign-ins. DEMO_PORT moves it from 8787, PUSH_SERVICE_PORT the fake push service

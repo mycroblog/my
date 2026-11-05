@@ -2,7 +2,7 @@
 // The server settings screen below its heading (manage_settings, FR-705): the instance's name and descriptions, how
 // to reach its operators and its thumbnail (#663), its own icon and logos (BrandSettings, ADR-0059), then its policies (who may sign up, the default language, the
 // public timelines, who may create invites of their own and their caps (ADR-0106 §14, §15), whether images need a description, the federation, who may read the list of the domain
-// actions, how much of the costs is published and shown to the holders of view_finance, how much of the income is published, and voice chat while the server offers it) in one form saved together. The name, the descriptions and the thumbnail's alt text hold one value each,
+// actions, how much of the costs is published and shown to the holders of view_finance, how much of the income is published, which posts the post search covers while the server has one, and voice chat while the server offers it) in one form saved together. The name, the descriptions and the thumbnail's alt text hold one value each,
 // written in any language and shown as it is in every language; the labels are the app's. The name stands in for
 // the domain where the instance is named to people; the domain stays in handles and links. The browser keeps a
 // form from being sent while a field is invalid (React Aria's native validation: the error is under its field and
@@ -32,6 +32,7 @@ import {
   TextField,
 } from "@my/ui";
 import { useId } from "react";
+import { usePostSearchAvailable } from "../../../lib/fullTextSearch";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { Section, RequirePermission } from "../../moderation";
 import { acceptedImageTypes } from "../../settings";
@@ -419,6 +420,24 @@ const choices = {
       description: "client:admin.settings.crawlers.ai.deny.description",
     },
   ],
+  // Only what the common rule allows (ADR-0149 §5): unlisted, followers-only and direct posts are never searched.
+  search_visibilities: [
+    {
+      value: "public",
+      label: "client:admin.settings.search.public",
+      description: "client:admin.settings.search.public.description",
+    },
+    {
+      value: "local",
+      label: "client:admin.settings.search.local",
+      description: "client:admin.settings.search.local.description",
+    },
+    {
+      value: "public,local",
+      label: "client:admin.settings.search.public_local",
+      description: "client:admin.settings.search.public_local.description",
+    },
+  ],
   invite_creators: [
     {
       value: "everyone",
@@ -553,6 +572,8 @@ function PoliciesForm() {
   const form = useServerPolicies();
   // The voice chat settings show only while the server offers voice chat (ADR-0100 §2).
   const voiceAvailable = useVoiceAvailable();
+  // The setting of the post search shows only on a server with a search engine (ADR-0149 §5).
+  const searchAvailable = usePostSearchAvailable();
   return (
     <Stack as="form" gap="8" onSubmit={form.submit}>
       <Section surface="card" title={t("client:admin.settings.registration.title")}>
@@ -762,6 +783,17 @@ function PoliciesForm() {
           }}
         />
       </Section>
+      {searchAvailable && (
+        <Section surface="card" title={t("client:admin.settings.search.title")}>
+          <Hint size="inherit">{t("client:admin.settings.search.description")}</Hint>
+          <PolicyRadios
+            form={form}
+            setting="search_visibilities"
+            label={t("client:admin.settings.search.visibilities")}
+            description={t("client:admin.settings.search.visibilities.description")}
+          />
+        </Section>
+      )}
       <Section surface="card" title={t("client:admin.settings.hooks.title")}>
         <Text tone="muted">{t("client:admin.settings.hooks.description")}</Text>
         <PolicyRadios
@@ -793,6 +825,12 @@ function PoliciesForm() {
           form={form}
           setting="hook_signup_check_on_failure"
           label={t("client:admin.settings.hooks.signup_check.on_failure")}
+        />
+        <PolicyCheckbox
+          form={form}
+          setting="hook_signup_check_reject"
+          label={t("client:admin.settings.hooks.signup_check.reject")}
+          description={t("client:admin.settings.hooks.signup_check.reject.description")}
         />
         <PolicyRadios
           form={form}

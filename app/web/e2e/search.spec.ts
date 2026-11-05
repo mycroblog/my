@@ -99,6 +99,7 @@ async function serveApi(page: Page) {
         source_url: "https://github.com/mycroblog/my",
         registrations: { mode: "open" },
         federation: { mode: "both" },
+        full_text_search: { available: false, visibilities: [] },
         translation: { browser: false, providers: [] },
         limits: { max_post_characters: 500, require_media_description: false },
         timelines: { local: "everyone", federated: "everyone" },
@@ -213,6 +214,14 @@ test.describe("the account search", () => {
     await expect(field).toBeFocused();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
+  });
+
+  test("shows nothing of the search of posts on a server without it", async ({ page }) => {
+    await serveApi(page);
+    await page.goto("/search?type=posts&q=bread");
+    await expect(page.getByRole("searchbox", { name: message("search.label") })).toHaveValue("");
+    await expect(page.getByRole("tablist")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: message("search.posts.submit") })).toHaveCount(0);
   });
 
   test("is a search landmark with its field and button", async ({ page }) => {

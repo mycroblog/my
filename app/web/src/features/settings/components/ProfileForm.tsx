@@ -23,6 +23,7 @@ import {
 import { type ReactNode, useId } from "react";
 import { useIntl } from "react-intl";
 import { handleOf } from "../../../lib/handle";
+import { useSearchScope } from "../../../lib/fullTextSearch";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
 import { CompletionTextArea, CompletionTextField } from "../../compose";
@@ -249,15 +250,17 @@ type CrawlerSettingsProps = {
 };
 
 /**
- * Whether search engines may index the profile and public posts, and whether AI may train on or use them (FR-412,
- * ADR-0057). The server's own statement wins where it is stricter, so the section says when it denies already.
+ * Whether search engines and the server's post search may list the profile and posts, and whether AI may train on or
+ * use them (FR-412, ADR-0057, ADR-0149 §6). The server's own statement wins where it is stricter, so the section says when it denies already.
  */
 function CrawlerSettings({ indexable, aiOptOut, serverPolicy }: CrawlerSettingsProps) {
   const t = useT();
+  // What `indexable` covers follows the server's post search; without one it speaks of search engines alone (ADR-0149 §16).
+  const scope = useSearchScope();
   return (
     <Section title={t("client:settings.profile.crawlers")}>
-      <Checkbox {...indexable} description={t("client:settings.profile.indexable.description")}>
-        {t("client:settings.profile.indexable")}
+      <Checkbox {...indexable} description={t("client:settings.profile.indexable.description", { scope })}>
+        {t("client:settings.profile.indexable", { scope })}
       </Checkbox>
       {serverPolicy?.searchIndexing === "deny" && <Hint>{t("client:settings.profile.indexable.server_denies")}</Hint>}
       <Checkbox {...aiOptOut} description={t("client:settings.profile.ai_opt_out.description")}>

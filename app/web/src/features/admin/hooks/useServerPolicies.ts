@@ -3,7 +3,7 @@
 // up, who may create invites of their own and the caps of those invites (ADR-0106 §14, §15), the default language, the public timelines, whether images need a description, the federation (its direction,
 // ADR-0006, which asks before it narrows), who may read the
 // list of the domain actions, whether the landing page shows the server's numbers and who runs it,
-// what the server states to search engines and AI crawlers, and voice chat (ADR-0100 §2, §9, §13: who may start a
+// what the server states to search engines and AI crawlers, which posts its search covers (ADR-0149 §5), and voice chat (ADR-0100 §2, §9, §13: who may start a
 // room, whether visitors see a room's summary, and how many days the participants' records are kept). They are
 // instance settings that used to change only from the CLI (`my instance set`); the form sends the ones that
 // changed together, all or none, and each change goes to the audit log (FR-704).
@@ -52,6 +52,7 @@ const policyKeys = [
   "indexable_default",
   "ai_usage",
   "security_contact",
+  "search_visibilities",
   "voice_room_starters",
   "voice_public_summary",
   "voice_participants_retention_days",
@@ -63,6 +64,7 @@ const policyKeys = [
   "hook_inbound_status_on_failure",
   "hook_inbound_follow_on_failure",
   "hook_signup_check_on_failure",
+  "hook_signup_check_reject",
   "hook_media_check_on_failure",
   "retention_hook_decisions",
 ] as const satisfies readonly InstanceSettingKey[];

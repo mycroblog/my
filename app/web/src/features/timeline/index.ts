@@ -14,7 +14,7 @@ export { type AccountTimelineFilter, accountTimelineFilters, timelineQueryOption
 export { HomeTimeline } from "./components/HomeTimeline";
 export { ListTimeline } from "./components/ListTimeline";
 export { PublicTimeline } from "./components/PublicTimeline";
-export { TimelineFeed } from "./components/TimelineFeed";
+export { StatusFeed, TimelineFeed } from "./components/TimelineFeed";
 export { TimelineSkeleton } from "./components/TimelineSkeleton";
 export { remoteFetchRereadDelay, useRemoteFetch } from "./hooks/useRemoteFetch";
 export { type TimelineAvailability, useTimelineAvailability } from "./hooks/useTimelineAvailability";

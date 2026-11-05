@@ -12,6 +12,7 @@ import { forgetUserDataOnUserChange } from "./auth/userData";
 import type { RuntimeConfig } from "./config";
 import { ErrorReporter } from "./errorReporting";
 import { refetchInstanceOnFederationRestricted } from "./federation";
+import { refetchInstanceOnSearchUnavailable } from "./fullTextSearch";
 import type { I18n } from "./i18n";
 import { AppLocale } from "./locale";
 import { Maintenance } from "./maintenance";
@@ -61,6 +62,8 @@ export function createAppServices(
   const api = createApi({ apiOrigin: config.apiOrigin, session, locale, maintenance, reload });
   // The mode can narrow while a page is open; a refusal for it brings the app's offer up to date.
   refetchInstanceOnFederationRestricted(queryClient, api);
+  // So can the search of posts stop being there.
+  refetchInstanceOnSearchUnavailable(queryClient, api);
   const errors = new ErrorReporter({ api, apiOrigin: config.apiOrigin, release: config.version });
   return { queryClient, api, session, leaveApp, locale, maintenance, errors };
 }
