@@ -59,12 +59,13 @@ func TestEveryPluginIsOffByDefault(t *testing.T) {
 
 func TestPlainTCPIsRefusedForTheKindsOfTheRule(t *testing.T) {
 	refused := map[string]string{
+		"translator": "MY_PLUGIN_TRANSLATOR_ADDRESS", "signup.check": "MY_PLUGIN_SIGNUP_CHECK_ADDRESS",
 		"key_manager": "MY_PLUGIN_KEY_MANAGER_ADDRESS", "mailer": "MY_PLUGIN_MAILER_ADDRESS",
 		"inbound.status": "MY_PLUGIN_INBOUND_STATUS_ADDRESS", "local.status": "MY_PLUGIN_LOCAL_STATUS_ADDRESS",
 	}
 	allowed := map[string]string{
-		"translator": "MY_PLUGIN_TRANSLATOR_ADDRESS", "billing": "MY_PLUGIN_BILLING_ADDRESS", "media": "MY_PLUGIN_MEDIA_ADDRESS",
-		"signup.check": "MY_PLUGIN_SIGNUP_CHECK_ADDRESS", "inbound.follow": "MY_PLUGIN_INBOUND_FOLLOW_ADDRESS", "media.check": "MY_PLUGIN_MEDIA_CHECK_ADDRESS",
+		"billing": "MY_PLUGIN_BILLING_ADDRESS", "media": "MY_PLUGIN_MEDIA_ADDRESS",
+		"inbound.follow": "MY_PLUGIN_INBOUND_FOLLOW_ADDRESS", "media.check": "MY_PLUGIN_MEDIA_CHECK_ADDRESS",
 	}
 	if len(refused)+len(allowed) != len(kind.Delegated()) {
 		t.Fatalf("this test names %d kinds of %d", len(refused)+len(allowed), len(kind.Delegated()))
@@ -133,7 +134,7 @@ func TestPluginSettingsThatConflict(t *testing.T) {
 		env     map[string]string
 		wantKey string
 	}{
-		{"a token over plain TCP", map[string]string{"MY_PLUGIN_TRANSLATOR_ADDRESS": "http://127.0.0.1:1", "MY_PLUGIN_TRANSLATOR_TOKEN": "t"}, "plugin_translator_token"},
+		{"a token over plain TCP", map[string]string{"MY_PLUGIN_BILLING_ADDRESS": "http://127.0.0.1:1", "MY_PLUGIN_BILLING_TOKEN": "t"}, "plugin_billing_token"},
 		{"a malformed address", map[string]string{"MY_PLUGIN_BILLING_ADDRESS": "billing:8080"}, "plugin_billing_address"},
 		{"json for a streaming kind", map[string]string{"MY_PLUGIN_MEDIA_ADDRESS": "unix:///s", "MY_PLUGIN_MEDIA_PROTOCOL": "json"}, "plugin_media_protocol"},
 		{"an unknown protocol", map[string]string{"MY_PLUGIN_BILLING_ADDRESS": "unix:///s", "MY_PLUGIN_BILLING_PROTOCOL": "soap"}, "plugin_billing_protocol"},

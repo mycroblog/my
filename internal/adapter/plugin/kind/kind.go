@@ -62,7 +62,7 @@ type Kind struct {
 	// Streaming is a kind whose RPCs stream both ways, which needs HTTP/2 and so refuses ProtocolJSON (ADR-0146 §13).
 	Streaming bool
 	// PlainTCP allows an http:// destination, with a warning. A kind that carries secrets that spread further when
-	// they leak, or the text of every post, refuses it, on loopback too (ADR-0146 §6).
+	// they leak, the text of posts, or personal data refuses it, on loopback too (ADR-0146 §6).
 	PlainTCP bool
 	// Timeout is the default deadline of one call.
 	Timeout time.Duration
@@ -75,14 +75,14 @@ type Kind struct {
 // The kinds that have a destination in the configuration, in documentation order: ADR-0146 §2, §6, §12, and the waits
 // of ADR-0147 §2.
 var delegated = []Kind{
-	{Name: Translator, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: mib, Concurrency: DefaultConcurrency},
+	{Name: Translator, Protocol: ProtocolJSON, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: mib, Concurrency: DefaultConcurrency},
 	{Name: Billing, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 2 * time.Minute, MaxSend: 64 * kib, MaxReceive: 4 * mib, Concurrency: DefaultConcurrency},
 	{Name: Mailer, Protocol: ProtocolJSON, Timeout: 30 * time.Second, MaxSend: 2 * mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: Media, Protocol: ProtocolProto, Streaming: true, PlainTCP: true, Timeout: 4 * time.Minute, MaxSend: 2 * mib, MaxReceive: 2 * mib, Concurrency: 2},
 	{Name: KeyManager, Protocol: ProtocolJSON, Timeout: 5 * time.Second, MaxSend: 128 * kib, MaxReceive: 128 * kib, Concurrency: DefaultConcurrency},
 	{Name: InboundStatus, Protocol: ProtocolJSON, Timeout: 3 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: InboundFollow, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 3 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
-	{Name: SignupCheck, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 2 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
+	{Name: SignupCheck, Protocol: ProtocolJSON, Timeout: 2 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: MediaCheck, Protocol: ProtocolJSON, PlainTCP: true, Timeout: 10 * time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 	{Name: LocalStatus, Protocol: ProtocolJSON, Timeout: time.Second, MaxSend: mib, MaxReceive: 64 * kib, Concurrency: DefaultConcurrency},
 }

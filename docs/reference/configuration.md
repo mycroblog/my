@@ -1701,7 +1701,7 @@ Name of the environment that every error report carries, such as `staging`, to t
 
 ### `plugin_translator_address`
 
-Where the `translator` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `translator` plugin listens: `unix:///path/to.sock` or `https://host[:port]`; `http://` is refused, on loopback too. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_TRANSLATOR_ADDRESS`
 - Default: none
@@ -2150,7 +2150,7 @@ Deadline of one call of the `inbound.follow` plugin, less than `5m0s`.
 
 ### `plugin_signup_check_address`
 
-Where the `signup.check` plugin listens: `unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
+Where the `signup.check` plugin listens: `unix:///path/to.sock` or `https://host[:port]`; `http://` is refused, on loopback too. Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.
 
 - Environment variable: `MY_PLUGIN_SIGNUP_CHECK_ADDRESS`
 - Default: none
