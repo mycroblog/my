@@ -126,11 +126,11 @@ tasks:
       - go build -trimpath -tags "{{.GO_TAGS}}" -ldflags "-X main.version={{.VERSION}}" -o bin/my ./cmd/my
 
   config-docs:
-    desc: Regenerate docs/reference/configuration.md from the config schema (go:test fails when it is stale)
+    desc: Regenerate docs/reference/configuration.md and deploy/docker/example.env from the config schema (go:test fails when they are stale)
     sources: ["internal/platform/config/**/*.go"]
-    generates: [docs/reference/configuration.md]
+    generates: [docs/reference/configuration.md, deploy/docker/example.env]
     cmds:
-      - go test ./internal/platform/config -run '^TestReferenceUpToDate$' -update
+      - go test ./internal/platform/config -run '^Test(Reference|ExampleEnv)UpToDate$' -update
 
   sqlc:
     desc: Regenerate Go code from sqlc.yaml with the pinned sqlc (ADR-0003)

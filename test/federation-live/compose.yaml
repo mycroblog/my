@@ -107,7 +107,7 @@ services:
   # my schema apply of the server image, before the server starts.
   my-schema:
     build: &my-build
-      context: ../../..
+      context: ../..
       target: app
       args:
         VERSION: ${MY_VERSION:-federation-live}

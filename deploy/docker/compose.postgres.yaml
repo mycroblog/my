@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Layer on compose.yaml: the database is PostgreSQL in its own container and named volume instead of the SQLite file.
+# Media stay in the volume `data` unless compose.s3.yaml moves them. Choose this file before the first start: moving an
+# instance from SQLite to PostgreSQL later is not a matter of changing files. Set POSTGRES_PASSWORD in .env to letters
+# and digits only, since it goes into a URL (openssl rand -hex 32).
+#
+# For a PostgreSQL server outside Compose, leave this file out and set MY_DATABASE and MY_DATABASE_URL in .env.
+#
+#   docker compose -f compose.yaml -f compose.postgres.yaml up -d
+
+x-database: &database
+  depends_on:
+    postgres:
+      condition: service_healthy
+  environment:
+    MY_DATABASE: postgres
+    MY_DATABASE_URL: postgres://my:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/my?sslmode=disable
+
+services:
+  postgres:
+    # Pinned by tag and digest.
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_USER: my
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: my
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "my", "-d", "my", "-h", "127.0.0.1"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    restart: unless-stopped
+
+  upgrade-check: *database
+  schema: *database
+  upgrade: *database
+  my: *database
+
+volumes:
+  postgres:

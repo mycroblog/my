@@ -46,7 +46,7 @@ const (
 )
 
 // DefaultImage is the container image of the tests, pinned by tag and digest. The development
-// compose file (deploy/docker/mailpit/compose.yaml) pins the same image.
+// compose file (the root compose.yaml) pins the same image.
 const DefaultImage = "axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48"
 
 // Options configure the server of one test.

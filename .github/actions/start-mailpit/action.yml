@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 name: Start Mailpit
 description: >-
-  Start the development Mailpit of deploy/docker/mailpit (its pinned image, STARTTLS with the certificate of
+  Start the development Mailpit of the root compose.yaml (its pinned image, STARTTLS with the certificate of
   scripts/mailpit-cert.sh) for a job that runs in a container, on the container's own 127.0.0.1:1025 (SMTP) and
   127.0.0.1:8025 (web UI and REST API), as `scripts/task.sh docker:mailpit` does on a workstation. A `services:`
   container would start before the checkout, without the certificate. Run it after actions/checkout; the tasks that
@@ -47,7 +47,7 @@ runs:
           echo "::error::$certs is on no mount of the job's container"
           exit 1
         fi
-        MAILPIT_CERTS="$host_certs" docker compose -f deploy/docker/mailpit/compose.yaml -f - up -d --wait <<EOF
+        MAILPIT_CERTS="$host_certs" docker compose -f compose.yaml -f - up -d --wait mailpit <<EOF
         services:
           mailpit:
             network_mode: "container:$JOB_CONTAINER"

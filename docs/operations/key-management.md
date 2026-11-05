@@ -37,7 +37,7 @@ The KEK is a secret setting, so it can be passed only through the environment va
 | Target | Example of how to deliver it |
 | --- | --- |
 | Self-hosted (binary / systemd) | Put it in a file only the owner can read (`chmod 600`) and point `MY_KEK_FILE` at it |
-| Docker / Compose | Mount a Docker secret at `/run/secrets/my_kek` and set `MY_KEK_FILE=/run/secrets/my_kek` |
+| Docker / Compose | Mount a Docker secret at `/run/secrets/my_kek` and set `MY_KEK_FILE=/run/secrets/my_kek`. The files of `deploy/docker` do this from `secrets/kek` ([Docker Compose files](running.md#docker-compose-files)): to rotate, replace that file and set `MY_KEK_PREVIOUS` in `.env` |
 | Kubernetes / microk8s | Mount a Secret as a file and point `MY_KEK_FILE` at it |
 | Cloud Run | Expose a Secret Manager secret as a file or an environment variable |
 | AWS Lambda / ECS | Pass it from Secrets Manager or SSM Parameter Store (SecureString) |

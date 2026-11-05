@@ -14,7 +14,7 @@ See [pkg/testkit/README.md](../../../README.md#federation-fixtures) for the layo
   `remote.example` is the server Misskey talks to. The `Undo` names the follow by `/follows/{follower}/{followee}`, not by
   the id of the `Follow` it sent.
 - `2026.10/` was captured from Misskey 2026.10.0 by the live interoperability test
-  ([deploy/docker/federation-live](../../../../../deploy/docker/federation-live/README.md)) on 2026-10-17: what Misskey
+  ([test/federation-live](../../../../../test/federation-live/README.md)) on 2026-10-17: what Misskey
   delivered to this server, as this server stored it. Replaced: `misskey.test` → `misskey.example`, `my.test` →
   `remote.example`, and `publicKeyPem`. The users (`alice`, `grace`) and the texts are the test's own.
 - `2026.10/outbox.json` and `2026.10/outbox-page.json` are what Misskey 2026.10.0 serves for grace's outbox, rendered from its

@@ -4,7 +4,7 @@
 # Sourced by scripts/upgrade-test.sh and scripts/restore-drill.sh. Needs jq and openssl.
 #
 # remote_test_files DIR writes the files of remote.test, the static ActivityPub server of
-# deploy/docker/upgrade-test/compose.yaml: a private CA and the server's certificate in DIR/certs, and the Person carol
+# test/upgrade-test/compose.yaml: a private CA and the server's certificate in DIR/certs, and the Person carol
 # with her WebFinger answer in DIR/remote. Every file is readable by the containers, which run as other users.
 
 remote_test_files() {

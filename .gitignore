@@ -8,6 +8,8 @@
 .env
 .env.*
 !.env.example
+# The KEK of the Compose deployment.
+/deploy/docker/secrets/
 
 # Dependencies & build output
 node_modules/

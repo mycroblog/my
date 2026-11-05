@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 # The restore drill (docs/operations/backup.md, "Recovery drill"): for each dialect, start this tree's image on the
-# stack of deploy/docker/upgrade-test/compose.yaml, fill the instance through the server (two local accounts, a post
+# stack of test/upgrade-test/compose.yaml, fill the instance through the server (two local accounts, a post
 # with an image, a followers-only post, a local follow, and a follow of carol on remote.test), and back it up while the
 # server runs: `my db backup` (SQLite) or `pg_dump` (PostgreSQL), then the media. Then remove every container and
 # volume, restore the backup into new ones, start the server with the same KEK, and check that the accounts sign in,
@@ -48,7 +48,7 @@ MY_KEK="$(openssl rand -base64 32)"
 export MY_KEK
 
 work="$(mktemp -d)"
-compose=(docker compose --project-directory "$root/deploy/docker/upgrade-test" -f "$root/deploy/docker/upgrade-test/compose.yaml" -p "$project")
+compose=(docker compose --project-directory "$root/test/upgrade-test" -f "$root/test/upgrade-test/compose.yaml" -p "$project")
 
 cleanup() {
 	status=$?

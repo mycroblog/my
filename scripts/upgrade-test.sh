@@ -5,7 +5,7 @@
 # accounts, posts, a local follow, and a follow request to an account of remote.test, which the server fetches), then
 # upgrade it with the server image of the working tree in the order that deploy/docker/compose.yaml runs (my db upgrade
 # -check, my schema apply, my db upgrade, then the server) and check readiness, `my projection verify`, and that the data
-# reads back. The stack is deploy/docker/upgrade-test/compose.yaml.
+# reads back. The stack is test/upgrade-test/compose.yaml.
 #
 # The previous release applies its schema with its own `my schema apply`, or, when it shipped a separate schema image
 # with Atlas (the `schema` target of its Dockerfile), with that image. Its images are built from its tag (git archive),
@@ -54,7 +54,7 @@ MY_KEK="$(openssl rand -base64 32)"
 export MY_KEK
 
 work="$(mktemp -d)"
-compose=(docker compose --project-directory "$root/deploy/docker/upgrade-test" -f "$root/deploy/docker/upgrade-test/compose.yaml" -p my-upgrade-test)
+compose=(docker compose --project-directory "$root/test/upgrade-test" -f "$root/test/upgrade-test/compose.yaml" -p my-upgrade-test)
 
 cleanup() {
 	status=$?
