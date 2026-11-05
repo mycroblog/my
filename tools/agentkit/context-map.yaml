@@ -445,6 +445,12 @@ entries:
     notes:
       - "OpenID Connect Discovery, the JWKS, and ID token verification use the standard library alone; every request goes through kernel.HTTPClient with HTTPPurposeLoginProvider."
       - "ID tokens accept RS256, ES256, and EdDSA only, never none or an HMAC; the adapter passes testkit.OIDCClientContract."
+  - name: translation
+    paths: ["internal/app/translation/**", "internal/adapter/translator/**", "pkg/testkit/translator_contract.go"]
+    docs: ["docs/adr/0148-post-translation.md#2-構成", "docs/adr/0148-post-translation.md#8-流れと送るものの形", "docs/architecture/overview.md#3-ポート一覧"]
+    notes:
+      - "translation.Translator stays small and free of provider options, names, and links (ADR-0148 §2): fragments, source language (possibly und), target language in; translations and the detected language out; errors ErrTemporary, ErrProviderLimit, ErrUnsupportedLanguage."
+      - "The markers have one form on the port, ⟦1⟧ and ⟦/1⟧ (translation.Marker, ClosingMarker, MarkersIntact); an adapter whose provider needs another form rewrites them both ways. Every adapter passes testkit.TranslatorContract on a stand-in of its provider."
   - name: captcha
     paths: ["internal/adapter/captcha/**"]
     userdocs: ["docs/operations/captcha.md"]
