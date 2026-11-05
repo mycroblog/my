@@ -14602,6 +14602,8 @@ components:
             none.
           allOf:
             - $ref: '#/components/schemas/Id'
+        hook_origin:
+          $ref: '#/components/schemas/AdminReportHookOrigin'
         rule_ids:
           description: |
             The IDs of the instance rules that the report cites, retired ones included; only a
@@ -14722,6 +14724,23 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AdminVoiceRoomBan'
+    AdminReportHookOrigin:
+      description: |
+        The decision hook that filed the report; omitted for a report that a person or another server
+        filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
+        notified when it is resolved.
+      type: object
+      required:
+        - hook
+        - decision_id
+      properties:
+        hook:
+          $ref: '#/components/schemas/HookName'
+        decision_id:
+          description: The decision that filed the report, which can be gone after its retention.
+          type: string
+        reason:
+          $ref: '#/components/schemas/HookReason'
     AdminVoiceRoomBan:
       description: An account removed from a voice chat room, who may not join it again.
       type: object
@@ -15122,6 +15141,13 @@ components:
           format: date-time
         overridden_at:
           description: When a moderator cancelled the decision; absent while it stands.
+          type: string
+          format: date-time
+        restorable_until:
+          description: |
+            For a `drop` of `inbound.status` or `inbound.follow`: until about when cancelling it processes the activity again,
+            which needs the document as it was received. After that, cancelling records the cancellation
+            and brings nothing back. Absent for any other decision.
           type: string
           format: date-time
         overridable:
@@ -19139,6 +19165,7 @@ components:
         - hook_media_check_mode
         - hook_local_status_mode
         - hook_inbound_status_on_failure
+        - hook_inbound_status_unfollowed_direct
         - hook_inbound_follow_on_failure
         - hook_signup_check_on_failure
         - hook_signup_check_reject

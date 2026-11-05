@@ -1,0 +1,232 @@
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+// Converting media files on another machine: re-encoding images into their variants and remuxing video and audio files,
+// both without metadata. The server keeps detecting formats and checking uploads itself, and sends only the files that
+// pass those checks.
+//
+// Both RPCs stream both ways, which needs HTTP/2: the server speaks the Connect protocol with binary protobuf or gRPC,
+// never JSON, over TLS with ALPN h2, or h2c on a Unix socket or plain TCP. The calls are half-duplex: the server sends a
+// head and the body in chunks, then closes its side; the plugin then answers with its head, and with a part and its
+// chunks for each output.
+//
+// A chunk holds 1 MiB at most, and a message 2 MiB. The server does not trust the output: it detects the format of each
+// one from its content, checks it with its own decoders and the same limits as an upload, and checks that it fits its
+// box. An output that breaks one of these is OUTCOME_CORRUPT, and one larger than its part or the limits below is
+// OUTCOME_TOO_LARGE, as if the plugin had answered them. The uploads may hold a location in their metadata, and removing
+// it is the plugin's job: the server cannot check that all of it is gone.
+package my.plugin.media.v1;
+
+service MediaService {
+  // Process re-encodes an image into its variants, as the server's own processor does. The same input and head give the
+  // same output, and the same call may come again after a failure. It lasts plugin_media_timeout at most.
+  //
+  // The server sends ProcessRequest.head first, then the image in chunks, then closes its side. The plugin answers
+  // ProcessResponse.head; with OUTCOME_OK, it then sends one part per output, each followed by its chunks, in any
+  // order: the three still outputs always, and the three animated ones only for an image of more than one frame.
+  // The server reads 2 × limits.max_bytes in all at most.
+  rpc Process(stream ProcessRequest) returns (stream ProcessResponse);
+  // Remux writes the streams of a video or audio file again, in the same container, without metadata: tags, titles,
+  // dates, locations, embedded pictures, and tracks other than the video and audio. It never transcodes. The same input
+  // gives the same output. It lasts plugin_media_timeout at most.
+  //
+  // The server sends RemuxRequest.head first, then the file in chunks, then closes its side. The plugin answers
+  // RemuxResponse.head; with OUTCOME_OK, it then sends the part OUTPUT_AV_BODY and its chunks, and the part
+  // OUTPUT_AV_COVER and its chunks when the file embeds a cover picture (ID3 APIC, MP4 covr). The server reads the body
+  // up to limits.max_bytes, and the cover up to its own limit of an image.
+  rpc Remux(stream RemuxRequest) returns (stream RemuxResponse);
+}
+
+message ProcessRequest {
+  oneof message {
+    // The first message, and only the first.
+    ProcessHead head = 1;
+    // A piece of the image, 1 MiB at most, in order after the head.
+    bytes chunk = 2;
+  }
+}
+
+message ProcessHead {
+  // The limits that the image passed, which the outputs must pass too.
+  Limits limits = 1;
+  // What the image is for. PURPOSE_EMOJI takes a PNG as its large still output; the others take a JPEG when the image is
+  // opaque and a PNG otherwise.
+  Purpose purpose = 2;
+  // The boxes of the purpose's outputs.
+  Box small = 3;
+  Box medium = 4;
+  Box large = 5;
+  // The focal point that a crop keeps in view, from -1.0 (left, bottom) to 1.0 (right, top); (0, 0) is the center.
+  double focus_x = 6;
+  double focus_y = 7;
+  // The length of the image, which the chunks add up to.
+  int64 size = 8;
+}
+
+// The limits of an image, as the server's settings set them.
+message Limits {
+  // The longest file, in bytes.
+  int64 max_bytes = 1;
+  // The largest width and height, in pixels.
+  int32 max_side = 2;
+  // The largest width × height. For an animation it bounds the pixels of all frames together too, and four times it
+  // bounds the frames × the canvas.
+  int64 max_pixels = 3;
+  // The most frames of an animation.
+  int32 max_frames = 4;
+}
+
+// The bounds of one output. With max_pixels above 0, the output keeps the aspect ratio of the image within that area;
+// otherwise it keeps the aspect ratio within width × height, or, with crop, is first cropped to the aspect ratio of width
+// × height around the focal point. An image that already fits is not enlarged. All zero bounds nothing.
+message Box {
+  int64 max_pixels = 1;
+  int32 width = 2;
+  int32 height = 3;
+  bool crop = 4;
+}
+
+// What an image is for. The boxes of the head already follow from it.
+enum Purpose {
+  PURPOSE_UNSPECIFIED = 0;
+  PURPOSE_ATTACHMENT = 1;
+  PURPOSE_AVATAR = 2;
+  PURPOSE_HEADER = 3;
+  PURPOSE_EMOJI = 4;
+}
+
+message ProcessResponse {
+  oneof message {
+    // The first message, and only the first.
+    ProcessResult head = 1;
+    // The start of an output, which its chunks follow.
+    Part part = 2;
+    // A piece of the output of the last part, 1 MiB at most.
+    bytes chunk = 3;
+  }
+}
+
+message ProcessResult {
+  // Anything but a value below, an empty head included, is a temporary failure. With anything but OUTCOME_OK, the server
+  // reads no further.
+  Outcome outcome = 1;
+  // The dimensions of the image after its EXIF orientation.
+  int32 width = 2;
+  int32 height = 3;
+  // The blurhash (https://blurha.sh) of the small still output.
+  string blurhash = 4;
+}
+
+message RemuxRequest {
+  oneof message {
+    // The first message, and only the first.
+    RemuxHead head = 1;
+    // A piece of the file, 1 MiB at most, in order after the head.
+    bytes chunk = 2;
+  }
+}
+
+message RemuxHead {
+  // The limits that the file passed, which the output must pass too.
+  AVLimits limits = 1;
+  // The length of the file, which the chunks add up to.
+  int64 size = 2;
+}
+
+// The limits of a video or audio file, as the server's settings set them.
+message AVLimits {
+  // The longest file, in bytes.
+  int64 max_bytes = 1;
+  // The longest video and audio file, in milliseconds.
+  int64 max_video_duration_ms = 2;
+  int64 max_audio_duration_ms = 3;
+  // The largest width × height of a video.
+  int64 max_pixels = 4;
+  // The most frames per second of a video.
+  double max_frame_rate = 5;
+}
+
+message RemuxResponse {
+  oneof message {
+    // The first message, and only the first.
+    RemuxResult head = 1;
+    // The start of an output, which its chunks follow.
+    Part part = 2;
+    // A piece of the output of the last part, 1 MiB at most.
+    bytes chunk = 3;
+  }
+}
+
+message RemuxResult {
+  // Anything but a value below, an empty head included, is a temporary failure. With anything but OUTCOME_OK, the server
+  // reads no further. The server reads the kind, dimensions, duration, and codecs of the output itself.
+  Outcome outcome = 1;
+}
+
+// What one output is, before its chunks.
+message Part {
+  Output output = 1;
+  // The format of the output, which the server checks against its content.
+  Format format = 2;
+  // The dimensions of an image output; zero for OUTPUT_AV_BODY.
+  int32 width = 3;
+  int32 height = 4;
+  // The length of the output, which its chunks add up to.
+  int64 size = 5;
+}
+
+// The outputs. Each one comes once at most.
+enum Output {
+  OUTPUT_UNSPECIFIED = 0;
+  // The still outputs of Process: a WebP for small and medium; a JPEG or a PNG for large (see Purpose). Of an animation,
+  // they show its first frame.
+  OUTPUT_STILL_SMALL = 1;
+  OUTPUT_STILL_MEDIUM = 2;
+  OUTPUT_STILL_LARGE = 3;
+  // The moving outputs of Process of an animation: an animated WebP for small and medium, a GIF for large.
+  OUTPUT_ANIMATED_SMALL = 4;
+  OUTPUT_ANIMATED_MEDIUM = 5;
+  OUTPUT_ANIMATED_LARGE = 6;
+  // The file that Remux writes, in the container of its input.
+  OUTPUT_AV_BODY = 7;
+  // The cover picture embedded in the input of Remux, which the server checks as an image later.
+  OUTPUT_AV_COVER = 8;
+}
+
+enum Format {
+  FORMAT_UNSPECIFIED = 0;
+  FORMAT_JPEG = 1;
+  FORMAT_PNG = 2;
+  FORMAT_GIF = 3;
+  FORMAT_WEBP = 4;
+  // MP4, QuickTime included.
+  FORMAT_MP4 = 5;
+  FORMAT_WEBM = 6;
+  FORMAT_MP3 = 7;
+  FORMAT_OGG = 8;
+}
+
+// The result of a call. Connect errors say only that the call failed in transport, which the server retries like
+// OUTCOME_TEMPORARY. The other outcomes reject the file: the server marks it as failed, as when its own processor rejects
+// one, and does not retry.
+enum Outcome {
+  OUTCOME_UNSPECIFIED = 0;
+  // The outputs follow.
+  OUTCOME_OK = 1;
+  // The plugin failed. Asking again may work.
+  OUTCOME_TEMPORARY = 2;
+  // The file is in none of the accepted formats.
+  OUTCOME_UNSUPPORTED_FORMAT = 3;
+  // The container of a video or audio file is accepted, but a codec is not: H.264, VP8, VP9, and AV1 for video, and AAC,
+  // Opus, Vorbis, and MP3 for audio are.
+  OUTCOME_UNSUPPORTED_CODEC = 4;
+  // The file is longer than limits.max_bytes.
+  OUTCOME_TOO_LARGE = 5;
+  // The dimensions, pixels, frames, or frame rate exceed the limits.
+  OUTCOME_DIMENSIONS = 6;
+  // The file does not decode.
+  OUTCOME_CORRUPT = 7;
+  // A video or audio file is longer than its limit of duration.
+  OUTCOME_TOO_LONG = 8;
+}

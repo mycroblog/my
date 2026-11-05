@@ -32,7 +32,7 @@
 | `status_heads` | `status_id`（PK）, `revision_id`, `seq`, `last_revised_at` | 現在版（`seq` が最大の版）。`seq > 1` なら編集済み |
 | `status_reply_links` | `status_id`（PK）, `parent_status_id`, `parent_author_account_id` | インデックス `(parent_status_id, status_id)`（返信一覧）。親が既知になった時点で作る |
 | `status_mention_index` | `account_id`, `status_id` | PK `(account_id, status_id)`、インデックス `(status_id)`（編集・削除での置き換え）。現在版のメンション（`direct` の閲覧判定・メンション通知） |
-| `status_sensitivity_overrides` | `status_id`, `source_action_id` | PK `(status_id, source_action_id)`、インデックス `(source_action_id)`。`mark_statuses_sensitive` による強制センシティブ。処分と同じトランザクションで書き、解除で処分の行を消す。行がある投稿の添付は、閲覧者を問わずセンシティブとして表示する（OGP のプレビューにも画像を出さない） |
+| `status_sensitivity_overrides` | `status_id`, `source_action_id`（NULL 可）, `source_hook_decision_id`（NULL 可） | 主キーなし（ADR-0147 §8）。CHECK で出所はどちらか一方だけ。一意 `(status_id, source_action_id)`, `(status_id, source_hook_decision_id)`、インデックス `(source_action_id)`, `(source_hook_decision_id)`。`mark_statuses_sensitive` か、フックの `mark_sensitive` の判定による強制センシティブ。処分か判定の効果と同じトランザクションで書き、処分の解除はその処分の行を、判定の取り消しはその判定の行を消す。行がある投稿の添付は、閲覧者を問わずセンシティブとして表示する（OGP のプレビューにも画像を出さない） |
 | `status_counters` | `status_id`（PK）, `replies_count`, `boosts_count`, `favourites_count`（`bigint`） | §2.3 |
 | `account_post_counters` | `account_id`（PK）, `statuses_count`（`bigint`、1 以上）, `last_status_at` | §2.3。投稿が 0 件のアカウントは行を持たない |
 | `local_post_counters` | `account_id`（PK）, `posts_count`（`bigint`、1 以上） | §2.3。NodeInfo の `usage.localPosts`（全行の合計）。数えるものが 0 件のアカウントは行を持たない |

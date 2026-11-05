@@ -85,9 +85,13 @@ kind, and they share no types.
 
 ## When a call fails
 
-A call that fails counts in the metric [`my.plugin.failures`](running.md) by kind and Connect code. The server drops the
+A call waits for its turn among the calls of its kind that run at once, and the wait counts in its deadline and in the
+metric [`my.plugin.slot_wait`](running.md). A call that fails counts in the metric [`my.plugin.failures`](running.md) by kind and Connect code. The server drops the
 message that a plugin puts in an error, so a plugin's failures have their reasons in the plugin's own log. The server
 does not retry a call itself: the job that made it does, so a plugin must cope with the same call twice.
+
+A plugin that is down when the server starts stops nothing, except `key_manager`: the server does not start without it, and
+[what stops without it](key-management.md#when-the-plugin-is-unreachable) is a part of its setup to read first.
 
 A call has the deadline of `plugin_<kind>_timeout`, below 5 minutes, and a plugin receives it as `Connect-Timeout-Ms`
 (`grpc-timeout` on gRPC). A plugin may ignore that header: the server stops waiting anyway.
@@ -128,6 +132,15 @@ choose another pair for a plugin that has only some). A service behind the plugi
 about 200 characters. It checks the form of the answers, and that the plugin refuses the language `qaa`, a code that ISO 639
 leaves for private use. It cannot judge the words, so read a translation of the plugin yourself.
 [Translating posts](#translating-posts) has the contract of the kind.
+
+`--kind media` sends only small test files that it makes itself: a photo, an emoji, an animated GIF, and an MP3. Each one
+hides a location or a title in its metadata, and a case fails when that comes back in an output. It checks every output as
+the server does. [Converting media](#converting-media) has the contract of the kind.
+
+`--kind key_manager` runs the checks the server runs at each start, and checks that the plugin refuses a changed value and a
+KEK it does not hold. It sends only keys it makes up and throws away, so it is safe against a real key store, which may bill
+the calls. It checks that the answers have the right form, not how the plugin keeps its KEK.
+[Managing the key](key-management.md#a-plugin) has the contract of the kind.
 
 `probe` is the smallest kind, and the server delegates nothing to it. Serve it first, to check the transport, the
 protocol, and the authentication before you write the rest of the plugin.
@@ -219,6 +232,66 @@ The characters of each call count against the monthly limits, also of a call tha
 
 The server stops waiting after `plugin_translator_timeout`, and after 20 seconds whatever that setting says. It does not retry a
 failed call, and the same fragments can come again for another reader.
+
+## Converting media
+
+A plugin of the kind `media` does the heavy part of processing uploads, so that it can run on another machine: it
+re-encodes images into their variants and remuxes video and audio files. The server still does the rest itself. It
+detects the format of each upload, checks it against the limits when the upload arrives, and makes the previews of remote
+media.
+
+```sh
+MY_MEDIA=plugin
+MY_PLUGIN_MEDIA_ADDRESS=unix:///run/my/media.sock
+```
+
+Set `media = plugin` and `plugin_media_address`, and restart. Two calls run at once at most, and each lasts
+`plugin_media_timeout` (4 minutes by default) at most.
+
+- **Removing metadata is the plugin's job.** The uploads reach the plugin as they were sent, with their EXIF data and
+  tags, which may hold where a photo was taken. The server checks the format and the size of every output, but it cannot
+  tell that every trace of metadata is gone. `my plugin test --kind media` checks that the location of its test files does
+  not come back; check the rest in the plugin.
+- **Plain TCP sends the uploads unencrypted.** The kind accepts `http://`, with a warning at start. Uploads, with their
+  metadata, then cross the network in the clear, and nothing authenticates either end: anyone on that network can read
+  them or answer for the plugin. Use a Unix socket or `https://` unless the network is yours alone.
+- **The server does not trust the output.** It detects the format of each output from its content, never from what the
+  plugin declares, and serves it with the content type and file extension of that format. It decodes each output under
+  the same limits as an upload, and checks that it fits its size. An output that is larger than declared or than those
+  limits, of a format the plugin did not declare, or of a format the variant does not take, fails the upload as a file
+  the server cannot process.
+- **A failure is a delay.** When the plugin is down or fails, the job retries later, as with the built-in processor. An
+  action that needs a custom emoji's image at once, such as copying a remote emoji or accepting a request for one, fails
+  while the plugin does.
+
+### The contract
+
+The service is `my.plugin.media.v1.MediaService`, with the RPCs `Process` for an image and `Remux` for a video or audio file.
+Both stream both ways, so the plugin needs a Connect or gRPC library and HTTP/2: `proto` or `grpc`, over TLS with ALPN
+`h2`, or over cleartext HTTP/2 (h2c) on a Unix socket or plain TCP.
+
+A call is half-duplex:
+
+1. The server sends a `head`: the limits, and for an image its purpose, the boxes of its three sizes, and its focal
+   point. The file follows in `chunk` messages of 1 MiB at most. The server then closes its side.
+2. The plugin answers with a `head` whose `outcome` is the result. With `OUTCOME_OK`, the head of `Process` also holds the
+   dimensions of the image after its EXIF orientation and the blurhash of the small still output.
+3. For each output, the plugin sends a `part`, which names the output and declares its format, dimensions, and length,
+   followed by `chunk` messages of 1 MiB at most.
+
+`Process` returns the small, medium, and large still outputs, and the three moving ones of an image of more than one
+frame. The small and medium outputs are WebP; the large still one is a JPEG or a PNG (always a PNG for a custom emoji),
+and the large moving one a GIF. `Remux` returns the file in its own container without metadata, and the cover picture it
+embeds, if any. The server reads at most twice the image limit from `Process`, and from `Remux` the video limit for the
+file and the image limit for its cover.
+
+| `outcome` | Meaning | What the server does |
+| --- | --- | --- |
+| `OUTCOME_OK` | The outputs follow | Checks them and stores them |
+| `OUTCOME_TEMPORARY` | The plugin failed | Retries the job later |
+| `OUTCOME_UNSUPPORTED_FORMAT`, `OUTCOME_UNSUPPORTED_CODEC`, `OUTCOME_TOO_LARGE`, `OUTCOME_DIMENSIONS`, `OUTCOME_CORRUPT`, `OUTCOME_TOO_LONG` | The file is not acceptable | Marks the upload as failed |
+
+A missing or unknown `outcome` and a failed call count as `OUTCOME_TEMPORARY`.
 
 ## A plugin with no library
 

@@ -6,7 +6,7 @@
 | `domain_restrictions` | `domain_moderation_actions`, `domain_moderation_action_lifts` | 同期 |
 | `report_states` | `reports`, `report_assignments`, `report_resolutions`, `report_reopenings` | 同期 |
 | `appeal_states` | `moderation_appeals`, `moderation_appeal_decisions` | 同期 |
-| `status_sensitivity_overrides` | `mark_statuses_sensitive` の `moderation_actions` と `moderation_action_statuses`、`moderation_action_lifts` | 同期 |
+| `status_sensitivity_overrides` | `mark_statuses_sensitive` の `moderation_actions` と `moderation_action_statuses`、`moderation_action_lifts`、`enforce` で `mark_sensitive` の `hook_decisions` と `hook_decision_statuses`、`hook_decision_overrides` | 同期 |
 | `account_lifecycle_states` | `account_lifecycle_events` | 同期 |
 | `account_move_states` | `account_moves`, `account_move_cancellations` | 同期 |
 | `email_suppressions` | `email_delivery_failures`, `email_suppression_lifts` | 同期 |
@@ -57,7 +57,7 @@
   - `report_states` は、受け付けで `open`、解決（`open` の通報だけ）で `resolved`、再開（`resolved` の通報だけ）で `open` という規則から作ります。
     解決が再開より多ければ `resolved` で、`outcome` と `since` は最新の解決のもの、そうでなければ `open` で、`since` は最新の再開か受け付けの時刻です。担当は最新の割り当てのものです。
     `appeal_states` は、審査があればその結果と審査の時刻、なければ `pending` と申し立ての時刻です。
-  - `status_sensitivity_overrides` は、`content` が `moderation` の表を読まないので、`moderation.ReplaySensitivityMarks` が返す、解除されていない `mark_statuses_sensitive` の処分の投稿から作ります。
+  - `status_sensitivity_overrides` は、`content` が `moderation` の表を読まないので、`moderation.ReplaySensitivityMarks` が返す、解除されていない `mark_statuses_sensitive` の処分の投稿と、`hook.ReplaySensitivityMarks` が返す、取り消しのない `enforce` の `mark_sensitive` の判定の投稿から作ります。`statuses` に行のない投稿は落とします。投稿の物理削除は投影の行を消しますが、出所の記録はそれより長く残り得るためです。
   - `user_registration_states` は、登録の申請に最新の決定があればその結果と決定の時刻、なければ `pending` と申請の時刻です。
     `user_primary_emails` は利用者の最初のメールアドレスから作ります。アドレスは登録と管理者の作成で 1 つだけ加わるので、それが主アドレスです。
     主アドレスを切り替える操作を足すときは、切り替えをイベントとして記録し、再構築をそれに合わせます。

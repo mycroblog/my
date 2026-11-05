@@ -419,10 +419,11 @@ entries:
     paths: ["internal/adapter/stream/**", "internal/adapter/valkey/**", "internal/adapter/telemetry/**"]
     docs: ["docs/adr/0050-stream-pubsub-across-processes.md", "docs/architecture/deployment-targets.md#ストリームプロセス間の知らせ"]
   - name: adapter-media
-    paths: ["internal/adapter/blob/**", "internal/adapter/media/**", "pkg/testkit/s3test/**", "internal/platform/adapters_*s3.go", "internal/platform/config/adapters_no_s3.go", "internal/platform/adapters_*gcs.go", "internal/platform/config/adapters_no_gcs.go"]
-    docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/adr/0005-blob-storage-and-media.md", "docs/operations/cdn.md", "docs/operations/backup.md#media-in-a-bucket"]
-    userdocs: ["docs/operations/cdn.md", "docs/operations/backup.md"]
+    paths: ["internal/adapter/blob/**", "internal/adapter/media/**", "pkg/testkit/s3test/**", "internal/platform/adapters_*s3.go", "internal/platform/config/adapters_no_s3.go", "internal/platform/adapters_*gcs.go", "internal/platform/config/adapters_no_gcs.go", "internal/platform/adapters_*media_plugin.go"]
+    docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/adr/0005-blob-storage-and-media.md", "docs/operations/cdn.md", "docs/operations/backup.md#media-in-a-bucket", "docs/adr/0146-plugin-protocol.md#13-メディアの本体"]
+    userdocs: ["docs/operations/cdn.md", "docs/operations/backup.md", "docs/operations/plugins.md"]
     notes:
+      - "media = plugin (internal/adapter/media/plugin) delegates Process and Remux to a plugin over a bidirectional stream of 1 MiB chunks (HTTP/2: proto or grpc, h2c on a Unix socket or plain TCP); Inspect, InspectAV, and Preview stay on the built-in processor that Options.Builtin gives, which also checks every input before the call and every output after it (ADR-0146 §13): format sniffed and declared, the built-in Inspect under the same limits, the box, sizes against the part and the limits. ContentType, Extension, and the AVProbe of a remux come from the server's own reading. Tests run testkit.MediaProcessorContract against fakeplugin with native behind it."
       - "blob = s3 (internal/adapter/blob/s3) uses the AWS SDK for Amazon S3 against any S3-compatible endpoint; the bucket stays private and the server serves media/ under /media/. Its unit tests run testkit.BlobStoreContract on an in-memory fake of S3; the contract also runs on a Garage container (pkg/testkit/s3test) only with TEST_S3=container: `scripts/task.sh go:test-blob` (CI job blob-contract in the slow suite)."
       - "blob = gcs (internal/adapter/blob/gcs) uses the JSON API of Cloud Storage (cloud.google.com/go/storage) on Application Default Credentials, with the library's client metrics disabled; SignedURL signs V4 URLs with the credentials' private key or, without one, IAM signBlob as the service account itself. Its unit tests run testkit.BlobStoreContract on an in-memory fake of the JSON API (fake_test.go) that also answers signBlob and the metadata server; no emulator or container."
   - name: adapter-federation
@@ -431,6 +432,13 @@ entries:
   - name: key-management
     paths: ["internal/adapter/keymanager/**"]
     userdocs: ["docs/operations/key-management.md"]
+  - name: keymanager-plugin
+    paths: ["internal/adapter/keymanager/plugin/**", "internal/platform/adapters_*key_manager_plugin*.go", "internal/platform/keymanager_plugin_test.go", "internal/platform/config/plugin_key_manager_test.go"]
+    docs: ["docs/adr/0146-plugin-protocol.md", "docs/adr/0019-security-baseline.md#decision決定"]
+    userdocs: ["docs/operations/key-management.md#a-plugin", "docs/operations/plugins.md", "docs/reference/build-tags.md"]
+    notes:
+      - "key_manager = plugin (internal/adapter/keymanager/plugin) fails closed: Start asks for the current key and runs the self-test, retrying only a plugin that does not answer for 30 seconds, and every failure at run time is an error of the call; nothing falls back on another key (ADR-0146 §14). It sits behind the DEK cache like a KMS, and with key_manager = local its address only opens the values still under it."
+      - "A DEK, an AAD, and a wrapped value reach no log, error, or metric. The errors here are fixed texts and the client's Connect code, and quote nothing of a response; TestNoKeyMaterialInErrorsLogsOrMetrics echoes them from a plugin in every place it can."
   - name: keymanager-gcpkms
     paths: ["internal/adapter/keymanager/gcpkms/**", "internal/platform/adapters_*gcpkms.go", "internal/platform/config/adapters_*gcpkms.go", "internal/platform/keymanager_gcpkms_test.go"]
     docs: ["docs/adr/0019-security-baseline.md#decision決定"]

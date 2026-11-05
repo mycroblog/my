@@ -2503,6 +2503,7 @@ const (
 	InstanceSettingKeyHookInboundFollowOnFailure         InstanceSettingKey = "hook_inbound_follow_on_failure"
 	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
 	InstanceSettingKeyHookInboundStatusOnFailure         InstanceSettingKey = "hook_inbound_status_on_failure"
+	InstanceSettingKeyHookInboundStatusUnfollowedDirect  InstanceSettingKey = "hook_inbound_status_unfollowed_direct"
 	InstanceSettingKeyHookLocalStatusAccountAgeDays      InstanceSettingKey = "hook_local_status_account_age_days"
 	InstanceSettingKeyHookLocalStatusMode                InstanceSettingKey = "hook_local_status_mode"
 	InstanceSettingKeyHookMediaCheckMode                 InstanceSettingKey = "hook_media_check_mode"
@@ -2599,6 +2600,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyHookInboundStatusMode:
 		return true
 	case InstanceSettingKeyHookInboundStatusOnFailure:
+		return true
+	case InstanceSettingKeyHookInboundStatusUnfollowedDirect:
 		return true
 	case InstanceSettingKeyHookLocalStatusAccountAgeDays:
 		return true
@@ -5749,6 +5752,11 @@ type AdminHookDecision struct {
 	// Reason The coded reason of a verdict.
 	Reason *HookReason `json:"reason,omitempty"`
 
+	// RestorableUntil For a `drop` of `inbound.status` or `inbound.follow`: until about when cancelling it processes the activity again,
+	// which needs the document as it was received. After that, cancelling records the cancellation
+	// and brings nothing back. Absent for any other decision.
+	RestorableUntil *time.Time `json:"restorable_until,omitempty"`
+
 	// SubjectKey What identifies the subject for the hook, such as the URI of a received activity.
 	SubjectKey string `json:"subject_key"`
 }
@@ -6339,6 +6347,11 @@ type AdminReport struct {
 	// Forwarded Whether the report was forwarded to the target's server.
 	Forwarded bool `json:"forwarded"`
 
+	// HookOrigin The decision hook that filed the report; omitted for a report that a person or another server
+	// filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
+	// notified when it is resolved.
+	HookOrigin *AdminReportHookOrigin `json:"hook_origin,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -6405,6 +6418,11 @@ type AdminReportDetail struct {
 	// Forwarded Whether the report was forwarded to the target's server.
 	Forwarded bool `json:"forwarded"`
 
+	// HookOrigin The decision hook that filed the report; omitted for a report that a person or another server
+	// filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
+	// notified when it is resolved.
+	HookOrigin *AdminReportHookOrigin `json:"hook_origin,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -6468,6 +6486,22 @@ type AdminReportDetail struct {
 	// VoiceRoomId The voice chat room that the report points at, whose host is the target; omitted for
 	// none.
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
+}
+
+// AdminReportHookOrigin The decision hook that filed the report; omitted for a report that a person or another server
+// filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
+// notified when it is resolved.
+type AdminReportHookOrigin struct {
+	// DecisionId The decision that filed the report, which can be gone after its retention.
+	DecisionId string `json:"decision_id"`
+
+	// Hook A decision hook, where the server asks an external review before it accepts something:
+	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+	Hook HookName `json:"hook"`
+
+	// Reason The coded reason of a verdict.
+	Reason *HookReason `json:"reason,omitempty"`
 }
 
 // AdminReportNote A moderator's internal note on a report; never shown to the target or the reporter.

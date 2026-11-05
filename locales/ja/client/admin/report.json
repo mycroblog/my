@@ -79,6 +79,18 @@
     "defaultMessage": "転送",
     "description": "Term: whether the report was forwarded to the target's server."
   },
+  "admin.report.hook_origin": {
+    "defaultMessage": "自動の審査",
+    "description": "Term of a report: the external review that filed it, instead of a person."
+  },
+  "admin.report.hook_origin.value": {
+    "defaultMessage": "{hook}の審査が起票しました。人の通報ではありません。",
+    "description": "Value of the term of a report filed by an external review. {hook} is the name of the review."
+  },
+  "admin.report.hook_origin.reason": {
+    "defaultMessage": "審査の理由: {reason}",
+    "description": "The coded reason the external review gave. {reason} is a code such as spam."
+  },
   "admin.report.forwarded.no": {
     "defaultMessage": "なし",
     "description": "The report was not forwarded."

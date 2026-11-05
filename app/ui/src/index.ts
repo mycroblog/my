@@ -309,8 +309,13 @@ export { NewItemsButton, type NewItemsButtonProps } from "./NewItemsButton";
 export { PostCard, PostCardAuthor, type PostCardAuthorProps, type PostCardProps } from "./PostCard";
 export {
   PostContent,
+  PostContentNodes,
+  sanitizedHtmlNodes,
   sanitizedHtmlText,
   serverSanitizedHtml,
+  type PostContentElement,
+  type PostContentNode,
+  type PostContentNodesProps,
   type PostContentProps,
   type SanitizedHtml,
 } from "./PostContent";

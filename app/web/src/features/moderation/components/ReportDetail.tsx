@@ -36,6 +36,7 @@ import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { StatusCard } from "../../status";
 import { type AccountAction, type ReportDetail, reportNoteLimit } from "../api/reports";
+import { hookNameLabels } from "../hooks/useHookDecisions";
 import { useHasPermission } from "../hooks/usePermissions";
 import { useRefetch } from "../hooks/useRefetch";
 import {
@@ -294,6 +295,18 @@ function ReportSummary({ report }: { report: ReportDetail }) {
         <DescriptionItem term={t("client:admin.report.forwarded")}>
           {report.forwarded ? t("client:admin.report.forwarded.yes") : t("client:admin.report.forwarded.no")}
         </DescriptionItem>
+        {report.hook_origin !== undefined && (
+          <DescriptionItem term={t("client:admin.report.hook_origin")}>
+            <Stack gap="1">
+              <span>
+                {t("client:admin.report.hook_origin.value", { hook: t(hookNameLabels[report.hook_origin.hook]) })}
+              </span>
+              {report.hook_origin.reason !== undefined && (
+                <span>{t("client:admin.report.hook_origin.reason", { reason: report.hook_origin.reason })}</span>
+              )}
+            </Stack>
+          </DescriptionItem>
+        )}
       </DescriptionList>
       {report.rule_ids.length > 0 && (
         <DescriptionList>

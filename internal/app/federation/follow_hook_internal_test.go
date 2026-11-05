@@ -15,6 +15,8 @@ type unconfiguredGate struct{ t *testing.T }
 
 func (unconfiguredGate) Configured(apphook.Name) bool { return false }
 
+func (unconfiguredGate) Active(context.Context, apphook.Name) (bool, error) { return false, nil }
+
 func (g unconfiguredGate) Decide(context.Context, apphook.Call) (apphook.Result, error) {
 	g.t.Error("Decide called on a hook with no plugin")
 	return apphook.Result{}, nil

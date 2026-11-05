@@ -3,7 +3,7 @@
 // the way through the server (POST /statuses/{id}/translation). A translation lives only in the Query cache, which is
 // memory: nothing here reaches the browser's storage or the offline timeline (lib/storage), and the cache forgets it
 // when the user changes (lib/auth/userData).
-import { type SanitizedHtml, serverSanitizedHtml } from "@my/ui";
+import { type PostContentNode, type SanitizedHtml, serverSanitizedHtml } from "@my/ui";
 import type { components } from "@mycroblog/mykit";
 import { type QueryClient, queryOptions, skipToken } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
@@ -18,15 +18,21 @@ export const translationUnsupportedType = "/api/v1/problems/translation-unsuppor
 /** The problem type of a request that no provider answered usefully, which may pass. */
 export const translationFailedType = "/api/v1/problems/translation-failed";
 
-/** The body of a translation. A translation that comes as text and not as sanitized HTML is another kind of it. */
-type TranslatedBody = { kind: "html"; html: SanitizedHtml };
+/**
+ * The body of a translation: sanitized HTML from the server, or, from the browser, whose output no sanitizer read, the
+ * structure of the post with the output as text (ADR-0148 §12).
+ */
+type TranslatedBody = { kind: "html"; html: SanitizedHtml } | { kind: "nodes"; nodes: readonly PostContentNode[] };
 
 /**
  * Whose words a translation is, for the line that says so: a provider's machine translation, with what the provider
- * asks to be shown beside it, or the author's own text (the post has a body in the language, or no words to translate).
+ * asks to be shown beside it, the browser's (its name, or null when it gives none that is known), or the author's own
+ * text (the post has a body in the language, or no words to translate).
  */
 export type TranslatedBy =
-  { kind: "provider"; name: string; href: string | null; logo: string | null } | { kind: "author" };
+  | { kind: "provider"; name: string; href: string | null; logo: string | null }
+  | { kind: "browser"; name: string | null }
+  | { kind: "author" };
 
 /** A post in another language, as the card shows it in place of the original. */
 export type TranslatedPost = {
@@ -42,8 +48,11 @@ export type TranslatedPost = {
   by: TranslatedBy;
 };
 
-/** A way to translate a post into a language; the hook useTranslator chooses it. */
-export type Translator = (targetLanguage: string) => Promise<TranslatedPost>;
+/**
+ * A way to translate a post into a language; the hook useTranslator chooses it. `onDownload` hears how much of a model
+ * has come, from 0 to 1, when the way has one to download.
+ */
+export type Translator = (targetLanguage: string, onDownload: (loaded: number) => void) => Promise<TranslatedPost>;
 
 /** What the card keeps of `answer`, the server's translation. */
 function translatedPost(answer: components["schemas"]["StatusTranslation"]): TranslatedPost {

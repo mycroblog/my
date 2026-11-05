@@ -107,6 +107,10 @@ func (m *memory) InsertDecision(_ context.Context, _ uow.Tx, d hook.Decision) (b
 	return true, nil
 }
 
+func (m *memory) ListSensitivityMarks(context.Context, uow.Tx) ([]apphook.SensitivityMark, error) {
+	return nil, nil
+}
+
 func (m *memory) RecordBySubject(_ context.Context, n hook.Name, key string) (hook.Record, error) {
 	m.reads++
 	for _, r := range m.records {

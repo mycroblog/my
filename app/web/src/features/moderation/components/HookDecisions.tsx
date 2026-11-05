@@ -30,6 +30,7 @@ import {
 } from "@my/ui";
 import { useState } from "react";
 import { useIntl } from "react-intl";
+import { useNow } from "../../../lib/clock";
 import { useT } from "../../../lib/i18n";
 import {
   type HookAppealFilter,
@@ -216,6 +217,7 @@ function HookDecisionList({
 function HookDecisionRow({ decision, override }: { decision: HookDecision; override: OverrideHookDecision }) {
   const t = useT();
   const intl = useIntl();
+  const now = useNow();
   const hook = t(hookNameLabels[decision.hook]);
   const outcome = t(hookOutcomeLabels[decision.outcome]);
   return (
@@ -247,6 +249,15 @@ function HookDecisionRow({ decision, override }: { decision: HookDecision; overr
           {decision.overridden_at !== undefined && (
             <DescriptionItem term={t("client:admin.hook_decisions.overridden_at")}>
               <DateTime value={decision.overridden_at} />
+            </DescriptionItem>
+          )}
+          {decision.overridable && decision.restorable_until !== undefined && (
+            <DescriptionItem term={t("client:admin.hook_decisions.restorable_until")}>
+              {Date.parse(decision.restorable_until) > now ? (
+                <DateTime value={decision.restorable_until} />
+              ) : (
+                t("client:admin.hook_decisions.restorable_gone")
+              )}
             </DescriptionItem>
           )}
         </DescriptionList>

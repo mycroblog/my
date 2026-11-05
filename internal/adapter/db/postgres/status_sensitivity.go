@@ -16,7 +16,7 @@ func (r *StatusRepository) InsertSensitivityOverride(ctx context.Context, tx uow
 		return err
 	}
 	return wrap(q.InsertStatusSensitivityOverride(ctx, postgresgen.InsertStatusSensitivityOverrideParams{
-		StatusID: statusID, SourceActionID: actionID,
+		StatusID: statusID, SourceActionID: &actionID,
 	}), "insert status sensitivity override")
 }
 
@@ -26,7 +26,27 @@ func (r *StatusRepository) DeleteSensitivityOverridesOf(ctx context.Context, tx 
 	if err != nil {
 		return err
 	}
-	return wrap(q.DeleteStatusSensitivityOverridesOfAction(ctx, actionID), "delete status sensitivity overrides")
+	return wrap(q.DeleteStatusSensitivityOverridesOfAction(ctx, &actionID), "delete status sensitivity overrides")
+}
+
+// InsertSensitivityOverrideOfHookDecision implements content.Repository.
+func (r *StatusRepository) InsertSensitivityOverrideOfHookDecision(ctx context.Context, tx uow.Tx, statusID, decisionID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.InsertStatusSensitivityOverrideOfHookDecision(ctx, postgresgen.InsertStatusSensitivityOverrideOfHookDecisionParams{
+		StatusID: statusID, SourceHookDecisionID: &decisionID,
+	}), "insert status sensitivity override of a hook decision")
+}
+
+// DeleteSensitivityOverridesOfHookDecision implements content.Repository.
+func (r *StatusRepository) DeleteSensitivityOverridesOfHookDecision(ctx context.Context, tx uow.Tx, decisionID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.DeleteStatusSensitivityOverridesOfHookDecision(ctx, &decisionID), "delete status sensitivity overrides of a hook decision")
 }
 
 // SensitivityOverridden implements content.Repository.

@@ -87,12 +87,20 @@ type Repository interface {
 	// mentions, its counters, its link to its parent, and the links of its replies to it.
 	DeleteStatusProjections(ctx context.Context, tx uow.Tx, statusID string) error
 	// InsertSensitivityOverride records that a mark_statuses_sensitive action shows a status as
-	// sensitive (status_sensitivity_overrides); recording it again does nothing.
+	// sensitive (status_sensitivity_overrides); recording it again does nothing. A status can have
+	// rows of several sources, and each source ends only its own.
 	InsertSensitivityOverride(ctx context.Context, tx uow.Tx, statusID, actionID string) error
 	// DeleteSensitivityOverridesOf deletes the overrides of a lifted action.
 	DeleteSensitivityOverridesOf(ctx context.Context, tx uow.Tx, actionID string) error
+	// InsertSensitivityOverrideOfHookDecision records that a mark_sensitive decision of a hook shows a
+	// status as sensitive; recording it again does nothing.
+	InsertSensitivityOverrideOfHookDecision(ctx context.Context, tx uow.Tx, statusID, decisionID string) error
+	// DeleteSensitivityOverridesOfHookDecision deletes the overrides of a cancelled decision.
+	DeleteSensitivityOverridesOfHookDecision(ctx context.Context, tx uow.Tx, decisionID string) error
 	// DeleteAllSensitivityOverrides empties status_sensitivity_overrides, for its rebuild.
 	DeleteAllSensitivityOverrides(ctx context.Context, tx uow.Tx) error
+	// DeleteSensitivityOverridesWithoutStatus drops the overrides of statuses with no row, for its rebuild.
+	DeleteSensitivityOverridesWithoutStatus(ctx context.Context, tx uow.Tx) error
 
 	// Rebuilds empty one projection and derive it again from the statuses, their revisions,
 	// and their deletions, by the same rules as the projectors (data-model §9).

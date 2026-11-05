@@ -21,6 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/adapter/keymanager/local"
 	mailnone "github.com/mycroblog/my/internal/adapter/mail/none"
 	mailsmtp "github.com/mycroblog/my/internal/adapter/mail/smtp"
+	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
 	"github.com/mycroblog/my/internal/adapter/system"
 	"github.com/mycroblog/my/internal/app/account"
@@ -689,8 +690,10 @@ func hostOnly(host string) string {
 // set, only unwrap the values still wrapped by their KMS, until `my kek rewrap` moves them to the
 // local KEK. With a KMS, the KMS key manager of kms_key wraps, and the KEKs of kek and kek_previous
 // only unwrap the values that are still wrapped locally, until `my kek rewrap` moves them to the
-// KMS. A KMS key manager sits behind the cache of the DEKs it unwraps. kms, when set, stands in
-// for the KMS key manager (tests only).
+// KMS. A plugin takes the place of a KMS (ADR-0146 §14): with key_manager = plugin it wraps, and
+// with key_manager = local and its address set it only unwraps; config refuses a plugin together
+// with a KMS. A KMS or plugin key manager sits behind the cache of the DEKs it unwraps. kms, when
+// set, stands in for it (tests only).
 func (a *App) newKeyManager(ctx context.Context, cfg *config.Config, kms kernel.KeyManager) (kernel.KeyManager, error) {
 	if cfg.KeyManager == "local" {
 		current, err := local.New(cfg.KEK, cfg.PreviousKEKs...)
@@ -702,11 +705,17 @@ func (a *App) newKeyManager(ctx context.Context, cfg *config.Config, kms kernel.
 			keys = append(keys, cfg.KMSKey)
 		}
 		keys = append(keys, cfg.PreviousKMSKeys...)
-		if len(keys) == 0 {
+		opensWithPlugin := cfg.PluginDestination(kind.KeyManager).Enabled()
+		if len(keys) == 0 && !opensWithPlugin {
 			return current, nil
 		}
 		if kms == nil {
-			if kms, err = a.newKMSKeyManager(ctx, kmsKindOf(keys[0]), keys[0], keys[1:]); err != nil {
+			if opensWithPlugin {
+				kms, err = a.newKMSKeyManager(ctx, cfg, keyManagerPlugin, "", nil)
+			} else {
+				kms, err = a.newKMSKeyManager(ctx, cfg, kmsKindOf(keys[0]), keys[0], keys[1:])
+			}
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -714,7 +723,7 @@ func (a *App) newKeyManager(ctx context.Context, cfg *config.Config, kms kernel.
 	}
 	if kms == nil {
 		var err error
-		if kms, err = a.newKMSKeyManager(ctx, cfg.KeyManager, cfg.KMSKey, cfg.PreviousKMSKeys); err != nil {
+		if kms, err = a.newKMSKeyManager(ctx, cfg, cfg.KeyManager, cfg.KMSKey, cfg.PreviousKMSKeys); err != nil {
 			return nil, err
 		}
 	}
@@ -749,10 +758,20 @@ func kmsKindOf(name string) string {
 	return "awskms"
 }
 
-// newKMSKeyManager returns the KMS key manager of kind that wraps with key and also unwraps with
-// previous; Close releases its client.
-func (a *App) newKMSKeyManager(ctx context.Context, kind, key string, previous []string) (kernel.KeyManager, error) {
-	switch kind {
+// keyManagerPlugin is the value of key_manager that delegates to a plugin.
+const keyManagerPlugin = "plugin"
+
+// newKMSKeyManager returns the key manager of the KMS or plugin of managerKind: a KMS wraps with
+// key and also unwraps with previous, and a plugin holds its keys itself. Close releases its client.
+func (a *App) newKMSKeyManager(ctx context.Context, cfg *config.Config, managerKind, key string, previous []string) (kernel.KeyManager, error) {
+	switch managerKind {
+	case keyManagerPlugin:
+		km, closer, err := newPluginKeyManager(ctx, cfg, a.Meter)
+		if err != nil {
+			return nil, err
+		}
+		a.keyManagerClosers = append(a.keyManagerClosers, closer)
+		return km, nil
 	case "gcpkms":
 		km, closer, err := newGCPKMS(ctx, key, previous)
 		if err != nil {
@@ -763,7 +782,7 @@ func (a *App) newKMSKeyManager(ctx context.Context, kind, key string, previous [
 	case "awskms":
 		return newAWSKMS(ctx, key, previous)
 	default:
-		return nil, fmt.Errorf("key_manager %q is not implemented yet", kind)
+		return nil, fmt.Errorf("key_manager %q is not implemented yet", managerKind)
 	}
 }
 

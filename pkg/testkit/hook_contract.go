@@ -44,6 +44,47 @@ func HookRepositoryContract(t *testing.T, newHarness func(t *testing.T) HookHarn
 		return inserted
 	}
 
+	t.Run("the marks of the decisions in force", func(t *testing.T) {
+		h := newHarness(t)
+		in := func(key string, mode hook.Mode, outcome hook.Outcome) hook.Decision {
+			d := decision(hook.InboundStatus, key, base)
+			d.Mode, d.Outcome = mode, outcome
+			if !insert(t, h, d) {
+				t.Fatalf("decision %s was not inserted", key)
+			}
+			return d
+		}
+		kept := in("kept", hook.ModeEnforce, hook.MarkSensitive)
+		cancelled := in("cancelled", hook.ModeEnforce, hook.MarkSensitive)
+		observed := in("observed", hook.ModeObserve, hook.MarkSensitive)
+		flagged := in("flagged", hook.ModeEnforce, hook.Flag)
+		status := ids.NewID()
+		err := h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+			for _, d := range []hook.Decision{kept, cancelled, observed, flagged} {
+				if err := h.Repository.InsertDecisionStatus(t.Context(), tx, d.ID, status); err != nil {
+					return err
+				}
+			}
+			_, err := h.Repository.InsertOverride(t.Context(), tx, hook.Override{DecisionID: cancelled.ID, At: base})
+			return err
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var marks []apphook.SensitivityMark
+		err = h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
+			var err error
+			marks, err = h.Repository.ListSensitivityMarks(t.Context(), tx)
+			return err
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(marks) != 1 || marks[0] != (apphook.SensitivityMark{StatusID: status, DecisionID: kept.ID}) {
+			t.Errorf("marks = %+v, want the decision that enforces and stands", marks)
+		}
+	})
+
 	t.Run("one decision per hook and subject", func(t *testing.T) {
 		h := newHarness(t)
 		d := decision(hook.InboundStatus, "https://remote.example/a", base)

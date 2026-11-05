@@ -193,6 +193,9 @@ type Repository interface {
 	Summarize(ctx context.Context, since time.Time) ([]SummaryRow, error)
 	// ListExpired returns one batch with the statuses of each decision in StatusIDs.
 	ListExpired(ctx context.Context, q ExpiredQuery) ([]hook.Expired, error)
+	// ListSensitivityMarks returns inside tx the statuses of the mark_sensitive decisions of
+	// ModeEnforce that no moderator cancelled.
+	ListSensitivityMarks(ctx context.Context, tx uow.Tx) ([]SensitivityMark, error)
 	// DecisionIDsOfAccount returns up to limit decisions of an account inside tx.
 	DecisionIDsOfAccount(ctx context.Context, tx uow.Tx, accountID string, limit int) ([]string, error)
 	// DeleteDecisions deletes the decisions with their statuses, cancellations, and appeals.
@@ -228,6 +231,12 @@ type AppealQuery struct {
 	// Before is the ID of the last appeal of the previous page; "" starts at the newest.
 	Before string
 	Limit  int
+}
+
+// SensitivityMark is a status that a mark_sensitive decision in force shows as sensitive.
+type SensitivityMark struct {
+	StatusID   string
+	DecisionID string
 }
 
 // ErrNotFound reports an unknown decision.
@@ -286,6 +295,10 @@ type Gate interface {
 	// Configured reports whether the hook has a plugin. A module may skip building a costly
 	// Subject when it has none.
 	Configured(n hook.Name) bool
+	// Active reports whether Decide would ask about anything: the hook has a plugin and its mode is
+	// not off. A module checks it before what it reads only to ask, so a hook that is off adds no
+	// read to its path. A hook with no plugin costs one map lookup.
+	Active(ctx context.Context, n hook.Name) (bool, error)
 	// Decide returns the decision on c, calling the plugin only if none is recorded. Call it
 	// before the transaction. A hook with no plugin costs one map lookup. It fails with
 	// ErrRetryLater as above.
@@ -296,6 +309,47 @@ type Gate interface {
 	// Applied records inside tx that the module acted on r: an audit log entry with the system as
 	// the actor when the effect leaves state, and nothing otherwise (ADR-0147 §11).
 	Applied(ctx context.Context, tx uow.Tx, r Result) error
+}
+
+// InboundStatusSubject is what inbound.status sends about a received post or a new revision of one.
+// It holds the post as the remote server sent it and how many local accounts it names, and nothing
+// of a local post or a local account.
+type InboundStatusSubject struct {
+	// ActivityType is the type of the activity that carried the post: Create or Update.
+	ActivityType string
+	StatusURI    string
+	StatusURL    string
+	AuthorURI    string
+	AuthorDomain string
+	// Visibility is public, unlisted, private, or direct.
+	Visibility string
+	// AnyLocalFollower says whether a local account follows the author, for the plugin to weigh.
+	AnyLocalFollower bool
+	InReplyToURI     string
+	SpoilerText      string
+	Sensitive        bool
+	PublishedAt      time.Time
+	Bodies           []InboundStatusBody
+	Attachments      []InboundStatusAttachment
+	PollOptions      []string
+	Hashtags         []string
+	// MentionCount is how many accounts the post names, and LocalMentionCount how many of them are local.
+	MentionCount      int
+	LocalMentionCount int
+}
+
+// InboundStatusBody is the text of a post in one language, as sanitized HTML.
+type InboundStatusBody struct {
+	Language string
+	HTML     string
+}
+
+// InboundStatusAttachment is a media attachment by its remote URL; the server sends no bytes of it.
+type InboundStatusAttachment struct {
+	Type        string
+	URL         string
+	ContentType string
+	Description string
 }
 
 // Domain events of the module.

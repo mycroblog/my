@@ -9,7 +9,13 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
-import { decidedHookAppeal, hookAppealFixture, hookDecisionFixture, hookSummaryFixture } from "./test/handlers";
+import {
+  decidedHookAppeal,
+  hookAppealFixture,
+  hookDecisionFixture,
+  hookSummaryFixture,
+  reportFixture,
+} from "./test/handlers";
 
 beforeEach(() => {
   server.use(signedInHandler, operatorHandler(["manage_reports"]));
@@ -84,6 +90,57 @@ describe("automated reviews", () => {
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: /Cancel decision of/u })).not.toBeInTheDocument();
     });
+  });
+
+  test("a drop says until when cancelling brings the post back, and when it no longer does", async () => {
+    const restorable = hookDecisionFixture({
+      id: "0192f0c4-7a8e-7000-8000-00000000d101",
+      subject_key: "https://remote.example/activities/restorable",
+      outcome: "drop",
+      mode: "enforce",
+      overridable: true,
+      restorable_until: "2999-01-01T00:00:00Z",
+    });
+    const gone = hookDecisionFixture({
+      id: "0192f0c4-7a8e-7000-8000-00000000d102",
+      subject_key: "https://remote.example/activities/gone",
+      outcome: "drop",
+      mode: "enforce",
+      overridable: true,
+      restorable_until: "2001-01-01T00:00:00Z",
+    });
+    decisionsServer([restorable, gone]);
+    await renderApp({ path: "/moderation/hook-decisions" });
+    const list = await screen.findByRole("table", { name: "Decisions" });
+    const row = (key: string) => within(list).getByRole("row", { name: new RegExp(key, "u") });
+    expect(await within(list).findByRole("rowheader", { name: restorable.subject_key })).toBeVisible();
+    expect(within(row("restorable")).getByText("Can be brought back until")).toBeVisible();
+    expect(
+      within(row("activities/gone")).getByText(
+        "Its received copy is gone, so cancelling records the cancellation and brings nothing back.",
+      ),
+    ).toBeVisible();
+  });
+
+  test("a report that a review filed says so", async () => {
+    const id = "0192f0c4-7a8e-7000-8000-00000000d103";
+    server.use(
+      http.get(`${apiBase}/admin/reports/:id`, () =>
+        HttpResponse.json(
+          reportFixture({
+            id,
+            hook_origin: {
+              hook: "inbound.status",
+              decision_id: "0192f0c4-7a8e-7000-8000-00000000d104",
+              reason: "spam",
+            },
+          }),
+        ),
+      ),
+    );
+    await renderApp({ path: `/moderation/reports/${id}` });
+    expect(await screen.findByText("Filed by the review of Posts from other servers, not by a person.")).toBeVisible();
+    expect(screen.getByText("Reason of the review: spam")).toBeVisible();
   });
 
   test("a failed cancellation leaves the row and says why", async () => {
