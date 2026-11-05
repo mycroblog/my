@@ -9,4 +9,5 @@ func init() {
 	exclude("no_plugins", "billing_sources", "plugin")
 	exclude("no_plugins", "mail", "plugin")
 	exclude("no_plugins", "media", "plugin")
+	exclude("no_plugins", "key_manager", "plugin")
 }

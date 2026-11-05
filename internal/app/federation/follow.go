@@ -10,6 +10,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
 )
@@ -279,6 +280,9 @@ type FollowHandlerDeps struct {
 	// again to a deactivated account changes nothing and gets no answer (ADR-0089 §16); nil means
 	// that none does.
 	Relationships FollowRelationships
+	// Hooks asks the inbound.follow hook about a Follow that would be recorded (ADR-0147); nil
+	// asks nothing.
+	Hooks apphook.Gate
 }
 
 // FollowRelationships reads how an account stands to another; *appgraph.Service implements it.
@@ -321,7 +325,7 @@ type QuoteAnswers interface {
 
 // RegisterFollowHandlers sets the inbox handlers of the follow activities (federation.md §3.4):
 //
-//   - Follow of a local actor: graph.ReceiveFollow.
+//   - Follow of a local actor: the inbound.follow hook, then graph.ReceiveFollow.
 //   - Accept and Reject of a Follow a local account sent: graph.AcceptRemote and
 //     graph.RejectRemote. The Follow is found by the object's id, and else by its embedded
 //     actor (local) and object (the sender); an Accept or Reject of something other than a
@@ -436,6 +440,9 @@ func (h followHandlers) follow(ctx context.Context, in *InboxActivity) error {
 	if followee == "" || refused {
 		return fmt.Errorf("%w: %s is not a local actor", ErrDropActivity, in.Activity.Object().ID)
 	}
+	if err := h.review(ctx, in); err != nil {
+		return err
+	}
 	uri := in.Activity.ID
 	if uri == "" {
 		uri = in.Received.ActivityURI
@@ -443,6 +450,27 @@ func (h followHandlers) follow(ctx context.Context, in *InboxActivity) error {
 	return graphError(h.d.Graph.ReceiveFollow(ctx, appgraph.ReceiveFollowInput{
 		URI: string(uri), FollowerID: in.Actor.Account.ID, FolloweeID: followee,
 	}))
+}
+
+// review asks the inbound.follow hook about a Follow outside any transaction (ADR-0147 §2). A drop
+// fails with ErrDropActivity: the job ends, and the record of the received activity stops a
+// redelivery. A plugin failure under the retry behaviour comes back as apphook.ErrRetryLater, which
+// the job retries. Only the Follow itself asks: the Undo that takes it back has a handler of its own.
+func (h followHandlers) review(ctx context.Context, in *InboxActivity) error {
+	if h.d.Hooks == nil || !h.d.Hooks.Configured(apphook.InboundFollow) {
+		return nil
+	}
+	r, err := h.d.Hooks.Decide(ctx, apphook.Call{
+		Hook: apphook.InboundFollow, SubjectKey: string(in.Received.ActivityURI), AccountID: in.Actor.Account.ID,
+		Subject: apphook.FollowSubject{FollowerURI: in.Actor.Account.URI, FolloweeURI: string(in.Activity.Object().ID)},
+	})
+	if err != nil {
+		return err
+	}
+	if r.Effect == apphook.Drop {
+		return fmt.Errorf("%w: inbound.follow dropped %s", ErrDropActivity, in.Received.ActivityURI)
+	}
+	return nil
 }
 
 // followOfDeactivated answers a Follow of a local account whose owner deactivated it (ADR-0089 §16):

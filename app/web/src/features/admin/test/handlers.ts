@@ -283,6 +283,7 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "search_indexing", kind: "enum", default: "deny", choices: ["allow", "deny"] },
   { key: "ai_usage", kind: "enum", default: "deny", choices: ["allow", "deny_training", "deny"] },
   { key: "indexable_default", kind: "bool", default: "false" },
+  { key: "search_visibilities", kind: "enum", default: "public", choices: ["public", "local", "public,local"] },
   { key: "security_contact", kind: "uri", default: "" },
   { key: "require_media_description", kind: "bool", default: "false" },
   { key: "link_cards", kind: "bool", default: "true" },

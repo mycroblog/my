@@ -89,6 +89,9 @@ A call that fails counts in the metric [`my.plugin.failures`](running.md) by kin
 message that a plugin puts in an error, so a plugin's failures have their reasons in the plugin's own log. The server
 does not retry a call itself: the job that made it does, so a plugin must cope with the same call twice.
 
+A plugin that is down when the server starts stops nothing, except `key_manager`: the server does not start without it, and
+[what stops without it](key-management.md#when-the-plugin-is-unreachable) is a part of its setup to read first.
+
 A call has the deadline of `plugin_<kind>_timeout`, below 5 minutes, and a plugin receives it as `Connect-Timeout-Ms`
 (`grpc-timeout` on gRPC). A plugin may ignore that header: the server stops waiting anyway.
 
@@ -132,6 +135,11 @@ leaves for private use. It cannot judge the words, so read a translation of the 
 `--kind media` sends only small test files that it makes itself: a photo, an emoji, an animated GIF, and an MP3. Each one
 hides a location or a title in its metadata, and a case fails when that comes back in an output. It checks every output as
 the server does. [Converting media](#converting-media) has the contract of the kind.
+
+`--kind key_manager` runs the checks the server runs at each start, and checks that the plugin refuses a changed value and a
+KEK it does not hold. It sends only keys it makes up and throws away, so it is safe against a real key store, which may bill
+the calls. It checks that the answers have the right form, not how the plugin keeps its KEK.
+[Managing the key](key-management.md#a-plugin) has the contract of the kind.
 
 `probe` is the smallest kind, and the server delegates nothing to it. Serve it first, to check the transport, the
 protocol, and the authentication before you write the rest of the plugin.

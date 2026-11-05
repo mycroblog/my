@@ -64,8 +64,8 @@ export function shellQueryRetry(failureCount: number, error: unknown): boolean {
 export const shellQueryReader = { retry: shellQueryRetry, retryOnMount: false } as const;
 
 /**
- * The paths of the API whose answers are lists of posts: the timelines, an account's posts, and the thread
- * around a post. Every one of them leaves out the posts of the accounts the viewer blocks or mutes.
+ * The paths of the API whose answers are lists of posts: the timelines, an account's posts, the thread around a
+ * post, and the search of posts. Every one of them leaves out the posts of the accounts the viewer blocks or mutes.
  */
 const postListPaths: ReadonlySet<string> = new Set([
   "/timelines/home",
@@ -74,6 +74,7 @@ const postListPaths: ReadonlySet<string> = new Set([
   "/timelines/tag/{hashtag}",
   "/accounts/{id}/statuses",
   "/statuses/{id}/context",
+  "/statuses/search",
 ]);
 
 /** Whether `queryKey` is a query of a list of posts (postListPaths); the API's keys are `[method, path, init]`. */

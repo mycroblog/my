@@ -110,13 +110,22 @@ func TestRefusedCredentialsFail(t *testing.T) {
 }
 
 func TestAKindWithoutCasesSaysSo(t *testing.T) {
+	// Every kind of this version has cases, so the probe stands in for a kind of a later one.
+	k, _ := kind.ByName(kind.Probe)
+	k.Name = "later"
 	h, _ := fakeplugin.Connect(fakeplugin.Options{})
-	results := run(t, kind.KeyManager, kind.Destination{Address: fakeplugin.ServeUnix(t, h)})
+	conn, err := client.New(client.Options{Kind: k, Destination: kind.Destination{Address: fakeplugin.ServeUnix(t, h)}, KeepDetail: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(conn.Close)
+	results := map[string]contract.Result{}
+	contract.Run(t.Context(), k, contract.Env{Conn: conn, Protocol: k.Protocol}, func(r contract.Result) { results[r.Case] = r })
 	if results["reachable"].Outcome != contract.Pass {
 		t.Errorf("reachable: %+v", results["reachable"])
 	}
-	if r := results[kind.KeyManager]; r.Outcome != contract.Skip || r.Detail == "" {
-		t.Errorf("%s: %+v", kind.KeyManager, r)
+	if r := results[k.Name]; r.Outcome != contract.Skip || r.Detail == "" {
+		t.Errorf("%s: %+v", k.Name, r)
 	}
 }
 

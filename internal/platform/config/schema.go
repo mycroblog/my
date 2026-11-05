@@ -604,15 +604,16 @@ var schema = []field{
 		doc: "Key manager adapter that encrypts actor private keys.",
 		def: "local",
 		choices: []choice{
-			{value: "local", doc: "Uses the key-encryption key from `kek`."},
+			{value: "local", doc: "Uses the key-encryption key from `kek`. With `plugin_key_manager_address` set, the plugin only decrypts the secrets it still holds, while they move to `kek`."},
 			{value: "gcpkms", doc: "Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out (docs/operations/key-management.md)."},
 			{value: "awskms", doc: "AWS KMS: the symmetric key of `kms_key` encrypts the data-encryption keys, with the credentials and region of the AWS SDK's default chain. The build tag `no_awskms` leaves it out (docs/operations/key-management.md)."},
+			{value: "plugin", doc: "A plugin of yours at `plugin_key_manager_address`, such as one before Vault or an HSM. It sees the data-encryption keys, so it is in the same trust boundary as the key-encryption key. The server does not start without its answer or when it fails a self-test, and nothing falls back to another key. The build tag `no_plugins` leaves it out (docs/operations/key-management.md)."},
 		},
 		set: func(c *Config, v string) { c.KeyManager = v },
 	},
 	{
 		key:          "kek",
-		doc:          "Key-encryption key for actor private keys and the other secrets in the database: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`; with another `key_manager` it only decrypts, while the secrets move to the KMS. Back it up separately from the database; losing it loses every actor key (docs/operations/key-management.md).",
+		doc:          "Key-encryption key for actor private keys and the other secrets in the database: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`; with another `key_manager` it only decrypts, while the secrets move to the KMS or plugin. Back it up separately from the database; losing it loses every actor key (docs/operations/key-management.md).",
 		secret:       true,
 		requiredWhen: "when `key_manager = local`",
 		check:        checkKEK,
@@ -622,7 +623,7 @@ var schema = []field{
 	},
 	{
 		key:    "kek_previous",
-		doc:    "Previous key-encryption keys, comma-separated, each in the format of `kek`. They only decrypt; new secrets are always encrypted with `kek`, or with `kms_key` when `key_manager` is not `local`. Set the replaced key here while rotating `kek` (docs/operations/key-management.md).",
+		doc:    "Previous key-encryption keys, comma-separated, each in the format of `kek`. They only decrypt; new secrets are always encrypted with `kek`, or with the KMS or plugin when `key_manager` is not `local`. Set the replaced key here while rotating `kek` (docs/operations/key-management.md).",
 		secret: true,
 		check:  checkPreviousKEKs,
 		set: func(c *Config, v string) {
@@ -634,8 +635,8 @@ var schema = []field{
 	},
 	{
 		key:          "kms_key",
-		doc:          "Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN, an alias (`alias/...`), or the key ID of an AWS KMS key, which the server resolves to the key's ARN at start. At most 248 bytes. With `key_manager = local`, it only decrypts, like `kms_key_previous`.",
-		requiredWhen: "when `key_manager` is not `local`",
+		doc:          "Key of the KMS that encrypts the secrets when `key_manager` is `gcpkms` or `awskms`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN, an alias (`alias/...`), or the key ID of an AWS KMS key, which the server resolves to the key's ARN at start. At most 248 bytes. With `key_manager = local`, it only decrypts, like `kms_key_previous`.",
+		requiredWhen: "when `key_manager` is `gcpkms` or `awskms`",
 		check:        checkKMSKey,
 		set:          func(c *Config, v string) { c.KMSKey = v },
 	},
@@ -651,7 +652,7 @@ var schema = []field{
 	},
 	{
 		key:   "kms_dek_cache_ttl",
-		doc:   "How long the server keeps a data-encryption key that the KMS decrypted, as a Go duration, so that a secret in use reaches the KMS about once per this period and process. `0` disables the cache. Not used when `key_manager = local`.",
+		doc:   "How long the server keeps a data-encryption key that the KMS or plugin decrypted, as a Go duration, so that a secret in use reaches it about once per this period and process. `0` disables the cache. Not used when `key_manager = local`.",
 		def:   "10m",
 		check: checkNonNegativeDuration,
 		set:   func(c *Config, v string) { c.DEKCacheTTL, _ = time.ParseDuration(v) },
@@ -1354,8 +1355,8 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 		if !present["kek"] {
 			issues = append(issues, Issue{Key: "kek", Missing: true, Message: "required when key_manager is local"})
 		}
-	} else if vals["key_manager"] != "" && !present["kms_key"] {
-		issues = append(issues, Issue{Key: "kms_key", Missing: true, Message: "required when key_manager is not local"})
+	} else if vals["key_manager"] != "" && vals["key_manager"] != "plugin" && !present["kms_key"] {
+		issues = append(issues, Issue{Key: "kms_key", Missing: true, Message: "required when key_manager is gcpkms or awskms"})
 	}
 	issues = append(issues, kmsKeyChecks(vals)...)
 	if prev, ok := vals["kms_key_previous"]; ok {

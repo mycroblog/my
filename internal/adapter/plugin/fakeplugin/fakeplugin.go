@@ -19,12 +19,14 @@ import (
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/billing/v1/billingv1connect"
 	hookv1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/hook/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/hook/v1/hookv1connect"
+	keymanagerv1connect "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/key_manager/v1/key_managerv1connect"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/mailer/v1/mailerv1connect"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/media/v1/mediav1connect"
 	probev1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1/probev1connect"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/translator/v1/translatorv1connect"
 	appfinance "github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/media"
 	"github.com/mycroblog/my/internal/app/translation"
 )
@@ -50,6 +52,10 @@ type Options struct {
 	Media media.Processor
 	// MediaUnderstate declares each output of the media kind at half its size, as a plugin that lies about it.
 	MediaUnderstate bool
+	// KeyManager is the key store behind the fake's key manager kind, whose answers it hands on as they are, so that a test
+	// can make the fake break the contract. Its key IDs are the plugin's own, without the server's prefix, and an error that
+	// is no result of the port fails the call. Without it the fake does not serve the kind.
+	KeyManager kernel.KeyManager
 }
 
 // Recorder tells what reached a fake.
@@ -87,6 +93,7 @@ func Connect(o Options) (http.Handler, *Recorder) {
 	mailerv1connect.RegisterMailerServiceHandler(server, &mailerServer{o: o})
 	translatorv1connect.RegisterTranslatorServiceHandler(server, &translatorServer{o: o})
 	mediav1connect.RegisterMediaServiceHandler(server, &mediaServer{o: o})
+	keymanagerv1connect.RegisterKeyManagerServiceHandler(server, &keyManagerServer{o: o})
 	hookv1connect.RegisterHookServiceHandler(server, &hookServer{o: o})
 	mux := http.NewServeMux()
 	connecthttp.Mount(mux, server)
@@ -178,6 +185,7 @@ func JSON(o Options) (http.Handler, *Recorder) {
 	serveBillingJSON(mux, o)
 	serveMailerJSON(mux, o)
 	serveTranslatorJSON(mux, o)
+	serveKeyManagerJSON(mux, o)
 	mux.HandleFunc("POST /my.plugin.hook.v1.HookService/Check", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			http.Error(w, "send JSON", http.StatusUnsupportedMediaType)

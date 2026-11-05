@@ -18,6 +18,14 @@ func TestNoPluginsRejectsTheMailer(t *testing.T) {
 	}
 }
 
+func TestNoPluginsRejectsTheKeyManager(t *testing.T) {
+	_, _, err := Load(source(with(minimal(), "MY_KEY_MANAGER", "plugin"), nil))
+	var ve *ValidationError
+	if !errors.As(err, &ve) || len(ve.Issues) != 1 || ve.Issues[0].Key != "key_manager" || !strings.Contains(ve.Issues[0].Message, "no_plugins") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestNoPluginsRejectsADestination(t *testing.T) {
 	_, _, err := Load(source(with(minimal(), "MY_PLUGIN_BILLING_ADDRESS", "unix:///s"), nil))
 	var ve *ValidationError

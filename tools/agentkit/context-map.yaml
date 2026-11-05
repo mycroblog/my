@@ -432,6 +432,13 @@ entries:
   - name: key-management
     paths: ["internal/adapter/keymanager/**"]
     userdocs: ["docs/operations/key-management.md"]
+  - name: keymanager-plugin
+    paths: ["internal/adapter/keymanager/plugin/**", "internal/platform/adapters_*key_manager_plugin*.go", "internal/platform/keymanager_plugin_test.go", "internal/platform/config/plugin_key_manager_test.go"]
+    docs: ["docs/adr/0146-plugin-protocol.md", "docs/adr/0019-security-baseline.md#decision決定"]
+    userdocs: ["docs/operations/key-management.md#a-plugin", "docs/operations/plugins.md", "docs/reference/build-tags.md"]
+    notes:
+      - "key_manager = plugin (internal/adapter/keymanager/plugin) fails closed: Start asks for the current key and runs the self-test, retrying only a plugin that does not answer for 30 seconds, and every failure at run time is an error of the call; nothing falls back on another key (ADR-0146 §14). It sits behind the DEK cache like a KMS, and with key_manager = local its address only opens the values still under it."
+      - "A DEK, an AAD, and a wrapped value reach no log, error, or metric. The errors here are fixed texts and the client's Connect code, and quote nothing of a response; TestNoKeyMaterialInErrorsLogsOrMetrics echoes them from a plugin in every place it can."
   - name: keymanager-gcpkms
     paths: ["internal/adapter/keymanager/gcpkms/**", "internal/platform/adapters_*gcpkms.go", "internal/platform/config/adapters_*gcpkms.go", "internal/platform/keymanager_gcpkms_test.go"]
     docs: ["docs/adr/0019-security-baseline.md#decision決定"]
