@@ -68,7 +68,7 @@ Setting it up:
 2. Pass the same value with `TF_VAR_origin_secret`, not in a file you commit, and apply. The rule and the server's settings then change in the same apply, so requests may be refused until both have taken effect.
 3. Check: `https://<host>/` answers `200`, and `https://<origin_host>/` answers `403`.
 
-To rotate it, follow the steps under "Rotate the value" in [the CDN guide](../../../../docs/operations/cdn.md): `MY_ORIGIN_SECRET_PREVIOUS` goes in `secret_env` of the app while the two differ.
+To rotate it, follow [the steps in the CDN guide](../../../../docs/operations/cdn.md#rotate-the-value): `MY_ORIGIN_SECRET_PREVIOUS` goes in `secret_env` of the app while the two differ.
 
 **A rule covers only the hosts it names**, deliberately, so that the rest of the zone never sees the value. A host name that reaches the server and is not covered is locked out: add it to `origin_secret_extra_hosts`. A media host goes through `extra_rules`, and the two share this one rule and one secret.
 

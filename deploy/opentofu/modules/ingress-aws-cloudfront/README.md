@@ -74,7 +74,7 @@ read the distribution's configuration can read the value too.
 
 **This depends on what the server cannot yet do on Lambda**: it reads `MY_ORIGIN_SECRET` through `SECRET_ARN_MY_ORIGIN_SECRET`, like every secret there, which `app-aws-lambda` says is missing. Nothing has been run, so the `403` is what the server documents rather than what has been seen.
 
-To rotate the value, follow the steps under "Rotate the value" in [the CDN guide](../../../../docs/operations/cdn.md).
+To rotate the value, follow [the steps in the CDN guide](../../../../docs/operations/cdn.md#rotate-the-value).
 
 ## Limits
 
