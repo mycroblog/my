@@ -15,7 +15,7 @@ a PWA web client (no mobile app in v0), and i18n from day one. Distributed as OS
   documentation, the release (tags, the container image on `ghcr.io/mycroblog/my`, release notes), and the API client
   library `pkg/mykit` and the bot library `pkg/mybot` (epic [#30](https://github.com/mycroblog/my/issues/30),
   [vision](docs/requirements/00-vision.md)). The mobile app is outside v0. M4.3 — Voice Chat (epic [#1345](https://github.com/mycroblog/my/issues/1345))
-  is a precondition of v0.1.0. The OpenTofu modules for Cloud Run (`deploy/opentofu`) are in M5; Cloud SQL and the deployment templates for AWS / microk8s belong to M6.
+  is a precondition of v0.1.0, and External Plugins and the core of Translation and Full-text Search are built before it (their tasks are in M5; provider adapters and search backends come after the tag). The OpenTofu modules for Cloud Run (`deploy/opentofu`) are in M5; Cloud SQL and the deployment templates for AWS / microk8s belong to M6.
 - The server is Go ([ADR-0002](docs/adr/0002-modular-monolith-hexagonal.md)); clients are TypeScript under `app/` with Bun.
   Cloudflare Workers is **not** a target.
 - **Web client work must follow [docs/architecture/web-client/](docs/architecture/web-client/README.md).** Do not write React from memory or
@@ -89,9 +89,9 @@ Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
 - Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`; `!` for breaking).
 - License is AGPL-3.0-only ([ADR-0011](docs/adr/0011-license.md)). New source files start with `SPDX-License-Identifier: AGPL-3.0-only`;
   only add dependencies with AGPL-compatible licenses.
-  The exception is MIT ([ADR-0093](docs/adr/0093-api-client-library-mykit.md) §2): `api/spec/`, `api/openapi.yaml`, `pkg/mykit/` and `pkg/mybot/`
+  The exception is MIT ([ADR-0093](docs/adr/0093-api-client-library-mykit.md) §2): `api/spec/`, `api/openapi.yaml`, `api/plugin/`, `pkg/mykit/` and `pkg/mybot/`
   start with `SPDX-License-Identifier: MIT` (`# ...` in YAML) and depend only on permissive licenses (MIT, Apache-2.0, BSD, ISC and the like), never GPL-family ones.
-  The generated code of the server and the web client stays `AGPL-3.0-only`. `scripts/task.sh api:license-scope` checks the identifiers.
+  The generated code of the server and the web client, including the plugin stubs under `internal/`, stays `AGPL-3.0-only`. `scripts/task.sh api:license-scope` checks the identifiers.
 - Links from issues and comments to repository files use `blob/main/...` or a commit permalink, never a feature branch
   (branches are deleted on merge). Before merge, link the PR instead.
 - Do not commit secrets, `.env` files, or credentials. Do not run destructive commands against remote resources.
@@ -149,8 +149,10 @@ These come from Accepted ADRs and are binding.
 - Job handlers must be idempotent; delivery is at-least-once ([ADR-0004](docs/adr/0004-job-queue-abstraction.md)).
 - Outbound HTTP to destinations that remote servers or users can influence (federation fetch and delivery, WebFinger,
   media proxy, link previews, Web Push, ADR-0019 §1) goes through the SSRF-guarded `kernel.HTTPClient` port;
-  `http.DefaultClient` is banned by lint. Cloud SDK clients that call the provider APIs the operator configured
-  (AWS, Google Cloud) live in adapters and use the SDK's own HTTP client.
+  `http.DefaultClient` is banned by lint. Destinations only the operator configures do not: cloud SDK clients that call the provider APIs
+  (AWS, Google Cloud) live in adapters and use the SDK's own HTTP client, and adapters that call a configured address (LiveKit, plugins, translation
+  providers, search backends) take a dedicated `*http.Client` from `internal/platform` that follows no redirects, as `internal/adapter/voice/livekit` does
+  ([ADR-0146](docs/adr/0146-plugin-protocol.md) §7). A URL such a service returns is not operator-configured, and fetching one goes through `kernel.HTTPClient`.
 - Visibility checks go through the single domain policy function; never re-implement them in API or federation code.
   Levels are `public` / `local` / `unlisted` / `private` / `direct`; `local` is never federated beyond the author's followers ([ADR-0017](docs/adr/0017-visibility-local.md)).
 - **i18n**: never hard-code user-facing strings or date/number formats. Add ICU messages to `locales/en` *and* `locales/ja`,
