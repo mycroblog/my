@@ -3,10 +3,12 @@ module github.com/mycroblog/my/tools
 go 1.27.3
 
 tool (
+	connectrpc.com/connect/v2/cmd/protoc-gen-connect-go
 	github.com/go-task/task/v3/cmd/task
 	github.com/google/go-licenses/v2
 	github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
 	github.com/sqlc-dev/sqlc/cmd/sqlc
+	google.golang.org/protobuf/cmd/protoc-gen-go
 )
 
 require (
@@ -21,6 +23,7 @@ require (
 	cloud.google.com/go/iam v1.14.0 // indirect
 	cloud.google.com/go/monitoring v1.31.0 // indirect
 	cloud.google.com/go/storage v1.70.0 // indirect
+	connectrpc.com/connect/v2 v2.0.2 // indirect
 	filippo.io/edwards25519 v1.1.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.38.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.62.0 // indirect

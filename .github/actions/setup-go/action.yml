@@ -42,7 +42,7 @@ runs:
       shell: bash
       env:
         GOTOOLCHAIN: local
-        SUMS: ${{ hashFiles('go.sum', 'tools/go.sum') }}
+        SUMS: ${{ hashFiles('go.sum', 'tools/go.sum', 'tools/buf/go.sum') }}
       run: |
         base="go-build-${RUNNER_OS}-$(go env GOVERSION)"
         {

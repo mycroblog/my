@@ -22,7 +22,7 @@ tasks:
 
   check:
     desc: Check and lint the client API spec and fail on a stale bundle or generated Go code, in parallel
-    deps: [spec-check, license-scope, live-calls, lint, generate-check]
+    deps: [spec-check, license-scope, live-calls, lint, generate-check, plugin-lint, plugin-generate-check, plugin-breaking]
 
   generate:
     desc: Bundle api/spec into api/openapi.yaml and regenerate the client API code from it (scripts/generate.sh)
@@ -65,8 +65,35 @@ tasks:
     cmds:
       - "{{.REDOCLY}} lint --config api/redocly.yaml api/spec/openapi.yaml"
 
+  plugin-generate:
+    desc: Regenerate the Go code of the plugin protocol in internal/adapter/plugin/gen from api/plugin (scripts/plugin-generate.sh)
+    sources:
+      - "api/plugin/**/*"
+      - scripts/plugin-generate.sh
+      - tools/go.mod
+      - tools/buf/go.mod
+    generates:
+      - "internal/adapter/plugin/gen/**/*.go"
+    cmds:
+      - scripts/plugin-generate.sh
+
+  plugin-generate-check:
+    desc: Fail if the committed Go code of the plugin protocol is stale
+    cmds:
+      - scripts/plugin-generate.sh --check
+
+  plugin-lint:
+    desc: Lint the plugin protocol in api/plugin with buf (pinned in tools/buf/go.mod)
+    cmds:
+      - go tool -modfile=tools/buf/go.mod buf lint api/plugin
+
+  plugin-breaking:
+    desc: Fail if api/plugin breaks the plugin protocol of the latest release from v0.1.0 on (scripts/plugin-breaking.sh)
+    cmds:
+      - scripts/plugin-breaking.sh
+
   license-scope:
-    desc: Fail if an SPDX identifier is outside the license scope, MIT for api/spec, api/openapi.yaml, pkg/mykit and pkg/mybot and AGPL-3.0-only elsewhere (scripts/license-scope-check.sh)
+    desc: Fail if an SPDX identifier is outside the license scope, MIT for api/spec, api/openapi.yaml, api/plugin, pkg/mykit and pkg/mybot and AGPL-3.0-only elsewhere (scripts/license-scope-check.sh)
     cmds:
       - scripts/license-scope-check.sh
 

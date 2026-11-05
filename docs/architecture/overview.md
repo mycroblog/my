@@ -273,7 +273,7 @@ pkg/
     pgtest/          # テスト用の PostgreSQL（既定は pgmem、テンプレートの複製。ADR-0015）
   mykit/             # クライアント API のクライアントライブラリ（MIT。別の Go モジュールと ts/ の npm パッケージ。ADR-0093）
   mybot/             # mykit の上のボット制作ライブラリ（MIT。別の Go モジュール。ADR-0093）
-api/                 # spec/（クライアント API の正。パス・components の項目ごとのファイル）、そのバンドル openapi.yaml（生成物）と lint 設定 redocly.yaml。規約は client-api.md
+api/                 # spec/（クライアント API の正。パス・components の項目ごとのファイル）、そのバンドル openapi.yaml（生成物）と lint 設定 redocly.yaml。規約は client-api.md。plugin/ はプラグインの proto（ADR-0146）
 schema/              # 目標スキーマ sqlite/・postgres/（モジュールごとのファイル。my に埋め込み、my schema apply が Atlas の Go ライブラリで宣言的に適用）と準備 SQL postgres.bootstrap.sql（ADR-0023・ADR-0081・ADR-0023）
 queries/             # sqlc 用クエリ（方言別。設定は sqlc.yaml、生成先は internal/adapter/db/<dialect>/。queue/ は internal/adapter/queue/db 用）
 locales/             # ICU MessageFormat カタログ（en がソース。Go と TS で共有。en-XA / ar-XB は生成物）

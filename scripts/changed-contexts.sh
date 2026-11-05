@@ -107,6 +107,11 @@ classify() {
       select_contexts api
       return
       ;;
+    # buf, and the Go code of the plugin protocol that api:check keeps fresh.
+    tools/buf/* | internal/adapter/plugin/gen/*)
+      select_contexts api go
+      return
+      ;;
     # The npm license check, which the web context runs on the client workspace too.
     tools/i18n/src/licenses.ts)
       select_contexts i18n web

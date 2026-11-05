@@ -39,7 +39,8 @@ been downloaded the first time. They cover Markdown lint and the documentation r
 the client API spec and the code generated from it, the Go image of the `Dockerfile` against `.tool-versions`, and
 the web client (type checks, build, dependency licenses).
 
-- The Go tools (go-licenses, sqlc, oapi-codegen) are pinned by the `tool` directives of `tools/go.mod`.
+- The Go tools (go-licenses, sqlc, oapi-codegen, protoc-gen-go, protoc-gen-connect-go) are pinned by the `tool` directives
+  of `tools/go.mod`, and buf by that of `tools/buf/go.mod`, since its requirements would raise the product's protobuf.
 - Dependabot Alerts on GitHub report known vulnerabilities in dependencies, and Dependabot opens the version update
   pull requests (`.github/dependabot.yml`). `go.work` at the root exists for its Go updates alone: tasks run with
   `GOWORK=off`, and a bare `go` command in `pkg/mykit`, `pkg/mybot`, or `tools` needs it too.

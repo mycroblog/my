@@ -10,7 +10,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
-outside='^(pkg/mykit|pkg/mybot|tools)/go\.mod$'
+outside='^(pkg/mykit|pkg/mybot|tools|tools/buf)/go\.mod$'
 want="$(git ls-files '*go.mod' | grep -v -E "$outside" | sed -e 's|/\{0,1\}go\.mod$||' -e 's|^$|.|' | sort)"
 have="$(GOWORK="$root/go.work" go list -m -f '{{.Dir}}' | sed -e "s|^$root/\{0,1\}||" -e 's|^$|.|' | sort)"
 
