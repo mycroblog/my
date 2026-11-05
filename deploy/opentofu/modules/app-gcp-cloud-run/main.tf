@@ -196,6 +196,17 @@ resource "google_cloud_run_v2_service" "server" {
       max_instance_count = var.max_instances
     }
 
+    dynamic "vpc_access" {
+      for_each = var.vpc_access == null ? [] : [var.vpc_access]
+      content {
+        egress = "PRIVATE_RANGES_ONLY"
+        network_interfaces {
+          network    = vpc_access.value.network
+          subnetwork = vpc_access.value.subnetwork
+        }
+      }
+    }
+
     dynamic "volumes" {
       for_each = local.file_mounts
       content {
@@ -335,6 +346,17 @@ resource "google_cloud_run_v2_job" "one_off" {
       timeout         = "${var.job_timeout_seconds}s"
       # A failed step is for the operator to look at, and only one step may run at a time.
       max_retries = 0
+
+      dynamic "vpc_access" {
+        for_each = var.vpc_access == null ? [] : [var.vpc_access]
+        content {
+          egress = "PRIVATE_RANGES_ONLY"
+          network_interfaces {
+            network    = vpc_access.value.network
+            subnetwork = vpc_access.value.subnetwork
+          }
+        }
+      }
 
       dynamic "volumes" {
         for_each = local.file_mounts

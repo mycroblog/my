@@ -147,6 +147,15 @@ An ingress closes the origin in one of three ways: on the platform (`ingress-gcp
 Every `app-*` module takes `backends`, `env`, `secret_env`, `secret_files`, `image`, and `host`, provides a console, and returns
 `origin_host`, the host name its service answers on, for an ingress that takes the origin as an input.
 
+### Private networking
+
+Most backends are reached over the internet with the platform's own identity, and need no network of their own. A backend that
+has only private addresses says what the app must attach as an output of its own, outside `backends`, and the operator passes it
+to the app. A setting cannot express this, and the backend still does not name the app.
+
+On Cloud Run, `vpc_access` of `app-gcp-cloud-run` takes `{ network, subnetwork }` and attaches the service and the jobs through
+Direct VPC egress, for traffic to private ranges only. Left null, it attaches nothing.
+
 ### The console
 
 A console runs one `my` command as a one-off, with the same image, settings, and secrets as the app, for tasks such as

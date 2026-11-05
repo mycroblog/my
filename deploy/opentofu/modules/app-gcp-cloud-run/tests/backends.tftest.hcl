@@ -643,3 +643,32 @@ run "an_unknown_setting_fails" {
 
   expect_failures = [var.service_ingress]
 }
+
+run "no_vpc_by_default" {
+  command = plan
+
+  assert {
+    condition     = length(google_cloud_run_v2_service.server.template[0].vpc_access) == 0 && length(google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].vpc_access) == 0
+    error_message = "a deployment that asks for no VPC must attach none"
+  }
+}
+
+run "vpc_access_reaches_the_service_and_the_jobs" {
+  command = plan
+
+  variables {
+    console_enabled = true
+    vpc_access      = { network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/r/subnetworks/s" }
+  }
+
+  assert {
+    condition = alltrue([
+      for t in [
+        google_cloud_run_v2_service.server.template[0],
+        google_cloud_run_v2_job.one_off["migrate"].template[0].template[0],
+        google_cloud_run_v2_job.one_off["console"].template[0].template[0],
+      ] : t.vpc_access[0].egress == "PRIVATE_RANGES_ONLY" && t.vpc_access[0].network_interfaces[0].subnetwork == "projects/p/regions/r/subnetworks/s"
+    ])
+    error_message = "the service and every job must take the subnet, for private ranges only"
+  }
+}
