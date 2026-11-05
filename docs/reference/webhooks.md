@@ -82,7 +82,8 @@ An endpoint subscribes to some of these events. Setting up the subscription need
 - A `2xx` answer delivers the message. The body of the answer is not read.
 - `410 Gone` disables the webhook at once.
 - Any other answer, redirects included (they are never followed), no answer within 15 seconds, and a failed connection fail the
-  attempt, which is retried after 5 seconds, 5 minutes, 30 minutes, 2 hours, 5 hours, 10 hours, and 10 hours: 8 attempts over
+  attempt. An answer with a status code outside 100-599 is not valid HTTP, and is recorded with the outcome `connection_error`
+  and no status code. A failed attempt is retried after 5 seconds, 5 minutes, 30 minutes, 2 hours, 5 hours, 10 hours, and 10 hours: 8 attempts over
   about 27 hours. A `Retry-After` header (seconds or an HTTP date, up to 1 hour) replaces the next wait. After the last attempt
   the delivery stops; an administrator can send it again from the administration screen, with the same `webhook-id`.
 - When the attempts to a webhook fail without a success for 72 hours and at least 20 times in a row, the server disables it,

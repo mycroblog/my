@@ -11,7 +11,7 @@
 | `webhook_endpoint_state_changes` | イベント | `id`, `endpoint_id`, `state`（`enum(enabled, disabled, deleted)`）, `reason`（`enum(admin, gone, failing)`）, `changed_by_user_id`（NULL 可。`reason = admin` のときだけ値を持てる）, `changed_at` | インデックス `(endpoint_id, id DESC)` |
 | `webhook_messages` | リソース | `id`（= `webhook-id`）, `event_type`（`enum`。購読できるイベントと `webhook.test`）, `body`（`bytes`。送る本文そのもの）, `created_at` | インデックス `(created_at)` |
 | `webhook_deliveries` | リソース | `id`, `message_id`, `endpoint_id`, `created_at` | 一意 `(message_id, endpoint_id)`。インデックス `(endpoint_id, id DESC)` |
-| `webhook_delivery_attempts` | イベント | `id`, `delivery_id`, `outcome`（`enum(succeeded, http_error, timeout, connection_error, forbidden_destination)`）, `status_code`（NULL 可。`succeeded` と `http_error` のときだけ。`CHECK`）, `duration_ms`, `attempted_at` | インデックス `(delivery_id, id)` |
+| `webhook_delivery_attempts` | イベント | `id`, `delivery_id`, `outcome`（`enum(succeeded, http_error, timeout, connection_error, forbidden_destination)`）, `status_code`（NULL 可。`succeeded` と `http_error` のときだけ。`CHECK`。100〜599 の外の答えは HTTP の答えとして扱わず `connection_error` で記録する）, `duration_ms`, `attempted_at` | インデックス `(delivery_id, id)` |
 | `webhook_endpoint_heads` | 投影 | `endpoint_id`（PK）, `revision_id`, `state`, `secret_id` | インデックス `(state)` |
 | `webhook_endpoint_failures` | 投影 | `endpoint_id`（PK）, `first_failure_attempt_id`, `first_failed_at`, `consecutive_failures` | 行がある = 最後の成功の後に失敗が続いている |
 
