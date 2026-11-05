@@ -8,6 +8,7 @@ this file is the contract for whoever uses or adds a module.
 deploy/opentofu/
   modules/app-gcp-cloud-run/      service, migration job, console, service account, public access
   modules/queue-gcp-cloud-tasks/  queue, Scheduler tick, the service account that calls the server
+  modules/queue-db/               the queue in the database, for a process that stays up: settings only
   modules/blob-gcp-gcs/           media bucket
   modules/stream-gcp-pubsub/      topic and the permissions for the server's own subscriptions
   modules/db-external/            connection URLs in Secret Manager: Neon created by hand, or any PostgreSQL
@@ -22,9 +23,10 @@ deploy/opentofu/
   modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
   modules/kek-gcp-kms/                 the KEK in Cloud KMS
   examples/gcp-cloud-run-neon/    all of the above, composed, on Git sources at MODULE_REF
-  modules/*-aws-*/, examples/aws-lambda-neon/  the same on AWS, never applied: see "AWS: unverified" below
+  modules/*-aws-*/, examples/aws-lambda-neon/, examples/aws-ecs-neon/  the same on AWS, never applied: see "AWS: unverified" below
   upgrade.sh                      migration job first, then the service
   console.sh                      runs one my command through an app module's console
+  aws-ecs.sh                      what those two share on ECS
 ```
 
 ## Using a module
@@ -149,8 +151,9 @@ An `ingress-*` module decides how traffic reaches the app. It is a backend, with
 | Output | Type | Meaning |
 | --- | --- | --- |
 | `trusted_proxies` | `list(string)` | What this ingress puts in front of the platform. The app module adds what the platform itself puts in front of the server (Cloud Run's `169.254.0.0/16`) and sets `MY_TRUSTED_PROXIES` from both, so that the server finds the client's address in `X-Forwarded-For` and the ingress does not need to know the platform |
-| `service_ingress` | `string` or null | What the ingress needs of the service: `all` when its traffic comes from the internet, `internal-and-load-balancer` for a load balancer of Cloud Run. It must agree with the app's own setting, and a disagreement fails the plan. Null for a module that needs nothing, such as a media host |
+| `service_ingress` | `string` or null | What the ingress needs of the service: `all` when its traffic comes from the internet, `internal-and-load-balancer` for a load balancer of Cloud Run, `load-balancer` for one that the service attaches to, as on ECS. It must agree with what the app can do, and a disagreement fails the plan. Null for a module that needs nothing, such as a media host |
 | `dns_records` | `list(object({ name, type, rrdata }))` | What to add at the DNS provider |
+| `load_balancer` (optional) | `object({ target_group_arn, security_group_id })` | What the service attaches to, on a platform where the app registers with its load balancer rather than the load balancer naming the app. An app with no way to attach refuses the ingress by its `service_ingress` |
 
 It takes the service's name from the app (`service_name = module.app.service_name`) while the app takes its settings, which
 is no cycle as long as `env`, `service_ingress`, and `trusted_proxies` do not depend on anything that reads the service's name.
@@ -165,18 +168,19 @@ it sits beside any other. A Cloudflare zone has one ruleset per phase, so two mo
 takes the other's `rules` as `extra_rules`.
 
 Swapping one for another changes its block, and `service_ingress` of the app if the new one needs another setting, which the plan says. `service_ingress` of Cloud Run's app is
-required and has no default, so nothing opens a service by accident: [its README](modules/app-gcp-cloud-run/README.md#who-may-reach-the-service) has what each setting means. AWS's app has no such input,
-because a Function URL has one setting that works: it accepts `all` and refuses the others. An ingress may also be left out, for a deployment that uses the
+required and has no default, so nothing opens a service by accident: [its README](modules/app-gcp-cloud-run/README.md#who-may-reach-the-service) has what each setting means. Neither AWS app has such an input, because each has one setting that works:
+a Function URL accepts `all`, and ECS accepts `load-balancer`, and each refuses the others. An ingress may also be left out, for a deployment that uses the
 service's own URL or has something else in front. Remove the block and that line: `MY_TRUSTED_PROXIES` is then only what the platform puts in front, or what `env` of the app says. Setting
 it in `env` beside an ingress that names proxies fails the plan, and so do two ingresses that both name them.
 
-An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`), with a header that the server checks (`ingress-cloudflare-app`, `ingress-aws-cloudfront`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
+An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`, `ingress-aws-alb`), with a header that the server checks (`ingress-cloudflare-app`, `ingress-aws-cloudfront`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
 **That value lands in the state**: neither provider has a write-only form of it. So this is the one place that breaks the rule below that no secret value reaches the state, and the state must be kept private. Two modules must not name those settings twice, so `ingress-cloudflare-media` beside `ingress-cloudflare-app` leaves them out and comes through `extra_rules`.
 
 ## The app contract
 
 Every `app-*` module takes `backends`, `env`, `secret_env`, `secret_files`, `image`, and `host`, provides a console, and returns
-`origin_host`, the host name its service answers on, for an ingress that takes the origin as an input.
+`origin_host`, the host name its service answers on, for an ingress that takes the origin as an input. It is null on a platform
+where the service has no host of its own, such as ECS, whose tasks each have another address: an ingress that needs a host then fails the plan.
 
 ### The console
 
@@ -203,12 +207,15 @@ tofu output -json console | deploy/opentofu/console.sh admin create -username al
 [`upgrade.sh`](upgrade.sh) runs the same steps in the same order on every platform: the one-off migration takes the new image, then
 `config check`, `db upgrade -check`, `schema apply`, `db upgrade`, and only then the service. Each platform is a few functions there,
 chosen by `--platform`, which is `gcp-cloud-run` unless you say otherwise. What holds a bad image back is the platform's: Cloud Run
-gives a revision no traffic until `/readyz` answers, and Lambda has nothing like that.
+gives a revision no traffic until `/readyz` answers, ECS goes back when a new task fails its load balancer's check, and Lambda has nothing like that.
 
 ## AWS: unverified
 
-The modules for AWS exist to test whether this contract holds on a second platform. **None has ever been applied, and a deployment cannot
-run on them yet**: use Google Cloud. `modules/app-aws-lambda/README.md` says in detail what is missing, which comes to:
+The modules for AWS test whether this contract holds on a second platform, in two shapes. **None has ever been applied**, so use Google Cloud unless you mean to be the first.
+
+`app-aws-ecs` runs the released image as it is, with its secrets from ECS and its one-off commands as tasks, so nothing is known to be missing: `modules/app-aws-ecs/README.md` says what stays unverified and what it costs. Unlike the others it costs money while idle.
+
+**A deployment cannot run on `app-aws-lambda` yet.** `modules/app-aws-lambda/README.md` says in detail what is missing, which comes to:
 
 - the server does not read a secret from Secrets Manager, and Lambda delivers none itself;
 - no released image runs on Lambda: it needs a single-architecture build with the Lambda Web Adapter, in ECR;
@@ -216,19 +223,19 @@ run on them yet**: use Google Cloud. `modules/app-aws-lambda/README.md` says in 
 
 | Module | Replaces on AWS |
 | --- | --- |
-| `app-aws-lambda` | `app-gcp-cloud-run` |
+| `app-aws-lambda`, `app-aws-ecs` | `app-gcp-cloud-run` |
 | `db-aws-rds` | `db-gcp-cloud-sql` |
-| `queue-aws-sqs` | `queue-gcp-cloud-tasks` |
+| `queue-aws-sqs` (Lambda), `queue-db` (ECS) | `queue-gcp-cloud-tasks` |
 | `blob-aws-s3` | `blob-gcp-gcs` |
 | `stream-aws-sns` | `stream-gcp-pubsub` |
 | `mail-aws-ses` | Beside `mail-smtp`, which works unchanged |
 | `secrets-aws-secrets-manager` | `secrets-gcp-secret-manager` |
 | `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
-| `ingress-aws-cloudfront` | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
+| `ingress-aws-cloudfront` (Lambda), `ingress-aws-alb` (ECS) | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
 
 `db-external`, `db-neon`, `mail-smtp`, and `ingress-cloudflare-app` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
-tests show that a block of one platform fails the plan on the other's app. `examples/aws-lambda-neon` composes them, and its tests swap each block
-its comments name; those tests mock the provider.
+tests show that a block of one platform fails the plan on the other's app. `examples/aws-lambda-neon` and `examples/aws-ecs-neon` compose them, and their tests swap each block
+their comments name; those tests mock the provider. Either shape's app refuses the queue and the ingress of the other at plan time.
 
 ## Checks
 
