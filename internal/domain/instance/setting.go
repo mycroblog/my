@@ -1507,12 +1507,20 @@ func HookOnFailureKey(hook string) (SettingKey, bool) {
 // CheckHookModeChange refuses a change of the setting key from off straight to enforce: an operator
 // reads what a hook would do in observe first (ADR-0147 §5). Other settings pass.
 func (s Settings) CheckHookModeChange(key SettingKey, value string) error {
-	for _, hook := range []string{"inbound.status", "inbound.follow", "signup.check", "media.check", "local.status"} {
-		if k, _ := HookModeKey(hook); k == key {
-			if current, _ := s.Value(key); current == HookModeOff && value == HookModeEnforce {
-				return fmt.Errorf("setting %s: off goes to enforce only through observe: %w", key, ErrInvalidValue)
-			}
-		}
+	if !IsHookModeKey(key) || value != HookModeEnforce {
+		return nil
+	}
+	if current, _ := s.Value(key); current == HookModeOff {
+		return fmt.Errorf("setting %s: off goes to enforce only through observe: %w", key, ErrInvalidValue)
 	}
 	return nil
+}
+
+// IsHookModeKey reports whether key is the setting of the mode of a hook.
+func IsHookModeKey(key SettingKey) bool {
+	switch key {
+	case SettingHookInboundStatusMode, SettingHookInboundFollowMode, SettingHookSignupCheckMode, SettingHookMediaCheckMode, SettingHookLocalStatusMode:
+		return true
+	}
+	return false
 }
