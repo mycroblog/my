@@ -75,6 +75,18 @@
     "defaultMessage": "通報日時",
     "description": "Term: when a report was filed."
   },
+  "admin.report.forward": {
+    "defaultMessage": "相手のサーバーに転送する",
+    "description": "Button that forwards a report to the server of the reported remote account."
+  },
+  "admin.report.forward.description": {
+    "defaultMessage": "このサーバーからの通報として、投稿とコメントをアカウントのサーバーに送ります。通報者のことは送りません。送るのは 1 回だけです。",
+    "description": "Help of the button that forwards a report to the server of the reported account."
+  },
+  "admin.report.forward_failed": {
+    "defaultMessage": "通報を転送できませんでした: {reason}",
+    "description": "Toast when forwarding a report fails."
+  },
   "admin.report.forwarded": {
     "defaultMessage": "転送",
     "description": "Term: whether the report was forwarded to the target's server."
@@ -98,6 +110,10 @@
   "admin.report.forwarded.yes": {
     "defaultMessage": "アカウントのサーバーに転送済み",
     "description": "The report was forwarded to the target's server."
+  },
+  "admin.report.forwarded_now": {
+    "defaultMessage": "通報をアカウントのサーバーに転送しました。",
+    "description": "Status message after forwarding a report."
   },
   "admin.report.history.empty": {
     "defaultMessage": "このアカウントへの処分はまだありません",

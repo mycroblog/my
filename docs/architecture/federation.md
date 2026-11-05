@@ -677,7 +677,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - `moderation.FederationPolicy` は、呼ばれるたびに期限内の制限を読みます（`DomainPolicy`・`AccountPolicy`・`content.MediaFetchPolicy` と、`Flag` の `RejectsReports`）。処分は `moderation.Service` の `IssueDomainAction` / `LiftDomainAction` と、アカウントへの `IssueAccountAction`（リモートのアカウントには制限だけを生む `limit` / `suspend` / `force_sensitive`）/ `LiftAccountAction` が記録します。
   ドメイン単位の処分の発行・解除・一覧と、通報の一覧・担当・解決は、管理 API（`/api/v1/admin/domain_actions`・`/api/v1/admin/reports`、権限 `manage_domains` / `manage_reports`）と CLI（`my admin domain` / `my admin report`）から行います（[運用手順](../operations/moderation.md)）。入力されたドメインは `CanonicalHost` で正規化してから渡します。
 - `Block` / `Undo Block` の送信（§7.1）は、ローカルのアカウントがリモートのアカウントをブロック・解除したときだけです。`Block` の `id` はブロックの URI（`/ap/activities/{block_id}`）、宛先はブロックした相手だけで、相手の個人の inbox に送ります（shared inbox に集約しない。Mastodon と同じ）。
-- 通報の転送（FR-709）は、ローカルの通報者が転送を選んだリモートのアカウントへの通報だけを、受け付けのトランザクションで outbox に積みます。
+- 通報の転送（FR-709）は、ローカルの通報者が転送を選んだリモートのアカウントへの通報を、受け付けのトランザクションで outbox に積みます。受け付けで転送しなかったこのサーバーの通報（判定フックの通報を含む）は、モデレーターが後から転送でき（ADR-0147 §7、`moderation.report_forwarded`）、そのトランザクションで同じ `Flag` を積みます。転送は通報ごとに 1 回です。
   `Flag` の主体はインスタンス Actor、`object` は対象の Actor の `id` と通報した投稿の URI、`content` はコメント、宛先は対象のアカウントの inbox だけです。通報者・IP・メールアドレスは載せません。
   `Flag` の `id` は `/ap/activities/{id}`（`outbound_activities` の ID）で、Mastodon と同じく `to` / `cc` を持ちません。文書は展開ジョブが組み立てるので、それまでに消えた投稿の URI は入りません。
   返信先の第三者のサーバーへは転送しません（[ADR-0058](../adr/0058-moderation-admin-separation.md)）。

@@ -18,8 +18,11 @@ import (
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	domcontent "github.com/mycroblog/my/internal/domain/content"
+	"github.com/mycroblog/my/internal/domain/moderation"
+	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/platform"
 )
 
@@ -100,15 +103,17 @@ func TestReportForwarding(t *testing.T) {
 	}
 	network.taken()
 
-	file := func(target string, forward bool, statusIDs ...string) {
+	file := func(target string, forward bool, statusIDs ...string) string {
 		t.Helper()
+		var r clientapi.Report
 		res := c.do("alice", http.MethodPost, "/reports", map[string]any{
 			"account_id": target, "status_ids": append([]string{}, statusIDs...), "category": "spam",
 			"comment": "Spam, please look", "forward": forward,
-		}, nil)
+		}, &r)
 		if res.StatusCode != http.StatusCreated {
 			t.Fatalf("POST /reports = %d", res.StatusCode)
 		}
+		return r.Id
 	}
 	file(bobID, true, statusID)
 	posts := network.taken()
@@ -134,9 +139,44 @@ func TestReportForwarding(t *testing.T) {
 		t.Errorf("signature = %q, want the instance actor's key", sig)
 	}
 
-	file(bobID, false)
-	file(c.ids["carol"], true)
+	unsent := file(bobID, false, statusID)
+	local := file(c.ids["carol"], true)
 	if posts := network.taken(); len(posts) != 0 {
 		t.Errorf("POSTs = %+v, want none for a report not forwarded or of a local account", posts)
+	}
+
+	// A moderator forwards the report that was not forwarded: the same Flag, once, and an entry
+	// in the audit log. Forwarding it again sends nothing more.
+	var detail clientapi.AdminReportDetail
+	if res := c.do("alice", http.MethodGet, "/admin/reports/"+unsent, nil, &detail); res.StatusCode != http.StatusOK || detail.Forwarded || !detail.Forwardable {
+		t.Fatalf("GET the report = %d, forwarded %v, forwardable %v", res.StatusCode, detail.Forwarded, detail.Forwardable)
+	}
+	for range 2 {
+		detail = clientapi.AdminReportDetail{}
+		if res := c.do("alice", http.MethodPost, "/admin/reports/"+unsent+"/forward", nil, &detail); res.StatusCode != http.StatusOK || !detail.Forwarded || detail.Forwardable {
+			t.Errorf("forward = %d, forwarded %v, forwardable %v", res.StatusCode, detail.Forwarded, detail.Forwardable)
+		}
+	}
+	posts = network.taken()
+	if len(posts) != 1 || posts[0].url != bob+"/inbox" {
+		t.Fatalf("POSTs after the forward = %+v, want one to bob's own inbox", posts)
+	}
+	flag = nil
+	if err := json.Unmarshal(posts[0].body, &flag); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := flag["object"].([]any); flag["type"] != "Flag" || flag["actor"] != instance.URI || len(got) != 2 || got[1] != bob+"/statuses/1" {
+		t.Errorf("Flag of the forward = %s", posts[0].body)
+	}
+	audit, err := c.app.Moderation.AuditLog(ctx, appmoderation.AuditQuery{TargetKind: moderation.AuditTargetReport, TargetID: unsent}, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(audit) != 1 || audit[0].Action != moderation.AuditReportForwarded || audit[0].ActorKind != moderation.AuditActorUser {
+		t.Errorf("audit of the report = %+v, want one report_forwarded by a user", audit)
+	}
+	// A report of a local account cannot be forwarded.
+	if res := c.do("alice", http.MethodPost, "/admin/reports/"+local+"/forward", nil, nil); res.StatusCode != http.StatusConflict {
+		t.Errorf("forward of a report of a local account = %d, want 409", res.StatusCode)
 	}
 }

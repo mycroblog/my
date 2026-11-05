@@ -40,7 +40,8 @@ type InstanceActorTxReader interface {
 // report of a remote account whose reporter asked to forward it (Report.Forwarded) is recorded,
 // in the transaction that files it, as a Flag of the instance actor about the report, with the
 // fan-out that delivers it. Other reports (not forwarded, of a local account, or received in a
-// Flag) are not.
+// Flag) are not. moderation.report_forwarded, a moderator's forward of a report after it was
+// filed, records the same Flag in the transaction of the forward.
 //
 // The instance actor exists whenever a remote account does: it signs the fetch that stored the
 // account (InstanceKey). When it is missing, filing the report fails rather than leaving a
@@ -61,6 +62,22 @@ func RegisterReportProjectors(r *uow.Projectors, d RecorderDeps, instance Instan
 			ObjectKind: federation.OutboundReport, ObjectID: ev.Report.ID, CreatedAt: ev.Report.FiledAt,
 		}, "")
 	})
+	// A moderator's forward of a report after it was filed sends the same Flag, recorded in the
+	// transaction of the forward. A report is forwarded once at most, so it has one Flag.
+	r.Register(appmoderation.EventReportForwarded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appmoderation.ReportForwarded)
+		if !ok || ev.Report.Forward == nil {
+			return nil
+		}
+		ia, err := instance.InstanceActorTx(ctx, tx)
+		if err != nil {
+			return fmt.Errorf("the instance actor that forwards report %s: %w", ev.Report.ID, err)
+		}
+		return rec.record(ctx, tx, federation.OutboundActivity{
+			Type: federation.ActivityFlag, ActorAccountID: ia.Account.ID,
+			ObjectKind: federation.OutboundReport, ObjectID: ev.Report.ID, CreatedAt: ev.Report.Forward.ForwardedAt,
+		}, "")
+	})
 }
 
 // reportSubject loads the report of a Flag. Only a forwarded report sent by the instance actor
@@ -76,7 +93,7 @@ func (f *FanOut) reportSubject(ctx context.Context, s subject) (subject, error) 
 		return subject{}, fmt.Errorf("%w: report %s", errGone, act.ObjectID)
 	case err != nil:
 		return subject{}, err
-	case !r.Forwarded:
+	case !r.SentToTarget():
 		return subject{}, fmt.Errorf("%w: report %s is not forwarded", federation.ErrInvalidOutbound, r.ID)
 	}
 	a, err := f.d.Accounts.FindByID(ctx, act.ActorAccountID)

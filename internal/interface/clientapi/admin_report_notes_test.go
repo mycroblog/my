@@ -61,6 +61,23 @@ func (f *fakeModeration) ReopenReport(_ context.Context, id, _ string) (moderati
 	return f.reports[i], nil
 }
 
+// ForwardReport forwards a report filed on this server; the fake takes every target as remote.
+func (f *fakeModeration) ForwardReport(_ context.Context, id, byUserID string) (moderation.ReportRecord, error) {
+	i, err := f.report(id)
+	if err != nil {
+		return moderation.ReportRecord{}, err
+	}
+	r := &f.reports[i].Report
+	if r.SentToTarget() {
+		return f.reports[i], nil
+	}
+	if !r.Forwardable(true) {
+		return moderation.ReportRecord{}, fmt.Errorf("%w: %s", appmoderation.ErrReportNotForwardable, id)
+	}
+	r.Forward = &moderation.ReportForward{ID: "forward-" + id, ReportID: id, ForwardedByUserID: byUserID, ForwardedAt: f.now}
+	return f.reports[i], nil
+}
+
 func TestReportNotes(t *testing.T) {
 	e, f := newModerationEnv(t)
 	res := e.sendJSON(t, http.MethodGet, "/admin/reports/"+reportTwo, "admin-read", "")

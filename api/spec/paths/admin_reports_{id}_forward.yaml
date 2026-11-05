@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: forwardReport
+  summary: Forward a report to the target's server
+  description: |
+    Sends the report to the server of its remote target as a `Flag` of the instance actor,
+    with the posts it points at and its comment, and nothing of the reporter. Works on an
+    open or a resolved report that `forwardable` allows: one filed on this server (by a
+    person or by an automated review) about a remote account, of no voice chat room. A
+    report forwarded already, when it was filed or later, changes nothing. A report that
+    cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
+    permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/ReportId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminReportDetail.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -119,6 +119,8 @@ function reportsServer(initial: Report[]) {
             delete next.outcome;
             return next;
           }
+          case "forward":
+            return { ...report, forwarded: true, forwardable: false };
           default:
             return {
               ...report,
@@ -740,6 +742,33 @@ describe("a report's page", () => {
     expect(await within(handling).findByText("The report is open again.")).toBeInTheDocument();
     expect(within(handling).getByRole("button", { name: "Dismiss the report" })).toBeInTheDocument();
     expect(api.changes).toEqual(["resolve dismissed", "reopen"]);
+  });
+
+  test("forwards a report that can be forwarded, once, keeping focus in the summary", async () => {
+    const unsent: Report = { ...spam, forwarded: false, forwardable: true };
+    const api = reportsServer([unsent]);
+    const { user } = await renderApp({ path: `/moderation/reports/${unsent.id}` });
+
+    const button = await screen.findByRole("button", { name: "Forward to their server" });
+    const summary = region("Report");
+    await user.click(button);
+    expect(
+      await within(summary).findByText("The report is forwarded to the server of the account."),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { level: 2, name: "Report" })).toHaveFocus();
+    });
+    expect(within(summary).getByText("To the account's server")).toBeInTheDocument();
+    expect(within(summary).queryByRole("button", { name: "Forward to their server" })).not.toBeInTheDocument();
+    expect(api.changes).toEqual(["forward"]);
+  });
+
+  test("a report that cannot be forwarded offers no forward", async () => {
+    reportsServer([spam]);
+    await renderApp({ path: `/moderation/reports/${spam.id}` });
+
+    expect(await screen.findByRole("heading", { level: 2, name: "Report" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Forward to their server" })).not.toBeInTheDocument();
   });
 
   test("a change that fails is told in a toast, and the report stays as it was", async () => {

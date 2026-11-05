@@ -145,15 +145,15 @@ export async function storeReportNote(queryClient: QueryClient, api: Api, report
 }
 
 /** What can be done to a report that takes no input. */
-type ReportOperation = "assign_to_self" | "unassign" | "reopen";
+type ReportOperation = "assign_to_self" | "unassign" | "reopen" | "forward";
 
 /** One change of a report: the operation and the report. */
 export type ChangeReport =
   { id: string; operation: ReportOperation } | { id: string; operation: "resolve"; outcome: ReportOutcome };
 
 /**
- * Takes a report, leaves it, reopens it, or resolves it (POST /admin/reports/{id}/assign_to_self | unassign |
- * reopen | resolve), as the options of TanStack Query's useMutation (web-client/10-api-client-and-auth.md §10). Returns the report after it.
+ * Takes a report, leaves it, reopens it, forwards it, or resolves it (POST /admin/reports/{id}/assign_to_self | unassign |
+ * reopen | forward | resolve), as the options of TanStack Query's useMutation (web-client/10-api-client-and-auth.md §10). Returns the report after it.
  */
 export function changeReportMutation(api: Api) {
   return {
@@ -168,6 +168,8 @@ export function changeReportMutation(api: Api) {
             return api.fetch.POST("/admin/reports/{id}/unassign", init);
           case "reopen":
             return api.fetch.POST("/admin/reports/{id}/reopen", init);
+          case "forward":
+            return api.fetch.POST("/admin/reports/{id}/forward", init);
           case "resolve":
             return api.fetch.POST("/admin/reports/{id}/resolve", { ...init, body: { outcome: change.outcome } });
         }

@@ -48,7 +48,7 @@
 | FR-501 クライアント API | M | `oauth_*`, `local_statuses.idempotency_key` |
 | FR-602 管理画面 | M | `user_roles`, `role_permissions`、モデレーション系 |
 | FR-701 通報 | M | `reports`, `report_statuses`, `report_rule_citations`, `report_states` |
-| FR-709〜711 通報の転送・対応・結果の通知 | S / M | `reports.forwarded`, `report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `notifications`（`report_resolved`） |
+| FR-709〜711 通報の転送・対応・結果の通知 | S / M | `reports.forwarded`, `report_forwards`, `report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `notifications`（`report_resolved`） |
 | FR-712 モデレーターへの通知 | M | `notifications`（`admin_report`, `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`） |
 | FR-714 アカウントの管理 | M | `session_origins`, `registration_origins`, `user_primary_emails`, `moderation_actions`, `reports` |
 | FR-716〜717 連合への伝播・切れた関係 | M / S | `jobs`, `follow_terminations`, `relationship_severances` |

@@ -296,18 +296,20 @@ my admin report unassign <report id>
 my admin report resolve -outcome dismissed <report id>
 my admin report note <report id> "Same person as an earlier report"
 my admin report reopen <report id>
+my admin report forward <report id>
 ```
 
 In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, and `assignee`: `me`, `none`, or a local account's ID; `order=oldest` lists the longest-waiting report first instead of the newest), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`,
-`POST .../{id}/resolve` (body `{"outcome": "actioned" | "dismissed"}`), `POST .../{id}/notes` (body `{"body": "..."}`) and `POST .../{id}/reopen`.
+`POST .../{id}/resolve` (body `{"outcome": "actioned" | "dismissed"}`), `POST .../{id}/notes` (body `{"body": "..."}`), `POST .../{id}/reopen` and `POST .../{id}/forward`.
 
 - An assignment (`assign`) can go only to a local user whose role has `manage_reports`. In the admin API you assign yourself.
 - The outcome of a resolution (`resolve`) is `actioned` (an action was taken against the target) or `dismissed` (no action was needed). Resolving a resolved report again does not change the outcome.
 - When you issue an action from a report (`report_id` / `-report` of the action), the report is resolved as `actioned` in the same operation.
 - A note (`note`) is an internal note that only moderators see, up to 2,000 characters. It is shown neither to the target nor to the reporter. It cannot be edited or deleted.
 - Reopening (`reopen`) puts a resolved report back to `open` (the assignment stays). An open report cannot be reopened (`409` in the admin API).
+- Forwarding (`forward`, the button **Forward to their server** of the report details) sends a report about an account on another server to that server, as a `Flag` of your instance actor with the reported posts that still exist and the comment, and nothing of the reporter. It works on a report filed on this server, by a person or by an [external review](#reports-that-an-external-review-filed), open or resolved, that was not forwarded yet; a report received from another server or about a voice chat room cannot be forwarded (`409` in the admin API, and the report details show no button). A report is sent once: forwarding it again, or forwarding one that its reporter had forwarded when filing it, changes nothing. `forwarded` in the admin API says whether it was sent, `forwardable` whether you can send it now.
 - The report details (`show`, `GET .../{id}`) return the notes, oldest first, with the number of other reports about the target and the number of actions against the target (lifted and expired ones included). The list does not return notes.
-- Assignments, resolutions, reopenings and notes are kept as events (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`), and `report_states` holds the current state.
+- Assignments, resolutions, reopenings, notes and forwards are kept as events (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `report_forwards`), and `report_states` holds the current state.
 - A reporter sees of the target only what they would see of the account otherwise: while it is suspended or blocks them, their report stays listed without the account. Moderators always see the whole target.
 - A local reporter gets a notification (`report_resolved`) at the first resolution. Reopening and resolving again adds no notification.
   A reporter can list their own reports with `GET /api/v1/reports` and sees only whether each is open or resolved. The outcome, the action taken, the reason given to the target and the assignee are not shown.
@@ -316,8 +318,9 @@ In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, 
 
 A [decision hook](decision-hooks.md) that answers `flag` files a report with your instance actor as the reporter. The report
 says so: `hook_origin` in the admin API and the `report.created` webhook, a line in the report details, and `automated` in
-`my admin report show`. Its comment is the plugin's note, and its category comes from the reason. It is not forwarded and
-never reaches the target, and resolving it notifies nobody. Cancelling the decision leaves the report as it is.
+`my admin report show`. Its comment is the plugin's note, and its category comes from the reason. It is not forwarded when it
+is filed, and resolving it notifies nobody. When the target is on another server, you can forward it
+yourself (`forward`), and the plugin's note goes out as the comment. Cancelling the decision leaves the report as it is.
 
 ### Voice chat rooms
 
@@ -371,7 +374,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_canceled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts) |
 | `status` | `status_refetch_queued` (refetch of a remote post; the target name is the post URI) |
 | `domain` | `domain_action_issued` and `domain_action_lifted` (issuing and lifting a domain action), `domain_statuses_refetch_queued` (refetch of posts of the domain's accounts), `instance_marked_available` (clearing the failures of a server) |
-| `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added` (assigning, unassigning, resolving and reopening a report, and adding a note) |
+| `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`, `report_forwarded` (assigning, unassigning, resolving and reopening a report, adding a note, and forwarding it) |
 | `user` | `registration_approved`, `registration_rejected` (registration review) |
 | `setting` | `setting_changed` (instance settings), `text_changed` (instance texts) |
 | `rule` | `rule_added`, `rule_revised`, `rule_moved`, `rule_retired` (instance rules) |

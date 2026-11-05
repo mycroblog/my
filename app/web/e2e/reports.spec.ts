@@ -91,6 +91,7 @@ function report(id: string, overrides: Partial<Report> = {}): Report {
     category: "spam",
     comment,
     forwarded: false,
+    forwardable: false,
     filed_at: "2026-10-16T09:00:00Z",
     state: "open",
     state_changed_at: "2026-10-16T09:00:00Z",

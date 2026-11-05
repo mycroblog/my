@@ -506,6 +506,8 @@ paths:
     $ref: ./paths/admin_reports_{id}_notes.yaml
   /admin/reports/{id}/reopen:
     $ref: ./paths/admin_reports_{id}_reopen.yaml
+  /admin/reports/{id}/forward:
+    $ref: ./paths/admin_reports_{id}_forward.yaml
   /admin/voice_rooms/{id}/end:
     $ref: ./paths/admin_voice_rooms_{id}_end.yaml
   /admin/accounts/{id}/actions:

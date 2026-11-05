@@ -401,10 +401,14 @@ func (r *ModerationRepository) reportFrom(ctx context.Context, row postgresgen.R
 	if len(origins) > 0 {
 		origin = &moderation.ReportHookOrigin{DecisionID: origins[0].HookDecisionID, Hook: origins[0].Hook, ReasonCode: origins[0].ReasonCode}
 	}
+	forward, err := r.reportForward(ctx, row.ID)
+	if err != nil {
+		return moderation.Report{}, err
+	}
 	return moderation.Report{
 		ID: row.ID, URI: fromNullString(row.Uri), ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
 		Category: moderation.Category(row.Category), Comment: row.Comment, Forwarded: row.Forwarded,
-		FiledAt: utc(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room, HookOrigin: origin,
+		FiledAt: utc(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room, HookOrigin: origin, Forward: forward,
 	}, nil
 }
 

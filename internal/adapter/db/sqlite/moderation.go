@@ -390,10 +390,14 @@ func (r *ModerationRepository) reportFrom(ctx context.Context, row sqlitegen.Rep
 	if len(origins) > 0 {
 		origin = &moderation.ReportHookOrigin{DecisionID: origins[0].HookDecisionID, Hook: origins[0].Hook, ReasonCode: origins[0].ReasonCode}
 	}
+	forward, err := r.reportForward(ctx, row.ID)
+	if err != nil {
+		return moderation.Report{}, err
+	}
 	return moderation.Report{
 		ID: row.ID, URI: row.Uri.String, ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
 		Category: moderation.Category(row.Category), Comment: row.Comment, Forwarded: row.Forwarded != 0,
-		FiledAt: fromMillis(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room, HookOrigin: origin,
+		FiledAt: fromMillis(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room, HookOrigin: origin, Forward: forward,
 	}, nil
 }
 
