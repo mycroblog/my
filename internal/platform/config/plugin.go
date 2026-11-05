@@ -83,8 +83,9 @@ func pluginTranslatorName() field {
 
 // pluginAddressRequiredWhen documents the kinds whose address another setting requires, which pluginChecks checks.
 var pluginAddressRequiredWhen = map[string]string{
-	kind.Billing: "when `billing_sources` includes `plugin`",
-	kind.Mailer:  "when `mail = plugin`",
+	kind.Billing:    "when `billing_sources` includes `plugin`",
+	kind.Mailer:     "when `mail = plugin`",
+	kind.KeyManager: "when `key_manager = plugin`",
 }
 
 func pluginFieldsOf(k kind.Kind) []field {
@@ -184,6 +185,7 @@ func pluginChecks(vals map[string]string, present map[string]bool) []Issue {
 	if pluginsLeftOutTag == "" && vals["mail"] == "plugin" && !present["plugin_mailer_address"] {
 		issues = append(issues, Issue{Key: "plugin_mailer_address", Missing: true, Message: "required when mail is plugin"})
 	}
+	issues = append(issues, pluginKeyManagerChecks(vals, present)...)
 	if pluginsLeftOutTag == "" && present["plugin_translator_address"] && !present["plugin_translator_name"] {
 		issues = append(issues, Issue{Key: "plugin_translator_name", Missing: true, Message: "required when plugin_translator_address is set"})
 	}
@@ -215,6 +217,34 @@ func pluginChecks(vals map[string]string, present map[string]bool) []Issue {
 		}
 		for _, p := range k.Check(d) {
 			issues = append(issues, Issue{Key: k.Key(p.Suffix), Message: p.Message})
+		}
+	}
+	return issues
+}
+
+// pluginKeyManagerChecks requires the address of key_manager = plugin, and refuses a plugin next to a KMS in any role:
+// values move between a plugin and a KMS through the local KEK, in two moves (ADR-0146 §14).
+func pluginKeyManagerChecks(vals map[string]string, present map[string]bool) []Issue {
+	const address = "plugin_key_manager_address"
+	if pluginsLeftOutTag != "" {
+		return nil
+	}
+	manager := vals["key_manager"]
+	var issues []Issue
+	if manager == "plugin" && !present[address] {
+		issues = append(issues, Issue{Key: address, Missing: true, Message: "required when key_manager is plugin"})
+	}
+	if manager == "gcpkms" || manager == "awskms" {
+		if present[address] {
+			issues = append(issues, Issue{Key: address, Message: "cannot be set with a KMS: move through the local KEK, in two steps"})
+		}
+		return issues
+	}
+	if manager == "plugin" || present[address] {
+		for _, key := range []string{"kms_key", "kms_key_previous"} {
+			if present[key] {
+				issues = append(issues, Issue{Key: key, Message: "cannot be set with a plugin: move through the local KEK, in two steps"})
+			}
 		}
 	}
 	return issues

@@ -117,7 +117,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`key_manager`](#key_manager) | `MY_KEY_MANAGER` | `local` | no | no |
 | [`kek`](#kek) | `MY_KEK` | none | when `key_manager = local` | yes |
 | [`kek_previous`](#kek_previous) | `MY_KEK_PREVIOUS` | none | no | yes |
-| [`kms_key`](#kms_key) | `MY_KMS_KEY` | none | when `key_manager` is not `local` | no |
+| [`kms_key`](#kms_key) | `MY_KMS_KEY` | none | when `key_manager` is `gcpkms` or `awskms` | no |
 | [`kms_key_previous`](#kms_key_previous) | `MY_KMS_KEY_PREVIOUS` | none | no | no |
 | [`kms_dek_cache_ttl`](#kms_dek_cache_ttl) | `MY_KMS_DEK_CACHE_TTL` | `10m` | no | no |
 | [`kms_dek_cache_entries`](#kms_dek_cache_entries) | `MY_KMS_DEK_CACHE_ENTRIES` | `1024` | no | no |
@@ -236,7 +236,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`plugin_media_tls_cert_file`](#plugin_media_tls_cert_file) | `MY_PLUGIN_MEDIA_TLS_CERT_FILE` | none | no | no |
 | [`plugin_media_tls_key_file`](#plugin_media_tls_key_file) | `MY_PLUGIN_MEDIA_TLS_KEY_FILE` | none | no | no |
 | [`plugin_media_timeout`](#plugin_media_timeout) | `MY_PLUGIN_MEDIA_TIMEOUT` | `4m0s` | no | no |
-| [`plugin_key_manager_address`](#plugin_key_manager_address) | `MY_PLUGIN_KEY_MANAGER_ADDRESS` | none | no | no |
+| [`plugin_key_manager_address`](#plugin_key_manager_address) | `MY_PLUGIN_KEY_MANAGER_ADDRESS` | none | when `key_manager = plugin` | no |
 | [`plugin_key_manager_protocol`](#plugin_key_manager_protocol) | `MY_PLUGIN_KEY_MANAGER_PROTOCOL` | `json` | no | no |
 | [`plugin_key_manager_token`](#plugin_key_manager_token) | `MY_PLUGIN_KEY_MANAGER_TOKEN` | none | no | yes |
 | [`plugin_key_manager_tls_ca_file`](#plugin_key_manager_tls_ca_file) | `MY_PLUGIN_KEY_MANAGER_TLS_CA_FILE` | the system's roots | no | no |
@@ -878,13 +878,14 @@ Key manager adapter that encrypts actor private keys.
 
 | Value | Description |
 | --- | --- |
-| `local` | Uses the key-encryption key from `kek`. |
+| `local` | Uses the key-encryption key from `kek`. With `plugin_key_manager_address` set, the plugin only decrypts the secrets it still holds, while they move to `kek`. |
 | `gcpkms` | Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out (docs/operations/key-management.md). |
 | `awskms` | AWS KMS: the symmetric key of `kms_key` encrypts the data-encryption keys, with the credentials and region of the AWS SDK's default chain. The build tag `no_awskms` leaves it out (docs/operations/key-management.md). |
+| `plugin` | A plugin of yours at `plugin_key_manager_address`, such as one before Vault or an HSM. It sees the data-encryption keys, so it is in the same trust boundary as the key-encryption key. The server does not start without its answer or when it fails a self-test, and nothing falls back to another key. The build tag `no_plugins` leaves it out (docs/operations/key-management.md). |
 
 ### `kek`
 
-Key-encryption key for actor private keys and the other secrets in the database: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`; with another `key_manager` it only decrypts, while the secrets move to the KMS. Back it up separately from the database; losing it loses every actor key (docs/operations/key-management.md).
+Key-encryption key for actor private keys and the other secrets in the database: 32 random bytes in standard base64 (for example `openssl rand -base64 32`). Required when `key_manager = local`; with another `key_manager` it only decrypts, while the secrets move to the KMS or plugin. Back it up separately from the database; losing it loses every actor key (docs/operations/key-management.md).
 
 - Environment variable: `MY_KEK` or `MY_KEK_FILE`
 - Default: none
@@ -892,7 +893,7 @@ Key-encryption key for actor private keys and the other secrets in the database:
 
 ### `kek_previous`
 
-Previous key-encryption keys, comma-separated, each in the format of `kek`. They only decrypt; new secrets are always encrypted with `kek`, or with `kms_key` when `key_manager` is not `local`. Set the replaced key here while rotating `kek` (docs/operations/key-management.md).
+Previous key-encryption keys, comma-separated, each in the format of `kek`. They only decrypt; new secrets are always encrypted with `kek`, or with the KMS or plugin when `key_manager` is not `local`. Set the replaced key here while rotating `kek` (docs/operations/key-management.md).
 
 - Environment variable: `MY_KEK_PREVIOUS` or `MY_KEK_PREVIOUS_FILE`
 - Default: none
@@ -900,11 +901,11 @@ Previous key-encryption keys, comma-separated, each in the format of `kek`. They
 
 ### `kms_key`
 
-Key of the KMS that encrypts the secrets when `key_manager` is not `local`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN, an alias (`alias/...`), or the key ID of an AWS KMS key, which the server resolves to the key's ARN at start. At most 248 bytes. With `key_manager = local`, it only decrypts, like `kms_key_previous`.
+Key of the KMS that encrypts the secrets when `key_manager` is `gcpkms` or `awskms`: the resource name of a Cloud KMS CryptoKey (`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`, without a version) or the ARN, an alias (`alias/...`), or the key ID of an AWS KMS key, which the server resolves to the key's ARN at start. At most 248 bytes. With `key_manager = local`, it only decrypts, like `kms_key_previous`.
 
 - Environment variable: `MY_KMS_KEY`
 - Default: none
-- Required: when `key_manager` is not `local`
+- Required: when `key_manager` is `gcpkms` or `awskms`
 
 ### `kms_key_previous`
 
@@ -916,7 +917,7 @@ Previous keys of the same KMS, comma-separated, each in the format of `kms_key`.
 
 ### `kms_dek_cache_ttl`
 
-How long the server keeps a data-encryption key that the KMS decrypted, as a Go duration, so that a secret in use reaches the KMS about once per this period and process. `0` disables the cache. Not used when `key_manager = local`.
+How long the server keeps a data-encryption key that the KMS or plugin decrypted, as a Go duration, so that a secret in use reaches it about once per this period and process. `0` disables the cache. Not used when `key_manager = local`.
 
 - Environment variable: `MY_KMS_DEK_CACHE_TTL`
 - Default: `10m`
@@ -1977,7 +1978,7 @@ Where the `key_manager` plugin listens: `unix:///path/to.sock` or `https://host[
 
 - Environment variable: `MY_PLUGIN_KEY_MANAGER_ADDRESS`
 - Default: none
-- Required: no
+- Required: when `key_manager = plugin`
 
 ### `plugin_key_manager_protocol`
 

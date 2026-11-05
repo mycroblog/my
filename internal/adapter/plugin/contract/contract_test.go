@@ -111,12 +111,12 @@ func TestRefusedCredentialsFail(t *testing.T) {
 
 func TestAKindWithoutCasesSaysSo(t *testing.T) {
 	h, _ := fakeplugin.Connect(fakeplugin.Options{})
-	results := run(t, kind.KeyManager, kind.Destination{Address: fakeplugin.ServeUnix(t, h)})
+	results := run(t, kind.Media, kind.Destination{Address: fakeplugin.ServeUnix(t, h)})
 	if results["reachable"].Outcome != contract.Pass {
 		t.Errorf("reachable: %+v", results["reachable"])
 	}
-	if r := results[kind.KeyManager]; r.Outcome != contract.Skip || r.Detail == "" {
-		t.Errorf("%s: %+v", kind.KeyManager, r)
+	if r := results[kind.Media]; r.Outcome != contract.Skip || r.Detail == "" {
+		t.Errorf("%s: %+v", kind.Media, r)
 	}
 }
 
