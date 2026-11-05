@@ -406,5 +406,89 @@
   "compose.blocked.loading_target": {
     "defaultMessage": "返信先・引用元の投稿を読み込んでいます。表示されてから投稿してください。",
     "description": "Beside the submit button of the new-post form, after it was pressed while the post replied to or quoted was still loading: why the post was not sent."
+  },
+  "compose.rejected.appeal.already_appealed": {
+    "defaultMessage": "この判定にはすでに異議を申し立てています。モデレーターが審査します。",
+    "description": "Shown in place of the appeal button when the user already appealed the automated review's refusal of their post."
+  },
+  "compose.rejected.appeal.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button of the appeal dialog of a refused post: closes it without appealing. The draft is kept."
+  },
+  "compose.rejected.appeal.characters_left": {
+    "defaultMessage": "残り {count, plural, other {# 文字}}",
+    "description": "Count under a field of the appeal of a refused post. {count} is how many more characters fit."
+  },
+  "compose.rejected.appeal.characters_over": {
+    "defaultMessage": "{count, plural, other {# 文字}}多すぎます",
+    "description": "Count under a field of the appeal of a refused post that is too long. {count} is how many characters are over."
+  },
+  "compose.rejected.appeal.closed": {
+    "defaultMessage": "異議を申し立てられる期限は {date} に終わりました。",
+    "description": "Shown in place of the appeal button once the deadline to appeal the refusal of a post passed. {date} is the deadline."
+  },
+  "compose.rejected.appeal.comment.description": {
+    "defaultMessage": "任意です。投稿を認めてよい理由をモデレーターに伝えます。",
+    "description": "Description of the comment field of the appeal of a refused post."
+  },
+  "compose.rejected.appeal.comment.label": {
+    "defaultMessage": "モデレーターへのコメント",
+    "description": "Label of the optional comment field of the appeal of a post the automated review refused."
+  },
+  "compose.rejected.appeal.comment.too_long": {
+    "defaultMessage": "{max, number} 文字以内で入力してください",
+    "description": "Error of the comment of the appeal of a refused post that is too long. {max} is the limit."
+  },
+  "compose.rejected.appeal.confirm.description": {
+    "defaultMessage": "モデレーターが本文とコメントを読みます。異議申し立てでは投稿は公開されません。モデレーターが判定を取り消したら、もう一度投稿できます。送った後は変更できません。",
+    "description": "Description of the appeal dialog of a post the automated review refused."
+  },
+  "compose.rejected.appeal.confirm.title": {
+    "defaultMessage": "この判定に異議を申し立てますか？",
+    "description": "Title of the dialog that appeals the automated review's refusal of a post."
+  },
+  "compose.rejected.appeal.failed": {
+    "defaultMessage": "異議申し立てを送れませんでした: {reason}",
+    "description": "Error in the appeal dialog of a refused post when sending failed; the dialog stays open. {reason} says why."
+  },
+  "compose.rejected.appeal.not_appealable": {
+    "defaultMessage": "この判定には異議を申し立てられません。",
+    "description": "Shown in place of the appeal button when the server says the refusal of the post cannot be appealed."
+  },
+  "compose.rejected.appeal.open": {
+    "defaultMessage": "異議を申し立てる",
+    "description": "Button under the notice of a post the automated review refused: opens the appeal dialog."
+  },
+  "compose.rejected.appeal.send": {
+    "defaultMessage": "異議申し立てを送る",
+    "description": "Button of the appeal dialog of a refused post that sends the appeal."
+  },
+  "compose.rejected.appeal.sent": {
+    "defaultMessage": "異議申し立てを送りました。モデレーターが審査します。判定が取り消されたら、もう一度投稿できます。",
+    "description": "Shown in the notice of a refused post after the appeal was sent."
+  },
+  "compose.rejected.appeal.text.description": {
+    "defaultMessage": "投稿しようとした本文です。モデレーターはこれを書式のない文として読みます。",
+    "description": "Description of the text field of the appeal of a refused post, which starts with the text that was sent."
+  },
+  "compose.rejected.appeal.text.label": {
+    "defaultMessage": "投稿の本文",
+    "description": "Label of the text field of the appeal of a post the automated review refused."
+  },
+  "compose.rejected.appeal.text.required": {
+    "defaultMessage": "投稿の本文を入力してください。",
+    "description": "Error of the appeal of a refused post whose text is empty."
+  },
+  "compose.rejected.appeal.text.too_long": {
+    "defaultMessage": "{max, number} 文字以内で入力してください",
+    "description": "Error of the text of the appeal of a refused post that is too long. {max} is the limit."
+  },
+  "compose.rejected.appeal.until": {
+    "defaultMessage": "{date} まで異議を申し立てられます。",
+    "description": "Shown above the appeal button of a post the automated review refused. {date} is the deadline."
+  },
+  "compose.rejected.appeal.window_closed": {
+    "defaultMessage": "この判定に異議を申し立てられる期限は終わりました。",
+    "description": "Shown in place of the appeal button when the server says the deadline to appeal the refusal of the post passed."
   }
 }

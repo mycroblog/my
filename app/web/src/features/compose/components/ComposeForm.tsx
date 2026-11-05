@@ -26,6 +26,7 @@ import { CompletionTextArea, CompletionTextField } from "./CompletionFields";
 import { ComposeTools } from "./ComposeTools";
 import { Outbox } from "./Outbox";
 import { PollEditor } from "./PollEditor";
+import { RejectionNotice } from "./RejectionNotice";
 import { ReplyContext } from "./ReplyContext";
 
 export type ComposeFormProps = {
@@ -195,6 +196,15 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
           </FormActionBar>
         </Stack>
       </FileDropZone>
+      {/* The result of the last send when the automated review refused it; outside the form (RejectionNotice.tsx). */}
+      {form.rejection !== null && (
+        // Another refusal is another appeal: its dialog starts afresh.
+        <RejectionNotice
+          key={form.rejection.hookDecisionId ?? "rejection"}
+          rejection={form.rejection}
+          settle={form.settleRejection}
+        />
+      )}
       <Outbox
         items={form.outbox}
         onRetry={form.retry}

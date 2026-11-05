@@ -21,9 +21,10 @@ import {
   type QuotePolicy,
   type Status,
   statusQueryOptions,
+  statusRejection,
   type Visibility,
 } from "../api/compose";
-import { type Draft, isEmptyDraft } from "./draftStore";
+import { type Draft, isEmptyDraft, type Rejection } from "./draftStore";
 import { newPoll, type PollDraft, pollProblem, pollRequest, withOption, withoutOption } from "./poll";
 import { type LanguageOption, languageOptions } from "./languages";
 import { countCharacters, defaultVisibility, domainMentions, postedVisibility } from "./policy";
@@ -59,6 +60,13 @@ export type ReadyComposeForm = {
   draft: Draft;
   /** Why the last attempt failed (localized), or null. */
   error: string | null;
+  /**
+   * The last post the server's automated review refused, until the next send: its fixed text, and the appeal the
+   * author may send (RejectionNotice).
+   */
+  rejection: Rejection | null;
+  /** Records what came of the appeal of the refused post. */
+  settleRejection: (outcome: NonNullable<Rejection["outcome"]>) => void;
   edit: (change: Partial<Omit<Draft, "idempotencyKey" | "attachments">>) => void;
   /** The characters the text may have: the instance's limit less the content warning. */
   textLimit: number;
@@ -206,7 +214,8 @@ export function useComposeFormPending(): boolean {
  * mutation's variables while it is on its way (S8). A failure puts the draft back into the form when the
  * user has not started another one, and otherwise leaves it in the outbox to send again: a draft is
  * never lost (and survives a reload, draftStore.ts). Every attempt for one draft sends the same
- * Idempotency-Key, so a retry after a lost answer cannot post twice.
+ * Idempotency-Key, so a retry after a lost answer cannot post twice. A post that the server's automated review
+ * refused is kept the same way, and the form shows the refusal and the appeal the author may send (`rejection`).
  */
 export function useComposeForm(controller: ComposeController): ComposeForm {
   const { store } = controller;
@@ -269,7 +278,15 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
         controller.setSheetOpen(false);
       }
     },
-    onError: (error, { idempotencyKey }) => {
+    onError: (error, { idempotencyKey, body }) => {
+      const rejection = statusRejection(error);
+      if (rejection !== null) {
+        // The refusal shows in its own notice, with the appeal, in place of the error of the attempt.
+        store.restore(idempotencyKey, null);
+        store.reject({ ...rejection, text: body.text, outcome: null });
+        notice.inPlace([rejection.title, rejection.detail].filter((part) => part !== null).join(" "), "assertive");
+        return;
+      }
       const message = t("client:compose.failed", { reason: errorMessage(error) });
       store.restore(idempotencyKey, message);
       notice.inPlace(message, "assertive");
@@ -366,6 +383,10 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     status: "ready",
     draft,
     error: state.error,
+    rejection: state.rejection,
+    settleRejection: (outcome) => {
+      store.settleRejection(outcome);
+    },
     edit: (change) => {
       store.edit(change);
     },

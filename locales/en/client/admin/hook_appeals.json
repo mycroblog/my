@@ -1,0 +1,122 @@
+{
+  "admin.hook_appeals.already_decided": {
+    "defaultMessage": "Another moderator already decided this appeal. Their decision stands.",
+    "description": "Status message when another moderator decided the appeal of a refused post first."
+  },
+  "admin.hook_appeals.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button of the confirmation of a decision on an appeal of a refused post: closes it without deciding."
+  },
+  "admin.hook_appeals.column.account": {
+    "defaultMessage": "Author",
+    "description": "Column of the list of appeals of refused posts: the account that tried to post and appealed."
+  },
+  "admin.hook_appeals.column.appeal": {
+    "defaultMessage": "Appeal",
+    "description": "Column of the list of appeals of refused posts: when it was sent, the text of the post and the author's comment."
+  },
+  "admin.hook_appeals.column.decision": {
+    "defaultMessage": "Decision",
+    "description": "Column of the list of appeals of refused posts: the automated review's decision that refused the post."
+  },
+  "admin.hook_appeals.column.state": {
+    "defaultMessage": "State",
+    "description": "Column of the list of appeals of refused posts: awaiting review, upheld, or overturned."
+  },
+  "admin.hook_appeals.comment": {
+    "defaultMessage": "Comment",
+    "description": "Term of an appeal of a refused post: what the author added for the moderators."
+  },
+  "admin.hook_appeals.confirm_overturn.description": {
+    "defaultMessage": "This cancels the decision and stops reviewing this author's posts. The refused post is not restored: the author posts it again. The decision cannot be changed later.",
+    "description": "Description of the confirmation of overturning an appeal of a refused post."
+  },
+  "admin.hook_appeals.confirm_overturn.title": {
+    "defaultMessage": "Overturn this appeal?",
+    "description": "Title of the confirmation of overturning an appeal of a refused post, which cancels the automated review's decision."
+  },
+  "admin.hook_appeals.confirm_uphold.description": {
+    "defaultMessage": "The post stays refused, and this author's posts are reviewed as before. The decision cannot be changed later.",
+    "description": "Description of the confirmation of upholding an appeal of a refused post."
+  },
+  "admin.hook_appeals.confirm_uphold.title": {
+    "defaultMessage": "Uphold this appeal?",
+    "description": "Title of the confirmation of upholding an appeal of a refused post, which keeps the automated review's decision."
+  },
+  "admin.hook_appeals.decide_failed": {
+    "defaultMessage": "Could not save the decision: {reason}",
+    "description": "Error in the confirmation when deciding an appeal of a refused post failed. {reason} says why."
+  },
+  "admin.hook_appeals.empty": {
+    "defaultMessage": "No appeals await review",
+    "description": "Empty list of appeals of refused posts that await a moderator."
+  },
+  "admin.hook_appeals.empty_all": {
+    "defaultMessage": "No appeals yet",
+    "description": "Empty list of every appeal of a refused post."
+  },
+  "admin.hook_appeals.filter.all": {
+    "defaultMessage": "All appeals",
+    "description": "Option of the select of the appeals of refused posts: every appeal, decided or not."
+  },
+  "admin.hook_appeals.filter.label": {
+    "defaultMessage": "Appeals by state",
+    "description": "Accessible name of the select that keeps the appeals of refused posts that await review, or shows every one."
+  },
+  "admin.hook_appeals.filter.pending": {
+    "defaultMessage": "Awaiting review",
+    "description": "Option of the select of the appeals of refused posts: those that await a moderator."
+  },
+  "admin.hook_appeals.none": {
+    "defaultMessage": "None",
+    "description": "Value of the text or comment of an appeal of a refused post that has none."
+  },
+  "admin.hook_appeals.overturn": {
+    "defaultMessage": "Overturn",
+    "description": "Button of a pending appeal of a refused post that opens the confirmation of overturning it, and the confirmation's button that overturns it."
+  },
+  "admin.hook_appeals.overturn_of": {
+    "defaultMessage": "Overturn the appeal of {date}",
+    "description": "Accessible name of the button that overturns an appeal of a refused post. {date} is when the appeal was sent."
+  },
+  "admin.hook_appeals.overturned": {
+    "defaultMessage": "Overturned the appeal. The decision is cancelled, and this author's posts are no longer reviewed.",
+    "description": "Status message after a moderator overturned an appeal of a refused post."
+  },
+  "admin.hook_appeals.state.overturned": {
+    "defaultMessage": "Overturned",
+    "description": "State of an appeal of a refused post whose decision a moderator cancelled."
+  },
+  "admin.hook_appeals.state.pending": {
+    "defaultMessage": "Awaiting review",
+    "description": "State of an appeal of a refused post that awaits a moderator."
+  },
+  "admin.hook_appeals.state.upheld": {
+    "defaultMessage": "Upheld",
+    "description": "State of an appeal of a refused post whose decision a moderator kept."
+  },
+  "admin.hook_appeals.status_text": {
+    "defaultMessage": "Text of the post",
+    "description": "Term of an appeal of a refused post: the text the author tried to post."
+  },
+  "admin.hook_appeals.submitted_at": {
+    "defaultMessage": "Sent",
+    "description": "Term of an appeal of a refused post: when the author sent it."
+  },
+  "admin.hook_appeals.title": {
+    "defaultMessage": "Appeals of refused posts",
+    "description": "Heading of the section of the automated reviews screen with the authors' appeals of posts the review refused, and the caption of its table."
+  },
+  "admin.hook_appeals.upheld": {
+    "defaultMessage": "Upheld the appeal. The post stays refused.",
+    "description": "Status message after a moderator upheld an appeal of a refused post."
+  },
+  "admin.hook_appeals.uphold": {
+    "defaultMessage": "Uphold",
+    "description": "Button of a pending appeal of a refused post that opens the confirmation of upholding it, and the confirmation's button that upholds it."
+  },
+  "admin.hook_appeals.uphold_of": {
+    "defaultMessage": "Uphold the appeal of {date}",
+    "description": "Accessible name of the button that upholds an appeal of a refused post. {date} is when the appeal was sent."
+  }
+}

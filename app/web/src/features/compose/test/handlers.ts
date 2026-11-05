@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The default MSW handlers of the compose feature (web-client/README.md §7, web-client/12-compose.md §12): the preferences, posting,
-// the media uploads, and the searches of the completion, which find nothing unless a test offers results with
+// appealing a refused post, the media uploads, and the searches of the completion, which find nothing unless a test offers results with
 // `server.use(accountSearchHandler(...))` or `server.use(tagSearchHandler(...))`.
 import { http, HttpResponse } from "msw";
 import { mediaFixture, preferencesFixture, type Schemas, viewerStatusFixture } from "../../../test/fixtures";
@@ -49,6 +49,17 @@ export const handlers = [
       }),
     );
   }),
+  // operationId appealHookDecision: the appeal of a refused post awaits a moderator.
+  http.post(`${apiBase}/hook_decisions/:id/appeal`, ({ request, params }) =>
+    withViewer(request, () =>
+      HttpResponse.json({
+        id: "0192f0c4-7a8e-7000-8000-0000000003b1",
+        hook_decision_id: String(params["id"]),
+        state: "pending",
+        submitted_at: "2026-11-06T00:10:00Z",
+      } satisfies Schemas["OwnHookAppeal"]),
+    ),
+  ),
   // Accepts the upload; it is processed by the time the client asks again.
   http.post(`${apiBase}/media`, () => HttpResponse.json(mediaFixture(uploadedMediaId, "processing"), { status: 202 })),
   http.get(`${apiBase}/media/:id`, ({ params }) => HttpResponse.json(mediaFixture(String(params["id"])))),

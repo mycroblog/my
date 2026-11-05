@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The automated reviews screen through the whole app (web-client/README.md T4): a moderator with manage_reports reads what
-// the external reviews said and cancels a decision, with MSW playing the admin API.
+// the external reviews said and cancels a decision, and upholds or overturns the authors' appeals of refused posts, with
+// MSW playing the admin API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -8,7 +9,7 @@ import type { Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
-import { hookDecisionFixture, hookSummaryFixture } from "./test/handlers";
+import { decidedHookAppeal, hookAppealFixture, hookDecisionFixture, hookSummaryFixture } from "./test/handlers";
 
 beforeEach(() => {
   server.use(signedInHandler, operatorHandler(["manage_reports"]));
@@ -98,10 +99,154 @@ describe("automated reviews", () => {
     expect(screen.getByRole("button", { name: /Cancel decision of/u })).toBeVisible();
   });
 
-  test("the filter asks for one review and stays in the URL", async () => {
+  test("the decision filter asks for one review and stays in the URL", async () => {
     const { lists } = decisionsServer([dropped]);
     await renderApp({ path: "/moderation/hook-decisions?hook=signup.check" });
     expect(await screen.findByText("Nothing was stopped")).toBeVisible();
     expect(lists.at(-1)).toContain("hook=signup.check");
+  });
+});
+
+type HookAppeal = Schemas["AdminHookAppeal"];
+
+const appeal = hookAppealFixture();
+// An appeal in Arabic without a comment, which reads right to left whatever the page's direction.
+const arabic: HookAppeal = {
+  id: "0192f0c4-7a8e-7000-8000-0000000003a2",
+  decision: appeal.decision,
+  account_id: appeal.account_id,
+  status_text: "حفلة في الحي يوم السبت",
+  state: "pending",
+  submitted_at: "2026-11-05T09:00:00Z",
+};
+const upheld = decidedHookAppeal(hookAppealFixture({ id: "0192f0c4-7a8e-7000-8000-0000000003a3" }), "uphold");
+
+/** Plays the appeals of refused posts: the pending ones or every one, and decisions; records the requests. */
+function appealsServer(initial: HookAppeal[]) {
+  let appeals = initial;
+  const lists: string[] = [];
+  const decisions: string[] = [];
+  decisionsServer([]);
+  server.use(
+    http.get(`${apiBase}/admin/hook_appeals`, ({ request }) => {
+      const pending = new URL(request.url).searchParams.get("pending") === "true";
+      lists.push(pending ? "pending" : "all");
+      return HttpResponse.json({ items: appeals.filter((item) => !pending || item.state === "pending") });
+    }),
+    ...(["uphold", "overturn"] as const).map((decision) =>
+      http.post(`${apiBase}/admin/hook_appeals/:id/${decision}`, ({ params }) => {
+        const found = appeals.find((item) => item.id === params["id"]);
+        if (found === undefined) return problem(404, "about:blank", "Not Found");
+        decisions.push(`${decision} ${found.id}`);
+        const decided = decidedHookAppeal(found, decision);
+        appeals = appeals.map((item) => (item.id === found.id ? decided : item));
+        return HttpResponse.json(decided);
+      }),
+    ),
+  );
+  return { lists, decisions };
+}
+
+/** Confirms the open decision of `title` with its button `action`. */
+async function confirmDecision(user: Awaited<ReturnType<typeof renderApp>>["user"], title: string, action: string) {
+  await user.click(
+    within(await screen.findByRole("alertdialog", { name: title })).getByRole("button", { name: action }),
+  );
+}
+
+describe("appeals of refused posts", () => {
+  test("lists those awaiting review with the author, the decision, the text and the comment in their own direction", async () => {
+    const api = appealsServer([appeal, arabic, upheld]);
+    await renderApp({ path: "/moderation/hook-decisions" });
+
+    const table = await screen.findByRole("table", { name: "Appeals of refused posts" });
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(2);
+    const [first] = rows;
+    if (first === undefined) throw new Error("an appeal is missing");
+    expect(await within(first).findByText("Bob")).toBeVisible();
+    expect(within(first).getByText("Local posts")).toBeVisible();
+    expect(within(first).getByText("spam")).toBeVisible();
+    expect(within(first).getByText(appeal.status_text)).toHaveAttribute("dir", "auto");
+    expect(within(first).getByText(appeal.comment ?? "")).toHaveAttribute("dir", "auto");
+    expect(within(table).getByText(arabic.status_text)).toHaveAttribute("dir", "auto");
+    expect(api.lists).toEqual(["pending"]);
+  });
+
+  test("upholds an appeal after confirming, and says so", async () => {
+    const api = appealsServer([appeal]);
+    const { user } = await renderApp({ path: "/moderation/hook-decisions" });
+
+    await user.click(await screen.findByRole("button", { name: /^Uphold the appeal of Nov 6, 2026/u }));
+    expect(await screen.findByRole("alertdialog", { name: "Uphold this appeal?" })).toHaveTextContent(
+      "The post stays refused",
+    );
+    await confirmDecision(user, "Uphold this appeal?", "Uphold");
+
+    expect(await screen.findByText("Upheld the appeal. The post stays refused.")).toBeVisible();
+    expect(api.decisions).toEqual([`uphold ${appeal.id}`]);
+    expect(await screen.findByText("No appeals await review")).toBeVisible();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Appeals of refused posts" })).toHaveFocus();
+    });
+  });
+
+  test("overturns an appeal after confirming, which cancels the decision", async () => {
+    const api = appealsServer([appeal]);
+    const { user } = await renderApp({ path: "/moderation/hook-decisions" });
+
+    await user.click(await screen.findByRole("button", { name: /^Overturn the appeal of/u }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Overturn this appeal?" });
+    expect(dialog).toHaveTextContent("The refused post is not restored");
+    // Cancelling decides nothing.
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+    expect(api.decisions).toEqual([]);
+
+    await user.click(screen.getByRole("button", { name: /^Overturn the appeal of/u }));
+    await confirmDecision(user, "Overturn this appeal?", "Overturn");
+
+    expect(
+      await screen.findByText(
+        "Overturned the appeal. The decision is cancelled, and this author's posts are no longer reviewed.",
+      ),
+    ).toBeVisible();
+    expect(api.decisions).toEqual([`overturn ${appeal.id}`]);
+  });
+
+  test("an appeal another moderator decided first is read again", async () => {
+    appealsServer([appeal]);
+    server.use(
+      http.post(`${apiBase}/admin/hook_appeals/:id/overturn`, () =>
+        problem(409, "/api/v1/problems/appeal-decided", "Decided already"),
+      ),
+    );
+    const { user } = await renderApp({ path: "/moderation/hook-decisions" });
+
+    await user.click(await screen.findByRole("button", { name: /^Overturn the appeal of/u }));
+    await confirmDecision(user, "Overturn this appeal?", "Overturn");
+
+    expect(
+      await screen.findByText("Another moderator already decided this appeal. Their decision stands."),
+    ).toBeVisible();
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+  });
+
+  test("the appeal filter shows every appeal and stays in the URL", async () => {
+    const api = appealsServer([upheld]);
+    const { user, router } = await renderApp({ path: "/moderation/hook-decisions" });
+
+    expect(await screen.findByText("No appeals await review")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /Appeals by state/u }));
+    await user.click(await screen.findByRole("option", { name: "All appeals" }));
+
+    expect(await screen.findByText("Upheld")).toBeVisible();
+    expect(screen.queryByRole("button", { name: /^Uphold the appeal of/u })).not.toBeInTheDocument();
+    expect(router.state.location.search).toEqual({ appeals: "all" });
+    expect(api.lists.at(-1)).toBe("all");
   });
 });

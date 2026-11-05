@@ -406,5 +406,89 @@
   "compose.blocked.loading_target": {
     "defaultMessage": "The post you reply to or quote is still loading. Post once it shows.",
     "description": "Beside the submit button of the new-post form, after it was pressed while the post replied to or quoted was still loading: why the post was not sent."
+  },
+  "compose.rejected.appeal.already_appealed": {
+    "defaultMessage": "You have already appealed this decision. A moderator will review it.",
+    "description": "Shown in place of the appeal button when the user already appealed the automated review's refusal of their post."
+  },
+  "compose.rejected.appeal.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button of the appeal dialog of a refused post: closes it without appealing. The draft is kept."
+  },
+  "compose.rejected.appeal.characters_left": {
+    "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
+    "description": "Count under a field of the appeal of a refused post. {count} is how many more characters fit."
+  },
+  "compose.rejected.appeal.characters_over": {
+    "defaultMessage": "{count, plural, one {# character too many} other {# characters too many}}",
+    "description": "Count under a field of the appeal of a refused post that is too long. {count} is how many characters are over."
+  },
+  "compose.rejected.appeal.closed": {
+    "defaultMessage": "The time to appeal ended on {date}.",
+    "description": "Shown in place of the appeal button once the deadline to appeal the refusal of a post passed. {date} is the deadline."
+  },
+  "compose.rejected.appeal.comment.description": {
+    "defaultMessage": "Optional. Tell the moderators why the post should be allowed.",
+    "description": "Description of the comment field of the appeal of a refused post."
+  },
+  "compose.rejected.appeal.comment.label": {
+    "defaultMessage": "Comment for the moderators",
+    "description": "Label of the optional comment field of the appeal of a post the automated review refused."
+  },
+  "compose.rejected.appeal.comment.too_long": {
+    "defaultMessage": "Write {max, number} characters or fewer.",
+    "description": "Error of the comment of the appeal of a refused post that is too long. {max} is the limit."
+  },
+  "compose.rejected.appeal.confirm.description": {
+    "defaultMessage": "A moderator reads the text and your comment. The appeal does not publish the post: if the moderator cancels the decision, you can post it again. You cannot change the appeal after sending it.",
+    "description": "Description of the appeal dialog of a post the automated review refused."
+  },
+  "compose.rejected.appeal.confirm.title": {
+    "defaultMessage": "Appeal this decision?",
+    "description": "Title of the dialog that appeals the automated review's refusal of a post."
+  },
+  "compose.rejected.appeal.failed": {
+    "defaultMessage": "Could not send the appeal: {reason}",
+    "description": "Error in the appeal dialog of a refused post when sending failed; the dialog stays open. {reason} says why."
+  },
+  "compose.rejected.appeal.not_appealable": {
+    "defaultMessage": "This decision cannot be appealed.",
+    "description": "Shown in place of the appeal button when the server says the refusal of the post cannot be appealed."
+  },
+  "compose.rejected.appeal.open": {
+    "defaultMessage": "Appeal",
+    "description": "Button under the notice of a post the automated review refused: opens the appeal dialog."
+  },
+  "compose.rejected.appeal.send": {
+    "defaultMessage": "Send appeal",
+    "description": "Button of the appeal dialog of a refused post that sends the appeal."
+  },
+  "compose.rejected.appeal.sent": {
+    "defaultMessage": "Your appeal was sent. A moderator will review it; if they cancel the decision, you can post again.",
+    "description": "Shown in the notice of a refused post after the appeal was sent."
+  },
+  "compose.rejected.appeal.text.description": {
+    "defaultMessage": "The text you tried to post. The moderators read it as plain text.",
+    "description": "Description of the text field of the appeal of a refused post, which starts with the text that was sent."
+  },
+  "compose.rejected.appeal.text.label": {
+    "defaultMessage": "Text of the post",
+    "description": "Label of the text field of the appeal of a post the automated review refused."
+  },
+  "compose.rejected.appeal.text.required": {
+    "defaultMessage": "Enter the text of the post.",
+    "description": "Error of the appeal of a refused post whose text is empty."
+  },
+  "compose.rejected.appeal.text.too_long": {
+    "defaultMessage": "Write {max, number} characters or fewer.",
+    "description": "Error of the text of the appeal of a refused post that is too long. {max} is the limit."
+  },
+  "compose.rejected.appeal.until": {
+    "defaultMessage": "You can appeal until {date}.",
+    "description": "Shown above the appeal button of a post the automated review refused. {date} is the deadline."
+  },
+  "compose.rejected.appeal.window_closed": {
+    "defaultMessage": "The time to appeal this decision has ended.",
+    "description": "Shown in place of the appeal button when the server says the deadline to appeal the refusal of the post passed."
   }
 }

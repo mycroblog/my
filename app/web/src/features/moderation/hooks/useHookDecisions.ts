@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The decisions of the external reviews on the screen: their labels, the list, the summary, and cancelling one.
+// The decisions of the external reviews on the screen: their labels, the list, the summary, cancelling one, and the
+// authors' appeals of refused posts with their review.
 import {
   useMutation,
   useMutationState,
@@ -8,10 +9,18 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { useToast } from "@my/ui";
+import { useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
+import { isAppealDecided } from "../api/appeals";
 import {
+  decideHookAppealMutation,
+  type HookAppeal,
+  type HookAppealDecision,
+  type HookAppealFilter,
+  hookAppealsQueryOptions,
+  type HookAppealState,
   type HookDecision,
   type HookDecisionFilter,
   type HookDecisionMode,
@@ -21,6 +30,7 @@ import {
   type HookOutcome,
   hookSummaryQueryOptions,
   overrideHookDecisionMutation,
+  refreshHookAppeals,
   refreshHookDecisions,
 } from "../api/hookDecisions";
 import { refreshAuditLog } from "../api/staff";
@@ -103,5 +113,97 @@ export function useOverrideHookDecision(onOverridden: (decision: HookDecision) =
       mutation.mutate(decision.id);
     },
     pendingIds,
+  };
+}
+
+export const hookAppealStateLabels: Readonly<Record<HookAppealState, ClientMessageKey>> = {
+  pending: "client:admin.hook_appeals.state.pending",
+  upheld: "client:admin.hook_appeals.state.upheld",
+  overturned: "client:admin.hook_appeals.state.overturned",
+};
+
+/** The appeals of refused posts of a filter, newest first. */
+export function useHookAppeals(filter: HookAppealFilter): PagedPages<HookAppeal> {
+  const api = useApi();
+  return toPagedList(useSuspenseInfiniteQuery(hookAppealsQueryOptions(api, filter)));
+}
+
+/** The decision being confirmed, of which appeal. */
+type HookAppealConfirmation = { appeal: HookAppeal; decision: HookAppealDecision };
+
+/** The confirmation dialog: open, or closing and still showing the last confirmation while it fades out. */
+type HookAppealDialog = { isOpen: boolean; confirmation: HookAppealConfirmation } | null;
+
+/** What the appeals of refused posts need to decide one. */
+export type HookAppealReview = {
+  /** Opens the confirmation of `decision` on `appeal`. */
+  open: (appeal: HookAppeal, decision: HookAppealDecision) => void;
+  isOpen: boolean;
+  /** The confirmation open now or last, which a closing dialog still shows; null before the first one. */
+  confirmation: HookAppealConfirmation | null;
+  /** Sends the decision; on success the confirmation closes and the list shows the appeal decided. */
+  confirm: () => void;
+  /** Closes the confirmation without deciding. */
+  cancel: () => void;
+  isPending: boolean;
+  /** Why the decision failed, localized, for the confirmation (which stays open to try again). */
+  error: string | undefined;
+  /** What the last decision did, for the section's StatusMessage; undefined before the first one. */
+  status: string | undefined;
+};
+
+/**
+ * Deciding the appeals of refused posts. A decision cannot be changed, so it is confirmed first (NFR-MOD-7). Once the
+ * lists of appeals, the decisions (an overturn cancels one) and the audit log are fetched again, the confirmation
+ * closes, the status says what the decision did, and `onDecided()` is called: the row's buttons are gone, and the page
+ * moves focus to the section's heading. An appeal another moderator decided the other way first (409 appeal-decided)
+ * is read again with the lists, and the status says so.
+ */
+export function useHookAppealReview(onDecided: () => void): HookAppealReview {
+  const api = useApi();
+  const t = useT();
+  const queryClient = useQueryClient();
+  const [dialog, setDialog] = useState<HookAppealDialog>(null);
+  const [status, setStatus] = useState<string | undefined>(undefined);
+  const refresh = () =>
+    Promise.all([refreshAuditLog(queryClient), refreshHookAppeals(queryClient), refreshHookDecisions(queryClient)]);
+  const mutation = useMutation({
+    ...decideHookAppealMutation(api),
+    onSuccess: async (appeal) => {
+      await refresh();
+      setDialog((current) => current && { ...current, isOpen: false });
+      setStatus(
+        t(appeal.state === "overturned" ? "client:admin.hook_appeals.overturned" : "client:admin.hook_appeals.upheld"),
+      );
+      onDecided();
+    },
+    onError: async (error) => {
+      if (!isAppealDecided(error)) return;
+      await refresh();
+      setDialog((current) => current && { ...current, isOpen: false });
+      setStatus(t("client:admin.hook_appeals.already_decided"));
+      onDecided();
+    },
+  });
+  const isOpen = dialog?.isOpen ?? false;
+  return {
+    open: (appeal, decision) => {
+      mutation.reset();
+      setDialog({ isOpen: true, confirmation: { appeal, decision } });
+    },
+    isOpen,
+    confirmation: dialog?.confirmation ?? null,
+    confirm: () => {
+      if (dialog === null || !dialog.isOpen || mutation.isPending) return;
+      const { appeal, decision } = dialog.confirmation;
+      mutation.mutate({ id: appeal.id, decision });
+    },
+    cancel: () => {
+      if (dialog !== null) setDialog({ ...dialog, isOpen: false });
+      mutation.reset();
+    },
+    isPending: mutation.isPending,
+    error: isOpen && mutation.isError && !isAppealDecided(mutation.error) ? errorMessage(mutation.error) : undefined,
+    status,
   };
 }

@@ -7,7 +7,7 @@
 // belongs to this tab only and ends with it; another account signing in on the same tab reads its own
 // key, and the end of the session removes it (it is the user's own data). Files picked but not yet uploaded live only in memory (their object URLs end with the page).
 import type { StorageKey, StoredCompose } from "../../../lib/storage";
-import type { CreateStatusRequest, QuotePolicy, Visibility } from "../api/compose";
+import type { CreateStatusRequest, QuotePolicy, StatusRejection, Visibility } from "../api/compose";
 import type { PollDraft } from "./poll";
 
 /** One image of the draft. */
@@ -51,11 +51,23 @@ export type Draft = {
 /** A post that was handed to the server and has not been confirmed yet: what is sent, and the draft it came from. */
 export type OutboxItem = { idempotencyKey: string; body: CreateStatusRequest; draft: Draft };
 
+/**
+ * A post that the server's automated review refused, with the text that was sent (which an appeal sends again) and
+ * what came of the appeal: null while the author can still appeal, or the localized outcome once the appeal was sent
+ * (`sent`) or can no longer be.
+ */
+export type Rejection = StatusRejection & {
+  text: string;
+  outcome: { message: string; sent: boolean } | null;
+};
+
 export type ComposeState = {
   draft: Draft;
   outbox: readonly OutboxItem[];
   /** The localized reason the last attempt to post the draft failed; cleared by any edit. Not saved. */
   error: string | null;
+  /** The last post the automated review refused; kept through edits, cleared by the next send. Not saved. */
+  rejection: Rejection | null;
 };
 
 const emptyDraft: Draft = {
@@ -109,12 +121,13 @@ function savedState(state: ComposeState) {
 /** Reads a saved state; anything unreadable starts empty. */
 function loadState(key: StorageKey<StoredCompose | null>): ComposeState {
   const saved = key.read();
-  if (saved === null) return { draft: emptyDraft, outbox: [], error: null };
+  if (saved === null) return { draft: emptyDraft, outbox: [], error: null, rejection: null };
   // The saved state is what savedState wrote: lib/storage checks its shape, and the fields of the draft fill in from the empty one.
   return {
     draft: { ...emptyDraft, ...(saved.draft as Partial<Draft>) },
     outbox: saved.outbox as unknown as OutboxItem[],
     error: null,
+    rejection: null,
   };
 }
 
@@ -162,7 +175,7 @@ export class DraftStore {
 
   /**
    * Moves the draft into the outbox under `idempotencyKey`, with the request `body` made from it, and starts an empty draft that keeps the
-   * chosen visibility, language and quote policy.
+   * chosen visibility, language and quote policy. The refusal of an earlier post gives way to this one.
    */
   send(idempotencyKey: string, body: CreateStatusRequest): OutboxItem {
     const item: OutboxItem = { idempotencyKey, body, draft: { ...this.#state.draft, idempotencyKey } };
@@ -171,6 +184,7 @@ export class DraftStore {
       draft: { ...emptyDraft, visibility: item.draft.replyToId === null ? visibility : null, language, quotePolicy },
       outbox: [...this.#state.outbox.filter((o) => o.idempotencyKey !== idempotencyKey), item],
       error: null,
+      rejection: null,
     });
     return item;
   }
@@ -187,7 +201,18 @@ export class DraftStore {
   restore(idempotencyKey: string, error: string | null): boolean {
     const item = this.#state.outbox.find((o) => o.idempotencyKey === idempotencyKey);
     if (item === undefined || !isEmptyDraft(this.#state.draft)) return false;
-    this.#set({ draft: item.draft, outbox: this.#state.outbox.filter((o) => o !== item), error });
+    this.#set({ ...this.#state, draft: item.draft, outbox: this.#state.outbox.filter((o) => o !== item), error });
     return true;
+  }
+
+  /** Records that the automated review refused a post, until the next send. */
+  reject(rejection: Rejection) {
+    this.#set({ ...this.#state, rejection });
+  }
+
+  /** Records what came of the appeal of the refused post. */
+  settleRejection(outcome: NonNullable<Rejection["outcome"]>) {
+    const { rejection } = this.#state;
+    if (rejection !== null) this.#set({ ...this.#state, rejection: { ...rejection, outcome } });
   }
 }
