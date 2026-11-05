@@ -256,8 +256,9 @@ func (s *Service) reviseRemoteProfile(ctx context.Context, tx uow.Tx, accountID,
 		}
 	}
 	cur, err := s.d.Repository.CurrentProfile(ctx, tx, accountID)
+	first := errors.Is(err, ErrNotFound)
 	switch {
-	case errors.Is(err, ErrNotFound):
+	case first:
 	case err != nil:
 		return err
 	case rev.SameContent(cur):
@@ -268,7 +269,7 @@ func (s *Service) reviseRemoteProfile(ctx context.Context, tx uow.Tx, accountID,
 	if err := s.d.Repository.InsertProfileRevision(ctx, tx, rev); err != nil {
 		return err
 	}
-	return tx.Emit(ctx, ProfileRevised{Revision: rev})
+	return tx.Emit(ctx, ProfileRevised{Revision: rev, IndexableChanged: !first && cur.Indexable != rev.Indexable})
 }
 
 func sanitizeOptional(sanitize func(string) string, html string) string {

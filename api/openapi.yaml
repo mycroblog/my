@@ -18393,6 +18393,7 @@ components:
         - search_indexing
         - ai_usage
         - indexable_default
+        - search_visibilities
         - security_contact
         - require_media_description
         - link_cards

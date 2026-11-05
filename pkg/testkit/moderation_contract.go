@@ -73,6 +73,7 @@ func ModerationContract(t *testing.T, newHarness ModerationFactory) {
 		{"HandlesReports", moderationHandlesReports},
 		{"ListsTheReportsOfAReporter", moderationReportsOfReporter},
 		{"TellsSuspensionsAndTheirEnds", moderationSuspensions},
+		{"RemovesExpiredDomainRestrictions", moderationExpiresDomainRestrictions},
 		{"FlagsTheFirstOpenReportAndCounts", moderationFirstOpenReport},
 		{"NotesReopensAndResolvesByAction", moderationNotesAndReopenings},
 		{"RebuildAgreesWithTheCommands", moderationProjectionEqualsRebuild},

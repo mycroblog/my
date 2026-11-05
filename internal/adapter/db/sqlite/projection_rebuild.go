@@ -104,6 +104,23 @@ func (r *ModerationRepository) ListAllAccountRestrictionRows(ctx context.Context
 	return out, nil
 }
 
+// ListAllDomainRestrictionRows implements moderation.Repository.
+func (r *ModerationRepository) ListAllDomainRestrictionRows(ctx context.Context, tx uow.Tx) ([]moderation.RestrictionRow, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListAllDomainRestrictionRows(ctx)
+	if err != nil {
+		return nil, wrap(err, "list domain restrictions")
+	}
+	out := make([]moderation.RestrictionRow, len(rows))
+	for i, row := range rows {
+		out[i] = restrictionRowsFrom(row.Domain, row.Restriction, row.SourceActionID, row.EffectiveUntil)
+	}
+	return out, nil
+}
+
 // DeleteAllAccountRestrictions implements moderation.Repository.
 func (r *ModerationRepository) DeleteAllAccountRestrictions(ctx context.Context, tx uow.Tx) error {
 	return r.db.execAll(ctx, tx, "empty account restrictions", (*sqlitegen.Queries).DeleteAllAccountRestrictions)

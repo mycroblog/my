@@ -571,6 +571,43 @@ func (q *Queries) ListAccountHandles(ctx context.Context) ([]AccountHandle, erro
 	return items, nil
 }
 
+const listAccountIDsOnDomainAfter = `-- name: ListAccountIDsOnDomainAfter :many
+SELECT id FROM accounts
+WHERE id > COALESCE($1::uuid, '00000000-0000-0000-0000-000000000000')
+  AND (domain = $2
+    OR (length(domain) > length($2) AND substr(domain, length(domain) - length($2)) = '.' || $2))
+ORDER BY id
+LIMIT $3
+`
+
+type ListAccountIDsOnDomainAfterParams struct {
+	After     *string
+	Domain    string
+	PageLimit int32
+}
+
+// ListAccountIDsOnDomainAfter pages the accounts on domain or one of its subdomains in ID order
+// after the ID after ("" for the first page).
+func (q *Queries) ListAccountIDsOnDomainAfter(ctx context.Context, arg ListAccountIDsOnDomainAfterParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listAccountIDsOnDomainAfter, arg.After, arg.Domain, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAccountKeys = `-- name: ListAccountKeys :many
 SELECT id, account_id, key_id, algorithm, public_key_pem, fingerprint, created_at FROM account_keys
 WHERE account_id = $1 ORDER BY id

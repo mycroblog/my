@@ -61,6 +61,8 @@ type Repository interface {
 	// expired at now, the earliest expired first, and returns them.
 	DeleteExpiredAccountRestrictions(ctx context.Context, tx uow.Tx, now time.Time, limit int) ([]moderation.RestrictionRow, error)
 	InsertDomainRestriction(ctx context.Context, tx uow.Tx, r moderation.RestrictionRow) error
+	// DeleteExpiredDomainRestrictions is DeleteExpiredAccountRestrictions for the rows of domains.
+	DeleteExpiredDomainRestrictions(ctx context.Context, tx uow.Tx, now time.Time, limit int) ([]moderation.RestrictionRow, error)
 	// DeleteDomainRestrictionsOf deletes the rows that an action on a domain imposes.
 	DeleteDomainRestrictionsOf(ctx context.Context, tx uow.Tx, actionID string) error
 	// DomainRestrictionRows returns every row of one domain (not its parents), expired ones

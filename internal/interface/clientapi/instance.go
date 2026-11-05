@@ -121,7 +121,11 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	if out.VoiceEnabled && settings.VoiceRoomStarters() == instance.VoiceRoomStartersEveryone {
 		out.VoiceRoomStarters = InstanceVoiceRoomStartersEveryone
 	}
-	out.FullTextSearch = s.instanceFullTextSearch()
+	fullTextSearch, err := s.instanceFullTextSearch(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out.FullTextSearch = fullTextSearch
 	if key := s.pushServerKey(); key != "" {
 		out.PushServerKey = &key
 	}
@@ -262,19 +266,23 @@ func (s *Server) GetInstanceDocument(ctx context.Context, req GetInstanceDocumen
 // *search.Service implements it.
 type FullTextSearch interface {
 	// Visibilities returns the visibilities the search covers.
-	Visibilities() []search.Visibility
+	Visibilities(ctx context.Context) ([]search.Visibility, error)
 }
 
 // instanceFullTextSearch is the item of GET /instance that tells clients whether to show an entry
 // to the full-text search: not available with search = none.
-func (s *Server) instanceFullTextSearch() InstanceFullTextSearch {
+func (s *Server) instanceFullTextSearch(ctx context.Context) (InstanceFullTextSearch, error) {
 	out := InstanceFullTextSearch{Visibilities: []InstanceFullTextSearchVisibilities{}}
 	if s.o.FullTextSearch == nil {
-		return out
+		return out, nil
+	}
+	visibilities, err := s.o.FullTextSearch.Visibilities(ctx)
+	if err != nil {
+		return out, err
 	}
 	out.Available = true
-	for _, v := range s.o.FullTextSearch.Visibilities() {
+	for _, v := range visibilities {
 		out.Visibilities = append(out.Visibilities, InstanceFullTextSearchVisibilities(v))
 	}
-	return out
+	return out, nil
 }
