@@ -22,7 +22,7 @@ tasks:
 
   check:
     desc: Check and lint the client API spec and fail on a stale bundle or generated Go code, in parallel
-    deps: [spec-check, license-scope, lint, generate-check]
+    deps: [spec-check, license-scope, live-calls, lint, generate-check]
 
   generate:
     desc: Bundle api/spec into api/openapi.yaml and regenerate the client API code from it (scripts/generate.sh)
@@ -69,6 +69,13 @@ tasks:
     desc: Fail if an SPDX identifier is outside the license scope, MIT for api/spec, api/openapi.yaml, pkg/mykit and pkg/mybot and AGPL-3.0-only elsewhere (scripts/license-scope-check.sh)
     cmds:
       - scripts/license-scope-check.sh
+
+  # The scenarios and scripts that call the API run only in the slow suite, so a renamed path would otherwise surface
+  # in the Nightly or the release gate. The test reads their sources and the bundle: no server, and no dependency.
+  live-calls:
+    desc: Fail if test/federation-live, scripts/upgrade-test.sh, scripts/restore-drill.sh or scripts/docker-smoke.sh call a method and path of the client API that api/openapi.yaml lacks
+    cmds:
+      - go test -count=1 -run '^TestLiveCalls' ./test/federation-live
 
   spec-check:
     desc: Fail if api/spec/openapi.yaml does not list every file of api/spec (scripts/api-spec-check.sh)

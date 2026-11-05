@@ -109,6 +109,8 @@ jobs:
     # tokens, the CSS 100vh check, the types of the email layout's compiler (app/mail), and the Documentation section
     # of the description. A pull request's own files, lockfiles, or description decide each of them, so stacking pull
     # requests in the merge queue cannot break them and the queue does not run them again.
+    # api:live-calls also runs here and in the merge queue's repo job: the spec and the live tests' calls can change in
+    # two pull requests, and the live tests themselves run on neither.
     # The bun fmt check (web:fmt-check) runs here and again in the merge queue's repo job, because two pull requests
     # that each format their own lines can meet in one statement.
     if: github.event_name == 'pull_request'
@@ -144,6 +146,8 @@ jobs:
             run: scripts/task.sh go:fmt-check
           - name: web:fmt-check
             run: scripts/task.sh web:fmt-check
+          - name: api:live-calls
+            run: scripts/task.sh api:live-calls
           - name: go:licenses
             run: scripts/task.sh go:licenses
           - name: web:licenses
@@ -511,6 +515,9 @@ jobs:
           # Also in preflight; here it checks the merge group, where two pull requests' formatted lines meet.
           - name: web:fmt-check
             run: scripts/task.sh web:fmt-check
+          # Also in preflight; here it checks the merge group, where one pull request's spec meets another's live test.
+          - name: api:live-calls
+            run: scripts/task.sh api:live-calls
           - name: mykit:test
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:test
