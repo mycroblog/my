@@ -212,6 +212,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`plugin_translator_tls_cert_file`](#plugin_translator_tls_cert_file) | `MY_PLUGIN_TRANSLATOR_TLS_CERT_FILE` | none | no | no |
 | [`plugin_translator_tls_key_file`](#plugin_translator_tls_key_file) | `MY_PLUGIN_TRANSLATOR_TLS_KEY_FILE` | none | no | no |
 | [`plugin_translator_timeout`](#plugin_translator_timeout) | `MY_PLUGIN_TRANSLATOR_TIMEOUT` | `10s` | no | no |
+| [`plugin_translator_name`](#plugin_translator_name) | `MY_PLUGIN_TRANSLATOR_NAME` | none | when `plugin_translator_address` is set | no |
 | [`plugin_billing_address`](#plugin_billing_address) | `MY_PLUGIN_BILLING_ADDRESS` | none | when `billing_sources` includes `plugin` | no |
 | [`plugin_billing_protocol`](#plugin_billing_protocol) | `MY_PLUGIN_BILLING_PROTOCOL` | `json` | no | no |
 | [`plugin_billing_token`](#plugin_billing_token) | `MY_PLUGIN_BILLING_TOKEN` | none | no | yes |
@@ -1760,6 +1761,14 @@ Deadline of one call of the `translator` plugin, less than `5m0s`.
 - Environment variable: `MY_PLUGIN_TRANSLATOR_TIMEOUT`
 - Default: `10s`
 - Required: no
+
+### `plugin_translator_name`
+
+The name that readers see next to a translation by the `translator` plugin and that the admin screen lists, such as the service behind your plugin, at most 100 characters. Clients get this name and never the address.
+
+- Environment variable: `MY_PLUGIN_TRANSLATOR_NAME`
+- Default: none
+- Required: when `plugin_translator_address` is set
 
 ### `plugin_billing_address`
 

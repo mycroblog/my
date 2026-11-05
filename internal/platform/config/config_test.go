@@ -1075,6 +1075,7 @@ func withPluginTokens(base map[string]string, kv ...string) map[string]string {
 		address, token := schemaField(k.Key(kind.SuffixAddress)).env(), schemaField(k.Key(kind.SuffixToken)).env()
 		kv = append(kv, address, "unix:///run/my/plugin.sock", token, "s3cret")
 	}
+	kv = append(kv, "MY_PLUGIN_TRANSLATOR_NAME", "A translator")
 	return with(base, kv...)
 }
 

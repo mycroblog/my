@@ -53,6 +53,13 @@ func (r *recordingTranslator) Translate(ctx context.Context, req translation.Req
 	return r.fake.Translate(ctx, req)
 }
 
+// lastRequest returns what it received last.
+func (r *recordingTranslator) lastRequest() translation.Request {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.requests[len(r.requests)-1]
+}
+
 func (r *recordingTranslator) calls() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
