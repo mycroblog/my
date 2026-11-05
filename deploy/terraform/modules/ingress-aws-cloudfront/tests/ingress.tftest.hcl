@@ -11,7 +11,8 @@ mock_provider "aws" {
   }
   mock_resource "aws_cloudfront_distribution" {
     defaults = {
-      domain_name = "d111111abcdef8.cloudfront.net"
+      domain_name    = "d111111abcdef8.cloudfront.net"
+      hosted_zone_id = "Z2FDTNDAQYW2N"
     }
   }
 }
@@ -47,6 +48,58 @@ run "it_serves_host_with_no_cache" {
   assert {
     condition     = one(output.dns_records).type == "CNAME" && one(output.dns_records).rrdata == "d111111abcdef8.cloudfront.net"
     error_message = "the host must point at the distribution"
+  }
+}
+
+run "a_subdomain_elsewhere_asks_for_a_cname" {
+  assert {
+    condition     = one(output.dns_records).name == "social.example.org" && one(output.dns_records).type == "CNAME" && output.dns_note == null && length(aws_route53_record.alias) == 0
+    error_message = "without a hosted zone the module creates nothing, and a subdomain takes a CNAME"
+  }
+
+  assert {
+    condition     = output.domain_name == "d111111abcdef8.cloudfront.net" && output.hosted_zone_id == "Z2FDTNDAQYW2N"
+    error_message = "the raw values are for records made elsewhere"
+  }
+}
+
+run "an_apex_elsewhere_asks_for_an_alias_and_says_why" {
+  variables {
+    host         = "example.co.uk"
+    host_is_apex = true
+  }
+
+  assert {
+    condition     = one(output.dns_records).type == "ALIAS" && one(output.dns_records).rrdata == "d111111abcdef8.cloudfront.net" && strcontains(output.dns_note, "Not every provider") && length(aws_route53_record.alias) == 0
+    error_message = "a plain CNAME cannot be used at an apex"
+  }
+}
+
+run "a_hosted_zone_gets_alias_records" {
+  variables {
+    host            = "example.co.uk"
+    host_is_apex    = true
+    route53_zone_id = "Z0123456789ABCDEFGHIJ"
+  }
+
+  assert {
+    condition     = toset(keys(aws_route53_record.alias)) == toset(["A", "AAAA"]) && aws_cloudfront_distribution.this.is_ipv6_enabled
+    error_message = "IPv4 and IPv6 each need an alias record"
+  }
+
+  assert {
+    condition = alltrue([
+      for r in aws_route53_record.alias : (
+        r.zone_id == "Z0123456789ABCDEFGHIJ" && r.name == "example.co.uk" && r.records == null &&
+        r.alias[0].name == "d111111abcdef8.cloudfront.net" && r.alias[0].zone_id == "Z2FDTNDAQYW2N" && !r.alias[0].evaluate_target_health
+      )
+    ])
+    error_message = "the records must alias the distribution from the operator's zone"
+  }
+
+  assert {
+    condition     = length(output.dns_records) == 0 && output.dns_note == null
+    error_message = "nothing is left to create elsewhere"
   }
 }
 

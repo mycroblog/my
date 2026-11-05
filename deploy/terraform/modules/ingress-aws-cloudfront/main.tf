@@ -34,6 +34,19 @@ variable "certificate_arn" {
   }
 }
 
+variable "route53_zone_id" {
+  description = "Public Route 53 hosted zone of host. Set, the module creates alias records, which work at a zone apex and on a subdomain. Null, you create the records that dns_records lists."
+  type        = string
+  default     = null
+}
+
+variable "host_is_apex" {
+  description = "Whether host is the apex of its DNS zone, which decides what dns_records asks for while route53_zone_id is null. An input, since the labels of a name cannot tell: social.example.org and example.co.uk both have three."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
 variable "origin_read_timeout" {
   description = "Seconds CloudFront waits for bytes from the origin, from 1 to 120 without a quota increase. Streams send a heartbeat every 30 seconds."
   type        = number
@@ -119,6 +132,22 @@ resource "aws_cloudfront_distribution" "this" {
   }
 }
 
+# Alias records answer with the distribution's addresses, so no CNAME is involved and an apex is fine. IPv4 and IPv6 each need
+# one, since the distribution enables IPv6.
+resource "aws_route53_record" "alias" {
+  for_each = var.route53_zone_id == null ? toset([]) : toset(["A", "AAAA"])
+
+  zone_id = var.route53_zone_id
+  name    = var.host
+  type    = each.value
+
+  alias {
+    name                   = aws_cloudfront_distribution.this.domain_name
+    zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
 output "env" {
   description = "The header that the proxies write."
   value       = { MY_TRUSTED_PROXY_HEADER = "x-forwarded-for" }
@@ -145,8 +174,23 @@ output "roles" {
 }
 
 output "dns_records" {
-  description = "What to add at the DNS provider."
-  value = [
-    { name = var.host, type = "CNAME", rrdata = aws_cloudfront_distribution.this.domain_name },
+  description = "What to add at the DNS provider: nothing with route53_zone_id, a CNAME for a subdomain, and for an apex an ALIAS or ANAME, the name depending on the provider, since DNS allows no CNAME there."
+  value = var.route53_zone_id != null ? [] : [
+    { name = var.host, type = var.host_is_apex ? "ALIAS" : "CNAME", rrdata = aws_cloudfront_distribution.this.domain_name },
   ]
+}
+
+output "dns_note" {
+  description = "What dns_records cannot say, or null."
+  value       = var.route53_zone_id == null && var.host_is_apex ? "A plain CNAME cannot be used at a zone apex. Create an ALIAS or ANAME record, or a flattened CNAME, at your DNS provider. Not every provider has one: without one, move the zone to a provider that does, such as Route 53 with route53_zone_id." : null
+}
+
+output "domain_name" {
+  description = "Domain name of the distribution, for records made elsewhere."
+  value       = aws_cloudfront_distribution.this.domain_name
+}
+
+output "hosted_zone_id" {
+  description = "Route 53 hosted zone of the distribution, for an alias record made elsewhere."
+  value       = aws_cloudfront_distribution.this.hosted_zone_id
 }

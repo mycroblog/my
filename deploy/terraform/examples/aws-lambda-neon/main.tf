@@ -110,6 +110,9 @@ module "ingress" {
   host            = var.host
   origin_host     = module.app.origin_host
   certificate_arn = var.certificate_arn
+  # With a hosted zone in Route 53 the module creates the records, at an apex too. Without one, dns_records says what to create.
+  route53_zone_id = var.route53_zone_id
+  host_is_apex    = var.host_is_apex
 }
 
 module "app" {

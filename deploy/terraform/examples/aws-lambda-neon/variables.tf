@@ -27,6 +27,18 @@ variable "certificate_arn" {
   type        = string
 }
 
+variable "route53_zone_id" {
+  description = "Public Route 53 hosted zone of host, in which the ingress creates alias records. Null leaves the records to you: the output dns_records says what to create."
+  type        = string
+  default     = null
+}
+
+variable "host_is_apex" {
+  description = "Whether host is the apex of its DNS zone, where a plain CNAME cannot be used. It matters only without route53_zone_id."
+  type        = bool
+  default     = false
+}
+
 variable "database_url_secret_name" {
   description = "Secret that holds Neon's direct connection URL."
   type        = string

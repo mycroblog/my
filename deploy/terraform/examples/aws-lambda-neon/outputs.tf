@@ -10,6 +10,11 @@ output "dns_records" {
   value       = module.ingress.dns_records
 }
 
+output "dns_note" {
+  description = "What dns_records cannot say, or null."
+  value       = module.ingress.dns_note
+}
+
 output "console" {
   description = "What console.sh reads."
   value       = module.app.console
