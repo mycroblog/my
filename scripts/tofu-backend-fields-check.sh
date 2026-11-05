@@ -69,10 +69,10 @@ trap 'rm -f "$contract"' EXIT
 
 network_gcp="$(table_fields "$dir/README.md" "### The network on Google Cloud" | sort -u)"
 network_aws="$(table_fields "$dir/README.md" "### The network on AWS" | sort -u)"
-[ -n "$network_gcp" ] && [ -n "$network_aws" ] || {
+if [ -z "$network_gcp" ] || [ -z "$network_aws" ]; then
   echo "tofu-backend-fields-check: no fields found in the network tables of $dir/README.md" >&2
   exit 1
-}
+fi
 
 status=0
 apps=0
