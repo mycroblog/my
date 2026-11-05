@@ -2,7 +2,7 @@
 
 How to run `my` on Google Cloud with the OpenTofu modules in [`deploy/terraform`](../../deploy/terraform/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage, and Pub/Sub, with a PostgreSQL database on Neon. Nothing runs while nobody uses it, except a tick that wakes the server each minute. Read [Costs](#costs) first: the tick and open streams decide what it costs.
 
-The modules also work with Terraform: use `terraform` where this guide says `tofu`. The lock file in the example is for OpenTofu, so `terraform init` adds its own entries to it.
+The modules also work with Terraform 1.11 or later: use `terraform` where this guide says `tofu`. The lock file in the example is for OpenTofu, so `terraform init` adds its own entries to it.
 
 ## What it creates
 
@@ -12,13 +12,16 @@ The modules also work with Terraform: use `terraform` where this guide says `tof
 | Jobs | `queue-gcp-cloud-tasks` | A Cloud Tasks queue, a Cloud Scheduler job, and a service account that calls the server |
 | Media | `blob-gcp-gcs` | A private bucket |
 | Real-time updates | `stream-gcp-pubsub` | A topic and a custom role. The server creates and removes its own subscriptions |
-| Database | `db-external` | Nothing: you create the database and its secret by hand |
+| Database | `db-external` | Nothing: you create the database by hand |
+| Email | `mail-smtp` | Nothing: any SMTP service |
+| Secrets | `secrets-gcp-secret-manager` | Secrets of the database URL and the SMTP password, which you fill, and a generated VAPID key |
+| KEK | `kek-gcp-secret-manager` or `kek-gcp-kms` | A generated secret mounted as a file, or a Cloud KMS key |
 
-Secret values never reach the OpenTofu state: the modules take the IDs of secrets you create yourself.
+Secret values never reach the OpenTofu plan or state: you add the ones that come from elsewhere yourself, and the deployment generates the KEK and the VAPID key through write-only attributes.
 
 ## Before you start
 
-- `tofu` 1.9 or later, `gcloud`, and `jq`.
+- `tofu` 1.11 or later, `gcloud`, and `jq`.
 - A Google Cloud project with billing, used for this instance alone, and an account on it with the Owner role.
 - A domain for [`host`](../reference/configuration.md#host). It cannot change later: read [Settings you cannot change later](production-checklist.md#settings-you-cannot-change-later).
 - A version of `my` from the [releases](running.md#get-the-image). There is no `latest` tag.
@@ -40,43 +43,55 @@ In the Neon console, create a project in a region near your Cloud Run region, an
 - Use the **direct** connection string (the host without `-pooler`). `my schema apply` holds a session-level lock, which does not work through a pooler in transaction mode.
 - Add `pool_max_conns` for the concurrency you expect, for example `postgres://...neon.tech/neondb?sslmode=require&pool_max_conns=8`. The default is 4 per instance, and a Cloud Run instance takes 80 requests at once: see [Waiting for a database connection](running.md#waiting-for-a-database-connection). All instances together must stay under the database's limit, so `max_instances` of the app module matters too.
 
-### 3. Create the secrets
-
-Create each secret once, and keep a copy of the KEK apart from the database: see [key management](key-management.md).
-
-```sh
-printf '%s' 'postgres://...' | gcloud secrets create my-database-url --project="$PROJECT" --data-file=-
-openssl rand -base64 32 | tr -d '\n' | gcloud secrets create my-kek --project="$PROJECT" --data-file=-
-```
-
-The KEK reaches the server as a mounted file, named by `MY_KEK_FILE`. The others are environment variables resolved when an instance starts. A new secret version therefore takes effect on the next instance: deploy a new revision to make sure.
-
-For Web Push, generate a key once and keep it like the KEK:
-
-```sh
-docker run --rm ghcr.io/mycroblog/my:0.1.0 config vapid-key
-printf '%s' '<the value of vapid_private_key>' | gcloud secrets create my-vapid-key --project="$PROJECT" --data-file=-
-```
-
-### 4. Set the variables
+### 3. Set the variables
 
 ```sh
 cd deploy/terraform/examples/gcp-cloud-run-neon
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Fill in `terraform.tfvars`. `env` and `secret_env` take any other setting from the [configuration reference](../reference/configuration.md), by value and by secret ID. A setting named in two places fails the plan.
+Fill in `terraform.tfvars`. `mail_from`, `mail_smtp_host`, `mail_smtp_port` (587 by default; Google Cloud blocks outbound port 25), and `mail_smtp_username` configure [email](email.md). `env` and `secret_env` take any other setting from the [configuration reference](../reference/configuration.md), by value and by secret ID. A setting named in two places fails the plan.
+
+To send no email, remove the `mail` module and its secret from `main.tf`, and `mail` stays `none`. Read [what that means for sign-ups](production-checklist.md#email) first.
 
 Decide on [`account_domain`](../reference/configuration.md#account_domain) now, as `MY_ACCOUNT_DOMAIN` in `env`, if handles use another domain.
 
 **The state** stays in this directory by default. It holds no secret values, but it is the only record of what was created: keep it in a bucket with a `backend "gcs"` block if more than one person runs this.
+
+### 4. Create the secrets and add their values
+
+This creates the secrets, and generates the KEK and the VAPID key:
+
+```sh
+tofu init
+tofu apply -target=module.secrets -target=module.kek
+```
+
+**Copy the KEK now**, and keep the copy apart from the database, for example in a password manager. Without it a [backup](backup.md) cannot be restored, and the accounts' keys are lost. Do the same with the VAPID key, whose loss ends every Web Push subscription:
+
+```sh
+gcloud secrets versions access latest --secret=my-kek --project="$PROJECT"
+gcloud secrets versions access latest --secret=my-vapid-key --project="$PROJECT"
+```
+
+Then add the values that come from elsewhere. An instance whose secret cannot be read does not start, so add them before the app:
+
+```sh
+printf '%s' 'postgres://...' | gcloud secrets versions add my-database-url --project="$PROJECT" --data-file=-
+printf '%s' '<the SMTP password>' | gcloud secrets versions add my-smtp-password --project="$PROJECT" --data-file=-
+```
+
+The KEK reaches the server as a mounted file, named by `MY_KEK_FILE`. The others are environment variables resolved when an instance starts, so a new version takes effect on the next instance: deploy a new revision to make sure.
+
+**OpenTofu generates the KEK once and never again.** The secret and its version have `prevent_destroy`, and the version number that would write a new value is fixed in the module: do not change it, because a new random KEK makes everything the old one encrypted unreadable. To rotate, follow [Rotate the KEK](key-management.md#rotate-the-kek), adding the new value with `gcloud secrets versions add`. OpenTofu does not track what you add there.
+
+To keep the KEK in Cloud KMS from the start, replace the `kek` block in `main.tf` as its comment shows, and enable `cloudkms.googleapis.com`. To bring a KEK or a VAPID key of your own, set `create = false` on the `kek` module, or remove the key from `generate_p256_keys`, before this step. A secret made elsewhere needs only its ID: pass it to `secret_env` of the app module, or to the module that uses it.
 
 ### 5. Create what the migration needs
 
 The service's startup probe waits for `/readyz`, which answers `503` until the schema exists, so the schema has to come first. Create the migration job and what it depends on:
 
 ```sh
-tofu init
 tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
 ```
 
@@ -122,7 +137,7 @@ Open the link right away and set the password. It works once, for one hour. **It
 
 ### 10. Go through the checklist
 
-Go through the [production checklist](production-checklist.md), starting with the mail settings in `env` and `secret_env`.
+Go through the [production checklist](production-checklist.md), starting with [email](production-checklist.md#email): SPF, DKIM, and DMARC on the domain of `mail_from`.
 
 ## The console
 
@@ -186,6 +201,14 @@ module "db" {
 ```
 
 For a store outside Google Cloud, such as an S3-compatible service, leave the `blob` module out of `backends` and pass its settings through `env` and `secret_env`.
+
+## Changing the KEK backend
+
+Replacing the `kek` block is one block in `main.tf`, but on an instance with data it is not free. The database holds secrets wrapped with the current key, so an instance that loses it can no longer read them, and every account's keys are among them.
+
+Follow [Move between the local KEK and a KMS](key-management.md#move-between-the-local-kek-and-a-kms). From the secret to Cloud KMS, keep the current KEK as `kek_previous` while the secrets move, by passing its secret through the app module, with `secret_files = { MY_KEK_PREVIOUS_FILE = "my-kek" }`; run `my kek rewrap` through [the console](#the-console), then remove it when `my kek status` no longer counts `local:` keys. Keep the KEK for as long as you keep database backups from before the rewrap.
+
+On a new instance with no data, nothing needs to move.
 
 ## Limits
 

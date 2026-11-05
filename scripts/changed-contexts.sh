@@ -245,7 +245,7 @@ classify() {
   esac
   case "$path" in
     # terraform:env-check reads the configuration reference and names the guide.
-    scripts/terraform-*.sh | docs/reference/configuration.md | docs/operations/deploy-cloud-run.md)
+    scripts/terraform-* | docs/reference/configuration.md | docs/operations/deploy-cloud-run.md)
       select_contexts terraform
       known=1
       ;;

@@ -11,11 +11,17 @@ mock_provider "google" {
   }
 }
 
+mock_provider "random" {}
+
 variables {
   project_id  = "my-project"
   host        = "social.example.org"
   image       = "ghcr.io/mycroblog/my:0.1.0"
   bucket_name = "my-project-my-media"
+
+  mail_from          = "noreply@social.example.org"
+  mail_smtp_host     = "smtp.example.org"
+  mail_smtp_username = "my-smtp-user"
 }
 
 run "composes_every_setting" {
@@ -27,7 +33,12 @@ run "composes_every_setting" {
       MY_BLOB_GCS_BUCKET                   = "my-project-my-media"
       MY_DATABASE                          = "postgres"
       MY_HOST                              = "social.example.org"
-      MY_KEK_FILE                          = "/secrets/kek/kek"
+      MY_KEK_FILE                          = "/secrets/my-kek-file/value"
+      MY_MAIL                              = "smtp"
+      MY_MAIL_FROM                         = "noreply@social.example.org"
+      MY_MAIL_SMTP_HOST                    = "smtp.example.org"
+      MY_MAIL_SMTP_PORT                    = "587"
+      MY_MAIL_SMTP_USERNAME                = "my-smtp-user"
       MY_MEDIA_MAX_AV_BYTES                = "31457280"
       MY_PROFILE                           = "production"
       MY_QUEUE                             = "cloudtasks"
@@ -44,8 +55,17 @@ run "composes_every_setting" {
   }
 
   assert {
-    condition     = module.app.secret_env == tomap({ MY_DATABASE_URL = "my-database-url" })
-    error_message = "the database URL must arrive as a secret"
+    condition     = module.app.secret_env == tomap({ MY_DATABASE_URL = "my-database-url", MY_MAIL_SMTP_PASSWORD = "my-smtp-password", MY_VAPID_PRIVATE_KEY = "my-vapid-key" })
+    error_message = "the database URL, the SMTP password, and the VAPID key must arrive as secrets"
+  }
+}
+
+# The first deployment creates these first, to hold the values before anything reads them.
+run "the_secrets_can_be_created_first" {
+  command = plan
+
+  plan_options {
+    target = [module.secrets, module.kek]
   }
 }
 
@@ -72,12 +92,12 @@ run "the_operator_can_set_any_other_setting" {
   command = plan
 
   variables {
-    env        = { MY_MEDIA_MAX_AV_BYTES = "1048576", MY_MAIL = "smtp" }
-    secret_env = { MY_MAIL_SMTP_PASSWORD = "smtp-secret" }
+    env        = { MY_MEDIA_MAX_AV_BYTES = "1048576", MY_CAPTCHA = "turnstile" }
+    secret_env = { MY_CAPTCHA_SECRET_KEY = "captcha-secret" }
   }
 
   assert {
-    condition     = module.app.env["MY_MEDIA_MAX_AV_BYTES"] == "1048576" && module.app.env["MY_MAIL"] == "smtp" && module.app.secret_env["MY_MAIL_SMTP_PASSWORD"] == "smtp-secret"
+    condition     = module.app.env["MY_MEDIA_MAX_AV_BYTES"] == "1048576" && module.app.env["MY_CAPTCHA"] == "turnstile" && module.app.secret_env["MY_CAPTCHA_SECRET_KEY"] == "captcha-secret"
     error_message = "plain settings must reach the server"
   }
 }

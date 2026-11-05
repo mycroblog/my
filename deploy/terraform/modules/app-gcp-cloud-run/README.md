@@ -13,7 +13,7 @@ It merges what the backends return ([the contract](../../README.md#the-backend-c
 | `host` | required | `host` of the server |
 | `backends` | `[]` | What each backend module returns |
 | `env`, `secret_env` | `{}` | Every other setting: by value, or by secret ID |
-| `kek_secret_id` | null | Secret of the KEK, mounted as a file and named by `MY_KEK_FILE`, never an environment variable |
+| `secret_files` | `{}` | Secret settings to mount as files: a `_FILE` variable name to secret ID. Backends return the same, and `kek-gcp-secret-manager` delivers the KEK this way |
 | `name` | `my` | The service, `<name>-migrate`, `<name>-console`, and `<name>-server` |
 | `role`, `profile` | `all`, `production` | `MY_ROLE` and `MY_PROFILE`. `web` is refused: it does not serve what Cloud Tasks calls |
 | `trusted_proxies` | `169.254.0.0/16` | `MY_TRUSTED_PROXIES`, the addresses of Cloud Run's front end |
@@ -38,7 +38,8 @@ It merges what the backends return ([the contract](../../README.md#the-backend-c
 
 - Request-based billing with min instances 0, a `/readyz` startup probe, and a `/healthz` liveness probe. The startup probe
   keeps a revision from taking traffic until the schema and the data upgrade steps of its release are in place.
-- The service account can read every secret in `secret_env` and `kek_secret_id`, and holds each role of the backends on
+- A plan fails without a KEK when the server needs one: `kek` with `key_manager = local`, or `kms_key` otherwise.
+- The service account can read every secret in `secret_env` and `secret_files`, and holds each role of the backends on
   the resource it names. Each `invokers` entry gets `roles/run.invoker`, and so does `allUsers`, because federation needs
   public paths. The server checks the tokens of `/_internal/*` itself.
 - `apply` never changes the image of what exists: it would skip the migration. [`upgrade.sh`](../../upgrade.sh) does.

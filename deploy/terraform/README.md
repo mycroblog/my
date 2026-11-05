@@ -1,7 +1,7 @@
 # OpenTofu modules
 
 Modules that compose a deployment of `my` from swappable backends. They are written for [OpenTofu](https://opentofu.org)
-and work with Terraform too. To deploy, follow [Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md);
+and work with Terraform too, from version 1.11 of either. To deploy, follow [Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md);
 this file is the contract for whoever uses or adds a module.
 
 ```text
@@ -11,6 +11,10 @@ deploy/terraform/
   modules/blob-gcp-gcs/           media bucket
   modules/stream-gcp-pubsub/      topic and the permissions for the server's own subscriptions
   modules/db-external/            a connection URL in Secret Manager: Neon, or any PostgreSQL
+  modules/mail-smtp/              email through any SMTP service
+  modules/secrets-gcp-secret-manager/  secrets to fill by hand, or a VAPID key it generates
+  modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
+  modules/kek-gcp-kms/                 the KEK in Cloud KMS
   examples/gcp-cloud-run-neon/    all of the above, composed
   upgrade.sh                      migration job first, then the service
   console.sh                      runs one my command through an app module's console
@@ -27,43 +31,51 @@ A module is named `<role>-<provider>-<service>`, so that the name says what it i
 | `queue` | The job queue and what triggers the periodic jobs |
 | `blob` | The media store |
 | `stream` | The broker of the real-time updates |
+| `mail` | Email |
+| `secrets` | Secrets, filled by hand or generated |
+| `kek` | The key that encrypts the secrets in the database |
 
-A module with no provider of its own drops that part (`db-external`). Cloud SQL would be `db-gcp-cloud-sql`.
+A module with no provider of its own drops that part (`db-external`, `mail-smtp`). Cloud SQL would be `db-gcp-cloud-sql`.
 
 ## The backend contract
 
-Every `db-*`, `queue-*`, `blob-*`, and `stream-*` module returns the same outputs, so that changing the database means
+Every `db-*`, `queue-*`, `blob-*`, `stream-*`, `mail-*`, `secrets-*`, and `kek-*` module returns the same outputs, so that changing the database means
 changing one module block:
 
 | Output | Type | Meaning |
 | --- | --- | --- |
 | `env` | `map(string)` | Settings by variable name (`MY_DATABASE`) |
 | `secret_env` | `map(string)` | Secret settings: variable name to the ID of a secret in the platform's store |
+| `secret_files` (optional) | `map(string)` | Secret settings to mount as files: a variable name ending in `_FILE` to the secret's ID. The app sets the variable to the path, on the service and every job |
 | `roles` | `list(object({ role, scope, resource }))` | What the app's service account needs |
 | `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it |
 
-`scope` says where the role goes: `project` (with `resource` null), `bucket`, `topic`, `queue`, or `service_account`. The
+`scope` says where the role goes: `project` (with `resource` null), `bucket`, `topic`, `queue`, `service_account`, or `crypto_key`. The service and its jobs share one service account, so a grant reaches them all. The
 app grants each role on that resource alone, so a backend asks for as little as it can. It reads the names of `roles` and
 `invokers` at plan time, so a backend builds them from its inputs rather than from attributes of its resources, and uses
 `depends_on` on the output for the order.
 
 The rules:
 
-- A backend never holds a secret value: it takes the ID of a secret that the operator created by hand, so no value
-  reaches the state.
+- No secret value reaches the plan or the state. A backend takes or creates a secret by ID, and the operator adds a value that
+  comes from elsewhere by hand. What the deployment can generate itself (the KEK, a VAPID key) goes through an ephemeral
+  resource and a write-only attribute, whose version number is fixed in the module, never an input: changing it writes a new
+  value. `secrets-gcp-secret-manager` exposes the IDs as `ids`; a secret made elsewhere needs only its ID. The app can read every secret in `secret_env` and `secret_files` without a role for it.
+- Exactly one KEK: a plan fails if the server would need one and no backend provides it (`kek` with `key_manager = local`,
+  `kms_key` otherwise).
 - A backend does not name the app. What it needs from the app is an input known in advance, such as `host`, so nothing
   is circular: the queue calls `https://{host}`, and its service account exists before the service does.
 - A setting belongs to one place. The same setting named by two backends, by `env` and `secret_env`, by what the app
   module sets itself, or as both `X` and `X_FILE`, fails the plan and lists the names. `merge()` alone would let the last
   one win without a word.
 
-Anything without a backend (`host`'s companions, mail, VAPID, and every other setting) goes through the `env` and
-`secret_env` inputs of the app module, so no setting is out of reach. A backend of your own needs nothing special: any
+Anything without a backend (VAPID, CAPTCHA, and every other setting) goes through the `env` and
+`secret_env`, and `secret_files` inputs of the app module, so no setting is out of reach. A backend of your own needs nothing special: any
 object with these fields can go in `backends`.
 
 ## The app contract
 
-Every `app-*` module takes `backends`, `env`, `secret_env`, `image`, and `host`, and provides a console.
+Every `app-*` module takes `backends`, `env`, `secret_env`, `secret_files`, `image`, and `host`, and provides a console.
 
 ### The console
 
@@ -88,6 +100,8 @@ tofu output -json console | deploy/terraform/console.sh admin create -username a
 ## Checks
 
 `scripts/task.sh terraform:check` runs `tofu fmt -check`, `tofu init -backend=false` and `tofu validate` for each module
-and the example, the tests on mocked providers, and a check that every `MY_*` name here exists in the configuration. None
-of them reaches a cloud, so they show that the configuration is consistent, not that an apply succeeds. Only the example
+and the example, the tests on mocked providers, a check that every `MY_*` name here exists in the configuration, and a real
+apply against a local stub of Secret Manager, which shows the formats of the generated values, that none reaches the plan or
+the state, and that another apply writes nothing. None of them reaches a cloud, so they show that the configuration is
+consistent, not that an apply on Google Cloud succeeds. Only the example
 pins its providers (`.terraform.lock.hcl`); update it with `scripts/task.sh terraform:lock`.

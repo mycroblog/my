@@ -1,20 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Copy to terraform.tfvars. Secrets are named here by their IDs; their values stay in Secret Manager.
+# Copy to terraform.tfvars. The secrets keep their default IDs; their values stay in Secret Manager.
 
 project_id  = "my-project"
 host        = "social.example.org"
 image       = "ghcr.io/mycroblog/my:0.1.0"
 bucket_name = "my-project-my-media"
 
-env = {
-  MY_MAIL           = "smtp"
-  MY_MAIL_FROM      = "my@example.org"
-  MY_MAIL_SMTP_HOST = "smtp.example.org"
-  MY_MAIL_SMTP_PORT = "587"
-}
-
-secret_env = {
-  MY_MAIL_SMTP_PASSWORD = "my-smtp-password"
-  MY_VAPID_PRIVATE_KEY  = "my-vapid-key"
-}
+mail_from          = "noreply@social.example.org"
+mail_smtp_host     = "smtp.example.org"
+mail_smtp_username = "my-smtp-user"

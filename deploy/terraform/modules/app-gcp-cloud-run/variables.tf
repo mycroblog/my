@@ -62,17 +62,12 @@ variable "trusted_proxies" {
   nullable    = false
 }
 
-variable "kek_secret_id" {
-  description = "Secret that holds the KEK, mounted as a file. Null when no KEK is needed, or it arrives another way."
-  type        = string
-  default     = null
-}
-
 variable "backends" {
   description = "What each backend module returns. A setting named twice fails the plan."
   type = list(object({
-    env        = optional(map(string), {})
-    secret_env = optional(map(string), {})
+    env          = optional(map(string), {})
+    secret_env   = optional(map(string), {})
+    secret_files = optional(map(string), {})
     roles = optional(list(object({
       role     = string
       scope    = string
@@ -87,17 +82,24 @@ variable "backends" {
     condition = alltrue(flatten([
       for b in var.backends : [
         for r in b.roles : (
-          contains(["project", "bucket", "topic", "queue", "service_account"], r.scope) &&
+          contains(["project", "bucket", "topic", "queue", "service_account", "crypto_key"], r.scope) &&
           (r.scope == "project") == (r.resource == null)
         )
       ]
     ]))
-    error_message = "Each role has a scope of project (without a resource), or bucket, topic, queue, or service_account (with its resource)."
+    error_message = "Each role has a scope of project (without a resource), or bucket, topic, queue, service_account, or crypto_key (with its resource)."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for b in var.backends : [for name in keys(b.secret_files) : endswith(name, "_FILE")]
+    ]))
+    error_message = "The names of secret_files end in _FILE: the variable holds the path of the mounted file."
   }
 }
 
 variable "env" {
-  description = "Other settings by variable name, for everything no backend covers: mail, media, and so on."
+  description = "Other settings by variable name, for everything no backend covers."
   type        = map(string)
   default     = {}
   nullable    = false
@@ -108,6 +110,18 @@ variable "secret_env" {
   type        = map(string)
   default     = {}
   nullable    = false
+}
+
+variable "secret_files" {
+  description = "Other secret settings to mount as files: variable name, ending in _FILE, to Secret Manager secret ID."
+  type        = map(string)
+  default     = {}
+  nullable    = false
+
+  validation {
+    condition     = alltrue([for name in keys(var.secret_files) : endswith(name, "_FILE")])
+    error_message = "The names of secret_files end in _FILE: the variable holds the path of the mounted file."
+  }
 }
 
 variable "cpu" {

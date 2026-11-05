@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 terraform {
-  required_version = ">= 1.9"
+  required_version = ">= 1.11"
 
   required_providers {
     google = {
@@ -12,27 +12,33 @@ terraform {
 }
 
 locals {
-  kek_mount_path = "/secrets/kek"
-  kek_file       = "kek"
+  base_env = {
+    MY_HOST            = var.host
+    MY_ROLE            = var.role
+    MY_PROFILE         = var.profile
+    MY_TRUSTED_PROXIES = var.trusted_proxies
+  }
 
-  base_env = merge(
-    {
-      MY_HOST            = var.host
-      MY_ROLE            = var.role
-      MY_PROFILE         = var.profile
-      MY_TRUSTED_PROXIES = var.trusted_proxies
-    },
-    var.kek_secret_id == null ? {} : { MY_KEK_FILE = "${local.kek_mount_path}/${local.kek_file}" },
-  )
+  # Each one is mounted at a directory of its own, and its variable names the path.
+  secret_files = merge(var.secret_files, [for b in var.backends : b.secret_files]...)
+  file_mounts = {
+    for name, secret in local.secret_files : name => {
+      secret = secret
+      volume = lower(replace(name, "_", "-"))
+      path   = "/secrets/${lower(replace(name, "_", "-"))}"
+    }
+  }
+  file_env = { for name, mount in local.file_mounts : name => "${mount.path}/value" }
 
   # Every setting by the name the server reads: MY_KEK and MY_KEK_FILE are one setting.
   setting_names = [
     for name in concat(
       ["GOMEMLIMIT"],
       keys(local.base_env),
-      flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env))]),
+      flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files))]),
       keys(var.env),
       keys(var.secret_env),
+      keys(var.secret_files),
     ) : trimsuffix(name, "_FILE")
   ]
   duplicate_settings = [
@@ -41,13 +47,16 @@ locals {
   ]
 
   # merge() alone would let the last one win without a word; the precondition below refuses that first.
-  env        = merge(local.base_env, var.env, [for b in var.backends : b.env]...)
+  env        = merge(local.base_env, local.file_env, var.env, [for b in var.backends : b.env]...)
   secret_env = merge(var.secret_env, [for b in var.backends : b.secret_env]...)
 
-  secret_ids = toset(concat(
-    values(local.secret_env),
-    var.kek_secret_id == null ? [] : [var.kek_secret_id],
-  ))
+  secret_ids = toset(concat(values(local.secret_env), values(local.secret_files)))
+
+  # The server refuses to start without these, but only once it runs: say it at plan time.
+  key_manager = lookup(local.env, "MY_KEY_MANAGER", "local")
+  kek_missing = (
+    local.key_manager == "local" ? !contains(local.setting_names, "MY_KEK") : !contains(local.setting_names, "MY_KMS_KEY")
+  )
 
   roles    = flatten([for b in var.backends : b.roles])
   invokers = toset(flatten([for b in var.backends : b.invokers]))
@@ -67,7 +76,11 @@ resource "google_service_account" "server" {
   lifecycle {
     precondition {
       condition     = length(local.duplicate_settings) == 0
-      error_message = "These settings are named more than once across the backends, env, secret_env, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
+      error_message = "These settings are named more than once across the backends, env, secret_env, secret_files, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
+    }
+    precondition {
+      condition     = !local.kek_missing
+      error_message = "No KEK: with key_manager = ${local.key_manager} the server needs ${local.key_manager == "local" ? "kek" : "kms_key"}. Add a kek-* module to backends."
     }
   }
 }
@@ -119,6 +132,14 @@ resource "google_service_account_iam_member" "backend" {
   member             = google_service_account.server.member
 }
 
+resource "google_kms_crypto_key_iam_member" "backend" {
+  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "crypto_key" }
+
+  crypto_key_id = each.value.resource
+  role          = each.value.role
+  member        = google_service_account.server.member
+}
+
 resource "google_secret_manager_secret_iam_member" "server" {
   for_each = local.secret_ids
 
@@ -146,14 +167,14 @@ resource "google_cloud_run_v2_service" "server" {
     }
 
     dynamic "volumes" {
-      for_each = var.kek_secret_id == null ? [] : [var.kek_secret_id]
+      for_each = local.file_mounts
       content {
-        name = "kek"
+        name = volumes.value.volume
         secret {
-          secret = volumes.value
+          secret = volumes.value.secret
           items {
             version = "latest"
-            path    = local.kek_file
+            path    = "value"
           }
         }
       }
@@ -204,10 +225,10 @@ resource "google_cloud_run_v2_service" "server" {
       }
 
       dynamic "volume_mounts" {
-        for_each = var.kek_secret_id == null ? [] : [var.kek_secret_id]
+        for_each = local.file_mounts
         content {
-          name       = "kek"
-          mount_path = local.kek_mount_path
+          name       = volume_mounts.value.volume
+          mount_path = volume_mounts.value.path
         }
       }
 
@@ -259,6 +280,7 @@ resource "google_cloud_run_v2_service" "server" {
     google_pubsub_topic_iam_member.backend,
     google_cloud_tasks_queue_iam_member.backend,
     google_service_account_iam_member.backend,
+    google_kms_crypto_key_iam_member.backend,
     google_secret_manager_secret_iam_member.server,
   ]
 }
@@ -285,14 +307,14 @@ resource "google_cloud_run_v2_job" "one_off" {
       max_retries = 0
 
       dynamic "volumes" {
-        for_each = var.kek_secret_id == null ? [] : [var.kek_secret_id]
+        for_each = local.file_mounts
         content {
-          name = "kek"
+          name = volumes.value.volume
           secret {
-            secret = volumes.value
+            secret = volumes.value.secret
             items {
               version = "latest"
-              path    = local.kek_file
+              path    = "value"
             }
           }
         }
@@ -336,10 +358,10 @@ resource "google_cloud_run_v2_job" "one_off" {
         }
 
         dynamic "volume_mounts" {
-          for_each = var.kek_secret_id == null ? [] : [var.kek_secret_id]
+          for_each = local.file_mounts
           content {
-            name       = "kek"
-            mount_path = local.kek_mount_path
+            name       = volume_mounts.value.volume
+            mount_path = volume_mounts.value.path
           }
         }
       }
@@ -362,6 +384,7 @@ resource "google_cloud_run_v2_job" "one_off" {
     google_pubsub_topic_iam_member.backend,
     google_cloud_tasks_queue_iam_member.backend,
     google_service_account_iam_member.backend,
+    google_kms_crypto_key_iam_member.backend,
     google_secret_manager_secret_iam_member.server,
   ]
 }

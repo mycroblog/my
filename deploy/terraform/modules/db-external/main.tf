@@ -4,7 +4,7 @@
 # the operator created by hand, so its value never reaches the state.
 
 terraform {
-  required_version = ">= 1.9"
+  required_version = ">= 1.11"
 }
 
 variable "url_secret_id" {

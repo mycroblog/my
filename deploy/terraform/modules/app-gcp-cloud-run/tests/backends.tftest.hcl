@@ -12,11 +12,11 @@ mock_provider "google" {
 }
 
 variables {
-  project_id    = "p"
-  region        = "asia-northeast1"
-  image         = "ghcr.io/mycroblog/my:0.1.0"
-  host          = "social.example.org"
-  kek_secret_id = "kek"
+  project_id   = "p"
+  region       = "asia-northeast1"
+  image        = "ghcr.io/mycroblog/my:0.1.0"
+  host         = "social.example.org"
+  secret_files = { MY_KEK_FILE = "kek" }
   backends = [
     {
       env        = { MY_DATABASE = "postgres" }
@@ -44,7 +44,7 @@ run "merges_every_source" {
     condition = output.env == {
       MY_DATABASE        = "postgres"
       MY_HOST            = "social.example.org"
-      MY_KEK_FILE        = "/secrets/kek/kek"
+      MY_KEK_FILE        = "/secrets/my-kek-file/value"
       MY_MAIL            = "smtp"
       MY_PROFILE         = "production"
       MY_QUEUE           = "cloudtasks"
@@ -195,5 +195,165 @@ run "console_on" {
   assert {
     condition     = output.console.platform == "gcp-cloud-run" && output.console.project == "p" && output.console.region == "asia-northeast1"
     error_message = "the console output does not say how to run it"
+  }
+}
+
+run "no_kek_fails" {
+  command = plan
+
+  variables {
+    secret_files = {}
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_kms_without_a_key_fails" {
+  command = plan
+
+  variables {
+    secret_files = {}
+    env          = { MY_KEY_MANAGER = "gcpkms" }
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_secret_file_needs_a_file_name" {
+  command = plan
+
+  variables {
+    secret_files = { MY_KEK = "kek" }
+  }
+
+  expect_failures = [var.secret_files]
+}
+
+# Swapping the KEK: the same app with each kek-* module, in one line of backends.
+run "kek_generated_in_secret_manager" {
+  command = plan
+
+  module {
+    source = "../kek-gcp-secret-manager"
+  }
+
+  variables {
+    project_id = "p"
+  }
+
+  assert {
+    condition     = google_secret_manager_secret_version.kek[0].secret_data_wo_version == 1 && google_secret_manager_secret_version.kek[0].deletion_policy == "ABANDON"
+    error_message = "the version of the generated KEK must stay fixed, and survive leaving the configuration"
+  }
+}
+
+# Applied, for run.* to read its outputs below; nothing with prevent_destroy is created.
+run "kek_in_secret_manager" {
+  module {
+    source = "../kek-gcp-secret-manager"
+  }
+
+  variables {
+    project_id = "p"
+    create     = false
+  }
+
+  assert {
+    condition     = length(google_secret_manager_secret_version.kek) == 0
+    error_message = "a secret made elsewhere must get no version from this module"
+  }
+}
+
+run "kek_in_kms" {
+  command = plan
+
+  module {
+    source = "../kek-gcp-kms"
+  }
+
+  variables {
+    project_id = "p"
+    location   = "asia-northeast1"
+  }
+
+  assert {
+    condition     = length(google_kms_crypto_key.kek) == 1
+    error_message = "the module must create the key"
+  }
+}
+
+# Applied, for run.* to read its outputs below; nothing with prevent_destroy is created.
+run "kek_in_kms_made_elsewhere" {
+  module {
+    source = "../kek-gcp-kms"
+  }
+
+  variables {
+    project_id    = "p"
+    location      = "asia-northeast1"
+    crypto_key_id = "projects/p/locations/l/keyRings/r/cryptoKeys/other"
+  }
+
+  assert {
+    condition     = length(google_kms_crypto_key.kek) == 0 && output.env["MY_KMS_KEY"] == "projects/p/locations/l/keyRings/r/cryptoKeys/other"
+    error_message = "a key made elsewhere must be used, and none created"
+  }
+}
+
+run "app_with_the_secret_manager_kek" {
+  command = plan
+
+  variables {
+    secret_files = {}
+    backends = [
+      { secret_files = run.kek_in_secret_manager.secret_files },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_KEK_FILE"] == "/secrets/my-kek-file/value" && !contains(keys(output.env), "MY_KEY_MANAGER")
+    error_message = "the KEK must arrive as a mounted file"
+  }
+
+  assert {
+    condition     = keys(google_secret_manager_secret_iam_member.server) == ["my-kek"] && length(google_kms_crypto_key_iam_member.backend) == 0
+    error_message = "the service account must read the secret and hold no role on a key"
+  }
+
+  assert {
+    condition     = one(google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].volumes).secret[0].secret == "my-kek"
+    error_message = "the jobs must mount the KEK as the service does"
+  }
+}
+
+run "app_with_the_kms_kek" {
+  command = plan
+
+  variables {
+    secret_files    = {}
+    console_enabled = true
+    backends = [
+      { env = run.kek_in_kms_made_elsewhere.env, roles = run.kek_in_kms_made_elsewhere.roles },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_KEY_MANAGER"] == "gcpkms" && output.env["MY_KMS_KEY"] == "projects/p/locations/l/keyRings/r/cryptoKeys/other" && !contains(keys(output.env), "MY_KEK_FILE")
+    error_message = "the KMS settings must replace the mounted file"
+  }
+
+  assert {
+    condition     = keys(google_kms_crypto_key_iam_member.backend) == ["projects/p/locations/l/keyRings/r/cryptoKeys/other/roles/cloudkms.cryptoKeyEncrypterDecrypter"] && length(google_project_iam_member.backend) == 0
+    error_message = "the grant must be on the key, not on the project"
+  }
+
+  assert {
+    condition     = length(google_secret_manager_secret_iam_member.server) == 0
+    error_message = "the KMS needs no secret"
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_job.one_off["console"].template[0].template[0].service_account == google_service_account.server.email && google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].service_account == google_service_account.server.email
+    error_message = "the jobs must run as the account that holds the grant"
   }
 }

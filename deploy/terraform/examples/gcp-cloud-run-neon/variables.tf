@@ -27,6 +27,12 @@ variable "database_url_secret_id" {
   default     = "my-database-url"
 }
 
+variable "vapid_secret_id" {
+  description = "Secret that holds the private key of Web Push."
+  type        = string
+  default     = "my-vapid-key"
+}
+
 variable "kek_secret_id" {
   description = "Secret that holds the KEK."
   type        = string
@@ -44,6 +50,33 @@ variable "bucket_location" {
   default     = "asia-northeast1"
 }
 
+variable "mail_from" {
+  description = "Sender address of emails, as a bare address."
+  type        = string
+}
+
+variable "mail_smtp_host" {
+  description = "Host name of the SMTP server."
+  type        = string
+}
+
+variable "mail_smtp_port" {
+  description = "TCP port of the SMTP server."
+  type        = number
+  default     = 587
+}
+
+variable "mail_smtp_username" {
+  description = "User name for SMTP AUTH."
+  type        = string
+}
+
+variable "mail_smtp_password_secret_id" {
+  description = "Secret that holds the SMTP password."
+  type        = string
+  default     = "my-smtp-password"
+}
+
 variable "tick_schedule" {
   description = "Cron schedule of the tick, in UTC."
   type        = string
@@ -51,7 +84,7 @@ variable "tick_schedule" {
 }
 
 variable "env" {
-  description = "Other settings by variable name: mail and so on."
+  description = "Other settings by variable name, for everything no module covers."
   type        = map(string)
   default     = {}
 }
