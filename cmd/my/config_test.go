@@ -70,7 +70,7 @@ func TestRunConfig(t *testing.T) {
 		{
 			name:       "the origin check says what it cannot see",
 			args:       []string{"config", "check"},
-			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DATABASE_URL": "file:my.db", "MY_KEK": kek, "MY_ORIGIN_SECRET": "0123456789abcdef0123456789abcdef", "MY_ORIGIN_SECRET_HEADER": "X-Via-Cdn", "LC_ALL": "C"},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_DATABASE_URL": "file:my.db", "MY_KEK": kek, "MY_ORIGIN_SECRET": "0123456789abcdef0123456789abcdef", "MY_ORIGIN_SECRET_HEADER": "X-Via-Cdn", "LC_ALL": "C"}, //nolint:gosec // G101: made-up values of the test
 			wantCode:   0,
 			wantStdout: []string{"origin check: on", "X-Via-Cdn", "cannot see the CDN", "configuration OK"},
 			wantAbsent: []string{"0123456789abcdef0123456789abcdef"},
@@ -78,7 +78,7 @@ func TestRunConfig(t *testing.T) {
 		{
 			name:       "the origin check of the maintenance mode",
 			args:       []string{"config", "check", "-maintenance"},
-			env:        map[string]string{"MY_HOST": "social.example.org", "MY_ORIGIN_SECRET": "0123456789abcdef0123456789abcdef", "MY_ORIGIN_SECRET_HEADER": "X-Via-Cdn", "LC_ALL": "C"},
+			env:        map[string]string{"MY_HOST": "social.example.org", "MY_ORIGIN_SECRET": "0123456789abcdef0123456789abcdef", "MY_ORIGIN_SECRET_HEADER": "X-Via-Cdn", "LC_ALL": "C"}, //nolint:gosec // G101: made-up values of the test
 			wantCode:   0,
 			wantStdout: []string{"origin check: on", "configuration OK"},
 			wantAbsent: []string{"0123456789abcdef0123456789abcdef"},

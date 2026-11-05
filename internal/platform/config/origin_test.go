@@ -53,9 +53,9 @@ func TestOriginSecretCombinations(t *testing.T) {
 		wantKey string
 	}{
 		{"no header", map[string]string{"MY_ORIGIN_SECRET": testOriginSecret}, "origin_secret_header"},
-		{"no secret", map[string]string{"MY_ORIGIN_SECRET_HEADER": "X-Via-Cdn"}, "origin_secret_header"},
+		{"no secret", map[string]string{"MY_ORIGIN_SECRET_HEADER": "X-Via-Cdn"}, "origin_secret_header"}, //nolint:gosec // G101: made-up values of the test
 		{"only previous", map[string]string{"MY_ORIGIN_SECRET_PREVIOUS": testOriginPrevious}, "origin_secret_previous"},
-		{"same twice", map[string]string{"MY_ORIGIN_SECRET": testOriginSecret, "MY_ORIGIN_SECRET_PREVIOUS": testOriginSecret, "MY_ORIGIN_SECRET_HEADER": "X-Via-Cdn"}, "origin_secret_previous"},
+		{"same twice", map[string]string{"MY_ORIGIN_SECRET": testOriginSecret, "MY_ORIGIN_SECRET_PREVIOUS": testOriginSecret, "MY_ORIGIN_SECRET_HEADER": "X-Via-Cdn"}, "origin_secret_previous"}, //nolint:gosec // G101: made-up values of the test
 		{"a header that the CDN refuses", map[string]string{"MY_ORIGIN_SECRET": testOriginSecret, "MY_ORIGIN_SECRET_HEADER": "cf-secret"}, "origin_secret_header"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
