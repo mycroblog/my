@@ -148,15 +148,13 @@ resource "cloudflare_ruleset" "firewall" {
 }
 
 output "env" {
-  description = "Cloud Run's front end connects to the server, Cloudflare to Cloud Run. Walking X-Forwarded-For from the right past both reaches the client that connected to Cloudflare."
-  value = {
-    MY_TRUSTED_PROXIES = join(", ", concat(
-      ["169.254.0.0/16"],
-      data.cloudflare_ip_ranges.this.ipv4_cidrs,
-      data.cloudflare_ip_ranges.this.ipv6_cidrs,
-    ))
-    MY_TRUSTED_PROXY_HEADER = "x-forwarded-for"
-  }
+  description = "The header that the proxies write."
+  value       = { MY_TRUSTED_PROXY_HEADER = "x-forwarded-for" }
+}
+
+output "trusted_proxies" {
+  description = "Cloudflare connects to the platform, whose own front end the app module adds. Walking X-Forwarded-For from the right past both reaches the client that connected to Cloudflare."
+  value       = concat(data.cloudflare_ip_ranges.this.ipv4_cidrs, data.cloudflare_ip_ranges.this.ipv6_cidrs)
 }
 
 output "secret_env" {

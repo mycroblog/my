@@ -69,6 +69,8 @@ variable "backends" {
     invokers = optional(list(string), [])
     # What an ingress needs of the service: who may reach it.
     service_ingress = optional(string)
+    # What an ingress puts in front of the service. The app adds Cloud Run's own front end.
+    trusted_proxies = optional(list(string))
   }))
   default  = []
   nullable = false

@@ -12,20 +12,24 @@ terraform {
 }
 
 locals {
-  # An ingress says who connects to the server. Without one, the connection comes from Cloud Run's own front end.
   named_settings = concat(
     flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files))]),
     keys(var.env),
     keys(var.secret_env),
     keys(var.secret_files),
   )
+  # Cloud Run's own front end connects to the server, and an ingress says what connects to Cloud Run. MY_TRUSTED_PROXIES in
+  # env replaces the value only without an ingress: with one, the setting is named twice and fails.
+  ingress_trust = [for b in var.backends : b.trusted_proxies if b.trusted_proxies != null]
   base_env = merge(
     {
       MY_HOST    = var.host
       MY_ROLE    = var.role
       MY_PROFILE = var.profile
     },
-    contains(local.named_settings, "MY_TRUSTED_PROXIES") ? {} : { MY_TRUSTED_PROXIES = "169.254.0.0/16" },
+    contains(local.named_settings, "MY_TRUSTED_PROXIES") && length(local.ingress_trust) == 0 ? {} : {
+      MY_TRUSTED_PROXIES = join(", ", concat(["169.254.0.0/16"], flatten(local.ingress_trust)))
+    },
   )
 
   service_ingresses = distinct(compact([for b in var.backends : b.service_ingress]))
@@ -86,6 +90,10 @@ resource "google_service_account" "server" {
     precondition {
       condition     = length(local.service_ingresses) <= 1
       error_message = "The backends ask for different ingress settings of the service: ${join(", ", local.service_ingresses)}. Use one ingress-* module."
+    }
+    precondition {
+      condition     = length(local.ingress_trust) <= 1
+      error_message = "More than one backend says what is in front of the service with trusted_proxies. Use one ingress-* module for that; a media host returns none."
     }
     precondition {
       condition     = !local.kek_missing

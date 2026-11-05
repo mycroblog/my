@@ -22,7 +22,7 @@ run "the_contract" {
   command = plan
 
   assert {
-    condition     = output.env["MY_TRUSTED_PROXIES"] == "169.254.0.0/16, 173.245.48.0/20, 2400:cb00::/32" && output.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for"
+    condition     = output.trusted_proxies == tolist(["173.245.48.0/20", "2400:cb00::/32"]) && output.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for"
     error_message = "the server must walk past Cloud Run's front end and Cloudflare"
   }
 

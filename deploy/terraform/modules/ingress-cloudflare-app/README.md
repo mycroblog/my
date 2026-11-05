@@ -27,7 +27,8 @@ module "ingress" {
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_TRUSTED_PROXIES`, `MY_TRUSTED_PROXY_HEADER` |
+| `env` | `MY_TRUSTED_PROXY_HEADER` |
+| `trusted_proxies` | Cloudflare's ranges. The app module adds the platform's own front end |
 | `secret_env`, `roles`, `dns_records` | Empty: it creates the record itself |
 | `service_ingress` | `INGRESS_TRAFFIC_ALL` |
 

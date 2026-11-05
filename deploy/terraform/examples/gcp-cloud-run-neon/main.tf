@@ -150,8 +150,8 @@ module "app" {
   backends = [
     module.secrets, module.kek, module.db, module.queue, module.blob, module.stream, module.mail,
     # Named output by output, unlike the rest: the ingress reads the service's name, so its dns_records depend on the app,
-    # and a reference to the whole module would be a cycle. These two outputs do not.
-    { env = module.ingress.env, service_ingress = module.ingress.service_ingress },
+    # and a reference to the whole module would be a cycle. These three outputs do not.
+    { env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
   ]
 
   env = merge(

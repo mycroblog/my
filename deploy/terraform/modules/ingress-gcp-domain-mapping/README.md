@@ -23,7 +23,8 @@ module "ingress" {
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_TRUSTED_PROXIES`: `169.254.0.0/16`, Cloud Run's front end |
+| `env` | Empty |
+| `trusted_proxies` | Empty: the app module adds `169.254.0.0/16`, Cloud Run's front end |
 | `secret_env`, `roles` | Empty |
 | `service_ingress` | `INGRESS_TRAFFIC_ALL` |
 | `dns_records` | The records to add at your DNS provider |

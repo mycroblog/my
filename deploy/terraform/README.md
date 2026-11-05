@@ -106,26 +106,26 @@ An `ingress-*` module decides how traffic reaches the app. It is a backend, with
 
 | Output | Type | Meaning |
 | --- | --- | --- |
-| `env` | `map(string)` | At least `MY_TRUSTED_PROXIES`: who connects to the server, so that it finds the client's address in `X-Forwarded-For` |
+| `trusted_proxies` | `list(string)` | What this ingress puts in front of the platform. The app module adds what the platform itself puts in front of the server (Cloud Run's `169.254.0.0/16`) and sets `MY_TRUSTED_PROXIES` from both, so that the server finds the client's address in `X-Forwarded-For` and the ingress does not need to know the platform |
 | `service_ingress` | `string` | Who may reach the service: `INGRESS_TRAFFIC_ALL`, or `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` when only a load balancer may |
 | `dns_records` | `list(object({ name, type, rrdata }))` | What to add at the DNS provider |
 
 It takes the service's name from the app (`service_name = module.app.service_name`) while the app takes its settings, which
-is no cycle as long as `env` and `service_ingress` do not depend on anything that reads the service's name. `dns_records` may,
-so `backends` names those two outputs rather than the whole module:
+is no cycle as long as `env`, `service_ingress`, and `trusted_proxies` do not depend on anything that reads the service's name.
+`dns_records` may, so `backends` names those three outputs rather than the whole module:
 
 ```hcl
-{ env = module.ingress.env, service_ingress = module.ingress.service_ingress },
+{ env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
 ```
 
-A module that only adds a host, such as `ingress-cloudflare-media`, returns no `MY_TRUSTED_PROXIES` and no `service_ingress`, so
+A module that only adds a host, such as `ingress-cloudflare-media`, returns no `trusted_proxies` and no `service_ingress`, so
 it sits beside any other. A Cloudflare zone has one ruleset per phase, so two modules in one zone share them: one owns them, and
 takes the other's `rules` as `extra_rules`.
 
 Swapping one for another changes only the module block. An ingress may also be left out, for a deployment that uses the
 service's own URL or has something else in front. Remove the block and that line: the service is then open
-(`INGRESS_TRAFFIC_ALL`), and `MY_TRUSTED_PROXIES` is `169.254.0.0/16`, or what `env` of the app says. Two ingresses that ask
-for different settings fail the plan.
+(`INGRESS_TRAFFIC_ALL`), and `MY_TRUSTED_PROXIES` is only what the platform puts in front, or what `env` of the app says. Setting
+it in `env` beside an ingress that names proxies fails the plan, and so do two ingresses that ask for different settings.
 
 ## The app contract
 

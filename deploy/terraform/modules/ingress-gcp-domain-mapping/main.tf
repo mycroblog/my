@@ -53,8 +53,13 @@ resource "google_cloud_run_domain_mapping" "host" {
 }
 
 output "env" {
-  description = "The peer of the server is Cloud Run's front end, and the header ends in the client's address."
-  value       = { MY_TRUSTED_PROXIES = "169.254.0.0/16" }
+  description = "No settings."
+  value       = {}
+}
+
+output "trusted_proxies" {
+  description = "Nothing beyond Cloud Run's front end, which the app module adds: the header ends in the client's address."
+  value       = []
 }
 
 output "secret_env" {

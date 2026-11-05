@@ -442,7 +442,7 @@ run "app_with_the_domain_mapping" {
 
   variables {
     backends = [
-      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress },
+      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress, trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
     ]
   }
 
@@ -457,7 +457,7 @@ run "app_with_the_load_balancer" {
 
   variables {
     backends = [
-      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress },
+      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
     ]
   }
 
@@ -510,7 +510,7 @@ run "media_beside_the_domain_mapping" {
 
   variables {
     backends = [
-      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress },
+      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress, trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
       { env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
     ]
   }
@@ -526,7 +526,7 @@ run "media_beside_the_load_balancer" {
 
   variables {
     backends = [
-      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress },
+      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
       { env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
     ]
   }
@@ -542,8 +542,8 @@ run "two_ingresses_that_set_trust_fail" {
 
   variables {
     backends = [
-      { env = run.ingress_domain_mapping.env },
-      { env = run.ingress_load_balancer.env },
+      { trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
+      { trusted_proxies = run.ingress_load_balancer.trusted_proxies },
     ]
   }
 
