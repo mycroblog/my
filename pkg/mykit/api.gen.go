@@ -5693,7 +5693,7 @@ type AdminHookDecision struct {
 	// Reason The coded reason of a verdict.
 	Reason *HookReason `json:"reason,omitempty"`
 
-	// RestorableUntil For a `drop` of `inbound.status`: until about when cancelling it processes the activity again,
+	// RestorableUntil For a `drop` of `inbound.status` or `inbound.follow`: until about when cancelling it processes the activity again,
 	// which needs the document as it was received. After that, cancelling records the cancellation
 	// and brings nothing back. Absent for any other decision.
 	RestorableUntil *time.Time `json:"restorable_until,omitempty"`

@@ -13,13 +13,6 @@ ON CONFLICT (activity_uri) DO NOTHING;
 SELECT activity_uri, actor_uri, type, signature_scheme, trust, received_at FROM received_activities
 WHERE activity_uri = @activity_uri;
 
--- GetReceivedActivityWithDocument returns a received activity while its document is kept.
--- name: GetReceivedActivityWithDocument :one
-SELECT a.activity_uri, a.actor_uri, a.type, a.signature_scheme, a.trust, a.received_at
-FROM received_activities a
-JOIN received_activity_documents d ON d.activity_uri = a.activity_uri
-WHERE a.activity_uri = @activity_uri;
-
 -- name: InsertReceivedActivityDocument :exec
 INSERT INTO received_activity_documents (activity_uri, document) VALUES (@activity_uri, @document)
 ON CONFLICT (activity_uri) DO NOTHING;

@@ -7,7 +7,7 @@
 // `voice = p2p` on a database and a port of its own, where every user may start a voice chat room
 // (`voice_room_starters = everyone`), so that the other specs keep a server with voice chat off.
 // With the argument `demo` it starts the demo server (ADR-0015 §7, §8): the test build (`GO_TAGS=e2e_fakes`) with the
-// fake payment provider and its email sent to the development Mailpit, on a fresh database and a port of its own.
+// fake payment provider, the fake search (accounts allow it by default, so that their posts are found) and its email sent to the development Mailpit, on a fresh database and a port of its own.
 // Once the server answers, demo/seed.ts (run by Bun, which reads @mycroblog/mykit from its sources) applies the demo
 // scenario, and the script prints "demo: ready", which Playwright and `scripts/task.sh web:demo` wait for. It needs
 // Mailpit (`scripts/task.sh docker:mailpit`) and stops at once without it. The demo server has Web Push on (ADR-0015
@@ -111,7 +111,9 @@ db.close();
 if (which === "voice") {
   // The spec creates its users with `bin/my`; any of them may open a room.
   runMy(["instance", "set", "voice_room_starters", "everyone"], "", which);
-} else if (which === "main") {
+} else if (which === "demo") {
+  runMy(["instance", "set", "indexable_default", "true"], "", which);
+} else {
   runMy(["admin", "create", "-username", "alice", "-email", admin.email], `${admin.password}\n`);
 
   // The documents, one text each that every locale shows, so that every project's pages link to them (#489).

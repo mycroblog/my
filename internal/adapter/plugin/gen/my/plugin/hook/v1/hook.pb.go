@@ -174,6 +174,8 @@ type CheckRequest struct {
 	Probe bool `protobuf:"varint,3,opt,name=probe,proto3" json:"probe,omitempty"`
 	// What inbound.status reviews; empty on the calls of the other hooks and on probes.
 	InboundStatus *InboundStatus `protobuf:"bytes,4,opt,name=inbound_status,json=inboundStatus,proto3" json:"inbound_status,omitempty"`
+	// The two parties of the follow, for inbound.follow.
+	Follow *FollowSubject `protobuf:"bytes,5,opt,name=follow,proto3" json:"follow,omitempty"`
 	// What signup.check reviews; empty on the calls of the other hooks and on probes.
 	Signup        *SignupSubject `protobuf:"bytes,6,opt,name=signup,proto3" json:"signup,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -234,6 +236,13 @@ func (x *CheckRequest) GetProbe() bool {
 func (x *CheckRequest) GetInboundStatus() *InboundStatus {
 	if x != nil {
 		return x.InboundStatus
+	}
+	return nil
+}
+
+func (x *CheckRequest) GetFollow() *FollowSubject {
+	if x != nil {
+		return x.Follow
 	}
 	return nil
 }
@@ -429,6 +438,61 @@ func (x *InboundStatus) GetLocalMentionCount() int32 {
 	return 0
 }
 
+// What inbound.follow asks about: a follow from another server of an account on this one.
+type FollowSubject struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The ActivityPub id of the account that follows.
+	FollowerUri string `protobuf:"bytes,1,opt,name=follower_uri,json=followerUri,proto3" json:"follower_uri,omitempty"`
+	// The ActivityPub id of the account on this server that it follows.
+	FolloweeUri   string `protobuf:"bytes,2,opt,name=followee_uri,json=followeeUri,proto3" json:"followee_uri,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FollowSubject) Reset() {
+	*x = FollowSubject{}
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FollowSubject) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FollowSubject) ProtoMessage() {}
+
+func (x *FollowSubject) ProtoReflect() protoreflect.Message {
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FollowSubject.ProtoReflect.Descriptor instead.
+func (*FollowSubject) Descriptor() ([]byte, []int) {
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *FollowSubject) GetFollowerUri() string {
+	if x != nil {
+		return x.FollowerUri
+	}
+	return ""
+}
+
+func (x *FollowSubject) GetFolloweeUri() string {
+	if x != nil {
+		return x.FolloweeUri
+	}
+	return ""
+}
+
 // SignupSubject is a sign-up that is not from an invitation, once its CAPTCHA and the sign-up block
 // list passed it. The subject_key of the call is the ID the account would get, which identifies
 // this attempt alone: an applicant who tries again is a new subject.
@@ -444,7 +508,7 @@ type SignupSubject struct {
 
 func (x *SignupSubject) Reset() {
 	*x = SignupSubject{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[2]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -456,7 +520,7 @@ func (x *SignupSubject) String() string {
 func (*SignupSubject) ProtoMessage() {}
 
 func (x *SignupSubject) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[2]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -469,7 +533,7 @@ func (x *SignupSubject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignupSubject.ProtoReflect.Descriptor instead.
 func (*SignupSubject) Descriptor() ([]byte, []int) {
-	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{2}
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SignupSubject) GetEmail() string {
@@ -503,7 +567,7 @@ type CheckResponse struct {
 
 func (x *CheckResponse) Reset() {
 	*x = CheckResponse{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[3]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -515,7 +579,7 @@ func (x *CheckResponse) String() string {
 func (*CheckResponse) ProtoMessage() {}
 
 func (x *CheckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[3]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -528,7 +592,7 @@ func (x *CheckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckResponse.ProtoReflect.Descriptor instead.
 func (*CheckResponse) Descriptor() ([]byte, []int) {
-	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{3}
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CheckResponse) GetVerdict() Verdict {
@@ -564,7 +628,7 @@ type InboundStatus_Body struct {
 
 func (x *InboundStatus_Body) Reset() {
 	*x = InboundStatus_Body{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[4]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -576,7 +640,7 @@ func (x *InboundStatus_Body) String() string {
 func (*InboundStatus_Body) ProtoMessage() {}
 
 func (x *InboundStatus_Body) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[4]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -621,7 +685,7 @@ type InboundStatus_Attachment struct {
 
 func (x *InboundStatus_Attachment) Reset() {
 	*x = InboundStatus_Attachment{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[5]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -633,7 +697,7 @@ func (x *InboundStatus_Attachment) String() string {
 func (*InboundStatus_Attachment) ProtoMessage() {}
 
 func (x *InboundStatus_Attachment) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[5]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -681,13 +745,14 @@ var File_my_plugin_hook_v1_hook_proto protoreflect.FileDescriptor
 
 const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\n" +
-	"\x1cmy/plugin/hook/v1/hook.proto\x12\x11my.plugin.hook.v1\"\xdc\x01\n" +
+	"\x1cmy/plugin/hook/v1/hook.proto\x12\x11my.plugin.hook.v1\"\x96\x02\n" +
 	"\fCheckRequest\x12\x12\n" +
 	"\x04hook\x18\x01 \x01(\tR\x04hook\x12\x1f\n" +
 	"\vsubject_key\x18\x02 \x01(\tR\n" +
 	"subjectKey\x12\x14\n" +
 	"\x05probe\x18\x03 \x01(\bR\x05probe\x12G\n" +
 	"\x0einbound_status\x18\x04 \x01(\v2 .my.plugin.hook.v1.InboundStatusR\rinboundStatus\x128\n" +
+	"\x06follow\x18\x05 \x01(\v2 .my.plugin.hook.v1.FollowSubjectR\x06follow\x128\n" +
 	"\x06signup\x18\x06 \x01(\v2 .my.plugin.hook.v1.SignupSubjectR\x06signup\"\xe2\x06\n" +
 	"\rInboundStatus\x12#\n" +
 	"\ractivity_type\x18\x01 \x01(\tR\factivityType\x12\x1d\n" +
@@ -721,7 +786,10 @@ const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x10\n" +
 	"\x03url\x18\x02 \x01(\tR\x03url\x12!\n" +
 	"\fcontent_type\x18\x03 \x01(\tR\vcontentType\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\"5\n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\"U\n" +
+	"\rFollowSubject\x12!\n" +
+	"\ffollower_uri\x18\x01 \x01(\tR\vfollowerUri\x12!\n" +
+	"\ffollowee_uri\x18\x02 \x01(\tR\vfolloweeUri\"5\n" +
 	"\rSignupSubject\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x0e\n" +
 	"\x02ip\x18\x02 \x01(\tR\x02ip\"\x8c\x01\n" +
@@ -763,31 +831,33 @@ func file_my_plugin_hook_v1_hook_proto_rawDescGZIP() []byte {
 }
 
 var file_my_plugin_hook_v1_hook_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_my_plugin_hook_v1_hook_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_my_plugin_hook_v1_hook_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_my_plugin_hook_v1_hook_proto_goTypes = []any{
 	(Verdict)(0),                     // 0: my.plugin.hook.v1.Verdict
 	(Reason)(0),                      // 1: my.plugin.hook.v1.Reason
 	(*CheckRequest)(nil),             // 2: my.plugin.hook.v1.CheckRequest
 	(*InboundStatus)(nil),            // 3: my.plugin.hook.v1.InboundStatus
-	(*SignupSubject)(nil),            // 4: my.plugin.hook.v1.SignupSubject
-	(*CheckResponse)(nil),            // 5: my.plugin.hook.v1.CheckResponse
-	(*InboundStatus_Body)(nil),       // 6: my.plugin.hook.v1.InboundStatus.Body
-	(*InboundStatus_Attachment)(nil), // 7: my.plugin.hook.v1.InboundStatus.Attachment
+	(*FollowSubject)(nil),            // 4: my.plugin.hook.v1.FollowSubject
+	(*SignupSubject)(nil),            // 5: my.plugin.hook.v1.SignupSubject
+	(*CheckResponse)(nil),            // 6: my.plugin.hook.v1.CheckResponse
+	(*InboundStatus_Body)(nil),       // 7: my.plugin.hook.v1.InboundStatus.Body
+	(*InboundStatus_Attachment)(nil), // 8: my.plugin.hook.v1.InboundStatus.Attachment
 }
 var file_my_plugin_hook_v1_hook_proto_depIdxs = []int32{
 	3, // 0: my.plugin.hook.v1.CheckRequest.inbound_status:type_name -> my.plugin.hook.v1.InboundStatus
-	4, // 1: my.plugin.hook.v1.CheckRequest.signup:type_name -> my.plugin.hook.v1.SignupSubject
-	6, // 2: my.plugin.hook.v1.InboundStatus.bodies:type_name -> my.plugin.hook.v1.InboundStatus.Body
-	7, // 3: my.plugin.hook.v1.InboundStatus.attachments:type_name -> my.plugin.hook.v1.InboundStatus.Attachment
-	0, // 4: my.plugin.hook.v1.CheckResponse.verdict:type_name -> my.plugin.hook.v1.Verdict
-	1, // 5: my.plugin.hook.v1.CheckResponse.reason:type_name -> my.plugin.hook.v1.Reason
-	2, // 6: my.plugin.hook.v1.HookService.Check:input_type -> my.plugin.hook.v1.CheckRequest
-	5, // 7: my.plugin.hook.v1.HookService.Check:output_type -> my.plugin.hook.v1.CheckResponse
-	7, // [7:8] is the sub-list for method output_type
-	6, // [6:7] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	4, // 1: my.plugin.hook.v1.CheckRequest.follow:type_name -> my.plugin.hook.v1.FollowSubject
+	5, // 2: my.plugin.hook.v1.CheckRequest.signup:type_name -> my.plugin.hook.v1.SignupSubject
+	7, // 3: my.plugin.hook.v1.InboundStatus.bodies:type_name -> my.plugin.hook.v1.InboundStatus.Body
+	8, // 4: my.plugin.hook.v1.InboundStatus.attachments:type_name -> my.plugin.hook.v1.InboundStatus.Attachment
+	0, // 5: my.plugin.hook.v1.CheckResponse.verdict:type_name -> my.plugin.hook.v1.Verdict
+	1, // 6: my.plugin.hook.v1.CheckResponse.reason:type_name -> my.plugin.hook.v1.Reason
+	2, // 7: my.plugin.hook.v1.HookService.Check:input_type -> my.plugin.hook.v1.CheckRequest
+	6, // 8: my.plugin.hook.v1.HookService.Check:output_type -> my.plugin.hook.v1.CheckResponse
+	8, // [8:9] is the sub-list for method output_type
+	7, // [7:8] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_my_plugin_hook_v1_hook_proto_init() }
@@ -801,7 +871,7 @@ func file_my_plugin_hook_v1_hook_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_my_plugin_hook_v1_hook_proto_rawDesc), len(file_my_plugin_hook_v1_hook_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

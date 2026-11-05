@@ -9787,7 +9787,7 @@ export interface components {
             overridden_at?: string;
             /**
              * Format: date-time
-             * @description For a `drop` of `inbound.status`: until about when cancelling it processes the activity again,
+             * @description For a `drop` of `inbound.status` or `inbound.follow`: until about when cancelling it processes the activity again,
              *     which needs the document as it was received. After that, cancelling records the cancellation
              *     and brings nothing back. Absent for any other decision.
              */

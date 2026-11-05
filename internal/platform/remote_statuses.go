@@ -40,11 +40,12 @@ func (a *App) registerStatusHandlers(repo federation.InboxRepository) {
 		// The posts that only relays bring in are kept for relay_status_retention_days (ADR-0006).
 		Relayed: a.Content, RelayPolicy: a.ModerationPolicy, Quotes: a.Content, Approvals: a.Interactions,
 		Review: federation.StatusReview{
-			Gate: a.Hooks, Sensitivity: a.Content, Reports: a.Moderation, Instance: a.Accounts, Settings: hookSettings{a}, Received: repo,
+			Gate: a.Hooks, Sensitivity: a.Content, Reports: a.Moderation, Instance: a.Accounts, Settings: hookSettings{a},
 		},
 		Clock: a.Clock, Host: a.Config.Host, Logger: a.Logger,
 	})
 	a.Hooks.RegisterOverrideEffect(hook.InboundStatus, a.RemoteStatuses.UndoReview)
+	a.Hooks.RegisterOverrideEffect(hook.InboundStatus, federation.RequeueDropped(repo, outbox))
 	a.RemoteStatuses.Register(a.InboxProcessor)
 	a.RemoteStatuses.RegisterJobs(a.Handlers)
 	federation.RegisterInteractionHandlers(a.InboxProcessor, federation.InteractionHandlersDeps{

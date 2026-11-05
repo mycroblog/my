@@ -59,6 +59,9 @@ func setSubject(req *hookv1.CheckRequest, subject any) error {
 	case apphook.InboundStatusSubject:
 		req.InboundStatus = inboundStatus(s)
 		return nil
+	case apphook.FollowSubject:
+		req.Follow = &hookv1.FollowSubject{FollowerUri: s.FollowerURI, FolloweeUri: s.FolloweeURI}
+		return nil
 	case apphook.SignupSubject:
 		req.Signup = &hookv1.SignupSubject{Email: s.Email, Ip: s.IP}
 		return nil

@@ -1038,5 +1038,45 @@
   "admin.settings.login_providers_only.label": {
     "defaultMessage": "Allow sign-in and registration only through login providers",
     "description": "Checkbox in the registration section of the server settings: limits sign-in and registration to login providers."
+  },
+  "admin.settings.search.title": {
+    "defaultMessage": "Post search",
+    "description": "Heading of the section of the server settings about the search of posts, shown only on a server with a search engine."
+  },
+  "admin.settings.search.description": {
+    "defaultMessage": "Which posts people signed in to this server can find by their words. Only accounts that allow it are covered, and unlisted, followers-only, and direct posts never are. What the server states to search engines is a separate setting.",
+    "description": "Explanation of the section of the server settings about the search of posts."
+  },
+  "admin.settings.search.visibilities": {
+    "defaultMessage": "Posts covered",
+    "description": "Label of the radio group of which posts the search covers (search_visibilities)."
+  },
+  "admin.settings.search.visibilities.description": {
+    "defaultMessage": "Removing a kind of post takes its posts out of the search. Adding one finds only new posts of it: older posts are not found until you rebuild the index (\"my search rebuild --keep\" on the server).",
+    "description": "Help text of which posts the search covers: narrowing takes effect, widening reaches older posts only after a rebuild."
+  },
+  "admin.settings.search.public": {
+    "defaultMessage": "Public posts",
+    "description": "Choice of search_visibilities: public posts only."
+  },
+  "admin.settings.search.public.description": {
+    "defaultMessage": "Public posts of this server and of the other servers' accounts it knows.",
+    "description": "Description of covering public posts."
+  },
+  "admin.settings.search.local": {
+    "defaultMessage": "Posts for this server",
+    "description": "Choice of search_visibilities: posts with the visibility 'This server' only."
+  },
+  "admin.settings.search.local.description": {
+    "defaultMessage": "Posts with the visibility \"This server\", and no public posts. Accounts that already allow search are not asked again, so tell your users first.",
+    "description": "Description of covering posts with the visibility 'This server' only."
+  },
+  "admin.settings.search.public_local": {
+    "defaultMessage": "Both",
+    "description": "Choice of search_visibilities: public posts and posts with the visibility 'This server'."
+  },
+  "admin.settings.search.public_local.description": {
+    "defaultMessage": "Public posts and posts with the visibility \"This server\". Accounts that already allow search are not asked again, so tell your users first.",
+    "description": "Description of covering public posts and posts with the visibility 'This server'."
   }
 }

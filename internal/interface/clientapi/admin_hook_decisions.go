@@ -66,7 +66,7 @@ func newHookDecision(r hook.Record) AdminHookDecision {
 	if r.Override != nil {
 		out.OverriddenAt = &r.Override.At
 	}
-	if d.Hook == hook.InboundStatus && d.Outcome == hook.Drop {
+	if (d.Hook == hook.InboundStatus || d.Hook == hook.InboundFollow) && d.Outcome == hook.Drop {
 		until := d.DecidedAt.Add(appfederation.ReceivedDocumentRetention)
 		out.RestorableUntil = &until
 	}

@@ -61,15 +61,18 @@ func (r *FederationRepository) FindReceivedDocument(ctx context.Context, activit
 	return doc, nil
 }
 
-// FindKeptReceivedActivityTx implements federation.InboxRepository.
-func (r *FederationRepository) FindKeptReceivedActivityTx(ctx context.Context, tx uow.Tx, activityURI federation.IRI) (federation.ReceivedActivity, error) {
+// KeptReceivedActivityTx implements federation.InboxRepository.
+func (r *FederationRepository) KeptReceivedActivityTx(ctx context.Context, tx uow.Tx, activityURI federation.IRI) (federation.ReceivedActivity, error) {
 	q, err := r.db.queries(tx)
 	if err != nil {
 		return federation.ReceivedActivity{}, err
 	}
-	row, err := q.GetReceivedActivityWithDocument(ctx, string(activityURI))
+	if _, err := q.GetReceivedActivityDocument(ctx, string(activityURI)); err != nil {
+		return federation.ReceivedActivity{}, notFound(err, appfederation.ErrNotFound, "document of received activity "+string(activityURI))
+	}
+	row, err := q.GetReceivedActivity(ctx, string(activityURI))
 	if err != nil {
-		return federation.ReceivedActivity{}, notFound(err, appfederation.ErrNotFound, "kept received activity "+string(activityURI))
+		return federation.ReceivedActivity{}, notFound(err, appfederation.ErrNotFound, "received activity "+string(activityURI))
 	}
 	return federation.ReceivedActivity{
 		ActivityURI: federation.IRI(row.ActivityUri), ActorURI: federation.IRI(row.ActorUri), Type: row.Type,

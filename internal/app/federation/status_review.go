@@ -4,7 +4,6 @@ package federation
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -49,8 +48,6 @@ type StatusReview struct {
 	Reports     HookReports
 	Instance    ReviewInstanceActor
 	Settings    ReviewSettings
-	// Received tells whether a dropped activity can be processed again.
-	Received InboxRepository
 }
 
 // reviewActive reports whether inbound.status asks about anything. While it does not, the paths of
@@ -183,27 +180,12 @@ func (h *StatusHandlers) applyReview(ctx context.Context, tx uow.Tx, v statusVer
 	return h.d.Review.Gate.Applied(ctx, tx, res)
 }
 
-// UndoReview undoes a cancelled decision of inbound.status inside the transaction of its
-// cancellation (ADR-0147 §9). A mark goes. A dropped activity is processed again while its document
-// is kept, which reads the cancelled decision as allow and calls no plugin; past that nothing is
-// left to bring back. A report stays: resolving it is the moderators' usual work.
+// UndoReview clears the mark of a cancelled mark_sensitive decision of inbound.status inside the
+// transaction of its cancellation (ADR-0147 §9). A mark from a moderation action stays. A dropped
+// post comes back through RequeueDropped, and a report stays: resolving it is the moderators' work.
 func (h *StatusHandlers) UndoReview(ctx context.Context, tx uow.Tx, r apphook.Record) error {
-	switch r.Decision.Outcome {
-	case apphook.MarkSensitive:
-		return h.d.Review.Sensitivity.ClearSensitivityOfHookDecision(ctx, tx, r.Decision.ID)
-	case apphook.Drop:
-		received, err := h.d.Review.Received.FindKeptReceivedActivityTx(ctx, tx, federation.IRI(r.Decision.SubjectKey))
-		if errors.Is(err, ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		job, err := InboxJob(received)
-		if err != nil {
-			return err
-		}
-		return h.d.Outbox.EnqueueTx(ctx, tx, job)
+	if r.Decision.Outcome != apphook.MarkSensitive {
+		return nil
 	}
-	return nil
+	return h.d.Review.Sensitivity.ClearSensitivityOfHookDecision(ctx, tx, r.Decision.ID)
 }
