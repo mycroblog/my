@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 85 job types. 37 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 87 job types. 38 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -138,14 +138,14 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | `supporters.apply_payment_event` | Applies one notice from the payment provider by re-reading what it points at. | A verified webhook from the provider | Default | Safe. Duplicates and reordering come down to re-reading. |
 | `supporters.reconcile_payments` | Compares the provider's records with this server's, within a request limit, and continues in a later job when it uses them up. A provider failure is recorded and waits for the next run. | Schedule, then itself | Default, for failures of this server | Next run |
 | `supporters.purge_payment_receipts` | Deletes old webhook receipts and expired checkout claims. | Schedule | Default | Next run |
-| `finance.billing_import` | Imports the charges of one source of `billing_sources`. A run that already succeeded for its key does nothing, and a source over its request limit ends without retrying. See [Importing hosting costs](../operations/billing-import.md). | Schedule, or an administrator, at most once an hour | Default, for throttling or an unavailable source | Next run |
+| `finance.import_billing` | Imports the charges of one source of `billing_sources`. A run that already succeeded for its key does nothing, and a source over its request limit ends without retrying. See [Importing hosting costs](../operations/billing-import.md). | Schedule, or an administrator, at most once an hour | Default, for throttling or an unavailable source | Next run |
 
 ## Voice
 
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
 | `voice.apply` | Applies one change of a room to its media transport: open, allow or stop audio, mute, remove, or close. Changes of one room run in order. | A committed change of a room | Default. Once it is dead, `voice.sweep` reconciles the room. | Safe. Opening does nothing for a room that ended, and allowing or stopping audio applies the participant's role now. A mute mutes the session again, and a removal or close that is done stays done. |
-| `voice.media_event` | Applies one verified event from a media server to its room. | A webhook from a media server | Default | Safe. It compares the event with the room and the media server as they are now. |
+| `voice.apply_media_event` | Applies one verified event from a media server to its room. | A webhook from a media server | Default | Safe. It compares the event with the room and the media server as they are now. |
 | `voice.sweep` | Evaluates every open room: participants' expiry, hosts' grace, rooms of a voice chat turned off, and rooms over the time limit. | Schedule | Default | Next run |
 | `voice.check_account` | Applies a change of an account to its participation: a suspended or deleted account leaves, and a host who is no longer eligible hands over. | A suspension, deletion, or restriction of an account in a room | Default | Safe. It reads the account and the room as they are now. |
 | `voice.check_block` | Applies a block between two participants of a room: the one who is not a host or co-host leaves. | A block | Default | Safe. A block that was lifted makes nobody leave. |
@@ -158,7 +158,7 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
 | `webhook.deliver` | Sends one delivery to an endpoint. Sends nothing if the endpoint is not enabled or the delivery already succeeded, unless it is a redelivery. | An event an endpoint subscribes to, or a redelivery | Up to 8 runs over about 27 hours. See the [Webhook reference](webhooks.md). | Sends again, only if it has not succeeded |
-| `webhook.purge` | Deletes messages past their retention, with their deliveries and attempts. | Schedule | Default | Next run |
+| `webhook.purge_messages` | Deletes messages past their retention, with their deliveries and attempts. | Schedule | Default | Next run |
 
 ## Upkeep
 
@@ -205,13 +205,13 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `moderation.purge_records` | 1 hour |
 | `queue.purge_dead_jobs` | 1 hour |
 | `voice.purge_records` | 1 hour |
-| `webhook.purge` | 1 hour |
+| `webhook.purge_messages` | 1 hour |
 | `account.prune_remote_profiles` | 24 hours |
 | `content.purge_link_cards` | 24 hours |
 | `content.purge_remote_emojis` | 24 hours |
 | `diagnostics.purge_error_counts` | 24 hours |
 | `federation.probe_instances` | 24 hours |
-| `finance.billing_import` | 24 hours, one schedule per source of `billing_sources`, named `finance.billing_import.<source>` |
+| `finance.import_billing` | 24 hours, one schedule per source of `billing_sources`, named `finance.import_billing.<source>` |
 | `notification.purge_error_group_notices` | 24 hours |
 | `projection.verify` | 24 hours |
 | `supporters.purge_payment_receipts` | 24 hours |
@@ -228,7 +228,7 @@ Most job types exist on every server. These do not:
 | `metrics_exporter` set (not `none`) | `metrics.snapshot` |
 | `stream = sns` or `pubsub` | `stream.sweep` |
 | `payments` set | `supporters.apply_payment_event`, `supporters.reconcile_payments`, `supporters.purge_payment_receipts` |
-| `billing_sources` set | The `finance.billing_import` schedules. The job type itself always exists. |
+| `billing_sources` set | The `finance.import_billing` schedules. The job type itself always exists. |
 
 A job whose type has no handler on the process that claims it, for example after you change one of these settings, counts as a failure, retries with the default waits, and becomes a dead job. It appears as `other` in the `my.job.*` metrics. Restore the setting and run it again, or delete it.
 

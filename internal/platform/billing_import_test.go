@@ -44,9 +44,9 @@ func TestBillingImports(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = app.Close() })
 	if !slices.ContainsFunc(app.Scheduler.Schedules(), func(s queue.Schedule) bool {
-		return s.Name == "finance.billing_import.aws" && s.Every == 24*time.Hour && s.Job.Type == appfinance.JobBillingImport
+		return s.Name == "finance.import_billing.aws" && s.Every == 24*time.Hour && s.Job.Type == appfinance.JobImportBilling
 	}) {
-		t.Error("no daily schedule finance.billing_import.aws")
+		t.Error("no daily schedule finance.import_billing.aws")
 	}
 	h, spec, ctx := app.Handler(), apitest.Load(t), t.Context()
 	admin, err := app.Identity.CreateAdmin(ctx, identity.CreateAdminInput{

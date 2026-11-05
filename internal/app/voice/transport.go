@@ -111,7 +111,7 @@ type ConnectDecision struct {
 // SessionDeduplicator is implemented by a transport whose media server may hold several
 // connections of one session (Sora with default_duplicate_client_id = allow, ADR-0101 §12):
 // Deduplicate keeps the newest connection of the session and disconnects the others.
-// JobMediaEvent calls it when a live session joins the media path.
+// JobApplyMediaEvent calls it when a live session joins the media path.
 type SessionDeduplicator interface {
 	Deduplicate(ctx context.Context, room RoomRef, session Session) error
 }

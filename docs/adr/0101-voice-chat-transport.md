@@ -251,7 +251,7 @@ ADR-0100 §14 の形に、接続のための次の操作を加える（細部は
 - **Sora の認証 Webhook**（`ConnectAuthorizer`）: `POST /voice/webhooks/sora/auth`。Sora が接続のたびに呼び、my は参加の値の署名と期限、セッションが生きていること、ルームで禁止されていないこと、`role` が `sendrecv` なら話者であること（ADR-0100 §4）、人数の上限を確かめ、`allowed` と §12 の音声の設定と `client_id` を返す。
   拒むときは `{"allowed": false, "reason": …}`（100 バイトまで）。応答の既定のタイムアウトは 5 秒（Sora Cloud は 10 秒）なので、判定は投影と KV の読み出しだけにし、外部の I/O をしない。冷えた起動で間に合わないことがある（運営者の文書）。
 - **イベント**（`EventSource`）: LiveKit は `POST /voice/webhooks/livekit`（`Authorization` の JWT を API シークレットで検証し、JWT の `sha256` と本文の SHA-256 を定数時間で比べる）。Sora は `POST /voice/webhooks/sora/events`。
-  検証した参加・退出・ルームの終了は、イベントの `id` を冪等キーにした outbox のジョブ `voice.media_event` に積む。ジョブは、参加が生きたセッションでなければ（禁止・退出の後・未知）`Remove` し、退出ならそのセッションのハートビートの値を消して ADR-0100 §6 の切断として扱う。受信の行は DB に残さない（イベントは照合を早めるだけ。§2）。
+  検証した参加・退出・ルームの終了は、イベントの `id` を冪等キーにした outbox のジョブ `voice.apply_media_event` に積む。ジョブは、参加が生きたセッションでなければ（禁止・退出の後・未知）`Remove` し、退出ならそのセッションのハートビートの値を消して ADR-0100 §6 の切断として扱う。受信の行は DB に残さない（イベントは照合を早めるだけ。§2）。
 - **照合**: ADR-0100 §6 の `voice.sweep`（1 分ごと）が、開いたルームごとに `Sessions` を呼ぶ（§2）。開いたルームの数は運営者の上限で抑えられ、呼び出しは 1 ルーム 1 回。
 - **Webhook が届かないとき**: LiveKit の Webhook は、送る前にキューで 30 秒を超えた知らせを捨て、送るときは失敗したら最大 4 回、1〜30 秒の間隔で再送する（確認日 2026-10-26: `livekit/protocol` のコミット `b20af9b` の `webhook/resource_url_notifier.go` の `MaxAge = 30s`、
   `go-retryablehttp` v0.7.8 の既定 `RetryMax = 4`・`RetryWaitMin = 1s`・`RetryWaitMax = 30s`）。my が冷えた起動で応えられないと知らせは失われうるので、照合が正である。

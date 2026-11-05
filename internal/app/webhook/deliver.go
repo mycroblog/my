@@ -24,11 +24,11 @@ import (
 const (
 	// JobDeliver sends one delivery (ADR-0060 "配送と再送").
 	JobDeliver = "webhook.deliver"
-	// JobPurge deletes the messages past webhook.Retention with their deliveries and attempts.
-	JobPurge = "webhook.purge"
+	// JobPurgeMessages deletes the messages past webhook.Retention with their deliveries and attempts.
+	JobPurgeMessages = "webhook.purge_messages"
 )
 
-// PurgeInterval is how often JobPurge runs, and PurgeBatch how many messages one transaction
+// PurgeInterval is how often JobPurgeMessages runs, and PurgeBatch how many messages one transaction
 // deletes.
 const (
 	PurgeInterval = time.Hour
@@ -64,8 +64,8 @@ func RetryPolicy() queue.RetryPolicy {
 	return queue.RetryPolicy{MaxAttempts: webhook.MaxAttempts, Delays: webhook.RetryDelays}
 }
 
-// RegisterJobs registers the handlers of JobDeliver and JobPurge, and the hourly schedule of
-// JobPurge.
+// RegisterJobs registers the handlers of JobDeliver and JobPurgeMessages, and the hourly schedule of
+// JobPurgeMessages.
 func (s *Service) RegisterJobs(h *queue.JobHandlerRegistry, sc *queue.Scheduler) {
 	h.RegisterWithPolicy(JobDeliver, func(ctx context.Context, j queue.Job) queue.Result {
 		var p deliverPayload
@@ -74,14 +74,14 @@ func (s *Service) RegisterJobs(h *queue.JobHandlerRegistry, sc *queue.Scheduler)
 		}
 		return s.Deliver(ctx, p.DeliveryID, p.Redeliver)
 	}, RetryPolicy())
-	h.Register(JobPurge, func(ctx context.Context, _ queue.Job) queue.Result {
+	h.Register(JobPurgeMessages, func(ctx context.Context, _ queue.Job) queue.Result {
 		if _, err := s.Purge(ctx); err != nil {
 			return queue.Retry(0, err)
 		}
 		return queue.Done()
 	})
 	if sc != nil {
-		sc.Add(queue.Schedule{Name: JobPurge, Every: PurgeInterval, Job: queue.NewJob{Type: JobPurge}})
+		sc.Add(queue.Schedule{Name: JobPurgeMessages, Every: PurgeInterval, Job: queue.NewJob{Type: JobPurgeMessages}})
 	}
 }
 

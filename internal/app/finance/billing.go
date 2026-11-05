@@ -12,7 +12,7 @@ import (
 
 // The import of a cloud provider's usage charges (ADR-0068, FR-904). A BillingSource adapter
 // (internal/adapter/billing/*) returns the charges of the billing months it is asked for; the
-// scheduled job JobBillingImport records the charges that changed as revisions, and the totals
+// scheduled job JobImportBilling records the charges that changed as revisions, and the totals
 // spread the newest revision of each key over the days it covers. The contract test suite of
 // the adapters is testkit.BillingSourceContract.
 
