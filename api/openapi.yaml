@@ -4035,6 +4035,54 @@ paths:
                 $ref: '#/components/schemas/StatusReactionPage'
         default:
           $ref: '#/components/responses/Problem'
+  /statuses/{id}/translation:
+    parameters:
+      - $ref: '#/components/parameters/StatusId'
+    post:
+      operationId: translateStatus
+      summary: Translate a post into a language
+      description: |
+        Returns the current version of a post in `target_language`: its text, content warning, the
+        alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+        for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+
+        `provider` is omitted when no machine translated the answer: the post already has a body in
+        the language, whose author wrote it, or it has no words to translate. Otherwise the server
+        answers with a translation that it keeps, or asks the providers that its operator enabled.
+        Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+        Characters sent count against monthly limits of the user and of the server, whichever app
+        asks.
+
+        A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+        is enabled, or none is allowed its visibility. A 422
+        `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+        language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+        `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+        `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+        may pass.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - read:statuses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusTranslationRequest'
+      responses:
+        '200':
+          description: The post in the language.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusTranslation'
+        default:
+          $ref: '#/components/responses/Problem'
   /statuses/{id}/quote_policy:
     parameters:
       - $ref: '#/components/parameters/StatusId'
@@ -23109,3 +23157,83 @@ components:
       properties:
         endpoint_id:
           $ref: '#/components/schemas/Id'
+    StatusTranslationRequest:
+      description: What to translate a post into.
+      type: object
+      required:
+        - target_language
+      additionalProperties: false
+      properties:
+        target_language:
+          description: The language to translate into, as a BCP 47 tag.
+          type: string
+          minLength: 1
+          maxLength: 35
+    StatusTranslationAttachment:
+      description: The alt text of an attached media file in the language of the translation.
+      type: object
+      required:
+        - id
+        - description
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        description:
+          description: The alt text.
+          type: string
+    TranslationProvider:
+      description: The service that translated a post, for the attribution next to the translation.
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          description: The identifier of the provider on this server.
+          type: string
+        name:
+          description: The name to show.
+          type: string
+        url:
+          description: The address of the provider; omitted when there is none.
+          type: string
+          format: uri
+        logo_url:
+          description: The address of the logo to show, for a provider that asks for one; omitted when there is none.
+          type: string
+          format: uri
+    StatusTranslation:
+      description: A post in another language. It belongs to the version of the post that was current when it was asked for.
+      type: object
+      required:
+        - language
+        - source_language
+        - content
+        - spoiler_text
+        - media_attachments
+        - poll_options
+      properties:
+        language:
+          description: The language of this answer, as a BCP 47 tag.
+          type: string
+        source_language:
+          description: The language translated from, which a provider may have detected; `und` when it is not known.
+          type: string
+        content:
+          description: The text as sanitized HTML, with the mentions, hashtags, links, custom emoji, and code of the post unchanged.
+          type: string
+        spoiler_text:
+          description: The content warning, as plain text; empty when the post has none.
+          type: string
+        media_attachments:
+          description: The alt text of the media that has any, in order.
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusTranslationAttachment'
+        poll_options:
+          description: The titles of the poll's options, in the order of the options; empty when the post has no poll.
+          type: array
+          items:
+            type: string
+        provider:
+          $ref: '#/components/schemas/TranslationProvider'

@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: The service that translated a post, for the attribution next to the translation.
+type: object
+required: [id, name]
+properties:
+  id:
+    description: The identifier of the provider on this server.
+    type: string
+  name:
+    description: The name to show.
+    type: string
+  url:
+    description: The address of the provider; omitted when there is none.
+    type: string
+    format: uri
+  logo_url:
+    description: The address of the logo to show, for a provider that asks for one; omitted when there is none.
+    type: string
+    format: uri

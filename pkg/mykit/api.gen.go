@@ -12260,6 +12260,47 @@ type StatusTag struct {
 // StatusText The plain text; the server links mentions, hashtags, and URLs.
 type StatusText = string
 
+// StatusTranslation A post in another language. It belongs to the version of the post that was current when it was asked for.
+type StatusTranslation struct {
+	// Content The text as sanitized HTML, with the mentions, hashtags, links, custom emoji, and code of the post unchanged.
+	Content string `json:"content"`
+
+	// Language The language of this answer, as a BCP 47 tag.
+	Language string `json:"language"`
+
+	// MediaAttachments The alt text of the media that has any, in order.
+	MediaAttachments []StatusTranslationAttachment `json:"media_attachments"`
+
+	// PollOptions The titles of the poll's options, in the order of the options; empty when the post has no poll.
+	PollOptions []string `json:"poll_options"`
+
+	// Provider The service that translated a post, for the attribution next to the translation.
+	Provider *TranslationProvider `json:"provider,omitempty"`
+
+	// SourceLanguage The language translated from, which a provider may have detected; `und` when it is not known.
+	SourceLanguage string `json:"source_language"`
+
+	// SpoilerText The content warning, as plain text; empty when the post has none.
+	SpoilerText string `json:"spoiler_text"`
+}
+
+// StatusTranslationAttachment The alt text of an attached media file in the language of the translation.
+type StatusTranslationAttachment struct {
+	// Description The alt text.
+	Description string `json:"description"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+}
+
+// StatusTranslationRequest What to translate a post into.
+type StatusTranslationRequest struct {
+	// TargetLanguage The language to translate into, as a BCP 47 tag.
+	TargetLanguage string `json:"target_language"`
+}
+
 // SupporterCheckout The payment provider's hosted checkout of a subscription.
 type SupporterCheckout struct {
 	// RedirectUrl Where to go next, in the same tab, which is the checkout unless it was paid already.
@@ -12587,6 +12628,21 @@ type TotpSetup struct {
 
 	// Uri The `otpauth://totp/...` URI of the secret.
 	Uri string `json:"uri"`
+}
+
+// TranslationProvider The service that translated a post, for the attribution next to the translation.
+type TranslationProvider struct {
+	// Id The identifier of the provider on this server.
+	Id string `json:"id"`
+
+	// LogoUrl The address of the logo to show, for a provider that asks for one; omitted when there is none.
+	LogoUrl *string `json:"logo_url,omitempty"`
+
+	// Name The name to show.
+	Name string `json:"name"`
+
+	// Url The address of the provider; omitted when there is none.
+	Url *string `json:"url,omitempty"`
 }
 
 // TwoFactor Where the authenticated user's two-factor authentication (TOTP) stands.
@@ -14660,6 +14716,9 @@ type SetStatusQuotePolicyJSONRequestBody = SetQuotePolicyRequest
 
 // ReactToStatusJSONRequestBody defines body for ReactToStatus for application/json ContentType.
 type ReactToStatusJSONRequestBody = ReactToStatusRequest
+
+// TranslateStatusJSONRequestBody defines body for TranslateStatus for application/json ContentType.
+type TranslateStatusJSONRequestBody = StatusTranslationRequest
 
 // StartSupporterCheckoutJSONRequestBody defines body for StartSupporterCheckout for application/json ContentType.
 type StartSupporterCheckoutJSONRequestBody = SupporterPlanChoice
@@ -21109,6 +21168,58 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /statuses/{id}/source (the `GetStatusSource` operationId).
 	GetStatusSource(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// TranslateStatusWithBody Translate a post into a language
+	//
+	// Returns the current version of a post in `target_language`: its text, content warning, the
+	// alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+	// for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+	//
+	// `provider` is omitted when no machine translated the answer: the post already has a body in
+	// the language, whose author wrote it, or it has no words to translate. Otherwise the server
+	// answers with a translation that it keeps, or asks the providers that its operator enabled.
+	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+	// Characters sent count against monthly limits of the user and of the server, whichever app
+	// asks.
+	//
+	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+	// is enabled, or none is allowed its visibility. A 422
+	// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+	// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+	// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+	// may pass.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /statuses/{id}/translation (the `TranslateStatus` operationId).
+	TranslateStatusWithBody(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// TranslateStatus Translate a post into a language
+	//
+	// Returns the current version of a post in `target_language`: its text, content warning, the
+	// alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+	// for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+	//
+	// `provider` is omitted when no machine translated the answer: the post already has a body in
+	// the language, whose author wrote it, or it has no words to translate. Otherwise the server
+	// answers with a translation that it keeps, or asks the providers that its operator enabled.
+	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+	// Characters sent count against monthly limits of the user and of the server, whichever app
+	// asks.
+	//
+	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+	// is enabled, or none is allowed its visibility. A 422
+	// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+	// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+	// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+	// may pass.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /statuses/{id}/translation (the `TranslateStatus` operationId).
+	TranslateStatus(ctx context.Context, id StatusId, body TranslateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListSubscriptions List the accounts whose new posts notify the viewer
 	//
@@ -30703,6 +30814,78 @@ func (c *Client) ListStatusReactions(ctx context.Context, id StatusId, params *L
 // Corresponds with GET /statuses/{id}/source (the `GetStatusSource` operationId).
 func (c *Client) GetStatusSource(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetStatusSourceRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// TranslateStatusWithBody Translate a post into a language
+//
+// Returns the current version of a post in `target_language`: its text, content warning, the
+// alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+// for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+//
+// `provider` is omitted when no machine translated the answer: the post already has a body in
+// the language, whose author wrote it, or it has no words to translate. Otherwise the server
+// answers with a translation that it keeps, or asks the providers that its operator enabled.
+// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+// Characters sent count against monthly limits of the user and of the server, whichever app
+// asks.
+//
+// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+// is enabled, or none is allowed its visibility. A 422
+// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+// may pass.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /statuses/{id}/translation (the `TranslateStatus` operationId).
+func (c *Client) TranslateStatusWithBody(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTranslateStatusRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// TranslateStatus Translate a post into a language
+//
+// Returns the current version of a post in `target_language`: its text, content warning, the
+// alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+// for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+//
+// `provider` is omitted when no machine translated the answer: the post already has a body in
+// the language, whose author wrote it, or it has no words to translate. Otherwise the server
+// answers with a translation that it keeps, or asks the providers that its operator enabled.
+// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+// Characters sent count against monthly limits of the user and of the server, whichever app
+// asks.
+//
+// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+// is enabled, or none is allowed its visibility. A 422
+// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+// may pass.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /statuses/{id}/translation (the `TranslateStatus` operationId).
+func (c *Client) TranslateStatus(ctx context.Context, id StatusId, body TranslateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTranslateStatusRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -45346,6 +45529,53 @@ func NewGetStatusSourceRequest(server string, id StatusId) (*http.Request, error
 	return req, nil
 }
 
+// NewTranslateStatusRequest calls the generic TranslateStatus builder with application/json body
+func NewTranslateStatusRequest(server string, id StatusId, body TranslateStatusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewTranslateStatusRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewTranslateStatusRequestWithBody constructs an http.Request for the TranslateStatus method, with any body, and a specified content type
+func NewTranslateStatusRequestWithBody(server string, id StatusId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/statuses/%s/translation", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListSubscriptionsRequest constructs an http.Request for the ListSubscriptions method
 func NewListSubscriptionsRequest(server string, params *ListSubscriptionsParams) (*http.Request, error) {
 	var err error
@@ -52925,6 +53155,58 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /statuses/{id}/source (the `GetStatusSource` operationId).
 	GetStatusSourceWithResponse(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*GetStatusSourceResponse, error)
+
+	// TranslateStatusWithBodyWithResponse Translate a post into a language
+	//
+	// Returns the current version of a post in `target_language`: its text, content warning, the
+	// alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+	// for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+	//
+	// `provider` is omitted when no machine translated the answer: the post already has a body in
+	// the language, whose author wrote it, or it has no words to translate. Otherwise the server
+	// answers with a translation that it keeps, or asks the providers that its operator enabled.
+	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+	// Characters sent count against monthly limits of the user and of the server, whichever app
+	// asks.
+	//
+	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+	// is enabled, or none is allowed its visibility. A 422
+	// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+	// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+	// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+	// may pass.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /statuses/{id}/translation (the `TranslateStatus` operationId).
+	TranslateStatusWithBodyWithResponse(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TranslateStatusResponse, error)
+
+	// TranslateStatusWithResponse Translate a post into a language
+	//
+	// Returns the current version of a post in `target_language`: its text, content warning, the
+	// alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+	// for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+	//
+	// `provider` is omitted when no machine translated the answer: the post already has a body in
+	// the language, whose author wrote it, or it has no words to translate. Otherwise the server
+	// answers with a translation that it keeps, or asks the providers that its operator enabled.
+	// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+	// Characters sent count against monthly limits of the user and of the server, whichever app
+	// asks.
+	//
+	// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+	// is enabled, or none is allowed its visibility. A 422
+	// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+	// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+	// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+	// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+	// may pass.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /statuses/{id}/translation (the `TranslateStatus` operationId).
+	TranslateStatusWithResponse(ctx context.Context, id StatusId, body TranslateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*TranslateStatusResponse, error)
 
 	// ListSubscriptionsWithResponse List the accounts whose new posts notify the viewer
 	//
@@ -73674,6 +73956,71 @@ func (r GetStatusSourceResponse) ContentType() string {
 	return ""
 }
 
+// TranslateStatusResponse200Headers the declared response headers of an HTTP 200 response for TranslateStatus
+type TranslateStatusResponse200Headers struct {
+	CacheControl *string
+}
+
+// TranslateStatusResponseDefaultHeaders the declared response headers of an HTTP default response for TranslateStatus
+type TranslateStatusResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type TranslateStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *StatusTranslation
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *TranslateStatusResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *TranslateStatusResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r TranslateStatusResponse) GetJSON200() *StatusTranslation {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r TranslateStatusResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r TranslateStatusResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r TranslateStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r TranslateStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r TranslateStatusResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListSubscriptionsResponse200Headers the declared response headers of an HTTP 200 response for ListSubscriptions
 type ListSubscriptionsResponse200Headers struct {
 	CacheControl *string
@@ -84459,6 +84806,70 @@ func (c *ClientWithResponses) GetStatusSourceWithResponse(ctx context.Context, i
 		return nil, err
 	}
 	return ParseGetStatusSourceResponse(rsp)
+}
+
+// TranslateStatusWithBodyWithResponse Translate a post into a language
+//
+// Returns the current version of a post in `target_language`: its text, content warning, the
+// alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+// for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+//
+// `provider` is omitted when no machine translated the answer: the post already has a body in
+// the language, whose author wrote it, or it has no words to translate. Otherwise the server
+// answers with a translation that it keeps, or asks the providers that its operator enabled.
+// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+// Characters sent count against monthly limits of the user and of the server, whichever app
+// asks.
+//
+// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+// is enabled, or none is allowed its visibility. A 422
+// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+// may pass.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /statuses/{id}/translation (the `TranslateStatus` operationId).
+func (c *ClientWithResponses) TranslateStatusWithBodyWithResponse(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TranslateStatusResponse, error) {
+	rsp, err := c.TranslateStatusWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTranslateStatusResponse(rsp)
+}
+
+// TranslateStatusWithResponse Translate a post into a language
+//
+// Returns the current version of a post in `target_language`: its text, content warning, the
+// alt text of its media, and its poll options. A post that the viewer cannot see is a 404, as
+// for `GET /statuses/{id}`, so a token without `read:direct` gets a 404 for a direct post.
+//
+// `provider` is omitted when no machine translated the answer: the post already has a body in
+// the language, whose author wrote it, or it has no words to translate. Otherwise the server
+// answers with a translation that it keeps, or asks the providers that its operator enabled.
+// Only the text is sent to a provider, with no address, author, viewer, mention, or link.
+// Characters sent count against monthly limits of the user and of the server, whichever app
+// asks.
+//
+// A 422 `/api/v1/problems/translation-unavailable` when no provider may receive this post: none
+// is enabled, or none is allowed its visibility. A 422
+// `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
+// language, and a 422 without a type for a `target_language` that is not a language tag. A 429
+// `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+// `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
+// may pass.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /statuses/{id}/translation (the `TranslateStatus` operationId).
+func (c *ClientWithResponses) TranslateStatusWithResponse(ctx context.Context, id StatusId, body TranslateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*TranslateStatusResponse, error) {
+	rsp, err := c.TranslateStatus(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTranslateStatusResponse(rsp)
 }
 
 // ListSubscriptionsWithResponse List the accounts whose new posts notify the viewer
@@ -109545,6 +109956,83 @@ func ParseGetStatusSourceResponse(rsp *http.Response) (*GetStatusSourceResponse,
 		response.Headers200 = &headers
 	case true:
 		var headers GetStatusSourceResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseTranslateStatusResponse parses an HTTP response from a TranslateStatusWithResponse call
+func ParseTranslateStatusResponse(rsp *http.Response) (*TranslateStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &TranslateStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StatusTranslation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers TranslateStatusResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers TranslateStatusResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

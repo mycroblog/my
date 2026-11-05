@@ -330,6 +330,8 @@ paths:
     $ref: ./paths/statuses_{id}_reaction.yaml
   /statuses/{id}/reactions:
     $ref: ./paths/statuses_{id}_reactions.yaml
+  /statuses/{id}/translation:
+    $ref: ./paths/statuses_{id}_translation.yaml
   /statuses/{id}/quote_policy:
     $ref: ./paths/statuses_{id}_quote_policy.yaml
   /statuses/{id}/quotes:

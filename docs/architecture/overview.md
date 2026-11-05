@@ -64,6 +64,7 @@ Remote servers ──AP──►│                               │
 | `supporters` | 管理者が有効にしたときだけ動く課金ユーザー（サポーター。ADR-0072）。課金の有効化・プラン・事業者の価格・加入・加入の状態と猶予・掲載の選択。決済の事業者の事実を運ぶ経路（webhook の受信の記録とジョブ、定期の照合。ADR-0074 §3・§4）。加入の状態は事業者のスナップショットから `Syncer`（`supporters.sync`）が導き、プランのロールを `identity` の管理されたロールの操作で付け外しする | Plan, PlanRevision, Subscription, Transition, WebhookReceipt, ReconcileRun |
 | `voice` | 同じサーバーのローカルの利用者どうしの通話のルーム（ADR-0100）。ルームの設定の版・ホストと共同ホスト・参加と役割・発話の許可・挙手・招待・再入室の禁止・終了。公開範囲・発話・ホストの資格は `internal/domain/voice` の純粋な関数（`CanSee`・`CanSpeakFreely`・`CanHost`）が判定する | Room, Revision, Participation, Participant, Invitation, Ending |
 | `diagnostics` | 報告されたエラーのグループ（ADR-0103 §4 (2)・§7）。`ErrorReporter` の出力の 1 つ `Recorder` が指紋ごとに 1 時間ごとの件数と最新の 1 件を数え、新しいグループと、解決したグループの別の版での再発（`regressed`）をドメインイベントで知らせる。解決・ミュート・ミュートの解除と、90 日より古い件数の定期の削除 | ErrorGroup, ErrorGroupEvent |
+| `translation` | 読者が求めた投稿の翻訳（ADR-0148）。閲覧の判定・提供元の候補・キャッシュ・上限・提供元の呼び出しと出力の確かめ。翻訳は連合しない | StatusTranslation |
 | `i18n` | ロケール解決・メッセージカタログ・整形 | （横断。`internal/i18n` の 1 パッケージで、`domain` / `app` の層を持たない） |
 
 ### 依存ルール

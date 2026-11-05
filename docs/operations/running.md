@@ -231,6 +231,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.job.duration` | Histogram, seconds | `my.job.type` (a registered job type, or `other`), `my.outcome` (`success` / `retry` / `dead` / `postponed`: `postponed` is a run that did no work and uses none of the job's attempts, such as a link card fetch that waits for its host) |
 | `my.job.wait` | Histogram, seconds | `my.job.type` |
 | `my.link_card.host_pauses` | Counter | `http.response.status_code` (`429` / `503`). One per pause of the link card fetches from a host; see [Link previews](link-previews.md#limits-per-host) |
+| `my.translation.requests` | Counter | `my.outcome` (`author` / `cache` / `provider` / `no_provider` / `limit` / `unsupported` / `failed`). One per request to translate a post that the viewer may see: answered from the author's own words, from a kept translation, or by a provider, or refused because no provider may receive the post, a monthly limit is reached, no provider translates the language, or no provider returned a usable translation. |
 | `my.timeline.delivery.lag` | Histogram, seconds | None (from the creation of a local post to its write into home timelines and the notification to streams) |
 | `my.stream.connections` | UpDownCounter | `my.stream.kind` (`user`, `timeline` for the streams of the local and federated timelines, `voice` for the streams of the voice chat rooms) |
 | `my.accounts.registered` | Counter | None |
