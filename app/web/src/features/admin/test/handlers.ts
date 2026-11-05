@@ -326,6 +326,7 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "translation_user_monthly_characters", kind: "int", default: "50000", minimum: 0, maximum: 1000000000000 },
   { key: "translation_server_monthly_characters", kind: "int", default: "500000", minimum: 0, maximum: 1000000000000 },
   { key: "translation_retention_days", kind: "int", default: "30", minimum: 1, maximum: 3650 },
+  { key: "translation_reports_to_server", kind: "bool", default: "false" },
 ];
 
 /** The instance settings as GET /admin/settings answers them, with the `stored` values set and the others at their defaults. */

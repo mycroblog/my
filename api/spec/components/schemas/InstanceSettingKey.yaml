@@ -75,3 +75,4 @@ enum:
   - translation_user_monthly_characters
   - translation_server_monthly_characters
   - translation_retention_days
+  - translation_reports_to_server

@@ -54,6 +54,13 @@ export type TranslatedPost = {
  */
 export type Translator = (targetLanguage: string, onDownload: (loaded: number) => void) => Promise<TranslatedPost>;
 
+/** Whose words the server says an answer is: the provider's that translated it, or, without one, the author's. */
+function translatedBy(provider: components["schemas"]["TranslationProvider"] | undefined): TranslatedBy {
+  return provider === undefined
+    ? { kind: "author" }
+    : { kind: "provider", name: provider.name, href: provider.url ?? null, logo: provider.logo_url ?? null };
+}
+
 /** What the card keeps of `answer`, the server's translation. */
 function translatedPost(answer: components["schemas"]["StatusTranslation"]): TranslatedPost {
   const { provider } = answer;
@@ -64,10 +71,7 @@ function translatedPost(answer: components["schemas"]["StatusTranslation"]): Tra
     contentWarning: answer.spoiler_text,
     altTexts: Object.fromEntries(answer.media_attachments.map(({ id, description }) => [id, description])),
     pollOptions: answer.poll_options,
-    by:
-      provider === undefined
-        ? { kind: "author" }
-        : { kind: "provider", name: provider.name, href: provider.url ?? null, logo: provider.logo_url ?? null },
+    by: translatedBy(provider),
   };
 }
 
@@ -80,6 +84,53 @@ export async function translateOnServer(api: Api, id: string, targetLanguage: st
   // The client's middleware throws an ApiError for every error status (lib/api/client.ts).
   if (data === undefined) throw new ApiError(error);
   return translatedPost(data);
+}
+
+/**
+ * Asks the server to translate post `id`, which report `report` points at, for a moderator (ADR-0148 §13): whatever
+ * the post's visibility, but sent only where the operator lets the text of reports go.
+ */
+export async function translateReportedOnServer(
+  api: Api,
+  report: string,
+  id: string,
+  targetLanguage: string,
+): Promise<TranslatedPost> {
+  const { data, error } = await api.fetch.POST("/admin/reports/{id}/statuses/{status_id}/translation", {
+    params: { path: { id: report, status_id: id } },
+    body: { target_language: targetLanguage },
+  });
+  if (data === undefined) throw new ApiError(error);
+  return translatedPost(data);
+}
+
+/** The comment of a report in another language, as the report's page shows it in place of the original. */
+export type TranslatedComment = {
+  /** The language of the translation (BCP 47). */
+  language: string;
+  /** The comment in plain text. */
+  text: string;
+  by: TranslatedBy;
+};
+
+/** A way to translate the comment of a report into a language; `onDownload` as for a Translator. */
+export type CommentTranslator = (
+  targetLanguage: string,
+  onDownload: (loaded: number) => void,
+) => Promise<TranslatedComment>;
+
+/** Asks the server to translate the comment of report `report` for a moderator; the server keeps no translation. */
+export async function translateReportCommentOnServer(
+  api: Api,
+  report: string,
+  targetLanguage: string,
+): Promise<TranslatedComment> {
+  const { data, error } = await api.fetch.POST("/admin/reports/{id}/comment/translation", {
+    params: { path: { id: report } },
+    body: { target_language: targetLanguage },
+  });
+  if (data === undefined) throw new ApiError(error);
+  return { language: data.language, text: data.comment, by: translatedBy(data.provider) };
 }
 
 /**

@@ -2527,6 +2527,7 @@ const (
 	InstanceSettingKeyTranslationBrowser                 InstanceSettingKey = "translation_browser"
 	InstanceSettingKeyTranslationProviderVisibilities    InstanceSettingKey = "translation_provider_visibilities"
 	InstanceSettingKeyTranslationProviders               InstanceSettingKey = "translation_providers"
+	InstanceSettingKeyTranslationReportsToServer         InstanceSettingKey = "translation_reports_to_server"
 	InstanceSettingKeyTranslationRetentionDays           InstanceSettingKey = "translation_retention_days"
 	InstanceSettingKeyTranslationServerMonthlyCharacters InstanceSettingKey = "translation_server_monthly_characters"
 	InstanceSettingKeyTranslationUserMonthlyCharacters   InstanceSettingKey = "translation_user_monthly_characters"
@@ -2666,6 +2667,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyTranslationProviderVisibilities:
 		return true
 	case InstanceSettingKeyTranslationProviders:
+		return true
+	case InstanceSettingKeyTranslationReportsToServer:
 		return true
 	case InstanceSettingKeyTranslationRetentionDays:
 		return true
@@ -10033,6 +10036,11 @@ type InstanceTranslation struct {
 
 	// Providers The enabled providers that run through this server, the first tried first.
 	Providers []InstanceTranslationProvider `json:"providers"`
+
+	// ReportsToServer Whether moderators may send the text of a report, its posts and its comment, to the providers.
+	// Each provider still receives only the visibilities it lists, and a comment counts as `private`.
+	// Absent on a server without translation, where it is false.
+	ReportsToServer *bool `json:"reports_to_server,omitempty"`
 }
 
 // InstanceTranslationProvider A provider that this instance sends the text of posts to when a reader asks for a translation.
@@ -12216,6 +12224,21 @@ type Report struct {
 // is illegal. `violation`: it breaks the instance rules that `rule_ids` cite. `other`:
 // anything else.
 type ReportCategory string
+
+// ReportCommentTranslation The comment of a report in another language. The server does not keep it.
+type ReportCommentTranslation struct {
+	// Comment The comment as plain text.
+	Comment string `json:"comment"`
+
+	// Language The language of this answer, as a BCP 47 tag.
+	Language string `json:"language"`
+
+	// Provider The service that translated a post, for the attribution next to the translation.
+	Provider *TranslationProvider `json:"provider,omitempty"`
+
+	// SourceLanguage The language translated from, which a provider may have detected; `und` when it is not known.
+	SourceLanguage string `json:"source_language"`
+}
 
 // ReportPage A page of the user's reports, newest first.
 type ReportPage struct {
@@ -15118,11 +15141,17 @@ type RejectRegistrationJSONRequestBody = RegistrationDecisionRequest
 // CreateRelayJSONRequestBody defines body for CreateRelay for application/json ContentType.
 type CreateRelayJSONRequestBody = CreateRelayRequest
 
+// TranslateReportCommentJSONRequestBody defines body for TranslateReportComment for application/json ContentType.
+type TranslateReportCommentJSONRequestBody = StatusTranslationRequest
+
 // AddReportNoteJSONRequestBody defines body for AddReportNote for application/json ContentType.
 type AddReportNoteJSONRequestBody = CreateReportNoteRequest
 
 // ResolveReportJSONRequestBody defines body for ResolveReport for application/json ContentType.
 type ResolveReportJSONRequestBody = ResolveReportRequest
+
+// TranslateReportedStatusJSONRequestBody defines body for TranslateReportedStatus for application/json ContentType.
+type TranslateReportedStatusJSONRequestBody = StatusTranslationRequest
 
 // CreateRoleJSONRequestBody defines body for CreateRole for application/json ContentType.
 type CreateRoleJSONRequestBody = CreateRoleRequest
@@ -15762,6 +15791,9 @@ type ServerInterface interface {
 	// AssignReportToSelf Take a report
 	// (POST /admin/reports/{id}/assign_to_self)
 	AssignReportToSelf(w http.ResponseWriter, r *http.Request, id ReportId)
+	// TranslateReportComment Translate the comment of a report into a language
+	// (POST /admin/reports/{id}/comment/translation)
+	TranslateReportComment(w http.ResponseWriter, r *http.Request, id ReportId)
 	// AddReportNote Write a note on a report
 	// (POST /admin/reports/{id}/notes)
 	AddReportNote(w http.ResponseWriter, r *http.Request, id ReportId)
@@ -15771,6 +15803,9 @@ type ServerInterface interface {
 	// ResolveReport Resolve a report
 	// (POST /admin/reports/{id}/resolve)
 	ResolveReport(w http.ResponseWriter, r *http.Request, id ReportId)
+	// TranslateReportedStatus Translate a reported post into a language
+	// (POST /admin/reports/{id}/statuses/{status_id}/translation)
+	TranslateReportedStatus(w http.ResponseWriter, r *http.Request, id ReportId, statusId Id)
 	// UnassignReport Leave a report to nobody
 	// (POST /admin/reports/{id}/unassign)
 	UnassignReport(w http.ResponseWriter, r *http.Request, id ReportId)
@@ -20990,6 +21025,32 @@ func (siw *ServerInterfaceWrapper) AssignReportToSelf(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// TranslateReportComment operation middleware
+func (siw *ServerInterfaceWrapper) TranslateReportComment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ReportId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TranslateReportComment(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // AddReportNote operation middleware
 func (siw *ServerInterfaceWrapper) AddReportNote(w http.ResponseWriter, r *http.Request) {
 
@@ -21059,6 +21120,41 @@ func (siw *ServerInterfaceWrapper) ResolveReport(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ResolveReport(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// TranslateReportedStatus operation middleware
+func (siw *ServerInterfaceWrapper) TranslateReportedStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ReportId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "status_id" -------------
+	var statusId Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "status_id", r.PathValue("status_id"), &statusId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TranslateReportedStatus(w, r, id, statusId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27174,6 +27270,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/resolve", wrapper.ResolveReport)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/notes", wrapper.AddReportNote)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/reopen", wrapper.ReopenReport)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/comment/translation", wrapper.TranslateReportComment)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/statuses/{status_id}/translation", wrapper.TranslateReportedStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/voice_rooms/{id}/end", wrapper.EndVoiceRoomAsModerator)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/accounts/{id}/actions", wrapper.ListAccountActions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/actions", wrapper.CreateAccountAction)
@@ -36648,6 +36746,69 @@ func (response AssignReportToSelfdefaultApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type TranslateReportCommentRequestObject struct {
+	Id   ReportId `json:"id"`
+	Body *TranslateReportCommentJSONRequestBody
+}
+
+type TranslateReportCommentResponseObject interface {
+	VisitTranslateReportCommentResponse(w http.ResponseWriter) error
+}
+
+type TranslateReportComment200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type TranslateReportComment200JSONResponse struct {
+	Body    ReportCommentTranslation
+	Headers TranslateReportComment200ResponseHeaders
+}
+
+func (response TranslateReportComment200JSONResponse) VisitTranslateReportCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TranslateReportCommentdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response TranslateReportCommentdefaultApplicationProblemPlusJSONResponse) VisitTranslateReportCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type AddReportNoteRequestObject struct {
 	Id   ReportId `json:"id"`
 	Body *AddReportNoteJSONRequestBody
@@ -36792,6 +36953,70 @@ type ResolveReportdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response ResolveReportdefaultApplicationProblemPlusJSONResponse) VisitResolveReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TranslateReportedStatusRequestObject struct {
+	Id       ReportId `json:"id"`
+	StatusId Id       `json:"status_id"`
+	Body     *TranslateReportedStatusJSONRequestBody
+}
+
+type TranslateReportedStatusResponseObject interface {
+	VisitTranslateReportedStatusResponse(w http.ResponseWriter) error
+}
+
+type TranslateReportedStatus200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type TranslateReportedStatus200JSONResponse struct {
+	Body    StatusTranslation
+	Headers TranslateReportedStatus200ResponseHeaders
+}
+
+func (response TranslateReportedStatus200JSONResponse) VisitTranslateReportedStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TranslateReportedStatusdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response TranslateReportedStatusdefaultApplicationProblemPlusJSONResponse) VisitTranslateReportedStatusResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -49787,6 +50012,9 @@ type StrictServerInterface interface {
 	// AssignReportToSelf Take a report
 	// (POST /admin/reports/{id}/assign_to_self)
 	AssignReportToSelf(ctx context.Context, request AssignReportToSelfRequestObject) (AssignReportToSelfResponseObject, error)
+	// TranslateReportComment Translate the comment of a report into a language
+	// (POST /admin/reports/{id}/comment/translation)
+	TranslateReportComment(ctx context.Context, request TranslateReportCommentRequestObject) (TranslateReportCommentResponseObject, error)
 	// AddReportNote Write a note on a report
 	// (POST /admin/reports/{id}/notes)
 	AddReportNote(ctx context.Context, request AddReportNoteRequestObject) (AddReportNoteResponseObject, error)
@@ -49796,6 +50024,9 @@ type StrictServerInterface interface {
 	// ResolveReport Resolve a report
 	// (POST /admin/reports/{id}/resolve)
 	ResolveReport(ctx context.Context, request ResolveReportRequestObject) (ResolveReportResponseObject, error)
+	// TranslateReportedStatus Translate a reported post into a language
+	// (POST /admin/reports/{id}/statuses/{status_id}/translation)
+	TranslateReportedStatus(ctx context.Context, request TranslateReportedStatusRequestObject) (TranslateReportedStatusResponseObject, error)
 	// UnassignReport Leave a report to nobody
 	// (POST /admin/reports/{id}/unassign)
 	UnassignReport(ctx context.Context, request UnassignReportRequestObject) (UnassignReportResponseObject, error)
@@ -54611,6 +54842,39 @@ func (sh *strictHandler) AssignReportToSelf(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// TranslateReportComment operation middleware
+func (sh *strictHandler) TranslateReportComment(w http.ResponseWriter, r *http.Request, id ReportId) {
+	var request TranslateReportCommentRequestObject
+
+	request.Id = id
+
+	var body TranslateReportCommentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TranslateReportComment(ctx, request.(TranslateReportCommentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TranslateReportComment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TranslateReportCommentResponseObject); ok {
+		if err := validResponse.VisitTranslateReportCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // AddReportNote operation middleware
 func (sh *strictHandler) AddReportNote(w http.ResponseWriter, r *http.Request, id ReportId) {
 	var request AddReportNoteRequestObject
@@ -54696,6 +54960,40 @@ func (sh *strictHandler) ResolveReport(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ResolveReportResponseObject); ok {
 		if err := validResponse.VisitResolveReportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// TranslateReportedStatus operation middleware
+func (sh *strictHandler) TranslateReportedStatus(w http.ResponseWriter, r *http.Request, id ReportId, statusId Id) {
+	var request TranslateReportedStatusRequestObject
+
+	request.Id = id
+	request.StatusId = statusId
+
+	var body TranslateReportedStatusJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TranslateReportedStatus(ctx, request.(TranslateReportedStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TranslateReportedStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TranslateReportedStatusResponseObject); ok {
+		if err := validResponse.VisitTranslateReportedStatusResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

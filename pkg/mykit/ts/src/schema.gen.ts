@@ -5145,6 +5145,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/reports/{id}/comment/translation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the report. */
+                id: components["parameters"]["ReportId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Translate the comment of a report into a language
+         * @description Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+         *     unknown report is a 404. Needs the `manage_reports` permission.
+         *
+         *     Only the reporter and the moderators read a comment, so it counts as a private post: the server
+         *     sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+         *     providers allowed private posts. The translation is never kept, and the characters sent count
+         *     against the server's monthly limit only. `provider` is omitted when the comment has no words to
+         *     translate, and the answer is the comment as it is.
+         *
+         *     The problems are those of `POST /statuses/{id}/translation`: a 422
+         *     `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+         *     comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+         *     `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+         *     `/api/v1/problems/translation-failed`.
+         */
+        post: operations["translateReportComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/reports/{id}/statuses/{status_id}/translation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the report. */
+                id: components["parameters"]["ReportId"];
+                /** @description The ID of a post that the report points at. */
+                status_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Translate a reported post into a language
+         * @description Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+         *     does, for a moderator who reads the report: whatever the post's visibility, and also when its
+         *     author deleted it. A report that does not point at the post, an unknown report, and a post that is
+         *     gone are a 404. Needs the `manage_reports` permission.
+         *
+         *     The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+         *     provider only while the instance setting `translation_reports_to_server` is on, and only to the
+         *     providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+         *     posts. The characters sent count against the server's monthly limit only. The translation is kept
+         *     for the readers of the post who may see it, except for a deleted post, whose translation is not
+         *     kept.
+         *
+         *     The problems are those of `POST /statuses/{id}/translation`: a 422
+         *     `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+         *     post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+         *     `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+         *     `/api/v1/problems/translation-failed`.
+         */
+        post: operations["translateReportedStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/voice_rooms/{id}/end": {
         parameters: {
             query?: never;
@@ -9068,6 +9145,12 @@ export interface components {
             browser: boolean;
             /** @description The enabled providers that run through this server, the first tried first. */
             providers: components["schemas"]["InstanceTranslationProvider"][];
+            /**
+             * @description Whether moderators may send the text of a report, its posts and its comment, to the providers.
+             *     Each provider still receives only the visibilities it lists, and a comment counts as `private`.
+             *     Absent on a server without translation, where it is false.
+             */
+            reports_to_server?: boolean;
         };
         /** @description A provider that this instance sends the text of posts to when a reader asks for a translation. */
         InstanceTranslationProvider: {
@@ -12096,7 +12179,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_media_check_on_failure" | "retention_hook_decisions" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_media_check_on_failure" | "retention_hook_decisions" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -13856,6 +13939,16 @@ export interface components {
          * @enum {string}
          */
         ReportCategory: "spam" | "legal" | "violation" | "other";
+        /** @description The comment of a report in another language. The server does not keep it. */
+        ReportCommentTranslation: {
+            /** @description The language of this answer, as a BCP 47 tag. */
+            language: string;
+            /** @description The language translated from, which a provider may have detected; `und` when it is not known. */
+            source_language: string;
+            /** @description The comment as plain text. */
+            comment: string;
+            provider?: components["schemas"]["TranslationProvider"];
+        };
         /** @description A page of the user's reports, newest first. */
         ReportPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["Report"][];
@@ -21377,6 +21470,66 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["AdminReportDetail"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    translateReportComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the report. */
+                id: components["parameters"]["ReportId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusTranslationRequest"];
+            };
+        };
+        responses: {
+            /** @description The comment in the language. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportCommentTranslation"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    translateReportedStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the report. */
+                id: components["parameters"]["ReportId"];
+                /** @description The ID of a post that the report points at. */
+                status_id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusTranslationRequest"];
+            };
+        };
+        responses: {
+            /** @description The post in the language. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusTranslation"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };

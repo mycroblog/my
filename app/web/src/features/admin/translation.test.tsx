@@ -139,6 +139,21 @@ describe("the translation screen", () => {
     });
   });
 
+  test("lets reports go to the providers, which starts off", async () => {
+    const user = userEvent.setup();
+    const sent = settings({ translation_providers: "one" });
+    await renderApp({ path });
+
+    const reports = await screen.findByRole("checkbox", { name: "Send reports to the providers" });
+    expect(reports).not.toBeChecked();
+    await user.click(reports);
+    await user.click(screen.getByRole("button", { name: "Save the translation settings" }));
+
+    await waitFor(() => {
+      expect(sent).toEqual([{ translation_reports_to_server: "true" }]);
+    });
+  });
+
   test("takes 0 as a limit, and refuses what is not a whole number in range", async () => {
     const user = userEvent.setup();
     const sent = settings();

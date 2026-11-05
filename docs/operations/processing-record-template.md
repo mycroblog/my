@@ -197,10 +197,10 @@ Delete this activity when `translation_providers` is empty.
 
 | | |
 | --- | --- |
-| Purposes | Translating a post when a reader asks, and keeping translation within its limits |
-| Data subjects | Authors of posts, here and on other servers, and people the text names. Readers, for the count of characters |
+| Purposes | Translating a post when a reader asks, {{IF translation of reports}} translating a report when a moderator asks, and keeping translation within its limits |
+| Data subjects | Authors of posts, here and on other servers, and people the text names. Readers, for the count of characters. {{IF translation of reports}} Reporters, for the text of their comments |
 | Personal data | Whatever the text of a post holds: its body, content warning, poll options, and image descriptions. The post's address, its author, the reader, mentions, and links are replaced or left out before sending. Kept: the translations, and the characters per account and month |
-| Recipients | Translation providers, as your processors: `public`, `local`, and `unlisted` posts by default. {{IF translation to private and direct}} Also `private` and `direct` posts, for {{THE PROVIDERS YOU ALLOWED}} |
+| Recipients | Translation providers, as your processors: `public`, `local`, and `unlisted` posts by default. {{IF translation to private and direct}} Also `private` and `direct` posts, for {{THE PROVIDERS YOU ALLOWED}}. {{IF translation of reports}} The comments of reports, for the providers allowed `private` posts, and the posts reports name, when a moderator asks |
 | Erasure | Translations `{{30 days}}` from the translation, and with the post when it is deleted. Characters per account until the end of the following month, or at account erasure. At the providers: what was sent cannot be recalled. {{THEIR PERIODS}} |
 | Legal basis | {{e.g. legitimate interests}} |
 

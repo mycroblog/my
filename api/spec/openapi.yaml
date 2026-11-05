@@ -506,6 +506,10 @@ paths:
     $ref: ./paths/admin_reports_{id}_notes.yaml
   /admin/reports/{id}/reopen:
     $ref: ./paths/admin_reports_{id}_reopen.yaml
+  /admin/reports/{id}/comment/translation:
+    $ref: ./paths/admin_reports_{id}_comment_translation.yaml
+  /admin/reports/{id}/statuses/{status_id}/translation:
+    $ref: ./paths/admin_reports_{id}_statuses_{status_id}_translation.yaml
   /admin/voice_rooms/{id}/end:
     $ref: ./paths/admin_voice_rooms_{id}_end.yaml
   /admin/accounts/{id}/actions:
@@ -1806,6 +1810,8 @@ components:
       $ref: ./components/schemas/ModerationActionState.yaml
     ReportCategory:
       $ref: ./components/schemas/ReportCategory.yaml
+    ReportCommentTranslation:
+      $ref: ./components/schemas/ReportCommentTranslation.yaml
     ReportPage:
       $ref: ./components/schemas/ReportPage.yaml
     ReportState:

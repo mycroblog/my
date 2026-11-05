@@ -36,7 +36,7 @@ export type StatusTranslationView = {
 };
 
 /** The sentence that says whose words a translation is; a screen reader hears it as the result. */
-function translatedByText(by: TranslatedBy, t: Translate): string {
+export function translatedByText(by: TranslatedBy, t: Translate): string {
   switch (by.kind) {
     case "provider":
       return t("client:status.translation.by", { provider: by.name });
@@ -50,7 +50,7 @@ function translatedByText(by: TranslatedBy, t: Translate): string {
 }
 
 /** The sentence for a request that gave no translation: the problems of the API by their type (E2), the browser's by their reason. */
-function failureText(error: unknown, t: Translate): string {
+export function failureText(error: unknown, t: Translate): string {
   if (error instanceof BrowserTranslationError) {
     switch (error.reason) {
       case "undetected":
@@ -84,16 +84,18 @@ function failureText(error: unknown, t: Translate): string {
 
 /**
  * The translation of `status` (the boosted post for a boost) into the language of the UI. `enabled` is false where the
- * card offers the viewer no actions (a moderator's page). The choice to show a translation stays with the card, like an
- * opened content warning; the translation itself stays in the cache, so that showing it again asks nothing of the server.
+ * card offers the viewer no actions and translates nothing. `report` is set on a moderator's page about a report that
+ * points at the post, whose translation goes through the report (ADR-0148 §13). The choice to show a translation stays
+ * with the card, like an opened content warning; the translation itself stays in the cache, so that showing it again
+ * asks nothing of the server.
  */
-export function useStatusTranslation(status: Status, enabled: boolean): StatusTranslationView {
+export function useStatusTranslation(status: Status, enabled: boolean, report?: string): StatusTranslationView {
   const post = status.boost ?? status;
   const t = useT();
   const target = useIntl().locale;
   const notice = useNotice();
   const queryClient = useQueryClient();
-  const translator = useTranslator(post, target);
+  const translator = useTranslator(post, target, report);
   const options = statusTranslationQueryOptions(post, target);
   const cached = useQuery(options).data;
   // The one version whose translation the card shows, so that an edit goes back to the original by itself.
