@@ -766,5 +766,13 @@
   "errors.deactivation.last_administrator": {
     "defaultMessage": "This is the only administrator account that can sign in. Make someone else an administrator first.",
     "description": "API error detail: the account cannot be deactivated or deleted because no other administrator can sign in."
+  },
+  "errors.search.unavailable": {
+    "defaultMessage": "Posts cannot be searched on this server.",
+    "description": "API error title for HTTP 404 of the full-text search of posts on a server that has no search engine."
+  },
+  "errors.search.failed": {
+    "defaultMessage": "The search could not be completed. Try again later.",
+    "description": "API error title for HTTP 503 of the full-text search of posts when the search engine cannot answer."
   }
 }

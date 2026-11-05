@@ -231,6 +231,10 @@ description: |
   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
     co-hosts of the room.
   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+  - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
+    be searched (`Instance.full_text_search.available`).
+  - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
+    posts is affected; try again later.
 type: object
 required: [type, title, status]
 properties:

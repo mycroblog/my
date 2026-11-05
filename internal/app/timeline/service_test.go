@@ -20,6 +20,8 @@ type leakyRepository struct {
 	rows  []apptimeline.Entry
 	facts apptimeline.Facts
 	homes []apptimeline.HomeQuery
+	// mutedDomains answers MutedDomains.
+	mutedDomains []string
 }
 
 func (r *leakyRepository) ListLocal(context.Context, apptimeline.LocalQuery) ([]apptimeline.Entry, error) {
@@ -152,5 +154,74 @@ func TestHomeEntry(t *testing.T) {
 	}
 	if _, _, err := svc.HomeEntry(t.Context(), appcontent.Viewer{}, testID(1), q); err == nil {
 		t.Error("HomeEntry for a visitor succeeded")
+	}
+}
+
+func (r *leakyRepository) MutedDomains(_ context.Context, _ string, domains []string) ([]string, error) {
+	var out []string
+	for _, d := range domains {
+		if slices.Contains(r.mutedDomains, d) {
+			out = append(out, d)
+		}
+	}
+	return out, nil
+}
+
+// TestSearchVisible checks the policy of a search's results: CanView in ContextSearch, the mutes, and
+// the domain mutes of a domain or its parent (ADR-0149 §8).
+func TestSearchVisible(t *testing.T) {
+	viewerID, authorID, mutedID, blockerID, farID, silencedID := testID(10), testID(11), testID(12), testID(13), testID(14), testID(15)
+	repo := &leakyRepository{
+		facts: apptimeline.Facts{
+			Exclusions: map[string][]timeline.ExclusionReason{
+				blockerID: {timeline.ExcludedBlockedBy}, mutedID: {timeline.ExcludedMute},
+			},
+			AccountRestrictions: map[string][]timeline.Restriction{silencedID: {timeline.RestrictPublicDiscovery}},
+		},
+		mutedDomains: []string{"muted.example"},
+	}
+	svc := apptimeline.NewService(apptimeline.Deps{Repository: repo, Clock: fixedClock{time.Now()}})
+	candidate := func(n int, author, domain string, v appcontent.Visibility) apptimeline.SearchCandidate {
+		return apptimeline.SearchCandidate{StatusID: testID(n), AuthorAccountID: author, AuthorDomain: domain, Visibility: v}
+	}
+	candidates := []apptimeline.SearchCandidate{
+		candidate(1, authorID, "", appcontent.VisibilityPublic),
+		candidate(2, authorID, "", appcontent.VisibilityLocal),
+		candidate(3, authorID, "", appcontent.VisibilityUnlisted),
+		candidate(4, authorID, "", appcontent.VisibilityPrivate),
+		candidate(5, authorID, "", appcontent.VisibilityDirect),
+		candidate(6, mutedID, "", appcontent.VisibilityPublic),
+		candidate(7, blockerID, "", appcontent.VisibilityPublic),
+		candidate(8, silencedID, "", appcontent.VisibilityPublic),
+		candidate(9, farID, "muted.example", appcontent.VisibilityPublic),
+		candidate(16, farID, "sub.muted.example", appcontent.VisibilityPublic),
+		candidate(17, farID, "fine.example", appcontent.VisibilityPublic),
+		candidate(18, farID, "fine.example", appcontent.VisibilityLocal),
+	}
+	viewer := appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: viewerID}
+	got, err := svc.SearchVisible(t.Context(), viewer, candidates)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{testID(1), testID(2), testID(17)}; !slices.Equal(got, want) {
+		t.Errorf("SearchVisible = %v, want %v", got, want)
+	}
+	// The author and a moderator get nothing wider.
+	for _, v := range []appcontent.Viewer{
+		{Kind: appcontent.ViewerLocal, AccountID: authorID},
+		{Kind: appcontent.ViewerLocal, AccountID: viewerID, Moderator: true},
+	} {
+		got, err := svc.SearchVisible(t.Context(), v, candidates[:5])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := []string{testID(1), testID(2)}; !slices.Equal(got, want) {
+			t.Errorf("SearchVisible for %+v = %v, want %v", v, got, want)
+		}
+	}
+	// No one signed out sees anything, without reading a thing.
+	got, err = svc.SearchVisible(t.Context(), appcontent.Viewer{}, candidates)
+	if err != nil || len(got) != 0 {
+		t.Errorf("SearchVisible signed out = %v, %v", got, err)
 	}
 }

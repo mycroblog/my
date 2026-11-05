@@ -23,6 +23,10 @@ const (
 // as it received them, so this is the client's error, unlike any other error of Index.Search.
 var ErrInvalidCursor = errors.New("search: invalid cursor")
 
+// ErrBackendFailed reports a search that the backend could not answer. It says how the call failed
+// and nothing that the backend said, since an engine's error may quote the request and so the query.
+var ErrBackendFailed = errors.New("search: the backend failed")
+
 // Document is what the index holds of one status (ADR-0149 §4). The index is a copy of the
 // database and nothing reads a document back.
 type Document struct {

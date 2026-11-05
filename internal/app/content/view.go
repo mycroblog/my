@@ -45,6 +45,7 @@ const (
 	ContextFederatedTimeline = content.ContextFederatedTimeline
 	ContextHashtag           = content.ContextHashtag
 	ContextProfile           = content.ContextProfile
+	ContextSearch            = content.ContextSearch
 
 	FollowNone   = content.FollowNone
 	FollowActive = content.FollowActive
