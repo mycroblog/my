@@ -54,6 +54,8 @@ func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository,
 			notifications,
 			// The follows it lost to suspensions.
 			a.Moderation,
+			// The decisions of the decision hooks on its subjects (ADR-0147 §6).
+			a.Hooks,
 			// Its pending custom emoji requests, before its uploads go.
 			a.CustomEmojis,
 			// The user's reads of the announcements (FR-726).

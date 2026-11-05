@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getHookSummary
+  summary: Summarize the decision hooks
+  description: |
+    Every decision hook with its settings, and the count and latency of its decisions of the
+    last 7 days per mode and outcome. Needs the `manage_reports` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  responses:
+    "200":
+      description: The summary.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminHookSummary.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

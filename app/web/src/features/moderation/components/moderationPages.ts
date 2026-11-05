@@ -34,6 +34,13 @@ export const moderationPages: readonly StaffPage[] = [
     icon: AppealIcon,
   },
   {
+    href: "/moderation/hook-decisions",
+    permission: "manage_reports",
+    label: "client:admin.hook_decisions.title",
+    description: "client:admin.hook_decisions.menu",
+    icon: AuditLogIcon,
+  },
+  {
     href: "/moderation/audit-log",
     permission: "view_audit",
     label: "client:admin.audit_log.title",

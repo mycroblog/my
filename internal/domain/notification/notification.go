@@ -97,6 +97,9 @@ const (
 	// the group. At most ErrorGroupHourlyCap of them are made in an hour; the rest of the hour
 	// fold into one with ErrorGroupChange others and the hour in ErrorGroupHour.
 	TypeAdminErrorGroup Type = "admin_error_group"
+	// TypeAdminHookFailing tells the holders of manage_reports that calls of a decision hook keep
+	// failing, so that subjects go unreviewed or wait (ADR-0147).
+	TypeAdminHookFailing Type = "admin_hook_failing"
 	// TypeStatus tells a local account of a new post of an account it subscribes to (ADR-0086):
 	// SourceAccountID is the author and StatusID the post.
 	TypeStatus Type = "status"
@@ -203,7 +206,7 @@ var Types = []Type{
 	TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 	TypeAccountMoved, TypeAdminAccountMoved,
 	TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
-	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeStatus, TypeAnnouncement,
+	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
 }
 
 // Valid reports whether t is a known notification type.
@@ -216,7 +219,7 @@ func (t Type) Valid() bool {
 		TypeSupporterPaymentFailed, TypeSupporterSubscriptionEnded, TypeSupporterPlanRetired,
 		TypeAccountMoved, TypeAdminAccountMoved,
 		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
-		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeStatus, TypeAnnouncement:
+		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement:
 		return true
 	}
 	return false
@@ -348,6 +351,7 @@ func (n Notification) Validate() error {
 		n.Type == TypeAdminServiceClosureDue && n.SourceAccountID != "",
 		n.Type == TypeAdminAppeal && n.SourceAccountID != "",
 		n.Type == TypeAdminWebhookDisabled && n.SourceAccountID != "",
+		n.Type == TypeAdminHookFailing && n.SourceAccountID != "",
 		n.Type == TypeAdminCustomEmojiRequest && n.SourceAccountID != "",
 		n.Type == TypeCustomEmojiRequestDecided && n.SourceAccountID != "",
 		n.Type == TypeAdminSignUp && (n.SubjectUserID == "" || n.SourceAccountID != ""):
@@ -482,7 +486,7 @@ const (
 // other types need none.
 func ModeratorPermission(t Type) (Permission, bool) {
 	switch t {
-	case TypeAdminReport:
+	case TypeAdminReport, TypeAdminHookFailing:
 		return PermissionManageReports, true
 	case TypeAdminSignUp, TypeAdminAppeal, TypeAdminAccountMoved:
 		return PermissionManageAccounts, true
@@ -527,6 +531,12 @@ func AppealDecidedKey(appealID string) string { return string(TypeAppealDecided)
 // state change of the endpoint that disabled it.
 func AdminWebhookDisabledKey(stateChangeID string) string {
 	return string(TypeAdminWebhookDisabled) + ":" + stateChangeID
+}
+
+// AdminHookFailingKey is the dedupe key of an admin_hook_failing notification: one per hook and UTC
+// day, however often its breaker opens.
+func AdminHookFailingKey(hook string, at time.Time) string {
+	return string(TypeAdminHookFailing) + ":" + hook + ":" + at.UTC().Format(time.DateOnly)
 }
 
 // AdminCustomEmojiRequestKey is the dedupe key of an admin_custom_emoji_request notification: one

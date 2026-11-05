@@ -25,7 +25,8 @@ key, so `inbound.status` has `plugin_inbound_status_address`.
 | `signup.check` | Email addresses and IP addresses | **Refused** | `json` | 2 s |
 | `media.check` | A small processed version of the media, never the original | Allowed | `json` | 10 s |
 
-The settings that make the server use a destination belong to each feature. This page covers what they share.
+The settings that make the server use a destination belong to each feature: the last five kinds of the table are the
+[decision hooks](decision-hooks.md). This page covers what they share.
 
 The server sends at most a kind's fixed limit per message and reads at most another. A call over the limit fails, and
 the job that made it retries.
@@ -122,8 +123,102 @@ contract of the kind.
 from `--mail-from` (default: the same address), and checks that the plugin refuses a request with no recipient.
 [Sending email](email.md#a-plugin-mail--plugin) has the contract of the kind.
 
+`--kind translator` sends a few fixed English sentences, translating them to Japanese (`--translate-from` and `--translate-to`
+choose another pair for a plugin that has only some). A service behind the plugin that bills per character bills these too,
+about 200 characters. It checks the form of the answers, and that the plugin refuses the language `qaa`, a code that ISO 639
+leaves for private use. It cannot judge the words, so read a translation of the plugin yourself.
+[Translating posts](#translating-posts) has the contract of the kind.
+
 `probe` is the smallest kind, and the server delegates nothing to it. Serve it first, to check the transport, the
 protocol, and the authentication before you write the rest of the plugin.
+
+## Translating posts
+
+A plugin of the kind `translator` lets the server translate a post when a reader asks, through a service you choose. It is
+the only server-side provider in this version. Without one, the only translation is the one built into the reader's browser,
+which exists only in desktop Chrome, Edge, and Opera: readers on a phone, in Firefox, or in Safari get no translate button
+until you enable a server-side provider.
+
+```sh
+MY_PLUGIN_TRANSLATOR_ADDRESS=unix:///run/my/translator.sock
+MY_PLUGIN_TRANSLATOR_NAME="Our translator"    # what readers see next to a translation
+```
+
+1. Set `plugin_translator_address` and `plugin_translator_name`, and restart. The name is required, since readers trust a
+   translation according to where it comes from. The address never leaves the configuration.
+2. [Update your privacy policy](privacy-policy-template.md#the-services-you-choose), and name the service behind the plugin
+   as a translation service: what the plugin passes on is what it receives.
+3. Enable it with the [instance setting](instance-settings.md) `translation_providers = plugin`. A change takes effect at once.
+
+Having an address enables nothing: until the setting names `plugin`, the server sends nothing and readers see no button.
+
+The plugin is one provider like any other. [`translation_provider_visibilities`](instance-settings.md) decides what it may
+receive, the monthly limits count what it is sent, and a translation it made stays in the server's cache like another.
+It can come before or after another provider in the order of `translation_providers`.
+
+### What the plugin receives
+
+The plugin receives the text of a post when a reader asks for a translation: its body, content warning, poll options, and
+image descriptions, and the language of the text and the language to translate into. It does not receive the post's address,
+its author, the reader, mentions, hashtags, links, custom emoji, or code: numbered markers stand in for them.
+
+By default that is `public`, `local`, and `unlisted` posts. **`private` and `direct` posts reach the plugin only when you allow
+them**, with `translation_provider_visibilities = plugin=public|local|unlisted|private|direct`. Then the plugin, and any
+service behind it, reads text that the author meant for few people, so allow them only if you control where the text goes,
+and say so in your privacy policy. The server cannot recall text it has sent.
+
+The server refuses `http://` for this kind, also on loopback, because the text is the text of posts. Use a Unix socket or
+`https://`.
+
+### An LLM behind a plugin
+
+The server has no LLM provider and offers none, on purpose. Anyone can write a post, so the text to translate is a way to
+give an LLM instructions (a prompt injection), and readers take a translation for what the post says. Sanitizing protects
+the HTML of a page: it cannot stop a translation from saying something that the post does not say.
+
+The server cannot see what a plugin calls. **If your plugin uses an LLM, this risk and its consequences are your own
+responsibility.**
+
+### The contract
+
+The RPC is `Translate` of `my.plugin.translator.v1.TranslatorService`:
+
+```text
+POST /my.plugin.translator.v1.TranslatorService/Translate
+Content-Type: application/json
+
+{"fragments":["Good morning ⟦1⟧, this is ⟦2⟧important⟦/2⟧.","⟦3⟧"],"sourceLanguage":"en","targetLanguage":"ja"}
+```
+
+```text
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"outcome":"OUTCOME_OK","translations":["⟦1⟧さん、おはようございます。これは⟦2⟧重要⟦/2⟧です。","⟦3⟧"],"detectedLanguage":"en"}
+```
+
+- `sourceLanguage` is a BCP 47 tag, or `und` when the server does not know the language. The plugin then detects it and reports
+  it in `detectedLanguage`, or answers `OUTCOME_UNSUPPORTED_LANGUAGE`. `detectedLanguage` may be missing when the plugin has
+  nothing to add, and the server ignores a value that is no language tag.
+- `translations` has one entry per fragment, in the order of the fragments, none of them empty. A fragment can be nothing but
+  markers, and its translation is then those markers.
+- `⟦1⟧` stands for one item or opens a pair that `⟦/1⟧` closes. Each marker of a fragment comes back exactly once in its
+  translation, unchanged. Items may move as word order requires, but a pair stays open before it closes, and pairs nest.
+- A translation is plain text. The server escapes any markup in it, and sanitizes the result before it stores or shows it.
+
+| `outcome` | Meaning | What the server does |
+| --- | --- | --- |
+| `OUTCOME_OK` | The translations are in the response | Checks them, stores them, and answers the reader |
+| `OUTCOME_TEMPORARY` | The service failed or did not answer | Tries the next provider |
+| `OUTCOME_PROVIDER_LIMIT` | The service reports its own rate limit or quota | Tries the next provider |
+| `OUTCOME_UNSUPPORTED_LANGUAGE` | The service does not have the source or target language, or cannot detect it | Tries the next provider, and tells the reader if none has it |
+
+An answer that breaks these rules counts as `OUTCOME_TEMPORARY` and nothing of it is stored, like a missing or unknown
+`outcome` and a failed call. When no provider answers, the reader sees that the translation failed and the post stays as it is.
+The characters of each call count against the monthly limits, also of a call that fails, since the service may have received them.
+
+The server stops waiting after `plugin_translator_timeout`, and after 20 seconds whatever that setting says. It does not retry a
+failed call, and the same fragments can come again for another reader.
 
 ## A plugin with no library
 

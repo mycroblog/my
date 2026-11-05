@@ -297,6 +297,8 @@ const (
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionHookDecisionApplied             AdminAuditAction = "hook_decision_applied"
+	AdminAuditActionHookDecisionOverridden          AdminAuditAction = "hook_decision_overridden"
 	AdminAuditActionInstanceMarkedAvailable         AdminAuditAction = "instance_marked_available"
 	AdminAuditActionInviteCreated                   AdminAuditAction = "invite_created"
 	AdminAuditActionInviteRevoked                   AdminAuditAction = "invite_revoked"
@@ -429,6 +431,10 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
+		return true
+	case AdminAuditActionHookDecisionApplied:
+		return true
+	case AdminAuditActionHookDecisionOverridden:
 		return true
 	case AdminAuditActionInstanceMarkedAvailable:
 		return true
@@ -597,6 +603,7 @@ const (
 	AdminAuditTargetKindCustomEmoji           AdminAuditTargetKind = "custom_emoji"
 	AdminAuditTargetKindCustomEmojiRequest    AdminAuditTargetKind = "custom_emoji_request"
 	AdminAuditTargetKindDomain                AdminAuditTargetKind = "domain"
+	AdminAuditTargetKindHookDecision          AdminAuditTargetKind = "hook_decision"
 	AdminAuditTargetKindInstance              AdminAuditTargetKind = "instance"
 	AdminAuditTargetKindInvite                AdminAuditTargetKind = "invite"
 	AdminAuditTargetKindLinkCardDomain        AdminAuditTargetKind = "link_card_domain"
@@ -637,6 +644,8 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindCustomEmojiRequest:
 		return true
 	case AdminAuditTargetKindDomain:
+		return true
+	case AdminAuditTargetKindHookDecision:
 		return true
 	case AdminAuditTargetKindInstance:
 		return true
@@ -2081,6 +2090,168 @@ func (e FinanceVisibility) Valid() bool {
 	}
 }
 
+// Defines values for HookDecisionMode.
+const (
+	HookDecisionModeEnforce HookDecisionMode = "enforce"
+	HookDecisionModeObserve HookDecisionMode = "observe"
+)
+
+// Valid indicates whether the value is a known member of the HookDecisionMode enum.
+func (e HookDecisionMode) Valid() bool {
+	switch e {
+	case HookDecisionModeEnforce:
+		return true
+	case HookDecisionModeObserve:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for HookMode.
+const (
+	HookModeEnforce HookMode = "enforce"
+	HookModeObserve HookMode = "observe"
+	HookModeOff     HookMode = "off"
+)
+
+// Valid indicates whether the value is a known member of the HookMode enum.
+func (e HookMode) Valid() bool {
+	switch e {
+	case HookModeEnforce:
+		return true
+	case HookModeObserve:
+		return true
+	case HookModeOff:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for HookName.
+const (
+	HookNameInboundFollow HookName = "inbound.follow"
+	HookNameInboundStatus HookName = "inbound.status"
+	HookNameLocalStatus   HookName = "local.status"
+	HookNameMediaCheck    HookName = "media.check"
+	HookNameSignupCheck   HookName = "signup.check"
+)
+
+// Valid indicates whether the value is a known member of the HookName enum.
+func (e HookName) Valid() bool {
+	switch e {
+	case HookNameInboundFollow:
+		return true
+	case HookNameInboundStatus:
+		return true
+	case HookNameLocalStatus:
+		return true
+	case HookNameMediaCheck:
+		return true
+	case HookNameSignupCheck:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for HookOnFailure.
+const (
+	HookOnFailurePass            HookOnFailure = "pass"
+	HookOnFailureRequireApproval HookOnFailure = "require_approval"
+	HookOnFailureRetry           HookOnFailure = "retry"
+)
+
+// Valid indicates whether the value is a known member of the HookOnFailure enum.
+func (e HookOnFailure) Valid() bool {
+	switch e {
+	case HookOnFailurePass:
+		return true
+	case HookOnFailureRequireApproval:
+		return true
+	case HookOnFailureRetry:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for HookOutcome.
+const (
+	HookOutcomeAllow           HookOutcome = "allow"
+	HookOutcomeBreakerOpen     HookOutcome = "breaker_open"
+	HookOutcomeDrop            HookOutcome = "drop"
+	HookOutcomeError           HookOutcome = "error"
+	HookOutcomeFlag            HookOutcome = "flag"
+	HookOutcomeInvalid         HookOutcome = "invalid"
+	HookOutcomeMarkSensitive   HookOutcome = "mark_sensitive"
+	HookOutcomeReject          HookOutcome = "reject"
+	HookOutcomeRequireApproval HookOutcome = "require_approval"
+	HookOutcomeTimeout         HookOutcome = "timeout"
+)
+
+// Valid indicates whether the value is a known member of the HookOutcome enum.
+func (e HookOutcome) Valid() bool {
+	switch e {
+	case HookOutcomeAllow:
+		return true
+	case HookOutcomeBreakerOpen:
+		return true
+	case HookOutcomeDrop:
+		return true
+	case HookOutcomeError:
+		return true
+	case HookOutcomeFlag:
+		return true
+	case HookOutcomeInvalid:
+		return true
+	case HookOutcomeMarkSensitive:
+		return true
+	case HookOutcomeReject:
+		return true
+	case HookOutcomeRequireApproval:
+		return true
+	case HookOutcomeTimeout:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for HookReason.
+const (
+	HookReasonHarassment HookReason = "harassment"
+	HookReasonIllegal    HookReason = "illegal"
+	HookReasonMalware    HookReason = "malware"
+	HookReasonOther      HookReason = "other"
+	HookReasonSexual     HookReason = "sexual"
+	HookReasonSpam       HookReason = "spam"
+	HookReasonViolence   HookReason = "violence"
+)
+
+// Valid indicates whether the value is a known member of the HookReason enum.
+func (e HookReason) Valid() bool {
+	switch e {
+	case HookReasonHarassment:
+		return true
+	case HookReasonIllegal:
+		return true
+	case HookReasonMalware:
+		return true
+	case HookReasonOther:
+		return true
+	case HookReasonSexual:
+		return true
+	case HookReasonSpam:
+		return true
+	case HookReasonViolence:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IncomeKind.
 const (
 	IncomeKindChargeback         IncomeKind = "chargeback"
@@ -2307,6 +2478,15 @@ const (
 	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
 	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
 	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyHookInboundFollowMode              InstanceSettingKey = "hook_inbound_follow_mode"
+	InstanceSettingKeyHookInboundFollowOnFailure         InstanceSettingKey = "hook_inbound_follow_on_failure"
+	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
+	InstanceSettingKeyHookInboundStatusOnFailure         InstanceSettingKey = "hook_inbound_status_on_failure"
+	InstanceSettingKeyHookLocalStatusMode                InstanceSettingKey = "hook_local_status_mode"
+	InstanceSettingKeyHookMediaCheckMode                 InstanceSettingKey = "hook_media_check_mode"
+	InstanceSettingKeyHookMediaCheckOnFailure            InstanceSettingKey = "hook_media_check_on_failure"
+	InstanceSettingKeyHookSignupCheckMode                InstanceSettingKey = "hook_signup_check_mode"
+	InstanceSettingKeyHookSignupCheckOnFailure           InstanceSettingKey = "hook_signup_check_on_failure"
 	InstanceSettingKeyIncomeVisibility                   InstanceSettingKey = "income_visibility"
 	InstanceSettingKeyIndexableDefault                   InstanceSettingKey = "indexable_default"
 	InstanceSettingKeyInviteCreators                     InstanceSettingKey = "invite_creators"
@@ -2333,6 +2513,7 @@ const (
 	InstanceSettingKeyRemoteStatusRetentionDays          InstanceSettingKey = "remote_status_retention_days"
 	InstanceSettingKeyReportsRetentionDays               InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription            InstanceSettingKey = "require_media_description"
+	InstanceSettingKeyRetentionHookDecisions             InstanceSettingKey = "retention_hook_decisions"
 	InstanceSettingKeySearchIndexing                     InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
 	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
@@ -2388,6 +2569,24 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyFinanceVisibility:
 		return true
+	case InstanceSettingKeyHookInboundFollowMode:
+		return true
+	case InstanceSettingKeyHookInboundFollowOnFailure:
+		return true
+	case InstanceSettingKeyHookInboundStatusMode:
+		return true
+	case InstanceSettingKeyHookInboundStatusOnFailure:
+		return true
+	case InstanceSettingKeyHookLocalStatusMode:
+		return true
+	case InstanceSettingKeyHookMediaCheckMode:
+		return true
+	case InstanceSettingKeyHookMediaCheckOnFailure:
+		return true
+	case InstanceSettingKeyHookSignupCheckMode:
+		return true
+	case InstanceSettingKeyHookSignupCheckOnFailure:
+		return true
 	case InstanceSettingKeyIncomeVisibility:
 		return true
 	case InstanceSettingKeyIndexableDefault:
@@ -2439,6 +2638,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyReportsRetentionDays:
 		return true
 	case InstanceSettingKeyRequireMediaDescription:
+		return true
+	case InstanceSettingKeyRetentionHookDecisions:
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
@@ -2814,6 +3015,7 @@ const (
 	NotificationGroupAdminAppeal             NotificationGroup = "admin_appeal"
 	NotificationGroupAdminCustomEmojiRequest NotificationGroup = "admin_custom_emoji_request"
 	NotificationGroupAdminErrorGroup         NotificationGroup = "admin_error_group"
+	NotificationGroupAdminHookFailing        NotificationGroup = "admin_hook_failing"
 	NotificationGroupAdminReport             NotificationGroup = "admin_report"
 	NotificationGroupAdminServiceClosureDue  NotificationGroup = "admin_service_closure_due"
 	NotificationGroupAdminSignUp             NotificationGroup = "admin_sign_up"
@@ -2847,6 +3049,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAdminCustomEmojiRequest:
 		return true
 	case NotificationGroupAdminErrorGroup:
+		return true
+	case NotificationGroupAdminHookFailing:
 		return true
 	case NotificationGroupAdminReport:
 		return true
@@ -2937,6 +3141,7 @@ const (
 	NotificationTypeAdminAppeal                NotificationType = "admin_appeal"
 	NotificationTypeAdminCustomEmojiRequest    NotificationType = "admin_custom_emoji_request"
 	NotificationTypeAdminErrorGroup            NotificationType = "admin_error_group"
+	NotificationTypeAdminHookFailing           NotificationType = "admin_hook_failing"
 	NotificationTypeAdminReport                NotificationType = "admin_report"
 	NotificationTypeAdminServiceClosureDue     NotificationType = "admin_service_closure_due"
 	NotificationTypeAdminSignUp                NotificationType = "admin_sign_up"
@@ -2978,6 +3183,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeAdminCustomEmojiRequest:
 		return true
 	case NotificationTypeAdminErrorGroup:
+		return true
+	case NotificationTypeAdminHookFailing:
 		return true
 	case NotificationTypeAdminReport:
 		return true
@@ -4987,6 +5194,9 @@ type AdminAppealPage struct {
 // `appeal_upheld`, `appeal_overturned` (which also records the action's
 // `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
+// `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
+// and left state; the actor is the system), `hook_decision_overridden` (a moderator
+// cancelled the decision). On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
 // `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -5062,6 +5272,9 @@ type AdminAuditEntry struct {
 	// `appeal_upheld`, `appeal_overturned` (which also records the action's
 	// `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
+	// `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
+	// and left state; the actor is the system), `hook_decision_overridden` (a moderator
+	// cancelled the decision). On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),
 	// `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -5413,6 +5626,101 @@ type AdminDomainActionPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminHook A decision hook with its settings and the decisions of the period.
+type AdminHook struct {
+	// Configured Whether the hook has a plugin. A hook without one calls nothing, whatever its mode.
+	Configured bool `json:"configured"`
+
+	// Hook A decision hook, where the server asks an external review before it accepts something:
+	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+	Hook HookName `json:"hook"`
+
+	// Mode How far a decision hook acts: `off` calls nothing, `observe` records the verdict and acts on
+	// nothing, `enforce` acts on the verdict.
+	Mode HookMode `json:"mode"`
+
+	// OnFailure What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
+	// fails the job so that it runs again, and `require_approval` holds the sign-up for approval.
+	OnFailure *HookOnFailure `json:"on_failure,omitempty"`
+
+	// Outcomes The decisions per mode and outcome.
+	Outcomes []AdminHookOutcome `json:"outcomes"`
+}
+
+// AdminHookDecision What a decision hook answered about one subject. It holds no text of a post.
+type AdminHookDecision struct {
+	// AccountId The account the subject belongs to; absent when there is none.
+	AccountId *string   `json:"account_id,omitempty"`
+	DecidedAt time.Time `json:"decided_at"`
+
+	// Hook A decision hook, where the server asks an external review before it accepts something:
+	// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
+	// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+	Hook HookName `json:"hook"`
+	Id   string   `json:"id"`
+
+	// LatencyMs How long the call took, in milliseconds.
+	LatencyMs int64 `json:"latency_ms"`
+
+	// Mode The mode of the hook when it made the decision.
+	Mode HookDecisionMode `json:"mode"`
+
+	// Note The plugin's short plain-text note for the moderators; absent when there is none.
+	Note *string `json:"note,omitempty"`
+
+	// Outcome What a decision records: a verdict (`allow`, `drop`, `flag`, `mark_sensitive`,
+	// `require_approval`, `reject`), or a kind of failure, which is not a verdict: `timeout`, `error`,
+	// `invalid` (the answer is outside the hook's vocabulary), `breaker_open` (the server skipped
+	// the plugin after repeated failures).
+	Outcome HookOutcome `json:"outcome"`
+
+	// Overridable Whether a moderator can cancel it here: a verdict in force that stopped or changed
+	// something. A `reject` of `local.status` goes through its appeal instead.
+	Overridable bool `json:"overridable"`
+
+	// OverriddenAt When a moderator cancelled the decision; absent while it stands.
+	OverriddenAt *time.Time `json:"overridden_at,omitempty"`
+
+	// Reason The coded reason of a verdict.
+	Reason *HookReason `json:"reason,omitempty"`
+
+	// SubjectKey What identifies the subject for the hook, such as the URI of a received activity.
+	SubjectKey string `json:"subject_key"`
+}
+
+// AdminHookDecisionPage A page of decisions, the newest first.
+type AdminHookDecisionPage struct {
+	Items []AdminHookDecision `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminHookOutcome How many decisions of one mode and outcome a hook made, and how long they took.
+type AdminHookOutcome struct {
+	AverageLatencyMs int64 `json:"average_latency_ms"`
+	Count            int64 `json:"count"`
+	MaxLatencyMs     int64 `json:"max_latency_ms"`
+
+	// Mode The mode of the hook when it made the decision.
+	Mode HookDecisionMode `json:"mode"`
+
+	// Outcome What a decision records: a verdict (`allow`, `drop`, `flag`, `mark_sensitive`,
+	// `require_approval`, `reject`), or a kind of failure, which is not a verdict: `timeout`, `error`,
+	// `invalid` (the answer is outside the hook's vocabulary), `breaker_open` (the server skipped
+	// the plugin after repeated failures).
+	Outcome HookOutcome `json:"outcome"`
+}
+
+// AdminHookSummary Every decision hook with its settings, and its decisions of the last 7 days.
+type AdminHookSummary struct {
+	Hooks []AdminHook `json:"hooks"`
+
+	// Since The start of the period that the counts cover.
+	Since time.Time `json:"since"`
 }
 
 // AdminIncomePeriodTotal A week, month, or year of the income totals as the administrators see it: the `gross`, the
@@ -8962,6 +9270,31 @@ type FollowAccountRequest struct {
 	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
+// HookDecisionMode The mode of the hook when it made the decision.
+type HookDecisionMode string
+
+// HookMode How far a decision hook acts: `off` calls nothing, `observe` records the verdict and acts on
+// nothing, `enforce` acts on the verdict.
+type HookMode string
+
+// HookName A decision hook, where the server asks an external review before it accepts something:
+// `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
+// `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+type HookName string
+
+// HookOnFailure What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
+// fails the job so that it runs again, and `require_approval` holds the sign-up for approval.
+type HookOnFailure string
+
+// HookOutcome What a decision records: a verdict (`allow`, `drop`, `flag`, `mark_sensitive`,
+// `require_approval`, `reject`), or a kind of failure, which is not a verdict: `timeout`, `error`,
+// `invalid` (the answer is outside the hook's vocabulary), `breaker_open` (the server skipped
+// the plugin after repeated failures).
+type HookOutcome string
+
+// HookReason The coded reason of a verdict.
+type HookReason string
+
 // Id The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -9192,6 +9525,10 @@ type Instance struct {
 
 	// Domain The domain that serves the instance.
 	Domain string `json:"domain"`
+
+	// ExternalReviews The decision hooks in use: what the server sends to an external review before it accepts it.
+	// Absent when there is none. The information page states this.
+	ExternalReviews *[]HookName `json:"external_reviews,omitempty"`
 
 	// Federation How the instance federates with other servers, so that clients offer only the
 	// operations on remote accounts and posts that can work.
@@ -10457,6 +10794,8 @@ type Notification struct {
 	// `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
 	// `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
 	// answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
+	// `admin_hook_failing` (calls of an external review keep failing; it names none) to those
+	// with `manage_reports`, and
 	// `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
 	// `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
 	// `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -10530,7 +10869,7 @@ type NotificationErrorGroupChange string
 // `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 // `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 // `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
 // `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
@@ -10594,7 +10933,7 @@ type NotificationSettingRow struct {
 	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 	// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
 	// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
@@ -10644,7 +10983,7 @@ type NotificationSettingsUpdate struct {
 		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 		// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
 		// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
@@ -10680,6 +11019,8 @@ type NotificationSettingsUpdateChangesChannel string
 // `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
 // `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
 // answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
+// `admin_hook_failing` (calls of an external review keep failing; it names none) to those
+// with `manage_reports`, and
 // `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
 // `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
 // `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -11495,6 +11836,9 @@ type PreviewDomainBlockImportRequest struct {
 //     is not in the state the operation needs, or was decided meanwhile.
 //   - `/api/v1/problems/email-already-verified` (409): the primary email address is already
 //     confirmed, so no confirmation mail is sent.
+//   - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
+//     had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
+//     its appeal.
 //   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
 //     suppressed, so there is nothing to lift.
 //   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
@@ -14056,6 +14400,24 @@ type ListErrorGroupsParams struct {
 
 	// Source Keep the groups of this source; both by default.
 	Source *ErrorGroupSource `form:"source,omitempty" json:"source,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListHookDecisionsParams defines parameters for ListHookDecisions.
+type ListHookDecisionsParams struct {
+	// Hook Keep the decisions of this hook.
+	Hook *HookName `form:"hook,omitempty" json:"hook,omitempty"`
+
+	// Mode Keep the decisions made in this mode.
+	Mode *HookDecisionMode `form:"mode,omitempty" json:"mode,omitempty"`
+
+	// Outcome Keep the decisions with this outcome.
+	Outcome *HookOutcome `form:"outcome,omitempty" json:"outcome,omitempty"`
 
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
@@ -18103,6 +18465,33 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/error_groups/{id}/unmute (the `UnmuteErrorGroup` operationId).
 	UnmuteErrorGroup(ctx context.Context, id ErrorGroupId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListHookDecisions List the decisions of the decision hooks
+	//
+	// What the external reviews said, the newest first. Without `outcome` the list leaves out
+	// `allow`: it shows what a hook stopped, would have stopped in `observe`, or could not check.
+	// Needs the `manage_reports` permission.
+	//
+	// Corresponds with GET /admin/hook_decisions (the `ListHookDecisions` operationId).
+	ListHookDecisions(ctx context.Context, params *ListHookDecisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetHookSummary Summarize the decision hooks
+	//
+	// Every decision hook with its settings, and the count and latency of its decisions of the
+	// last 7 days per mode and outcome. Needs the `manage_reports` permission.
+	//
+	// Corresponds with GET /admin/hook_decisions/summary (the `GetHookSummary` operationId).
+	GetHookSummary(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OverrideHookDecision Cancel a decision
+	//
+	// Records the cancellation as its own event and in the audit log, and undoes what the hook
+	// can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
+	// effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
+	// appeal, is a 409. Needs the `manage_reports` permission.
+	//
+	// Corresponds with POST /admin/hook_decisions/{id}/override (the `OverrideHookDecision` operationId).
+	OverrideHookDecision(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListIncomeMovements List the money movements of the income
 	//
 	// The payment provider's money movements that the income records keep, newest
@@ -20469,7 +20858,7 @@ type ClientInterface interface {
 	// mutes with notifications hidden are left out, also those that came before the block or
 	// mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 	// `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_service_closure_due`, `admin_error_group`) are left out once
+	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
 	// the user's roles no longer grant the permission they need.
 	//
 	// Corresponds with GET /notifications (the `ListNotifications` operationId).
@@ -25099,6 +25488,63 @@ func (c *Client) UnmuteErrorGroup(ctx context.Context, id ErrorGroupId, reqEdito
 	return c.Client.Do(req)
 }
 
+// ListHookDecisions List the decisions of the decision hooks
+//
+// What the external reviews said, the newest first. Without `outcome` the list leaves out
+// `allow`: it shows what a hook stopped, would have stopped in `observe`, or could not check.
+// Needs the `manage_reports` permission.
+//
+// Corresponds with GET /admin/hook_decisions (the `ListHookDecisions` operationId).
+func (c *Client) ListHookDecisions(ctx context.Context, params *ListHookDecisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListHookDecisionsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetHookSummary Summarize the decision hooks
+//
+// Every decision hook with its settings, and the count and latency of its decisions of the
+// last 7 days per mode and outcome. Needs the `manage_reports` permission.
+//
+// Corresponds with GET /admin/hook_decisions/summary (the `GetHookSummary` operationId).
+func (c *Client) GetHookSummary(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetHookSummaryRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OverrideHookDecision Cancel a decision
+//
+// Records the cancellation as its own event and in the audit log, and undoes what the hook
+// can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
+// effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
+// appeal, is a 409. Needs the `manage_reports` permission.
+//
+// Corresponds with POST /admin/hook_decisions/{id}/override (the `OverrideHookDecision` operationId).
+func (c *Client) OverrideHookDecision(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOverrideHookDecisionRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListIncomeMovements List the money movements of the income
 //
 // The payment provider's money movements that the income records keep, newest
@@ -29415,7 +29861,7 @@ func (c *Client) ListMutes(ctx context.Context, params *ListMutesParams, reqEdit
 // mutes with notifications hidden are left out, also those that came before the block or
 // mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 // `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_service_closure_due`, `admin_error_group`) are left out once
+// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
 // the user's roles no longer grant the permission they need.
 //
 // Corresponds with GET /notifications (the `ListNotifications` operationId).
@@ -36788,6 +37234,169 @@ func NewUnmuteErrorGroupRequest(server string, id ErrorGroupId) (*http.Request, 
 	}
 
 	operationPath := fmt.Sprintf("/admin/error_groups/%s/unmute", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListHookDecisionsRequest constructs an http.Request for the ListHookDecisions method
+func NewListHookDecisionsRequest(server string, params *ListHookDecisionsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/hook_decisions")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Hook != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "hook", *params.Hook, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Mode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "mode", *params.Mode, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Outcome != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "outcome", *params.Outcome, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetHookSummaryRequest constructs an http.Request for the GetHookSummary method
+func NewGetHookSummaryRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/hook_decisions/summary")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewOverrideHookDecisionRequest constructs an http.Request for the OverrideHookDecision method
+func NewOverrideHookDecisionRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/hook_decisions/%s/override", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -49991,6 +50600,39 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/error_groups/{id}/unmute (the `UnmuteErrorGroup` operationId).
 	UnmuteErrorGroupWithResponse(ctx context.Context, id ErrorGroupId, reqEditors ...RequestEditorFn) (*UnmuteErrorGroupResponse, error)
 
+	// ListHookDecisionsWithResponse List the decisions of the decision hooks
+	//
+	// What the external reviews said, the newest first. Without `outcome` the list leaves out
+	// `allow`: it shows what a hook stopped, would have stopped in `observe`, or could not check.
+	// Needs the `manage_reports` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/hook_decisions (the `ListHookDecisions` operationId).
+	ListHookDecisionsWithResponse(ctx context.Context, params *ListHookDecisionsParams, reqEditors ...RequestEditorFn) (*ListHookDecisionsResponse, error)
+
+	// GetHookSummaryWithResponse Summarize the decision hooks
+	//
+	// Every decision hook with its settings, and the count and latency of its decisions of the
+	// last 7 days per mode and outcome. Needs the `manage_reports` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/hook_decisions/summary (the `GetHookSummary` operationId).
+	GetHookSummaryWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHookSummaryResponse, error)
+
+	// OverrideHookDecisionWithResponse Cancel a decision
+	//
+	// Records the cancellation as its own event and in the audit log, and undoes what the hook
+	// can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
+	// effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
+	// appeal, is a 409. Needs the `manage_reports` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/hook_decisions/{id}/override (the `OverrideHookDecision` operationId).
+	OverrideHookDecisionWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*OverrideHookDecisionResponse, error)
+
 	// ListIncomeMovementsWithResponse List the money movements of the income
 	//
 	// The payment provider's money movements that the income records keep, newest
@@ -52585,7 +53227,7 @@ type ClientWithResponsesInterface interface {
 	// mutes with notifications hidden are left out, also those that came before the block or
 	// mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 	// `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_service_closure_due`, `admin_error_group`) are left out once
+	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
 	// the user's roles no longer grant the permission they need.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -60635,6 +61277,194 @@ func (r UnmuteErrorGroupResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UnmuteErrorGroupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListHookDecisionsResponse200Headers the declared response headers of an HTTP 200 response for ListHookDecisions
+type ListHookDecisionsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListHookDecisionsResponseDefaultHeaders the declared response headers of an HTTP default response for ListHookDecisions
+type ListHookDecisionsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListHookDecisionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminHookDecisionPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListHookDecisionsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListHookDecisionsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListHookDecisionsResponse) GetJSON200() *AdminHookDecisionPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListHookDecisionsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListHookDecisionsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListHookDecisionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListHookDecisionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListHookDecisionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetHookSummaryResponse200Headers the declared response headers of an HTTP 200 response for GetHookSummary
+type GetHookSummaryResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetHookSummaryResponseDefaultHeaders the declared response headers of an HTTP default response for GetHookSummary
+type GetHookSummaryResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetHookSummaryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminHookSummary
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetHookSummaryResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetHookSummaryResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetHookSummaryResponse) GetJSON200() *AdminHookSummary {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetHookSummaryResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetHookSummaryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetHookSummaryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetHookSummaryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetHookSummaryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// OverrideHookDecisionResponseDefaultHeaders the declared response headers of an HTTP default response for OverrideHookDecision
+type OverrideHookDecisionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type OverrideHookDecisionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminHookDecision
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *OverrideHookDecisionResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r OverrideHookDecisionResponse) GetJSON200() *AdminHookDecision {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r OverrideHookDecisionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r OverrideHookDecisionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r OverrideHookDecisionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OverrideHookDecisionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r OverrideHookDecisionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -80198,6 +81028,57 @@ func (c *ClientWithResponses) UnmuteErrorGroupWithResponse(ctx context.Context, 
 	return ParseUnmuteErrorGroupResponse(rsp)
 }
 
+// ListHookDecisionsWithResponse List the decisions of the decision hooks
+//
+// What the external reviews said, the newest first. Without `outcome` the list leaves out
+// `allow`: it shows what a hook stopped, would have stopped in `observe`, or could not check.
+// Needs the `manage_reports` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/hook_decisions (the `ListHookDecisions` operationId).
+func (c *ClientWithResponses) ListHookDecisionsWithResponse(ctx context.Context, params *ListHookDecisionsParams, reqEditors ...RequestEditorFn) (*ListHookDecisionsResponse, error) {
+	rsp, err := c.ListHookDecisions(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListHookDecisionsResponse(rsp)
+}
+
+// GetHookSummaryWithResponse Summarize the decision hooks
+//
+// Every decision hook with its settings, and the count and latency of its decisions of the
+// last 7 days per mode and outcome. Needs the `manage_reports` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/hook_decisions/summary (the `GetHookSummary` operationId).
+func (c *ClientWithResponses) GetHookSummaryWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHookSummaryResponse, error) {
+	rsp, err := c.GetHookSummary(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetHookSummaryResponse(rsp)
+}
+
+// OverrideHookDecisionWithResponse Cancel a decision
+//
+// Records the cancellation as its own event and in the audit log, and undoes what the hook
+// can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
+// effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
+// appeal, is a 409. Needs the `manage_reports` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/hook_decisions/{id}/override (the `OverrideHookDecision` operationId).
+func (c *ClientWithResponses) OverrideHookDecisionWithResponse(ctx context.Context, id string, reqEditors ...RequestEditorFn) (*OverrideHookDecisionResponse, error) {
+	rsp, err := c.OverrideHookDecision(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOverrideHookDecisionResponse(rsp)
+}
+
 // ListIncomeMovementsWithResponse List the money movements of the income
 //
 // The payment provider's money movements that the income records keep, newest
@@ -83962,7 +84843,7 @@ func (c *ClientWithResponses) ListMutesWithResponse(ctx context.Context, params 
 // mutes with notifications hidden are left out, also those that came before the block or
 // mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 // `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_service_closure_due`, `admin_error_group`) are left out once
+// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
 // the user's roles no longer grant the permission they need.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -94074,6 +94955,227 @@ func ParseUnmuteErrorGroupResponse(rsp *http.Response) (*UnmuteErrorGroupRespons
 		response.Headers200 = &headers
 	case true:
 		var headers UnmuteErrorGroupResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListHookDecisionsResponse parses an HTTP response from a ListHookDecisionsWithResponse call
+func ParseListHookDecisionsResponse(rsp *http.Response) (*ListHookDecisionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListHookDecisionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminHookDecisionPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListHookDecisionsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListHookDecisionsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetHookSummaryResponse parses an HTTP response from a GetHookSummaryWithResponse call
+func ParseGetHookSummaryResponse(rsp *http.Response) (*GetHookSummaryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetHookSummaryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminHookSummary
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetHookSummaryResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetHookSummaryResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseOverrideHookDecisionResponse parses an HTTP response from a OverrideHookDecisionWithResponse call
+func ParseOverrideHookDecisionResponse(rsp *http.Response) (*OverrideHookDecisionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OverrideHookDecisionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminHookDecision
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers OverrideHookDecisionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

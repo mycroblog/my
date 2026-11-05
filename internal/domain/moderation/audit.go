@@ -55,6 +55,9 @@ const (
 	AuditTargetSetting     AuditTargetKind = "setting"
 	AuditTargetRule        AuditTargetKind = "rule"
 	AuditTargetSignupBlock AuditTargetKind = "signup_block"
+	// AuditTargetHookDecision is a decision of a decision hook (ADR-0147 §11); its label is the
+	// hook and the key of the subject.
+	AuditTargetHookDecision AuditTargetKind = "hook_decision"
 	// AuditTargetCustomEmoji is a custom emoji (ADR-0051 §5); its label is :shortcode:, or
 	// :shortcode:@domain for a remote one.
 	AuditTargetCustomEmoji AuditTargetKind = "custom_emoji"
@@ -116,7 +119,7 @@ var auditTargetKinds = []AuditTargetKind{
 	AuditTargetBillingSource, AuditTargetCostItem, AuditTargetSupporterProgram, AuditTargetSupporterPlan,
 	AuditTargetSupporterSubscription, AuditTargetCustomEmojiRequest, AuditTargetPaymentProvider,
 	AuditTargetOAuthClient, AuditTargetOAuthClientHost, AuditTargetInstance, AuditTargetVoiceRoom,
-	AuditTargetLoginProvider, AuditTargetLinkCardDomain,
+	AuditTargetLoginProvider, AuditTargetLinkCardDomain, AuditTargetHookDecision,
 }
 
 // AuditTargetKinds returns every kind of target, in the order of the schema's CHECK.
@@ -190,6 +193,11 @@ const (
 	AuditRevealedPrivateData AuditAction = "revealed_private_data"
 	// AuditSignupBlockAdded: a new sign-up block (signup_blocks).
 	AuditSignupBlockAdded AuditAction = "signup_block_added"
+	// AuditHookDecisionApplied: the server acted on a decision hook's verdict and left state
+	// (mark_sensitive, a filed flag, require_approval); drop and reject stay in hook_decisions.
+	AuditHookDecisionApplied AuditAction = "hook_decision_applied"
+	// AuditHookDecisionOverridden: a moderator cancelled a decision (hook_decision_overrides).
+	AuditHookDecisionOverridden AuditAction = "hook_decision_overridden"
 	// AuditSignupBlockLifted: a sign-up block was lifted (signup_block_lifts).
 	AuditSignupBlockLifted AuditAction = "signup_block_lifted"
 	// AuditTwoFactorDisabled: an administrator removed the two-factor authentication of a local
@@ -390,6 +398,8 @@ var auditActions = []struct {
 	{AuditRevealedPrivateData, AuditTargetAccount},
 	{AuditSignupBlockAdded, AuditTargetSignupBlock},
 	{AuditSignupBlockLifted, AuditTargetSignupBlock},
+	{AuditHookDecisionApplied, AuditTargetHookDecision},
+	{AuditHookDecisionOverridden, AuditTargetHookDecision},
 	{AuditTwoFactorDisabled, AuditTargetAccount},
 	{AuditPasswordResetLinkIssued, AuditTargetAccount},
 	{AuditEmailSuppressionLifted, AuditTargetAccount},

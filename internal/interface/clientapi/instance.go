@@ -121,6 +121,20 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		}
 		out.SupportersEnabled = enabled
 	}
+	// The external reviews in use, which the information page states (ADR-0147 §12).
+	if s.o.HookDecisions != nil {
+		used, err := s.o.HookDecisions.InUse(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: the hooks in use: %w", err)
+		}
+		if len(used) > 0 {
+			reviews := make([]HookName, len(used))
+			for i, n := range used {
+				reviews[i] = HookName(n)
+			}
+			out.ExternalReviews = &reviews
+		}
+	}
 	// Whether the voice chat rooms are on and who may open them (ADR-0100 §2), so that clients
 	// show their entries only then.
 	out.VoiceEnabled = s.o.Voice != nil

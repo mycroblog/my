@@ -867,6 +867,110 @@
     "defaultMessage": "このサーバーのアカウントのユーザー名を、空白で区切って 20 個まで。",
     "description": "Help text of the field of the accounts that the suggestions show first."
   },
+  "admin.settings.hooks.description": {
+    "defaultMessage": "審査は、サーバーの運営者がプラグインを設定したときだけ動きます。オフから適用へは観察を経て進みます。先に審査が何を止めるかを読めるようにするためです。",
+    "description": "Explanation of the section of the server settings about the external reviews."
+  },
+  "admin.settings.hooks.failure.pass": {
+    "defaultMessage": "通す",
+    "description": "Choice of what happens when an external review fails."
+  },
+  "admin.settings.hooks.failure.pass.description": {
+    "defaultMessage": "審査なしで受け付けます。審査が止まっている間はスパムが入ることがあります。",
+    "description": "Description of letting a submission through when its external review fails."
+  },
+  "admin.settings.hooks.failure.require_approval": {
+    "defaultMessage": "承認待ちにする",
+    "description": "Choice of what happens when the external review of sign-ups fails."
+  },
+  "admin.settings.hooks.failure.require_approval.description": {
+    "defaultMessage": "登録はモデレーターの承認を待ちます。",
+    "description": "Description of holding a sign-up for approval when its external review fails."
+  },
+  "admin.settings.hooks.failure.retry": {
+    "defaultMessage": "再試行する",
+    "description": "Choice of what happens when an external review fails."
+  },
+  "admin.settings.hooks.failure.retry.description": {
+    "defaultMessage": "ジョブをやり直します。投稿とフォローでは、同じ送信元の後続が、削除も含めて最長で約 4 時間止まります。",
+    "description": "Description of retrying when an external review fails."
+  },
+  "admin.settings.hooks.inbound_follow.mode": {
+    "defaultMessage": "ほかのサーバーからのフォロー",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_follow.on_failure": {
+    "defaultMessage": "ほかのサーバーからのフォロー: 審査が失敗したとき",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.inbound_status.mode": {
+    "defaultMessage": "ほかのサーバーからの投稿",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.inbound_status.on_failure": {
+    "defaultMessage": "ほかのサーバーからの投稿: 審査が失敗したとき",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.local_status.mode": {
+    "defaultMessage": "このサーバーの投稿",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.media_check.mode": {
+    "defaultMessage": "アップロードされたメディア",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.media_check.on_failure": {
+    "defaultMessage": "アップロードされたメディア: 審査が失敗したとき",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.mode.enforce": {
+    "defaultMessage": "適用",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.enforce.description": {
+    "defaultMessage": "判定に従います。",
+    "description": "Description of the Enforce mode of an external review."
+  },
+  "admin.settings.hooks.mode.observe": {
+    "defaultMessage": "観察",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.observe.description": {
+    "defaultMessage": "判定を記録するだけで、何も行いません。",
+    "description": "Description of the Observe mode of an external review."
+  },
+  "admin.settings.hooks.mode.off": {
+    "defaultMessage": "オフ",
+    "description": "Choice of the mode of an external review."
+  },
+  "admin.settings.hooks.mode.off.description": {
+    "defaultMessage": "何も呼びません。",
+    "description": "Description of the Off mode of an external review."
+  },
+  "admin.settings.hooks.retention": {
+    "defaultMessage": "判定を残す日数",
+    "description": "Label of the number of days the records of the decisions of the external reviews stay."
+  },
+  "admin.settings.hooks.retention.description": {
+    "defaultMessage": "{min} 日から {max} 日まで。センシティブの印の元になっている間、アカウントが保全されている間、作者が異議を申し立てられる間は、判定はより長く残ります。",
+    "description": "Description of the number of days the records of decisions stay. {min} and {max} are the bounds."
+  },
+  "admin.settings.hooks.retention.invalid": {
+    "defaultMessage": "{min} から {max} までの日数を整数で入力してください。",
+    "description": "Error of the number of days the records of decisions stay: not a whole number within {min} and {max}."
+  },
+  "admin.settings.hooks.signup_check.mode": {
+    "defaultMessage": "登録",
+    "description": "Label of the choice of the mode of the external review of this kind of submission."
+  },
+  "admin.settings.hooks.signup_check.on_failure": {
+    "defaultMessage": "登録: 審査が失敗したとき",
+    "description": "Label of the choice of what happens when this external review fails while it enforces."
+  },
+  "admin.settings.hooks.title": {
+    "defaultMessage": "外部の審査",
+    "description": "Heading of the section of the server settings about the external reviews of submissions."
+  },
   "admin.settings.login_providers_only.confirm.affected": {
     "defaultMessage": "{count, plural, =0 {有効な利用者は全員、ログインプロバイダーを連携しています。} other {有効な利用者のうち # 人はログインプロバイダーを連携しておらず、セッションが切れるとログインできなくなります。}}",
     "description": "In the confirmation dialog: how many active users have no link to an enabled login provider."

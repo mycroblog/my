@@ -2338,7 +2338,7 @@ export interface paths {
          *     mutes with notifications hidden are left out, also those that came before the block or
          *     mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
          *     `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-         *     `admin_service_closure_due`, `admin_error_group`) are left out once
+         *     `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
          *     the user's roles no longer grant the permission they need.
          */
         get: operations["listNotifications"];
@@ -4785,6 +4785,72 @@ export interface paths {
         get: operations["getDomainAction"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/hook_decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the decisions of the decision hooks
+         * @description What the external reviews said, the newest first. Without `outcome` the list leaves out
+         *     `allow`: it shows what a hook stopped, would have stopped in `observe`, or could not check.
+         *     Needs the `manage_reports` permission.
+         */
+        get: operations["listHookDecisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/hook_decisions/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summarize the decision hooks
+         * @description Every decision hook with its settings, and the count and latency of its decisions of the
+         *     last 7 days per mode and outcome. Needs the `manage_reports` permission.
+         */
+        get: operations["getHookSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/hook_decisions/{id}/override": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a decision
+         * @description Records the cancellation as its own event and in the audit log, and undoes what the hook
+         *     can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
+         *     effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
+         *     appeal, is a 409. Needs the `manage_reports` permission.
+         */
+        post: operations["overrideHookDecision"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8489,6 +8555,9 @@ export interface components {
          *     `appeal_upheld`, `appeal_overturned` (which also records the action's
          *     `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
          *     `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
+         *     `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
+         *     and left state; the actor is the system), `hook_decision_overridden` (a moderator
+         *     cancelled the decision). On a
          *     `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
          *     `custom_emoji_copied` (a new local emoji copied from a remote one),
          *     `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -8534,7 +8603,7 @@ export interface components {
          *     name.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -8593,7 +8662,7 @@ export interface components {
          * @description The kind of what an audited operation acted on.
          * @enum {string}
          */
-        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room" | "login_provider" | "link_card_domain";
+        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room" | "login_provider" | "link_card_domain" | "hook_decision";
         /** @description The time a remote server was marked unavailable or available again, and why. */
         AdminAvailabilityEvent: {
             id: components["schemas"]["Id"];
@@ -9669,6 +9738,108 @@ export interface components {
              */
             lifted_at?: string;
         };
+        /** @description A decision hook with its settings and the decisions of the period. */
+        AdminHook: {
+            hook: components["schemas"]["HookName"];
+            /** @description Whether the hook has a plugin. A hook without one calls nothing, whatever its mode. */
+            configured: boolean;
+            mode: components["schemas"]["HookMode"];
+            on_failure?: components["schemas"]["HookOnFailure"];
+            /** @description The decisions per mode and outcome. */
+            outcomes: components["schemas"]["AdminHookOutcome"][];
+        };
+        /** @description What a decision hook answered about one subject. It holds no text of a post. */
+        AdminHookDecision: {
+            id: string;
+            hook: components["schemas"]["HookName"];
+            /** @description What identifies the subject for the hook, such as the URI of a received activity. */
+            subject_key: string;
+            /** @description The account the subject belongs to; absent when there is none. */
+            account_id?: string;
+            mode: components["schemas"]["HookDecisionMode"];
+            outcome: components["schemas"]["HookOutcome"];
+            reason?: components["schemas"]["HookReason"];
+            /** @description The plugin's short plain-text note for the moderators; absent when there is none. */
+            note?: string;
+            /**
+             * Format: int64
+             * @description How long the call took, in milliseconds.
+             */
+            latency_ms: number;
+            /** Format: date-time */
+            decided_at: string;
+            /**
+             * Format: date-time
+             * @description When a moderator cancelled the decision; absent while it stands.
+             */
+            overridden_at?: string;
+            /**
+             * @description Whether a moderator can cancel it here: a verdict in force that stopped or changed
+             *     something. A `reject` of `local.status` goes through its appeal instead.
+             */
+            overridable: boolean;
+        };
+        /** @description A page of decisions, the newest first. */
+        AdminHookDecisionPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["AdminHookDecision"][];
+        };
+        /** @description How many decisions of one mode and outcome a hook made, and how long they took. */
+        AdminHookOutcome: {
+            mode: components["schemas"]["HookDecisionMode"];
+            outcome: components["schemas"]["HookOutcome"];
+            /** Format: int64 */
+            count: number;
+            /** Format: int64 */
+            average_latency_ms: number;
+            /** Format: int64 */
+            max_latency_ms: number;
+        };
+        /** @description Every decision hook with its settings, and its decisions of the last 7 days. */
+        AdminHookSummary: {
+            /**
+             * Format: date-time
+             * @description The start of the period that the counts cover.
+             */
+            since: string;
+            hooks: components["schemas"]["AdminHook"][];
+        };
+        /**
+         * @description The mode of the hook when it made the decision.
+         * @enum {string}
+         */
+        HookDecisionMode: "observe" | "enforce";
+        /**
+         * @description How far a decision hook acts: `off` calls nothing, `observe` records the verdict and acts on
+         *     nothing, `enforce` acts on the verdict.
+         * @enum {string}
+         */
+        HookMode: "off" | "observe" | "enforce";
+        /**
+         * @description A decision hook, where the server asks an external review before it accepts something:
+         *     `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
+         *     `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+         * @enum {string}
+         */
+        HookName: "inbound.status" | "inbound.follow" | "signup.check" | "media.check" | "local.status";
+        /**
+         * @description What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
+         *     fails the job so that it runs again, and `require_approval` holds the sign-up for approval.
+         * @enum {string}
+         */
+        HookOnFailure: "pass" | "retry" | "require_approval";
+        /**
+         * @description What a decision records: a verdict (`allow`, `drop`, `flag`, `mark_sensitive`,
+         *     `require_approval`, `reject`), or a kind of failure, which is not a verdict: `timeout`, `error`,
+         *     `invalid` (the answer is outside the hook's vocabulary), `breaker_open` (the server skipped
+         *     the plugin after repeated failures).
+         * @enum {string}
+         */
+        HookOutcome: "allow" | "drop" | "flag" | "mark_sensitive" | "require_approval" | "reject" | "timeout" | "error" | "invalid" | "breaker_open";
+        /**
+         * @description The coded reason of a verdict.
+         * @enum {string}
+         */
+        HookReason: "spam" | "harassment" | "sexual" | "violence" | "illegal" | "malware" | "other";
         /**
          * @description `email_domain`: the domain of the email address and its subdomains. `email_hash`: one
          *     email address, compared in lower case without the part of the local part from its first
@@ -11663,6 +11834,11 @@ export interface components {
             supporters_enabled: boolean;
             supporter_list_visibility: components["schemas"]["InstanceAudience"];
             /**
+             * @description The decision hooks in use: what the server sends to an external review before it accepts it.
+             *     Absent when there is none. The information page states this.
+             */
+            external_reviews?: components["schemas"]["HookName"][];
+            /**
              * @description Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
              *     they are off, and clients then show no entry to them.
              */
@@ -11901,7 +12077,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_status_on_failure" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_media_check_on_failure" | "retention_hook_decisions" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -12455,14 +12631,14 @@ export interface components {
          *     `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
          *     `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
          *     `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-         *     `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+         *     `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
          *     notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
          *     `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
          *     `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
          *     them that the user turns off in the app (on by default); it has no `email` channel.
          * @enum {string}
          */
-        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement";
+        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement";
         /** @description How far the authenticated user has read the notifications, across all clients. */
         NotificationMarker: {
             /** @description The newest notification read; omitted when the user has read none. */
@@ -12568,6 +12744,8 @@ export interface components {
          *     `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
          *     `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
          *     answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
+         *     `admin_hook_failing` (calls of an external review keep failing; it names none) to those
+         *     with `manage_reports`, and
          *     `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
          *     `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
          *     `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -12610,7 +12788,7 @@ export interface components {
          *     announcement is withdrawn or its window ends.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement";
         /**
          * @description An OAuth app that the authenticated user registered. Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -13348,6 +13526,9 @@ export interface components {
          *       is not in the state the operation needs, or was decided meanwhile.
          *     - `/api/v1/problems/email-already-verified` (409): the primary email address is already
          *       confirmed, so no confirmation mail is sent.
+         *     - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
+         *       had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
+         *       its appeal.
          *     - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
          *       suppressed, so there is nothing to lift.
          *     - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
@@ -20832,6 +21013,85 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["AdminDomainAction"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listHookDecisions: {
+        parameters: {
+            query?: {
+                /** @description Keep the decisions of this hook. */
+                hook?: components["schemas"]["HookName"];
+                /** @description Keep the decisions made in this mode. */
+                mode?: components["schemas"]["HookDecisionMode"];
+                /** @description Keep the decisions with this outcome. */
+                outcome?: components["schemas"]["HookOutcome"];
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the decisions. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminHookDecisionPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getHookSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The summary. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminHookSummary"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    overrideHookDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the decision. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The decision with its cancellation. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminHookDecision"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };

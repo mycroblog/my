@@ -10,6 +10,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/moderation"
 )
@@ -178,8 +179,9 @@ type AuditQuery struct {
 }
 
 // RegisterAuditProjector registers the projector that writes the audit log entry of every
-// AuditRecorded, of every appcontent.CustomEmojiAdministered and
-// appcontent.CustomEmojiRequestRecorded, and of the appaccount.Moved that carry an audit ID, into
+// AuditRecorded, of every appcontent.CustomEmojiAdministered,
+// appcontent.CustomEmojiRequestRecorded, apphook.DecisionApplied, and apphook.DecisionOverridden,
+// and of the appaccount.Moved that carry an audit ID, into
 // the transaction that
 // emits it. An invalid entry fails the operation: an operation that cannot be audited does not
 // happen.
@@ -199,6 +201,23 @@ func RegisterAuditProjector(r *uow.Projectors, repo AuditRepository) {
 	})
 	r.Register(appcontent.EventCustomEmojiRequestRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return r.Project(ctx, tx, AuditRecorded{Entry: customEmojiRequestAuditEntry(e.(appcontent.CustomEmojiRequestRecorded))})
+	})
+	// Nor can the hook module, which the modules this one depends on call (ADR-0147 §11).
+	r.Register(apphook.EventDecisionApplied, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(apphook.DecisionApplied)
+		return r.Project(ctx, tx, AuditRecorded{Entry: AuditEntry{
+			ID: ev.AuditID, ActorKind: moderation.AuditActorSystem, Action: moderation.AuditHookDecisionApplied, TargetKind: moderation.AuditTargetHookDecision,
+			TargetID: ev.DecisionID, TargetLabel: ev.Label, SourceEventID: ev.DecisionID, OccurredAt: ev.At,
+		}})
+	})
+	r.Register(apphook.EventDecisionOverridden, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(apphook.DecisionOverridden)
+		entry := AuditEntry{
+			ID: ev.AuditID, Action: moderation.AuditHookDecisionOverridden, TargetKind: moderation.AuditTargetHookDecision,
+			TargetID: ev.DecisionID, TargetLabel: ev.Label, SourceEventID: ev.DecisionID, OccurredAt: ev.At,
+		}
+		entry.ActorKind, entry.ActorUserID = moderation.AuditActor(ev.ByUserID)
+		return r.Project(ctx, tx, AuditRecorded{Entry: entry})
 	})
 	// The account module cannot emit AuditRecorded either: the local move of a limited account to
 	// a local one is audited from appaccount.Moved, whose AuditID it sets (ADR-0089).

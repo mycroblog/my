@@ -389,7 +389,12 @@ func instanceProjectionEqualsRebuild(t *testing.T, e *instanceEnv) {
 		for step := range 40 {
 			if rng.IntN(2) == 0 {
 				d := defs[rng.IntN(len(defs))]
-				e.set(t, d.Key, values(d), "")
+				value := values(d)
+				if instance.IsHookModeKey(d.Key) && value == instance.HookModeEnforce {
+					// A hook goes to enforce only through observe.
+					e.set(t, d.Key, instance.HookModeObserve, "")
+				}
+				e.set(t, d.Key, value, "")
 			} else {
 				body := ""
 				if rng.IntN(4) > 0 {

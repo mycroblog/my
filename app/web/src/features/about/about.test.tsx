@@ -330,3 +330,24 @@ describe("the information page", () => {
     expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
   });
 });
+
+describe("the external review", () => {
+  test("states what is reviewed when a hook is in use", async () => {
+    server.use(
+      http.get(`${apiBase}/instance`, () =>
+        HttpResponse.json({ ...instanceFixture, external_reviews: ["inbound.status", "signup.check"] }),
+      ),
+    );
+    await renderApp({ path: "/about" });
+    expect(await screen.findByRole("heading", { name: "External review" })).toBeVisible();
+    expect(screen.getByText(/Sign-ups: the email address and the IP address/u)).toBeVisible();
+    expect(screen.getByText(/Posts from other servers that this server takes in/u)).toBeVisible();
+    expect(screen.queryByText(/Uploaded media: /u)).not.toBeInTheDocument();
+  });
+
+  test("says nothing when none is", async () => {
+    await renderApp({ path: "/about" });
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.queryByRole("heading", { name: "External review" })).not.toBeInTheDocument();
+  });
+});

@@ -397,6 +397,11 @@ type FollowPreference struct {
 	ShowBoosts bool
 }
 
+type HookDecisionStatus struct {
+	DecisionID string
+	StatusID   string
+}
+
 type ImportedCostRevision struct {
 	ID           string
 	Source       string

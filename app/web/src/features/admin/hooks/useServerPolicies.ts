@@ -56,6 +56,16 @@ const policyKeys = [
   "voice_room_starters",
   "voice_public_summary",
   "voice_participants_retention_days",
+  "hook_inbound_status_mode",
+  "hook_inbound_follow_mode",
+  "hook_signup_check_mode",
+  "hook_media_check_mode",
+  "hook_local_status_mode",
+  "hook_inbound_status_on_failure",
+  "hook_inbound_follow_on_failure",
+  "hook_signup_check_on_failure",
+  "hook_media_check_on_failure",
+  "retention_hook_decisions",
 ] as const satisfies readonly InstanceSettingKey[];
 
 export type PolicyKey = (typeof policyKeys)[number];
@@ -81,6 +91,7 @@ const inviteExpiryChoices: readonly number[] = [
  */
 const numberFields = {
   voice_participants_retention_days: { min: 30, max: 3650 },
+  retention_hook_decisions: { min: 30, max: 3650 },
   member_invite_max_active: { min: 0, max: 100 },
   member_invite_max_uses: { min: 1, max: 1000 },
 } as const satisfies Partial<Record<PolicyKey, { min: number; max: number }>>;
@@ -90,6 +101,7 @@ export type NumberPolicyKey = keyof typeof numberFields;
 
 const numberKeys: readonly NumberPolicyKey[] = [
   "voice_participants_retention_days",
+  "retention_hook_decisions",
   "member_invite_max_active",
   "member_invite_max_uses",
 ];
@@ -189,7 +201,9 @@ export function useServerPolicies() {
         ? undefined
         : key === "voice_participants_retention_days"
           ? t("client:admin.settings.voice.retention.invalid", range)
-          : t("client:admin.settings.invites.number.invalid", range),
+          : key === "retention_hook_decisions"
+            ? t("client:admin.settings.hooks.retention.invalid", range)
+            : t("client:admin.settings.invites.number.invalid", range),
     };
   };
   const numberErrors = numberKeys.map((key) => numberField(key).error);

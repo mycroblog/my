@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listHookDecisions
+  summary: List the decisions of the decision hooks
+  description: |
+    What the external reviews said, the newest first. Without `outcome` the list leaves out
+    `allow`: it shows what a hook stopped, would have stopped in `observe`, or could not check.
+    Needs the `manage_reports` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - name: hook
+      in: query
+      required: false
+      description: Keep the decisions of this hook.
+      schema:
+        $ref: ../components/schemas/HookName.yaml
+    - name: mode
+      in: query
+      required: false
+      description: Keep the decisions made in this mode.
+      schema:
+        $ref: ../components/schemas/HookDecisionMode.yaml
+    - name: outcome
+      in: query
+      required: false
+      description: Keep the decisions with this outcome.
+      schema:
+        $ref: ../components/schemas/HookOutcome.yaml
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the decisions.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminHookDecisionPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

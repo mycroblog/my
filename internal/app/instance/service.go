@@ -211,8 +211,15 @@ func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]ins
 	now := s.d.Clock.Now()
 	revs := make([]instance.SettingRevision, 0, len(ins))
 	audits := make([]appmoderation.AuditRecorded, 0, len(ins))
+	current, err := s.Settings(ctx)
+	if err != nil {
+		return nil, err
+	}
 	for _, in := range ins {
 		value, err := s.parseSetting(ctx, in)
+		if err == nil {
+			err = current.CheckHookModeChange(in.Key, value)
+		}
 		if err != nil {
 			return nil, &SettingError{Key: in.Key, Err: err}
 		}
@@ -220,7 +227,7 @@ func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]ins
 		revs = append(revs, rev)
 		audits = append(audits, s.audit(appmoderation.AuditSettingChanged, appmoderation.AuditTargetSetting, string(in.Key), string(in.Key), rev.ID, in.RevisedByUserID, now))
 	}
-	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		for i, rev := range revs {
 			if err := s.d.Repository.InsertSettingRevision(ctx, tx, rev); err != nil {
 				return err

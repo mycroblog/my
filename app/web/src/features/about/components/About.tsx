@@ -54,6 +54,7 @@ export function About() {
       <DocumentsSection />
       {/* Who runs it, for someone who considers joining (web-client/screens/about.md). */}
       {about.contact !== undefined && <Contact contact={about.contact} />}
+      {about.externalReviews.length > 0 && <ExternalReview hooks={about.externalReviews} />}
       {/* How the server treats other servers and crawlers. */}
       <ModeratedDomainsSection />
       {about.crawlers !== undefined && (
@@ -167,6 +168,29 @@ export function ContactDetails({ contact }: { contact: NonNullable<Instance["con
         </Stack>
       )}
     </Stack>
+  );
+}
+
+const externalReviewLabels = {
+  "inbound.status": "client:about.external_review.inbound_status",
+  "inbound.follow": "client:about.external_review.inbound_follow",
+  "signup.check": "client:about.external_review.signup_check",
+  "media.check": "client:about.external_review.media_check",
+  "local.status": "client:about.external_review.local_status",
+} as const;
+
+/** That an external review is in use, what it covers, and what is sent to it (ADR-0147 §12), from the settings. */
+function ExternalReview({ hooks }: { hooks: readonly (keyof typeof externalReviewLabels)[] }) {
+  const t = useT();
+  return (
+    <Section title={t("client:about.external_review.title")}>
+      <p>{t("client:about.external_review.intro")}</p>
+      <ul>
+        {hooks.map((hook) => (
+          <li key={hook}>{t(externalReviewLabels[hook])}</li>
+        ))}
+      </ul>
+    </Section>
   );
 }
 

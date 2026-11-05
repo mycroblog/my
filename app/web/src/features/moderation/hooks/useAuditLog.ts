@@ -49,6 +49,8 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   account_deletion_canceled: "client:admin.audit_log.action.account_deletion_canceled",
   signup_block_added: "client:admin.audit_log.action.signup_block_added",
   signup_block_lifted: "client:admin.audit_log.action.signup_block_lifted",
+  hook_decision_applied: "client:admin.audit_log.action.hook_decision_applied",
+  hook_decision_overridden: "client:admin.audit_log.action.hook_decision_overridden",
   custom_emoji_created: "client:admin.audit_log.action.custom_emoji_created",
   custom_emoji_image_replaced: "client:admin.audit_log.action.custom_emoji_image_replaced",
   custom_emoji_copied: "client:admin.audit_log.action.custom_emoji_copied",
@@ -126,6 +128,7 @@ export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessa
   setting: "client:admin.audit_log.target_kind.setting",
   rule: "client:admin.audit_log.target_kind.rule",
   signup_block: "client:admin.audit_log.target_kind.signup_block",
+  hook_decision: "client:admin.audit_log.target_kind.hook_decision",
   custom_emoji: "client:admin.audit_log.target_kind.custom_emoji",
   webhook: "client:admin.audit_log.target_kind.webhook",
   announcement: "client:admin.audit_log.target_kind.announcement",
@@ -173,6 +176,9 @@ export function auditTargetHref(
     case "domain":
       // Every action on the domain, lifted ones too: the entry may be about one that is no longer in effect.
       return `/moderation/domain-actions?filter=all&domain=${id}`;
+    case "hook_decision":
+      // A decision has no screen of its own, and its record may have passed its retention.
+      return "/moderation/hook-decisions";
     case "signup_block":
       // The screen lists every block, lifted and ended ones too; a block has no screen of its own.
       return "/moderation/signup-blocks?filter=all";

@@ -4,17 +4,23 @@ package platform
 
 import (
 	"context"
+	"slices"
 
 	"github.com/mycroblog/my/internal/app/translation"
+	"github.com/mycroblog/my/internal/platform/config"
 )
 
 // setUpTranslation builds the translation of posts (ADR-0148): the instance settings choose among
 // the registered providers and set the limits, read per request. It comes after the status reader,
 // and its projector after the content module's, whose lock it relies on.
-func (a *App) setUpTranslation(repo translation.Repository, opts AppOptions) {
-	// Nothing registers a provider yet: an adapter adds itself to this list, with its API key from
-	// the deployment configuration, so that no key reaches the settings or the API (ADR-0148 §15).
-	registered := opts.TranslationRegistered
+func (a *App) setUpTranslation(cfg *config.Config, repo translation.Repository, opts AppOptions) error {
+	// An adapter adds itself to this list, with its API key from the deployment configuration, so
+	// that no key reaches the settings or the API (ADR-0148 §15).
+	plugin, err := pluginTranslationProviders(cfg, a.Meter)
+	if err != nil {
+		return err
+	}
+	registered := slices.Concat(opts.TranslationRegistered, plugin)
 	var providers translation.Providers = translation.ConfiguredProviders{
 		Registered: registered,
 		Settings: func(ctx context.Context) (translation.ProviderSettings, error) {
@@ -58,4 +64,5 @@ func (a *App) setUpTranslation(repo translation.Repository, opts AppOptions) {
 		},
 	})
 	a.Translation.RegisterJobs(a.Handlers, a.Scheduler)
+	return nil
 }
