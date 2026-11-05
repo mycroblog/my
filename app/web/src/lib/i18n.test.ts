@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { describe, expect, test } from "vitest";
 import en from "virtual:locales/en/client";
-import { applyDocumentLocale, direction, fallbackChain, loadI18n, resolveLocale, supportedLocales } from "./i18n";
+import {
+  applyDocumentLocale,
+  createTranslate,
+  direction,
+  fallbackChain,
+  loadI18n,
+  resolveLocale,
+  supportedLocales,
+} from "./i18n";
 
 describe("locales", () => {
   test("has a catalog for the source locale, Japanese and the pseudo-locales", () => {
@@ -67,4 +75,10 @@ test("applyDocumentLocale sets lang and dir of <html>", () => {
   applyDocumentLocale(doc, "ar-XB");
   expect(doc.documentElement.lang).toBe("ar-XB");
   expect(doc.documentElement.dir).toBe("rtl");
+});
+
+test("reads a label that is not there as a neutral word", async () => {
+  const t = createTranslate(await loadI18n("en"));
+  const labels: Readonly<Record<string, "client:page.not_built">> = {};
+  expect(t(labels.not_yet_known as "client:page.not_built")).toBe("Unknown");
 });

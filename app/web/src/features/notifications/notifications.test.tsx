@@ -256,6 +256,20 @@ describe("the notifications page", () => {
     expectSelectedTabControlsPanel("New posts");
   });
 
+  test("shows a type this bundle does not know as a plain row, with the rest of the feed", async () => {
+    server.use(resumableSession());
+    markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a2", unread_count: 0 });
+    const [mention, follow] = notificationsFixture;
+    const unknown = { ...follow, id: "0192f0c4-7a8e-7000-8000-0000000000ff", type: "not_yet_known" };
+    server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items: [unknown, mention] })));
+    await renderApp({ path: "/notifications" });
+
+    const feed = await screen.findByRole("feed", { name: "Notifications" });
+    const row = await within(feed).findByRole("article", { name: /You have a new notification/ });
+    expect(row.innerHTML).toMatch(/data-notification-kind="notice"/);
+    expect(within(feed).getAllByRole("article")).toHaveLength(2);
+  });
+
   test("loads older notifications a page at a time", async () => {
     server.use(resumableSession());
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a2", unread_count: 0 });

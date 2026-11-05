@@ -166,13 +166,22 @@ export type PlainClientMessageKey = {
   [K in ClientMessageKey]: keyof MessageArgs[K] extends never ? K : never;
 }[ClientMessageKey];
 
+/**
+ * The ID to format for `id`. The types say that `id` is always there, but a label looked up by an API enum value
+ * is undefined when the server is newer than this bundle, and react-intl throws on it. Adding a value is not a
+ * breaking change (ADR-0090 §8), so such a label reads as a neutral word instead of breaking the page.
+ */
+function messageId(id: ClientMessageKey | undefined): ClientMessageKey {
+  return id ?? "client:page.unknown_value";
+}
+
 /** Formats a client message to a string, with its arguments type-checked: `t("client:shell.nav.home")`. */
 export type Translate = <K extends ClientMessageKey>(id: K, ...values: MessageValues<K>) => string;
 
 /** Returns `t` for the current locale. */
 export function useT(): Translate {
   const intl = useIntl();
-  return (id, ...[values]) => intl.formatMessage({ id }, values);
+  return (id, ...[values]) => intl.formatMessage({ id: messageId(id) }, values);
 }
 
 /** Returns the locale that formats values (numbers, language names) on the page. */
@@ -190,5 +199,5 @@ export function createTranslate(i18n: I18n): Translate {
     defaultLocale: sourceLocale,
     messages: i18n.messages,
   });
-  return (id, ...[values]) => intl.formatMessage({ id }, values);
+  return (id, ...[values]) => intl.formatMessage({ id: messageId(id) }, values);
 }

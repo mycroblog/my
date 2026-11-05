@@ -54,6 +54,11 @@ const kindIcons: Readonly<Record<NotificationKind, () => ReactNode>> = {
   announcement: () => <AnnouncementIcon />,
 };
 
+/** The icon of `kind`, the bell for one newer than this bundle. */
+function kindIcon(kind: NotificationKind): () => ReactNode {
+  return (kindIcons[kind] as (() => ReactNode) | undefined) ?? kindIcons.notice;
+}
+
 const kindMark = tv({
   slots: {
     base: "relative",
@@ -90,18 +95,17 @@ export type NotificationKindMarkProps = {
 
 /** The icon of a notification's kind, as its mark shows it, for a place that names the kind in words too (a filter's tab). */
 export function NotificationKindIcon({ kind }: { kind: NotificationKind }) {
-  return kindIcons[kind]();
+  return kindIcon(kind)();
 }
 
 /** The avatar slot of a notification's row: the avatar with the mark of the kind on its corner, or the mark alone. */
 export function NotificationKindMark({ kind, children }: NotificationKindMarkProps) {
   const slots = kindMark({ kind, placement: children === undefined ? "alone" : "corner" });
-  const Icon = kindIcons[kind];
   return (
     <div className={slots.base()} data-notification-kind={kind}>
       {children}
       <span aria-hidden="true" className={slots.mark()}>
-        <Icon />
+        {kindIcon(kind)()}
       </span>
     </div>
   );

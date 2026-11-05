@@ -402,5 +402,9 @@
   "notifications.link.announcement": {
     "defaultMessage": "Open the announcement",
     "description": "Link from a notification of an announcement without a title to the announcement on the list page."
+  },
+  "notifications.unknown": {
+    "defaultMessage": "You have a new notification.",
+    "description": "Sentence of a notification whose type this version of the web client does not know yet."
   }
 }
