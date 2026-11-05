@@ -55,20 +55,33 @@ variable "profile" {
   nullable    = false
 }
 
+variable "service_ingress" {
+  description = "Who may reach the service: all, the internet; internal-and-load-balancer, only the load balancer and internal traffic; internal, only internal traffic. No default: the choice is what decides whether anyone can go around an ingress. Cloud Tasks and Cloud Scheduler of the same project reach it under any of them."
+  type        = string
+  nullable    = false
+
+  validation {
+    condition     = contains(["all", "internal", "internal-and-load-balancer"], var.service_ingress)
+    error_message = "service_ingress must be all, internal, or internal-and-load-balancer."
+  }
+}
+
 variable "backends" {
   description = "What each backend module returns. A setting named twice fails the plan."
   type = list(object({
     env          = optional(map(string), {})
     secret_env   = optional(map(string), {})
     secret_files = optional(map(string), {})
-    roles = optional(list(object({
-      role     = string
-      scope    = string
-      resource = optional(string)
+    permissions = optional(list(object({
+      permission = string
+      scope      = string
+      resource   = optional(string)
     })), [])
     invokers = optional(list(string), [])
-    # What an ingress needs of the service: who may reach it.
+    # What an ingress needs of the service, which must be var.service_ingress.
     service_ingress = optional(string)
+    # What an ingress puts in front of the service. The app adds Cloud Run's own front end.
+    trusted_proxies = optional(list(string))
   }))
   default  = []
   nullable = false
@@ -76,20 +89,20 @@ variable "backends" {
   validation {
     condition = alltrue(flatten([
       for b in var.backends : [
-        for r in b.roles : (
+        for r in b.permissions : (
           contains(["project", "bucket", "topic", "queue", "service_account", "crypto_key"], r.scope) &&
           (r.scope == "project") == (r.resource == null)
         )
       ]
     ]))
-    error_message = "Each role has a scope of project (without a resource), or bucket, topic, queue, service_account, or crypto_key (with its resource)."
+    error_message = "Each permission has a scope of project (without a resource), or bucket, topic, queue, service_account, or crypto_key (with its resource). A scope of policy is a backend for AWS."
   }
 
   validation {
     condition = alltrue([
-      for b in var.backends : b.service_ingress == null || contains(["INGRESS_TRAFFIC_ALL", "INGRESS_TRAFFIC_INTERNAL_ONLY", "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"], b.service_ingress)
+      for b in var.backends : b.service_ingress == null || contains(["all", "internal", "internal-and-load-balancer"], b.service_ingress)
     ])
-    error_message = "service_ingress must be INGRESS_TRAFFIC_ALL, INGRESS_TRAFFIC_INTERNAL_ONLY, or INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER."
+    error_message = "service_ingress must be all, internal, or internal-and-load-balancer."
   }
 
   validation {

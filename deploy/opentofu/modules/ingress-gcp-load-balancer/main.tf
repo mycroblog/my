@@ -130,8 +130,13 @@ resource "google_compute_global_forwarding_rule" "redirect" {
 }
 
 output "env" {
+  description = "No settings."
+  value       = {}
+}
+
+output "trusted_proxies" {
   description = "The load balancer ends the header with the client's address and its own, so the server must look past its own."
-  value       = { MY_TRUSTED_PROXIES = "169.254.0.0/16, ${google_compute_global_address.this.address}" }
+  value       = [google_compute_global_address.this.address]
 }
 
 output "secret_env" {
@@ -139,14 +144,14 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Nothing."
   value       = []
 }
 
 output "service_ingress" {
   description = "Only the load balancer reaches the service: the internet cannot go around it through the run.app URL."
-  value       = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+  value       = "internal-and-load-balancer"
 }
 
 output "ip_address" {

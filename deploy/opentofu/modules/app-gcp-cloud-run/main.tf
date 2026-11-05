@@ -12,24 +12,33 @@ terraform {
 }
 
 locals {
-  # An ingress says who connects to the server. Without one, the connection comes from Cloud Run's own front end.
   named_settings = concat(
     flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files))]),
     keys(var.env),
     keys(var.secret_env),
     keys(var.secret_files),
   )
+  # Cloud Run's own front end connects to the server, and an ingress says what connects to Cloud Run. MY_TRUSTED_PROXIES in
+  # env replaces the value only without an ingress: with one, the setting is named twice and fails.
+  ingress_trust = [for b in var.backends : b.trusted_proxies if b.trusted_proxies != null]
   base_env = merge(
     {
       MY_HOST    = var.host
       MY_ROLE    = var.role
       MY_PROFILE = var.profile
     },
-    contains(local.named_settings, "MY_TRUSTED_PROXIES") ? {} : { MY_TRUSTED_PROXIES = "169.254.0.0/16" },
+    contains(local.named_settings, "MY_TRUSTED_PROXIES") && length(local.ingress_trust) == 0 ? {} : {
+      MY_TRUSTED_PROXIES = join(", ", concat(["169.254.0.0/16"], flatten(local.ingress_trust)))
+    },
   )
 
-  service_ingresses = distinct(compact([for b in var.backends : b.service_ingress]))
-  service_ingress   = length(local.service_ingresses) == 0 ? "INGRESS_TRAFFIC_ALL" : local.service_ingresses[0]
+  # Cloud Run's settings by a plain name. An ingress says which it needs, and the plan fails below when that is not this one.
+  cloud_run_ingress = {
+    all                        = "INGRESS_TRAFFIC_ALL"
+    internal                   = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+    internal-and-load-balancer = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+  }
+  ingress_disagreements = distinct([for b in var.backends : b.service_ingress if b.service_ingress != null && b.service_ingress != var.service_ingress])
 
   # Each one is mounted at a directory of its own, and its variable names the path.
   secret_files = merge(var.secret_files, [for b in var.backends : b.secret_files]...)
@@ -57,14 +66,16 @@ locals {
 
   secret_ids = toset(concat(values(local.secret_env), values(local.secret_files)))
 
+  jobs_url = lookup(local.env, "MY_QUEUE_CLOUDTASKS_URL", "")
+
   # The server refuses to start without these, but only once it runs: say it at plan time.
   key_manager = lookup(local.env, "MY_KEY_MANAGER", "local")
   kek_missing = (
     local.key_manager == "local" ? !contains(local.setting_names, "MY_KEK") : !contains(local.setting_names, "MY_KMS_KEY")
   )
 
-  roles    = flatten([for b in var.backends : b.roles])
-  invokers = toset(flatten([for b in var.backends : b.invokers]))
+  permissions = flatten([for b in var.backends : b.permissions])
+  invokers    = toset(flatten([for b in var.backends : b.invokers]))
 
   jobs = merge(
     { migrate = ["db", "upgrade", "-check"] },
@@ -84,8 +95,16 @@ resource "google_service_account" "server" {
       error_message = "These settings are named more than once across the backends, env, secret_env, secret_files, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
     }
     precondition {
-      condition     = length(local.service_ingresses) <= 1
-      error_message = "The backends ask for different ingress settings of the service: ${join(", ", local.service_ingresses)}. Use one ingress-* module."
+      condition     = length(local.ingress_disagreements) == 0
+      error_message = "service_ingress is ${var.service_ingress}, but an ingress module needs ${join(" and ", local.ingress_disagreements)}. A load balancer reaches the service only with internal-and-load-balancer, and it should be the only way in; a domain mapping and Cloudflare come from the internet and need all. Set service_ingress to what the ingress needs."
+    }
+    precondition {
+      condition     = length(local.ingress_trust) <= 1
+      error_message = "More than one backend says what is in front of the service with trusted_proxies. Use one ingress-* module for that; a media host returns none."
+    }
+    precondition {
+      condition     = !strcontains(local.jobs_url, ".run.app") || (startswith(local.jobs_url, "https://${var.name}-") && endswith(local.jobs_url, ".${var.region}.run.app"))
+      error_message = "MY_QUEUE_CLOUDTASKS_URL is ${local.jobs_url}, which is not the URL of the service ${var.name} in ${var.region}, so jobs would go nowhere. Give queue-gcp-cloud-tasks the same name and region."
     }
     precondition {
       condition     = !local.kek_missing
@@ -97,55 +116,55 @@ resource "google_service_account" "server" {
 # Each binding goes on its resource unless the backend says project. The keys are strings known at plan time, which the
 # backend modules build from their inputs.
 resource "google_project_iam_member" "backend" {
-  for_each = { for r in local.roles : r.role => r if r.scope == "project" }
+  for_each = { for r in local.permissions : r.permission => r if r.scope == "project" }
 
   project = var.project_id
-  role    = each.value.role
+  role    = each.value.permission
   member  = google_service_account.server.member
 }
 
 resource "google_storage_bucket_iam_member" "backend" {
-  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "bucket" }
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "bucket" }
 
   bucket = each.value.resource
-  role   = each.value.role
+  role   = each.value.permission
   member = google_service_account.server.member
 }
 
 resource "google_pubsub_topic_iam_member" "backend" {
-  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "topic" }
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "topic" }
 
   # projects/<project>/topics/<topic>
   project = split("/", each.value.resource)[1]
   topic   = split("/", each.value.resource)[3]
-  role    = each.value.role
+  role    = each.value.permission
   member  = google_service_account.server.member
 }
 
 resource "google_cloud_tasks_queue_iam_member" "backend" {
-  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "queue" }
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "queue" }
 
   # projects/<project>/locations/<location>/queues/<queue>
   project  = split("/", each.value.resource)[1]
   location = split("/", each.value.resource)[3]
   name     = split("/", each.value.resource)[5]
-  role     = each.value.role
+  role     = each.value.permission
   member   = google_service_account.server.member
 }
 
 resource "google_service_account_iam_member" "backend" {
-  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "service_account" }
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "service_account" }
 
   service_account_id = each.value.resource
-  role               = each.value.role
+  role               = each.value.permission
   member             = google_service_account.server.member
 }
 
 resource "google_kms_crypto_key_iam_member" "backend" {
-  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "crypto_key" }
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "crypto_key" }
 
   crypto_key_id = each.value.resource
-  role          = each.value.role
+  role          = each.value.permission
   member        = google_service_account.server.member
 }
 
@@ -159,11 +178,13 @@ resource "google_secret_manager_secret_iam_member" "server" {
 }
 
 resource "google_cloud_run_v2_service" "server" {
-  project             = var.project_id
-  location            = var.region
-  name                = var.name
-  ingress             = local.service_ingress
-  deletion_protection = var.deletion_protection
+  project  = var.project_id
+  location = var.region
+  name     = var.name
+  ingress  = local.cloud_run_ingress[var.service_ingress]
+  # Cloud Tasks and Cloud Scheduler call this URL, and count as internal only on it.
+  default_uri_disabled = false
+  deletion_protection  = var.deletion_protection
 
   template {
     service_account                  = google_service_account.server.email

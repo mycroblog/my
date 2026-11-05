@@ -23,7 +23,7 @@ module "stream" {
 | --- | --- |
 | `env` | `MY_STREAM`, `MY_STREAM_PUBSUB_TOPIC`, `MY_STREAM_PUBSUB_SUBSCRIPTION_PREFIX` |
 | `secret_env` | Empty |
-| `roles` | `roles/pubsub.publisher` and `roles/pubsub.subscriber` on the topic, and the custom role on the project |
+| `permissions` | `roles/pubsub.publisher` and `roles/pubsub.subscriber` on the topic, and the custom role on the project |
 
 The server creates one subscription per process that has open streams, and deletes it. The periodic job `stream.sweep`
 removes what ended processes leave behind. Those names are not known in advance, so the custom role

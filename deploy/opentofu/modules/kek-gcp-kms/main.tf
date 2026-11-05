@@ -94,10 +94,10 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Encrypting and decrypting with this key, not the others of the project."
   value = [
-    { role = "roles/cloudkms.cryptoKeyEncrypterDecrypter", scope = "crypto_key", resource = local.crypto_key_id },
+    { permission = "roles/cloudkms.cryptoKeyEncrypterDecrypter", scope = "crypto_key", resource = local.crypto_key_id },
   ]
   depends_on = [google_kms_crypto_key.kek]
 }

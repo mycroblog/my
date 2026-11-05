@@ -37,8 +37,10 @@ module "app" {
   host         = "social.example.org"
   secret_files = { MY_KEK_FILE = "kek" }
 
+  service_ingress = "internal-and-load-balancer"
+
   backends = [
-    { env = module.ingress.env, service_ingress = module.ingress.service_ingress },
+    { env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
   ]
 }
 

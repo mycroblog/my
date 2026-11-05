@@ -27,8 +27,8 @@ run "carries_every_setting_and_the_password_by_id" {
   }
 
   assert {
-    condition     = length(output.roles) == 0
-    error_message = "the mailer needs no role"
+    condition     = length(output.permissions) == 0
+    error_message = "the mailer needs no permission"
   }
 }
 

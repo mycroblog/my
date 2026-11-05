@@ -23,9 +23,14 @@ module "ingress" {
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_TRUSTED_PROXIES`: `169.254.0.0/16`, Cloud Run's front end |
-| `secret_env`, `roles` | Empty |
-| `service_ingress` | `INGRESS_TRAFFIC_ALL` |
+| `env` | Empty |
+| `trusted_proxies` | Empty: the app module adds `169.254.0.0/16`, Cloud Run's front end |
+| `secret_env`, `permissions` | Empty |
+| `service_ingress` | `all`, which the app must set: the traffic comes from the internet, so the `run.app` URL stays open too |
 | `dns_records` | The records to add at your DNS provider |
 
 Whoever applies must be a verified owner of the domain in Search Console, and the certificate can take up to 24 hours.
+
+## The origin stays open
+
+A domain mapping cannot add a header, and its traffic comes from the internet, so `run.app` stays open to anyone. A load balancer closes it on the platform, and Cloudflare closes it with a header that the server checks. Going from this module to either changes its block and the settings the plan asks for.

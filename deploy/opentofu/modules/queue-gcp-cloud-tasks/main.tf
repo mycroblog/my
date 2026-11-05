@@ -12,20 +12,21 @@ terraform {
 }
 
 variable "project_id" {
-  description = "Project of the queue, the Scheduler job, and the invoker service account."
+  description = "Project of the queue, the Scheduler job, and the invoker service account. It must be the service's: Cloud Run counts Cloud Tasks and Cloud Scheduler as internal only from the same project."
   type        = string
   nullable    = false
 }
 
 variable "region" {
-  description = "Location of the queue and the Scheduler job."
+  description = "Location of the queue and the Scheduler job, and the region of the service."
   type        = string
   nullable    = false
 }
 
-variable "host" {
-  description = "Public domain of the server. Tasks and ticks call https://{host}, which is known before the service exists, so the service and the queue do not depend on each other."
+variable "service_name" {
+  description = "Name of the Cloud Run service, the name input of the app module. Tasks and ticks call its run.app URL, built from this name, so the service and the queue do not depend on each other."
   type        = string
+  default     = "my"
   nullable    = false
 }
 
@@ -50,8 +51,16 @@ variable "max_concurrent_dispatches" {
   nullable    = false
 }
 
+data "google_project" "this" {
+  project_id = var.project_id
+}
+
 locals {
-  url = "https://${var.host}"
+  # The service's default URL, directly and never through an ingress: Cloudflare's 125 seconds and challenges stay out of the
+  # way, and Cloud Run counts these two as internal only on this URL, so the service can refuse the internet. The format is
+  # Cloud Run's deterministic one, which is known before the service exists.
+  url_label = "${var.service_name}-${data.google_project.this.number}"
+  url       = "https://${local.url_label}.${var.region}.run.app"
   # Built from the inputs, not read from the resources, so that they are known at plan time: the app module keys its
   # IAM bindings on them. The outputs depend on the resources for the order.
   queue         = "projects/${var.project_id}/locations/${var.region}/queues/${var.name}"
@@ -72,6 +81,13 @@ resource "google_cloud_tasks_queue" "jobs" {
 
   rate_limits {
     max_concurrent_dispatches = var.max_concurrent_dispatches
+  }
+
+  lifecycle {
+    precondition {
+      condition     = length(local.url_label) <= 63
+      error_message = "Cloud Run has no deterministic URL when the service's name and the project's number come to more than 63 characters together, and tasks and ticks call that URL: shorten the service's name."
+    }
   }
 }
 
@@ -115,11 +131,11 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Creating tasks in the queue, and acting as the invoker service account so that the tasks carry its token."
   value = [
-    { role = "roles/cloudtasks.enqueuer", scope = "queue", resource = local.queue },
-    { role = "roles/iam.serviceAccountUser", scope = "service_account", resource = "projects/${var.project_id}/serviceAccounts/${local.invoker_email}" },
+    { permission = "roles/cloudtasks.enqueuer", scope = "queue", resource = local.queue },
+    { permission = "roles/iam.serviceAccountUser", scope = "service_account", resource = "projects/${var.project_id}/serviceAccounts/${local.invoker_email}" },
   ]
   depends_on = [google_cloud_tasks_queue.jobs, google_service_account.invoker]
 }

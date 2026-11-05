@@ -12,6 +12,8 @@ mock_provider "google" {
 }
 
 variables {
+  service_ingress = "all"
+
   project_id   = "p"
   region       = "asia-northeast1"
   image        = "ghcr.io/mycroblog/my:0.1.0"
@@ -25,8 +27,8 @@ variables {
     {
       env      = { MY_QUEUE = "cloudtasks" }
       invokers = ["invoker@p.iam.gserviceaccount.com"]
-      roles = [
-        { role = "roles/cloudtasks.enqueuer", scope = "queue", resource = "projects/p/locations/l/queues/q" },
+      permissions = [
+        { permission = "roles/cloudtasks.enqueuer", scope = "queue", resource = "projects/p/locations/l/queues/q" },
       ]
     },
   ]
@@ -66,7 +68,7 @@ run "merges_every_source" {
 
   assert {
     condition     = length(google_cloud_tasks_queue_iam_member.backend) == 1 && length(google_project_iam_member.backend) == 0
-    error_message = "a backend's role must go on the scope it names"
+    error_message = "a backend's permission must go on the scope it names"
   }
 
   assert {
@@ -87,8 +89,8 @@ run "swapping_a_backend_changes_only_its_settings" {
       {
         env      = { MY_QUEUE = "cloudtasks" }
         invokers = ["invoker@p.iam.gserviceaccount.com"]
-        roles = [
-          { role = "roles/cloudtasks.enqueuer", scope = "queue", resource = "projects/p/locations/l/queues/q" },
+        permissions = [
+          { permission = "roles/cloudtasks.enqueuer", scope = "queue", resource = "projects/p/locations/l/queues/q" },
         ]
       },
     ]
@@ -149,12 +151,12 @@ run "a_setting_and_its_file_form_fail" {
   expect_failures = [google_service_account.server]
 }
 
-run "a_role_without_its_scope_fails" {
+run "a_permission_without_its_scope_fails" {
   command = plan
 
   variables {
     backends = [
-      { roles = [{ role = "roles/x", scope = "somewhere", resource = "r" }] },
+      { permissions = [{ permission = "roles/x", scope = "somewhere", resource = "r" }] },
     ]
   }
 
@@ -333,7 +335,7 @@ run "app_with_the_kms_kek" {
     secret_files    = {}
     console_enabled = true
     backends = [
-      { env = run.kek_in_kms_made_elsewhere.env, roles = run.kek_in_kms_made_elsewhere.roles },
+      { env = run.kek_in_kms_made_elsewhere.env, permissions = run.kek_in_kms_made_elsewhere.permissions },
     ]
   }
 
@@ -372,8 +374,8 @@ run "two_ingresses_asking_differently_fail" {
 
   variables {
     backends = [
-      { service_ingress = "INGRESS_TRAFFIC_ALL" },
-      { service_ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" },
+      { service_ingress = "all" },
+      { service_ingress = "internal-and-load-balancer" },
     ]
   }
 
@@ -442,7 +444,7 @@ run "app_with_the_domain_mapping" {
 
   variables {
     backends = [
-      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress },
+      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress, trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
     ]
   }
 
@@ -456,8 +458,9 @@ run "app_with_the_load_balancer" {
   command = plan
 
   variables {
+    service_ingress = "internal-and-load-balancer"
     backends = [
-      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress },
+      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
     ]
   }
 
@@ -510,7 +513,7 @@ run "media_beside_the_domain_mapping" {
 
   variables {
     backends = [
-      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress },
+      { env = run.ingress_domain_mapping.env, service_ingress = run.ingress_domain_mapping.service_ingress, trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
       { env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
     ]
   }
@@ -525,8 +528,9 @@ run "media_beside_the_load_balancer" {
   command = plan
 
   variables {
+    service_ingress = "internal-and-load-balancer"
     backends = [
-      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress },
+      { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
       { env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
     ]
   }
@@ -542,10 +546,100 @@ run "two_ingresses_that_set_trust_fail" {
 
   variables {
     backends = [
-      { env = run.ingress_domain_mapping.env },
-      { env = run.ingress_load_balancer.env },
+      { trusted_proxies = run.ingress_domain_mapping.trusted_proxies },
+      { trusted_proxies = run.ingress_load_balancer.trusted_proxies },
     ]
   }
 
   expect_failures = [google_service_account.server]
+}
+
+# A backend of another platform fails rather than being dropped by the conversion to this module's type.
+run "a_backend_for_aws_fails" {
+  command = plan
+
+  variables {
+    backends = [
+      { permissions = [{ permission = "sqs:SendMessage", scope = "policy", resource = "arn:aws:sqs:us-east-1:111122223333:my-jobs" }] },
+    ]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_default_url_stays_on_and_jobs_must_name_this_service" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE_CLOUDTASKS_URL = "https://my-123456789012.asia-northeast1.run.app" }
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.server.default_uri_disabled == false
+    error_message = "Cloud Tasks and Cloud Scheduler call the default URL"
+  }
+}
+
+run "jobs_that_call_another_service_fail" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE_CLOUDTASKS_URL = "https://other-123456789012.asia-northeast1.run.app" }
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "jobs_that_call_another_region_fail" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE_CLOUDTASKS_URL = "https://my-123456789012.us-central1.run.app" }
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "the_setting_is_the_inputs" {
+  command = plan
+
+  variables {
+    service_ingress = "internal"
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.server.ingress == "INGRESS_TRAFFIC_INTERNAL_ONLY" && output.service_ingress == "internal"
+    error_message = "a deployment with no ingress chooses for itself"
+  }
+}
+
+run "an_ingress_that_disagrees_fails" {
+  command = plan
+
+  variables {
+    backends = [{ service_ingress = "internal-and-load-balancer" }]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_load_balancer_needs_its_setting" {
+  command = plan
+
+  variables {
+    service_ingress = "internal-and-load-balancer"
+    backends        = [{ service_ingress = "all" }]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "an_unknown_setting_fails" {
+  command = plan
+
+  variables {
+    service_ingress = "open"
+  }
+
+  expect_failures = [var.service_ingress]
 }

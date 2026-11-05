@@ -127,7 +127,7 @@ tofu apply
 
 ### 8. Point the domain at the service
 
-`tofu output dns_records` lists the records to add at your DNS provider. The server must answer at `https://{host}`, because Cloud Tasks and Cloud Scheduler call that address. Until the domain works, tasks and ticks fail and are tried again, which costs next to nothing.
+`tofu output dns_records` lists the records to add at your DNS provider. Federation and browsers reach the server at `https://{host}`. Jobs do not depend on it: Cloud Tasks and Cloud Scheduler call the service's default `run.app` URL, `https://<service>-<project number>.<region>.run.app`. **Do not disable the default URL**, or jobs stop. Cloud Run counts these two as internal only from the same project and on that URL, not on a custom domain.
 
 See [How traffic reaches the service](#how-traffic-reaches-the-service) for what this example uses and what else you can choose.
 
@@ -222,22 +222,25 @@ The `ingress` block of `main.tf` decides this, and swapping one for the other ch
 | DNS | The records that `tofu output dns_records` lists | An `A` record of the same output |
 | Certificate | Google-managed, up to 24 hours | Google-managed, active once DNS points at the address |
 | Domain ownership | You, and every other account that applies, must be a [verified owner](https://cloud.google.com/run/docs/mapping-custom-domains) before you apply | Nothing beyond DNS |
-| `run.app` URL | Reachable by anyone | Refused from the internet, so nobody goes around the load balancer |
+| `run.app` URL | Reachable by anyone: a domain mapping cannot add a header, so the origin stays open | Refused from the internet, so nobody goes around the load balancer |
 | `MY_TRUSTED_PROXIES` | `169.254.0.0/16` | `169.254.0.0/16` and the load balancer's address |
+| `service_ingress` of the `app` block | `all` | `internal-and-load-balancer`. A disagreement with the `ingress` block fails the plan |
 
-The load balancer also needs `compute.googleapis.com`. Cloud Tasks and Cloud Scheduler call `https://{host}`, so they arrive through whichever you choose.
+The load balancer also needs `compute.googleapis.com`. Cloud Tasks and Cloud Scheduler arrive through neither: they call the default `run.app` URL directly.
 
-To use the service's own URL or something else in front, such as a CDN, remove the `ingress` block and its line in `backends`. Set `MY_TRUSTED_PROXIES` in `env` to what connects to the server. Whatever you put in front must still answer at `https://{host}`.
+To use the service's own URL or something else in front, such as a CDN, remove the `ingress` block and its line in `backends`, and keep `service_ingress` at what you need: it is always your explicit choice, and `all` leaves the `run.app` URL open to anyone. Set `MY_TRUSTED_PROXIES` in `env` to what connects to the server. Whatever you put in front must still answer at `https://{host}`.
 
 ### Cloudflare
 
 `ingress-cloudflare-app` puts Cloudflare in front of `host`, with the cache bypassed for everything, and `ingress-cloudflare-media` adds a cached media host beside any ingress. Read each module's README first ([app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)). The token goes in `CLOUDFLARE_API_TOKEN`. These modules have run only on mocked providers.
 
 - **Your plan decides the origin.** Cloud Run routes by `Host`, and Cloudflare offers the Host header override on the Enterprise plan only. On any other plan a `*.run.app` origin fails the plan, so the origin must accept your host itself: keep an `ingress-gcp-domain-mapping` of that host, out of `backends`, and set `origin_host = "ghs.googlehosted.com"`. Each host needs a mapping of its own. Whether its certificate is issued and renewed behind the proxy is unverified, so start with `proxied = false`.
-- **Nothing locks the origin.** The service stays open, so anyone can go around Cloudflare through the `run.app` URL. Someone calling that URL from a Cloudflare Worker of their own can also choose the client address the rate limits see, because the server trusts Cloudflare's ranges. Do not treat Cloudflare as a security boundary here.
-- **Turn off Bot Fight Mode** in the dashboard. It covers the whole zone and no rule can skip it, and a challenge on `/ap/`, `/_internal/`, `/.well-known/`, or `/api/` breaks federation and jobs, because other servers and Cloud Tasks are not browsers. The modules add no challenge and turn off Browser Integrity Check, but they do not manage Bot Fight Mode. Do not turn on "I'm Under Attack" for the same reason.
+- **A header closes the origin.** `ingress-cloudflare-app` adds a request header transform rule, and the server refuses a request without the header with a `403`, apart from health checks and the jobs' own `POST`s, which check their tokens. So nobody goes around Cloudflare through the `run.app` URL, and a caller's own Cloudflare Worker cannot choose the client address the rate limits see.
+- **The value lands in the state.** The Cloudflare provider has no write-only form of a rule's header value. Generate one with `openssl rand -hex 32`, add it to a secret with `gcloud secrets versions add`, pass the same value with `TF_VAR_origin_secret`, and keep the state private. [The CDN guide](cdn.md#rotate-the-value) has how to rotate it.
+- **Nothing adds the header while a record is not proxied**, so the server refuses everything but its health checks: with `proxied = false` for a domain mapping's certificate, set the secret up after that.
+- **Turn off Bot Fight Mode** in the dashboard. It covers the whole zone and no rule can skip it, and a challenge on `/ap/`, `/.well-known/`, or `/api/` breaks federation, because other servers are not browsers. Jobs do not come through Cloudflare. The modules add no challenge and turn off Browser Integrity Check, but they do not manage Bot Fight Mode. Do not turn on "I'm Under Attack" for the same reason.
 - **Turn on Always Use HTTPS** in the dashboard if you want `http://` redirected. It covers the whole zone, so the modules leave it to you.
-- **Timeouts**: Cloudflare answers `524` when the origin sends nothing for 125 seconds. A job can run for 5 minutes. The dropped connection may cancel a longer job, and Cloud Tasks tries the task again. How jobs over 125 seconds behave behind Cloudflare is unverified. Streams send a heartbeat every 30 seconds, under the 900-second idle limit. Whether it buffers streams on an ordinary proxied host is unverified.
+- **Timeouts**: Cloudflare answers `524` when the origin sends nothing for 125 seconds. Jobs are not affected, since they call the `run.app` URL directly. Streams send a heartbeat every 30 seconds, under the 900-second idle limit. Whether it buffers streams on an ordinary proxied host is unverified.
 - **Uploads**: 100 MB on Free and Pro, above Cloud Run's 32 MiB, which remains the limit.
 - **Video**: Cloudflare's terms restrict serving video and a disproportionate amount of large files on Free, Pro, and Business, and it may redirect the content or take other action. Decide this before you cache video on the media host.
 
@@ -264,7 +267,7 @@ On a new instance with no data, nothing needs to move.
 
 - **Uploads**: Cloud Run refuses an HTTP/1 request above 32 MiB, and the server speaks HTTP/1.1. The example therefore sets `MY_MEDIA_MAX_AV_BYTES` to 30 MiB, against the default of 100 MiB, so that a larger upload gets the server's own answer.
 - **Streams**: the request timeout, 15 minutes by default, ends an open stream, and the client connects again.
-- **Client addresses**: the rate limits rely on `MY_TRUSTED_PROXIES`, which the `ingress` module sets. Check the addresses in the first request logs: a client IP that is a `169.254` address or a Google address means that the setting is wrong for your project.
+- **Client addresses**: the rate limits rely on `MY_TRUSTED_PROXIES`, which the app module sets from what the `ingress` module returns. No document we have read says what Cloud Run adds to `X-Forwarded-For` for a direct request or what peer address a container sees, and the container contract says nothing about either, so `169.254.0.0/16` is an assumption. The external load balancer's documented form is `[<supplied>,]<client-ip>,<lb-ip>`. Check the addresses in the first request logs: a client IP that is a `169.254` address or a Google address means that the setting is wrong for your project.
 - **Public access**: the service grants `roles/run.invoker` to `allUsers`, which an organization policy on domain-restricted sharing refuses. Such a project needs an exception.
 
 ## Costs

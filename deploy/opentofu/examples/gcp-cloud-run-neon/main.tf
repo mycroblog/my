@@ -70,7 +70,6 @@ module "queue" {
 
   project_id    = var.project_id
   region        = var.region
-  host          = var.host
   tick_schedule = var.tick_schedule
 }
 
@@ -109,7 +108,12 @@ module "mail" {
 #     zone_id     = "<the zone's ID>"
 #     host        = var.host
 #     origin_host = "ghs.googlehosted.com"
+#     # Closes the origin. The value lands in the state, so keep the state private: the guide has how.
+#     origin_secret    = var.origin_secret
+#     origin_secret_id = module.secrets.ids["origin_secret"]
 #   }
+#
+# with secret_env = module.ingress.secret_env in its line of backends.
 #
 # And a media host beside any of them, which adds { env = module.media.env } to backends:
 #
@@ -146,12 +150,15 @@ module "app" {
   image           = var.image
   host            = var.host
   console_enabled = var.console_enabled
+  # What the ingress needs: all for the domain mapping and Cloudflare, whose traffic comes from the internet, and which leave the
+  # run.app URL open to anyone; internal-and-load-balancer for the load balancer, which closes it. A disagreement fails the plan.
+  service_ingress = "all"
 
   backends = [
     module.secrets, module.kek, module.db, module.queue, module.blob, module.stream, module.mail,
     # Named output by output, unlike the rest: the ingress reads the service's name, so its dns_records depend on the app,
-    # and a reference to the whole module would be a cycle. These two outputs do not.
-    { env = module.ingress.env, service_ingress = module.ingress.service_ingress },
+    # and a reference to the whole module would be a cycle. These three outputs do not.
+    { env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
   ]
 
   env = merge(

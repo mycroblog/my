@@ -24,14 +24,16 @@ module "ingress" {
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_TRUSTED_PROXIES`: `169.254.0.0/16` and the load balancer's address |
-| `secret_env`, `roles` | Empty |
-| `service_ingress` | `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` |
+| `env` | Empty |
+| `trusted_proxies` | The load balancer's address. The app module adds `169.254.0.0/16` |
+| `secret_env`, `permissions` | Empty |
+| `service_ingress` | `internal-and-load-balancer`, which the app must set |
 | `ip_address` | The address to point DNS at |
 | `dns_records` | The same address as an `A` record |
 
 - **The service takes traffic from the load balancer only.** Otherwise anyone could go around it through the `run.app` URL.
-  Cloud Tasks and Cloud Scheduler call `https://{host}`, so they arrive through the load balancer too.
+  Cloud Tasks and Cloud Scheduler do not come through it: they call that URL, and Cloud Run counts them as internal from the same project. Do not disable the URL.
+- **It needs no origin secret.** `internal-and-load-balancer` closes the `run.app` URL on the platform itself.
 - **Client addresses.** The load balancer writes `<what the client sent>,<client>,<its own address>` to `X-Forwarded-For`, so
   the server must trust its address to find the client. Enable `compute.googleapis.com` first.
 - **The certificate** becomes active only after DNS points at the address, which can take a while.
