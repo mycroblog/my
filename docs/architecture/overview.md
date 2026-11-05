@@ -284,7 +284,8 @@ app/                 # クライアントの Bun ワークスペース（アプ�
   mail/              # HTML のメールの外枠を MJML で html/template にする開発時のパッケージ @my/mail（ADR-0086 §2）
   mobile/            # モバイルアプリ（Tauri 2）
 deploy/
-  docker/ k8s/ gcp/ aws/
+  docker/ k8s/ aws/
+  terraform/  # Cloud Run の OpenTofu モジュール（<role>-<provider>-<service>）
   docker/federation-live/  # ライブの相互運用テスト（Mastodon・GoToSocial との compose とシナリオ。federation.md §12）
 docs/
 ```

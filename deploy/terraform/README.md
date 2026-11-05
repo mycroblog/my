@@ -1,0 +1,93 @@
+# OpenTofu modules
+
+Modules that compose a deployment of `my` from swappable backends. They are written for [OpenTofu](https://opentofu.org)
+and work with Terraform too. To deploy, follow [Deploying on Cloud Run](../../docs/operations/deploy-cloud-run.md);
+this file is the contract for whoever uses or adds a module.
+
+```text
+deploy/terraform/
+  modules/app-gcp-cloud-run/      service, migration job, console, service account, public access
+  modules/queue-gcp-cloud-tasks/  queue, Scheduler tick, the service account that calls the server
+  modules/blob-gcp-gcs/           media bucket
+  modules/stream-gcp-pubsub/      topic and the permissions for the server's own subscriptions
+  modules/db-external/            a connection URL in Secret Manager: Neon, or any PostgreSQL
+  examples/gcp-cloud-run-neon/    all of the above, composed
+  upgrade.sh                      migration job first, then the service
+  console.sh                      runs one my command through an app module's console
+```
+
+## Naming
+
+A module is named `<role>-<provider>-<service>`, so that the name says what it is for before where it runs:
+
+| Role | What it provides |
+| --- | --- |
+| `app` | The server itself. It merges what the others return |
+| `db` | The database |
+| `queue` | The job queue and what triggers the periodic jobs |
+| `blob` | The media store |
+| `stream` | The broker of the real-time updates |
+
+A module with no provider of its own drops that part (`db-external`). Cloud SQL would be `db-gcp-cloud-sql`.
+
+## The backend contract
+
+Every `db-*`, `queue-*`, `blob-*`, and `stream-*` module returns the same outputs, so that changing the database means
+changing one module block:
+
+| Output | Type | Meaning |
+| --- | --- | --- |
+| `env` | `map(string)` | Settings by variable name (`MY_DATABASE`) |
+| `secret_env` | `map(string)` | Secret settings: variable name to the ID of a secret in the platform's store |
+| `roles` | `list(object({ role, scope, resource }))` | What the app's service account needs |
+| `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it |
+
+`scope` says where the role goes: `project` (with `resource` null), `bucket`, `topic`, `queue`, or `service_account`. The
+app grants each role on that resource alone, so a backend asks for as little as it can. It reads the names of `roles` and
+`invokers` at plan time, so a backend builds them from its inputs rather than from attributes of its resources, and uses
+`depends_on` on the output for the order.
+
+The rules:
+
+- A backend never holds a secret value: it takes the ID of a secret that the operator created by hand, so no value
+  reaches the state.
+- A backend does not name the app. What it needs from the app is an input known in advance, such as `host`, so nothing
+  is circular: the queue calls `https://{host}`, and its service account exists before the service does.
+- A setting belongs to one place. The same setting named by two backends, by `env` and `secret_env`, by what the app
+  module sets itself, or as both `X` and `X_FILE`, fails the plan and lists the names. `merge()` alone would let the last
+  one win without a word.
+
+Anything without a backend (`host`'s companions, mail, VAPID, and every other setting) goes through the `env` and
+`secret_env` inputs of the app module, so no setting is out of reach. A backend of your own needs nothing special: any
+object with these fields can go in `backends`.
+
+## The app contract
+
+Every `app-*` module takes `backends`, `env`, `secret_env`, `image`, and `host`, and provides a console.
+
+### The console
+
+A console runs one `my` command as a one-off, with the same image, settings, and secrets as the app, for tasks such as
+creating the first administrator.
+
+- The input `console_enabled`, off by default, turns it on for as long as it is needed, so that nothing extra that can
+  read the secrets stays around.
+- The output `console` is null while it is off. Otherwise it is an object with a `platform`, and whatever else that
+  platform needs.
+- [`console.sh`](console.sh) is the one way to use it. It reads that output on standard input and takes the `my` command
+  as its arguments, waits for it, prints its output, and exits with its exit code. A new platform adds one function
+  there, chosen by `platform`.
+- The command has no standard input and no terminal, on every platform. Anything it prints stays wherever the platform
+  keeps output, so a command that needs a secret must not take it from there or print it casually:
+  `my admin create -password-link` exists for this.
+
+```sh
+tofu output -json console | deploy/terraform/console.sh admin create -username alice -email alice@example.com -password-link
+```
+
+## Checks
+
+`scripts/task.sh terraform:check` runs `tofu fmt -check`, `tofu init -backend=false` and `tofu validate` for each module
+and the example, the tests on mocked providers, and a check that every `MY_*` name here exists in the configuration. None
+of them reaches a cloud, so they show that the configuration is consistent, not that an apply succeeds. Only the example
+pins its providers (`.terraform.lock.hcl`); update it with `scripts/task.sh terraform:lock`.

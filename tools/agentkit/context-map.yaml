@@ -647,6 +647,14 @@ entries:
   - name: docker-compose
     paths: ["deploy/docker/compose.yaml", "deploy/docker/compose.build.yaml", "deploy/docker/.env.example", "Dockerfile"]
     userdocs: ["README.md#quick-start-docker-compose", "docs/operations/running.md#get-the-image", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
+  - name: terraform
+    paths: ["deploy/terraform/**", "scripts/terraform-env-check.sh", "scripts/terraform-scripts-test.sh", "tasks/terraform.yml", "docs/operations/deploy-cloud-run.md"]
+    docs: ["deploy/terraform/README.md", "docs/operations/deploy-cloud-run.md", "docs/architecture/deployment-targets.md#google-cloud"]
+    userdocs: ["docs/operations/deploy-cloud-run.md"]
+    checks: [terraform, shell, docs]
+    notes:
+      - "Modules are named <role>-<provider>-<service>. Each backend returns env, secret_env, and roles; the app module merges them and a setting named twice fails the plan. Every app-* module provides a console (console_enabled, the output console, console.sh). The contract is in deploy/terraform/README.md, and each module's README states its inputs and outputs."
+      - "A setting the modules set must exist in internal/platform/config/schema.go (`scripts/task.sh terraform:env-check`). The checks mock the providers, so a change that matters to a real apply needs one: list what was not run in the PR."
   - name: monitoring
     paths: ["deploy/monitoring/**", "docs/operations/alerts.md"]
     docs: ["docs/operations/alerts.md", "docs/operations/monitoring.md"]

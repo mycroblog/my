@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+# Only the example pins its providers; a module takes the versions of what uses it.
+modules/**/.terraform.lock.hcl

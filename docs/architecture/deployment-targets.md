@@ -48,7 +48,8 @@
 
 ## Google Cloud
 
-- **構成**: Cloud Run サービス（Web）+ 同一イメージのワーカー用エンドポイント。Cloud Tasks が HTTP でワーカーを叩く（push 型）。
+- **構成**: Cloud Run サービス 1 つ（`role = all`）。Cloud Tasks と Cloud Scheduler が `https://{host}` の `/_internal/jobs` と `/_internal/tick` を HTTP で叩く（push 型）。OpenTofu モジュールは `deploy/terraform`（`app-gcp-cloud-run`、`queue-gcp-cloud-tasks`、`blob-gcp-gcs`、`stream-gcp-pubsub`、`db-external`）で、手順は [Deploying on Cloud Run](../operations/deploy-cloud-run.md) にある。
+- **固定費の前提**: 既定の毎分の tick は DB に触るので、Neon のコンピュートが止まらない（0.25 CU で 182.5 CU-hours / 月、Free の 100 CU-hours を超え、Launch で約 $19 / 月）。Free に収めるなら `tick_schedule` を 10 分ごとなどに延ばす。開いたストリームが 1 本でもあればインスタンスに課金が続く（1 vCPU・512 MiB で 1 本を 1 か月開き続けると約 $60 / 月。単価は要検証）。「ほぼ $0」はこの 2 つを抑えたときの値である。
 - **RDB**: Cloud SQL は最小構成でも常時課金のため、低コスト構成では Neon（Postgres）などの外部サーバーレス PostgreSQL を推奨。
   Cloud Run + SQLite は永続ディスクがないため非推奨。
 - **キュー**: 遅延実行・レート制御・タスク名による重複排除がある Cloud Tasks を第一候補。Pub/Sub は将来オプション。
@@ -62,6 +63,8 @@
 | アイドル時 | **min instances に指定したインスタンスのみ** アイドル料金がかかる。min instances 0 ならアイドル課金なし | インスタンスが存在する間は課金 |
 
 - 本プロジェクトの既定はリクエストベース課金 + min instances 0（コールドスタートを許容）。
+- HTTP/1 のリクエストは 32 MiB まで。サーバーは HTTP/1.1 で受けるので、`deploy/terraform` の例は `media_max_av_bytes` を 30 MiB にする。
+- 起動プローブ `/readyz`、生存プローブ `/healthz`。プローブにも CPU とメモリの課金がある（リクエストの課金はない）。
 - 無料の外向き転送は北米発 1 GiB/月のみ。連合配送の外向き通信量は M6 で計測する。
 
 ### Cloud Tasks
@@ -326,7 +329,7 @@
 | AWS Application Load Balancer（EC2 / ECS） | ロードバランサのノード（ALB のサブネットのプライベート IP） | ALB を置いたサブネット（または VPC）の CIDR | `x-forwarded-for`（ALB の `routing.http.xff_header_processing.mode` は既定の `append` のままにする） |
 
 - Google Cloud のロードバランサと Cloud Run は `X-Forwarded-For` を `<クライアントが送った値>, <クライアント IP>[, <ロードバランサの IP>]` の形にする。
-  要検証: Cloud Run のコンテナから見た接続元が `169.254.0.0/16` に収まること（M6 のデプロイ検証でアクセスログの接続元を確認し、ずれていれば表を直す）。
+  要検証: Cloud Run のコンテナから見た接続元が `169.254.0.0/16` に収まること（最初のデプロイでアクセスログの接続元を確認し、ずれていれば表を直す）。
 - AWS ALB の `append` モードはクライアント IP を `X-Forwarded-For` の右端に追記する。`preserve` は追記しない（クライアントの値がそのまま届く）ので使わない。
 - 要検証: Lambda Web Adapter 経由（Function URL / ALB → Lambda）では接続元がアダプタの `127.0.0.1` になる。`trusted_proxies = 127.0.0.1` で
   `X-Forwarded-For` を採れるか、ヘッダが前段で追記されたものかを、Lambda のデプロイテンプレートの作業で確認する。

@@ -431,6 +431,8 @@ Choose a value from how your instance runs:
 
 ### Cloud Tasks
 
+[Deploying on Cloud Run](deploy-cloud-run.md) sets up everything below with OpenTofu modules.
+
 With `queue = cloudtasks` the jobs stay in the database (`database = postgres`), and Google Cloud Tasks only wakes the server up for each of them:
 
 - For every job it stores, retries, or puts back, the server creates a task in `queue_cloudtasks_queue` once the transaction commits. The task calls
