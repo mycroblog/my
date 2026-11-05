@@ -43,6 +43,10 @@ func TestDependencies(t *testing.T) {
 	if got := Dependencies(body); !reflect.DeepEqual(got, []string{"929", "930"}) {
 		t.Errorf("Dependencies = %v", got)
 	}
+	body = "Depends on #2247. The rule is shared with the API (#2249) and the rebuild (#2250)."
+	if got := Dependencies(body); !reflect.DeepEqual(got, []string{"2247"}) {
+		t.Errorf("Dependencies = %v, want only the sentence that names the dependency", got)
+	}
 }
 
 func TestTokens(t *testing.T) {

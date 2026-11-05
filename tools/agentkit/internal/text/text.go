@@ -149,15 +149,21 @@ func OneLine(s string) string { return strings.Join(strings.Fields(s), " ") }
 // dependencyWords mark a line of an issue that says it waits for another issue or pull request.
 var dependencyWords = []string{"着手しない", "マージされるまで", "の後に着手", "blocked by", "depends on", "stacked on", "after #"}
 
-// Dependencies returns the issue and pull request numbers that lines of body say the work waits for.
+// sentenceEnd splits a line into sentences, so that a number in the sentence after "Depends on #1."
+// is not read as something the work waits for.
+var sentenceEnd = regexp.MustCompile(`[.。]\s+|。`)
+
+// Dependencies returns the issue and pull request numbers that sentences of body say the work waits for.
 func Dependencies(body string) []string {
 	var out []string
 	for _, l := range strings.Split(body, "\n") {
-		lower := strings.ToLower(l)
-		for _, w := range dependencyWords {
-			if strings.Contains(lower, w) {
-				out = append(out, Issues(l)...)
-				break
+		for _, sentence := range sentenceEnd.Split(l, -1) {
+			lower := strings.ToLower(sentence)
+			for _, w := range dependencyWords {
+				if strings.Contains(lower, w) {
+					out = append(out, Issues(sentence)...)
+					break
+				}
 			}
 		}
 	}
