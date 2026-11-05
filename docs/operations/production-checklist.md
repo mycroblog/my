@@ -35,6 +35,7 @@ detail in English:
   - No `vapid_private_key`.
   - `stream = hub` or `kv = memory` with a `role` other than `all`: they work within one process only.
   - Voice settings that were likely not meant, such as `voice = p2p` without STUN or TURN.
+  - A [plugin](plugins.md) at an `http://` address, or at an `https://` address with neither a token nor a client certificate.
   - A test-mode key of the payment provider.
   - `origin_secret` set with an empty `trusted_proxies`, and `origin_secret_previous` left set after a rotation.
   - With `-instance`: the instance texts `name`, `short_description`, `terms`, and `privacy_policy`, the instance settings

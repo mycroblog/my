@@ -93,6 +93,7 @@ var exampleEnvSections = map[string]string{
 	"billing_sources":               "Cost records",
 	"payments":                      "Payments",
 	"voice":                         "Voice chat",
+	"plugin_translator_address":     "Plugins",
 	"dead_job_retention":            "Retention",
 	"metrics_exporter":              "Metrics, traces, and error reports",
 }

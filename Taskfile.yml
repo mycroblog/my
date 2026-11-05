@@ -80,6 +80,7 @@ tasks:
     desc: Run every generator whose inputs changed since its last run; the others are up to date and skip
     deps:
       - api:generate
+      - api:plugin-generate
       - go:sqlc
       - go:config-docs
       - i18n:gen

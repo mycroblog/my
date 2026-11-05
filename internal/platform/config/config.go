@@ -22,6 +22,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/pelletier/go-toml/v2"
+
+	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 )
 
 // Role selects what a process runs.
@@ -233,6 +235,9 @@ type Config struct {
 	PaymentsPayjpWebhookToken    string
 	PaymentsReconcileInterval    time.Duration
 	PaymentsReconcileMaxRequests int
+	// Plugins holds the destination of each delegated kind that has any setting, by the kind's name (ADR-0146 §5); read
+	// it through PluginDestination.
+	Plugins map[string]kind.Destination
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string

@@ -1065,7 +1065,7 @@ func skipExcluded(t *testing.T, env map[string]string) {
 }
 
 func TestLoadSettingsRedactSecrets(t *testing.T) {
-	_, settings, err := Load(source(with(minimal(), "MY_KEK_PREVIOUS", testKEK1, "MY_MAIL_SMTP_PASSWORD", "hunter3",
+	_, settings, err := Load(source(withPluginTokens(minimal(), "MY_KEK_PREVIOUS", testKEK1, "MY_MAIL_SMTP_PASSWORD", "hunter3",
 		"MY_CAPTCHA", "turnstile", "MY_CAPTCHA_SITE_KEY", "site", "MY_CAPTCHA_SECRET_KEY", "0x5eCrE7",
 		"MY_VAPID_PRIVATE_KEY", "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw",
 		"MY_KV", "valkey", "MY_VALKEY_URL", "valkey://user:pass@cache:6379/0",
