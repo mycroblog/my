@@ -20,6 +20,7 @@ deploy/terraform/
   modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
   modules/kek-gcp-kms/                 the KEK in Cloud KMS
   examples/gcp-cloud-run-neon/    all of the above, composed, on Git sources at MODULE_REF
+  modules/*-aws-*/, examples/aws-lambda-neon/  the same on AWS, never applied: see "AWS: unverified" below
   upgrade.sh                      migration job first, then the service
   console.sh                      runs one my command through an app module's console
 ```
@@ -169,6 +170,30 @@ tofu output -json console | deploy/terraform/console.sh admin create -username a
 chosen by `--platform`, which is `gcp-cloud-run` unless you say otherwise. What holds a bad image back is the platform's: Cloud Run
 gives a revision no traffic until `/readyz` answers, and Lambda has nothing like that.
 
+## AWS: unverified
+
+The modules for AWS exist to test whether this contract holds on a second platform. **None has ever been applied, and a deployment cannot
+run on them yet**: use Google Cloud. `modules/app-aws-lambda/README.md` says in detail what is missing, which comes to:
+
+- the server does not read a secret from Secrets Manager, and Lambda delivers none itself;
+- no released image runs on Lambda: it needs a single-architecture build with the Lambda Web Adapter, in ECR;
+- `my` has no way to run one command in an invocation, which the migration and the console need.
+
+| Module | Replaces on AWS |
+| --- | --- |
+| `app-aws-lambda` | `app-gcp-cloud-run` |
+| `queue-aws-sqs` | `queue-gcp-cloud-tasks` |
+| `blob-aws-s3` | `blob-gcp-gcs` |
+| `stream-aws-sns` | `stream-gcp-pubsub` |
+| `mail-aws-ses` | Beside `mail-smtp`, which works unchanged |
+| `secrets-aws-secrets-manager` | `secrets-gcp-secret-manager` |
+| `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
+| `ingress-aws-cloudfront` | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
+
+`db-external`, `mail-smtp`, and `ingress-cloudflare-app` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
+tests show that a block of one platform fails the plan on the other's app. `examples/aws-lambda-neon` composes them, and its tests swap each block
+its comments name; those tests mock the provider.
+
 ## Checks
 
 `scripts/task.sh terraform:check` runs `tofu fmt -check`, `tofu init -backend=false` and `tofu validate` for each module
@@ -178,3 +203,5 @@ the state, and that another apply writes nothing. None of them reaches a cloud, 
 consistent, not that an apply on Google Cloud succeeds. Only the example
 pins its providers (`.terraform.lock.hcl`). `terraform:sources` fails on a relative source or a `ref` other than `MODULE_REF`, and
 `terraform:git-source-test` runs `tofu init` on a copy of the example against a local bare repository with the tag.
+`terraform:aws-plan-test` plans the AWS modules that generate a value, with no credentials and no call to AWS, and shows that the plan holds nothing of it. There is no
+stub of AWS and no apply on that side, so nothing has shown what the state holds beyond what the provider's schema says.

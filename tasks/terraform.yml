@@ -26,6 +26,7 @@ tasks:
       - task: example-test
       - task: git-source-test
       - task: state-test
+      - task: aws-plan-test
 
   fmt-check:
     desc: Fail when the files of deploy/terraform are not formatted as tofu fmt does
@@ -55,7 +56,7 @@ tasks:
     desc: Run the tests of deploy/terraform, on mocked providers
     deps: [init]
     cmds:
-      - for: [deploy/terraform/modules/app-gcp-cloud-run, deploy/terraform/modules/ingress-cloudflare-app, deploy/terraform/modules/ingress-cloudflare-media, deploy/terraform/modules/mail-smtp, deploy/terraform/modules/secrets-gcp-secret-manager]
+      - for: [deploy/terraform/modules/app-aws-lambda, deploy/terraform/modules/app-gcp-cloud-run, deploy/terraform/modules/ingress-aws-cloudfront, deploy/terraform/modules/ingress-cloudflare-app, deploy/terraform/modules/ingress-cloudflare-media, deploy/terraform/modules/kek-aws-secrets-manager, deploy/terraform/modules/mail-smtp, deploy/terraform/modules/queue-aws-sqs, deploy/terraform/modules/secrets-aws-secrets-manager, deploy/terraform/modules/secrets-gcp-secret-manager, deploy/terraform/modules/stream-aws-sns]
         cmd: tofu -chdir={{.ITEM}} test
 
   state-test:
@@ -63,6 +64,12 @@ tasks:
     cmds:
       - mkdir -p "$TF_PLUGIN_CACHE_DIR"
       - scripts/terraform-state-test.sh
+
+  aws-plan-test:
+    desc: Prove with a plan that makes no call that the AWS modules hold no generated value in the plan
+    cmds:
+      - mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - scripts/terraform-aws-plan-test.sh
 
   sources:
     desc: Fail when an example or a document of deploy/terraform has a relative module source, or a ref other than MODULE_REF

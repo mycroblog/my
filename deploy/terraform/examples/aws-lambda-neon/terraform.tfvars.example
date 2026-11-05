@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Copy to terraform.tfvars. Nothing here has been applied: read deploy/terraform/modules/app-aws-lambda/README.md.
+
+host            = "social.example.org"
+image           = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
+certificate_arn = "arn:aws:acm:us-east-1:111122223333:certificate/00000000-0000-0000-0000-000000000000"
+bucket_name     = "social-example-org-media"
+
+mail_from          = "noreply@social.example.org"
+mail_smtp_host     = "smtp.example.org"
+mail_smtp_username = "my-smtp-user"
