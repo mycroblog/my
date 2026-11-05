@@ -102,7 +102,7 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	// about it (ADR-0062).
 	out.LinkCards, out.LinkCardsIgnoreRobotsTxt = settings.LinkCardsEnabled(), settings.LinkCardsIgnoreRobotsTxt()
 	// What translation offers and where it sends the text of posts (ADR-0148 §6).
-	translationInfo, err := s.instanceTranslation(ctx, settings.TranslationBrowser())
+	translationInfo, err := s.instanceTranslation(ctx, settings.TranslationBrowser(), settings.TranslationReportsToServer())
 	if err != nil {
 		return nil, err
 	}

@@ -32,6 +32,10 @@ type Translations interface {
 	EnabledProviders(ctx context.Context) ([]translation.Provider, error)
 	// Overview returns the use of the current month.
 	Overview(ctx context.Context) (translation.Overview, error)
+	// TranslateReportedStatus translates a status that a report points at, for its moderators.
+	TranslateReportedStatus(ctx context.Context, reportID, statusID, target string) (translation.Translation, error)
+	// TranslateReportComment translates the comment of a report, for its moderators.
+	TranslateReportComment(ctx context.Context, reportID, target string) (translation.CommentTranslation, error)
 }
 
 // TranslateStatus serves POST /api/v1/statuses/{id}/translation. The answer depends on the viewer,
@@ -106,13 +110,14 @@ func newTranslationProvider(p translation.ProviderInfo) TranslationProvider {
 	return out
 }
 
-// instanceTranslation returns what GET /instance publishes of translation (ADR-0148 §6). A server
-// without the module offers nothing.
-func (s *Server) instanceTranslation(ctx context.Context, browser bool) (InstanceTranslation, error) {
+// instanceTranslation returns what GET /instance publishes of translation (ADR-0148 §6, §13). A
+// server without the module offers nothing.
+func (s *Server) instanceTranslation(ctx context.Context, browser, reportsToServer bool) (InstanceTranslation, error) {
 	out := InstanceTranslation{Browser: browser, Providers: []InstanceTranslationProvider{}}
 	if s.o.Translations == nil {
 		return out, nil
 	}
+	out.ReportsToServer = &reportsToServer
 	providers, err := s.o.Translations.EnabledProviders(ctx)
 	if err != nil {
 		return InstanceTranslation{}, fmt.Errorf("clientapi: translation providers: %w", err)

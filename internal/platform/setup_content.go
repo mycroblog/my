@@ -9,8 +9,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/identity"
-	appmoderation "github.com/mycroblog/my/internal/app/moderation"
-	"github.com/mycroblog/my/internal/app/uow"
+	"github.com/mycroblog/my/internal/domain/hook"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -38,7 +37,8 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 		LocalEmojis: func(ctx context.Context, texts ...string) ([]string, error) {
 			return a.CustomEmojis.LocalEmojiIDs(ctx, texts...)
 		},
-		// The decision hook local.status (ADR-0147), built by setUpHooks before this.
+		// The decision hook local.status (ADR-0147), built by setUpHooks before this; a flag files
+		// its report on the moderation module, built by setUpModeration before this.
 		StatusReview: content.StatusReview{
 			Hooks: a.Hooks,
 			MaxAccountAge: func(ctx context.Context) (time.Duration, error) {
@@ -48,10 +48,12 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 				}
 				return settings.HookLocalStatusAccountAge(), nil
 			},
-			Reports: localStatusReports{a}, // reads a.Moderation, built after this
+			Reports: hookReports{a.Moderation}, InstanceActor: a.emojiImageOwner,
 		},
-		Clock: a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
+		MediaReview: a.mediaReview(),
+		Clock:       a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
 	})
+	a.Hooks.RegisterOverrideEffect(hook.MediaCheck, a.Content.UndoMediaReview)
 	// After RegisterProjectors, which creates the counters that these projectors update.
 	content.RegisterInteractionProjectors(a.Projectors, interactions)
 	a.Interactions = content.NewInteractions(content.InteractionDeps{
@@ -64,26 +66,6 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 			return a.Media.EmojiTags(ctx, ids)
 		},
 		Clock: a.Clock, IDs: a.IDs, Host: cfg.Host,
-	})
-}
-
-// localStatusReports files the report of a flag decision of local.status on the moderation module,
-// which the content module may not import: the instance actor reports the author's new post.
-type localStatusReports struct{ a *App }
-
-func (r localStatusReports) ReporterAccountID(ctx context.Context) (string, error) {
-	actor, err := r.a.Accounts.EnsureInstanceActor(ctx)
-	if err != nil {
-		return "", err
-	}
-	return actor.ID, nil
-}
-
-func (r localStatusReports) FileHookReport(ctx context.Context, tx uow.Tx, in content.HookReport) (bool, error) {
-	res := in.Result
-	return r.a.Moderation.FileHookReport(ctx, tx, appmoderation.HookReportInput{
-		ReporterAccountID: in.ReporterAccountID, TargetAccountID: in.AuthorAccountID, StatusIDs: []string{in.StatusID},
-		DecisionID: res.DecisionID, Hook: string(res.Hook), ReasonCode: string(res.Reason), Comment: res.Note,
 	})
 }
 

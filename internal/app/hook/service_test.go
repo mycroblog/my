@@ -259,6 +259,33 @@ func TestARecordedDecisionDoesNotCallThePluginAgain(t *testing.T) {
 	}
 }
 
+// Recorded reads what Decide recorded and never calls the plugin: media.check acts on its answer
+// when a post attaches the file, long after it asked.
+func TestRecordedReadsTheDecisionWithoutCallingThePlugin(t *testing.T) {
+	h := newHarness(hook.ModeEnforce, hook.PassOnFailure)
+	ctx := t.Context()
+	none, err := h.s.Recorded(ctx, hook.InboundStatus, "a")
+	if err != nil || none.DecisionID != "" || none.Effect != hook.Allow || len(h.plugin.Requests()) != 0 {
+		t.Fatalf("Recorded before any decision = %+v, %v after %d calls", none, err, len(h.plugin.Requests()))
+	}
+	h.plugin.Answer(apphook.Answer{Verdict: hook.MarkSensitive, Reason: hook.ReasonSexual})
+	decided := h.decide(t, "a")
+	got, err := h.s.Recorded(ctx, hook.InboundStatus, "a")
+	if err != nil || got != decided || len(h.plugin.Requests()) != 1 {
+		t.Errorf("Recorded = %+v, %v, want %+v after one call", got, err, decided)
+	}
+	if _, err := h.s.Override(ctx, decided.DecisionID, "moderator"); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := h.s.Recorded(ctx, hook.InboundStatus, "a"); got.Effect != hook.Allow || got.DecisionID != decided.DecisionID {
+		t.Errorf("Recorded after the cancellation = %+v", got)
+	}
+	reads := h.mem.reads
+	if got, err := h.s.Recorded(ctx, hook.MediaCheck, "a"); err != nil || got.DecisionID != "" || h.mem.reads != reads {
+		t.Errorf("Recorded of a hook with no plugin = %+v, %v, and read the database", got, err)
+	}
+}
+
 func TestFailuresAreOutcomesNotVerdicts(t *testing.T) {
 	for _, c := range []struct {
 		err  error

@@ -12,7 +12,7 @@ import { type PostContentElement, type PostContentNode, sanitizedHtmlNodes, serv
 import { queryOptions } from "@tanstack/react-query";
 import { textTokens } from "../../../lib/textTokens";
 import type { Status } from "./status";
-import { isInLanguage, type TranslatedPost } from "./translation";
+import { isInLanguage, type TranslatedComment, type TranslatedPost } from "./translation";
 
 /** The part of the Translator and Language Detector APIs used here. */
 type Availability = "available" | "downloadable" | "downloading" | "unavailable";
@@ -452,4 +452,21 @@ export async function translateInBrowser(
     pollOptions: options.map(restoredText),
     by: { kind: "browser", name: browserName() },
   };
+}
+
+/**
+ * Translates `text`, plain text in a language nobody named, such as the comment of a report (ADR-0148 §13), in the
+ * browser: the detector finds its language first. Text with no words to translate comes back as it is.
+ */
+export async function translateTextInBrowser(
+  text: string,
+  target: string,
+  onDownload: (loaded: number) => void,
+): Promise<TranslatedComment> {
+  const masked = maskInline([text]);
+  if (!sendable(masked)) return { language: "und", text, by: { kind: "author" } };
+  const source = await detectLanguage(masked.fragment.replaceAll(markerPattern, ""), onDownload);
+  if (isInLanguage(source, target)) throw new BrowserTranslationError("same_language");
+  await translateAll([masked], { sourceLanguage: source, targetLanguage: target }, onDownload);
+  return { language: target, text: restoredText(masked), by: { kind: "browser", name: browserName() } };
 }

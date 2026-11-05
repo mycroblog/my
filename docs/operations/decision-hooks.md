@@ -2,12 +2,12 @@
 
 A decision hook asks a [plugin](plugins.md) of yours whether to accept something before the server accepts it. The plugin
 answers with a verdict from a fixed list. It never rewrites anything and it takes no action on an account: the most it can do
-is stop one post, follow, or sign-up, or file a report for your moderators. People decide what happens to an account.
+is stop one post, follow, sign-up, or upload, or file a report for your moderators. People decide what happens to an account.
 
 Nothing is reviewed by default. A server with no hook address makes no call and spends no time on them. This version keeps
 the records, the modes, and the admin screens described here. Of the intake paths, posts from other servers ask
-`inbound.status`, follows from other servers ask `inbound.follow`, sign-ups ask `signup.check`, and posts of local
-accounts ask `local.status`; the other hooks are not called yet.
+`inbound.status`, follows from other servers ask `inbound.follow`, sign-ups ask `signup.check`, uploads ask
+`media.check`, and posts of local accounts ask `local.status`; the other hooks are not called yet.
 
 ## The hooks
 
@@ -16,7 +16,7 @@ accounts ask `local.status`; the other hooks are not called yet.
 | `inbound.status` | Posts from other servers | `allow`, `drop`, `flag`, `mark_sensitive` | `pass` (default) or `retry` |
 | `inbound.follow` | Follows from other servers | `allow`, `drop`, `flag` | `pass` (default) or `retry` |
 | `signup.check` | Sign-ups, after the CAPTCHA and the block list | `allow`, `require_approval`, `reject` | `pass` (default) or `require_approval` |
-| `media.check` | Uploaded media | `allow`, `mark_sensitive`, `flag` | `pass` (default) or `retry` |
+| `media.check` | Uploaded media, before anyone can use them | `allow`, `mark_sensitive`, `flag`, `reject` | `pass` (default) or `retry` |
 | `local.status` | Posts of local accounts | `allow`, `flag`, `reject` | `pass` |
 
 Set `plugin_<hook>_address` to give a hook a plugin, with a dot in the name becoming `_`
@@ -27,12 +27,14 @@ What each answer does:
 
 - `drop` stops the subject and stores nothing of it. A wrong `drop` silently hides a post from its followers too, so read
   what a hook would drop in `observe` before you enforce it.
-- `flag` lets it through and files one report per decision. On `inbound.follow` this version only records the decision
-  and files no report.
+- `flag` lets it through and files one report per decision. On `inbound.follow` the report is about the account that sent
+  the follow, names no post, and is filed once the follow is recorded; its reporter, category, and comment are those of
+  [a post's report](#what-inboundstatus-reviews).
 - `mark_sensitive` lets it through and shows its attachments as sensitive until a moderator cancels the decision.
 - `require_approval` holds the sign-up for approval.
 - `reject` refuses it, with fixed text that shows nothing of the plugin's answer. On `signup.check` this also takes
-  [the setting below](#sign-ups); on `local.status` its author can [appeal](#local-posts).
+  [the setting below](#sign-ups). On `media.check` it keeps nothing of the upload, the original included
+  ([below](#what-mediacheck-reviews)). On `local.status` its author can [appeal](#local-posts).
 
 An answer can carry a coded reason (`spam`, `harassment`, `sexual`, `violence`, `illegal`, `malware`, `other`) and a note of
 up to 200 characters for your moderators. An answer the hook does not take counts as a failure.
@@ -62,6 +64,35 @@ What each answer does to a post:
 - `mark_sensitive` marks the post, not the revision: the mark stays on later revisions, whatever they are answered, until a
   moderator cancels the decision. It shows attachments as sensitive and leaves the text alone, so a post with no attachment
   looks no different, and other servers do not see it.
+
+## What `media.check` reviews
+
+The server asks about each file a local account uploads, for any use: an attachment, an avatar, a header, or a custom
+emoji. It asks once, when the file is first processed and before it is ready, so nobody can use it while the plugin
+decides. Using the same file for something else later reads the decision already made. Remote media is never asked about.
+
+It sends the smallest image the server made of the file, without its metadata, and never the original: for a video or
+audio file, the small image of its poster or embedded cover, or no image when there is none. With it go what the file
+is for, whether it is an image, video, or audio, its size, how long it plays, and whether it moves. The alt text and
+anything of the account or of a post are not sent. The message `MediaSubject` of the `HookService` protocol has the fields.
+
+What each answer does to an upload:
+
+- `reject` makes the processing fail, as for a file the server cannot read: the uploader sees that the file could not be
+  processed, and a post cannot attach it. **The server keeps nothing of a rejected file.** It deletes the original once
+  processing ends, whatever the answer, and a rejected file gets no processed version. If you must preserve such
+  files, or report them to someone, your plugin has to do it when it answers: the server cannot give the file back.
+  Cancelling a `reject` only changes its record.
+- `mark_sensitive` marks the post that attaches the file, in the transaction that creates the post or the edit that adds
+  the file, and the mark stays until a moderator cancels the decision, as for `inbound.status`. An avatar, a header, or an
+  emoji has no post, so the decision is only recorded.
+- `flag` files one report per decision, with your instance actor as the reporter. For an attachment it is filed with the
+  post that attaches the file and points at that post; a file that is never posted files none. For an avatar, a header, or
+  an emoji it is filed when the file is processed, about the account that uploaded it.
+
+The processing job waits for the plugin for up to `plugin_media_check_timeout` (10 seconds by default). Adding a custom
+emoji from another server or approving an emoji request processes the image while the moderator waits, so that wait
+is theirs.
 
 ## Sign-ups
 
@@ -150,6 +181,10 @@ What happens to the subject then depends on `hook_<hook>_on_failure`:
   After its last run the job becomes a [dead job](running.md#the-job-queue-and-failed-dead-jobs), which releases the others.
 - `require_approval` holds the sign-up for a moderator.
 
+For `media.check`, `pass` makes the file ready unreviewed. `retry` holds the upload as still processing until the plugin
+answers or the job runs out of runs; the file is never ready meanwhile, and a dead job leaves it unprocessed, which the
+cleanup of unattached uploads then deletes. No other job waits for it.
+
 Each process makes at most 8 calls of a plugin at once, and a call that waits its turn past the hook's deadline counts as a
 timeout. Waits show in `my.plugin.slot_wait` ([Running](running.md)). Keep `plugin_inbound_status_timeout` short: while a call
 waits, later jobs from the same actor wait with it.
@@ -207,4 +242,5 @@ is one call, and every revision another. Review what you send before you turn a 
   It sends nothing of the post it replies to. The message `InboundStatus` of the `HookService` protocol has the fields.
 - `signup.check` sends the email address and the IP address of each applicant, and refuses plain TCP.
 - `inbound.follow` sends the two parties of a follow.
-- `media.check` sends a small processed version of the media, never the original.
+- `media.check` sends the smallest processed image of each upload, never the original, with what the file is for, its
+  kind, size, and length. It may use plain TCP, as it sends no text: a processed image can still show a person.

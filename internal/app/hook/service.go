@@ -181,6 +181,26 @@ func (s *Service) Decide(ctx context.Context, c Call) (Result, error) {
 	return resultOf(rec, onFailure), nil
 }
 
+// Recorded implements Gate.
+func (s *Service) Recorded(ctx context.Context, n hook.Name, subjectKey string) (Result, error) {
+	none := Result{Hook: n, SubjectKey: subjectKey, Effect: hook.Allow}
+	if !s.Configured(n) {
+		return none, nil
+	}
+	rec, err := s.d.Repository.RecordBySubject(ctx, n, subjectKey)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return none, nil
+	case err != nil:
+		return Result{}, fmt.Errorf("hook: read the decision of %s: %w", n, err)
+	}
+	onFailure, err := s.d.Settings.HookOnFailure(ctx, n)
+	if err != nil {
+		return Result{}, fmt.Errorf("hook: the failure behaviour of %s: %w", n, err)
+	}
+	return resultOf(rec, onFailure), nil
+}
+
 // call asks the plugin through the hook's breaker and returns its answer, a failure being the
 // Verdict of an empty answer. It fails only when the caller's own context ended, which says nothing
 // about the plugin: the job runs again and no decision is recorded.
@@ -212,7 +232,7 @@ func (s *Service) call(ctx context.Context, plugin Plugin, c Call) (Answer, time
 }
 
 // failureOf returns the kind of failure of a call, "" for an answer the hook can act on. A verdict
-// the hook does not take, such as a reject of media.check, is an invalid answer (ADR-0147 §2).
+// the hook does not take, such as a drop of signup.check, is an invalid answer (ADR-0147 §2).
 func failureOf(n hook.Name, a Answer, err error) hook.Outcome {
 	switch {
 	case errors.Is(err, ErrPluginTimeout):

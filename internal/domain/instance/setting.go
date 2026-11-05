@@ -181,6 +181,10 @@ const (
 	// SettingTranslationRetentionDays is how many days a translation is kept after it was made
 	// (ADR-0148 §9).
 	SettingTranslationRetentionDays SettingKey = "translation_retention_days"
+	// SettingTranslationReportsToServer lets the moderators' translations of reports go to the
+	// server-side providers, which still receive only the visibilities that each is allowed; off,
+	// the text of a report reaches no provider (ADR-0148 §13).
+	SettingTranslationReportsToServer SettingKey = "translation_reports_to_server"
 )
 
 // RegistrationMode is the value of SettingRegistrationMode (FR-001).
@@ -729,6 +733,10 @@ var definitions = []Definition{
 	{
 		Key: SettingTranslationRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultTranslationRetentionDays), Min: 1, Max: MaxRetention,
 		Doc: "How many days a translation is kept after it was made; reading it does not extend this (ADR-0148 §9).",
+	},
+	{
+		Key: SettingTranslationReportsToServer, Kind: KindBool, Default: "false",
+		Doc: "Whether moderators may send the text of a report, its posts and its comment, to the server-side translation providers; each provider still receives only the visibilities it is allowed, and a comment counts as private (ADR-0148 §13).",
 	},
 }
 
@@ -1332,6 +1340,11 @@ func (s Settings) TranslationServerMonthlyCharacters() int64 {
 // TranslationRetentionDays returns the value of SettingTranslationRetentionDays.
 func (s Settings) TranslationRetentionDays() int {
 	return s.intValue(SettingTranslationRetentionDays)
+}
+
+// TranslationReportsToServer returns the value of SettingTranslationReportsToServer.
+func (s Settings) TranslationReportsToServer() bool {
+	return s.boolValue(SettingTranslationReportsToServer)
 }
 
 // maxProviderSettingLength bounds the values of KindProviderList and KindProviderVisibilities.

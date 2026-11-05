@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: The comment of a report in another language. The server does not keep it.
+type: object
+required: [language, source_language, comment]
+properties:
+  language:
+    description: The language of this answer, as a BCP 47 tag.
+    type: string
+  source_language:
+    description: The language translated from, which a provider may have detected; `und` when it is not known.
+    type: string
+  comment:
+    description: The comment as plain text.
+    type: string
+  provider:
+    $ref: ./TranslationProvider.yaml

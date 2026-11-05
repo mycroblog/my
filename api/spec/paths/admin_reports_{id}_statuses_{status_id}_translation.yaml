@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/ReportId.yaml
+  - name: status_id
+    in: path
+    description: The ID of a post that the report points at.
+    required: true
+    schema:
+      $ref: ../components/schemas/Id.yaml
+post:
+  operationId: translateReportedStatus
+  summary: Translate a reported post into a language
+  description: |
+    Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+    does, for a moderator who reads the report: whatever the post's visibility, and also when its
+    author deleted it. A report that does not point at the post, an unknown report, and a post that is
+    gone are a 404. Needs the `manage_reports` permission.
+
+    The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+    provider only while the instance setting `translation_reports_to_server` is on, and only to the
+    providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+    posts. The characters sent count against the server's monthly limit only. The translation is kept
+    for the readers of the post who may see it, except for a deleted post, whose translation is not
+    kept.
+
+    The problems are those of `POST /statuses/{id}/translation`: a 422
+    `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+    post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+    `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+    `/api/v1/problems/translation-failed`.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/StatusTranslationRequest.yaml
+  responses:
+    "200":
+      description: The post in the language.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/StatusTranslation.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

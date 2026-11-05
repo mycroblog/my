@@ -67,6 +67,14 @@
     "defaultMessage": "提供元",
     "description": "Heading of the section that enables translation providers."
   },
+  "admin.translation.reports": {
+    "defaultMessage": "通報を提供元に送る",
+    "description": "Checkbox that lets moderators translate reports with the server-side providers."
+  },
+  "admin.translation.reports.description": {
+    "defaultMessage": "モデレーターが、通報された投稿と通報者のコメントを上の提供元で翻訳できるようにします。それぞれの提供元に送るのは、その提供元で選んだ公開範囲だけで、コメントはフォロワーへの投稿として扱います。コメントの訳は保存せず、文字数はサーバー全体の上限にだけ数えます。ブラウザの内蔵翻訳は、この設定によらず通報にも使えます。",
+    "description": "Explains what sending reports to the translation providers does."
+  },
   "admin.translation.retention": {
     "defaultMessage": "翻訳を保持する日数",
     "description": "Label of how many days a translation is kept."

@@ -31,7 +31,7 @@ const (
 // inbound.status: ALLOW, DROP, FLAG, MARK_SENSITIVE.
 // inbound.follow: ALLOW, DROP, FLAG.
 // signup.check: ALLOW, REQUIRE_APPROVAL, REJECT.
-// media.check: ALLOW, MARK_SENSITIVE, FLAG.
+// media.check: ALLOW, MARK_SENSITIVE, FLAG, REJECT.
 // local.status: ALLOW, FLAG, REJECT. A REJECT can be appealed by the author, which people review.
 type Verdict int32
 
@@ -47,7 +47,8 @@ const (
 	Verdict_VERDICT_MARK_SENSITIVE Verdict = 4
 	// Go on, and hold the sign-up for approval.
 	Verdict_VERDICT_REQUIRE_APPROVAL Verdict = 5
-	// Refuse the subject and tell the person, with fixed text that holds nothing of the response.
+	// Refuse the subject and keep nothing of it. A person told about it sees fixed text that holds
+	// nothing of the response.
 	Verdict_VERDICT_REJECT Verdict = 6
 )
 
@@ -179,7 +180,9 @@ type CheckRequest struct {
 	// What signup.check reviews; empty on the calls of the other hooks and on probes.
 	Signup *SignupSubject `protobuf:"bytes,6,opt,name=signup,proto3" json:"signup,omitempty"`
 	// What local.status reviews; empty on the calls of the other hooks and on probes.
-	LocalStatus   *LocalStatus `protobuf:"bytes,7,opt,name=local_status,json=localStatus,proto3" json:"local_status,omitempty"`
+	LocalStatus *LocalStatus `protobuf:"bytes,7,opt,name=local_status,json=localStatus,proto3" json:"local_status,omitempty"`
+	// What media.check reviews; empty on the calls of the other hooks and on probes.
+	Media         *MediaSubject `protobuf:"bytes,8,opt,name=media,proto3" json:"media,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -259,6 +262,13 @@ func (x *CheckRequest) GetSignup() *SignupSubject {
 func (x *CheckRequest) GetLocalStatus() *LocalStatus {
 	if x != nil {
 		return x.LocalStatus
+	}
+	return nil
+}
+
+func (x *CheckRequest) GetMedia() *MediaSubject {
+	if x != nil {
+		return x.Media
 	}
 	return nil
 }
@@ -741,6 +751,134 @@ func (x *LocalStatus) GetMentionCount() int32 {
 	return 0
 }
 
+// MediaSubject is a file a local account uploaded, once it is processed and before anyone can use
+// it. The subject_key of the call is the ID of the file. The original file is never sent: the
+// server sends the smallest image it made of the file, which has no metadata. Nothing else of the
+// account or of a post is sent, not even the alt text.
+type MediaSubject struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// What the file is for: attachment, avatar, header, or emoji.
+	Purpose string `protobuf:"bytes,1,opt,name=purpose,proto3" json:"purpose,omitempty"`
+	// image, video, or audio.
+	MediaType string `protobuf:"bytes,2,opt,name=media_type,json=mediaType,proto3" json:"media_type,omitempty"`
+	// The smallest still image made of the file, for a video or audio file of its poster or cover.
+	// Empty when there is none, such as for audio without a cover.
+	Image []byte `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
+	// The media type of image, such as image/webp; empty when image is.
+	ImageContentType string `protobuf:"bytes,4,opt,name=image_content_type,json=imageContentType,proto3" json:"image_content_type,omitempty"`
+	ImageWidth       int32  `protobuf:"varint,5,opt,name=image_width,json=imageWidth,proto3" json:"image_width,omitempty"`
+	ImageHeight      int32  `protobuf:"varint,6,opt,name=image_height,json=imageHeight,proto3" json:"image_height,omitempty"`
+	// The size of the file as uploaded, in pixels; 0 for audio.
+	Width  int32 `protobuf:"varint,7,opt,name=width,proto3" json:"width,omitempty"`
+	Height int32 `protobuf:"varint,8,opt,name=height,proto3" json:"height,omitempty"`
+	// How long a video or audio file plays, in milliseconds; 0 for an image.
+	DurationMs int64 `protobuf:"varint,9,opt,name=duration_ms,json=durationMs,proto3" json:"duration_ms,omitempty"`
+	// Whether the image moves: an animation, or a video. image holds its first frame or poster.
+	Animated      bool `protobuf:"varint,10,opt,name=animated,proto3" json:"animated,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MediaSubject) Reset() {
+	*x = MediaSubject{}
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MediaSubject) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MediaSubject) ProtoMessage() {}
+
+func (x *MediaSubject) ProtoReflect() protoreflect.Message {
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MediaSubject.ProtoReflect.Descriptor instead.
+func (*MediaSubject) Descriptor() ([]byte, []int) {
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *MediaSubject) GetPurpose() string {
+	if x != nil {
+		return x.Purpose
+	}
+	return ""
+}
+
+func (x *MediaSubject) GetMediaType() string {
+	if x != nil {
+		return x.MediaType
+	}
+	return ""
+}
+
+func (x *MediaSubject) GetImage() []byte {
+	if x != nil {
+		return x.Image
+	}
+	return nil
+}
+
+func (x *MediaSubject) GetImageContentType() string {
+	if x != nil {
+		return x.ImageContentType
+	}
+	return ""
+}
+
+func (x *MediaSubject) GetImageWidth() int32 {
+	if x != nil {
+		return x.ImageWidth
+	}
+	return 0
+}
+
+func (x *MediaSubject) GetImageHeight() int32 {
+	if x != nil {
+		return x.ImageHeight
+	}
+	return 0
+}
+
+func (x *MediaSubject) GetWidth() int32 {
+	if x != nil {
+		return x.Width
+	}
+	return 0
+}
+
+func (x *MediaSubject) GetHeight() int32 {
+	if x != nil {
+		return x.Height
+	}
+	return 0
+}
+
+func (x *MediaSubject) GetDurationMs() int64 {
+	if x != nil {
+		return x.DurationMs
+	}
+	return 0
+}
+
+func (x *MediaSubject) GetAnimated() bool {
+	if x != nil {
+		return x.Animated
+	}
+	return false
+}
+
 type CheckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
@@ -758,7 +896,7 @@ type CheckResponse struct {
 
 func (x *CheckResponse) Reset() {
 	*x = CheckResponse{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[5]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -770,7 +908,7 @@ func (x *CheckResponse) String() string {
 func (*CheckResponse) ProtoMessage() {}
 
 func (x *CheckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[5]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -783,7 +921,7 @@ func (x *CheckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckResponse.ProtoReflect.Descriptor instead.
 func (*CheckResponse) Descriptor() ([]byte, []int) {
-	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{5}
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CheckResponse) GetVerdict() Verdict {
@@ -819,7 +957,7 @@ type InboundStatus_Body struct {
 
 func (x *InboundStatus_Body) Reset() {
 	*x = InboundStatus_Body{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[6]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -831,7 +969,7 @@ func (x *InboundStatus_Body) String() string {
 func (*InboundStatus_Body) ProtoMessage() {}
 
 func (x *InboundStatus_Body) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[6]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -876,7 +1014,7 @@ type InboundStatus_Attachment struct {
 
 func (x *InboundStatus_Attachment) Reset() {
 	*x = InboundStatus_Attachment{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[7]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -888,7 +1026,7 @@ func (x *InboundStatus_Attachment) String() string {
 func (*InboundStatus_Attachment) ProtoMessage() {}
 
 func (x *InboundStatus_Attachment) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[7]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -936,7 +1074,7 @@ var File_my_plugin_hook_v1_hook_proto protoreflect.FileDescriptor
 
 const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\n" +
-	"\x1cmy/plugin/hook/v1/hook.proto\x12\x11my.plugin.hook.v1\"\xd9\x02\n" +
+	"\x1cmy/plugin/hook/v1/hook.proto\x12\x11my.plugin.hook.v1\"\x90\x03\n" +
 	"\fCheckRequest\x12\x12\n" +
 	"\x04hook\x18\x01 \x01(\tR\x04hook\x12\x1f\n" +
 	"\vsubject_key\x18\x02 \x01(\tR\n" +
@@ -945,7 +1083,8 @@ const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\x0einbound_status\x18\x04 \x01(\v2 .my.plugin.hook.v1.InboundStatusR\rinboundStatus\x128\n" +
 	"\x06follow\x18\x05 \x01(\v2 .my.plugin.hook.v1.FollowSubjectR\x06follow\x128\n" +
 	"\x06signup\x18\x06 \x01(\v2 .my.plugin.hook.v1.SignupSubjectR\x06signup\x12A\n" +
-	"\flocal_status\x18\a \x01(\v2\x1e.my.plugin.hook.v1.LocalStatusR\vlocalStatus\"\xe2\x06\n" +
+	"\flocal_status\x18\a \x01(\v2\x1e.my.plugin.hook.v1.LocalStatusR\vlocalStatus\x125\n" +
+	"\x05media\x18\b \x01(\v2\x1f.my.plugin.hook.v1.MediaSubjectR\x05media\"\xe2\x06\n" +
 	"\rInboundStatus\x12#\n" +
 	"\ractivity_type\x18\x01 \x01(\tR\factivityType\x12\x1d\n" +
 	"\n" +
@@ -1006,7 +1145,22 @@ const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\x17attachment_descriptions\x18\r \x03(\tR\x16attachmentDescriptions\x12!\n" +
 	"\fpoll_options\x18\x0e \x03(\tR\vpollOptions\x12\x1a\n" +
 	"\bhashtags\x18\x0f \x03(\tR\bhashtags\x12#\n" +
-	"\rmention_count\x18\x10 \x01(\x05R\fmentionCount\"\x8c\x01\n" +
+	"\rmention_count\x18\x10 \x01(\x05R\fmentionCount\"\xba\x02\n" +
+	"\fMediaSubject\x12\x18\n" +
+	"\apurpose\x18\x01 \x01(\tR\apurpose\x12\x1d\n" +
+	"\n" +
+	"media_type\x18\x02 \x01(\tR\tmediaType\x12\x14\n" +
+	"\x05image\x18\x03 \x01(\fR\x05image\x12,\n" +
+	"\x12image_content_type\x18\x04 \x01(\tR\x10imageContentType\x12\x1f\n" +
+	"\vimage_width\x18\x05 \x01(\x05R\n" +
+	"imageWidth\x12!\n" +
+	"\fimage_height\x18\x06 \x01(\x05R\vimageHeight\x12\x14\n" +
+	"\x05width\x18\a \x01(\x05R\x05width\x12\x16\n" +
+	"\x06height\x18\b \x01(\x05R\x06height\x12\x1f\n" +
+	"\vduration_ms\x18\t \x01(\x03R\n" +
+	"durationMs\x12\x1a\n" +
+	"\banimated\x18\n" +
+	" \x01(\bR\banimated\"\x8c\x01\n" +
 	"\rCheckResponse\x124\n" +
 	"\averdict\x18\x01 \x01(\x0e2\x1a.my.plugin.hook.v1.VerdictR\averdict\x121\n" +
 	"\x06reason\x18\x02 \x01(\x0e2\x19.my.plugin.hook.v1.ReasonR\x06reason\x12\x12\n" +
@@ -1045,7 +1199,7 @@ func file_my_plugin_hook_v1_hook_proto_rawDescGZIP() []byte {
 }
 
 var file_my_plugin_hook_v1_hook_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_my_plugin_hook_v1_hook_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_my_plugin_hook_v1_hook_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_my_plugin_hook_v1_hook_proto_goTypes = []any{
 	(Verdict)(0),                     // 0: my.plugin.hook.v1.Verdict
 	(Reason)(0),                      // 1: my.plugin.hook.v1.Reason
@@ -1054,26 +1208,28 @@ var file_my_plugin_hook_v1_hook_proto_goTypes = []any{
 	(*FollowSubject)(nil),            // 4: my.plugin.hook.v1.FollowSubject
 	(*SignupSubject)(nil),            // 5: my.plugin.hook.v1.SignupSubject
 	(*LocalStatus)(nil),              // 6: my.plugin.hook.v1.LocalStatus
-	(*CheckResponse)(nil),            // 7: my.plugin.hook.v1.CheckResponse
-	(*InboundStatus_Body)(nil),       // 8: my.plugin.hook.v1.InboundStatus.Body
-	(*InboundStatus_Attachment)(nil), // 9: my.plugin.hook.v1.InboundStatus.Attachment
+	(*MediaSubject)(nil),             // 7: my.plugin.hook.v1.MediaSubject
+	(*CheckResponse)(nil),            // 8: my.plugin.hook.v1.CheckResponse
+	(*InboundStatus_Body)(nil),       // 9: my.plugin.hook.v1.InboundStatus.Body
+	(*InboundStatus_Attachment)(nil), // 10: my.plugin.hook.v1.InboundStatus.Attachment
 }
 var file_my_plugin_hook_v1_hook_proto_depIdxs = []int32{
-	3, // 0: my.plugin.hook.v1.CheckRequest.inbound_status:type_name -> my.plugin.hook.v1.InboundStatus
-	4, // 1: my.plugin.hook.v1.CheckRequest.follow:type_name -> my.plugin.hook.v1.FollowSubject
-	5, // 2: my.plugin.hook.v1.CheckRequest.signup:type_name -> my.plugin.hook.v1.SignupSubject
-	6, // 3: my.plugin.hook.v1.CheckRequest.local_status:type_name -> my.plugin.hook.v1.LocalStatus
-	8, // 4: my.plugin.hook.v1.InboundStatus.bodies:type_name -> my.plugin.hook.v1.InboundStatus.Body
-	9, // 5: my.plugin.hook.v1.InboundStatus.attachments:type_name -> my.plugin.hook.v1.InboundStatus.Attachment
-	0, // 6: my.plugin.hook.v1.CheckResponse.verdict:type_name -> my.plugin.hook.v1.Verdict
-	1, // 7: my.plugin.hook.v1.CheckResponse.reason:type_name -> my.plugin.hook.v1.Reason
-	2, // 8: my.plugin.hook.v1.HookService.Check:input_type -> my.plugin.hook.v1.CheckRequest
-	7, // 9: my.plugin.hook.v1.HookService.Check:output_type -> my.plugin.hook.v1.CheckResponse
-	9, // [9:10] is the sub-list for method output_type
-	8, // [8:9] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	3,  // 0: my.plugin.hook.v1.CheckRequest.inbound_status:type_name -> my.plugin.hook.v1.InboundStatus
+	4,  // 1: my.plugin.hook.v1.CheckRequest.follow:type_name -> my.plugin.hook.v1.FollowSubject
+	5,  // 2: my.plugin.hook.v1.CheckRequest.signup:type_name -> my.plugin.hook.v1.SignupSubject
+	6,  // 3: my.plugin.hook.v1.CheckRequest.local_status:type_name -> my.plugin.hook.v1.LocalStatus
+	7,  // 4: my.plugin.hook.v1.CheckRequest.media:type_name -> my.plugin.hook.v1.MediaSubject
+	9,  // 5: my.plugin.hook.v1.InboundStatus.bodies:type_name -> my.plugin.hook.v1.InboundStatus.Body
+	10, // 6: my.plugin.hook.v1.InboundStatus.attachments:type_name -> my.plugin.hook.v1.InboundStatus.Attachment
+	0,  // 7: my.plugin.hook.v1.CheckResponse.verdict:type_name -> my.plugin.hook.v1.Verdict
+	1,  // 8: my.plugin.hook.v1.CheckResponse.reason:type_name -> my.plugin.hook.v1.Reason
+	2,  // 9: my.plugin.hook.v1.HookService.Check:input_type -> my.plugin.hook.v1.CheckRequest
+	8,  // 10: my.plugin.hook.v1.HookService.Check:output_type -> my.plugin.hook.v1.CheckResponse
+	10, // [10:11] is the sub-list for method output_type
+	9,  // [9:10] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_my_plugin_hook_v1_hook_proto_init() }
@@ -1087,7 +1243,7 @@ func file_my_plugin_hook_v1_hook_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_my_plugin_hook_v1_hook_proto_rawDesc), len(file_my_plugin_hook_v1_hook_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

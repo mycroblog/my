@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The translation screen below its heading (web-client/screens/admin-translation.md, ADR-0148, manage_settings): the
-// month's characters and cache hit rate, then one form with the providers, what each may receive, the browser's
-// translation, the limits, and how long translations are kept. The form says first that the privacy policy must change
+// month's characters and cache hit rate, then one form with the providers, what each may receive, whether reports may
+// go to them, the browser's translation, the limits, and how long translations are kept. The form says first that the privacy policy must change
 // before a server-side provider is enabled, since text sent to one cannot be recalled. "Move up" and "Move down" set the
 // order with the keyboard as well as the pointer (no dragging).
 import {
@@ -162,6 +162,13 @@ function TranslationForm() {
               />
             ))
           )}
+          <Checkbox
+            isSelected={form.reportsToServer}
+            onChange={form.setReportsToServer}
+            description={t("client:admin.translation.reports.description")}
+          >
+            {t("client:admin.translation.reports")}
+          </Checkbox>
           <Checkbox
             isSelected={form.browser}
             onChange={form.setBrowser}

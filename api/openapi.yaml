@@ -7324,6 +7324,103 @@ paths:
           $ref: '#/components/responses/AdminReportDetail'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/reports/{id}/comment/translation:
+    parameters:
+      - $ref: '#/components/parameters/ReportId'
+    post:
+      operationId: translateReportComment
+      summary: Translate the comment of a report into a language
+      description: |
+        Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+        unknown report is a 404. Needs the `manage_reports` permission.
+
+        Only the reporter and the moderators read a comment, so it counts as a private post: the server
+        sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+        providers allowed private posts. The translation is never kept, and the characters sent count
+        against the server's monthly limit only. `provider` is omitted when the comment has no words to
+        translate, and the answer is the comment as it is.
+
+        The problems are those of `POST /statuses/{id}/translation`: a 422
+        `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+        comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+        `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+        `/api/v1/problems/translation-failed`.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusTranslationRequest'
+      responses:
+        '200':
+          description: The comment in the language.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportCommentTranslation'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/reports/{id}/statuses/{status_id}/translation:
+    parameters:
+      - $ref: '#/components/parameters/ReportId'
+      - name: status_id
+        in: path
+        description: The ID of a post that the report points at.
+        required: true
+        schema:
+          $ref: '#/components/schemas/Id'
+    post:
+      operationId: translateReportedStatus
+      summary: Translate a reported post into a language
+      description: |
+        Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+        does, for a moderator who reads the report: whatever the post's visibility, and also when its
+        author deleted it. A report that does not point at the post, an unknown report, and a post that is
+        gone are a 404. Needs the `manage_reports` permission.
+
+        The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+        provider only while the instance setting `translation_reports_to_server` is on, and only to the
+        providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+        posts. The characters sent count against the server's monthly limit only. The translation is kept
+        for the readers of the post who may see it, except for a deleted post, whose translation is not
+        kept.
+
+        The problems are those of `POST /statuses/{id}/translation`: a 422
+        `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+        post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+        `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+        `/api/v1/problems/translation-failed`.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusTranslationRequest'
+      responses:
+        '200':
+          description: The post in the language.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusTranslation'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/voice_rooms/{id}/end:
     post:
       operationId: endVoiceRoomAsModerator
@@ -13938,6 +14035,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InstanceTranslationProvider'
+        reports_to_server:
+          description: |
+            Whether moderators may send the text of a report, its posts and its comment, to the providers.
+            Each provider still receives only the visibilities it lists, and a comment counts as `private`.
+            Absent on a server without translation, where it is false.
+          type: boolean
     InstanceTranslationProvider:
       description: A provider that this instance sends the text of posts to when a reader asks for a translation.
       type: object
@@ -19190,6 +19293,7 @@ components:
         - translation_user_monthly_characters
         - translation_server_monthly_characters
         - translation_retention_days
+        - translation_reports_to_server
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
@@ -21839,6 +21943,25 @@ components:
         - legal
         - violation
         - other
+    ReportCommentTranslation:
+      description: The comment of a report in another language. The server does not keep it.
+      type: object
+      required:
+        - language
+        - source_language
+        - comment
+      properties:
+        language:
+          description: The language of this answer, as a BCP 47 tag.
+          type: string
+        source_language:
+          description: The language translated from, which a provider may have detected; `und` when it is not known.
+          type: string
+        comment:
+          description: The comment as plain text.
+          type: string
+        provider:
+          $ref: '#/components/schemas/TranslationProvider'
     ReportPage:
       description: A page of the user's reports, newest first.
       allOf:

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The translation screen's form and numbers (web-client/screens/admin-translation.md, ADR-0148): which providers are
-// enabled and in what order, what each may receive, the browser's translation, the monthly limits, and how long
-// translations are kept. They are instance settings: the form sends the ones that changed together, all or none, and
+// enabled and in what order, what each may receive, whether reports may go to them, the browser's translation, the
+// monthly limits, and how long translations are kept. They are instance settings: the form sends the ones that changed together, all or none, and
 // each change goes to the audit log. The numbers of the month load apart, and their failure stays in their section.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
@@ -29,6 +29,7 @@ const translationKeys = [
   "translation_providers",
   "translation_provider_visibilities",
   "translation_browser",
+  "translation_reports_to_server",
   "translation_user_monthly_characters",
   "translation_server_monthly_characters",
   "translation_retention_days",
@@ -138,6 +139,10 @@ export function useTranslationSettings() {
         "translation_provider_visibilities",
         withVisibilities(valueOf("translation_provider_visibilities"), provider, visibilities),
       );
+    },
+    reportsToServer: valueOf("translation_reports_to_server") === "true",
+    setReportsToServer: (on: boolean) => {
+      change("translation_reports_to_server", on ? "true" : "false");
     },
     browser: valueOf("translation_browser") === "true",
     setBrowser: (on: boolean) => {

@@ -67,6 +67,14 @@
     "defaultMessage": "Providers",
     "description": "Heading of the section that enables translation providers."
   },
+  "admin.translation.reports": {
+    "defaultMessage": "Send reports to the providers",
+    "description": "Checkbox that lets moderators translate reports with the server-side providers."
+  },
+  "admin.translation.reports.description": {
+    "defaultMessage": "Moderators can then translate a report's posts and the reporter's comment with the providers above. Each provider still receives only the visibilities ticked for it, and a comment counts as a post for followers. The comment's translation is not kept, and the characters count against the server's limit only. The browser's built-in translation works on reports either way.",
+    "description": "Explains what sending reports to the translation providers does."
+  },
   "admin.translation.retention": {
     "defaultMessage": "Days to keep a translation",
     "description": "Label of how many days a translation is kept."

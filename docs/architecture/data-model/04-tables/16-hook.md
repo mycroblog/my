@@ -24,3 +24,5 @@
 `local.status` の `subject_key` は、作成がトランザクションの前に生成する投稿の ID です。`reject` では投稿の行ができず、作者は申し立てが覆った後に投稿し直します。
 
 `signup.check` の `subject_key` と `account_id` は、登録がトランザクションの前に生成するアカウントの ID です。メールアドレスも IP アドレスも含みません。`reject` や、後の検証で失敗した登録ではアカウントの行ができないので、その判定は保持期間で消えます。
+
+`media.check` の `subject_key` はメディアファイルの ID、`account_id` はアップロードしたアカウントです。判定は初回の処理（`media.process`）で 1 度だけ作り、別の用途への再処理と、添付する投稿の作成・編集は `Gate.Recorded` で記録を読むだけでプラグインを呼びません。`mark_sensitive` と添付の `flag` は、添付する投稿を書くトランザクションで `status_sensitivity_overrides`・`hook_decision_statuses`・通報を書きます。`reject` の判定はメディアの処理結果を `failed` にし、原本も派生も残りません。

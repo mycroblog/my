@@ -59,8 +59,8 @@ func (h *StatusHandlers) reviewActive(ctx context.Context) (bool, error) {
 	return h.d.Review.Gate.Active(ctx, apphook.InboundStatus)
 }
 
-// statusVerdict is what the transaction that stores a post acts on.
-type statusVerdict struct {
+// hookVerdict is what the transaction that stores a post or a follow acts on.
+type hookVerdict struct {
 	apphook.Result
 	// reporterAccountID is the instance actor when the verdict files a report: it is created on first
 	// use, with keys and its own transaction, so it is settled before the transaction starts.
@@ -68,22 +68,22 @@ type statusVerdict struct {
 }
 
 // allowed is the verdict on a post that the plugin is not asked about.
-var allowed = statusVerdict{Result: apphook.Result{Effect: apphook.Allow}}
+var allowed = hookVerdict{Result: apphook.Result{Effect: apphook.Allow}}
 
 // review asks the plugin about a post that the caller found in scope. A direct post from an author
 // no local account follows stays between the two unless the operator chose to send it (ADR-0147
 // §10). What is sent is the remote post alone: nothing of a local post, not even the parent's text,
 // goes out with it. It fails with an error that the job returns as it is, apphook.ErrRetryLater
 // included.
-func (h *StatusHandlers) review(ctx context.Context, a *InboxActivity, obj *federation.Object, in appcontent.RemoteStatusInput, m *postMentions) (statusVerdict, error) {
+func (h *StatusHandlers) review(ctx context.Context, a *InboxActivity, obj *federation.Object, in appcontent.RemoteStatusInput, m *postMentions) (hookVerdict, error) {
 	followed, err := h.followed(ctx, a.Actor)
 	if err != nil {
-		return statusVerdict{}, err
+		return hookVerdict{}, err
 	}
 	if in.Visibility == appcontent.VisibilityDirect && !followed {
 		send, err := h.d.Review.Settings.ReviewUnfollowedDirect(ctx)
 		if err != nil {
-			return statusVerdict{}, err
+			return hookVerdict{}, err
 		}
 		if !send {
 			return allowed, nil
@@ -94,13 +94,13 @@ func (h *StatusHandlers) review(ctx context.Context, a *InboxActivity, obj *fede
 		Subject: inboundStatusSubject(a, obj, in, m, followed),
 	})
 	if err != nil {
-		return statusVerdict{}, err
+		return hookVerdict{}, err
 	}
-	v := statusVerdict{Result: res}
+	v := hookVerdict{Result: res}
 	if res.Effect == apphook.Flag {
 		instance, err := h.d.Review.Instance.EnsureInstanceActor(ctx)
 		if err != nil {
-			return statusVerdict{}, err
+			return hookVerdict{}, err
 		}
 		v.reporterAccountID = instance.ID
 	}
@@ -129,7 +129,7 @@ func inboundStatusSubject(a *InboxActivity, obj *federation.Object, in appconten
 // actor wrote the post, so a revision the transaction would refuse is not sent, and when the post is
 // in scope, so that what only a relay carries reaches no plugin. A post out of scope stores its
 // revision without a question.
-func (h *StatusHandlers) reviewUpdate(ctx context.Context, a *InboxActivity, st appcontent.Status, obj *federation.Object, in appcontent.RemoteStatusInput, m *postMentions) (statusVerdict, error) {
+func (h *StatusHandlers) reviewUpdate(ctx context.Context, a *InboxActivity, st appcontent.Status, obj *federation.Object, in appcontent.RemoteStatusInput, m *postMentions) (hookVerdict, error) {
 	active, err := h.reviewActive(ctx)
 	if err != nil || !active {
 		return allowed, err
@@ -156,7 +156,7 @@ func reviewDropped(obj *federation.Object) error {
 
 // applyReview acts on the verdict inside the transaction that stored the post or its revision: the
 // report of a flag, the mark of a mark_sensitive, and the link and the audit log entry of either.
-func (h *StatusHandlers) applyReview(ctx context.Context, tx uow.Tx, v statusVerdict, statusID string, author appaccount.Account) error {
+func (h *StatusHandlers) applyReview(ctx context.Context, tx uow.Tx, v hookVerdict, statusID string, author appaccount.Account) error {
 	res := v.Result
 	switch res.Effect {
 	case apphook.Flag:

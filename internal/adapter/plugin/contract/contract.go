@@ -58,7 +58,7 @@ var table = map[string][]Case{
 	kind.InboundStatus: hookCases(kind.InboundStatus, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_DROP, hookv1.Verdict_VERDICT_FLAG, hookv1.Verdict_VERDICT_MARK_SENSITIVE),
 	kind.InboundFollow: hookCases(kind.InboundFollow, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_DROP, hookv1.Verdict_VERDICT_FLAG),
 	kind.SignupCheck:   hookCases(kind.SignupCheck, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_REQUIRE_APPROVAL, hookv1.Verdict_VERDICT_REJECT),
-	kind.MediaCheck:    hookCases(kind.MediaCheck, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_MARK_SENSITIVE, hookv1.Verdict_VERDICT_FLAG),
+	kind.MediaCheck:    hookCases(kind.MediaCheck, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_MARK_SENSITIVE, hookv1.Verdict_VERDICT_FLAG, hookv1.Verdict_VERDICT_REJECT),
 	kind.LocalStatus:   hookCases(kind.LocalStatus, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_FLAG, hookv1.Verdict_VERDICT_REJECT),
 }
 

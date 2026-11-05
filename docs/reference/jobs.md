@@ -56,7 +56,7 @@ A job type can also be registered or do its work only with some settings; **Need
 
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
-| `media.process` | Re-encodes one upload into its variants, records the result, and deletes the received file. Content the processor rejects records a failed result. | An upload, or a change of what a file is used for | Default | Safe |
+| `media.process` | Re-encodes one upload into its variants, asks the [`media.check` hook](../operations/decision-hooks.md#what-mediacheck-reviews) about a new upload when it has a plugin, records the result, and deletes the received file. Content the processor rejects, and an upload the hook rejects, records a failed result. | An upload, or a change of what a file is used for | Default | Safe |
 | `media.purge_unattached` | Deletes the uploads that nothing attached in time. | Schedule | Default | Next run |
 | `media.purge_replaced` | Deletes the old versions of images that a newer version replaced more than `media_replaced_retention` ago. An image's current version is never deleted. | Schedule | Default | Next run |
 | `media.reprocess_walk` | Walks the uploaded images last processed before a time and queues a `media.reprocess` for each, one batch per minute. | `my admin media reprocess` | Default | Safe |

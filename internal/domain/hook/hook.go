@@ -159,9 +159,10 @@ var specs = map[Name]Spec{
 		Name: SignupCheck, Verdicts: []Outcome{Allow, RequireApproval, Reject},
 		OnFailure: []OnFailure{PassOnFailure, ApproveOnFailure},
 	},
-	// media.check has no Reject until the legal review of illegal content (ADR-0147 §2).
+	// A reject of media.check keeps nothing of the upload: its original is gone once it is
+	// processed (ADR-0147 §2).
 	MediaCheck: {
-		Name: MediaCheck, Verdicts: []Outcome{Allow, MarkSensitive, Flag},
+		Name: MediaCheck, Verdicts: []Outcome{Allow, MarkSensitive, Flag, Reject},
 		OnFailure: []OnFailure{PassOnFailure, RetryOnFailure},
 	},
 	LocalStatus: {

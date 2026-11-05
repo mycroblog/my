@@ -45,30 +45,11 @@ type StatusReview struct {
 	// MaxAccountAge returns how old an account may be and still be sent, read at each post; 0
 	// sends every account. nil sends every account.
 	MaxAccountAge func(ctx context.Context) (time.Duration, error)
-	// Reports files the report of a flag inside the post's transaction (ADR-0147 §7); nil files
-	// none, and the decision is only linked to the post.
-	Reports HookReports
-}
-
-// HookReport is the report that a flag decision of local.status files about a new post.
-type HookReport struct {
-	// ReporterAccountID is the instance actor, which ReporterAccountID returned before the
-	// transaction.
-	ReporterAccountID string
-	AuthorAccountID   string
-	StatusID          string
-	Result            apphook.Result
-}
-
-// HookReports files the report of a flag decision on a post; the platform implements it on the
-// moderation module, which this module may not import.
-type HookReports interface {
-	// ReporterAccountID returns the reporter of an automated report, the instance actor. Create
-	// calls it before the transaction, since it may create that account.
-	ReporterAccountID(ctx context.Context) (string, error)
-	// FileHookReport files the report inside the transaction that writes the post, and reports
-	// whether it did: a decision that has a report keeps it.
-	FileHookReport(ctx context.Context, tx uow.Tx, r HookReport) (bool, error)
+	// Reports files the report of a flag inside the post's transaction (ADR-0147 §7), with
+	// InstanceActor as its reporter; nil for either files none, and the decision is only linked to
+	// the post.
+	Reports       HookReports
+	InstanceActor func(ctx context.Context) (string, error)
 }
 
 // reviewVerdict is what Create carries into its transaction: the hook's Result and, for a flag
@@ -142,11 +123,11 @@ func localStatusSubject(author appaccount.Actor, p PreparedCreate) apphook.Local
 // files a report outside it.
 func (s *Service) verdict(ctx context.Context, r apphook.Result) (reviewVerdict, error) {
 	v := reviewVerdict{Result: r}
-	if r.DecisionID == "" || r.Effect != apphook.Flag || s.d.StatusReview.Reports == nil {
+	if r.DecisionID == "" || r.Effect != apphook.Flag || s.d.StatusReview.Reports == nil || s.d.StatusReview.InstanceActor == nil {
 		return v, nil
 	}
 	var err error
-	v.reporterAccountID, err = s.d.StatusReview.Reports.ReporterAccountID(ctx)
+	v.reporterAccountID, err = s.d.StatusReview.InstanceActor(ctx)
 	return v, err
 }
 
@@ -161,11 +142,12 @@ func (s *Service) reviewed(ctx context.Context, tx uow.Tx, v reviewVerdict, post
 	if err := hooks.LinkStatus(ctx, tx, r.DecisionID, post.Status.ID); err != nil {
 		return err
 	}
-	if s.d.StatusReview.Reports == nil {
+	if v.reporterAccountID == "" {
 		return nil
 	}
 	filed, err := s.d.StatusReview.Reports.FileHookReport(ctx, tx, HookReport{
-		ReporterAccountID: v.reporterAccountID, AuthorAccountID: post.Status.AuthorAccountID, StatusID: post.Status.ID, Result: r,
+		ReporterAccountID: v.reporterAccountID, TargetAccountID: post.Status.AuthorAccountID, StatusIDs: []string{post.Status.ID},
+		DecisionID: r.DecisionID, Hook: string(r.Hook), ReasonCode: string(r.Reason), Comment: r.Note,
 	})
 	if err != nil || !filed {
 		return err

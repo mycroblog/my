@@ -5,6 +5,8 @@ package moderation
 import (
 	"context"
 	"errors"
+	"fmt"
+	"slices"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 )
@@ -44,4 +46,33 @@ func (s *Service) ReportStatuses(ctx context.Context, reportID string) ([]appcon
 		out = append(out, st)
 	}
 	return out, nil
+}
+
+// ReportedStatus returns one status that a report points at, as ReportStatuses presents it, for
+// the moderators who translate it (ADR-0148 §13). It fails with an error wrapping ErrNotFound for
+// an unknown report, for a status that the report does not point at, and for a status that is
+// gone, so that it reads nothing else past content.CanView.
+func (s *Service) ReportedStatus(ctx context.Context, reportID, statusID string) (appcontent.ReviewedStatus, error) {
+	r, err := s.d.Repository.FindReport(ctx, reportID)
+	if err != nil {
+		return appcontent.ReviewedStatus{}, err
+	}
+	if s.d.Evidence == nil || !slices.Contains(r.StatusIDs, statusID) {
+		return appcontent.ReviewedStatus{}, fmt.Errorf("report %s does not point at status %s: %w", reportID, statusID, ErrNotFound)
+	}
+	st, err := s.d.Evidence.Review(ctx, statusID)
+	if errors.Is(err, appcontent.ErrNotFound) {
+		return appcontent.ReviewedStatus{}, errors.Join(ErrNotFound, err)
+	}
+	return st, err
+}
+
+// ReportComment returns the comment of a report, empty when it has none, for the moderators who
+// translate it (ADR-0148 §13). An unknown report fails with an error wrapping ErrNotFound.
+func (s *Service) ReportComment(ctx context.Context, reportID string) (string, error) {
+	r, err := s.d.Repository.FindReport(ctx, reportID)
+	if err != nil {
+		return "", err
+	}
+	return r.Comment, nil
 }

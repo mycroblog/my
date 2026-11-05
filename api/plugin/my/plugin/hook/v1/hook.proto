@@ -28,6 +28,8 @@ message CheckRequest {
   SignupSubject signup = 6;
   // What local.status reviews; empty on the calls of the other hooks and on probes.
   LocalStatus local_status = 7;
+  // What media.check reviews; empty on the calls of the other hooks and on probes.
+  MediaSubject media = 8;
 }
 
 // A post from another server, or a new revision of one, for inbound.status. It holds the post as
@@ -134,6 +136,31 @@ message LocalStatus {
   int32 mention_count = 16;
 }
 
+// MediaSubject is a file a local account uploaded, once it is processed and before anyone can use
+// it. The subject_key of the call is the ID of the file. The original file is never sent: the
+// server sends the smallest image it made of the file, which has no metadata. Nothing else of the
+// account or of a post is sent, not even the alt text.
+message MediaSubject {
+  // What the file is for: attachment, avatar, header, or emoji.
+  string purpose = 1;
+  // image, video, or audio.
+  string media_type = 2;
+  // The smallest still image made of the file, for a video or audio file of its poster or cover.
+  // Empty when there is none, such as for audio without a cover.
+  bytes image = 3;
+  // The media type of image, such as image/webp; empty when image is.
+  string image_content_type = 4;
+  int32 image_width = 5;
+  int32 image_height = 6;
+  // The size of the file as uploaded, in pixels; 0 for audio.
+  int32 width = 7;
+  int32 height = 8;
+  // How long a video or audio file plays, in milliseconds; 0 for an image.
+  int64 duration_ms = 9;
+  // Whether the image moves: an animation, or a video. image holds its first frame or poster.
+  bool animated = 10;
+}
+
 message CheckResponse {
   // A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
   // know, and a verdict the hook does not take are all failures and follow the hook's failure
@@ -150,7 +177,7 @@ message CheckResponse {
 // inbound.status: ALLOW, DROP, FLAG, MARK_SENSITIVE.
 // inbound.follow: ALLOW, DROP, FLAG.
 // signup.check: ALLOW, REQUIRE_APPROVAL, REJECT.
-// media.check: ALLOW, MARK_SENSITIVE, FLAG.
+// media.check: ALLOW, MARK_SENSITIVE, FLAG, REJECT.
 // local.status: ALLOW, FLAG, REJECT. A REJECT can be appealed by the author, which people review.
 enum Verdict {
   VERDICT_UNSPECIFIED = 0;
@@ -164,7 +191,8 @@ enum Verdict {
   VERDICT_MARK_SENSITIVE = 4;
   // Go on, and hold the sign-up for approval.
   VERDICT_REQUIRE_APPROVAL = 5;
-  // Refuse the subject and tell the person, with fixed text that holds nothing of the response.
+  // Refuse the subject and keep nothing of it. A person told about it sees fixed text that holds
+  // nothing of the response.
   VERDICT_REJECT = 6;
 }
 

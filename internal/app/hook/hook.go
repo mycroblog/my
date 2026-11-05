@@ -100,6 +100,27 @@ type SignupSubject struct {
 	IP string
 }
 
+// MediaSubject is what media.check sends about an upload once it is processed: the smallest
+// image made of it and what it is, never the original file, its alt text, or anything of the account.
+type MediaSubject struct {
+	// Purpose is attachment, avatar, header, or emoji.
+	Purpose string
+	// MediaType is image, video, or audio.
+	MediaType string
+	// Image is the smallest still variant, of the poster or cover for video and audio; nil when
+	// there is none. ImageContentType, ImageWidth, and ImageHeight describe it.
+	Image            []byte
+	ImageContentType string
+	ImageWidth       int
+	ImageHeight      int
+	// Width and Height are the size of the file as uploaded, 0 for audio.
+	Width, Height int
+	// Duration is how long a video or audio file plays.
+	Duration time.Duration
+	// Animated says that the file moves: an animation or a video.
+	Animated bool
+}
+
 // Answer is what a plugin returned. Outcome is checked against the hook's spec afterwards.
 type Answer struct {
 	Verdict hook.Outcome
@@ -303,6 +324,11 @@ type Gate interface {
 	// before the transaction. A hook with no plugin costs one map lookup. It fails with
 	// ErrRetryLater as above.
 	Decide(ctx context.Context, c Call) (Result, error)
+	// Recorded returns the decision recorded on a subject without calling any plugin, for a module
+	// that acts on a decision later than it asked: media.check asks when an upload is processed, and
+	// the post that attaches it acts on the answer. The Result has no DecisionID when the hook has no
+	// plugin or nothing is recorded; a cancelled decision has the effect Allow.
+	Recorded(ctx context.Context, n hook.Name, subjectKey string) (Result, error)
 	// LinkStatus records inside tx that the decision had an effect on a status, the source of the
 	// rebuild of status_sensitivity_overrides.
 	LinkStatus(ctx context.Context, tx uow.Tx, decisionID, statusID string) error
