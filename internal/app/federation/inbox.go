@@ -77,6 +77,9 @@ type InboxRepository interface {
 
 	FindReceivedActivity(ctx context.Context, activityURI federation.IRI) (federation.ReceivedActivity, error)
 	FindReceivedDocument(ctx context.Context, activityURI federation.IRI) ([]byte, error)
+	// KeptReceivedActivityTx returns a received activity inside tx while its document is kept: it
+	// fails with ErrNotFound when the activity or its document is gone.
+	KeptReceivedActivityTx(ctx context.Context, tx uow.Tx, activityURI federation.IRI) (federation.ReceivedActivity, error)
 	// ReleaseUnconfirmedActivity removes a received activity of trust refetch with its document,
 	// so that the activity is recorded again when it next arrives, and reports whether there was
 	// one. An activity of trust signed stays.

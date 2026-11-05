@@ -20,8 +20,18 @@ message CheckRequest {
   string subject_key = 2;
   // True for a call of `my plugin test`, which is about no real subject and acts on nothing.
   bool probe = 3;
+  // The two parties of the follow, for inbound.follow.
+  FollowSubject follow = 5;
   // What signup.check reviews; empty on the calls of the other hooks and on probes.
   SignupSubject signup = 6;
+}
+
+// What inbound.follow asks about: a follow from another server of an account on this one.
+message FollowSubject {
+  // The ActivityPub id of the account that follows.
+  string follower_uri = 1;
+  // The ActivityPub id of the account on this server that it follows.
+  string followee_uri = 2;
 }
 
 // SignupSubject is a sign-up that is not from an invitation, once its CAPTCHA and the sign-up block

@@ -69,6 +69,7 @@ func InboxContract(t *testing.T, newHarness InboxFactory) {
 		run  func(t *testing.T, e *inboxEnv)
 	}{
 		{"RecordsAnActivityOnce", inboxRecordsOnce},
+		{"ReadsAKeptActivityInATransaction", inboxReadsKeptActivity},
 		{"KeepsTheDocumentByteExact", inboxKeepsDocumentByteExact},
 		{"SynthesizesTheURIOfAnActivityWithoutID", inboxSynthesizesURI},
 		{"MarksActivitiesOfOtherSignersForRefetch", inboxMarksRefetch},
@@ -324,6 +325,53 @@ func (q *inboxJobs) all() []queue.NewJob {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	return append([]queue.NewJob(nil), q.jobs...)
+}
+
+// inboxReadsKeptActivity checks KeptReceivedActivityTx: the activity while its document is kept, and
+// ErrNotFound for an unknown activity and once the document is purged.
+func inboxReadsKeptActivity(t *testing.T, e *inboxEnv) {
+	ctx := t.Context()
+	id := federation.IRI(inboxAlice + "/activities/kept")
+	kept := func() (a federation.ReceivedActivity, err error) {
+		terr := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			a, err = e.h.Inbox.KeptReceivedActivityTx(ctx, tx, id)
+			return nil
+		})
+		if terr != nil {
+			t.Fatal(terr)
+		}
+		return a, err
+	}
+	if _, err := kept(); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("an unknown activity = %v, want ErrNotFound", err)
+	}
+	in := e.inbox(kernel.Limit{}, kernel.Limit{})
+	if _, err := e.receive(t, in, inboxPost{body: inboxCreate(t, string(id)), signature: inboxAliceKey + " yes"}); err != nil {
+		t.Fatalf("Receive: %v", err)
+	}
+	a, err := kept()
+	if err != nil {
+		t.Fatalf("a kept activity: %v", err)
+	}
+	if a.ActivityURI != id || a.ActorURI != inboxAlice || a.Trust != federation.TrustSigned {
+		t.Errorf("a kept activity = %+v", a)
+	}
+	purge, ok := e.h.Inbox.(interface {
+		DeleteReceivedDocumentsBefore(ctx context.Context, tx uow.Tx, t time.Time, limit int) (int64, error)
+	})
+	if !ok {
+		t.Fatalf("%T does not purge received documents", e.h.Inbox)
+	}
+	err = e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		_, err := purge.DeleteReceivedDocumentsBefore(ctx, tx, e.clock.Now().Add(time.Hour), 10)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := kept(); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("an activity whose document is purged = %v, want ErrNotFound", err)
+	}
 }
 
 func inboxRecordsOnce(t *testing.T, e *inboxEnv) {

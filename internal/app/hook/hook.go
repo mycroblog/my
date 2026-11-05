@@ -58,6 +58,12 @@ type Request struct {
 	Subject    any
 }
 
+// FollowSubject is the Subject of InboundFollow: the two parties of a follow from another server.
+type FollowSubject struct {
+	FollowerURI string
+	FolloweeURI string
+}
+
 // SignupSubject is what signup.check sends about a sign-up. Only the plugin receives it: a decision
 // holds neither of the two.
 type SignupSubject struct {

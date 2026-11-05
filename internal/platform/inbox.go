@@ -5,6 +5,7 @@ package platform
 import (
 	"github.com/mycroblog/my/internal/adapter/httpsig"
 	"github.com/mycroblog/my/internal/app/federation"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/platform/config"
 )
@@ -55,12 +56,14 @@ func (a *App) setUpInboxProcessor(cfg *config.Config, repo federationRepository,
 	// The handlers of each activity type (federation.md §3.4).
 	federation.RegisterFollowHandlers(a.InboxProcessor, federation.FollowHandlerDeps{
 		Graph: a.Graph, Accounts: a.Accounts, Relays: a.Relays, Quotes: a.QuoteHandlers, Moves: a.Accounts, Relationships: a.Graph,
+		Hooks: a.Hooks,
 		// The Follows that the federation mode refuses get a Reject (ADR-0006).
 		Refusals: federation.NewFollowRefusals(federation.FollowRefusalsDeps{
 			UnitOfWork: a.UnitOfWork, Outbound: repo, Outbox: outbox, Inboxes: a.Accounts,
 			Clock: a.Clock, IDs: a.IDs, Host: cfg.Host,
 		}),
 	})
+	a.Hooks.RegisterOverrideEffect(apphook.InboundFollow, federation.RequeueDropped(repo, outbox))
 	a.QuoteHandlers.Register(a.InboxProcessor)
 	// The Moves of remote accounts move their local followers (ADR-0089).
 	federation.RegisterMoveHandler(a.InboxProcessor, federation.MoveHandlerDeps{

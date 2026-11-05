@@ -5,8 +5,8 @@ answers with a verdict from a fixed list. It never rewrites anything and it take
 is stop one post, follow, or sign-up, or file a report for your moderators. People decide what happens to an account.
 
 Nothing is reviewed by default. A server with no hook address makes no call and spends no time on them. This version keeps
-the records, the modes, and the admin screens described here, and `signup.check` asks about sign-ups; no other intake path
-asks a hook yet.
+the records, the modes, and the admin screens described here. Of the intake paths, follows from other servers ask a hook
+(`inbound.follow`) and sign-ups ask `signup.check`; the other hooks are not called yet.
 
 ## The hooks
 
@@ -26,7 +26,8 @@ What each answer does:
 
 - `drop` stops the subject and stores nothing of it. A wrong `drop` silently hides a post from its followers too, so read
   what a hook would drop in `observe` before you enforce it.
-- `flag` lets it through and files one report per decision.
+- `flag` lets it through and files one report per decision. On `inbound.follow` this version only records the decision and
+  files no report.
 - `mark_sensitive` lets it through and shows its attachments as sensitive until a moderator cancels the decision.
 - `require_approval` holds the sign-up for approval.
 - `reject` refuses it, with fixed text that shows nothing of the plugin's answer. On `signup.check` this also takes
@@ -96,6 +97,15 @@ holds no text of a post, no email address, and no IP address.
 **Moderation** > **Automated reviews** (`manage_reports`) shows the counts and waits of the last 7 days, and what the hooks
 stopped, would have stopped in `observe`, or could not check. Cancelling a decision there goes in the audit log as
 `hook_decision_overridden`. A `reject` of `local.status` is not cancelled there: its author appeals it.
+
+Cancelling a `drop` of `inbound.follow` runs the follow again, without calling the plugin, for as long as the server keeps
+the activity it received (7 days). After that the follow cannot come back and the cancellation only goes on record; the
+other server has to send a new follow.
+
+A follow only asks the hook when it would be recorded. Taking a follow back (`Undo`) never asks, and neither does a follow that
+the server refuses anyway: one that the federation mode refuses, one of a moved or deactivated account, or one of the instance
+actor. A dropped follow gets no answer, so the other server keeps showing it as requested. Sending the same activity again is
+ignored as a duplicate.
 
 An automated effect goes in the audit log, with the system as the actor, only when it leaves state: `mark_sensitive`, a
 filed `flag`, and `require_approval` (`hook_decision_applied`). `drop` and `reject` store nothing, so they stay in the
