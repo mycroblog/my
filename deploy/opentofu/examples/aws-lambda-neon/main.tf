@@ -121,6 +121,16 @@ module "ingress" {
   host_is_apex    = var.host_is_apex
 }
 
+# To give a kind of job its own function and queue, set the same value on the queue above and on this block, which derive every name
+# from the key. Read "Workers" in deploy/opentofu/README.md.
+#
+#   workers = {
+#     delivery = {
+#       job_types   = ["federation.fanout", "federation.deliver"]
+#       memory_mib  = 2048
+#       concurrency = 10
+#     }
+#   }
 module "app" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/app-aws-lambda?ref=v0.1.0&depth=1"
 

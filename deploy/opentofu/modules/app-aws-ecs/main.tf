@@ -17,6 +17,13 @@ terraform {
 
 data "aws_region" "current" {}
 
+module "workers" {
+  source = "../workers"
+
+  workers = var.workers
+  fields  = ["instances", "cpu", "memory_mib", "concurrency"]
+}
+
 locals {
   container_name = "my"
   container_port = 8080
@@ -112,8 +119,52 @@ locals {
       secrets = local.secret_arns
       command = null
       ports   = [{ containerPort = local.container_port, hostPort = local.container_port, protocol = "tcp" }]
+      role    = "all"
+      env     = local.server_env
     }
   }
+  # A worker differs from the default service in these alone, and in having no load balancer and no way in.
+  has_workers         = length(var.workers) > 0
+  server_env          = local.has_workers ? { MY_WORKER_JOB_TYPES_EXCEPT = join(",", module.workers.all_patterns) } : {}
+  workers_of_backends = merge([for b in var.backends : b.workers]...)
+  worker_settings     = ["MY_WORKER_JOB_TYPES", "MY_WORKER_JOB_TYPES_EXCEPT", "MY_WORKER_JOB_CONCURRENCY"]
+  workers = {
+    for key, w in module.workers.workers : key => {
+      name      = "${var.name}-${key}"
+      instances = coalesce(w.instances, 1)
+      cpu       = coalesce(w.cpu, var.cpu)
+      memory    = coalesce(w.memory_mib, var.memory_mib)
+      job_types = w.job_types
+      env = merge(
+        { MY_WORKER_JOB_TYPES = join(",", w.job_types) },
+        w.concurrency == null ? {} : { MY_WORKER_JOB_CONCURRENCY = tostring(w.concurrency) },
+      )
+      concurrency = w.concurrency
+    }
+  }
+  worker_tasks = {
+    for key, w in local.workers : "worker-${key}" => {
+      family  = w.name
+      cpu     = w.cpu
+      memory  = w.memory
+      secrets = local.secret_arns
+      command = null
+      ports   = []
+      role    = "worker"
+      env     = w.env
+    }
+  }
+  worker_way_out = local.has_workers ? { ipv4 = { cidr_ipv4 = "0.0.0.0/0", cidr_ipv6 = null }, ipv6 = { cidr_ipv4 = null, cidr_ipv6 = "::/0" } } : {}
+
+  # What a worker's concurrency must stay below: a slot needs a connection to claim and to record. The default of the pool is the
+  # greater of 4 and the CPU count, so it is known only up to 4 CPUs, and a backend that cannot say leaves it to the server's start.
+  pools = [for b in var.backends : b.pool_max_conns if b.pool_max_conns != null]
+  workers_over_the_pool = [
+    for key, w in local.workers : key
+    if w.concurrency != null && length(local.pools) > 0 && (
+      w.concurrency >= (local.pools[0] > 0 ? local.pools[0] : (w.cpu <= 4096 ? 4 : w.concurrency + 1))
+    )
+  ]
   one_off = {
     for key in concat(["migrate"], var.console_enabled ? ["console"] : []) : key => {
       family  = "${var.name}-${key}"
@@ -122,9 +173,11 @@ locals {
       secrets = local.one_off_arns
       command = ["version"]
       ports   = []
+      role    = "all"
+      env     = {}
     }
   }
-  tasks = merge(local.long_running, local.one_off)
+  tasks = merge(local.long_running, local.worker_tasks, local.one_off)
 }
 
 resource "aws_iam_role" "execution" {
@@ -147,6 +200,34 @@ resource "aws_iam_role" "execution" {
     precondition {
       condition     = alltrue([for n in local.private_networks : n == var.network.vpc_id])
       error_message = "A backend has private addresses in another VPC than the tasks. Give the app the same network as the backend."
+    }
+    precondition {
+      condition     = length(module.workers.problems) == 0
+      error_message = "workers: ${join(" ", module.workers.problems)}"
+    }
+    precondition {
+      condition     = jsonencode(module.workers.job_types) == jsonencode(local.workers_of_backends)
+      error_message = "The app was given the workers ${jsonencode(module.workers.job_types)}, and its queue module ${jsonencode(local.workers_of_backends)}. Give queue-db the same value."
+    }
+    precondition {
+      condition     = !local.has_workers || local.queue == "db"
+      error_message = "queue = ${local.queue} cannot split its jobs by worker_job_types. Use queue-db."
+    }
+    precondition {
+      condition     = !local.has_workers || local.stream != "hub"
+      error_message = "With workers, stream = hub would keep the updates of a job in the task that ran it, and away from the streams. Add a stream-* module, or set MY_STREAM to postgres."
+    }
+    precondition {
+      condition     = !local.has_workers || length(setintersection(local.setting_names, local.worker_settings)) == 0
+      error_message = "These are what workers sets, so they cannot be named beside it: ${join(", ", local.worker_settings)}."
+    }
+    precondition {
+      condition     = length(local.pools) <= 1
+      error_message = "More than one backend says what the pool of the database is."
+    }
+    precondition {
+      condition     = length(local.workers_over_the_pool) == 0
+      error_message = "The concurrency of ${join(", ", local.workers_over_the_pool)} is not below the pool of the database, so the server would not start. Raise pool_max_conns in url_parameters of the database, or lower concurrency."
     }
     precondition {
       condition     = var.network == null || lookup(local.env, "MY_HTTP_ALLOW_PRIVATE_NETWORKS", "false") != "true"
@@ -290,6 +371,27 @@ resource "aws_security_group" "task" {
   vpc_id      = var.network.vpc_id
 }
 
+# What a worker's tasks join in place of the group above: it admits nothing at all.
+resource "aws_security_group" "worker" {
+  name        = "${var.name}-worker"
+  description = "Workers of ${var.name}"
+  vpc_id      = var.network.vpc_id
+
+  lifecycle {
+    enabled = local.has_workers
+  }
+}
+
+resource "aws_vpc_security_group_egress_rule" "worker_out" {
+  for_each = local.worker_way_out
+
+  security_group_id = aws_security_group.worker.id
+  description       = "The image, the database, the cloud's APIs, and federation"
+  ip_protocol       = "-1"
+  cidr_ipv4         = each.value.cidr_ipv4
+  cidr_ipv6         = each.value.cidr_ipv6
+}
+
 resource "aws_vpc_security_group_ingress_rule" "from_load_balancer" {
   security_group_id            = aws_security_group.task.id
   description                  = "From the load balancer"
@@ -353,7 +455,7 @@ resource "aws_ecs_task_definition" "task" {
   # rather than the one apply made, so one that only took the image of the parameter above shows no change.
   track_latest = true
   # A deregistered revision cannot be rolled back to. The console's stay out: nothing extra stays around while it is off.
-  skip_destroy = each.key == "server"
+  skip_destroy = contains(keys(local.one_off), each.key) == false
 
   runtime_platform {
     operating_system_family = "LINUX"
@@ -368,9 +470,9 @@ resource "aws_ecs_task_definition" "task" {
       # The server's own shutdown takes under 30 seconds; a task gets 120 at most.
       stopTimeout = 60
       environment = [
-        for name, value in merge(local.env, {
+        for name, value in merge(local.env, each.value.env, {
           GOMEMLIMIT = "${floor(each.value.memory * 0.9)}MiB"
-          MY_ROLE    = "all"
+          MY_ROLE    = each.value.role
         }) : { name = name, value = value }
       ]
       secrets      = [for name, arn in each.value.secrets : { name = name, valueFrom = arn }]
@@ -431,4 +533,33 @@ resource "aws_ecs_service" "server" {
   }
 
   depends_on = [aws_vpc_security_group_ingress_rule.from_load_balancer, aws_vpc_security_group_egress_rule.out]
+}
+
+# A service for each worker, with everything of the default service but what local.workers says, no load balancer, and a group
+# that admits nothing. upgrade.sh finds these in the cluster, and moves them with the default after the migration.
+resource "aws_ecs_service" "worker" {
+  for_each = local.workers
+
+  name            = each.value.name
+  cluster         = aws_ecs_cluster.this.arn
+  task_definition = aws_ecs_task_definition.task["worker-${each.key}"].arn
+  desired_count   = each.value.instances
+  launch_type     = "FARGATE"
+
+  deployment_minimum_healthy_percent = 100
+  deployment_maximum_percent         = 200
+
+  # With no load balancer, what holds a bad image back is only that its tasks do not start.
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
+  network_configuration {
+    subnets          = local.task_subnet_ids
+    security_groups  = distinct(concat([aws_security_group.worker.id], flatten([for b in var.backends : b.security_group_ids])))
+    assign_public_ip = var.assign_public_ip
+  }
+
+  depends_on = [aws_vpc_security_group_egress_rule.worker_out]
 }

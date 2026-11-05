@@ -33,6 +33,7 @@ module "app" {
 | `health_check_grace_seconds` | `120` | How long a new task may fail the load balancer's check |
 | `console_enabled` | `false` | Creates the console's task definition |
 | `log_retention_days` | `30` | CloudWatch Logs |
+| `workers` | `{}` | Services that run some job types apart from the default: [the contract](../../README.md#workers). Give `queue-db` the same value. Each task costs what a service task does, all the time |
 
 [`direct_secret_env`](../../README.md#the-databases-two-connections) of a backend is what the migration and the console take over a setting of `secret_env`, which the service keeps. Each name must be in `secret_env`, and a plan fails otherwise. `security_group_ids` of a backend are groups that the service and every one-off task join, beside the tasks' own, to reach it in the VPC: `db-aws-rds` and `kv-aws-elasticache` return one each.
 
@@ -44,6 +45,7 @@ module "app" {
 | `security_group_id` | Of the tasks, for a rule of your own |
 | `task_security_group_ids` | Every group a task joins: that one, and those of the backends |
 | `task_subnet_ids` | The subnets of the service and the one-off tasks |
+| `worker_services`, `worker_env` | The service of each worker, and what it sets over `env` |
 | `execution_role_arn`, `task_role_arn` | Read [Secrets](#secrets) |
 | `log_group` | `/ecs/<name>` |
 | `console` | What `console.sh` reads, or null |
@@ -156,6 +158,7 @@ Not read, so not in the total: Secrets Manager per secret, CloudWatch Logs, S3, 
 
 ## Unverified
 
+- That a worker's deployment means anything beyond its tasks having started: it has no load balancer and no container check, so a worker on a bad image fails only in its logs, and `upgrade.sh` goes on to the default.
 - Everything against a real account: that ECS accepts the task definitions, and that the service starts.
 - That a plan shows no change after `upgrade.sh`. It rests on what the provider's source does: `track_latest` reads a family's latest revision, a refresh reads `insecure_value` from the parameter, and the provider's comparison of `container_definitions` treats ECS's added defaults as no change. If it does not, the plan shows a replacement of the task definition, which rolls the tasks on the same image.
 - What `register-task-definition` accepts from a revision that `describe-task-definition` printed. `scripts/tofu-scripts-test.sh` shows only what is sent.

@@ -778,3 +778,138 @@ run "a_public_address_needs_no_nat" {
     error_message = "a task in a public subnet needs its public address to reach the internet"
   }
 }
+
+run "no_workers_builds_nothing_more" {
+  command = plan
+
+  assert {
+    condition     = length(aws_ecs_service.worker) == 0 && aws_security_group.worker == null && length(output.worker_services) == 0 && !contains(keys(output.env), "MY_WORKER_JOB_TYPES_EXCEPT")
+    error_message = "an empty workers must plan as it did"
+  }
+}
+
+run "a_worker_is_a_service_with_no_way_in" {
+  command = plan
+
+  override_resource {
+    target = aws_security_group.worker
+    values = {
+      id = "sg-worker"
+    }
+  }
+
+  variables {
+    workers = {
+      delivery = { job_types = ["federation.fanout", "federation.deliver"], instances = 3, concurrency = 3, cpu = 512, memory_mib = 2048 }
+    }
+    backends = [
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" }, env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "neutral", env = { MY_QUEUE = "db", MY_STREAM = "postgres" }, workers = { delivery = ["federation.deliver", "federation.fanout"] } },
+      { platform = "aws", security_group_ids = ["sg-db"] },
+    ]
+  }
+
+  assert {
+    condition     = aws_ecs_service.worker["delivery"].name == "my-delivery" && aws_ecs_service.worker["delivery"].desired_count == 3 && length(aws_ecs_service.worker["delivery"].load_balancer) == 0
+    error_message = "a worker must be a service of its name and count, with no load balancer"
+  }
+
+  assert {
+    condition     = toset(aws_ecs_service.worker["delivery"].network_configuration[0].security_groups) == toset(["sg-worker", "sg-db"]) && toset(aws_ecs_service.worker["delivery"].network_configuration[0].subnets) == toset(["subnet-1", "subnet-2"])
+    error_message = "a worker must reach the backends and take the subnets of the app, and be in no group that admits anything"
+  }
+
+  assert {
+    condition     = aws_ecs_task_definition.task["worker-delivery"].family == "my-delivery" && aws_ecs_task_definition.task["worker-delivery"].cpu == "512" && aws_ecs_task_definition.task["worker-delivery"].memory == "2048"
+    error_message = "the family must be the service's name, which upgrade.sh takes, with the worker's size"
+  }
+
+  assert {
+    condition     = output.worker_env["delivery"]["MY_WORKER_JOB_TYPES"] == "federation.deliver,federation.fanout" && output.worker_env["delivery"]["MY_WORKER_JOB_CONCURRENCY"] == "3"
+    error_message = "the worker must run its types, as many as it says"
+  }
+
+  assert {
+    condition     = output.env["MY_WORKER_JOB_TYPES_EXCEPT"] == "federation.deliver,federation.fanout"
+    error_message = "the default must leave those types"
+  }
+
+  assert {
+    condition     = contains([for e in jsondecode(aws_ecs_task_definition.task["worker-delivery"].container_definitions)[0].environment : "${e.name}=${e.value}"], "MY_ROLE=worker") && contains([for e in jsondecode(aws_ecs_task_definition.task["server"].container_definitions)[0].environment : "${e.name}=${e.value}"], "MY_ROLE=all")
+    error_message = "the worker runs jobs alone, and the default stays role = all"
+  }
+
+  assert {
+    condition     = !contains([for e in jsondecode(aws_ecs_task_definition.task["migrate"].container_definitions)[0].environment : e.name], "MY_WORKER_JOB_TYPES_EXCEPT")
+    error_message = "a one-off task runs no jobs, so it takes no split"
+  }
+}
+
+run "workers_that_the_queue_was_not_given_fail" {
+  command = plan
+
+  variables {
+    workers = {
+      delivery = { job_types = ["federation.*"] }
+    }
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" }, env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } }, { platform = "neutral", env = { MY_QUEUE = "db", MY_STREAM = "postgres" } }]
+  }
+
+  expect_failures = [aws_iam_role.execution]
+}
+
+run "a_split_fails" {
+  command = plan
+
+  variables {
+    workers = {
+      delivery = { job_types = ["federation.deliver"] }
+    }
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" }, env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } }, { platform = "neutral", env = { MY_QUEUE = "db", MY_STREAM = "postgres" }, workers = { delivery = ["federation.deliver"] } }]
+  }
+
+  expect_failures = [aws_iam_role.execution]
+}
+
+run "a_field_of_cloud_run_fails" {
+  command = plan
+
+  variables {
+    workers = {
+      delivery = { job_types = ["federation.*"], max_instances = 20 }
+    }
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" }, env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } }, { platform = "neutral", env = { MY_QUEUE = "db", MY_STREAM = "postgres" }, workers = { delivery = ["federation.*"] } }]
+  }
+
+  expect_failures = [aws_iam_role.execution]
+}
+
+run "workers_on_the_hub_fail" {
+  command = plan
+
+  variables {
+    workers = {
+      delivery = { job_types = ["federation.*"] }
+    }
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" }, env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } }, { platform = "neutral", env = { MY_QUEUE = "db" }, workers = { delivery = ["federation.*"] } }]
+  }
+
+  expect_failures = [aws_iam_role.execution]
+}
+
+run "a_concurrency_the_pool_cannot_serve_fails" {
+  command = plan
+
+  variables {
+    workers = {
+      delivery = { job_types = ["federation.*"], concurrency = 4 }
+    }
+    backends = [
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" }, env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "neutral", env = { MY_QUEUE = "db", MY_STREAM = "postgres" }, workers = { delivery = ["federation.*"] } },
+      { platform = "aws", pool_max_conns = 0 },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.execution]
+}

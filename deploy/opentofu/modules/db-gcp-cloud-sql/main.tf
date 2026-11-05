@@ -320,6 +320,11 @@ output "connection_name" {
   value       = local.connection_name
 }
 
+output "pool_max_conns" {
+  description = "pool_max_conns of url_parameters, or 0 for the server's default: what a worker's concurrency must stay below."
+  value       = try(tonumber(var.url_parameters.pool_max_conns), 0)
+}
+
 output "url_without_password" {
   description = "The URL in the secret, with PASSWORD in place of the password."
   value       = "postgres://${var.username}:PASSWORD${local.url_after_password}"

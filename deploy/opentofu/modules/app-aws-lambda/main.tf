@@ -17,6 +17,13 @@ terraform {
 
 data "aws_region" "current" {}
 
+module "workers" {
+  source = "../workers"
+
+  workers = var.workers
+  fields  = ["memory_mib", "concurrency"]
+}
+
 locals {
   # One setting, which several backends add to. A source named twice is listed below as a setting named twice.
   billing_sources = flatten([for b in var.backends : b.billing_sources])
@@ -116,7 +123,21 @@ locals {
       adapter = {}
     }
   }
-  functions = merge(local.long_running, local.one_off)
+  # One function for each worker, which its own queue invokes: the same image and settings, with the routes in env.
+  has_workers         = length(var.workers) > 0
+  workers_of_backends = merge([for b in var.backends : b.workers]...)
+  pools               = [for b in var.backends : b.pool_max_conns if b.pool_max_conns != null]
+  worker_functions = {
+    for key, w in module.workers.workers : "worker-${key}" => {
+      role    = "worker"
+      memory  = coalesce(w.memory_mib, var.worker_memory_mib)
+      timeout = var.worker_timeout_seconds
+      command = null
+      adapter = { AWS_LWA_INVOKE_MODE = "buffered", AWS_LWA_READINESS_CHECK_PATH = "/readyz" }
+    }
+  }
+  worker_concurrency = { for key, w in module.workers.workers : key => coalesce(w.concurrency, var.worker_max_concurrency) }
+  functions          = merge(local.long_running, local.worker_functions, local.one_off)
 
   function_env = {
     for key, f in local.functions : key => merge(local.env, contains(keys(local.one_off), key) ? local.one_off_secret_refs : local.secret_refs, f.adapter, {
@@ -142,6 +163,22 @@ resource "aws_iam_role" "server" {
     precondition {
       condition     = length(local.duplicate_settings) == 0
       error_message = "These settings are named more than once across the backends, env, secret_env, secret_files, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
+    }
+    precondition {
+      condition     = length(module.workers.problems) == 0
+      error_message = "workers: ${join(" ", module.workers.problems)}"
+    }
+    precondition {
+      condition     = jsonencode(module.workers.job_types) == jsonencode(local.workers_of_backends)
+      error_message = "The app was given the workers ${jsonencode(module.workers.job_types)}, and its queue module ${jsonencode(local.workers_of_backends)}. Give queue-aws-sqs the same value: a process without the routes undoes the split without an error, and a queue with no function is never read."
+    }
+    precondition {
+      condition     = alltrue([for c in values(local.worker_concurrency) : c >= 2])
+      error_message = "The concurrency of a worker on Lambda is the maximum concurrency of its event source mapping, which must be at least 2."
+    }
+    precondition {
+      condition     = length(local.pools) <= 1
+      error_message = "More than one backend says what the pool of the database is."
     }
     precondition {
       condition     = var.network == null || lookup(local.env, "MY_HTTP_ALLOW_PRIVATE_NETWORKS", "false") != "true"
@@ -367,20 +404,25 @@ resource "aws_lambda_permission" "url_invoke" {
 resource "aws_lambda_event_source_mapping" "worker" {
   for_each = local.event_sources
 
-  function_name    = aws_lambda_function.server["worker"].function_name
+  # The queue named jobs is the default worker's, and any other is the queue of the worker of that key.
+  function_name    = aws_lambda_function.server[each.key == "jobs" ? "worker" : "worker-${each.key}"].function_name
   event_source_arn = each.value.arn
   batch_size       = var.worker_batch_size
   # Without it the whole batch counts as done, whatever the server answers.
   function_response_types = ["ReportBatchItemFailures"]
 
   scaling_config {
-    maximum_concurrency = var.worker_max_concurrency
+    maximum_concurrency = lookup(local.worker_concurrency, each.key, var.worker_max_concurrency)
   }
 
   lifecycle {
     precondition {
       condition     = var.worker_timeout_seconds <= each.value.visibility_timeout_seconds
       error_message = "The visibility timeout of the queue ${each.key} is below the worker's timeout, which Lambda refuses when it creates the mapping."
+    }
+    precondition {
+      condition     = each.key == "jobs" || contains(keys(var.workers), each.key)
+      error_message = "The queue ${each.key} has no function: give the app the workers that its queue module was given."
     }
   }
 

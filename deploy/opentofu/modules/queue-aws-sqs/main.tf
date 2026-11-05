@@ -39,9 +39,39 @@ variable "message_retention_seconds" {
   nullable    = false
 }
 
+variable "workers" {
+  description = "The same workers as the app takes. Each gets a queue of its own, its job types a route to it, and the app a function that the queue invokes, all named by the key. Empty sends everything to the one queue."
+  type        = any
+  default     = {}
+  nullable    = false
+}
+
+module "workers" {
+  source = "../workers"
+
+  workers = var.workers
+  fields  = ["memory_mib", "concurrency"]
+}
+
 # A standard queue: the server refuses nothing else, and a signal delivered twice runs a job once.
 resource "aws_sqs_queue" "jobs" {
   name                       = var.name
+  visibility_timeout_seconds = var.visibility_timeout_seconds
+  message_retention_seconds  = var.message_retention_seconds
+  sqs_managed_sse_enabled    = true
+
+  lifecycle {
+    precondition {
+      condition     = length(module.workers.problems) == 0
+      error_message = "workers: ${join(" ", module.workers.problems)}"
+    }
+  }
+}
+
+resource "aws_sqs_queue" "worker" {
+  for_each = module.workers.workers
+
+  name                       = "${var.name}-${each.key}"
   visibility_timeout_seconds = var.visibility_timeout_seconds
   message_retention_seconds  = var.message_retention_seconds
   sqs_managed_sse_enabled    = true
@@ -102,10 +132,17 @@ output "platform" {
 
 output "env" {
   description = "The settings of the queue."
-  value = {
-    MY_QUEUE               = "sqs"
-    MY_QUEUE_SQS_QUEUE_URL = aws_sqs_queue.jobs.url
-  }
+  value = merge(
+    {
+      MY_QUEUE               = "sqs"
+      MY_QUEUE_SQS_QUEUE_URL = aws_sqs_queue.jobs.url
+    },
+    length(var.workers) == 0 ? {} : {
+      MY_QUEUE_SQS_ROUTES = join(",", flatten([
+        for key, w in module.workers.workers : [for pattern in w.job_types : "${pattern}=${aws_sqs_queue.worker[key].url}"]
+      ]))
+    },
+  )
 }
 
 output "secret_env" {
@@ -115,17 +152,31 @@ output "secret_env" {
 
 output "permissions" {
   description = "Sending the signals to the queue."
-  value = [
-    { permission = "sqs:SendMessage", resource = aws_sqs_queue.jobs.arn },
-  ]
+  value = concat(
+    [{ permission = "sqs:SendMessage", resource = aws_sqs_queue.jobs.arn }],
+    [for q in values(aws_sqs_queue.worker) : { permission = "sqs:SendMessage", resource = q.arn }],
+  )
 }
 
 output "event_sources" {
-  description = "The queue that invokes the worker, which the app module maps to its function. The key is known at plan time."
-  value = {
-    jobs = {
-      arn                        = aws_sqs_queue.jobs.arn
-      visibility_timeout_seconds = var.visibility_timeout_seconds
-    }
-  }
+  description = "The queues that invoke the workers, which the app module maps to its functions: jobs to the default, and each worker's key to that worker's. The keys are known at plan time."
+  value = merge(
+    {
+      jobs = {
+        arn                        = aws_sqs_queue.jobs.arn
+        visibility_timeout_seconds = var.visibility_timeout_seconds
+      }
+    },
+    {
+      for key, q in aws_sqs_queue.worker : key => {
+        arn                        = q.arn
+        visibility_timeout_seconds = var.visibility_timeout_seconds
+      }
+    },
+  )
+}
+
+output "workers" {
+  description = "The job types of each worker, which the app compares with its own."
+  value       = module.workers.job_types
 }

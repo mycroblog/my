@@ -14,7 +14,7 @@ module "queue" {
 }
 ```
 
-It takes no input.
+It takes one input, `workers`, [the same value as the app](../../README.md#workers). It creates nothing for it, since the app gives each worker `worker_job_types`: the module reads the value so that a plan refuses a bad one here too, and returns it as `workers`, so that the app can see that they agree.
 
 | Output | Value |
 | --- | --- |

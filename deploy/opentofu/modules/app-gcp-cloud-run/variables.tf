@@ -111,6 +111,13 @@ variable "vpc_egress" {
   }
 }
 
+variable "workers" {
+  description = "Services that run some job types apart from the default, by a key that names them: job_types, and min_instances, max_instances, cpu, memory_mib, and concurrency, each the service's own where it is not named. Give the queue module the same value. Empty builds one service, which runs every job type."
+  type        = any
+  default     = {}
+  nullable    = false
+}
+
 variable "backends" {
   description = "What each backend module returns. A setting named twice fails the plan."
   type = list(object({
@@ -143,6 +150,10 @@ variable "backends" {
     billing_sources = optional(list(string), [])
     # The network a backend has private addresses on, which must be the network of the app.
     private_network = optional(string)
+    # What the queue module was given as workers, by the job types of each, which must be what the app was given.
+    workers = optional(map(list(string)), {})
+    # pool_max_conns of the database URL, 0 for the server's default, or null where it cannot be known.
+    pool_max_conns = optional(number)
     # Accepted so that they cannot vanish, and refused below: they belong to AWS.
     security_group_ids = optional(list(string), [])
     event_sources = optional(map(object({

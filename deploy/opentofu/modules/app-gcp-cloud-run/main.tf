@@ -11,6 +11,14 @@ terraform {
   }
 }
 
+module "workers" {
+  source = "../workers"
+
+  workers = var.workers
+  # The last two are the queue's: this module reads the value, and queue-gcp-cloud-tasks makes of them what it can.
+  fields = ["min_instances", "max_instances", "cpu", "memory_mib", "concurrency", "max_concurrent_dispatches", "max_dispatches_per_second"]
+}
+
 locals {
   # One setting, which several backends add to. A source named twice is listed below as a setting named twice.
   billing_sources = flatten([for b in var.backends : b.billing_sources])
@@ -99,6 +107,50 @@ locals {
   # What private addresses the backends have: the app reaches them only on the same network.
   private_networks = distinct([for b in var.backends : b.private_network if b.private_network != null])
 
+  # A worker differs from the default service in these alone, and in being closed: read the service worker below. queue = db
+  # chooses by worker_job_types; a queue that signals chooses by the routes that the queue module returns, which every process
+  # holds in env.
+  polls               = local.queue == "db"
+  has_workers         = length(var.workers) > 0
+  default_except      = join(",", module.workers.all_patterns)
+  service_env         = merge(local.env, local.polls && local.has_workers ? { MY_WORKER_JOB_TYPES_EXCEPT = local.default_except } : {})
+  workers_of_backends = merge([for b in var.backends : b.workers]...)
+  worker_settings     = ["MY_WORKER_JOB_TYPES", "MY_WORKER_JOB_TYPES_EXCEPT", "MY_WORKER_JOB_CONCURRENCY"]
+  workers = {
+    for key, w in module.workers.workers : key => {
+      name   = "${var.name}-${key}"
+      cpu    = w.cpu == null ? var.cpu : tostring(w.cpu)
+      memory = coalesce(w.memory_mib, var.memory_mib)
+      # A process that polls must stay up, as the default must.
+      min_instances = w.min_instances != null ? w.min_instances : (local.polls ? 1 : 0)
+      max_instances = coalesce(w.max_instances, var.max_instances)
+      requests      = !local.polls && w.concurrency != null ? w.concurrency : var.concurrency
+      concurrency   = w.concurrency
+      env = merge(
+        local.env,
+        { MY_ROLE = "worker" },
+        local.polls ? { MY_WORKER_JOB_TYPES = join(",", w.job_types) } : {},
+        local.polls && w.concurrency != null ? { MY_WORKER_JOB_CONCURRENCY = tostring(w.concurrency) } : {},
+      )
+    }
+  }
+  # The one audience that tasks carry when there are workers, which a closed service must accept as a custom audience.
+  worker_audience = lookup(local.env, "MY_QUEUE_CLOUDTASKS_AUDIENCE", null)
+  worker_invokers = merge([
+    for key in keys(local.workers) : { for email in local.invokers : "${key}/${email}" => { key = key, email = email } }
+  ]...)
+
+  # What a worker's concurrency must stay below: a slot needs a connection to claim and to record. The default of the pool is the
+  # greater of 4 and the CPU count, so it is known only up to 4 CPUs, and a backend that cannot say leaves it to the server's start.
+  pools = [for b in var.backends : b.pool_max_conns if b.pool_max_conns != null]
+  workers_over_the_pool = [
+    for key, w in local.workers : key
+    if local.polls && w.concurrency != null && length(local.pools) > 0 && try(
+      w.concurrency >= (local.pools[0] > 0 ? local.pools[0] : (try(tonumber(w.cpu), tonumber(trimsuffix(w.cpu, "m")) / 1000) <= 4 ? 4 : w.concurrency + 1)),
+      false,
+    )
+  ]
+
   jobs = merge(
     { migrate = ["db", "upgrade", "-check"] },
     var.console_enabled ? { console = ["version"] } : {},
@@ -131,6 +183,38 @@ resource "google_service_account" "server" {
     precondition {
       condition     = var.vpc_egress != "ALL_TRAFFIC" || length(local.cloud_sql_instances) == 0
       error_message = "With vpc_egress = ALL_TRAFFIC, Google's guide says to reach Cloud SQL by a private address. Give db-gcp-cloud-sql the network, or leave vpc_egress at PRIVATE_RANGES_ONLY."
+    }
+    precondition {
+      condition     = length(module.workers.problems) == 0
+      error_message = "workers: ${join(" ", module.workers.problems)}"
+    }
+    precondition {
+      condition     = jsonencode(module.workers.job_types) == jsonencode(local.workers_of_backends)
+      error_message = "The app was given the workers ${jsonencode(module.workers.job_types)}, and its queue module ${jsonencode(local.workers_of_backends)}. Give both the same value: a process without the routes undoes the split without an error, and a route with no service loses its jobs."
+    }
+    precondition {
+      condition     = !local.has_workers || contains(["db", "cloudtasks"], local.queue)
+      error_message = "queue = ${local.queue} cannot split its jobs. Use queue-gcp-cloud-tasks, or queue-db."
+    }
+    precondition {
+      condition     = !local.has_workers || lookup(local.env, "MY_STREAM", "hub") != "hub"
+      error_message = "With workers, stream = hub would keep the updates of a job in the process that ran it, and away from the streams. Add a stream-* module, or set MY_STREAM to postgres."
+    }
+    precondition {
+      condition     = !local.has_workers || length(setintersection(local.setting_names, local.worker_settings)) == 0
+      error_message = "These are what workers sets, so they cannot be named beside it: ${join(", ", local.worker_settings)}."
+    }
+    precondition {
+      condition     = !local.polls || alltrue([for w in values(local.workers) : w.min_instances >= 1])
+      error_message = "queue = db runs jobs in a process that stays up, so min_instances of a worker must be at least 1."
+    }
+    precondition {
+      condition     = length(local.pools) <= 1
+      error_message = "More than one backend says what the pool of the database is."
+    }
+    precondition {
+      condition     = length(local.workers_over_the_pool) == 0
+      error_message = "The concurrency of ${join(", ", local.workers_over_the_pool)} is not below the pool of the database, so the server would not start. Raise pool_max_conns in url_parameters of the database, or lower concurrency."
     }
     precondition {
       condition     = var.network == null || lookup(local.env, "MY_HTTP_ALLOW_PRIVATE_NETWORKS", "false") != "true"
@@ -320,7 +404,182 @@ resource "google_cloud_run_v2_service" "server" {
       }
 
       dynamic "env" {
-        for_each = local.env
+        for_each = local.service_env
+        content {
+          name  = env.key
+          value = env.value
+        }
+      }
+
+      dynamic "env" {
+        for_each = local.secret_env
+        content {
+          name = env.key
+          value_source {
+            secret_key_ref {
+              secret  = env.value
+              version = "latest"
+            }
+          }
+        }
+      }
+
+      dynamic "volume_mounts" {
+        for_each = local.file_mounts
+        content {
+          name       = volume_mounts.value.volume
+          mount_path = volume_mounts.value.path
+        }
+      }
+
+      dynamic "volume_mounts" {
+        for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+        content {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
+        }
+      }
+
+      # A revision takes traffic only when the schema is in place and every data upgrade step of its release is
+      # recorded, which also holds back a revision rolled out before the migration.
+      startup_probe {
+        http_get {
+          path = "/readyz"
+          port = 8080
+        }
+        timeout_seconds   = 5
+        period_seconds    = 10
+        failure_threshold = 30
+      }
+
+      liveness_probe {
+        http_get {
+          path = "/healthz"
+          port = 8080
+        }
+        timeout_seconds   = 5
+        period_seconds    = 30
+        failure_threshold = 3
+      }
+    }
+  }
+
+  traffic {
+    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+    percent = 100
+  }
+
+  # The upgrade script changes the image, after the migration. An apply with another image would skip that order, so
+  # apply keeps what runs. gcloud also writes the other fields listed here.
+  lifecycle {
+    ignore_changes = [
+      client,
+      client_version,
+      template[0].containers[0].image,
+      template[0].revision,
+      template[0].labels,
+      template[0].annotations,
+    ]
+  }
+
+  depends_on = [
+    google_project_iam_member.backend,
+    google_storage_bucket_iam_member.backend,
+    google_pubsub_topic_iam_member.backend,
+    google_cloud_tasks_queue_iam_member.backend,
+    google_service_account_iam_member.backend,
+    google_kms_crypto_key_iam_member.backend,
+    google_secret_manager_secret_iam_member.server,
+  ]
+}
+
+# A service for each worker, with everything of the default service but what local.workers says. It takes no public traffic: only
+# what is internal reaches it, which Cloud Tasks is from the same project on this URL, and only the queue's account may invoke it.
+# upgrade.sh finds these by the label, and moves them with the default after the migration.
+resource "google_cloud_run_v2_service" "worker" {
+  for_each = local.workers
+
+  project  = var.project_id
+  location = var.region
+  name     = each.value.name
+  ingress  = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+  labels   = { my-worker-of = var.name }
+  # Cloud Tasks calls this URL, and counts as internal only on it.
+  default_uri_disabled = false
+  deletion_protection  = var.deletion_protection
+  custom_audiences     = local.worker_audience == null ? null : [local.worker_audience]
+
+  template {
+    service_account                  = google_service_account.server.email
+    timeout                          = "${var.request_timeout_seconds}s"
+    max_instance_request_concurrency = each.value.requests
+
+    scaling {
+      min_instance_count = each.value.min_instances
+      max_instance_count = each.value.max_instances
+    }
+
+    dynamic "vpc_access" {
+      for_each = var.network == null ? [] : [var.network]
+      content {
+        egress = var.vpc_egress
+        network_interfaces {
+          network    = vpc_access.value.network
+          subnetwork = vpc_access.value.subnetwork
+        }
+      }
+    }
+
+    dynamic "volumes" {
+      for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+      content {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = local.cloud_sql_instances
+        }
+      }
+    }
+
+    dynamic "volumes" {
+      for_each = local.file_mounts
+      content {
+        name = volumes.value.volume
+        secret {
+          secret = volumes.value.secret
+          items {
+            version = "latest"
+            path    = "value"
+          }
+        }
+      }
+    }
+
+    containers {
+      # What the default service runs now, not var.image, which upgrade.sh leaves behind: a worker added later starts on the
+      # same release.
+      image = google_cloud_run_v2_service.server.template[0].containers[0].image
+
+      ports {
+        container_port = 8080
+      }
+
+      resources {
+        limits = {
+          cpu    = each.value.cpu
+          memory = "${each.value.memory}Mi"
+        }
+        # Request-based billing, unless the process polls and so needs CPU outside requests.
+        cpu_idle          = !local.polls
+        startup_cpu_boost = true
+      }
+
+      env {
+        name  = "GOMEMLIMIT"
+        value = "${floor(each.value.memory * 0.9)}MiB"
+      }
+
+      dynamic "env" {
+        for_each = each.value.env
         content {
           name  = env.key
           value = env.value
@@ -559,4 +818,15 @@ resource "google_cloud_run_v2_service_iam_member" "invoker" {
   name     = google_cloud_run_v2_service.server.name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${each.value}"
+}
+
+# Only the queue's account: no allUsers, since nothing from outside calls a worker.
+resource "google_cloud_run_v2_service_iam_member" "worker_invoker" {
+  for_each = local.worker_invokers
+
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.worker[each.value.key].name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${each.value.email}"
 }

@@ -1385,3 +1385,241 @@ run "all_traffic_with_the_connector_of_cloud_sql_fails" {
 
   expect_failures = [google_service_account.server]
 }
+
+run "no_workers_builds_nothing_more" {
+  command = plan
+
+  assert {
+    condition     = length(google_cloud_run_v2_service.worker) == 0 && length(google_cloud_run_v2_service_iam_member.worker_invoker) == 0 && length(output.worker_services) == 0 && !contains(keys(output.env), "MY_WORKER_JOB_TYPES_EXCEPT")
+    error_message = "an empty workers must plan as it did"
+  }
+}
+
+run "a_worker_on_cloud_tasks_is_a_closed_service" {
+  command = plan
+
+  variables {
+    env = {}
+    workers = {
+      delivery = { job_types = ["federation.fanout", "federation.deliver"], max_instances = 20, concurrency = 16, memory_mib = 256, cpu = "2" }
+    }
+    backends = [
+      {
+        platform = "gcp"
+        env = {
+          MY_QUEUE                     = "cloudtasks"
+          MY_QUEUE_CLOUDTASKS_AUDIENCE = "https://my-1.asia-northeast1.run.app"
+          MY_STREAM                    = "pubsub"
+        }
+        invokers = ["invoker@p.iam.gserviceaccount.com"]
+        workers  = { delivery = ["federation.deliver", "federation.fanout"] }
+      },
+    ]
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.worker["delivery"].name == "my-delivery" && google_cloud_run_v2_service.worker["delivery"].ingress == "INGRESS_TRAFFIC_INTERNAL_ONLY" && google_cloud_run_v2_service.worker["delivery"].default_uri_disabled == false
+    error_message = "a worker must be internal, on its default URL, by a name from its key"
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.worker["delivery"].custom_audiences == tolist(["https://my-1.asia-northeast1.run.app"])
+    error_message = "a closed service must accept the one audience that the tasks carry, or Cloud Run refuses them"
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service_iam_member.worker_invoker["delivery/invoker@p.iam.gserviceaccount.com"].member == "serviceAccount:invoker@p.iam.gserviceaccount.com" && length(google_cloud_run_v2_service_iam_member.worker_invoker) == 1
+    error_message = "only the account of the queue may invoke a worker"
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.worker["delivery"].template[0].scaling[0].max_instance_count == 20 && google_cloud_run_v2_service.worker["delivery"].template[0].scaling[0].min_instance_count == 0 && google_cloud_run_v2_service.worker["delivery"].template[0].max_instance_request_concurrency == 16
+    error_message = "with a queue that signals, concurrency is the requests of an instance, and the service scales to zero"
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.worker["delivery"].template[0].containers[0].resources[0].limits["cpu"] == "2" && google_cloud_run_v2_service.worker["delivery"].template[0].containers[0].resources[0].limits["memory"] == "256Mi" && google_cloud_run_v2_service.worker["delivery"].template[0].containers[0].resources[0].cpu_idle
+    error_message = "the worker's size must be its own"
+  }
+
+  assert {
+    condition     = output.worker_env["delivery"]["MY_ROLE"] == "worker" && !contains(keys(output.worker_env["delivery"]), "MY_WORKER_JOB_TYPES") && !contains(keys(output.worker_env["delivery"]), "MY_WORKER_JOB_CONCURRENCY")
+    error_message = "those settings need queue = db, and the server would refuse them"
+  }
+
+  assert {
+    condition     = output.env["MY_ROLE"] == "all" && !contains(keys(output.env), "MY_WORKER_JOB_TYPES_EXCEPT")
+    error_message = "the default stays role = all, and the routes decide what reaches it"
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.worker["delivery"].template[0].service_account == google_cloud_run_v2_service.server.template[0].service_account
+    error_message = "a worker must share the identity of the default"
+  }
+}
+
+run "a_worker_on_the_database_chooses_by_job_types" {
+  command = plan
+
+  variables {
+    env                  = {}
+    min_instances        = 1
+    cpu_always_allocated = true
+    workers = {
+      delivery = { job_types = ["federation.fanout", "federation.deliver"], concurrency = 16 }
+    }
+    backends = [
+      {
+        platform = "neutral"
+        env      = { MY_QUEUE = "db", MY_STREAM = "postgres" }
+        workers  = { delivery = ["federation.deliver", "federation.fanout"] }
+      },
+    ]
+  }
+
+  assert {
+    condition     = output.worker_env["delivery"]["MY_WORKER_JOB_TYPES"] == "federation.deliver,federation.fanout" && output.worker_env["delivery"]["MY_WORKER_JOB_CONCURRENCY"] == "16"
+    error_message = "the worker must run its types, as many as it says"
+  }
+
+  assert {
+    condition     = output.env["MY_WORKER_JOB_TYPES_EXCEPT"] == "federation.deliver,federation.fanout"
+    error_message = "the default must leave those types"
+  }
+
+  assert {
+    condition     = !google_cloud_run_v2_service.worker["delivery"].template[0].containers[0].resources[0].cpu_idle && google_cloud_run_v2_service.worker["delivery"].template[0].scaling[0].min_instance_count == 1
+    error_message = "a process that polls must stay up, with CPU"
+  }
+
+  assert {
+    condition     = length(google_cloud_run_v2_service_iam_member.worker_invoker) == 0
+    error_message = "nothing calls a process that polls"
+  }
+}
+
+run "a_worker_with_none_of_its_own_settings_takes_the_services" {
+  command = plan
+
+  variables {
+    env = {}
+    workers = {
+      delivery = { job_types = ["federation.*"] }
+    }
+    backends = [
+      {
+        platform = "gcp"
+        env      = { MY_QUEUE = "cloudtasks", MY_STREAM = "pubsub" }
+        workers  = { delivery = ["federation.*"] }
+      },
+    ]
+    network = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/asia-northeast1/subnetworks/s" }
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.worker["delivery"].template[0].scaling[0].max_instance_count == 3 && google_cloud_run_v2_service.worker["delivery"].template[0].containers[0].resources[0].limits["memory"] == "512Mi"
+    error_message = "what is not named must be the service's"
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.worker["delivery"].template[0].vpc_access[0].network_interfaces[0].subnetwork == "projects/p/regions/asia-northeast1/subnetworks/s" && google_cloud_run_v2_service.worker["delivery"].template[0].vpc_access[0].egress == "PRIVATE_RANGES_ONLY"
+    error_message = "a worker must be on the network of the app"
+  }
+}
+
+run "workers_that_the_queue_was_not_given_fail" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE = "cloudtasks", MY_STREAM = "pubsub" }
+    workers = {
+      delivery = { job_types = ["federation.*"] }
+    }
+    backends = []
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_split_fails" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE = "cloudtasks", MY_STREAM = "pubsub" }
+    workers = {
+      delivery = { job_types = ["federation.deliver"] }
+    }
+    backends = [{ platform = "gcp", workers = { delivery = ["federation.deliver"] } }]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "workers_on_the_hub_fail" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE = "cloudtasks" }
+    workers = {
+      delivery = { job_types = ["federation.*"] }
+    }
+    backends = [{ platform = "gcp", workers = { delivery = ["federation.*"] } }]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_setting_of_workers_beside_them_fails" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE = "cloudtasks", MY_STREAM = "pubsub", MY_WORKER_JOB_CONCURRENCY = "4" }
+    workers = {
+      delivery = { job_types = ["federation.*"] }
+    }
+    backends = [{ platform = "gcp", workers = { delivery = ["federation.*"] } }]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_concurrency_the_pool_cannot_serve_fails" {
+  command = plan
+
+  variables {
+    env                  = {}
+    min_instances        = 1
+    cpu_always_allocated = true
+    workers = {
+      delivery = { job_types = ["federation.*"], concurrency = 4 }
+    }
+    backends = [
+      { platform = "neutral", env = { MY_QUEUE = "db", MY_STREAM = "postgres" }, workers = { delivery = ["federation.*"] } },
+      { platform = "gcp", pool_max_conns = 0 },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_concurrency_below_a_pool_that_was_raised_passes" {
+  command = plan
+
+  variables {
+    env                  = {}
+    min_instances        = 1
+    cpu_always_allocated = true
+    workers = {
+      delivery = { job_types = ["federation.*"], concurrency = 16 }
+    }
+    backends = [
+      { platform = "neutral", env = { MY_QUEUE = "db", MY_STREAM = "postgres" }, workers = { delivery = ["federation.*"] } },
+      { platform = "gcp", pool_max_conns = 20 },
+    ]
+  }
+
+  assert {
+    condition     = output.worker_env["delivery"]["MY_WORKER_JOB_CONCURRENCY"] == "16"
+    error_message = "a pool of 20 serves 16"
+  }
+}

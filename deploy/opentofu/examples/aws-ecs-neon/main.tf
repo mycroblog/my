@@ -112,6 +112,16 @@ module "ingress" {
   host_is_apex    = var.host_is_apex
 }
 
+# To give a kind of job its own service, set the same value on the queue above and on this block, which derive every name from the
+# key. The default takes whatever no worker names. Read "Workers" in deploy/opentofu/README.md.
+#
+#   workers = {
+#     delivery = {
+#       job_types   = ["federation.fanout", "federation.deliver"]
+#       instances   = 2
+#       concurrency = 3
+#     }
+#   }
 module "app" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/app-aws-ecs?ref=v0.1.0&depth=1"
 

@@ -62,7 +62,7 @@ output "console" {
 
 output "env" {
   description = "Merged settings of every task, without GOMEMLIMIT and MY_ROLE."
-  value       = local.env
+  value       = merge(local.env, local.server_env)
 }
 
 output "secret_env" {
@@ -78,4 +78,14 @@ output "one_off_secret_env" {
 output "task_subnet_ids" {
   description = "The subnets of the service and the one-off tasks."
   value       = local.task_subnet_ids
+}
+
+output "worker_services" {
+  description = "The ECS service of each worker, by its key."
+  value       = { for key, w in local.workers : key => w.name }
+}
+
+output "worker_env" {
+  description = "What each worker's service sets over env, without GOMEMLIMIT."
+  value       = { for key, w in local.workers : key => w.env }
 }

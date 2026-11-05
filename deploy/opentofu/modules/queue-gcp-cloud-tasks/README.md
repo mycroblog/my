@@ -21,12 +21,14 @@ module "queue" {
 | `name` | `my-jobs` | The queue, `<name>-tick`, and `<name>-invoker` |
 | `tick_schedule` | `* * * * *` | How often the periodic jobs are checked. Each tick touches the database |
 | `max_concurrent_dispatches` | `20` | Tasks at once, which bounds a burst of jobs |
+| `workers` | `{}` | [The same value as the app](../../README.md#workers). Each gets a queue `<name>-<key>` and a route to the service `<service_name>-<key>` |
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_QUEUE`, `MY_QUEUE_CLOUDTASKS_QUEUE`, `MY_QUEUE_CLOUDTASKS_URL`, `MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT` |
+| `env` | `MY_QUEUE`, `MY_QUEUE_CLOUDTASKS_QUEUE`, `MY_QUEUE_CLOUDTASKS_URL`, `MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT`, and with workers `MY_QUEUE_CLOUDTASKS_ROUTES` and `MY_QUEUE_CLOUDTASKS_AUDIENCE` |
+| `workers` | The job types of each worker, which the app compares with its own |
 | `secret_env` | Empty |
-| `permissions` | `roles/cloudtasks.enqueuer` on the queue, `roles/iam.serviceAccountUser` on the invoker |
+| `permissions` | `roles/cloudtasks.enqueuer` on each queue, `roles/iam.serviceAccountUser` on the invoker |
 | `invokers` | The invoker, which the app gives `roles/run.invoker` |
 
 Tasks and ticks call `https://<service_name>-<project number>.<region>.run.app`, Cloud Run's deterministic default URL, directly and never through an ingress:

@@ -1,0 +1,5 @@
+[
+  ["federation.fanout", "federation.deliver"],
+  ["voice.apply_media_event", "voice.apply"],
+  ["supporters.sync", "supporters.command"]
+]

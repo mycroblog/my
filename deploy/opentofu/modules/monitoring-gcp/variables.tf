@@ -6,6 +6,13 @@ variable "project_id" {
   nullable    = false
 }
 
+variable "workers" {
+  description = "The same workers as the app takes, for the names of their services, whose lines and memory the alerts read too."
+  type        = any
+  default     = {}
+  nullable    = false
+}
+
 variable "service_name" {
   description = "The app module's name. The log-based metrics and the request alerts read this service alone."
   type        = string

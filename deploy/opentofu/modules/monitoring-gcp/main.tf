@@ -12,7 +12,14 @@ terraform {
 }
 
 locals {
-  service  = "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${var.service_name}\""
+  # A worker runs jobs and writes their lines like the default service, so what reads them must read each service. Requests are
+  # the default service's: a worker takes none from outside.
+  services = concat([var.service_name], [for key in sort(keys(var.workers)) : "${var.service_name}-${key}"])
+  service = (
+    length(var.workers) == 0
+    ? "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${var.service_name}\""
+    : "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=(${join(" OR ", [for name in local.services : "\"${name}\""])})"
+  )
   snapshot = "${local.service} AND jsonPayload.msg=\"metrics snapshot\""
 
   # A log-based counter counts the lines of its filter. Every alert on these fires on lines that exist, so an idle
@@ -89,12 +96,16 @@ locals {
   resource = "monitored_resource=\"cloud_run_revision\""
   log      = "logging_googleapis_com:user_${var.name}"
   requests = "run_googleapis_com:request_count{${local.resource},service_name=\"${var.service_name}\""
-  memory   = "run_googleapis_com:container_memory_utilizations_bucket{${local.resource},service_name=\"${var.service_name}\"}"
-  jobs     = "${local.log}_job_runs{${local.resource}"
-  deliver  = "${local.jobs},my_job_type=\"federation.deliver\""
-  email    = "${local.jobs},my_job_type=~\".*[._]email.*\""
-  inbox    = "${local.log}_inbox_requests{${local.resource}"
-  errors   = "${local.log}_error_reports{${local.resource}}"
+  memory = (
+    length(var.workers) == 0
+    ? "run_googleapis_com:container_memory_utilizations_bucket{${local.resource},service_name=\"${var.service_name}\"}"
+    : "run_googleapis_com:container_memory_utilizations_bucket{${local.resource},service_name=~\"${join("|", local.services)}\"}"
+  )
+  jobs    = "${local.log}_job_runs{${local.resource}"
+  deliver = "${local.jobs},my_job_type=\"federation.deliver\""
+  email   = "${local.jobs},my_job_type=~\".*[._]email.*\""
+  inbox   = "${local.log}_inbox_requests{${local.resource}"
+  errors  = "${local.log}_error_reports{${local.resource}}"
 
   # The names, thresholds, and durations of deploy/monitoring/prometheus/alerts.yml; the README says where each differs.
   # An empty result fires nothing, so no traffic means no alert. Only MyTargetDown and MyMetricsSnapshotStale, below,

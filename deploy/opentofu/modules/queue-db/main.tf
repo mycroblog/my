@@ -7,6 +7,20 @@ terraform {
   required_version = ">= 1.11"
 }
 
+variable "workers" {
+  description = "The same workers as the app takes. Nothing is needed of a queue in the database, since the app gives each worker worker_job_types. It is here so that the value is read once, and so that the app can see that its queue was given the same."
+  type        = any
+  default     = {}
+  nullable    = false
+}
+
+module "workers" {
+  source = "../workers"
+
+  workers = var.workers
+  fields  = ["min_instances", "max_instances", "instances", "cpu", "memory_mib", "concurrency"]
+}
+
 output "platform" {
   description = "The platform of this module: it works with any app."
   value       = "neutral"
@@ -25,4 +39,14 @@ output "secret_env" {
 output "permissions" {
   description = "Nothing."
   value       = []
+}
+
+output "workers" {
+  description = "The job types of each worker, which the app compares with its own."
+  value       = module.workers.job_types
+
+  precondition {
+    condition     = length(module.workers.problems) == 0
+    error_message = "workers: ${join(" ", module.workers.problems)}"
+  }
 }

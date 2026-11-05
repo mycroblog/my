@@ -21,6 +21,7 @@ deploy/opentofu/
   modules/kv-aws-elasticache/     ElastiCache Serverless for Valkey, on a network, never applied
   modules/network-gcp-vpc/        a VPC that the others take as network, never applied
   modules/network-aws-vpc/        the same on AWS, never applied
+  modules/workers/                what the workers input means, for the app and queue modules: no block of a deployment
   modules/stream-valkey/          the broker on Valkey Pub/Sub, beside a kv module or alone
   modules/stream-postgres/        the broker on LISTEN / NOTIFY of the database
   modules/mail-smtp/              email through any SMTP service
@@ -124,6 +125,8 @@ changing one module block:
 | `private_network` (optional) | `string` | The network on which this backend has private addresses: `network` of the shape on Google Cloud, `vpc_id` on AWS. The app must have the same network, and a plan fails otherwise. Read [The network contract](#the-network-contract) |
 | `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it, on a platform where something calls it |
 | `event_sources` (optional) | `map(object({ arn, visibility_timeout_seconds }))` | Queues that the platform polls to invoke the app, on a platform where the app is invoked that way |
+| `workers` (optional) | `map(list(string))` | The job types of each worker that a queue module was given. The app must have been given the same, and a plan fails otherwise. Read [Workers](#workers) |
+| `pool_max_conns` (optional) | `number` | `pool_max_conns` of the database URL, or `0` for the server's default, where a `db-*` module knows it: what the `concurrency` of a worker must stay below |
 | `billing_sources` (optional) | `list(string)` | What this module adds to the one setting `MY_BILLING_SOURCES`, which the app sets from all of them |
 
 A permission means what the platform's IAM means: what the identity is permitted, which on Google Cloud is a role, so its shape is the platform's:
@@ -344,6 +347,61 @@ Most backends are reached over the internet with the platform's own identity, an
 
 The server has one Valkey setting for `kv` and `stream`, so `MY_VALKEY_URL` has one owner: `url_secret_id` of `stream-valkey` is
 null beside a `kv-*` module. Both managed Valkey modules bill while the server is idle, and each README says what it costs.
+
+### Workers
+
+A busy type of job should not hold up the rest. An app takes `workers` and builds what it says, and a queue module takes the same value and creates what that needs, so **no queue name, URL, route, or `worker_job_types` is written by hand**:
+
+```hcl
+locals {
+  workers = {
+    delivery = {
+      job_types     = ["federation.fanout", "federation.deliver"]
+      max_instances = 20
+      concurrency   = 16
+    }
+  }
+}
+
+module "queue" {
+  # ...
+  workers = local.workers
+}
+
+module "app" {
+  # ...
+  workers = local.workers
+}
+```
+
+The key names everything, and whatever no worker names goes to the default service, which an app always has. **An empty `workers`, the default, plans as if it were not there**, with one service and one queue. Each is derived from inputs, not from created resources, so nothing is circular: the queue builds a service's URL from its name as it does for the default.
+
+| | `queue-gcp-cloud-tasks` on Cloud Run | `queue-db` on Cloud Run or ECS | `queue-aws-sqs` on Lambda |
+| --- | --- | --- | --- |
+| A worker | A service `<app>-<key>`, a queue `<queue>-<key>` | A service `<app>-<key>`, no queue | A function `<app>-worker-<key>`, a queue `<queue>-<key>` |
+| How jobs reach it | `MY_QUEUE_CLOUDTASKS_ROUTES`, to its queue and its deterministic URL | `MY_WORKER_JOB_TYPES`, and `MY_WORKER_JOB_TYPES_EXCEPT` of the default with every type of every worker | `MY_QUEUE_SQS_ROUTES`, and an event source mapping |
+| `concurrency` | Requests of an instance at once, since one signal is one job | `MY_WORKER_JOB_CONCURRENCY` | Maximum concurrency of the mapping, at least 2 |
+
+| Field | Cloud Run | ECS | Lambda | Otherwise |
+| --- | --- | --- | --- | --- |
+| `job_types` | Required | Required | Required | Names and prefixes, as [the server reads them](../../docs/operations/running.md#splitting-workers-by-job-type) |
+| `min_instances`, `max_instances` | Yes | | | The service's. With `queue-db`, `min_instances` is 1 and must stay at least that |
+| `instances` | | Yes | | 1 task. ECS here has no scaling |
+| `cpu`, `memory_mib` | Yes | Yes | `memory_mib` | The service's, or the worker function's |
+| `concurrency` | Yes | Yes | Yes | As in the table above |
+| `max_concurrent_dispatches`, `max_dispatches_per_second` | With Cloud Tasks | | | The queue's input, and Cloud Tasks' own default |
+
+**A plan refuses** a field that nothing reads or that the platform and queue do not have, since a conversion would drop it without a word; a key that cannot name things or that a deployment already uses; a name or prefix that matches no job type; a type on two workers; a `concurrency` outside 1 to 128, or known not to be below the pool of the database; a queue module given other workers than the app, since a process with other routes undoes the split without an error; `stream = hub`, which would keep a job's updates in the process that ran it; and **a split of the types that must stay on one worker**, which [the guide](../../docs/operations/running.md#splitting-workers-by-job-type) lists. A prefix covers its types, so `federation.*` keeps them together.
+
+`modules/workers` holds the job types and that list in one place, as JSON. It is no block of a deployment, and the modules that take `workers` read it. `scripts/tofu-workers-check.sh`, in `tofu:backend-fields`, fails when they drift from `internal/platform/job_types.go`, which `my job types` prints, or from the table in the guide; `--write` updates the types. **What the plan cannot see** is that some types exist only with a setting: a name that the running server has not registered, such as `notification.push` with no VAPID key, still stops the start.
+
+What a worker has of the app: the image, the settings, the secrets with `direct_secret_env` left to the one-off work as for the service, the identity, and the network. **Its `role` is `worker`, and the default stays at the `role` it has**, `all` unless said otherwise: it serves the traffic and runs what no worker names. **A worker takes no public traffic.** On Cloud Run its service is internal, and only the queue's account may invoke it. On ECS it has no load balancer, and joins a group that admits nothing. The console is unaffected.
+
+**One audience, and one account, across the services of Cloud Tasks.** A process checks a token against `queue_cloudtasks_url` plus the path, unless `queue_cloudtasks_audience` is set. That same URL is where the process sends the tasks of the default queue, so a worker cannot name its own URL there without taking those tasks. So with workers the queue module sets one audience, the default service's URL, for every process and for the tick, and a worker's service accepts it as a custom audience, which Cloud Run's own check of the token needs. There is one invoker account rather than one per service, because the server creates every task with the one `queue_cloudtasks_service_account` and accepts only that, and a route cannot name another.
+
+`upgrade.sh` finds the workers on the platform and moves each after the migration and before the default: by a label on Cloud Run, by being in the cluster on ECS, and by the name on Lambda. `--maintenance` puts them in the mode as well. `monitoring-gcp` takes the same `workers`, so that the lines of a job count wherever it ran.
+
+Never applied, like everything here. Unverified: that Cloud Run accepts a token whose audience is a custom one on a service that shares it with no other, on the URL that Cloud Tasks counts as internal, and that the same value of audience on several services is allowed, which Google's page does not say; that `gcloud`'s filter finds a service by that label; and that `role = worker` answers Cloud Run's probes as the configuration reference says it does.
 
 ### The console
 

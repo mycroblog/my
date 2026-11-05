@@ -43,6 +43,13 @@ variable "profile" {
   nullable    = false
 }
 
+variable "workers" {
+  description = "Functions that run some job types apart from the default worker, by a key that names them: job_types, and memory_mib and concurrency, each the worker's own where it is not named. Give queue-aws-sqs the same value. Empty builds the one worker function, which runs every job type."
+  type        = any
+  default     = {}
+  nullable    = false
+}
+
 variable "backends" {
   description = "What each backend module returns. A setting named twice fails the plan."
   type = list(object({
@@ -57,6 +64,10 @@ variable "backends" {
     security_group_ids = optional(list(string), [])
     # The VPC a backend has private addresses in, which must be the VPC of the functions.
     private_network = optional(string)
+    # What the queue module was given as workers, by the job types of each, which must be what the app was given.
+    workers = optional(map(list(string)), {})
+    # pool_max_conns of the database URL, 0 for the server's default, or null where it cannot be known.
+    pool_max_conns = optional(number)
     permissions = optional(list(object({
       permission = string
       resource   = optional(string)

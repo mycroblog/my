@@ -37,6 +37,7 @@ module "app" {
 | `console_enabled` | `false` | Creates the console job |
 | `network` | `null` | Attaches the service and the jobs through Direct VPC egress: a network from [`network-gcp-vpc`](../network-gcp-vpc/README.md), or an object of [its shape](../../README.md#the-network-on-google-cloud). A backend on private addresses must be on the same one. Null attaches nothing, which is all that a deployment on public endpoints needs |
 | `vpc_egress` | `PRIVATE_RANGES_ONLY` | What goes through the network. `ALL_TRAFFIC` needs `nat` of the network, and fails the plan without it. [The way out](../../README.md#the-way-out-to-the-internet) has the table |
+| `workers` | `{}` | Services that run some job types apart from the default: [the contract](../../README.md#workers). Give the queue module the same value |
 | `deletion_protection` | `true` | Refuses to delete the service and the jobs |
 
 ## Outputs
@@ -50,6 +51,7 @@ module "app" {
 | `env`, `secret_env` | The merged settings of the service |
 | `one_off_secret_env` | The secret settings of the jobs: `secret_env` with `direct_secret_env` over it |
 | `subnetwork` | The subnet that the service and the jobs attach to, or null |
+| `worker_services`, `worker_env` | The service of each worker, and its settings |
 
 ## Who may reach the service
 

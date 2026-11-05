@@ -623,3 +623,77 @@ run "a_network_with_no_nat_fails" {
 
   expect_failures = [var.network]
 }
+
+run "no_workers_builds_nothing_more" {
+  command = plan
+
+  assert {
+    condition     = length(output.worker_functions) == 0 && toset(keys(aws_lambda_function.server)) == toset(["web", "worker", "migrate"])
+    error_message = "an empty workers must plan as it did"
+  }
+}
+
+run "a_worker_is_a_function_that_its_queue_invokes" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE = "sqs" }
+    workers = {
+      delivery = { job_types = ["federation.*"], memory_mib = 2048, concurrency = 8 }
+    }
+    backends = [
+      {
+        platform   = "aws"
+        secret_env = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" }
+        workers    = { delivery = ["federation.*"] }
+        event_sources = {
+          jobs     = { arn = "arn:aws:sqs:r:1:my-jobs", visibility_timeout_seconds = 5400 }
+          delivery = { arn = "arn:aws:sqs:r:1:my-jobs-delivery", visibility_timeout_seconds = 5400 }
+        }
+      },
+    ]
+  }
+
+  assert {
+    condition     = aws_lambda_function.server["worker-delivery"].function_name == "my-worker-delivery" && aws_lambda_function.server["worker-delivery"].memory_size == 2048 && aws_lambda_function.server["worker-delivery"].environment[0].variables["MY_ROLE"] == "worker"
+    error_message = "a worker must be a function of its name and size"
+  }
+
+  assert {
+    condition     = aws_lambda_event_source_mapping.worker["delivery"].event_source_arn == "arn:aws:sqs:r:1:my-jobs-delivery" && aws_lambda_event_source_mapping.worker["delivery"].scaling_config[0].maximum_concurrency == 8 && aws_lambda_event_source_mapping.worker["jobs"].scaling_config[0].maximum_concurrency == 5
+    error_message = "its queue must invoke it, as many at once as it says, and the default keeps its own"
+  }
+
+  assert {
+    condition     = output.worker_functions["delivery"] == "my-worker-delivery"
+    error_message = "the name must be what upgrade.sh finds"
+  }
+}
+
+run "workers_that_the_queue_was_not_given_fail" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE = "sqs" }
+    workers = {
+      delivery = { job_types = ["federation.*"] }
+    }
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" } }]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "a_field_lambda_does_not_have_fails" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE = "sqs" }
+    workers = {
+      delivery = { job_types = ["federation.*"], max_instances = 2 }
+    }
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" }, workers = { delivery = ["federation.*"] } }]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}

@@ -102,6 +102,8 @@ done
 
 for module in "$dir"/modules/*/; do
   name="$(basename "$module")"
+  # What the workers input means, read by the app and queue modules: no block of a deployment, with no settings to compare.
+  [ "$name" != workers ] || continue
   case "$name" in
     *-gcp | *-gcp-*) expected=gcp shape="$network_gcp" ;;
     *-aws | *-aws-*) expected=aws shape="$network_aws" ;;

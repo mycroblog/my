@@ -27,6 +27,7 @@ Add `module.monitoring` to `backends` of the app module, so that a setting of `m
 | `notification_channels` | empty | Channels made elsewhere, by full ID, that get every alert |
 | `page_notification_channels` | empty | Channels that also get the alerts of severity page |
 | `service_name` | `my` | The app module's `name` |
+| `workers` | `{}` | [The same value as the app](../../README.md#workers). The lines and the memory of each worker's service count too. Requests stay the default's, since a worker takes none from outside |
 | `name` | `my` | Start of the names of the metrics and the check |
 | `uptime_period` | `900s` | `60s`, `300s`, `600s`, or `900s`. [What it costs](#what-the-uptime-check-costs) |
 | `uptime_path` | `/readyz` | Or `/healthz`, or `/api/v1/instance/health` |

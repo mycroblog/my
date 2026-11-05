@@ -22,13 +22,15 @@ module "queue" {
 | `tick_schedule` | `rate(1 minute)` | How often the periodic jobs are checked. Each tick invokes the worker and touches the database |
 | `visibility_timeout_seconds` | `5400` | At least the function's timeout, which Lambda enforces. AWS asks for six times that |
 | `message_retention_seconds` | `345600` | How long a signal is kept |
+| `workers` | `{}` | [The same value as the app](../../README.md#workers). Each gets a queue `<name>-<key>`, its job types a route, and the app a function that the queue invokes |
 
 | Output | Value |
 | --- | --- |
-| `env` | `MY_QUEUE`, `MY_QUEUE_SQS_QUEUE_URL` |
+| `env` | `MY_QUEUE`, `MY_QUEUE_SQS_QUEUE_URL`, and with workers `MY_QUEUE_SQS_ROUTES` |
+| `workers` | The job types of each worker, which the app compares with its own |
 | `secret_env` | Empty |
-| `permissions` | `sqs:SendMessage` on the queue |
-| `event_sources` | The queue, which the app maps to its worker. Lambda polls it, so there are no `invokers` |
+| `permissions` | `sqs:SendMessage` on each queue |
+| `event_sources` | Each queue, which the app maps to its worker: `jobs` to the default, and each key to that worker's. Lambda polls it, so there are no `invokers` |
 
 Lambda's pollers read a queue all the time, which costs SQS requests. The first million a month are free. This module takes no `host`: nothing
 calls the server, and `queue_sqs_events_path` stays at its default, which is also the adapter's.
