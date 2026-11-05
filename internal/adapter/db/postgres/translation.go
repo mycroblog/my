@@ -147,25 +147,28 @@ func (r *TranslationRepository) DeleteTranslations(ctx context.Context, tx uow.T
 
 // AddUsageWithin implements translation.Repository.
 func (r *TranslationRepository) AddUsageWithin(ctx context.Context, tx uow.Tx, accountID, month string, characters int64, limits translation.Limits) (bool, error) {
-	if characters > limits.Account || characters > limits.Server {
+	if (accountID != "" && characters > limits.Account) || characters > limits.Server {
 		return false, nil
 	}
 	q, err := r.db.queries(tx)
 	if err != nil {
 		return false, err
 	}
-	err = q.EnsureTranslationAccountUsage(ctx, postgresgen.EnsureTranslationAccountUsageParams{AccountID: accountID, Month: month})
-	if err != nil {
-		return false, wrap(err, "ensure translation account usage")
-	}
-	n, err := q.AddTranslationAccountUsageWithin(ctx, postgresgen.AddTranslationAccountUsageWithinParams{AccountID: accountID, Month: month, Characters: characters, MaxCharacters: limits.Account})
-	if err != nil || n == 0 {
-		return false, wrap(err, "add translation account usage")
+	// Without an account, only the server's row counts (a moderator's translation of a report).
+	if accountID != "" {
+		err = q.EnsureTranslationAccountUsage(ctx, postgresgen.EnsureTranslationAccountUsageParams{AccountID: accountID, Month: month})
+		if err != nil {
+			return false, wrap(err, "ensure translation account usage")
+		}
+		n, err := q.AddTranslationAccountUsageWithin(ctx, postgresgen.AddTranslationAccountUsageWithinParams{AccountID: accountID, Month: month, Characters: characters, MaxCharacters: limits.Account})
+		if err != nil || n == 0 {
+			return false, wrap(err, "add translation account usage")
+		}
 	}
 	if err := q.EnsureTranslationServerUsage(ctx, month); err != nil {
 		return false, wrap(err, "ensure translation server usage")
 	}
-	n, err = q.AddTranslationServerUsageWithin(ctx, postgresgen.AddTranslationServerUsageWithinParams{Month: month, Characters: characters, MaxCharacters: limits.Server})
+	n, err := q.AddTranslationServerUsageWithin(ctx, postgresgen.AddTranslationServerUsageWithinParams{Month: month, Characters: characters, MaxCharacters: limits.Server})
 	return n > 0, wrap(err, "add translation server usage")
 }
 

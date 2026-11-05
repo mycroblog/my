@@ -81,7 +81,8 @@ type Repository interface {
 	// AddUsageWithin adds characters, which are not negative, to the month's rows of the account
 	// and of the server, and reports whether the result is within limits. A month is YYYY-MM in
 	// UTC. It decides under the rows' locks, so that concurrent requests cannot pass a limit
-	// together. On false the caller ends tx with an error: the account's row may have grown.
+	// together. On false the caller ends tx with an error: the account's row may have grown. An
+	// empty accountID adds to the server's row only, and limits.Account does not apply.
 	AddUsageWithin(ctx context.Context, tx uow.Tx, accountID, month string, characters int64, limits Limits) (bool, error)
 	// AddCacheLookup counts a request of the month as answered from the cache or not.
 	AddCacheLookup(ctx context.Context, tx uow.Tx, month string, hit bool) error

@@ -2524,6 +2524,7 @@ const (
 	InstanceSettingKeyTranslationBrowser                 InstanceSettingKey = "translation_browser"
 	InstanceSettingKeyTranslationProviderVisibilities    InstanceSettingKey = "translation_provider_visibilities"
 	InstanceSettingKeyTranslationProviders               InstanceSettingKey = "translation_providers"
+	InstanceSettingKeyTranslationReportsToServer         InstanceSettingKey = "translation_reports_to_server"
 	InstanceSettingKeyTranslationRetentionDays           InstanceSettingKey = "translation_retention_days"
 	InstanceSettingKeyTranslationServerMonthlyCharacters InstanceSettingKey = "translation_server_monthly_characters"
 	InstanceSettingKeyTranslationUserMonthlyCharacters   InstanceSettingKey = "translation_user_monthly_characters"
@@ -2661,6 +2662,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyTranslationProviderVisibilities:
 		return true
 	case InstanceSettingKeyTranslationProviders:
+		return true
+	case InstanceSettingKeyTranslationReportsToServer:
 		return true
 	case InstanceSettingKeyTranslationRetentionDays:
 		return true
@@ -10000,6 +10003,10 @@ type InstanceTranslation struct {
 
 	// Providers The enabled providers that run through this server, the first tried first.
 	Providers []InstanceTranslationProvider `json:"providers"`
+
+	// ReportsToServer Whether moderators may send the text of a report, its posts and its comment, to the providers.
+	// Each provider still receives only the visibilities it lists, and a comment counts as `private`.
+	ReportsToServer bool `json:"reports_to_server"`
 }
 
 // InstanceTranslationProvider A provider that this instance sends the text of posts to when a reader asks for a translation.
@@ -12186,6 +12193,21 @@ type Report struct {
 // is illegal. `violation`: it breaks the instance rules that `rule_ids` cite. `other`:
 // anything else.
 type ReportCategory string
+
+// ReportCommentTranslation The comment of a report in another language. The server does not keep it.
+type ReportCommentTranslation struct {
+	// Comment The comment as plain text.
+	Comment string `json:"comment"`
+
+	// Language The language of this answer, as a BCP 47 tag.
+	Language string `json:"language"`
+
+	// Provider The service that translated a post, for the attribution next to the translation.
+	Provider *TranslationProvider `json:"provider,omitempty"`
+
+	// SourceLanguage The language translated from, which a provider may have detected; `und` when it is not known.
+	SourceLanguage string `json:"source_language"`
+}
 
 // ReportPage A page of the user's reports, newest first.
 type ReportPage struct {
@@ -15092,11 +15114,17 @@ type RejectRegistrationJSONRequestBody = RegistrationDecisionRequest
 // CreateRelayJSONRequestBody defines body for CreateRelay for application/json ContentType.
 type CreateRelayJSONRequestBody = CreateRelayRequest
 
+// TranslateReportCommentJSONRequestBody defines body for TranslateReportComment for application/json ContentType.
+type TranslateReportCommentJSONRequestBody = StatusTranslationRequest
+
 // AddReportNoteJSONRequestBody defines body for AddReportNote for application/json ContentType.
 type AddReportNoteJSONRequestBody = CreateReportNoteRequest
 
 // ResolveReportJSONRequestBody defines body for ResolveReport for application/json ContentType.
 type ResolveReportJSONRequestBody = ResolveReportRequest
+
+// TranslateReportedStatusJSONRequestBody defines body for TranslateReportedStatus for application/json ContentType.
+type TranslateReportedStatusJSONRequestBody = StatusTranslationRequest
 
 // CreateRoleJSONRequestBody defines body for CreateRole for application/json ContentType.
 type CreateRoleJSONRequestBody = CreateRoleRequest
@@ -19199,6 +19227,50 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/reports/{id}/assign_to_self (the `AssignReportToSelf` operationId).
 	AssignReportToSelf(ctx context.Context, id ReportId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// TranslateReportCommentWithBody Translate the comment of a report into a language
+	//
+	// Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+	// unknown report is a 404. Needs the `manage_reports` permission.
+	//
+	// Only the reporter and the moderators read a comment, so it counts as a private post: the server
+	// sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+	// providers allowed private posts. The translation is never kept, and the characters sent count
+	// against the server's monthly limit only. `provider` is omitted when the comment has no words to
+	// translate, and the answer is the comment as it is.
+	//
+	// The problems are those of `POST /statuses/{id}/translation`: a 422
+	// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+	// comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+	// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+	// `/api/v1/problems/translation-failed`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
+	TranslateReportCommentWithBody(ctx context.Context, id ReportId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// TranslateReportComment Translate the comment of a report into a language
+	//
+	// Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+	// unknown report is a 404. Needs the `manage_reports` permission.
+	//
+	// Only the reporter and the moderators read a comment, so it counts as a private post: the server
+	// sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+	// providers allowed private posts. The translation is never kept, and the characters sent count
+	// against the server's monthly limit only. `provider` is omitted when the comment has no words to
+	// translate, and the answer is the comment as it is.
+	//
+	// The problems are those of `POST /statuses/{id}/translation`: a 422
+	// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+	// comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+	// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+	// `/api/v1/problems/translation-failed`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
+	TranslateReportComment(ctx context.Context, id ReportId, body TranslateReportCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AddReportNoteWithBody Write a note on a report
 	//
 	// Adds an internal note to the report. Notes are shown to the moderators only,
@@ -19249,6 +19321,56 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /admin/reports/{id}/resolve (the `ResolveReport` operationId).
 	ResolveReport(ctx context.Context, id ReportId, body ResolveReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// TranslateReportedStatusWithBody Translate a reported post into a language
+	//
+	// Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+	// does, for a moderator who reads the report: whatever the post's visibility, and also when its
+	// author deleted it. A report that does not point at the post, an unknown report, and a post that is
+	// gone are a 404. Needs the `manage_reports` permission.
+	//
+	// The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+	// provider only while the instance setting `translation_reports_to_server` is on, and only to the
+	// providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+	// posts. The characters sent count against the server's monthly limit only. The translation is kept
+	// for the readers of the post who may see it, except for a deleted post, whose translation is not
+	// kept.
+	//
+	// The problems are those of `POST /statuses/{id}/translation`: a 422
+	// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+	// post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+	// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+	// `/api/v1/problems/translation-failed`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/reports/{id}/statuses/{status_id}/translation (the `TranslateReportedStatus` operationId).
+	TranslateReportedStatusWithBody(ctx context.Context, id ReportId, statusId Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// TranslateReportedStatus Translate a reported post into a language
+	//
+	// Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+	// does, for a moderator who reads the report: whatever the post's visibility, and also when its
+	// author deleted it. A report that does not point at the post, an unknown report, and a post that is
+	// gone are a 404. Needs the `manage_reports` permission.
+	//
+	// The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+	// provider only while the instance setting `translation_reports_to_server` is on, and only to the
+	// providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+	// posts. The characters sent count against the server's monthly limit only. The translation is kept
+	// for the readers of the post who may see it, except for a deleted post, whose translation is not
+	// kept.
+	//
+	// The problems are those of `POST /statuses/{id}/translation`: a 422
+	// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+	// post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+	// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+	// `/api/v1/problems/translation-failed`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/reports/{id}/statuses/{status_id}/translation (the `TranslateReportedStatus` operationId).
+	TranslateReportedStatus(ctx context.Context, id ReportId, statusId Id, body TranslateReportedStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UnassignReport Leave a report to nobody
 	//
@@ -26852,6 +26974,70 @@ func (c *Client) AssignReportToSelf(ctx context.Context, id ReportId, reqEditors
 	return c.Client.Do(req)
 }
 
+// TranslateReportCommentWithBody Translate the comment of a report into a language
+//
+// Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+// unknown report is a 404. Needs the `manage_reports` permission.
+//
+// Only the reporter and the moderators read a comment, so it counts as a private post: the server
+// sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+// providers allowed private posts. The translation is never kept, and the characters sent count
+// against the server's monthly limit only. `provider` is omitted when the comment has no words to
+// translate, and the answer is the comment as it is.
+//
+// The problems are those of `POST /statuses/{id}/translation`: a 422
+// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+// comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+// `/api/v1/problems/translation-failed`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
+func (c *Client) TranslateReportCommentWithBody(ctx context.Context, id ReportId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTranslateReportCommentRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// TranslateReportComment Translate the comment of a report into a language
+//
+// Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+// unknown report is a 404. Needs the `manage_reports` permission.
+//
+// Only the reporter and the moderators read a comment, so it counts as a private post: the server
+// sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+// providers allowed private posts. The translation is never kept, and the characters sent count
+// against the server's monthly limit only. `provider` is omitted when the comment has no words to
+// translate, and the answer is the comment as it is.
+//
+// The problems are those of `POST /statuses/{id}/translation`: a 422
+// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+// comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+// `/api/v1/problems/translation-failed`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
+func (c *Client) TranslateReportComment(ctx context.Context, id ReportId, body TranslateReportCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTranslateReportCommentRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // AddReportNoteWithBody Write a note on a report
 //
 // Adds an internal note to the report. Notes are shown to the moderators only,
@@ -26943,6 +27129,76 @@ func (c *Client) ResolveReportWithBody(ctx context.Context, id ReportId, content
 // Corresponds with POST /admin/reports/{id}/resolve (the `ResolveReport` operationId).
 func (c *Client) ResolveReport(ctx context.Context, id ReportId, body ResolveReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewResolveReportRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// TranslateReportedStatusWithBody Translate a reported post into a language
+//
+// Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+// does, for a moderator who reads the report: whatever the post's visibility, and also when its
+// author deleted it. A report that does not point at the post, an unknown report, and a post that is
+// gone are a 404. Needs the `manage_reports` permission.
+//
+// The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+// provider only while the instance setting `translation_reports_to_server` is on, and only to the
+// providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+// posts. The characters sent count against the server's monthly limit only. The translation is kept
+// for the readers of the post who may see it, except for a deleted post, whose translation is not
+// kept.
+//
+// The problems are those of `POST /statuses/{id}/translation`: a 422
+// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+// post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+// `/api/v1/problems/translation-failed`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/reports/{id}/statuses/{status_id}/translation (the `TranslateReportedStatus` operationId).
+func (c *Client) TranslateReportedStatusWithBody(ctx context.Context, id ReportId, statusId Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTranslateReportedStatusRequestWithBody(c.Server, id, statusId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// TranslateReportedStatus Translate a reported post into a language
+//
+// Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+// does, for a moderator who reads the report: whatever the post's visibility, and also when its
+// author deleted it. A report that does not point at the post, an unknown report, and a post that is
+// gone are a 404. Needs the `manage_reports` permission.
+//
+// The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+// provider only while the instance setting `translation_reports_to_server` is on, and only to the
+// providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+// posts. The characters sent count against the server's monthly limit only. The translation is kept
+// for the readers of the post who may see it, except for a deleted post, whose translation is not
+// kept.
+//
+// The problems are those of `POST /statuses/{id}/translation`: a 422
+// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+// post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+// `/api/v1/problems/translation-failed`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/reports/{id}/statuses/{status_id}/translation (the `TranslateReportedStatus` operationId).
+func (c *Client) TranslateReportedStatus(ctx context.Context, id ReportId, statusId Id, body TranslateReportedStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTranslateReportedStatusRequest(c.Server, id, statusId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -39670,6 +39926,53 @@ func NewAssignReportToSelfRequest(server string, id ReportId) (*http.Request, er
 	return req, nil
 }
 
+// NewTranslateReportCommentRequest calls the generic TranslateReportComment builder with application/json body
+func NewTranslateReportCommentRequest(server string, id ReportId, body TranslateReportCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewTranslateReportCommentRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewTranslateReportCommentRequestWithBody constructs an http.Request for the TranslateReportComment method, with any body, and a specified content type
+func NewTranslateReportCommentRequestWithBody(server string, id ReportId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/reports/%s/comment/translation", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewAddReportNoteRequest calls the generic AddReportNote builder with application/json body
 func NewAddReportNoteRequest(server string, id ReportId, body AddReportNoteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -39779,6 +40082,60 @@ func NewResolveReportRequestWithBody(server string, id ReportId, contentType str
 	}
 
 	operationPath := fmt.Sprintf("/admin/reports/%s/resolve", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewTranslateReportedStatusRequest calls the generic TranslateReportedStatus builder with application/json body
+func NewTranslateReportedStatusRequest(server string, id ReportId, statusId Id, body TranslateReportedStatusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewTranslateReportedStatusRequestWithBody(server, id, statusId, "application/json", bodyReader)
+}
+
+// NewTranslateReportedStatusRequestWithBody constructs an http.Request for the TranslateReportedStatus method, with any body, and a specified content type
+func NewTranslateReportedStatusRequestWithBody(server string, id ReportId, statusId Id, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "status_id", statusId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/reports/%s/statuses/%s/translation", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -51416,6 +51773,50 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/reports/{id}/assign_to_self (the `AssignReportToSelf` operationId).
 	AssignReportToSelfWithResponse(ctx context.Context, id ReportId, reqEditors ...RequestEditorFn) (*AssignReportToSelfResponse, error)
 
+	// TranslateReportCommentWithBodyWithResponse Translate the comment of a report into a language
+	//
+	// Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+	// unknown report is a 404. Needs the `manage_reports` permission.
+	//
+	// Only the reporter and the moderators read a comment, so it counts as a private post: the server
+	// sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+	// providers allowed private posts. The translation is never kept, and the characters sent count
+	// against the server's monthly limit only. `provider` is omitted when the comment has no words to
+	// translate, and the answer is the comment as it is.
+	//
+	// The problems are those of `POST /statuses/{id}/translation`: a 422
+	// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+	// comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+	// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+	// `/api/v1/problems/translation-failed`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
+	TranslateReportCommentWithBodyWithResponse(ctx context.Context, id ReportId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TranslateReportCommentResponse, error)
+
+	// TranslateReportCommentWithResponse Translate the comment of a report into a language
+	//
+	// Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+	// unknown report is a 404. Needs the `manage_reports` permission.
+	//
+	// Only the reporter and the moderators read a comment, so it counts as a private post: the server
+	// sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+	// providers allowed private posts. The translation is never kept, and the characters sent count
+	// against the server's monthly limit only. `provider` is omitted when the comment has no words to
+	// translate, and the answer is the comment as it is.
+	//
+	// The problems are those of `POST /statuses/{id}/translation`: a 422
+	// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+	// comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+	// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+	// `/api/v1/problems/translation-failed`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
+	TranslateReportCommentWithResponse(ctx context.Context, id ReportId, body TranslateReportCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*TranslateReportCommentResponse, error)
+
 	// AddReportNoteWithBodyWithResponse Write a note on a report
 	//
 	// Adds an internal note to the report. Notes are shown to the moderators only,
@@ -51468,6 +51869,56 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /admin/reports/{id}/resolve (the `ResolveReport` operationId).
 	ResolveReportWithResponse(ctx context.Context, id ReportId, body ResolveReportJSONRequestBody, reqEditors ...RequestEditorFn) (*ResolveReportResponse, error)
+
+	// TranslateReportedStatusWithBodyWithResponse Translate a reported post into a language
+	//
+	// Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+	// does, for a moderator who reads the report: whatever the post's visibility, and also when its
+	// author deleted it. A report that does not point at the post, an unknown report, and a post that is
+	// gone are a 404. Needs the `manage_reports` permission.
+	//
+	// The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+	// provider only while the instance setting `translation_reports_to_server` is on, and only to the
+	// providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+	// posts. The characters sent count against the server's monthly limit only. The translation is kept
+	// for the readers of the post who may see it, except for a deleted post, whose translation is not
+	// kept.
+	//
+	// The problems are those of `POST /statuses/{id}/translation`: a 422
+	// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+	// post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+	// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+	// `/api/v1/problems/translation-failed`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/reports/{id}/statuses/{status_id}/translation (the `TranslateReportedStatus` operationId).
+	TranslateReportedStatusWithBodyWithResponse(ctx context.Context, id ReportId, statusId Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TranslateReportedStatusResponse, error)
+
+	// TranslateReportedStatusWithResponse Translate a reported post into a language
+	//
+	// Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+	// does, for a moderator who reads the report: whatever the post's visibility, and also when its
+	// author deleted it. A report that does not point at the post, an unknown report, and a post that is
+	// gone are a 404. Needs the `manage_reports` permission.
+	//
+	// The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+	// provider only while the instance setting `translation_reports_to_server` is on, and only to the
+	// providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+	// posts. The characters sent count against the server's monthly limit only. The translation is kept
+	// for the readers of the post who may see it, except for a deleted post, whose translation is not
+	// kept.
+	//
+	// The problems are those of `POST /statuses/{id}/translation`: a 422
+	// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+	// post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+	// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+	// `/api/v1/problems/translation-failed`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/reports/{id}/statuses/{status_id}/translation (the `TranslateReportedStatus` operationId).
+	TranslateReportedStatusWithResponse(ctx context.Context, id ReportId, statusId Id, body TranslateReportedStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*TranslateReportedStatusResponse, error)
 
 	// UnassignReportWithResponse Leave a report to nobody
 	//
@@ -64761,6 +65212,71 @@ func (r AssignReportToSelfResponse) ContentType() string {
 	return ""
 }
 
+// TranslateReportCommentResponse200Headers the declared response headers of an HTTP 200 response for TranslateReportComment
+type TranslateReportCommentResponse200Headers struct {
+	CacheControl *string
+}
+
+// TranslateReportCommentResponseDefaultHeaders the declared response headers of an HTTP default response for TranslateReportComment
+type TranslateReportCommentResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type TranslateReportCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ReportCommentTranslation
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *TranslateReportCommentResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *TranslateReportCommentResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r TranslateReportCommentResponse) GetJSON200() *ReportCommentTranslation {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r TranslateReportCommentResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r TranslateReportCommentResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r TranslateReportCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r TranslateReportCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r TranslateReportCommentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // AddReportNoteResponse200Headers the declared response headers of an HTTP 200 response for AddReportNote
 type AddReportNoteResponse200Headers struct {
 	CacheControl *string
@@ -64950,6 +65466,71 @@ func (r ResolveReportResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ResolveReportResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// TranslateReportedStatusResponse200Headers the declared response headers of an HTTP 200 response for TranslateReportedStatus
+type TranslateReportedStatusResponse200Headers struct {
+	CacheControl *string
+}
+
+// TranslateReportedStatusResponseDefaultHeaders the declared response headers of an HTTP default response for TranslateReportedStatus
+type TranslateReportedStatusResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type TranslateReportedStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *StatusTranslation
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *TranslateReportedStatusResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *TranslateReportedStatusResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r TranslateReportedStatusResponse) GetJSON200() *StatusTranslation {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r TranslateReportedStatusResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r TranslateReportedStatusResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r TranslateReportedStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r TranslateReportedStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r TranslateReportedStatusResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -82222,6 +82803,62 @@ func (c *ClientWithResponses) AssignReportToSelfWithResponse(ctx context.Context
 	return ParseAssignReportToSelfResponse(rsp)
 }
 
+// TranslateReportCommentWithBodyWithResponse Translate the comment of a report into a language
+//
+// Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+// unknown report is a 404. Needs the `manage_reports` permission.
+//
+// Only the reporter and the moderators read a comment, so it counts as a private post: the server
+// sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+// providers allowed private posts. The translation is never kept, and the characters sent count
+// against the server's monthly limit only. `provider` is omitted when the comment has no words to
+// translate, and the answer is the comment as it is.
+//
+// The problems are those of `POST /statuses/{id}/translation`: a 422
+// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+// comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+// `/api/v1/problems/translation-failed`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
+func (c *ClientWithResponses) TranslateReportCommentWithBodyWithResponse(ctx context.Context, id ReportId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TranslateReportCommentResponse, error) {
+	rsp, err := c.TranslateReportCommentWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTranslateReportCommentResponse(rsp)
+}
+
+// TranslateReportCommentWithResponse Translate the comment of a report into a language
+//
+// Returns the reporter's comment in `target_language`, for a moderator who reads the report. An
+// unknown report is a 404. Needs the `manage_reports` permission.
+//
+// Only the reporter and the moderators read a comment, so it counts as a private post: the server
+// sends it only while the instance setting `translation_reports_to_server` is on, and only to the
+// providers allowed private posts. The translation is never kept, and the characters sent count
+// against the server's monthly limit only. `provider` is omitted when the comment has no words to
+// translate, and the answer is the comment as it is.
+//
+// The problems are those of `POST /statuses/{id}/translation`: a 422
+// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+// comment, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+// `/api/v1/problems/translation-failed`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/reports/{id}/comment/translation (the `TranslateReportComment` operationId).
+func (c *ClientWithResponses) TranslateReportCommentWithResponse(ctx context.Context, id ReportId, body TranslateReportCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*TranslateReportCommentResponse, error) {
+	rsp, err := c.TranslateReportComment(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTranslateReportCommentResponse(rsp)
+}
+
 // AddReportNoteWithBodyWithResponse Write a note on a report
 //
 // Adds an internal note to the report. Notes are shown to the moderators only,
@@ -82303,6 +82940,68 @@ func (c *ClientWithResponses) ResolveReportWithResponse(ctx context.Context, id 
 		return nil, err
 	}
 	return ParseResolveReportResponse(rsp)
+}
+
+// TranslateReportedStatusWithBodyWithResponse Translate a reported post into a language
+//
+// Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+// does, for a moderator who reads the report: whatever the post's visibility, and also when its
+// author deleted it. A report that does not point at the post, an unknown report, and a post that is
+// gone are a 404. Needs the `manage_reports` permission.
+//
+// The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+// provider only while the instance setting `translation_reports_to_server` is on, and only to the
+// providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+// posts. The characters sent count against the server's monthly limit only. The translation is kept
+// for the readers of the post who may see it, except for a deleted post, whose translation is not
+// kept.
+//
+// The problems are those of `POST /statuses/{id}/translation`: a 422
+// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+// post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+// `/api/v1/problems/translation-failed`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/reports/{id}/statuses/{status_id}/translation (the `TranslateReportedStatus` operationId).
+func (c *ClientWithResponses) TranslateReportedStatusWithBodyWithResponse(ctx context.Context, id ReportId, statusId Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TranslateReportedStatusResponse, error) {
+	rsp, err := c.TranslateReportedStatusWithBody(ctx, id, statusId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTranslateReportedStatusResponse(rsp)
+}
+
+// TranslateReportedStatusWithResponse Translate a reported post into a language
+//
+// Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`
+// does, for a moderator who reads the report: whatever the post's visibility, and also when its
+// author deleted it. A report that does not point at the post, an unknown report, and a post that is
+// gone are a 404. Needs the `manage_reports` permission.
+//
+// The moderator's access lifts nothing of what a provider may receive. The server sends the post to a
+// provider only while the instance setting `translation_reports_to_server` is on, and only to the
+// providers allowed the post's visibility, so a direct post goes only to a provider allowed direct
+// posts. The characters sent count against the server's monthly limit only. The translation is kept
+// for the readers of the post who may see it, except for a deleted post, whose translation is not
+// kept.
+//
+// The problems are those of `POST /statuses/{id}/translation`: a 422
+// `/api/v1/problems/translation-unavailable` when the setting is off or no provider may receive the
+// post, a 422 `/api/v1/problems/translation-unsupported-language`, a 429
+// `/api/v1/problems/translation-limit` over the server's monthly limit, and a 503
+// `/api/v1/problems/translation-failed`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/reports/{id}/statuses/{status_id}/translation (the `TranslateReportedStatus` operationId).
+func (c *ClientWithResponses) TranslateReportedStatusWithResponse(ctx context.Context, id ReportId, statusId Id, body TranslateReportedStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*TranslateReportedStatusResponse, error) {
+	rsp, err := c.TranslateReportedStatus(ctx, id, statusId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTranslateReportedStatusResponse(rsp)
 }
 
 // UnassignReportWithResponse Leave a report to nobody
@@ -99184,6 +99883,83 @@ func ParseAssignReportToSelfResponse(rsp *http.Response) (*AssignReportToSelfRes
 	return response, nil
 }
 
+// ParseTranslateReportCommentResponse parses an HTTP response from a TranslateReportCommentWithResponse call
+func ParseTranslateReportCommentResponse(rsp *http.Response) (*TranslateReportCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &TranslateReportCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReportCommentTranslation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers TranslateReportCommentResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers TranslateReportCommentResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseAddReportNoteResponse parses an HTTP response from a AddReportNoteWithResponse call
 func ParseAddReportNoteResponse(rsp *http.Response) (*AddReportNoteResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -99381,6 +100157,83 @@ func ParseResolveReportResponse(rsp *http.Response) (*ResolveReportResponse, err
 		response.Headers200 = &headers
 	case true:
 		var headers ResolveReportResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseTranslateReportedStatusResponse parses an HTTP response from a TranslateReportedStatusWithResponse call
+func ParseTranslateReportedStatusResponse(rsp *http.Response) (*TranslateReportedStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &TranslateReportedStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StatusTranslation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers TranslateReportedStatusResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers TranslateReportedStatusResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
