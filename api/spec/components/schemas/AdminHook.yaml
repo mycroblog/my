@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: A decision hook with its settings and the decisions of the period.
+type: object
+required: [hook, configured, mode, outcomes]
+properties:
+  hook:
+    $ref: ./HookName.yaml
+  configured:
+    description: Whether the hook has a plugin. A hook without one calls nothing, whatever its mode.
+    type: boolean
+  mode:
+    $ref: ./HookMode.yaml
+  on_failure:
+    $ref: ./HookOnFailure.yaml
+  outcomes:
+    description: The decisions per mode and outcome.
+    type: array
+    items:
+      $ref: ./AdminHookOutcome.yaml

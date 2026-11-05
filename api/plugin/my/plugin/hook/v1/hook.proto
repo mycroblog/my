@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+// The decision hooks: the server asks a plugin whether to accept one subject before it does. The
+// plugin returns a verdict from a fixed vocabulary. It rewrites nothing, and it takes no action on
+// an account. Every hook has its own destination, and one plugin may serve several of them.
+package my.plugin.hook.v1;
+
+service HookService {
+  // Check returns the verdict on one subject. The server calls it again for the same subject_key
+  // only when an earlier call failed, so a plugin should give the same answer again.
+  rpc Check(CheckRequest) returns (CheckResponse);
+}
+
+message CheckRequest {
+  // The hook that asks: inbound.status, inbound.follow, signup.check, media.check, or local.status.
+  string hook = 1;
+  // What identifies the subject for the hook, such as the URI of a received activity.
+  string subject_key = 2;
+  // True for a call of `my plugin test`, which is about no real subject and acts on nothing.
+  bool probe = 3;
+}
+
+message CheckResponse {
+  // A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
+  // know, and a verdict the hook does not take are all failures and follow the hook's failure
+  // behaviour.
+  Verdict verdict = 1;
+  // A name in JSON. May be left out. A name this version does not know reads as left out.
+  Reason reason = 2;
+  // A short note for the moderators, in plain text. The server keeps the first 200 characters on
+  // one line and shows it to nobody else.
+  string note = 3;
+}
+
+// The verdicts. Which of them a hook takes:
+// inbound.status: ALLOW, DROP, FLAG, MARK_SENSITIVE.
+// inbound.follow: ALLOW, DROP, FLAG.
+// signup.check: ALLOW, REQUIRE_APPROVAL, REJECT.
+// media.check: ALLOW, MARK_SENSITIVE, FLAG.
+// local.status: ALLOW, FLAG, REJECT.
+enum Verdict {
+  VERDICT_UNSPECIFIED = 0;
+  // Go on as if the hook were not there.
+  VERDICT_ALLOW = 1;
+  // Stop the subject and store nothing of it.
+  VERDICT_DROP = 2;
+  // Go on, and file a report for the moderators.
+  VERDICT_FLAG = 3;
+  // Go on, and show the attachments as sensitive.
+  VERDICT_MARK_SENSITIVE = 4;
+  // Go on, and hold the sign-up for approval.
+  VERDICT_REQUIRE_APPROVAL = 5;
+  // Refuse the subject and tell the person.
+  VERDICT_REJECT = 6;
+}
+
+enum Reason {
+  REASON_UNSPECIFIED = 0;
+  REASON_SPAM = 1;
+  REASON_HARASSMENT = 2;
+  REASON_SEXUAL = 3;
+  REASON_VIOLENCE = 4;
+  REASON_ILLEGAL = 5;
+  REASON_MALWARE = 6;
+  REASON_OTHER = 7;
+}

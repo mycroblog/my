@@ -636,6 +636,13 @@ func TestRemoteInteractionContract(t *testing.T) {
 	})
 }
 
+func TestHookRepositoryContract(t *testing.T) {
+	testkit.HookRepositoryContract(t, func(t *testing.T) testkit.HookHarness {
+		db := newTestDB(t, uow.Options{})
+		return testkit.HookHarness{UnitOfWork: db, Repository: db.HookRepository()}
+	})
+}
+
 func TestDiagnosticsRepositoryContract(t *testing.T) {
 	testkit.DiagnosticsRepositoryContract(t, func(t *testing.T, opts uow.Options) testkit.DiagnosticsHarness {
 		db := newTestDB(t, opts)

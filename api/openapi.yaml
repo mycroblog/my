@@ -3411,7 +3411,7 @@ paths:
         mutes with notifications hidden are left out, also those that came before the block or
         mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
         `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-        `admin_service_closure_due`, `admin_error_group`) are left out once
+        `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
         the user's roles no longer grant the permission they need.
       tags:
         - notifications
@@ -6665,6 +6665,106 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/AdminDomainAction'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/hook_decisions:
+    get:
+      operationId: listHookDecisions
+      summary: List the decisions of the decision hooks
+      description: |
+        What the external reviews said, the newest first. Without `outcome` the list leaves out
+        `allow`: it shows what a hook stopped, would have stopped in `observe`, or could not check.
+        Needs the `manage_reports` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - name: hook
+          in: query
+          required: false
+          description: Keep the decisions of this hook.
+          schema:
+            $ref: '#/components/schemas/HookName'
+        - name: mode
+          in: query
+          required: false
+          description: Keep the decisions made in this mode.
+          schema:
+            $ref: '#/components/schemas/HookDecisionMode'
+        - name: outcome
+          in: query
+          required: false
+          description: Keep the decisions with this outcome.
+          schema:
+            $ref: '#/components/schemas/HookOutcome'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of the decisions.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHookDecisionPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/hook_decisions/summary:
+    get:
+      operationId: getHookSummary
+      summary: Summarize the decision hooks
+      description: |
+        Every decision hook with its settings, and the count and latency of its decisions of the
+        last 7 days per mode and outcome. Needs the `manage_reports` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          description: The summary.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHookSummary'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/hook_decisions/{id}/override:
+    post:
+      operationId: overrideHookDecision
+      summary: Cancel a decision
+      description: |
+        Records the cancellation as its own event and in the audit log, and undoes what the hook
+        can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
+        effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
+        appeal, is a 409. Needs the `manage_reports` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the decision.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The decision with its cancellation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHookDecision'
         default:
           $ref: '#/components/responses/Problem'
   /admin/error_groups:
@@ -12609,6 +12709,9 @@ components:
         `appeal_upheld`, `appeal_overturned` (which also records the action's
         `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
         `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
+        `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
+        and left state; the actor is the system), `hook_decision_overridden` (a moderator
+        cancelled the decision). On a
         `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
         `custom_emoji_copied` (a new local emoji copied from a remote one),
         `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -12682,6 +12785,8 @@ components:
         - revealed_private_data
         - signup_block_added
         - signup_block_lifted
+        - hook_decision_applied
+        - hook_decision_overridden
         - two_factor_disabled
         - password_reset_link_issued
         - email_suppression_lifted
@@ -12866,6 +12971,7 @@ components:
         - voice_room
         - login_provider
         - link_card_domain
+        - hook_decision
     AdminAvailabilityEvent:
       description: The time a remote server was marked unavailable or available again, and why.
       type: object
@@ -14594,6 +14700,192 @@ components:
           description: When the block was lifted; omitted until it is.
           type: string
           format: date-time
+    AdminHook:
+      description: A decision hook with its settings and the decisions of the period.
+      type: object
+      required:
+        - hook
+        - configured
+        - mode
+        - outcomes
+      properties:
+        hook:
+          $ref: '#/components/schemas/HookName'
+        configured:
+          description: Whether the hook has a plugin. A hook without one calls nothing, whatever its mode.
+          type: boolean
+        mode:
+          $ref: '#/components/schemas/HookMode'
+        on_failure:
+          $ref: '#/components/schemas/HookOnFailure'
+        outcomes:
+          description: The decisions per mode and outcome.
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminHookOutcome'
+    AdminHookDecision:
+      description: What a decision hook answered about one subject. It holds no text of a post.
+      type: object
+      required:
+        - id
+        - hook
+        - subject_key
+        - mode
+        - outcome
+        - latency_ms
+        - decided_at
+        - overridable
+      properties:
+        id:
+          type: string
+        hook:
+          $ref: '#/components/schemas/HookName'
+        subject_key:
+          description: What identifies the subject for the hook, such as the URI of a received activity.
+          type: string
+        account_id:
+          description: The account the subject belongs to; absent when there is none.
+          type: string
+        mode:
+          $ref: '#/components/schemas/HookDecisionMode'
+        outcome:
+          $ref: '#/components/schemas/HookOutcome'
+        reason:
+          $ref: '#/components/schemas/HookReason'
+        note:
+          description: The plugin's short plain-text note for the moderators; absent when there is none.
+          type: string
+        latency_ms:
+          description: How long the call took, in milliseconds.
+          type: integer
+          format: int64
+        decided_at:
+          type: string
+          format: date-time
+        overridden_at:
+          description: When a moderator cancelled the decision; absent while it stands.
+          type: string
+          format: date-time
+        overridable:
+          description: |
+            Whether a moderator can cancel it here: a verdict in force that stopped or changed
+            something. A `reject` of `local.status` goes through its appeal instead.
+          type: boolean
+    AdminHookDecisionPage:
+      description: A page of decisions, the newest first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminHookDecision'
+    AdminHookOutcome:
+      description: How many decisions of one mode and outcome a hook made, and how long they took.
+      type: object
+      required:
+        - mode
+        - outcome
+        - count
+        - average_latency_ms
+        - max_latency_ms
+      properties:
+        mode:
+          $ref: '#/components/schemas/HookDecisionMode'
+        outcome:
+          $ref: '#/components/schemas/HookOutcome'
+        count:
+          type: integer
+          format: int64
+        average_latency_ms:
+          type: integer
+          format: int64
+        max_latency_ms:
+          type: integer
+          format: int64
+    AdminHookSummary:
+      description: Every decision hook with its settings, and its decisions of the last 7 days.
+      type: object
+      required:
+        - hooks
+        - since
+      properties:
+        since:
+          description: The start of the period that the counts cover.
+          type: string
+          format: date-time
+        hooks:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminHook'
+    HookDecisionMode:
+      description: The mode of the hook when it made the decision.
+      type: string
+      enum:
+        - observe
+        - enforce
+    HookMode:
+      description: |
+        How far a decision hook acts: `off` calls nothing, `observe` records the verdict and acts on
+        nothing, `enforce` acts on the verdict.
+      type: string
+      enum:
+        - 'off'
+        - observe
+        - enforce
+    HookName:
+      description: |
+        A decision hook, where the server asks an external review before it accepts something:
+        `inbound.status` (posts from other servers), `inbound.follow` (follows from other servers),
+        `signup.check` (sign-ups), `media.check` (uploaded media), `local.status` (local posts).
+      type: string
+      enum:
+        - inbound.status
+        - inbound.follow
+        - signup.check
+        - media.check
+        - local.status
+    HookOnFailure:
+      description: |
+        What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
+        fails the job so that it runs again, and `require_approval` holds the sign-up for approval.
+      type: string
+      enum:
+        - pass
+        - retry
+        - require_approval
+    HookOutcome:
+      description: |
+        What a decision records: a verdict (`allow`, `drop`, `flag`, `mark_sensitive`,
+        `require_approval`, `reject`), or a kind of failure, which is not a verdict: `timeout`, `error`,
+        `invalid` (the answer is outside the hook's vocabulary), `breaker_open` (the server skipped
+        the plugin after repeated failures).
+      type: string
+      enum:
+        - allow
+        - drop
+        - flag
+        - mark_sensitive
+        - require_approval
+        - reject
+        - timeout
+        - error
+        - invalid
+        - breaker_open
+    HookReason:
+      description: The coded reason of a verdict.
+      type: string
+      enum:
+        - spam
+        - harassment
+        - sexual
+        - violence
+        - illegal
+        - malware
+        - other
     AdminSignupBlockKind:
       description: |
         `email_domain`: the domain of the email address and its subdomains. `email_hash`: one
@@ -17980,6 +18272,13 @@ components:
           type: boolean
         supporter_list_visibility:
           $ref: '#/components/schemas/InstanceAudience'
+        external_reviews:
+          description: |
+            The decision hooks in use: what the server sends to an external review before it accepts it.
+            Absent when there is none. The information page states this.
+          type: array
+          items:
+            $ref: '#/components/schemas/HookName'
         voice_enabled:
           description: |
             Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
@@ -18358,6 +18657,16 @@ components:
         - voice_room_starters
         - voice_public_summary
         - voice_participants_retention_days
+        - hook_inbound_status_mode
+        - hook_inbound_follow_mode
+        - hook_signup_check_mode
+        - hook_media_check_mode
+        - hook_local_status_mode
+        - hook_inbound_status_on_failure
+        - hook_inbound_follow_on_failure
+        - hook_signup_check_on_failure
+        - hook_media_check_on_failure
+        - retention_hook_decisions
         - invite_creators
         - member_invite_max_active
         - member_invite_max_uses
@@ -19219,7 +19528,7 @@ components:
         `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
         `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
         `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-        `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+        `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
         notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
         `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
         `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
@@ -19242,6 +19551,7 @@ components:
         - admin_sign_up
         - admin_appeal
         - admin_webhook_disabled
+        - admin_hook_failing
         - admin_custom_emoji_request
         - admin_account_moved
         - admin_service_closure_due
@@ -19409,6 +19719,8 @@ components:
         `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
         `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
         answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
+        `admin_hook_failing` (calls of an external review keep failing; it names none) to those
+        with `manage_reports`, and
         `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
         `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
         `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -19468,6 +19780,7 @@ components:
         - appeal_decided
         - admin_appeal
         - admin_webhook_disabled
+        - admin_hook_failing
         - admin_custom_emoji_request
         - custom_emoji_request_decided
         - supporter_payment_failed
@@ -20536,6 +20849,9 @@ components:
           is not in the state the operation needs, or was decided meanwhile.
         - `/api/v1/problems/email-already-verified` (409): the primary email address is already
           confirmed, so no confirmation mail is sent.
+        - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
+          had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
+          its appeal.
         - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
           suppressed, so there is nothing to lift.
         - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;

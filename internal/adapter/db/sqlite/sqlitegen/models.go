@@ -395,6 +395,11 @@ type FollowPreference struct {
 	ShowBoosts int64
 }
 
+type HookDecisionStatus struct {
+	DecisionID string
+	StatusID   string
+}
+
 type ImportedCostRevision struct {
 	ID           string
 	Source       string

@@ -1785,6 +1785,13 @@ func (l *Localizer) ServerErrorsGone() string {
 	return l.format("server:errors.gone", nil)
 }
 
+// ServerErrorsHookDecisionNotOverridable formats "server:errors.hook_decision.not_overridable". Title of the HTTP 409 API error when a moderator cancels a decision of an external review that had no effect, that is already cancelled, or that goes through an appeal.
+//
+//	en: This decision cannot be cancelled.
+func (l *Localizer) ServerErrorsHookDecisionNotOverridable() string {
+	return l.format("server:errors.hook_decision.not_overridable", nil)
+}
+
 // ServerErrorsImportInProgress formats "server:errors.import.in_progress". API error title for HTTP 409 when the user starts an import of a CSV file of follows, blocks, mutes, or bookmarks while another import is still being carried out.
 //
 //	en: Another import is in progress. Wait until it finishes.
@@ -3005,6 +3012,27 @@ func (l *Localizer) ServerMailAdminErrorGroupSubject(instance string) string {
 	return l.format("server:mail.admin_error_group.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailAdminHookFailingBody formats "server:mail.admin_hook_failing.body". First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: Calls of an external review on the server {instance} keep failing. Until it works again, what it reviews follows its failure behaviour: by default it goes through unreviewed.
+func (l *Localizer) ServerMailAdminHookFailingBody(instance string) string {
+	return l.format("server:mail.admin_hook_failing.body", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminHookFailingDetail formats "server:mail.admin_hook_failing.detail". Second paragraph of the email to a moderator about an external review that keeps failing, before the link to the notifications.
+//
+//	en: Open your notifications and see the automated reviews for what failed.
+func (l *Localizer) ServerMailAdminHookFailingDetail() string {
+	return l.format("server:mail.admin_hook_failing.detail", nil)
+}
+
+// ServerMailAdminHookFailingSubject formats "server:mail.admin_hook_failing.subject". Subject of the email to a moderator who gets moderator notifications by email: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: An external review of {instance} keeps failing
+func (l *Localizer) ServerMailAdminHookFailingSubject(instance string) string {
+	return l.format("server:mail.admin_hook_failing.subject", map[string]any{"instance": instance})
+}
+
 // ServerMailAdminReportBody formats "server:mail.admin_report.body". Paragraph of the email to a moderator about a new report. It never names the report or the accounts. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: A new report awaits the moderators of {instance}.
@@ -3101,6 +3129,13 @@ func (l *Localizer) ServerMailGroupAdminCustomEmojiRequest() string {
 //	en: New and recurring errors
 func (l *Localizer) ServerMailGroupAdminErrorGroup() string {
 	return l.format("server:mail.group.admin_error_group", nil)
+}
+
+// ServerMailGroupAdminHookFailing formats "server:mail.group.admin_hook_failing". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Failing external reviews
+func (l *Localizer) ServerMailGroupAdminHookFailing() string {
+	return l.format("server:mail.group.admin_hook_failing", nil)
 }
 
 // ServerMailGroupAdminReport formats "server:mail.group.admin_report". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
@@ -4236,6 +4271,13 @@ func (l *Localizer) ServerPushAdminErrorGroupOthers(instance string) string {
 //	en: A resolved error happened again on {instance}
 func (l *Localizer) ServerPushAdminErrorGroupRegressed(instance string) string {
 	return l.format("server:push.admin_error_group.regressed", map[string]any{"instance": instance})
+}
+
+// ServerPushAdminHookFailing formats "server:push.admin_hook_failing". Web Push notification to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: An external review of {instance} keeps failing
+func (l *Localizer) ServerPushAdminHookFailing(instance string) string {
+	return l.format("server:push.admin_hook_failing", map[string]any{"instance": instance})
 }
 
 // ServerPushAdminReport formats "server:push.admin_report". Web Push notification to a moderator: someone reported an account that had no open report. It never names the accounts. {instance} is the server's display name, or its domain name when it has none.

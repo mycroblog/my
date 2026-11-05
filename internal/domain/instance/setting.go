@@ -110,6 +110,19 @@ const (
 	SettingVoiceRoomStarters              SettingKey = "voice_room_starters"
 	SettingVoicePublicSummary             SettingKey = "voice_public_summary"
 	SettingVoiceParticipantsRetentionDays SettingKey = "voice_participants_retention_days"
+
+	// The decision hooks (ADR-0147 §5): the mode of each hook, what each does when its plugin fails
+	// while it enforces, and how many days the records of the decisions stay.
+	SettingHookInboundStatusMode      SettingKey = "hook_inbound_status_mode"
+	SettingHookInboundFollowMode      SettingKey = "hook_inbound_follow_mode"
+	SettingHookSignupCheckMode        SettingKey = "hook_signup_check_mode"
+	SettingHookMediaCheckMode         SettingKey = "hook_media_check_mode"
+	SettingHookLocalStatusMode        SettingKey = "hook_local_status_mode"
+	SettingHookInboundStatusOnFailure SettingKey = "hook_inbound_status_on_failure"
+	SettingHookInboundFollowOnFailure SettingKey = "hook_inbound_follow_on_failure"
+	SettingHookSignupCheckOnFailure   SettingKey = "hook_signup_check_on_failure"
+	SettingHookMediaCheckOnFailure    SettingKey = "hook_media_check_on_failure"
+	SettingRetentionHookDecisions     SettingKey = "retention_hook_decisions"
 	// SettingInviteCreators decides who may create invites of their own (ADR-0106 §14), and
 	// SettingMemberInviteMaxActive, SettingMemberInviteMaxUses, and
 	// SettingMemberInviteMaxLifetimeSeconds bound those invites (§2).
@@ -331,6 +344,9 @@ const (
 	// The records of the participants of voice chat rooms (ADR-0100 §13).
 	MinRetentionVoiceParticipants     = 30
 	DefaultRetentionVoiceParticipants = 90
+	// The bounds and default of SettingRetentionHookDecisions, in days (ADR-0147 §6).
+	MinRetentionHookDecisions     = 30
+	DefaultRetentionHookDecisions = 90
 )
 
 // Kind is the scalar type of a setting's value.
@@ -558,6 +574,19 @@ var definitions = []Definition{
 	{
 		Key: SettingVoiceParticipantsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionVoiceParticipants), Min: MinRetentionVoiceParticipants, Max: MaxRetention,
 		Doc: "How many days the records of who took part in a voice chat room, and as what, are kept after the room ended; the records of a reported room are kept as long as the report (ADR-0100 §13).",
+	},
+	hookModeDefinition(SettingHookInboundStatusMode, "inbound.status"),
+	hookModeDefinition(SettingHookInboundFollowMode, "inbound.follow"),
+	hookModeDefinition(SettingHookSignupCheckMode, "signup.check"),
+	hookModeDefinition(SettingHookMediaCheckMode, "media.check"),
+	hookModeDefinition(SettingHookLocalStatusMode, "local.status"),
+	hookOnFailureDefinition(SettingHookInboundStatusOnFailure, "inbound.status", HookRetryOnFailure),
+	hookOnFailureDefinition(SettingHookInboundFollowOnFailure, "inbound.follow", HookRetryOnFailure),
+	hookOnFailureDefinition(SettingHookSignupCheckOnFailure, "signup.check", HookApproveOnFailure),
+	hookOnFailureDefinition(SettingHookMediaCheckOnFailure, "media.check", HookRetryOnFailure),
+	{
+		Key: SettingRetentionHookDecisions, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionHookDecisions), Min: MinRetentionHookDecisions, Max: MaxRetention,
+		Doc: "How many days the records of the decisions of the decision hooks are kept. A decision stays longer while a post's sensitive mark rests on it, a retention hold preserves its account, or its author can still appeal it (ADR-0147 §6).",
 	},
 	{
 		Key: SettingInviteCreators, Kind: KindEnum, Default: string(InviteCreatorsPermitted),
@@ -976,7 +1005,7 @@ func (s Settings) AppealWindow() time.Duration {
 // Retention returns the value of a retention setting (SettingSessionOriginsRetentionDays,
 // SettingRegistrationOriginsRetentionDays, SettingReportsRetentionDays,
 // SettingModerationActionsRetentionDays, SettingAuditLogRetentionDays,
-// SettingVoiceParticipantsRetentionDays) as a duration.
+// SettingVoiceParticipantsRetentionDays, SettingRetentionHookDecisions) as a duration.
 func (s Settings) Retention(key SettingKey) time.Duration {
 	return time.Duration(s.intValue(key)) * 24 * time.Hour
 }
@@ -1184,4 +1213,77 @@ func MediaKeys() []SettingKey {
 		}
 	}
 	return out
+}
+
+// The values of the mode of a decision hook (ADR-0147 §5).
+const (
+	HookModeOff     = "off"
+	HookModeObserve = "observe"
+	HookModeEnforce = "enforce"
+)
+
+// The values of what a decision hook does when its plugin fails (ADR-0147 §2).
+const (
+	HookPassOnFailure    = "pass"
+	HookRetryOnFailure   = "retry"
+	HookApproveOnFailure = "require_approval"
+)
+
+func hookModeDefinition(key SettingKey, hook string) Definition {
+	return Definition{
+		Key: key, Kind: KindEnum, Default: HookModeObserve, Choices: []string{HookModeOff, HookModeObserve, HookModeEnforce},
+		Doc: "How far the decision hook " + hook + " acts while it has a plugin: off (calls nothing), observe (records the verdict and acts on nothing), or enforce (acts on the verdict). off goes to enforce only through observe (ADR-0147 §5).",
+	}
+}
+
+func hookOnFailureDefinition(key SettingKey, hook, other string) Definition {
+	return Definition{
+		Key: key, Kind: KindEnum, Default: HookPassOnFailure, Choices: []string{HookPassOnFailure, other},
+		Doc: "What the decision hook " + hook + " does when it enforces and its plugin fails: pass (lets it through) or " + other + " (ADR-0147 §2, §4).",
+	}
+}
+
+// HookModeKey returns the setting of the mode of a hook.
+func HookModeKey(hook string) (SettingKey, bool) {
+	switch hook {
+	case "inbound.status":
+		return SettingHookInboundStatusMode, true
+	case "inbound.follow":
+		return SettingHookInboundFollowMode, true
+	case "signup.check":
+		return SettingHookSignupCheckMode, true
+	case "media.check":
+		return SettingHookMediaCheckMode, true
+	case "local.status":
+		return SettingHookLocalStatusMode, true
+	}
+	return "", false
+}
+
+// HookOnFailureKey returns the setting of what a hook does on failure; local.status has no choice.
+func HookOnFailureKey(hook string) (SettingKey, bool) {
+	switch hook {
+	case "inbound.status":
+		return SettingHookInboundStatusOnFailure, true
+	case "inbound.follow":
+		return SettingHookInboundFollowOnFailure, true
+	case "signup.check":
+		return SettingHookSignupCheckOnFailure, true
+	case "media.check":
+		return SettingHookMediaCheckOnFailure, true
+	}
+	return "", false
+}
+
+// CheckHookModeChange refuses a change of the setting key from off straight to enforce: an operator
+// reads what a hook would do in observe first (ADR-0147 §5). Other settings pass.
+func (s Settings) CheckHookModeChange(key SettingKey, value string) error {
+	for _, hook := range []string{"inbound.status", "inbound.follow", "signup.check", "media.check", "local.status"} {
+		if k, _ := HookModeKey(hook); k == key {
+			if current, _ := s.Value(key); current == HookModeOff && value == HookModeEnforce {
+				return fmt.Errorf("setting %s: off goes to enforce only through observe: %w", key, ErrInvalidValue)
+			}
+		}
+	}
+	return nil
 }

@@ -44,6 +44,16 @@ enum:
   - voice_room_starters
   - voice_public_summary
   - voice_participants_retention_days
+  - hook_inbound_status_mode
+  - hook_inbound_follow_mode
+  - hook_signup_check_mode
+  - hook_media_check_mode
+  - hook_local_status_mode
+  - hook_inbound_status_on_failure
+  - hook_inbound_follow_on_failure
+  - hook_signup_check_on_failure
+  - hook_media_check_on_failure
+  - retention_hook_decisions
   - invite_creators
   - member_invite_max_active
   - member_invite_max_uses

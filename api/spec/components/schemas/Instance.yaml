@@ -87,6 +87,13 @@ properties:
     type: boolean
   supporter_list_visibility:
     $ref: ./InstanceAudience.yaml
+  external_reviews:
+    description: |
+      The decision hooks in use: what the server sends to an external review before it accepts it.
+      Absent when there is none. The information page states this.
+    type: array
+    items:
+      $ref: ./HookName.yaml
   voice_enabled:
     description: |
       Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while

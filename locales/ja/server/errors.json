@@ -75,6 +75,10 @@
     "defaultMessage": "このサーバーは終了しました。リソースはもうありません。",
     "description": "Error title for HTTP 410 from the federation endpoints of a server that has closed (ADR-0088)."
   },
+  "errors.hook_decision.not_overridable": {
+    "defaultMessage": "この判定は取り消せません。",
+    "description": "Title of the HTTP 409 API error when a moderator cancels a decision of an external review that had no effect, that is already cancelled, or that goes through an appeal."
+  },
   "errors.import.in_progress": {
     "defaultMessage": "別のインポートを処理中です。終わるまでお待ちください。",
     "description": "API error title for HTTP 409 when the user starts an import of a CSV file of follows, blocks, mutes, or bookmarks while another import is still being carried out."

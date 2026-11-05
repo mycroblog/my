@@ -51,6 +51,7 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 		feds: d.FederationRepository(), mods: d.ModerationRepository(), hooks: d.WebhookRepository(),
 		finance: d.FinanceRepository(), payments: d.PaymentRepository(), supporters: d.SupporterRepository(),
 		voice: d.VoiceRepository(), diagnostics: d.DiagnosticsRepository(),
+		decisions: d.HookRepository(), existingStatuses: d.StatusRepository(),
 		retention: retentionRepositories{
 			statuses: d.StatusRepository(), purges: d.FederationRepository(), profiles: d.AccountRepository(), emojis: d.CustomEmojiRepository(),
 			autoDeletes: d.StatusRepository(),

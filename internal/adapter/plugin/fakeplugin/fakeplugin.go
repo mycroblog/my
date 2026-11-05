@@ -16,6 +16,8 @@ import (
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
 
+	hookv1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/hook/v1"
+	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/hook/v1/hookv1connect"
 	probev1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1/probev1connect"
 )
@@ -61,6 +63,7 @@ func (r *Recorder) wrap(token string, h http.Handler) http.Handler {
 func Connect(o Options) (http.Handler, *Recorder) {
 	server := connect.NewServer()
 	probev1connect.RegisterProbeServiceHandler(server, &probeServer{o: o})
+	hookv1connect.RegisterHookServiceHandler(server, &hookServer{o: o})
 	mux := http.NewServeMux()
 	connecthttp.Mount(mux, server)
 	r := new(Recorder)
@@ -83,6 +86,24 @@ func (s *probeServer) Echo(ctx context.Context, req *probev1.EchoRequest) (*prob
 		return &probev1.EchoResponse{}, nil
 	}
 	return &probev1.EchoResponse{Outcome: probev1.Outcome_OUTCOME_OK, Payload: req.GetPayload(), Number: req.GetNumber()}, nil
+}
+
+type hookServer struct {
+	hookv1connect.UnimplementedHookServiceHandler
+
+	o Options
+}
+
+// Check implements hookv1connect.HookServiceHandler: it allows everything.
+func (s *hookServer) Check(ctx context.Context, _ *hookv1.CheckRequest) (*hookv1.CheckResponse, error) {
+	if s.o.Block {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	if s.o.Broken {
+		return &hookv1.CheckResponse{}, nil
+	}
+	return &hookv1.CheckResponse{Verdict: hookv1.Verdict_VERDICT_ALLOW}, nil
 }
 
 // JSON returns the fake of net/http and encoding/json alone. It knows the Connect protocol only as a POST of JSON to the
@@ -129,6 +150,22 @@ func JSON(o Options) (http.Handler, *Recorder) {
 			"number":  strconv.FormatInt(number, 10),
 			"extra":   "a field the server does not know, which it ignores",
 		})
+	})
+	mux.HandleFunc("POST /my.plugin.hook.v1.HookService/Check", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "send JSON", http.StatusUnsupportedMediaType)
+			return
+		}
+		if o.Block {
+			<-r.Context().Done()
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if o.Broken {
+			_, _ = w.Write([]byte("{}"))
+			return
+		}
+		_, _ = w.Write([]byte(`{"verdict":"VERDICT_ALLOW"}`))
 	})
 	r := new(Recorder)
 	return r.wrap(o.Token, mux), r

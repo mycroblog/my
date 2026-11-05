@@ -211,6 +211,9 @@ description: |
     is not in the state the operation needs, or was decided meanwhile.
   - `/api/v1/problems/email-already-verified` (409): the primary email address is already
     confirmed, so no confirmation mail is sent.
+  - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
+    had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
+    its appeal.
   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
     suppressed, so there is nothing to lift.
   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
