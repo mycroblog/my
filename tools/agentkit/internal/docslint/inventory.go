@@ -37,6 +37,8 @@ type inventory struct {
 	collect func(root string, files []string) ([]Item, error)
 	// mentions returns whether the documents (their text, one per element) mention a name.
 	mentions func(docs []string) func(name string) bool
+	// count, when set, is the sentence of the documents that gives the number of names, in its first group.
+	count *regexp.Regexp
 }
 
 // inventories are the names checked by Inventory. The documents are the ones whose readers look the names up.
@@ -69,11 +71,13 @@ var inventories = []inventory{
 	{
 		name: "job-types", what: "the job type",
 		docs:    []string{jobsDocument},
+		count:   regexp.MustCompile(`The server has (\d+) job types`),
 		collect: jobTypes, mentions: codeSpanMentions,
 	},
 	{
 		name: "job-schedules", what: "the periodic job",
 		docs:    []string{jobsDocument},
+		count:   regexp.MustCompile(`(\d+) periodic jobs start`),
 		collect: jobSchedules, mentions: sectionMentions(periodicJobsHeading),
 	},
 }
@@ -122,6 +126,9 @@ func Inventory(root string, files []string, c *Config) ([]Finding, error) {
 				out = append(out, Finding{where, 0, RuleInventory, fmt.Sprintf("%s %s (%s) is in none of these documents: describe it there, or list it under inventory.exclude.%s of %s with the reason", inv.what, it.Name, it.Where, inv.name, File)})
 			}
 		}
+		if inv.count != nil {
+			out = append(out, countFindings(inv, docs, where, len(defined))...)
+		}
 		for _, n := range c.Inventory.Exclude[inv.name] {
 			if !defined[n] {
 				out = append(out, Finding{File, 0, RuleInventory, fmt.Sprintf("inventory.exclude.%s lists %s, which the code does not define; remove it", inv.name, n)})
@@ -134,6 +141,19 @@ func Inventory(root string, files []string, c *Config) ([]Finding, error) {
 		}
 	}
 	return out, nil
+}
+
+// countFindings compares the number that the documents state with the number of names the code defines.
+func countFindings(inv inventory, docs []string, where string, defined int) []Finding {
+	for _, text := range docs {
+		if m := inv.count.FindStringSubmatch(text); m != nil {
+			if stated, err := strconv.Atoi(m[1]); err != nil || stated != defined {
+				return []Finding{{where, 0, RuleInventory, fmt.Sprintf("the document says %q, but the code defines %d (inventory %s)", m[0], defined, inv.name)}}
+			}
+			return nil
+		}
+	}
+	return []Finding{{where, 0, RuleInventory, fmt.Sprintf("no sentence matches %q: state the number of names of the inventory %s, or drop its count", inv.count, inv.name)}}
 }
 
 func sortedKeys[V any](m map[string]V) []string {
