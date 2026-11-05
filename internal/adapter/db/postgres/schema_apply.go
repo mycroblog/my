@@ -13,6 +13,7 @@ import (
 	atlaspostgres "ariga.io/atlas/sql/postgres"
 	atlasschema "ariga.io/atlas/sql/schema"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/mycroblog/my/internal/adapter/db/schemaapply"
@@ -149,12 +150,14 @@ func inspectDesired(ctx context.Context, conn *sql.Conn, ddl string) (_ *atlassc
 	return drv.InspectSchema(ctx, name, nil)
 }
 
-// openSQL opens a database/sql pool on the connection string of the setting key.
+// openSQL opens a database/sql pool on the connection string of the setting key. It parses it as
+// Open does, so that it accepts whatever the server accepts: pgx.ParseConfig alone would send the
+// pool_* parameters to PostgreSQL as startup parameters, which PostgreSQL refuses.
 func openSQL(url, key string) (*sql.DB, error) {
-	cfg, err := pgx.ParseConfig(url)
+	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		// The error may quote the URL, which can hold a password; keep only its kind.
 		return nil, fmt.Errorf("%s is not a valid connection string", key)
 	}
-	return stdlib.OpenDB(*cfg), nil
+	return stdlib.OpenDB(*cfg.ConnConfig), nil
 }

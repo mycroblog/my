@@ -12,11 +12,14 @@ terraform {
 }
 
 locals {
+  # One setting, which several backends add to. A source named twice is listed below as a setting named twice.
+  billing_sources = flatten([for b in var.backends : b.billing_sources])
   named_settings = concat(
     flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files))]),
     keys(var.env),
     keys(var.secret_env),
     keys(var.secret_files),
+    [for source in local.billing_sources : "billing_sources: ${source}"],
   )
   # Cloud Run's own front end connects to the server, and an ingress says what connects to Cloud Run. MY_TRUSTED_PROXIES in
   # env replaces the value only without an ingress: with one, the setting is named twice and fails.
@@ -29,6 +32,9 @@ locals {
     },
     contains(local.named_settings, "MY_TRUSTED_PROXIES") && length(local.ingress_trust) == 0 ? {} : {
       MY_TRUSTED_PROXIES = join(", ", concat(["169.254.0.0/16"], flatten(local.ingress_trust)))
+    },
+    length(local.billing_sources) == 0 ? {} : {
+      MY_BILLING_SOURCES = join(",", sort(distinct(local.billing_sources)))
     },
   )
 
@@ -64,7 +70,14 @@ locals {
   env        = merge(local.base_env, local.file_env, var.env, [for b in var.backends : b.env]...)
   secret_env = merge(var.secret_env, [for b in var.backends : b.secret_env]...)
 
-  secret_ids = toset(concat(values(local.secret_env), values(local.secret_files)))
+  # The one-off jobs differ from the service here alone: my schema apply holds a session-level lock, which a pooler in
+  # transaction mode does not keep, so they take what a backend names in direct_secret_env.
+  direct_secret_env      = merge([for b in var.backends : b.direct_secret_env]...)
+  direct_names           = flatten([for b in var.backends : keys(b.direct_secret_env)])
+  direct_without_setting = setsubtract(local.direct_names, keys(local.secret_env))
+  one_off_secret_env     = merge(local.secret_env, local.direct_secret_env)
+
+  secret_ids = toset(concat(values(local.one_off_secret_env), values(local.secret_env), values(local.secret_files)))
 
   jobs_url = lookup(local.env, "MY_QUEUE_CLOUDTASKS_URL", "")
 
@@ -76,6 +89,13 @@ locals {
 
   permissions = flatten([for b in var.backends : b.permissions])
   invokers    = toset(flatten([for b in var.backends : b.invokers]))
+
+  # Cloud SQL instances that the service and the jobs reach through the socket of Cloud Run's connector, at /cloudsql.
+  cloud_sql_instances = distinct(flatten([for b in var.backends : b.cloud_sql_instances]))
+
+  # A service has one Direct VPC egress, so every backend that asks for one must name the same subnet.
+  vpc_accesses = distinct(concat(var.vpc_access == null ? [] : [var.vpc_access], [for b in var.backends : b.vpc_access if b.vpc_access != null]))
+  vpc_access   = length(local.vpc_accesses) == 0 ? null : local.vpc_accesses[0]
 
   jobs = merge(
     { migrate = ["db", "upgrade", "-check"] },
@@ -91,8 +111,16 @@ resource "google_service_account" "server" {
   # Here because this resource always exists, and the plan fails before anything is created.
   lifecycle {
     precondition {
+      condition     = length(local.vpc_accesses) <= 1
+      error_message = "vpc_access names more than one subnet across the input and the backends, and a service has one Direct VPC egress."
+    }
+    precondition {
       condition     = length(local.duplicate_settings) == 0
       error_message = "These settings are named more than once across the backends, env, secret_env, secret_files, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
+    }
+    precondition {
+      condition     = length(local.direct_names) == length(distinct(local.direct_names)) && length(local.direct_without_setting) == 0
+      error_message = "direct_secret_env overrides a setting of secret_env for the one-off jobs, once: each name must be in secret_env and in one backend's direct_secret_env. Check: ${join(", ", local.direct_names)}."
     }
     precondition {
       condition     = length(local.ingress_disagreements) == 0
@@ -116,9 +144,10 @@ resource "google_service_account" "server" {
 # Each binding goes on its resource unless the backend says project. The keys are strings known at plan time, which the
 # backend modules build from their inputs.
 resource "google_project_iam_member" "backend" {
-  for_each = { for r in local.permissions : r.permission => r if r.scope == "project" }
+  for_each = { for r in local.permissions : (r.resource == null ? r.permission : "${r.resource}/${r.permission}") => r if r.scope == "project" }
 
-  project = var.project_id
+  # Another project when the backend names one, such as the project that runs the queries of a billing export.
+  project = coalesce(each.value.resource, var.project_id)
   role    = each.value.permission
   member  = google_service_account.server.member
 }
@@ -168,6 +197,28 @@ resource "google_kms_crypto_key_iam_member" "backend" {
   member        = google_service_account.server.member
 }
 
+# An access entry rather than an IAM member: the IAM resources rewrite the dataset's policy, which removes its authorized
+# views, and Google keeps its own entry on a dataset that receives the billing export.
+resource "google_bigquery_dataset_access" "backend" {
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "dataset" }
+
+  # projects/<project>/datasets/<dataset>
+  project       = split("/", each.value.resource)[1]
+  dataset_id    = split("/", each.value.resource)[3]
+  role          = each.value.permission
+  user_by_email = google_service_account.server.email
+}
+
+resource "google_pubsub_subscription_iam_member" "backend" {
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "subscription" }
+
+  # projects/<project>/subscriptions/<subscription>
+  project      = split("/", each.value.resource)[1]
+  subscription = split("/", each.value.resource)[3]
+  role         = each.value.permission
+  member       = google_service_account.server.member
+}
+
 resource "google_secret_manager_secret_iam_member" "server" {
   for_each = local.secret_ids
 
@@ -194,6 +245,27 @@ resource "google_cloud_run_v2_service" "server" {
     scaling {
       min_instance_count = 0
       max_instance_count = var.max_instances
+    }
+
+    dynamic "vpc_access" {
+      for_each = local.vpc_access == null ? [] : [local.vpc_access]
+      content {
+        egress = "PRIVATE_RANGES_ONLY"
+        network_interfaces {
+          network    = vpc_access.value.network
+          subnetwork = vpc_access.value.subnetwork
+        }
+      }
+    }
+
+    dynamic "volumes" {
+      for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+      content {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = local.cloud_sql_instances
+        }
+      }
     }
 
     dynamic "volumes" {
@@ -259,6 +331,14 @@ resource "google_cloud_run_v2_service" "server" {
         content {
           name       = volume_mounts.value.volume
           mount_path = volume_mounts.value.path
+        }
+      }
+
+      dynamic "volume_mounts" {
+        for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+        content {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
         }
       }
 
@@ -336,6 +416,27 @@ resource "google_cloud_run_v2_job" "one_off" {
       # A failed step is for the operator to look at, and only one step may run at a time.
       max_retries = 0
 
+      dynamic "vpc_access" {
+        for_each = local.vpc_access == null ? [] : [local.vpc_access]
+        content {
+          egress = "PRIVATE_RANGES_ONLY"
+          network_interfaces {
+            network    = vpc_access.value.network
+            subnetwork = vpc_access.value.subnetwork
+          }
+        }
+      }
+
+      dynamic "volumes" {
+        for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+        content {
+          name = "cloudsql"
+          cloud_sql_instance {
+            instances = local.cloud_sql_instances
+          }
+        }
+      }
+
       dynamic "volumes" {
         for_each = local.file_mounts
         content {
@@ -375,7 +476,7 @@ resource "google_cloud_run_v2_job" "one_off" {
         }
 
         dynamic "env" {
-          for_each = local.secret_env
+          for_each = local.one_off_secret_env
           content {
             name = env.key
             value_source {
@@ -384,6 +485,14 @@ resource "google_cloud_run_v2_job" "one_off" {
                 version = "latest"
               }
             }
+          }
+        }
+
+        dynamic "volume_mounts" {
+          for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+          content {
+            name       = "cloudsql"
+            mount_path = "/cloudsql"
           }
         }
 

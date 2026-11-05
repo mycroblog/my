@@ -49,6 +49,10 @@ variable "backends" {
     env          = optional(map(string), {})
     secret_env   = optional(map(string), {})
     secret_files = optional(map(string), {})
+    # What the one-off functions take in place of a setting of secret_env, which the others keep.
+    direct_secret_env = optional(map(string), {})
+    # Security groups the functions join to reach a backend in a VPC.
+    security_group_ids = optional(list(string), [])
     permissions = optional(list(object({
       permission = string
       scope      = string
@@ -68,8 +72,20 @@ variable "backends" {
     service_ingress = optional(string)
     # What an ingress puts in front of the function. The module adds the Web Adapter.
     trusted_proxies = optional(list(string))
+    # What the backend adds to the one setting MY_BILLING_SOURCES.
+    billing_sources = optional(list(string), [])
     # Accepted so that a backend of no platform fits, and refused below: nothing calls the functions.
     invokers = optional(list(string), [])
+    # Accepted so that they cannot vanish, and refused below: they belong to Google Cloud, and to an app with tasks.
+    cloud_sql_instances = optional(list(string), [])
+    vpc_access = optional(object({
+      network    = string
+      subnetwork = string
+    }))
+    load_balancer = optional(object({
+      target_group_arn  = string
+      security_group_id = string
+    }))
   }))
   default  = []
   nullable = false
@@ -89,6 +105,16 @@ variable "backends" {
   validation {
     condition     = alltrue([for b in var.backends : length(b.invokers) == 0])
     error_message = "invokers belongs to a platform that calls the app. Here Lambda polls the queue, which a backend names in event_sources."
+  }
+
+  validation {
+    condition     = alltrue([for b in var.backends : length(b.cloud_sql_instances) == 0 && b.vpc_access == null])
+    error_message = "cloud_sql_instances and vpc_access belong to Cloud Run. A backend in a VPC here returns security_group_ids."
+  }
+
+  validation {
+    condition     = alltrue([for b in var.backends : b.load_balancer == null])
+    error_message = "load_balancer is what a service with tasks attaches to, and a function attaches to none. Use ingress-aws-cloudfront, or app-aws-ecs."
   }
 
   validation {
@@ -123,6 +149,20 @@ variable "secret_files" {
     condition     = alltrue([for name in keys(var.secret_files) : endswith(name, "_FILE")])
     error_message = "The names of secret_files end in _FILE."
   }
+}
+
+variable "vpc_subnet_ids" {
+  description = "Private subnets to attach every function to, for a backend in a VPC. Empty, they stay outside any VPC of yours. An attached function reaches the internet and AWS's APIs only through what the VPC provides, such as a NAT gateway: read the README."
+  type        = list(string)
+  default     = []
+  nullable    = false
+}
+
+variable "vpc_security_group_ids" {
+  description = "Security groups of the functions beside the ones the backends return, such as one that allows the way out to the internet."
+  type        = list(string)
+  default     = []
+  nullable    = false
 }
 
 variable "web_memory_mib" {

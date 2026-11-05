@@ -21,6 +21,9 @@ module "secrets" {
 | `secrets` | empty | Secret settings by variable name, to the name of the secret |
 | `referenced` | empty | Secrets another module takes, such as `db-external` |
 | `generate_p256_keys` | empty | Keys of `secrets` whose value the first apply generates |
+| `write_keys` | empty | Keys of `secrets` or `referenced` whose value comes from `write_values`, such as the URLs of `db-neon` |
+| `write_values` | empty | The value of each key of `write_keys`. An ephemeral input: this module keeps none of it, whatever the module it comes from keeps |
+| `write_version` | `1` | Raise it to write `write_values` again, after a value changed where it comes from. Nothing else can tell |
 
 | Output | Value |
 | --- | --- |

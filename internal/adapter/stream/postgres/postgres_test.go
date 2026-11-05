@@ -93,6 +93,24 @@ func TestNewRejectsBadOptions(t *testing.T) {
 	}
 }
 
+// The listener takes any URL the server takes: PostgreSQL refuses a startup parameter it does not
+// know, which is what pool_max_conns becomes unless it is taken out first.
+func TestListenURLTakesTheParametersOfThePool(t *testing.T) {
+	url := pgtest.NewDatabase(t)
+	sep := "?"
+	if strings.Contains(url, "?") {
+		sep = "&"
+	}
+	b := newBus(t, url, streampostgres.Options{ListenURL: url + sep + "pool_max_conns=4"})
+	l, err := b.Listen(t.Context(), func([]byte) {})
+	if err != nil {
+		t.Fatalf("Listen: %v", err)
+	}
+	if err := l.Close(t.Context()); err != nil {
+		t.Errorf("Close: %v", err)
+	}
+}
+
 // newBus returns a Bus with its own pool on url, closed when t ends.
 func newBus(t *testing.T, url string, o streampostgres.Options) stream.Bus {
 	t.Helper()

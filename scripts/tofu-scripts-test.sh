@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, and scripts/tofu-env-check.sh against a gcloud
+# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, scripts/tofu-env-check.sh, and scripts/tofu-backend-fields-check.sh against a gcloud
 # and an aws that record their calls: the order of the steps, stopping at a failure, and passing on an exit code. It shows
 # nothing about Google Cloud or AWS themselves.
 set -euo pipefail
@@ -42,6 +42,28 @@ if [ -n "${FAIL_ON:-}" ]; then
   case "$*" in *"$FAIL_ON"*) exit "${FAIL_CODE:-1}" ;; esac
 fi
 case "$*" in
+  "ecs describe-services"*"taskDefinition"*) echo "arn:service:7" ;;
+  "ecs describe-services"*"deployments"*)
+    state="${ROLLOUT:-COMPLETED}"
+    echo "[{\"taskDefinition\":\"arn:new\",\"rolloutState\":\"$state\"}]"
+    ;;
+  "ecs describe-task-definition"*"--include TAGS"*)
+    echo '{"taskDefinition":{"family":"f","revision":7,"status":"ACTIVE","taskDefinitionArn":"arn:old","containerDefinitions":[{"name":"my","image":"image:old","environment":[{"name":"MY_HOST","value":"h"}]}]},"tags":[]}'
+    ;;
+  "ecs describe-task-definition --task-definition arn:service:7"*) echo "${SERVICE_IMAGE:-image:new}" ;;
+  "ecs describe-task-definition"*) echo "${JOB_IMAGE:-image:new}" ;;
+  "ecs register-task-definition"*) echo "arn:new" ;;
+  "ecs run-task"*)
+    echo "attempts=${AWS_MAX_ATTEMPTS:-}" >> "$CALLS"
+    default_started='{"tasks":[{"taskArn":"arn:aws:ecs:r:1:task/my/abc"}],"failures":[]}'
+    echo "${STARTED:-$default_started}"
+    ;;
+  "ecs describe-tasks"*)
+    default_task='{"lastStatus":"STOPPED","containers":[{"name":"my","exitCode":0}]}'
+    echo "${TASK:-$default_task}"
+    ;;
+  "logs filter-log-events"*) echo "${ECS_LOG:-[\"ok\"]}" ;;
+  "ssm get-parameter"*) echo '{"awsvpcConfiguration":{"subnets":["s"]}}' ;;
   "lambda get-function --function-name my-console"*) echo "${JOB_IMAGE:-image:new}" ;;
   "lambda get-function "*) echo "${SERVICE_IMAGE:-image:new}" ;;
   "lambda get-function-configuration"*) echo '{"MY_HOST":"h"}' ;;
@@ -56,7 +78,7 @@ esac
 exit 0
 EOF
 chmod +x "$tmp/bin/aws"
-export PATH="$tmp/bin:$PATH" CALLS="$tmp/calls" CONSOLE_LOG_WAIT_SECONDS=0
+export PATH="$tmp/bin:$PATH" CALLS="$tmp/calls" CONSOLE_LOG_WAIT_SECONDS=0 CONSOLE_POLL_SECONDS=0 UPGRADE_POLL_SECONDS=0
 
 upgrade() {
   : > "$CALLS"
@@ -203,6 +225,73 @@ lambda_upgrade --maintenance
 head -n 1 "$CALLS" | grep -q 'get-function-configuration --function-name my-worker' || fail "--maintenance did not come first on Lambda: $(head -n 1 "$CALLS")"
 grep -q 'update-function-configuration --function-name my-web .*"MY_MAINTENANCE":"true"' "$CALLS" || fail "--maintenance did not reach the web function: $(cat "$CALLS")"
 tail -n 2 "$CALLS" | grep -q 'update-function-configuration --function-name my-web --region r --environment {"Variables":{"MY_HOST":"h"}}' || fail "--maintenance did not end with the new image on Lambda: $(tail -n 3 "$CALLS")"
+# console on ECS: a one-off task with the command as its override, its exit code, and its output from the logs.
+ECS_CONSOLE='{"platform":"aws-ecs","region":"r","cluster":"my","task_definition":"my-console","container":"my","service":"my","network":"{\"awsvpcConfiguration\":{\"subnets\":[\"s\"]}}","log_group":"/ecs/my","log_prefix":"console"}'
+
+ecs_console() {
+  : > "$CALLS"
+  local code=0
+  "$root/deploy/opentofu/console.sh" "$@" <<< "$ECS_CONSOLE" > "$tmp/out" 2> "$tmp/err" || code=$?
+  return "$code"
+}
+
+ecs_console admin create -email 'a,b "c"@example.com' || fail "ecs console failed: $(cat "$tmp/err")"
+grep -qF -- '"command":["admin","create","-email","a,b \"c\"@example.com"]' "$CALLS" || fail "ecs console args: $(cat "$CALLS")"
+grep -q 'ecs run-task --cluster my --task-definition my-console .*--launch-type FARGATE .*--network-configuration {"awsvpcConfiguration"' "$CALLS" || fail "ecs console did not start the task: $(cat "$CALLS")"
+grep -qx 'attempts=1' "$CALLS" || fail "ecs console may run a command twice: $(cat "$CALLS")"
+grep -q 'logs filter-log-events --log-group-name /ecs/my --log-stream-names console/my/abc' "$CALLS" || fail "ecs console read the wrong log stream: $(cat "$CALLS")"
+grep -qx 'ok' "$tmp/out" || fail "ecs console did not print the output: $(cat "$tmp/out")"
+if grep -q 'register-task-definition' "$CALLS"; then fail "ecs console registered a revision that has the service's image"; fi
+JOB_IMAGE=image:old ecs_console version || fail "ecs console failed"
+grep -q 'register-task-definition .*"image":"image:new"' "$CALLS" || fail "ecs console left the family on another image: $(cat "$CALLS")"
+grep -q 'register-task-definition .*"taskDefinitionArn"\|register-task-definition .*"revision"' "$CALLS" && fail "ecs console sent fields that ECS sets itself: $(cat "$CALLS")"
+code=0
+TASK='{"lastStatus":"STOPPED","containers":[{"name":"my","exitCode":3}]}' ecs_console version || code=$?
+[ "$code" = 3 ] || fail "ecs console exited $code, want the command's 3"
+grep -qx 'ok' "$tmp/out" || fail "ecs console hid the output of a failure"
+code=0
+TASK='{"lastStatus":"STOPPED","stoppedReason":"CannotPullContainerError","containers":[{"name":"my"}]}' ecs_console version || code=$?
+[ "$code" = 1 ] || fail "ecs console exited $code on a task with no exit code, want 1"
+grep -q 'CannotPullContainerError' "$tmp/err" || fail "ecs console did not say why: $(cat "$tmp/err")"
+code=0
+STARTED='{"tasks":[],"failures":[{"reason":"MISSING"}]}' ecs_console version || code=$?
+[ "$code" = 1 ] || fail "ecs console exited $code on a task that did not start, want 1"
+grep -q 'MISSING' "$tmp/err" || fail "ecs console did not say why the task did not start: $(cat "$tmp/err")"
+
+# upgrade on ECS: the same order, the migration first, and the parameter that apply reads last of all.
+ecs_upgrade() {
+  : > "$CALLS"
+  "$root/deploy/opentofu/upgrade.sh" --platform aws-ecs --region r --image image:new "$@" > "$tmp/out" 2>&1
+}
+
+ecs_steps() {
+  grep -E '^ecs (run-task|register-task-definition|update-service)|^ssm put-parameter' "$CALLS" | sed -E 's/^ecs run-task .*"command":(\[[^]]*\]).*/task \1/; s/^ecs register-task-definition .*"image":"([^"]*)".*/register \1/; s/^ecs update-service .*--task-definition ([^ ]*).*/update \1/; s/^ssm put-parameter --name ([^ ]*) --value ([^ ]*).*/parameter \1 \2/'
+}
+
+JOB_IMAGE=image:old ecs_upgrade || fail "ecs upgrade failed: $(cat "$tmp/out")"
+want='register image:new
+task ["config","check"]
+task ["db","upgrade","-check"]
+task ["schema","apply"]
+task ["db","upgrade"]
+register image:new
+update arn:new
+parameter /my/my/image image:new'
+[ "$(ecs_steps)" = "$want" ] || fail "ecs upgrade ran: $(ecs_steps)"
+if TASK='{"lastStatus":"STOPPED","containers":[{"name":"my","exitCode":1}]}' ecs_upgrade; then fail "ecs upgrade went on after a step failed"; fi
+if grep -q 'update-service\|put-parameter' "$CALLS"; then fail "the service changed although a step failed on ECS"; fi
+if ROLLOUT=FAILED ecs_upgrade; then fail "ecs upgrade passed although the deployment went back"; fi
+if grep -q 'put-parameter' "$CALLS"; then fail "apply would follow an image that the service went back from"; fi
+ecs_upgrade --migrate-only
+if grep -q 'update-service\|put-parameter' "$CALLS"; then fail "--migrate-only changed the service on ECS"; fi
+grep -q 'ssm get-parameter --name /my/my/network' "$CALLS" || fail "--migrate-only must find its network without the service: $(cat "$CALLS")"
+ecs_upgrade --plan
+grep -qF '"command":["schema","apply","-dry-run"]' "$CALLS" || fail "--plan did not run the dry run on ECS"
+if grep -q 'update-service\|put-parameter' "$CALLS"; then fail "--plan changed the service on ECS"; fi
+ecs_upgrade --maintenance
+head -n 2 "$CALLS" | grep -q 'register-task-definition .*"MY_MAINTENANCE"' || fail "--maintenance did not come first on ECS: $(head -n 2 "$CALLS")"
+grep 'register-task-definition' "$CALLS" | tail -n 1 | grep -q 'MY_MAINTENANCE' && fail "--maintenance did not end with the new image on ECS: $(cat "$CALLS")"
+
 if "$root/deploy/opentofu/upgrade.sh" --platform elsewhere --region r --image i > /dev/null 2>&1; then fail "upgrade.sh took an unknown platform"; fi
 
 # tofu-env-check: a setting of the reference passes, its _FILE form only where the reference has it.
@@ -246,6 +335,38 @@ if examples check --release v0.2.0; then fail "a stable release passed with anot
 examples bump v0.2.0 || fail "bump failed"
 examples check --release v0.2.0 || fail "bump left something behind"
 grep -qF 'ref=v0.2.0&depth=1' "$tree/deploy/opentofu/examples/e/main.tf" || fail "bump did not change the source"
+
+# tofu-backend-fields-check: the real modules pass, and each way for a backend's field to vanish fails.
+"$root/scripts/tofu-backend-fields-check.sh" || fail "the fields check refused the repository"
+fields="$tmp/fields"
+fields_copy() {
+  rm -rf "$fields"
+  mkdir -p "$fields/modules"
+  cp "$root/deploy/opentofu/README.md" "$fields/"
+  for module in "$root"/deploy/opentofu/modules/*/; do
+    mkdir "$fields/modules/$(basename "$module")"
+    cp "$module"*.tf "$fields/modules/$(basename "$module")/"
+  done
+}
+fields_copy
+"$root/scripts/tofu-backend-fields-check.sh" "$fields" || fail "the fields check refused a copy"
+sed -i '/^    billing_sources = /d' "$fields/modules/app-aws-ecs/variables.tf"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed an app without a contract field"; fi
+grep -qF 'app-aws-ecs: backends has no field billing_sources' "$tmp/fields.err" || fail "the fields check did not name the missing field"
+fields_copy
+# shellcheck disable=SC2016 # the backticks are the table's
+sed -i 's/^| `billing_sources` (optional)/| `new_field` (optional)/' "$fields/README.md"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a contract field that no app has"; fi
+grep -qF 'backends has no field new_field' "$tmp/fields.err" || fail "the fields check did not name the new contract field"
+grep -qF 'billing_sources, which the contract' "$tmp/fields.err" || fail "the fields check did not name a field outside the contract"
+fields_copy
+sed -i 's/b\.cloud_sql_instances/b.other/g' "$fields/modules/app-gcp-cloud-run/main.tf"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a field that nothing reads"; fi
+grep -qF 'app-gcp-cloud-run: nothing reads or refuses b.cloud_sql_instances' "$tmp/fields.err" || fail "the fields check did not name the field nothing reads"
+fields_copy
+printf 'output "client_group" {\n  value = "x"\n}\n' >> "$fields/modules/kv-external/main.tf"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed an output outside the contract"; fi
+grep -qF 'kv-external: the output client_group' "$tmp/fields.err" || fail "the fields check did not name the output"
 
 if [ "$failures" -gt 0 ]; then
   echo "tofu-scripts-test: $failures failed" >&2

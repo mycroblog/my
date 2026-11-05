@@ -8,6 +8,11 @@ mock_provider "google" {
       number = "123456789012"
     }
   }
+  mock_resource "google_compute_global_address" {
+    defaults = {
+      address = "203.0.113.10"
+    }
+  }
   mock_resource "google_service_account" {
     defaults = {
       email  = "sa@my-project.iam.gserviceaccount.com"
@@ -63,7 +68,7 @@ run "composes_every_setting" {
       MY_STREAM                            = "pubsub"
       MY_STREAM_PUBSUB_SUBSCRIPTION_PREFIX = "my-stream"
       MY_STREAM_PUBSUB_TOPIC               = "projects/my-project/topics/my-stream"
-      MY_TRUSTED_PROXIES                   = "169.254.0.0/16"
+      MY_TRUSTED_PROXIES                   = "169.254.0.0/16, 203.0.113.10"
     }
     error_message = "the example does not compose the settings it should"
   }
@@ -116,24 +121,26 @@ run "the_operator_can_set_any_other_setting" {
   }
 }
 
-run "the_example_keeps_the_domain_mapping" {
+run "the_example_closes_the_service_behind_the_load_balancer" {
   command = plan
 
   assert {
-    condition     = module.app.service_ingress == "all" && module.app.env["MY_TRUSTED_PROXIES"] == "169.254.0.0/16"
-    error_message = "the domain mapping must leave the service open"
+    condition     = module.app.service_ingress == "internal-and-load-balancer" && one(module.ingress.dns_records).type == "A" && one(module.ingress.dns_records).rrdata == "203.0.113.10"
+    error_message = "the load balancer must close the run.app URL, and DNS must point at its address"
   }
 }
 
-# The same composition with the other block: no cycle, and the ingress's settings reach the service.
-run "the_load_balancer_swaps_in_one_block" {
+# The same composition with the block for trying it cheaply: no cycle, and the ingress's settings reach the service.
+run "the_domain_mapping_swaps_in_one_block" {
+  command = plan
+
   module {
-    source = "../../tests/ingress-load-balancer"
+    source = "../../tests/ingress-domain-mapping"
   }
 
   assert {
-    condition     = output.service_ingress == "internal-and-load-balancer" && one(output.dns_records).type == "A"
-    error_message = "the load balancer must take over how traffic reaches the service"
+    condition     = output.service_ingress == "all" && output.trusted_proxies == "169.254.0.0/16"
+    error_message = "the domain mapping must leave the service open, with nothing more to trust"
   }
 }
 

@@ -66,22 +66,58 @@ variable "service_ingress" {
   }
 }
 
+variable "vpc_access" {
+  description = "A VPC subnet for the service and the jobs to reach private addresses through, for something of your own. A backend that has only private addresses, such as kv-gcp-memorystore, returns it in backends instead. Null, the default, attaches nothing unless a backend does. Only traffic to private ranges goes through it."
+  type = object({
+    network    = string
+    subnetwork = string
+  })
+  default = null
+}
+
 variable "backends" {
   description = "What each backend module returns. A setting named twice fails the plan."
   type = list(object({
     env          = optional(map(string), {})
     secret_env   = optional(map(string), {})
     secret_files = optional(map(string), {})
+    # What the one-off jobs take in place of a setting of secret_env, which the service keeps.
+    direct_secret_env = optional(map(string), {})
+    # Cloud SQL instances to reach through the connector's socket, as <project>:<region>:<instance>.
+    cloud_sql_instances = optional(list(string), [])
     permissions = optional(list(object({
       permission = string
       scope      = string
       resource   = optional(string)
+      # Accepted so that it cannot vanish, and refused below: Google Cloud's roles take no such conditions here.
+      conditions = optional(list(object({
+        test     = string
+        variable = string
+        values   = list(string)
+      })), [])
     })), [])
     invokers = optional(list(string), [])
     # What an ingress needs of the service, which must be var.service_ingress.
     service_ingress = optional(string)
     # What an ingress puts in front of the service. The app adds Cloud Run's own front end.
     trusted_proxies = optional(list(string))
+    # What the backend adds to the one setting MY_BILLING_SOURCES.
+    billing_sources = optional(list(string), [])
+    # A VPC subnet to reach a backend on private addresses through.
+    vpc_access = optional(object({
+      network    = string
+      subnetwork = string
+    }))
+    # Accepted so that they cannot vanish, and refused below: they belong to AWS.
+    security_group_ids = optional(list(string), [])
+    event_sources = optional(map(object({
+      arn                        = string
+      visibility_timeout_seconds = number
+    })), {})
+    load_balancer = optional(object({
+      target_group_arn  = string
+      security_group_id = string
+    }))
   }))
   default  = []
   nullable = false
@@ -90,12 +126,22 @@ variable "backends" {
     condition = alltrue(flatten([
       for b in var.backends : [
         for r in b.permissions : (
-          contains(["project", "bucket", "topic", "queue", "service_account", "crypto_key"], r.scope) &&
-          (r.scope == "project") == (r.resource == null)
+          contains(["project", "bucket", "topic", "queue", "service_account", "crypto_key", "dataset", "subscription"], r.scope) &&
+          (r.scope == "project" || r.resource != null)
         )
       ]
     ]))
-    error_message = "Each permission has a scope of project (without a resource), or bucket, topic, queue, service_account, or crypto_key (with its resource). A scope of policy is a backend for AWS."
+    error_message = "Each permission has a scope of project (with another project as its resource, or none for this one), or bucket, topic, queue, service_account, crypto_key, dataset, or subscription (with its resource). A scope of policy is a backend for AWS."
+  }
+
+  validation {
+    condition     = alltrue(flatten([for b in var.backends : [for r in b.permissions : length(r.conditions) == 0]]))
+    error_message = "A permission on Google Cloud has no conditions: those are the statements of an AWS policy."
+  }
+
+  validation {
+    condition     = alltrue([for b in var.backends : length(b.security_group_ids) == 0 && length(b.event_sources) == 0 && b.load_balancer == null])
+    error_message = "security_group_ids, event_sources, and load_balancer belong to AWS. A backend on private addresses here returns vpc_access."
   }
 
   validation {

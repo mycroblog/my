@@ -2,7 +2,7 @@
 
 ## 一文で
 
-**月額ほぼ $0〜$5 から運営できる、ActivityPub 互換で多言語対応のマイクロブログサーバー。
+**工夫すれば安く運営できる、ActivityPub 互換で多言語対応のマイクロブログサーバー。
 ホスティング先とバックエンドを自由に選べる OSS。**
 
 ## 背景・課題
@@ -10,13 +10,13 @@
 - 既存の Fediverse サーバー（Mastodon など）は Ruby + PostgreSQL + Redis + Sidekiq + Elasticsearch などの構成が前提です。
   小規模インスタンスでも VM 1 台を常時動かす必要があり、月額 $20〜 かかることが珍しくありません。
 - 運営コストの大部分は **常時起動のコンピュート**、**マネージド RDB の最低料金**、**リモートメディアのキャッシュ（ストレージ・転送量）** で決まります。
-- サーバーレス（scale-to-zero）や無料枠の大きい DB（SQLite / Neon 等）を前提にした設計なら、小規模運営のコストを一桁下げられる見込みです。
+- サーバーレス（scale-to-zero）や使った分だけ払う DB（SQLite / Neon 等）を選べる設計なら、小規模運営のコストを工夫で抑えられます。それでもサーバーには費用がかかります。
 
 ## 目標（Goals）
 
 | ID | 目標 |
 | --- | --- |
-| G1 | 低コスト: おひとりさま〜数十人規模なら、小さな VM 1 台（$4〜6/月）か、サーバーレス（Cloud Run / Lambda）の無料枠でほぼ収まる |
+| G1 | 費用を工夫で抑えられる: おひとりさま〜数十人規模なら、小さな VM 1 台（$4〜6/月）か、サーバーレス（Cloud Run / Lambda）とマネージド DB で動かせる。コストは設計の制約ではなく、できるところで減らす対象で、選択肢を費用だけで退けない。目安は [デプロイターゲット](../architecture/deployment-targets.md) に示す |
 | G2 | 可搬性: Google Cloud / AWS / Self-hosted（Docker, microk8s）の 3 系統で同じコードベースが動く（Cloudflare Workers は対象外。[ADR-0002](../adr/0002-modular-monolith-hexagonal.md)） |
 | G3 | 差し替え可能性: RDB・キュー・ストレージ・メール等を設定で切り替えられ、利用者が独自アダプタを追加できる |
 | G4 | 相互運用性: Mastodon / Misskey / GoToSocial / Pleroma(Akkoma) と問題なく連合できる |

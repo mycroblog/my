@@ -20,6 +20,11 @@ output "service_account_email" {
   value       = google_service_account.server.email
 }
 
+output "service_account_unique_id" {
+  description = "Numeric ID of that service account, which another cloud's trust policy names."
+  value       = google_service_account.server.unique_id
+}
+
 output "migration_job" {
   description = "Name of the job the upgrade script runs."
   value       = google_cloud_run_v2_job.one_off["migrate"].name
@@ -47,6 +52,11 @@ output "env" {
 }
 
 output "secret_env" {
-  description = "Merged secret settings of the service and the jobs: variable name to secret ID."
+  description = "Merged secret settings of the service: variable name to secret ID."
   value       = local.secret_env
+}
+
+output "one_off_secret_env" {
+  description = "Merged secret settings of the migration and console jobs, which take direct_secret_env over secret_env."
+  value       = local.one_off_secret_env
 }

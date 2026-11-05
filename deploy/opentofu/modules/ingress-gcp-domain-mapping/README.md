@@ -1,7 +1,7 @@
 # ingress-gcp-domain-mapping
 
-Traffic reaches the service directly, on a Cloud Run domain mapping of `host`. It costs nothing, but it is a Preview feature
-that Google Cloud does not recommend for production, because of latency. It follows
+Traffic reaches the service directly, on a Cloud Run domain mapping of `host`. It has no monthly fee, which suits trying a deployment
+cheaply, but it is a Preview feature that Google Cloud does not recommend for production, because of latency. It follows
 [the ingress contract](../../README.md#the-ingress-contract).
 
 ## Source

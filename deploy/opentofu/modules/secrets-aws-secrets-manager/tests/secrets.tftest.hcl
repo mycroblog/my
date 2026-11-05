@@ -47,3 +47,28 @@ run "a_generated_key_outside_secrets_fails" {
 
   expect_failures = [var.generate_p256_keys]
 }
+
+run "a_value_from_elsewhere_goes_through_the_write_only_attribute" {
+  command = plan
+
+  variables {
+    referenced   = { database_url = "my-database-url" }
+    write_keys   = ["database_url"]
+    write_values = { database_url = "postgres://u:p@h/d" }
+  }
+
+  assert {
+    condition     = aws_secretsmanager_secret_version.written["database_url"].secret_string == null && aws_secretsmanager_secret_version.written["database_url"].secret_string_wo_version == 1
+    error_message = "the value must go through the write-only attribute"
+  }
+}
+
+run "a_written_key_must_be_a_secret_of_this_module" {
+  command = plan
+
+  variables {
+    write_keys = ["not_a_secret"]
+  }
+
+  expect_failures = [var.write_keys]
+}

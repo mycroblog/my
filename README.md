@@ -1,6 +1,6 @@
 # my
 
-An ActivityPub-compatible microblog server written in Go. It aims to run at as close to zero cost as possible on
+An ActivityPub-compatible microblog server written in Go. It can run cheaply with care on
 Google Cloud, AWS, or your own machine (Docker, microk8s), and is open source.
 
 > **Status: in development, before the first release (v0).** Data may not survive an upgrade before `v0.1.0`: the
@@ -8,7 +8,7 @@ Google Cloud, AWS, or your own machine (Docker, microk8s), and is open source.
 
 ## Goals
 
-- Run from about $0–$5 a month: the server scales to zero and needs no always-on middleware
+- Run cheaply with care: the server can scale to zero and needs no always-on middleware, though a server still costs money
 - Switch the database, job queue, storage, and runtime by configuration
 - Federate with Mastodon, Misskey, GoToSocial, and other ActivityPub servers
 - Speak many languages from day one

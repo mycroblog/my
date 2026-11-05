@@ -643,3 +643,467 @@ run "an_unknown_setting_fails" {
 
   expect_failures = [var.service_ingress]
 }
+
+run "the_jobs_take_the_direct_connection_and_the_service_the_pooled_one" {
+  command = plan
+
+  variables {
+    backends = [{
+      env               = { MY_DATABASE = "postgres" }
+      secret_env        = { MY_DATABASE_URL = "pooled", MY_STREAM_POSTGRES_URL = "direct" }
+      direct_secret_env = { MY_DATABASE_URL = "direct" }
+    }]
+  }
+
+  assert {
+    condition     = [for e in google_cloud_run_v2_service.server.template[0].containers[0].env : e.value_source[0].secret_key_ref[0].secret if e.name == "MY_DATABASE_URL"] == ["pooled"]
+    error_message = "the service must use the pooled connection"
+  }
+
+  assert {
+    condition     = [for e in google_cloud_run_v2_service.server.template[0].containers[0].env : e.value_source[0].secret_key_ref[0].secret if e.name == "MY_STREAM_POSTGRES_URL"] == ["direct"]
+    error_message = "LISTEN must use the direct connection"
+  }
+
+  assert {
+    condition     = [for e in google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].containers[0].env : e.value_source[0].secret_key_ref[0].secret if e.name == "MY_DATABASE_URL"] == ["direct"]
+    error_message = "the migration job must use the direct connection"
+  }
+
+  assert {
+    condition     = contains(keys(google_secret_manager_secret_iam_member.server), "pooled") && contains(keys(google_secret_manager_secret_iam_member.server), "direct")
+    error_message = "the app must be able to read both secrets"
+  }
+}
+
+run "the_console_takes_the_direct_connection_too" {
+  command = plan
+
+  variables {
+    console_enabled = true
+    backends = [{
+      secret_env        = { MY_DATABASE_URL = "pooled" }
+      direct_secret_env = { MY_DATABASE_URL = "direct" }
+    }]
+  }
+
+  assert {
+    condition     = [for e in google_cloud_run_v2_job.one_off["console"].template[0].template[0].containers[0].env : e.value_source[0].secret_key_ref[0].secret if e.name == "MY_DATABASE_URL"] == ["direct"]
+    error_message = "the console must use the direct connection"
+  }
+}
+
+run "without_a_pooler_the_jobs_and_the_service_are_the_same" {
+  command = plan
+
+  assert {
+    condition     = output.one_off_secret_env == output.secret_env
+    error_message = "with no direct_secret_env, the jobs take what the service takes"
+  }
+}
+
+run "a_direct_setting_with_nothing_to_override_fails" {
+  command = plan
+
+  variables {
+    backends = [{ direct_secret_env = { MY_DATABASE_URL = "direct" } }]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_cloud_sql_backend_mounts_the_socket_on_the_service_and_the_jobs" {
+  command = plan
+
+  variables {
+    backends = [{ cloud_sql_instances = ["p:r:db"] }]
+  }
+
+  assert {
+    condition     = [for v in google_cloud_run_v2_service.server.template[0].volumes : tolist(v.cloud_sql_instance[0].instances)[0] if v.name == "cloudsql"] == ["p:r:db"]
+    error_message = "the service must have the instance as a volume"
+  }
+
+  assert {
+    condition     = [for m in google_cloud_run_v2_service.server.template[0].containers[0].volume_mounts : m.mount_path if m.name == "cloudsql"] == ["/cloudsql"]
+    error_message = "the service must mount the socket at /cloudsql"
+  }
+
+  assert {
+    condition     = [for v in google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].volumes : v.cloud_sql_instance[0].instances[0] if v.name == "cloudsql"] == ["p:r:db"]
+    error_message = "the migration job must have the instance as a volume"
+  }
+
+  assert {
+    condition     = [for m in google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].containers[0].volume_mounts : m.mount_path if m.name == "cloudsql"] == ["/cloudsql"]
+    error_message = "the migration job must mount the socket at /cloudsql"
+  }
+}
+
+run "without_cloud_sql_there_is_no_volume" {
+  command = plan
+
+  assert {
+    condition     = length([for v in google_cloud_run_v2_service.server.template[0].volumes : v if v.name == "cloudsql"]) == 0
+    error_message = "a deployment without Cloud SQL must not change"
+  }
+}
+
+run "no_vpc_by_default" {
+  command = plan
+
+  assert {
+    condition     = length(google_cloud_run_v2_service.server.template[0].vpc_access) == 0 && length(google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].vpc_access) == 0
+    error_message = "a deployment that asks for no VPC must attach none"
+  }
+}
+
+run "vpc_access_reaches_the_service_and_the_jobs" {
+  command = plan
+
+  variables {
+    console_enabled = true
+    vpc_access      = { network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/r/subnetworks/s" }
+  }
+
+  assert {
+    condition = alltrue([
+      for t in [
+        google_cloud_run_v2_service.server.template[0],
+        google_cloud_run_v2_job.one_off["migrate"].template[0].template[0],
+        google_cloud_run_v2_job.one_off["console"].template[0].template[0],
+      ] : t.vpc_access[0].egress == "PRIVATE_RANGES_ONLY" && t.vpc_access[0].network_interfaces[0].subnetwork == "projects/p/regions/r/subnetworks/s"
+    ])
+    error_message = "the service and every job must take the subnet, for private ranges only"
+  }
+}
+
+# These modules have no resources, so applying them reaches nothing, and run.* can read their outputs below.
+run "kv_external" {
+  command = apply
+
+  module {
+    source = "../kv-external"
+  }
+
+  variables {
+    url_secret_id    = "valkey-url"
+    tls_ca_secret_id = "valkey-ca"
+  }
+}
+
+run "stream_beside_the_kv" {
+  command = apply
+
+  module {
+    source = "../stream-valkey"
+  }
+
+  variables {
+    url_secret_id = null
+  }
+}
+
+run "kv_and_stream_share_one_url" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.kv_external.env, secret_env = run.kv_external.secret_env, secret_files = run.kv_external.secret_files },
+      { env = run.stream_beside_the_kv.env, secret_env = run.stream_beside_the_kv.secret_env, secret_files = run.stream_beside_the_kv.secret_files },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_KV"] == "valkey" && output.env["MY_STREAM"] == "valkey" && output.secret_env["MY_VALKEY_URL"] == "valkey-url"
+    error_message = "the one URL must serve both"
+  }
+
+  assert {
+    condition     = output.env["MY_VALKEY_TLS_CA_FILE"] == "/secrets/my-valkey-tls-ca-file/value" && contains(keys(google_secret_manager_secret_iam_member.server), "valkey-ca")
+    error_message = "the CA must arrive as a mounted file that the service account can read"
+  }
+}
+
+# Replaces the run above of the same module, whose outputs nothing reads after this.
+run "stream_with_its_own_url" {
+  command = apply
+
+  module {
+    source = "../stream-valkey"
+  }
+
+  variables {
+    url_secret_id = "valkey-url"
+  }
+}
+
+run "kv_and_stream_both_naming_the_url_fail" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.kv_external.env, secret_env = run.kv_external.secret_env },
+      { env = run.stream_with_its_own_url.env, secret_env = run.stream_with_its_own_url.secret_env },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+# Several backends add to the one setting, which is absent while none does.
+run "billing_sources_are_absent_without_a_billing_backend" {
+  command = plan
+
+  assert {
+    condition     = !contains(keys(output.env), "MY_BILLING_SOURCES")
+    error_message = "a deployment without a billing backend must not name the setting"
+  }
+}
+
+run "two_backends_add_to_billing_sources" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
+      { billing_sources = ["gcp"], env = { MY_BILLING_GCP_METHOD = "budget" } },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_BILLING_SOURCES"] == "aws,gcp"
+    error_message = "the setting must list each source of the backends"
+  }
+}
+
+run "a_billing_source_named_twice_fails" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
+      { billing_sources = ["aws"] },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "billing_sources_beside_the_setting_in_env_fail" {
+  command = plan
+
+  variables {
+    env = { MY_BILLING_SOURCES = "aws" }
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
+      { billing_sources = ["gcp"] },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "the_scopes_of_billing_grant_on_their_resources" {
+  command = plan
+
+  variables {
+    backends = [
+      {
+        permissions = [
+          { permission = "roles/bigquery.jobUser", scope = "project", resource = "other" },
+          { permission = "READER", scope = "dataset", resource = "projects/billing/datasets/export" },
+          { permission = "roles/pubsub.subscriber", scope = "subscription", resource = "projects/billing/subscriptions/budget" },
+        ]
+      },
+    ]
+  }
+
+  assert {
+    condition     = google_project_iam_member.backend["other/roles/bigquery.jobUser"].project == "other"
+    error_message = "a project the backend names must get the grant, not the app's"
+  }
+
+  assert {
+    condition = (
+      google_bigquery_dataset_access.backend["projects/billing/datasets/export/READER"].project == "billing" &&
+      google_bigquery_dataset_access.backend["projects/billing/datasets/export/READER"].dataset_id == "export" &&
+      google_bigquery_dataset_access.backend["projects/billing/datasets/export/READER"].user_by_email == "my-server@p.iam.gserviceaccount.com"
+    )
+    error_message = "the dataset's access entry must name the dataset and the service account"
+  }
+
+  assert {
+    condition = (
+      google_pubsub_subscription_iam_member.backend["projects/billing/subscriptions/budget/roles/pubsub.subscriber"].project == "billing" &&
+      google_pubsub_subscription_iam_member.backend["projects/billing/subscriptions/budget/roles/pubsub.subscriber"].subscription == "budget"
+    )
+    error_message = "the subscription's binding must name the subscription"
+  }
+}
+
+run "a_project_without_a_resource_is_still_the_apps" {
+  command = plan
+
+  variables {
+    backends = [
+      { permissions = [{ permission = "roles/x", scope = "project" }] },
+    ]
+  }
+
+  assert {
+    condition     = google_project_iam_member.backend["roles/x"].project == "p"
+    error_message = "a project grant without a resource goes on the app's project, under the key it always had"
+  }
+}
+
+run "the_security_groups_of_aws_fail" {
+  command = plan
+
+  variables {
+    backends = [{ security_group_ids = ["sg-1"] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "a_queue_that_lambda_polls_fails" {
+  command = plan
+
+  variables {
+    backends = [{ event_sources = { jobs = { arn = "a", visibility_timeout_seconds = 930 } } }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_load_balancer_of_ecs_fails" {
+  command = plan
+
+  variables {
+    backends = [{ load_balancer = { target_group_arn = "a", security_group_id = "b" } }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_conditions_of_an_aws_statement_fail" {
+  command = plan
+
+  variables {
+    backends = [{ permissions = [{ permission = "roles/x", scope = "project", conditions = [{ test = "t", variable = "v", values = ["x"] }] }] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "a_backend_on_private_addresses_attaches_the_service_and_the_jobs" {
+  command = plan
+
+  variables {
+    console_enabled = true
+    backends        = [{ vpc_access = { network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/r/subnetworks/s" } }]
+  }
+
+  assert {
+    condition = alltrue([
+      for t in [
+        google_cloud_run_v2_service.server.template[0],
+        google_cloud_run_v2_job.one_off["migrate"].template[0].template[0],
+        google_cloud_run_v2_job.one_off["console"].template[0].template[0],
+      ] : t.vpc_access[0].egress == "PRIVATE_RANGES_ONLY" && t.vpc_access[0].network_interfaces[0].subnetwork == "projects/p/regions/r/subnetworks/s"
+    ])
+    error_message = "a backend's subnet must reach the service and every job"
+  }
+}
+
+run "the_same_subnet_from_the_input_and_a_backend_passes" {
+  command = plan
+
+  variables {
+    vpc_access = { network = "n", subnetwork = "s" }
+    backends   = [{ vpc_access = { network = "n", subnetwork = "s" } }]
+  }
+
+  assert {
+    condition     = length(google_cloud_run_v2_service.server.template[0].vpc_access) == 1
+    error_message = "one subnet named twice is still one subnet"
+  }
+}
+
+run "two_subnets_fail" {
+  command = plan
+
+  variables {
+    backends = [
+      { vpc_access = { network = "n", subnetwork = "s" } },
+      { vpc_access = { network = "n", subnetwork = "t" } },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "stream_postgres_on_a_database_url" {
+  command = apply
+
+  module {
+    source = "../stream-postgres"
+  }
+}
+
+run "db_with_a_pooler" {
+  command = apply
+
+  module {
+    source = "../db-external"
+  }
+
+  variables {
+    url_secret_id        = "direct"
+    pooled_url_secret_id = "pooled"
+  }
+}
+
+run "a_pooled_database_names_the_listeners_url_and_stream_postgres_names_nothing" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.db_with_a_pooler.env, secret_env = run.db_with_a_pooler.secret_env, direct_secret_env = run.db_with_a_pooler.direct_secret_env },
+      { env = run.stream_postgres_on_a_database_url.env, secret_env = run.stream_postgres_on_a_database_url.secret_env },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_STREAM"] == "postgres" && output.secret_env["MY_STREAM_POSTGRES_URL"] == "direct" && output.secret_env["MY_DATABASE_URL"] == "pooled"
+    error_message = "LISTEN must use the direct connection, which the database module names"
+  }
+}
+
+run "stream_postgres_with_its_own_url" {
+  command = apply
+
+  module {
+    source = "../stream-postgres"
+  }
+
+  variables {
+    listen_url_secret_id = "other"
+  }
+}
+
+run "two_owners_of_the_listeners_url_fail" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.db_with_a_pooler.env, secret_env = run.db_with_a_pooler.secret_env, direct_secret_env = run.db_with_a_pooler.direct_secret_env },
+      { env = run.stream_postgres_with_its_own_url.env, secret_env = run.stream_postgres_with_its_own_url.secret_env },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}

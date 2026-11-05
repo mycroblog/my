@@ -20,12 +20,14 @@ tasks:
     cmds:
       - task: fmt-check
       - task: env-check
+      - task: backend-fields
       - task: sources
       - task: validate
       - task: test
       - task: example-test
       - task: git-source-test
       - task: state-test
+      - task: db-state-test
       - task: aws-plan-test
 
   fmt-check:
@@ -36,7 +38,12 @@ tasks:
   env-check:
     desc: Fail when deploy/opentofu or its guide names a MY_ variable that the configuration does not have
     cmds:
-      - scripts/tofu-env-check.sh deploy/opentofu docs/operations/deploy-cloud-run.md
+      - scripts/tofu-env-check.sh deploy/opentofu docs/operations/deploy-cloud-run.md docs/operations/billing-import.md
+
+  backend-fields:
+    desc: Fail when the backends type of an app module and the backend contract disagree, since OpenTofu drops an unknown field without a word
+    cmds:
+      - scripts/tofu-backend-fields-check.sh
 
   init:
     internal: true
@@ -56,7 +63,7 @@ tasks:
     desc: Run the tests of deploy/opentofu, on mocked providers
     deps: [init]
     cmds:
-      - for: [deploy/opentofu/modules/app-aws-lambda, deploy/opentofu/modules/app-gcp-cloud-run, deploy/opentofu/modules/ingress-aws-cloudfront, deploy/opentofu/modules/ingress-cloudflare-app, deploy/opentofu/modules/ingress-cloudflare-media, deploy/opentofu/modules/kek-aws-kms, deploy/opentofu/modules/kek-aws-secrets-manager, deploy/opentofu/modules/mail-aws-ses, deploy/opentofu/modules/mail-smtp, deploy/opentofu/modules/queue-aws-sqs, deploy/opentofu/modules/queue-gcp-cloud-tasks, deploy/opentofu/modules/secrets-aws-secrets-manager, deploy/opentofu/modules/secrets-gcp-secret-manager, deploy/opentofu/modules/stream-aws-sns]
+      - for: [deploy/opentofu/modules/app-aws-ecs, deploy/opentofu/modules/app-aws-lambda, deploy/opentofu/modules/app-gcp-cloud-run, deploy/opentofu/modules/billing-aws, deploy/opentofu/modules/billing-gcp, deploy/opentofu/modules/blob-cloudflare-r2, deploy/opentofu/modules/blob-s3, deploy/opentofu/modules/db-aws-rds, deploy/opentofu/modules/db-external, deploy/opentofu/modules/db-gcp-cloud-sql, deploy/opentofu/modules/db-neon, deploy/opentofu/modules/ingress-aws-alb, deploy/opentofu/modules/ingress-aws-cloudfront, deploy/opentofu/modules/ingress-cloudflare-app, deploy/opentofu/modules/ingress-cloudflare-media, deploy/opentofu/modules/kek-aws-kms, deploy/opentofu/modules/kek-aws-secrets-manager, deploy/opentofu/modules/kv-aws-elasticache, deploy/opentofu/modules/kv-external, deploy/opentofu/modules/kv-gcp-memorystore, deploy/opentofu/modules/mail-aws-ses, deploy/opentofu/modules/mail-smtp, deploy/opentofu/modules/monitoring-aws, deploy/opentofu/modules/monitoring-gcp, deploy/opentofu/modules/queue-aws-sqs, deploy/opentofu/modules/queue-db, deploy/opentofu/modules/queue-gcp-cloud-tasks, deploy/opentofu/modules/secrets-aws-secrets-manager, deploy/opentofu/modules/secrets-gcp-secret-manager, deploy/opentofu/modules/stream-aws-sns, deploy/opentofu/modules/stream-postgres, deploy/opentofu/modules/stream-valkey]
         cmd: tofu -chdir={{.ITEM}} test
 
   state-test:
@@ -64,6 +71,12 @@ tasks:
     cmds:
       - mkdir -p "$TF_PLUGIN_CACHE_DIR"
       - scripts/tofu-state-test.sh
+
+  db-state-test:
+    desc: Prove against a local stub of Cloud SQL and Secret Manager that a generated database password reaches the user and the URL secret, and neither the plan nor the state
+    cmds:
+      - mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - scripts/tofu-db-state-test.sh
 
   aws-plan-test:
     desc: Prove with a plan that makes no call that the AWS modules hold no generated value in the plan

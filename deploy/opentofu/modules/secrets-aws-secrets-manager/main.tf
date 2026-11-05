@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# Secrets in AWS Secrets Manager. It holds no value of its own: the operator adds what comes from elsewhere, and what can be
-# generated goes through an ephemeral resource and a write-only attribute, so it reaches neither the plan nor the state.
+# Secrets in AWS Secrets Manager. It holds no value of its own: the operator adds what comes from elsewhere, what can be
+# generated goes through an ephemeral resource and a write-only attribute, and what another module of the configuration hands
+# over goes through an ephemeral input and a write-only attribute, so none of it reaches this module's plan or state.
 
 terraform {
   required_version = ">= 1.11"
@@ -49,6 +50,38 @@ variable "generate_p256_keys" {
   }
 }
 
+variable "write_keys" {
+  description = "Keys of var.secrets or var.referenced whose value comes from write_values, such as the connection URL of a database another module creates. A separate input because the keys must be known at plan time, and write_values need not be."
+  type        = set(string)
+  default     = []
+  nullable    = false
+
+  validation {
+    condition     = length(setsubtract(var.write_keys, concat(keys(var.secrets), keys(var.referenced)))) == 0
+    error_message = "Each key of write_keys must be a key of secrets or referenced."
+  }
+
+  validation {
+    condition     = length(setintersection(var.write_keys, var.generate_p256_keys)) == 0
+    error_message = "A key can be generated or written, not both."
+  }
+}
+
+variable "write_values" {
+  description = "The value of each key of write_keys. Ephemeral: this module keeps none of them in the state, whatever the module they come from keeps."
+  type        = map(string)
+  default     = {}
+  nullable    = false
+  ephemeral   = true
+}
+
+variable "write_version" {
+  description = "Raise it to write write_values again, after the value changed where it comes from. Nothing else can tell: the value is not in the state to compare."
+  type        = number
+  default     = 1
+  nullable    = false
+}
+
 resource "aws_secretsmanager_secret" "this" {
   for_each = toset(concat(values(var.secrets), values(var.referenced)))
 
@@ -78,6 +111,14 @@ resource "aws_secretsmanager_secret_version" "generated" {
   }
 }
 
+resource "aws_secretsmanager_secret_version" "written" {
+  for_each = var.write_keys
+
+  secret_id                = aws_secretsmanager_secret.this[merge(var.secrets, var.referenced)[each.key]].id
+  secret_string_wo         = var.write_values[each.key]
+  secret_string_wo_version = var.write_version
+}
+
 output "env" {
   description = "No plain settings."
   value       = {}
@@ -86,7 +127,7 @@ output "env" {
 output "secret_env" {
   description = "The settings of var.secrets: variable name to the secret's ARN."
   value       = { for key, name in var.secrets : key => aws_secretsmanager_secret.this[name].arn }
-  depends_on  = [aws_secretsmanager_secret_version.generated]
+  depends_on  = [aws_secretsmanager_secret_version.generated, aws_secretsmanager_secret_version.written]
 }
 
 output "permissions" {

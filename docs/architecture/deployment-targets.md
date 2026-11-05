@@ -1,22 +1,24 @@
-# デプロイターゲットと低コスト構成
+# デプロイターゲットとコストの目安
 
 > 価格・制限値は **2026-10-16 時点の公式ドキュメント / 公式料金ページ** の値です。各数値の出典は節末の「出典」に URL で示します。
 > 公式資料で確認できないものは **要検証** とし、理由を併記しています。料金は改定されるので、最終的には各社の公式ページを正としてください。
 > 価格は特記がない限り USD・税抜・代表リージョン（GCP は us-central1、AWS は us-east-1）の値です。M6 で実測し、本ファイルを更新します。
+> サーバーには費用がかかります。ここの数字は、見込みを立て、工夫して減らせるところを見つけるための目安で、選択肢を費用だけで退ける基準ではありません（[NFR-COST](../requirements/02-non-functional.md#コストnfr-cost)）。
 
 ## サマリ
 
 | ターゲット | コンピュート | RDB | キュー | Blob | スケジューラ | 想定固定費 |
 | --- | --- | --- | --- | --- | --- | --- |
-| **Google Cloud** | Cloud Run（min instances 0） | 外部の Neon、または Cloud SQL | Cloud Tasks（push） | GCS（または R2） | Cloud Scheduler | ほぼ $0（Cloud SQL を使うと最小構成でも約 $9/月〜） |
-| **AWS** | Lambda（Function URL）+ Lambda Web Adapter | Aurora Serverless v2（0 ACU）/ RDS / 外部 | SQS（event source） | S3 + CloudFront | EventBridge Scheduler | ほぼ $0（DB 次第。Aurora は常時接続があると 0 ACU にならない） |
+| **Google Cloud** | Cloud Run（min instances 0） | 外部の Neon、または Cloud SQL | Cloud Tasks（push） | GCS（または R2） | Cloud Scheduler | 約 $37/月（ロードバランサ約 $18 + Neon Launch 約 $19）。ドメインマッピングや Neon Free で減らせる。Cloud SQL は最小構成で約 $9/月〜 |
+| **AWS** | Lambda（Function URL）+ Lambda Web Adapter | Aurora Serverless v2（0 ACU）/ RDS / 外部 | SQS（event source） | S3 + CloudFront | EventBridge Scheduler | DB 次第（Aurora は常時接続があると 0 ACU にならない）。VPC の DB には NAT ゲートウェイが加わる |
+| **AWS（常駐）** | ECS Fargate + ALB | 外部 / RDS | DB キュー | S3 | プロセス内 cron | 約 $42/月 + DB（東京の最小構成。`app-aws-ecs` の README に内訳） |
 | **Self-hosted** | Docker Compose / microk8s | SQLite（+ Litestream）/ PostgreSQL | DB キュー | ローカル FS / MinIO / 外部 S3 互換 | プロセス内 cron | VM 代（$4〜6/月 クラス、要検証） |
 
 ## 設計に効く事実（要点）
 
 1. **Aurora Serverless v2 の 0 ACU は「ユーザー接続が 1 本もない」ときだけ** 一時停止する。常駐ワーカーの DB ポーリングやコネクションプール、RDS Proxy があると停止しない。復帰は通常約 15 秒、24 時間超の停止後は 30 秒以上。
-   → 連合サーバーは受信が途切れにくく、「ほぼ $0」になる前提は弱い。AWS の最安 DB 構成として外部 DB を併記する。
-2. **Neon Free は 100 CU-hours/プロジェクト/月**。最小 0.25 CU で 400 時間/月（約 16.7 日）分で、常時起動（約 730 時間）には足りない。5 分無通信で scale to zero（Free では無効化不可）。
+   → 連合サーバーは受信が途切れにくく、一時停止はあまり見込めない。費用を抑える選択肢として外部 DB を併記する。
+2. **Neon Free は 100 CU-hours/プロジェクト/月**。最小 0.25 CU で 400 時間/月（約 16.7 日）分で、常時起動（約 730 時間）には足りない。5 分無通信で scale to zero（Free では無効化不可）。想定するプランは Launch で、Free はトレードオフを受け入れれば使える。
 3. **SQS の遅延上限は 15 分、Cloud Tasks の予約上限は 30 日**。SQS のメッセージ上限は **1 MiB**。
 4. **AWS Lambda Web Functions**（2026-10 発表の新形態。HTTP サーバーをそのまま動かせる）は現時点で **Node.js のみ** 対応で、Go サーバーには使えない。Go では引き続き Lambda Web Adapter（Event Functions）を使う。
 
@@ -48,9 +50,10 @@
 
 ## Google Cloud
 
-- **構成**: Cloud Run サービス 1 つ（`role = all`）。Cloud Tasks と Cloud Scheduler がサービスの既定の URL（`https://<service>-<project number>.<region>.run.app`）の `/_internal/jobs` と `/_internal/tick` を HTTP で叩く（push 型）。ingress を通さないので Cloudflare の 125 秒の制限やチャレンジを受けず、同じプロジェクトから既定の URL を呼ぶときだけ内部のトラフィックに数えられるのでサービスをインターネットから閉じられる。既定の URL は無効にしない。OpenTofu（Terraform には対応しない）のモジュールは `deploy/opentofu`（`app-gcp-cloud-run`、`queue-gcp-cloud-tasks`、`blob-gcp-gcs`、`stream-gcp-pubsub`、`db-external`、`mail-smtp`、`secrets-gcp-secret-manager`、`kek-gcp-secret-manager`、`kek-gcp-kms`、`ingress-gcp-domain-mapping`、`ingress-gcp-load-balancer`、`ingress-cloudflare-app`、`ingress-cloudflare-media`）。KEK と VAPID 鍵は最初の apply が ephemeral リソースと write-only 属性で生成し、plan にも state にも値を残さないで、手順は [Deploying on Cloud Run](../operations/deploy-cloud-run.md) にある。
-- **固定費の前提**: 既定の毎分の tick は DB に触るので、Neon のコンピュートが止まらない（0.25 CU で 182.5 CU-hours / 月、Free の 100 CU-hours を超え、Launch で約 $19 / 月）。Free に収めるなら `tick_schedule` を 10 分ごとなどに延ばす。開いたストリームが 1 本でもあればインスタンスに課金が続く（1 vCPU・512 MiB で 1 本を 1 か月開き続けると約 $60 / 月。単価は要検証）。「ほぼ $0」はこの 2 つを抑えたときの値である。
-- **RDB**: Cloud SQL は最小構成でも常時課金のため、低コスト構成では Neon（Postgres）などの外部サーバーレス PostgreSQL を推奨。
+- **構成**: Cloud Run サービス 1 つ（`role = all`）。Cloud Tasks と Cloud Scheduler がサービスの既定の URL（`https://<service>-<project number>.<region>.run.app`）の `/_internal/jobs` と `/_internal/tick` を HTTP で叩く（push 型）。ingress を通さないので Cloudflare の 125 秒の制限やチャレンジを受けず、同じプロジェクトから既定の URL を呼ぶときだけ内部のトラフィックに数えられるのでサービスをインターネットから閉じられる。既定の URL は無効にしない。OpenTofu（Terraform には対応しない）のモジュールは `deploy/opentofu`（一覧は [その README](../../deploy/opentofu/README.md)）。例の `examples/gcp-cloud-run-neon` の ingress は `ingress-gcp-load-balancer` で、`internal-and-load-balancer` で既定の URL をインターネットから閉じる。`ingress-gcp-domain-mapping` は安く試すためにコメントで残す。KEK と VAPID 鍵は最初の apply が ephemeral リソースと write-only 属性で生成し、plan にも state にも値を残さないで、手順は [Deploying on Cloud Run](../operations/deploy-cloud-run.md) にある。
+- **固定費の目安**: min instances は既定で 0 のまま。ロードバランサが約 $18 / 月（料金ページで未確認）。既定の毎分の tick は DB に触るので Neon のコンピュートが止まらず（0.25 CU で 182.5 CU-hours / 月）、想定するプランの Launch で約 $19 / 月になる。tick は既定で毎分のままとする。開いたストリームが 1 本でもあればインスタンスに課金が続く（1 vCPU・512 MiB で 1 本を 1 か月開き続けると約 $60 / 月。単価は要検証）。
+- **工夫して減らせるところ**: ドメインマッピングならロードバランサの費用がなくなる（Preview で本番には非推奨、既定の URL が開いたまま）。Neon Free なら DB の費用がなくなる（100 CU-hours に収めるには `tick_schedule` を 10 分ごとなどに延ばす必要があり、定期ジョブが遅れる。トレードオフは [Costs](../operations/deploy-cloud-run.md#costs)）。
+- **RDB**: 例は Neon（Postgres）を手で作る `db-external` を使う。Cloud SQL は常時課金で最小構成でも約 $9.4 / 月で、`db-gcp-cloud-sql` に差し替えられる。
   Cloud Run + SQLite は永続ディスクがないため非推奨。
 - **キュー**: 遅延実行・レート制御・タスク名による重複排除がある Cloud Tasks を第一候補。Pub/Sub は将来オプション。
 
@@ -208,7 +211,7 @@
 | 外向き転送 | 5 GB / プロジェクト / 月 |
 | 有料（Launch） | $0.106 / CU 時間、$0.35 / GB-month、転送 500 GB/プロジェクト込み（超過 $0.10/GB） |
 
-- 常時起動（約 730 時間/月）だと 0.25 CU でも 182.5 CU-hours になり Free 枠を超える。**5 分以上アクセスが途切れる時間がどれだけあるか** が Free で収まるかの分かれ目になる（M6 で計測）。
+- 常時起動（約 730 時間/月）だと 0.25 CU でも 182.5 CU-hours になり Free 枠を超える。想定するプランは Launch で、**5 分以上アクセスが途切れる時間がどれだけあるか** が Free でも収まるかの分かれ目になる（M6 で計測）。
 - 要検証: Free 枠を使い切った後の挙動（停止か、制限か）を公式ページで明示的に確認できなかった。
 
 ### Turso（libSQL。将来の候補）
@@ -251,7 +254,7 @@
   非公開の CA は `valkey_tls_ca_file`、キーの接頭辞は `valkey_key_prefix` で設定する（[設定のリファレンス](../reference/configuration.md)）。
 - クラスタのモードのサーバーでも動く。KV のキーは 1 つのハッシュスロット（ハッシュタグ `{kv}`）に集まるので、KV をクラスタで分散はしない。
 - 候補: Google Cloud は Memorystore for Valkey、AWS は ElastiCache for Valkey（サーバーレスを含む）、Self-hosted は `valkey/valkey` のコンテナ。
-  どれも常時課金で、ほぼ $0 の構成には入らない（料金は要検証。M6 で計測する）。
+  どれも常時課金する（料金は要検証。M6 で計測する）。
 
 ## ストリーム（プロセス間の知らせ）
 
@@ -268,7 +271,7 @@
 
 - **トピック** は各ブローカーとも 1 インスタンスに 1 つで、デプロイのテンプレートが作る（標準トピック）。プロセスごとのキュー・subscription はサーバーが作り、消す。
   消し損ねた分は、定期ジョブ `stream.sweep`（15 分ごと）が、KV の生存の印のないプロセスのものを消す。`stream_sns_queue_prefix` と `stream_pubsub_subscription_prefix` は、そのインスタンスだけが使う値にする
-- **Neon**: アイドルの `LISTEN` の接続はコンピュートを起こし続けないが、scale to zero でリスナーは切られる。ストリームのないプロセスは listen しないので、切られるのはストリームがないときだけ
+- **Neon**: アイドルの `LISTEN` の接続はコンピュートを起こし続けないとみなしている（Neon の文書は明言せず、未計測）。scale to zero でリスナーは切られる。ストリームのないプロセスは listen しないので、切られるのはストリームがないときだけ
 - 未決（ADR-0050 の Open Questions）: Lambda でストリームを既定で有効にするか（下記の実行時間）と、`database = postgres` で `stream` の既定を `postgres` にするか。決まるまでは、どのターゲットも `stream` を明示的に設定する
 
 ### コスト（2026-10-19 確認）
@@ -278,7 +281,7 @@
 - Lambda: SSE の接続 1 本が実行環境 1 つを最大 15 分（関数のタイムアウト）占有する。ブローカーとは別に、実行時間がストリームの本数 × 時間で増える（512 MB で 1 本を 1 か月開き続けると約 131 万 GB 秒で、無料枠 40 万 GB 秒を超える）
 - Pub/Sub: スループット $40 / TiB、毎月 10 GiB まで無料（リクエストごとに最低 1 KB で数える）。subscription 3 つなら知らせ約 268 万件 / 月までが無料枠で、以降 100 万件ごとに約 $0.15。保持を 1 日以下にするので保存料はかからない。subscription の作成・削除は無料
 - Cloud Run（リクエストベース課金）: CPU はリクエストの処理中だけ割り当てられる。SSE のストリームはリクエストなので、「ストリームがある間だけ受ける」形になる。subscription はインスタンスにつき 1 つ
-- Valkey: ElastiCache Serverless for Valkey は最小 100 MB の課金で約 $6.13 / 月（$0.084 / GB 時間、us-east-1）、Memorystore for Valkey は最小の shared-core-nano でも約 $23 / 月（$0.0318 / 時間）。クラウドの既定にはしない
+- Valkey: ElastiCache Serverless for Valkey は料金ページでは最小 100 MB の課金で約 $6.13 / 月（$0.084 / GB 時間、us-east-1）、ただしガイドの「How ElastiCache works」は最小 1 GB（約 $61 / 月）と書き、AWS の文書が食い違う。Memorystore for Valkey は最小の shared-core-nano でも約 $23 / 月（$0.0318 / 時間）。どちらも既定ではなく、DB の負荷に応じて選ぶ
 
 ### 権限
 

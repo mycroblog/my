@@ -318,3 +318,168 @@ run "a_queue_that_hides_messages_for_less_than_the_timeout_fails" {
 
   expect_failures = [aws_lambda_event_source_mapping.worker]
 }
+
+run "the_one_off_functions_take_the_direct_connection_and_the_others_the_pooled_one" {
+  command = plan
+
+  variables {
+    backends = [{
+      env               = { MY_DATABASE = "postgres" }
+      secret_env        = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek", MY_DATABASE_URL = "arn:aws:secretsmanager:r:1:secret:pooled", MY_STREAM_POSTGRES_URL = "arn:aws:secretsmanager:r:1:secret:direct" }
+      direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:r:1:secret:direct" }
+    }]
+  }
+
+  assert {
+    condition     = aws_lambda_function.server["web"].environment[0].variables["SECRET_ARN_MY_DATABASE_URL"] == "arn:aws:secretsmanager:r:1:secret:pooled"
+    error_message = "the web function must use the pooled connection"
+  }
+
+  assert {
+    condition     = aws_lambda_function.server["worker"].environment[0].variables["SECRET_ARN_MY_DATABASE_URL"] == "arn:aws:secretsmanager:r:1:secret:pooled"
+    error_message = "the worker function must use the pooled connection"
+  }
+
+  assert {
+    condition     = aws_lambda_function.server["web"].environment[0].variables["SECRET_ARN_MY_STREAM_POSTGRES_URL"] == "arn:aws:secretsmanager:r:1:secret:direct"
+    error_message = "LISTEN must use the direct connection"
+  }
+
+  assert {
+    condition     = aws_lambda_function.server["migrate"].environment[0].variables["SECRET_ARN_MY_DATABASE_URL"] == "arn:aws:secretsmanager:r:1:secret:direct"
+    error_message = "the migration function must use the direct connection"
+  }
+}
+
+run "a_direct_setting_with_nothing_to_override_fails" {
+  command = plan
+
+  variables {
+    backends = [{ direct_secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:r:1:secret:direct" } }]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "a_backend_in_a_vpc_attaches_every_function" {
+  command = plan
+
+  variables {
+    vpc_subnet_ids         = ["subnet-a", "subnet-b"]
+    vpc_security_group_ids = ["sg-out"]
+    backends = [{
+      secret_env         = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" }
+      security_group_ids = ["sg-db"]
+    }]
+  }
+
+  assert {
+    condition     = toset(aws_lambda_function.server["web"].vpc_config[0].security_group_ids) == toset(["sg-out", "sg-db"]) && toset(aws_lambda_function.server["migrate"].vpc_config[0].subnet_ids) == toset(["subnet-a", "subnet-b"])
+    error_message = "every function must join the subnets and every group"
+  }
+}
+
+run "a_backend_in_a_vpc_without_subnets_fails" {
+  command = plan
+
+  variables {
+    backends = [{ security_group_ids = ["sg-db"] }]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "subnets_without_a_group_fail" {
+  command = plan
+
+  variables {
+    vpc_subnet_ids = ["subnet-a"]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+# Several backends add to the one setting, which is absent while none does.
+run "billing_sources_are_absent_without_a_billing_backend" {
+  command = plan
+
+  assert {
+    condition     = !contains(keys(output.env), "MY_BILLING_SOURCES")
+    error_message = "a deployment without a billing backend must not name the setting"
+  }
+}
+
+run "two_backends_add_to_billing_sources" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { billing_sources = ["gcp"], env = { MY_BILLING_GCP_METHOD = "budget" } },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_BILLING_SOURCES"] == "aws,gcp"
+    error_message = "the setting must list each source of the backends"
+  }
+}
+
+run "a_billing_source_named_twice_fails" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { billing_sources = ["aws"] },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "billing_sources_beside_the_setting_in_env_fail" {
+  command = plan
+
+  variables {
+    env = { MY_BILLING_SOURCES = "aws" }
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { billing_sources = ["gcp"] },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "a_field_of_google_cloud_fails" {
+  command = plan
+
+  variables {
+    backends = [{ cloud_sql_instances = ["p:r:db"] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_subnet_of_cloud_run_fails" {
+  command = plan
+
+  variables {
+    backends = [{ vpc_access = { network = "n", subnetwork = "s" } }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_load_balancer_of_a_service_with_tasks_fails" {
+  command = plan
+
+  variables {
+    backends = [{ load_balancer = { target_group_arn = "a", security_group_id = "b" } }]
+  }
+
+  expect_failures = [var.backends]
+}
