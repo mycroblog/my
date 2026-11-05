@@ -268,7 +268,7 @@
 
 - **トピック** は各ブローカーとも 1 インスタンスに 1 つで、デプロイのテンプレートが作る（標準トピック）。プロセスごとのキュー・subscription はサーバーが作り、消す。
   消し損ねた分は、定期ジョブ `stream.sweep`（15 分ごと）が、KV の生存の印のないプロセスのものを消す。`stream_sns_queue_prefix` と `stream_pubsub_subscription_prefix` は、そのインスタンスだけが使う値にする
-- **Neon**: アイドルの `LISTEN` の接続はコンピュートを起こし続けないが、scale to zero でリスナーは切られる。ストリームのないプロセスは listen しないので、切られるのはストリームがないときだけ
+- **Neon**: アイドルの `LISTEN` の接続はコンピュートを起こし続けないとみなしている（Neon の文書は明言せず、未計測）。scale to zero でリスナーは切られる。ストリームのないプロセスは listen しないので、切られるのはストリームがないときだけ
 - 未決（ADR-0050 の Open Questions）: Lambda でストリームを既定で有効にするか（下記の実行時間）と、`database = postgres` で `stream` の既定を `postgres` にするか。決まるまでは、どのターゲットも `stream` を明示的に設定する
 
 ### コスト（2026-10-19 確認）
@@ -278,7 +278,7 @@
 - Lambda: SSE の接続 1 本が実行環境 1 つを最大 15 分（関数のタイムアウト）占有する。ブローカーとは別に、実行時間がストリームの本数 × 時間で増える（512 MB で 1 本を 1 か月開き続けると約 131 万 GB 秒で、無料枠 40 万 GB 秒を超える）
 - Pub/Sub: スループット $40 / TiB、毎月 10 GiB まで無料（リクエストごとに最低 1 KB で数える）。subscription 3 つなら知らせ約 268 万件 / 月までが無料枠で、以降 100 万件ごとに約 $0.15。保持を 1 日以下にするので保存料はかからない。subscription の作成・削除は無料
 - Cloud Run（リクエストベース課金）: CPU はリクエストの処理中だけ割り当てられる。SSE のストリームはリクエストなので、「ストリームがある間だけ受ける」形になる。subscription はインスタンスにつき 1 つ
-- Valkey: ElastiCache Serverless for Valkey は最小 100 MB の課金で約 $6.13 / 月（$0.084 / GB 時間、us-east-1）、Memorystore for Valkey は最小の shared-core-nano でも約 $23 / 月（$0.0318 / 時間）。クラウドの既定にはしない
+- Valkey: ElastiCache Serverless for Valkey は料金ページでは最小 100 MB の課金で約 $6.13 / 月（$0.084 / GB 時間、us-east-1）、ただしガイドの「How ElastiCache works」は最小 1 GB（約 $61 / 月）と書き、AWS の文書が食い違う。Memorystore for Valkey は最小の shared-core-nano でも約 $23 / 月（$0.0318 / 時間）。クラウドの既定にはしない
 
 ### 権限
 

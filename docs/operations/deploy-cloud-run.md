@@ -208,7 +208,7 @@ module "db" {
 }
 ```
 
-For a store outside Google Cloud, such as an S3-compatible service, leave the `blob` module out of `backends` and pass its settings through `env` and `secret_env`.
+For a store outside Google Cloud, replace the `blob` block with [`blob-s3`](../../deploy/opentofu/modules/blob-s3/README.md), for any S3-compatible service, or [`blob-cloudflare-r2`](../../deploy/opentofu/modules/blob-cloudflare-r2/README.md).
 
 ## How traffic reaches the service
 
