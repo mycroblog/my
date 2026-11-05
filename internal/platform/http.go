@@ -49,7 +49,11 @@ const readinessTimeout = 3 * time.Second
 // that no database can look up are a 400 before any route (rejectInvalidText).
 // The worker role serves only the health checks, for the platform's probes, and the endpoints of
 // the push receiver and the trigger of queue = cloudtasks and sqs, which the web role does not serve.
-func (a *App) Handler() http.Handler {
+func (a *App) Handler() http.Handler { return a.handler(false) }
+
+// handler builds Handler. With gateDomains, as in Serve, requests other than the health checks
+// answer 503 until the domains are verified (domainsGate).
+func (a *App) handler(gateDomains bool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+PathLiveness, a.liveness)
 	mux.HandleFunc("GET "+PathReadiness, a.readiness)
@@ -69,6 +73,9 @@ func (a *App) Handler() http.Handler {
 		}
 	}
 	h := a.problemFallback(mux, page, targets)
+	if gateDomains {
+		h = a.domainsGate(h)
+	}
 	h = a.rejectInvalidText(h)
 	h = a.clientIPs(h)
 	h = clientAPICORS(a.Config.WebOrigin, h)
@@ -78,6 +85,24 @@ func (a *App) Handler() http.Handler {
 	h = securityHeaders(h, a.Voice.Enabled())
 	h = a.accessLog(h)
 	return a.requestIDs(h)
+}
+
+// domainsGate answers 503 to every request but the health checks until the database has confirmed
+// host and account_domain, so that no id or URL goes out under a host that it would refuse.
+func (a *App) domainsGate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !a.domainsVerified.Load() {
+			switch r.URL.Path {
+			case PathLiveness, PathReadiness, PathInstanceHealth:
+			default:
+				l := (&i18n.Resolver{Bundle: a.Messages}).RequestLocalizer(r)
+				w.Header().Set("Retry-After", strconv.Itoa(int(defaultDomainsRetry/time.Second)))
+				a.writeProblem(w, r, l, http.StatusServiceUnavailable, l.ServerHealthUnavailable())
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (a *App) liveness(w http.ResponseWriter, _ *http.Request) {
