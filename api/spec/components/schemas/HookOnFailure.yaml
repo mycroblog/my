@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What a hook that enforces does when its plugin fails: `pass` lets the subject through, `retry`
+  fails the job so that it runs again, and `require_approval` holds the sign-up for approval.
+type: string
+enum: [pass, retry, require_approval]

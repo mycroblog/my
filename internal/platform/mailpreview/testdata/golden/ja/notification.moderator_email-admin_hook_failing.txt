@@ -1,0 +1,14 @@
+サーバー Example Social の外部の審査の呼び出しが失敗し続けています。動くようになるまで、審査の対象は失敗時の動作に従います。既定では審査なしで通ります。
+
+通知を開いて、自動審査の記録で何が失敗したかを確認してください。
+
+通知を開く
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+連絡先: admin@social.example
+
+通知の設定で「外部の審査の失敗」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
+このメールを止める: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

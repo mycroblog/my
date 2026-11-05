@@ -474,6 +474,12 @@ paths:
     $ref: ./paths/admin_domain_actions.yaml
   /admin/domain_actions/{id}:
     $ref: ./paths/admin_domain_actions_{id}.yaml
+  /admin/hook_decisions:
+    $ref: ./paths/admin_hook_decisions.yaml
+  /admin/hook_decisions/summary:
+    $ref: ./paths/admin_hook_decisions_summary.yaml
+  /admin/hook_decisions/{id}/override:
+    $ref: ./paths/admin_hook_decisions_{id}_override.yaml
   /admin/error_groups:
     $ref: ./paths/admin_error_groups.yaml
   /admin/error_groups/{id}:
@@ -1228,6 +1234,28 @@ components:
       $ref: ./components/schemas/AdminSettingList.yaml
     AdminSignupBlock:
       $ref: ./components/schemas/AdminSignupBlock.yaml
+    AdminHook:
+      $ref: ./components/schemas/AdminHook.yaml
+    AdminHookDecision:
+      $ref: ./components/schemas/AdminHookDecision.yaml
+    AdminHookDecisionPage:
+      $ref: ./components/schemas/AdminHookDecisionPage.yaml
+    AdminHookOutcome:
+      $ref: ./components/schemas/AdminHookOutcome.yaml
+    AdminHookSummary:
+      $ref: ./components/schemas/AdminHookSummary.yaml
+    HookDecisionMode:
+      $ref: ./components/schemas/HookDecisionMode.yaml
+    HookMode:
+      $ref: ./components/schemas/HookMode.yaml
+    HookName:
+      $ref: ./components/schemas/HookName.yaml
+    HookOnFailure:
+      $ref: ./components/schemas/HookOnFailure.yaml
+    HookOutcome:
+      $ref: ./components/schemas/HookOutcome.yaml
+    HookReason:
+      $ref: ./components/schemas/HookReason.yaml
     AdminSignupBlockKind:
       $ref: ./components/schemas/AdminSignupBlockKind.yaml
     AdminSignupBlockPage:

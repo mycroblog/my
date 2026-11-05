@@ -343,6 +343,34 @@
     "defaultMessage": "Read the commerce disclosures",
     "description": "Link from the information page to the server's page of the commerce disclosures of its supporter plans."
   },
+  "about.external_review.inbound_follow": {
+    "defaultMessage": "Follows from other servers: who follows whom.",
+    "description": "What the external review of follows covers and what is sent to it."
+  },
+  "about.external_review.inbound_status": {
+    "defaultMessage": "Posts from other servers that this server takes in: their text and who sent them.",
+    "description": "What the external review of posts from other servers covers and what is sent to it."
+  },
+  "about.external_review.intro": {
+    "defaultMessage": "This server asks an external service to review the following before it accepts them. The review can only stop or mark what it reviews, and people decide on any action against an account.",
+    "description": "Introduction of the section of the information page about the external review."
+  },
+  "about.external_review.local_status": {
+    "defaultMessage": "Posts by accounts of this server: their text. Private and direct posts are not sent.",
+    "description": "What the external review of local posts covers and what is sent to it."
+  },
+  "about.external_review.media_check": {
+    "defaultMessage": "Uploaded media: a small processed version, never the original.",
+    "description": "What the external review of uploaded media covers and what is sent to it."
+  },
+  "about.external_review.signup_check": {
+    "defaultMessage": "Sign-ups: the email address and the IP address.",
+    "description": "What the external review of sign-ups covers and what is sent to it."
+  },
+  "about.external_review.title": {
+    "defaultMessage": "External review",
+    "description": "Heading of the section of the information page that says the server uses an external review of submissions."
+  },
   "about.licenses.title": {
     "defaultMessage": "Licenses",
     "description": "Heading of the section of the server's information page that links to the license notices of the third-party software, data and fonts that the web app bundles."

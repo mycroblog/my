@@ -31,6 +31,7 @@ import (
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/graph"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -203,6 +204,8 @@ type App struct {
 	// VoiceRooms runs the voice chat rooms (ADR-0100) and their jobs; its use cases answer
 	// ErrDisabled while Voice is off.
 	VoiceRooms *appvoice.Service
+	// Hooks runs the decision hooks (ADR-0147). A module that owns a subject takes it as apphook.Gate.
+	Hooks *apphook.Service
 	// Diagnostics groups the error reports in the database and changes the state of the groups
 	// (ADR-0103 §4 (2), §7).
 	Diagnostics *appdiagnostics.Service
@@ -507,6 +510,10 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	// The user step is the locale of the client API request's authenticated viewer.
 	a.Locales = &i18n.Resolver{Bundle: a.Messages, UserLocale: a.viewerLocale, InstanceDefault: a.instanceDefaultLocale}
 
+	// The modules that own the subjects of the decision hooks take a.Hooks when they are built.
+	if err := a.setUpHooks(cfg, repos.decisions, repos.existingStatuses); err != nil {
+		return nil, err
+	}
 	a.setUpAccount(cfg, repos.accounts)
 	a.setUpInstance(repos.instances)
 	if err := a.verifyDomainsAtStart(ctx, opts.CheckDomainsOnly); err != nil {

@@ -135,6 +135,10 @@
     "defaultMessage": "{instance} でさらにエラーが報告されました",
     "description": "Web Push notification to an administrator who manages the errors: more new or recurring errors happened in this hour than are notified one by one, and they are counted in one notification. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.admin_hook_failing": {
+    "defaultMessage": "{instance} の外部の審査が失敗し続けています",
+    "description": "Web Push notification to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.supporter_service_closure": {
     "defaultMessage": "{instance} の終了のため、サポーターの加入が解約されます",
     "description": "Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none."

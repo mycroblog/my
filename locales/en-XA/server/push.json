@@ -27,6 +27,10 @@
     "defaultMessage": "[Ȧ řḗḗşǿǿŀṽḗḗḓ ḗḗřřǿǿř ħȧȧƥƥḗḗƞḗḗḓ ȧȧɠȧȧīƞ ǿǿƞ {instance}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.admin_hook_failing": {
+    "defaultMessage": "[Ȧƞ ḗḗẋŧḗḗřƞȧȧŀ řḗḗṽīḗḗẇ ǿǿƒ {instance} ķḗḗḗḗƥş ƒȧȧīŀīƞɠ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.admin_report": {
     "defaultMessage": "[Ȧ ƞḗḗẇ řḗḗƥǿǿřŧ ȧȧẇȧȧīŧş ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance}]",
     "description": "Generated from en by tools/i18n; do not edit."

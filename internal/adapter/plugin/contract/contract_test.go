@@ -185,3 +185,25 @@ func TestPassed(t *testing.T) {
 		t.Error("a failure passed")
 	}
 }
+
+func TestAHookPluginPasses(t *testing.T) {
+	connectFake, _ := fakeplugin.Connect(fakeplugin.Options{})
+	jsonFake, _ := fakeplugin.JSON(fakeplugin.Options{})
+	for _, h := range []http.Handler{connectFake, jsonFake} {
+		// local.status refuses plain TCP, so this runs on a Unix socket like its sidecars.
+		for _, name := range []string{kind.InboundStatus, kind.InboundFollow, kind.SignupCheck, kind.MediaCheck, kind.LocalStatus} {
+			results := run(t, name, kind.Destination{Address: fakeplugin.ServeUnix(t, h)})
+			if results["verdict"].Outcome != contract.Pass {
+				t.Errorf("%s: %+v", name, results["verdict"])
+			}
+		}
+	}
+}
+
+func TestAHookPluginWithAnEmptyAnswerFails(t *testing.T) {
+	h, _ := fakeplugin.JSON(fakeplugin.Options{Broken: true})
+	results := run(t, kind.InboundStatus, kind.Destination{Address: fakeplugin.ServeUnix(t, h)})
+	if results["verdict"].Outcome != contract.Fail {
+		t.Errorf("%+v", results["verdict"])
+	}
+}

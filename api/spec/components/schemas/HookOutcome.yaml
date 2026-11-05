@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What a decision records: a verdict (`allow`, `drop`, `flag`, `mark_sensitive`,
+  `require_approval`, `reject`), or a kind of failure, which is not a verdict: `timeout`, `error`,
+  `invalid` (the answer is outside the hook's vocabulary), `breaker_open` (the server skipped
+  the plugin after repeated failures).
+type: string
+enum: [allow, drop, flag, mark_sensitive, require_approval, reject, timeout, error, invalid, breaker_open]

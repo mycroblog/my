@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: Every decision hook with its settings, and its decisions of the last 7 days.
+type: object
+required: [hooks, since]
+properties:
+  since:
+    description: The start of the period that the counts cover.
+    type: string
+    format: date-time
+  hooks:
+    type: array
+    items:
+      $ref: ./AdminHook.yaml

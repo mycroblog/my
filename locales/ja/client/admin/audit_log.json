@@ -499,6 +499,14 @@
     "defaultMessage": "カスタム絵文字の申請の却下",
     "description": "Kind of an audited operation: an administrator rejected a custom emoji request."
   },
+  "admin.audit_log.action.hook_decision_applied": {
+    "defaultMessage": "自動審査の判定を適用",
+    "description": "Heading of an audit log entry: the server acted on the verdict of an external review and left state: a sensitive mark, a filed report, or a sign-up held for approval."
+  },
+  "admin.audit_log.action.hook_decision_overridden": {
+    "defaultMessage": "自動審査の判定を取り消し",
+    "description": "Heading of an audit log entry: a moderator cancelled a decision of an external review."
+  },
   "admin.audit_log.target_kind.custom_emoji_request": {
     "defaultMessage": "カスタム絵文字の申請",
     "description": "Kind of target of an audited operation: a request for a custom emoji or a new image of one, shown as the :shortcode: of the emoji."
@@ -602,6 +610,10 @@
   "admin.audit_log.action.link_card_domain_rule_removed": {
     "defaultMessage": "リンクのカードのルールを削除",
     "description": "Kind of an audited operation: an administrator removed the rule of the link card crawler on a domain."
+  },
+  "admin.audit_log.target_kind.hook_decision": {
+    "defaultMessage": "自動審査",
+    "description": "Filter of the audit log, and the kind of what an entry acted on: a decision of an external review of submissions."
   },
   "admin.audit_log.target_kind.link_card_domain": {
     "defaultMessage": "リンクのカードのドメイン",

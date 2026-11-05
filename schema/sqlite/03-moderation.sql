@@ -223,7 +223,7 @@ CREATE TABLE audit_log_entries (
     'rule_added', 'rule_revised', 'rule_moved', 'rule_retired', 'role_granted', 'role_revoked',
     'role_created', 'role_updated', 'role_deleted', 'appeal_upheld',
     'appeal_overturned', 'account_deletion_canceled',
-    'revealed_private_data', 'signup_block_added', 'signup_block_lifted', 'two_factor_disabled',
+    'revealed_private_data', 'signup_block_added', 'signup_block_lifted', 'two_factor_disabled', 'hook_decision_applied', 'hook_decision_overridden',
     'password_reset_link_issued',
     'email_suppression_lifted', 'account_moved',
     'custom_emoji_created', 'custom_emoji_image_replaced', 'custom_emoji_copied', 'custom_emoji_updated',
@@ -251,7 +251,7 @@ CREATE TABLE audit_log_entries (
     'signup_block', 'custom_emoji', 'webhook', 'announcement', 'invite', 'relay', 'billing_source',
     'cost_item', 'supporter_program', 'supporter_plan', 'supporter_subscription', 'custom_emoji_request',
     'payment_provider', 'oauth_client', 'oauth_client_host', 'instance', 'voice_room', 'login_provider',
-    'link_card_domain'
+    'link_card_domain', 'hook_decision'
   )),
   target_id TEXT NOT NULL,
   target_label TEXT NOT NULL,

@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/mycroblog/my/internal/adapter/plugin/client"
+	hookv1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/hook/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
 )
 
@@ -45,9 +46,14 @@ type Case struct {
 
 // table holds the cases of each kind, which follow the common ones.
 var table = map[string][]Case{
-	kind.Probe:   probeCases,
-	kind.Billing: billingCases,
-	kind.Mailer:  mailerCases,
+	kind.Probe:         probeCases,
+	kind.Billing:       billingCases,
+	kind.Mailer:        mailerCases,
+	kind.InboundStatus: hookCases(kind.InboundStatus, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_DROP, hookv1.Verdict_VERDICT_FLAG, hookv1.Verdict_VERDICT_MARK_SENSITIVE),
+	kind.InboundFollow: hookCases(kind.InboundFollow, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_DROP, hookv1.Verdict_VERDICT_FLAG),
+	kind.SignupCheck:   hookCases(kind.SignupCheck, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_REQUIRE_APPROVAL, hookv1.Verdict_VERDICT_REJECT),
+	kind.MediaCheck:    hookCases(kind.MediaCheck, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_MARK_SENSITIVE, hookv1.Verdict_VERDICT_FLAG),
+	kind.LocalStatus:   hookCases(kind.LocalStatus, hookv1.Verdict_VERDICT_ALLOW, hookv1.Verdict_VERDICT_FLAG, hookv1.Verdict_VERDICT_REJECT),
 }
 
 // noCases is the reason of a kind without an entry in the table.

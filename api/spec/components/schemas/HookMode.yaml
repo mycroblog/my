@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MIT
+description: |
+  How far a decision hook acts: `off` calls nothing, `observe` records the verdict and acts on
+  nothing, `enforce` acts on the verdict.
+type: string
+enum: ["off", observe, enforce]

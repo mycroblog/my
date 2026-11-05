@@ -196,6 +196,8 @@ func GroupLabel(l *i18n.Localizer, g notification.Group) string {
 		return l.ServerMailGroupAdminAppeal()
 	case notification.GroupAdminWebhookDisabled:
 		return l.ServerMailGroupAdminWebhookDisabled()
+	case notification.GroupAdminHookFailing:
+		return l.ServerMailGroupAdminHookFailing()
 	case notification.GroupAdminCustomEmojiRequest:
 		return l.ServerMailGroupAdminCustomEmojiRequest()
 	case notification.GroupAdminAccountMoved:

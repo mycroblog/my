@@ -15,3 +15,8 @@ SELECT EXISTS (SELECT 1 FROM status_sensitivity_overrides WHERE status_id = ?);
 
 -- name: PurgeStatusSensitivityOverrides :exec
 DELETE FROM status_sensitivity_overrides WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
+
+-- ListExistingStatusIDs returns the statuses among ids that have a row, which the retention of the
+-- hook decisions asks (ADR-0147 6).
+-- name: ListExistingStatusIDs :many
+SELECT id FROM statuses WHERE id IN (sqlc.slice(ids)) ORDER BY id;
