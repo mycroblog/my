@@ -59,6 +59,18 @@
     "defaultMessage": "‮Ǝɹɹoɹs ʍǝɹǝ ɹǝdoɹʇǝp ou {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.admin_hook_failing.body": {
+    "defaultMessage": "‮Ↄɐʅʅs oɟ ɐu ǝxʇǝɹuɐʅ ɹǝʌıǝʍ ou ʇɥǝ sǝɹʌǝɹ {instance} ʞǝǝd ɟɐıʅıuƃ. ∩uʇıʅ ıʇ ʍoɹʞs ɐƃɐıu, ʍɥɐʇ ıʇ ɹǝʌıǝʍs ɟoʅʅoʍs ıʇs ɟɐıʅnɹǝ qǝɥɐʌıonɹ: qʎ pǝɟɐnʅʇ ıʇ ƃoǝs ʇɥɹonƃɥ nuɹǝʌıǝʍǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_hook_failing.detail": {
+    "defaultMessage": "‮Odǝu ʎonɹ uoʇıɟıɔɐʇıous ɐup sǝǝ ʇɥǝ ɐnʇoɯɐʇǝp ɹǝʌıǝʍs ɟoɹ ʍɥɐʇ ɟɐıʅǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_hook_failing.subject": {
+    "defaultMessage": "‮∀u ǝxʇǝɹuɐʅ ɹǝʌıǝʍ oɟ {instance} ʞǝǝds ɟɐıʅıuƃ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.admin_report.body": {
     "defaultMessage": "‮∀ uǝʍ ɹǝdoɹʇ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance}.‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -113,6 +125,10 @@
   },
   "mail.group.admin_error_group": {
     "defaultMessage": "‮Nǝʍ ɐup ɹǝɔnɹɹıuƃ ǝɹɹoɹs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_hook_failing": {
+    "defaultMessage": "‮Ⅎɐıʅıuƃ ǝxʇǝɹuɐʅ ɹǝʌıǝʍs‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.group.admin_report": {

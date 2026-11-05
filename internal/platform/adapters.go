@@ -15,6 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/graph"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -63,10 +64,13 @@ type repositories struct {
 	voice        voice.Repository
 	diagnostics  diagnostics.Repository
 	translations translation.Repository
-	retention    retentionRepositories
-	projections  projection.Store
-	dataUpgrades dbupgrade.Repository
-	sealedValues rewrap.Store
+	decisions    apphook.Repository
+	// existingStatuses tells the retention of the decisions which statuses have a row.
+	existingStatuses apphook.Statuses
+	retention        retentionRepositories
+	projections      projection.Store
+	dataUpgrades     dbupgrade.Repository
+	sealedValues     rewrap.Store
 }
 
 // openDatabase connects the database that cfg.DB selects and returns its repositories. With

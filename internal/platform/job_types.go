@@ -23,6 +23,7 @@ var jobTypes = []string{
 	"content.purge_remote_emojis",
 	"content.purge_remote_statuses",
 	"diagnostics.purge_error_counts",
+	"hook.purge_decisions",
 	"federation.deliver",
 	"federation.fanout",
 	"federation.fetch_featured",

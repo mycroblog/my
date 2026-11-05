@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: overrideHookDecision
+  summary: Cancel a decision
+  description: |
+    Records the cancellation as its own event and in the audit log, and undoes what the hook
+    can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
+    effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
+    appeal, is a 409. Needs the `manage_reports` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The ID of the decision.
+      schema:
+        type: string
+  responses:
+    "200":
+      description: The decision with its cancellation.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminHookDecision.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

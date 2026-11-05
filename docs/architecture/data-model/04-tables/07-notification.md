@@ -61,6 +61,7 @@
   | 承認待ちの登録 | `admin_sign_up` | ロールが `manage_accounts` を持つ人 | `admin_sign_up:<user_id>` |
   | 異議申し立て | `admin_appeal` | ロールが `manage_accounts` を持つ人 | `admin_appeal:<appeal_id>` |
   | サーバーによる webhook の無効化（`webhook.endpoint_disabled`、ADR-0060） | `admin_webhook_disabled` | ロールが `manage_webhooks` を持つ人 | `admin_webhook_disabled:<state_change_id>` |
+  | 判定フックのブレーカーが開いた（`hook.failing`、ADR-0147） | `admin_hook_failing` | ロールが `manage_reports` を持つ人 | `admin_hook_failing:<hook>:<UTC の日付>` |
   | `limit` の処分中のアカウントの移転（`account.moved` の `SourceLimited`、ADR-0089） | `admin_account_moved` | ロールが `manage_accounts` を持つ人 | `admin_account_moved:<move_id>` |
   | カスタム絵文字の申請（`content.custom_emoji_request_recorded` の申請、ADR-0070 §9） | `admin_custom_emoji_request` | ロールが `manage_custom_emojis` を持つ人（申請者を除く） | `admin_custom_emoji_request:<request_id>` |
   | カスタム絵文字の申請の承認と却下（同じイベントの承認・却下。取り下げと `lapsed` は通知しない） | `custom_emoji_request_decided` | 申請者 | `custom_emoji_request_decided:<request_id>` |

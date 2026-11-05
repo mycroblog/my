@@ -345,6 +345,14 @@ entries:
       - "searchStatuses reads each ID the backend returns from the database and drops it in the order of ADR-0149 §8: search.Service.Search applies search.Eligible, and timeline.Service.SearchVisible applies CanView in ContextSearch, the mutes, and the domain mutes. Next is the backend's cursor, so a short or empty page can have one. No query in a log, trace, or error: a backend error reaches the log only as search.ErrBackendFailed with its kind. The response is private, no-store."
       - "The fake, internal/adapter/search/fake, is separate from none. Go tests inject it with AppOptions.SearchIndex; only internal/platform/adapters_search_fake.go (build tag e2e_fakes) links it into the server, as search = fake, refused outside profile = development."
     userdocs: ["docs/reference/jobs.md#full-text-search", "docs/operations/running.md#splitting-workers-by-job-type"]
+  - name: module-hook
+    paths: ["internal/domain/hook/**", "internal/app/hook/**", "internal/adapter/hook/**", "internal/platform/hook*.go", "internal/adapter/db/*/hook.go", "internal/adapter/plugin/contract/hook.go", "schema/*/16-hook.sql", "queries/*/hook.sql", "pkg/testkit/hook_contract.go", "api/plugin/my/plugin/hook/**", "internal/interface/clientapi/admin_hook_decisions.go", "app/web/src/routes/moderation.hook-decisions.tsx"]
+    docs: ["docs/architecture/data-model/04-tables/16-hook.md#416-hook", "docs/adr/0147-decision-hooks.md", "docs/adr/0146-plugin-protocol.md"]
+    notes:
+      - "A module that owns a subject takes apphook.Gate: call Decide before its transaction, carry the Result in, act on Result.Effect with its own code, and call LinkStatus and Applied inside. It returns ErrRetryLater from its job as it is."
+      - "Each hook adds its Subject type and a CheckRequest field in api/plugin/my/plugin/hook/v1, and a case of setSubject in internal/adapter/hook/connect. A hook undoes what a cancelled decision did with Service.RegisterOverrideEffect; a review of an appeal cancels with Service.OverrideTx."
+      - "hook imports no other module but account (for DataEraser): settings, holds, and statuses arrive through its ports, and moderation (audit) and notification subscribe to its events, because content and identity call it."
+    userdocs: ["docs/operations/decision-hooks.md", "docs/reference/jobs.md#upkeep", "docs/operations/instance-settings.md"]
   - name: module-diagnostics
     paths: ["internal/domain/diagnostics/**", "internal/app/diagnostics/**", "internal/platform/diagnostics.go", "internal/adapter/db/*/diagnostics.go", "schema/*/15-diagnostics.sql", "queries/*/diagnostics.sql", "pkg/testkit/diagnostics_contract.go"]
     docs: ["docs/architecture/data-model/04-tables/15-diagnostics.md#415-diagnostics", "docs/adr/0103-error-reporting.md"]

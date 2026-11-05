@@ -23,6 +23,9 @@ description: |
   `appeal_upheld`, `appeal_overturned` (which also records the action's
   `account_action_lifted`, and for a `ban` the `account_deletion_canceled` on the
   `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
+  `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
+  and left state; the actor is the system), `hook_decision_overridden` (a moderator
+  cancelled the decision). On a
   `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
   `custom_emoji_copied` (a new local emoji copied from a remote one),
   `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -96,6 +99,8 @@ enum:
   - revealed_private_data
   - signup_block_added
   - signup_block_lifted
+  - hook_decision_applied
+  - hook_decision_overridden
   - two_factor_disabled
   - password_reset_link_issued
   - email_suppression_lifted

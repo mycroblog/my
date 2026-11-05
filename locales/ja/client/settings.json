@@ -2694,5 +2694,9 @@
   "settings.account.deactivate.refused.last_administrator": {
     "defaultMessage": "ログインできる管理者はこのアカウントだけなので、無効化できません。先にほかの人を管理者にしてください。",
     "description": "Why the account cannot be deactivated."
+  },
+  "settings.notifications.group.admin_hook_failing": {
+    "defaultMessage": "外部の審査の失敗",
+    "description": "Row of the notification settings table: (moderators) calls of an external review keep failing."
   }
 }

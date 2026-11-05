@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: The mode of the hook when it made the decision.
+type: string
+enum: [observe, enforce]

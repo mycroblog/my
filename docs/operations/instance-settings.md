@@ -87,6 +87,10 @@ default locale, who can see the timelines, the instance name, description, terms
 | `translation_server_monthly_characters` | integer 0-1000000000000 | `500000` | How many characters the whole server may send to translation providers in a UTC month. At `0` nothing is sent. No value means unlimited: set a large number instead |
 | `translation_retention_days` | integer 1-3650 (days) | `30` | How many days a translation is kept after it was made. Reading it does not extend this, and it goes with the post |
 | `voice_participants_retention_days` | integer 30-3650 (days) | `90` | How many days after a voice chat room ended to keep the records of who took part in it: the participations, the speakers and listeners, the raised hands, the invitations, and the removals. The room itself (its name, description, hosts, and how it ended) is kept. The records of a reported room are kept as long as the report, and holds apply as to the other records |
+| `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode` | `off`, `observe`, `enforce` | `observe` | How far each [decision hook](decision-hooks.md#modes) acts while it has a plugin. `off` goes to `enforce` only through `observe`. |
+| `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure` | `pass`, `retry` | `pass` | What the hook does when it enforces and its plugin fails ([details](decision-hooks.md#when-the-plugin-fails)). |
+| `hook_signup_check_on_failure` | `pass`, `require_approval` | `pass` | What `signup.check` does when it enforces and its plugin fails. |
+| `retention_hook_decisions` | integer 30-3650 (days) | `90` | How many days to keep the [decisions of the hooks](decision-hooks.md#the-decisions). |
 
 - Values are normalized before they are stored (`TRUE` becomes `true`, `0750` becomes `750`, `ja_jp` becomes `ja-JP`, media IDs are lowercased).
   An invalid value is rejected and nothing is written.

@@ -39,6 +39,9 @@ func ModeratorEmailDraft(l *i18n.Localizer, name, to string, t notification.Type
 	case notification.TypeAdminWebhookDisabled:
 		d.Subject = l.ServerMailAdminWebhookDisabledSubject(name)
 		d.Paragraphs = []string{l.ServerMailAdminWebhookDisabledBody(name), l.ServerMailAdminWebhookDisabledDetail()}
+	case notification.TypeAdminHookFailing:
+		d.Subject = l.ServerMailAdminHookFailingSubject(name)
+		d.Paragraphs = []string{l.ServerMailAdminHookFailingBody(name), l.ServerMailAdminHookFailingDetail()}
 	case notification.TypeAdminCustomEmojiRequest:
 		d.Subject, d.Paragraphs = l.ServerMailAdminCustomEmojiRequestSubject(name), []string{l.ServerMailAdminCustomEmojiRequestBody(name)}
 	case notification.TypeAdminAccountMoved:

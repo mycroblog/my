@@ -145,6 +145,43 @@ export function signupBlockFixture(overrides: Partial<Schemas["AdminSignupBlock"
   };
 }
 
+/** A decision of an external review: a drop of a post from another server, in force. */
+export function hookDecisionFixture(
+  overrides: Partial<Schemas["AdminHookDecision"]> = {},
+): Schemas["AdminHookDecision"] {
+  return {
+    id: "0192f0c4-7a8e-7000-8000-0000000002a0",
+    hook: "inbound.status",
+    subject_key: "https://remote.example/activities/0",
+    mode: "enforce",
+    outcome: "drop",
+    latency_ms: 25,
+    decided_at: "2026-11-06T00:00:00Z",
+    overridable: true,
+    ...overrides,
+  };
+}
+
+/** GET /admin/hook_decisions/summary: posts from other servers enforce, and the rest have no plugin. */
+export function hookSummaryFixture(): Schemas["AdminHookSummary"] {
+  return {
+    since: "2026-10-30T00:00:00Z",
+    hooks: [
+      {
+        hook: "inbound.status",
+        configured: true,
+        mode: "enforce",
+        on_failure: "pass",
+        outcomes: [{ mode: "enforce", outcome: "drop", count: 3, average_latency_ms: 25, max_latency_ms: 40 }],
+      },
+      { hook: "inbound.follow", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+      { hook: "signup.check", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+      { hook: "media.check", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+      { hook: "local.status", configured: false, mode: "observe", on_failure: "pass", outcomes: [] },
+    ],
+  };
+}
+
 /** The block that POST /admin/signup_blocks records for `body`, added at 2026-10-17T00:00:00Z; the value is kept as sent. */
 export function newSignupBlock(body: Schemas["CreateSignupBlockRequest"]): Schemas["AdminSignupBlock"] {
   const createdAt = "2026-10-17T00:00:00Z";

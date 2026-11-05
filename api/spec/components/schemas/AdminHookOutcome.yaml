@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+description: How many decisions of one mode and outcome a hook made, and how long they took.
+type: object
+required: [mode, outcome, count, average_latency_ms, max_latency_ms]
+properties:
+  mode:
+    $ref: ./HookDecisionMode.yaml
+  outcome:
+    $ref: ./HookOutcome.yaml
+  count:
+    type: integer
+    format: int64
+  average_latency_ms:
+    type: integer
+    format: int64
+  max_latency_ms:
+    type: integer
+    format: int64

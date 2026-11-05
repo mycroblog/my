@@ -1,0 +1,186 @@
+{
+  "admin.hook_decisions.column.decided_at": {
+    "defaultMessage": "判定した日時",
+    "description": "Column of the list of decisions: when the review answered."
+  },
+  "admin.hook_decisions.column.details": {
+    "defaultMessage": "詳細",
+    "description": "Column of the list of decisions: the wait, reason, note, and cancellation."
+  },
+  "admin.hook_decisions.column.hook": {
+    "defaultMessage": "審査",
+    "description": "Column of the tables of the automated reviews screen: which external review."
+  },
+  "admin.hook_decisions.column.mode": {
+    "defaultMessage": "モード",
+    "description": "Column of the tables of the automated reviews screen: off, observe, or enforce."
+  },
+  "admin.hook_decisions.column.outcome": {
+    "defaultMessage": "結果",
+    "description": "Column of the list of decisions: the verdict, or the kind of failure."
+  },
+  "admin.hook_decisions.column.outcomes": {
+    "defaultMessage": "判定",
+    "description": "Column of the table of external reviews: the counts of decisions per outcome."
+  },
+  "admin.hook_decisions.column.subject": {
+    "defaultMessage": "対象",
+    "description": "Column of the list of decisions: what identifies the post, follow, sign-up, or file."
+  },
+  "admin.hook_decisions.empty": {
+    "defaultMessage": "止められたものはありません",
+    "description": "Empty list of decisions: no external review stopped anything or failed."
+  },
+  "admin.hook_decisions.filter.all": {
+    "defaultMessage": "すべての審査",
+    "description": "Option of the select that keeps the decisions of one external review: every review."
+  },
+  "admin.hook_decisions.filter.label": {
+    "defaultMessage": "審査",
+    "description": "Accessible name of the select that keeps the decisions of one external review."
+  },
+  "admin.hook_decisions.hook.inbound_follow": {
+    "defaultMessage": "ほかのサーバーからのフォロー",
+    "description": "Name of the external review of follows that arrive from other servers."
+  },
+  "admin.hook_decisions.hook.inbound_status": {
+    "defaultMessage": "ほかのサーバーからの投稿",
+    "description": "Name of the external review of posts that arrive from other servers."
+  },
+  "admin.hook_decisions.hook.local_status": {
+    "defaultMessage": "このサーバーの投稿",
+    "description": "Name of the external review of posts by accounts of this server."
+  },
+  "admin.hook_decisions.hook.media_check": {
+    "defaultMessage": "アップロードされたメディア",
+    "description": "Name of the external review of uploaded media."
+  },
+  "admin.hook_decisions.hook.signup_check": {
+    "defaultMessage": "登録",
+    "description": "Name of the external review of sign-ups."
+  },
+  "admin.hook_decisions.latency": {
+    "defaultMessage": "待ち時間",
+    "description": "Term of a decision: how long the call of the review took."
+  },
+  "admin.hook_decisions.latency.value": {
+    "defaultMessage": "{value} ミリ秒",
+    "description": "Value of how long the call of the review took, in milliseconds."
+  },
+  "admin.hook_decisions.list.title": {
+    "defaultMessage": "判定",
+    "description": "Heading of the list of decisions on the automated reviews screen, and the caption of its table."
+  },
+  "admin.hook_decisions.menu": {
+    "defaultMessage": "外部の審査が止めたものと確かめられなかったもの。",
+    "description": "Summary of the automated reviews screen in the moderation menu."
+  },
+  "admin.hook_decisions.mode.enforce": {
+    "defaultMessage": "適用",
+    "description": "Mode of an external review: it acts on the verdict."
+  },
+  "admin.hook_decisions.mode.observe": {
+    "defaultMessage": "観察",
+    "description": "Mode of an external review: it records the verdict and acts on nothing."
+  },
+  "admin.hook_decisions.mode.off": {
+    "defaultMessage": "オフ",
+    "description": "Mode of an external review: it calls nothing."
+  },
+  "admin.hook_decisions.not_configured": {
+    "defaultMessage": "未設定",
+    "description": "Mode cell of an external review that has no plugin on this server: it calls nothing."
+  },
+  "admin.hook_decisions.note": {
+    "defaultMessage": "審査のメモ",
+    "description": "Term of a decision: the short plain-text note the review left for moderators."
+  },
+  "admin.hook_decisions.outcome.allow": {
+    "defaultMessage": "許可",
+    "description": "Outcome of a decision: the review let it through."
+  },
+  "admin.hook_decisions.outcome.breaker_open": {
+    "defaultMessage": "失敗が続いて省略",
+    "description": "Outcome of a decision: the server skipped the review after repeated failures. A failure, not a verdict."
+  },
+  "admin.hook_decisions.outcome.drop": {
+    "defaultMessage": "破棄",
+    "description": "Outcome of a decision: the review stopped it and nothing is stored."
+  },
+  "admin.hook_decisions.outcome.error": {
+    "defaultMessage": "失敗",
+    "description": "Outcome of a decision: the call of the review failed. A failure, not a verdict."
+  },
+  "admin.hook_decisions.outcome.flag": {
+    "defaultMessage": "通報",
+    "description": "Outcome of a decision: the review let it through and files a report."
+  },
+  "admin.hook_decisions.outcome.invalid": {
+    "defaultMessage": "不正な応答",
+    "description": "Outcome of a decision: the answer of the review was outside its vocabulary. A failure, not a verdict."
+  },
+  "admin.hook_decisions.outcome.mark_sensitive": {
+    "defaultMessage": "センシティブに設定",
+    "description": "Outcome of a decision: the review let it through and its attachments show as sensitive."
+  },
+  "admin.hook_decisions.outcome.reject": {
+    "defaultMessage": "拒否",
+    "description": "Outcome of a decision: the review refused it."
+  },
+  "admin.hook_decisions.outcome.require_approval": {
+    "defaultMessage": "承認待ち",
+    "description": "Outcome of a decision: the review holds a sign-up for approval."
+  },
+  "admin.hook_decisions.outcome.timeout": {
+    "defaultMessage": "タイムアウト",
+    "description": "Outcome of a decision: the call of the review ran past its deadline. A failure, not a verdict."
+  },
+  "admin.hook_decisions.overridden": {
+    "defaultMessage": "{hook} の判定 ({outcome}) を取り消しました。",
+    "description": "Status message after a moderator cancelled a decision."
+  },
+  "admin.hook_decisions.overridden_at": {
+    "defaultMessage": "取り消した日時",
+    "description": "Term of a decision: when a moderator cancelled it."
+  },
+  "admin.hook_decisions.override": {
+    "defaultMessage": "判定を取り消す",
+    "description": "Button of a row of the list of decisions: cancels the decision."
+  },
+  "admin.hook_decisions.override_action": {
+    "defaultMessage": "判定を取り消す: {hook} ({outcome})、{date}",
+    "description": "Accessible name of the button that cancels a decision. {hook} names the review, {outcome} the outcome, and {date} when it decided."
+  },
+  "admin.hook_decisions.override_failed": {
+    "defaultMessage": "判定を取り消せませんでした: {reason}",
+    "description": "Toast when cancelling a decision failed. {reason} says why."
+  },
+  "admin.hook_decisions.reason": {
+    "defaultMessage": "理由コード",
+    "description": "Term of a decision: the coded reason the review gave."
+  },
+  "admin.hook_decisions.summary.count": {
+    "defaultMessage": "{count, plural, other {# 件}}、平均 {average} ミリ秒、最大 {max} ミリ秒",
+    "description": "Value of a count of decisions, with how long the calls took in milliseconds."
+  },
+  "admin.hook_decisions.summary.none": {
+    "defaultMessage": "判定なし",
+    "description": "Cell of the table of external reviews: a review that made no decisions in the period."
+  },
+  "admin.hook_decisions.summary.outcome": {
+    "defaultMessage": "{outcome} ({mode})",
+    "description": "Term of a count of decisions. {outcome} is what the review answered; {mode} is the mode it ran in."
+  },
+  "admin.hook_decisions.summary.period": {
+    "defaultMessage": "過去 7 日の件数と待ち時間です。",
+    "description": "Note above the table of external reviews: the period the numbers cover."
+  },
+  "admin.hook_decisions.summary.title": {
+    "defaultMessage": "審査",
+    "description": "Heading of the section of the automated reviews screen with one row per external review."
+  },
+  "admin.hook_decisions.title": {
+    "defaultMessage": "自動審査の記録",
+    "description": "Heading and menu entry of the moderation screen that lists what the external reviews of submissions said."
+  }
+}

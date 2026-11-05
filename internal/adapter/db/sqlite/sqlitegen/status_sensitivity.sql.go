@@ -9,6 +9,7 @@ package sqlitegen
 
 import (
 	"context"
+	"strings"
 )
 
 const deleteStatusSensitivityOverridesOfAction = `-- name: DeleteStatusSensitivityOverridesOfAction :exec
@@ -38,6 +39,45 @@ type InsertStatusSensitivityOverrideParams struct {
 func (q *Queries) InsertStatusSensitivityOverride(ctx context.Context, arg InsertStatusSensitivityOverrideParams) error {
 	_, err := q.db.ExecContext(ctx, insertStatusSensitivityOverride, arg.StatusID, arg.SourceActionID)
 	return err
+}
+
+const listExistingStatusIDs = `-- name: ListExistingStatusIDs :many
+SELECT id FROM statuses WHERE id IN (/*SLICE:ids*/?) ORDER BY id
+`
+
+// ListExistingStatusIDs returns the statuses among ids that have a row, which the retention of the
+// hook decisions asks (ADR-0147 6).
+func (q *Queries) ListExistingStatusIDs(ctx context.Context, ids []string) ([]string, error) {
+	query := listExistingStatusIDs
+	var queryParams []interface{}
+	if len(ids) > 0 {
+		for _, v := range ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const purgeStatusSensitivityOverrides = `-- name: PurgeStatusSensitivityOverrides :exec

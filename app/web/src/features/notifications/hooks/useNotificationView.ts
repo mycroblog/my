@@ -182,6 +182,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   appeal_decided: "staff",
   admin_appeal: "staff",
   admin_webhook_disabled: "staff",
+  admin_hook_failing: "staff",
   admin_custom_emoji_request: "staff",
   custom_emoji_request_decided: "staff",
   supporter_payment_failed: "notice",
@@ -217,6 +218,7 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   appeal_decided: "client:notifications.type.appeal_decided",
   admin_appeal: "client:notifications.type.admin_appeal",
   admin_webhook_disabled: "client:notifications.type.admin_webhook_disabled",
+  admin_hook_failing: "client:notifications.type.admin_hook_failing",
   admin_custom_emoji_request: "client:notifications.type.admin_custom_emoji_request",
   custom_emoji_request_decided: "client:notifications.type.custom_emoji_request_decided",
   supporter_payment_failed: "client:notifications.type.supporter_payment_failed",
@@ -451,6 +453,8 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return [{ href: "/moderation/registrations", label: "client:notifications.link.registrations" }];
     case "admin_webhook_disabled":
       return [{ href: "/admin/webhooks", label: "client:notifications.link.webhooks" }];
+    case "admin_hook_failing":
+      return [{ href: "/moderation/hook-decisions", label: "client:notifications.link.hook_decisions" }];
     // A new or regressed group leads to its page; the groups beyond the hour's limit, to the list.
     case "admin_error_group": {
       const groupId = notification.error_group?.group_id;

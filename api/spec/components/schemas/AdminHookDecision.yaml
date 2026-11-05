@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MIT
+description: What a decision hook answered about one subject. It holds no text of a post.
+type: object
+required: [id, hook, subject_key, mode, outcome, latency_ms, decided_at, overridable]
+properties:
+  id:
+    type: string
+  hook:
+    $ref: ./HookName.yaml
+  subject_key:
+    description: What identifies the subject for the hook, such as the URI of a received activity.
+    type: string
+  account_id:
+    description: The account the subject belongs to; absent when there is none.
+    type: string
+  mode:
+    $ref: ./HookDecisionMode.yaml
+  outcome:
+    $ref: ./HookOutcome.yaml
+  reason:
+    $ref: ./HookReason.yaml
+  note:
+    description: The plugin's short plain-text note for the moderators; absent when there is none.
+    type: string
+  latency_ms:
+    description: How long the call took, in milliseconds.
+    type: integer
+    format: int64
+  decided_at:
+    type: string
+    format: date-time
+  overridden_at:
+    description: When a moderator cancelled the decision; absent while it stands.
+    type: string
+    format: date-time
+  overridable:
+    description: |
+      Whether a moderator can cancel it here: a verdict in force that stopped or changed
+      something. A `reject` of `local.status` goes through its appeal instead.
+    type: boolean

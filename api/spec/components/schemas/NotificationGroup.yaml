@@ -6,7 +6,7 @@ description: |
   `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
   `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
   `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-  `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`). The instance's
+  `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
   notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
   `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
   `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
@@ -29,6 +29,7 @@ enum:
   - admin_sign_up
   - admin_appeal
   - admin_webhook_disabled
+  - admin_hook_failing
   - admin_custom_emoji_request
   - admin_account_moved
   - admin_service_closure_due

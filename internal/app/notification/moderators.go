@@ -10,6 +10,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
@@ -118,9 +119,10 @@ type ModeratorDeps struct {
 //     of manage_accounts, since the target does not inherit the limit (ADR-0089).
 //   - diagnostics.error_group_created, _confirmed, and _regressed: admin_error_group, to the
 //     holders of manage_errors, with the hourly cap of errors.go (ADR-0103 §8).
+//   - hook.failing: admin_hook_failing, to the holders of manage_reports (ADR-0147).
 //
 // The dedupe keys (notification.AdminReportKey, AdminSignUpKey, AdminAppealKey,
-// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey, AdminErrorGroupKey,
+// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey, AdminHookFailingKey, AdminErrorGroupKey,
 // AdminErrorGroupOthersKey) make projecting an event again
 // create nothing more. A recipient who turned the type off in the app gets nothing. For each
 // recipient who gets the type by email and whose notification is new, the projector enqueues
@@ -153,6 +155,12 @@ func RegisterModeratorProjectors(r *uow.Projectors, d ModeratorDeps) {
 		ev := e.(appwebhook.EndpointDisabled)
 		return p.notify(ctx, tx, notification.Notification{
 			Type: notification.TypeAdminWebhookDisabled, DedupeKey: notification.AdminWebhookDisabledKey(ev.StateChangeID), CreatedAt: ev.At,
+		})
+	})
+	r.Register(apphook.EventFailing, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(apphook.Failing)
+		return p.notify(ctx, tx, notification.Notification{
+			Type: notification.TypeAdminHookFailing, DedupeKey: notification.AdminHookFailingKey(string(ev.Hook), ev.At), CreatedAt: ev.At,
 		})
 	})
 	r.Register(appaccount.EventAccountMoved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
