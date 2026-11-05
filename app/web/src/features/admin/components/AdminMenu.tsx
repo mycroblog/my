@@ -11,6 +11,7 @@ import {
   FinanceIcon,
   ImageIcon,
   JobIcon,
+  LanguageIcon,
   LoginProviderIcon,
   RelayIcon,
   RoleIcon,
@@ -84,6 +85,14 @@ export const adminPages: readonly StaffPage[] = [
     label: "client:admin.link_card_domains.title",
     description: "client:admin.link_card_domains.summary",
     icon: ImageIcon,
+    group: "client:admin.menu.group.connections",
+  },
+  {
+    href: "/admin/translation",
+    permission: "manage_settings",
+    label: "client:admin.translation.title",
+    description: "client:admin.translation.summary",
+    icon: LanguageIcon,
     group: "client:admin.menu.group.connections",
   },
   {

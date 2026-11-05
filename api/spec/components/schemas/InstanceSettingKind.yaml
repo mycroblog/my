@@ -7,6 +7,8 @@ description: |
   `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
   none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
   a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
-  `client_id=requests` pairs, or empty for none.
+  `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
+  provider IDs, the first tried first, or empty for none. `provider_visibilities`:
+  comma-separated `provider=visibility|visibility` pairs, or empty for none.
 type: string
-enum: [bool, int, enum, locale, media, account, email, uri, accounts, client_limits]
+enum: [bool, int, enum, locale, media, account, email, uri, accounts, client_limits, provider_list, provider_visibilities]

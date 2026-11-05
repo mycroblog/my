@@ -362,11 +362,13 @@ type AppOptions struct {
 	// MetricsWriter receives the EMF lines of metrics_exporter = emf; the default is standard
 	// output, which the logs (on standard error) do not share.
 	MetricsWriter io.Writer
-	// TranslationProviders, when set, are the translation providers instead of none. Tests only,
-	// to translate with a fake.
+	// TranslationRegistered, when set, are the translation providers that the server has, which the
+	// instance settings then enable. Tests only, to translate with a fake.
+	TranslationRegistered []translation.Provider
+	// TranslationProviders, when set, replaces the instance settings that say which providers are
+	// enabled. Tests only.
 	TranslationProviders translation.Providers
-	// TranslationLimiter, when set, holds the monthly translation limits instead of limits of 0.
-	// Tests only, to reach the providers.
+	// TranslationLimiter, when set, replaces the limits of the instance settings. Tests only.
 	TranslationLimiter translation.Limiter
 	// Meter, when set, records the metrics instead of the adapter that cfg.MetricsExporter
 	// selects. Tests only, to inspect the measurements with testkit.Meter.

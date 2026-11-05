@@ -307,6 +307,12 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "member_invite_max_active", kind: "int", default: "5", minimum: 0, maximum: 100 },
   { key: "member_invite_max_uses", kind: "int", default: "10", minimum: 1, maximum: 1000 },
   { key: "member_invite_max_lifetime_seconds", kind: "int", default: "2592000", minimum: 3600, maximum: 31536000 },
+  { key: "translation_providers", kind: "provider_list", default: "" },
+  { key: "translation_provider_visibilities", kind: "provider_visibilities", default: "" },
+  { key: "translation_browser", kind: "bool", default: "false" },
+  { key: "translation_user_monthly_characters", kind: "int", default: "50000", minimum: 0, maximum: 1000000000000 },
+  { key: "translation_server_monthly_characters", kind: "int", default: "500000", minimum: 0, maximum: 1000000000000 },
+  { key: "translation_retention_days", kind: "int", default: "30", minimum: 1, maximum: 3650 },
 ];
 
 /** The instance settings as GET /admin/settings answers them, with the `stored` values set and the others at their defaults. */
@@ -465,6 +471,23 @@ const createdLoginProviderId = "0199f0e0-0000-7000-8000-0000000000c1";
 const createdWebhookId = "0199f0e0-0000-7000-8000-0000000000b1";
 
 /** A rule of the link card crawler that stops images, set at 2026-10-20T00:00:00Z, with `overrides`. */
+/** The use of translation in a month, with two providers on the server. */
+export function translationOverviewFixture(
+  overrides: Partial<Schemas["AdminTranslationOverview"]> = {},
+): Schemas["AdminTranslationOverview"] {
+  return {
+    month: "2026-11",
+    characters: 0,
+    cache_hits: 0,
+    cache_misses: 0,
+    providers: [
+      { id: "one", name: "Provider One" },
+      { id: "two", name: "Provider Two" },
+    ],
+    ...overrides,
+  };
+}
+
 export function linkCardDomainRuleFixture(
   domain: string,
   overrides: Partial<Schemas["LinkCardDomainRule"]> = {},
@@ -832,6 +855,10 @@ export const handlers = [
   }),
   http.delete(`${apiBase}/admin/relays/:id`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  // operationId getAdminTranslationOverview: no use yet, and one provider to enable.
+  http.get(`${apiBase}/admin/translation`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(translationOverviewFixture())),
   ),
   // operationIds listLinkCardDomainRules, setLinkCardDomainRule, removeLinkCardDomainRule: no rules; a rule is answered
   // as sent.

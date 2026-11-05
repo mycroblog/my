@@ -62,7 +62,16 @@ var Requests = kernel.Instrument{
 	LabelKeys: []string{labelOutcome},
 }
 
-const labelOutcome = "my.outcome"
+// Characters counts the characters sent to providers, by provider (ADR-0148 §11).
+var Characters = kernel.Instrument{
+	Name: "my.translation.characters", Unit: "{character}", Description: "Characters of posts sent to translation providers, without markers, by provider.",
+	LabelKeys: []string{labelProvider},
+}
+
+const (
+	labelOutcome  = "my.outcome"
+	labelProvider = "my.provider"
+)
 
 // The outcomes of Requests.
 const (
@@ -97,36 +106,39 @@ func (p Provider) Allows(v appcontent.Visibility) bool {
 	return v == appcontent.VisibilityPublic || v == appcontent.VisibilityLocal || v == appcontent.VisibilityUnlisted
 }
 
+// Allowed returns every visibility that the provider may receive.
+func (p Provider) Allowed() []appcontent.Visibility {
+	out := []appcontent.Visibility{}
+	for _, v := range []appcontent.Visibility{
+		appcontent.VisibilityPublic, appcontent.VisibilityLocal, appcontent.VisibilityUnlisted,
+		appcontent.VisibilityPrivate, appcontent.VisibilityDirect,
+	} {
+		if p.Allows(v) {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// Info returns what a client shows of the provider.
+func (p Provider) Info() ProviderInfo {
+	return ProviderInfo{ID: p.ID, Name: p.Name, URL: p.URL, LogoURL: p.LogoURL}
+}
+
 // Providers tells which providers are enabled, in the operator's order of priority. It is read
 // per request, so that a change takes effect at once.
 type Providers interface {
 	Providers(ctx context.Context) ([]Provider, error)
 }
 
-// NoProviders is the Providers of a server with none enabled, which is the default (ADR-0148 §3).
-type NoProviders struct{}
-
-// Providers implements Providers.
-func (NoProviders) Providers(context.Context) ([]Provider, error) { return nil, nil }
-
-// Limiter holds the monthly limits of ADR-0148 §11. Only a request that goes to a provider reaches
-// it: cache hits and the author's own language do not count.
+// Limiter holds the monthly limits of ADR-0148 §11. It is asked just before each call of a
+// provider, so cache hits and the author's own language do not count.
 type Limiter interface {
 	// Reserve counts characters against the limits of the account and of the server, or fails
-	// with ErrLimitReached and counts nothing.
+	// with ErrLimitReached and counts nothing. Nothing gives them back: a call may have reached
+	// the provider whatever it answers, and the port cannot tell.
 	Reserve(ctx context.Context, accountID string, characters int) error
-	// Release gives back characters that no provider received.
-	Release(ctx context.Context, accountID string, characters int) error
 }
-
-// ClosedLimiter is the Limiter of limits of 0: it sends nothing to a provider.
-type ClosedLimiter struct{}
-
-// Reserve implements Limiter.
-func (ClosedLimiter) Reserve(context.Context, string, int) error { return ErrLimitReached }
-
-// Release implements Limiter.
-func (ClosedLimiter) Release(context.Context, string, int) error { return nil }
 
 // Statuses is what the service reads of the content module, implemented by content.Reader.
 type Statuses interface {
@@ -149,9 +161,11 @@ type Deps struct {
 	KV         kernel.KeyValueStore
 	Clock      kernel.Clock
 	IDs        kernel.IDGenerator
+	// Registered are the providers that this server has, whether enabled or not.
+	Registered []ProviderInfo
 	// RetentionDays returns translation_retention_days; nil means DefaultRetentionDays.
 	RetentionDays func(ctx context.Context) (int, error)
-	// Meter records Requests; nil records nothing.
+	// Meter records Requests and Characters; nil records nothing.
 	Meter kernel.Meter
 	// Logger reports provider failures, which never hold the text of a post; nil logs nothing.
 	Logger *slog.Logger
@@ -159,8 +173,9 @@ type Deps struct {
 
 // Service translates posts on a reader's request (ADR-0148 §8).
 type Service struct {
-	d        Deps
-	requests kernel.Counter
+	d          Deps
+	requests   kernel.Counter
+	characters kernel.Counter
 }
 
 // NewService returns a Service on d.
@@ -168,7 +183,8 @@ func NewService(d Deps) *Service {
 	if d.Logger == nil {
 		d.Logger = slog.New(slog.DiscardHandler)
 	}
-	return &Service{d: d, requests: kernel.MeterOrNop(d.Meter).Counter(Requests)}
+	meter := kernel.MeterOrNop(d.Meter)
+	return &Service{d: d, requests: meter.Counter(Requests), characters: meter.Counter(Characters)}
 }
 
 // ProviderInfo is what a client shows of the provider of a translation.
@@ -224,7 +240,7 @@ func (s *Service) Translate(ctx context.Context, viewer appcontent.Viewer, statu
 	if hit, ok, err := s.cached(ctx, post, target, candidates); err != nil {
 		return Translation{}, err
 	} else if ok {
-		s.count(ctx, outcomeCache)
+		s.countHit(ctx)
 		return hit, nil
 	}
 	d, err := newDraft(post)
@@ -248,24 +264,10 @@ func (s *Service) Translate(ctx context.Context, viewer appcontent.Viewer, statu
 	return out, err
 }
 
-// request is what is left when nothing is cached: the limit, the lock, the provider, and the row.
+// request is what is left when nothing is cached: the lock, the limit with the provider, and the
+// row. The limit comes after the lock, so that a request that ends up with another one's translation
+// never holds characters that could refuse a third request.
 func (s *Service) request(ctx context.Context, accountID string, post appcontent.ReadableStatus, d *draft, target string, candidates []Provider) (Translation, error) {
-	characters := CountCharacters(d.fragments())
-	if err := s.d.Limiter.Reserve(ctx, accountID, characters); err != nil {
-		return Translation{}, err
-	}
-	// The characters stay counted once a provider has answered, whatever the answer was worth: it
-	// has received them.
-	received := false
-	defer func() {
-		if received {
-			return
-		}
-		if err := s.d.Limiter.Release(context.WithoutCancel(ctx), accountID, characters); err != nil {
-			s.d.Logger.WarnContext(ctx, "translation usage not released", slog.Any("error", err))
-		}
-	}()
-
 	key := post.Revision.ID + "|" + target
 	token := []byte(s.d.IDs.NewID())
 	hit, ok, err := s.lock(ctx, key, token, post, target, candidates)
@@ -273,13 +275,12 @@ func (s *Service) request(ctx context.Context, accountID string, post appcontent
 		return Translation{}, err
 	}
 	if ok {
-		s.count(ctx, outcomeCache)
+		s.countHit(ctx)
 		return hit, nil
 	}
 	defer s.unlock(ctx, key, token)
 
-	provider, stored, answered, err := s.callProviders(ctx, post, d, target, candidates)
-	received = answered
+	provider, stored, err := s.callProviders(ctx, accountID, post, d, target, candidates)
 	if err != nil {
 		return Translation{}, err
 	}
@@ -339,12 +340,23 @@ func (s *Service) unlock(ctx context.Context, key string, token []byte) {
 	}
 }
 
-// callProviders asks the candidates in order until one returns a usable translation, and reports
-// whether any provider answered. It runs outside transactions (ADR-0003).
-func (s *Service) callProviders(ctx context.Context, post appcontent.ReadableStatus, d *draft, target string, candidates []Provider) (Provider, Stored, bool, error) {
+// callProviders asks the candidates in order until one returns a usable translation. Each call
+// counts against the limits first, since what counts is the characters sent (ADR-0148 §11): a
+// provider that fails may have received them, and the next one receives them again. A limit that
+// stops a later call ends the request as one that stops the first. It runs outside transactions
+// (ADR-0003).
+func (s *Service) callProviders(ctx context.Context, accountID string, post appcontent.ReadableStatus, d *draft, target string, candidates []Provider) (Provider, Stored, error) {
 	req := Request{Fragments: d.fragments(), SourceLanguage: d.sourceLanguage, TargetLanguage: target}
-	answered, onlyUnsupported := false, true
-	for _, p := range candidates {
+	characters := CountCharacters(req.Fragments)
+	onlyUnsupported := true
+	for i, p := range candidates {
+		if err := s.d.Limiter.Reserve(ctx, accountID, characters); err != nil {
+			return Provider{}, Stored{}, err
+		}
+		if i == 0 {
+			s.recordLookup(ctx, false)
+		}
+		s.characters.Add(ctx, int64(characters), kernel.NewLabels(labelProvider, p.ID))
 		callCtx, cancel := context.WithTimeout(ctx, providerTimeout)
 		res, err := p.Translator.Translate(callCtx, req)
 		cancel()
@@ -353,7 +365,7 @@ func (s *Service) callProviders(ctx context.Context, post appcontent.ReadableSta
 			s.d.Logger.WarnContext(ctx, "translation provider failed", slog.String("provider", p.ID), slog.Any("error", err))
 			continue
 		}
-		answered, onlyUnsupported = true, false
+		onlyUnsupported = false
 		stored, err := d.apply(res, s.d.Sanitizer)
 		if err != nil {
 			s.d.Logger.WarnContext(ctx, "translation output refused", slog.String("provider", p.ID), slog.Any("error", err))
@@ -361,12 +373,12 @@ func (s *Service) callProviders(ctx context.Context, post appcontent.ReadableSta
 		}
 		stored.ID, stored.StatusID, stored.RevisionID = s.d.IDs.NewID(), post.Status.ID, post.Revision.ID
 		stored.TargetLanguage, stored.Provider, stored.CreatedAt = target, p.ID, s.d.Clock.Now()
-		return p, stored, true, nil
+		return p, stored, nil
 	}
 	if onlyUnsupported {
-		return Provider{}, Stored{}, false, fmt.Errorf("%w: %s", ErrUnsupportedLanguage, target)
+		return Provider{}, Stored{}, fmt.Errorf("%w: %s", ErrUnsupportedLanguage, target)
 	}
-	return Provider{}, Stored{}, answered, ErrFailed
+	return Provider{}, Stored{}, ErrFailed
 }
 
 // candidates returns the enabled providers allowed the visibility, by priority.
@@ -405,10 +417,54 @@ func (s *Service) count(ctx context.Context, outcome string) {
 	s.requests.Add(ctx, 1, kernel.NewLabels(labelOutcome, outcome))
 }
 
+// countHit records a request answered from a kept translation.
+func (s *Service) countHit(ctx context.Context) {
+	s.count(ctx, outcomeCache)
+	s.recordLookup(ctx, true)
+}
+
+// recordLookup keeps a request for the hit rate of the admin screen. The rate is a guide, so a
+// failure here does not fail the request.
+func (s *Service) recordLookup(ctx context.Context, hit bool) {
+	month := s.d.Clock.Now().UTC().Format(monthFormat)
+	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return s.d.Repository.AddCacheLookup(ctx, tx, month, hit)
+	})
+	if err != nil {
+		s.d.Logger.WarnContext(ctx, "translation lookup not recorded", slog.Any("error", err))
+	}
+}
+
+// EnabledProviders returns the providers in force, by priority, as the instance information
+// publishes them (ADR-0148 §6).
+func (s *Service) EnabledProviders(ctx context.Context) ([]Provider, error) {
+	return s.d.Providers.Providers(ctx)
+}
+
+// Overview is what the admin screen shows: the UTC month so far, and the providers that can be
+// enabled.
+type Overview struct {
+	// Month is YYYY-MM in UTC.
+	Month string
+	Usage ServerUsage
+	// Registered are the providers that this server has.
+	Registered []ProviderInfo
+}
+
+// Overview returns the current month's use.
+func (s *Service) Overview(ctx context.Context) (Overview, error) {
+	month := s.d.Clock.Now().UTC().Format(monthFormat)
+	usage, err := s.d.Repository.FindServerUsage(ctx, month)
+	if err != nil {
+		return Overview{}, err
+	}
+	return Overview{Month: month, Usage: usage, Registered: slices.Clone(s.d.Registered)}, nil
+}
+
 // present returns a row as the answer of its provider.
 func present(post appcontent.ReadableStatus, row Stored, p Provider) Translation {
 	out := Translation{
-		Provider:       &ProviderInfo{ID: p.ID, Name: p.Name, URL: p.URL, LogoURL: p.LogoURL},
+		Provider:       new(p.Info()),
 		TargetLanguage: row.TargetLanguage,
 		SourceLanguage: row.SourceLanguage,
 		ContentHTML:    row.ContentHTML,

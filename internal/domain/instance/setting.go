@@ -141,6 +141,21 @@ const (
 	// all its users, for an administrator to hold back a client that overloads the server
 	// (ADR-0090 §7).
 	SettingOAuthClientRateLimits SettingKey = "oauth_client_rate_limits"
+	// SettingTranslationProviders names the server-side translation providers that are enabled, in
+	// the order of their priority; SettingTranslationProviderVisibilities says what each may
+	// receive; and SettingTranslationBrowser enables the browser's built-in translation
+	// (ADR-0148 §3, §5, §12). All start off.
+	SettingTranslationProviders            SettingKey = "translation_providers"
+	SettingTranslationProviderVisibilities SettingKey = "translation_provider_visibilities"
+	SettingTranslationBrowser              SettingKey = "translation_browser"
+	// SettingTranslationUserMonthlyCharacters and SettingTranslationServerMonthlyCharacters bound
+	// the characters sent to providers in a UTC month. 0 sends nothing, and no value means
+	// unlimited (ADR-0148 §11).
+	SettingTranslationUserMonthlyCharacters   SettingKey = "translation_user_monthly_characters"
+	SettingTranslationServerMonthlyCharacters SettingKey = "translation_server_monthly_characters"
+	// SettingTranslationRetentionDays is how many days a translation is kept after it was made
+	// (ADR-0148 §9).
+	SettingTranslationRetentionDays SettingKey = "translation_retention_days"
 )
 
 // RegistrationMode is the value of SettingRegistrationMode (FR-001).
@@ -355,7 +370,28 @@ const (
 	KindAccounts Kind = "accounts"
 	// KindClientLimits is comma-separated client_id=requests pairs, or "" for none.
 	KindClientLimits Kind = "client_limits"
+	// KindProviderList is comma-separated translation provider IDs in order of priority, without
+	// repeats, or "" for none.
+	KindProviderList Kind = "provider_list"
+	// KindProviderVisibilities is comma-separated provider=visibility|visibility pairs, sorted by
+	// provider, or "" for none. A provider with no visibility after the "=" may receive nothing.
+	KindProviderVisibilities Kind = "provider_visibilities"
 )
+
+// The defaults and bounds of the translation settings (ADR-0148 §9, §11).
+const (
+	DefaultTranslationUserMonthlyCharacters   = 50000
+	DefaultTranslationServerMonthlyCharacters = 500000
+	// MaxTranslationMonthlyCharacters is far above any bill an operator means to pay. It keeps a
+	// value in range, and is not a way to say unlimited.
+	MaxTranslationMonthlyCharacters = 1_000_000_000_000
+	DefaultTranslationRetentionDays = 30
+)
+
+// TranslationVisibilities are the values a provider may be allowed, in their canonical order. They
+// are the visibilities of posts (ADR-0017); a test of the platform keeps the two the same, since a
+// domain imports no other module.
+var TranslationVisibilities = []string{"public", "local", "unlisted", "private", "direct"}
 
 // MaxClientLimitsLength bounds a KindClientLimits value, in bytes.
 const MaxClientLimitsLength = 8192
@@ -610,6 +646,30 @@ var definitions = []Definition{
 		Key: SettingLoginProvidersOnly, Kind: KindBool, Default: "false",
 		Doc: "Whether registration and sign-in are limited to the external login providers while at least one is enabled: passwords and passkeys no longer sign in, and users without a linked provider cannot sign in again once their sessions end. With no enabled provider it does not apply.",
 	},
+	{
+		Key: SettingTranslationProviders, Kind: KindProviderList, Default: "",
+		Doc: "The server-side translation providers that are enabled: comma-separated IDs, the first tried first. Empty sends nothing to any provider (ADR-0148 §3).",
+	},
+	{
+		Key: SettingTranslationProviderVisibilities, Kind: KindProviderVisibilities, Default: "",
+		Doc: "What each translation provider may receive: comma-separated provider=visibility|visibility pairs. A provider not named receives public, local, and unlisted posts; provider= receives nothing (ADR-0148 §5).",
+	},
+	{
+		Key: SettingTranslationBrowser, Kind: KindBool, Default: "false",
+		Doc: "Whether readers may use the translation built into their browser, which sends nothing to this server or to a provider (ADR-0148 §12).",
+	},
+	{
+		Key: SettingTranslationUserMonthlyCharacters, Kind: KindInt, Default: strconv.Itoa(DefaultTranslationUserMonthlyCharacters), Min: 0, Max: MaxTranslationMonthlyCharacters,
+		Doc: "How many characters of posts one user's requests may send to translation providers in a UTC month; 0 sends nothing (ADR-0148 §11).",
+	},
+	{
+		Key: SettingTranslationServerMonthlyCharacters, Kind: KindInt, Default: strconv.Itoa(DefaultTranslationServerMonthlyCharacters), Min: 0, Max: MaxTranslationMonthlyCharacters,
+		Doc: "How many characters of posts the whole server may send to translation providers in a UTC month; 0 sends nothing (ADR-0148 §11).",
+	},
+	{
+		Key: SettingTranslationRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultTranslationRetentionDays), Min: 1, Max: MaxRetention,
+		Doc: "How many days a translation is kept after it was made; reading it does not extend this (ADR-0148 §9).",
+	},
 }
 
 // Definitions returns the definitions of every setting key, in a fixed order.
@@ -666,6 +726,18 @@ func (d Definition) Parse(raw string) (string, error) {
 			return "", invalid(fmt.Sprintf("is over %d bytes", MaxClientLimitsLength))
 		}
 		return formatClientLimits(limits), nil
+	case KindProviderList:
+		ids, err := parseProviderList(raw)
+		if err != nil {
+			return "", invalid(err.Error())
+		}
+		return strings.Join(ids, ","), nil
+	case KindProviderVisibilities:
+		allowed, err := parseProviderVisibilities(raw)
+		if err != nil {
+			return "", invalid(err.Error())
+		}
+		return formatProviderVisibilities(allowed), nil
 	case KindEnum:
 		if slices.Contains(d.Choices, raw) {
 			return raw, nil
@@ -1128,6 +1200,133 @@ func formatClientLimits(limits map[string]int64) string {
 	pairs := make([]string, 0, len(limits))
 	for _, id := range slices.Sorted(maps.Keys(limits)) {
 		pairs = append(pairs, id+"="+strconv.FormatInt(limits[id], 10))
+	}
+	return strings.Join(pairs, ",")
+}
+
+// TranslationProviders returns the IDs of SettingTranslationProviders, the first tried first.
+func (s Settings) TranslationProviders() []string {
+	v, _ := s.Value(SettingTranslationProviders)
+	ids, err := parseProviderList(v)
+	if err != nil {
+		return nil
+	}
+	return ids
+}
+
+// TranslationProviderVisibilities returns what SettingTranslationProviderVisibilities allows, by
+// provider ID. A provider that it does not name is absent; one allowed nothing has an empty slice.
+func (s Settings) TranslationProviderVisibilities() map[string][]string {
+	v, _ := s.Value(SettingTranslationProviderVisibilities)
+	allowed, err := parseProviderVisibilities(v)
+	if err != nil {
+		return nil
+	}
+	return allowed
+}
+
+// TranslationBrowser returns the value of SettingTranslationBrowser.
+func (s Settings) TranslationBrowser() bool { return s.boolValue(SettingTranslationBrowser) }
+
+// TranslationUserMonthlyCharacters returns the value of SettingTranslationUserMonthlyCharacters.
+func (s Settings) TranslationUserMonthlyCharacters() int64 {
+	return int64(s.intValue(SettingTranslationUserMonthlyCharacters))
+}
+
+// TranslationServerMonthlyCharacters returns the value of SettingTranslationServerMonthlyCharacters.
+func (s Settings) TranslationServerMonthlyCharacters() int64 {
+	return int64(s.intValue(SettingTranslationServerMonthlyCharacters))
+}
+
+// TranslationRetentionDays returns the value of SettingTranslationRetentionDays.
+func (s Settings) TranslationRetentionDays() int {
+	return s.intValue(SettingTranslationRetentionDays)
+}
+
+// maxProviderSettingLength bounds the values of KindProviderList and KindProviderVisibilities.
+const maxProviderSettingLength = 4096
+
+// wellFormedProviderID reports whether id can be the ID of a provider: a lowercase letter or digit,
+// then up to 63 lowercase letters, digits, "_", or "-". A setting may name a provider that this
+// server does not have, which then does nothing.
+func wellFormedProviderID(id string) bool {
+	if id == "" || len(id) > 64 {
+		return false
+	}
+	for i, r := range id {
+		alnum := (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')
+		if !alnum && (i == 0 || (r != '_' && r != '-')) {
+			return false
+		}
+	}
+	return true
+}
+
+// parseProviderList parses comma-separated provider IDs, keeping their order and dropping repeats.
+func parseProviderList(v string) ([]string, error) {
+	if len(v) > maxProviderSettingLength {
+		return nil, fmt.Errorf("is over %d bytes", maxProviderSettingLength)
+	}
+	var ids []string
+	for id := range strings.SplitSeq(v, ",") {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			continue
+		}
+		if !wellFormedProviderID(id) {
+			return nil, fmt.Errorf("has %q, which is not a provider ID", id)
+		}
+		if !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
+}
+
+// parseProviderVisibilities parses comma-separated provider=visibility|visibility pairs. The
+// visibilities of a pair come back in the order of TranslationVisibilities, without repeats.
+func parseProviderVisibilities(v string) (map[string][]string, error) {
+	if len(v) > maxProviderSettingLength {
+		return nil, fmt.Errorf("is over %d bytes", maxProviderSettingLength)
+	}
+	allowed := map[string][]string{}
+	for pair := range strings.SplitSeq(v, ",") {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+		id, list, ok := strings.Cut(pair, "=")
+		id = strings.TrimSpace(id)
+		if !ok || !wellFormedProviderID(id) {
+			return nil, errors.New("is not comma-separated provider=visibility|visibility pairs")
+		}
+		named := map[string]bool{}
+		for part := range strings.SplitSeq(list, "|") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			if !slices.Contains(TranslationVisibilities, part) {
+				return nil, fmt.Errorf("has %q, which is not a visibility", part)
+			}
+			named[part] = true
+		}
+		visibilities := []string{}
+		for _, name := range TranslationVisibilities {
+			if named[name] {
+				visibilities = append(visibilities, name)
+			}
+		}
+		allowed[id] = visibilities
+	}
+	return allowed, nil
+}
+
+// formatProviderVisibilities returns the stored form of allowed, sorted by provider.
+func formatProviderVisibilities(allowed map[string][]string) string {
+	pairs := make([]string, 0, len(allowed))
+	for _, id := range slices.Sorted(maps.Keys(allowed)) {
+		pairs = append(pairs, id+"="+strings.Join(allowed[id], "|"))
 	}
 	return strings.Join(pairs, ",")
 }

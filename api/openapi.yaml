@@ -10061,6 +10061,31 @@ paths:
                 $ref: '#/components/schemas/LinkCardDomainRule'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/translation:
+    get:
+      operationId: getAdminTranslationOverview
+      summary: Show how translation is used
+      description: |
+        The characters of posts sent to providers in the current month, the cache hit rate, and the
+        providers that this server has. Months are in UTC. The settings of translation are instance
+        settings (`GET /admin/settings`). Needs the `manage_settings` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          description: The use of the current month.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTranslationOverview'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/relays:
     get:
       operationId: listAdminRelays
@@ -13549,6 +13574,91 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LinkCardDomainRule'
+    AdminTranslationOverview:
+      description: How translation is used in the current month, and the providers that this server has.
+      type: object
+      required:
+        - month
+        - characters
+        - cache_hits
+        - cache_misses
+        - providers
+      properties:
+        month:
+          description: The month that the numbers cover, as `YYYY-MM` in UTC.
+          type: string
+        characters:
+          description: |
+            The characters of posts sent to providers this month, without the markers that stand in for
+            mentions, links, and the like. A call to a provider that fails counts too. This is what the
+            limits count, and it can differ from what a provider bills.
+          type: integer
+          format: int64
+        cache_hits:
+          description: The requests answered this month from a translation the server kept.
+          type: integer
+          format: int64
+        cache_misses:
+          description: The requests that went to a provider this month.
+          type: integer
+          format: int64
+        cache_hit_rate:
+          description: |
+            The share of those requests answered from a kept translation, from 0 to 1; omitted before
+            there is any.
+          type: number
+          format: double
+        providers:
+          description: Every provider that this server has, enabled or not. API keys are not part of this.
+          type: array
+          items:
+            $ref: '#/components/schemas/TranslationProvider'
+    InstanceTranslation:
+      description: |
+        What the instance offers for translating posts, and what it sends where. With `browser` false and
+        no `providers`, nothing can be translated and clients show no action for it.
+      type: object
+      required:
+        - browser
+        - providers
+      properties:
+        browser:
+          description: |
+            Whether clients may use the translation built into the browser, where the browser has one. It
+            sends the text of a post to neither this server nor a provider, and works on every visibility.
+          type: boolean
+        providers:
+          description: The enabled providers that run through this server, the first tried first.
+          type: array
+          items:
+            $ref: '#/components/schemas/InstanceTranslationProvider'
+    InstanceTranslationProvider:
+      description: A provider that this instance sends the text of posts to when a reader asks for a translation.
+      type: object
+      required:
+        - id
+        - name
+        - visibilities
+      properties:
+        id:
+          description: The identifier of the provider on this server.
+          type: string
+        name:
+          description: The name to show.
+          type: string
+        url:
+          description: The address of the provider; omitted when there is none.
+          type: string
+          format: uri
+        logo_url:
+          description: The address of the logo to show, for a provider that asks for one; omitted when there is none.
+          type: string
+          format: uri
+        visibilities:
+          description: The visibilities of the posts that this provider may receive.
+          type: array
+          items:
+            $ref: '#/components/schemas/Visibility'
     LoginProviderClaimCondition:
       description: |
         A condition of an `oidc` provider: a user signs in only when the claim of the ID token
@@ -17943,6 +18053,7 @@ components:
         - voice_enabled
         - voice_room_starters
         - full_text_search
+        - translation
       properties:
         domain:
           description: The domain that serves the instance.
@@ -18070,6 +18181,8 @@ components:
             Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
             link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
           type: boolean
+        translation:
+          $ref: '#/components/schemas/InstanceTranslation'
         finance_visibility:
           $ref: '#/components/schemas/FinanceVisibility'
         income_visibility:
@@ -18418,6 +18531,12 @@ components:
         - remote_status_max_retention_days
         - relay_status_retention_days
         - oauth_client_rate_limits
+        - translation_providers
+        - translation_provider_visibilities
+        - translation_browser
+        - translation_user_monthly_characters
+        - translation_server_monthly_characters
+        - translation_retention_days
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
@@ -18427,7 +18546,9 @@ components:
         `admin@example.com`, or empty for none. `uri`: an `https:` or `mailto:` URI, or empty for
         none. `accounts`: the usernames of up to 20 local accounts separated by spaces (commas and
         a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
-        `client_id=requests` pairs, or empty for none.
+        `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
+        provider IDs, the first tried first, or empty for none. `provider_visibilities`:
+        comma-separated `provider=visibility|visibility` pairs, or empty for none.
       type: string
       enum:
         - bool
@@ -18440,6 +18561,8 @@ components:
         - uri
         - accounts
         - client_limits
+        - provider_list
+        - provider_visibilities
     InstanceTextKey:
       description: |
         The key of an instance text: the name (one line), the short and full descriptions,
