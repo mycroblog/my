@@ -56,7 +56,7 @@
     "description": "Heading shown when the server has no translation provider to enable."
   },
   "admin.translation.providers.privacy": {
-    "defaultMessage": "サーバー側の提供元を有効にする前に、プライバシーポリシーを更新してください。読者が翻訳を求めると、ローカルの投稿でも本文が提供元に送られ、一度送った文字は取り消せません。",
+    "defaultMessage": "サーバー側の提供元を有効にする前に、プライバシーポリシーを更新してください。読者が翻訳を求めると、「このサーバー」の投稿でも本文が提供元に送られ、一度送った文字は取り消せません。",
     "description": "Warning at the top of the translation providers: the privacy policy must change first."
   },
   "admin.translation.providers.privacy.link": {
@@ -96,7 +96,7 @@
     "description": "Shown beside the save button of the translation settings when nothing was changed."
   },
   "admin.translation.use.characters": {
-    "defaultMessage": "送った文字数（{month}）",
+    "defaultMessage": "送った文字数 ({month})",
     "description": "Label of the number of characters sent to translation providers in a month. {month} is the month and year."
   },
   "admin.translation.use.description": {
@@ -132,27 +132,27 @@
     "description": "Legend of the visibilities of the posts that a translation provider may receive."
   },
   "admin.translation.visibilities.description": {
-    "defaultMessage": "フォロワー限定とダイレクトは、プライバシーポリシーにそう書いたときだけ許可してください。",
+    "defaultMessage": "「フォロワー」と「メンションした人」は、プライバシーポリシーにそう書いたときだけ許可してください。",
     "description": "Warning under the visibilities that a translation provider may receive."
   },
   "admin.translation.visibility.direct": {
-    "defaultMessage": "ダイレクトの投稿",
-    "description": "Checkbox: a translation provider may receive direct posts."
+    "defaultMessage": "メンションした人",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
   },
   "admin.translation.visibility.local": {
-    "defaultMessage": "ローカルの投稿",
-    "description": "Checkbox: a translation provider may receive local posts."
+    "defaultMessage": "このサーバー",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
   },
   "admin.translation.visibility.private": {
-    "defaultMessage": "フォロワー限定の投稿",
-    "description": "Checkbox: a translation provider may receive followers-only posts."
+    "defaultMessage": "フォロワー",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
   },
   "admin.translation.visibility.public": {
-    "defaultMessage": "公開の投稿",
-    "description": "Checkbox: a translation provider may receive public posts."
+    "defaultMessage": "公開",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
   },
   "admin.translation.visibility.unlisted": {
-    "defaultMessage": "未収載の投稿",
-    "description": "Checkbox: a translation provider may receive unlisted posts."
+    "defaultMessage": "未収載",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
   }
 }

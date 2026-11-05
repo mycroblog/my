@@ -123,15 +123,15 @@ describe("the translation screen", () => {
     expect(await screen.findByText("Saved the translation settings.")).toBeInTheDocument();
   });
 
-  test("allows a provider direct posts, for that provider alone", async () => {
+  test("allows a provider posts for mentioned people, for that provider alone", async () => {
     const user = userEvent.setup();
     const sent = settings({ translation_providers: "one,two" });
     await renderApp({ path });
 
     const group = await screen.findByRole("group", { name: "What Provider One may receive" });
-    expect(within(group).getByRole("checkbox", { name: "Local posts" })).toBeChecked();
-    expect(within(group).getByRole("checkbox", { name: "Direct posts" })).not.toBeChecked();
-    await user.click(within(group).getByRole("checkbox", { name: "Direct posts" }));
+    expect(within(group).getByRole("checkbox", { name: "This server" })).toBeChecked();
+    expect(within(group).getByRole("checkbox", { name: "Mentioned people" })).not.toBeChecked();
+    await user.click(within(group).getByRole("checkbox", { name: "Mentioned people" }));
     await user.click(screen.getByRole("button", { name: "Save the translation settings" }));
 
     await waitFor(() => {

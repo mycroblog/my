@@ -56,7 +56,7 @@
     "description": "Heading shown when the server has no translation provider to enable."
   },
   "admin.translation.providers.privacy": {
-    "defaultMessage": "Update your privacy policy before you enable a server-side provider. When a reader asks for a translation, the text of the post goes to the provider, also for local posts, and text sent to a provider cannot be recalled.",
+    "defaultMessage": "Update your privacy policy before you enable a server-side provider. When a reader asks for a translation, the text of the post goes to the provider, also for posts visible only on this server, and text sent to a provider cannot be recalled.",
     "description": "Warning at the top of the translation providers: the privacy policy must change first."
   },
   "admin.translation.providers.privacy.link": {
@@ -132,27 +132,27 @@
     "description": "Legend of the visibilities of the posts that a translation provider may receive."
   },
   "admin.translation.visibilities.description": {
-    "defaultMessage": "Allow followers-only and direct posts only if your privacy policy says so.",
+    "defaultMessage": "Allow Followers and Mentioned people only if your privacy policy says so.",
     "description": "Warning under the visibilities that a translation provider may receive."
   },
   "admin.translation.visibility.direct": {
-    "defaultMessage": "Direct posts",
-    "description": "Checkbox: a translation provider may receive direct posts."
+    "defaultMessage": "Mentioned people",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
   },
   "admin.translation.visibility.local": {
-    "defaultMessage": "Local posts",
-    "description": "Checkbox: a translation provider may receive local posts."
+    "defaultMessage": "This server",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
   },
   "admin.translation.visibility.private": {
-    "defaultMessage": "Followers-only posts",
-    "description": "Checkbox: a translation provider may receive followers-only posts."
+    "defaultMessage": "Followers",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
   },
   "admin.translation.visibility.public": {
-    "defaultMessage": "Public posts",
-    "description": "Checkbox: a translation provider may receive public posts."
+    "defaultMessage": "Public",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
   },
   "admin.translation.visibility.unlisted": {
-    "defaultMessage": "Unlisted posts",
-    "description": "Checkbox: a translation provider may receive unlisted posts."
+    "defaultMessage": "Unlisted",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
   }
 }

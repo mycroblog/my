@@ -138,8 +138,12 @@ function TranslationForm() {
       <Section surface="card" title={t("client:admin.translation.providers.title")}>
         <Stack gap="4">
           <Callout>
-            {t("client:admin.translation.providers.privacy")}{" "}
-            <Link href="/admin/documents">{t("client:admin.translation.providers.privacy.link")}</Link>
+            <Stack gap="2">
+              <span>{t("client:admin.translation.providers.privacy")}</span>
+              <Link href="/admin/documents" variant="standalone">
+                {t("client:admin.translation.providers.privacy.link")}
+              </Link>
+            </Stack>
           </Callout>
           {use.status === "ready" && providers.length === 0 ? (
             <EmptyState
