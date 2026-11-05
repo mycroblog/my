@@ -118,6 +118,10 @@ makes a real fetch of the current and the previous month, and checks the answer 
 the providers behind the plugin. [Importing cloud usage costs](billing-import.md#a-plugin-billing_sources--plugin) has the
 contract of the kind.
 
+`--kind mailer` makes no call of the RPC unless `--mail-to` names a recipient. With it, the command sends one real message there,
+from `--mail-from` (default: the same address), and checks that the plugin refuses a request with no recipient.
+[Sending email](email.md#a-plugin-mail--plugin) has the contract of the kind.
+
 `probe` is the smallest kind, and the server delegates nothing to it. Serve it first, to check the transport, the
 protocol, and the authentication before you write the rest of the plugin.
 

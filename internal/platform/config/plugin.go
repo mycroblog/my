@@ -54,7 +54,10 @@ func pluginBillingFields() []field {
 }
 
 // pluginAddressRequiredWhen documents the kinds whose address another setting requires, which pluginChecks checks.
-var pluginAddressRequiredWhen = map[string]string{kind.Billing: "when `billing_sources` includes `plugin`"}
+var pluginAddressRequiredWhen = map[string]string{
+	kind.Billing: "when `billing_sources` includes `plugin`",
+	kind.Mailer:  "when `mail = plugin`",
+}
 
 func pluginFieldsOf(k kind.Kind) []field {
 	store := func(c *Config, change func(*kind.Destination)) {
@@ -149,6 +152,9 @@ func pluginChecks(vals map[string]string, present map[string]bool) []Issue {
 				issues = append(issues, Issue{Key: key, Missing: true, Message: "required when billing_sources includes plugin"})
 			}
 		}
+	}
+	if pluginsLeftOutTag == "" && vals["mail"] == "plugin" && !present["plugin_mailer_address"] {
+		issues = append(issues, Issue{Key: "plugin_mailer_address", Missing: true, Message: "required when mail is plugin"})
 	}
 	for _, k := range kind.Delegated() {
 		address := k.Key(kind.SuffixAddress)

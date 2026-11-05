@@ -489,7 +489,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	}
 	a.setUpDeadJobPurger(cfg)
 	if a.Mailer = opts.Mailer; a.Mailer == nil {
-		if a.Mailer, err = newMailer(ctx, cfg, a.Logger); err != nil {
+		if a.Mailer, err = newMailer(ctx, cfg, a.Logger, a.Meter); err != nil {
 			return nil, err
 		}
 	}
@@ -602,7 +602,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	return a, nil
 }
 
-func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error) {
+func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger, meter kernel.Meter) (kernel.Mailer, error) {
 	switch cfg.Mail {
 	case "", "none":
 		return mailnone.New(logger, mailnone.Options{LogMessages: cfg.Profile == "development"}), nil
@@ -613,6 +613,8 @@ func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger) (ke
 		})
 	case "ses":
 		return newSESMailer(ctx, cfg)
+	case "plugin":
+		return newPluginMailer(cfg, meter)
 	default:
 		return nil, fmt.Errorf("mail %q is not implemented yet", cfg.Mail)
 	}

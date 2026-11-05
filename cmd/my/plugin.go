@@ -41,6 +41,8 @@ func pluginTest(args []string, stdout, stderr io.Writer) int {
 	fs.StringVar(&d.TLSKeyFile, "tls-key-file", "", "the key of the client certificate")
 	fs.DurationVar(&d.Timeout, "timeout", 0, "the deadline of one call (default: the kind's)")
 	billed := fs.Bool("billed", false, "--kind billing: also run the case that may cost money at the plugin's providers")
+	mailTo := fs.String("mail-to", "", "--kind mailer: run the cases that send real mail, to this address")
+	mailFrom := fs.String("mail-from", "", "--kind mailer: the sender of that mail, as mail_from (default: the --mail-to address)")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
@@ -87,7 +89,7 @@ func pluginTest(args []string, stdout, stderr io.Writer) int {
 		protocol = k.Protocol
 	}
 	counts := map[contract.Outcome]int{}
-	results := contract.Run(context.Background(), k, contract.Env{Conn: conn, Protocol: protocol, Billed: *billed}, func(r contract.Result) {
+	results := contract.Run(context.Background(), k, contract.Env{Conn: conn, Protocol: protocol, Billed: *billed, MailTo: *mailTo, MailFrom: *mailFrom}, func(r contract.Result) {
 		counts[r.Outcome]++
 		line := string(r.Outcome) + " " + r.Case
 		if r.Detail != "" {
@@ -121,6 +123,9 @@ Flags:
   --timeout        the deadline of one call, such as 5s (default: the kind's)
   --billed         --kind billing: also run the case that may cost money at the plugin's
                    providers
+  --mail-to        --kind mailer: run the cases that send real mail, to this address
+  --mail-from      --kind mailer: the sender of that mail, as mail_from (default: the
+                   --mail-to address)
 
 The flags mean what the settings plugin_<kind>_* mean, and this command reads no
 configuration.
