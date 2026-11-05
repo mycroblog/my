@@ -118,8 +118,9 @@ An `ingress-*` module decides how traffic reaches the app. It is a backend, with
 | Output | Type | Meaning |
 | --- | --- | --- |
 | `trusted_proxies` | `list(string)` | What this ingress puts in front of the platform. The app module adds what the platform itself puts in front of the server (Cloud Run's `169.254.0.0/16`) and sets `MY_TRUSTED_PROXIES` from both, so that the server finds the client's address in `X-Forwarded-For` and the ingress does not need to know the platform |
-| `service_ingress` | `string` or null | What the ingress needs of the service: `all` when its traffic comes from the internet, `internal-and-load-balancer` for a load balancer of Cloud Run. It must agree with the app's own setting, and a disagreement fails the plan. Null for a module that needs nothing, such as a media host |
+| `service_ingress` | `string` or null | What the ingress needs of the service: `all` when its traffic comes from the internet, `internal-and-load-balancer` for a load balancer of Cloud Run, `load-balancer` for one that the service attaches to, as on ECS. It must agree with what the app can do, and a disagreement fails the plan. Null for a module that needs nothing, such as a media host |
 | `dns_records` | `list(object({ name, type, rrdata }))` | What to add at the DNS provider |
+| `load_balancer` (optional) | `object({ target_group_arn, security_group_id })` | What the service attaches to, on a platform where the app registers with its load balancer rather than the load balancer naming the app. An app with no way to attach refuses the ingress by its `service_ingress` |
 
 It takes the service's name from the app (`service_name = module.app.service_name`) while the app takes its settings, which
 is no cycle as long as `env`, `service_ingress`, and `trusted_proxies` do not depend on anything that reads the service's name.
@@ -134,18 +135,19 @@ it sits beside any other. A Cloudflare zone has one ruleset per phase, so two mo
 takes the other's `rules` as `extra_rules`.
 
 Swapping one for another changes its block, and `service_ingress` of the app if the new one needs another setting, which the plan says. `service_ingress` of Cloud Run's app is
-required and has no default, so nothing opens a service by accident: [its README](modules/app-gcp-cloud-run/README.md#who-may-reach-the-service) has what each setting means. AWS's app has no such input,
-because a Function URL has one setting that works: it accepts `all` and refuses the others. An ingress may also be left out, for a deployment that uses the
+required and has no default, so nothing opens a service by accident: [its README](modules/app-gcp-cloud-run/README.md#who-may-reach-the-service) has what each setting means. Neither AWS app has such an input, because each has one setting that works:
+a Function URL accepts `all`, and ECS accepts `load-balancer`, and each refuses the others. An ingress may also be left out, for a deployment that uses the
 service's own URL or has something else in front. Remove the block and that line: `MY_TRUSTED_PROXIES` is then only what the platform puts in front, or what `env` of the app says. Setting
 it in `env` beside an ingress that names proxies fails the plan, and so do two ingresses that both name them.
 
-An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`), with a header that the server checks (`ingress-cloudflare-app`, `ingress-aws-cloudfront`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
+An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`, `ingress-aws-alb`), with a header that the server checks (`ingress-cloudflare-app`, `ingress-aws-cloudfront`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
 **That value lands in the state**: neither provider has a write-only form of it. So this is the one place that breaks the rule below that no secret value reaches the state, and the state must be kept private. Two modules must not name those settings twice, so `ingress-cloudflare-media` beside `ingress-cloudflare-app` leaves them out and comes through `extra_rules`.
 
 ## The app contract
 
 Every `app-*` module takes `backends`, `env`, `secret_env`, `secret_files`, `image`, and `host`, provides a console, and returns
-`origin_host`, the host name its service answers on, for an ingress that takes the origin as an input.
+`origin_host`, the host name its service answers on, for an ingress that takes the origin as an input. It is null on a platform
+where the service has no host of its own, such as ECS, whose tasks each have another address: an ingress that needs a host then fails the plan.
 
 ### The console
 
