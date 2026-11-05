@@ -8,6 +8,7 @@ this file is the contract for whoever uses or adds a module.
 deploy/opentofu/
   modules/app-gcp-cloud-run/      service, migration job, console, service account, public access
   modules/queue-gcp-cloud-tasks/  queue, Scheduler tick, the service account that calls the server
+  modules/queue-db/               the queue in the database, for a process that stays up: settings only
   modules/blob-gcp-gcs/           media bucket
   modules/stream-gcp-pubsub/      topic and the permissions for the server's own subscriptions
   modules/db-external/            a connection URL in Secret Manager: Neon, or any PostgreSQL
@@ -20,9 +21,10 @@ deploy/opentofu/
   modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
   modules/kek-gcp-kms/                 the KEK in Cloud KMS
   examples/gcp-cloud-run-neon/    all of the above, composed, on Git sources at MODULE_REF
-  modules/*-aws-*/, examples/aws-lambda-neon/  the same on AWS, never applied: see "AWS: unverified" below
+  modules/*-aws-*/, examples/aws-lambda-neon/, examples/aws-ecs-neon/  the same on AWS, never applied: see "AWS: unverified" below
   upgrade.sh                      migration job first, then the service
   console.sh                      runs one my command through an app module's console
+  aws-ecs.sh                      what those two share on ECS
 ```
 
 ## Using a module
@@ -174,12 +176,15 @@ tofu output -json console | deploy/opentofu/console.sh admin create -username al
 [`upgrade.sh`](upgrade.sh) runs the same steps in the same order on every platform: the one-off migration takes the new image, then
 `config check`, `db upgrade -check`, `schema apply`, `db upgrade`, and only then the service. Each platform is a few functions there,
 chosen by `--platform`, which is `gcp-cloud-run` unless you say otherwise. What holds a bad image back is the platform's: Cloud Run
-gives a revision no traffic until `/readyz` answers, and Lambda has nothing like that.
+gives a revision no traffic until `/readyz` answers, ECS goes back when a new task fails its load balancer's check, and Lambda has nothing like that.
 
 ## AWS: unverified
 
-The modules for AWS exist to test whether this contract holds on a second platform. **None has ever been applied, and a deployment cannot
-run on them yet**: use Google Cloud. `modules/app-aws-lambda/README.md` says in detail what is missing, which comes to:
+The modules for AWS test whether this contract holds on a second platform, in two shapes. **None has ever been applied**, so use Google Cloud unless you mean to be the first.
+
+`app-aws-ecs` runs the released image as it is, with its secrets from ECS and its one-off commands as tasks, so nothing is known to be missing: `modules/app-aws-ecs/README.md` says what stays unverified and what it costs. Unlike the others it costs money while idle.
+
+**A deployment cannot run on `app-aws-lambda` yet.** `modules/app-aws-lambda/README.md` says in detail what is missing, which comes to:
 
 - the server does not read a secret from Secrets Manager, and Lambda delivers none itself;
 - no released image runs on Lambda: it needs a single-architecture build with the Lambda Web Adapter, in ECR;
@@ -187,18 +192,18 @@ run on them yet**: use Google Cloud. `modules/app-aws-lambda/README.md` says in 
 
 | Module | Replaces on AWS |
 | --- | --- |
-| `app-aws-lambda` | `app-gcp-cloud-run` |
-| `queue-aws-sqs` | `queue-gcp-cloud-tasks` |
+| `app-aws-lambda`, `app-aws-ecs` | `app-gcp-cloud-run` |
+| `queue-aws-sqs` (Lambda), `queue-db` (ECS) | `queue-gcp-cloud-tasks` |
 | `blob-aws-s3` | `blob-gcp-gcs` |
 | `stream-aws-sns` | `stream-gcp-pubsub` |
 | `mail-aws-ses` | Beside `mail-smtp`, which works unchanged |
 | `secrets-aws-secrets-manager` | `secrets-gcp-secret-manager` |
 | `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
-| `ingress-aws-cloudfront` | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
+| `ingress-aws-cloudfront` (Lambda), `ingress-aws-alb` (ECS) | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
 
 `db-external`, `mail-smtp`, and `ingress-cloudflare-app` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
-tests show that a block of one platform fails the plan on the other's app. `examples/aws-lambda-neon` composes them, and its tests swap each block
-its comments name; those tests mock the provider.
+tests show that a block of one platform fails the plan on the other's app. `examples/aws-lambda-neon` and `examples/aws-ecs-neon` compose them, and their tests swap each block
+their comments name; those tests mock the provider. Either shape's app refuses the queue and the ingress of the other at plan time.
 
 ## Checks
 
