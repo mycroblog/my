@@ -392,6 +392,12 @@ jobs:
             run: scripts/task.sh api:generate-check
           - name: api:lint
             run: scripts/task.sh api:lint
+          - name: api:plugin-generate-check
+            run: scripts/task.sh api:plugin-generate-check
+          - name: api:plugin-lint
+            run: scripts/task.sh api:plugin-lint
+          - name: api:plugin-breaking
+            run: scripts/task.sh api:plugin-breaking
           - name: go:mod-check
             run: scripts/task.sh go:mod-check
           - name: api:spec-check

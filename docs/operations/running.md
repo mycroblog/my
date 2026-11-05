@@ -228,6 +228,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.move.activities` | Counter | `my.outcome` (`recorded` / `duplicate` / `not_own_actor` / `same_account` / `target_unavailable` / `alias_missing` / `target_moved` / `suspended` / `too_soon`: whether a received `Move` was recorded, and why it was dropped) |
 | `my.delivery.attempts` | Counter | `my.outcome` (`success` / `retry` / `gone` / `failed`; `gone` covers a 410 and deliveries skipped because the server is unavailable or suspended) |
 | `my.delivery.duration` | Histogram, seconds | `my.outcome` |
+| `my.plugin.failures` | Counter | `my.plugin.kind` (a kind of [plugin](plugins.md)), `my.plugin.code` (the Connect code of the failure) |
 | `my.job.duration` | Histogram, seconds | `my.job.type` (a registered job type, or `other`), `my.outcome` (`success` / `retry` / `dead` / `postponed`: `postponed` is a run that did no work and uses none of the job's attempts, such as a link card fetch that waits for its host) |
 | `my.job.wait` | Histogram, seconds | `my.job.type` |
 | `my.link_card.host_pauses` | Counter | `http.response.status_code` (`429` / `503`). One per pause of the link card fetches from a host; see [Link previews](link-previews.md#limits-per-host) |

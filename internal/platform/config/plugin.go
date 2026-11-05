@@ -1,0 +1,176 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+package config
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/mycroblog/my/internal/adapter/plugin/kind"
+)
+
+// pluginsLeftOutTag is the build tag that left the plugins out of this binary, "" in a build that has them.
+var pluginsLeftOutTag string
+
+func init() { schema = append(schema, pluginFields()...) }
+
+// pluginFields returns the settings of the destination of every delegated kind (ADR-0146 §5). They exist in the
+// configuration file and the environment only, which is what keeps the destination out of the admin UI and the client
+// API: an administrator's stolen account cannot change where posts and keys go.
+func pluginFields() []field {
+	var fields []field
+	for _, k := range kind.Delegated() {
+		fields = append(fields, pluginFieldsOf(k)...)
+	}
+	return fields
+}
+
+func pluginFieldsOf(k kind.Kind) []field {
+	store := func(c *Config, change func(*kind.Destination)) {
+		if c.Plugins == nil {
+			c.Plugins = map[string]kind.Destination{}
+		}
+		d := c.Plugins[k.Name]
+		change(&d)
+		c.Plugins[k.Name] = d
+	}
+	forms := "`unix:///path/to.sock`, `https://host[:port]`, or `http://host[:port]`, which is plain TCP: nothing encrypts or authenticates it, and the server warns at start"
+	if !k.PlainTCP {
+		forms = "`unix:///path/to.sock` or `https://host[:port]`; `http://` is refused, on loopback too"
+	}
+	protocols := []choice{
+		{value: kind.ProtocolJSON, doc: "The Connect protocol with JSON, which a plugin of an HTTP server and a JSON library serves with no Connect library."},
+		{value: kind.ProtocolProto, doc: "The Connect protocol with binary protobuf, for a server on a Connect library."},
+		{value: kind.ProtocolGRPC, doc: "gRPC, for a server that speaks only that."},
+	}
+	if k.Streaming {
+		protocols = protocols[1:]
+	}
+	return []field{
+		{
+			key: k.Key(kind.SuffixAddress),
+			doc: "Where the `" + k.Name + "` plugin listens: " + forms +
+				". Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.",
+			check: func(v string) error {
+				_, err := kind.ParseAddress(v)
+				return err
+			},
+			set: func(c *Config, v string) { store(c, func(d *kind.Destination) { d.Address = v }) },
+		},
+		{
+			key:     k.Key(kind.SuffixProtocol),
+			doc:     "What the server sends to the `" + k.Name + "` plugin; it must be what the plugin accepts.",
+			defDoc:  "`" + k.Protocol + "`",
+			choices: protocols,
+			set:     func(c *Config, v string) { store(c, func(d *kind.Destination) { d.Protocol = v }) },
+		},
+		{
+			key:    k.Key(kind.SuffixToken),
+			doc:    "Bearer token that the server sends to the `" + k.Name + "` plugin, over `https://` or `unix://` only.",
+			secret: true,
+			check:  checkNotBlank,
+			set:    func(c *Config, v string) { store(c, func(d *kind.Destination) { d.Token = v }) },
+		},
+		{
+			key:    k.Key(kind.SuffixTLSCAFile),
+			doc:    "File of the CA that verifies the `" + k.Name + "` plugin at an `https://` address.",
+			defDoc: "the system's roots",
+			set:    func(c *Config, v string) { store(c, func(d *kind.Destination) { d.TLSCAFile = v }) },
+		},
+		{
+			key: k.Key(kind.SuffixTLSCertFile),
+			doc: "File of the client certificate that the server shows the `" + k.Name + "` plugin at an `https://` address (mTLS), with its key file.",
+			set: func(c *Config, v string) { store(c, func(d *kind.Destination) { d.TLSCertFile = v }) },
+		},
+		{
+			key: k.Key(kind.SuffixTLSKeyFile),
+			doc: "File of the key of that client certificate of the `" + k.Name + "` plugin.",
+			set: func(c *Config, v string) { store(c, func(d *kind.Destination) { d.TLSKeyFile = v }) },
+		},
+		{
+			key:    k.Key(kind.SuffixTimeout),
+			doc:    "Deadline of one call of the `" + k.Name + "` plugin, less than `" + kind.MaxTimeout.String() + "`.",
+			defDoc: "`" + k.Timeout.String() + "`",
+			check: func(v string) error {
+				d, err := time.ParseDuration(v)
+				if err != nil || d <= 0 {
+					return fmt.Errorf("must be a duration above zero, such as %s", k.Timeout)
+				}
+				return nil
+			},
+			set: func(c *Config, v string) {
+				timeout, err := time.ParseDuration(v)
+				if err == nil {
+					store(c, func(d *kind.Destination) { d.Timeout = timeout })
+				}
+			},
+		},
+	}
+}
+
+// pluginChecks applies the rules of a destination to the settings of every kind (ADR-0146 §5, §6).
+func pluginChecks(vals map[string]string, present map[string]bool) []Issue {
+	var issues []Issue
+	for _, k := range kind.Delegated() {
+		address := k.Key(kind.SuffixAddress)
+		if !present[address] {
+			issues = append(issues, pluginWithoutAddress(k, present)...)
+			continue
+		}
+		if pluginsLeftOutTag != "" {
+			issues = append(issues, Issue{Key: address, Message: fmt.Sprintf("is not in this build: the build tag %s left the plugins out (docs/reference/build-tags.md)", pluginsLeftOutTag)})
+			continue
+		}
+		if vals[address] == "" {
+			continue // Its own validation reported it.
+		}
+		timeout, err := time.ParseDuration(vals[k.Key(kind.SuffixTimeout)])
+		if err != nil {
+			timeout = 0
+		}
+		d := kind.Destination{
+			Address:     vals[address],
+			Protocol:    vals[k.Key(kind.SuffixProtocol)],
+			Token:       vals[k.Key(kind.SuffixToken)],
+			TLSCAFile:   vals[k.Key(kind.SuffixTLSCAFile)],
+			TLSCertFile: vals[k.Key(kind.SuffixTLSCertFile)],
+			TLSKeyFile:  vals[k.Key(kind.SuffixTLSKeyFile)],
+			Timeout:     timeout,
+		}
+		for _, p := range k.Check(d) {
+			issues = append(issues, Issue{Key: k.Key(p.Suffix), Message: p.Message})
+		}
+	}
+	return issues
+}
+
+// pluginWithoutAddress rejects the credentials of a kind that has no address, which are most likely a mistyped key away
+// from one. The protocol and the timeout have defaults, so their presence says nothing.
+func pluginWithoutAddress(k kind.Kind, present map[string]bool) []Issue {
+	var issues []Issue
+	for _, suffix := range []string{kind.SuffixToken, kind.SuffixTLSCAFile, kind.SuffixTLSCertFile, kind.SuffixTLSKeyFile} {
+		if present[k.Key(suffix)] {
+			issues = append(issues, Issue{Key: k.Key(suffix), Message: "has no use without " + k.Key(kind.SuffixAddress)})
+		}
+	}
+	return issues
+}
+
+// PluginDestination returns the destination of the kind's plugin. Its Enabled says whether one is configured.
+func (c *Config) PluginDestination(name string) kind.Destination { return c.Plugins[name] }
+
+// PluginWarnings returns the destinations that work but that the operator should know about, for `my config check` and
+// the log at start (ADR-0146 §6).
+func PluginWarnings(c *Config) []Finding {
+	var out []Finding
+	for _, k := range kind.Delegated() {
+		d := c.Plugins[k.Name]
+		if !d.Enabled() {
+			continue
+		}
+		for _, p := range k.Warnings(d) {
+			out = append(out, Finding{Severity: SeverityWarning, Key: k.Key(p.Suffix), Message: p.Message})
+		}
+	}
+	return out
+}
