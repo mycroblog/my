@@ -70,7 +70,8 @@ On the rows that say yes, nothing closes `run.app`. For the header, the value is
 - Request-based billing with min instances 0, a `/readyz` startup probe, and a `/healthz` liveness probe. The startup probe
   keeps a revision from taking traffic until the schema and the data upgrade steps of its release are in place.
 - A plan fails without a KEK when the server needs one: `kek` with `key_manager = local`, or `kms_key` otherwise.
-- The service account can read every secret in `secret_env` and `secret_files`, and holds each permission of the backends on
+- A backend's `cloud_sql_instances` are mounted at `/cloudsql` on the service and every job, for `db-gcp-cloud-sql`. A backend's `direct_secret_env` goes to the jobs only.
+- The service account can read every secret in `secret_env`, `direct_secret_env`, and `secret_files`, and holds each permission of the backends on
   the resource it names. Each `invokers` entry gets `roles/run.invoker`, and so does `allUsers`, because federation needs
   public paths. The server checks the tokens of `/_internal/*` itself.
 - `apply` never changes the image of what exists: it would skip the migration. [`upgrade.sh`](../../upgrade.sh) does.

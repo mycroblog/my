@@ -72,8 +72,11 @@ locals {
     local.key_manager == "local" ? !contains(local.setting_names, "MY_KEK") : !contains(local.setting_names, "MY_KMS_KEY")
   )
 
-  permissions   = flatten([for b in var.backends : b.permissions])
-  event_sources = merge([for b in var.backends : b.event_sources]...)
+  permissions = flatten([for b in var.backends : b.permissions])
+  # Attached to a VPC when a backend lives in one. What the function may reach is the sum of these groups.
+  security_group_ids = distinct(concat(var.vpc_security_group_ids, flatten([for b in var.backends : b.security_group_ids])))
+  vpc_attached       = length(var.vpc_subnet_ids) > 0
+  event_sources      = merge([for b in var.backends : b.event_sources]...)
 
   # The same image with other settings: one definition makes every function, as one block makes the jobs on Cloud Run.
   # The adapter's defaults are the server's: port 8080, and /events for the events of the queue.
@@ -134,6 +137,14 @@ resource "aws_iam_role" "server" {
       error_message = "More than one backend says what is in front of the function with trusted_proxies. Use one ingress-* module for that; a media host returns none."
     }
     precondition {
+      condition     = local.vpc_attached || length(local.security_group_ids) == 0
+      error_message = "A backend lives in a VPC, or vpc_security_group_ids is set, but vpc_subnet_ids is empty, so the functions cannot reach it. Name the private subnets."
+    }
+    precondition {
+      condition     = !local.vpc_attached || length(local.security_group_ids) > 0
+      error_message = "vpc_subnet_ids needs at least one security group. A function in a VPC reaches only what its groups allow, so give vpc_security_group_ids a group that allows the way out."
+    }
+    precondition {
       condition     = !local.kek_missing
       error_message = "No KEK: with key_manager = ${local.key_manager} the server needs ${local.key_manager == "local" ? "kek" : "kms_key"}. Add a kek-* module to backends."
     }
@@ -170,6 +181,23 @@ data "aws_iam_policy_document" "server" {
       sid       = "Secrets"
       actions   = ["secretsmanager:GetSecretValue"]
       resources = local.all_secret_arns
+    }
+  }
+
+  # What Lambda needs of the function's role to create the network interfaces in the VPC.
+  dynamic "statement" {
+    for_each = local.vpc_attached ? [1] : []
+    content {
+      sid = "VpcNetworkInterfaces"
+      actions = [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeSubnets",
+        "ec2:DeleteNetworkInterface",
+        "ec2:AssignPrivateIpAddresses",
+        "ec2:UnassignPrivateIpAddresses",
+      ]
+      resources = ["*"]
     }
   }
 
@@ -237,6 +265,14 @@ resource "aws_lambda_function" "server" {
   }
 
   reserved_concurrent_executions = each.key == "web" ? var.web_reserved_concurrency : null
+
+  dynamic "vpc_config" {
+    for_each = local.vpc_attached ? [1] : []
+    content {
+      subnet_ids         = var.vpc_subnet_ids
+      security_group_ids = local.security_group_ids
+    }
+  }
 
   lifecycle {
     # upgrade.sh changes the image, as on the other platforms, and apply must not move it back.

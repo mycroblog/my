@@ -84,6 +84,9 @@ locals {
   permissions = flatten([for b in var.backends : b.permissions])
   invokers    = toset(flatten([for b in var.backends : b.invokers]))
 
+  # Cloud SQL instances that the service and the jobs reach through the socket of Cloud Run's connector, at /cloudsql.
+  cloud_sql_instances = distinct(flatten([for b in var.backends : b.cloud_sql_instances]))
+
   jobs = merge(
     { migrate = ["db", "upgrade", "-check"] },
     var.console_enabled ? { console = ["version"] } : {},
@@ -208,6 +211,16 @@ resource "google_cloud_run_v2_service" "server" {
     }
 
     dynamic "volumes" {
+      for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+      content {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = local.cloud_sql_instances
+        }
+      }
+    }
+
+    dynamic "volumes" {
       for_each = local.file_mounts
       content {
         name = volumes.value.volume
@@ -270,6 +283,14 @@ resource "google_cloud_run_v2_service" "server" {
         content {
           name       = volume_mounts.value.volume
           mount_path = volume_mounts.value.path
+        }
+      }
+
+      dynamic "volume_mounts" {
+        for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+        content {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
         }
       }
 
@@ -348,6 +369,16 @@ resource "google_cloud_run_v2_job" "one_off" {
       max_retries = 0
 
       dynamic "volumes" {
+        for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+        content {
+          name = "cloudsql"
+          cloud_sql_instance {
+            instances = local.cloud_sql_instances
+          }
+        }
+      }
+
+      dynamic "volumes" {
         for_each = local.file_mounts
         content {
           name = volumes.value.volume
@@ -395,6 +426,14 @@ resource "google_cloud_run_v2_job" "one_off" {
                 version = "latest"
               }
             }
+          }
+        }
+
+        dynamic "volume_mounts" {
+          for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+          content {
+            name       = "cloudsql"
+            mount_path = "/cloudsql"
           }
         }
 

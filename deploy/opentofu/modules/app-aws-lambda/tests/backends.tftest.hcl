@@ -360,3 +360,41 @@ run "a_direct_setting_with_nothing_to_override_fails" {
 
   expect_failures = [aws_iam_role.server]
 }
+
+run "a_backend_in_a_vpc_attaches_every_function" {
+  command = plan
+
+  variables {
+    vpc_subnet_ids         = ["subnet-a", "subnet-b"]
+    vpc_security_group_ids = ["sg-out"]
+    backends = [{
+      secret_env         = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" }
+      security_group_ids = ["sg-db"]
+    }]
+  }
+
+  assert {
+    condition     = toset(aws_lambda_function.server["web"].vpc_config[0].security_group_ids) == toset(["sg-out", "sg-db"]) && toset(aws_lambda_function.server["migrate"].vpc_config[0].subnet_ids) == toset(["subnet-a", "subnet-b"])
+    error_message = "every function must join the subnets and every group"
+  }
+}
+
+run "a_backend_in_a_vpc_without_subnets_fails" {
+  command = plan
+
+  variables {
+    backends = [{ security_group_ids = ["sg-db"] }]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "subnets_without_a_group_fail" {
+  command = plan
+
+  variables {
+    vpc_subnet_ids = ["subnet-a"]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}

@@ -711,3 +711,40 @@ run "a_direct_setting_with_nothing_to_override_fails" {
 
   expect_failures = [google_service_account.server]
 }
+
+run "a_cloud_sql_backend_mounts_the_socket_on_the_service_and_the_jobs" {
+  command = plan
+
+  variables {
+    backends = [{ cloud_sql_instances = ["p:r:db"] }]
+  }
+
+  assert {
+    condition     = [for v in google_cloud_run_v2_service.server.template[0].volumes : tolist(v.cloud_sql_instance[0].instances) if v.name == "cloudsql"] == [["p:r:db"]]
+    error_message = "the service must have the instance as a volume"
+  }
+
+  assert {
+    condition     = [for m in google_cloud_run_v2_service.server.template[0].containers[0].volume_mounts : m.mount_path if m.name == "cloudsql"] == ["/cloudsql"]
+    error_message = "the service must mount the socket at /cloudsql"
+  }
+
+  assert {
+    condition     = [for v in google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].volumes : v.cloud_sql_instance[0].instances[0] if v.name == "cloudsql"] == ["p:r:db"]
+    error_message = "the migration job must have the instance as a volume"
+  }
+
+  assert {
+    condition     = [for m in google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].containers[0].volume_mounts : m.mount_path if m.name == "cloudsql"] == ["/cloudsql"]
+    error_message = "the migration job must mount the socket at /cloudsql"
+  }
+}
+
+run "without_cloud_sql_there_is_no_volume" {
+  command = plan
+
+  assert {
+    condition     = length([for v in google_cloud_run_v2_service.server.template[0].volumes : v if v.name == "cloudsql"]) == 0
+    error_message = "a deployment without Cloud SQL must not change"
+  }
+}

@@ -51,6 +51,8 @@ variable "backends" {
     secret_files = optional(map(string), {})
     # What the one-off functions take in place of a setting of secret_env, which the others keep.
     direct_secret_env = optional(map(string), {})
+    # Security groups the functions join to reach a backend in a VPC.
+    security_group_ids = optional(list(string), [])
     permissions = optional(list(object({
       permission = string
       scope      = string
@@ -125,6 +127,20 @@ variable "secret_files" {
     condition     = alltrue([for name in keys(var.secret_files) : endswith(name, "_FILE")])
     error_message = "The names of secret_files end in _FILE."
   }
+}
+
+variable "vpc_subnet_ids" {
+  description = "Private subnets to attach every function to, for a backend in a VPC. Empty, they stay outside any VPC of yours. An attached function reaches the internet and AWS's APIs only through what the VPC provides, such as a NAT gateway: read the README."
+  type        = list(string)
+  default     = []
+  nullable    = false
+}
+
+variable "vpc_security_group_ids" {
+  description = "Security groups of the functions beside the ones the backends return, such as one that allows the way out to the internet."
+  type        = list(string)
+  default     = []
+  nullable    = false
 }
 
 variable "web_memory_mib" {

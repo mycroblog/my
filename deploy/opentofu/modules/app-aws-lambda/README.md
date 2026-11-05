@@ -40,6 +40,7 @@ module "app" {
 | `job_memory_mib`, `job_timeout_seconds` | `1024`, `900` | The one-off functions |
 | `one_off_command` | `["lambda-run"]` | What they run. Assumed: read above |
 | `console_enabled` | `false` | Creates the console function |
+| `vpc_subnet_ids`, `vpc_security_group_ids` | `[]` | Attach every function to a VPC, for a backend that lives in one: private subnets, and a group that allows the way out beside those of `security_group_ids` of the backends. An attached function reaches the internet and AWS's APIs only through a NAT gateway or endpoints that you provide, and a public subnet does not help |
 | `log_retention_days` | `30` | CloudWatch Logs |
 
 | Output | Value |

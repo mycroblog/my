@@ -70,3 +70,28 @@ run "a_key_in_both_maps_fails" {
 
   expect_failures = [var.referenced]
 }
+
+run "a_value_from_elsewhere_goes_through_the_write_only_attribute" {
+  command = plan
+
+  variables {
+    referenced   = { database_url = "my-database-url" }
+    write_keys   = ["database_url"]
+    write_values = { database_url = "postgres://u:p@h/d" }
+  }
+
+  assert {
+    condition     = google_secret_manager_secret_version.written["database_url"].secret_data == null && google_secret_manager_secret_version.written["database_url"].secret_data_wo_version == 1
+    error_message = "the value must go through the write-only attribute"
+  }
+}
+
+run "a_written_key_must_be_a_secret_of_this_module" {
+  command = plan
+
+  variables {
+    write_keys = ["database_url"]
+  }
+
+  expect_failures = [var.write_keys]
+}
