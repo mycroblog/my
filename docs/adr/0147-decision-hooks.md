@@ -1,6 +1,6 @@
 # ADR-0147: 判定フックは判定だけを返し、処分は人が決める
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-05
 - Deciders: @rosylilly
 - Issue: #2215
@@ -9,7 +9,7 @@
 
 **外部プラグインに「これを通してよいか」を受け付けの前に尋ねるフックを置く。プラグインが返すのは決まった語彙の判定だけで、本文は書き換えず、アカウントの処分もしない。失敗したら既定で通し、`observe` から始め、判定は本文なしで期限付きで記録して取り消せるようにする。**
 
-§1、§5 の `drop`、§7 の通報者と出所、§8 の出所の排他、§10 は Decider の判断を記録したものである。それ以外は推奨案で、各節の覆る条件か Open Questions のとおり未確定である。プロトコルと接続の設定は ADR-0146 が持つ。
+プロトコルと接続の設定は ADR-0146 が持つ。
 
 ### 1. 原則
 
@@ -28,12 +28,14 @@
 | `inbound.status` | `federation.inbox` の `Create` と `Update` | `allow`, `drop`, `flag`, `mark_sensitive` | 通す（`retry`） | 3 秒 |
 | `inbound.follow` | `federation.inbox` の `Follow` | `allow`, `drop`, `flag` | 通す（`retry`） | 3 秒 |
 | `signup.check` | `SignUp` と `SignUpExternal`。CAPTCHA と拒否リストの後。招待の登録は呼ばない | `allow`, `require_approval`, `reject`（運営者が有効にしたときだけ） | 通す（`require_approval`） | 2 秒 |
-| `media.check` | `media.process` の、結果が `ready` になる前。原本は送らない | `allow`, `mark_sensitive`, `flag`, `reject` | 通す（`retry`） | 10 秒 |
+| `media.check` | `media.process` の、結果が `ready` になる前。原本は送らない | `allow`, `mark_sensitive`, `flag` | 通す（`retry`） | 10 秒 |
 | `local.status` | `content.Service.Create` のトランザクションの前。冪等な再送の確認の後。既定は作成から日の浅いアカウントだけ | `allow`, `flag`, `reject` | 通す（選択肢なし） | 1 秒 |
 
+- `media.check` は違法なコンテンツの法務の確認が済むまで `reject` なしで作る。処理結果が出ると原本の blob が消えるので（`uploaded_media`）、`reject` は証拠を失わせ得る一方、保全と通報の義務は国で違う（要検証）。`reject` は proto の語彙に残すので、後で足しても何も壊れない。プラグインが今 `media.check` に `reject` を返したら不正な応答として扱い、失敗として記録して §4 の失敗時の既定に従う。
 - `Delete`・`Undo`・`Reject`、`Like`・リアクション・ブースト、配送の前にはフックを置かない。1 つのフックに複数のプラグインは連ねない。
 - 事後の確認は webhook（ADR-0060）と API の役目で、ここには持ち込まない。
 - フックを設定していないサーバーはプラグインを呼ばない。
+- 投稿の本文を送る `inbound.status` と `local.status` は平文の TCP を拒み、ほかのフックは使える（ADR-0146 §6）。
 
 ### 3. `inbound.status` の位置
 
@@ -68,6 +70,8 @@ ADR-0020 の分類で次を足す。`schema/<dialect>/16-hook.sql` に置き、`
 - `hook_decisions`（イベント）: フック、対象のキー、モード、結果（判定または失敗の種類）、理由コード、メモ、待ち時間、日時。`(hook, subject_key)` で一意。本文・メールアドレス・IP は持たない。`inbound.*` の対象のキーは受信したアクティビティの URI で、`Update` の版ごとに別の判定になる。
 - `hook_decision_statuses`（イベントの子）: 効果が及んだ投稿。`moderation_action_statuses` に対応し、§8 の投影の元になる。`Create` では投稿の ID が決まる取り込みのトランザクションで書く。
 - `hook_decision_overrides`（イベント）: モデレーターの取り消し（§9）。
+- `hook_decision_appeals`（リソース）と `hook_decision_appeal_decisions`（イベント）: `local.status` の `reject` への異議申し立てとその審査（§9）。処分の記録と分けた、この判定のためだけの表で、`moderation_appeals` と `moderation_appeal_decisions` と同じ形をとる。`hook_decision_appeals` は作者が送る本文を持つ。判定が本文を持たず、審査に要るからで、判定の表に本文がない原則はそのままである。1 つの判定に 1 件まで。
+- `hook_account_exemptions`（現在値）: 申し立てが覆って対象から外れたアカウントとフックの組。行の存在が現在値で（ADR-0020 規約 5）、保持期間で消える判定や申し立てから導かない。
 
 判定は呼び出しの直後に短いトランザクションで書く。その後の取り込みが失敗しても、再実行は同じ判定を読む。
 
@@ -75,9 +79,9 @@ ADR-0020 の分類で次を足す。`schema/<dialect>/16-hook.sql` に置き、`
 
 - §8 の投影が指している判定。投影を再構築できなくなるため（ADR-0020 規約 1）。投稿がなくなれば消せる。
 - `retention_holds` が保全するアカウントの判定（ADR-0058 §8）。
-- 異議申し立ての期間内の判定（Open Questions の 1 を採るとき）。
+- `local.status` の `reject` のうち、異議申し立ての期間内か審査待ちの判定。期間は `appeal_window_days` に合わせる。
 
-アカウントの削除では、そのアカウントの判定を消す（保全の間を除く）。
+申し立ての行は判定と一緒に消す。アカウントの削除では、そのアカウントの判定・申し立て・`hook_account_exemptions` の行を消す（保全の間を除く）。
 
 ### 7. 自動の通報
 
@@ -85,7 +89,7 @@ ADR-0020 の分類で次を足す。`schema/<dialect>/16-hook.sql` に置き、`
 
 - `reporter_account_id` は**インスタンス Actor** にする。`accounts` に行があり（`Service.EnsureInstanceActor`、`InstanceActorTx`）、`NOT NULL` を変えずに済む。
 - 出所は `hook_decision_id` で記録する。`report_voice_rooms` と同じく通報の子のリソース `report_hook_origins`（`report_id` PK、`hook_decision_id` 一意、`hook`、`reason_code`）に置く。一意制約が再実行での二重の起票を防ぐ。フックと理由は不変の事実なので写す（ADR-0020 規約 4）。判定が先に消えても、通報は自動のものと分かり、理由が読める。
-- `uri` は NULL、`forwarded` は偽。カテゴリは理由コードから決め、`comment` はメモ（なければ空）にする。投稿と同じトランザクションで書くので、`moderation` にトランザクションの中で起票する入口を足す。`FileRemoteReport` は URI を要し、`LocalReports.File` は閲覧者の確認をするので、どちらも使えない。
+- **1 つの判定に 1 件の通報** で、まとめない。リモートのサーバーへ自動で転送しない。`uri` は NULL、`forwarded` は偽にする。転送するかはモデレーターが通常の操作で決める。カテゴリは理由コードから決め、`comment` はメモ（なければ空）にする。投稿と同じトランザクションで書くので、`moderation` にトランザクションの中で起票する入口を足す。`FileRemoteReport` は URI を要し、`LocalReports.File` は閲覧者の確認をするので、どちらも使えない。
 - `EventReportResolved` の通知の宛先は `reporter_account_id` で、インスタンス Actor はローカルなので、今のままでは通知の行を作りに行く。自動の通報は通知しない。
 - 管理 API の通報と webhook `report.created`（管理 API の表現を写す）に、自動の起票であることを足す。
 
@@ -111,14 +115,14 @@ CREATE INDEX status_sensitivity_overrides_source_action_id ON status_sensitivity
 CREATE INDEX status_sensitivity_overrides_source_hook_decision_id ON status_sensitivity_overrides (source_hook_decision_id);
 ```
 
-今の PK `(status_id, source_action_id)` は NULL を持てないので外す。排他の CHECK の形は `relationship_severances` と同じである。代理キー `id` は足さない。`my projection verify` は全列で行を比べるので、再構築のたびに変わる ID があると毎回ずれと報告される。この表は主キーのない最初の表になる（Open Questions の 3）。
+今の PK `(status_id, source_action_id)` は NULL を持てないので外す。排他の CHECK の形は `relationship_severances` と同じである。代理キー `id` は足さない。`my projection verify` は全列で行を比べるので、再構築のたびに変わる ID があると毎回ずれと報告される。この表は主キーのない最初の表になる。
 
 - **書き込み**: `content` に `MarkSensitiveByHook(ctx, tx, statusID, decisionID)` と `ClearSensitivityOfHookDecision(ctx, tx, decisionID)` を足し、`InsertStatusSensitivityOverride` の `ON CONFLICT` を出所ごとの文に分ける。`inbound.status` は取り込みか改訂のトランザクションで書く。`media.check` は投稿より先に動くので、添付を持つ投稿を作るトランザクションで、投影の行と `hook_decision_statuses` を書く。`avatar`・`header`・`emoji` には投稿がないので `mark_sensitive` は効かず、記録だけが残る。
 - **読み取り**: 変えない。`SensitivityOverridden` は行の有無だけを見るので、`Reader.forcedSensitive` と `preview.go` はそのまま動く。
 - **再構築**: `SensitivityMarks` の `mark` は処分か判定のどちらかを受け取る。`internal/platform/projections.go` の `status_sensitivity_overrides` は `moderation.ReplaySensitivityMarks` に加えて `hook.ReplaySensitivityMarks`（`enforce` で `mark_sensitive`、取り消しのない判定の `hook_decision_statuses`）を流す。`content` は他のモジュールの表を読まない。`content.RebuildSensitivityOverrides` は `statuses` に行のない投稿を落とす。投稿の物理削除は投影の行を消すが、判定の子の行はそれより長く残り得るため。保持期間が判定を消して行が戻らなくなることは §6 が防ぐ。
 - **何を消すか**: 処分の解除は `source_action_id` の行だけを、判定の取り消しは `source_hook_decision_id` の行だけを消す。両方の行があれば、片方が消えても投稿はセンシティブのまま。どちらも作者が付けた `Sensitive`（版の列）と `force_sensitive` の制限には触らない。投稿の物理削除（`PurgeStatusSensitivityOverrides`）は両方を消す。
 - **効く範囲**: 今の投影と同じ。添付を閲覧者を問わずセンシティブとして表示し、プレビューに画像を出さない。本文は隠さず、添付のない投稿には見える効果がない。`internal/app/federation/document.go` は版の `Sensitive` だけを使うので、連合先には伝わらない。
-- **版をまたぐ**: 行は投稿に付くので、後の版が `allow` でも残る。外すのはモデレーターの取り消しである（Open Questions の 7）。
+- **版をまたぐ**: 行は投稿に付くので、後の版が `allow` でも残る。外すのはモデレーターの取り消しだけである。再構築が単純で、失敗の通過と紛れない。
 
 v0.1.0 の前なので移行は要らない（ADR-0023）。
 
@@ -132,9 +136,10 @@ v0.1.0 の前なので移行は要らない（ADR-0023）。
 | `flag` | 通報はそのまま。解決はモデレーターの通常の操作で行う |
 | `drop` | 原本が残っていれば `federation.inbox` を積み直す。再実行は取り消しのある判定を `allow` と読むので、プラグインを呼ばない。原本は `received_activity_documents` に 7 日（`ReceivedDocumentRetention`）しかなく、それを過ぎたら戻せず、画面がそう示す |
 | `reject`（`signup.check`） | 申請は残らないので、記録だけ。応募者は登録し直す |
-| `reject`（`media.check`） | Open Questions の 2 に従う。処理結果が出ると原本の blob は消えるので（`uploaded_media`）、今の流れでは戻せない |
-| `reject`（`local.status`） | Open Questions の 1 に従う |
+| `reject`（`local.status`） | 投稿は残らないので、取り消しは下の異議申し立ての審査で行う |
 | `require_approval` | 登録審査の通常の操作で承認する |
+
+**`local.status` の `reject` への異議申し立て。** 作者は `appeal_window_days` の間に、投稿しようとした本文を添えて申し立てる。審査は人が行い、プラグインを呼ばない。退ければ判定はそのままである。覆すと、同じトランザクションで判定を取り消し（`hook_decision_overrides`）、そのアカウントを `local.status` の対象から外す（`hook_account_exemptions`）。投稿は戻さず、作者が投稿し直す。
 
 `drop` は tombstone を残さない。受信の重複排除（`received_activities`、30 日）が同じアクティビティを止めるが、スレッドの取得（`threads.go`）や `Announce` の取得は別の経路で同じ投稿を運び得る。それらは実際にすり抜けが出るまで広げない。
 
@@ -160,7 +165,7 @@ v0.1.0 の前なので移行は要らない（ADR-0023）。
 
 ### 13. 作る順序
 
-#2222 から #2227 は `v0.1.0` までに作る。順序は #2222、#2223、#2224、#2227、#2226、#2225 で、どのフックも `observe` を既定に出す。
+`v0.1.0` までに #2222 から #2227 を作る。順序は #2222、#2223、#2224、#2227、#2226、#2225 で、どのフックも `observe` を既定に出す。
 
 ## 経緯
 
@@ -168,7 +173,7 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 
 最初に原則を決めた。判定だけを返すのは、プラグインが操られても読者に届く文章を作れないようにするためで、固定の語彙がそれを保つ。既定で通すのは、順序キーのために失敗の影響が 1 件で済まないから。
 
-未決だった点のうち、`drop` は誤りの代償が大きい一方で最も価値のある判定なので、外すのではなく `observe` から始める形にした。通報者は、`NOT NULL` を保てる行のあるインスタンス Actor にした。`mark_sensitive` は、投影の `source_action_id` が処分しか指せないことが問題で、処分を作ると原則の 3 に反するので、出所の排他にした。これに伴い、保持期間のある判定から投影を作ることになり、§6 が投影の指す判定を残す形になった。
+`drop` は誤りの代償が大きい一方で最も価値のある判定なので、外すのではなく `observe` から始める形にした。通報者は、`NOT NULL` を保てる行のあるインスタンス Actor にした。`mark_sensitive` は、投影の `source_action_id` が処分しか指せないことが問題で、処分を作ると原則の 3 に反するので、出所の排他にした。これに伴い、保持期間のある判定から投影を作ることになり、§6 が投影の指す判定を残す形になった。`media.check` の `reject` は法務の確認を待つ間だけ外し、語彙には残した。`local.status` の `reject` には、今の `moderation_appeals.action_id` が処分しか指せないので、専用の異議申し立てを付けた。
 
 ## 採らなかった案
 
@@ -179,6 +184,11 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 - 自動の通報の `reporter_account_id` を NULL にする、専用の `reporter_kind` を持たせる: 人でないことを直接表せるが、通報者を読む経路（`ReportsFiledBy`、管理 API、書き出し）すべてを直すことになる。
 - 既定を `retry` にする: 審査されていない投稿を通さないが、§4 のとおり Actor の `Delete` まで止まる。
 - `inbound.status` を、フォローされていない作者に絞る: 費用と送るデータを大きく減らせるが、フォローされた作者や乗っ取られたアカウントからのスパムを見られない。
+- `status_sensitivity_overrides` の PK を `source_kind`（CHECK）と `source_id` で保つ: NULL も主キーのない表もなくなるが、どの列が何を指すかが読み取れなくなる。
+- 後の版が `allow` のとき判定から来たセンシティブの行を外す: 版に判定が付くことと揃うが、再構築が投稿ごとの最新の判定を見ることになる。
+- `media.check` に最初から `reject` を持たせる: 公開前に止められるが、法務の確認の前に証拠を失わせ得る。
+- `local.status` の `reject` に異議申し立てを付けない: 表も審査も増えないが、作者が誤りを正す道がなくなる。
+- 異議申し立てを既存の `moderation_appeals` に載せる: 審査の仕組みを共有できるが、`action_id` が処分を指すので、処分のない判定を載せると原則の 3 の記録の分離が崩れる。
 - 拒否したものも監査ログにすべて書く: 1 つの場所で追えるが、§11 のとおり保持の短さを損なう。
 
 ## Consequences（影響）
@@ -186,19 +196,18 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 - 良い: 運営者は自分の信号で受け付けを止められ、`observe` で先に試せる。プラグインが落ちても受け付けは続く。自動の判定と人の処分が記録の上で分かれ、処分の履歴は人の決定だけのままである。
 - 悪い: 送るデータと費用が受信量に比例して増える。既定で通すので、プラグインの障害の間はスパムが入る（指標とモデレーターへの通知で気づく）。
 - 悪い: `flag` は投稿ごとに通報を作るので、スパムの波でモデレーターの列があふれ得る。`FirstOpen` は通知を抑えるが、列は減らない。
+- 悪い: `media.check` に `reject` がないので、違法なコンテンツを検出しても公開を止められない。`flag` でモデレーターに渡し、`mark_sensitive` で隠すところまでである。
+- 悪い: `local.status` の異議申し立ては、投稿を拒まれた作者の本文を一時的に保存し、モデレーターの審査の列を増やす。対象から外れたアカウントは以後審査されないので、乗っ取られても `local.status` は働かない。
 - 悪い: `drop` を戻せるのは 7 日だけで、`drop` した投稿が別の経路で入ることがある（§9）。
 - 悪い: `status_sensitivity_overrides` は主キーを持たない最初の表になり、判定を残すために §6 の保持に例外ができる。
 - 後続: data-model §4.4・§5.2・§8・§9、`schema/` の両方言、`docs/operations/`、`tools/agentkit/context-map.yaml` は #2222 以降のタスクで直す。
 
 ## Open Questions / 要検証
 
-1. **`local.status` の `reject` に異議申し立てを付けるか（Decider、#2226 を作るとき。このマイルストーンの中）。** 今の `moderation_appeals.action_id` は処分を指すので、処分のない判定には使えない。推奨案: 付ける。処分の記録と分けた `hook_decision_appeals` に、作者が送る本文（判定は本文を持たないので審査に要る）を置き、期間は `appeal_window_days` に合わせ、審査は人が行う。覆せば判定を取り消し、そのアカウントを `local.status` の対象から外す。投稿は戻さず、作者が投稿し直す。
-2. **検出した違法なコンテンツをソフトウェアがどこまで扱うか（Decider、法務の確認の後）。** 保全と通報の義務は国で違い（要検証）、`media.check` の `reject` は処理結果が出ると原本を消すので証拠を失い得る。一方で保管そのものが問題になる国もあり得る（要検証）。確認が済むまで `media.check` は `reject` を出さず、`allow`・`mark_sensitive`・`flag` だけで作ることを推奨する。
-3. **`status_sensitivity_overrides` を主キーなしの 2 列にするか（Decider）。** §8 が推奨案。代案は `source_kind`（CHECK）と `source_id` で PK を保つ形で、NULL も主キーのない表もなくなるが、どの列が何を指すかが読み取れなくなる。
-4. DSA（2026-11-05 に非公式の全文掲載サイト [eu-digital-services-act.com](https://www.eu-digital-services-act.com/Digital_Services_Act_Article_17.html) で第 14・15・17・19・20 条を読んだ。EUR-Lex との照合は未了で**要検証**）:
+1. 違法なコンテンツをソフトウェアがどこまで扱うか。法務の確認は未手配で、済むまで `media.check` に `reject` を足さない（§2）。保全と通報の義務は国で違い、保管そのものが問題になる国もあり得る（要検証）。
+2. DSA（2026-11-05 に非公式の全文掲載サイト [eu-digital-services-act.com](https://www.eu-digital-services-act.com/Digital_Services_Act_Article_17.html) で第 14・15・17・19・20 条を読んだ。EUR-Lex との照合は未了で**要検証**）:
    - 第 17 条は、違法または規約違反を理由とする制限（削除、アクセスの無効化、順位の引き下げなど）に理由の説明を求め、自動の手段の使用を説明に含める（3 項 c）。電子的な連絡先を知らない相手と、欺瞞的な大量の商業コンテンツには適用しない（2 項）。
    - 第 20 条は、知らされてから少なくとも 6 か月の内部の苦情処理を求め、自動の手段だけで結論を出すことを禁じる（6 項）。第 19 条はオンラインプラットフォームのうち零細・小規模事業者を除外する。第 15 条の透明性の報告（自動の手段の精度を含む、1 項 e）も零細・小規模事業者を除外する。第 14 条は規約に自動の判断を含むモデレーションの手段の記載を求める。
    - 未確認（**要検証**）: 公開前の `reject` が第 17 条の制限に当たるか。連合先の作者が「受領者」で、連絡先を知っていることになるか。第 17 条に小規模の除外がないこと（条文の節の構成は二次資料でしか確かめていない）。非営利のインスタンスが該当するかは ADR-0058 の未解決の問いと同じ。
-5. その他の法域の自動の判断の規則は未読で**要検証**: GDPR 第 22 条（`signup.check` の `reject` が該当するか）、日本の情報流通プラットフォーム対処法、米国の報告・保全の義務。
-6. 既定値（保持 90 日、§2 の待ち時間、メモの 200 文字）は、#2223 の `observe` の運用で確かめる。
-7. 後の版が `allow` のとき、判定から来たセンシティブの行を外すか（Decider）。§8 は残す案で、再構築が単純で、失敗の通過と紛れない。外す案は版に判定が付くことと揃うが、再構築が投稿ごとの最新の判定を見ることになる。
+3. その他の法域の自動の判断の規則は未読で**要検証**: GDPR 第 22 条（`signup.check` の `reject` が該当するか）、日本の情報流通プラットフォーム対処法、米国の報告・保全の義務。
+4. 既定値（保持 90 日、§2 の待ち時間、メモの 200 文字）は、#2223 の `observe` の運用で確かめる。
