@@ -17,6 +17,8 @@ my admin create -username alice -email alice@example.com
 - From a terminal, the command asks for the password twice, without echoing it.
 - When standard input is not a terminal, the first line of standard input is the password (for example `my admin create ... < password.txt`).
   The password cannot be given as a command-line argument or an environment variable, because those end up in process lists and shell history.
+- Where a one-off command has neither a terminal nor standard input, such as a [Cloud Run job](deploy-cloud-run.md#9-create-the-first-administrator), add `-password-link`. The command then reads no password: it sets a random one that nobody learns and prints a link after the `created admin` line, which sets the password once, for one hour, like `my admin account password-reset-link` (the audit log records it as `password_reset_link_issued`).
+  Whoever can read the command's output can use the link, and on such a platform that output stays in the platform's logs until the link is used or expires. Open the link right away. If it expires, issue another with `my admin account password-reset-link @alice`. If issuing the link fails, the administrator already exists: the command says so and exits with code 1, and the same command gives a new link.
 - A password has 8 to 128 characters. It never appears in the output, the logs, or an error message.
 - One transaction creates the user, the password, the primary email address, the local account (with its keys), and the grant of the `admin` role (with no grantor, which means the CLI).
   The built-in roles are created first if they are missing.

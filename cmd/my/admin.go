@@ -5,6 +5,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
 	"errors"
 	"flag"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"golang.org/x/term"
 
@@ -72,6 +74,7 @@ func runAdmin(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs.Usage = func() { adminUsage(stderr) }
 	username := fs.String("username", "", "username of the new admin (required)")
 	email := fs.String("email", "", "email address of the new admin (required)")
+	passwordLink := fs.Bool("password-link", false, "print a single-use link that sets the password, instead of reading it")
 	file := fs.String("config", "", "TOML config file (default: $"+config.EnvConfigFile+")")
 	if err := fs.Parse(args[1:]); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -93,10 +96,15 @@ func runAdmin(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		printLoadError(stderr, err)
 		return 1
 	}
-	password, err := readPassword(stdin, stderr)
-	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "my admin create: %v\n", err)
-		return 1
+	var password string
+	if *passwordLink {
+		password = rand.Text() + rand.Text()
+	} else {
+		password, err = readPassword(stdin, stderr)
+		if err != nil {
+			_, _ = fmt.Fprintf(stderr, "my admin create: %v\n", err)
+			return 1
+		}
 	}
 
 	ctx := context.Background()
@@ -112,6 +120,15 @@ func runAdmin(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 1
 	}
 	_, _ = fmt.Fprintf(stdout, "created admin @%s@%s (user %s, account %s)\n", *username, cfg.AccountDomain, reg.User.ID, reg.AccountID)
+	if *passwordLink {
+		link, err := app.Identity.IssuePasswordResetLink(ctx, reg.AccountID, "")
+		if err != nil {
+			_, _ = fmt.Fprintf(stderr, "my admin create: the admin exists but has no link: %v (my admin account password-reset-link @%s)\n", err, *username)
+			return 1
+		}
+		_, _ = fmt.Fprintf(stdout, "%s\n", link.URL)
+		_, _ = fmt.Fprintf(stderr, "the link sets the password once, until %s; nobody can sign in with a password before that\n", link.ExpiresAt.UTC().Format(time.RFC3339))
+	}
 	switch limited, err := app.Identity.LoginProvidersOnly(ctx); {
 	case err != nil:
 		_, _ = fmt.Fprintf(stderr, "my admin create: %v\n", err)
@@ -201,7 +218,7 @@ func promptPassword(fd int, stderr io.Writer) (string, error) {
 }
 
 func adminUsage(w io.Writer) {
-	_, _ = fmt.Fprint(w, `Usage: my admin create -username <name> -email <address> [-config <file>]
+	_, _ = fmt.Fprint(w, `Usage: my admin create -username <name> -email <address> [-password-link] [-config <file>]
        my admin account action list|issue|lift ...   (my admin account action -help)
        my admin account export-moderation <account>   (my admin account export-moderation -help)
        my admin account disable-two-factor <account>   (my admin account disable-two-factor -help)

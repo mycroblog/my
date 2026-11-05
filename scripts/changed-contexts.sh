@@ -23,6 +23,7 @@
 #   schema  the desired-state schema files                       (db:check-all)
 #   agentkit tools/agentkit and its context map, which covers every path (agentkit:check)
 #   mykit   pkg/mykit and pkg/mybot, the client libraries, Go modules of their own, and their integration tests (mykit:check)
+#   tofu the OpenTofu modules of deploy/opentofu          (tofu:check)
 #
 # A change to shared configuration (Taskfile.yml and tasks/, .tool-versions, tools/go.mod, the workflows and their
 # actions) selects every context, and so does any path no rule below knows: a new kind of file runs everything until a
@@ -30,7 +31,7 @@
 # web, and mail), so a Dependabot pull request runs the jobs that use the dependency.
 set -euo pipefail
 
-ALL=(docs go i18n mail api ui web docker shell schema agentkit mykit)
+ALL=(docs go i18n mail api ui web docker shell schema agentkit mykit tofu)
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -138,6 +139,19 @@ classify() {
       select_contexts shell
       return
       ;;
+    # Not the docker context, which deploy/* selects below: no image or Compose file is involved.
+    deploy/opentofu/*.md)
+      select_contexts docs tofu
+      return
+      ;;
+    deploy/opentofu/*.sh)
+      select_contexts shell tofu
+      return
+      ;;
+    deploy/opentofu/*)
+      select_contexts tofu
+      return
+      ;;
     # pkg/mykit is a Go module of its own too (ADR-0093). Its generated client comes from the spec, and the license
     # scope check of the api context reads its SPDX headers, which mykit:check runs as well.
     pkg/mykit/*.md | pkg/mybot/*.md)
@@ -226,6 +240,13 @@ classify() {
   case "$path" in
     scripts/*.sh)
       select_contexts shell
+      known=1
+      ;;
+  esac
+  case "$path" in
+    # tofu:env-check reads the configuration reference and names the guide.
+    scripts/tofu-* | docs/reference/configuration.md | docs/operations/deploy-cloud-run.md)
+      select_contexts tofu
       known=1
       ;;
   esac

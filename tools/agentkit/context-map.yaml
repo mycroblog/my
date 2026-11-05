@@ -655,6 +655,14 @@ entries:
     checks: [docker]
     notes:
       - "Development only, under the project my-dev: the PostgreSQL of `scripts/task.sh db:up` and the Mailpit of `scripts/task.sh docker:mailpit` and .github/actions/start-mailpit."
+  - name: tofu
+    paths: ["deploy/opentofu/**", "scripts/tofu-*", "tasks/tofu.yml", "docs/operations/deploy-cloud-run.md"]
+    docs: ["deploy/opentofu/README.md", "docs/operations/deploy-cloud-run.md", "docs/architecture/deployment-targets.md#google-cloud"]
+    userdocs: ["docs/operations/deploy-cloud-run.md"]
+    checks: [tofu, shell, docs]
+    notes:
+      - "Modules are named <role>-<provider>-<service>, the roles being app, db, queue, blob, stream, mail, secrets, kek, and ingress. Each backend returns env, secret_env, and roles, and optionally secret_files and invokers; the app module merges them and a setting named twice fails the plan. The examples use Git sources at deploy/opentofu/MODULE_REF, which `scripts/tofu-examples.sh` checks and rewrites to local paths for the tests; a stable release must bump it. Every app-* module provides a console (console_enabled, the output console, console.sh). The contract is in deploy/opentofu/README.md, and each module's README states its inputs and outputs."
+      - "A setting the modules set must exist in internal/platform/config/schema.go (`scripts/task.sh tofu:env-check`). secret_data_wo_version of the generating modules is fixed at 1 and must never change, since a new number writes a new random KEK; scripts/tofu-state-test.sh proves against a stub of Secret Manager that no generated value reaches the plan or the state. The other checks mock the providers, so a change that matters to a real apply needs one: list what was not run in the PR."
   - name: monitoring
     paths: ["deploy/monitoring/**", "docs/operations/alerts.md"]
     docs: ["docs/operations/alerts.md", "docs/operations/monitoring.md"]

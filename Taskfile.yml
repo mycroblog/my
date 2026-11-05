@@ -40,6 +40,7 @@ includes:
   mail: ./tasks/mail.yml
   mykit: ./tasks/mykit.yml
   shell: ./tasks/shell.yml
+  tofu: ./tasks/tofu.yml
   ui: ./tasks/ui.yml
   web: ./tasks/web.yml
 
@@ -65,6 +66,8 @@ tasks:
         if: case " {{.CONTEXTS}} " in *" shell "*) true;; *) false;; esac
       - cmd: echo 'also run `scripts/task.sh db:check-all` and `scripts/task.sh db:lint` for both dialects (PostgreSQL needs Docker; CI runs them)'
         if: case " {{.CONTEXTS}} " in *" schema "*) true;; *) false;; esac
+      - cmd: echo 'also run `scripts/task.sh tofu:check` (needs tofu; CI runs it)'
+        if: case " {{.CONTEXTS}} " in *" tofu "*) true;; *) false;; esac
       - cmd: echo 'no check covers these changes'
         if: '[ -z "{{trim .SELECTED}}" ]'
       - task: check
