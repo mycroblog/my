@@ -168,8 +168,8 @@ output "roles" {
 }
 
 output "service_ingress" {
-  description = "Open: Cloudflare is not a Google load balancer, so the service cannot be limited to it. Read the README."
-  value       = "INGRESS_TRAFFIC_ALL"
+  description = "Nothing asked of the platform, which leaves the service open: no platform can limit its service to Cloudflare. Read the README."
+  value       = null
 }
 
 output "dns_records" {

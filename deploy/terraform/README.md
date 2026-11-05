@@ -107,7 +107,7 @@ An `ingress-*` module decides how traffic reaches the app. It is a backend, with
 | Output | Type | Meaning |
 | --- | --- | --- |
 | `trusted_proxies` | `list(string)` | What this ingress puts in front of the platform. The app module adds what the platform itself puts in front of the server (Cloud Run's `169.254.0.0/16`) and sets `MY_TRUSTED_PROXIES` from both, so that the server finds the client's address in `X-Forwarded-For` and the ingress does not need to know the platform |
-| `service_ingress` | `string` | Who may reach the service: `INGRESS_TRAFFIC_ALL`, or `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` when only a load balancer may |
+| `service_ingress` | `string` or null | What a module of one platform asks of that platform's service. On Cloud Run, `INGRESS_TRAFFIC_ALL`, or `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` when only a load balancer may reach it. A module of no particular platform returns null, which leaves the service open on every platform, and an app module refuses a value that is not its platform's |
 | `dns_records` | `list(object({ name, type, rrdata }))` | What to add at the DNS provider |
 
 It takes the service's name from the app (`service_name = module.app.service_name`) while the app takes its settings, which
