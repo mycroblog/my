@@ -11,6 +11,20 @@ The metrics count every attempt by source, outcome, and kind of failure (`my.bil
 
 No credentials are kept in this server's configuration. Give the runtime environment what the default credential chain of each provider's SDK reads (for AWS, the execution role, environment variables, or shared credential files; for Google Cloud, Application Default Credentials).
 
+## With the OpenTofu modules
+
+The modules [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) and [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) set `billing_sources` and do the parts of this guide that a provider's API allows. Both can sit in the `backends` of one app module, on Google Cloud or on AWS. Neither has been applied on a real account yet.
+
+| Step in this guide | With the modules |
+| --- | --- |
+| The IAM policy, and the role of "Calling from Cloud Run with web identity" | `billing-aws` |
+| Enable Cost Explorer, Linked Account Access, cost allocation tags | By hand, in the AWS console |
+| The dataset of the export, and the roles of "IAM roles" | `billing-gcp` |
+| Enable the export ("Standard usage cost") | By hand, in the Google Cloud console, with a role on the billing account |
+| The topic and the pull subscription of a budget, and the subscriber role | `billing-gcp` with `method = "budget"` |
+| Create the budget and connect it to the topic | By hand, in the Google Cloud console, with a role on the billing account |
+| Enable the BigQuery or Pub/Sub API | By hand, as in [Deploying on Cloud Run](deploy-cloud-run.md#1-enable-the-apis) |
+
 ## AWS (`billing_sources = aws`)
 
 The server calls `GetCostAndUsage` of AWS Cost Explorer once per billing month (a UTC calendar month), grouped by service (`SERVICE`) and record type (`RECORD_TYPE`). The endpoint is always `us-east-1`.
