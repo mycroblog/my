@@ -112,7 +112,7 @@ These names are used under the activities below. List each one you use.
 | Data subjects | People on other servers, who usually have no relationship with you |
 | Personal data | Actor documents, profile versions, handles, posts, media references, copies of media, interactions |
 | Recipients | Hosting, CDN, local users, public pages |
-| Erasure | Posts `{{90 days}}` when nothing here refers to them, `{{7 days}}` when only a relay brought them, and `{{no limit}}` for any post otherwise. Copies of media `{{not kept}}`. Handle checks 90 days. Everything of an account 7 days after its server deletes it. Its URI and domain stay |
+| Erasure | Posts `{{90 days}}` when nothing here refers to them, `{{7 days}}` when only a relay brought them, and `{{no limit}}` for any post otherwise. Copies of media `{{not kept}}`. Handle checks 90 days. Everything of an account 7 days after its server deletes it, or up to 30 days when only a `410 Gone` said so and the server does not answer again. Its URI and domain stay |
 | Legal basis | {{e.g. legitimate interests}} |
 
 ### 6. Notifications

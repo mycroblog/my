@@ -1423,7 +1423,7 @@ const listAccountsToErase = `-- name: ListAccountsToErase :many
 
 
 
-SELECT s.account_id, la.user_id FROM account_lifecycle_states s
+SELECT s.account_id, s.since, la.user_id FROM account_lifecycle_states s
 LEFT JOIN local_accounts la ON la.account_id = s.account_id
 WHERE s.state = 'deleted' AND s.since <= $1::timestamptz
   AND s.account_id > COALESCE($2::uuid, '00000000-0000-0000-0000-000000000000')
@@ -1440,6 +1440,7 @@ type ListAccountsToEraseParams struct {
 
 type ListAccountsToEraseRow struct {
 	AccountID string
+	Since     time.Time
 	UserID    *string
 }
 
@@ -1450,7 +1451,7 @@ type ListAccountsToEraseRow struct {
 // account ---------------------------------------------------------------------------------------
 // ListAccountsToErase returns, in account ID order after @after, up to @lim accounts that were
 // deleted at or before @deleted_before and are not erased yet, local or remote (remote_deleted),
-// with the user of a local one.
+// with when it was deleted and the user of a local one.
 func (q *Queries) ListAccountsToErase(ctx context.Context, arg ListAccountsToEraseParams) ([]ListAccountsToEraseRow, error) {
 	rows, err := q.db.Query(ctx, listAccountsToErase, arg.DeletedBefore, arg.After, arg.Lim)
 	if err != nil {
@@ -1460,7 +1461,7 @@ func (q *Queries) ListAccountsToErase(ctx context.Context, arg ListAccountsToEra
 	items := []ListAccountsToEraseRow{}
 	for rows.Next() {
 		var i ListAccountsToEraseRow
-		if err := rows.Scan(&i.AccountID, &i.UserID); err != nil {
+		if err := rows.Scan(&i.AccountID, &i.Since, &i.UserID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

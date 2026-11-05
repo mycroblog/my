@@ -49,6 +49,9 @@ type RemoteAccounts interface {
 	StaleRemoteActors(ctx context.Context, after appaccount.RemoteHead, limit int) ([]appaccount.RemoteHead, error)
 	UpsertRemoteActor(ctx context.Context, tx uow.Tx, in appaccount.RemoteActorInput) (appaccount.Account, error)
 	MarkRemoteDeleted(ctx context.Context, tx uow.Tx, accountID string) error
+	MarkRemoteGone(ctx context.Context, tx uow.Tx, accountID string) error
+	RestoreRemoteActor(ctx context.Context, tx uow.Tx, accountID string) error
+	RemoteDeletionUnconfirmed(ctx context.Context, accountID string) (bool, error)
 	RecordRemoteFetchFailure(ctx context.Context, accountID string) error
 	// EnsureInstanceActor returns the instance actor, creating it with its keys on first use.
 	EnsureInstanceActor(ctx context.Context) (appaccount.Account, error)
@@ -160,11 +163,69 @@ func (r *RemoteActors) Refresh(ctx context.Context, uri string) (appaccount.Acto
 	return r.store(ctx, actor, raw)
 }
 
+// RecheckDeletion implements appaccount.DeletionRechecker. An actor that only a 410 marked deleted
+// is fetched once more: another 410 confirms the deletion, and its document brings the actor back.
+// Any other outcome says nothing. The actor's own Delete, and an actor whose head the erasure has
+// removed already, need no fetch.
+func (r *RemoteActors) RecheckDeletion(ctx context.Context, accountID string) (appaccount.DeletionRecheck, error) {
+	unconfirmed, err := r.d.Accounts.RemoteDeletionUnconfirmed(ctx, accountID)
+	if err != nil {
+		return appaccount.RecheckInconclusive, err
+	}
+	if !unconfirmed {
+		return appaccount.RecheckConfirmed, nil
+	}
+	switch _, err := r.d.Accounts.RemoteHead(ctx, accountID); {
+	case errors.Is(err, appaccount.ErrNotFound):
+		return appaccount.RecheckConfirmed, nil
+	case err != nil:
+		return appaccount.RecheckInconclusive, err
+	}
+	a, err := r.d.Accounts.FindByID(ctx, accountID)
+	if err != nil {
+		return appaccount.RecheckInconclusive, err
+	}
+	actor, raw, err := r.fetchActor(ctx, a.Account.URI)
+	switch {
+	case errors.Is(err, ErrFetchGone):
+		return appaccount.RecheckConfirmed, nil
+	case ctx.Err() != nil:
+		return appaccount.RecheckInconclusive, ctx.Err()
+	case err != nil:
+		return appaccount.RecheckInconclusive, nil
+	case string(actor.ID) != a.Account.URI:
+		return appaccount.RecheckInconclusive, nil
+	}
+	restore := func(tx uow.Tx) error { return r.d.Accounts.RestoreRemoteActor(ctx, tx, accountID) }
+	if _, err := r.storeAfter(ctx, actor, raw, restore); err != nil {
+		if errors.Is(err, appaccount.ErrActorDeleted) { // its Delete came during the fetch
+			return appaccount.RecheckConfirmed, nil
+		}
+		return appaccount.RecheckInconclusive, err
+	}
+	r.d.Logger.InfoContext(ctx, "remote actor restored: its server serves it again after a 410", slog.String("uri", a.Account.URI))
+	return appaccount.RecheckRestored, nil
+}
+
 // store saves a fetched actor in the account module and records its server.
 func (r *RemoteActors) store(ctx context.Context, actor *federation.Actor, raw []byte) (appaccount.Actor, error) {
+	stored, err := r.storeAfter(ctx, actor, raw, nil)
+	if errors.Is(err, appaccount.ErrActorDeleted) {
+		return r.d.Accounts.FindByURI(ctx, string(actor.ID)) // a deleted actor stays deleted, and stays erased
+	}
+	return stored, err
+}
+
+// storeAfter runs before, when set, and stores a fetched actor in one transaction.
+func (r *RemoteActors) storeAfter(ctx context.Context, actor *federation.Actor, raw []byte, before func(uow.Tx) error) (appaccount.Actor, error) {
 	in := r.input(ctx, actor, raw)
 	var stored appaccount.Account
 	err := r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if before != nil {
+			if err := before(tx); err != nil {
+				return err
+			}
+		}
 		var err error
 		if stored, err = r.d.Accounts.UpsertRemoteActor(ctx, tx, in); err != nil {
 			return err
@@ -174,9 +235,6 @@ func (r *RemoteActors) store(ctx context.Context, actor *federation.Actor, raw [
 		}
 		return r.seeInstance(ctx, tx, in.Domain)
 	})
-	if errors.Is(err, appaccount.ErrActorDeleted) {
-		return r.d.Accounts.FindByURI(ctx, in.URI) // a deleted actor stays deleted, and stays erased
-	}
 	if err != nil {
 		return appaccount.Actor{}, err
 	}
@@ -272,7 +330,7 @@ func (r *RemoteActors) recordFailure(ctx context.Context, uri string, cause erro
 		return
 	}
 	if errors.Is(cause, ErrFetchGone) {
-		err = r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return r.d.Accounts.MarkRemoteDeleted(ctx, tx, a.Account.ID) })
+		err = r.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return r.d.Accounts.MarkRemoteGone(ctx, tx, a.Account.ID) })
 	} else {
 		err = r.d.Accounts.RecordRemoteFetchFailure(ctx, a.Account.ID)
 	}

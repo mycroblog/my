@@ -27,6 +27,22 @@ func (q *Queries) FindLatestReactivation(ctx context.Context, accountID string) 
 	return occurred_at, err
 }
 
+const findNewestRemoteDeletion = `-- name: FindNewestRemoteDeletion :one
+SELECT initiated_by FROM account_lifecycle_events
+WHERE account_id = $1 AND kind = 'remote_deleted'
+ORDER BY id DESC
+LIMIT 1
+`
+
+// FindNewestRemoteDeletion returns who initiated the newest remote_deleted event of an account:
+// the actor's signed Delete (remote) or this server after a 410 (system).
+func (q *Queries) FindNewestRemoteDeletion(ctx context.Context, accountID string) (string, error) {
+	row := q.db.QueryRow(ctx, findNewestRemoteDeletion, accountID)
+	var initiated_by string
+	err := row.Scan(&initiated_by)
+	return initiated_by, err
+}
+
 const listDueDeactivations = `-- name: ListDueDeactivations :many
 SELECT account_id, state, since, deletion_due_at FROM account_lifecycle_states
 WHERE state = 'deactivated' AND since <= $1::timestamptz

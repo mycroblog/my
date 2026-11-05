@@ -33,6 +33,10 @@ const (
 	erasureMaxBatches = 50
 	// erasureAccounts is the number of accounts that one listing returns.
 	erasureAccounts = 20
+	// ErasureRecheckLimit is how long after its deletion an actor marked by a 410 waits for an
+	// answer from its server: a server that stays unreachable, or that this server no longer
+	// fetches from, cannot keep the actor's data for ever, so the erasure then goes on the 410.
+	ErasureRecheckLimit = 30 * 24 * time.Hour
 )
 
 // ErasureTarget is a deleted account whose data the erasure removes, with the user who logged in
@@ -40,6 +44,26 @@ const (
 type ErasureTarget struct {
 	AccountID string
 	UserID    string
+	// DeletedAt is when the account became deleted.
+	DeletedAt time.Time
+}
+
+// DeletionRecheck is what a fetch before the erasure says of a remote actor.
+type DeletionRecheck int
+
+const (
+	// RecheckInconclusive says nothing: the server did not answer, or not with a 410 or the actor.
+	RecheckInconclusive DeletionRecheck = iota
+	// RecheckConfirmed lets the erasure go on: the actor deleted itself, or answered 410 again.
+	RecheckConfirmed
+	// RecheckRestored stops the erasure: the actor's server serves it, and it is no longer deleted.
+	RecheckRestored
+)
+
+// DeletionRechecker asks a remote actor's server, outside any transaction, whether an actor that
+// a 410 marked deleted is really gone. *federation.RemoteActors implements it.
+type DeletionRechecker interface {
+	RecheckDeletion(ctx context.Context, accountID string) (DeletionRecheck, error)
 }
 
 // ErasureStep is the outcome of one batch of a DataEraser.
@@ -94,6 +118,8 @@ type ErasureDeps struct {
 	Erasers []DataEraser
 	// Holds lists the held accounts, read at each run; nil holds none.
 	Holds HeldAccounts
+	// Recheck is asked about each remote account before its erasure starts; nil erases them all.
+	Recheck DeletionRechecker
 	// Jobs enqueues the next job of a run, outside any transaction.
 	Jobs  queue.JobQueue
 	Clock kernel.Clock
@@ -112,7 +138,9 @@ type ErasureDeps struct {
 // lifecycle, and the moderation records stay. A remote account also loses its remote media files,
 // snapshots, head, and handle; the statuses that local accounts bookmarked or replied to go too. A status that a report or an action points at keeps its rows
 // and its media files until the moderation purge erases that record, and the account is
-// recorded as erased only when nothing is left.
+// recorded as erased only when nothing is left. An actor that only a 410 marked deleted is fetched
+// once more first: it is erased when the 410 is repeated, or ErasureRecheckLimit after its
+// deletion when no answer settles it, and it comes back when its server serves it.
 type Eraser struct{ d ErasureDeps }
 
 // NewEraser returns the erasure on d.
@@ -215,6 +243,21 @@ func (e *Eraser) Run(ctx context.Context, cur ErasureCursor) (ErasureRun, error)
 				at = cur
 			}
 			at.After = out.Next.After
+			if e.d.Recheck != nil && t.UserID == "" && at.Eraser == 0 && at.Next == "" && !at.Kept {
+				if budget <= 0 {
+					out.More, out.Next = true, at
+					return out, nil
+				}
+				budget--
+				confirmed, err := e.confirmed(ctx, t)
+				if err != nil {
+					return out, fmt.Errorf("account: recheck %s: %w", t.AccountID, err)
+				}
+				if !confirmed {
+					out.Next.After = t.AccountID
+					continue
+				}
+			}
 			next, erased, err := e.erase(ctx, t, at, &budget)
 			if err != nil {
 				return out, fmt.Errorf("account: erase %s: %w", t.AccountID, err)
@@ -235,6 +278,22 @@ func (e *Eraser) Run(ctx context.Context, cur ErasureCursor) (ErasureRun, error)
 			out.More = true
 			return out, nil
 		}
+	}
+}
+
+// confirmed reports whether the erasure of the remote account t may start.
+func (e *Eraser) confirmed(ctx context.Context, t ErasureTarget) (bool, error) {
+	got, err := e.d.Recheck.RecheckDeletion(ctx, t.AccountID)
+	if err != nil {
+		return false, err
+	}
+	switch got {
+	case RecheckConfirmed:
+		return true, nil
+	case RecheckRestored:
+		return false, nil
+	default:
+		return e.d.Clock.Now().Sub(t.DeletedAt) >= ErasureRecheckLimit, nil
 	}
 }
 

@@ -36,6 +36,7 @@ import (
 type relayNet struct {
 	mu    sync.Mutex
 	docs  map[string][]byte
+	gone  map[string]bool // URLs that answer 410 Gone
 	posts []recordedPost
 }
 
@@ -47,6 +48,8 @@ func (n *relayNet) Do(_ context.Context, req *kernel.HTTPRequest) (*kernel.HTTPR
 	case req.Method == http.MethodPost:
 		status = http.StatusAccepted
 		n.posts = append(n.posts, recordedPost{url: req.URL, header: req.Header.Clone(), body: slices.Clone(req.Body)})
+	case n.gone[req.URL]:
+		status = http.StatusGone
 	case n.docs[req.URL] != nil:
 		status, body = http.StatusOK, n.docs[req.URL]
 		h.Set("Content-Type", "application/activity+json")

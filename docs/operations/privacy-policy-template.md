@@ -50,7 +50,7 @@ These periods are fixed by the software, and no setting changes them:
 
 | Record | Period |
 | --- | --- |
-| Erasing a deleted account | 7 days after the deletion |
+| Erasing a deleted account | 7 days after the deletion; up to 30 days for a remote account when only a `410 Gone` from its server said so and the server does not answer again |
 | Deleting a deactivated account | 30 days after the deactivation |
 | Sign-up blocks | 30 days after the lift or the expiry; without either, as long as they are in effect |
 | Sessions, tokens, and authorization codes | 30 days after they expire |

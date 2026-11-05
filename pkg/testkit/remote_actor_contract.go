@@ -68,6 +68,8 @@ func RemoteActorContract(t *testing.T, newHarness RemoteActorFactory) {
 		{"RejectsIDsOfAnotherOrigin", remoteRejectsForeignIDs},
 		{"AppliesTheFetchRules", remoteAppliesFetchRules},
 		{"MarksGoneActorsDeleted", remoteMarksGoneActorsDeleted},
+		{"RechecksGoneActors", remoteRechecksGoneActors},
+		{"DeleteSettlesAGoneMark", remoteDeleteSettlesAGoneMark},
 		{"RefreshesFollowedStaleActors", remoteRefreshesStaleActors},
 		{"ObservesNodeInfo", remoteObservesNodeInfo},
 		{"ResolvesPublicKeys", remoteResolvesPublicKeys},
@@ -728,6 +730,111 @@ func remoteMarksGoneActorsDeleted(t *testing.T, e *remoteEnv) {
 		}
 		return nil
 	})
+}
+
+// remoteRechecksGoneActors runs the fetch before the erasure on an actor that a 410 marked.
+func remoteRechecksGoneActors(t *testing.T, e *remoteEnv) {
+	ctx := t.Context()
+	doc := fixtureActor(t, "misskey/2025.4/actor")
+	id, _, _ := e.serveActor(doc)
+	a := e.resolve(t, id)
+	served := remoteResponse{status: http.StatusOK, contentType: activityJSON + "; charset=utf-8", body: string(doc)}
+	recheck := func(answer remoteResponse, want appaccount.DeletionRecheck) {
+		t.Helper()
+		e.clock.Advance(appfederation.FetchFailureTTL)
+		e.net.set(id, answer)
+		if got, err := e.actors.RecheckDeletion(ctx, a.Account.ID); err != nil || got != want {
+			t.Errorf("RecheckDeletion(%d) = %v, %v; want %v", answer.status, got, err, want)
+		}
+	}
+	state := func() account.LifecycleStateName {
+		t.Helper()
+		got, err := e.accounts.FindByID(ctx, a.Account.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return got.Lifecycle.State
+	}
+
+	e.clock.Advance(appfederation.FetchFailureTTL)
+	e.net.set(id, remoteResponse{status: http.StatusGone})
+	if _, err := e.actors.Refresh(ctx, id); !errors.Is(err, appfederation.ErrFetchGone) {
+		t.Fatalf("Refresh(410) = %v", err)
+	}
+	recheck(remoteResponse{status: http.StatusServiceUnavailable}, appaccount.RecheckInconclusive)
+	recheck(remoteResponse{status: http.StatusNotFound}, appaccount.RecheckInconclusive)
+	recheck(remoteResponse{status: http.StatusGone}, appaccount.RecheckConfirmed)
+	if got := state(); got != account.StateDeleted {
+		t.Fatalf("before the document came back: %s, want deleted", got)
+	}
+	recheck(served, appaccount.RecheckRestored)
+	if got := state(); got != account.StateActive {
+		t.Errorf("after the document came back: %s, want active", got)
+	}
+	// A restored actor is an ordinary one: it stores its documents, and its own Delete is final.
+	if _, err := e.actors.Refresh(ctx, id); err != nil {
+		t.Errorf("Refresh of the restored actor = %v", err)
+	}
+	e.tx(t, func(tx uow.Tx) error { return e.accounts.MarkRemoteDeleted(ctx, tx, a.Account.ID) })
+	recheck(served, appaccount.RecheckConfirmed)
+	if got := state(); got != account.StateDeleted {
+		t.Errorf("after its Delete: %s, want deleted", got)
+	}
+}
+
+// remoteDeleteSettlesAGoneMark runs a signed Delete of an actor that a 410 marked: the erasure no
+// longer asks its server, and a redelivered Delete records nothing more.
+func remoteDeleteSettlesAGoneMark(t *testing.T, e *remoteEnv) {
+	ctx := t.Context()
+	doc := fixtureActor(t, "misskey/2025.4/actor")
+	id, _, _ := e.serveActor(doc)
+	a := e.resolve(t, id)
+	e.clock.Advance(appfederation.FetchFailureTTL)
+	e.net.set(id, remoteResponse{status: http.StatusGone})
+	if _, err := e.actors.Refresh(ctx, id); !errors.Is(err, appfederation.ErrFetchGone) {
+		t.Fatalf("Refresh(410) = %v", err)
+	}
+	unconfirmed := func() bool {
+		t.Helper()
+		got, err := e.accounts.RemoteDeletionUnconfirmed(ctx, a.Account.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+	if !unconfirmed() {
+		t.Error("after the 410: confirmed, want unconfirmed")
+	}
+	e.tx(t, func(tx uow.Tx) error { return e.accounts.MarkRemoteGone(ctx, tx, a.Account.ID) })
+	if !unconfirmed() {
+		t.Error("after a second 410: confirmed, want unconfirmed")
+	}
+	for range 2 {
+		e.tx(t, func(tx uow.Tx) error { return e.accounts.MarkRemoteDeleted(ctx, tx, a.Account.ID) })
+		if unconfirmed() {
+			t.Error("after the Delete: unconfirmed, want confirmed")
+		}
+	}
+	e.tx(t, func(tx uow.Tx) error {
+		if err := e.accounts.MarkRemoteGone(ctx, tx, a.Account.ID); err != nil {
+			t.Errorf("MarkRemoteGone after the Delete = %v", err)
+		}
+		if err := e.accounts.RestoreRemoteActor(ctx, tx, a.Account.ID); !errors.Is(err, appaccount.ErrActorDeleted) {
+			t.Errorf("RestoreRemoteActor after the Delete = %v, want ErrActorDeleted", err)
+		}
+		return nil
+	})
+	if unconfirmed() {
+		t.Error("after a 410 that follows the Delete: unconfirmed, want confirmed")
+	}
+	e.clock.Advance(appfederation.FetchFailureTTL)
+	before := e.net.count(id)
+	if got, err := e.actors.RecheckDeletion(ctx, a.Account.ID); err != nil || got != appaccount.RecheckConfirmed {
+		t.Errorf("RecheckDeletion = %v, %v; want confirmed", got, err)
+	}
+	if n := e.net.count(id) - before; n != 0 {
+		t.Errorf("fetched the actor %d times after its Delete, want 0", n)
+	}
 }
 
 func remoteRefreshesStaleActors(t *testing.T, e *remoteEnv) {

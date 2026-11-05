@@ -4,6 +4,7 @@ package platform_test
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
+	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/platform"
@@ -144,4 +146,181 @@ func TestRemoteActorDeleteIsErased(t *testing.T) {
 			}
 		}
 	}
+}
+
+// goneActor is a remote actor with a post that a local user can see, marked deleted by a 410.
+type goneActor struct {
+	c       *statusesClient
+	network *relayNet
+	clock   laterClock
+	carol   remoteActor
+	noteID  string
+}
+
+func newGoneActor(t *testing.T) *goneActor {
+	t.Helper()
+	network := &relayNet{docs: map[string][]byte{}, gone: map[string]bool{}}
+	clock := laterClock{steadyClock: newSteadyClock(), ahead: &atomic.Int64{}}
+	c := newStatusesClientWith(t, map[string]string{"MY_QUEUE": "inline"}, platform.AppOptions{HTTPClient: network, Clock: clock}, "alice")
+	carol := newRemoteActor(t, network, "https://remote.example/users/carol", "Person", "https://remote.example/users/carol/inbox")
+	aliceIRI := "https://example.test/ap/actors/" + c.ids["alice"]
+	note := carol.id + "/statuses/1"
+	postInbox(t, c, carol, map[string]any{"id": carol.id + "/follows/1", "type": "Follow", "actor": carol.id, "object": aliceIRI})
+	postInbox(t, c, carol, map[string]any{
+		"id": note + "/activity", "type": "Create", "actor": carol.id,
+		"object": map[string]any{
+			"id": note, "type": "Note", "attributedTo": carol.id, "published": time.Now().UTC().Add(-time.Minute).Format(time.RFC3339),
+			"to": []string{"https://www.w3.org/ns/activitystreams#Public"}, "cc": []string{aliceIRI},
+			"content": "<p>hi alice</p>",
+			"tag":     []any{map[string]any{"type": "Mention", "href": aliceIRI}},
+		},
+	})
+	g := &goneActor{c: c, network: network, clock: clock, carol: carol}
+	g.drain(t)
+	var notes struct {
+		Items []struct {
+			Status *clientapi.Status `json:"status"`
+		} `json:"items"`
+	}
+	if res := c.do("alice", http.MethodGet, "/notifications", nil, &notes); res.StatusCode != http.StatusOK {
+		t.Fatalf("GET /notifications = %d", res.StatusCode)
+	}
+	for _, n := range notes.Items {
+		if n.Status != nil && strings.Contains(n.Status.Content, "hi alice") {
+			g.noteID = n.Status.Id
+		}
+	}
+	if g.noteID == "" {
+		t.Fatalf("notifications = %+v, want the mention of the post", notes.Items)
+	}
+	network.taken()
+
+	g.setGone(true)
+	if _, err := c.app.RemoteActors.Refresh(t.Context(), carol.id); !errors.Is(err, appfederation.ErrFetchGone) {
+		t.Fatalf("Refresh(410) = %v", err)
+	}
+	if a := g.actor(t); !a.Deleted() || a.Profile == nil {
+		t.Fatalf("after the 410: %+v; want deleted, with its data", a)
+	}
+	if res := c.do("alice", http.MethodGet, "/statuses/"+g.noteID, nil, nil); res.StatusCode != http.StatusNotFound {
+		t.Errorf("GET the post of the marked actor = %d, want 404", res.StatusCode)
+	}
+	return g
+}
+
+func (g *goneActor) setGone(gone bool) {
+	g.network.mu.Lock()
+	defer g.network.mu.Unlock()
+	g.network.gone[g.carol.id] = gone
+}
+
+func (g *goneActor) drain(t *testing.T) {
+	t.Helper()
+	if _, err := g.c.app.Runner.Drain(t.Context()); err != nil {
+		t.Fatalf("Drain: %v", err)
+	}
+}
+
+func (g *goneActor) actor(t *testing.T) appaccount.Actor {
+	t.Helper()
+	a, err := g.c.app.Accounts.FindByURI(t.Context(), g.carol.id)
+	if err != nil {
+		t.Fatalf("FindByURI: %v", err)
+	}
+	return a
+}
+
+// eraseAfter runs the erasure the given time after the 410, and comes back to the present, where
+// alice's token still holds.
+func (g *goneActor) eraseAfter(t *testing.T, after time.Duration) {
+	t.Helper()
+	handler, _, ok := g.c.app.Handlers.Lookup(appaccount.JobEraseDeletedAccounts)
+	if !ok {
+		t.Fatalf("no handler of %s", appaccount.JobEraseDeletedAccounts)
+	}
+	g.clock.ahead.Store(int64(after))
+	if res := handler(t.Context(), queue.Job{Type: appaccount.JobEraseDeletedAccounts}); res.Err() != nil {
+		t.Fatalf("erasure: %v", res.Err())
+	}
+	g.drain(t)
+	g.clock.ahead.Store(0)
+}
+
+func TestRemoteActorGoneIsAskedBeforeErasure(t *testing.T) {
+	t.Parallel()
+	delay := appaccount.ErasureDelay + time.Minute
+
+	t.Run("served again", func(t *testing.T) {
+		t.Parallel()
+		g := newGoneActor(t)
+		g.setGone(false)
+		g.eraseAfter(t, delay)
+		if a := g.actor(t); a.Deleted() || a.Profile == nil || len(a.Keys) == 0 {
+			t.Errorf("after the erasure: %+v; want the actor back with its data", a)
+		}
+		if res := g.c.do("alice", http.MethodGet, "/statuses/"+g.noteID, nil, nil); res.StatusCode != http.StatusOK {
+			t.Errorf("GET the post of the restored actor = %d, want 200", res.StatusCode)
+		}
+		// Its server's actor is none of this server's to announce.
+		for inbox, posts := range g.network.taken() {
+			for _, p := range posts {
+				t.Errorf("the restoration sent %v to %s", p["type"], inbox)
+			}
+		}
+		// A restored actor is never erased, and its own Delete still is.
+		g.eraseAfter(t, 2*delay)
+		if a := g.actor(t); a.Deleted() || a.Profile == nil {
+			t.Errorf("after a later erasure: %+v; want it kept", a)
+		}
+		postInbox(t, g.c, g.carol, map[string]any{
+			"id": g.carol.id + "#delete", "type": "Delete", "actor": g.carol.id, "object": g.carol.id,
+			"to": []string{"https://www.w3.org/ns/activitystreams#Public"},
+		})
+		g.drain(t)
+		g.eraseAfter(t, 2*delay)
+		if a := g.actor(t); !a.Deleted() || a.Profile != nil {
+			t.Errorf("after its Delete and the erasure: %+v; want it erased", a)
+		}
+	})
+
+	t.Run("confirmed 410", func(t *testing.T) {
+		t.Parallel()
+		g := newGoneActor(t)
+		g.eraseAfter(t, delay)
+		if a := g.actor(t); !a.Deleted() || a.Profile != nil || len(a.Keys) != 0 {
+			t.Errorf("after the erasure: %+v; want the account and its lifecycle only", a)
+		}
+	})
+
+	t.Run("no answer until the limit", func(t *testing.T) {
+		t.Parallel()
+		g := newGoneActor(t)
+		g.setGone(false)
+		g.network.mu.Lock()
+		delete(g.network.docs, g.carol.id) // 404
+		g.network.mu.Unlock()
+		g.eraseAfter(t, delay)
+		if a := g.actor(t); !a.Deleted() || a.Profile == nil {
+			t.Errorf("within the limit: %+v; want it kept, deleted", a)
+		}
+		g.eraseAfter(t, appaccount.ErasureRecheckLimit+2*time.Hour)
+		if a := g.actor(t); !a.Deleted() || a.Profile != nil {
+			t.Errorf("after the limit: %+v; want it erased", a)
+		}
+	})
+
+	t.Run("signed Delete after the 410", func(t *testing.T) {
+		t.Parallel()
+		g := newGoneActor(t)
+		postInbox(t, g.c, g.carol, map[string]any{
+			"id": g.carol.id + "#delete", "type": "Delete", "actor": g.carol.id, "object": g.carol.id,
+			"to": []string{"https://www.w3.org/ns/activitystreams#Public"},
+		})
+		g.drain(t)
+		g.setGone(false) // its own word stands, whatever its server serves
+		g.eraseAfter(t, delay)
+		if a := g.actor(t); !a.Deleted() || a.Profile != nil {
+			t.Errorf("after the erasure: %+v; want it erased", a)
+		}
+	})
 }

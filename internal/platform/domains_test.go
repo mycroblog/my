@@ -136,3 +136,43 @@ func TestServeStopsWhenTheDomainsDifferLater(t *testing.T) {
 		t.Fatal("Serve did not stop")
 	}
 }
+
+// A process that could not check its domains serves only the health checks, and runs no jobs, until
+// it has.
+func TestServeHoldsEverythingButHealthChecksUntilTheDomainsAreChecked(t *testing.T) {
+	t.Parallel()
+	path := newDatabase(t, false)
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": path})
+	s := start(t, cfg, platform.ServeOptions{DomainsRetry: 10 * time.Millisecond}, nil)
+	waitServing(t, s)
+	for _, target := range []string{"/", "/api/v1/instance", "/.well-known/webfinger?resource=acct:alice@example.test", "/ap/actors/x"} {
+		resp, _ := s.do(t, http.MethodGet, target, nil)
+		if resp.StatusCode != http.StatusServiceUnavailable || resp.Header.Get("Retry-After") == "" {
+			t.Errorf("GET %s = %d, Retry-After %q; want 503 and the header", target, resp.StatusCode, resp.Header.Get("Retry-After"))
+		}
+	}
+	if resp, _ := s.do(t, http.MethodPost, "/inbox", nil); resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("POST /inbox = %d, want 503", resp.StatusCode)
+	}
+	if resp, _ := s.do(t, http.MethodGet, platform.PathLiveness, nil); resp.StatusCode != http.StatusOK {
+		t.Errorf("liveness = %d, want 200", resp.StatusCode)
+	}
+	// A job runner on a database without tables would say so in the log.
+	time.Sleep(300 * time.Millisecond)
+	if logs := s.logs.String(); strings.Contains(logs, `"msg":"job runner"`) {
+		t.Errorf("the job runner ran before the domains were checked:\n%s", logs)
+	}
+
+	applySchema(t, path, "")
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		resp, _ := s.do(t, http.MethodGet, "/api/v1/instance", nil)
+		if resp.StatusCode != http.StatusServiceUnavailable {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("still 503 after the schema was applied")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}

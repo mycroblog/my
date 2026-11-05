@@ -17,10 +17,10 @@ The real-time updates (`GET /api/v1/streaming`, the streams of the local and fed
 The proxy must not buffer these responses (nginx: the server sends `X-Accel-Buffering: no`), and its idle or read timeout must be longer than the heartbeat interval.
 It does not apply the schema: apply it with `my schema apply` before starting (see [Database](database.md); upgrades run it as part of [Upgrading](database.md#upgrading)).
 In the Docker Compose setup (`deploy/docker/compose.yaml`; see the [README](../../README.md#quick-start-docker-compose)), a one-shot `schema` service runs `my schema apply` before the server starts.
-If the schema is not applied, the process still starts and readiness returns 503.
+If the schema is not applied, the process still starts and readiness returns 503, and it serves nothing else until the schema is there.
 
 The first `my serve` or `my` command that uses the database records `host` and `account_domain` in it. When the configuration differs from the recorded values, `my serve` logs `start failed` with both pairs of values and exits with code 1, and the commands print the same error. The exceptions are `my schema apply` and `my db backup`, which do not check, and the maintenance mode, which does not read the database. `my config check -instance` and `my db upgrade -check` check but record nothing.
-A process that could not read the database when it started is not ready until it can. If it then finds different values, it stops with the same error.
+A process that could not read the database when it started is not ready until it can, and until then it runs no jobs and answers `503` with `Retry-After` to every request except the three health checks below (`/healthz`, `/readyz`, `/api/v1/instance/health`). This is also what a server started before `my schema apply` does. If it then finds different values, it stops with the same error.
 
 In the `production` profile, `my config check` also checks that the valid settings suit a production instance: errors, such as a `host` that other servers cannot reach or a KEK that is not random, make it exit 1, and warnings, such as `mail = none`, do not.
 `my serve` logs both as warnings when it starts but starts anyway, so run `my config check` as a step of the deployment.

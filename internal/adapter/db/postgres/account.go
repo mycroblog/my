@@ -265,6 +265,25 @@ func lifecycleState(row postgresgen.AccountLifecycleState) account.LifecycleStat
 	}
 }
 
+// NewestRemoteDeletion implements account.Repository.
+func (r *AccountRepository) NewestRemoteDeletion(ctx context.Context, tx uow.Tx, accountID string) (account.Initiator, error) {
+	var by string
+	var err error
+	if tx == nil {
+		by, err = r.db.reader().FindNewestRemoteDeletion(ctx, accountID)
+	} else {
+		q, qerr := r.db.queries(tx)
+		if qerr != nil {
+			return "", qerr
+		}
+		by, err = q.FindNewestRemoteDeletion(ctx, accountID)
+	}
+	if err != nil {
+		return "", notFound(err, appaccount.ErrNotFound, "remote deletion of "+accountID)
+	}
+	return account.Initiator(by), nil
+}
+
 // UpsertLifecycleState implements account.Repository.
 func (r *AccountRepository) UpsertLifecycleState(ctx context.Context, tx uow.Tx, s account.LifecycleState) error {
 	q, err := r.db.queries(tx)

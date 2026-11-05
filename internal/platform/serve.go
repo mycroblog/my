@@ -50,7 +50,8 @@ type ServeOptions struct {
 //   - every role first ensures the built-in roles, giving admin every permission.
 //
 // A process that started before the schema was applied or while the database was down verifies
-// host and account_domain as soon as it can, and stops with an error when they differ.
+// host and account_domain as soon as it can, and stops with an error when they differ. Until then
+// it answers only the health checks (503 to every other request) and runs no jobs.
 //
 // When ctx ends or a goroutine of kernel.Go panics, Serve stops accepting connections and claiming jobs, and waits up to
 // ShutdownTimeout for the requests and the job in progress to finish. After the timeout it
@@ -79,7 +80,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	defer hardStop()
 
 	srv := &http.Server{
-		Handler:           a.Handler(),
+		Handler:           a.handler(true),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       60 * time.Second,
 		WriteTimeout:      60 * time.Second,
@@ -97,24 +98,6 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 			a.shutDownStreams(closeCtx)
 		})
 	}
-	// A new version may add permissions that the built-in admin role must hold (ADR-0058 §4).
-	// Every role does this, so an upgrade needs no manual step whichever process starts first;
-	// the transaction is short and idempotent, and concurrent starts converge on the same rows.
-	if err := a.Identity.EnsureBuiltinRoles(ctx); err != nil {
-		a.Logger.WarnContext(ctx, "built-in roles not ensured yet", slog.Any("error", err))
-	}
-	if a.Config.Role != config.RoleWorker {
-		// The authorization server also registers the web client on its first request, so a
-		// schema applied after the start only delays this.
-		if err := a.Identity.EnsureWebClient(ctx); err != nil {
-			a.Logger.WarnContext(ctx, "web client not registered yet", slog.Any("error", err))
-		}
-	}
-	// The media proxy's key is generated on the first start and read on the others; a schema
-	// applied after the start only delays it to the first use.
-	if err := a.MediaProxy.LoadKeys(ctx); err != nil {
-		a.Logger.WarnContext(ctx, "media proxy key not loaded yet", slog.Any("error", err))
-	}
 	metricsSrv, err := a.serveMetrics(ctx, opts.MetricsListener)
 	if err != nil {
 		_ = ln.Close()
@@ -129,8 +112,15 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		default: // a shutdown has already been asked for
 		}
 	})()
-	if !a.domainsVerified.Load() {
-		a.Logger.WarnContext(ctx, "host and account_domain not verified yet; the process is not ready until they are")
+	// Nothing that writes or runs jobs under the configured domains starts before they are
+	// verified: this closes when they are, and until then the listener answers only the health
+	// checks (Handler's gate) and the job runner and the scheduler wait.
+	verified := make(chan struct{})
+	if a.domainsVerified.Load() {
+		a.afterDomainsVerified(ctx)
+		close(verified)
+	} else {
+		a.Logger.WarnContext(ctx, "host and account_domain not verified yet; the process serves only health checks and runs no jobs until they are")
 		retry := opts.DomainsRetry
 		if retry <= 0 {
 			retry = defaultDomainsRetry
@@ -141,6 +131,11 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 				case fatal <- err:
 				default: // a shutdown has already been asked for
 				}
+				return
+			}
+			if a.domainsVerified.Load() { // otherwise ctx ended first
+				a.afterDomainsVerified(ctx)
+				close(verified)
 			}
 		})
 	}
@@ -165,9 +160,17 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 			a.Logger.WarnContext(ctx, "this database writes one transaction at a time, and many jobs at once can run slower than a few",
 				slog.Int("worker_job_concurrency", a.Config.WorkerJobConcurrency), slog.Int("above", sqliteJobConcurrencyWarning))
 		}
-		goJob(hardCtx, &jobs, "queue.run", a.ErrorReporter, func(ctx context.Context) { _ = a.runJobs(ctx, stopJobs) })
+		goJob(hardCtx, &jobs, "queue.run", a.ErrorReporter, func(ctx context.Context) {
+			if domainsSettled(verified, stopJobs) {
+				_ = a.runJobs(ctx, stopJobs)
+			}
+		})
 		if a.Scheduler != nil {
-			goJob(hardCtx, &jobs, "queue.schedule", a.ErrorReporter, func(ctx context.Context) { a.Scheduler.RunUntil(ctx, stopJobs, 0) })
+			goJob(hardCtx, &jobs, "queue.schedule", a.ErrorReporter, func(ctx context.Context) {
+				if domainsSettled(verified, stopJobs) {
+					a.Scheduler.RunUntil(ctx, stopJobs, 0)
+				}
+			})
 		}
 	}
 	if a.wakeRouter != nil {
@@ -218,6 +221,37 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		a.Logger.InfoContext(ctx, "stopped")
 	}
 	return err
+}
+
+// domainsSettled waits until the domains are verified or the shutdown starts, and reports which.
+func domainsSettled(verified, stop <-chan struct{}) bool {
+	select {
+	case <-verified:
+		return true
+	case <-stop:
+		return false
+	}
+}
+
+// afterDomainsVerified prepares what the first requests and jobs of the process expect. None of it
+// is a reason not to start: each logs its failure, and the next start, or the first use, does it.
+func (a *App) afterDomainsVerified(ctx context.Context) {
+	// A new version may add permissions that the built-in admin role must hold (ADR-0058 §4).
+	// Every role does this, so an upgrade needs no manual step whichever process starts first;
+	// the transaction is short and idempotent, and concurrent starts converge on the same rows.
+	if err := a.Identity.EnsureBuiltinRoles(ctx); err != nil {
+		a.Logger.WarnContext(ctx, "built-in roles not ensured yet", slog.Any("error", err))
+	}
+	if a.Config.Role != config.RoleWorker {
+		// The authorization server also registers the web client on its first request.
+		if err := a.Identity.EnsureWebClient(ctx); err != nil {
+			a.Logger.WarnContext(ctx, "web client not registered yet", slog.Any("error", err))
+		}
+	}
+	// The media proxy's key is generated on the first start and read on the others.
+	if err := a.MediaProxy.LoadKeys(ctx); err != nil {
+		a.Logger.WarnContext(ctx, "media proxy key not loaded yet", slog.Any("error", err))
+	}
 }
 
 // metricsServer is the listener of the Prometheus scrape.
