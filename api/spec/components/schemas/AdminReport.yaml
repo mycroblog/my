@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: A report of an account to the moderators.
 type: object
-required: [id, category, comment, forwarded, filed_at, state, state_changed_at, reporter_account_id, target_account_id, status_ids, rule_ids]
+required: [id, category, comment, forwarded, forwardable, filed_at, state, state_changed_at, reporter_account_id, target_account_id, status_ids, rule_ids]
 properties:
   id:
     $ref: ./Id.yaml
@@ -16,7 +16,15 @@ properties:
     description: The reporter's comment as plain text, up to 5,000 characters.
     type: string
   forwarded:
-    description: Whether the report was forwarded to the target's server.
+    description: |
+      Whether the report was forwarded to the target's server: when it was filed, because
+      the reporter asked, or later by a moderator.
+    type: boolean
+  forwardable:
+    description: |
+      Whether a moderator can forward the report to the target's server now: it was filed on
+      this server, its target is a remote account, it points at no voice chat room, and it is
+      not forwarded yet.
     type: boolean
   filed_at:
     type: string

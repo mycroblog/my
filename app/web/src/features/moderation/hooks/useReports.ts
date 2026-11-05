@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The report queue (FR-701, FR-710): the reports of a tab, newest first; one report with what the moderators
 // need to handle it on one page (NFR-MOD-4): the posts it points at, the target's earlier actions, the moderator
-// who handles it, the notes, and resolving or reopening it. Each operation on the report answers the report after
+// who handles it, the notes, resolving or reopening it, and forwarding it to the target's server. Each operation on the report answers the report after
 // it, which replaces the cached one once the lists of reports it changes and the audit log are fetched again;
 // failures are shown in a toast and leave the page as it was (web-client/README.md E2).
 import { useToast } from "@my/ui";
@@ -177,6 +177,8 @@ function changedMessage(t: Translate, change: ChangeReport): string {
       return t("client:admin.report.unassigned");
     case "reopen":
       return t("client:admin.report.reopened");
+    case "forward":
+      return t("client:admin.report.forwarded_now");
     case "resolve":
       return t("client:admin.report.resolved", { outcome: t(reportOutcomeLabels[change.outcome]) });
   }
@@ -191,6 +193,8 @@ function failedMessage(t: Translate, change: ChangeReport, reason: string): stri
       return t("client:admin.report.unassign_failed", { reason });
     case "reopen":
       return t("client:admin.report.reopen_failed", { reason });
+    case "forward":
+      return t("client:admin.report.forward_failed", { reason });
     case "resolve":
       return t("client:admin.report.resolve_failed", { reason });
   }
@@ -201,12 +205,14 @@ export type ReportChanges = {
   unassign: () => void;
   resolve: (outcome: ReportOutcome) => void;
   reopen: () => void;
+  /** Forwards the report to the server of its remote target, when `forwardable` allows it. */
+  forward: () => void;
   /** The change being sent, if any; its button waits and the others are disabled. */
   pending: ChangeReport | undefined;
 };
 
 /**
- * Taking, leaving, resolving and reopening one report. `onChanged(change, message)` is called once the cache has
+ * Taking, leaving, resolving, reopening and forwarding one report. `onChanged(change, message)` is called once the cache has
  * the report after it and the lists of reports and the audit log are fetched again (the change stays pending until
  * then), with what the change did in words: the page shows it next to the pressed button, and keeps focus where
  * that button went away.
@@ -244,6 +250,9 @@ export function useReportChanges(
     },
     reopen: () => {
       send({ id, operation: "reopen" });
+    },
+    forward: () => {
+      send({ id, operation: "forward" });
     },
     pending: mutation.isPending ? mutation.variables : undefined,
   };

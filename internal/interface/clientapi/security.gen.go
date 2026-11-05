@@ -275,6 +275,7 @@ var operationSecurity = map[string]operationAccess{
 	"POST /api/v1/admin/relays/{id}/follow":                                         {Operation: "followRelay", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/reports/{id}/assign_to_self":                                {Operation: "assignReportToSelf", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/reports/{id}/comment/translation":                           {Operation: "translateReportComment", Scopes: []string{"admin:read"}},
+	"POST /api/v1/admin/reports/{id}/forward":                                       {Operation: "forwardReport", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/reports/{id}/notes":                                         {Operation: "addReportNote", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/reports/{id}/reopen":                                        {Operation: "reopenReport", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/reports/{id}/resolve":                                       {Operation: "resolveReport", Scopes: []string{"admin:write"}},

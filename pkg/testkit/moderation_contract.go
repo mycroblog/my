@@ -118,7 +118,7 @@ func newModerationEnv(t *testing.T, newHarness ModerationFactory) *moderationEnv
 		statuses:   &stubModerationStatuses{live: map[string]appcontent.Status{}, deleted: map[string]string{}, marked: map[string][]string{}},
 		lifecycles: &stubLifecycles{due: map[string]time.Time{}},
 	}
-	for _, typ := range []string{appmoderation.EventDomainRestrictionsChanged, appmoderation.EventAccountRestrictionsChanged, appmoderation.EventReportFiled, appmoderation.EventReportResolved} {
+	for _, typ := range []string{appmoderation.EventDomainRestrictionsChanged, appmoderation.EventAccountRestrictionsChanged, appmoderation.EventReportFiled, appmoderation.EventReportResolved, appmoderation.EventReportForwarded} {
 		projectors.Register(typ, e.events.record)
 	}
 	e.suspensions = &eventLog{}
@@ -917,6 +917,44 @@ func moderationLocalReports(t *testing.T, e *moderationEnv) {
 	}
 	if _, err := e.svc.ResolveReport(ctx, byHook.ID, moderation.OutcomeDismissed, ""); err != nil {
 		t.Fatal(err)
+	}
+	e.events.take()
+
+	// A moderator forwards a report of a remote account after it was filed, once: the forward
+	// reads back, and a second request records nothing.
+	unsent, err := reports.File(ctx, appmoderation.LocalReportInput{
+		ReporterAccountID: reporter, TargetAccountID: e.remote, Category: moderation.CategorySpam,
+	})
+	if err != nil || unsent.SentToTarget() {
+		t.Fatalf("File(not forwarded) = %+v, %v", unsent, err)
+	}
+	e.events.take()
+	for range 2 {
+		rec, err := e.svc.ForwardReport(ctx, unsent.ID, "")
+		if err != nil || rec.Report.Forward == nil || rec.Report.Forward.ReportID != unsent.ID || rec.Report.Forward.ForwardedByUserID != "" ||
+			!rec.Report.SentToTarget() || rec.Report.Forwarded {
+			t.Errorf("ForwardReport = %+v, %v; want the report with its forward", rec.Report, err)
+		}
+	}
+	forwards := 0
+	for _, ev := range e.events.take() {
+		if fw, ok := ev.(appmoderation.ReportForwarded); ok && fw.Report.ID == unsent.ID && fw.Report.Forward != nil {
+			forwards++
+		}
+	}
+	if forwards != 1 {
+		t.Errorf("ReportForwarded events = %d, want 1", forwards)
+	}
+	// A report forwarded when it was filed is not forwarded again; one of a local account, or
+	// an unknown one, cannot be.
+	if rec, err := e.svc.ForwardReport(ctx, r.ID, ""); err != nil || rec.Report.Forward != nil {
+		t.Errorf("ForwardReport(forwarded when filed) = %+v, %v; want it unchanged", rec.Report, err)
+	}
+	if _, err := e.svc.ForwardReport(ctx, local.ID, ""); !errors.Is(err, appmoderation.ErrReportNotForwardable) {
+		t.Errorf("ForwardReport(local target) = %v, want ErrReportNotForwardable", err)
+	}
+	if _, err := e.svc.ForwardReport(ctx, e.ids.NewID(), ""); !errors.Is(err, appmoderation.ErrNotFound) {
+		t.Errorf("ForwardReport(unknown) = %v, want ErrNotFound", err)
 	}
 	e.events.take()
 

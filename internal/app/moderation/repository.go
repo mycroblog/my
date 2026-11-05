@@ -126,6 +126,8 @@ type Repository interface {
 	AppealRepository
 	// Notes on reports and their reopenings (report_notes.go).
 	ReportNoteRepository
+	// The forwards of reports after they were filed (report_forward.go).
+	ReportForwardRepository
 	// The follows that suspensions cut (severance.go).
 	SeveranceRepository
 	// The retention of the records and the holds (retention.go).

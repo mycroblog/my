@@ -412,6 +412,10 @@ func TestInboundStatusFlag(t *testing.T) {
 	if detail.HookOrigin == nil || detail.HookOrigin.Hook != clientapi.HookNameInboundStatus || detail.HookOrigin.DecisionId != rec.Decision.ID {
 		t.Errorf("hook_origin = %+v", detail.HookOrigin)
 	}
+	// It is not forwarded, and a moderator can forward it to the author's server.
+	if detail.Forwarded || !detail.Forwardable {
+		t.Errorf("forwarded %v, forwardable %v; want a report a moderator can forward", detail.Forwarded, detail.Forwardable)
+	}
 
 	// A second run of the same decision files nothing more.
 	err = h.c.app.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {

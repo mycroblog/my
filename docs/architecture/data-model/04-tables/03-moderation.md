@@ -61,12 +61,14 @@
 | `report_resolutions` | イベント | `id`, `report_id`, `outcome`（`enum(actioned, dismissed)`）, `resolved_by_user_id`（NULL 可 = CLI）, `resolved_at` | インデックス `(report_id, id DESC)`。処分との関連は `moderation_actions.report_id` で辿る。解決済みの通報の解決は記録しない |
 | `report_reopenings` | イベント | `id`, `report_id`, `reopened_by_user_id`（NULL 可 = CLI）, `reopened_at` | インデックス `(report_id, id DESC)`。未解決の通報の再開は記録しない |
 | `report_notes` | イベント | `id`, `report_id`, `author_user_id`（NULL 可 = CLI）, `body`（2,000 文字まで）, `written_at` | インデックス `(report_id, id)`。モデレーターだけが見る内部メモ。対象にも通報者にも見せない |
+| `report_forwards` | イベント | `id`, `report_id`, `forwarded_by_user_id`（NULL 可 = CLI）, `forwarded_at` | 一意 `(report_id)`。受け付けた後にモデレーターが相手のサーバーへ転送したこと。受け付けで転送した通報（`forwarded`）には行を作らない |
 | `report_states` | 投影 | `report_id`（PK）, `state`（`enum(open, resolved)`）, `outcome`（`enum(actioned, dismissed)`、NULL 可。最後の解決の結果）, `assignee_user_id`（NULL 可）, `since`（受け付けた時刻か、解決した時刻か、再開した時刻） | インデックス `(state, report_id)`（未解決一覧）。`outcome` は `state = resolved` のときだけ値を持つ（`CHECK` 制約）。インデックス `(assignee_user_id, report_id)` |
 
 - 通報者（`reporter_account_id`）は、ローカルの通報ならローカルのアカウント、受信した `Flag` なら送ってきた Actor（多くはリモートのインスタンス Actor）です。通報者は対象に見せません（ADR-0058）。
 - ローカルの通報者は、自分の通報を `(reporter_account_id, id)` のキーセットで新しい順に引けます。見せるのは通報の内容と状態（`open` / `resolved`）だけで、`outcome`・担当・処分・メモは見せません（FR-711）。
 - 解決はすべて、通報と解決を載せたドメインイベント（`moderation.report_resolved`）を同じトランザクションで発行します。`notification` はそこから `report_resolved` を作り、`dedupe_key` が通報ごとなので、再開のあとの解決では通知し直しません（§4.7）。
 - `forwarded` は、ローカルの通報者がリモートのアカウントの通報で相手のサーバーへの転送を求めたかどうかです（受け付けた時点で決まる事実）。対象がローカルのアカウントなら、求めても `false` です。転送は受け付けのトランザクションで outbox に積みます（[ADR-0058](../../../adr/0058-moderation-admin-separation.md)）。受信した `Flag` は常に `false` です。
+- 受け付けで転送しなかった通報は、モデレーターが後から転送できます（ADR-0147 §7、`moderation.Service.ForwardReport`、管理 API の `POST /admin/reports/{id}/forward`、`my admin report forward`）。対象はこのサーバーで受け付けた（`uri` が NULL の）リモートのアカウントへの通報で、通話のルームの通報は除きます。開いていても解決済みでも転送できます。`report_forwards` の行と監査ログ `report_forwarded` とドメインイベント `moderation.report_forwarded` を 1 つのトランザクションで書き、`federation` はそこからインスタンス Actor の `Flag` を outbox に積みます。`(report_id)` の一意で 1 回だけで、受け付けで転送済みの通報も含めて、2 回目は何も記録しません。管理 API の `forwarded` はどちらかで転送したかで、利用者の API と通報者のエクスポートの `forwarded` は通報者の選択（列の値）のままです。
 - ローカルの通報のコメントは 1,000 文字、受信した `Flag` のコメントは 5,000 文字までです。`report_rule_citations` は `category = violation` のときだけ持てます。
 - ローカルの通報が指せる投稿は、対象のアカウントの投稿のうち通報者が見られるもの（単一の閲覧判定 `CanView` を通す）を 20 件まで、引用できるルールは効いているもの（引退していないもの）を 20 件までです。自分自身は通報できません。
 - フックの `flag` の通報（ADR-0147 §7）は、通報者がインスタンス Actor で、`uri` は NULL、`forwarded` は偽です。カテゴリは判定の理由コードから決め（`spam`・`malware` は `spam`、`illegal` は `legal`、`harassment`・`sexual`・`violence` は `violation`、ほかは `other`）、`comment` はプラグインのメモ（なければ空）です。投稿と同じトランザクションで `moderation.Service.FileHookReport` が書きます。解決しても `report_resolved` を作りません。
@@ -111,7 +113,7 @@
   | --- | --- | --- | --- | --- |
   | `account_action_issued`, `account_action_lifted` | `account` | `accounts.id` | アカウントのハンドル | `moderation_actions.id`（解除の行もこの ID が PK） |
   | `domain_action_issued`, `domain_action_lifted` | `domain` | ドメイン | ドメイン | `domain_moderation_actions.id`（解除の行もこの ID が PK） |
-  | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added` | `report` | `reports.id` | 通報されたアカウントのハンドル | `report_assignments.id` / `report_resolutions.id` / `report_reopenings.id` / `report_notes.id` |
+  | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`, `report_forwarded` | `report` | `reports.id` | 通報されたアカウントのハンドル | `report_assignments.id` / `report_resolutions.id` / `report_reopenings.id` / `report_notes.id` / `report_forwards.id` |
   | `registration_approved`, `registration_rejected` | `user` | `users.id` | ローカルアカウントのハンドル（`@alice`） | `registration_decisions.id` |
   | `setting_changed` | `setting` | 設定のキー | 設定のキー | `instance_setting_revisions.id` |
   | `text_changed` | `setting` | 文章のキー | 文章のキー（`terms`） | `instance_text_revisions.id` |
@@ -194,7 +196,7 @@
 | 記録 | 設定（既定・下限） | 起点 | 消すもの |
 | --- | --- | --- | --- |
 | 処分 | `moderation_actions_retention_days`（365 日・180 日） | 処分の終わり: `warn`・`delete_statuses` は `issued_at`、ほかは解除と期限の早い方（どちらも無ければ消さない）。異議申し立てがあれば審査の `decided_at` より前には消さず、審査待ちの間は消さない | `moderation_actions` と `moderation_action_statuses`・`moderation_action_lifts`・`moderation_appeals`・`moderation_appeal_decisions`・`appeal_states`・`account_restrictions` の行 |
-| 通報 | `reports_retention_days`（365 日・180 日） | `report_states` が `resolved` になった `since`（最後の解決）。未解決の通報と、処分が参照する（`moderation_actions.report_id`）通報は消さない | `reports` と `report_statuses`・`report_rule_citations`・`report_assignments`・`report_resolutions`・`report_reopenings`・`report_notes`・`report_voice_rooms`・`report_states` |
+| 通報 | `reports_retention_days`（365 日・180 日） | `report_states` が `resolved` になった `since`（最後の解決）。未解決の通報と、処分が参照する（`moderation_actions.report_id`）通報は消さない | `reports` と `report_statuses`・`report_rule_citations`・`report_assignments`・`report_resolutions`・`report_reopenings`・`report_notes`・`report_voice_rooms`・`report_hook_origins`・`report_forwards`・`report_states` |
 | 監査ログ | `audit_log_retention_days`（730 日・365 日） | `occurred_at` | `audit_log_entries` の行 |
 | 登録の拒否 | なし（30 日に固定） | 拒否の終わり: 解除（`signup_block_lifts.lifted_at`）と期限（`expires_at`）の早い方。どちらも無ければ消さない | `signup_blocks` と `signup_block_lifts` の行 |
 

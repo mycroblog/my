@@ -5,7 +5,8 @@
 // then the evidence. The report itself, the posts it points at (or the voice chat room, with its records and ending it,
 // ADR-0100 §11), its target with the target's history (its other reports
 // and its moderation actions), the moderator who handles it, the moderators' notes, and handling it: a
-// moderation action on the target that resolves it, resolving it without one, or reopening it. What a change
+// moderation action on the target that resolves it, resolving it without one, or reopening it; and, in the
+// summary, forwarding it to the server of a remote target when the server says it can be. What a change
 // did stays on the page in a StatusMessage (role="status") next to what caused it; failures are toasts, and a
 // failed note stays under its field (web-client/README.md E2).
 import {
@@ -70,7 +71,7 @@ export function ReportDetailView({ id }: { id: string }) {
 }
 
 /** The region of the page that a message belongs to: the one whose button caused it. */
-type Message = { region: "assignee" | "resolution"; text: string };
+type Message = { region: "summary" | "assignee" | "resolution"; text: string };
 
 function ReportPage({ id }: { id: string }) {
   const t = useT();
@@ -85,7 +86,15 @@ function ReportPage({ id }: { id: string }) {
   const [message, setMessage] = useState<Message | undefined>(undefined);
   const resolutionHeadingRef = useRef<HTMLHeadingElement>(null);
   const focusResolution = useFocusAfterChange(resolutionHeadingRef, report.state);
+  // Forwarding takes its button away, so focus goes to the summary's heading.
+  const summaryHeadingRef = useRef<HTMLHeadingElement>(null);
+  const focusSummary = useFocusAfterChange(summaryHeadingRef, report.forwarded);
   const changes = useReportChanges(id, (change, text) => {
+    if (change.operation === "forward") {
+      setMessage({ region: "summary", text });
+      focusSummary();
+      return;
+    }
     const isResolution = change.operation === "resolve" || change.operation === "reopen";
     setMessage({ region: isResolution ? "resolution" : "assignee", text });
     if (isResolution) focusResolution();
@@ -94,8 +103,17 @@ function ReportPage({ id }: { id: string }) {
   return (
     <TriageLayout
       summary={
-        <Section surface="card" title={t("client:admin.report.summary.title")}>
+        <Section surface="card" title={t("client:admin.report.summary.title")} headingRef={summaryHeadingRef}>
+          <StatusMessage>{message?.region === "summary" ? message.text : undefined}</StatusMessage>
           <ReportSummary report={report} />
+          {report.forwardable && (
+            <Stack align="start" gap="3">
+              <Hint>{t("client:admin.report.forward.description")}</Hint>
+              <Button onPress={changes.forward} isPending={changes.pending?.operation === "forward"}>
+                {t("client:admin.report.forward")}
+              </Button>
+            </Stack>
+          )}
         </Section>
       }
       decision={

@@ -40,6 +40,9 @@ type Moderation interface {
 	ReportDetail(ctx context.Context, id string) (moderation.ReportDetail, error)
 	AddReportNote(ctx context.Context, reportID, body, byUserID string) (moderation.ReportNote, error)
 	ReopenReport(ctx context.Context, reportID, byUserID string) (moderation.ReportRecord, error)
+	// ForwardReport forwards a report to the target's server after it was filed
+	// (admin_report_notes.go).
+	ForwardReport(ctx context.Context, reportID, byUserID string) (moderation.ReportRecord, error)
 	// ReportStatuses presents the statuses of a report whatever their visibility, deleted ones
 	// included, for the report's detail (admin_report_notes.go).
 	ReportStatuses(ctx context.Context, reportID string) ([]appcontent.ReviewedStatus, error)
@@ -274,7 +277,7 @@ func (s *Server) newAdminReportsWith(ctx context.Context, reads presentReads, re
 	for _, rec := range recs {
 		r, st := rec.Report, rec.Status
 		item := AdminReport{
-			Id: r.ID, Category: ReportCategory(r.Category), Comment: r.Comment, Forwarded: r.Forwarded,
+			Id: r.ID, Category: ReportCategory(r.Category), Comment: r.Comment, Forwarded: r.SentToTarget(),
 			FiledAt: r.FiledAt.UTC(), State: AdminReportState(st.State), StateChangedAt: st.Since.UTC(),
 			ReporterAccountId: r.ReporterAccountID, ReporterAccount: accounts[r.ReporterAccountID],
 			TargetAccountId: r.TargetAccountID, TargetAccount: accounts[r.TargetAccountID],
@@ -282,6 +285,9 @@ func (s *Server) newAdminReportsWith(ctx context.Context, reads presentReads, re
 		}
 		if r.URI != "" {
 			item.Uri = &r.URI
+		}
+		if target, ok := actors[r.TargetAccountID]; ok {
+			item.Forwardable = r.Forwardable(!target.Account.IsLocal())
 		}
 		if r.VoiceRoom != nil {
 			id := r.VoiceRoom.RoomID

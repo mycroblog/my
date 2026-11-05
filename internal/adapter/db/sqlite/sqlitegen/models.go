@@ -1003,6 +1003,13 @@ type ReportAssignment struct {
 	AssignedAt       int64
 }
 
+type ReportForward struct {
+	ID                string
+	ReportID          string
+	ForwardedByUserID sql.NullString
+	ForwardedAt       int64
+}
+
 type ReportNote struct {
 	ID           string
 	ReportID     string

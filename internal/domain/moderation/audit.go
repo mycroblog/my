@@ -153,6 +153,9 @@ const (
 	AuditReportReopened AuditAction = "report_reopened"
 	// AuditReportNoteAdded: a moderator wrote an internal note on a report (report_notes).
 	AuditReportNoteAdded AuditAction = "report_note_added"
+	// AuditReportForwarded: a report was forwarded to the target's server after it was filed
+	// (report_forwards).
+	AuditReportForwarded AuditAction = "report_forwarded"
 	// AuditRegistrationApproved: a pending registration was approved (registration_decisions).
 	AuditRegistrationApproved AuditAction = "registration_approved"
 	// AuditRegistrationRejected: a pending registration was rejected (registration_decisions).
@@ -379,6 +382,7 @@ var auditActions = []struct {
 	{AuditReportResolved, AuditTargetReport},
 	{AuditReportReopened, AuditTargetReport},
 	{AuditReportNoteAdded, AuditTargetReport},
+	{AuditReportForwarded, AuditTargetReport},
 	{AuditRegistrationApproved, AuditTargetUser},
 	{AuditRegistrationRejected, AuditTargetUser},
 	{AuditSettingChanged, AuditTargetSetting},

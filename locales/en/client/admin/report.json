@@ -75,6 +75,18 @@
     "defaultMessage": "Reported",
     "description": "Term: when a report was filed."
   },
+  "admin.report.forward": {
+    "defaultMessage": "Forward to their server",
+    "description": "Button that forwards a report to the server of the reported remote account."
+  },
+  "admin.report.forward.description": {
+    "defaultMessage": "Sends your server's report to the server of the account, with the posts and the comment. Nothing of the reporter is sent. It is sent once.",
+    "description": "Help of the button that forwards a report to the server of the reported account."
+  },
+  "admin.report.forward_failed": {
+    "defaultMessage": "Could not forward the report: {reason}",
+    "description": "Toast when forwarding a report fails."
+  },
   "admin.report.forwarded": {
     "defaultMessage": "Forwarded",
     "description": "Term: whether the report was forwarded to the target's server."
@@ -98,6 +110,10 @@
   "admin.report.forwarded.yes": {
     "defaultMessage": "To the account's server",
     "description": "The report was forwarded to the target's server."
+  },
+  "admin.report.forwarded_now": {
+    "defaultMessage": "The report is forwarded to the server of the account.",
+    "description": "Status message after forwarding a report."
   },
   "admin.report.history.empty": {
     "defaultMessage": "No actions on this account yet",

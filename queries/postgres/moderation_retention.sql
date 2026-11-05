@@ -130,6 +130,9 @@ DELETE FROM report_notes WHERE report_id = ANY(sqlc.arg(ids)::uuid[]);
 -- name: PurgeReportVoiceRooms :exec
 DELETE FROM report_voice_rooms WHERE report_id = ANY(sqlc.arg(ids)::uuid[]);
 
+-- name: PurgeReportForwards :exec
+DELETE FROM report_forwards WHERE report_id = ANY(sqlc.arg(ids)::uuid[]);
+
 -- name: PurgeReportHookOrigins :exec
 DELETE FROM report_hook_origins WHERE report_id = ANY(sqlc.arg(ids)::uuid[]);
 

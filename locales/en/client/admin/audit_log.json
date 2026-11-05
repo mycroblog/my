@@ -99,6 +99,10 @@
     "defaultMessage": "Note added to a report",
     "description": "Heading of an audit log entry: a moderator wrote an internal note on a report."
   },
+  "admin.audit_log.action.report_forwarded": {
+    "defaultMessage": "Report forwarded",
+    "description": "Heading of an audit log entry: a moderator forwarded a report to the server of the reported account."
+  },
   "admin.audit_log.action.report_reopened": {
     "defaultMessage": "Report reopened",
     "description": "Heading of an audit log entry: a moderator reopened a resolved report."

@@ -207,6 +207,10 @@
     "defaultMessage": "再開できるのは解決済みの通報だけです。",
     "description": "Detail of the HTTP 409 API error when a moderator reopens a report that is still open."
   },
+  "errors.report.not_forwardable": {
+    "defaultMessage": "転送できるのは、このサーバーで受け付けた、ほかのサーバーのアカウントへの通報で、通話のルームの通報でないものだけです。",
+    "description": "Detail of the HTTP 409 API error when a moderator forwards a report that cannot be forwarded to the server of its target."
+  },
   "errors.request_too_large": {
     "defaultMessage": "リクエストが大きすぎます。",
     "description": "API error title for HTTP 413 when a request body is larger than the server accepts."

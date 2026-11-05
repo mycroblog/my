@@ -139,6 +139,23 @@ func fedForwardsReports(t *testing.T, e *fedEnv) {
 		}
 	}
 
+	// A moderator's forward after filing sends the same Flag, to the same inbox.
+	later := e.report(t, alice, bob, false, spam.ID)
+	e.clock.Advance(time.Second)
+	later.Forward = &moderation.ReportForward{ID: e.ids.NewID(), ReportID: later.ID, ForwardedAt: e.clock.Now()}
+	e.reports.mu.Lock()
+	e.reports.reports[later.ID] = later
+	e.reports.mu.Unlock()
+	e.emit(t, appmoderation.ReportForwarded{Report: later})
+	e.drain(t)
+	act = e.activity(t, federation.OutboundReport, later.ID, federation.ActivityFlag)
+	if act.ActorAccountID != instance {
+		t.Errorf("Flag of a forward = %+v, want the instance actor's", act)
+	}
+	if got, want := e.inboxes(t, act.ID), []string{e.uri(bob) + "/inbox"}; !slices.Equal(got, want) {
+		t.Errorf("Flag inboxes of a forward = %v, want %v", got, want)
+	}
+
 	// A suspended server gets no Flag.
 	dave := e.remote("d.example", false)
 	e.domains["d.example"] = true

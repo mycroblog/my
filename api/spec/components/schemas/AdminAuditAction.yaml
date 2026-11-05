@@ -10,7 +10,8 @@ description: |
   local account moved to another local account, which does not inherit the limit). On a `domain`:
   `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
   cleared the failures of the server). On a `report`: `report_assigned`,
-  `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`. On a
+  `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
+  `report_forwarded` (a moderator forwarded the report to the target's server). On a
   `user` (a registration):
   `registration_approved`, `registration_rejected`. On a `setting`: `setting_changed`
   (an instance setting), `text_changed` (an instance text). On a `rule`:
@@ -80,6 +81,7 @@ enum:
   - report_resolved
   - report_reopened
   - report_note_added
+  - report_forwarded
   - registration_approved
   - registration_rejected
   - setting_changed
