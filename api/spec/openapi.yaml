@@ -666,8 +666,6 @@ paths:
     $ref: ./paths/admin_relays_{id}.yaml
   /admin/relays/{id}/follow:
     $ref: ./paths/admin_relays_{id}_follow.yaml
-  /admin/relays/{id}/unfollow:
-    $ref: ./paths/admin_relays_{id}_unfollow.yaml
   /admin/statuses/{id}/refetch:
     $ref: ./paths/admin_statuses_{id}_refetch.yaml
   /admin/accounts/{id}/refetch_statuses:
@@ -704,11 +702,13 @@ components:
         `read:statuses` does not show posts whose visibility is `direct`, in timelines, in a post's
         thread, or in a post's own response, nor in the posts of a notification; `read:direct` (which
         `read` grants) does. The same holds for bookmarks, a post's source, and the posts that quote
-        a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`.
+        a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`,
+        and the response shows the post just sent.
 
         A write scope reads the post it acts on: the response to an action on a post, such as
         favouriting it with `write:favourites`, is the whole post. A token without `read:direct`
-        cannot act on a `direct` post: it gets a 404 and nothing changes. It can still take back
+        cannot act on a `direct` post, the user's own included (editing or deleting it, or setting who
+        may quote it, say): it gets a 404 and nothing changes. It can still take back
         what the user had on one (a favourite, say), and the answer is the same 404, which shows
         nothing of the post.
 
@@ -716,7 +716,7 @@ components:
         and `write:supporters`: an authorization request of any other client that asks for one is
         refused with `invalid_scope`, and a broad scope such as `write` does not give such a client
         `write:supporters`. The operations that change how the user signs in or ends the account
-        (password, two-factor authentication, passkeys, linked identities, signed-in browsers, authorized apps, moving and deleting
+        (password, two-factor authentication, passkeys, linked identities, signed-in browsers, authorized apps, moving, deactivating, and deleting
         the account, the user's own OAuth apps), and those whose consequences a consent screen cannot explain (data exports and
         imports, changing and previewing the automatic deletion of posts, adding and removing
         aliases, invites, the user's moderation actions and appeals), are marked
@@ -728,6 +728,13 @@ components:
         clients only: another client's token, whatever the user's roles, does not get them in the
         notification list, the stream, or the unread count, and they are dropped from the alerts of
         its Web Push subscription.
+
+        `read:notifications` shows a notification's `status`, under the rule of `read:direct` above,
+        and its `type` tells what happened. The other objects that a notification carries need the
+        scope that reads them elsewhere, and are omitted without it: `report` needs `read:reports`,
+        `supporter_subscription` `read:supporters`, `custom_emoji_request` `read:custom_emojis`,
+        `relationship_severance` `read:follows`, and `voice_room` `read:voice`. `moderation_action`
+        reaches first-party clients only.
       flows:
         authorizationCode:
           authorizationUrl: /oauth/authorize

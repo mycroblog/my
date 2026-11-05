@@ -197,7 +197,7 @@ describe("the page of a webhook", () => {
       http.get(`${apiBase}/admin/webhooks/:id/deliveries`, () => HttpResponse.json({ items: [failing] })),
       http.post(`${apiBase}/admin/webhooks/:id/deliveries/:delivery_id/redeliver`, ({ params }) => {
         redelivered = String(params["delivery_id"]);
-        return HttpResponse.json(failing);
+        return HttpResponse.json(failing, { status: 202 });
       }),
     );
     const { user } = await renderApp({ path: `/admin/webhooks/${webhookId}` });

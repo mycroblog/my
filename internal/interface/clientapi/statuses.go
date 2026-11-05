@@ -200,7 +200,7 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 // answer does not reveal a status the viewer may not see.
 func (s *Server) authorProblem(ctx context.Context, v Viewer, statusID string, err error) (problem, bool) {
 	if errors.Is(err, appcontent.ErrNotAuthor) {
-		_, viewErr := s.o.StatusReader.View(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: v.AccountID}, statusID)
+		_, viewErr := s.o.StatusReader.View(ctx, localContentViewer(v), statusID)
 		if errors.Is(viewErr, appcontent.ErrNotFound) {
 			err = viewErr
 		} else if viewErr != nil {
@@ -212,20 +212,23 @@ func (s *Server) authorProblem(ctx context.Context, v Viewer, statusID string, e
 
 // viewStatus returns the status as the viewer of ctx sees it, for the response of a command.
 func (s *Server) viewStatus(ctx context.Context, statusID string) (Status, error) {
-	viewer := contentViewer(ctx)
-	// The response to a command shows the post it acted on, the author's own direct post
-	// included, so write:statuses alone can send one. Another account's direct post stays
-	// hidden from a token without read:direct.
-	viewer.DirectDenied = false
-	view, err := s.o.StatusReader.View(ctx, viewer, statusID)
+	view, err := s.o.StatusReader.View(ctx, contentViewer(ctx), statusID)
 	if err != nil {
 		return Status{}, err
 	}
-	if v, ok := ViewerFrom(ctx); ok && contentViewer(ctx).DirectDenied &&
-		view.Status.Visibility == appcontent.VisibilityDirect && view.Status.AuthorAccountID != v.AccountID {
-		return Status{}, appcontent.ErrNotFound
-	}
 	return s.presentStatus(ctx, view)
+}
+
+// refuseUnseenDirect fails with ErrNotFound when the token of v may not see statusID because it
+// lacks read:direct, so that an author's command on a direct post changes nothing and shows
+// nothing. A token with read:direct goes on to the command, which decides by itself.
+func (s *Server) refuseUnseenDirect(ctx context.Context, v Viewer, statusID string) error {
+	viewer := localContentViewer(v)
+	if !viewer.DirectDenied {
+		return nil
+	}
+	_, err := s.o.StatusReader.Visible(ctx, viewer, statusID)
+	return err
 }
 
 // presentStatus presents one status as the Status schema, with its author's images.
@@ -515,9 +518,17 @@ func (s *Server) CreateStatus(ctx context.Context, req CreateStatusRequestObject
 	return s.createdStatus(ctx, post.Status.ID)
 }
 
-// createdStatus answers POST /api/v1/statuses with the status posted.
+// createdStatus answers POST /api/v1/statuses with the status posted. It is the one command that
+// shows a direct post without read:direct, since write:statuses alone can send one and the post
+// is the user's own, just written.
 func (s *Server) createdStatus(ctx context.Context, statusID string) (CreateStatusResponseObject, error) {
-	out, err := s.viewStatus(ctx, statusID)
+	viewer := contentViewer(ctx)
+	viewer.DirectDenied = false
+	view, err := s.o.StatusReader.View(ctx, viewer, statusID)
+	var out Status
+	if err == nil {
+		out, err = s.presentStatus(ctx, view)
+	}
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {
 			return CreateStatusdefaultApplicationProblemPlusJSONResponse(p), nil
@@ -584,13 +595,16 @@ func (s *Server) EditStatus(ctx context.Context, req EditStatusRequestObject) (E
 		return nil, err
 	}
 	body := req.Body
-	_, err = s.o.Statuses.Edit(ctx, appcontent.EditInput{
-		TextInput: appcontent.TextInput{
-			Text: body.Text, SpoilerText: deref(body.SpoilerText), Sensitive: deref(body.Sensitive),
-			Language: deref(body.Language), Media: mediaInput(body.Media),
-		},
-		AccountID: v.AccountID, StatusID: req.Id, DetachQuote: deref(body.RemoveQuote),
-	})
+	err = s.refuseUnseenDirect(ctx, v, req.Id)
+	if err == nil {
+		_, err = s.o.Statuses.Edit(ctx, appcontent.EditInput{
+			TextInput: appcontent.TextInput{
+				Text: body.Text, SpoilerText: deref(body.SpoilerText), Sensitive: deref(body.Sensitive),
+				Language: deref(body.Language), Media: mediaInput(body.Media),
+			},
+			AccountID: v.AccountID, StatusID: req.Id, DetachQuote: deref(body.RemoveQuote),
+		})
+	}
 	if err == nil {
 		var out Status
 		if out, err = s.viewStatus(ctx, req.Id); err == nil {
@@ -609,7 +623,11 @@ func (s *Server) DeleteStatus(ctx context.Context, req DeleteStatusRequestObject
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.o.Statuses.Delete(ctx, v.AccountID, req.Id); err != nil {
+	err = s.refuseUnseenDirect(ctx, v, req.Id)
+	if err == nil {
+		_, err = s.o.Statuses.Delete(ctx, v.AccountID, req.Id)
+	}
+	if err != nil {
 		if p, ok := s.authorProblem(ctx, v, req.Id, err); ok {
 			return DeleteStatusdefaultApplicationProblemPlusJSONResponse(p), nil
 		}
@@ -893,7 +911,10 @@ func (s *Server) SetStatusQuotePolicy(ctx context.Context, req SetStatusQuotePol
 	if err != nil {
 		return nil, err
 	}
-	_, err = s.o.Statuses.SetQuotePolicy(ctx, v.AccountID, req.Id, content.QuotePolicy(req.Body.QuotePolicy))
+	err = s.refuseUnseenDirect(ctx, v, req.Id)
+	if err == nil {
+		_, err = s.o.Statuses.SetQuotePolicy(ctx, v.AccountID, req.Id, content.QuotePolicy(req.Body.QuotePolicy))
+	}
 	if err == nil {
 		var out Status
 		if out, err = s.viewStatus(ctx, req.Id); err == nil {
@@ -940,7 +961,11 @@ func (s *Server) RevokeStatusQuoteApproval(ctx context.Context, req RevokeStatus
 	if err != nil {
 		return nil, err
 	}
-	if err := s.o.Interactions.RevokeQuote(ctx, v.AccountID, req.Id, req.QuoteId); err != nil {
+	err = s.refuseUnseenDirect(ctx, v, req.Id)
+	if err == nil {
+		err = s.o.Interactions.RevokeQuote(ctx, v.AccountID, req.Id, req.QuoteId)
+	}
+	if err != nil {
 		if p, ok := s.authorProblem(ctx, v, req.Id, err); ok {
 			return RevokeStatusQuoteApprovaldefaultApplicationProblemPlusJSONResponse(p), nil
 		}

@@ -347,7 +347,7 @@ func (s *Server) TestWebhook(ctx context.Context, req TestWebhookRequestObject) 
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: test webhook %s: %w", req.Id, err)
 	}
-	return TestWebhook200JSONResponse{adminWebhookDeliveryResponse(d)}, nil
+	return TestWebhook202JSONResponse{adminWebhookDeliveryResponse(d)}, nil
 }
 
 // ListWebhookDeliveries serves GET /api/v1/admin/webhooks/{id}/deliveries.
@@ -398,5 +398,5 @@ func (s *Server) RedeliverWebhookDelivery(ctx context.Context, req RedeliverWebh
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: redeliver %s of webhook %s: %w", req.DeliveryId, req.Id, err)
 	}
-	return RedeliverWebhookDelivery200JSONResponse{adminWebhookDeliveryResponse(d)}, nil
+	return RedeliverWebhookDelivery202JSONResponse{adminWebhookDeliveryResponse(d)}, nil
 }

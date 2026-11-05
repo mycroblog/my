@@ -439,8 +439,8 @@
     "defaultMessage": "費用の終了日の変更",
     "description": "Kind of an audited operation: an administrator set or removed the end of a regular cost."
   },
-  "admin.audit_log.action.cost_item_canceled": {
-    "defaultMessage": "費用の取り消し",
+  "admin.audit_log.action.cost_item_deleted": {
+    "defaultMessage": "費用の削除",
     "description": "Kind of an audited operation: an administrator removed a cost recorded by mistake from every period."
   },
   "admin.audit_log.target_kind.cost_item": {
@@ -467,8 +467,8 @@
     "defaultMessage": "プランを廃止",
     "description": "Kind of an audited operation: an administrator retired a supporter plan."
   },
-  "admin.audit_log.action.supporter_subscription_canceled": {
-    "defaultMessage": "加入をすぐに解約",
+  "admin.audit_log.action.supporter_subscription_ended": {
+    "defaultMessage": "加入の終了",
     "description": "Kind of an audited operation: an administrator ended a subscription to a supporter plan at once, without a refund."
   },
   "admin.audit_log.target_kind.supporter_program": {

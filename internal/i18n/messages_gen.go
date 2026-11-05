@@ -188,14 +188,14 @@ func (l *Localizer) ServerAuthAuthorizeScopeReadDirect() string {
 
 // ServerAuthAuthorizeScopeReadFinance formats "server:auth.authorize.scope.read_finance". Permission (OAuth scope read:finance) listed on the authorization page.
 //
-//	en: Read the totals of the instance's costs, as far as your roles allow
+//	en: Read the totals of the instance's costs and income, as far as your roles allow
 func (l *Localizer) ServerAuthAuthorizeScopeReadFinance() string {
 	return l.format("server:auth.authorize.scope.read_finance", nil)
 }
 
 // ServerAuthAuthorizeScopeReadFollows formats "server:auth.authorize.scope.read_follows". Permission (OAuth scope read:follows) listed on the authorization page.
 //
-//	en: Read your follows and follow requests
+//	en: Read your follows, follow requests, lists, and the accounts whose new posts notify you
 func (l *Localizer) ServerAuthAuthorizeScopeReadFollows() string {
 	return l.format("server:auth.authorize.scope.read_follows", nil)
 }
@@ -286,7 +286,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteFavourites() string {
 
 // ServerAuthAuthorizeScopeWriteFollows formats "server:auth.authorize.scope.write_follows". Permission (OAuth scope write:follows) listed on the authorization page.
 //
-//	en: Follow and unfollow accounts and answer follow requests
+//	en: Follow and unfollow accounts, answer follow requests, change lists, and subscribe to the new posts of accounts
 func (l *Localizer) ServerAuthAuthorizeScopeWriteFollows() string {
 	return l.format("server:auth.authorize.scope.write_follows", nil)
 }
@@ -321,7 +321,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteReports() string {
 
 // ServerAuthAuthorizeScopeWriteStatuses formats "server:auth.authorize.scope.write_statuses". Permission (OAuth scope write:statuses) listed on the authorization page.
 //
-//	en: Post, edit, delete, boost, and pin posts
+//	en: Post, edit, delete, boost, and pin posts, vote in polls, and set who may quote a post
 func (l *Localizer) ServerAuthAuthorizeScopeWriteStatuses() string {
 	return l.format("server:auth.authorize.scope.write_statuses", nil)
 }

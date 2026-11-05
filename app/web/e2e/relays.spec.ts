@@ -124,10 +124,11 @@ async function administratorServer(page: Page) {
       relays = [relay];
       return json(route, relay);
     }
-    const membership = /^POST \/admin\/relays\/([^/]+)\/(follow|unfollow)$/.exec(key);
+    const membership = /^(POST|DELETE) \/admin\/relays\/[^/]+\/follow$/.exec(key);
     if (membership) {
-      sent.push(membership[2] ?? "");
-      return json(route, withState(membership[2] === "follow" ? "pending" : "left"));
+      const join = membership[1] === "POST";
+      sent.push(join ? "follow" : "unfollow");
+      return json(route, withState(join ? "pending" : "left"));
     }
     if (/^DELETE \/admin\/relays\/[^/]+$/.test(key)) {
       sent.push("delete");

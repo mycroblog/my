@@ -123,10 +123,13 @@ func oauthUsesClientMetadataDocuments(t *testing.T, e *accountEnv) {
 
 	// A denied host is refused before any fetch, for authorizations and token requests alike;
 	// lifting the denial lets the client back in.
-	for range 2 { // safe to repeat
-		if err := s.DenyOAuthClientHost(ctx, "App.Example", userID); err != nil {
-			t.Fatalf("DenyOAuthClientHost = %v", err)
-		}
+	first, created, err := s.DenyOAuthClientHost(ctx, "App.Example", userID)
+	if err != nil || !created || first.Host != "app.example" {
+		t.Fatalf("DenyOAuthClientHost = %+v, %v, %v", first, created, err)
+	}
+	again, created, err := s.DenyOAuthClientHost(ctx, "App.Example", userID) // safe to repeat
+	if err != nil || created || again.ID != first.ID {
+		t.Fatalf("DenyOAuthClientHost again = %+v, %v, %v, want the denial %s", again, created, err, first.ID)
 	}
 	e.clock.Advance(time.Hour)
 	if _, err := authorize(redirect2); !errors.Is(err, appidentity.ErrUnknownClient) || web.count() != 2 {

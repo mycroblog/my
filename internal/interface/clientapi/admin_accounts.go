@@ -175,7 +175,7 @@ func (s *Server) GetAdminAccount(ctx context.Context, req GetAdminAccountRequest
 		out.EmailSuppression = newEmailSuppression(*d.EmailSuppression, true)
 	}
 	if app := d.Application; app != nil {
-		reg := AdminAccountRegistration{SubmittedAt: app.SubmittedAt.UTC(), StateChangedAt: app.SubmittedAt.UTC()}
+		reg := AdminAccountRegistration{Id: app.ID, SubmittedAt: app.SubmittedAt.UTC(), StateChangedAt: app.SubmittedAt.UTC()}
 		if d.Registration != nil {
 			reg.StateChangedAt = d.Registration.Since.UTC()
 		}

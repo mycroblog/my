@@ -7,7 +7,9 @@ post:
     then `requested` is true until the account accepts it. Following an
     account that the viewer already follows or has requested to follow changes only the
     preferences in the body. Following an account that the viewer blocks is a 409
-    `/api/v1/problems/blocking`. A follow of an account on another server is a request
+    `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+    moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+    gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
     until that server accepts it. While the instance does not follow remote accounts
     (`Instance.federation.mode` `off` or `outbound`), following an account on another
     server that the viewer does not follow or request yet is a 403

@@ -86,12 +86,13 @@ func (f *fakeOAuthClients) ListOAuthClientHostDenials(_ context.Context, before 
 	return out, nil
 }
 
-func (f *fakeOAuthClients) DenyOAuthClientHost(_ context.Context, host, by string) error {
+func (f *fakeOAuthClients) DenyOAuthClientHost(_ context.Context, host, by string) (identity.OAuthClientHostDenial, bool, error) {
 	h, err := identity.ClientHost(host)
-	if err == nil {
-		f.calls = append(f.calls, "deny "+h+" by "+by)
+	if err != nil {
+		return identity.OAuthClientHostDenial{}, false, err
 	}
-	return err
+	f.calls = append(f.calls, "deny "+h+" by "+by)
+	return identity.OAuthClientHostDenial{ID: "01890a5d-ac96-774b-bcce-b302099a70f0", Host: h, DeniedAt: adminNow}, true, nil
 }
 
 func (f *fakeOAuthClients) AllowOAuthClientHost(_ context.Context, host, by string) error {
@@ -233,7 +234,7 @@ func TestDenyAndAllowOAuthClientHosts(t *testing.T) {
 	if res.StatusCode != http.StatusOK || len(page.Items) != 1 || page.Items[0].Host != "bad.example" || page.Items[0].DeniedBy == nil || page.Items[0].DeniedBy.Id != aliceAccountID || page.NextCursor != nil {
 		t.Fatalf("list = %d %+v", res.StatusCode, page)
 	}
-	if res := e.sendJSON(t, http.MethodPost, "/admin/oauth_client_host_denials", "admin", `{"host":"App.Example"}`); res.StatusCode != http.StatusNoContent {
+	if res := e.sendJSON(t, http.MethodPost, "/admin/oauth_client_host_denials", "admin", `{"host":"App.Example"}`); res.StatusCode != http.StatusCreated {
 		t.Errorf("deny = %d, want 204", res.StatusCode)
 	}
 	if res := e.send(t, http.MethodDelete, "/admin/oauth_client_host_denials/bad.example", "admin", ""); res.StatusCode != http.StatusNoContent {

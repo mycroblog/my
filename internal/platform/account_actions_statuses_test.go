@@ -72,6 +72,21 @@ func TestClientAPIActionsOnStatusesAndBans(t *testing.T) {
 		}
 	}
 
+	// The edit history of a post with media shows what moderation forces, like the post itself.
+	sensitiveHistory := func(who testUser, id string, want bool, when string) {
+		t.Helper()
+		var history clientapi.StatusHistory
+		e.want(e.do(http.MethodGet, "/statuses/"+id+"/history", who.token, nil, &history), http.StatusOK, "get the history "+when)
+		if len(history.Items) == 0 {
+			t.Fatalf("%s: the history is empty", when)
+		}
+		for _, rev := range history.Items {
+			if rev.Sensitive != want || len(rev.MediaAttachments) != 1 {
+				t.Errorf("%s: history sensitive = %v with %d attachments, want %v", when, rev.Sensitive, len(rev.MediaAttachments), want)
+			}
+		}
+	}
+
 	media := uploadImage(t, e, alice)
 	var pictured, spam clientapi.Status
 	e.want(e.do(http.MethodPost, "/statuses", alice.token, map[string]any{
@@ -93,8 +108,10 @@ func TestClientAPIActionsOnStatusesAndBans(t *testing.T) {
 		t.Errorf("mark_statuses_sensitive = %+v, want the status", a)
 	}
 	sensitive(bob, pictured.Id, true, "marked")
+	sensitiveHistory(bob, pictured.Id, true, "marked")
 	lift(a)
 	sensitive(bob, pictured.Id, false, "after the mark is lifted")
+	sensitiveHistory(bob, pictured.Id, false, "after the mark is lifted")
 
 	// delete_statuses deletes the status for everyone, the author included, and for good.
 	a = issue("delete_statuses", spam.Id)

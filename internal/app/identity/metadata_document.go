@@ -185,17 +185,19 @@ func metadataDocumentTTL(h http.Header, now time.Time) time.Duration {
 // §1); byUserID is the administrator, "" for the CLI. Denying a denied host records nothing new.
 // The denial also revokes every token of the clients of the host with client_disabled, so that
 // no access token outlives it; the call is safe to repeat.
-func (s *Service) DenyOAuthClientHost(ctx context.Context, host, byUserID string) error {
+func (s *Service) DenyOAuthClientHost(ctx context.Context, host, byUserID string) (identity.OAuthClientHostDenial, bool, error) {
 	h, err := identity.ClientHost(host)
 	if err != nil {
-		return err
+		return identity.OAuthClientHostDenial{}, false, err
 	}
 	d := identity.OAuthClientHostDenial{ID: s.d.IDs.NewID(), Host: h, DeniedByUserID: byUserID, DeniedAt: s.d.Clock.Now()}
-	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+	out, created := d, false
+	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		inserted, err := s.d.Repository.InsertOAuthClientHostDenial(ctx, tx, d)
 		if err != nil {
 			return err
 		}
+		out, created = d, inserted
 		clients, err := s.d.Repository.ListMetadataDocumentClientsOfHost(ctx, tx, h)
 		if err != nil {
 			return err
@@ -209,10 +211,15 @@ func (s *Service) DenyOAuthClientHost(ctx context.Context, host, byUserID string
 			}
 		}
 		if !inserted {
-			return nil
+			out, err = s.d.Repository.FindOAuthClientHostDenial(ctx, tx, h)
+			return err
 		}
 		return s.emitOAuthHostAudit(ctx, tx, appmoderation.AuditOAuthClientHostDenied, h, d.ID, byUserID, d.DeniedAt)
 	})
+	if err != nil {
+		return identity.OAuthClientHostDenial{}, false, err
+	}
+	return out, created, nil
 }
 
 // emitOAuthHostAudit emits the audit log entry of an administrator's operation on a host of

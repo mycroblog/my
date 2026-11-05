@@ -73,13 +73,13 @@ const (
 	AuditCostItemRelabeled               = moderation.AuditCostItemRelabeled
 	AuditCostItemPriceRevised            = moderation.AuditCostItemPriceRevised
 	AuditCostItemEndChanged              = moderation.AuditCostItemEndChanged
-	AuditCostItemCanceled                = moderation.AuditCostItemCanceled
+	AuditCostItemDeleted                 = moderation.AuditCostItemDeleted
 	AuditSupporterProgramEnabled         = moderation.AuditSupporterProgramEnabled
 	AuditSupporterProgramDisabled        = moderation.AuditSupporterProgramDisabled
 	AuditSupporterPlanCreated            = moderation.AuditSupporterPlanCreated
 	AuditSupporterPlanRevised            = moderation.AuditSupporterPlanRevised
 	AuditSupporterPlanRetired            = moderation.AuditSupporterPlanRetired
-	AuditSupporterSubscriptionCanceled   = moderation.AuditSupporterSubscriptionCanceled
+	AuditSupporterSubscriptionEnded      = moderation.AuditSupporterSubscriptionEnded
 	AuditCustomEmojiRequestSubmitted     = moderation.AuditCustomEmojiRequestSubmitted
 	AuditCustomEmojiRequestWithdrawn     = moderation.AuditCustomEmojiRequestWithdrawn
 	AuditCustomEmojiRequestApproved      = moderation.AuditCustomEmojiRequestApproved

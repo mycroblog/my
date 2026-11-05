@@ -11,6 +11,7 @@ post:
     unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
     a poll of another server is sent to that server, whose counts in `poll` include it once
     the server reports them again.
+    A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
   tags: [statuses]
   security:
     - oauth2: ["write:statuses"]

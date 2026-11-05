@@ -68,8 +68,11 @@ func (s *Server) MoveOwnAccount(ctx context.Context, req MoveOwnAccountRequestOb
 	if p, h, limited := s.LimitProblem(ctx, MoveAccountLimit, v.AccountID); limited {
 		return MoveOwnAccountdefaultApplicationProblemPlusJSONResponse{Body: p, Headers: h, StatusCode: http.StatusTooManyRequests}, nil
 	}
-	if req.Body == nil || req.Body.TargetAccountId == "" {
+	if req.Body == nil {
 		return MoveOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "target_account_id")), nil
+	}
+	if req.Body.TargetAccountId == "" {
+		return MoveOwnAccountdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "target_account_id")), nil
 	}
 	c, param, ok := confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password")
 	if !ok {

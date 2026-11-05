@@ -21,7 +21,7 @@ get:
     Events:
 
     - `update`: a new post of the timeline, as `GET /api/v1/timelines/local` or
-      `GET /api/v1/timelines/public` would list it for the user at that moment (the visibility,
+      `GET /api/v1/timelines/federated` would list it for the user at that moment (the visibility,
       the user's blocks, mutes, and muted domains, and the user's timeline languages apply).
       `data` is a `Status`. The local timeline has the public posts of the local accounts and
       their `local` posts; the federated timeline has the public posts of local and remote

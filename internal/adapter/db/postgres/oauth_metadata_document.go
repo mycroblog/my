@@ -49,6 +49,21 @@ func (r *IdentityRepository) InsertOAuthClientHostDenial(ctx context.Context, tx
 	return n == 1, wrap(err, "insert oauth client host denial")
 }
 
+// FindOAuthClientHostDenial implements identity.Repository.
+func (r *IdentityRepository) FindOAuthClientHostDenial(ctx context.Context, tx uow.Tx, host string) (identity.OAuthClientHostDenial, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return identity.OAuthClientHostDenial{}, err
+	}
+	row, err := q.FindOAuthClientHostDenial(ctx, host)
+	if err != nil {
+		return identity.OAuthClientHostDenial{}, notFound(err, appidentity.ErrNotFound, "oauth client host denial")
+	}
+	return identity.OAuthClientHostDenial{
+		ID: row.ID, Host: row.Host, DeniedByUserID: fromNullString(row.DeniedByUserID), DeniedAt: utc(row.DeniedAt),
+	}, nil
+}
+
 // LiftOAuthClientHostDenials implements identity.Repository.
 func (r *IdentityRepository) LiftOAuthClientHostDenials(ctx context.Context, tx uow.Tx, host, byUserID string, at time.Time) (bool, error) {
 	q, err := r.db.queries(tx)

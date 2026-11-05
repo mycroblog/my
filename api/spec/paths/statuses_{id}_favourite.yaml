@@ -7,6 +7,7 @@ post:
   description: |
     Favouriting a status that is already favourited changes nothing. A user has one
     favourite or one emoji reaction on a status, so favouriting takes back the reaction.
+    A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
   tags: [statuses]
   security:
     - oauth2: ["write:favourites"]

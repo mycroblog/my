@@ -227,6 +227,15 @@ SELECT d.id, sqlc.narg(lifted_by_user_id)::uuid, sqlc.arg(lifted_at)::timestampt
 WHERE d.host = sqlc.arg(host)::text
 ON CONFLICT (denial_id) DO NOTHING;
 
+-- FindOAuthClientHostDenial returns the denial of a host that has no lift.
+-- name: FindOAuthClientHostDenial :one
+SELECT d.id, d.host, d.denied_by_user_id, d.denied_at
+FROM oauth_client_host_denials d
+WHERE d.host = sqlc.arg(host)::text
+  AND NOT EXISTS (SELECT 1 FROM oauth_client_host_denial_lifts l WHERE l.denial_id = d.id)
+ORDER BY d.id DESC
+LIMIT 1;
+
 -- OAuthClientHostDenied reports whether a host has a denial without a lift.
 -- name: OAuthClientHostDenied :one
 SELECT EXISTS (

@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: MIT
 description: The registration application of a local account.
 type: object
-required: [submitted_at, state_changed_at]
+required: [id, submitted_at, state_changed_at]
 properties:
+  id:
+    description: The ID that `approveRegistration` and `rejectRegistration` take.
+    allOf:
+      - $ref: ./Id.yaml
   submitted_at:
     type: string
     format: date-time

@@ -25,6 +25,10 @@ put:
     moves forward: a `last_read_id` older than the current marker changes nothing, so
     clients that report their positions concurrently never move it back. A
     `last_read_id` that is not one of the user's notifications is a 404.
+
+    The user has one marker, shared by all clients. Moving it marks everything up to
+    `last_read_id` as read for every client, including notifications that this client does
+    not list, such as the moderator notifications that reach first-party clients only.
   tags: [notifications]
   security:
     - oauth2: ["write:notifications"]

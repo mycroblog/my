@@ -86,7 +86,7 @@ export function denyHostMutation(api: Api) {
   return {
     mutationKey: ["post", "/admin/oauth_client_host_denials"] as const,
     mutationFn: async (host: string): Promise<void> => {
-      // The middleware throws for every error status; a 204 has no body to read.
+      // The middleware throws for every error status; the list is fetched again after this.
       await api.fetch.POST("/admin/oauth_client_host_denials", { body: { host } });
     },
   };

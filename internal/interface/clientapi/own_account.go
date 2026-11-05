@@ -264,7 +264,7 @@ func (s *Server) DeactivateOwnAccount(ctx context.Context, req DeactivateOwnAcco
 		var param string
 		var ok bool
 		if c, param, ok = confirmationOf(req.Body.Password, req.Body.Passkey, req.Body.ExternalConfirmation, "password"); !ok {
-			return DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, param)), nil
+			return DeactivateOwnAccountdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, param)), nil
 		}
 	}
 	due, err := s.o.OwnAccount.DeactivateOwnAccount(ctx, v.UserID, c)
@@ -283,7 +283,10 @@ func (s *Server) DeactivateOwnAccount(ctx context.Context, req DeactivateOwnAcco
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: deactivate the account of user %s: %w", v.UserID, err)
 	}
-	return DeactivateOwnAccount200JSONResponse{DeletionDueAt: due.UTC()}, nil
+	cache := cacheNoStore
+	return DeactivateOwnAccount200JSONResponse{
+		Body: Deactivation{DeletionDueAt: due.UTC()}, Headers: DeactivateOwnAccount200ResponseHeaders{CacheControl: &cache},
+	}, nil
 }
 
 // deactivationRefusalDetail says why a deactivation is refused.

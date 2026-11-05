@@ -131,7 +131,7 @@ func TestCostItemsAdmin(t *testing.T) {
 		got = append(got, string(entry.Action)+" "+entry.TargetLabel)
 	}
 	want := []string{
-		"cost_item_canceled Mistake", "cost_item_end_changed Backups", "cost_item_price_revised Main VM", "cost_item_relabeled Main VM",
+		"cost_item_deleted Mistake", "cost_item_end_changed Backups", "cost_item_price_revised Main VM", "cost_item_relabeled Main VM",
 		"cost_item_created Mistake", "cost_item_created Backups", "cost_item_created VM", "cost_item_created example.com",
 	}
 	if !slices.Equal(got, want) {

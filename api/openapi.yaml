@@ -1149,6 +1149,9 @@ paths:
       responses:
         '200':
           description: The account is deactivated, and its sessions and tokens have ended.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
           content:
             application/json:
               schema:
@@ -1883,8 +1886,8 @@ paths:
         Returns the options of a WebAuthn authentication (with user verification) for the
         browser's `navigator.credentials.get()`, with a `confirmation_token` that carries them
         for 5 minutes, once, in the `passkey` of an operation that a passkey of the user confirms
-        in place of the current password: deleting the account, moving it, changing or removing
-        the password, registering a passkey, and linking an identity. Nothing is stored.
+        in place of the current password: deleting the account, deactivating it, moving it, changing
+        or removing the password, registering a passkey, and linking an identity. Nothing is stored.
       tags:
         - passkeys
       security:
@@ -2633,7 +2636,9 @@ paths:
         then `requested` is true until the account accepts it. Following an
         account that the viewer already follows or has requested to follow changes only the
         preferences in the body. Following an account that the viewer blocks is a 409
-        `/api/v1/problems/blocking`. A follow of an account on another server is a request
+        `/api/v1/problems/blocking`, following oneself is a 422, and following an account while
+        moderation keeps the viewer from interacting with it is a 403. A user whose account moved
+        gets a 403 `/api/v1/problems/account-moved`. A follow of an account on another server is a request
         until that server accepts it. While the instance does not follow remote accounts
         (`Instance.federation.mode` `off` or `outbound`), following an account on another
         server that the viewer does not follow or request yet is a 403
@@ -3467,6 +3472,10 @@ paths:
         moves forward: a `last_read_id` older than the current marker changes nothing, so
         clients that report their positions concurrently never move it back. A
         `last_read_id` that is not one of the user's notifications is a 404.
+
+        The user has one marker, shared by all clients. Moving it marks everything up to
+        `last_read_id` as read for every client, including notifications that this client does
+        not list, such as the moderator notifications that reach first-party clients only.
       tags:
         - notifications
       security:
@@ -3623,6 +3632,7 @@ paths:
         a new post (a 409 when that status is deleted). Attached media must be the user's own uploads that
         finished processing (422 otherwise). A status with a `poll` attaches no media, and a
         poll outside the limits of `PollInput` is a 422.
+        A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
       tags:
         - statuses
       security:
@@ -3681,6 +3691,8 @@ paths:
         previous content stays in the edit history. The visibility and reply target never
         change. Attached media must be the user's own uploads that finished processing (422
         otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+        Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+        status is a 404 to a token without `read:direct`, the user's own included.
       tags:
         - statuses
       security:
@@ -3707,6 +3719,10 @@ paths:
     delete:
       operationId: deleteStatus
       summary: Delete the authenticated user's status
+      description: |
+        Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+        status is a 404 to a token without `read:direct`, the user's own included, and nothing
+        is deleted.
       tags:
         - statuses
       security:
@@ -3757,6 +3773,7 @@ paths:
       description: |
         Boosting a status that is already boosted changes nothing. A status whose visibility
         does not allow boosting is a 422.
+        A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
       tags:
         - statuses
       security:
@@ -3820,6 +3837,7 @@ paths:
       description: |
         Favouriting a status that is already favourited changes nothing. A user has one
         favourite or one emoji reaction on a status, so favouriting takes back the reaction.
+        A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
       tags:
         - statuses
       security:
@@ -3917,6 +3935,7 @@ paths:
         unknown one, the same one twice, or several in a single-choice poll) is a 422. A vote in
         a poll of another server is sent to that server, whose counts in `poll` include it once
         the server reports them again.
+        A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
       tags:
         - statuses
       security:
@@ -3945,6 +3964,7 @@ paths:
         status, so reacting takes back the favourite and the reaction with another emoji;
         reacting again with the same emoji changes nothing. A custom emoji of another server,
         or anything else that is not one emoji, is a 422.
+        A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
       tags:
         - statuses
       security:
@@ -4024,7 +4044,8 @@ paths:
       description: |
         Changes the `quote_policy` of a status of the user; the approvals given
         before stay, and each is revoked on its own. Another account's status is a 403 when the
-        user may see it and a 404 otherwise.
+        user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
+        `read:direct`, the user's own included.
       tags:
         - statuses
       security:
@@ -4136,8 +4157,8 @@ paths:
         that it did. It does at most once a day per account, for at most 30 accounts per viewer
         in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
 
-        An account that is not found by `getAccount` is a 404 here too: an unknown, suspended, or
-        deleted account, the instance actor, and an account that blocks the viewer.
+        An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+        deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
       tags:
         - timelines
       security:
@@ -4351,7 +4372,7 @@ paths:
         resolved. A report reopened by the moderators is open again. It never tells how
         a report was resolved, which actions it led to, the reasons given to the account, or
         who handles it. A report stays listed when the user may no longer see its target (the
-        account is suspended, deleted, or blocks the user), without `target_account`. A report
+        account is suspended, deactivated, deleted, or blocks the user), without `target_account`. A report
         whose target no longer exists at all is left out, so a page may hold fewer
         reports than `limit` and still have a `next_cursor`.
       tags:
@@ -4599,7 +4620,7 @@ paths:
         Events:
 
         - `update`: a new post of the timeline, as `GET /api/v1/timelines/local` or
-          `GET /api/v1/timelines/public` would list it for the user at that moment (the visibility,
+          `GET /api/v1/timelines/federated` would list it for the user at that moment (the visibility,
           the user's blocks, mutes, and muted domains, and the user's timeline languages apply).
           `data` is a `Status`. The local timeline has the public posts of the local accounts and
           their `local` posts; the federated timeline has the public posts of local and remote
@@ -9391,7 +9412,7 @@ paths:
         From now on no `client_id` URL on the host is fetched or accepted, and the authorization
         requests, token exchanges and refreshes of its clients fail. The tokens that the clients
         of the host hold are revoked at once (with the reason `client_disabled`). Denying a denied
-        host revokes again and records nothing new. A host that is empty or malformed, or has a
+        host revokes again, records nothing new, and answers 200 with the denial it has. A host that is empty or malformed, or has a
         port, is a 422. The denial is recorded in the audit log. Needs the `manage_oauth_apps`
         permission.
       tags:
@@ -9406,8 +9427,24 @@ paths:
             schema:
               $ref: '#/components/schemas/DenyOAuthClientHostRequest'
       responses:
-        '204':
+        '200':
+          description: The host was denied already.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOAuthClientHostDenial'
+        '201':
           description: The host is denied.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOAuthClientHostDenial'
         default:
           $ref: '#/components/responses/Problem'
   /admin/oauth_client_host_denials/{host}:
@@ -9823,7 +9860,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/WebhookId'
       responses:
-        '200':
+        '202':
           $ref: '#/components/responses/AdminWebhookDelivery'
         default:
           $ref: '#/components/responses/Problem'
@@ -9878,7 +9915,7 @@ paths:
           schema:
             $ref: '#/components/schemas/Id'
       responses:
-        '200':
+        '202':
           $ref: '#/components/responses/AdminWebhookDelivery'
         default:
           $ref: '#/components/responses/Problem'
@@ -10078,8 +10115,7 @@ paths:
           $ref: '#/components/responses/RelayProblem'
         default:
           $ref: '#/components/responses/Problem'
-  /admin/relays/{id}/unfollow:
-    post:
+    delete:
       operationId: unfollowRelay
       summary: Leave a relay
       description: |
@@ -10446,11 +10482,13 @@ components:
         `read:statuses` does not show posts whose visibility is `direct`, in timelines, in a post's
         thread, or in a post's own response, nor in the posts of a notification; `read:direct` (which
         `read` grants) does. The same holds for bookmarks, a post's source, and the posts that quote
-        a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`.
+        a post, the user's own `direct` posts included. Sending a `direct` post needs only `write:statuses`,
+        and the response shows the post just sent.
 
         A write scope reads the post it acts on: the response to an action on a post, such as
         favouriting it with `write:favourites`, is the whole post. A token without `read:direct`
-        cannot act on a `direct` post: it gets a 404 and nothing changes. It can still take back
+        cannot act on a `direct` post, the user's own included (editing or deleting it, or setting who
+        may quote it, say): it gets a 404 and nothing changes. It can still take back
         what the user had on one (a favourite, say), and the answer is the same 404, which shows
         nothing of the post.
 
@@ -10458,7 +10496,7 @@ components:
         and `write:supporters`: an authorization request of any other client that asks for one is
         refused with `invalid_scope`, and a broad scope such as `write` does not give such a client
         `write:supporters`. The operations that change how the user signs in or ends the account
-        (password, two-factor authentication, passkeys, linked identities, signed-in browsers, authorized apps, moving and deleting
+        (password, two-factor authentication, passkeys, linked identities, signed-in browsers, authorized apps, moving, deactivating, and deleting
         the account, the user's own OAuth apps), and those whose consequences a consent screen cannot explain (data exports and
         imports, changing and previewing the automatic deletion of posts, adding and removing
         aliases, invites, the user's moderation actions and appeals), are marked
@@ -10470,6 +10508,13 @@ components:
         clients only: another client's token, whatever the user's roles, does not get them in the
         notification list, the stream, or the unread count, and they are dropped from the alerts of
         its Web Push subscription.
+
+        `read:notifications` shows a notification's `status`, under the rule of `read:direct` above,
+        and its `type` tells what happened. The other objects that a notification carries need the
+        scope that reads them elsewhere, and are omitted without it: `report` needs `read:reports`,
+        `supporter_subscription` `read:supporters`, `custom_emoji_request` `read:custom_emojis`,
+        `relationship_severance` `read:follows`, and `voice_room` `read:voice`. `moderation_action`
+        reaches first-party clients only.
       flows:
         authorizationCode:
           authorizationUrl: /oauth/authorize
@@ -11905,9 +11950,14 @@ components:
       description: The registration application of a local account.
       type: object
       required:
+        - id
         - submitted_at
         - state_changed_at
       properties:
+        id:
+          description: The ID that `approveRegistration` and `rejectRegistration` take.
+          allOf:
+            - $ref: '#/components/schemas/Id'
         submitted_at:
           type: string
           format: date-time
@@ -12578,12 +12628,12 @@ components:
         on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
         the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
         `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
-        `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_canceled`; the label is
+        `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
         the item's name. On the `supporter_program`: `supporter_program_enabled`,
         `supporter_program_disabled`; the label is the payment provider's name. On a
         `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
         `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
-        `supporter_subscription_canceled`, an administrator's cancellation without a refund; the
+        `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
         label is the plan's name and the subscriber's handle. On a `custom_emoji_request`:
         `custom_emoji_request_submitted` and `custom_emoji_request_withdrawn` by the requester, and
         `custom_emoji_request_approved` (which also records the emoji's `custom_emoji_created` or
@@ -12669,13 +12719,13 @@ components:
         - cost_item_relabeled
         - cost_item_price_revised
         - cost_item_end_changed
-        - cost_item_canceled
+        - cost_item_deleted
         - supporter_program_enabled
         - supporter_program_disabled
         - supporter_plan_created
         - supporter_plan_revised
         - supporter_plan_retired
-        - supporter_subscription_canceled
+        - supporter_subscription_ended
         - custom_emoji_request_submitted
         - custom_emoji_request_withdrawn
         - custom_emoji_request_approved
@@ -18381,7 +18431,7 @@ components:
       description: |
         Who may read the public timelines the instance serves: `local` is the instance
         setting `local_timeline_visibility` of `GET /timelines/local`, and `federated` the instance
-        setting `federated_timeline_visibility` of `GET /timelines/public`. Clients do not offer a
+        setting `federated_timeline_visibility` of `GET /timelines/federated`. Clients do not offer a
         timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in.
       type: object
       required:
@@ -19085,12 +19135,12 @@ components:
             may not see it.
           $ref: '#/components/schemas/Status'
         report:
-          description: The user's report that a `report_resolved` tells of.
+          description: The user's report that a `report_resolved` tells of; omitted without `read:reports`.
           $ref: '#/components/schemas/Report'
         moderation_action:
           description: |
             The action on the user's account that a `moderation_notice` tells of, or whose
-            appeal an `appeal_decided` tells of, with the appeal.
+            appeal an `appeal_decided` tells of, with the appeal; first-party clients only.
           $ref: '#/components/schemas/ModerationAction'
         report_id:
           description: The report that an `admin_report` is about.
@@ -19103,15 +19153,17 @@ components:
         custom_emoji_request:
           description: |
             The custom emoji request that an `admin_custom_emoji_request` or a
-            `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists.
+            `custom_emoji_request_decided` is about, as it is now; absent when it no longer exists,
+            and without `read:custom_emojis`.
           $ref: '#/components/schemas/CustomEmojiRequest'
         supporter_subscription:
           description: |
             The user's supporter subscription that a `supporter_payment_failed`, a
             `supporter_subscription_ended`, or a `supporter_plan_retired` is about, as it is now;
-            absent when it no longer exists.
+            absent when it no longer exists, and without `read:supporters`.
           $ref: '#/components/schemas/SupporterSubscription'
         relationship_severance:
+          description: The follows that a `relationships_severed` tells of; omitted without `read:follows`.
           $ref: '#/components/schemas/RelationshipSeverance'
         account_move:
           $ref: '#/components/schemas/AccountMove'
@@ -19127,7 +19179,7 @@ components:
         voice_room:
           description: |
             The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
-            it is open and the user sees it; omitted otherwise.
+            it is open and the user sees it; omitted otherwise, and without `read:voice`.
           $ref: '#/components/schemas/VoiceRoom'
         error_group:
           description: What an `admin_error_group` tells of; omitted for the other types.
@@ -19175,7 +19227,7 @@ components:
         - supporter
         - announcement
     NotificationMarker:
-      description: How far the authenticated user has read the notifications.
+      description: How far the authenticated user has read the notifications, across all clients.
       type: object
       required:
         - unread_count
@@ -20880,7 +20932,7 @@ components:
         target_account:
           description: |
             The account reported, as the user would see it through `getAccount`; omitted when that
-            answers 404, because the account is suspended, deleted, or blocks the user.
+            answers 404, because the account is suspended, deactivated, deleted, or blocks the user.
           allOf:
             - $ref: '#/components/schemas/Account'
         status_ids:

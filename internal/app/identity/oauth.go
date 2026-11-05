@@ -177,6 +177,9 @@ type OAuthRepository interface {
 	// InsertOAuthClientHostDenial records d and reports whether it did; false means the host was
 	// denied already.
 	InsertOAuthClientHostDenial(ctx context.Context, tx uow.Tx, d identity.OAuthClientHostDenial) (bool, error)
+	// FindOAuthClientHostDenial returns the denial of a host that has no lift; ErrNotFound when
+	// there is none.
+	FindOAuthClientHostDenial(ctx context.Context, tx uow.Tx, host string) (identity.OAuthClientHostDenial, error)
 	// LiftOAuthClientHostDenials lifts every denial of a host that has no lift yet and reports
 	// whether there was one. byUserID is "" for the CLI.
 	LiftOAuthClientHostDenials(ctx context.Context, tx uow.Tx, host, byUserID string, at time.Time) (bool, error)

@@ -23,7 +23,7 @@ type OAuthClients interface {
 	DisableOAuthClient(ctx context.Context, clientID, byUserID string) error
 	EnableOAuthClient(ctx context.Context, clientID, byUserID string) error
 	ListOAuthClientHostDenials(ctx context.Context, before string, limit int) ([]identity.OAuthClientHostDenial, error)
-	DenyOAuthClientHost(ctx context.Context, host, byUserID string) error
+	DenyOAuthClientHost(ctx context.Context, host, byUserID string) (identity.OAuthClientHostDenial, bool, error)
 	AllowOAuthClientHost(ctx context.Context, host, byUserID string) error
 }
 
@@ -217,6 +217,20 @@ func (s *Server) ListOAuthClientHostDenials(ctx context.Context, req ListOAuthCl
 		return nil, fmt.Errorf("clientapi: list oauth client host denials: %w", err)
 	}
 	list, last := trim(list, q.limit)
+	items, err := s.newOAuthClientHostDenials(ctx, list)
+	if err != nil {
+		return nil, err
+	}
+	page := AdminOAuthClientHostDenialPage{Items: items}
+	if last >= 0 {
+		page.NextCursor = encodeCursor(list[last].ID)
+	}
+	cache := cacheNoStore
+	return ListOAuthClientHostDenials200JSONResponse{Body: page, Headers: ListOAuthClientHostDenials200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// newOAuthClientHostDenials presents denials as the AdminOAuthClientHostDenial schema.
+func (s *Server) newOAuthClientHostDenials(ctx context.Context, list []identity.OAuthClientHostDenial) ([]AdminOAuthClientHostDenial, error) {
 	ids := make([]string, len(list))
 	for i, d := range list {
 		ids[i] = d.DeniedByUserID
@@ -225,7 +239,7 @@ func (s *Server) ListOAuthClientHostDenials(ctx context.Context, req ListOAuthCl
 	if err != nil {
 		return nil, err
 	}
-	page := AdminOAuthClientHostDenialPage{Items: make([]AdminOAuthClientHostDenial, 0, len(list))}
+	out := make([]AdminOAuthClientHostDenial, 0, len(list))
 	for _, d := range list {
 		item := AdminOAuthClientHostDenial{Id: d.ID, Host: d.Host, DeniedAt: d.DeniedAt.UTC()}
 		if d.DeniedByUserID != "" {
@@ -235,13 +249,9 @@ func (s *Server) ListOAuthClientHostDenials(ctx context.Context, req ListOAuthCl
 				item.DeniedByDeleted = true
 			}
 		}
-		page.Items = append(page.Items, item)
+		out = append(out, item)
 	}
-	if last >= 0 {
-		page.NextCursor = encodeCursor(list[last].ID)
-	}
-	cache := cacheNoStore
-	return ListOAuthClientHostDenials200JSONResponse{Body: page, Headers: ListOAuthClientHostDenials200ResponseHeaders{CacheControl: &cache}}, nil
+	return out, nil
 }
 
 // DenyOAuthClientHost serves POST /api/v1/admin/oauth_client_host_denials.
@@ -256,14 +266,22 @@ func (s *Server) DenyOAuthClientHost(ctx context.Context, req DenyOAuthClientHos
 	if req.Body == nil {
 		return DenyOAuthClientHostdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "body")), nil
 	}
-	err = s.o.OAuthClients.DenyOAuthClientHost(ctx, req.Body.Host, v.UserID)
+	denial, created, err := s.o.OAuthClients.DenyOAuthClientHost(ctx, req.Body.Host, v.UserID)
 	switch {
 	case errors.Is(err, identity.ErrInvalidClientIDURL):
 		return DenyOAuthClientHostdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "host")), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: deny oauth client host: %w", err)
 	}
-	return DenyOAuthClientHost204Response{}, nil
+	items, err := s.newOAuthClientHostDenials(ctx, []identity.OAuthClientHostDenial{denial})
+	if err != nil {
+		return nil, err
+	}
+	cache := cacheNoStore
+	if created {
+		return DenyOAuthClientHost201JSONResponse{Body: items[0], Headers: DenyOAuthClientHost201ResponseHeaders{CacheControl: &cache}}, nil
+	}
+	return DenyOAuthClientHost200JSONResponse{Body: items[0], Headers: DenyOAuthClientHost200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // AllowOAuthClientHost serves DELETE /api/v1/admin/oauth_client_host_denials/{host}.
