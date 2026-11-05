@@ -19,7 +19,7 @@ export const translationUnsupportedType = "/api/v1/problems/translation-unsuppor
 export const translationFailedType = "/api/v1/problems/translation-failed";
 
 /** The body of a translation. A translation that comes as text and not as sanitized HTML is another kind of it. */
-export type TranslatedBody = { kind: "html"; html: SanitizedHtml };
+type TranslatedBody = { kind: "html"; html: SanitizedHtml };
 
 /**
  * Whose words a translation is, for the line that says so: a provider's machine translation, with what the provider

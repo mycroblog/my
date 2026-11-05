@@ -356,7 +356,7 @@
     "description": "Line above a translated post, and what a screen reader hears when the translation appears. {provider} is the name of the translation service."
   },
   "status.translation.failed": {
-    "defaultMessage": "今はこの投稿を翻訳できませんでした。少し待ってからもう一度お試しください。",
+    "defaultMessage": "今はこの投稿を翻訳できませんでした。少し待ってからもう一度試してください。",
     "description": "Next to the translate button: the translation service gave no usable answer, which may pass. The original stays in view."
   },
   "status.translation.failed_reason": {
