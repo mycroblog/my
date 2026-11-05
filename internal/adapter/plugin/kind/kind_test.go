@@ -11,8 +11,11 @@ import (
 	"github.com/mycroblog/my/internal/app/queue"
 )
 
-func TestPlainTCPRefusedOnlyForTheKindsThatCarrySecretsOrEveryPost(t *testing.T) {
-	refused := map[string]bool{kind.KeyManager: true, kind.Mailer: true, kind.InboundStatus: true, kind.LocalStatus: true}
+func TestPlainTCPRefusedOnlyForTheKindsThatCarrySecretsPostsOrPersonalData(t *testing.T) {
+	refused := map[string]bool{
+		kind.KeyManager: true, kind.Mailer: true, kind.Translator: true,
+		kind.InboundStatus: true, kind.LocalStatus: true, kind.SignupCheck: true,
+	}
 	for _, k := range kind.Delegated() {
 		for _, addr := range []string{"http://127.0.0.1:8080", "http://plugin.internal:8080", "http://localhost"} {
 			problems := k.Check(kind.Destination{Address: addr})
