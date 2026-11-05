@@ -173,7 +173,7 @@ type CheckRequest struct {
 	// True for a call of `my plugin test`, which is about no real subject and acts on nothing.
 	Probe bool `protobuf:"varint,3,opt,name=probe,proto3" json:"probe,omitempty"`
 	// The two parties of the follow, for inbound.follow.
-	Follow        *FollowSubject `protobuf:"bytes,4,opt,name=follow,proto3" json:"follow,omitempty"`
+	Follow        *FollowSubject `protobuf:"bytes,5,opt,name=follow,proto3" json:"follow,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -367,7 +367,7 @@ const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\vsubject_key\x18\x02 \x01(\tR\n" +
 	"subjectKey\x12\x14\n" +
 	"\x05probe\x18\x03 \x01(\bR\x05probe\x128\n" +
-	"\x06follow\x18\x04 \x01(\v2 .my.plugin.hook.v1.FollowSubjectR\x06follow\"U\n" +
+	"\x06follow\x18\x05 \x01(\v2 .my.plugin.hook.v1.FollowSubjectR\x06follow\"U\n" +
 	"\rFollowSubject\x12!\n" +
 	"\ffollower_uri\x18\x01 \x01(\tR\vfollowerUri\x12!\n" +
 	"\ffollowee_uri\x18\x02 \x01(\tR\vfolloweeUri\"\x8c\x01\n" +

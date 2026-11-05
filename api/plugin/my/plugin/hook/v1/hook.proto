@@ -21,7 +21,7 @@ message CheckRequest {
   // True for a call of `my plugin test`, which is about no real subject and acts on nothing.
   bool probe = 3;
   // The two parties of the follow, for inbound.follow.
-  FollowSubject follow = 4;
+  FollowSubject follow = 5;
 }
 
 // What inbound.follow asks about: a follow from another server of an account on this one.
