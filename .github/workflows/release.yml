@@ -65,7 +65,7 @@ jobs:
       - name: Check the module ref of the examples
         env:
           VERSION: ${{ inputs.version }}
-        run: scripts/terraform-examples.sh check --release "$VERSION"
+        run: scripts/tofu-examples.sh check --release "$VERSION"
       - name: Validate the version and check that its tag does not exist
         env:
           GH_TOKEN: ${{ github.token }}

@@ -28,7 +28,7 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
 2. For a stable version, set the module ref of the OpenTofu examples to it, and merge that first: the first job of the release fails while they differ. A prerelease is not checked, and operators of a prerelease set `ref` themselves.
 
    ```sh
-   scripts/terraform-examples.sh bump v0.1.0
+   scripts/tofu-examples.sh bump v0.1.0
    ```
 
 3. Run `release.yml` on `main`. The head commit of `main` at that moment is the commit that is checked and tagged.

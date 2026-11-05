@@ -285,7 +285,7 @@ app/                 # クライアントの Bun ワークスペース（アプ�
   mobile/            # モバイルアプリ（Tauri 2）
 deploy/
   docker/ k8s/ aws/
-  terraform/  # Cloud Run の OpenTofu モジュール（`<role>-<provider>-<service>`）
+  opentofu/  # Cloud Run の OpenTofu モジュール（`<role>-<provider>-<service>`）
 test/                # テストの構成
   federation-live/   # ライブの相互運用テスト（Mastodon・GoToSocial との compose とシナリオ。federation.md §12）
   upgrade-test/      # アップグレードのテストと復旧の訓練の compose

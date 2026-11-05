@@ -26,7 +26,7 @@
 
 ### 3. デプロイテンプレート（`deploy/`）
 
-今あるのは `deploy/docker` の Compose で、ほかは M6 で作る（`deploy/monitoring` は監視の設定）。`deploy/` に置くのはインスタンスを動かすものだけで、開発の構成はルートの `compose.yaml`（プロジェクト名 `my-dev`。`go run` のサーバーが使う PostgreSQL と Mailpit）、テストの構成は `test/`（`test/federation-live`、`test/upgrade-test`）に分ける。
+今あるのは `deploy/docker` の Compose と `deploy/opentofu` の Cloud Run の OpenTofu モジュールで、ほかは M6 で作る（`deploy/monitoring` は監視の設定）。`deploy/` に置くのはインスタンスを動かすものだけで、開発の構成はルートの `compose.yaml`（プロジェクト名 `my-dev`。`go run` のサーバーが使う PostgreSQL と Mailpit）、テストの構成は `test/`（`test/federation-live`、`test/upgrade-test`）に分ける。
 
 | ターゲット | 形式 |
 | --- | --- |
@@ -35,7 +35,7 @@
 | Google Cloud | OpenTofu モジュール（Cloud Run, Cloud Tasks, GCS, Scheduler） |
 | AWS | OpenTofu モジュール（Lambda, SQS, S3, CloudFront, EventBridge Scheduler） |
 
-IaC は OSS ライセンスの OpenTofu を採用（Terraform 互換）。
+IaC は OSS ライセンスの OpenTofu だけを使う。プロプライエタリなソフトウェアに依存しないため、Terraform には対応しない。モジュールは OpenTofu の機能（`lifecycle` の `enabled` など）を使ってよく、Terraform で動くことを確かめない。
 
 Docker の構成は次のとおり。
 

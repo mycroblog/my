@@ -1,8 +1,8 @@
 # Deploying on Cloud Run
 
-How to run `my` on Google Cloud with the OpenTofu modules in [`deploy/terraform`](../../deploy/terraform/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage, and Pub/Sub, with a PostgreSQL database on Neon. Nothing runs while nobody uses it, except a tick that wakes the server each minute. Read [Costs](#costs) first: the tick and open streams decide what it costs.
+How to run `my` on Google Cloud with the OpenTofu modules in [`deploy/opentofu`](../../deploy/opentofu/README.md): Cloud Run, Cloud Tasks, Cloud Scheduler, Cloud Storage, and Pub/Sub, with a PostgreSQL database on Neon. Nothing runs while nobody uses it, except a tick that wakes the server each minute. Read [Costs](#costs) first: the tick and open streams decide what it costs.
 
-The modules also work with Terraform 1.11 or later: use `terraform` where this guide says `tofu`. The lock file in the example is for OpenTofu, so `terraform init` adds its own entries to it.
+The modules need OpenTofu 1.11 or later. Terraform is not supported.
 
 ## What it creates
 
@@ -52,7 +52,7 @@ Start from a copy in an empty directory, with the provider lock file, from the r
 VERSION=v0.1.0
 git clone --depth 1 --branch "$VERSION" https://github.com/mycroblog/my.git my-source
 mkdir my-deployment
-cp -r my-source/deploy/terraform/examples/gcp-cloud-run-neon/. my-deployment/
+cp -r my-source/deploy/opentofu/examples/gcp-cloud-run-neon/. my-deployment/
 rm -rf my-source
 cd my-deployment
 cp terraform.tfvars.example terraform.tfvars
@@ -80,7 +80,7 @@ tofu apply -target=module.secrets -target=module.kek
 `tofu init` also fetches `upgrade.sh` and `console.sh` at that release, which the next steps use:
 
 ```sh
-SCRIPTS=.terraform/modules/app/deploy/terraform
+SCRIPTS=.terraform/modules/app/deploy/opentofu
 ```
 
 **Copy the KEK now**, and keep the copy apart from the database, for example in a password manager. Without it a [backup](backup.md) cannot be restored, and the accounts' keys are lost. Do the same with the VAPID key, whose loss ends every Web Push subscription:
@@ -202,7 +202,7 @@ Replace the module's block in `main.tf`. The app module takes whatever the block
 
 ```hcl
 module "db" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/terraform/modules/db-external?ref=v0.1.0&depth=1"
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/db-external?ref=v0.1.0&depth=1"
 
   url_secret_id = "another-database-url"
 }
@@ -231,13 +231,13 @@ To use the service's own URL or something else in front, such as a CDN, remove t
 
 ### Cloudflare
 
-`ingress-cloudflare-app` puts Cloudflare in front of `host`, with the cache bypassed for everything, and `ingress-cloudflare-media` adds a cached media host beside any ingress. Read each module's README first ([app](../../deploy/terraform/modules/ingress-cloudflare-app/README.md), [media](../../deploy/terraform/modules/ingress-cloudflare-media/README.md)). The token goes in `CLOUDFLARE_API_TOKEN`. These modules have run only on mocked providers.
+`ingress-cloudflare-app` puts Cloudflare in front of `host`, with the cache bypassed for everything, and `ingress-cloudflare-media` adds a cached media host beside any ingress. Read each module's README first ([app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)). The token goes in `CLOUDFLARE_API_TOKEN`. These modules have run only on mocked providers.
 
 - **Your plan decides the origin.** Cloud Run routes by `Host`, and Cloudflare offers the Host header override on the Enterprise plan only. On any other plan a `*.run.app` origin fails the plan, so the origin must accept your host itself: keep an `ingress-gcp-domain-mapping` of that host, out of `backends`, and set `origin_host = "ghs.googlehosted.com"`. Each host needs a mapping of its own. Whether its certificate is issued and renewed behind the proxy is unverified, so start with `proxied = false`.
 - **Nothing locks the origin.** The service stays open, so anyone can go around Cloudflare through the `run.app` URL. Someone calling that URL from a Cloudflare Worker of their own can also choose the client address the rate limits see, because the server trusts Cloudflare's ranges. Do not treat Cloudflare as a security boundary here.
 - **Turn off Bot Fight Mode** in the dashboard. It covers the whole zone and no rule can skip it, and a challenge on `/ap/`, `/_internal/`, `/.well-known/`, or `/api/` breaks federation and jobs, because other servers and Cloud Tasks are not browsers. The modules add no challenge and turn off Browser Integrity Check, but they do not manage Bot Fight Mode. Do not turn on "I'm Under Attack" for the same reason.
 - **Turn on Always Use HTTPS** in the dashboard if you want `http://` redirected. It covers the whole zone, so the modules leave it to you.
-- **Timeouts**: Cloudflare answers `524` when the origin sends nothing for 125 seconds. A job can run for 5 minutes, so a long job's task is tried again while the job still runs. Streams send a heartbeat every 30 seconds, under the 900-second idle limit. Whether it buffers streams on an ordinary proxied host is unverified.
+- **Timeouts**: Cloudflare answers `524` when the origin sends nothing for 125 seconds. A job can run for 5 minutes. The dropped connection may cancel a longer job, and Cloud Tasks tries the task again. How jobs over 125 seconds behave behind Cloudflare is unverified. Streams send a heartbeat every 30 seconds, under the 900-second idle limit. Whether it buffers streams on an ordinary proxied host is unverified.
 - **Uploads**: 100 MB on Free and Pro, above Cloud Run's 32 MiB, which remains the limit.
 - **Video**: Cloudflare's terms restrict serving video and a disproportionate amount of large files on Free, Pro, and Business, and it may redirect the content or take other action. Decide this before you cache video on the media host.
 
