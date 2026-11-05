@@ -643,3 +643,108 @@ run "an_unknown_setting_fails" {
 
   expect_failures = [var.service_ingress]
 }
+
+run "the_jobs_take_the_direct_connection_and_the_service_the_pooled_one" {
+  command = plan
+
+  variables {
+    backends = [{
+      env               = { MY_DATABASE = "postgres" }
+      secret_env        = { MY_DATABASE_URL = "pooled", MY_STREAM_POSTGRES_URL = "direct" }
+      direct_secret_env = { MY_DATABASE_URL = "direct" }
+    }]
+  }
+
+  assert {
+    condition     = [for e in google_cloud_run_v2_service.server.template[0].containers[0].env : e.value_source[0].secret_key_ref[0].secret if e.name == "MY_DATABASE_URL"] == ["pooled"]
+    error_message = "the service must use the pooled connection"
+  }
+
+  assert {
+    condition     = [for e in google_cloud_run_v2_service.server.template[0].containers[0].env : e.value_source[0].secret_key_ref[0].secret if e.name == "MY_STREAM_POSTGRES_URL"] == ["direct"]
+    error_message = "LISTEN must use the direct connection"
+  }
+
+  assert {
+    condition     = [for e in google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].containers[0].env : e.value_source[0].secret_key_ref[0].secret if e.name == "MY_DATABASE_URL"] == ["direct"]
+    error_message = "the migration job must use the direct connection"
+  }
+
+  assert {
+    condition     = contains(keys(google_secret_manager_secret_iam_member.server), "pooled") && contains(keys(google_secret_manager_secret_iam_member.server), "direct")
+    error_message = "the app must be able to read both secrets"
+  }
+}
+
+run "the_console_takes_the_direct_connection_too" {
+  command = plan
+
+  variables {
+    console_enabled = true
+    backends = [{
+      secret_env        = { MY_DATABASE_URL = "pooled" }
+      direct_secret_env = { MY_DATABASE_URL = "direct" }
+    }]
+  }
+
+  assert {
+    condition     = [for e in google_cloud_run_v2_job.one_off["console"].template[0].template[0].containers[0].env : e.value_source[0].secret_key_ref[0].secret if e.name == "MY_DATABASE_URL"] == ["direct"]
+    error_message = "the console must use the direct connection"
+  }
+}
+
+run "without_a_pooler_the_jobs_and_the_service_are_the_same" {
+  command = plan
+
+  assert {
+    condition     = output.one_off_secret_env == output.secret_env
+    error_message = "with no direct_secret_env, the jobs take what the service takes"
+  }
+}
+
+run "a_direct_setting_with_nothing_to_override_fails" {
+  command = plan
+
+  variables {
+    backends = [{ direct_secret_env = { MY_DATABASE_URL = "direct" } }]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_cloud_sql_backend_mounts_the_socket_on_the_service_and_the_jobs" {
+  command = plan
+
+  variables {
+    backends = [{ cloud_sql_instances = ["p:r:db"] }]
+  }
+
+  assert {
+    condition     = [for v in google_cloud_run_v2_service.server.template[0].volumes : tolist(v.cloud_sql_instance[0].instances)[0] if v.name == "cloudsql"] == ["p:r:db"]
+    error_message = "the service must have the instance as a volume"
+  }
+
+  assert {
+    condition     = [for m in google_cloud_run_v2_service.server.template[0].containers[0].volume_mounts : m.mount_path if m.name == "cloudsql"] == ["/cloudsql"]
+    error_message = "the service must mount the socket at /cloudsql"
+  }
+
+  assert {
+    condition     = [for v in google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].volumes : v.cloud_sql_instance[0].instances[0] if v.name == "cloudsql"] == ["p:r:db"]
+    error_message = "the migration job must have the instance as a volume"
+  }
+
+  assert {
+    condition     = [for m in google_cloud_run_v2_job.one_off["migrate"].template[0].template[0].containers[0].volume_mounts : m.mount_path if m.name == "cloudsql"] == ["/cloudsql"]
+    error_message = "the migration job must mount the socket at /cloudsql"
+  }
+}
+
+run "without_cloud_sql_there_is_no_volume" {
+  command = plan
+
+  assert {
+    condition     = length([for v in google_cloud_run_v2_service.server.template[0].volumes : v if v.name == "cloudsql"]) == 0
+    error_message = "a deployment without Cloud SQL must not change"
+  }
+}

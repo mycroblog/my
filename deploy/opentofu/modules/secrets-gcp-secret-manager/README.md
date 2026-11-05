@@ -1,8 +1,8 @@
 # secrets-gcp-secret-manager
 
-Secrets in Secret Manager. It never takes a value: you add the values that come from elsewhere by hand, and the first apply
-can generate a VAPID key, so no secret value reaches the plan or the state. It needs OpenTofu 1.11 or later, and
-follows [the backend contract](../../README.md#the-backend-contract).
+Secrets in Secret Manager. You add the values that come from elsewhere by hand, the first apply can generate a VAPID key, and another
+module's value can be written in through an ephemeral input, so this module keeps no secret value in the plan or the state. It needs
+OpenTofu 1.11 or later, and follows [the backend contract](../../README.md#the-backend-contract).
 
 ## Source
 
@@ -21,6 +21,9 @@ module "secrets" {
 | `secrets` | `{}` | Settings this module provides: variable name to secret ID, such as `MY_VAPID_PRIVATE_KEY = "my-vapid-key"` |
 | `referenced` | `{}` | Secrets another module sets its own setting from: any key to secret ID |
 | `generate_p256_keys` | `[]` | Keys of `secrets` whose value the first apply generates: a P-256 private key as 32 bytes in base64url, the format of `vapid_private_key`. Decide before the first apply: added later, it writes a new latest version over the value you have |
+| `write_keys` | `[]` | Keys of `secrets` or `referenced` whose value comes from `write_values`, such as the URLs of `db-neon` |
+| `write_values` | `{}` | The value of each key of `write_keys`. An ephemeral input: this module keeps none of it, whatever the module it comes from keeps |
+| `write_version` | `1` | Raise it to write `write_values` again, after a value changed where it comes from. Nothing else can tell |
 
 | Output | Value |
 | --- | --- |

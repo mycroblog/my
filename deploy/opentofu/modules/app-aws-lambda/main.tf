@@ -57,14 +57,26 @@ locals {
   secret_arns  = merge(local.secret_env, { for name, arn in local.secret_files : trimsuffix(name, "_FILE") => arn })
   secret_refs  = { for name, arn in local.secret_arns : "SECRET_ARN_${name}" => arn }
 
+  # The one-off functions differ from the others here: my schema apply holds a session-level lock, which a pooler in
+  # transaction mode does not keep, so they take what a backend names in direct_secret_env.
+  direct_secret_env      = merge([for b in var.backends : b.direct_secret_env]...)
+  direct_names           = flatten([for b in var.backends : keys(b.direct_secret_env)])
+  direct_without_setting = setsubtract(local.direct_names, keys(local.secret_arns))
+  one_off_secret_arns    = merge(local.secret_arns, local.direct_secret_env)
+  one_off_secret_refs    = { for name, arn in local.one_off_secret_arns : "SECRET_ARN_${name}" => arn }
+  all_secret_arns        = distinct(concat(values(local.secret_arns), values(local.direct_secret_env)))
+
   # The server refuses to start without these, but only once it runs: say it at plan time.
   key_manager = lookup(local.env, "MY_KEY_MANAGER", "local")
   kek_missing = (
     local.key_manager == "local" ? !contains(local.setting_names, "MY_KEK") : !contains(local.setting_names, "MY_KMS_KEY")
   )
 
-  permissions   = flatten([for b in var.backends : b.permissions])
-  event_sources = merge([for b in var.backends : b.event_sources]...)
+  permissions = flatten([for b in var.backends : b.permissions])
+  # Attached to a VPC when a backend lives in one. What the function may reach is the sum of these groups.
+  security_group_ids = distinct(concat(var.vpc_security_group_ids, flatten([for b in var.backends : b.security_group_ids])))
+  vpc_attached       = length(var.vpc_subnet_ids) > 0
+  event_sources      = merge([for b in var.backends : b.event_sources]...)
 
   # The same image with other settings: one definition makes every function, as one block makes the jobs on Cloud Run.
   # The adapter's defaults are the server's: port 8080, and /events for the events of the queue.
@@ -96,7 +108,7 @@ locals {
   functions = merge(local.long_running, local.one_off)
 
   function_env = {
-    for key, f in local.functions : key => merge(local.env, local.secret_refs, f.adapter, {
+    for key, f in local.functions : key => merge(local.env, contains(keys(local.one_off), key) ? local.one_off_secret_refs : local.secret_refs, f.adapter, {
       GOMEMLIMIT = "${floor(f.memory * 0.9)}MiB"
       MY_ROLE    = f.role
     })
@@ -125,11 +137,23 @@ resource "aws_iam_role" "server" {
       error_message = "More than one backend says what is in front of the function with trusted_proxies. Use one ingress-* module for that; a media host returns none."
     }
     precondition {
+      condition     = local.vpc_attached || length(local.security_group_ids) == 0
+      error_message = "A backend lives in a VPC, or vpc_security_group_ids is set, but vpc_subnet_ids is empty, so the functions cannot reach it. Name the private subnets."
+    }
+    precondition {
+      condition     = !local.vpc_attached || length(local.security_group_ids) > 0
+      error_message = "vpc_subnet_ids needs at least one security group. A function in a VPC reaches only what its groups allow, so give vpc_security_group_ids a group that allows the way out."
+    }
+    precondition {
       condition     = !local.kek_missing
       error_message = "No KEK: with key_manager = ${local.key_manager} the server needs ${local.key_manager == "local" ? "kek" : "kms_key"}. Add a kek-* module to backends."
     }
     precondition {
-      condition     = alltrue([for arn in values(local.secret_arns) : startswith(arn, "arn:")])
+      condition     = length(local.direct_names) == length(distinct(local.direct_names)) && length(local.direct_without_setting) == 0
+      error_message = "direct_secret_env overrides a setting of secret_env for the one-off functions, once: each name must be in secret_env and in one backend's direct_secret_env. Check: ${join(", ", local.direct_names)}."
+    }
+    precondition {
+      condition     = alltrue([for arn in local.all_secret_arns : startswith(arn, "arn:")])
       error_message = "A secret on AWS is named by its full ARN, which is what the role is granted and what the server reads."
     }
   }
@@ -152,11 +176,28 @@ data "aws_iam_policy_document" "server" {
   }
 
   dynamic "statement" {
-    for_each = length(local.secret_arns) > 0 ? [1] : []
+    for_each = length(local.all_secret_arns) > 0 ? [1] : []
     content {
       sid       = "Secrets"
       actions   = ["secretsmanager:GetSecretValue"]
-      resources = values(local.secret_arns)
+      resources = local.all_secret_arns
+    }
+  }
+
+  # What Lambda needs of the function's role to create the network interfaces in the VPC.
+  dynamic "statement" {
+    for_each = local.vpc_attached ? [1] : []
+    content {
+      sid = "VpcNetworkInterfaces"
+      actions = [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeSubnets",
+        "ec2:DeleteNetworkInterface",
+        "ec2:AssignPrivateIpAddresses",
+        "ec2:UnassignPrivateIpAddresses",
+      ]
+      resources = ["*"]
     }
   }
 
@@ -224,6 +265,14 @@ resource "aws_lambda_function" "server" {
   }
 
   reserved_concurrent_executions = each.key == "web" ? var.web_reserved_concurrency : null
+
+  dynamic "vpc_config" {
+    for_each = local.vpc_attached ? [1] : []
+    content {
+      subnet_ids         = var.vpc_subnet_ids
+      security_group_ids = local.security_group_ids
+    }
+  }
 
   lifecycle {
     # upgrade.sh changes the image, as on the other platforms, and apply must not move it back.

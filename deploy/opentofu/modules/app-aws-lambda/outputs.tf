@@ -46,8 +46,13 @@ output "env" {
 }
 
 output "secret_env" {
-  description = "Merged secret settings of every function: the name the server reads to the secret's ARN."
+  description = "Merged secret settings of the web and worker functions: the name the server reads to the secret's ARN."
   value       = local.secret_arns
+}
+
+output "one_off_secret_env" {
+  description = "Merged secret settings of the migration and console functions, which take direct_secret_env over secret_env."
+  value       = local.one_off_secret_arns
 }
 
 output "secret_references" {

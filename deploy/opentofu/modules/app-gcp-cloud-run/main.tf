@@ -64,7 +64,14 @@ locals {
   env        = merge(local.base_env, local.file_env, var.env, [for b in var.backends : b.env]...)
   secret_env = merge(var.secret_env, [for b in var.backends : b.secret_env]...)
 
-  secret_ids = toset(concat(values(local.secret_env), values(local.secret_files)))
+  # The one-off jobs differ from the service here alone: my schema apply holds a session-level lock, which a pooler in
+  # transaction mode does not keep, so they take what a backend names in direct_secret_env.
+  direct_secret_env      = merge([for b in var.backends : b.direct_secret_env]...)
+  direct_names           = flatten([for b in var.backends : keys(b.direct_secret_env)])
+  direct_without_setting = setsubtract(local.direct_names, keys(local.secret_env))
+  one_off_secret_env     = merge(local.secret_env, local.direct_secret_env)
+
+  secret_ids = toset(concat(values(local.one_off_secret_env), values(local.secret_env), values(local.secret_files)))
 
   jobs_url = lookup(local.env, "MY_QUEUE_CLOUDTASKS_URL", "")
 
@@ -76,6 +83,9 @@ locals {
 
   permissions = flatten([for b in var.backends : b.permissions])
   invokers    = toset(flatten([for b in var.backends : b.invokers]))
+
+  # Cloud SQL instances that the service and the jobs reach through the socket of Cloud Run's connector, at /cloudsql.
+  cloud_sql_instances = distinct(flatten([for b in var.backends : b.cloud_sql_instances]))
 
   jobs = merge(
     { migrate = ["db", "upgrade", "-check"] },
@@ -93,6 +103,10 @@ resource "google_service_account" "server" {
     precondition {
       condition     = length(local.duplicate_settings) == 0
       error_message = "These settings are named more than once across the backends, env, secret_env, secret_files, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
+    }
+    precondition {
+      condition     = length(local.direct_names) == length(distinct(local.direct_names)) && length(local.direct_without_setting) == 0
+      error_message = "direct_secret_env overrides a setting of secret_env for the one-off jobs, once: each name must be in secret_env and in one backend's direct_secret_env. Check: ${join(", ", local.direct_names)}."
     }
     precondition {
       condition     = length(local.ingress_disagreements) == 0
@@ -197,6 +211,16 @@ resource "google_cloud_run_v2_service" "server" {
     }
 
     dynamic "volumes" {
+      for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+      content {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = local.cloud_sql_instances
+        }
+      }
+    }
+
+    dynamic "volumes" {
       for_each = local.file_mounts
       content {
         name = volumes.value.volume
@@ -259,6 +283,14 @@ resource "google_cloud_run_v2_service" "server" {
         content {
           name       = volume_mounts.value.volume
           mount_path = volume_mounts.value.path
+        }
+      }
+
+      dynamic "volume_mounts" {
+        for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+        content {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
         }
       }
 
@@ -337,6 +369,16 @@ resource "google_cloud_run_v2_job" "one_off" {
       max_retries = 0
 
       dynamic "volumes" {
+        for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+        content {
+          name = "cloudsql"
+          cloud_sql_instance {
+            instances = local.cloud_sql_instances
+          }
+        }
+      }
+
+      dynamic "volumes" {
         for_each = local.file_mounts
         content {
           name = volumes.value.volume
@@ -375,7 +417,7 @@ resource "google_cloud_run_v2_job" "one_off" {
         }
 
         dynamic "env" {
-          for_each = local.secret_env
+          for_each = local.one_off_secret_env
           content {
             name = env.key
             value_source {
@@ -384,6 +426,14 @@ resource "google_cloud_run_v2_job" "one_off" {
                 version = "latest"
               }
             }
+          }
+        }
+
+        dynamic "volume_mounts" {
+          for_each = length(local.cloud_sql_instances) > 0 ? [1] : []
+          content {
+            name       = "cloudsql"
+            mount_path = "/cloudsql"
           }
         }
 

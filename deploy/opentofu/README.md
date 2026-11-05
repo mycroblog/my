@@ -10,7 +10,9 @@ deploy/opentofu/
   modules/queue-gcp-cloud-tasks/  queue, Scheduler tick, the service account that calls the server
   modules/blob-gcp-gcs/           media bucket
   modules/stream-gcp-pubsub/      topic and the permissions for the server's own subscriptions
-  modules/db-external/            a connection URL in Secret Manager: Neon, or any PostgreSQL
+  modules/db-external/            connection URLs in Secret Manager: Neon created by hand, or any PostgreSQL
+  modules/db-neon/                a Neon project it creates, with the password in the state: read its README
+  modules/db-gcp-cloud-sql/       Cloud SQL, reached through the connector's socket, never applied
   modules/mail-smtp/              email through any SMTP service
   modules/ingress-gcp-domain-mapping/  traffic through a Cloud Run domain mapping
   modules/ingress-gcp-load-balancer/   traffic through a global external Application Load Balancer
@@ -76,6 +78,9 @@ changing one module block:
 | `secret_env` | `map(string)` | Secret settings: variable name to a reference to a secret in the platform's store. The reference is the store's own: a secret ID in Secret Manager, a full ARN in AWS Secrets Manager. How the value reaches the server is the app module's business |
 | `secret_files` (optional) | `map(string)` | Secret settings to mount as files: a variable name ending in `_FILE` to the secret's reference. The app sets the variable to the path, on the service and every job. A platform with no mounted secrets treats it as `secret_env` of the name without `_FILE` |
 | `permissions` | `list(object({ permission, scope, resource, conditions }))` | What the app's identity is permitted |
+| `direct_secret_env` (optional) | `map(string)` | What the one-off work takes over a setting of `secret_env`, which the service keeps: `MY_DATABASE_URL` as a direct connection when `secret_env` names a pooled one. Each name must be in `secret_env` |
+| `cloud_sql_instances` (optional) | `list(string)` | Cloud SQL instances, as `<project>:<region>:<instance>`, that Cloud Run mounts at `/cloudsql` on the service and every job |
+| `security_group_ids` (optional) | `list(string)` | Security groups the app joins to reach a backend in a VPC, on AWS. The app takes the subnets as its own input, and a plan fails without them |
 | `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it, on a platform where something calls it |
 | `event_sources` (optional) | `map(object({ arn, visibility_timeout_seconds }))` | Queues that the platform polls to invoke the app, on a platform where the app is invoked that way |
 
@@ -98,7 +103,9 @@ The rules:
 - No secret value reaches the plan or the state, with one exception: the origin secret of an ingress, as its section says. A backend takes or creates a secret by ID, and the operator adds a value that
   comes from elsewhere by hand. What the deployment can generate itself (the KEK, a VAPID key) goes through an ephemeral
   resource and a write-only attribute, whose version number is fixed in the module, never an input: changing it writes a new
-  value. `secrets-gcp-secret-manager` exposes the IDs as `ids`; a secret made elsewhere needs only its ID. The app can read every secret in `secret_env` and `secret_files` without a role for it.
+  value, and the old one cannot be had again. A value that another system also holds, which can be written again without losing anything, is the
+  exception, and its version is an input: a database's password goes to the database and into the URL in one apply (`password_version`), and a value
+  from a module with no write-only form goes through `write_values` of a `secrets-*` module (`write_version`). `secrets-gcp-secret-manager` exposes the IDs as `ids`; a secret made elsewhere needs only its ID. The app can read every secret in `secret_env`, `direct_secret_env`, and `secret_files` without a role for it.
 - Exactly one KEK: a plan fails if the server would need one and no backend provides it (`kek` with `key_manager = local`,
   `kms_key` otherwise).
 - A backend does not name the app. What it needs from the app is an input known in advance, such as `host`, so nothing
@@ -110,6 +117,30 @@ The rules:
 Anything without a backend (VAPID, CAPTCHA, and every other setting) goes through the `env` and
 `secret_env`, and `secret_files` inputs of the app module, so no setting is out of reach. A backend of your own needs nothing special: any
 object with these fields can go in `backends`.
+
+### The database's two connections
+
+A database has a direct connection, and may have a pooled one. `my schema apply` holds a session-level lock and `LISTEN` belongs to
+a session, so neither can go through a pooler in transaction mode, while the service gets the most from one, and works through one
+that handles protocol-level prepared statements: [Through a connection pooler](../../docs/operations/database.md#through-a-connection-pooler). So:
+
+| Who | `MY_DATABASE_URL` | Comes from |
+| --- | --- | --- |
+| The service | The pooled connection when there is one, otherwise the direct one | `secret_env` |
+| The migration job and the console | Always the direct one | `direct_secret_env`, over `secret_env` |
+
+A `db-*` module with a pooled connection also returns `MY_STREAM_POSTGRES_URL`, the direct one, in `secret_env`, for `stream = postgres`.
+Which module has what:
+
+| Module | Direct | Pooled |
+| --- | --- | --- |
+| `db-external` | `url_secret_id`, required | `pooled_url_secret_id`, optional |
+| `db-neon` | `connection_uri` | `connection_uri_pooler` |
+| `db-gcp-cloud-sql` | The connector's socket | None: its pooling needs the Enterprise Plus edition |
+| `db-aws-rds` | The instance's endpoint | None: RDS Proxy pins on what the server does. Its README has why |
+
+The module list above names the database modules; each README says what stays unverified, and what moving your data takes. **Changing the `db` block is one block in the
+configuration and a data migration in practice**: a new database is empty.
 
 ## The ingress contract
 
@@ -186,6 +217,7 @@ run on them yet**: use Google Cloud. `modules/app-aws-lambda/README.md` says in 
 | Module | Replaces on AWS |
 | --- | --- |
 | `app-aws-lambda` | `app-gcp-cloud-run` |
+| `db-aws-rds` | `db-gcp-cloud-sql` |
 | `queue-aws-sqs` | `queue-gcp-cloud-tasks` |
 | `blob-aws-s3` | `blob-gcp-gcs` |
 | `stream-aws-sns` | `stream-gcp-pubsub` |
@@ -194,7 +226,7 @@ run on them yet**: use Google Cloud. `modules/app-aws-lambda/README.md` says in 
 | `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
 | `ingress-aws-cloudfront` | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
 
-`db-external`, `mail-smtp`, and `ingress-cloudflare-app` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
+`db-external`, `db-neon`, `mail-smtp`, and `ingress-cloudflare-app` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
 tests show that a block of one platform fails the plan on the other's app. `examples/aws-lambda-neon` composes them, and its tests swap each block
 its comments name; those tests mock the provider.
 
@@ -203,9 +235,9 @@ its comments name; those tests mock the provider.
 `scripts/task.sh tofu:check` runs `tofu fmt -check`, `tofu init -backend=false` and `tofu validate` for each module
 and the example, the tests on mocked providers, a check that every `MY_*` name here exists in the configuration, and a real
 apply against a local stub of Secret Manager, which shows the formats of the generated values, that none reaches the plan or
-the state, and that another apply writes nothing. None of them reaches a cloud, so they show that the configuration is
+the state, and that another apply writes nothing; `tofu:db-state-test` does the same against a stub of Cloud SQL and shows that the database user and the URL get the same password. None of them reaches a cloud, so they show that the configuration is
 consistent, not that an apply on Google Cloud succeeds. Only the example
 pins its providers (`.terraform.lock.hcl`). `tofu:sources` fails on a relative source or a `ref` other than `MODULE_REF`, and
 `tofu:git-source-test` runs `tofu init` on a copy of the example against a local bare repository with the tag.
-`tofu:aws-plan-test` plans the AWS modules that generate a value, with no credentials and no call to AWS, and shows that the plan holds nothing of it. There is no
+`tofu:aws-plan-test` plans the AWS modules that generate a value, `db-aws-rds` among them, with no credentials and no call to AWS, and shows that the plan holds nothing of it. There is no
 stub of AWS and no apply on that side, so nothing has shown what the state holds beyond what the provider's schema says.

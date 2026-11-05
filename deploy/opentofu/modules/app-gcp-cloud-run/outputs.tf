@@ -47,6 +47,11 @@ output "env" {
 }
 
 output "secret_env" {
-  description = "Merged secret settings of the service and the jobs: variable name to secret ID."
+  description = "Merged secret settings of the service: variable name to secret ID."
   value       = local.secret_env
+}
+
+output "one_off_secret_env" {
+  description = "Merged secret settings of the migration and console jobs, which take direct_secret_env over secret_env."
+  value       = local.one_off_secret_env
 }

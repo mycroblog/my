@@ -72,6 +72,10 @@ variable "backends" {
     env          = optional(map(string), {})
     secret_env   = optional(map(string), {})
     secret_files = optional(map(string), {})
+    # What the one-off jobs take in place of a setting of secret_env, which the service keeps.
+    direct_secret_env = optional(map(string), {})
+    # Cloud SQL instances to reach through the connector's socket, as <project>:<region>:<instance>.
+    cloud_sql_instances = optional(list(string), [])
     permissions = optional(list(object({
       permission = string
       scope      = string

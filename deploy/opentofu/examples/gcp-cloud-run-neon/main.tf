@@ -59,6 +59,27 @@ module "kek" {
   secret_id  = var.kek_secret_id
 }
 
+# To have OpenTofu create the Neon project instead of creating it by hand, replace this block. The trade-off: the database password
+# then lands in the state, unlike here, and the provider is unmaintained; the module's README says what that means. NEON_API_KEY
+# provides the key, and tofu init adds the provider to the lock file.
+#
+#   module "db" {
+#     source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/db-neon?ref=v0.1.0&depth=1"
+#
+#     org_id        = "<your Neon organization>"
+#     region_id     = "aws-ap-southeast-1"
+#     url_secret_id = module.secrets.ids["database_url"]
+#     # The service then uses Neon's pooler, and the migration job and the console the direct connection.
+#     pooled_url_secret_id = module.secrets.ids["database_url_pooled"]
+#   }
+#
+# and let the secrets module create the second secret and write both URLs, which you then do not add by hand:
+#
+#     referenced   = { database_url = var.database_url_secret_id, database_url_pooled = "my-database-url-pooled", ... }
+#     write_keys   = ["database_url", "database_url_pooled"]
+#     write_values = { database_url = module.db.connection_uri, database_url_pooled = module.db.connection_uri_pooler }
+#
+# On an instance with data this is a move, not a swap: the new project is empty. Read the module's README first.
 module "db" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/db-external?ref=v0.1.0&depth=1"
 
