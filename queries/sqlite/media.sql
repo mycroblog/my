@@ -139,3 +139,38 @@ DELETE FROM media_blob_deletions WHERE blob_key = @blob_key;
 -- name: ListDueMediaBlobDeletions :many
 SELECT blob_key FROM media_blob_deletions WHERE delete_after <= @now
 ORDER BY delete_after, blob_key LIMIT @batch_limit;
+
+-- HasNewerMediaProcessingResult reports whether a media file has a result newer than @result_id.
+-- name: HasNewerMediaProcessingResult :one
+SELECT EXISTS (
+  SELECT 1 FROM media_processing_results r WHERE r.media_id = @media_id AND r.id > @result_id
+);
+
+-- ListReplacedMediaProcessingResults returns the results after @after_id that a newer result of the
+-- same file replaced before @replaced_before. The newest result of a file is never one of them.
+-- name: ListReplacedMediaProcessingResults :many
+SELECT r.id FROM media_processing_results r
+WHERE r.id > @after_id
+  AND EXISTS (
+    SELECT 1 FROM media_processing_results n
+    WHERE n.media_id = r.media_id AND n.id > r.id AND n.processed_at < @replaced_before)
+ORDER BY r.id
+LIMIT @row_limit;
+
+-- name: DeleteMediaVariantsOfResult :many
+DELETE FROM media_variants WHERE result_id = @result_id RETURNING blob_key;
+
+-- name: DeleteMediaProcessingResult :exec
+DELETE FROM media_processing_results WHERE id = @result_id;
+
+-- ListReprocessableUploads returns the uploads after @after_id whose current result is a ready image
+-- processed before @processed_before. A video or audio file is never re-encoded, and a failed one
+-- has nothing to start from.
+-- name: ListReprocessableUploads :many
+SELECT m.id FROM media_files m
+JOIN media_processing_results r ON r.media_id = m.id
+WHERE m.origin = 'upload' AND m.id > @after_id
+  AND r.outcome = 'ready' AND r.media_type = 'image' AND r.processed_at < @processed_before
+  AND NOT EXISTS (SELECT 1 FROM media_processing_results n WHERE n.media_id = m.id AND n.id > r.id)
+ORDER BY m.id
+LIMIT @row_limit;

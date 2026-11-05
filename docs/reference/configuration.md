@@ -95,6 +95,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`media_max_image_side`](#media_max_image_side) | `MY_MEDIA_MAX_IMAGE_SIDE` | `8192` | no | no |
 | [`media_max_image_pixels`](#media_max_image_pixels) | `MY_MEDIA_MAX_IMAGE_PIXELS` | `33177600` | no | no |
 | [`media_unattached_retention`](#media_unattached_retention) | `MY_MEDIA_UNATTACHED_RETENTION` | `24h` | no | no |
+| [`media_replaced_retention`](#media_replaced_retention) | `MY_MEDIA_REPLACED_RETENTION` | `720h` | no | no |
 | [`media_max_av_bytes`](#media_max_av_bytes) | `MY_MEDIA_MAX_AV_BYTES` | `104857600` | no | no |
 | [`media_max_video_duration`](#media_max_video_duration) | `MY_MEDIA_MAX_VIDEO_DURATION` | `5m` | no | no |
 | [`media_max_audio_duration`](#media_max_audio_duration) | `MY_MEDIA_MAX_AUDIO_DURATION` | `10m` | no | no |
@@ -622,6 +623,14 @@ How long an upload may stay unattached to any post or profile before the hourly 
 
 - Environment variable: `MY_MEDIA_UNATTACHED_RETENTION`
 - Default: `24h`
+- Required: no
+
+### `media_replaced_retention`
+
+How long the files of an image's replaced version stay after a newer version replaces them, as a Go duration such as `720h`. Pages that are open, caches, and other servers still hold their URLs, which answer `404` once the hourly cleanup deletes them.
+
+- Environment variable: `MY_MEDIA_REPLACED_RETENTION`
+- Default: `720h`
 - Required: no
 
 ### `media_max_av_bytes`

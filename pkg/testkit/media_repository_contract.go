@@ -42,7 +42,8 @@ type MediaFactory func(t *testing.T, opts uow.Options) MediaHarness
 // focal points and descriptions as current values that only the uploader reads and changes
 // until a status attaches the file, the cleanup of old unattached uploads that keeps attached
 // and referenced ones, the erasure of a deleted account's uploads with their blobs that keeps
-// the attached and referenced ones, remote media files recorded once per owner and URL, and the media
+// the attached and referenced ones, the purge of replaced processing results, processing again with
+// the current settings once for a time, remote media files recorded once per owner and URL, and the media
 // proxy's remote media cache with its cleanup, the work list of blob deletions that leaves no
 // blob of a failed or losing write and retries failed deletions, and the bytes that the local
 // uploads keep.
@@ -62,6 +63,9 @@ func MediaRepositoryContract(t *testing.T, newHarness MediaFactory) {
 		{"ChecksProfileImages", mediaChecksProfileImages},
 		{"ReadsImagesTogether", mediaReadsImagesTogether},
 		{"UpdatesOnlyOwnUnattachedUploads", mediaUpdates},
+		{"PurgesReplacedResultsAfterTheRetention", mediaPurgesReplaced},
+		{"ReprocessesOnceWithTheCurrentSettings", mediaReprocesses},
+		{"WalksTheUploadsToReprocess", mediaWalksReprocessing},
 		{"CleansUpOldUnattachedUploads", mediaCleansUp},
 		{"CleanupPagesPastReferencedUploads", mediaCleanupPages},
 		{"ErasesDeletedAccountsUploads", mediaErasesDeletedAccounts},
@@ -605,6 +609,170 @@ func mediaReadsImagesTogether(t *testing.T, e *mediaEnv) {
 }
 
 // attach inserts a local status whose first revision attaches mediaID.
+// mediaPurgesReplaced checks that a replaced result goes with its blobs only after the retention,
+// and that a file's newest result, however old, stays and keeps its blobs.
+func mediaPurgesReplaced(t *testing.T, e *mediaEnv) {
+	ctx := t.Context()
+	replaced := e.upload(t, FixturePNG(4, 3, false))
+	e.process(t, replaced.File.ID)
+	old := *e.media(t, replaced.File.ID).Result
+	alone := e.upload(t, FixturePNG(2, 2, false))
+	e.process(t, alone.File.ID)
+	e.clock.Advance(time.Second)
+	e.processFor(t, replaced.File.ID, content.PurposeAvatar)
+	current := *e.media(t, replaced.File.ID).Result
+
+	if n, err := e.service.PurgeReplaced(ctx); err != nil || n != 0 {
+		t.Errorf("PurgeReplaced within the retention = %d, %v; want nothing", n, err)
+	}
+	for _, v := range old.Variants {
+		if len(e.blobs.Bytes(v.BlobKey)) == 0 {
+			t.Errorf("%s went within the retention", v.BlobKey)
+		}
+	}
+	e.clock.Advance(appcontent.DefaultReplacedRetention + time.Second)
+	if n, err := e.service.PurgeReplaced(ctx); err != nil || n != 1 {
+		t.Fatalf("PurgeReplaced = %d, %v; want 1", n, err)
+	}
+	for _, v := range old.Variants {
+		if len(e.blobs.Bytes(v.BlobKey)) != 0 {
+			t.Errorf("%s stays after the purge", v.BlobKey)
+		}
+	}
+	for _, v := range append(current.Variants, e.media(t, alone.File.ID).Result.Variants...) {
+		if len(e.blobs.Bytes(v.BlobKey)) == 0 {
+			t.Errorf("%s of a result in use went", v.BlobKey)
+		}
+	}
+	results, err := e.h.Media.ListProcessingResults(ctx, replaced.File.ID)
+	if err != nil || len(results) != 1 || results[0].ID != current.ID {
+		t.Errorf("results = %+v, %v; want only the current one", results, err)
+	}
+	if keys, err := e.h.Media.ListDueBlobDeletions(ctx, e.clock.Now(), 10); err != nil || len(keys) != 0 {
+		t.Errorf("due blob deletions = %v, %v; want none", keys, err)
+	}
+	if n, err := e.service.PurgeReplaced(ctx); err != nil || n != 0 {
+		t.Errorf("a second PurgeReplaced = %d, %v; want nothing", n, err)
+	}
+}
+
+// mediaReprocesses checks that a file is processed again once for a time, keeping its purpose and
+// original size under new keys.
+func mediaReprocesses(t *testing.T, e *mediaEnv) {
+	ctx := t.Context()
+	m := e.upload(t, FixtureGIF(4, 3, 2))
+	e.processFor(t, m.File.ID, content.PurposeHeader)
+	first := *e.media(t, m.File.ID).Result
+	e.clock.Advance(time.Second)
+	before := e.clock.Now()
+	e.clock.Advance(time.Second)
+
+	for range 2 {
+		if res := e.service.Reprocess(ctx, m.File.ID, before); !res.IsDone() {
+			t.Fatalf("Reprocess = %+v, want Done", res)
+		}
+		e.clock.Advance(time.Second)
+	}
+	results, err := e.h.Media.ListProcessingResults(ctx, m.File.ID)
+	if err != nil || len(results) != 2 {
+		t.Fatalf("%d results after two runs (%v), want 2", len(results), err)
+	}
+	second := results[1]
+	if second.Purpose != content.PurposeHeader || second.Outcome != content.MediaReady || second.Width != first.Width || second.Height != first.Height || len(second.Variants) != 6 {
+		t.Errorf("second result = %+v, want the 6 variants of a header of %d×%d", second, first.Width, first.Height)
+	}
+	for _, v := range second.Variants {
+		if !strings.HasPrefix(v.BlobKey, "media/"+m.File.ID+"/"+second.ID+"/") || len(e.blobs.Bytes(v.BlobKey)) == 0 {
+			t.Errorf("variant %+v is not under the new result", v)
+		}
+	}
+	for _, v := range first.Variants {
+		if len(e.blobs.Bytes(v.BlobKey)) == 0 {
+			t.Errorf("%s of the replaced result went at once", v.BlobKey)
+		}
+	}
+	// A run that started from a result replaced since records nothing.
+	err = e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if newer, err := e.h.Media.HasNewerProcessingResult(ctx, tx, m.File.ID, first.ID); err != nil || !newer {
+			t.Errorf("HasNewerProcessingResult(first) = %v, %v; want true", newer, err)
+		}
+		newer, err := e.h.Media.HasNewerProcessingResult(ctx, tx, m.File.ID, second.ID)
+		if newer {
+			t.Error("HasNewerProcessingResult(second) = true")
+		}
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res := e.service.Reprocess(ctx, "01890a5d-ac96-774b-bcce-b302099a0000", before); !res.IsDone() {
+		t.Errorf("Reprocess of an unknown file = %+v, want Done", res)
+	}
+}
+
+// mediaWalksReprocessing checks that a request walks only the images processed before its time, in
+// batches a minute apart, and refuses a time that has not passed.
+func mediaWalksReprocessing(t *testing.T, e *mediaEnv) {
+	ctx := t.Context()
+	reg := &queue.JobHandlerRegistry{}
+	e.service.RegisterJobs(reg, queue.NewScheduler(nil, e.clock, nil))
+	walk, _, ok := reg.Lookup(appcontent.JobReprocessWalk)
+	if !ok {
+		t.Fatal("no handler of the walk")
+	}
+	var ids []string
+	for range appcontent.ReprocessBatch + 1 {
+		m := e.upload(t, FixturePNG(2, 2, false))
+		e.process(t, m.File.ID)
+		ids = append(ids, m.File.ID)
+	}
+	e.clock.Advance(time.Second)
+	before := e.clock.Now()
+	e.clock.Advance(time.Second)
+	later := e.upload(t, FixturePNG(2, 2, false))
+	e.process(t, later.File.ID)
+	e.jobs.jobs = nil
+
+	if err := e.service.RequestReprocess(ctx, e.clock.Now().Add(time.Hour)); !errors.Is(err, appcontent.ErrReprocessBeforeInFuture) {
+		t.Errorf("a time to come = %v, want ErrReprocessBeforeInFuture", err)
+	}
+	if err := e.service.RequestReprocess(ctx, before); err != nil {
+		t.Fatal(err)
+	}
+	var files []string
+	for steps := 0; len(e.jobs.jobs) > 0; steps++ {
+		if steps > 3 {
+			t.Fatal("the walk does not end")
+		}
+		jobs := e.jobs.jobs
+		e.jobs.jobs = nil
+		for _, j := range jobs {
+			switch j.Type {
+			case appcontent.JobReprocessWalk:
+				if steps > 0 && !j.RunAt.After(e.clock.Now()) {
+					t.Errorf("the next batch runs at %v, not after now", j.RunAt)
+				}
+				if res := walk(ctx, queue.Job{Type: j.Type, Payload: j.Payload}); !res.IsDone() {
+					t.Fatalf("walk = %+v", res)
+				}
+			case appcontent.JobReprocess:
+				var p struct {
+					MediaID string `json:"media_id"`
+				}
+				if err := json.Unmarshal(j.Payload, &p); err != nil {
+					t.Fatal(err)
+				}
+				files = append(files, p.MediaID)
+			default:
+				t.Errorf("job %s", j.Type)
+			}
+		}
+	}
+	if !slices.Equal(files, ids) {
+		t.Errorf("the walk queued %d files, want the %d processed before the time", len(files), len(ids))
+	}
+}
+
 func (e *mediaEnv) attach(t *testing.T, mediaID string) {
 	t.Helper()
 	e.clock.Advance(time.Millisecond)

@@ -30,6 +30,15 @@ const (
 	JobProcessMedia = "media.process"
 	// JobCleanupMedia deletes the uploads that nothing attached in time (FR-803); no payload.
 	JobCleanupMedia = "media.purge_unattached"
+	// JobPurgeReplacedMedia deletes the processing results that newer ones replaced long enough
+	// ago, with their blobs; no payload.
+	JobPurgeReplacedMedia = "media.purge_replaced"
+	// JobReprocessWalk walks the uploads processed before a time and queues a JobReprocess for
+	// each, one batch at a time: payload {"before": "...", "after": "..."}.
+	JobReprocessWalk = "media.reprocess_walk"
+	// JobReprocess processes one upload again with the current settings: payload
+	// {"media_id": "...", "before": "..."}.
+	JobReprocess = "media.reprocess"
 )
 
 // Defaults of MediaDeps.
@@ -39,6 +48,13 @@ const (
 	DefaultUnattachedTTL = 24 * time.Hour
 	// DefaultCleanupInterval is the period of the cleanup schedule.
 	DefaultCleanupInterval = time.Hour
+	// DefaultReplacedRetention is how long a replaced processing result stays after the result
+	// that replaced it. Pages that are open, caches, and other servers still hold its URLs.
+	DefaultReplacedRetention = 30 * 24 * time.Hour
+	// ReprocessBatch is the number of uploads that one JobReprocessWalk queues, and
+	// ReprocessBatchInterval the wait before the next one.
+	ReprocessBatch         = 100
+	ReprocessBatchInterval = time.Minute
 	// cleanupBatch is the number of uploads one cleanup query looks at; cleanupMaxBatches
 	// bounds the batches of one run, and the next run continues.
 	cleanupBatch      = 100
@@ -77,7 +93,10 @@ type MediaDeps struct {
 	AVLimits media.AVLimits
 	// UnattachedTTL is how long an upload may stay unattached; zero means DefaultUnattachedTTL.
 	UnattachedTTL time.Duration
-	Referrers     []MediaReferrer
+	// ReplacedRetention is how long a replaced processing result stays; zero means
+	// DefaultReplacedRetention.
+	ReplacedRetention time.Duration
+	Referrers         []MediaReferrer
 	// Proxy signs the media proxy URLs that present remote media files (federation.md §9);
 	// nil presents no remote file.
 	Proxy *MediaProxy
@@ -114,6 +133,9 @@ func NewMediaService(d MediaDeps) *MediaService {
 	if d.UnattachedTTL <= 0 {
 		d.UnattachedTTL = DefaultUnattachedTTL
 	}
+	if d.ReplacedRetention <= 0 {
+		d.ReplacedRetention = DefaultReplacedRetention
+	}
 	if d.Logger == nil {
 		d.Logger = slog.Default()
 	}
@@ -130,7 +152,11 @@ func (s *MediaService) MaxUploadBytes() int64 { return max(s.d.Limits.MaxBytes, 
 func (s *MediaService) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
 	reg.Register(JobProcessMedia, s.handleProcess)
 	reg.Register(JobCleanupMedia, s.handleCleanup)
+	reg.Register(JobPurgeReplacedMedia, s.handlePurgeReplaced)
+	reg.Register(JobReprocessWalk, s.handleReprocessWalk)
+	reg.Register(JobReprocess, s.handleReprocess)
 	sched.Add(queue.Schedule{Name: JobCleanupMedia, Every: DefaultCleanupInterval, Job: queue.NewJob{Type: JobCleanupMedia}})
+	sched.Add(queue.Schedule{Name: JobPurgeReplacedMedia, Every: DefaultCleanupInterval, Job: queue.NewJob{Type: JobPurgeReplacedMedia}})
 }
 
 // UploadInput describes an upload.
@@ -848,6 +874,15 @@ func (s *MediaService) Process(ctx context.Context, mediaID string, purpose cont
 // a result that is not recorded, because the transaction failed or a concurrent run of the same
 // job recorded its result first, are deleted.
 func (s *MediaService) recordResult(ctx context.Context, up *content.UploadedMedia, result content.MediaProcessingResult) queue.Result {
+	// A concurrent run of the same job may have recorded its result first.
+	return s.record(ctx, up, result, func(tx uow.Tx) (bool, error) {
+		return s.d.Repository.HasProcessingResult(ctx, tx, result.MediaID, result.Purpose)
+	})
+}
+
+// record records a processing result unless lost reports, in the transaction, that another result
+// took its place.
+func (s *MediaService) record(ctx context.Context, up *content.UploadedMedia, result content.MediaProcessingResult, isLost func(uow.Tx) (bool, error)) queue.Result {
 	journal := s.journal()
 	keys := make([]string, 0, len(result.Variants))
 	for _, v := range result.Variants {
@@ -856,8 +891,7 @@ func (s *MediaService) recordResult(ctx context.Context, up *content.UploadedMed
 	lost := false
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		lost = false
-		// A concurrent run of the same job may have recorded its result first.
-		done, err := s.d.Repository.HasProcessingResult(ctx, tx, result.MediaID, result.Purpose)
+		done, err := isLost(tx)
 		if err != nil {
 			return err
 		}
@@ -1122,6 +1156,178 @@ func (s *MediaService) deleteUnattached(ctx context.Context, id string) (bool, e
 	}
 	journal.deleteNow(ctx, keys...)
 	return true, nil
+}
+
+func (s *MediaService) handlePurgeReplaced(ctx context.Context, _ queue.Job) queue.Result {
+	if _, err := s.PurgeReplaced(ctx); err != nil {
+		return queue.Retry(0, err)
+	}
+	return queue.Done()
+}
+
+// PurgeReplaced deletes the processing results that a newer result of the same file replaced more
+// than the retention ago, with their blobs, and returns how many it deleted (ADR-0005 §7, FR-803).
+// A file's newest result, the one it serves, is never deleted. The rows go in one transaction that
+// records their keys on the work list of blob deletions, and a blob whose deletion fails stays on
+// the list for the next cleanup. One run looks at a bounded number of results; the next continues.
+func (s *MediaService) PurgeReplaced(ctx context.Context) (int, error) {
+	before := s.d.Clock.Now().Add(-s.d.ReplacedRetention)
+	journal := s.journal()
+	deleted, after := 0, ""
+	for range cleanupMaxBatches {
+		ids, err := s.d.Repository.ListReplacedProcessingResults(ctx, after, before, cleanupBatch)
+		if err != nil {
+			return deleted, err
+		}
+		for _, id := range ids {
+			var keys []string
+			err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+				var err error
+				if keys, err = s.d.Repository.DeleteProcessingResult(ctx, tx, id); err != nil {
+					return err
+				}
+				return journal.release(ctx, tx, keys...)
+			})
+			if err != nil {
+				return deleted, err
+			}
+			journal.deleteNow(ctx, keys...)
+			deleted++
+		}
+		if len(ids) < cleanupBatch {
+			break
+		}
+		after = ids[len(ids)-1]
+	}
+	return deleted, nil
+}
+
+// ErrReprocessBeforeInFuture reports a time of reprocessing that has not passed: what is processed
+// from now on would be processed again by another run with the same time.
+var ErrReprocessBeforeInFuture = errors.New("content: the time to reprocess before is in the future")
+
+type reprocessWalkPayload struct {
+	Before time.Time `json:"before"`
+	After  string    `json:"after,omitempty"`
+}
+
+type reprocessPayload struct {
+	MediaID string    `json:"media_id"`
+	Before  time.Time `json:"before"`
+}
+
+// RequestReprocess queues the processing again, with the current settings, of the uploaded images
+// whose current result was processed before the time (ADR-0005 §7). A file processed since is
+// left alone, so a second request with the same time does nothing to the files the first one
+// processed and picks up the ones it did not reach. Originals are not kept, so each processing
+// starts from the large variant and re-encodes it. It fails with ErrReprocessBeforeInFuture for a
+// time that has not passed.
+func (s *MediaService) RequestReprocess(ctx context.Context, before time.Time) error {
+	before = kernel.Normalize(before)
+	if before.After(s.d.Clock.Now()) {
+		return ErrReprocessBeforeInFuture
+	}
+	job, err := reprocessWalkJob(reprocessWalkPayload{Before: before}, time.Time{})
+	if err != nil {
+		return err
+	}
+	return s.d.Jobs.Enqueue(ctx, job)
+}
+
+func reprocessWalkJob(p reprocessWalkPayload, runAt time.Time) (queue.NewJob, error) {
+	b, err := json.Marshal(p)
+	if err != nil {
+		return queue.NewJob{}, err
+	}
+	key := JobReprocessWalk + ":" + p.Before.Format(time.RFC3339Nano) + ":" + p.After
+	return queue.NewJob{Type: JobReprocessWalk, Payload: b, RunAt: runAt, IdempotencyKey: key}, nil
+}
+
+func (s *MediaService) handleReprocessWalk(ctx context.Context, j queue.Job) queue.Result {
+	var p reprocessWalkPayload
+	if err := json.Unmarshal(j.Payload, &p); err != nil || p.Before.IsZero() {
+		return queue.Fail(fmt.Errorf("media.reprocess_walk: bad payload %s", j.Payload))
+	}
+	ids, err := s.d.Repository.ListReprocessableUploads(ctx, p.After, p.Before, ReprocessBatch)
+	if err != nil {
+		return queue.Retry(0, err)
+	}
+	jobs := make([]queue.NewJob, 0, len(ids)+1)
+	for _, id := range ids {
+		b, err := json.Marshal(reprocessPayload{MediaID: id, Before: p.Before})
+		if err != nil {
+			return queue.Fail(err)
+		}
+		jobs = append(jobs, queue.NewJob{
+			Type: JobReprocess, Payload: b,
+			IdempotencyKey: JobReprocess + ":" + id + ":" + p.Before.Format(time.RFC3339Nano),
+		})
+	}
+	if len(ids) == ReprocessBatch {
+		next, err := reprocessWalkJob(reprocessWalkPayload{Before: p.Before, After: ids[len(ids)-1]}, s.d.Clock.Now().Add(ReprocessBatchInterval))
+		if err != nil {
+			return queue.Fail(err)
+		}
+		jobs = append(jobs, next)
+	}
+	if len(jobs) > 0 {
+		if err := s.d.Jobs.Enqueue(ctx, jobs...); err != nil {
+			return queue.Retry(0, err)
+		}
+	}
+	return queue.Done()
+}
+
+func (s *MediaService) handleReprocess(ctx context.Context, j queue.Job) queue.Result {
+	var p reprocessPayload
+	if err := json.Unmarshal(j.Payload, &p); err != nil || p.MediaID == "" || p.Before.IsZero() {
+		return queue.Fail(fmt.Errorf("media.reprocess: bad payload %s", j.Payload))
+	}
+	return s.Reprocess(ctx, p.MediaID, p.Before)
+}
+
+// Reprocess processes a media file again from its large variant, for the purpose of its current
+// result, unless that result was processed at or after before. It records a new result with keys
+// of its own, and PurgeReplaced deletes the one it replaces after the retention. It is idempotent:
+// a file already processed, a file that is gone, and a video or audio file are done. Content the
+// processor no longer accepts, such as a file past limits lowered since, keeps its current result.
+func (s *MediaService) Reprocess(ctx context.Context, mediaID string, before time.Time) queue.Result {
+	current, err := s.d.Repository.FindLatestProcessingResult(ctx, mediaID)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return queue.Done()
+	case err != nil:
+		return queue.Retry(0, err)
+	case !current.ProcessedAt.Before(before), current.Outcome != content.MediaReady, current.MediaType != content.MediaTypeImage:
+		return queue.Done()
+	}
+	req := media.Request{Purpose: media.Purpose(current.Purpose)}
+	switch f, err := s.d.Repository.FindFocus(ctx, mediaID); {
+	case err == nil:
+		req.FocusX, req.FocusY = f.X, f.Y
+	case !errors.Is(err, ErrNotFound):
+		return queue.Retry(0, err)
+	}
+	out, err := s.processBlob(ctx, sourceVariant(current).BlobKey, req)
+	switch {
+	case media.Rejected(err) || errors.Is(err, blob.ErrNotFound):
+		s.d.Logger.WarnContext(ctx, "media reprocessing failed", slog.String("media_id", mediaID), slog.Any("error", err))
+		return queue.Done()
+	case err != nil:
+		return queue.Retry(0, err)
+	}
+	// The source is a variant: keep the size of the original.
+	result := content.MediaProcessingResult{
+		ID: s.d.IDs.NewID(), MediaID: mediaID, Purpose: current.Purpose, Outcome: content.MediaReady, MediaType: content.MediaTypeImage,
+		Width: current.Width, Height: current.Height, Blurhash: out.Blurhash, ProcessedAt: s.d.Clock.Now(),
+	}
+	if err := s.storeVariants(ctx, &result, stillAndAnimated(out)); err != nil {
+		return queue.Retry(0, err)
+	}
+	// A concurrent run, or a change of purpose, may have replaced the result that this one started from.
+	return s.record(ctx, nil, result, func(tx uow.Tx) (bool, error) {
+		return s.d.Repository.HasNewerProcessingResult(ctx, tx, mediaID, current.ID)
+	})
 }
 
 // StoredBytes returns the bytes that the media files keep in blob storage: those of the local
