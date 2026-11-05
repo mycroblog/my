@@ -65,6 +65,9 @@ func setSubject(req *hookv1.CheckRequest, subject any) error {
 	case apphook.SignupSubject:
 		req.Signup = &hookv1.SignupSubject{Email: s.Email, Ip: s.IP}
 		return nil
+	case apphook.MediaSubject:
+		req.Media = mediaSubject(s)
+		return nil
 	}
 	return fmt.Errorf("hook: no mapping of the subject %T", subject)
 }
@@ -88,7 +91,20 @@ func inboundStatus(s apphook.InboundStatusSubject) *hookv1.InboundStatus {
 	return out
 }
 
-// count32 is a count of what one post names, which federation.MaxTags keeps far below the limit.
+func mediaSubject(s apphook.MediaSubject) *hookv1.MediaSubject {
+	out := &hookv1.MediaSubject{
+		Purpose: s.Purpose, MediaType: s.MediaType, Width: count32(s.Width), Height: count32(s.Height),
+		DurationMs: s.Duration.Milliseconds(), Animated: s.Animated,
+	}
+	if len(s.Image) > 0 {
+		out.Image, out.ImageContentType = s.Image, s.ImageContentType
+		out.ImageWidth, out.ImageHeight = count32(s.ImageWidth), count32(s.ImageHeight)
+	}
+	return out
+}
+
+// count32 is a count of what one post names, which federation.MaxTags keeps far below the limit,
+// or a side of an image, which the media limits keep there.
 func count32(n int) int32 { return int32(min(n, math.MaxInt32)) } //nolint:gosec // G115: min bounds it
 
 func callError(err error) error {

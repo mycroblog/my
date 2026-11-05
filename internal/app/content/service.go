@@ -155,6 +155,9 @@ type Deps struct {
 	// LocalEmojis returns the enabled local custom emoji that texts use as :shortcode:
 	// ((*CustomEmojiService).LocalEmojiIDs, ADR-0051 §3); nil records no custom emoji.
 	LocalEmojis func(ctx context.Context, texts ...string) ([]string, error)
+	// MediaReview acts on the decisions of the hook media.check on the files a post attaches; nil
+	// acts on none.
+	MediaReview *MediaReview
 	Clock       kernel.Clock
 	IDs         kernel.IDGenerator
 	// Host is the serving domain of the status URIs and pages (ADR-0018).
@@ -289,7 +292,9 @@ type PreparedCreate struct {
 	quotePolicy content.QuotePolicy
 	quote       *localQuote
 	tally       *content.PollTallyObservation
-	now         time.Time
+	// media are the decisions of media.check on the attachments that CreateTx acts on.
+	media []mediaVerdict
+	now   time.Time
 }
 
 // PrepareCreate checks and builds a new local status as Create does, without writing it, so
@@ -328,6 +333,9 @@ func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Po
 		return Post{}, err
 	}
 	if err := tx.Emit(ctx, StatusCreated{Status: p.st, Revision: rev}); err != nil {
+		return Post{}, err
+	}
+	if err := s.applyAttachmentVerdicts(ctx, tx, p.st.ID, p.media); err != nil {
 		return Post{}, err
 	}
 	if s.d.Quotes != nil {
@@ -424,7 +432,11 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 			ID: s.d.IDs.NewID(), PollID: poll.ID, VotersCount: &none, ObservedAt: now, Votes: make([]int64, len(poll.Options)),
 		}
 	}
-	return PreparedCreate{st: st, local: local, rev: rev, tags: tags, quotePolicy: quotePolicy, quote: quote, tally: tally, now: now}, nil
+	verdicts, err := s.attachmentVerdicts(ctx, in.AuthorAccountID, rev.Attachments, nil)
+	if err != nil {
+		return PreparedCreate{}, err
+	}
+	return PreparedCreate{st: st, local: local, rev: rev, tags: tags, quotePolicy: quotePolicy, quote: quote, tally: tally, media: verdicts, now: now}, nil
 }
 
 // Replay returns the post that an author posted with an Idempotency-Key, so that a retry is
@@ -507,6 +519,11 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 	now := s.d.Clock.Now()
 	rev := body.revision(s.d.IDs.NewID(), st.ID, 0, now)
 	tags := body.tags(s.d.IDs, now)
+	// The files the current revision attaches were acted on when it was stored.
+	verdicts, err := s.attachmentVerdicts(ctx, in.AccountID, rev.Attachments, current.Attachments)
+	if err != nil {
+		return Post{}, err
+	}
 
 	repo := s.d.Repository
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
@@ -534,6 +551,9 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 			return err
 		}
 		if err := tx.Emit(ctx, StatusRevised{Status: st, Revision: rev}); err != nil {
+			return err
+		}
+		if err := s.applyAttachmentVerdicts(ctx, tx, st.ID, verdicts); err != nil {
 			return err
 		}
 		if in.DetachQuote {

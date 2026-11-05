@@ -17,6 +17,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/blob"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/media"
 	"github.com/mycroblog/my/internal/app/queue"
@@ -100,6 +101,9 @@ type MediaDeps struct {
 	// Proxy signs the media proxy URLs that present remote media files (federation.md §9);
 	// nil presents no remote file.
 	Proxy *MediaProxy
+	// Review asks the hook media.check about each upload before its result is ready; nil asks
+	// nothing.
+	Review *MediaReview
 	// Logger logs what jobs survive; nil means slog.Default().
 	Logger *slog.Logger
 }
@@ -835,10 +839,11 @@ func (s *MediaService) Process(ctx context.Context, mediaID string, purpose cont
 		ID: s.d.IDs.NewID(), MediaID: mediaID, Purpose: purpose, MediaType: content.MediaTypeImage, ProcessedAt: s.d.Clock.Now(),
 	}
 	if current == nil && playable(up.ContentType) {
-		if res := s.processAV(ctx, up, &result, req); res != nil {
+		variants, res := s.processAV(ctx, up, &result, req)
+		if res != nil {
 			return *res
 		}
-		return s.recordResult(ctx, up, result)
+		return s.finish(ctx, up, true, result, variants)
 	}
 	key := ""
 	if current == nil {
@@ -847,6 +852,7 @@ func (s *MediaService) Process(ctx context.Context, mediaID string, purpose cont
 		key = sourceVariant(*current).BlobKey
 	}
 	out, err := s.processBlob(ctx, key, req)
+	var variants []sizedVariant
 	switch {
 	case err == nil:
 		result.Outcome = content.MediaReady
@@ -855,9 +861,7 @@ func (s *MediaService) Process(ctx context.Context, mediaID string, purpose cont
 			// The source is a variant: keep the size of the original.
 			result.Width, result.Height = current.Width, current.Height
 		}
-		if err := s.storeVariants(ctx, &result, stillAndAnimated(out)); err != nil {
-			return queue.Retry(0, err)
-		}
+		variants = stillAndAnimated(out)
 	case current != nil && (media.Rejected(err) || errors.Is(err, blob.ErrNotFound)):
 		s.d.Logger.WarnContext(ctx, "media reprocessing failed", slog.String("media_id", mediaID), slog.String("purpose", string(purpose)), slog.Any("error", err))
 		return s.deleteReceived(ctx, up)
@@ -867,22 +871,46 @@ func (s *MediaService) Process(ctx context.Context, mediaID string, purpose cont
 	default:
 		return queue.Retry(0, err)
 	}
-	return s.recordResult(ctx, up, result)
+	return s.finish(ctx, up, current == nil, result, variants)
+}
+
+// finish asks the hook media.check about a result that is ready, before anyone can use the file,
+// then stores the variants and records the result. A reject turns the result into a failure with
+// no variant; the file as received goes all the same, so nothing of the file is kept. first says
+// that the file is processed for the first time, which alone asks the plugin.
+func (s *MediaService) finish(ctx context.Context, up *content.UploadedMedia, first bool, result content.MediaProcessingResult, variants []sizedVariant) queue.Result {
+	verdict := mediaVerdict{Result: apphook.Result{Effect: apphook.Allow}}
+	if result.Outcome == content.MediaReady {
+		var err error
+		if verdict, err = s.review(ctx, first, result, variants); err != nil {
+			return queue.Retry(0, err)
+		}
+		if verdict.Effect == apphook.Reject {
+			result, variants = s.rejectedResult(ctx, result), nil
+		}
+	}
+	if len(variants) > 0 {
+		if err := s.storeVariants(ctx, &result, variants); err != nil {
+			return queue.Retry(0, err)
+		}
+	}
+	return s.recordResult(ctx, up, result, func(tx uow.Tx) error { return s.applyReview(ctx, tx, verdict, result.Purpose) })
 }
 
 // recordResult records a processing result, then deletes the file as received. The variants of
 // a result that is not recorded, because the transaction failed or a concurrent run of the same
-// job recorded its result first, are deleted.
-func (s *MediaService) recordResult(ctx context.Context, up *content.UploadedMedia, result content.MediaProcessingResult) queue.Result {
+// job recorded its result first, are deleted. apply, when not nil, runs in the transaction that
+// records the result.
+func (s *MediaService) recordResult(ctx context.Context, up *content.UploadedMedia, result content.MediaProcessingResult, apply func(uow.Tx) error) queue.Result {
 	// A concurrent run of the same job may have recorded its result first.
 	return s.record(ctx, up, result, func(tx uow.Tx) (bool, error) {
 		return s.d.Repository.HasProcessingResult(ctx, tx, result.MediaID, result.Purpose)
-	})
+	}, apply)
 }
 
 // record records a processing result unless lost reports, in the transaction, that another result
-// took its place.
-func (s *MediaService) record(ctx context.Context, up *content.UploadedMedia, result content.MediaProcessingResult, isLost func(uow.Tx) (bool, error)) queue.Result {
+// took its place. apply, when not nil, runs after the result is recorded in the same transaction.
+func (s *MediaService) record(ctx context.Context, up *content.UploadedMedia, result content.MediaProcessingResult, isLost func(uow.Tx) (bool, error), apply func(uow.Tx) error) queue.Result {
 	journal := s.journal()
 	keys := make([]string, 0, len(result.Variants))
 	for _, v := range result.Variants {
@@ -902,7 +930,13 @@ func (s *MediaService) record(ctx context.Context, up *content.UploadedMedia, re
 		if err := journal.keep(ctx, tx, keys...); err != nil {
 			return err
 		}
-		return s.d.Repository.InsertProcessingResult(ctx, tx, result)
+		if err := s.d.Repository.InsertProcessingResult(ctx, tx, result); err != nil {
+			return err
+		}
+		if apply != nil {
+			return apply(tx)
+		}
+		return nil
 	})
 	if err != nil {
 		// A commit that failed to answer may have recorded the result.
@@ -920,10 +954,10 @@ func (s *MediaService) record(ctx context.Context, up *content.UploadedMedia, re
 // processAV remuxes a video or audio upload into result (ADR-0005 §9): the file without
 // metadata as its large animated variant, and the poster, or else the cover embedded in the
 // file, as its still variants and blurhash. A poster that is not an accepted image is left out.
-// Content the processor rejects makes result a failure. It returns the job's result when the
-// job must stop or be retried, nil when result is to be recorded.
-func (s *MediaService) processAV(ctx context.Context, up *content.UploadedMedia, result *content.MediaProcessingResult, req media.Request) *queue.Result {
-	retry := func(err error) *queue.Result { r := queue.Retry(0, err); return &r }
+// Content the processor rejects makes result a failure. It returns the variants to store, and the
+// job's result when the job must stop or be retried, nil when result is to be recorded.
+func (s *MediaService) processAV(ctx context.Context, up *content.UploadedMedia, result *content.MediaProcessingResult, req media.Request) ([]sizedVariant, *queue.Result) {
+	retry := func(err error) ([]sizedVariant, *queue.Result) { r := queue.Retry(0, err); return nil, &r }
 	av := s.d.AVLimits
 	data, err := s.readBlob(ctx, up.BlobKey, av.MaxBytes)
 	var out media.AVOutput
@@ -934,7 +968,7 @@ func (s *MediaService) processAV(ctx context.Context, up *content.UploadedMedia,
 	case media.Rejected(err) || errors.Is(err, blob.ErrNotFound):
 		s.d.Logger.WarnContext(ctx, "media processing failed", slog.String("media_id", up.MediaID), slog.Any("error", err))
 		result.Outcome, result.MediaType = content.MediaFailed, content.MediaTypeUnknown
-		return nil
+		return nil, nil
 	case err != nil:
 		return retry(err)
 	}
@@ -969,10 +1003,7 @@ func (s *MediaService) processAV(ctx context.Context, up *content.UploadedMedia,
 		size: content.SizeLarge, motion: content.MotionAnimated,
 		v: media.Variant{Data: out.Data, ContentType: out.ContentType, Extension: out.Extension, Width: out.Width, Height: out.Height},
 	})
-	if err := s.storeVariants(ctx, result, variants); err != nil {
-		return retry(err)
-	}
-	return nil
+	return variants, nil
 }
 
 // readBlob reads the blob of key, failing past maxBytes with media.ErrTooLarge.
@@ -1327,7 +1358,7 @@ func (s *MediaService) Reprocess(ctx context.Context, mediaID string, before tim
 	// A concurrent run, or a change of purpose, may have replaced the result that this one started from.
 	return s.record(ctx, nil, result, func(tx uow.Tx) (bool, error) {
 		return s.d.Repository.HasNewerProcessingResult(ctx, tx, mediaID, current.ID)
-	})
+	}, nil)
 }
 
 // StoredBytes returns the bytes that the media files keep in blob storage: those of the local
