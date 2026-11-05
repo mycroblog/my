@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
-import { PostContent, serverSanitizedHtml } from "./PostContent";
+import { PostContent, PostContentNodes, serverSanitizedHtml } from "./PostContent";
 
 const meta = {
   title: "Timeline/PostContent",
@@ -35,6 +35,36 @@ export const RichText: Story = {
     html: serverSanitizedHtml(
       "<p>Release notes:</p><ul><li>Feeds</li><li>Content warnings</li></ul><blockquote><p>Quoted text</p></blockquote><p><code>make check</code> passes.</p>",
     ),
+  },
+};
+
+/**
+ * A body that React renders, with the structure of the sanitized body and text from elsewhere: markup in that text
+ * shows as text, and looks as the rest of the body does.
+ */
+export const Nodes: Story = {
+  render: () => (
+    <PostContentNodes
+      lang="en"
+      nodes={[
+        {
+          tag: "p",
+          attributes: {},
+          children: [
+            "Say hi to ",
+            { tag: "a", attributes: { href: "https://example.com/@bob" }, children: ["@bob"] },
+            " and read ",
+            { tag: "strong", attributes: {}, children: ["this"] },
+            ". <b>Not bold</b>",
+          ],
+        },
+        { tag: "ul", attributes: {}, children: [{ tag: "li", attributes: {}, children: ["One item"] }] },
+      ]}
+    />
+  ),
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("link", { name: "@bob" })).toBeVisible();
+    await expect(canvas.getByText(/Not bold/)).toHaveTextContent("<b>Not bold</b>");
   },
 };
 

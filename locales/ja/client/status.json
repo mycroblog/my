@@ -351,9 +351,45 @@
     "defaultMessage": "機械翻訳ではありません。作者自身が書いた文章です。",
     "description": "Line above a post after the reader asked for a translation and the server answered with the words the author wrote, so nothing was machine translated."
   },
+  "status.translation.browser_failed": {
+    "defaultMessage": "ブラウザでこの投稿を翻訳できませんでした。もう一度試してください。",
+    "description": "Next to the translate button: the translator built into the browser failed, or lost a mention or a link of the post on the way. The original stays in view."
+  },
+  "status.translation.browser_model": {
+    "defaultMessage": "ブラウザの翻訳モデルを準備できなかったため、この投稿は翻訳されませんでした。接続を確かめて、もう一度試してください。",
+    "description": "Next to the translate button: the browser's translation model failed to download or to start. The original stays in view."
+  },
+  "status.translation.browser_not_allowed": {
+    "defaultMessage": "ブラウザがこの翻訳を許可しませんでした。もう一度試して、続くようならブラウザの設定を確かめてください。",
+    "description": "Next to the translate button: the browser refused, because it disabled the feature or because a download needs a fresh press of the button. The original stays in view."
+  },
+  "status.translation.browser_same_language": {
+    "defaultMessage": "ブラウザの判定では、この投稿はすでにお使いの言語で書かれているため、翻訳するものはありません。",
+    "description": "Next to the translate button: the post did not say its language, and the browser detected the language of the app. The original stays in view."
+  },
+  "status.translation.browser_undetected": {
+    "defaultMessage": "ブラウザがこの投稿の言語を判定できなかったため、翻訳されませんでした。",
+    "description": "Next to the translate button: the post did not say its language, and the browser could not detect it. The original stays in view."
+  },
+  "status.translation.browser_unsupported": {
+    "defaultMessage": "ブラウザはこの投稿の言語を翻訳できません。",
+    "description": "Next to the translate button: the browser detected the language of the post and has no translation from it. The original stays in view."
+  },
   "status.translation.by": {
     "defaultMessage": "{provider} による機械翻訳",
     "description": "Line above a translated post, and what a screen reader hears when the translation appears. {provider} is the name of the translation service."
+  },
+  "status.translation.by_browser": {
+    "defaultMessage": "お使いのブラウザ ({browser}) による機械翻訳",
+    "description": "Line above a post that the reader's own browser translated, and what a screen reader hears when the translation appears. {browser} is the browser's product name."
+  },
+  "status.translation.by_browser_unnamed": {
+    "defaultMessage": "お使いのブラウザによる機械翻訳",
+    "description": "Line above a post that the reader's own browser translated, for a browser whose name is not known, and what a screen reader hears when the translation appears."
+  },
+  "status.translation.downloading": {
+    "defaultMessage": "翻訳モデルをダウンロードしています… {progress, number, ::percent}",
+    "description": "The translate button while the browser downloads its translation model, which happens once. {progress} is how much has come, as a percentage."
   },
   "status.translation.failed": {
     "defaultMessage": "今はこの投稿を翻訳できませんでした。少し待ってからもう一度試してください。",

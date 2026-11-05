@@ -132,7 +132,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 | `Publisher` / `Subscriber` | リアルタイム更新の通知と購読（§4.4）。設定 `stream` が `hub` なら `stream.Hub`、それ以外は `stream.Relay` | in-process（`stream.Hub`、`stream = hub`） | [0016](../adr/0016-client-api-style.md), [0050](../adr/0050-stream-pubsub-across-processes.md) |
 | `Bus` / `Sweeper` | プロセス間の知らせの同報（`stream.Relay` が使う）と、プロセスが残したブローカーの資源の後始末（§4.4）。アダプタは `postgres` / `valkey` / `sns` / `pubsub`（`sns` と `pubsub` は `Sweeper` も実装）。`stream.MemoryBroker` はテスト用 | なし（`stream = hub`）。複数プロセスは `postgres` | [0050](../adr/0050-stream-pubsub-across-processes.md) |
 | `Clock` / `IdGenerator` | 時刻（UTC・ミリ秒）・ID 生成（テスト容易性のため注入） | system（システム時計 / UUIDv7。どちらもプロセス内では小さく戻った時計で逆行しない） | [0003](../adr/0003-database-abstraction.md) |
-| `KeyManager` | 秘密（アクター秘密鍵など）を包む DEK の wrap / unwrap。暗号化は `kernel.Sealer` が行う | local（設定の KEK） | [0019](../adr/0019-security-baseline.md) |
+| `KeyManager` | 秘密（アクター秘密鍵など）を包む DEK の wrap / unwrap。暗号化は `kernel.Sealer` が行う | local（設定の KEK）。ほかに gcpkms・awskms・plugin | [0019](../adr/0019-security-baseline.md)、[0146](../adr/0146-plugin-protocol.md) |
 | `SearchIndex` | 投稿の全文検索（`internal/app/search`、Go 名 `search.Index`）。投稿の ID だけを返す。アカウントとタグの検索はこのポートを通さない。テスト用の fake は `internal/adapter/search/fake`。契約は `testkit.SearchIndexContract` | none（`search = none`。全文検索は使えない） | [0149](../adr/0149-full-text-search.md) |
 | `Translator` | 投稿の翻訳の提供元（`internal/app/translation`）。受け取るのは断片の列・原文の言語（`und` があり得る）・翻訳先の言語で、返すのは訳の列と検出した言語である。メンションやリンクは番号付きの印（`⟦1⟧`、対は `⟦1⟧` と `⟦/1⟧`）に置き換わっている。失敗を一時的な失敗・提供元が報告した上限・対応しない言語に分ける。提供元に固有の選択肢や名前は持たない。テスト用の fake は `internal/adapter/translator/fake`、運営者のプラグインへの委譲は `internal/adapter/translator/plugin` | なし（提供元はすべて無効で始まる） | [0148](../adr/0148-post-translation.md) |
 | `Meter` | サービスとシステムの指標の計測。計器（Counter・UpDownCounter・Histogram・Gauge）を名前・単位・許すラベルのキーとともに宣言して記録し、`Begin` でリクエスト・ジョブの区切りを示す。型は標準ライブラリだけで、OTel の型を出さない。アダプタは `none` / `otel`（OpenTelemetry Go SDK。Prometheus の scrape と OTLP/HTTP）/ `emf`（CloudWatch Embedded Metric Format。Gauge は収集されないので、定期ジョブが `GaugeWriter` で書かせる）。ログは port でなく `log/slog` の JSON Lines（標準エラー）で、トレースは `Tracer` が持つ | none（`metrics_exporter = none`） | [0055](../adr/0055-service-observability.md), [0056](../adr/0055-service-observability.md) |
@@ -269,7 +269,7 @@ internal/
     telemetry/sysmetrics/ # システムの指標の計器と、アダプタの境界で測るデコレーター（ADR-0055）
     captcha/siteverify/ # HumanVerifier の実装（Turnstile / hCaptcha / reCAPTCHA v2 のプリセット。ADR-0106）
     system/          # Clock / IDGenerator の本番実装（システム時計・UUIDv7）
-    keymanager/local/ # KeyManager の実装（設定の KEK。KMS アダプタは後続）
+    keymanager/{local,gcpkms,awskms,plugin}/ # KeyManager の実装（設定の KEK、Cloud KMS、AWS KMS、運営者のプラグイン。ADR-0019、ADR-0146 §14）
     htmlsanitizer/   # HTMLSanitizer の実装（bluemonday。リモート HTML の許可リスト。federation.md §5）と、インスタンスの文書の許可リスト
     oidc/            # identity.OIDCClient の実装（標準ライブラリ。Discovery・JWKS・RS256 / ES256 / EdDSA の ID トークンの検証。ADR-0106）
     webauthn/        # identity.PasskeyCeremonies の実装（go-webauthn。パスキーの登録とログインの WebAuthn の手続き。FR-004）
