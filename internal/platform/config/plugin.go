@@ -4,9 +4,13 @@ package config
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
+	"github.com/mycroblog/my/internal/domain/finance"
+	"github.com/mycroblog/my/internal/domain/identity"
 )
 
 // pluginsLeftOutTag is the build tag that left the plugins out of this binary, "" in a build that has them.
@@ -21,9 +25,36 @@ func pluginFields() []field {
 	var fields []field
 	for _, k := range kind.Delegated() {
 		fields = append(fields, pluginFieldsOf(k)...)
+		if k.Name == kind.Billing {
+			fields = append(fields, pluginBillingFields()...)
+		}
 	}
 	return fields
 }
+
+// pluginBillingFields returns what the billing source of a plugin says with no call, so that the start depends on none
+// (ADR-0146 §11).
+func pluginBillingFields() []field {
+	return []field{
+		{
+			key:          "plugin_billing_location",
+			doc:          "IANA time zone that cuts the billing months of `billing_sources = plugin`, such as `UTC` or `Asia/Tokyo`. The imports ask the plugin for the months of this zone.",
+			requiredWhen: "when `billing_sources` includes `plugin`",
+			check:        identity.ValidateTimeZone,
+			set:          func(c *Config, v string) { c.PluginBillingLocation = v },
+		},
+		{
+			key:          "plugin_billing_provider",
+			doc:          "The provider's name that the totals, the costs page, and the audit log show for `billing_sources = plugin`, such as `Hetzner`, at most 100 characters. All the plugin's costs are under this one name, and the services of its lines tell them apart.",
+			requiredWhen: "when `billing_sources` includes `plugin`",
+			check:        finance.ValidateProvider,
+			set:          func(c *Config, v string) { c.PluginBillingProvider = strings.TrimSpace(v) },
+		},
+	}
+}
+
+// pluginAddressRequiredWhen documents the kinds whose address another setting requires, which pluginChecks checks.
+var pluginAddressRequiredWhen = map[string]string{kind.Billing: "when `billing_sources` includes `plugin`"}
 
 func pluginFieldsOf(k kind.Kind) []field {
 	store := func(c *Config, change func(*kind.Destination)) {
@@ -51,6 +82,7 @@ func pluginFieldsOf(k kind.Kind) []field {
 			key: k.Key(kind.SuffixAddress),
 			doc: "Where the `" + k.Name + "` plugin listens: " + forms +
 				". Empty delegates nothing, and the server opens no connection. Host names are resolved per connection. Restart to change it; no instance setting or API can.",
+			requiredWhen: pluginAddressRequiredWhen[k.Name],
 			check: func(v string) error {
 				_, err := kind.ParseAddress(v)
 				return err
@@ -111,6 +143,13 @@ func pluginFieldsOf(k kind.Kind) []field {
 // pluginChecks applies the rules of a destination to the settings of every kind (ADR-0146 §5, §6).
 func pluginChecks(vals map[string]string, present map[string]bool) []Issue {
 	var issues []Issue
+	if pluginsLeftOutTag == "" && slices.Contains(splitList(vals["billing_sources"]), "plugin") {
+		for _, key := range []string{"plugin_billing_address", "plugin_billing_location", "plugin_billing_provider"} {
+			if !present[key] {
+				issues = append(issues, Issue{Key: key, Missing: true, Message: "required when billing_sources includes plugin"})
+			}
+		}
+	}
 	for _, k := range kind.Delegated() {
 		address := k.Key(kind.SuffixAddress)
 		if !present[address] {

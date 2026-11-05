@@ -12626,7 +12626,7 @@ components:
         posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
         `account_statuses_refetch_queued` on an `account`, and `domain_statuses_refetch_queued`
         on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
-        the ID is the source (`aws`, `gcp`) and the label the provider's name. On a `cost_item`:
+        the ID is the source (`aws`, `gcp`, `plugin`) and the label the provider's name. On a `cost_item`:
         `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
         `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
         the item's name. On the `supporter_program`: `supporter_program_enabled`,
@@ -15596,16 +15596,17 @@ components:
             Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
             bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
             `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
-            without a breakdown by service.
+            without a breakdown by service; `plugin` (the operator's plugin) what the plugin reports.
           type: string
           enum:
             - cost_explorer
             - bigquery
             - budget
+            - plugin
         time_zone:
           description: |
-            The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`),
-            kept as the provider reports them.
+            The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`, or
+            the operator's choice for a plugin), kept as the provider reports them.
           type: string
         last_run:
           $ref: '#/components/schemas/BillingImportRun'
@@ -15634,7 +15635,7 @@ components:
           type: integer
           minimum: 1
         bytes_billed_this_month:
-          description: The BigQuery bytes billed this UTC month; 0 for the other sources.
+          description: The bytes billed this UTC month, of BigQuery or as a plugin reports them; 0 for the other sources.
           type: integer
           format: int64
           minimum: 0
@@ -15722,11 +15723,14 @@ components:
           type: string
           format: date-time
     BillingSourceName:
-      description: A cloud provider of the billing imports (`billing_sources`).
+      description: |
+        A source of the billing imports (`billing_sources`): a cloud provider, or `plugin`, the
+        operator's plugin that aggregates any other providers.
       type: string
       enum:
         - aws
         - gcp
+        - plugin
     CalendarDate:
       description: |
         A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day

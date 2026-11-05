@@ -27,6 +27,9 @@ type Deps struct {
 	// Sources are the billing sources of billing_sources, in its order (ADR-0068); none imports
 	// nothing.
 	Sources []BillingSource
+	// ProviderNames overrides the provider's name of the sources it names (plugin_billing_provider,
+	// ADR-0146 §11). It also names the costs of a source that is no longer enabled.
+	ProviderNames map[string]string
 	// Caps bounds the billed requests of the sources it names (the AWS caps of ADR-0068 §4).
 	Caps map[string]RequestCaps
 	// Outbox enqueues the manual imports; nil refuses them.
