@@ -33,7 +33,7 @@ module "ingress" {
 | `secret_env`, `permissions`, `dns_records` | Empty: it creates the record itself |
 | `rules` | The rules of this host, by phase |
 
-Pass only `env` to `backends`, as `{ env = module.media.env }`.
+Pass only `platform` and `env` to `backends`, as `{ platform = module.media.platform, env = module.media.env }`.
 
 ## Caching
 

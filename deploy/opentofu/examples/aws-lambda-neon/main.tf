@@ -132,7 +132,7 @@ module "app" {
   backends = [
     module.secrets, module.kek, module.db, module.queue, module.blob, module.stream, module.mail,
     # Named output by output, as on Google Cloud: the ingress reads the app's origin, so its other outputs depend on the app.
-    { env = module.ingress.env, secret_env = module.ingress.secret_env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
+    { platform = module.ingress.platform, env = module.ingress.env, secret_env = module.ingress.secret_env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
   ]
 
   env = merge(

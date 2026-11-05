@@ -30,6 +30,11 @@ variable "key_prefix" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works with any app."
+  value       = "neutral"
+}
+
 output "env" {
   description = "The settings of the key-value store."
   value       = merge({ MY_KV = "valkey" }, var.key_prefix == null ? {} : { MY_VALKEY_KEY_PREFIX = var.key_prefix })

@@ -47,6 +47,8 @@ module "media" {
 module "app" {
   source = "../../modules/app-gcp-cloud-run"
 
+  env = { MY_QUEUE = "cloudtasks" }
+
   project_id   = "p"
   region       = "asia-northeast1"
   image        = "ghcr.io/mycroblog/my:0.1.0"
@@ -56,8 +58,8 @@ module "app" {
   service_ingress = "all"
 
   backends = [
-    { env = module.ingress.env, secret_env = module.ingress.secret_env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
-    { env = module.media.env },
+    { platform = module.ingress.platform, env = module.ingress.env, secret_env = module.ingress.secret_env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
+    { platform = module.media.platform, env = module.media.env },
   ]
 }
 

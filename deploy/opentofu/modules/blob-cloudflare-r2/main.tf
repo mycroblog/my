@@ -75,6 +75,11 @@ resource "cloudflare_r2_bucket" "media" {
   jurisdiction = var.jurisdiction
 }
 
+output "platform" {
+  description = "The platform of this module: it works with any app."
+  value       = "neutral"
+}
+
 output "env" {
   description = "The settings of the blob store."
   value = {

@@ -137,6 +137,11 @@ resource "google_secret_manager_secret_version" "written" {
   deletion_policy = "ABANDON"
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of Google Cloud."
+  value       = "gcp"
+}
+
 output "env" {
   description = "No plain settings."
   value       = {}

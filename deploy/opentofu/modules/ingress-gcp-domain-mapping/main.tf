@@ -52,6 +52,11 @@ resource "google_cloud_run_domain_mapping" "host" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of Google Cloud."
+  value       = "gcp"
+}
+
 output "env" {
   description = "No settings."
   value       = {}

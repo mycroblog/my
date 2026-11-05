@@ -115,6 +115,11 @@ resource "google_cloud_scheduler_job" "tick" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of Google Cloud."
+  value       = "gcp"
+}
+
 output "env" {
   description = "The settings of the queue."
   value = {

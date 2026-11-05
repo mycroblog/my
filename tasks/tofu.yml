@@ -41,7 +41,7 @@ tasks:
       - scripts/tofu-env-check.sh deploy/opentofu docs/operations/deploy-cloud-run.md docs/operations/billing-import.md
 
   backend-fields:
-    desc: Fail when the backends type of an app module and the backend contract disagree, since OpenTofu drops an unknown field without a word
+    desc: Fail when the backends type of an app module and the backend contract disagree, since OpenTofu drops an unknown field without a word, or when a module's platform contradicts its name
     cmds:
       - scripts/tofu-backend-fields-check.sh
 

@@ -144,8 +144,8 @@ module "app" {
     var.mail == "smtp" ? [module.mail_smtp] : [],
     var.mail == "ses" ? [module.mail_ses] : [],
     # Named output by output, as in the example: a reference to the whole module would be a cycle.
-    var.ingress == "cloudfront" ? [{ env = module.ingress_cloudfront.env, secret_env = module.ingress_cloudfront.secret_env, service_ingress = module.ingress_cloudfront.service_ingress, trusted_proxies = module.ingress_cloudfront.trusted_proxies }] : [],
-    var.ingress == "cloudflare" ? [{ env = module.ingress_cloudflare.env, secret_env = module.ingress_cloudflare.secret_env, service_ingress = module.ingress_cloudflare.service_ingress, trusted_proxies = module.ingress_cloudflare.trusted_proxies }] : [],
+    var.ingress == "cloudfront" ? [{ platform = module.ingress_cloudfront.platform, env = module.ingress_cloudfront.env, secret_env = module.ingress_cloudfront.secret_env, service_ingress = module.ingress_cloudfront.service_ingress, trusted_proxies = module.ingress_cloudfront.trusted_proxies }] : [],
+    var.ingress == "cloudflare" ? [{ platform = module.ingress_cloudflare.platform, env = module.ingress_cloudflare.env, secret_env = module.ingress_cloudflare.secret_env, service_ingress = module.ingress_cloudflare.service_ingress, trusted_proxies = module.ingress_cloudflare.trusted_proxies }] : [],
   )
 }
 

@@ -156,6 +156,11 @@ resource "google_secret_manager_secret_version" "ca" {
   secret_data = join("\n", flatten([for m in google_memorystore_instance.valkey.managed_server_ca : [for c in m.ca_certs : c.certificates]]))
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of Google Cloud."
+  value       = "gcp"
+}
+
 output "env" {
   description = "The settings of the key-value store. The URL holds no password, so it needs no secret."
   value = {

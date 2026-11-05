@@ -31,6 +31,7 @@ module "app" {
 | `role`, `profile` | `all`, `production` | `MY_ROLE` and `MY_PROFILE`. `web` is refused: it does not serve what Cloud Tasks calls |
 | `cpu`, `memory_mib` | `1`, `512` | Instance size. `GOMEMLIMIT` follows, at 90% |
 | `max_instances`, `concurrency` | `3`, `80` | With `pool_max_conns` of the database URL, they bound the connections |
+| `min_instances`, `cpu_always_allocated` | `0`, `false` | Instances kept running, and CPU outside requests, which is instance-based billing. `queue-db` needs both, and fails the plan without them: [its README](../queue-db/README.md#what-it-needs). With both, an instance is billed at the full rate all the time |
 | `request_timeout_seconds` | `900` | Longer than the dispatch deadline of the queue |
 | `job_memory_mib`, `job_timeout_seconds` | `1024`, `3600` | Size and limit of the jobs |
 | `console_enabled` | `false` | Creates the console job |
@@ -68,7 +69,7 @@ On the rows that say yes, nothing closes `run.app`. For the header, the value is
 
 - **It keeps the service's default `run.app` URL on**, because Cloud Tasks and Cloud Scheduler call it. Do not disable it: jobs stop.
 - Without an ingress, `MY_TRUSTED_PROXIES` is `169.254.0.0/16`, taken to be Cloud Run's front end. A backend or `env` that names `MY_TRUSTED_PROXIES` replaces that. No document we have read says what Cloud Run adds to `X-Forwarded-For` for a direct request or what peer address a container sees, and the container contract says nothing about either, so `169.254.0.0/16` is an assumption. The external load balancer's documented form is `[<supplied>,]<client-ip>,<lb-ip>`.
-- Request-based billing with min instances 0, a `/readyz` startup probe, and a `/healthz` liveness probe. The startup probe
+- Request-based billing with min instances 0 unless those inputs say otherwise, a `/readyz` startup probe, and a `/healthz` liveness probe. The startup probe
   keeps a revision from taking traffic until the schema and the data upgrade steps of its release are in place.
 - A plan fails without a KEK when the server needs one: `kek` with `key_manager = local`, or `kms_key` otherwise.
 - A backend's `cloud_sql_instances` are mounted at `/cloudsql` on the service and every job, for `db-gcp-cloud-sql`. A backend's `direct_secret_env` goes to the jobs only.

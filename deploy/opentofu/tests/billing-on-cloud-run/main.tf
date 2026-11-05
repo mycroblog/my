@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
-# Both billing modules beside the app of Google Cloud, for the tests of billing-aws. billing_aws takes the app's service
-# account while the app takes billing_aws's settings, which is no cycle as long as backends names its outputs rather than
-# the whole module, as with an ingress: a reference to the whole module waits for everything in it. Each block says which
-# provider it needs.
+# Both billing modules beside the app of Google Cloud, for the tests of billing-aws: billing-aws here is the one module of
+# AWS that this app takes. billing_aws takes the app's service account while the app takes billing_aws's settings, which is
+# no cycle as long as backends names its outputs rather than the whole module, as with an ingress: a reference to the whole
+# module waits for everything in it. Each block says which provider it needs.
 
 terraform {
   required_version = ">= 1.11"
@@ -58,8 +58,9 @@ module "app" {
   host            = "social.example.org"
   service_ingress = "all"
   secret_files    = { MY_KEK_FILE = "kek" }
+  env             = { MY_QUEUE = "cloudtasks" }
   backends = concat(
-    contains(var.sources, "aws") ? [{ env = module.billing_aws.env, permissions = module.billing_aws.permissions, billing_sources = module.billing_aws.billing_sources }] : [],
+    contains(var.sources, "aws") ? [{ platform = module.billing_aws.platform, env = module.billing_aws.env, permissions = module.billing_aws.permissions, billing_sources = module.billing_aws.billing_sources }] : [],
     contains(var.sources, "gcp") ? [module.billing_gcp] : [],
   )
 }

@@ -7,6 +7,11 @@ terraform {
   required_version = ">= 1.11"
 }
 
+output "platform" {
+  description = "The platform of this module: it works with any app."
+  value       = "neutral"
+}
+
 output "env" {
   description = "The queue."
   value       = { MY_QUEUE = "db" }

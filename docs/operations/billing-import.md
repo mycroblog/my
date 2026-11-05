@@ -13,7 +13,7 @@ No credentials are kept in this server's configuration. Give the runtime environ
 
 ## With the OpenTofu modules
 
-The modules [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) and [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) set `billing_sources` and do the parts of this guide that a provider's API allows. Both can sit in the `backends` of one app module, on Google Cloud or on AWS. Neither has been applied on a real account yet.
+The modules [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) and [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) set `billing_sources` and do the parts of this guide that a provider's API allows. `billing-gcp` works only with Google Cloud's app module, so on AWS the modules import AWS's costs alone. `billing-aws` works with AWS's app modules and with Cloud Run's, where both can sit in the `backends`. Neither has been applied on a real account yet.
 
 | Step in this guide | With the modules |
 | --- | --- |

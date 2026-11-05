@@ -367,6 +367,14 @@ fields_copy
 printf 'output "client_group" {\n  value = "x"\n}\n' >> "$fields/modules/kv-external/main.tf"
 if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed an output outside the contract"; fi
 grep -qF 'kv-external: the output client_group' "$tmp/fields.err" || fail "the fields check did not name the output"
+fields_copy
+sed -i '/^output "platform"/,/^}/d' "$fields/modules/blob-s3/main.tf"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a module with no platform"; fi
+grep -qF 'blob-s3: its platform is ""' "$tmp/fields.err" || fail "the fields check did not name the module with no platform"
+fields_copy
+sed -i '/^output "platform"/,/^}/s/"aws"/"neutral"/' "$fields/modules/blob-aws-s3/main.tf"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a module of AWS that says it is neutral"; fi
+grep -qF 'blob-aws-s3: its platform is "neutral", and its name says aws' "$tmp/fields.err" || fail "the fields check did not name the module with the wrong platform"
 
 if [ "$failures" -gt 0 ]; then
   echo "tofu-scripts-test: $failures failed" >&2

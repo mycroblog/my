@@ -48,6 +48,11 @@ variable "password_secret_id" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works with any app."
+  value       = "neutral"
+}
+
 output "env" {
   description = "The settings of the mailer."
   value = merge(

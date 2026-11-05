@@ -36,6 +36,8 @@ module "cloud_sql" {
 module "app_on_cloud_sql" {
   source = "../../modules/app-gcp-cloud-run"
 
+  env = { MY_QUEUE = "cloudtasks" }
+
   project_id      = "p"
   region          = "asia-northeast1"
   name            = "cloud-sql"
@@ -70,6 +72,8 @@ module "secrets_on_gcp" {
 module "app_on_neon_gcp" {
   source = "../../modules/app-gcp-cloud-run"
 
+  env = { MY_QUEUE = "cloudtasks" }
+
   project_id      = "p"
   region          = "asia-northeast1"
   name            = "neon"
@@ -89,6 +93,8 @@ module "rds" {
 
 module "app_on_rds" {
   source = "../../modules/app-aws-lambda"
+
+  env = { MY_QUEUE = "sqs" }
 
   name                   = "rds"
   image                  = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
@@ -119,6 +125,8 @@ module "secrets_on_aws" {
 
 module "app_on_neon_aws" {
   source = "../../modules/app-aws-lambda"
+
+  env = { MY_QUEUE = "sqs" }
 
   name       = "neon"
   image      = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"

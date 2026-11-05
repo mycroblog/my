@@ -216,6 +216,11 @@ resource "cloudflare_ruleset" "firewall" {
   }
 }
 
+output "platform" {
+  description = "The platform of this module: it works with any app."
+  value       = "neutral"
+}
+
 output "env" {
   description = "The header that the proxies write, and the name of the one that shows the server a request came through Cloudflare."
   value = {

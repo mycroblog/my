@@ -35,6 +35,11 @@ resource "aws_sns_topic" "stream" {
   name = var.name
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "env" {
   description = "The settings of the stream."
   value = {
@@ -53,24 +58,23 @@ output "permissions" {
   description = "Publishing to the topic and subscribing the server's own queues to it, and managing those queues, whose names are not known in advance."
   value = concat(
     [
-      { permission = "sns:Publish", scope = "policy", resource = aws_sns_topic.stream.arn, conditions = [] },
+      { permission = "sns:Publish", resource = aws_sns_topic.stream.arn, conditions = [] },
       {
         permission = "sns:Subscribe"
-        scope      = "policy"
         resource   = aws_sns_topic.stream.arn
         conditions = [
           { test = "StringEquals", variable = "sns:Protocol", values = ["sqs"] },
           { test = "StringLike", variable = "sns:Endpoint", values = [local.queues] },
         ]
       },
-      { permission = "sns:Unsubscribe", scope = "policy", resource = aws_sns_topic.stream.arn, conditions = [] },
-      { permission = "sns:ListSubscriptionsByTopic", scope = "policy", resource = aws_sns_topic.stream.arn, conditions = [] },
+      { permission = "sns:Unsubscribe", resource = aws_sns_topic.stream.arn, conditions = [] },
+      { permission = "sns:ListSubscriptionsByTopic", resource = aws_sns_topic.stream.arn, conditions = [] },
       # The sweep lists the queues, which this action cannot limit by name.
-      { permission = "sqs:ListQueues", scope = "policy", resource = "*", conditions = [] },
+      { permission = "sqs:ListQueues", resource = "*", conditions = [] },
     ],
     [
       for action in ["CreateQueue", "TagQueue", "SetQueueAttributes", "GetQueueAttributes", "ReceiveMessage", "DeleteMessage", "DeleteQueue"] : {
-        permission = "sqs:${action}", scope = "policy", resource = local.queues, conditions = []
+        permission = "sqs:${action}", resource = local.queues, conditions = []
       }
     ],
   )

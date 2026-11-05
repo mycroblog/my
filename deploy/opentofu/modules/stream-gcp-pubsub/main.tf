@@ -58,6 +58,11 @@ resource "google_project_iam_custom_role" "subscriptions" {
   ]
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of Google Cloud."
+  value       = "gcp"
+}
+
 output "env" {
   description = "The settings of the stream."
   value = {

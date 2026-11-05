@@ -238,8 +238,8 @@ run "the_outputs_fit_the_app" {
     image = "111122223333.dkr.ecr.ap-northeast-1.amazonaws.com/my:0.1.0"
     backends = [
       # What this module returns: run blocks of a plan cannot pass outputs to another module.
-      { env = { MY_METRICS_EXPORTER = "emf", MY_METRICS_EMF_NAMESPACE = "my", MY_METRICS_EMF_DIMENSIONS = "my.outcome" }, secret_env = {}, permissions = [] },
-      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { platform = "aws", env = { MY_METRICS_EXPORTER = "emf", MY_METRICS_EMF_NAMESPACE = "my", MY_METRICS_EMF_DIMENSIONS = "my.outcome" }, secret_env = {}, permissions = [] },
+      { platform = "aws", env = { MY_DATABASE = "postgres", MY_QUEUE = "sqs" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
     ]
   }
 

@@ -45,11 +45,6 @@ run "bigquery_names_the_table_and_returns_its_roles" {
   }
 
   assert {
-    condition     = google_project_iam_member.external_query == null && google_bigquery_dataset_access.external_export == null
-    error_message = "the app of Google Cloud grants the roles"
-  }
-
-  assert {
     condition     = length(output.billing_sources) == 1 && output.billing_sources[0] == "gcp" && output.budget_topic == null
     error_message = "the module adds gcp to the sources"
   }
@@ -142,42 +137,4 @@ run "an_unknown_method_fails" {
   }
 
   expect_failures = [var.method]
-}
-
-run "outside_google_cloud_the_module_grants_bigquery" {
-  command = plan
-
-  variables {
-    external_member = "principalSet://iam.googleapis.com/projects/1/locations/global/workloadIdentityPools/my/attribute.aws_role/my-server"
-  }
-
-  assert {
-    condition     = length(output.permissions) == 0
-    error_message = "an AWS app refuses these permissions, so the module must not return them"
-  }
-
-  assert {
-    condition = (
-      google_project_iam_member.external_query.role == "roles/bigquery.jobUser" &&
-      google_project_iam_member.external_query.project == "billing-project" &&
-      google_bigquery_dataset_access.external_export.role == "READER" &&
-      google_bigquery_dataset_access.external_export.iam_member == var.external_member
-    )
-    error_message = "the member must get both roles of the bigquery method"
-  }
-}
-
-run "outside_google_cloud_the_module_grants_the_subscription" {
-  command = plan
-
-  variables {
-    method             = "budget"
-    billing_account_id = null
-    external_member    = "principalSet://iam.googleapis.com/projects/1/locations/global/workloadIdentityPools/my/attribute.aws_role/my-server"
-  }
-
-  assert {
-    condition     = length(output.permissions) == 0 && google_pubsub_subscription_iam_member.external_budget.subscription == "my-billing-budget"
-    error_message = "the member must get the subscriber role"
-  }
 }

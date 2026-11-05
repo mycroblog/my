@@ -94,6 +94,11 @@ locals {
   pooled = var.pooled_url_secret_id != null
 }
 
+output "platform" {
+  description = "The platform of this module: it works with any app."
+  value       = "neutral"
+}
+
 output "env" {
   description = "The settings of the database."
   value       = { MY_DATABASE = "postgres" }

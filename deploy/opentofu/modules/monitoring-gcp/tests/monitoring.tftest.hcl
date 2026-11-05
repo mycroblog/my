@@ -235,8 +235,8 @@ run "the_outputs_fit_the_app" {
     secret_files    = { MY_KEK_FILE = "kek" }
     backends = [
       # What this module returns: run blocks of a plan cannot pass outputs to another module.
-      { env = { MY_METRICS_EXPORTER = "none" }, secret_env = {}, permissions = [] },
-      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
+      { platform = "gcp", env = { MY_METRICS_EXPORTER = "none" }, secret_env = {}, permissions = [] },
+      { platform = "neutral", env = { MY_DATABASE = "postgres", MY_QUEUE = "cloudtasks" }, secret_env = { MY_DATABASE_URL = "db-url" } },
     ]
   }
 

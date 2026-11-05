@@ -85,6 +85,11 @@ resource "aws_elasticache_serverless_cache" "valkey" {
   security_group_ids = [aws_security_group.cache.id]
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "env" {
   description = "The settings of the key-value store. The URL holds no password, so it needs no secret, and no CA file is named, so the server uses the system roots."
   value = {

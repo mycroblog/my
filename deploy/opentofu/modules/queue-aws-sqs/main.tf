@@ -95,6 +95,11 @@ resource "aws_scheduler_schedule" "tick" {
   depends_on = [aws_iam_role_policy.scheduler]
 }
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of AWS."
+  value       = "aws"
+}
+
 output "env" {
   description = "The settings of the queue."
   value = {
@@ -111,7 +116,7 @@ output "secret_env" {
 output "permissions" {
   description = "Sending the signals to the queue."
   value = [
-    { permission = "sqs:SendMessage", scope = "policy", resource = aws_sqs_queue.jobs.arn },
+    { permission = "sqs:SendMessage", resource = aws_sqs_queue.jobs.arn },
   ]
 }
 

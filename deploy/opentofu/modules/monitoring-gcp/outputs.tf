@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
+output "platform" {
+  description = "The platform of this module: it works only with an app of Google Cloud."
+  value       = "gcp"
+}
+
 output "env" {
   description = "Settings of the server, by variable name."
   value = {
