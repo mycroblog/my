@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/app/account"
+	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -114,6 +115,12 @@ type Deps struct {
 	// SignupBlocks screens the sign-ups from the registration page against the sign-up block
 	// list (FR-719); nil screens nothing.
 	SignupBlocks SignupScreen
+	// Hooks asks the decision hook signup.check about a sign-up without an invite (ADR-0147 §2); nil
+	// asks nothing.
+	Hooks apphook.Gate
+	// SignupHookRejects reads whether a reject of signup.check refuses the sign-up, only when one
+	// comes; nil never refuses.
+	SignupHookRejects func(ctx context.Context) (bool, error)
 	// MemberInvites returns the instance settings of the invites that members create
 	// (invite_creators and the caps, ADR-0106 §14, §15). It is read per operation, so a change
 	// applies to the next one. Nil means the defaults: only the holders of create_invites,
