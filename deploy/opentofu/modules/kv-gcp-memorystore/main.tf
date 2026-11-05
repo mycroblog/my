@@ -181,7 +181,7 @@ output "permissions" {
 }
 
 output "vpc_access" {
-  description = "What the app must attach to reach the instance: pass it to vpc_access of app-gcp-cloud-run."
+  description = "What the app attaches to reach the instance, through backends."
   value = {
     network    = local.network
     subnetwork = local.subnetwork

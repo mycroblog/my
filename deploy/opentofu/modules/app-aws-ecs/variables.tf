@@ -97,6 +97,12 @@ variable "backends" {
     billing_sources = optional(list(string), [])
     # Accepted so that a backend of no platform fits, and refused below: nothing calls or invokes this service that way.
     invokers = optional(list(string), [])
+    # Accepted so that they cannot vanish, and refused below: they belong to Google Cloud.
+    cloud_sql_instances = optional(list(string), [])
+    vpc_access = optional(object({
+      network    = string
+      subnetwork = string
+    }))
     event_sources = optional(map(object({
       arn                        = string
       visibility_timeout_seconds = number
@@ -125,6 +131,11 @@ variable "backends" {
   validation {
     condition     = alltrue([for b in var.backends : length(b.event_sources) == 0])
     error_message = "event_sources belongs to a platform that polls a queue to invoke the app, and nothing does here: queue = sqs needs Lambda. Use queue-db."
+  }
+
+  validation {
+    condition     = alltrue([for b in var.backends : length(b.cloud_sql_instances) == 0 && b.vpc_access == null])
+    error_message = "cloud_sql_instances and vpc_access belong to Cloud Run. A backend in a VPC here returns security_group_ids."
   }
 
   validation {

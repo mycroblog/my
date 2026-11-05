@@ -93,6 +93,10 @@ locals {
   # Cloud SQL instances that the service and the jobs reach through the socket of Cloud Run's connector, at /cloudsql.
   cloud_sql_instances = distinct(flatten([for b in var.backends : b.cloud_sql_instances]))
 
+  # A service has one Direct VPC egress, so every backend that asks for one must name the same subnet.
+  vpc_accesses = distinct(concat(var.vpc_access == null ? [] : [var.vpc_access], [for b in var.backends : b.vpc_access if b.vpc_access != null]))
+  vpc_access   = length(local.vpc_accesses) == 0 ? null : local.vpc_accesses[0]
+
   jobs = merge(
     { migrate = ["db", "upgrade", "-check"] },
     var.console_enabled ? { console = ["version"] } : {},
@@ -106,6 +110,10 @@ resource "google_service_account" "server" {
 
   # Here because this resource always exists, and the plan fails before anything is created.
   lifecycle {
+    precondition {
+      condition     = length(local.vpc_accesses) <= 1
+      error_message = "vpc_access names more than one subnet across the input and the backends, and a service has one Direct VPC egress."
+    }
     precondition {
       condition     = length(local.duplicate_settings) == 0
       error_message = "These settings are named more than once across the backends, env, secret_env, secret_files, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
@@ -240,7 +248,7 @@ resource "google_cloud_run_v2_service" "server" {
     }
 
     dynamic "vpc_access" {
-      for_each = var.vpc_access == null ? [] : [var.vpc_access]
+      for_each = local.vpc_access == null ? [] : [local.vpc_access]
       content {
         egress = "PRIVATE_RANGES_ONLY"
         network_interfaces {
@@ -409,7 +417,7 @@ resource "google_cloud_run_v2_job" "one_off" {
       max_retries = 0
 
       dynamic "vpc_access" {
-        for_each = var.vpc_access == null ? [] : [var.vpc_access]
+        for_each = local.vpc_access == null ? [] : [local.vpc_access]
         content {
           egress = "PRIVATE_RANGES_ONLY"
           network_interfaces {

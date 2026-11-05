@@ -20,6 +20,7 @@ tasks:
     cmds:
       - task: fmt-check
       - task: env-check
+      - task: backend-fields
       - task: sources
       - task: validate
       - task: test
@@ -38,6 +39,11 @@ tasks:
     desc: Fail when deploy/opentofu or its guide names a MY_ variable that the configuration does not have
     cmds:
       - scripts/tofu-env-check.sh deploy/opentofu docs/operations/deploy-cloud-run.md docs/operations/billing-import.md
+
+  backend-fields:
+    desc: Fail when the backends type of an app module and the backend contract disagree, since OpenTofu drops an unknown field without a word
+    cmds:
+      - scripts/tofu-backend-fields-check.sh
 
   init:
     internal: true

@@ -589,3 +589,23 @@ run "the_same_direct_setting_from_two_backends_fails" {
 
   expect_failures = [aws_iam_role.execution]
 }
+
+run "a_field_of_google_cloud_fails" {
+  command = plan
+
+  variables {
+    backends = [{ cloud_sql_instances = ["p:r:db"] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_subnet_of_cloud_run_fails" {
+  command = plan
+
+  variables {
+    backends = [{ vpc_access = { network = "n", subnetwork = "s" } }]
+  }
+
+  expect_failures = [var.backends]
+}

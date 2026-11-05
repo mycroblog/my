@@ -958,3 +958,152 @@ run "a_project_without_a_resource_is_still_the_apps" {
     error_message = "a project grant without a resource goes on the app's project, under the key it always had"
   }
 }
+
+run "the_security_groups_of_aws_fail" {
+  command = plan
+
+  variables {
+    backends = [{ security_group_ids = ["sg-1"] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "a_queue_that_lambda_polls_fails" {
+  command = plan
+
+  variables {
+    backends = [{ event_sources = { jobs = { arn = "a", visibility_timeout_seconds = 930 } } }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_load_balancer_of_ecs_fails" {
+  command = plan
+
+  variables {
+    backends = [{ load_balancer = { target_group_arn = "a", security_group_id = "b" } }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_conditions_of_an_aws_statement_fail" {
+  command = plan
+
+  variables {
+    backends = [{ permissions = [{ permission = "roles/x", scope = "project", conditions = [{ test = "t", variable = "v", values = ["x"] }] }] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "a_backend_on_private_addresses_attaches_the_service_and_the_jobs" {
+  command = plan
+
+  variables {
+    console_enabled = true
+    backends        = [{ vpc_access = { network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/r/subnetworks/s" } }]
+  }
+
+  assert {
+    condition = alltrue([
+      for t in [
+        google_cloud_run_v2_service.server.template[0],
+        google_cloud_run_v2_job.one_off["migrate"].template[0].template[0],
+        google_cloud_run_v2_job.one_off["console"].template[0].template[0],
+      ] : t.vpc_access[0].egress == "PRIVATE_RANGES_ONLY" && t.vpc_access[0].network_interfaces[0].subnetwork == "projects/p/regions/r/subnetworks/s"
+    ])
+    error_message = "a backend's subnet must reach the service and every job"
+  }
+}
+
+run "the_same_subnet_from_the_input_and_a_backend_passes" {
+  command = plan
+
+  variables {
+    vpc_access = { network = "n", subnetwork = "s" }
+    backends   = [{ vpc_access = { network = "n", subnetwork = "s" } }]
+  }
+
+  assert {
+    condition     = length(google_cloud_run_v2_service.server.template[0].vpc_access) == 1
+    error_message = "one subnet named twice is still one subnet"
+  }
+}
+
+run "two_subnets_fail" {
+  command = plan
+
+  variables {
+    backends = [
+      { vpc_access = { network = "n", subnetwork = "s" } },
+      { vpc_access = { network = "n", subnetwork = "t" } },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "stream_postgres_on_a_database_url" {
+  command = apply
+
+  module {
+    source = "../stream-postgres"
+  }
+}
+
+run "db_with_a_pooler" {
+  command = apply
+
+  module {
+    source = "../db-external"
+  }
+
+  variables {
+    url_secret_id        = "direct"
+    pooled_url_secret_id = "pooled"
+  }
+}
+
+run "a_pooled_database_names_the_listeners_url_and_stream_postgres_names_nothing" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.db_with_a_pooler.env, secret_env = run.db_with_a_pooler.secret_env, direct_secret_env = run.db_with_a_pooler.direct_secret_env },
+      { env = run.stream_postgres_on_a_database_url.env, secret_env = run.stream_postgres_on_a_database_url.secret_env },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_STREAM"] == "postgres" && output.secret_env["MY_STREAM_POSTGRES_URL"] == "direct" && output.secret_env["MY_DATABASE_URL"] == "pooled"
+    error_message = "LISTEN must use the direct connection, which the database module names"
+  }
+}
+
+run "stream_postgres_with_its_own_url" {
+  command = apply
+
+  module {
+    source = "../stream-postgres"
+  }
+
+  variables {
+    listen_url_secret_id = "other"
+  }
+}
+
+run "two_owners_of_the_listeners_url_fail" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = run.db_with_a_pooler.env, secret_env = run.db_with_a_pooler.secret_env, direct_secret_env = run.db_with_a_pooler.direct_secret_env },
+      { env = run.stream_postgres_with_its_own_url.env, secret_env = run.stream_postgres_with_its_own_url.secret_env },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}

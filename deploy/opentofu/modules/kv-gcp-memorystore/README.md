@@ -29,10 +29,9 @@ module "kv" {
 
 module "app" {
   # ...
-  vpc_access = module.kv.vpc_access
   backends = [
     # ...
-    { env = module.kv.env, secret_files = module.kv.secret_files },
+    module.kv,
   ]
 }
 ```
@@ -51,7 +50,7 @@ module "app" {
 | `secret_env` | Empty |
 | `secret_files` | `MY_VALKEY_TLS_CA_FILE`, the instance's CA |
 | `permissions` | Empty |
-| `vpc_access` | `{ network, subnetwork }` for the `vpc_access` input of `app-gcp-cloud-run` |
+| `vpc_access` | `{ network, subnetwork }`, which `app-gcp-cloud-run` attaches, through `backends` |
 
 The project needs the APIs of Memorystore, Network Connectivity, Service Consumer Management, Compute Engine, and Secret Manager.
 

@@ -100,6 +100,7 @@ changing one module block:
 | `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it, on a platform where something calls it |
 | `event_sources` (optional) | `map(object({ arn, visibility_timeout_seconds }))` | Queues that the platform polls to invoke the app, on a platform where the app is invoked that way |
 | `billing_sources` (optional) | `list(string)` | What this module adds to the one setting `MY_BILLING_SOURCES`, which the app sets from all of them |
+| `vpc_access` (optional) | `object({ network, subnetwork })` | The subnet Cloud Run attaches to reach a backend on private addresses. Two different subnets fail the plan |
 
 A permission means what the platform's IAM means: what the identity is permitted, which on Google Cloud is a role. `scope` says which kind it is, so a backend of
 one platform handed to the app of another fails the plan instead of granting nothing:
@@ -135,6 +136,10 @@ The rules:
 Anything without a backend (VAPID, CAPTCHA, and every other setting) goes through the `env` and
 `secret_env`, and `secret_files` inputs of the app module, so no setting is out of reach. A backend of your own needs nothing special: any
 object with these fields can go in `backends`.
+
+**An app takes every field of these tables and either uses it or refuses it**, because OpenTofu drops an unknown field without a word when it converts a module's
+outputs to the type of `backends`, and a backend's settings or security groups would vanish while the plan passes. So a field of another platform fails the plan, and
+`scripts/task.sh tofu:backend-fields` fails when the tables and the type of `backends` of an app disagree, or when a module returns an output that is neither here nor listed there as being for the operator.
 
 ### The database's two connections
 
@@ -224,13 +229,13 @@ where the service has no host of its own, such as ECS, whose tasks each have ano
 ### Private networking
 
 Most backends are reached over the internet with the platform's own identity, and need no network of their own. A backend that
-has only private addresses says what the app must attach as an output of its own, outside `backends`, and the operator passes it
-to the app. A setting cannot express this, and the backend still does not name the app.
+has only private addresses says what the app must attach through `backends`, and the backend still does not name the app:
 
-On Cloud Run, `vpc_access` of `app-gcp-cloud-run` takes `{ network, subnetwork }` and attaches the service and the jobs through
-Direct VPC egress, for traffic to private ranges only. Left null, it attaches nothing. `kv-gcp-memorystore` returns the value as
-`vpc_access`. `kv-aws-elasticache` returns `client_security_group_id` for the tasks to take; `app-aws-lambda` has no input for a VPC,
-so it cannot reach that cache.
+| Platform | Field | What the app does | Returned by |
+| --- | --- | --- | --- |
+| Cloud Run | `vpc_access` | Attaches the service and the jobs through Direct VPC egress, for traffic to private ranges only | `kv-gcp-memorystore` |
+| ECS | `security_group_ids` | The service and every one-off task join each group, in the VPC of `vpc_id` | `db-aws-rds`, `kv-aws-elasticache` |
+| Lambda | `security_group_ids` | Every function joins each group, in the subnets of `vpc_subnet_ids`, without which the plan fails. An attached function reaches the internet only through a NAT gateway | `db-aws-rds`, `kv-aws-elasticache` |
 
 The server has one Valkey setting for `kv` and `stream`, so `MY_VALKEY_URL` has one owner: `url_secret_id` of `stream-valkey` is
 null beside a `kv-*` module. Both managed Valkey modules bill while the server is idle, so neither fits a deployment at near zero,

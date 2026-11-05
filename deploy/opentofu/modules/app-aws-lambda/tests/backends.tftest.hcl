@@ -453,3 +453,33 @@ run "billing_sources_beside_the_setting_in_env_fail" {
 
   expect_failures = [aws_iam_role.server]
 }
+
+run "a_field_of_google_cloud_fails" {
+  command = plan
+
+  variables {
+    backends = [{ cloud_sql_instances = ["p:r:db"] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_subnet_of_cloud_run_fails" {
+  command = plan
+
+  variables {
+    backends = [{ vpc_access = { network = "n", subnetwork = "s" } }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "the_load_balancer_of_a_service_with_tasks_fails" {
+  command = plan
+
+  variables {
+    backends = [{ load_balancer = { target_group_arn = "a", security_group_id = "b" } }]
+  }
+
+  expect_failures = [var.backends]
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, and scripts/tofu-env-check.sh against a gcloud
+# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, scripts/tofu-env-check.sh, and scripts/tofu-backend-fields-check.sh against a gcloud
 # and an aws that record their calls: the order of the steps, stopping at a failure, and passing on an exit code. It shows
 # nothing about Google Cloud or AWS themselves.
 set -euo pipefail
@@ -335,6 +335,38 @@ if examples check --release v0.2.0; then fail "a stable release passed with anot
 examples bump v0.2.0 || fail "bump failed"
 examples check --release v0.2.0 || fail "bump left something behind"
 grep -qF 'ref=v0.2.0&depth=1' "$tree/deploy/opentofu/examples/e/main.tf" || fail "bump did not change the source"
+
+# tofu-backend-fields-check: the real modules pass, and each way for a backend's field to vanish fails.
+"$root/scripts/tofu-backend-fields-check.sh" || fail "the fields check refused the repository"
+fields="$tmp/fields"
+fields_copy() {
+  rm -rf "$fields"
+  mkdir -p "$fields/modules"
+  cp "$root/deploy/opentofu/README.md" "$fields/"
+  for module in "$root"/deploy/opentofu/modules/*/; do
+    mkdir "$fields/modules/$(basename "$module")"
+    cp "$module"*.tf "$fields/modules/$(basename "$module")/"
+  done
+}
+fields_copy
+"$root/scripts/tofu-backend-fields-check.sh" "$fields" || fail "the fields check refused a copy"
+sed -i '/^    billing_sources = /d' "$fields/modules/app-aws-ecs/variables.tf"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed an app without a contract field"; fi
+grep -qF 'app-aws-ecs: backends has no field billing_sources' "$tmp/fields.err" || fail "the fields check did not name the missing field"
+fields_copy
+# shellcheck disable=SC2016 # the backticks are the table's
+sed -i 's/^| `billing_sources` (optional)/| `new_field` (optional)/' "$fields/README.md"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a contract field that no app has"; fi
+grep -qF 'backends has no field new_field' "$tmp/fields.err" || fail "the fields check did not name the new contract field"
+grep -qF 'billing_sources, which the contract' "$tmp/fields.err" || fail "the fields check did not name a field outside the contract"
+fields_copy
+sed -i 's/b\.cloud_sql_instances/b.other/g' "$fields/modules/app-gcp-cloud-run/main.tf"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a field that nothing reads"; fi
+grep -qF 'app-gcp-cloud-run: nothing reads or refuses b.cloud_sql_instances' "$tmp/fields.err" || fail "the fields check did not name the field nothing reads"
+fields_copy
+printf 'output "client_group" {\n  value = "x"\n}\n' >> "$fields/modules/kv-external/main.tf"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed an output outside the contract"; fi
+grep -qF 'kv-external: the output client_group' "$tmp/fields.err" || fail "the fields check did not name the output"
 
 if [ "$failures" -gt 0 ]; then
   echo "tofu-scripts-test: $failures failed" >&2

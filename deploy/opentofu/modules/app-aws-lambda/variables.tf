@@ -76,6 +76,16 @@ variable "backends" {
     billing_sources = optional(list(string), [])
     # Accepted so that a backend of no platform fits, and refused below: nothing calls the functions.
     invokers = optional(list(string), [])
+    # Accepted so that they cannot vanish, and refused below: they belong to Google Cloud, and to an app with tasks.
+    cloud_sql_instances = optional(list(string), [])
+    vpc_access = optional(object({
+      network    = string
+      subnetwork = string
+    }))
+    load_balancer = optional(object({
+      target_group_arn  = string
+      security_group_id = string
+    }))
   }))
   default  = []
   nullable = false
@@ -95,6 +105,16 @@ variable "backends" {
   validation {
     condition     = alltrue([for b in var.backends : length(b.invokers) == 0])
     error_message = "invokers belongs to a platform that calls the app. Here Lambda polls the queue, which a backend names in event_sources."
+  }
+
+  validation {
+    condition     = alltrue([for b in var.backends : length(b.cloud_sql_instances) == 0 && b.vpc_access == null])
+    error_message = "cloud_sql_instances and vpc_access belong to Cloud Run. A backend in a VPC here returns security_group_ids."
+  }
+
+  validation {
+    condition     = alltrue([for b in var.backends : b.load_balancer == null])
+    error_message = "load_balancer is what a service with tasks attaches to, and a function attaches to none. Use ingress-aws-cloudfront, or app-aws-ecs."
   }
 
   validation {
