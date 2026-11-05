@@ -29,7 +29,7 @@ export function useReportCommentTranslation(report: string, comment: string): Re
   const translator = useReportCommentTranslator(report, comment, target);
   // The last translation, of this comment into this language, and whether it is on show.
   const [kept, setKept] = useState<{ key: string; translation: TranslatedComment } | null>(null);
-  const [isShown, setShown] = useState(false);
+  const [isShown, setIsShown] = useState(false);
   const [downloaded, setDownloaded] = useState<number | null>(null);
   const key = JSON.stringify([report, comment, target]);
   const cached = kept?.key === key ? kept.translation : null;
@@ -44,7 +44,7 @@ export function useReportCommentTranslation(report: string, comment: string): Re
     },
     onSuccess: (answer, variables) => {
       setKept({ key: variables.key, translation: answer });
-      setShown(true);
+      setIsShown(true);
       notice.inPlace(translatedByText(answer.by, t));
     },
   });
@@ -54,10 +54,10 @@ export function useReportCommentTranslation(report: string, comment: string): Re
 
   const onPress = () => {
     if (shown !== null) {
-      setShown(false);
+      setIsShown(false);
       notice.inPlace(t("client:status.translation.original_shown"));
     } else if (cached !== null) {
-      setShown(true);
+      setIsShown(true);
       notice.inPlace(translatedByText(cached.by, t));
     } else if (translator !== null) {
       translate.mutate({ translator, key });
