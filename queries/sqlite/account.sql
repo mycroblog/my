@@ -108,6 +108,16 @@ WHERE id IN (SELECT value FROM json_each(sqlc.arg(ids)))
     OR (length(domain) > length(sqlc.arg(domain)) AND substr(domain, length(domain) - length(sqlc.arg(domain))) = '.' || sqlc.arg(domain)))
 ORDER BY id;
 
+-- ListAccountIDsOnDomainAfter pages the accounts on domain or one of its subdomains in ID order
+-- after the ID after ("" for the first page).
+-- name: ListAccountIDsOnDomainAfter :many
+SELECT id FROM accounts
+WHERE id > CAST(sqlc.arg(after) AS TEXT)
+  AND (domain = sqlc.arg(domain)
+    OR (length(domain) > length(sqlc.arg(domain)) AND substr(domain, length(domain) - length(sqlc.arg(domain))) = '.' || sqlc.arg(domain)))
+ORDER BY id
+LIMIT sqlc.arg(page_limit);
+
 -- ListExistingAccountIDs returns, in ID order, the accounts among ids that exist. The ids are a JSON array.
 -- name: ListExistingAccountIDs :many
 SELECT id FROM accounts WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY id;

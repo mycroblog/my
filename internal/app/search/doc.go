@@ -8,6 +8,10 @@
 // without being read again from the database. The search of accounts and hashtags (FR-306,
 // FR-307) does not go through this module.
 //
+// A backend's index follows the database through jobs that the facts enqueue in their transactions,
+// each carrying an ID and reading the current state when it runs (ADR-0149 §7). Eligible is the one
+// rule of what the index may hold.
+//
 // With search = none there is no backend: the server opens no connection to an engine, starts no
 // worker for it, and enqueues no search job (ADR-0149 §2).
 package search

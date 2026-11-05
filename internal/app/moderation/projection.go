@@ -30,6 +30,8 @@ type ProjectionRepository interface {
 	ListUnliftedActionStatuses(ctx context.Context, tx uow.Tx, kind moderation.ActionKind) ([]ActionStatus, error)
 	// ListAllAccountRestrictionRows returns every row of account_restrictions.
 	ListAllAccountRestrictionRows(ctx context.Context, tx uow.Tx) ([]moderation.RestrictionRow, error)
+	// ListAllDomainRestrictionRows returns every row of domain_restrictions.
+	ListAllDomainRestrictionRows(ctx context.Context, tx uow.Tx) ([]moderation.RestrictionRow, error)
 	DeleteAllAccountRestrictions(ctx context.Context, tx uow.Tx) error
 	DeleteAllDomainRestrictions(ctx context.Context, tx uow.Tx) error
 	// RebuildReportStates empties report_states and derives it again from the reports, their
@@ -52,18 +54,17 @@ type ActionStatus struct {
 // write (data-model §9).
 //
 // An action that is not lifted imposes its restrictions until it expires. An expired row
-// restricts nothing, and the job moderation.expire_restrictions removes it and tells the end of
-// a suspension it removes (ExpireAccountRestrictions), which no event records; so the rebuild
-// keeps the expired rows of account_restrictions that the table holds and does not bring back
-// those that the job removed. domain_restrictions keeps its expired rows until the lift, so the
-// rebuild derives them all.
+// restricts nothing, and the job moderation.expire_restrictions removes it and tells what expired
+// (ExpireAccountRestrictions, ExpireDomainRestrictions), which no event table records; so the
+// rebuild keeps the expired rows that the tables hold and does not bring back those that the job
+// removed.
 func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository, clock kernel.Clock) error {
 	err := u.Tx(ctx, func(tx uow.Tx) error {
 		now := kernel.Normalize(clock.Now())
 		if err := rebuildAccountRestrictions(ctx, tx, repo, now); err != nil {
 			return err
 		}
-		if err := rebuildDomainRestrictions(ctx, tx, repo); err != nil {
+		if err := rebuildDomainRestrictions(ctx, tx, repo, now); err != nil {
 			return err
 		}
 		if err := repo.RebuildReportStates(ctx, tx); err != nil {
@@ -89,10 +90,7 @@ func rebuildAccountRestrictions(ctx context.Context, tx uow.Tx, repo Repository,
 	if err != nil {
 		return err
 	}
-	kept := make(map[string]bool, len(held))
-	for _, r := range held {
-		kept[rowKey(r)] = true
-	}
+	kept := heldRows(held)
 	for _, a := range actions {
 		for _, r := range a.Rows() {
 			if !moderation.InEffect(r.EffectiveUntil, now) && !kept[rowKey(r)] {
@@ -106,7 +104,11 @@ func rebuildAccountRestrictions(ctx context.Context, tx uow.Tx, repo Repository,
 	return nil
 }
 
-func rebuildDomainRestrictions(ctx context.Context, tx uow.Tx, repo Repository) error {
+func rebuildDomainRestrictions(ctx context.Context, tx uow.Tx, repo Repository, now time.Time) error {
+	held, err := repo.ListAllDomainRestrictionRows(ctx, tx)
+	if err != nil {
+		return err
+	}
 	if err := repo.DeleteAllDomainRestrictions(ctx, tx); err != nil {
 		return err
 	}
@@ -114,14 +116,27 @@ func rebuildDomainRestrictions(ctx context.Context, tx uow.Tx, repo Repository) 
 	if err != nil {
 		return err
 	}
+	kept := heldRows(held)
 	for _, a := range actions {
 		for _, r := range a.Rows() {
+			if !moderation.InEffect(r.EffectiveUntil, now) && !kept[rowKey(r)] {
+				continue
+			}
 			if err := repo.InsertDomainRestriction(ctx, tx, r); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+// heldRows returns the keys of rows.
+func heldRows(rows []moderation.RestrictionRow) map[string]bool {
+	kept := make(map[string]bool, len(rows))
+	for _, r := range rows {
+		kept[rowKey(r)] = true
+	}
+	return kept
 }
 
 // rowKey identifies a restriction row by all its columns.

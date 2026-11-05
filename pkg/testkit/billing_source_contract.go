@@ -18,7 +18,8 @@ import (
 // is final, how many billed pages a fetch of everything takes, and a failure of the provider.
 type BillingScenario struct {
 	// Location is UTC. The dates of the scenario are calendar dates in the source's own Location
-	// (UTC for aws, America/Los_Angeles for gcp): the fake provider of a source serves them there.
+	// (UTC for aws and the plugin of the tests, America/Los_Angeles for gcp): the fake provider of a
+	// source serves them there.
 	Location *time.Location
 	Months   []BillingScenarioMonth
 	// Pages is the number of billed pages (Cost Explorer pages, BigQuery queries) that a fetch of
@@ -40,8 +41,8 @@ type BillingScenarioMonth struct {
 	Rows    []FakeBillingRow
 }
 
-// BillingSourceFactory returns a source named aws or gcp whose provider (a fake HTTP server, an
-// emulator) serves the scenario. The factory registers the cleanup of what it creates with
+// BillingSourceFactory returns a source named aws, gcp, or plugin whose provider (a fake HTTP server,
+// an emulator, a fake plugin) serves the scenario. The factory registers the cleanup of what it creates with
 // t.Cleanup.
 type BillingSourceFactory func(t *testing.T, s BillingScenario) appfinance.BillingSource
 
@@ -96,7 +97,7 @@ func billingLines(totals bool) int {
 }
 
 // billingLocations are the time zones of the billing months of each source (ADR-0068 §1).
-var billingLocations = map[string]string{"aws": "UTC", "gcp": "America/Los_Angeles"}
+var billingLocations = map[string]string{"aws": "UTC", "gcp": "America/Los_Angeles", appfinance.SourcePlugin: "UTC"}
 
 func billingMonth(t *testing.T, s string) finance.YearMonth {
 	t.Helper()
@@ -171,14 +172,14 @@ func billingAmountIs(t *testing.T, what, got, want string) {
 func billingMonthsAskedFor(t *testing.T, factory BillingSourceFactory, totals bool) {
 	s := billingScenario(t)
 	src := factory(t, s)
-	if n := src.Name(); n != "aws" && n != "gcp" {
-		t.Errorf("Name() = %q, want aws or gcp", n)
+	if n := src.Name(); n != "aws" && n != "gcp" && n != appfinance.SourcePlugin {
+		t.Errorf("Name() = %q, want aws, gcp, or plugin", n)
 	}
 	if want := billingLocations[src.Name()]; src.Location() == nil || src.Location().String() != want {
 		t.Errorf("Location() = %v, want %s for %s", src.Location(), want, src.Name())
 	}
-	if m := src.Method(); m != appfinance.MethodCostExplorer && m != appfinance.MethodBigQuery && m != appfinance.MethodBudget {
-		t.Errorf("Method() = %q, want %s, %s, or %s", m, appfinance.MethodCostExplorer, appfinance.MethodBigQuery, appfinance.MethodBudget)
+	if m := src.Method(); m != appfinance.MethodCostExplorer && m != appfinance.MethodBigQuery && m != appfinance.MethodBudget && m != appfinance.MethodPlugin {
+		t.Errorf("Method() = %q, want %s, %s, %s, or %s", m, appfinance.MethodCostExplorer, appfinance.MethodBigQuery, appfinance.MethodBudget, appfinance.MethodPlugin)
 	}
 	snap, err := billingFetch(t, src, 10, "2026-09", "2026-10")
 	if err != nil {

@@ -48,6 +48,18 @@ WHERE effective_until <= sqlc.arg(now)::timestamptz
   )
 RETURNING account_id, restriction, source_action_id, effective_until;
 
+-- DeleteExpiredDomainRestrictions is DeleteExpiredAccountRestrictions for the rows of domains.
+-- name: DeleteExpiredDomainRestrictions :many
+DELETE FROM domain_restrictions
+WHERE effective_until <= sqlc.arg(now)::timestamptz
+  AND (domain, restriction, source_action_id) IN (
+    SELECT r.domain, r.restriction, r.source_action_id FROM domain_restrictions AS r
+    WHERE r.effective_until <= sqlc.arg(now)::timestamptz
+    ORDER BY r.effective_until
+    LIMIT sqlc.arg(batch_limit)::integer
+  )
+RETURNING domain, restriction, source_action_id, effective_until;
+
 -- ListAccountRestrictionsInEffect returns the distinct restrictions of an account in effect at now.
 -- name: ListAccountRestrictionsInEffect :many
 SELECT DISTINCT restriction FROM account_restrictions

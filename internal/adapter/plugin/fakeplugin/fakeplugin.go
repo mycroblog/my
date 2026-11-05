@@ -16,8 +16,10 @@ import (
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
 
+	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/billing/v1/billingv1connect"
 	probev1 "github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1"
 	"github.com/mycroblog/my/internal/adapter/plugin/gen/my/plugin/probe/v1/probev1connect"
+	appfinance "github.com/mycroblog/my/internal/app/finance"
 )
 
 // Options make the fake misbehave or require credentials.
@@ -28,6 +30,9 @@ type Options struct {
 	Broken bool
 	// Block holds every call until its context ends.
 	Block bool
+	// Billing is what the fake's billing kind reports, under the source's own rules of requests and failures. Without it
+	// the fake does not serve the kind.
+	Billing appfinance.BillingSource
 }
 
 // Recorder tells what reached a fake.
@@ -61,6 +66,7 @@ func (r *Recorder) wrap(token string, h http.Handler) http.Handler {
 func Connect(o Options) (http.Handler, *Recorder) {
 	server := connect.NewServer()
 	probev1connect.RegisterProbeServiceHandler(server, &probeServer{o: o})
+	billingv1connect.RegisterBillingServiceHandler(server, &billingServer{o: o})
 	mux := http.NewServeMux()
 	connecthttp.Mount(mux, server)
 	r := new(Recorder)
@@ -130,6 +136,7 @@ func JSON(o Options) (http.Handler, *Recorder) {
 			"extra":   "a field the server does not know, which it ignores",
 		})
 	})
+	serveBillingJSON(mux, o)
 	r := new(Recorder)
 	return r.wrap(o.Token, mux), r
 }

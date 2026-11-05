@@ -552,6 +552,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err != nil {
 		return nil, err
 	}
+	if err := a.setUpSearch(ctx, cfg, opts); err != nil {
+		return nil, err
+	}
 	if err := a.setUpErasure(repos.identities, repos.accounts, repos.statuses, repos.follows, repos.feeds, repos.notifs, repos.medias, repos.voice, repos.translations); err != nil {
 		return nil, err
 	}
@@ -565,9 +568,6 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpFanOut(cfg, repos.feds, fedOutbox)
 	a.setUpWebhooks(repos.hooks)
 	if err := a.setUpVoice(cfg, repos.voice); err != nil {
-		return nil, err
-	}
-	if err := a.setUpSearch(ctx, cfg, opts); err != nil {
 		return nil, err
 	}
 	if err := a.setUpFinance(ctx, cfg, repos.finance, opts); err != nil {

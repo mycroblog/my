@@ -328,10 +328,18 @@ func (s *Service) reviseProfile(ctx context.Context, accountID string, in Profil
 			return errProfileChanged
 		}
 		rev.Seq = head.Seq + 1
+		indexableChanged := false
+		switch cur, err := s.d.Repository.CurrentProfile(ctx, tx, accountID); {
+		case errors.Is(err, ErrNotFound):
+		case err != nil:
+			return err
+		default:
+			indexableChanged = cur.Indexable != rev.Indexable
+		}
 		if err := s.d.Repository.InsertProfileRevision(ctx, tx, rev); err != nil {
 			return err
 		}
-		return tx.Emit(ctx, ProfileRevised{Revision: rev})
+		return tx.Emit(ctx, ProfileRevised{Revision: rev, IndexableChanged: indexableChanged})
 	})
 	if err != nil {
 		return account.ProfileRevision{}, err
@@ -539,6 +547,25 @@ func (s *Service) AccountsOnDomain(ctx context.Context, tx uow.Tx, domain string
 		return nil, nil
 	}
 	return s.d.Repository.AccountsOnDomain(ctx, tx, domain, ids)
+}
+
+// ProfileIndexable reports the indexable of an account's current profile, false for an account
+// without one.
+func (s *Service) ProfileIndexable(ctx context.Context, id string) (bool, error) {
+	actor, err := s.FindByID(ctx, id)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+	return actor.Profile != nil && actor.Profile.Indexable, nil
+}
+
+// AccountIDsOnDomain returns up to limit IDs of the accounts on domain or one of its subdomains in
+// order, after the ID after ("" for the first page).
+func (s *Service) AccountIDsOnDomain(ctx context.Context, domain, after string, limit int) ([]string, error) {
+	return s.d.Repository.ListAccountIDsOnDomain(ctx, domain, after, limit)
 }
 
 // LocalAccountIDs returns up to limit local account IDs in order, after the ID after ("" for the

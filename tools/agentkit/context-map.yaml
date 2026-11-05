@@ -341,9 +341,10 @@ entries:
     docs: ["docs/adr/0149-full-text-search.md"]
     notes:
       - "search.Index returns status IDs and a cursor only, and a query is plain text, never the engine's query language (ADR-0149 §4). testkit.SearchIndexContract is what a backend passes."
-      - "search = none has no backend: no connection, no worker, and no search job (ADR-0149 §2). The job types stay registered with handlers that succeed doing nothing (§7), and GET /instance says full_text_search.available = false."
+      - "search = none has no backend: no connection, no worker, and no search job (ADR-0149 §2). The job types stay registered with handlers that succeed doing nothing (§7), and GET /instance says full_text_search.available = false. RegisterProjectors runs only with a backend."
+      - "search.Eligible is the one rule of what the index holds (ADR-0149 §5), shared with the API and the rebuild. A job carries an ID, never text, and reads the current state; search.sync_status reads again after writing (§7). Backend calls run outside transactions with indexCallTimeout. The eraser only enqueues (§11)."
       - "The fake, internal/adapter/search/fake, is separate from none. Go tests inject it with AppOptions.SearchIndex; only internal/platform/adapters_search_fake.go (build tag e2e_fakes) links it into the server, as search = fake, refused outside profile = development."
-    userdocs: ["docs/reference/jobs.md#full-text-search"]
+    userdocs: ["docs/reference/jobs.md#full-text-search", "docs/operations/running.md#splitting-workers-by-job-type"]
   - name: module-diagnostics
     paths: ["internal/domain/diagnostics/**", "internal/app/diagnostics/**", "internal/platform/diagnostics.go", "internal/adapter/db/*/diagnostics.go", "schema/*/15-diagnostics.sql", "queries/*/diagnostics.sql", "pkg/testkit/diagnostics_contract.go"]
     docs: ["docs/architecture/data-model/04-tables/15-diagnostics.md#415-diagnostics", "docs/adr/0103-error-reporting.md"]
@@ -476,7 +477,7 @@ entries:
       - "Every mailer sends the message that internal/adapter/mail/internal/message assembles and passes testkit.MailerContract; mail/ses tests run against an httptest stand-in of the SES API, never AWS."
       - "mail/smtp also runs on Mailpit containers (mailpit_test.go and internal/platform/mailpit_test.go through pkg/testkit/mailpittest), only with TEST_MAIL=container: `scripts/task.sh go:test-mail` (CI job mail-integration in the slow suite). The development Mailpit is deploy/docker/mailpit with scripts/mailpit-cert.sh; its image pin matches mailpittest.DefaultImage."
   - name: adapter-billing
-    paths: ["internal/adapter/billing/**"]
+    paths: ["internal/adapter/billing/**", "internal/platform/adapters_*billing_plugin.go", "internal/platform/billing_import_plugin_test.go"]
     docs: ["docs/adr/0068-billing-import.md", "docs/operations/billing-import.md"]
     userdocs: ["docs/operations/billing-import.md"]
   - name: adapter-payment

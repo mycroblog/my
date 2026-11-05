@@ -113,6 +113,11 @@ The exit code is 1 when a case fails. The flags mean what the settings mean: `--
 `http://` address. The plugin under test can be a real one, so a case that does more than the call itself runs only when
 a flag asks for it. A kind whose contract the version does not have yet reports `reachable` and a `SKIP`.
 
+`--kind billing` checks only that the plugin refuses to spend anything when no billed request is allowed. `--billed` also
+makes a real fetch of the current and the previous month, and checks the answer as an import does; it may cost money at
+the providers behind the plugin. [Importing cloud usage costs](billing-import.md#a-plugin-billing_sources--plugin) has the
+contract of the kind.
+
 `probe` is the smallest kind, and the server delegates nothing to it. Serve it first, to check the transport, the
 protocol, and the authentication before you write the rest of the plugin.
 

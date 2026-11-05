@@ -52,8 +52,8 @@
     行のない Actor には最新のスナップショットの取得時刻と 0 を入れます。`snapshot_id` と配送先は最新のスナップショットから作ります。
   - `notification_deleted_statuses` は、通知の対象の投稿のうち `content` の公開 API が削除済みと答えるものから作ります。
   - `account_restrictions` は、解除されていない処分の行のうち、期限の来ていない行と、期限の来た行で表にまだあるものから作ります。
-    期限の来た行は何も制限せず、`moderation.expire_restrictions` がそれを消すときに凍結の終わりを伝えます（§4.3）。消したことはイベントに残らないので、
-    再構築は表にある期限の来た行を残し、ジョブが消した行を戻しません。`domain_restrictions` は期限の来た行を解除まで持つので、解除されていない処分の行をすべて作ります。
+    期限の来た行は何も制限せず、`moderation.expire_restrictions` が `account_restrictions` と `domain_restrictions` からそれを消すときに、凍結の終わりと期限切れ（`moderation.account_restrictions_expired`、`moderation.domain_restrictions_expired`）を伝えます（§4.3）。消したことはイベントの表に残らないので、
+    再構築は表にある期限の来た行を残し、ジョブが消した行を戻しません。
   - `report_states` は、受け付けで `open`、解決（`open` の通報だけ）で `resolved`、再開（`resolved` の通報だけ）で `open` という規則から作ります。
     解決が再開より多ければ `resolved` で、`outcome` と `since` は最新の解決のもの、そうでなければ `open` で、`since` は最新の再開か受け付けの時刻です。担当は最新の割り当てのものです。
     `appeal_states` は、審査があればその結果と審査の時刻、なければ `pending` と申し立ての時刻です。

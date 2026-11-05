@@ -133,3 +133,52 @@ func moderationSuspensions(t *testing.T, e *moderationEnv) {
 		t.Errorf("AccountFederationSuspended after the removal = %v, %v; want true", ok, err)
 	}
 }
+
+// moderationExpiresDomainRestrictions checks that the expiry job removes the expired rows of a domain
+// and leaves those still in effect, of the same domain and of another.
+func moderationExpiresDomainRestrictions(t *testing.T, e *moderationEnv) {
+	ctx := t.Context()
+	issue := func(domain string, d time.Duration) {
+		t.Helper()
+		if _, err := e.svc.IssueDomainAction(ctx, appmoderation.DomainActionInput{Domain: domain, Kind: moderation.DomainLimit, Duration: d}); err != nil {
+			t.Fatalf("IssueDomainAction(%s) = %v", domain, err)
+		}
+	}
+	rowsOf := func(domain string) int {
+		t.Helper()
+		var rows []moderation.RestrictionRow
+		if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			var err error
+			rows, err = e.h.Moderation.DomainRestrictionRows(ctx, tx, domain)
+			return err
+		}); err != nil {
+			t.Fatalf("DomainRestrictionRows = %v", err)
+		}
+		return len(rows)
+	}
+	issue("short.example", time.Hour)
+	issue("mixed.example", time.Hour)
+	issue("mixed.example", 3*time.Hour)
+	issue("forever.example", 0)
+	limitRows := rowsOf("short.example")
+
+	if n, err := e.svc.ExpireDomainRestrictions(ctx); err != nil || n != 0 {
+		t.Errorf("ExpireDomainRestrictions before the end = %d, %v; want none", n, err)
+	}
+	e.clock.Advance(2 * time.Hour)
+	if n, err := e.svc.ExpireDomainRestrictions(ctx); err != nil || n != 2*limitRows {
+		t.Errorf("ExpireDomainRestrictions = %d, %v; want %d", n, err, 2*limitRows)
+	}
+	if n := rowsOf("short.example"); n != 0 {
+		t.Errorf("rows of the expired domain = %d, want none", n)
+	}
+	if n := rowsOf("mixed.example"); n != limitRows {
+		t.Errorf("rows of the domain with a longer action = %d, want %d", n, limitRows)
+	}
+	if n := rowsOf("forever.example"); n != limitRows {
+		t.Errorf("rows of the domain without an end = %d, want %d", n, limitRows)
+	}
+	if n, err := e.svc.ExpireDomainRestrictions(ctx); err != nil || n != 0 {
+		t.Errorf("ExpireDomainRestrictions again = %d, %v; want none", n, err)
+	}
+}

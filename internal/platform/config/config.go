@@ -238,6 +238,10 @@ type Config struct {
 	// Plugins holds the destination of each delegated kind that has any setting, by the kind's name (ADR-0146 §5); read
 	// it through PluginDestination.
 	Plugins map[string]kind.Destination
+	// PluginBillingLocation and PluginBillingProvider are what the billing source of a plugin says with no call: the
+	// IANA time zone of its billing months and the provider's name that the totals show (ADR-0146 §11).
+	PluginBillingLocation string
+	PluginBillingProvider string
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string
@@ -434,6 +438,8 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("billing_gcp_label", c.BillingGCPLabel),
 		slog.Int64("billing_gcp_max_bytes_billed", c.BillingGCPMaxBytesBilled),
 		slog.String("billing_gcp_budget_subscription", c.BillingGCPBudgetSubscription),
+		slog.String("plugin_billing_location", c.PluginBillingLocation),
+		slog.String("plugin_billing_provider", c.PluginBillingProvider),
 		slog.String("payments", c.PaymentsProvider),
 		slog.String("payments_stripe_secret_key", redact(c.PaymentsStripeSecretKey != "")),
 		slog.String("payments_stripe_webhook_secret", redact(c.PaymentsStripeWebhookSecret != "")),

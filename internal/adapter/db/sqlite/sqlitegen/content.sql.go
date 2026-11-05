@@ -322,12 +322,10 @@ func (q *Queries) GetLocalStatusByIdempotencyKey(ctx context.Context, arg GetLoc
 }
 
 const getStatus = `-- name: GetStatus :one
-
 SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
 FROM statuses WHERE id = ?
 `
 
-// Lookups.
 func (q *Queries) GetStatus(ctx context.Context, id string) (Status, error) {
 	row := q.db.QueryRowContext(ctx, getStatus, id)
 	var i Status
@@ -809,6 +807,48 @@ func (q *Queries) ListAccountPostCounters(ctx context.Context) ([]AccountPostCou
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAuthorSearchableStatusIDs = `-- name: ListAuthorSearchableStatusIDs :many
+
+SELECT id FROM statuses
+WHERE author_account_id = ?1
+  AND id > CAST(?2 AS TEXT)
+  AND visibility IN ('public', 'local')
+ORDER BY id
+LIMIT ?3
+`
+
+type ListAuthorSearchableStatusIDsParams struct {
+	AuthorAccountID string
+	After           string
+	PageLimit       int64
+}
+
+// Lookups.
+// ListAuthorSearchableStatusIDs pages the public and local statuses of an author in ID order after
+// the ID after ("" for the first page), deleted ones included.
+func (q *Queries) ListAuthorSearchableStatusIDs(ctx context.Context, arg ListAuthorSearchableStatusIDsParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listAuthorSearchableStatusIDs, arg.AuthorAccountID, arg.After, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
