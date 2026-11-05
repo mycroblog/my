@@ -850,3 +850,111 @@ run "kv_and_stream_both_naming_the_url_fail" {
 
   expect_failures = [google_service_account.server]
 }
+
+# Several backends add to the one setting, which is absent while none does.
+run "billing_sources_are_absent_without_a_billing_backend" {
+  command = plan
+
+  assert {
+    condition     = !contains(keys(output.env), "MY_BILLING_SOURCES")
+    error_message = "a deployment without a billing backend must not name the setting"
+  }
+}
+
+run "two_backends_add_to_billing_sources" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
+      { billing_sources = ["gcp"], env = { MY_BILLING_GCP_METHOD = "budget" } },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_BILLING_SOURCES"] == "aws,gcp"
+    error_message = "the setting must list each source of the backends"
+  }
+}
+
+run "a_billing_source_named_twice_fails" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
+      { billing_sources = ["aws"] },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "billing_sources_beside_the_setting_in_env_fail" {
+  command = plan
+
+  variables {
+    env = { MY_BILLING_SOURCES = "aws" }
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "db-url" } },
+      { billing_sources = ["gcp"] },
+    ]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "the_scopes_of_billing_grant_on_their_resources" {
+  command = plan
+
+  variables {
+    backends = [
+      {
+        permissions = [
+          { permission = "roles/bigquery.jobUser", scope = "project", resource = "other" },
+          { permission = "READER", scope = "dataset", resource = "projects/billing/datasets/export" },
+          { permission = "roles/pubsub.subscriber", scope = "subscription", resource = "projects/billing/subscriptions/budget" },
+        ]
+      },
+    ]
+  }
+
+  assert {
+    condition     = google_project_iam_member.backend["other/roles/bigquery.jobUser"].project == "other"
+    error_message = "a project the backend names must get the grant, not the app's"
+  }
+
+  assert {
+    condition = (
+      google_bigquery_dataset_access.backend["projects/billing/datasets/export/READER"].project == "billing" &&
+      google_bigquery_dataset_access.backend["projects/billing/datasets/export/READER"].dataset_id == "export" &&
+      google_bigquery_dataset_access.backend["projects/billing/datasets/export/READER"].user_by_email == "my-server@p.iam.gserviceaccount.com"
+    )
+    error_message = "the dataset's access entry must name the dataset and the service account"
+  }
+
+  assert {
+    condition = (
+      google_pubsub_subscription_iam_member.backend["projects/billing/subscriptions/budget/roles/pubsub.subscriber"].project == "billing" &&
+      google_pubsub_subscription_iam_member.backend["projects/billing/subscriptions/budget/roles/pubsub.subscriber"].subscription == "budget"
+    )
+    error_message = "the subscription's binding must name the subscription"
+  }
+}
+
+run "a_project_without_a_resource_is_still_the_apps" {
+  command = plan
+
+  variables {
+    backends = [
+      { permissions = [{ permission = "roles/x", scope = "project" }] },
+    ]
+  }
+
+  assert {
+    condition     = google_project_iam_member.backend["roles/x"].project == "p"
+    error_message = "a project grant without a resource goes on the app's project, under the key it always had"
+  }
+}

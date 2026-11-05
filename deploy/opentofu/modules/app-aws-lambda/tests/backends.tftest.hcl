@@ -398,3 +398,58 @@ run "subnets_without_a_group_fail" {
 
   expect_failures = [aws_iam_role.server]
 }
+
+# Several backends add to the one setting, which is absent while none does.
+run "billing_sources_are_absent_without_a_billing_backend" {
+  command = plan
+
+  assert {
+    condition     = !contains(keys(output.env), "MY_BILLING_SOURCES")
+    error_message = "a deployment without a billing backend must not name the setting"
+  }
+}
+
+run "two_backends_add_to_billing_sources" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { billing_sources = ["gcp"], env = { MY_BILLING_GCP_METHOD = "budget" } },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  assert {
+    condition     = output.env["MY_BILLING_SOURCES"] == "aws,gcp"
+    error_message = "the setting must list each source of the backends"
+  }
+}
+
+run "a_billing_source_named_twice_fails" {
+  command = plan
+
+  variables {
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { billing_sources = ["aws"] },
+      { billing_sources = ["aws"] },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "billing_sources_beside_the_setting_in_env_fail" {
+  command = plan
+
+  variables {
+    env = { MY_BILLING_SOURCES = "aws" }
+    backends = [
+      { env = { MY_DATABASE = "postgres" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
+      { billing_sources = ["gcp"] },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}

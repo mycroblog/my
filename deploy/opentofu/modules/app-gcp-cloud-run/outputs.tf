@@ -20,6 +20,11 @@ output "service_account_email" {
   value       = google_service_account.server.email
 }
 
+output "service_account_unique_id" {
+  description = "Numeric ID of that service account, which another cloud's trust policy names."
+  value       = google_service_account.server.unique_id
+}
+
 output "migration_job" {
   description = "Name of the job the upgrade script runs."
   value       = google_cloud_run_v2_job.one_off["migrate"].name

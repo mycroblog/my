@@ -18,11 +18,14 @@ terraform {
 data "aws_region" "current" {}
 
 locals {
+  # One setting, which several backends add to. A source named twice is listed below as a setting named twice.
+  billing_sources = flatten([for b in var.backends : b.billing_sources])
   named_settings = concat(
     flatten([for b in var.backends : concat(keys(b.env), keys(b.secret_env), keys(b.secret_files))]),
     keys(var.env),
     keys(var.secret_env),
     keys(var.secret_files),
+    [for source in local.billing_sources : "billing_sources: ${source}"],
   )
 
   # The Web Adapter connects to the server from loopback, and an ingress says what connects to the Function URL.
@@ -35,6 +38,9 @@ locals {
     },
     contains(local.named_settings, "MY_TRUSTED_PROXIES") && length(local.ingress_trust) == 0 ? {} : {
       MY_TRUSTED_PROXIES = join(", ", concat(["127.0.0.1/32"], flatten(local.ingress_trust)))
+    },
+    length(local.billing_sources) == 0 ? {} : {
+      MY_BILLING_SOURCES = join(",", sort(distinct(local.billing_sources)))
     },
   )
 

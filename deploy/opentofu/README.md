@@ -29,6 +29,8 @@ deploy/opentofu/
   modules/secrets-gcp-secret-manager/  secrets to fill by hand, or a VAPID key it generates
   modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
   modules/kek-gcp-kms/                 the KEK in Cloud KMS
+  modules/billing-gcp/                 the usage cost import from Google Cloud, never applied
+  modules/billing-aws/                 the usage cost import from AWS, never applied
   examples/gcp-cloud-run-neon/    all of the above, composed, on Git sources at MODULE_REF
   modules/*-aws-*/, examples/aws-lambda-neon/, examples/aws-ecs-neon/  the same on AWS, never applied: see "AWS: unverified" below
   upgrade.sh                      migration job first, then the service
@@ -73,13 +75,15 @@ A module is named `<role>-<provider>-<service>`, so that the name says what it i
 | `secrets` | Secrets, filled by hand or generated |
 | `kek` | The key that encrypts the secrets in the database |
 | `ingress` | How traffic reaches the app |
+| `billing` | What the import of a provider's usage costs reads |
 
 A module with no provider of its own drops that part (`db-external`, `mail-smtp`). The provider is what the module talks to,
 not the platform behind it: `ingress-cloudflare-app` takes its origin as an input, so the same module fronts Cloud Run or AWS. Cloud SQL would be `db-gcp-cloud-sql`.
+A module that covers a provider's several services for one purpose drops the service (`billing-gcp`).
 
 ## The backend contract
 
-Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, and `kek-*` module returns the same outputs, so that changing the database means
+Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, `kek-*`, and `billing-*` module returns the same outputs, so that changing the database means
 changing one module block:
 
 | Output | Type | Meaning |
@@ -93,13 +97,14 @@ changing one module block:
 | `security_group_ids` (optional) | `list(string)` | Security groups the app joins to reach a backend in a VPC, on AWS. The app takes the subnets as its own input, and a plan fails without them |
 | `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it, on a platform where something calls it |
 | `event_sources` (optional) | `map(object({ arn, visibility_timeout_seconds }))` | Queues that the platform polls to invoke the app, on a platform where the app is invoked that way |
+| `billing_sources` (optional) | `list(string)` | What this module adds to the one setting `MY_BILLING_SOURCES`, which the app sets from all of them |
 
 A permission means what the platform's IAM means: what the identity is permitted, which on Google Cloud is a role. `scope` says which kind it is, so a backend of
 one platform handed to the app of another fails the plan instead of granting nothing:
 
 | Platform | `permission` | `scope` | `resource` | `conditions` |
 | --- | --- | --- | --- | --- |
-| Google Cloud | A role, such as `roles/storage.objectUser` | `project` (with `resource` null), `bucket`, `topic`, `queue`, `service_account`, or `crypto_key`, each a different kind of binding | The resource's name | Not available |
+| Google Cloud | A role, such as `roles/storage.objectUser` | `project`, `bucket`, `topic`, `queue`, `service_account`, `crypto_key`, `dataset`, or `subscription`, each a different kind of binding | The resource's name. For `project`, null is the app's project, and otherwise another project's ID. For `dataset`, `projects/<project>/datasets/<dataset>`, and the permission is what an access entry holds | Not available |
 | AWS | One IAM action, such as `sqs:SendMessage` | `policy`: every grant is a statement of one policy | An ARN or an ARN pattern, or `*` | Optional: `{ test, variable, values }` of the statement |
 
 The service and its jobs share one identity, so a grant reaches them all. The app grants each permission on that resource alone, so a
@@ -122,7 +127,8 @@ The rules:
   is circular: the queue calls the service's `run.app` URL, built from the service's name, and its service account exists before the service does.
 - A setting belongs to one place. The same setting named by two backends, by `env` and `secret_env`, by what the app
   module sets itself, or as both `X` and `X_FILE`, fails the plan and lists the names. `merge()` alone would let the last
-  one win without a word.
+  one win without a word. `MY_BILLING_SOURCES` is one setting that lists what several modules read, so no module names it: each
+  returns `billing_sources`. The same source twice, or the setting in `env` beside them, fails the same way.
 
 Anything without a backend (VAPID, CAPTCHA, and every other setting) goes through the `env` and
 `secret_env`, and `secret_files` inputs of the app module, so no setting is out of reach. A backend of your own needs nothing special: any
@@ -183,6 +189,25 @@ it in `env` beside an ingress that names proxies fails the plan, and so do two i
 
 An ingress closes the origin in one of three ways: on the platform (`ingress-gcp-load-balancer`, `ingress-aws-alb`), with a header that the server checks (`ingress-cloudflare-app`, `ingress-aws-cloudfront`), or not at all (`ingress-gcp-domain-mapping`). A module that sets the header returns `MY_ORIGIN_SECRET_HEADER` in `env` and `MY_ORIGIN_SECRET` by reference in `secret_env`, and takes the value as a sensitive input.
 **That value lands in the state**: neither provider has a write-only form of it. So this is the one place that breaks the rule below that no secret value reaches the state, and the state must be kept private. Two modules must not name those settings twice, so `ingress-cloudflare-media` beside `ingress-cloudflare-app` leaves them out and comes through `extra_rules`.
+
+## The billing modules
+
+`billing-gcp` and `billing-aws` sit together in `backends`, and each with any app, whichever cloud it runs on. Each module uses
+the provider of the cloud it reads and no other, and takes what it needs of the other cloud as a string, so the root
+configuration needs the other provider only when it has that block. A permission on the other cloud's resource cannot go through
+`permissions`, since an app refuses another platform's scope, so the module holds it itself:
+
+| Block | App | Provider of the block | What holds the permission |
+| --- | --- | --- | --- |
+| `billing-aws` | AWS | `aws`, which the app has | The app's role, through `permissions` |
+| `billing-aws` with `web_identity` | Google Cloud | `aws`, on top of the app's `google` | A role of this module, which trusts the app's service account |
+| `billing-gcp` | Google Cloud | `google`, which the app has | The app's service account, through `permissions` |
+| `billing-gcp` with `external_member` | AWS | `google`, on top of the app's `aws` | That member, granted by this module |
+
+`billing-aws` on Cloud Run takes `module.app.service_account_unique_id`, so name its outputs in `backends` rather than the whole
+module, as with an ingress. Its `env` is built from names, so it does not wait for the role.
+
+Neither module has ever been applied, and turning on a billing export or a budget stays a step in the Console: [each README](modules/billing-gcp/README.md#what-stays-manual) says which, and [the guide](../../docs/operations/billing-import.md) what the import does with them.
 
 ## The app contract
 
@@ -255,6 +280,7 @@ The modules for AWS test whether this contract holds on a second platform, in tw
 | `secrets-aws-secrets-manager` | `secrets-gcp-secret-manager` |
 | `kek-aws-secrets-manager`, `kek-aws-kms` | `kek-gcp-secret-manager`, `kek-gcp-kms` |
 | `ingress-aws-cloudfront` (Lambda), `ingress-aws-alb` (ECS) | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
+| `billing-aws` | Beside `billing-gcp`, on either platform: read [The billing modules](#the-billing-modules) |
 
 `db-external`, `db-neon`, `mail-smtp`, and `ingress-cloudflare-app` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
 tests show that a block of one platform fails the plan on the other's app. `examples/aws-lambda-neon` and `examples/aws-ecs-neon` compose them, and their tests swap each block

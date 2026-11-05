@@ -95,6 +95,8 @@ variable "backends" {
     service_ingress = optional(string)
     # What an ingress puts in front of the service. The app adds Cloud Run's own front end.
     trusted_proxies = optional(list(string))
+    # What the backend adds to the one setting MY_BILLING_SOURCES.
+    billing_sources = optional(list(string), [])
   }))
   default  = []
   nullable = false
@@ -103,12 +105,12 @@ variable "backends" {
     condition = alltrue(flatten([
       for b in var.backends : [
         for r in b.permissions : (
-          contains(["project", "bucket", "topic", "queue", "service_account", "crypto_key"], r.scope) &&
-          (r.scope == "project") == (r.resource == null)
+          contains(["project", "bucket", "topic", "queue", "service_account", "crypto_key", "dataset", "subscription"], r.scope) &&
+          (r.scope == "project" || r.resource != null)
         )
       ]
     ]))
-    error_message = "Each permission has a scope of project (without a resource), or bucket, topic, queue, service_account, or crypto_key (with its resource). A scope of policy is a backend for AWS."
+    error_message = "Each permission has a scope of project (with another project as its resource, or none for this one), or bucket, topic, queue, service_account, crypto_key, dataset, or subscription (with its resource). A scope of policy is a backend for AWS."
   }
 
   validation {
