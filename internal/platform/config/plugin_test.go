@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+//go:build !no_plugins
+
 package config
 
 import (
 	"errors"
 	"os"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -30,19 +31,6 @@ func loadPlugin(t *testing.T, env map[string]string) (*Config, []Issue) {
 		t.Fatal(err)
 	}
 	return cfg, nil
-}
-
-// withPluginTokens is with, plus an address and a token for every kind.
-func withPluginTokens(base map[string]string, kv ...string) map[string]string {
-	for _, k := range kind.Delegated() {
-		address, token := schemaField(k.Key(kind.SuffixAddress)).env(), schemaField(k.Key(kind.SuffixToken)).env()
-		kv = append(kv, address, "unix:///run/my/plugin.sock", token, "s3cret")
-	}
-	return with(base, kv...)
-}
-
-func schemaField(key string) *field {
-	return &schema[slices.IndexFunc(schema, func(f field) bool { return f.key == key })]
 }
 
 func hasIssue(issues []Issue, key string) bool {
