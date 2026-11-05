@@ -41,14 +41,14 @@ variable "create" {
 
 # Standard base64 of 32 random bytes, the format of kek.
 ephemeral "random_bytes" "kek" {
-  count = var.create ? 1 : 0
-
   length = 32
+
+  lifecycle {
+    enabled = var.create
+  }
 }
 
 resource "google_secret_manager_secret" "kek" {
-  count = var.create ? 1 : 0
-
   project   = var.project_id
   secret_id = var.secret_id
 
@@ -57,15 +57,15 @@ resource "google_secret_manager_secret" "kek" {
   }
 
   lifecycle {
+    enabled = var.create
+
     prevent_destroy = true
   }
 }
 
 resource "google_secret_manager_secret_version" "kek" {
-  count = var.create ? 1 : 0
-
-  secret         = google_secret_manager_secret.kek[0].id
-  secret_data_wo = ephemeral.random_bytes.kek[0].base64
+  secret         = google_secret_manager_secret.kek.id
+  secret_data_wo = ephemeral.random_bytes.kek.base64
 
   # NEVER CHANGE THIS. A new number writes a new random KEK as the latest version, and everything in the database that the
   # old one encrypted, every account's private key among it, becomes unreadable. It is deliberately not an input.
@@ -76,6 +76,8 @@ resource "google_secret_manager_secret_version" "kek" {
   deletion_policy = "ABANDON"
 
   lifecycle {
+    enabled = var.create
+
     prevent_destroy = true
   }
 }

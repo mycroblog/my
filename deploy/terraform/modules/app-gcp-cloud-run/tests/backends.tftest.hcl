@@ -242,7 +242,7 @@ run "kek_generated_in_secret_manager" {
   }
 
   assert {
-    condition     = google_secret_manager_secret_version.kek[0].secret_data_wo_version == 1 && google_secret_manager_secret_version.kek[0].deletion_policy == "ABANDON"
+    condition     = google_secret_manager_secret_version.kek.secret_data_wo_version == 1 && google_secret_manager_secret_version.kek.deletion_policy == "ABANDON"
     error_message = "the version of the generated KEK must stay fixed, and survive leaving the configuration"
   }
 }
@@ -259,7 +259,7 @@ run "kek_in_secret_manager" {
   }
 
   assert {
-    condition     = length(google_secret_manager_secret_version.kek) == 0
+    condition     = google_secret_manager_secret_version.kek == null
     error_message = "a secret made elsewhere must get no version from this module"
   }
 }
@@ -277,7 +277,7 @@ run "kek_in_kms" {
   }
 
   assert {
-    condition     = length(google_kms_crypto_key.kek) == 1
+    condition     = google_kms_crypto_key.kek != null
     error_message = "the module must create the key"
   }
 }
@@ -295,7 +295,7 @@ run "kek_in_kms_made_elsewhere" {
   }
 
   assert {
-    condition     = length(google_kms_crypto_key.kek) == 0 && output.env["MY_KMS_KEY"] == "projects/p/locations/l/keyRings/r/cryptoKeys/other"
+    condition     = google_kms_crypto_key.kek == null && output.env["MY_KMS_KEY"] == "projects/p/locations/l/keyRings/r/cryptoKeys/other"
     error_message = "a key made elsewhere must be used, and none created"
   }
 }

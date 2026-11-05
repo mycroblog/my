@@ -7,7 +7,7 @@
 #   - the values have the formats of kek and vapid_private_key;
 #   - no value is in the state, the saved plan, or what tofu prints;
 #   - another apply writes no new version, which would replace the KEK;
-#   - destroying is refused.
+#   - destroying is refused, and so is turning off what generates the KEK.
 #
 # It reaches no cloud.
 set -euo pipefail
@@ -98,5 +98,12 @@ if tofu -chdir="$dir" plan -destroy -input=false > "$tmp/destroy.out" 2>&1; then
   fail "a destroy was not refused"
 fi
 grep -q 'prevent_destroy' "$tmp/destroy.out" || fail "a destroy failed for another reason: $(tail -5 "$tmp/destroy.out")"
+
+# Nor may turning a module's generation off take the KEK with it.
+sed -i '/^variable "create"/,/^}/s/default     = true/default     = false/' "$tmp/modules/kek-gcp-secret-manager/main.tf"
+if tofu -chdir="$dir" plan -input=false > "$tmp/off.out" 2>&1; then
+  fail "turning off create was not refused"
+fi
+grep -q 'prevent_destroy' "$tmp/off.out" || fail "turning off create failed for another reason: $(tail -5 "$tmp/off.out")"
 
 echo "terraform-state-test: ok"

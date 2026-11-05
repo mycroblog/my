@@ -42,7 +42,7 @@ run "the_contract" {
   }
 
   assert {
-    condition     = length(cloudflare_ruleset.firewall) == 0 && length(cloudflare_ruleset.origin) == 0
+    condition     = cloudflare_ruleset.firewall == null && cloudflare_ruleset.origin == null
     error_message = "the module must add no challenge, and no origin rule unless asked"
   }
 
@@ -84,7 +84,7 @@ run "a_rewrite_is_an_origin_rule" {
   }
 
   assert {
-    condition     = cloudflare_ruleset.origin[0].rules[0].action == "route" && cloudflare_ruleset.origin[0].rules[0].action_parameters.host_header == "my-abc-an.a.run.app"
+    condition     = cloudflare_ruleset.origin.rules[0].action == "route" && cloudflare_ruleset.origin.rules[0].action_parameters.host_header == "my-abc-an.a.run.app"
     error_message = "the origin rule must send the origin's Host"
   }
 }
@@ -113,7 +113,7 @@ run "shares_the_rulesets_with_media" {
   }
 
   assert {
-    condition     = length(cloudflare_ruleset.cache.rules) == 2 && cloudflare_ruleset.firewall[0].rules[0].action == "block"
+    condition     = length(cloudflare_ruleset.cache.rules) == 2 && cloudflare_ruleset.firewall.rules[0].action == "block"
     error_message = "the rules of the media host must join this zone's rulesets"
   }
 }

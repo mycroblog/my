@@ -128,23 +128,27 @@ resource "cloudflare_ruleset" "config" {
 }
 
 resource "cloudflare_ruleset" "origin" {
-  count = length(local.origin_rules) > 0 ? 1 : 0
-
   zone_id = var.zone_id
   name    = "my origin"
   kind    = "zone"
   phase   = "http_request_origin"
   rules   = local.origin_rules
+
+  lifecycle {
+    enabled = length(local.origin_rules) > 0
+  }
 }
 
 resource "cloudflare_ruleset" "firewall" {
-  count = length(var.extra_rules.firewall) > 0 ? 1 : 0
-
   zone_id = var.zone_id
   name    = "my firewall"
   kind    = "zone"
   phase   = "http_request_firewall_custom"
   rules   = var.extra_rules.firewall
+
+  lifecycle {
+    enabled = length(var.extra_rules.firewall) > 0
+  }
 }
 
 output "env" {

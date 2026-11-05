@@ -58,22 +58,24 @@ locals {
 }
 
 resource "google_kms_key_ring" "this" {
-  count = local.create ? 1 : 0
-
   project  = var.project_id
   location = var.location
   name     = var.key_ring
+
+  lifecycle {
+    enabled = local.create
+  }
 }
 
 resource "google_kms_crypto_key" "kek" {
-  count = local.create ? 1 : 0
-
   name     = var.key
-  key_ring = google_kms_key_ring.this[0].id
+  key_ring = google_kms_key_ring.this.id
   purpose  = "ENCRYPT_DECRYPT"
 
   # Destroying the key loses every secret it wrapped.
   lifecycle {
+    enabled = local.create
+
     prevent_destroy = true
   }
 }

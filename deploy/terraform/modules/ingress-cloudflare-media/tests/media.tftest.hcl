@@ -45,7 +45,7 @@ run "follows_the_cdn_guide" {
   }
 
   assert {
-    condition     = length(cloudflare_ruleset.cache) == 1 && length(cloudflare_ruleset.firewall) == 1 && cloudflare_tiered_cache.smart[0].value == "on"
+    condition     = cloudflare_ruleset.cache != null && cloudflare_ruleset.firewall != null && cloudflare_tiered_cache.smart.value == "on"
     error_message = "alone, the module must create what it needs"
   }
 }
@@ -58,7 +58,7 @@ run "beside_the_app_module_the_app_owns_the_rulesets" {
   }
 
   assert {
-    condition     = length(cloudflare_ruleset.cache) == 0 && length(cloudflare_ruleset.config) == 0 && length(cloudflare_ruleset.firewall) == 0 && length(output.rules.cache) == 1
+    condition     = cloudflare_ruleset.cache == null && cloudflare_ruleset.config == null && cloudflare_ruleset.firewall == null && length(output.rules.cache) == 1
     error_message = "a zone has one ruleset per phase"
   }
 }

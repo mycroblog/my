@@ -123,50 +123,60 @@ resource "cloudflare_dns_record" "host" {
 }
 
 resource "cloudflare_ruleset" "cache" {
-  count = var.manage_rulesets ? 1 : 0
-
   zone_id = var.zone_id
   name    = "my media cache"
   kind    = "zone"
   phase   = "http_request_cache_settings"
   rules   = local.rules.cache
+
+  lifecycle {
+    enabled = var.manage_rulesets
+  }
 }
 
 resource "cloudflare_ruleset" "config" {
-  count = var.manage_rulesets ? 1 : 0
-
   zone_id = var.zone_id
   name    = "my media configuration"
   kind    = "zone"
   phase   = "http_config_settings"
   rules   = local.rules.config
+
+  lifecycle {
+    enabled = var.manage_rulesets
+  }
 }
 
 resource "cloudflare_ruleset" "origin" {
-  count = var.manage_rulesets && var.rewrite_host_header ? 1 : 0
-
   zone_id = var.zone_id
   name    = "my media origin"
   kind    = "zone"
   phase   = "http_request_origin"
   rules   = local.rules.origin
+
+  lifecycle {
+    enabled = var.manage_rulesets && var.rewrite_host_header
+  }
 }
 
 resource "cloudflare_ruleset" "firewall" {
-  count = var.manage_rulesets ? 1 : 0
-
   zone_id = var.zone_id
   name    = "my media firewall"
   kind    = "zone"
   phase   = "http_request_firewall_custom"
   rules   = local.rules.firewall
+
+  lifecycle {
+    enabled = var.manage_rulesets
+  }
 }
 
 resource "cloudflare_tiered_cache" "smart" {
-  count = var.tiered_cache ? 1 : 0
-
   zone_id = var.zone_id
   value   = "on"
+
+  lifecycle {
+    enabled = var.tiered_cache
+  }
 }
 
 output "env" {
