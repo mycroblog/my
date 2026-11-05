@@ -9,7 +9,7 @@ import (
 )
 
 // KeyIDKind returns the kind of KeyManager that a key ID names: the part before its first colon,
-// such as "local", "gcpkms", or "awskms". It returns "" for an ID without one.
+// such as "local", "gcpkms", "awskms", or "plugin". It returns "" for an ID without one.
 func KeyIDKind(keyID string) string {
 	kind, _, ok := strings.Cut(keyID, ":")
 	if !ok {

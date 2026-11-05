@@ -321,7 +321,7 @@ entries:
     checks: [api, go]
     notes:
       - "`my` is only a client of a plugin. internal/adapter/plugin/client holds the transport of every kind (protocol, authentication, deadline, limits, concurrency, failures); internal/adapter/plugin/kind holds the table of the kinds and the rules of a destination, with the standard library alone so that the configuration reads it in a no_plugins build."
-      - "Destinations are settings of the configuration file and the environment only (ADR-0146 §5). A new kind is one row of kind.Delegated, which adds the keys; plain TCP is refused only for key_manager, mailer, inbound.status, and local.status (§6)."
+      - "Destinations are settings of the configuration file and the environment only (ADR-0146 §5). A new kind is one row of kind.Delegated, which adds the keys; plain TCP is refused for key_manager, mailer, translator, inbound.status, local.status, and signup.check (§6)."
       - "api/plugin/ is MIT and holds one package per kind with no shared types, imports, or well-known types (§8). `scripts/task.sh api:plugin-generate` writes internal/adapter/plugin/gen as AGPL-3.0-only; buf is pinned in tools/buf/go.mod apart from tools/go.mod."
       - "A port's adapter goes in internal/adapter/<port>/plugin, takes a *client.Conn from platform.NewPluginConn in a !no_plugins file of internal/platform, and reads the `outcome` of the response; its contract cases go in a file of internal/adapter/plugin/contract and one entry of its table, and fakeplugin gains the kind."
     userdocs: ["docs/operations/plugins.md", "docs/reference/build-tags.md", "docs/operations/running.md"]
@@ -431,6 +431,13 @@ entries:
   - name: key-management
     paths: ["internal/adapter/keymanager/**"]
     userdocs: ["docs/operations/key-management.md"]
+  - name: keymanager-plugin
+    paths: ["internal/adapter/keymanager/plugin/**", "internal/platform/adapters_*key_manager_plugin*.go", "internal/platform/keymanager_plugin_test.go", "internal/platform/config/plugin_key_manager_test.go"]
+    docs: ["docs/adr/0146-plugin-protocol.md", "docs/adr/0019-security-baseline.md#decision決定"]
+    userdocs: ["docs/operations/key-management.md#a-plugin", "docs/operations/plugins.md", "docs/reference/build-tags.md"]
+    notes:
+      - "key_manager = plugin (internal/adapter/keymanager/plugin) fails closed: Start asks for the current key and runs the self-test, retrying only a plugin that does not answer for 30 seconds, and every failure at run time is an error of the call; nothing falls back on another key (ADR-0146 §14). It sits behind the DEK cache like a KMS, and with key_manager = local its address only opens the values still under it."
+      - "A DEK, an AAD, and a wrapped value reach no log, error, or metric. The errors here are fixed texts and the client's Connect code, and quote nothing of a response; TestNoKeyMaterialInErrorsLogsOrMetrics echoes them from a plugin in every place it can."
   - name: keymanager-gcpkms
     paths: ["internal/adapter/keymanager/gcpkms/**", "internal/platform/adapters_*gcpkms.go", "internal/platform/config/adapters_*gcpkms.go", "internal/platform/keymanager_gcpkms_test.go"]
     docs: ["docs/adr/0019-security-baseline.md#decision決定"]
