@@ -209,8 +209,8 @@ WHERE remote_account_snapshots.account_id = sqlc.arg(account_id)
 
 -- DeleteRetentionDeletionsBefore removes at most @batch_limit deletions by retention recorded
 -- before @deleted_before, the oldest first. A row stays while the status's row does, or while a
--- boost, favourite, reaction, bookmark, or pin names the status: the readers and the projection
--- rebuilds of those tell from it that the status is gone.
+-- boost, favourite, reaction, bookmark, pin, or notification names the status: the readers and
+-- the projection rebuilds of those tell from it that the status is gone.
 -- name: DeleteRetentionDeletionsBefore :execrows
 DELETE FROM status_deletions
 WHERE status_id IN (
@@ -222,6 +222,7 @@ WHERE status_id IN (
     AND NOT EXISTS (SELECT 1 FROM reactions r WHERE r.status_id = d.status_id)
     AND NOT EXISTS (SELECT 1 FROM bookmarks m WHERE m.status_id = d.status_id)
     AND NOT EXISTS (SELECT 1 FROM status_pins p WHERE p.status_id = d.status_id)
+    AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.status_id = d.status_id)
   ORDER BY d.deleted_at, d.status_id LIMIT @batch_limit
 );
 

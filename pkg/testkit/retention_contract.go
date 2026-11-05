@@ -51,7 +51,8 @@ type RetentionFactory func(t *testing.T, opts uow.Options) RetentionHarness
 // deleted with origin retention and their rows purged, while those a local reply, thread, boost,
 // favourite, bookmark, or notification refers to stay; past remote_status_max_retention_days every
 // remote status goes, leaving the local accounts' interactions, except those that the moderation
-// records retain (a reported status, a held author); each transaction deletes a
+// records retain (a reported status, a held author); the deletion of a purged status stays while a
+// notification names it, so that rebuilding the notifications' projection keeps it hidden; each transaction deletes a
 // bounded batch; a purged status can be fetched and deleted again; the inbox and delivery records
 // and the tombstones of unknown objects and Follows go after their retention; unrelated remote accounts keep only their current profile;
 // and the remote custom emoji that no status, profile, or reaction refers to any more go with the
@@ -68,6 +69,7 @@ func RetentionContract(t *testing.T, newHarness RetentionFactory) {
 		{"PurgesUnreferencedRemoteStatuses", retentionPurgesUnreferenced},
 		{"KeepsReferencedRemoteStatuses", retentionKeepsReferenced},
 		{"PurgesEveryRemoteStatusPastTheMaximum", retentionMaximum},
+		{"KeepsTheDeletionOfANotifiedStatusThroughARebuild", retentionNotifiedDeletion},
 		{"KeepsTheEvidenceOfModeration", retentionKeepsModerationEvidence},
 		{"PurgesInBoundedBatches", retentionBatches},
 		{"IngestsAPurgedStatusAgain", retentionRefetch},
@@ -368,6 +370,68 @@ func retentionMaximum(t *testing.T, e *retentionEnv) {
 	if err != nil || len(ns) != 0 {
 		t.Errorf("notifications of the mentioned account = %+v, %v; want the mention hidden", ns, err)
 	}
+}
+
+// retentionNotifiedDeletion purges a status past the maximum period while a notification names it,
+// lets the record of its deletion pass its own retention, and rebuilds
+// notification_deleted_statuses: the notification stays hidden, since its status has no row.
+func retentionNotifiedDeletion(t *testing.T, e *retentionEnv) {
+	ctx := t.Context()
+	const alice = "https://remote.example/users/alice"
+	aliceID := e.actor(t, alice)
+	reader, mentioned := e.user(t, "reader"), e.user(t, "mentioned")
+	e.follow(t, reader, aliceID)
+	age := 200 * 24 * time.Hour
+	notified := e.note(t, alice, alice+"/notes/mention", age, map[string]any{
+		"cc":  []string{alice + "/followers", e.localIRI(mentioned)},
+		"tag": []any{map[string]any{"type": "Mention", "href": e.localIRI(mentioned)}},
+	})
+	plain := e.note(t, alice, alice+"/notes/plain", age, nil)
+	listed := func(when string) {
+		t.Helper()
+		ns, err := e.notifications.List(ctx, mentioned, appnotification.Query{Limit: appnotification.MaxPageLimit})
+		if err != nil || len(ns) != 0 {
+			t.Errorf("notifications %s = %+v, %v; want the mention hidden", when, ns, err)
+		}
+		if n, err := e.notifications.UnreadCount(ctx, mentioned, false); err != nil || n != 0 {
+			t.Errorf("unread count %s = %d, %v; want 0", when, n, err)
+		}
+	}
+	deleted := func(id string) bool {
+		t.Helper()
+		var got bool
+		if err := e.rh.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			var err error
+			got, err = e.content.IsDeleted(ctx, tx, id)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+
+	r := e.retention(retentionPeriod, 180*24*time.Hour, 0)
+	if n := e.purgeAll(t, r); n != 2 {
+		t.Fatalf("purged %d statuses, want 2", n)
+	}
+	listed("after the purge")
+	if !deleted(notified.ID) || !deleted(plain.ID) {
+		t.Fatalf("a purged status does not read as deleted")
+	}
+
+	e.clock.Advance(appcontent.RetentionDeletionRetention + time.Hour)
+	e.purgeAll(t, r)
+	if deleted(plain.ID) {
+		t.Errorf("the deletion of a status that nothing names is still there past its retention")
+	}
+	if !deleted(notified.ID) {
+		t.Errorf("the deletion of a status that a notification names went")
+	}
+
+	if err := appnotification.RebuildDeletedStatuses(ctx, e.rh.UnitOfWork, e.rh.Notifications, e.content); err != nil {
+		t.Fatal(err)
+	}
+	listed("after the rebuild")
 }
 
 func retentionBatches(t *testing.T, e *retentionEnv) {

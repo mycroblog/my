@@ -68,13 +68,13 @@ WHERE e.is_local AND e.kind = 'post'
 ORDER BY e.id DESC LIMIT :limit + 1;
 ```
 
-- 連合タイムラインは `kind = 'post' AND visibility = 'public'` の部分インデックスを使い、`feed_domain_restrictions`（`public_discovery`・`visibility_ceiling_private`・`profile_view`）も除外します。
+- 連合タイムラインは `kind = 'post' AND visibility = 'public'` の部分インデックスを使い、`feed_domain_restrictions`（`public_discovery`・`profile_view`）も除外します。
   閲覧者がミュートしたドメイン（`feed_domain_mutes`。サブドメインを含む）の投稿も除外します。ローカルタイムラインはリモートの投稿を含まないので、ドメインのミュートは関係しません。
 
 ### 6.3 ハッシュタグ・プロフィール・スレッド
 
 - **ハッシュタグ（FR-203）**: `feed_tag_entries (tag_id, entry_id)` を `visibility IN ('public','local')`（未ログインは `public`）で絞り、言語のために `feed_entries` と結合します。
-  作者の `public_discovery`・`visibility_ceiling_private`・`profile_view` は `feed_author_restrictions` と `feed_domain_restrictions`（作者のドメイン）で、閲覧者のブロック・ミュートは `feed_exclusions` で、閲覧者がミュートしたドメインは `feed_domain_mutes` で除外します。
+  作者の `public_discovery`・`visibility_ceiling_private`・`profile_view` は `feed_author_restrictions` で、作者のドメインの `public_discovery`・`profile_view` は `feed_domain_restrictions` で、閲覧者のブロック・ミュートは `feed_exclusions` で、閲覧者がミュートしたドメインは `feed_domain_mutes` で除外します。
 - **プロフィール（FR-204）**: `feed_entries (author_account_id, id)` を使い、作者の投稿とブーストを読みます。
   許される公開範囲の集合は、閲覧者と作者の関係（本人・承認済みフォロワー・ブロック）と作者の制限を `canView`（`ContextProfile`）に公開範囲ごとに与えて求め、`IN (…)` に入れます。
   `direct` は本人なら全部、それ以外は自分宛てのもの（`feed_direct_recipients`）だけです。ブーストは、元投稿の作者を閲覧者が除外している・元投稿の作者やそのドメインに `profile_view` がある・元投稿の作者のドメインを閲覧者がミュートしているものを除きます。

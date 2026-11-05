@@ -95,7 +95,8 @@ CREATE TABLE status_revision_emojis (
 CREATE INDEX status_revision_emojis_emoji_id ON status_revision_emojis (emoji_id);
 
 -- Event: the deletion of a status. It outlives the purge as the tombstone of the URI, except a
--- deletion by retention, which is no tombstone and goes after 30 days once nothing names the status.
+-- deletion by retention, which is no tombstone and goes after 30 days once no boost, favourite,
+-- reaction, bookmark, pin, or notification names the status.
 CREATE TABLE status_deletions (
   status_id TEXT NOT NULL PRIMARY KEY,
   uri TEXT NOT NULL,
@@ -183,7 +184,8 @@ CREATE TABLE uploaded_media (
 ) STRICT;
 
 -- Event: one processing of a media file for a purpose, which picks the sizes of its variants
--- (ADR-0005). The newest row of a file is its current state.
+-- (ADR-0005). The newest row of a file is its current state; a row that a newer one replaced goes
+-- after media_replaced_retention.
 CREATE TABLE media_processing_results (
   id TEXT NOT NULL PRIMARY KEY,
   media_id TEXT NOT NULL,
@@ -338,6 +340,8 @@ CREATE TABLE status_pins (
 ) STRICT;
 CREATE UNIQUE INDEX status_pins_account_id_slot ON status_pins (account_id, slot);
 CREATE INDEX status_pins_account_id_id ON status_pins (account_id, id);
+-- The purges and the automatic deletion keep a pinned status, and the erasure removes its pins.
+CREATE INDEX status_pins_status_id ON status_pins (status_id);
 
 -- Current value: a local account's automatic deletion of its own old posts (FR-118). No row
 -- means the default policy, which is disabled. Each keep_* flag (0/1) is an exception that keeps

@@ -141,7 +141,7 @@ CREATE TABLE supporter_duplicate_subscriptions (
   id uuid NOT NULL PRIMARY KEY,
   subscription_id uuid NOT NULL,
   provider text NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
-  provider_subscription_id text NOT NULL CHECK (length(provider_subscription_id) BETWEEN 1 AND 255),
+  provider_subscription_id text COLLATE "C" NOT NULL CHECK (length(provider_subscription_id) BETWEEN 1 AND 255),
   detected_at timestamptz NOT NULL
 );
 CREATE UNIQUE INDEX supporter_duplicate_subscriptions_provider_subscription ON supporter_duplicate_subscriptions (provider, provider_subscription_id);

@@ -141,7 +141,7 @@ ON CONFLICT (duplicate_id) DO NOTHING;
 
 -- name: GetSupporterDuplicate :one
 SELECT d.id, d.subscription_id, d.provider, d.provider_subscription_id, d.detected_at,
-  EXISTS (SELECT 1 FROM supporter_duplicate_cancellations x WHERE x.duplicate_id = d.id) AS cancelling,
+  EXISTS (SELECT 1 FROM supporter_duplicate_cancellations x WHERE x.duplicate_id = d.id) AS canceling,
   EXISTS (SELECT 1 FROM supporter_duplicate_settlements x WHERE x.duplicate_id = d.id) AS settled
 FROM supporter_duplicate_subscriptions d
 WHERE d.provider = ? AND d.provider_subscription_id = ?;

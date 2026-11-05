@@ -100,8 +100,8 @@ type Duplicate struct {
 	Provider       string
 	Ref            SubscriptionRef
 	DetectedAt     time.Time
-	// Cancelling reports that the server took it on: it no longer needs the provider to report it.
-	Cancelling bool
+	// Canceling reports that the server took it on: it no longer needs the provider to report it.
+	Canceling bool
 	// Settled reports that nothing is left to do: it is canceled and refunded, or it had ended at the
 	// provider already.
 	Settled bool

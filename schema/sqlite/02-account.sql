@@ -115,6 +115,9 @@ CREATE TABLE account_lifecycle_events (
   CHECK ((kind = 'deletion_scheduled') = (deletion_due_at IS NOT NULL))
 ) STRICT;
 
+-- The last reactivation of an account (deactivation) and the rebuild of the states, in this order.
+CREATE INDEX account_lifecycle_events_account_id_id ON account_lifecycle_events (account_id, id);
+
 -- Projection: the current lifecycle state. An account without a row is active.
 CREATE TABLE account_lifecycle_states (
   account_id TEXT NOT NULL PRIMARY KEY,

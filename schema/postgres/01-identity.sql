@@ -200,8 +200,9 @@ CREATE TABLE user_preferences (
   updated_at timestamptz NOT NULL
 );
 
--- Current value: the time zone a user chose, an IANA name. No row means the user has not chosen
--- one yet: dates are shown in UTC and the web client offers the browser's zone.
+-- Current value: the time zone a user chose, or the one the web client last detected for a user
+-- who follows the browser, an IANA name. No row means none is known yet: dates are shown in UTC
+-- and the web client saves the browser's zone.
 CREATE TABLE user_time_zones (
   user_id uuid NOT NULL PRIMARY KEY,
   time_zone text NOT NULL
