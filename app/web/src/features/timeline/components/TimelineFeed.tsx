@@ -39,7 +39,6 @@ export function TimelineFeed({
   keepPosition,
   onTopChange,
 }: TimelineFeedProps) {
-  const t = useT();
   const { statuses, hasMore, isLoadingMore, loadMore, loadMoreError } = useTimeline(timeline);
   // A pinned post is in the timeline too, further down, so its entry at the top has a key of its own.
   const entries = [
@@ -66,6 +65,56 @@ export function TimelineFeed({
           <p>{origin.link}</p>
         </Cluster>
       )}
+      <StatusFeed
+        entries={entries}
+        aria-labelledby={labelledBy}
+        feedRef={feedRef}
+        keepPosition={keepPosition}
+        onTopChange={onTopChange}
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        loadMore={loadMore}
+        loadMoreError={loadMoreError}
+      />
+    </Stack>
+  );
+}
+
+export type StatusFeedProps = {
+  /** The posts to show, in order; `key` is unique among them. */
+  entries: readonly { key: string; status: Status; pinned?: boolean }[];
+  /** The ID of the heading that names the posts. */
+  "aria-labelledby": string;
+  feedRef?: Ref<HTMLDivElement> | undefined;
+  keepPosition?: boolean | undefined;
+  onTopChange?: ((atTop: boolean) => void) | undefined;
+  /** Whether the server has more pages; none may have been shown yet, since a page can be empty while more follow. */
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  loadMore: () => void;
+  /** Why the last page failed to load (localized), or null. */
+  loadMoreError: string | null;
+};
+
+/**
+ * Posts as a feed (web-client/README.md Y6), rendered as every timeline renders them, with their later pages loaded as
+ * the reader nears the end, and the failure of a later page under the posts already loaded. A page that leaves the
+ * end of the feed in view, an empty one too, loads the next by itself (Feed).
+ */
+export function StatusFeed({
+  entries,
+  "aria-labelledby": labelledBy,
+  feedRef,
+  keepPosition,
+  onTopChange,
+  hasMore,
+  isLoadingMore,
+  loadMore,
+  loadMoreError,
+}: StatusFeedProps) {
+  const t = useT();
+  return (
+    <>
       {/* The feed role has no keyboard convention, so its keys are told before it (Feed's documentation). */}
       <VisuallyHidden>
         <p>{t("client:timeline.keyboard_hint")}</p>
@@ -77,7 +126,7 @@ export function TimelineFeed({
         onTopChange={onTopChange}
         items={entries}
         getKey={(entry) => entry.key}
-        renderItem={(entry) => <StatusCard status={entry.status} pinned={entry.pinned} />}
+        renderItem={(entry) => <StatusCard status={entry.status} pinned={entry.pinned ?? false} />}
         isLoading={isLoadingMore}
         // After a failure the feed stops loading by itself; the retry button below asks again.
         hasMore={hasMore && loadMoreError === null}
@@ -87,8 +136,8 @@ export function TimelineFeed({
         loadingLabel={t("client:timeline.loading")}
       />
       {loadMoreError !== null && (
-        // Announced by useTimeline when it fails; shown here, under the posts already loaded, in the one form of a
-        // region's failure (web-client/16-look-states-and-wording.md G16).
+        // Announced by whoever loads the pages when it fails; shown here, under the posts already loaded, in the one
+        // form of a region's failure (web-client/16-look-states-and-wording.md G16).
         <Box padding="4">
           <RegionError
             heading={t("client:timeline.load_more.failed.heading")}
@@ -99,7 +148,7 @@ export function TimelineFeed({
           />
         </Box>
       )}
-    </Stack>
+    </>
   );
 }
 
