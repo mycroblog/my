@@ -2092,6 +2092,27 @@ func (e FinanceVisibility) Valid() bool {
 	}
 }
 
+// Defines values for HookAppealState.
+const (
+	HookAppealStateOverturned HookAppealState = "overturned"
+	HookAppealStatePending    HookAppealState = "pending"
+	HookAppealStateUpheld     HookAppealState = "upheld"
+)
+
+// Valid indicates whether the value is a known member of the HookAppealState enum.
+func (e HookAppealState) Valid() bool {
+	switch e {
+	case HookAppealStateOverturned:
+		return true
+	case HookAppealStatePending:
+		return true
+	case HookAppealStateUpheld:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HookDecisionMode.
 const (
 	HookDecisionModeEnforce HookDecisionMode = "enforce"
@@ -2484,6 +2505,7 @@ const (
 	InstanceSettingKeyHookInboundFollowOnFailure         InstanceSettingKey = "hook_inbound_follow_on_failure"
 	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
 	InstanceSettingKeyHookInboundStatusOnFailure         InstanceSettingKey = "hook_inbound_status_on_failure"
+	InstanceSettingKeyHookLocalStatusAccountAgeDays      InstanceSettingKey = "hook_local_status_account_age_days"
 	InstanceSettingKeyHookLocalStatusMode                InstanceSettingKey = "hook_local_status_mode"
 	InstanceSettingKeyHookMediaCheckMode                 InstanceSettingKey = "hook_media_check_mode"
 	InstanceSettingKeyHookMediaCheckOnFailure            InstanceSettingKey = "hook_media_check_on_failure"
@@ -2579,6 +2601,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyHookInboundStatusMode:
 		return true
 	case InstanceSettingKeyHookInboundStatusOnFailure:
+		return true
+	case InstanceSettingKeyHookLocalStatusAccountAgeDays:
 		return true
 	case InstanceSettingKeyHookLocalStatusMode:
 		return true
@@ -5655,6 +5679,41 @@ type AdminHook struct {
 	Outcomes []AdminHookOutcome `json:"outcomes"`
 }
 
+// AdminHookAppeal An author's appeal of a `reject` of `local.status`, with the text the author tried to post.
+// Deciding it never calls the plugin.
+type AdminHookAppeal struct {
+	// AccountId The author.
+	AccountId string `json:"account_id"`
+
+	// Comment What the author adds for the moderators, as plain text; absent when there is none.
+	Comment *string `json:"comment,omitempty"`
+
+	// DecidedAt When a moderator decided the appeal; absent while it is pending.
+	DecidedAt *time.Time `json:"decided_at,omitempty"`
+
+	// Decision What a decision hook answered about one subject. It holds no text of a post.
+	Decision AdminHookDecision `json:"decision"`
+	Id       string            `json:"id"`
+
+	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
+	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+	// `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
+	// post is not restored.
+	State HookAppealState `json:"state"`
+
+	// StatusText The text of the post the author tried to post, as plain text.
+	StatusText  string    `json:"status_text"`
+	SubmittedAt time.Time `json:"submitted_at"`
+}
+
+// AdminHookAppealPage A page of appeals, the newest first.
+type AdminHookAppealPage struct {
+	Items []AdminHookAppeal `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
 // AdminHookDecision What a decision hook answered about one subject. It holds no text of a post.
 type AdminHookDecision struct {
 	// AccountId The account the subject belongs to; absent when there is none.
@@ -7276,6 +7335,15 @@ type AnnouncementPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AppealHookDecisionRequest An appeal of a post that the automated review refused.
+type AppealHookDecisionRequest struct {
+	// Comment Why the moderators should let the post through, as plain text.
+	Comment *string `json:"comment,omitempty"`
+
+	// StatusText The text of the post the user tried to post, as plain text.
+	StatusText string `json:"status_text"`
 }
 
 // AppealModerationActionRequest An appeal of an action on the user's own account.
@@ -9272,6 +9340,12 @@ type FollowAccountRequest struct {
 	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
+// HookAppealState Where an appeal of a refused post stands: `pending` until a moderator decides it,
+// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+// `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
+// post is not restored.
+type HookAppealState string
+
 // HookDecisionMode The mode of the hook when it made the decision.
 type HookDecisionMode string
 
@@ -11213,6 +11287,20 @@ type OwnCustomEmojiPage struct {
 	Used int `json:"used"`
 }
 
+// OwnHookAppeal The user's appeal of a post that the automated review refused.
+type OwnHookAppeal struct {
+	// HookDecisionId The decision appealed.
+	HookDecisionId string `json:"hook_decision_id"`
+	Id             string `json:"id"`
+
+	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
+	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+	// `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
+	// post is not restored.
+	State       HookAppealState `json:"state"`
+	SubmittedAt time.Time       `json:"submitted_at"`
+}
+
 // OwnInvite An invite that the user created as a member, which always has a limit of uses and an expiry.
 type OwnInvite struct {
 	// Code The code people enter on the registration page, 16 characters.
@@ -11665,9 +11753,9 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/missing-permission` (403): the user's roles lack the permission
 //     that an admin operation needs.
 //   - `/api/v1/problems/already-appealed` (422): the user already appealed the moderation
-//     action; an action is appealed once.
+//     action or the refusal of a post; each is appealed once.
 //   - `/api/v1/problems/appeal-window-closed` (422): the time to appeal the moderation
-//     action has passed.
+//     action or the refusal of a post has passed.
 //   - `/api/v1/problems/not-appealable` (422): the moderation action is a ban whose
 //     account is deleted, so it can no longer be appealed or overturned.
 //   - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
@@ -11840,6 +11928,9 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
 //     had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
 //     its appeal.
+//   - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
+//     and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
+//     user may appeal (`POST /hook_decisions/{id}/appeal`).
 //   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
 //     suppressed, so there is nothing to lift.
 //   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
@@ -12716,6 +12807,35 @@ type StatusReactor struct {
 	// Emoji The emoji of a reaction: a Unicode emoji, or a custom emoji with its image. A custom
 	// emoji of another server is shown as it is and cannot be used to react from here.
 	Emoji ReactionEmoji `json:"emoji"`
+}
+
+// StatusRejectedProblem The problem of a post that the server's automated review refused (422,
+// `/api/v1/problems/status-rejected`). Nothing was posted. `title` and `detail` are fixed text
+// that holds nothing of the review's answer. The author may appeal the decision with
+// `POST /hook_decisions/{hook_decision_id}/appeal` until `appeal_deadline`, sending the text
+// of the post. Another 422 (a malformed request) has neither member.
+type StatusRejectedProblem struct {
+	// AppealDeadline The last moment the author can appeal the decision.
+	AppealDeadline *time.Time `json:"appeal_deadline,omitempty"`
+
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// HookDecisionId The decision to appeal.
+	HookDecisionId *string `json:"hook_decision_id,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type string `json:"type"`
 }
 
 // StatusSource What the author typed, for editing a status.
@@ -14403,6 +14523,18 @@ type ListErrorGroupsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListHookAppealsParams defines parameters for ListHookAppeals.
+type ListHookAppealsParams struct {
+	// Pending Keep the appeals that no moderator has decided.
+	Pending *bool `form:"pending,omitempty" json:"pending,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListHookDecisionsParams defines parameters for ListHookDecisions.
 type ListHookDecisionsParams struct {
 	// Hook Keep the decisions of this hook.
@@ -15144,6 +15276,9 @@ type UpdateOwnCustomEmojiJSONRequestBody = UpdateOwnCustomEmojiRequest
 // MuteDomainJSONRequestBody defines body for MuteDomain for application/json ContentType.
 type MuteDomainJSONRequestBody = MuteDomainRequest
 
+// AppealHookDecisionJSONRequestBody defines body for AppealHookDecision for application/json ContentType.
+type AppealHookDecisionJSONRequestBody = AppealHookDecisionRequest
+
 // StartDataImportJSONRequestBody defines body for StartDataImport for application/json ContentType.
 type StartDataImportJSONRequestBody = DataImportRequest
 
@@ -15569,6 +15704,15 @@ type ServerInterface interface {
 	// UnmuteErrorGroup Unmute an error group
 	// (POST /admin/error_groups/{id}/unmute)
 	UnmuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
+	// ListHookAppeals List the appeals of refused posts
+	// (GET /admin/hook_appeals)
+	ListHookAppeals(w http.ResponseWriter, r *http.Request, params ListHookAppealsParams)
+	// OverturnHookAppeal Overturn an appeal of a refused post
+	// (POST /admin/hook_appeals/{id}/overturn)
+	OverturnHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
+	// UpholdHookAppeal Uphold an appeal of a refused post
+	// (POST /admin/hook_appeals/{id}/uphold)
+	UpholdHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
 	// ListHookDecisions List the decisions of the decision hooks
 	// (GET /admin/hook_decisions)
 	ListHookDecisions(w http.ResponseWriter, r *http.Request, params ListHookDecisionsParams)
@@ -15947,6 +16091,9 @@ type ServerInterface interface {
 	// RejectFollowRequest Reject a follow request
 	// (POST /follow_requests/{id}/reject)
 	RejectFollowRequest(w http.ResponseWriter, r *http.Request, id AccountId)
+	// AppealHookDecision Appeal a post that the automated review refused
+	// (POST /hook_decisions/{id}/appeal)
+	AppealHookDecision(w http.ResponseWriter, r *http.Request, id Id)
 	// ListDataImports List the authenticated user's imports
 	// (GET /imports)
 	ListDataImports(w http.ResponseWriter, r *http.Request)
@@ -19271,6 +19418,117 @@ func (siw *ServerInterfaceWrapper) UnmuteErrorGroup(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UnmuteErrorGroup(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListHookAppeals operation middleware
+func (siw *ServerInterfaceWrapper) ListHookAppeals(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListHookAppealsParams
+
+	// ------------- Optional query parameter "pending" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "pending", r.URL.Query(), &params.Pending, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pending"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pending", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListHookAppeals(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// OverturnHookAppeal operation middleware
+func (siw *ServerInterfaceWrapper) OverturnHookAppeal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AppealId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.OverturnHookAppeal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpholdHookAppeal operation middleware
+func (siw *ServerInterfaceWrapper) UpholdHookAppeal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AppealId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpholdHookAppeal(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -22945,6 +23203,32 @@ func (siw *ServerInterfaceWrapper) RejectFollowRequest(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RejectFollowRequest(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AppealHookDecision operation middleware
+func (siw *ServerInterfaceWrapper) AppealHookDecision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AppealHookDecision(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27016,6 +27300,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/media/{id}", wrapper.UpdateMedia)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/moderation/actions", wrapper.ListOwnModerationActions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/moderation/actions/{id}/appeal", wrapper.AppealModerationAction)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/hook_decisions/{id}/appeal", wrapper.AppealHookDecision)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications", wrapper.ListNotifications)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/marker", wrapper.GetNotificationMarker)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/notifications/marker", wrapper.UpdateNotificationMarker)
@@ -27127,6 +27412,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_decisions", wrapper.ListHookDecisions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_decisions/summary", wrapper.GetHookSummary)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/hook_decisions/{id}/override", wrapper.OverrideHookDecision)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_appeals", wrapper.ListHookAppeals)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/hook_appeals/{id}/uphold", wrapper.UpholdHookAppeal)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/hook_appeals/{id}/overturn", wrapper.OverturnHookAppeal)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/error_groups", wrapper.ListErrorGroups)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/error_groups/{id}", wrapper.GetErrorGroup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/resolve", wrapper.ResolveErrorGroup)
@@ -27359,6 +27647,15 @@ type AdminDomainActionJSONResponse struct {
 	Body AdminDomainAction
 
 	Headers AdminDomainActionResponseHeaders
+}
+
+type AdminHookAppealResponseHeaders struct {
+	CacheControl *string
+}
+type AdminHookAppealJSONResponse struct {
+	Body AdminHookAppeal
+
+	Headers AdminHookAppealResponseHeaders
 }
 
 type AdminInstanceHealthResponseHeaders struct {
@@ -27701,6 +27998,16 @@ type StatusPageJSONResponse struct {
 	Body StatusPage
 
 	Headers StatusPageResponseHeaders
+}
+
+type StatusRejectedProblemResponseHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+type StatusRejectedProblemApplicationProblemPlusJSONResponse struct {
+	Body StatusRejectedProblem
+
+	Headers StatusRejectedProblemResponseHeaders
 }
 
 type SupporterPlanProblemResponseHeaders struct {
@@ -33350,6 +33657,178 @@ type UnmuteErrorGroupdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UnmuteErrorGroupdefaultApplicationProblemPlusJSONResponse) VisitUnmuteErrorGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListHookAppealsRequestObject struct {
+	Params ListHookAppealsParams
+}
+
+type ListHookAppealsResponseObject interface {
+	VisitListHookAppealsResponse(w http.ResponseWriter) error
+}
+
+type ListHookAppeals200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListHookAppeals200JSONResponse struct {
+	Body    AdminHookAppealPage
+	Headers ListHookAppeals200ResponseHeaders
+}
+
+func (response ListHookAppeals200JSONResponse) VisitListHookAppealsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListHookAppealsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListHookAppealsdefaultApplicationProblemPlusJSONResponse) VisitListHookAppealsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OverturnHookAppealRequestObject struct {
+	Id AppealId `json:"id"`
+}
+
+type OverturnHookAppealResponseObject interface {
+	VisitOverturnHookAppealResponse(w http.ResponseWriter) error
+}
+
+type OverturnHookAppeal200JSONResponse struct{ AdminHookAppealJSONResponse }
+
+func (response OverturnHookAppeal200JSONResponse) VisitOverturnHookAppealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OverturnHookAppealdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response OverturnHookAppealdefaultApplicationProblemPlusJSONResponse) VisitOverturnHookAppealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpholdHookAppealRequestObject struct {
+	Id AppealId `json:"id"`
+}
+
+type UpholdHookAppealResponseObject interface {
+	VisitUpholdHookAppealResponse(w http.ResponseWriter) error
+}
+
+type UpholdHookAppeal200JSONResponse struct{ AdminHookAppealJSONResponse }
+
+func (response UpholdHookAppeal200JSONResponse) VisitUpholdHookAppealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpholdHookAppealdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UpholdHookAppealdefaultApplicationProblemPlusJSONResponse) VisitUpholdHookAppealResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -41040,6 +41519,69 @@ func (response RejectFollowRequestdefaultApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type AppealHookDecisionRequestObject struct {
+	Id   Id `json:"id"`
+	Body *AppealHookDecisionJSONRequestBody
+}
+
+type AppealHookDecisionResponseObject interface {
+	VisitAppealHookDecisionResponse(w http.ResponseWriter) error
+}
+
+type AppealHookDecision200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type AppealHookDecision200JSONResponse struct {
+	Body    OwnHookAppeal
+	Headers AppealHookDecision200ResponseHeaders
+}
+
+func (response AppealHookDecision200JSONResponse) VisitAppealHookDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AppealHookDecisiondefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AppealHookDecisiondefaultApplicationProblemPlusJSONResponse) VisitAppealHookDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListDataImportsRequestObject struct {
 }
 
@@ -45083,6 +45625,28 @@ func (response CreateStatus201JSONResponse) VisitCreateStatusResponse(w http.Res
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
 	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateStatus422ApplicationProblemPlusJSONResponse struct {
+	StatusRejectedProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateStatus422ApplicationProblemPlusJSONResponse) VisitCreateStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -49594,6 +50158,15 @@ type StrictServerInterface interface {
 	// UnmuteErrorGroup Unmute an error group
 	// (POST /admin/error_groups/{id}/unmute)
 	UnmuteErrorGroup(ctx context.Context, request UnmuteErrorGroupRequestObject) (UnmuteErrorGroupResponseObject, error)
+	// ListHookAppeals List the appeals of refused posts
+	// (GET /admin/hook_appeals)
+	ListHookAppeals(ctx context.Context, request ListHookAppealsRequestObject) (ListHookAppealsResponseObject, error)
+	// OverturnHookAppeal Overturn an appeal of a refused post
+	// (POST /admin/hook_appeals/{id}/overturn)
+	OverturnHookAppeal(ctx context.Context, request OverturnHookAppealRequestObject) (OverturnHookAppealResponseObject, error)
+	// UpholdHookAppeal Uphold an appeal of a refused post
+	// (POST /admin/hook_appeals/{id}/uphold)
+	UpholdHookAppeal(ctx context.Context, request UpholdHookAppealRequestObject) (UpholdHookAppealResponseObject, error)
 	// ListHookDecisions List the decisions of the decision hooks
 	// (GET /admin/hook_decisions)
 	ListHookDecisions(ctx context.Context, request ListHookDecisionsRequestObject) (ListHookDecisionsResponseObject, error)
@@ -49972,6 +50545,9 @@ type StrictServerInterface interface {
 	// RejectFollowRequest Reject a follow request
 	// (POST /follow_requests/{id}/reject)
 	RejectFollowRequest(ctx context.Context, request RejectFollowRequestRequestObject) (RejectFollowRequestResponseObject, error)
+	// AppealHookDecision Appeal a post that the automated review refused
+	// (POST /hook_decisions/{id}/appeal)
+	AppealHookDecision(ctx context.Context, request AppealHookDecisionRequestObject) (AppealHookDecisionResponseObject, error)
 	// ListDataImports List the authenticated user's imports
 	// (GET /imports)
 	ListDataImports(ctx context.Context, request ListDataImportsRequestObject) (ListDataImportsResponseObject, error)
@@ -53125,6 +53701,84 @@ func (sh *strictHandler) UnmuteErrorGroup(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UnmuteErrorGroupResponseObject); ok {
 		if err := validResponse.VisitUnmuteErrorGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListHookAppeals operation middleware
+func (sh *strictHandler) ListHookAppeals(w http.ResponseWriter, r *http.Request, params ListHookAppealsParams) {
+	var request ListHookAppealsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListHookAppeals(ctx, request.(ListHookAppealsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListHookAppeals")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListHookAppealsResponseObject); ok {
+		if err := validResponse.VisitListHookAppealsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// OverturnHookAppeal operation middleware
+func (sh *strictHandler) OverturnHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId) {
+	var request OverturnHookAppealRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.OverturnHookAppeal(ctx, request.(OverturnHookAppealRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "OverturnHookAppeal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(OverturnHookAppealResponseObject); ok {
+		if err := validResponse.VisitOverturnHookAppealResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpholdHookAppeal operation middleware
+func (sh *strictHandler) UpholdHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId) {
+	var request UpholdHookAppealRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpholdHookAppeal(ctx, request.(UpholdHookAppealRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpholdHookAppeal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpholdHookAppealResponseObject); ok {
+		if err := validResponse.VisitUpholdHookAppealResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -56567,6 +57221,39 @@ func (sh *strictHandler) RejectFollowRequest(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RejectFollowRequestResponseObject); ok {
 		if err := validResponse.VisitRejectFollowRequestResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AppealHookDecision operation middleware
+func (sh *strictHandler) AppealHookDecision(w http.ResponseWriter, r *http.Request, id Id) {
+	var request AppealHookDecisionRequestObject
+
+	request.Id = id
+
+	var body AppealHookDecisionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AppealHookDecision(ctx, request.(AppealHookDecisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AppealHookDecision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AppealHookDecisionResponseObject); ok {
+		if err := validResponse.VisitAppealHookDecisionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

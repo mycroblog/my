@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: overturnHookAppeal
+  summary: Overturn an appeal of a refused post
+  description: |
+    Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
+    reviewing the author's posts with `local.status`, in one transaction. The refused post is not
+    restored: the author posts again. Deciding a decided appeal the same way again changes
+    nothing; deciding it the other way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID
+    is a 404. Needs the `manage_reports` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/AppealId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminHookAppeal.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: appealHookDecision
+  x-first-party-only: true
+  summary: Appeal a post that the automated review refused
+  description: |
+    Asks the moderators to let a refused post through (the 422
+    `/api/v1/problems/status-rejected` of `POST /statuses`), once per decision and until its
+    `appeal_deadline` (the instance's appeal window from the refusal, 180 days by default).
+    People review it; the refused post is not stored, so the appeal sends its text. When a
+    moderator overturns the decision, the user's posts are no longer reviewed and the user posts
+    again. A second appeal is a 422 `/api/v1/problems/already-appealed`, an appeal after the
+    deadline a 422 `/api/v1/problems/appeal-window-closed`, and an appeal of a decision that is
+    not such a refusal a 422 `/api/v1/problems/not-appealable`. A `status_text` that is blank or
+    too long, or a field that contains U+0000, is a 422 naming it. A decision that is not about
+    the user's post is a 404.
+  tags: [statuses]
+  security:
+    - oauth2: ["write:statuses"]
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The ID of the decision, `hook_decision_id` of the refusal.
+      schema:
+        $ref: ../components/schemas/Id.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/AppealHookDecisionRequest.yaml
+  responses:
+    "200":
+      description: The appeal.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/OwnHookAppeal.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

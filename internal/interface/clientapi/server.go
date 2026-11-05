@@ -239,6 +239,9 @@ type Options struct {
 	// HookDecisions runs the decisions of /admin/hook_decisions and says which hooks GET /instance
 	// states (admin_hook_decisions.go); nil answers 404 to those operations.
 	HookDecisions HookDecisions
+	// HookAppeals runs the appeals of the posts that the decision hook local.status refused, and
+	// the deadline that the refusal states (hook_appeals.go); nil answers 404 to the appeals.
+	HookAppeals HookAppeals
 	// ErrorGroups runs the error groups of /admin/error_groups and presents the data of the
 	// webhook events error_group.* (admin_errors.go); nil answers 404 to those operations.
 	ErrorGroups ErrorGroups

@@ -129,3 +129,54 @@ func TestContract(t *testing.T) {
 		})
 	}
 }
+
+// recordingPlugin answers allow and keeps the last request.
+type recordingPlugin struct {
+	hookv1connect.UnimplementedHookServiceHandler
+
+	last atomic.Pointer[hookv1.CheckRequest]
+}
+
+func (p *recordingPlugin) Check(_ context.Context, req *hookv1.CheckRequest) (*hookv1.CheckResponse, error) {
+	p.last.Store(req)
+	return &hookv1.CheckResponse{Verdict: hookv1.Verdict_VERDICT_ALLOW}, nil
+}
+
+func TestTheSubjectOfLocalStatus(t *testing.T) {
+	plugin := new(recordingPlugin)
+	server := connect.NewServer()
+	hookv1connect.RegisterHookServiceHandler(server, plugin)
+	mux := http.NewServeMux()
+	connecthttp.Mount(mux, server)
+	k, ok := kind.ByName(kind.LocalStatus)
+	if !ok {
+		t.Fatal("no kind")
+	}
+	conn, err := client.New(client.Options{Kind: k, Destination: kind.Destination{Address: fakeplugin.ServeUnix(t, mux), Protocol: kind.ProtocolJSON}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(conn.Close)
+	created := time.Date(2026, 11, 1, 9, 30, 0, 0, time.UTC)
+	_, err = hookconnect.New(conn).Check(t.Context(), apphook.Request{
+		Hook: hook.LocalStatus, SubjectKey: "status-id",
+		Subject: apphook.LocalStatusSubject{
+			StatusURI: "https://my.example/ap/objects/status-id", AuthorURI: "https://my.example/ap/actors/a", AuthorUsername: "alice",
+			AccountCreatedAt: created, Visibility: "public", Language: "en", Text: "buy now", HTML: "<p>buy now</p>",
+			AttachmentDescriptions: []string{"", "a cat"}, Hashtags: []string{"deal"}, MentionCount: 3,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sent := plugin.last.Load()
+	got := sent.GetLocalStatus()
+	if got == nil || got.GetText() != "buy now" || got.GetHtml() != "<p>buy now</p>" || got.GetAuthorUsername() != "alice" ||
+		got.GetAccountCreatedAt() != "2026-11-01T09:30:00Z" || got.GetMentionCount() != 3 || len(got.GetAttachmentDescriptions()) != 2 ||
+		len(got.GetHashtags()) != 1 || got.GetVisibility() != "public" {
+		t.Errorf("sent %v", got)
+	}
+	if sent.GetSignup() != nil || sent.GetFollow() != nil {
+		t.Error("another hook's subject was sent")
+	}
+}

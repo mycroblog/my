@@ -32,7 +32,7 @@ const (
 // inbound.follow: ALLOW, DROP, FLAG.
 // signup.check: ALLOW, REQUIRE_APPROVAL, REJECT.
 // media.check: ALLOW, MARK_SENSITIVE, FLAG.
-// local.status: ALLOW, FLAG, REJECT.
+// local.status: ALLOW, FLAG, REJECT. A REJECT can be appealed by the author, which people review.
 type Verdict int32
 
 const (
@@ -175,7 +175,9 @@ type CheckRequest struct {
 	// The two parties of the follow, for inbound.follow.
 	Follow *FollowSubject `protobuf:"bytes,5,opt,name=follow,proto3" json:"follow,omitempty"`
 	// What signup.check reviews; empty on the calls of the other hooks and on probes.
-	Signup        *SignupSubject `protobuf:"bytes,6,opt,name=signup,proto3" json:"signup,omitempty"`
+	Signup *SignupSubject `protobuf:"bytes,6,opt,name=signup,proto3" json:"signup,omitempty"`
+	// What local.status reviews; empty on the calls of the other hooks and on probes.
+	LocalStatus   *LocalStatus `protobuf:"bytes,7,opt,name=local_status,json=localStatus,proto3" json:"local_status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -241,6 +243,13 @@ func (x *CheckRequest) GetFollow() *FollowSubject {
 func (x *CheckRequest) GetSignup() *SignupSubject {
 	if x != nil {
 		return x.Signup
+	}
+	return nil
+}
+
+func (x *CheckRequest) GetLocalStatus() *LocalStatus {
+	if x != nil {
+		return x.LocalStatus
 	}
 	return nil
 }
@@ -357,6 +366,188 @@ func (x *SignupSubject) GetIp() string {
 	return ""
 }
 
+// A post of an account on this server, before the server creates it, for local.status. The
+// subject_key of the call is the ID the post would get, which identifies this attempt alone: an
+// author who posts again is a new subject. Only public, local, and unlisted posts are sent, by default
+// only those of accounts created recently, and never those of an account whose appeal a moderator
+// granted.
+type LocalStatus struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The ActivityPub id the post would get.
+	StatusUri string `protobuf:"bytes,1,opt,name=status_uri,json=statusUri,proto3" json:"status_uri,omitempty"`
+	// The ActivityPub id of the author.
+	AuthorUri string `protobuf:"bytes,2,opt,name=author_uri,json=authorUri,proto3" json:"author_uri,omitempty"`
+	// The author's username on this server.
+	AuthorUsername string `protobuf:"bytes,3,opt,name=author_username,json=authorUsername,proto3" json:"author_username,omitempty"`
+	// When the author's account was created, in RFC 3339.
+	AccountCreatedAt string `protobuf:"bytes,4,opt,name=account_created_at,json=accountCreatedAt,proto3" json:"account_created_at,omitempty"`
+	// public, local, or unlisted. A local post never leaves this server.
+	Visibility string `protobuf:"bytes,5,opt,name=visibility,proto3" json:"visibility,omitempty"`
+	// The post this one replies to; empty for none. The parent's text is not sent.
+	InReplyToUri string `protobuf:"bytes,6,opt,name=in_reply_to_uri,json=inReplyToUri,proto3" json:"in_reply_to_uri,omitempty"`
+	// The post this one quotes; empty for none. Its text is not sent.
+	QuoteUri string `protobuf:"bytes,7,opt,name=quote_uri,json=quoteUri,proto3" json:"quote_uri,omitempty"`
+	// A language tag; "und" when the author's language is not known.
+	Language    string `protobuf:"bytes,8,opt,name=language,proto3" json:"language,omitempty"`
+	SpoilerText string `protobuf:"bytes,9,opt,name=spoiler_text,json=spoilerText,proto3" json:"spoiler_text,omitempty"`
+	// Whether the author marked the media as sensitive.
+	Sensitive bool `protobuf:"varint,10,opt,name=sensitive,proto3" json:"sensitive,omitempty"`
+	// The text as the author typed it.
+	Text string `protobuf:"bytes,11,opt,name=text,proto3" json:"text,omitempty"`
+	// The text as the server renders it, in HTML.
+	Html string `protobuf:"bytes,12,opt,name=html,proto3" json:"html,omitempty"`
+	// The alt texts of the attachments in order, empty for one without. The server sends no media.
+	AttachmentDescriptions []string `protobuf:"bytes,13,rep,name=attachment_descriptions,json=attachmentDescriptions,proto3" json:"attachment_descriptions,omitempty"`
+	PollOptions            []string `protobuf:"bytes,14,rep,name=poll_options,json=pollOptions,proto3" json:"poll_options,omitempty"`
+	Hashtags               []string `protobuf:"bytes,15,rep,name=hashtags,proto3" json:"hashtags,omitempty"`
+	// How many accounts the post names.
+	MentionCount  int32 `protobuf:"varint,16,opt,name=mention_count,json=mentionCount,proto3" json:"mention_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LocalStatus) Reset() {
+	*x = LocalStatus{}
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LocalStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LocalStatus) ProtoMessage() {}
+
+func (x *LocalStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LocalStatus.ProtoReflect.Descriptor instead.
+func (*LocalStatus) Descriptor() ([]byte, []int) {
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *LocalStatus) GetStatusUri() string {
+	if x != nil {
+		return x.StatusUri
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetAuthorUri() string {
+	if x != nil {
+		return x.AuthorUri
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetAuthorUsername() string {
+	if x != nil {
+		return x.AuthorUsername
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetAccountCreatedAt() string {
+	if x != nil {
+		return x.AccountCreatedAt
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetVisibility() string {
+	if x != nil {
+		return x.Visibility
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetInReplyToUri() string {
+	if x != nil {
+		return x.InReplyToUri
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetQuoteUri() string {
+	if x != nil {
+		return x.QuoteUri
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetSpoilerText() string {
+	if x != nil {
+		return x.SpoilerText
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetSensitive() bool {
+	if x != nil {
+		return x.Sensitive
+	}
+	return false
+}
+
+func (x *LocalStatus) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetHtml() string {
+	if x != nil {
+		return x.Html
+	}
+	return ""
+}
+
+func (x *LocalStatus) GetAttachmentDescriptions() []string {
+	if x != nil {
+		return x.AttachmentDescriptions
+	}
+	return nil
+}
+
+func (x *LocalStatus) GetPollOptions() []string {
+	if x != nil {
+		return x.PollOptions
+	}
+	return nil
+}
+
+func (x *LocalStatus) GetHashtags() []string {
+	if x != nil {
+		return x.Hashtags
+	}
+	return nil
+}
+
+func (x *LocalStatus) GetMentionCount() int32 {
+	if x != nil {
+		return x.MentionCount
+	}
+	return 0
+}
+
 type CheckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
@@ -374,7 +565,7 @@ type CheckResponse struct {
 
 func (x *CheckResponse) Reset() {
 	*x = CheckResponse{}
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[3]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -386,7 +577,7 @@ func (x *CheckResponse) String() string {
 func (*CheckResponse) ProtoMessage() {}
 
 func (x *CheckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[3]
+	mi := &file_my_plugin_hook_v1_hook_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -399,7 +590,7 @@ func (x *CheckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckResponse.ProtoReflect.Descriptor instead.
 func (*CheckResponse) Descriptor() ([]byte, []int) {
-	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{3}
+	return file_my_plugin_hook_v1_hook_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CheckResponse) GetVerdict() Verdict {
@@ -427,20 +618,43 @@ var File_my_plugin_hook_v1_hook_proto protoreflect.FileDescriptor
 
 const file_my_plugin_hook_v1_hook_proto_rawDesc = "" +
 	"\n" +
-	"\x1cmy/plugin/hook/v1/hook.proto\x12\x11my.plugin.hook.v1\"\xcd\x01\n" +
+	"\x1cmy/plugin/hook/v1/hook.proto\x12\x11my.plugin.hook.v1\"\x90\x02\n" +
 	"\fCheckRequest\x12\x12\n" +
 	"\x04hook\x18\x01 \x01(\tR\x04hook\x12\x1f\n" +
 	"\vsubject_key\x18\x02 \x01(\tR\n" +
 	"subjectKey\x12\x14\n" +
 	"\x05probe\x18\x03 \x01(\bR\x05probe\x128\n" +
 	"\x06follow\x18\x05 \x01(\v2 .my.plugin.hook.v1.FollowSubjectR\x06follow\x128\n" +
-	"\x06signup\x18\x06 \x01(\v2 .my.plugin.hook.v1.SignupSubjectR\x06signup\"U\n" +
+	"\x06signup\x18\x06 \x01(\v2 .my.plugin.hook.v1.SignupSubjectR\x06signup\x12A\n" +
+	"\flocal_status\x18\a \x01(\v2\x1e.my.plugin.hook.v1.LocalStatusR\vlocalStatus\"U\n" +
 	"\rFollowSubject\x12!\n" +
 	"\ffollower_uri\x18\x01 \x01(\tR\vfollowerUri\x12!\n" +
 	"\ffollowee_uri\x18\x02 \x01(\tR\vfolloweeUri\"5\n" +
 	"\rSignupSubject\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x0e\n" +
-	"\x02ip\x18\x02 \x01(\tR\x02ip\"\x8c\x01\n" +
+	"\x02ip\x18\x02 \x01(\tR\x02ip\"\xa8\x04\n" +
+	"\vLocalStatus\x12\x1d\n" +
+	"\n" +
+	"status_uri\x18\x01 \x01(\tR\tstatusUri\x12\x1d\n" +
+	"\n" +
+	"author_uri\x18\x02 \x01(\tR\tauthorUri\x12'\n" +
+	"\x0fauthor_username\x18\x03 \x01(\tR\x0eauthorUsername\x12,\n" +
+	"\x12account_created_at\x18\x04 \x01(\tR\x10accountCreatedAt\x12\x1e\n" +
+	"\n" +
+	"visibility\x18\x05 \x01(\tR\n" +
+	"visibility\x12%\n" +
+	"\x0fin_reply_to_uri\x18\x06 \x01(\tR\finReplyToUri\x12\x1b\n" +
+	"\tquote_uri\x18\a \x01(\tR\bquoteUri\x12\x1a\n" +
+	"\blanguage\x18\b \x01(\tR\blanguage\x12!\n" +
+	"\fspoiler_text\x18\t \x01(\tR\vspoilerText\x12\x1c\n" +
+	"\tsensitive\x18\n" +
+	" \x01(\bR\tsensitive\x12\x12\n" +
+	"\x04text\x18\v \x01(\tR\x04text\x12\x12\n" +
+	"\x04html\x18\f \x01(\tR\x04html\x127\n" +
+	"\x17attachment_descriptions\x18\r \x03(\tR\x16attachmentDescriptions\x12!\n" +
+	"\fpoll_options\x18\x0e \x03(\tR\vpollOptions\x12\x1a\n" +
+	"\bhashtags\x18\x0f \x03(\tR\bhashtags\x12#\n" +
+	"\rmention_count\x18\x10 \x01(\x05R\fmentionCount\"\x8c\x01\n" +
 	"\rCheckResponse\x124\n" +
 	"\averdict\x18\x01 \x01(\x0e2\x1a.my.plugin.hook.v1.VerdictR\averdict\x121\n" +
 	"\x06reason\x18\x02 \x01(\x0e2\x19.my.plugin.hook.v1.ReasonR\x06reason\x12\x12\n" +
@@ -479,27 +693,29 @@ func file_my_plugin_hook_v1_hook_proto_rawDescGZIP() []byte {
 }
 
 var file_my_plugin_hook_v1_hook_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_my_plugin_hook_v1_hook_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_my_plugin_hook_v1_hook_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_my_plugin_hook_v1_hook_proto_goTypes = []any{
 	(Verdict)(0),          // 0: my.plugin.hook.v1.Verdict
 	(Reason)(0),           // 1: my.plugin.hook.v1.Reason
 	(*CheckRequest)(nil),  // 2: my.plugin.hook.v1.CheckRequest
 	(*FollowSubject)(nil), // 3: my.plugin.hook.v1.FollowSubject
 	(*SignupSubject)(nil), // 4: my.plugin.hook.v1.SignupSubject
-	(*CheckResponse)(nil), // 5: my.plugin.hook.v1.CheckResponse
+	(*LocalStatus)(nil),   // 5: my.plugin.hook.v1.LocalStatus
+	(*CheckResponse)(nil), // 6: my.plugin.hook.v1.CheckResponse
 }
 var file_my_plugin_hook_v1_hook_proto_depIdxs = []int32{
 	3, // 0: my.plugin.hook.v1.CheckRequest.follow:type_name -> my.plugin.hook.v1.FollowSubject
 	4, // 1: my.plugin.hook.v1.CheckRequest.signup:type_name -> my.plugin.hook.v1.SignupSubject
-	0, // 2: my.plugin.hook.v1.CheckResponse.verdict:type_name -> my.plugin.hook.v1.Verdict
-	1, // 3: my.plugin.hook.v1.CheckResponse.reason:type_name -> my.plugin.hook.v1.Reason
-	2, // 4: my.plugin.hook.v1.HookService.Check:input_type -> my.plugin.hook.v1.CheckRequest
-	5, // 5: my.plugin.hook.v1.HookService.Check:output_type -> my.plugin.hook.v1.CheckResponse
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	5, // 2: my.plugin.hook.v1.CheckRequest.local_status:type_name -> my.plugin.hook.v1.LocalStatus
+	0, // 3: my.plugin.hook.v1.CheckResponse.verdict:type_name -> my.plugin.hook.v1.Verdict
+	1, // 4: my.plugin.hook.v1.CheckResponse.reason:type_name -> my.plugin.hook.v1.Reason
+	2, // 5: my.plugin.hook.v1.HookService.Check:input_type -> my.plugin.hook.v1.CheckRequest
+	6, // 6: my.plugin.hook.v1.HookService.Check:output_type -> my.plugin.hook.v1.CheckResponse
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_my_plugin_hook_v1_hook_proto_init() }
@@ -513,7 +729,7 @@ func file_my_plugin_hook_v1_hook_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_my_plugin_hook_v1_hook_proto_rawDesc), len(file_my_plugin_hook_v1_hook_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

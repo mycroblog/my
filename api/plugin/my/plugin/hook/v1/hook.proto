@@ -24,6 +24,8 @@ message CheckRequest {
   FollowSubject follow = 5;
   // What signup.check reviews; empty on the calls of the other hooks and on probes.
   SignupSubject signup = 6;
+  // What local.status reviews; empty on the calls of the other hooks and on probes.
+  LocalStatus local_status = 7;
 }
 
 // What inbound.follow asks about: a follow from another server of an account on this one.
@@ -44,6 +46,43 @@ message SignupSubject {
   string ip = 2;
 }
 
+// A post of an account on this server, before the server creates it, for local.status. The
+// subject_key of the call is the ID the post would get, which identifies this attempt alone: an
+// author who posts again is a new subject. Only public, local, and unlisted posts are sent, by default
+// only those of accounts created recently, and never those of an account whose appeal a moderator
+// granted.
+message LocalStatus {
+  // The ActivityPub id the post would get.
+  string status_uri = 1;
+  // The ActivityPub id of the author.
+  string author_uri = 2;
+  // The author's username on this server.
+  string author_username = 3;
+  // When the author's account was created, in RFC 3339.
+  string account_created_at = 4;
+  // public, local, or unlisted. A local post never leaves this server.
+  string visibility = 5;
+  // The post this one replies to; empty for none. The parent's text is not sent.
+  string in_reply_to_uri = 6;
+  // The post this one quotes; empty for none. Its text is not sent.
+  string quote_uri = 7;
+  // A language tag; "und" when the author's language is not known.
+  string language = 8;
+  string spoiler_text = 9;
+  // Whether the author marked the media as sensitive.
+  bool sensitive = 10;
+  // The text as the author typed it.
+  string text = 11;
+  // The text as the server renders it, in HTML.
+  string html = 12;
+  // The alt texts of the attachments in order, empty for one without. The server sends no media.
+  repeated string attachment_descriptions = 13;
+  repeated string poll_options = 14;
+  repeated string hashtags = 15;
+  // How many accounts the post names.
+  int32 mention_count = 16;
+}
+
 message CheckResponse {
   // A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
   // know, and a verdict the hook does not take are all failures and follow the hook's failure
@@ -61,7 +100,7 @@ message CheckResponse {
 // inbound.follow: ALLOW, DROP, FLAG.
 // signup.check: ALLOW, REQUIRE_APPROVAL, REJECT.
 // media.check: ALLOW, MARK_SENSITIVE, FLAG.
-// local.status: ALLOW, FLAG, REJECT.
+// local.status: ALLOW, FLAG, REJECT. A REJECT can be appealed by the author, which people review.
 enum Verdict {
   VERDICT_UNSPECIFIED = 0;
   // Go on as if the hook were not there.

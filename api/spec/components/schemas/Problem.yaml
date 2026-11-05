@@ -39,9 +39,9 @@ description: |
   - `/api/v1/problems/missing-permission` (403): the user's roles lack the permission
     that an admin operation needs.
   - `/api/v1/problems/already-appealed` (422): the user already appealed the moderation
-    action; an action is appealed once.
+    action or the refusal of a post; each is appealed once.
   - `/api/v1/problems/appeal-window-closed` (422): the time to appeal the moderation
-    action has passed.
+    action or the refusal of a post has passed.
   - `/api/v1/problems/not-appealable` (422): the moderation action is a ban whose
     account is deleted, so it can no longer be appealed or overturned.
   - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
@@ -214,6 +214,9 @@ description: |
   - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
     had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
     its appeal.
+  - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
+    and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
+    user may appeal (`POST /hook_decisions/{id}/appeal`).
   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
     suppressed, so there is nothing to lift.
   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;

@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"time"
 
 	"connectrpc.com/connect/v2"
 
@@ -59,6 +61,15 @@ func setSubject(req *hookv1.CheckRequest, subject any) error {
 		return nil
 	case apphook.SignupSubject:
 		req.Signup = &hookv1.SignupSubject{Email: s.Email, Ip: s.IP}
+		return nil
+	case apphook.LocalStatusSubject:
+		req.LocalStatus = &hookv1.LocalStatus{
+			StatusUri: s.StatusURI, AuthorUri: s.AuthorURI, AuthorUsername: s.AuthorUsername,
+			AccountCreatedAt: s.AccountCreatedAt.UTC().Format(time.RFC3339Nano), Visibility: s.Visibility,
+			InReplyToUri: s.InReplyToURI, QuoteUri: s.QuoteURI, Language: s.Language, SpoilerText: s.SpoilerText,
+			Sensitive: s.Sensitive, Text: s.Text, Html: s.HTML, AttachmentDescriptions: s.AttachmentDescriptions,
+			PollOptions: s.PollOptions, Hashtags: s.Hashtags, MentionCount: int32(min(s.MentionCount, math.MaxInt32)), //nolint:gosec // bounded above
+		}
 		return nil
 	}
 	return fmt.Errorf("hook: no mapping of the subject %T", subject)

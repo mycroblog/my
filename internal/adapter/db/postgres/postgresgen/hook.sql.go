@@ -12,6 +12,53 @@ import (
 	"time"
 )
 
+const deleteHookAccountExemptionsOfAccount = `-- name: DeleteHookAccountExemptionsOfAccount :exec
+DELETE FROM hook_account_exemptions WHERE account_id = $1
+`
+
+func (q *Queries) DeleteHookAccountExemptionsOfAccount(ctx context.Context, accountID string) error {
+	_, err := q.db.Exec(ctx, deleteHookAccountExemptionsOfAccount, accountID)
+	return err
+}
+
+const deleteHookDecisionAppealDecisions = `-- name: DeleteHookDecisionAppealDecisions :exec
+DELETE FROM hook_decision_appeal_decisions
+WHERE appeal_id IN (SELECT id FROM hook_decision_appeals WHERE decision_id = ANY($1::uuid[]))
+`
+
+func (q *Queries) DeleteHookDecisionAppealDecisions(ctx context.Context, ids []string) error {
+	_, err := q.db.Exec(ctx, deleteHookDecisionAppealDecisions, ids)
+	return err
+}
+
+const deleteHookDecisionAppealDecisionsOfAccount = `-- name: DeleteHookDecisionAppealDecisionsOfAccount :exec
+DELETE FROM hook_decision_appeal_decisions
+WHERE appeal_id IN (SELECT id FROM hook_decision_appeals WHERE account_id = $1)
+`
+
+func (q *Queries) DeleteHookDecisionAppealDecisionsOfAccount(ctx context.Context, accountID string) error {
+	_, err := q.db.Exec(ctx, deleteHookDecisionAppealDecisionsOfAccount, accountID)
+	return err
+}
+
+const deleteHookDecisionAppeals = `-- name: DeleteHookDecisionAppeals :exec
+DELETE FROM hook_decision_appeals WHERE decision_id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteHookDecisionAppeals(ctx context.Context, ids []string) error {
+	_, err := q.db.Exec(ctx, deleteHookDecisionAppeals, ids)
+	return err
+}
+
+const deleteHookDecisionAppealsOfAccount = `-- name: DeleteHookDecisionAppealsOfAccount :exec
+DELETE FROM hook_decision_appeals WHERE account_id = $1
+`
+
+func (q *Queries) DeleteHookDecisionAppealsOfAccount(ctx context.Context, accountID string) error {
+	_, err := q.db.Exec(ctx, deleteHookDecisionAppealsOfAccount, accountID)
+	return err
+}
+
 const deleteHookDecisionOverrides = `-- name: DeleteHookDecisionOverrides :exec
 DELETE FROM hook_decision_overrides WHERE decision_id = ANY($1::uuid[])
 `
@@ -84,6 +131,140 @@ func (q *Queries) GetHookDecision(ctx context.Context, id string) (GetHookDecisi
 	return i, err
 }
 
+const getHookDecisionAppeal = `-- name: GetHookDecisionAppeal :one
+SELECT a.id AS appeal_id, a.decision_id AS appeal_decision_id, a.account_id AS appeal_account_id, a.status_text, a.comment, a.submitted_at,
+  r.decision AS review, r.decided_by_user_id AS reviewed_by_user_id, r.decided_at AS reviewed_at,
+  d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
+  o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
+FROM hook_decision_appeals a
+JOIN hook_decisions d ON d.id = a.decision_id
+LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE a.id = $1
+`
+
+type GetHookDecisionAppealRow struct {
+	AppealID             string
+	AppealDecisionID     string
+	AppealAccountID      string
+	StatusText           string
+	Comment              string
+	SubmittedAt          time.Time
+	Review               *string
+	ReviewedByUserID     *string
+	ReviewedAt           *time.Time
+	ID                   string
+	Hook                 string
+	SubjectKey           string
+	AccountID            *string
+	Mode                 string
+	Outcome              string
+	ReasonCode           string
+	Note                 string
+	LatencyMs            int64
+	DecidedAt            time.Time
+	OverriddenDecisionID *string
+	OverriddenByUserID   *string
+	OverriddenAt         *time.Time
+}
+
+func (q *Queries) GetHookDecisionAppeal(ctx context.Context, id string) (GetHookDecisionAppealRow, error) {
+	row := q.db.QueryRow(ctx, getHookDecisionAppeal, id)
+	var i GetHookDecisionAppealRow
+	err := row.Scan(
+		&i.AppealID,
+		&i.AppealDecisionID,
+		&i.AppealAccountID,
+		&i.StatusText,
+		&i.Comment,
+		&i.SubmittedAt,
+		&i.Review,
+		&i.ReviewedByUserID,
+		&i.ReviewedAt,
+		&i.ID,
+		&i.Hook,
+		&i.SubjectKey,
+		&i.AccountID,
+		&i.Mode,
+		&i.Outcome,
+		&i.ReasonCode,
+		&i.Note,
+		&i.LatencyMs,
+		&i.DecidedAt,
+		&i.OverriddenDecisionID,
+		&i.OverriddenByUserID,
+		&i.OverriddenAt,
+	)
+	return i, err
+}
+
+const getHookDecisionAppealOfDecision = `-- name: GetHookDecisionAppealOfDecision :one
+SELECT a.id AS appeal_id, a.decision_id AS appeal_decision_id, a.account_id AS appeal_account_id, a.status_text, a.comment, a.submitted_at,
+  r.decision AS review, r.decided_by_user_id AS reviewed_by_user_id, r.decided_at AS reviewed_at,
+  d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
+  o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
+FROM hook_decision_appeals a
+JOIN hook_decisions d ON d.id = a.decision_id
+LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE a.decision_id = $1
+`
+
+type GetHookDecisionAppealOfDecisionRow struct {
+	AppealID             string
+	AppealDecisionID     string
+	AppealAccountID      string
+	StatusText           string
+	Comment              string
+	SubmittedAt          time.Time
+	Review               *string
+	ReviewedByUserID     *string
+	ReviewedAt           *time.Time
+	ID                   string
+	Hook                 string
+	SubjectKey           string
+	AccountID            *string
+	Mode                 string
+	Outcome              string
+	ReasonCode           string
+	Note                 string
+	LatencyMs            int64
+	DecidedAt            time.Time
+	OverriddenDecisionID *string
+	OverriddenByUserID   *string
+	OverriddenAt         *time.Time
+}
+
+func (q *Queries) GetHookDecisionAppealOfDecision(ctx context.Context, decisionID string) (GetHookDecisionAppealOfDecisionRow, error) {
+	row := q.db.QueryRow(ctx, getHookDecisionAppealOfDecision, decisionID)
+	var i GetHookDecisionAppealOfDecisionRow
+	err := row.Scan(
+		&i.AppealID,
+		&i.AppealDecisionID,
+		&i.AppealAccountID,
+		&i.StatusText,
+		&i.Comment,
+		&i.SubmittedAt,
+		&i.Review,
+		&i.ReviewedByUserID,
+		&i.ReviewedAt,
+		&i.ID,
+		&i.Hook,
+		&i.SubjectKey,
+		&i.AccountID,
+		&i.Mode,
+		&i.Outcome,
+		&i.ReasonCode,
+		&i.Note,
+		&i.LatencyMs,
+		&i.DecidedAt,
+		&i.OverriddenDecisionID,
+		&i.OverriddenByUserID,
+		&i.OverriddenAt,
+	)
+	return i, err
+}
+
 const getHookDecisionBySubject = `-- name: GetHookDecisionBySubject :one
 SELECT d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
   o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
@@ -134,6 +315,38 @@ func (q *Queries) GetHookDecisionBySubject(ctx context.Context, arg GetHookDecis
 	return i, err
 }
 
+const hookAccountExempt = `-- name: HookAccountExempt :one
+SELECT EXISTS (SELECT 1 FROM hook_account_exemptions WHERE hook = $1 AND account_id = $2) AS exempt
+`
+
+type HookAccountExemptParams struct {
+	Hook      string
+	AccountID string
+}
+
+func (q *Queries) HookAccountExempt(ctx context.Context, arg HookAccountExemptParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hookAccountExempt, arg.Hook, arg.AccountID)
+	var exempt bool
+	err := row.Scan(&exempt)
+	return exempt, err
+}
+
+const insertHookAccountExemption = `-- name: InsertHookAccountExemption :exec
+INSERT INTO hook_account_exemptions (hook, account_id, exempted_at) VALUES ($1, $2, $3)
+ON CONFLICT (hook, account_id) DO NOTHING
+`
+
+type InsertHookAccountExemptionParams struct {
+	Hook       string
+	AccountID  string
+	ExemptedAt time.Time
+}
+
+func (q *Queries) InsertHookAccountExemption(ctx context.Context, arg InsertHookAccountExemptionParams) error {
+	_, err := q.db.Exec(ctx, insertHookAccountExemption, arg.Hook, arg.AccountID, arg.ExemptedAt)
+	return err
+}
+
 const insertHookDecision = `-- name: InsertHookDecision :execrows
 
 
@@ -156,8 +369,9 @@ type InsertHookDecisionParams struct {
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
-// The decisions of the decision hooks (data-model 4.16, ADR-0147 6). Every table is an event: rows
-// are written once and only the retention and the erasure delete them.
+// The decisions of the decision hooks (data-model 4.16, ADR-0147 6). Rows are written once and only
+// the retention and the erasure delete them, except the exemptions, which are current values that
+// only the erasure deletes.
 func (q *Queries) InsertHookDecision(ctx context.Context, arg InsertHookDecisionParams) (int64, error) {
 	result, err := q.db.Exec(ctx, insertHookDecision,
 		arg.ID,
@@ -169,6 +383,61 @@ func (q *Queries) InsertHookDecision(ctx context.Context, arg InsertHookDecision
 		arg.ReasonCode,
 		arg.Note,
 		arg.LatencyMs,
+		arg.DecidedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const insertHookDecisionAppeal = `-- name: InsertHookDecisionAppeal :execrows
+INSERT INTO hook_decision_appeals (id, decision_id, account_id, status_text, comment, submitted_at)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (decision_id) DO NOTHING
+`
+
+type InsertHookDecisionAppealParams struct {
+	ID          string
+	DecisionID  string
+	AccountID   string
+	StatusText  string
+	Comment     string
+	SubmittedAt time.Time
+}
+
+func (q *Queries) InsertHookDecisionAppeal(ctx context.Context, arg InsertHookDecisionAppealParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertHookDecisionAppeal,
+		arg.ID,
+		arg.DecisionID,
+		arg.AccountID,
+		arg.StatusText,
+		arg.Comment,
+		arg.SubmittedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const insertHookDecisionAppealDecision = `-- name: InsertHookDecisionAppealDecision :execrows
+INSERT INTO hook_decision_appeal_decisions (appeal_id, decision, decided_by_user_id, decided_at) VALUES ($1, $2, $3, $4)
+ON CONFLICT (appeal_id) DO NOTHING
+`
+
+type InsertHookDecisionAppealDecisionParams struct {
+	AppealID        string
+	Decision        string
+	DecidedByUserID *string
+	DecidedAt       time.Time
+}
+
+func (q *Queries) InsertHookDecisionAppealDecision(ctx context.Context, arg InsertHookDecisionAppealDecisionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertHookDecisionAppealDecision,
+		arg.AppealID,
+		arg.Decision,
+		arg.DecidedByUserID,
 		arg.DecidedAt,
 	)
 	if err != nil {
@@ -213,7 +482,9 @@ func (q *Queries) InsertHookDecisionStatus(ctx context.Context, arg InsertHookDe
 
 const listExpiredHookDecisions = `-- name: ListExpiredHookDecisions :many
 SELECT d.id, d.hook, d.account_id, d.mode, d.outcome, d.decided_at,
-  CAST(EXISTS (SELECT 1 FROM hook_decision_overrides o WHERE o.decision_id = d.id) AS boolean) AS overridden
+  CAST(EXISTS (SELECT 1 FROM hook_decision_overrides o WHERE o.decision_id = d.id) AS boolean) AS overridden,
+  CAST(EXISTS (SELECT 1 FROM hook_decision_appeals a WHERE a.decision_id = d.id
+    AND NOT EXISTS (SELECT 1 FROM hook_decision_appeal_decisions r WHERE r.appeal_id = a.id)) AS boolean) AS appeal_pending
 FROM hook_decisions d
 WHERE d.decided_at < $1
   AND ($2::uuid IS NULL OR d.decided_at > $3
@@ -230,13 +501,14 @@ type ListExpiredHookDecisionsParams struct {
 }
 
 type ListExpiredHookDecisionsRow struct {
-	ID         string
-	Hook       string
-	AccountID  *string
-	Mode       string
-	Outcome    string
-	DecidedAt  time.Time
-	Overridden bool
+	ID            string
+	Hook          string
+	AccountID     *string
+	Mode          string
+	Outcome       string
+	DecidedAt     time.Time
+	Overridden    bool
+	AppealPending bool
 }
 
 // The decisions past their retention, oldest first after the position of the last batch.
@@ -262,6 +534,97 @@ func (q *Queries) ListExpiredHookDecisions(ctx context.Context, arg ListExpiredH
 			&i.Outcome,
 			&i.DecidedAt,
 			&i.Overridden,
+			&i.AppealPending,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listHookDecisionAppeals = `-- name: ListHookDecisionAppeals :many
+SELECT a.id AS appeal_id, a.decision_id AS appeal_decision_id, a.account_id AS appeal_account_id, a.status_text, a.comment, a.submitted_at,
+  r.decision AS review, r.decided_by_user_id AS reviewed_by_user_id, r.decided_at AS reviewed_at,
+  d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
+  o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
+FROM hook_decision_appeals a
+JOIN hook_decisions d ON d.id = a.decision_id
+LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE ($1::uuid IS NULL OR a.id < $1::uuid)
+  AND (NOT $2::boolean OR r.appeal_id IS NULL)
+ORDER BY a.id DESC
+LIMIT $3
+`
+
+type ListHookDecisionAppealsParams struct {
+	Before   *string
+	Pending  bool
+	RowLimit int32
+}
+
+type ListHookDecisionAppealsRow struct {
+	AppealID             string
+	AppealDecisionID     string
+	AppealAccountID      string
+	StatusText           string
+	Comment              string
+	SubmittedAt          time.Time
+	Review               *string
+	ReviewedByUserID     *string
+	ReviewedAt           *time.Time
+	ID                   string
+	Hook                 string
+	SubjectKey           string
+	AccountID            *string
+	Mode                 string
+	Outcome              string
+	ReasonCode           string
+	Note                 string
+	LatencyMs            int64
+	DecidedAt            time.Time
+	OverriddenDecisionID *string
+	OverriddenByUserID   *string
+	OverriddenAt         *time.Time
+}
+
+// The appeals newest first; pending keeps those that no moderator has decided.
+func (q *Queries) ListHookDecisionAppeals(ctx context.Context, arg ListHookDecisionAppealsParams) ([]ListHookDecisionAppealsRow, error) {
+	rows, err := q.db.Query(ctx, listHookDecisionAppeals, arg.Before, arg.Pending, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListHookDecisionAppealsRow{}
+	for rows.Next() {
+		var i ListHookDecisionAppealsRow
+		if err := rows.Scan(
+			&i.AppealID,
+			&i.AppealDecisionID,
+			&i.AppealAccountID,
+			&i.StatusText,
+			&i.Comment,
+			&i.SubmittedAt,
+			&i.Review,
+			&i.ReviewedByUserID,
+			&i.ReviewedAt,
+			&i.ID,
+			&i.Hook,
+			&i.SubjectKey,
+			&i.AccountID,
+			&i.Mode,
+			&i.Outcome,
+			&i.ReasonCode,
+			&i.Note,
+			&i.LatencyMs,
+			&i.DecidedAt,
+			&i.OverriddenDecisionID,
+			&i.OverriddenByUserID,
+			&i.OverriddenAt,
 		); err != nil {
 			return nil, err
 		}

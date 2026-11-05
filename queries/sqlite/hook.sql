@@ -1,7 +1,8 @@
 -- SPDX-License-Identifier: AGPL-3.0-only
 
--- The decisions of the decision hooks (data-model 4.16, ADR-0147 6). Every table is an event: rows
--- are written once and only the retention and the erasure delete them.
+-- The decisions of the decision hooks (data-model 4.16, ADR-0147 6). Rows are written once and only
+-- the retention and the erasure delete them, except the exemptions, which are current values that
+-- only the erasure deletes.
 
 -- name: InsertHookDecision :execrows
 INSERT INTO hook_decisions (id, hook, subject_key, account_id, mode, outcome, reason_code, note, latency_ms, decided_at)
@@ -56,7 +57,9 @@ ORDER BY hook, mode, outcome;
 -- The decisions past their retention, oldest first after the position of the last batch.
 -- name: ListExpiredHookDecisions :many
 SELECT d.id, d.hook, d.account_id, d.mode, d.outcome, d.decided_at,
-  CAST(EXISTS (SELECT 1 FROM hook_decision_overrides o WHERE o.decision_id = d.id) AS INTEGER) AS overridden
+  CAST(EXISTS (SELECT 1 FROM hook_decision_overrides o WHERE o.decision_id = d.id) AS INTEGER) AS overridden,
+  CAST(EXISTS (SELECT 1 FROM hook_decision_appeals a WHERE a.decision_id = d.id
+    AND NOT EXISTS (SELECT 1 FROM hook_decision_appeal_decisions r WHERE r.appeal_id = a.id)) AS INTEGER) AS appeal_pending
 FROM hook_decisions d
 WHERE d.decided_at < sqlc.arg(before)
   AND (CAST(sqlc.arg(after_id) AS TEXT) = '' OR d.decided_at > sqlc.arg(after_at)
@@ -76,5 +79,75 @@ DELETE FROM hook_decision_statuses WHERE decision_id IN (sqlc.slice(ids));
 -- name: DeleteHookDecisionOverrides :exec
 DELETE FROM hook_decision_overrides WHERE decision_id IN (sqlc.slice(ids));
 
+-- name: DeleteHookDecisionAppealDecisions :exec
+DELETE FROM hook_decision_appeal_decisions
+WHERE appeal_id IN (SELECT id FROM hook_decision_appeals WHERE decision_id IN (sqlc.slice(ids)));
+
+-- name: DeleteHookDecisionAppeals :exec
+DELETE FROM hook_decision_appeals WHERE decision_id IN (sqlc.slice(ids));
+
 -- name: DeleteHookDecisions :exec
 DELETE FROM hook_decisions WHERE id IN (sqlc.slice(ids));
+
+-- name: InsertHookDecisionAppeal :execrows
+INSERT INTO hook_decision_appeals (id, decision_id, account_id, status_text, comment, submitted_at)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT (decision_id) DO NOTHING;
+
+-- name: GetHookDecisionAppeal :one
+SELECT a.id AS appeal_id, a.decision_id AS appeal_decision_id, a.account_id AS appeal_account_id, a.status_text, a.comment, a.submitted_at,
+  r.decision AS review, r.decided_by_user_id AS reviewed_by_user_id, r.decided_at AS reviewed_at,
+  d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
+  o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
+FROM hook_decision_appeals a
+JOIN hook_decisions d ON d.id = a.decision_id
+LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE a.id = ?;
+
+-- name: GetHookDecisionAppealOfDecision :one
+SELECT a.id AS appeal_id, a.decision_id AS appeal_decision_id, a.account_id AS appeal_account_id, a.status_text, a.comment, a.submitted_at,
+  r.decision AS review, r.decided_by_user_id AS reviewed_by_user_id, r.decided_at AS reviewed_at,
+  d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
+  o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
+FROM hook_decision_appeals a
+JOIN hook_decisions d ON d.id = a.decision_id
+LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE a.decision_id = ?;
+
+-- The appeals newest first; pending keeps those that no moderator has decided.
+-- name: ListHookDecisionAppeals :many
+SELECT a.id AS appeal_id, a.decision_id AS appeal_decision_id, a.account_id AS appeal_account_id, a.status_text, a.comment, a.submitted_at,
+  r.decision AS review, r.decided_by_user_id AS reviewed_by_user_id, r.decided_at AS reviewed_at,
+  d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.reason_code, d.note, d.latency_ms, d.decided_at,
+  o.decision_id AS overridden_decision_id, o.overridden_by_user_id, o.overridden_at
+FROM hook_decision_appeals a
+JOIN hook_decisions d ON d.id = a.decision_id
+LEFT JOIN hook_decision_appeal_decisions r ON r.appeal_id = a.id
+LEFT JOIN hook_decision_overrides o ON o.decision_id = d.id
+WHERE (CAST(sqlc.arg(before) AS TEXT) = '' OR a.id < sqlc.arg(before))
+  AND (CAST(sqlc.arg(pending) AS INTEGER) = 0 OR r.appeal_id IS NULL)
+ORDER BY a.id DESC
+LIMIT sqlc.arg(row_limit);
+
+-- name: InsertHookDecisionAppealDecision :execrows
+INSERT INTO hook_decision_appeal_decisions (appeal_id, decision, decided_by_user_id, decided_at) VALUES (?, ?, ?, ?)
+ON CONFLICT (appeal_id) DO NOTHING;
+
+-- name: InsertHookAccountExemption :exec
+INSERT INTO hook_account_exemptions (hook, account_id, exempted_at) VALUES (?, ?, ?)
+ON CONFLICT (hook, account_id) DO NOTHING;
+
+-- name: HookAccountExempt :one
+SELECT CAST(EXISTS (SELECT 1 FROM hook_account_exemptions WHERE hook = ? AND account_id = ?) AS INTEGER) AS exempt;
+
+-- name: DeleteHookAccountExemptionsOfAccount :exec
+DELETE FROM hook_account_exemptions WHERE account_id = ?;
+
+-- name: DeleteHookDecisionAppealDecisionsOfAccount :exec
+DELETE FROM hook_decision_appeal_decisions
+WHERE appeal_id IN (SELECT id FROM hook_decision_appeals WHERE account_id = ?);
+
+-- name: DeleteHookDecisionAppealsOfAccount :exec
+DELETE FROM hook_decision_appeals WHERE account_id = ?;

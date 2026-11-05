@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The problem of a post that the server's automated review refused (422,
+  `/api/v1/problems/status-rejected`). Nothing was posted. `title` and `detail` are fixed text
+  that holds nothing of the review's answer. The author may appeal the decision with
+  `POST /hook_decisions/{hook_decision_id}/appeal` until `appeal_deadline`, sending the text
+  of the post. Another 422 (a malformed request) has neither member.
+allOf:
+  - $ref: ./Problem.yaml
+  - type: object
+    properties:
+      hook_decision_id:
+        description: The decision to appeal.
+        type: string
+      appeal_deadline:
+        description: The last moment the author can appeal the decision.
+        type: string
+        format: date-time

@@ -110,6 +110,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		WebhookReads: webhookReads{a},
 		// The decisions of the decision hooks (ADR-0147 §9).
 		HookDecisions: a.Hooks,
+		HookAppeals:   a.Hooks,
 		// The error groups (ADR-0103 §8).
 		ErrorGroups: a.Diagnostics,
 		// The relays the instance joins (ADR-0006).

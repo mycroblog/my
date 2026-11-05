@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listHookAppeals
+  summary: List the appeals of refused posts
+  description: |
+    The authors' appeals of a `reject` of `local.status`, the newest first, with the text each
+    author tried to post. Needs the `manage_reports` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - name: pending
+      in: query
+      required: false
+      description: Keep the appeals that no moderator has decided.
+      schema:
+        type: boolean
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the appeals.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminHookAppealPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

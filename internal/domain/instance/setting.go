@@ -128,6 +128,9 @@ const (
 	// SettingHookSignupCheckReject lets a reject of the hook signup.check refuse a sign-up (ADR-0147 §2).
 	SettingHookSignupCheckReject  SettingKey = "hook_signup_check_reject"
 	SettingRetentionHookDecisions SettingKey = "retention_hook_decisions"
+	// SettingHookLocalStatusAccountAgeDays limits the hook local.status to the posts of accounts
+	// created recently (ADR-0147 §2).
+	SettingHookLocalStatusAccountAgeDays SettingKey = "hook_local_status_account_age_days"
 	// SettingInviteCreators decides who may create invites of their own (ADR-0106 §14), and
 	// SettingMemberInviteMaxActive, SettingMemberInviteMaxUses, and
 	// SettingMemberInviteMaxLifetimeSeconds bound those invites (§2).
@@ -367,6 +370,8 @@ const (
 	// The bounds and default of SettingRetentionHookDecisions, in days (ADR-0147 §6).
 	MinRetentionHookDecisions     = 30
 	DefaultRetentionHookDecisions = 90
+	// DefaultHookLocalStatusAccountAgeDays is the default of SettingHookLocalStatusAccountAgeDays.
+	DefaultHookLocalStatusAccountAgeDays = 7
 )
 
 // Kind is the scalar type of a setting's value.
@@ -633,6 +638,10 @@ var definitions = []Definition{
 	{
 		Key: SettingHookSignupCheckReject, Kind: KindBool, Default: "false",
 		Doc: "Whether a reject of the decision hook signup.check refuses the sign-up while the hook enforces; when off, the verdict is recorded and has no effect (ADR-0147 §2).",
+	},
+	{
+		Key: SettingHookLocalStatusAccountAgeDays, Kind: KindInt, Default: strconv.Itoa(DefaultHookLocalStatusAccountAgeDays), Min: 0, Max: MaxRetention,
+		Doc: "How many days after its creation an account's posts go to the decision hook local.status; 0 sends the posts of every account. Private and direct posts never go, nor those of an account whose appeal a moderator overturned (ADR-0147 §2, §9).",
 	},
 	{
 		Key: SettingRetentionHookDecisions, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionHookDecisions), Min: MinRetentionHookDecisions, Max: MaxRetention,
@@ -1152,6 +1161,12 @@ func (s Settings) IndexableDefault() bool { return s.boolValue(SettingIndexableD
 
 // HookSignupCheckReject returns the value of SettingHookSignupCheckReject.
 func (s Settings) HookSignupCheckReject() bool { return s.boolValue(SettingHookSignupCheckReject) }
+
+// HookLocalStatusAccountAge returns SettingHookLocalStatusAccountAgeDays as a duration; 0 sends
+// every account.
+func (s Settings) HookLocalStatusAccountAge() time.Duration {
+	return time.Duration(s.intValue(SettingHookLocalStatusAccountAgeDays)) * 24 * time.Hour
+}
 
 // FinanceVisibility returns the value of SettingFinanceVisibility; an unexpected value is private.
 func (s Settings) FinanceVisibility() FinanceVisibility {

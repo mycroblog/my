@@ -6,8 +6,9 @@
 
 -- ---------------------------------------------------------------------------------------------
 -- hook: the decisions of the decision hooks (data-model §4.16, ADR-0147 §6). Owned by
--- internal/app/hook. No column holds the text of a post, an email address, or an IP address, and
--- hook.purge_decisions removes the rows after retention_hook_decisions.
+-- internal/app/hook. No decision holds the text of a post, an email address, or an IP address; an
+-- appeal holds the text its author sends. hook.purge_decisions removes the decisions after
+-- retention_hook_decisions, with their appeals.
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: what a hook answered about one subject, one row per hook and subject, so that running a
@@ -45,3 +46,39 @@ CREATE TABLE hook_decision_overrides (
   overridden_by_user_id uuid,
   overridden_at timestamptz NOT NULL
 );
+
+-- Resource: an author's appeal of a reject of local.status (ADR-0147 §9), at most one per
+-- decision, within appeal_window_days of the decision. It holds the text the author wanted to post,
+-- which the decision does not, for the person who reviews it. comment is '' for none. The rows go
+-- with their decision, and with their account when it is erased.
+CREATE TABLE hook_decision_appeals (
+  id uuid NOT NULL PRIMARY KEY,
+  decision_id uuid NOT NULL,
+  account_id uuid NOT NULL,
+  status_text text NOT NULL,
+  comment text NOT NULL,
+  submitted_at timestamptz NOT NULL
+);
+CREATE UNIQUE INDEX hook_decision_appeals_decision_id ON hook_decision_appeals (decision_id);
+CREATE INDEX hook_decision_appeals_account_id ON hook_decision_appeals (account_id);
+
+-- Event: a moderator's decision on an appeal, at most one. An overturned appeal records the
+-- cancellation of its decision (hook_decision_overrides) and the exemption of the account in the same
+-- transaction. decided_by_user_id is NULL for the CLI.
+CREATE TABLE hook_decision_appeal_decisions (
+  appeal_id uuid NOT NULL PRIMARY KEY,
+  decision text NOT NULL CHECK (decision IN ('upheld', 'overturned')),
+  decided_by_user_id uuid,
+  decided_at timestamptz NOT NULL
+);
+
+-- Current value: the hook no longer reviews the account, because a moderator overturned its appeal.
+-- The row is the value (data-model §1, rule 5): it does not follow the decision or the appeal, which
+-- retention removes. Erasing the account removes it.
+CREATE TABLE hook_account_exemptions (
+  hook text NOT NULL CHECK (hook IN ('local.status')),
+  account_id uuid NOT NULL,
+  exempted_at timestamptz NOT NULL,
+  PRIMARY KEY (hook, account_id)
+);
+CREATE INDEX hook_account_exemptions_account_id ON hook_account_exemptions (account_id);

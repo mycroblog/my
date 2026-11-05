@@ -77,14 +77,20 @@ func (t fakeTx) Emit(_ context.Context, e uow.Event) error {
 // memory is the persistence of a test: a Repository and a UnitOfWork over maps.
 type memory struct {
 	uow.UnitOfWork
-	records  map[string]*hook.Record
-	statuses map[string][]string
-	events   []uow.Event
-	reads    int
+	records    map[string]*hook.Record
+	statuses   map[string][]string
+	appeals    map[string]*hook.Appeal
+	reviews    map[string]hook.AppealDecision
+	exemptions map[string]bool
+	events     []uow.Event
+	reads      int
 }
 
 func newMemory() *memory {
-	return &memory{records: map[string]*hook.Record{}, statuses: map[string][]string{}}
+	return &memory{
+		records: map[string]*hook.Record{}, statuses: map[string][]string{},
+		appeals: map[string]*hook.Appeal{}, reviews: map[string]hook.AppealDecision{}, exemptions: map[string]bool{},
+	}
 }
 
 func (m *memory) Tx(_ context.Context, f func(uow.Tx) error) error {
@@ -150,7 +156,7 @@ func (m *memory) ListExpired(_ context.Context, q apphook.ExpiredQuery) ([]hook.
 		if d.DecidedAt.Before(q.Before) {
 			out = append(out, hook.Expired{
 				ID: d.ID, Hook: d.Hook, AccountID: d.AccountID, Mode: d.Mode, Outcome: d.Outcome,
-				DecidedAt: d.DecidedAt, Overridden: r.Override != nil, StatusIDs: m.statuses[d.ID],
+				DecidedAt: d.DecidedAt, Overridden: r.Override != nil, StatusIDs: m.statuses[d.ID], AppealPending: m.appealPending(d.ID),
 			})
 		}
 	}
@@ -171,6 +177,12 @@ func (m *memory) DeleteDecisions(_ context.Context, _ uow.Tx, ids []string) erro
 	for _, id := range ids {
 		delete(m.records, id)
 		delete(m.statuses, id)
+		for appealID, a := range m.appeals {
+			if a.DecisionID == id {
+				delete(m.appeals, appealID)
+				delete(m.reviews, appealID)
+			}
+		}
 	}
 	return nil
 }

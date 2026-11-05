@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MIT
+description: The user's appeal of a post that the automated review refused.
+type: object
+required: [id, hook_decision_id, state, submitted_at]
+properties:
+  id:
+    type: string
+  hook_decision_id:
+    description: The decision appealed.
+    type: string
+  state:
+    $ref: ./HookAppealState.yaml
+  submitted_at:
+    type: string
+    format: date-time

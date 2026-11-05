@@ -911,6 +911,14 @@
     "defaultMessage": "ほかのサーバーからの投稿: 審査が失敗したとき",
     "description": "Label of the choice of what happens when this external review fails while it enforces."
   },
+  "admin.settings.hooks.local_status.account_age": {
+    "defaultMessage": "投稿を審査するアカウントの作成からの日数",
+    "description": "Label of the number of days after its creation that an account's posts go to the external review of local posts."
+  },
+  "admin.settings.hooks.local_status.account_age.description": {
+    "defaultMessage": "{min} 日から {max} 日まで。0 ならすべてのアカウントの投稿を審査します。非公開とダイレクトの投稿は送りません。異議申し立てが認められたアカウントの投稿も送りません。",
+    "description": "Description of the number of days an account's posts go to the external review. {min} and {max} are the bounds."
+  },
   "admin.settings.hooks.local_status.mode": {
     "defaultMessage": "このサーバーの投稿",
     "description": "Label of the choice of the mode of the external review of this kind of submission."

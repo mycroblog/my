@@ -2090,6 +2090,27 @@ func (e FinanceVisibility) Valid() bool {
 	}
 }
 
+// Defines values for HookAppealState.
+const (
+	HookAppealStateOverturned HookAppealState = "overturned"
+	HookAppealStatePending    HookAppealState = "pending"
+	HookAppealStateUpheld     HookAppealState = "upheld"
+)
+
+// Valid indicates whether the value is a known member of the HookAppealState enum.
+func (e HookAppealState) Valid() bool {
+	switch e {
+	case HookAppealStateOverturned:
+		return true
+	case HookAppealStatePending:
+		return true
+	case HookAppealStateUpheld:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HookDecisionMode.
 const (
 	HookDecisionModeEnforce HookDecisionMode = "enforce"
@@ -2482,6 +2503,7 @@ const (
 	InstanceSettingKeyHookInboundFollowOnFailure         InstanceSettingKey = "hook_inbound_follow_on_failure"
 	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
 	InstanceSettingKeyHookInboundStatusOnFailure         InstanceSettingKey = "hook_inbound_status_on_failure"
+	InstanceSettingKeyHookLocalStatusAccountAgeDays      InstanceSettingKey = "hook_local_status_account_age_days"
 	InstanceSettingKeyHookLocalStatusMode                InstanceSettingKey = "hook_local_status_mode"
 	InstanceSettingKeyHookMediaCheckMode                 InstanceSettingKey = "hook_media_check_mode"
 	InstanceSettingKeyHookMediaCheckOnFailure            InstanceSettingKey = "hook_media_check_on_failure"
@@ -2577,6 +2599,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyHookInboundStatusMode:
 		return true
 	case InstanceSettingKeyHookInboundStatusOnFailure:
+		return true
+	case InstanceSettingKeyHookLocalStatusAccountAgeDays:
 		return true
 	case InstanceSettingKeyHookLocalStatusMode:
 		return true
@@ -5653,6 +5677,41 @@ type AdminHook struct {
 	Outcomes []AdminHookOutcome `json:"outcomes"`
 }
 
+// AdminHookAppeal An author's appeal of a `reject` of `local.status`, with the text the author tried to post.
+// Deciding it never calls the plugin.
+type AdminHookAppeal struct {
+	// AccountId The author.
+	AccountId string `json:"account_id"`
+
+	// Comment What the author adds for the moderators, as plain text; absent when there is none.
+	Comment *string `json:"comment,omitempty"`
+
+	// DecidedAt When a moderator decided the appeal; absent while it is pending.
+	DecidedAt *time.Time `json:"decided_at,omitempty"`
+
+	// Decision What a decision hook answered about one subject. It holds no text of a post.
+	Decision AdminHookDecision `json:"decision"`
+	Id       string            `json:"id"`
+
+	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
+	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+	// `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
+	// post is not restored.
+	State HookAppealState `json:"state"`
+
+	// StatusText The text of the post the author tried to post, as plain text.
+	StatusText  string    `json:"status_text"`
+	SubmittedAt time.Time `json:"submitted_at"`
+}
+
+// AdminHookAppealPage A page of appeals, the newest first.
+type AdminHookAppealPage struct {
+	Items []AdminHookAppeal `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
 // AdminHookDecision What a decision hook answered about one subject. It holds no text of a post.
 type AdminHookDecision struct {
 	// AccountId The account the subject belongs to; absent when there is none.
@@ -7274,6 +7333,15 @@ type AnnouncementPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AppealHookDecisionRequest An appeal of a post that the automated review refused.
+type AppealHookDecisionRequest struct {
+	// Comment Why the moderators should let the post through, as plain text.
+	Comment *string `json:"comment,omitempty"`
+
+	// StatusText The text of the post the user tried to post, as plain text.
+	StatusText string `json:"status_text"`
 }
 
 // AppealModerationActionRequest An appeal of an action on the user's own account.
@@ -9273,6 +9341,12 @@ type FollowAccountRequest struct {
 	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
+// HookAppealState Where an appeal of a refused post stands: `pending` until a moderator decides it,
+// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+// `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
+// post is not restored.
+type HookAppealState string
+
 // HookDecisionMode The mode of the hook when it made the decision.
 type HookDecisionMode string
 
@@ -11215,6 +11289,20 @@ type OwnCustomEmojiPage struct {
 	Used int `json:"used"`
 }
 
+// OwnHookAppeal The user's appeal of a post that the automated review refused.
+type OwnHookAppeal struct {
+	// HookDecisionId The decision appealed.
+	HookDecisionId string `json:"hook_decision_id"`
+	Id             string `json:"id"`
+
+	// State Where an appeal of a refused post stands: `pending` until a moderator decides it,
+	// `upheld` when the refusal stays, `overturned` when the moderator cancelled it. After
+	// `overturned` the user's posts are no longer reviewed, and the user posts again: the refused
+	// post is not restored.
+	State       HookAppealState `json:"state"`
+	SubmittedAt time.Time       `json:"submitted_at"`
+}
+
 // OwnInvite An invite that the user created as a member, which always has a limit of uses and an expiry.
 type OwnInvite struct {
 	// Code The code people enter on the registration page, 16 characters.
@@ -11667,9 +11755,9 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/missing-permission` (403): the user's roles lack the permission
 //     that an admin operation needs.
 //   - `/api/v1/problems/already-appealed` (422): the user already appealed the moderation
-//     action; an action is appealed once.
+//     action or the refusal of a post; each is appealed once.
 //   - `/api/v1/problems/appeal-window-closed` (422): the time to appeal the moderation
-//     action has passed.
+//     action or the refusal of a post has passed.
 //   - `/api/v1/problems/not-appealable` (422): the moderation action is a ban whose
 //     account is deleted, so it can no longer be appealed or overturned.
 //   - `/api/v1/problems/appeal-decided` (409): the appeal was already decided the other way.
@@ -11842,6 +11930,9 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
 //     had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
 //     its appeal.
+//   - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
+//     and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
+//     user may appeal (`POST /hook_decisions/{id}/appeal`).
 //   - `/api/v1/problems/email-not-suppressed` (409): the email address of the account is not
 //     suppressed, so there is nothing to lift.
 //   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
@@ -12721,6 +12812,36 @@ type StatusReactor struct {
 	// Emoji The emoji of a reaction: a Unicode emoji, or a custom emoji with its image. A custom
 	// emoji of another server is shown as it is and cannot be used to react from here.
 	Emoji ReactionEmoji `json:"emoji"`
+}
+
+// StatusRejectedProblem The problem of a post that the server's automated review refused (422,
+// `/api/v1/problems/status-rejected`). Nothing was posted. `title` and `detail` are fixed text
+// that holds nothing of the review's answer. The author may appeal the decision with
+// `POST /hook_decisions/{hook_decision_id}/appeal` until `appeal_deadline`, sending the text
+// of the post. Another 422 (a malformed request) has neither member.
+type StatusRejectedProblem struct {
+	// AppealDeadline The last moment the author can appeal the decision.
+	AppealDeadline *time.Time `json:"appeal_deadline,omitempty"`
+
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// HookDecisionId The decision to appeal.
+	HookDecisionId *string `json:"hook_decision_id,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type                 string                 `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
 // StatusSource What the author typed, for editing a status.
@@ -14411,6 +14532,18 @@ type ListErrorGroupsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListHookAppealsParams defines parameters for ListHookAppeals.
+type ListHookAppealsParams struct {
+	// Pending Keep the appeals that no moderator has decided.
+	Pending *bool `form:"pending,omitempty" json:"pending,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListHookDecisionsParams defines parameters for ListHookDecisions.
 type ListHookDecisionsParams struct {
 	// Hook Keep the decisions of this hook.
@@ -15151,6 +15284,9 @@ type UpdateOwnCustomEmojiJSONRequestBody = UpdateOwnCustomEmojiRequest
 
 // MuteDomainJSONRequestBody defines body for MuteDomain for application/json ContentType.
 type MuteDomainJSONRequestBody = MuteDomainRequest
+
+// AppealHookDecisionJSONRequestBody defines body for AppealHookDecision for application/json ContentType.
+type AppealHookDecisionJSONRequestBody = AppealHookDecisionRequest
 
 // StartDataImportJSONRequestBody defines body for StartDataImport for application/json ContentType.
 type StartDataImportJSONRequestBody = DataImportRequest
@@ -16206,6 +16342,158 @@ func (a RoleProblem) MarshalJSON() ([]byte, error) {
 		object["reason"], err = json.Marshal(a.Reason)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'reason': %w", err)
+		}
+	}
+
+	if a.RequestId != nil {
+		object["request_id"], err = json.Marshal(a.RequestId)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'request_id': %w", err)
+		}
+	}
+
+	object["status"], err = json.Marshal(a.Status)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'status': %w", err)
+	}
+
+	object["title"], err = json.Marshal(a.Title)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'title': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for StatusRejectedProblem. Returns the specified
+// element and whether it was found
+func (a StatusRejectedProblem) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for StatusRejectedProblem
+func (a *StatusRejectedProblem) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for StatusRejectedProblem to handle AdditionalProperties
+func (a *StatusRejectedProblem) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["appeal_deadline"]; found {
+		err = json.Unmarshal(raw, &a.AppealDeadline)
+		if err != nil {
+			return fmt.Errorf("error reading 'appeal_deadline': %w", err)
+		}
+		delete(object, "appeal_deadline")
+	}
+
+	if raw, found := object["detail"]; found {
+		err = json.Unmarshal(raw, &a.Detail)
+		if err != nil {
+			return fmt.Errorf("error reading 'detail': %w", err)
+		}
+		delete(object, "detail")
+	}
+
+	if raw, found := object["hook_decision_id"]; found {
+		err = json.Unmarshal(raw, &a.HookDecisionId)
+		if err != nil {
+			return fmt.Errorf("error reading 'hook_decision_id': %w", err)
+		}
+		delete(object, "hook_decision_id")
+	}
+
+	if raw, found := object["request_id"]; found {
+		err = json.Unmarshal(raw, &a.RequestId)
+		if err != nil {
+			return fmt.Errorf("error reading 'request_id': %w", err)
+		}
+		delete(object, "request_id")
+	}
+
+	if raw, found := object["status"]; found {
+		err = json.Unmarshal(raw, &a.Status)
+		if err != nil {
+			return fmt.Errorf("error reading 'status': %w", err)
+		}
+		delete(object, "status")
+	}
+
+	if raw, found := object["title"]; found {
+		err = json.Unmarshal(raw, &a.Title)
+		if err != nil {
+			return fmt.Errorf("error reading 'title': %w", err)
+		}
+		delete(object, "title")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for StatusRejectedProblem to handle AdditionalProperties
+func (a StatusRejectedProblem) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.AppealDeadline != nil {
+		object["appeal_deadline"], err = json.Marshal(a.AppealDeadline)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'appeal_deadline': %w", err)
+		}
+	}
+
+	if a.Detail != nil {
+		object["detail"], err = json.Marshal(a.Detail)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'detail': %w", err)
+		}
+	}
+
+	if a.HookDecisionId != nil {
+		object["hook_decision_id"], err = json.Marshal(a.HookDecisionId)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'hook_decision_id': %w", err)
 		}
 	}
 
@@ -18468,6 +18756,35 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/error_groups/{id}/unmute (the `UnmuteErrorGroup` operationId).
 	UnmuteErrorGroup(ctx context.Context, id ErrorGroupId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListHookAppeals List the appeals of refused posts
+	//
+	// The authors' appeals of a `reject` of `local.status`, the newest first, with the text each
+	// author tried to post. Needs the `manage_reports` permission.
+	//
+	// Corresponds with GET /admin/hook_appeals (the `ListHookAppeals` operationId).
+	ListHookAppeals(ctx context.Context, params *ListHookAppealsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OverturnHookAppeal Overturn an appeal of a refused post
+	//
+	// Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
+	// reviewing the author's posts with `local.status`, in one transaction. The refused post is not
+	// restored: the author posts again. Deciding a decided appeal the same way again changes
+	// nothing; deciding it the other way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID
+	// is a 404. Needs the `manage_reports` permission.
+	//
+	// Corresponds with POST /admin/hook_appeals/{id}/overturn (the `OverturnHookAppeal` operationId).
+	OverturnHookAppeal(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpholdHookAppeal Uphold an appeal of a refused post
+	//
+	// Rejects the appeal; the decision stays as it is and the author's posts are reviewed as
+	// before. Deciding a decided appeal the same way again changes nothing; deciding it the other
+	// way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID is a 404. Needs the
+	// `manage_reports` permission.
+	//
+	// Corresponds with POST /admin/hook_appeals/{id}/uphold (the `UpholdHookAppeal` operationId).
+	UpholdHookAppeal(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListHookDecisions List the decisions of the decision hooks
 	//
 	// What the external reviews said, the newest first. Without `outcome` the list leaves out
@@ -20294,6 +20611,42 @@ type ClientInterface interface {
 	// Corresponds with POST /follow_requests/{id}/reject (the `RejectFollowRequest` operationId).
 	RejectFollowRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AppealHookDecisionWithBody Appeal a post that the automated review refused
+	//
+	// Asks the moderators to let a refused post through (the 422
+	// `/api/v1/problems/status-rejected` of `POST /statuses`), once per decision and until its
+	// `appeal_deadline` (the instance's appeal window from the refusal, 180 days by default).
+	// People review it; the refused post is not stored, so the appeal sends its text. When a
+	// moderator overturns the decision, the user's posts are no longer reviewed and the user posts
+	// again. A second appeal is a 422 `/api/v1/problems/already-appealed`, an appeal after the
+	// deadline a 422 `/api/v1/problems/appeal-window-closed`, and an appeal of a decision that is
+	// not such a refusal a 422 `/api/v1/problems/not-appealable`. A `status_text` that is blank or
+	// too long, or a field that contains U+0000, is a 422 naming it. A decision that is not about
+	// the user's post is a 404.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
+	AppealHookDecisionWithBody(ctx context.Context, id Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AppealHookDecision Appeal a post that the automated review refused
+	//
+	// Asks the moderators to let a refused post through (the 422
+	// `/api/v1/problems/status-rejected` of `POST /statuses`), once per decision and until its
+	// `appeal_deadline` (the instance's appeal window from the refusal, 180 days by default).
+	// People review it; the refused post is not stored, so the appeal sends its text. When a
+	// moderator overturns the decision, the user's posts are no longer reviewed and the user posts
+	// again. A second appeal is a 422 `/api/v1/problems/already-appealed`, an appeal after the
+	// deadline a 422 `/api/v1/problems/appeal-window-closed`, and an appeal of a decision that is
+	// not such a refusal a 422 `/api/v1/problems/not-appealable`. A `status_text` that is blank or
+	// too long, or a field that contains U+0000, is a 422 naming it. A decision that is not about
+	// the user's post is a 404.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
+	AppealHookDecision(ctx context.Context, id Id, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListDataImports List the authenticated user's imports
 	//
 	// Lists the user's latest 10 imports of CSV files, newest first, with their progress.
@@ -21454,6 +21807,8 @@ type ClientInterface interface {
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422.
 	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
+	// When the server's automated review refuses the post, nothing is posted and the answer is a
+	// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -21468,6 +21823,8 @@ type ClientInterface interface {
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422.
 	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
+	// When the server's automated review refuses the post, nothing is posted and the answer is a
+	// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -25491,6 +25848,65 @@ func (c *Client) UnmuteErrorGroup(ctx context.Context, id ErrorGroupId, reqEdito
 	return c.Client.Do(req)
 }
 
+// ListHookAppeals List the appeals of refused posts
+//
+// The authors' appeals of a `reject` of `local.status`, the newest first, with the text each
+// author tried to post. Needs the `manage_reports` permission.
+//
+// Corresponds with GET /admin/hook_appeals (the `ListHookAppeals` operationId).
+func (c *Client) ListHookAppeals(ctx context.Context, params *ListHookAppealsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListHookAppealsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// OverturnHookAppeal Overturn an appeal of a refused post
+//
+// Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
+// reviewing the author's posts with `local.status`, in one transaction. The refused post is not
+// restored: the author posts again. Deciding a decided appeal the same way again changes
+// nothing; deciding it the other way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID
+// is a 404. Needs the `manage_reports` permission.
+//
+// Corresponds with POST /admin/hook_appeals/{id}/overturn (the `OverturnHookAppeal` operationId).
+func (c *Client) OverturnHookAppeal(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOverturnHookAppealRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpholdHookAppeal Uphold an appeal of a refused post
+//
+// Rejects the appeal; the decision stays as it is and the author's posts are reviewed as
+// before. Deciding a decided appeal the same way again changes nothing; deciding it the other
+// way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID is a 404. Needs the
+// `manage_reports` permission.
+//
+// Corresponds with POST /admin/hook_appeals/{id}/uphold (the `UpholdHookAppeal` operationId).
+func (c *Client) UpholdHookAppeal(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpholdHookAppealRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListHookDecisions List the decisions of the decision hooks
 //
 // What the external reviews said, the newest first. Without `outcome` the list leaves out
@@ -28877,6 +29293,62 @@ func (c *Client) RejectFollowRequest(ctx context.Context, id AccountId, reqEdito
 	return c.Client.Do(req)
 }
 
+// AppealHookDecisionWithBody Appeal a post that the automated review refused
+//
+// Asks the moderators to let a refused post through (the 422
+// `/api/v1/problems/status-rejected` of `POST /statuses`), once per decision and until its
+// `appeal_deadline` (the instance's appeal window from the refusal, 180 days by default).
+// People review it; the refused post is not stored, so the appeal sends its text. When a
+// moderator overturns the decision, the user's posts are no longer reviewed and the user posts
+// again. A second appeal is a 422 `/api/v1/problems/already-appealed`, an appeal after the
+// deadline a 422 `/api/v1/problems/appeal-window-closed`, and an appeal of a decision that is
+// not such a refusal a 422 `/api/v1/problems/not-appealable`. A `status_text` that is blank or
+// too long, or a field that contains U+0000, is a 422 naming it. A decision that is not about
+// the user's post is a 404.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
+func (c *Client) AppealHookDecisionWithBody(ctx context.Context, id Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAppealHookDecisionRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AppealHookDecision Appeal a post that the automated review refused
+//
+// Asks the moderators to let a refused post through (the 422
+// `/api/v1/problems/status-rejected` of `POST /statuses`), once per decision and until its
+// `appeal_deadline` (the instance's appeal window from the refusal, 180 days by default).
+// People review it; the refused post is not stored, so the appeal sends its text. When a
+// moderator overturns the decision, the user's posts are no longer reviewed and the user posts
+// again. A second appeal is a 422 `/api/v1/problems/already-appealed`, an appeal after the
+// deadline a 422 `/api/v1/problems/appeal-window-closed`, and an appeal of a decision that is
+// not such a refusal a 422 `/api/v1/problems/not-appealable`. A `status_text` that is blank or
+// too long, or a field that contains U+0000, is a 422 naming it. A decision that is not about
+// the user's post is a 404.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
+func (c *Client) AppealHookDecision(ctx context.Context, id Id, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAppealHookDecisionRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListDataImports List the authenticated user's imports
 //
 // Lists the user's latest 10 imports of CSV files, newest first, with their progress.
@@ -30947,6 +31419,8 @@ func (c *Client) RevokeSession(ctx context.Context, id Id, reqEditors ...Request
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422.
 // A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
+// When the server's automated review refuses the post, nothing is posted and the answer is a
+// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
 //
 // Takes any type of body and a specified content type.
 //
@@ -30971,6 +31445,8 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422.
 // A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
+// When the server's automated review refuses the post, nothing is posted and the answer is a
+// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -37254,6 +37730,152 @@ func NewUnmuteErrorGroupRequest(server string, id ErrorGroupId) (*http.Request, 
 	return req, nil
 }
 
+// NewListHookAppealsRequest constructs an http.Request for the ListHookAppeals method
+func NewListHookAppealsRequest(server string, params *ListHookAppealsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/hook_appeals")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Pending != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "pending", *params.Pending, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewOverturnHookAppealRequest constructs an http.Request for the OverturnHookAppeal method
+func NewOverturnHookAppealRequest(server string, id AppealId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/hook_appeals/%s/overturn", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpholdHookAppealRequest constructs an http.Request for the UpholdHookAppeal method
+func NewUpholdHookAppealRequest(server string, id AppealId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/hook_appeals/%s/uphold", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListHookDecisionsRequest constructs an http.Request for the ListHookDecisions method
 func NewListHookDecisionsRequest(server string, params *ListHookDecisionsParams) (*http.Request, error) {
 	var err error
@@ -42757,6 +43379,53 @@ func NewRejectFollowRequestRequest(server string, id AccountId) (*http.Request, 
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewAppealHookDecisionRequest calls the generic AppealHookDecision builder with application/json body
+func NewAppealHookDecisionRequest(server string, id Id, body AppealHookDecisionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAppealHookDecisionRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAppealHookDecisionRequestWithBody constructs an http.Request for the AppealHookDecision method, with any body, and a specified content type
+func NewAppealHookDecisionRequestWithBody(server string, id Id, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/hook_decisions/%s/appeal", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -50603,6 +51272,41 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/error_groups/{id}/unmute (the `UnmuteErrorGroup` operationId).
 	UnmuteErrorGroupWithResponse(ctx context.Context, id ErrorGroupId, reqEditors ...RequestEditorFn) (*UnmuteErrorGroupResponse, error)
 
+	// ListHookAppealsWithResponse List the appeals of refused posts
+	//
+	// The authors' appeals of a `reject` of `local.status`, the newest first, with the text each
+	// author tried to post. Needs the `manage_reports` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/hook_appeals (the `ListHookAppeals` operationId).
+	ListHookAppealsWithResponse(ctx context.Context, params *ListHookAppealsParams, reqEditors ...RequestEditorFn) (*ListHookAppealsResponse, error)
+
+	// OverturnHookAppealWithResponse Overturn an appeal of a refused post
+	//
+	// Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
+	// reviewing the author's posts with `local.status`, in one transaction. The refused post is not
+	// restored: the author posts again. Deciding a decided appeal the same way again changes
+	// nothing; deciding it the other way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID
+	// is a 404. Needs the `manage_reports` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/hook_appeals/{id}/overturn (the `OverturnHookAppeal` operationId).
+	OverturnHookAppealWithResponse(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*OverturnHookAppealResponse, error)
+
+	// UpholdHookAppealWithResponse Uphold an appeal of a refused post
+	//
+	// Rejects the appeal; the decision stays as it is and the author's posts are reviewed as
+	// before. Deciding a decided appeal the same way again changes nothing; deciding it the other
+	// way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID is a 404. Needs the
+	// `manage_reports` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/hook_appeals/{id}/uphold (the `UpholdHookAppeal` operationId).
+	UpholdHookAppealWithResponse(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*UpholdHookAppealResponse, error)
+
 	// ListHookDecisionsWithResponse List the decisions of the decision hooks
 	//
 	// What the external reviews said, the newest first. Without `outcome` the list leaves out
@@ -52617,6 +53321,42 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /follow_requests/{id}/reject (the `RejectFollowRequest` operationId).
 	RejectFollowRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*RejectFollowRequestResponse, error)
 
+	// AppealHookDecisionWithBodyWithResponse Appeal a post that the automated review refused
+	//
+	// Asks the moderators to let a refused post through (the 422
+	// `/api/v1/problems/status-rejected` of `POST /statuses`), once per decision and until its
+	// `appeal_deadline` (the instance's appeal window from the refusal, 180 days by default).
+	// People review it; the refused post is not stored, so the appeal sends its text. When a
+	// moderator overturns the decision, the user's posts are no longer reviewed and the user posts
+	// again. A second appeal is a 422 `/api/v1/problems/already-appealed`, an appeal after the
+	// deadline a 422 `/api/v1/problems/appeal-window-closed`, and an appeal of a decision that is
+	// not such a refusal a 422 `/api/v1/problems/not-appealable`. A `status_text` that is blank or
+	// too long, or a field that contains U+0000, is a 422 naming it. A decision that is not about
+	// the user's post is a 404.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
+	AppealHookDecisionWithBodyWithResponse(ctx context.Context, id Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error)
+
+	// AppealHookDecisionWithResponse Appeal a post that the automated review refused
+	//
+	// Asks the moderators to let a refused post through (the 422
+	// `/api/v1/problems/status-rejected` of `POST /statuses`), once per decision and until its
+	// `appeal_deadline` (the instance's appeal window from the refusal, 180 days by default).
+	// People review it; the refused post is not stored, so the appeal sends its text. When a
+	// moderator overturns the decision, the user's posts are no longer reviewed and the user posts
+	// again. A second appeal is a 422 `/api/v1/problems/already-appealed`, an appeal after the
+	// deadline a 422 `/api/v1/problems/appeal-window-closed`, and an appeal of a decision that is
+	// not such a refusal a 422 `/api/v1/problems/not-appealable`. A `status_text` that is blank or
+	// too long, or a field that contains U+0000, is a 422 naming it. A decision that is not about
+	// the user's post is a 404.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
+	AppealHookDecisionWithResponse(ctx context.Context, id Id, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error)
+
 	// ListDataImportsWithResponse List the authenticated user's imports
 	//
 	// Lists the user's latest 10 imports of CSV files, newest first, with their progress.
@@ -53865,6 +54605,8 @@ type ClientWithResponsesInterface interface {
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422.
 	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
+	// When the server's automated review refuses the post, nothing is posted and the answer is a
+	// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -53879,6 +54621,8 @@ type ClientWithResponsesInterface interface {
 	// finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 	// poll outside the limits of `PollInput` is a 422.
 	// A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
+	// When the server's automated review refuses the post, nothing is posted and the answer is a
+	// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -61280,6 +62024,201 @@ func (r UnmuteErrorGroupResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UnmuteErrorGroupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListHookAppealsResponse200Headers the declared response headers of an HTTP 200 response for ListHookAppeals
+type ListHookAppealsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListHookAppealsResponseDefaultHeaders the declared response headers of an HTTP default response for ListHookAppeals
+type ListHookAppealsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListHookAppealsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminHookAppealPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListHookAppealsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListHookAppealsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListHookAppealsResponse) GetJSON200() *AdminHookAppealPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListHookAppealsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListHookAppealsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListHookAppealsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListHookAppealsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListHookAppealsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// OverturnHookAppealResponse200Headers the declared response headers of an HTTP 200 response for OverturnHookAppeal
+type OverturnHookAppealResponse200Headers struct {
+	CacheControl *string
+}
+
+// OverturnHookAppealResponseDefaultHeaders the declared response headers of an HTTP default response for OverturnHookAppeal
+type OverturnHookAppealResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type OverturnHookAppealResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminHookAppeal
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *OverturnHookAppealResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *OverturnHookAppealResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r OverturnHookAppealResponse) GetJSON200() *AdminHookAppeal {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r OverturnHookAppealResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r OverturnHookAppealResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r OverturnHookAppealResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OverturnHookAppealResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r OverturnHookAppealResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpholdHookAppealResponse200Headers the declared response headers of an HTTP 200 response for UpholdHookAppeal
+type UpholdHookAppealResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpholdHookAppealResponseDefaultHeaders the declared response headers of an HTTP default response for UpholdHookAppeal
+type UpholdHookAppealResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpholdHookAppealResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminHookAppeal
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpholdHookAppealResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpholdHookAppealResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpholdHookAppealResponse) GetJSON200() *AdminHookAppeal {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpholdHookAppealResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpholdHookAppealResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpholdHookAppealResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpholdHookAppealResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpholdHookAppealResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -69561,6 +70500,71 @@ func (r RejectFollowRequestResponse) ContentType() string {
 	return ""
 }
 
+// AppealHookDecisionResponse200Headers the declared response headers of an HTTP 200 response for AppealHookDecision
+type AppealHookDecisionResponse200Headers struct {
+	CacheControl *string
+}
+
+// AppealHookDecisionResponseDefaultHeaders the declared response headers of an HTTP default response for AppealHookDecision
+type AppealHookDecisionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type AppealHookDecisionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *OwnHookAppeal
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *AppealHookDecisionResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *AppealHookDecisionResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AppealHookDecisionResponse) GetJSON200() *OwnHookAppeal {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AppealHookDecisionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AppealHookDecisionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AppealHookDecisionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AppealHookDecisionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AppealHookDecisionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListDataImportsResponse200Headers the declared response headers of an HTTP 200 response for ListDataImports
 type ListDataImportsResponse200Headers struct {
 	CacheControl *string
@@ -73862,6 +74866,12 @@ type CreateStatusResponse201Headers struct {
 	CacheControl *string
 }
 
+// CreateStatusResponse422Headers the declared response headers of an HTTP 422 response for CreateStatus
+type CreateStatusResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
 // CreateStatusResponseDefaultHeaders the declared response headers of an HTTP default response for CreateStatus
 type CreateStatusResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -73875,10 +74885,14 @@ type CreateStatusResponse struct {
 	HTTPResponse *http.Response
 	// JSON201 the response for an HTTP 201 `application/json` response
 	JSON201 *Status
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *StatusRejectedProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers201 the parsed response headers for an HTTP 201 response
 	Headers201 *CreateStatusResponse201Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *CreateStatusResponse422Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateStatusResponseDefaultHeaders
 }
@@ -73886,6 +74900,11 @@ type CreateStatusResponse struct {
 // GetJSON201 returns the response for an HTTP 201 `application/json` response
 func (r CreateStatusResponse) GetJSON201() *Status {
 	return r.JSON201
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r CreateStatusResponse) GetApplicationproblemJSON422() *StatusRejectedProblem {
+	return r.ApplicationproblemJSON422
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -81031,6 +82050,59 @@ func (c *ClientWithResponses) UnmuteErrorGroupWithResponse(ctx context.Context, 
 	return ParseUnmuteErrorGroupResponse(rsp)
 }
 
+// ListHookAppealsWithResponse List the appeals of refused posts
+//
+// The authors' appeals of a `reject` of `local.status`, the newest first, with the text each
+// author tried to post. Needs the `manage_reports` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/hook_appeals (the `ListHookAppeals` operationId).
+func (c *ClientWithResponses) ListHookAppealsWithResponse(ctx context.Context, params *ListHookAppealsParams, reqEditors ...RequestEditorFn) (*ListHookAppealsResponse, error) {
+	rsp, err := c.ListHookAppeals(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListHookAppealsResponse(rsp)
+}
+
+// OverturnHookAppealWithResponse Overturn an appeal of a refused post
+//
+// Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
+// reviewing the author's posts with `local.status`, in one transaction. The refused post is not
+// restored: the author posts again. Deciding a decided appeal the same way again changes
+// nothing; deciding it the other way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID
+// is a 404. Needs the `manage_reports` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/hook_appeals/{id}/overturn (the `OverturnHookAppeal` operationId).
+func (c *ClientWithResponses) OverturnHookAppealWithResponse(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*OverturnHookAppealResponse, error) {
+	rsp, err := c.OverturnHookAppeal(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOverturnHookAppealResponse(rsp)
+}
+
+// UpholdHookAppealWithResponse Uphold an appeal of a refused post
+//
+// Rejects the appeal; the decision stays as it is and the author's posts are reviewed as
+// before. Deciding a decided appeal the same way again changes nothing; deciding it the other
+// way is a 409 `/api/v1/problems/appeal-decided`. An unknown ID is a 404. Needs the
+// `manage_reports` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/hook_appeals/{id}/uphold (the `UpholdHookAppeal` operationId).
+func (c *ClientWithResponses) UpholdHookAppealWithResponse(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*UpholdHookAppealResponse, error) {
+	rsp, err := c.UpholdHookAppeal(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpholdHookAppealResponse(rsp)
+}
+
 // ListHookDecisionsWithResponse List the decisions of the decision hooks
 //
 // What the external reviews said, the newest first. Without `outcome` the list leaves out
@@ -83981,6 +85053,54 @@ func (c *ClientWithResponses) RejectFollowRequestWithResponse(ctx context.Contex
 	return ParseRejectFollowRequestResponse(rsp)
 }
 
+// AppealHookDecisionWithBodyWithResponse Appeal a post that the automated review refused
+//
+// Asks the moderators to let a refused post through (the 422
+// `/api/v1/problems/status-rejected` of `POST /statuses`), once per decision and until its
+// `appeal_deadline` (the instance's appeal window from the refusal, 180 days by default).
+// People review it; the refused post is not stored, so the appeal sends its text. When a
+// moderator overturns the decision, the user's posts are no longer reviewed and the user posts
+// again. A second appeal is a 422 `/api/v1/problems/already-appealed`, an appeal after the
+// deadline a 422 `/api/v1/problems/appeal-window-closed`, and an appeal of a decision that is
+// not such a refusal a 422 `/api/v1/problems/not-appealable`. A `status_text` that is blank or
+// too long, or a field that contains U+0000, is a 422 naming it. A decision that is not about
+// the user's post is a 404.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
+func (c *ClientWithResponses) AppealHookDecisionWithBodyWithResponse(ctx context.Context, id Id, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error) {
+	rsp, err := c.AppealHookDecisionWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAppealHookDecisionResponse(rsp)
+}
+
+// AppealHookDecisionWithResponse Appeal a post that the automated review refused
+//
+// Asks the moderators to let a refused post through (the 422
+// `/api/v1/problems/status-rejected` of `POST /statuses`), once per decision and until its
+// `appeal_deadline` (the instance's appeal window from the refusal, 180 days by default).
+// People review it; the refused post is not stored, so the appeal sends its text. When a
+// moderator overturns the decision, the user's posts are no longer reviewed and the user posts
+// again. A second appeal is a 422 `/api/v1/problems/already-appealed`, an appeal after the
+// deadline a 422 `/api/v1/problems/appeal-window-closed`, and an appeal of a decision that is
+// not such a refusal a 422 `/api/v1/problems/not-appealable`. A `status_text` that is blank or
+// too long, or a field that contains U+0000, is a 422 naming it. A decision that is not about
+// the user's post is a 404.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /hook_decisions/{id}/appeal (the `AppealHookDecision` operationId).
+func (c *ClientWithResponses) AppealHookDecisionWithResponse(ctx context.Context, id Id, body AppealHookDecisionJSONRequestBody, reqEditors ...RequestEditorFn) (*AppealHookDecisionResponse, error) {
+	rsp, err := c.AppealHookDecision(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAppealHookDecisionResponse(rsp)
+}
+
 // ListDataImportsWithResponse List the authenticated user's imports
 //
 // Lists the user's latest 10 imports of CSV files, newest first, with their progress.
@@ -85775,6 +86895,8 @@ func (c *ClientWithResponses) RevokeSessionWithResponse(ctx context.Context, id 
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422.
 // A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
+// When the server's automated review refuses the post, nothing is posted and the answer is a
+// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -85795,6 +86917,8 @@ func (c *ClientWithResponses) CreateStatusWithBodyWithResponse(ctx context.Conte
 // finished processing (422 otherwise). A status with a `poll` attaches no media, and a
 // poll outside the limits of `PollInput` is a 422.
 // A user whose account moved gets a 403 `/api/v1/problems/account-moved`.
+// When the server's automated review refuses the post, nothing is posted and the answer is a
+// 422 `/api/v1/problems/status-rejected` with fixed text and the decision the user may appeal.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -94958,6 +96082,237 @@ func ParseUnmuteErrorGroupResponse(rsp *http.Response) (*UnmuteErrorGroupRespons
 		response.Headers200 = &headers
 	case true:
 		var headers UnmuteErrorGroupResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListHookAppealsResponse parses an HTTP response from a ListHookAppealsWithResponse call
+func ParseListHookAppealsResponse(rsp *http.Response) (*ListHookAppealsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListHookAppealsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminHookAppealPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListHookAppealsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListHookAppealsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseOverturnHookAppealResponse parses an HTTP response from a OverturnHookAppealWithResponse call
+func ParseOverturnHookAppealResponse(rsp *http.Response) (*OverturnHookAppealResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OverturnHookAppealResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminHookAppeal
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers OverturnHookAppealResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers OverturnHookAppealResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpholdHookAppealResponse parses an HTTP response from a UpholdHookAppealWithResponse call
+func ParseUpholdHookAppealResponse(rsp *http.Response) (*UpholdHookAppealResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpholdHookAppealResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminHookAppeal
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpholdHookAppealResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpholdHookAppealResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -104971,6 +106326,83 @@ func ParseRejectFollowRequestResponse(rsp *http.Response) (*RejectFollowRequestR
 	return response, nil
 }
 
+// ParseAppealHookDecisionResponse parses an HTTP response from a AppealHookDecisionWithResponse call
+func ParseAppealHookDecisionResponse(rsp *http.Response) (*AppealHookDecisionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AppealHookDecisionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OwnHookAppeal
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers AppealHookDecisionResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers AppealHookDecisionResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseListDataImportsResponse parses an HTTP response from a ListDataImportsWithResponse call
 func ParseListDataImportsResponse(rsp *http.Response) (*ListDataImportsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -110119,6 +111551,13 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 		}
 		response.JSON201 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StatusRejectedProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -110139,6 +111578,23 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 			headers.CacheControl = &value
 		}
 		response.Headers201 = &headers
+	case rsp.StatusCode == 422:
+		var headers CreateStatusResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
 	case true:
 		var headers CreateStatusResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {

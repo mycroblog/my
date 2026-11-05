@@ -155,7 +155,7 @@ func (r *HookRepository) ListExpired(ctx context.Context, q apphook.ExpiredQuery
 	for i, row := range rows {
 		out[i] = hook.Expired{
 			ID: row.ID, Hook: hook.Name(row.Hook), AccountID: fromNullString(row.AccountID), Mode: hook.Mode(row.Mode),
-			Outcome: hook.Outcome(row.Outcome), DecidedAt: row.DecidedAt, Overridden: row.Overridden,
+			Outcome: hook.Outcome(row.Outcome), DecidedAt: row.DecidedAt, Overridden: row.Overridden, AppealPending: row.AppealPending,
 		}
 		ids[i], at[row.ID] = row.ID, i
 	}
@@ -192,7 +192,131 @@ func (r *HookRepository) DeleteDecisions(ctx context.Context, tx uow.Tx, ids []s
 	if err := q.DeleteHookDecisionOverrides(ctx, ids); err != nil {
 		return wrap(err, "delete hook decision overrides")
 	}
+	if err := q.DeleteHookDecisionAppealDecisions(ctx, ids); err != nil {
+		return wrap(err, "delete hook decision appeal decisions")
+	}
+	if err := q.DeleteHookDecisionAppeals(ctx, ids); err != nil {
+		return wrap(err, "delete hook decision appeals")
+	}
 	return wrap(q.DeleteHookDecisions(ctx, ids), "delete hook decisions")
+}
+
+// InsertAppeal implements apphook.Repository.
+func (r *HookRepository) InsertAppeal(ctx context.Context, tx uow.Tx, a hook.Appeal) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertHookDecisionAppeal(ctx, postgresgen.InsertHookDecisionAppealParams{
+		ID: a.ID, DecisionID: a.DecisionID, AccountID: a.AccountID, StatusText: a.StatusText, Comment: a.Comment, SubmittedAt: a.SubmittedAt,
+	})
+	return n > 0, wrap(err, "insert hook decision appeal")
+}
+
+func hookAppealRecord(row postgresgen.GetHookDecisionAppealRow) hook.AppealRecord {
+	out := hook.AppealRecord{
+		Appeal: hook.Appeal{
+			ID: row.AppealID, DecisionID: row.AppealDecisionID, AccountID: row.AppealAccountID,
+			StatusText: row.StatusText, Comment: row.Comment, SubmittedAt: row.SubmittedAt,
+		},
+		Decision: hookRecord(row.ID, row.Hook, row.SubjectKey, row.AccountID, row.Mode, row.Outcome, row.ReasonCode, row.Note, row.LatencyMs, row.DecidedAt,
+			row.OverriddenDecisionID, row.OverriddenByUserID, row.OverriddenAt),
+	}
+	if row.Review != nil {
+		out.Review = &hook.AppealDecision{AppealID: row.AppealID, Outcome: hook.AppealOutcome(*row.Review), ByUserID: fromNullString(row.ReviewedByUserID)}
+		if row.ReviewedAt != nil {
+			out.Review.DecidedAt = *row.ReviewedAt
+		}
+	}
+	return out
+}
+
+func hookAppealNotFound(err error, what string) error {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return apphook.ErrAppealNotFound
+	}
+	return wrap(err, "read hook decision appeal "+what)
+}
+
+// AppealTx implements apphook.Repository.
+func (r *HookRepository) AppealTx(ctx context.Context, tx uow.Tx, id string) (hook.AppealRecord, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return hook.AppealRecord{}, err
+	}
+	row, err := q.GetHookDecisionAppeal(ctx, id)
+	if err != nil {
+		return hook.AppealRecord{}, hookAppealNotFound(err, id)
+	}
+	return hookAppealRecord(row), nil
+}
+
+// AppealOfDecision implements apphook.Repository.
+func (r *HookRepository) AppealOfDecision(ctx context.Context, decisionID string) (hook.AppealRecord, error) {
+	row, err := r.db.reader().GetHookDecisionAppealOfDecision(ctx, decisionID)
+	if err != nil {
+		return hook.AppealRecord{}, hookAppealNotFound(err, "of "+decisionID)
+	}
+	return hookAppealRecord(postgresgen.GetHookDecisionAppealRow(row)), nil
+}
+
+// ListAppeals implements apphook.Repository.
+func (r *HookRepository) ListAppeals(ctx context.Context, q apphook.AppealQuery) ([]hook.AppealRecord, error) {
+	rows, err := r.db.reader().ListHookDecisionAppeals(ctx, postgresgen.ListHookDecisionAppealsParams{
+		Before: toNullString(q.Before), Pending: q.Pending, RowLimit: int32(q.Limit), //nolint:gosec // a page's size
+	})
+	if err != nil {
+		return nil, wrap(err, "list hook decision appeals")
+	}
+	out := make([]hook.AppealRecord, len(rows))
+	for i, row := range rows {
+		out[i] = hookAppealRecord(postgresgen.GetHookDecisionAppealRow(row))
+	}
+	return out, nil
+}
+
+// InsertAppealDecision implements apphook.Repository.
+func (r *HookRepository) InsertAppealDecision(ctx context.Context, tx uow.Tx, d hook.AppealDecision) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.InsertHookDecisionAppealDecision(ctx, postgresgen.InsertHookDecisionAppealDecisionParams{
+		AppealID: d.AppealID, Decision: string(d.Outcome), DecidedByUserID: toNullString(d.ByUserID), DecidedAt: d.DecidedAt,
+	})
+	return n > 0, wrap(err, "insert hook decision appeal decision")
+}
+
+// InsertExemption implements apphook.Repository.
+func (r *HookRepository) InsertExemption(ctx context.Context, tx uow.Tx, e hook.Exemption) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return wrap(q.InsertHookAccountExemption(ctx, postgresgen.InsertHookAccountExemptionParams{
+		Hook: string(e.Hook), AccountID: e.AccountID, ExemptedAt: e.ExemptedAt,
+	}), "insert hook account exemption")
+}
+
+// Exempt implements apphook.Repository.
+func (r *HookRepository) Exempt(ctx context.Context, n hook.Name, accountID string) (bool, error) {
+	exempt, err := r.db.reader().HookAccountExempt(ctx, postgresgen.HookAccountExemptParams{Hook: string(n), AccountID: accountID})
+	return exempt, wrap(err, "read hook account exemption")
+}
+
+// DeleteAppealsOfAccount implements apphook.Repository.
+func (r *HookRepository) DeleteAppealsOfAccount(ctx context.Context, tx uow.Tx, accountID string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	if err := q.DeleteHookDecisionAppealDecisionsOfAccount(ctx, accountID); err != nil {
+		return wrap(err, "delete hook decision appeal decisions of account")
+	}
+	if err := q.DeleteHookDecisionAppealsOfAccount(ctx, accountID); err != nil {
+		return wrap(err, "delete hook decision appeals of account")
+	}
+	return wrap(q.DeleteHookAccountExemptionsOfAccount(ctx, accountID), "delete hook account exemptions of account")
 }
 
 // ExistingStatusIDs implements apphook.Statuses on the content module's table.

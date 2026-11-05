@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+description: |
+  An author's appeal of a `reject` of `local.status`, with the text the author tried to post.
+  Deciding it never calls the plugin.
+type: object
+required: [id, decision, account_id, status_text, state, submitted_at]
+properties:
+  id:
+    type: string
+  decision:
+    $ref: ./AdminHookDecision.yaml
+  account_id:
+    description: The author.
+    type: string
+  status_text:
+    description: The text of the post the author tried to post, as plain text.
+    type: string
+  comment:
+    description: What the author adds for the moderators, as plain text; absent when there is none.
+    type: string
+  state:
+    $ref: ./HookAppealState.yaml
+  submitted_at:
+    type: string
+    format: date-time
+  decided_at:
+    description: When a moderator decided the appeal; absent while it is pending.
+    type: string
+    format: date-time

@@ -1785,6 +1785,27 @@ func (l *Localizer) ServerErrorsGone() string {
 	return l.format("server:errors.gone", nil)
 }
 
+// ServerErrorsHookAppealAlreadyAppealed formats "server:errors.hook_appeal.already_appealed". API error title for HTTP 422 when the user appeals the refusal of a post a second time; a refusal is appealed once.
+//
+//	en: You have already appealed this decision.
+func (l *Localizer) ServerErrorsHookAppealAlreadyAppealed() string {
+	return l.format("server:errors.hook_appeal.already_appealed", nil)
+}
+
+// ServerErrorsHookAppealNotAppealable formats "server:errors.hook_appeal.not_appealable". API error title for HTTP 422 when the user appeals a decision of the automated review that is not a refusal of their post in force.
+//
+//	en: This decision cannot be appealed.
+func (l *Localizer) ServerErrorsHookAppealNotAppealable() string {
+	return l.format("server:errors.hook_appeal.not_appealable", nil)
+}
+
+// ServerErrorsHookAppealWindowClosed formats "server:errors.hook_appeal.window_closed". API error title for HTTP 422 when the user appeals the refusal of a post after the instance's appeal window.
+//
+//	en: The time to appeal this decision has passed.
+func (l *Localizer) ServerErrorsHookAppealWindowClosed() string {
+	return l.format("server:errors.hook_appeal.window_closed", nil)
+}
+
 // ServerErrorsHookDecisionNotOverridable formats "server:errors.hook_decision.not_overridable". Title of the HTTP 409 API error when a moderator cancels a decision of an external review that had no effect, that is already cancelled, or that goes through an appeal.
 //
 //	en: This decision cannot be cancelled.
@@ -2486,6 +2507,20 @@ func (l *Localizer) ServerErrorsStatusQuoteNotFound() string {
 //	en: A local, followers-only, or direct post cannot quote a post from another server.
 func (l *Localizer) ServerErrorsStatusQuoteRemoteAudience() string {
 	return l.format("server:errors.status.quote_remote_audience", nil)
+}
+
+// ServerErrorsStatusRejected formats "server:errors.status.rejected". API error title for HTTP 422 when the server's automated review of posts refused a post and nothing was posted. Fixed text: it never says why.
+//
+//	en: This post was not published.
+func (l *Localizer) ServerErrorsStatusRejected() string {
+	return l.format("server:errors.status.rejected", nil)
+}
+
+// ServerErrorsStatusRejectedDetail formats "server:errors.status.rejected.detail". API error detail for HTTP 422 when the server's automated review of posts refused a post; says that the author may appeal.
+//
+//	en: This server's automated review did not accept this post. If you think this is a mistake, you can appeal.
+func (l *Localizer) ServerErrorsStatusRejectedDetail() string {
+	return l.format("server:errors.status.rejected.detail", nil)
 }
 
 // ServerErrorsStatusReplyNotFound formats "server:errors.status.reply_not_found". Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see.

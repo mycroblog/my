@@ -911,6 +911,14 @@
     "defaultMessage": "Posts from other servers: when the review fails",
     "description": "Label of the choice of what happens when this external review fails while it enforces."
   },
+  "admin.settings.hooks.local_status.account_age": {
+    "defaultMessage": "Review the posts of accounts younger than (days)",
+    "description": "Label of the number of days after its creation that an account's posts go to the external review of local posts."
+  },
+  "admin.settings.hooks.local_status.account_age.description": {
+    "defaultMessage": "From {min} to {max} days; 0 reviews the posts of every account. Private and direct posts are never sent, nor those of an account whose appeal a moderator granted.",
+    "description": "Description of the number of days an account's posts go to the external review. {min} and {max} are the bounds."
+  },
   "admin.settings.hooks.local_status.mode": {
     "defaultMessage": "Local posts",
     "description": "Label of the choice of the mode of the external review of this kind of submission."

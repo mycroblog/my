@@ -849,6 +849,12 @@ function PoliciesForm() {
         />
         <NumberPolicyField
           form={form}
+          setting="hook_local_status_account_age_days"
+          label={t("client:admin.settings.hooks.local_status.account_age")}
+          description={(range) => t("client:admin.settings.hooks.local_status.account_age.description", range)}
+        />
+        <NumberPolicyField
+          form={form}
           setting="retention_hook_decisions"
           label={t("client:admin.settings.hooks.retention")}
           description={(range) => t("client:admin.settings.hooks.retention.description", range)}

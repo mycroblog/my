@@ -510,6 +510,9 @@ func (s *Server) CreateStatus(ctx context.Context, req CreateStatusRequestObject
 		QuotedStatusID: knownID(deref(body.QuotedStatusId)), QuotePolicy: content.QuotePolicy(deref(body.QuotePolicy)),
 	})
 	if err != nil {
+		if r, ok, err := s.statusRejected(ctx, err); ok {
+			return r, err
+		}
 		if p, ok := s.statusProblem(ctx, err); ok {
 			return CreateStatusdefaultApplicationProblemPlusJSONResponse(p), nil
 		}
