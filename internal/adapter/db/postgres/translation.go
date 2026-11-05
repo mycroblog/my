@@ -145,18 +145,40 @@ func (r *TranslationRepository) DeleteTranslations(ctx context.Context, tx uow.T
 	return nil
 }
 
-// AddUsage implements translation.Repository.
-func (r *TranslationRepository) AddUsage(ctx context.Context, tx uow.Tx, accountID, month string, characters int64) error {
+// AddUsageWithin implements translation.Repository.
+func (r *TranslationRepository) AddUsageWithin(ctx context.Context, tx uow.Tx, accountID, month string, characters int64, limits translation.Limits) (bool, error) {
+	if characters > limits.Account || characters > limits.Server {
+		return false, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	err = q.EnsureTranslationAccountUsage(ctx, postgresgen.EnsureTranslationAccountUsageParams{AccountID: accountID, Month: month})
+	if err != nil {
+		return false, wrap(err, "ensure translation account usage")
+	}
+	n, err := q.AddTranslationAccountUsageWithin(ctx, postgresgen.AddTranslationAccountUsageWithinParams{AccountID: accountID, Month: month, Characters: characters, MaxCharacters: limits.Account})
+	if err != nil || n == 0 {
+		return false, wrap(err, "add translation account usage")
+	}
+	if err := q.EnsureTranslationServerUsage(ctx, month); err != nil {
+		return false, wrap(err, "ensure translation server usage")
+	}
+	n, err = q.AddTranslationServerUsageWithin(ctx, postgresgen.AddTranslationServerUsageWithinParams{Month: month, Characters: characters, MaxCharacters: limits.Server})
+	return n > 0, wrap(err, "add translation server usage")
+}
+
+// AddCacheLookup implements translation.Repository.
+func (r *TranslationRepository) AddCacheLookup(ctx context.Context, tx uow.Tx, month string, hit bool) error {
 	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
-	err = q.AddTranslationAccountUsage(ctx, postgresgen.AddTranslationAccountUsageParams{AccountID: accountID, Month: month, Characters: characters})
-	if err != nil {
-		return wrap(err, "add translation account usage")
+	if hit {
+		return wrap(q.AddTranslationCacheHit(ctx, month), "add translation cache hit")
 	}
-	err = q.AddTranslationServerUsage(ctx, postgresgen.AddTranslationServerUsageParams{Month: month, Characters: characters})
-	return wrap(err, "add translation server usage")
+	return wrap(q.AddTranslationCacheMiss(ctx, month), "add translation cache miss")
 }
 
 // FindUsage implements translation.Repository.
@@ -166,11 +188,23 @@ func (r *TranslationRepository) FindUsage(ctx context.Context, accountID, month 
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return translation.Usage{}, wrap(err, "get translation account usage")
 	}
-	server, err := q.GetTranslationServerUsage(ctx, month)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return translation.Usage{}, wrap(err, "get translation server usage")
+	server, err := r.FindServerUsage(ctx, month)
+	if err != nil {
+		return translation.Usage{}, err
 	}
-	return translation.Usage{Account: account, Server: server}, nil
+	return translation.Usage{Account: account, Server: server.Characters}, nil
+}
+
+// FindServerUsage implements translation.Repository.
+func (r *TranslationRepository) FindServerUsage(ctx context.Context, month string) (translation.ServerUsage, error) {
+	row, err := r.db.reader().GetTranslationServerUsage(ctx, month)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return translation.ServerUsage{}, nil
+	}
+	if err != nil {
+		return translation.ServerUsage{}, wrap(err, "get translation server usage")
+	}
+	return translation.ServerUsage{Characters: row.Characters, CacheHits: row.CacheHits, CacheMisses: row.CacheMisses}, nil
 }
 
 // DeleteAccountUsage implements translation.Repository.

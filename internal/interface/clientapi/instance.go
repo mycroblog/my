@@ -100,6 +100,12 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	// What the link card crawler does on this instance, for the page that tells site operators
 	// about it (ADR-0062).
 	out.LinkCards, out.LinkCardsIgnoreRobotsTxt = settings.LinkCardsEnabled(), settings.LinkCardsIgnoreRobotsTxt()
+	// What translation offers and where it sends the text of posts (ADR-0148 §6).
+	translationInfo, err := s.instanceTranslation(ctx, settings.TranslationBrowser())
+	if err != nil {
+		return nil, err
+	}
+	out.Translation = translationInfo
 	// How much of the costs GET /instance/cost_totals publishes (FR-903, ADR-0067 §8).
 	out.FinanceVisibility = FinanceVisibility(settings.FinanceVisibility())
 	// How much of the income GET /instance/income_totals publishes (FR-917, ADR-0067 §17).

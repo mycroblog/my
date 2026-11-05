@@ -604,3 +604,53 @@ func TestRemoteContentSettings(t *testing.T) {
 		t.Errorf("OAuthClientRateLimits = %v", got)
 	}
 }
+
+func TestTranslationProviderSettings(t *testing.T) {
+	t.Parallel()
+	list, err := instance.Lookup(instance.SettingTranslationProviders)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for raw, want := range map[string]string{"": "", "two, one,two": "two,one", "self-hosted_1": "self-hosted_1"} {
+		if got, err := list.Parse(raw); err != nil || got != want {
+			t.Errorf("Parse(%q) = %q, %v; want %q", raw, got, err, want)
+		}
+	}
+	for _, raw := range []string{"One", "-one", "a b", "a=b", strings.Repeat("a", 65), strings.Repeat("a,", 3000)} {
+		if _, err := list.Parse(raw); !errors.Is(err, instance.ErrInvalidValue) {
+			t.Errorf("Parse(%q) = %v, want ErrInvalidValue", raw, err)
+		}
+	}
+	vis, err := instance.Lookup(instance.SettingTranslationProviderVisibilities)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for raw, want := range map[string]string{
+		"":                        "",
+		"two=direct|public, one=": "one=,two=public|direct",
+		"one=public|public":       "one=public",
+		"one = local | private":   "one=local|private",
+		"one=public,one=direct":   "one=direct",
+	} {
+		if got, err := vis.Parse(raw); err != nil || got != want {
+			t.Errorf("Parse(%q) = %q, %v; want %q", raw, got, err, want)
+		}
+	}
+	for _, raw := range []string{"one", "=public", "one=everyone", "One=public"} {
+		if _, err := vis.Parse(raw); !errors.Is(err, instance.ErrInvalidValue) {
+			t.Errorf("Parse(%q) = %v, want ErrInvalidValue", raw, err)
+		}
+	}
+	for _, key := range []instance.SettingKey{instance.SettingTranslationUserMonthlyCharacters, instance.SettingTranslationServerMonthlyCharacters} {
+		d, err := instance.Lookup(key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, err := d.Parse("0"); err != nil || got != "0" {
+			t.Errorf("%s accepts 0 = %q, %v", key, got, err)
+		}
+		if _, err := d.Parse("-1"); !errors.Is(err, instance.ErrInvalidValue) {
+			t.Errorf("%s accepts -1: %v", key, err)
+		}
+	}
+}

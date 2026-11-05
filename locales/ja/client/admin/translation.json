@@ -1,0 +1,158 @@
+{
+  "admin.translation.browser": {
+    "defaultMessage": "ブラウザの内蔵翻訳を許可する",
+    "description": "Checkbox that enables the translation built into the reader's browser."
+  },
+  "admin.translation.browser.description": {
+    "defaultMessage": "対応するブラウザで、読者のブラウザの中で翻訳します。どの公開範囲にも使えます。このサーバーにも提供元にも何も送らず、上限にも数えません。",
+    "description": "Explains the browser's built-in translation."
+  },
+  "admin.translation.limits.description": {
+    "defaultMessage": "0 にすると提供元に何も送りません。無制限の値はないので、大きな数を入れてください。上限を超えると、読者に伝えて提供元を呼びません。",
+    "description": "Explains the monthly limits of translation."
+  },
+  "admin.translation.limits.server": {
+    "defaultMessage": "サーバー全体の月の文字数",
+    "description": "Label of the monthly limit of characters of the whole server."
+  },
+  "admin.translation.limits.title": {
+    "defaultMessage": "上限と保持期間",
+    "description": "Heading of the section with the monthly limits of translation and how long translations are kept."
+  },
+  "admin.translation.limits.user": {
+    "defaultMessage": "利用者ごとの月の文字数",
+    "description": "Label of the monthly limit of characters of one user."
+  },
+  "admin.translation.move_down": {
+    "defaultMessage": "下へ",
+    "description": "Button that moves a translation provider later in the order of priority."
+  },
+  "admin.translation.move_down_provider": {
+    "defaultMessage": "{provider} を下へ",
+    "description": "Accessible name of the button that moves a translation provider later in the order."
+  },
+  "admin.translation.move_up": {
+    "defaultMessage": "上へ",
+    "description": "Button that moves a translation provider earlier in the order of priority."
+  },
+  "admin.translation.move_up_provider": {
+    "defaultMessage": "{provider} を上へ",
+    "description": "Accessible name of the button that moves a translation provider earlier in the order."
+  },
+  "admin.translation.number.invalid": {
+    "defaultMessage": "{min} から {max} までの整数を入れてください。",
+    "description": "Error of a number field of the translation settings."
+  },
+  "admin.translation.number.range": {
+    "defaultMessage": "{min} から {max} までの整数です。",
+    "description": "Hint of a number field of the translation settings."
+  },
+  "admin.translation.providers.none.description": {
+    "defaultMessage": "先にサーバーの配備に提供元を足し、鍵を設定に入れる必要があります。鍵がこの画面に出ることはありません。",
+    "description": "Explains how a translation provider gets to the server."
+  },
+  "admin.translation.providers.none.heading": {
+    "defaultMessage": "このサーバーにはサーバー側の提供元がありません",
+    "description": "Heading shown when the server has no translation provider to enable."
+  },
+  "admin.translation.providers.privacy": {
+    "defaultMessage": "サーバー側の提供元を有効にする前に、プライバシーポリシーを更新してください。読者が翻訳を求めると、「このサーバー」の投稿でも本文が提供元に送られ、一度送った文字は取り消せません。",
+    "description": "Warning at the top of the translation providers: the privacy policy must change first."
+  },
+  "admin.translation.providers.privacy.link": {
+    "defaultMessage": "規約とポリシーを開く",
+    "description": "Link from the warning about the privacy policy to the screen of the documents."
+  },
+  "admin.translation.providers.title": {
+    "defaultMessage": "提供元",
+    "description": "Heading of the section that enables translation providers."
+  },
+  "admin.translation.retention": {
+    "defaultMessage": "翻訳を保持する日数",
+    "description": "Label of how many days a translation is kept."
+  },
+  "admin.translation.save": {
+    "defaultMessage": "翻訳の設定を保存",
+    "description": "Button that saves the translation settings."
+  },
+  "admin.translation.save_failed": {
+    "defaultMessage": "翻訳の設定を保存できませんでした: {reason}",
+    "description": "Shown beside the save button when the translation settings could not be saved; reason is the server's localized reason."
+  },
+  "admin.translation.saved": {
+    "defaultMessage": "翻訳の設定を保存しました。",
+    "description": "Shown beside the save button after the translation settings are saved."
+  },
+  "admin.translation.summary": {
+    "defaultMessage": "投稿を翻訳する提供元、送ってよいもの、月ごとの上限を決めます。",
+    "description": "What the translation screen is for, in the menu of server administration."
+  },
+  "admin.translation.title": {
+    "defaultMessage": "翻訳",
+    "description": "Heading and menu entry of the screen with the settings of the translation of posts."
+  },
+  "admin.translation.unchanged": {
+    "defaultMessage": "保存するものはありません。",
+    "description": "Shown beside the save button of the translation settings when nothing was changed."
+  },
+  "admin.translation.use.characters": {
+    "defaultMessage": "送った文字数 ({month})",
+    "description": "Label of the number of characters sent to translation providers in a month. {month} is the month and year."
+  },
+  "admin.translation.use.description": {
+    "defaultMessage": "文字数は UTC の月ごとに数えます。メンションやリンクの代わりの印は数えません。提供元を呼ぶたびに、失敗した呼び出しも数えるので、提供元の請求とは一致しないことがあります。",
+    "description": "Explains the number of characters sent to translation providers."
+  },
+  "admin.translation.use.failed": {
+    "defaultMessage": "今月の利用を読み込めませんでした",
+    "description": "Heading of the failure of loading the use of translation."
+  },
+  "admin.translation.use.hit_rate": {
+    "defaultMessage": "キャッシュヒット率",
+    "description": "Label of the share of translation requests answered from a kept translation."
+  },
+  "admin.translation.use.hit_rate.none": {
+    "defaultMessage": "まだ要求がありません",
+    "description": "Shown as the cache hit rate before any translation request this month."
+  },
+  "admin.translation.use.loading": {
+    "defaultMessage": "今月の利用を読み込んでいます",
+    "description": "Label of the spinner of the section with the use of translation."
+  },
+  "admin.translation.use.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "Button that loads the use of translation again."
+  },
+  "admin.translation.use.title": {
+    "defaultMessage": "今月",
+    "description": "Heading of the section with how translation was used in the current month."
+  },
+  "admin.translation.visibilities": {
+    "defaultMessage": "{provider} に送ってよいもの",
+    "description": "Legend of the visibilities of the posts that a translation provider may receive."
+  },
+  "admin.translation.visibilities.description": {
+    "defaultMessage": "「フォロワー」と「メンションした人」は、プライバシーポリシーにそう書いたときだけ許可してください。",
+    "description": "Warning under the visibilities that a translation provider may receive."
+  },
+  "admin.translation.visibility.direct": {
+    "defaultMessage": "メンションした人",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.local": {
+    "defaultMessage": "このサーバー",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.private": {
+    "defaultMessage": "フォロワー",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.public": {
+    "defaultMessage": "公開",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  },
+  "admin.translation.visibility.unlisted": {
+    "defaultMessage": "未収載",
+    "description": "Checkbox: a translation provider may receive posts of this visibility, named as in the visibility picker."
+  }
+}

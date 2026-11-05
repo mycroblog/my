@@ -46,8 +46,11 @@ CREATE TABLE translation_account_usage (
 );
 CREATE INDEX translation_account_usage_month ON translation_account_usage (month);
 
--- Current value: the characters of the whole server sent to providers in a UTC month (YYYY-MM).
+-- Current value: the characters of the whole server sent to providers in a UTC month (YYYY-MM),
+-- and how many requests that month were answered from the cache and how many went to a provider.
 CREATE TABLE translation_server_usage (
   month text COLLATE "C" NOT NULL PRIMARY KEY,
-  characters bigint NOT NULL CHECK (characters >= 0)
+  characters bigint NOT NULL DEFAULT 0 CHECK (characters >= 0),
+  cache_hits bigint NOT NULL DEFAULT 0 CHECK (cache_hits >= 0),
+  cache_misses bigint NOT NULL DEFAULT 0 CHECK (cache_misses >= 0)
 );
