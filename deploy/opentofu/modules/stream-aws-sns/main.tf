@@ -49,28 +49,28 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Publishing to the topic and subscribing the server's own queues to it, and managing those queues, whose names are not known in advance."
   value = concat(
     [
-      { role = "sns:Publish", scope = "policy", resource = aws_sns_topic.stream.arn, conditions = [] },
+      { permission = "sns:Publish", scope = "policy", resource = aws_sns_topic.stream.arn, conditions = [] },
       {
-        role     = "sns:Subscribe"
-        scope    = "policy"
-        resource = aws_sns_topic.stream.arn
+        permission = "sns:Subscribe"
+        scope      = "policy"
+        resource   = aws_sns_topic.stream.arn
         conditions = [
           { test = "StringEquals", variable = "sns:Protocol", values = ["sqs"] },
           { test = "StringLike", variable = "sns:Endpoint", values = [local.queues] },
         ]
       },
-      { role = "sns:Unsubscribe", scope = "policy", resource = aws_sns_topic.stream.arn, conditions = [] },
-      { role = "sns:ListSubscriptionsByTopic", scope = "policy", resource = aws_sns_topic.stream.arn, conditions = [] },
+      { permission = "sns:Unsubscribe", scope = "policy", resource = aws_sns_topic.stream.arn, conditions = [] },
+      { permission = "sns:ListSubscriptionsByTopic", scope = "policy", resource = aws_sns_topic.stream.arn, conditions = [] },
       # The sweep lists the queues, which this action cannot limit by name.
-      { role = "sqs:ListQueues", scope = "policy", resource = "*", conditions = [] },
+      { permission = "sqs:ListQueues", scope = "policy", resource = "*", conditions = [] },
     ],
     [
       for action in ["CreateQueue", "TagQueue", "SetQueueAttributes", "GetQueueAttributes", "ReceiveMessage", "DeleteMessage", "DeleteQueue"] : {
-        role = "sqs:${action}", scope = "policy", resource = local.queues, conditions = []
+        permission = "sqs:${action}", scope = "policy", resource = local.queues, conditions = []
       }
     ],
   )

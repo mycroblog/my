@@ -61,11 +61,11 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Sending from the identity and, with one, through the configuration set."
   value = concat(
-    [{ role = "ses:SendEmail", scope = "policy", resource = aws_sesv2_email_identity.domain.arn }],
-    var.configuration_set == null ? [] : [{ role = "ses:SendEmail", scope = "policy", resource = aws_sesv2_configuration_set.this.arn }],
+    [{ permission = "ses:SendEmail", scope = "policy", resource = aws_sesv2_email_identity.domain.arn }],
+    var.configuration_set == null ? [] : [{ permission = "ses:SendEmail", scope = "policy", resource = aws_sesv2_configuration_set.this.arn }],
   )
 }
 

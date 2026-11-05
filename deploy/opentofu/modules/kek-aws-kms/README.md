@@ -25,7 +25,7 @@ module "kek" {
 | --- | --- |
 | `env` | `MY_KEY_MANAGER`, `MY_KMS_KEY` |
 | `secret_env` | Empty |
-| `roles` | `kms:Encrypt`, `kms:Decrypt`, and `kms:DescribeKey` on the key |
+| `permissions` | `kms:Encrypt`, `kms:Decrypt`, and `kms:DescribeKey` on the key |
 
 The key has `prevent_destroy` and a deletion window of 30 days, and rotates its key material. It costs a monthly fee, and a fee per request beyond a free
 tier: [Key management](../../../../docs/operations/key-management.md#aws-kms) has more.

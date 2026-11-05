@@ -67,7 +67,7 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Nothing."
   value       = []
 }

@@ -25,13 +25,13 @@ run "the_queues_are_limited_to_the_prefix" {
 
   assert {
     condition = alltrue([
-      for r in output.roles : r.resource == "arn:aws:sqs:ap-northeast-1:111122223333:my-stream-*" if startswith(r.role, "sqs:") && r.role != "sqs:ListQueues"
+      for r in output.permissions : r.resource == "arn:aws:sqs:ap-northeast-1:111122223333:my-stream-*" if startswith(r.permission, "sqs:") && r.permission != "sqs:ListQueues"
     ])
     error_message = "the server manages its own queues alone"
   }
 
   assert {
-    condition     = length([for r in output.roles : r if r.role == "sns:Subscribe" && length(r.conditions) == 2]) == 1
+    condition     = length([for r in output.permissions : r if r.permission == "sns:Subscribe" && length(r.conditions) == 2]) == 1
     error_message = "a subscription must be limited to SQS and to these queues"
   }
 }

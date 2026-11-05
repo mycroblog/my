@@ -26,7 +26,7 @@ module "secrets" {
 | --- | --- |
 | `env` | Empty |
 | `secret_env` | `secrets`: variable name to secret ID |
-| `roles` | Empty: the app module grants access to every secret it is given |
+| `permissions` | Empty: the app module grants access to every secret it is given |
 | `ids` | Every secret ID by its key, for `db-external`, `mail-smtp`, and the like |
 
 Use `referenced` when another backend names the setting, so that no setting is named twice:

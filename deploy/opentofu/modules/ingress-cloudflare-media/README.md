@@ -29,7 +29,7 @@ module "ingress" {
 | Output | Value |
 | --- | --- |
 | `env` | `MY_MEDIA_ORIGIN` |
-| `secret_env`, `roles`, `dns_records` | Empty: it creates the record itself |
+| `secret_env`, `permissions`, `dns_records` | Empty: it creates the record itself |
 | `rules` | The rules of this host, by phase |
 
 Pass only `env` to `backends`, as `{ env = module.media.env }`.

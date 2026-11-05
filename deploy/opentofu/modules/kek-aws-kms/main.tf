@@ -71,11 +71,11 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Encrypting and decrypting with this key, not the others of the account."
   value = [
-    { role = "kms:Encrypt", scope = "policy", resource = local.arn },
-    { role = "kms:Decrypt", scope = "policy", resource = local.arn },
-    { role = "kms:DescribeKey", scope = "policy", resource = local.arn },
+    { permission = "kms:Encrypt", scope = "policy", resource = local.arn },
+    { permission = "kms:Decrypt", scope = "policy", resource = local.arn },
+    { permission = "kms:DescribeKey", scope = "policy", resource = local.arn },
   ]
 }

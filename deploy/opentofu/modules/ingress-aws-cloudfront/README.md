@@ -34,7 +34,7 @@ module "ingress" {
 | `dns_records` | What to create elsewhere: read [DNS](#dns) |
 | `dns_note` | What `dns_records` cannot say, or null |
 | `domain_name`, `hosted_zone_id` | Of the distribution, for records made elsewhere |
-| `secret_env`, `roles` | Empty |
+| `secret_env`, `permissions` | Empty |
 
 It takes the certificate as an input, unlike Google's ingress modules, which obtain their own. Create it first: CloudFront takes one only from `us-east-1`, which
 would need a second AWS provider in every configuration, and validating it within the apply would hold the apply until you add records that

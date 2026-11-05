@@ -27,7 +27,7 @@ module "queue" {
 | --- | --- |
 | `env` | `MY_QUEUE`, `MY_QUEUE_SQS_QUEUE_URL` |
 | `secret_env` | Empty |
-| `roles` | `sqs:SendMessage` on the queue |
+| `permissions` | `sqs:SendMessage` on the queue |
 | `event_sources` | The queue, which the app maps to its worker. Lambda polls it, so there are no `invokers` |
 
 Lambda's pollers read a queue all the time, which costs SQS requests. The first million a month are free. This module takes no `host`: nothing

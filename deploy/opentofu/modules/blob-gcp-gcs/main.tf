@@ -52,10 +52,10 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Reading and writing the objects of the bucket."
   value = [
-    { role = "roles/storage.objectUser", scope = "bucket", resource = var.bucket_name },
+    { permission = "roles/storage.objectUser", scope = "bucket", resource = var.bucket_name },
   ]
   depends_on = [google_storage_bucket.media]
 }

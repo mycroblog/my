@@ -98,7 +98,7 @@ output "secret_files" {
   depends_on  = [google_secret_manager_secret_version.kek]
 }
 
-output "roles" {
+output "permissions" {
   description = "Nothing: the app module grants access to every secret it is given."
   value       = []
 }

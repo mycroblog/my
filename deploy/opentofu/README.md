@@ -75,20 +75,20 @@ changing one module block:
 | `env` | `map(string)` | Settings by variable name (`MY_DATABASE`) |
 | `secret_env` | `map(string)` | Secret settings: variable name to a reference to a secret in the platform's store. The reference is the store's own: a secret ID in Secret Manager, a full ARN in AWS Secrets Manager. How the value reaches the server is the app module's business |
 | `secret_files` (optional) | `map(string)` | Secret settings to mount as files: a variable name ending in `_FILE` to the secret's reference. The app sets the variable to the path, on the service and every job. A platform with no mounted secrets treats it as `secret_env` of the name without `_FILE` |
-| `roles` | `list(object({ role, scope, resource, conditions }))` | What the app's identity needs |
+| `permissions` | `list(object({ permission, scope, resource, conditions }))` | What the app's identity is permitted |
 | `invokers` (optional) | `list(string)` | Service accounts that call the app and need permission to invoke it, on a platform where something calls it |
 | `event_sources` (optional) | `map(object({ arn, visibility_timeout_seconds }))` | Queues that the platform polls to invoke the app, on a platform where the app is invoked that way |
 
-A role means what the platform's IAM means, and `scope` says which kind it is, so a backend of one platform handed to the app of
-another fails the plan instead of granting nothing:
+A permission means what the platform's IAM means: what the identity is permitted, which on Google Cloud is a role. `scope` says which kind it is, so a backend of
+one platform handed to the app of another fails the plan instead of granting nothing:
 
-| Platform | `role` | `scope` | `resource` | `conditions` |
+| Platform | `permission` | `scope` | `resource` | `conditions` |
 | --- | --- | --- | --- | --- |
 | Google Cloud | A role, such as `roles/storage.objectUser` | `project` (with `resource` null), `bucket`, `topic`, `queue`, `service_account`, or `crypto_key`, each a different kind of binding | The resource's name | Not available |
 | AWS | One IAM action, such as `sqs:SendMessage` | `policy`: every grant is a statement of one policy | An ARN or an ARN pattern, or `*` | Optional: `{ test, variable, values }` of the statement |
 
-The service and its jobs share one identity, so a grant reaches them all. The app grants each role on that resource alone, so a
-backend asks for as little as it can. Google Cloud's app keys one resource on each grant, so it reads the names of `roles` and
+The service and its jobs share one identity, so a grant reaches them all. The app grants each permission on that resource alone, so a
+backend asks for as little as it can. Google Cloud's app keys one resource on each grant, so it reads the names of `permissions` and
 `invokers` at plan time: a backend there builds them from its inputs rather than from attributes of its resources, and uses
 `depends_on` on the output for the order. AWS's app makes one document of them, so a backend there may name an attribute of its
 resources.

@@ -24,7 +24,7 @@ module "blob" {
 | --- | --- |
 | `env` | `MY_BLOB`, `MY_BLOB_GCS_BUCKET` |
 | `secret_env` | Empty |
-| `roles` | `roles/storage.objectUser` on the bucket |
+| `permissions` | `roles/storage.objectUser` on the bucket |
 
 The server reads the bucket and serves the media under `/media/`. It signs no URLs at present, so the service account does
 not get `roles/iam.serviceAccountTokenCreator` on itself; a backend of your own that needs signed URLs would add it.

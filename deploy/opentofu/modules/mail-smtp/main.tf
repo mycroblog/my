@@ -66,7 +66,7 @@ output "secret_env" {
   value       = var.password_secret_id == null ? {} : { MY_MAIL_SMTP_PASSWORD = var.password_secret_id }
 }
 
-output "roles" {
+output "permissions" {
   description = "Nothing beyond reading the secret, which the app module grants for every secret it is given."
   value       = []
 }

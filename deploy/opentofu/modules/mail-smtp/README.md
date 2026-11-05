@@ -25,6 +25,6 @@ module "mail" {
 | --- | --- |
 | `env` | `MY_MAIL`, `MY_MAIL_FROM`, `MY_MAIL_SMTP_HOST`, `MY_MAIL_SMTP_PORT`, and `MY_MAIL_SMTP_USERNAME` when set |
 | `secret_env` | `MY_MAIL_SMTP_PASSWORD` when set |
-| `roles` | Empty: the app module grants access to every secret it is given |
+| `permissions` | Empty: the app module grants access to every secret it is given |
 
 To send no email, leave this module out of `backends`: `mail` then stays at its default, `none`.

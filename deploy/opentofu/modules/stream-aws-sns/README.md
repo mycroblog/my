@@ -24,7 +24,7 @@ module "stream" {
 | --- | --- |
 | `env` | `MY_STREAM`, `MY_STREAM_SNS_TOPIC_ARN`, `MY_STREAM_SNS_QUEUE_PREFIX` |
 | `secret_env` | Empty |
-| `roles` | What the server's `sns` adapter documents, the `sns:Subscribe` of it with its conditions |
+| `permissions` | What the server's `sns` adapter documents, the `sns:Subscribe` of it with its conditions |
 
 ## On Lambda
 

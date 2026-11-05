@@ -73,13 +73,13 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Publishing to the topic, attaching subscriptions to it, and managing the subscriptions of the project."
   value = [
-    { role = "roles/pubsub.publisher", scope = "topic", resource = local.topic },
+    { permission = "roles/pubsub.publisher", scope = "topic", resource = local.topic },
     # Holds pubsub.topics.attachSubscription.
-    { role = "roles/pubsub.subscriber", scope = "topic", resource = local.topic },
-    { role = local.role, scope = "project", resource = null },
+    { permission = "roles/pubsub.subscriber", scope = "topic", resource = local.topic },
+    { permission = local.role, scope = "project", resource = null },
   ]
   depends_on = [google_pubsub_topic.stream, google_project_iam_custom_role.subscriptions]
 }

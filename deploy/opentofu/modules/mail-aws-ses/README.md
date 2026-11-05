@@ -25,7 +25,7 @@ module "mail" {
 | --- | --- |
 | `env` | `MY_MAIL`, `MY_MAIL_FROM`, and `MY_MAIL_SES_CONFIGURATION_SET` with a set |
 | `secret_env` | Empty |
-| `roles` | `ses:SendEmail` on the identity, and on the set |
+| `permissions` | `ses:SendEmail` on the identity, and on the set |
 | `dns_records` | The DKIM records to add. This output is not part of the backend contract: read it from this module, not through `backends` |
 
 A new SES account can send only to verified addresses until AWS grants production access, on request, which no configuration can do for you.

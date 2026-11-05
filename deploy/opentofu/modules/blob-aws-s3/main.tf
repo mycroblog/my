@@ -70,13 +70,13 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Reading and writing the objects of the bucket. Listing it makes a missing object a 404 rather than a 403."
   value = [
-    { role = "s3:GetObject", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
-    { role = "s3:PutObject", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
-    { role = "s3:DeleteObject", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
-    { role = "s3:AbortMultipartUpload", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
-    { role = "s3:ListBucket", scope = "policy", resource = aws_s3_bucket.media.arn },
+    { permission = "s3:GetObject", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
+    { permission = "s3:PutObject", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
+    { permission = "s3:DeleteObject", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
+    { permission = "s3:AbortMultipartUpload", scope = "policy", resource = "${aws_s3_bucket.media.arn}/*" },
+    { permission = "s3:ListBucket", scope = "policy", resource = aws_s3_bucket.media.arn },
   ]
 }

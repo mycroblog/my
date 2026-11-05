@@ -63,7 +63,7 @@ locals {
     local.key_manager == "local" ? !contains(local.setting_names, "MY_KEK") : !contains(local.setting_names, "MY_KMS_KEY")
   )
 
-  roles         = flatten([for b in var.backends : b.roles])
+  permissions   = flatten([for b in var.backends : b.permissions])
   event_sources = merge([for b in var.backends : b.event_sources]...)
 
   # The same image with other settings: one definition makes every function, as one block makes the jobs on Cloud Run.
@@ -171,9 +171,9 @@ data "aws_iam_policy_document" "server" {
   }
 
   dynamic "statement" {
-    for_each = local.roles
+    for_each = local.permissions
     content {
-      actions   = [statement.value.role]
+      actions   = [statement.value.permission]
       resources = [statement.value.resource]
 
       dynamic "condition" {

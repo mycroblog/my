@@ -23,7 +23,7 @@ output "secret_env" {
   value       = { MY_DATABASE_URL = var.url_secret_id }
 }
 
-output "roles" {
+output "permissions" {
   description = "Nothing beyond reading the secret, which the app module grants for every secret it is given."
   value       = []
 }

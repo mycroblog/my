@@ -24,7 +24,7 @@ module "kek" {
 | Output | Value |
 | --- | --- |
 | `secret_files` | `MY_KEK_FILE`: the secret to mount |
-| `env`, `secret_env`, `roles` | Empty: the app module grants access to the secret |
+| `env`, `secret_env`, `permissions` | Empty: the app module grants access to the secret |
 
 The first apply generates 32 random bytes with an ephemeral resource and sends them through a write-only attribute, so the
 value reaches neither the plan nor the state, and no later apply writes another. It needs OpenTofu 1.11 or later.

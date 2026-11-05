@@ -22,7 +22,7 @@ module "db" {
 | --- | --- |
 | `env` | `MY_DATABASE` |
 | `secret_env` | `MY_DATABASE_URL` |
-| `roles` | Empty: the app module grants access to every secret it is given |
+| `permissions` | Empty: the app module grants access to every secret it is given |
 
 The URL must not go through a pooler in transaction mode. `my schema apply` holds a session-level lock, so use Neon's
 direct connection string (the host without `-pooler`). With `stream = pubsub` the server needs no `LISTEN` connection.

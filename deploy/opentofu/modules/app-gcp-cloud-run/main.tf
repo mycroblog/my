@@ -67,8 +67,8 @@ locals {
     local.key_manager == "local" ? !contains(local.setting_names, "MY_KEK") : !contains(local.setting_names, "MY_KMS_KEY")
   )
 
-  roles    = flatten([for b in var.backends : b.roles])
-  invokers = toset(flatten([for b in var.backends : b.invokers]))
+  permissions = flatten([for b in var.backends : b.permissions])
+  invokers    = toset(flatten([for b in var.backends : b.invokers]))
 
   jobs = merge(
     { migrate = ["db", "upgrade", "-check"] },
@@ -105,55 +105,55 @@ resource "google_service_account" "server" {
 # Each binding goes on its resource unless the backend says project. The keys are strings known at plan time, which the
 # backend modules build from their inputs.
 resource "google_project_iam_member" "backend" {
-  for_each = { for r in local.roles : r.role => r if r.scope == "project" }
+  for_each = { for r in local.permissions : r.permission => r if r.scope == "project" }
 
   project = var.project_id
-  role    = each.value.role
+  role    = each.value.permission
   member  = google_service_account.server.member
 }
 
 resource "google_storage_bucket_iam_member" "backend" {
-  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "bucket" }
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "bucket" }
 
   bucket = each.value.resource
-  role   = each.value.role
+  role   = each.value.permission
   member = google_service_account.server.member
 }
 
 resource "google_pubsub_topic_iam_member" "backend" {
-  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "topic" }
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "topic" }
 
   # projects/<project>/topics/<topic>
   project = split("/", each.value.resource)[1]
   topic   = split("/", each.value.resource)[3]
-  role    = each.value.role
+  role    = each.value.permission
   member  = google_service_account.server.member
 }
 
 resource "google_cloud_tasks_queue_iam_member" "backend" {
-  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "queue" }
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "queue" }
 
   # projects/<project>/locations/<location>/queues/<queue>
   project  = split("/", each.value.resource)[1]
   location = split("/", each.value.resource)[3]
   name     = split("/", each.value.resource)[5]
-  role     = each.value.role
+  role     = each.value.permission
   member   = google_service_account.server.member
 }
 
 resource "google_service_account_iam_member" "backend" {
-  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "service_account" }
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "service_account" }
 
   service_account_id = each.value.resource
-  role               = each.value.role
+  role               = each.value.permission
   member             = google_service_account.server.member
 }
 
 resource "google_kms_crypto_key_iam_member" "backend" {
-  for_each = { for r in local.roles : "${r.resource}/${r.role}" => r if r.scope == "crypto_key" }
+  for_each = { for r in local.permissions : "${r.resource}/${r.permission}" => r if r.scope == "crypto_key" }
 
   crypto_key_id = each.value.resource
-  role          = each.value.role
+  role          = each.value.permission
   member        = google_service_account.server.member
 }
 

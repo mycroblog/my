@@ -13,7 +13,7 @@ run "it_creates_a_key_that_rotates" {
   }
 
   assert {
-    condition     = toset([for r in output.roles : r.role]) == toset(["kms:Encrypt", "kms:Decrypt", "kms:DescribeKey"])
+    condition     = toset([for r in output.permissions : r.permission]) == toset(["kms:Encrypt", "kms:Decrypt", "kms:DescribeKey"])
     error_message = "the server needs exactly these on the key"
   }
 }

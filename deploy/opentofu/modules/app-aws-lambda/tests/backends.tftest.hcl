@@ -44,12 +44,12 @@ variables {
     },
     {
       env = { MY_QUEUE = "sqs" }
-      roles = [
-        { role = "sqs:SendMessage", scope = "policy", resource = "arn:aws:sqs:ap-northeast-1:111122223333:my-jobs" },
+      permissions = [
+        { permission = "sqs:SendMessage", scope = "policy", resource = "arn:aws:sqs:ap-northeast-1:111122223333:my-jobs" },
         {
-          role     = "sns:Subscribe"
-          scope    = "policy"
-          resource = "arn:aws:sns:ap-northeast-1:111122223333:my-stream"
+          permission = "sns:Subscribe"
+          scope      = "policy"
+          resource   = "arn:aws:sns:ap-northeast-1:111122223333:my-stream"
           conditions = [
             { test = "StringEquals", variable = "sns:Protocol", values = ["sqs"] },
           ]
@@ -146,7 +146,7 @@ run "the_policy_holds_every_grant" {
 
   assert {
     condition     = length(flatten(data.aws_iam_policy_document.server.statement[*].condition)) == 1
-    error_message = "a role's conditions must reach its statement"
+    error_message = "a permission's conditions must reach its statement"
   }
 }
 
@@ -256,7 +256,7 @@ run "a_backend_for_google_cloud_fails" {
   command = plan
 
   variables {
-    backends = [{ roles = [{ role = "roles/storage.objectUser", scope = "bucket", resource = "b" }] }]
+    backends = [{ permissions = [{ permission = "roles/storage.objectUser", scope = "bucket", resource = "b" }] }]
   }
 
   expect_failures = [var.backends]

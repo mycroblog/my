@@ -24,7 +24,7 @@ module "kek" {
 | --- | --- |
 | `env` | `MY_KEY_MANAGER`, `MY_KMS_KEY` |
 | `secret_env` | Empty |
-| `roles` | `roles/cloudkms.cryptoKeyEncrypterDecrypter` on the key, which the service and the jobs share through one service account |
+| `permissions` | `roles/cloudkms.cryptoKeyEncrypterDecrypter` on the key, which the service and the jobs share through one service account |
 
 Enable `cloudkms.googleapis.com` first. The key has `prevent_destroy`, because destroying it loses every secret it wrapped.
 Cloud KMS keeps key rings and keys in any case: a key can only have its versions destroyed.

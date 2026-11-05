@@ -115,11 +115,11 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Creating tasks in the queue, and acting as the invoker service account so that the tasks carry its token."
   value = [
-    { role = "roles/cloudtasks.enqueuer", scope = "queue", resource = local.queue },
-    { role = "roles/iam.serviceAccountUser", scope = "service_account", resource = "projects/${var.project_id}/serviceAccounts/${local.invoker_email}" },
+    { permission = "roles/cloudtasks.enqueuer", scope = "queue", resource = local.queue },
+    { permission = "roles/iam.serviceAccountUser", scope = "service_account", resource = "projects/${var.project_id}/serviceAccounts/${local.invoker_email}" },
   ]
   depends_on = [google_cloud_tasks_queue.jobs, google_service_account.invoker]
 }

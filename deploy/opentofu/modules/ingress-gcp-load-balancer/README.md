@@ -26,7 +26,7 @@ module "ingress" {
 | --- | --- |
 | `env` | Empty |
 | `trusted_proxies` | The load balancer's address. The app module adds `169.254.0.0/16` |
-| `secret_env`, `roles` | Empty |
+| `secret_env`, `permissions` | Empty |
 | `service_ingress` | `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` |
 | `ip_address` | The address to point DNS at |
 | `dns_records` | The same address as an `A` record |

@@ -33,7 +33,7 @@ run "the_tick_goes_through_the_queue" {
   }
 
   assert {
-    condition     = one(output.roles).role == "sqs:SendMessage" && one(output.roles).scope == "policy"
+    condition     = one(output.permissions).permission == "sqs:SendMessage" && one(output.permissions).scope == "policy"
     error_message = "the server only sends to the queue; polling is the event source's"
   }
 }

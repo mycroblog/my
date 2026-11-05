@@ -26,7 +26,7 @@ module "queue" {
 | --- | --- |
 | `env` | `MY_QUEUE`, `MY_QUEUE_CLOUDTASKS_QUEUE`, `MY_QUEUE_CLOUDTASKS_URL`, `MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT` |
 | `secret_env` | Empty |
-| `roles` | `roles/cloudtasks.enqueuer` on the queue, `roles/iam.serviceAccountUser` on the invoker |
+| `permissions` | `roles/cloudtasks.enqueuer` on the queue, `roles/iam.serviceAccountUser` on the invoker |
 | `invokers` | The invoker, which the app gives `roles/run.invoker` |
 
 The queue depends on no output of the app module: the URL comes from `host`, and the invoker is created here. No audience

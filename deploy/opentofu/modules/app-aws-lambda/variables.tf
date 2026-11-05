@@ -49,10 +49,10 @@ variable "backends" {
     env          = optional(map(string), {})
     secret_env   = optional(map(string), {})
     secret_files = optional(map(string), {})
-    roles = optional(list(object({
-      role     = string
-      scope    = string
-      resource = optional(string)
+    permissions = optional(list(object({
+      permission = string
+      scope      = string
+      resource   = optional(string)
       conditions = optional(list(object({
         test     = string
         variable = string
@@ -76,9 +76,9 @@ variable "backends" {
 
   validation {
     condition = alltrue(flatten([
-      for b in var.backends : [for r in b.roles : r.scope == "policy" && r.resource != null]
+      for b in var.backends : [for r in b.permissions : r.scope == "policy" && r.resource != null]
     ]))
-    error_message = "Each role has a scope of policy and a resource: the role is an IAM action, and the resource an ARN. Another scope is a backend for Google Cloud."
+    error_message = "Each permission has a scope of policy and a resource: the permission is an IAM action, and the resource an ARN. Another scope is a backend for Google Cloud."
   }
 
   validation {

@@ -104,7 +104,7 @@ output "secret_env" {
   depends_on  = [google_secret_manager_secret.this, google_secret_manager_secret_version.generated]
 }
 
-output "roles" {
+output "permissions" {
   description = "Nothing: the app module grants access to every secret it is given."
   value       = []
 }

@@ -24,7 +24,7 @@ module "blob" {
 | --- | --- |
 | `env` | `MY_BLOB`, `MY_BLOB_S3_BUCKET`, `MY_BLOB_S3_REGION` |
 | `secret_env` | Empty: no access key, the role is used |
-| `roles` | Reading, writing, and deleting objects, stopping a multipart upload, and listing the bucket |
+| `permissions` | Reading, writing, and deleting objects, stopping a multipart upload, and listing the bucket |
 
 ## On Lambda, an upload does not reach this bucket directly
 

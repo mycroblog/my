@@ -24,7 +24,7 @@ module "secrets" {
 
 | Output | Value |
 | --- | --- |
-| `env`, `roles` | Empty |
+| `env`, `permissions` | Empty |
 | `secret_env` | Variable name to the secret's ARN |
 | `ids` | The ARN of every secret by its key |
 

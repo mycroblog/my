@@ -61,10 +61,10 @@ variable "backends" {
     env          = optional(map(string), {})
     secret_env   = optional(map(string), {})
     secret_files = optional(map(string), {})
-    roles = optional(list(object({
-      role     = string
-      scope    = string
-      resource = optional(string)
+    permissions = optional(list(object({
+      permission = string
+      scope      = string
+      resource   = optional(string)
     })), [])
     invokers = optional(list(string), [])
     # What an ingress needs of the service: who may reach it.
@@ -78,13 +78,13 @@ variable "backends" {
   validation {
     condition = alltrue(flatten([
       for b in var.backends : [
-        for r in b.roles : (
+        for r in b.permissions : (
           contains(["project", "bucket", "topic", "queue", "service_account", "crypto_key"], r.scope) &&
           (r.scope == "project") == (r.resource == null)
         )
       ]
     ]))
-    error_message = "Each role has a scope of project (without a resource), or bucket, topic, queue, service_account, or crypto_key (with its resource). A scope of policy is a backend for AWS."
+    error_message = "Each permission has a scope of project (without a resource), or bucket, topic, queue, service_account, or crypto_key (with its resource). A scope of policy is a backend for AWS."
   }
 
   validation {

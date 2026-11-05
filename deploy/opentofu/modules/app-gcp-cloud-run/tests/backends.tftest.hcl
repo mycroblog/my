@@ -25,8 +25,8 @@ variables {
     {
       env      = { MY_QUEUE = "cloudtasks" }
       invokers = ["invoker@p.iam.gserviceaccount.com"]
-      roles = [
-        { role = "roles/cloudtasks.enqueuer", scope = "queue", resource = "projects/p/locations/l/queues/q" },
+      permissions = [
+        { permission = "roles/cloudtasks.enqueuer", scope = "queue", resource = "projects/p/locations/l/queues/q" },
       ]
     },
   ]
@@ -66,7 +66,7 @@ run "merges_every_source" {
 
   assert {
     condition     = length(google_cloud_tasks_queue_iam_member.backend) == 1 && length(google_project_iam_member.backend) == 0
-    error_message = "a backend's role must go on the scope it names"
+    error_message = "a backend's permission must go on the scope it names"
   }
 
   assert {
@@ -87,8 +87,8 @@ run "swapping_a_backend_changes_only_its_settings" {
       {
         env      = { MY_QUEUE = "cloudtasks" }
         invokers = ["invoker@p.iam.gserviceaccount.com"]
-        roles = [
-          { role = "roles/cloudtasks.enqueuer", scope = "queue", resource = "projects/p/locations/l/queues/q" },
+        permissions = [
+          { permission = "roles/cloudtasks.enqueuer", scope = "queue", resource = "projects/p/locations/l/queues/q" },
         ]
       },
     ]
@@ -149,12 +149,12 @@ run "a_setting_and_its_file_form_fail" {
   expect_failures = [google_service_account.server]
 }
 
-run "a_role_without_its_scope_fails" {
+run "a_permission_without_its_scope_fails" {
   command = plan
 
   variables {
     backends = [
-      { roles = [{ role = "roles/x", scope = "somewhere", resource = "r" }] },
+      { permissions = [{ permission = "roles/x", scope = "somewhere", resource = "r" }] },
     ]
   }
 
@@ -333,7 +333,7 @@ run "app_with_the_kms_kek" {
     secret_files    = {}
     console_enabled = true
     backends = [
-      { env = run.kek_in_kms_made_elsewhere.env, roles = run.kek_in_kms_made_elsewhere.roles },
+      { env = run.kek_in_kms_made_elsewhere.env, permissions = run.kek_in_kms_made_elsewhere.permissions },
     ]
   }
 
@@ -556,7 +556,7 @@ run "a_backend_for_aws_fails" {
 
   variables {
     backends = [
-      { roles = [{ role = "sqs:SendMessage", scope = "policy", resource = "arn:aws:sqs:us-east-1:111122223333:my-jobs" }] },
+      { permissions = [{ permission = "sqs:SendMessage", scope = "policy", resource = "arn:aws:sqs:us-east-1:111122223333:my-jobs" }] },
     ]
   }
 

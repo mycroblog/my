@@ -29,7 +29,7 @@ module "ingress" {
 | --- | --- |
 | `env` | `MY_TRUSTED_PROXY_HEADER` |
 | `trusted_proxies` | Cloudflare's ranges. The app module adds the platform's own front end |
-| `secret_env`, `roles`, `dns_records` | Empty: it creates the record itself |
+| `secret_env`, `permissions`, `dns_records` | Empty: it creates the record itself |
 | `service_ingress` | Null: it asks nothing of the platform, so the service stays open |
 
 ## Plans: Cloud Run needs a matching `Host`

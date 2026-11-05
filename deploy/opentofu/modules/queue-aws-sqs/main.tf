@@ -108,10 +108,10 @@ output "secret_env" {
   value       = {}
 }
 
-output "roles" {
+output "permissions" {
   description = "Sending the signals to the queue."
   value = [
-    { role = "sqs:SendMessage", scope = "policy", resource = aws_sqs_queue.jobs.arn },
+    { permission = "sqs:SendMessage", scope = "policy", resource = aws_sqs_queue.jobs.arn },
   ]
 }
 

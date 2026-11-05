@@ -22,7 +22,7 @@ module "kek" {
 
 | Output | Value |
 | --- | --- |
-| `env`, `roles` | Empty |
+| `env`, `permissions` | Empty |
 | `secret_env` | `MY_KEK`: the ARN of the secret |
 
 On Google Cloud the KEK is a file, because a mounted secret is the safer form that Cloud Run offers. Here it is `secret_env`: the swap of this block
