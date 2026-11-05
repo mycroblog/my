@@ -128,7 +128,9 @@ func mediaSubject(result content.MediaProcessingResult, variants []sizedVariant)
 // or an emoji files its report there, as no post will. A mark_sensitive of those is only recorded:
 // there is no post to mark.
 func (s *MediaService) applyReview(ctx context.Context, tx uow.Tx, v mediaVerdict, purpose content.MediaPurpose) error {
-	if v.Effect != apphook.Flag || purpose == content.PurposeAttachment {
+	if v.Effect != apphook.Flag || purpose == content.PurposeAttachment || v.accountID == v.reporterAccountID {
+		// The instance actor owns the copy of the image of an approved emoji request, whose
+		// requester's upload was reviewed itself; a report on the instance actor tells nobody anything.
 		return nil
 	}
 	filed, err := s.d.Review.Reports.FileHookReport(ctx, tx, HookReport{
