@@ -74,7 +74,7 @@ output "permissions" {
 
 output "service_ingress" {
   description = "The mapping reaches the service as the internet does."
-  value       = "INGRESS_TRAFFIC_ALL"
+  value       = "all"
 }
 
 output "dns_records" {

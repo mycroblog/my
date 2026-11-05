@@ -27,7 +27,7 @@ run "the_contract" {
   }
 
   assert {
-    condition     = output.service_ingress == null
+    condition     = output.service_ingress == "all"
     error_message = "the service cannot be limited to Cloudflare"
   }
 

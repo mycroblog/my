@@ -159,8 +159,8 @@ output "trusted_proxies" {
 }
 
 output "service_ingress" {
-  description = "Nothing asked of the platform: nothing can limit a Function URL to CloudFront for this server. Read the README."
-  value       = null
+  description = "All: nothing can limit a Function URL to CloudFront for this server. Read the README."
+  value       = "all"
 }
 
 output "secret_env" {

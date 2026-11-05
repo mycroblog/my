@@ -26,7 +26,7 @@ module "ingress" {
 | `env` | Empty |
 | `trusted_proxies` | Empty: the app module adds `169.254.0.0/16`, Cloud Run's front end |
 | `secret_env`, `permissions` | Empty |
-| `service_ingress` | `INGRESS_TRAFFIC_ALL` |
+| `service_ingress` | `all`, which the app must set: the traffic comes from the internet, so the `run.app` URL stays open too |
 | `dns_records` | The records to add at your DNS provider |
 
 Whoever applies must be a verified owner of the domain in Search Console, and the certificate can take up to 24 hours.

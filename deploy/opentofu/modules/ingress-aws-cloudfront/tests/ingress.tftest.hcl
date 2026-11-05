@@ -41,8 +41,8 @@ run "it_serves_host_with_no_cache" {
   }
 
   assert {
-    condition     = output.trusted_proxies == tolist(["130.176.0.0/18", "2600:9000::/28"]) && output.service_ingress == null
-    error_message = "it says what connects, and asks nothing of the platform"
+    condition     = output.trusted_proxies == tolist(["130.176.0.0/18", "2600:9000::/28"]) && output.service_ingress == "all"
+    error_message = "it says what connects, and that the service is open"
   }
 
   assert {

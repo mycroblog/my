@@ -266,7 +266,7 @@ run "an_ingress_for_cloud_run_fails" {
   command = plan
 
   variables {
-    backends = [{ service_ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" }]
+    backends = [{ service_ingress = "internal-and-load-balancer" }]
   }
 
   expect_failures = [var.backends]

@@ -37,8 +37,8 @@ output "console" {
 }
 
 output "service_ingress" {
-  description = "Who may reach the service, as the backends asked."
-  value       = local.service_ingress
+  description = "Who may reach the service, as service_ingress says."
+  value       = var.service_ingress
 }
 
 output "env" {

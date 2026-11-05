@@ -118,7 +118,7 @@ An `ingress-*` module decides how traffic reaches the app. It is a backend, with
 | Output | Type | Meaning |
 | --- | --- | --- |
 | `trusted_proxies` | `list(string)` | What this ingress puts in front of the platform. The app module adds what the platform itself puts in front of the server (Cloud Run's `169.254.0.0/16`) and sets `MY_TRUSTED_PROXIES` from both, so that the server finds the client's address in `X-Forwarded-For` and the ingress does not need to know the platform |
-| `service_ingress` | `string` or null | What a module of one platform asks of that platform's service. On Cloud Run, `INGRESS_TRAFFIC_ALL`, or `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` when only a load balancer may reach it. A module of no particular platform returns null, which leaves the service open on every platform, and an app module refuses a value that is not its platform's |
+| `service_ingress` | `string` or null | What the ingress needs of the service: `all` when its traffic comes from the internet, `internal-and-load-balancer` for a load balancer of Cloud Run. It must agree with the app's own setting, and a disagreement fails the plan. Null for a module that needs nothing, such as a media host |
 | `dns_records` | `list(object({ name, type, rrdata }))` | What to add at the DNS provider |
 
 It takes the service's name from the app (`service_name = module.app.service_name`) while the app takes its settings, which
@@ -133,10 +133,11 @@ A module that only adds a host, such as `ingress-cloudflare-media`, returns no `
 it sits beside any other. A Cloudflare zone has one ruleset per phase, so two modules in one zone share them: one owns them, and
 takes the other's `rules` as `extra_rules`.
 
-Swapping one for another changes only the module block. An ingress may also be left out, for a deployment that uses the
-service's own URL or has something else in front. Remove the block and that line: the service is then open
-(`INGRESS_TRAFFIC_ALL`), and `MY_TRUSTED_PROXIES` is only what the platform puts in front, or what `env` of the app says. Setting
-it in `env` beside an ingress that names proxies fails the plan, and so do two ingresses that ask for different settings.
+Swapping one for another changes its block, and `service_ingress` of the app if the new one needs another setting, which the plan says. `service_ingress` of Cloud Run's app is
+required and has no default, so nothing opens a service by accident: [its README](modules/app-gcp-cloud-run/README.md#who-may-reach-the-service) has what each setting means. AWS's app has no such input,
+because a Function URL has one setting that works: it accepts `all` and refuses the others. An ingress may also be left out, for a deployment that uses the
+service's own URL or has something else in front. Remove the block and that line: `MY_TRUSTED_PROXIES` is then only what the platform puts in front, or what `env` of the app says. Setting
+it in `env` beside an ingress that names proxies fails the plan, and so do two ingresses that both name them.
 
 ## The app contract
 

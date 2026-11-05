@@ -83,7 +83,7 @@ Lambda runs as can read everything in the image; and whether the adapter gets ou
 | One-off commands | A job, an hour by default | 15 minutes, and a step that takes longer cannot run here |
 | All settings | No limit that matters | 4 KB of environment variables per function, which the plan checks once the values are known |
 | IAM | A binding per kind of resource | One inline policy, up to 10,240 characters, which the plan checks |
-| Who may reach it | A load balancer can be the only way in | Everyone. An origin access control needs the SHA-256 of every `POST` body from the client, which a peer does not send |
+| Who may reach it | An explicit `service_ingress`, and a load balancer can be the only way in | Everyone, with no input to say otherwise: a Function URL has `NONE` or `AWS_IAM`, and `AWS_IAM` with an origin access control needs the SHA-256 of every `POST` body from the client, which a peer does not send. There is one value that works, so an input would be a choice in name only |
 
 ## Unverified
 

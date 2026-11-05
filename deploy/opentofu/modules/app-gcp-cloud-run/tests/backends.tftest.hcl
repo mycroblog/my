@@ -12,6 +12,8 @@ mock_provider "google" {
 }
 
 variables {
+  service_ingress = "all"
+
   project_id   = "p"
   region       = "asia-northeast1"
   image        = "ghcr.io/mycroblog/my:0.1.0"
@@ -372,8 +374,8 @@ run "two_ingresses_asking_differently_fail" {
 
   variables {
     backends = [
-      { service_ingress = "INGRESS_TRAFFIC_ALL" },
-      { service_ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" },
+      { service_ingress = "all" },
+      { service_ingress = "internal-and-load-balancer" },
     ]
   }
 
@@ -456,6 +458,7 @@ run "app_with_the_load_balancer" {
   command = plan
 
   variables {
+    service_ingress = "internal-and-load-balancer"
     backends = [
       { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
     ]
@@ -525,6 +528,7 @@ run "media_beside_the_load_balancer" {
   command = plan
 
   variables {
+    service_ingress = "internal-and-load-balancer"
     backends = [
       { env = run.ingress_load_balancer.env, service_ingress = run.ingress_load_balancer.service_ingress, trusted_proxies = run.ingress_load_balancer.trusted_proxies },
       { env = { MY_MEDIA_ORIGIN = "https://media.example.org" } },
@@ -594,4 +598,48 @@ run "jobs_that_call_another_region_fail" {
   }
 
   expect_failures = [google_service_account.server]
+}
+
+run "the_setting_is_the_inputs" {
+  command = plan
+
+  variables {
+    service_ingress = "internal"
+  }
+
+  assert {
+    condition     = google_cloud_run_v2_service.server.ingress == "INGRESS_TRAFFIC_INTERNAL_ONLY" && output.service_ingress == "internal"
+    error_message = "a deployment with no ingress chooses for itself"
+  }
+}
+
+run "an_ingress_that_disagrees_fails" {
+  command = plan
+
+  variables {
+    backends = [{ service_ingress = "internal-and-load-balancer" }]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "a_load_balancer_needs_its_setting" {
+  command = plan
+
+  variables {
+    service_ingress = "internal-and-load-balancer"
+    backends        = [{ service_ingress = "all" }]
+  }
+
+  expect_failures = [google_service_account.server]
+}
+
+run "an_unknown_setting_fails" {
+  command = plan
+
+  variables {
+    service_ingress = "open"
+  }
+
+  expect_failures = [var.service_ingress]
 }

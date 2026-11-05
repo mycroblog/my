@@ -30,7 +30,7 @@ module "ingress" {
 | --- | --- |
 | `env` | `MY_TRUSTED_PROXY_HEADER` |
 | `trusted_proxies` | The ranges of `CLOUDFRONT_ORIGIN_FACING` |
-| `service_ingress` | Null |
+| `service_ingress` | `all`: the Function URL stays open |
 | `dns_records` | What to create elsewhere: read [DNS](#dns) |
 | `dns_note` | What `dns_records` cannot say, or null |
 | `domain_name`, `hosted_zone_id` | Of the distribution, for records made elsewhere |

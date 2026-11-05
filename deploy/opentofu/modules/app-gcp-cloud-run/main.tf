@@ -32,8 +32,13 @@ locals {
     },
   )
 
-  service_ingresses = distinct(compact([for b in var.backends : b.service_ingress]))
-  service_ingress   = length(local.service_ingresses) == 0 ? "INGRESS_TRAFFIC_ALL" : local.service_ingresses[0]
+  # Cloud Run's settings by a plain name. An ingress says which it needs, and the plan fails below when that is not this one.
+  cloud_run_ingress = {
+    all                        = "INGRESS_TRAFFIC_ALL"
+    internal                   = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+    internal-and-load-balancer = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+  }
+  ingress_disagreements = distinct([for b in var.backends : b.service_ingress if b.service_ingress != null && b.service_ingress != var.service_ingress])
 
   # Each one is mounted at a directory of its own, and its variable names the path.
   secret_files = merge(var.secret_files, [for b in var.backends : b.secret_files]...)
@@ -90,8 +95,8 @@ resource "google_service_account" "server" {
       error_message = "These settings are named more than once across the backends, env, secret_env, secret_files, and what this module sets itself: ${join(", ", local.duplicate_settings)}."
     }
     precondition {
-      condition     = length(local.service_ingresses) <= 1
-      error_message = "The backends ask for different ingress settings of the service: ${join(", ", local.service_ingresses)}. Use one ingress-* module."
+      condition     = length(local.ingress_disagreements) == 0
+      error_message = "service_ingress is ${var.service_ingress}, but an ingress module needs ${join(" and ", local.ingress_disagreements)}. A load balancer reaches the service only with internal-and-load-balancer, and it should be the only way in; a domain mapping and Cloudflare come from the internet and need all. Set service_ingress to what the ingress needs."
     }
     precondition {
       condition     = length(local.ingress_trust) <= 1
@@ -176,7 +181,7 @@ resource "google_cloud_run_v2_service" "server" {
   project  = var.project_id
   location = var.region
   name     = var.name
-  ingress  = local.service_ingress
+  ingress  = local.cloud_run_ingress[var.service_ingress]
   # Cloud Tasks and Cloud Scheduler call this URL, and count as internal only on it.
   default_uri_disabled = false
   deletion_protection  = var.deletion_protection

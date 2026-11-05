@@ -120,7 +120,7 @@ run "the_example_keeps_the_domain_mapping" {
   command = plan
 
   assert {
-    condition     = module.app.service_ingress == "INGRESS_TRAFFIC_ALL" && module.app.env["MY_TRUSTED_PROXIES"] == "169.254.0.0/16"
+    condition     = module.app.service_ingress == "all" && module.app.env["MY_TRUSTED_PROXIES"] == "169.254.0.0/16"
     error_message = "the domain mapping must leave the service open"
   }
 }
@@ -132,7 +132,7 @@ run "the_load_balancer_swaps_in_one_block" {
   }
 
   assert {
-    condition     = output.service_ingress == "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" && one(output.dns_records).type == "A"
+    condition     = output.service_ingress == "internal-and-load-balancer" && one(output.dns_records).type == "A"
     error_message = "the load balancer must take over how traffic reaches the service"
   }
 }
@@ -145,7 +145,7 @@ run "both_cloudflare_modules_swap_in_by_their_blocks" {
   }
 
   assert {
-    condition     = output.service_ingress == "INGRESS_TRAFFIC_ALL" && output.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for" && output.env["MY_MEDIA_ORIGIN"] == "https://media.example.org"
+    condition     = output.service_ingress == "all" && output.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for" && output.env["MY_MEDIA_ORIGIN"] == "https://media.example.org"
     error_message = "the Cloudflare modules must set the trust and the media origin"
   }
 }

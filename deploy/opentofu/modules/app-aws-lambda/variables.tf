@@ -64,7 +64,7 @@ variable "backends" {
       arn                        = string
       visibility_timeout_seconds = number
     })), {})
-    # A module of another platform's value, which this module cannot honor.
+    # What an ingress needs. Only all can be honored: read the validation below.
     service_ingress = optional(string)
     # What an ingress puts in front of the function. The module adds the Web Adapter.
     trusted_proxies = optional(list(string))
@@ -82,8 +82,8 @@ variable "backends" {
   }
 
   validation {
-    condition     = alltrue([for b in var.backends : b.service_ingress == null])
-    error_message = "service_ingress belongs to Cloud Run: an ingress-gcp-* module does not work here. Nothing can limit a Function URL to what is in front of it: read the README."
+    condition     = alltrue([for b in var.backends : b.service_ingress == null || b.service_ingress == "all"])
+    error_message = "A Function URL can only be open to all: nothing can limit it to what is in front of it for this server, so an ingress-gcp-* module and the settings of Cloud Run do not work here. Read the README."
   }
 
   validation {

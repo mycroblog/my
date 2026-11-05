@@ -151,7 +151,7 @@ output "permissions" {
 
 output "service_ingress" {
   description = "Only the load balancer reaches the service: the internet cannot go around it through the run.app URL."
-  value       = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+  value       = "internal-and-load-balancer"
 }
 
 output "ip_address" {

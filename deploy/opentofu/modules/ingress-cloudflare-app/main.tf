@@ -172,8 +172,8 @@ output "permissions" {
 }
 
 output "service_ingress" {
-  description = "Nothing asked of the platform, which leaves the service open: no platform can limit its service to Cloudflare. Read the README."
-  value       = null
+  description = "All: Cloudflare's traffic comes from the internet, and no platform can limit its service to Cloudflare, so the service is open to everyone. Read the README."
+  value       = "all"
 }
 
 output "dns_records" {

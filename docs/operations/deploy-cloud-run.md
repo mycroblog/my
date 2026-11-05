@@ -224,10 +224,11 @@ The `ingress` block of `main.tf` decides this, and swapping one for the other ch
 | Domain ownership | You, and every other account that applies, must be a [verified owner](https://cloud.google.com/run/docs/mapping-custom-domains) before you apply | Nothing beyond DNS |
 | `run.app` URL | Reachable by anyone | Refused from the internet, so nobody goes around the load balancer |
 | `MY_TRUSTED_PROXIES` | `169.254.0.0/16` | `169.254.0.0/16` and the load balancer's address |
+| `service_ingress` of the `app` block | `all` | `internal-and-load-balancer`. A disagreement with the `ingress` block fails the plan |
 
 The load balancer also needs `compute.googleapis.com`. Cloud Tasks and Cloud Scheduler arrive through neither: they call the default `run.app` URL directly.
 
-To use the service's own URL or something else in front, such as a CDN, remove the `ingress` block and its line in `backends`. Set `MY_TRUSTED_PROXIES` in `env` to what connects to the server. Whatever you put in front must still answer at `https://{host}`.
+To use the service's own URL or something else in front, such as a CDN, remove the `ingress` block and its line in `backends`, and keep `service_ingress` at what you need: it is always your explicit choice, and `all` leaves the `run.app` URL open to anyone. Set `MY_TRUSTED_PROXIES` in `env` to what connects to the server. Whatever you put in front must still answer at `https://{host}`.
 
 ### Cloudflare
 

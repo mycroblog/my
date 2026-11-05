@@ -145,6 +145,9 @@ module "app" {
   image           = var.image
   host            = var.host
   console_enabled = var.console_enabled
+  # What the ingress needs: all for the domain mapping and Cloudflare, whose traffic comes from the internet, and which leave the
+  # run.app URL open to anyone; internal-and-load-balancer for the load balancer, which closes it. A disagreement fails the plan.
+  service_ingress = "all"
 
   backends = [
     module.secrets, module.kek, module.db, module.queue, module.blob, module.stream, module.mail,
