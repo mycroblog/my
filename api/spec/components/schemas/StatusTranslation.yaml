@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+description: A post in another language. It belongs to the version of the post that was current when it was asked for.
+type: object
+required: [language, source_language, content, spoiler_text, media_attachments, poll_options]
+properties:
+  language:
+    description: The language of this answer, as a BCP 47 tag.
+    type: string
+  source_language:
+    description: The language translated from, which a provider may have detected; `und` when it is not known.
+    type: string
+  content:
+    description: The text as sanitized HTML, with the mentions, hashtags, links, custom emoji, and code of the post unchanged.
+    type: string
+  spoiler_text:
+    description: The content warning, as plain text; empty when the post has none.
+    type: string
+  media_attachments:
+    description: The alt text of the media that has any, in order.
+    type: array
+    items:
+      $ref: ./StatusTranslationAttachment.yaml
+  poll_options:
+    description: The titles of the poll's options, in the order of the options; empty when the post has no poll.
+    type: array
+    items:
+      type: string
+  provider:
+    $ref: ./TranslationProvider.yaml

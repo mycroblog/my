@@ -1198,6 +1198,18 @@ type StatusRevisionSource struct {
 	SourceFormat string
 }
 
+type StatusTranslation struct {
+	ID             string
+	StatusID       string
+	RevisionID     string
+	TargetLanguage string
+	Provider       string
+	SourceLanguage string
+	ContentHtml    string
+	SpoilerText    string
+	CreatedAt      int64
+}
+
 type SupporterCheckout struct {
 	ID                 string
 	SubscriptionID     string

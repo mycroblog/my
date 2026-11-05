@@ -65,6 +65,7 @@ Remote servers ──AP──►│                               │
 | `voice` | 同じサーバーのローカルの利用者どうしの通話のルーム（ADR-0100）。ルームの設定の版・ホストと共同ホスト・参加と役割・発話の許可・挙手・招待・再入室の禁止・終了。公開範囲・発話・ホストの資格は `internal/domain/voice` の純粋な関数（`CanSee`・`CanSpeakFreely`・`CanHost`）が判定する | Room, Revision, Participation, Participant, Invitation, Ending |
 | `search` | 投稿の全文検索（ADR-0149）。運営者が選ぶ検索エンジンのポート（`search.Index`）と索引のジョブの種類。投稿の ID だけを受け取り、既定の `search = none` ではバックエンドを持たない。アカウントとタグの検索は持たない | （読み取りモデル） |
 | `diagnostics` | 報告されたエラーのグループ（ADR-0103 §4 (2)・§7）。`ErrorReporter` の出力の 1 つ `Recorder` が指紋ごとに 1 時間ごとの件数と最新の 1 件を数え、新しいグループと、解決したグループの別の版での再発（`regressed`）をドメインイベントで知らせる。解決・ミュート・ミュートの解除と、90 日より古い件数の定期の削除 | ErrorGroup, ErrorGroupEvent |
+| `translation` | 読者が求めた投稿の翻訳（ADR-0148）。閲覧の判定・提供元の候補・キャッシュ・上限・提供元の呼び出しと出力の確かめ。翻訳は連合しない | StatusTranslation |
 | `i18n` | ロケール解決・メッセージカタログ・整形 | （横断。`internal/i18n` の 1 パッケージで、`domain` / `app` の層を持たない） |
 
 ### 依存ルール

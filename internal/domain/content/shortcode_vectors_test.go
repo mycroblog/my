@@ -43,8 +43,8 @@ func TestScanShortcodesVectors(t *testing.T) {
 					codes = append(codes, code)
 				}
 			}
-			if got := shortcodeSpans(tc.Text); !slices.Equal(got, want) {
-				t.Errorf("shortcodeSpans(%q) = %v, want %v", tc.Text, got, want)
+			if got := ShortcodeSpans(tc.Text); !slices.Equal(got, want) {
+				t.Errorf("ShortcodeSpans(%q) = %v, want %v", tc.Text, got, want)
 			}
 			if got := ScanShortcodes(tc.Text); !slices.Equal(got, codes) {
 				t.Errorf("ScanShortcodes(%q) = %q, want %q", tc.Text, got, codes)

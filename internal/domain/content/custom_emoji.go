@@ -199,7 +199,7 @@ func CheckCustomEmojiImage(f CustomEmojiImageFacts, maxBytes int64) error {
 func ScanShortcodes(texts ...string) []string {
 	var out []string
 	for _, t := range texts {
-		for _, span := range shortcodeSpans(t) {
+		for _, span := range ShortcodeSpans(t) {
 			if code := t[span[0]+1 : span[1]-1]; !slices.Contains(out, code) {
 				out = append(out, code)
 			}
@@ -208,9 +208,9 @@ func ScanShortcodes(texts ...string) []string {
 	return out
 }
 
-// shortcodeSpans returns the byte ranges [start, end) of every :shortcode: in t, colons
+// ShortcodeSpans returns the byte ranges [start, end) of every :shortcode: in t, colons
 // included, in order, under the rules of ScanShortcodes.
-func shortcodeSpans(t string) [][2]int {
+func ShortcodeSpans(t string) [][2]int {
 	var out [][2]int
 	for i := 0; i < len(t); i++ {
 		if t[i] != ':' || i > 0 && blocksShortcode(t, i, true) {

@@ -643,6 +643,22 @@
     "defaultMessage": "[{max,plural,one{{name} ƈȧȧƞ ħȧȧṽḗḗ ȧȧŧ ḿǿǿşŧ # īŧḗḗḿ.} other{{name} ƈȧȧƞ ħȧȧṽḗḗ ȧȧŧ ḿǿǿşŧ # īŧḗḗḿş.}}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.translation.failed": {
+    "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ƈǿǿŭŭŀḓ ƞǿǿŧ ƀḗḗ ŧřȧȧƞşŀȧȧŧḗḗḓ. Ŧřẏ ȧȧɠȧȧīƞ ŀȧȧŧḗḗř.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.translation.limit": {
+    "defaultMessage": "[Ŧħḗḗ ḿǿǿƞŧħŀẏ ŧřȧȧƞşŀȧȧŧīǿǿƞ ŀīḿīŧ īş řḗḗȧȧƈħḗḗḓ. Ŧřȧȧƞşŀȧȧŧīǿǿƞ īş ȧȧṽȧȧīŀȧȧƀŀḗḗ ȧȧɠȧȧīƞ ƞḗḗẋŧ ḿǿǿƞŧħ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.translation.unavailable": {
+    "defaultMessage": "[Ŧħīş ƥǿǿşŧ ƈȧȧƞƞǿǿŧ ƀḗḗ ŧřȧȧƞşŀȧȧŧḗḗḓ ǿǿƞ ŧħīş şḗḗřṽḗḗř.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.translation.unsupported_language": {
+    "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ƈȧȧƞƞǿǿŧ ƀḗḗ ŧřȧȧƞşŀȧȧŧḗḗḓ īƞŧǿǿ ŧħȧȧŧ ŀȧȧƞɠŭŭȧȧɠḗḗ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.two_factor.code_invalid": {
     "defaultMessage": "[Ŧħḗḗ ƈǿǿḓḗḗ īş īƞƈǿǿřřḗḗƈŧ ǿǿř ẇȧȧş ȧȧŀřḗḗȧȧḓẏ ŭŭşḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -451,6 +451,22 @@
     "defaultMessage": "{max, plural, other {1 件の投稿に添付できるファイルは重複なしで # 個までです。}}",
     "description": "Detail of the HTTP 422 API error when a post attaches too many media files or the same file twice. {max} is the maximum number of files."
   },
+  "errors.translation.failed": {
+    "defaultMessage": "投稿を翻訳できませんでした。しばらくしてからもう一度試してください。",
+    "description": "API error title for HTTP 503 when no translation service returned a usable translation of a post."
+  },
+  "errors.translation.limit": {
+    "defaultMessage": "今月の翻訳の上限に達しました。来月からまた翻訳できます。",
+    "description": "API error title for HTTP 429 when a user or the whole server reached the monthly limit on the characters sent to translation services."
+  },
+  "errors.translation.unavailable": {
+    "defaultMessage": "このサーバーではこの投稿を翻訳できません。",
+    "description": "API error title for HTTP 422 when no translation service of the server may receive the post: none is enabled, or none is allowed the post's visibility."
+  },
+  "errors.translation.unsupported_language": {
+    "defaultMessage": "その言語には翻訳できません。",
+    "description": "API error title for HTTP 422 when no translation service of the server translates between the post's language and the language asked for."
+  },
   "errors.streaming.too_many": {
     "defaultMessage": "開いているストリームが多すぎます。どれかを閉じてからやり直してください。",
     "description": "Detail of the HTTP 429 API error when the user already has as many real-time update streams (open tabs or devices) as the server allows."

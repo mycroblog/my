@@ -11404,6 +11404,13 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/invalid-login-provider` (422): a login provider breaks a rule;
 //     `reason` says which.
 //   - `/api/v1/problems/invalid-role` (422): a role change breaks a rule; `reason` says which.
+//   - `/api/v1/problems/translation-failed` (503): no translation provider returned a usable
+//     translation; asking again may work.
+//   - `/api/v1/problems/translation-limit` (429): a monthly limit on translated characters is
+//     reached, until the next month in UTC.
+//   - `/api/v1/problems/translation-unavailable` (422): no translation provider may receive the post.
+//   - `/api/v1/problems/translation-unsupported-language` (422): the translation providers do not
+//     translate the language.
 //   - `/api/v1/problems/voice-already-invited` (409): the account is already invited to the room.
 //   - `/api/v1/problems/voice-cannot-speak` (403): the participant may not speak in the room.
 //   - `/api/v1/problems/voice-invalid-invitee` (422): the account cannot be invited to the room.
@@ -12295,6 +12302,47 @@ type StatusTag struct {
 // StatusText The plain text; the server links mentions, hashtags, and URLs.
 type StatusText = string
 
+// StatusTranslation A post in another language. It belongs to the version of the post that was current when it was asked for.
+type StatusTranslation struct {
+	// Content The text as sanitized HTML, with the mentions, hashtags, links, custom emoji, and code of the post unchanged.
+	Content string `json:"content"`
+
+	// Language The language of this answer, as a BCP 47 tag.
+	Language string `json:"language"`
+
+	// MediaAttachments The alt text of the media that has any, in order.
+	MediaAttachments []StatusTranslationAttachment `json:"media_attachments"`
+
+	// PollOptions The titles of the poll's options, in the order of the options; empty when the post has no poll.
+	PollOptions []string `json:"poll_options"`
+
+	// Provider The service that translated a post, for the attribution next to the translation.
+	Provider *TranslationProvider `json:"provider,omitempty"`
+
+	// SourceLanguage The language translated from, which a provider may have detected; `und` when it is not known.
+	SourceLanguage string `json:"source_language"`
+
+	// SpoilerText The content warning, as plain text; empty when the post has none.
+	SpoilerText string `json:"spoiler_text"`
+}
+
+// StatusTranslationAttachment The alt text of an attached media file in the language of the translation.
+type StatusTranslationAttachment struct {
+	// Description The alt text.
+	Description string `json:"description"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+}
+
+// StatusTranslationRequest What to translate a post into.
+type StatusTranslationRequest struct {
+	// TargetLanguage The language to translate into, as a BCP 47 tag.
+	TargetLanguage string `json:"target_language"`
+}
+
 // SupporterCheckout The payment provider's hosted checkout of a subscription.
 type SupporterCheckout struct {
 	// RedirectUrl Where to go next, in the same tab, which is the checkout unless it was paid already.
@@ -12620,6 +12668,21 @@ type TotpSetup struct {
 
 	// Uri The `otpauth://totp/...` URI of the secret.
 	Uri string `json:"uri"`
+}
+
+// TranslationProvider The service that translated a post, for the attribution next to the translation.
+type TranslationProvider struct {
+	// Id The identifier of the provider on this server.
+	Id string `json:"id"`
+
+	// LogoUrl The address of the logo to show, for a provider that asks for one; omitted when there is none.
+	LogoUrl *string `json:"logo_url,omitempty"`
+
+	// Name The name to show.
+	Name string `json:"name"`
+
+	// Url The address of the provider; omitted when there is none.
+	Url *string `json:"url,omitempty"`
 }
 
 // TwoFactor Where the authenticated user's two-factor authentication (TOTP) stands.
@@ -14693,6 +14756,9 @@ type SetStatusQuotePolicyJSONRequestBody = SetQuotePolicyRequest
 // ReactToStatusJSONRequestBody defines body for ReactToStatus for application/json ContentType.
 type ReactToStatusJSONRequestBody = ReactToStatusRequest
 
+// TranslateStatusJSONRequestBody defines body for TranslateStatus for application/json ContentType.
+type TranslateStatusJSONRequestBody = StatusTranslationRequest
+
 // StartSupporterCheckoutJSONRequestBody defines body for StartSupporterCheckout for application/json ContentType.
 type StartSupporterCheckoutJSONRequestBody = SupporterPlanChoice
 
@@ -15664,6 +15730,9 @@ type ServerInterface interface {
 	// GetStatusSource Get the source of the authenticated user's status, for editing it
 	// (GET /statuses/{id}/source)
 	GetStatusSource(w http.ResponseWriter, r *http.Request, id StatusId)
+	// TranslateStatus Translate a post into a language
+	// (POST /statuses/{id}/translation)
+	TranslateStatus(w http.ResponseWriter, r *http.Request, id StatusId)
 	// ListSubscriptions List the accounts whose new posts notify the viewer
 	// (GET /subscriptions)
 	ListSubscriptions(w http.ResponseWriter, r *http.Request, params ListSubscriptionsParams)
@@ -24553,6 +24622,32 @@ func (siw *ServerInterfaceWrapper) GetStatusSource(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// TranslateStatus operation middleware
+func (siw *ServerInterfaceWrapper) TranslateStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id StatusId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TranslateStatus(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListSubscriptions operation middleware
 func (siw *ServerInterfaceWrapper) ListSubscriptions(w http.ResponseWriter, r *http.Request) {
 
@@ -26259,6 +26354,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/statuses/{id}/reaction", wrapper.UnreactToStatus)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statuses/{id}/reaction", wrapper.ReactToStatus)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}/reactions", wrapper.ListStatusReactions)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statuses/{id}/translation", wrapper.TranslateStatus)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statuses/{id}/quote_policy", wrapper.SetStatusQuotePolicy)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}/quotes", wrapper.ListStatusQuotes)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/statuses/{id}/quotes/{quote_id}/approval", wrapper.RevokeStatusQuoteApproval)
@@ -45278,6 +45374,69 @@ func (response GetStatusSourcedefaultApplicationProblemPlusJSONResponse) VisitGe
 	return err
 }
 
+type TranslateStatusRequestObject struct {
+	Id   StatusId `json:"id"`
+	Body *TranslateStatusJSONRequestBody
+}
+
+type TranslateStatusResponseObject interface {
+	VisitTranslateStatusResponse(w http.ResponseWriter) error
+}
+
+type TranslateStatus200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type TranslateStatus200JSONResponse struct {
+	Body    StatusTranslation
+	Headers TranslateStatus200ResponseHeaders
+}
+
+func (response TranslateStatus200JSONResponse) VisitTranslateStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TranslateStatusdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response TranslateStatusdefaultApplicationProblemPlusJSONResponse) VisitTranslateStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListSubscriptionsRequestObject struct {
 	Params ListSubscriptionsParams
 }
@@ -49087,6 +49246,9 @@ type StrictServerInterface interface {
 	// GetStatusSource Get the source of the authenticated user's status, for editing it
 	// (GET /statuses/{id}/source)
 	GetStatusSource(ctx context.Context, request GetStatusSourceRequestObject) (GetStatusSourceResponseObject, error)
+	// TranslateStatus Translate a post into a language
+	// (POST /statuses/{id}/translation)
+	TranslateStatus(ctx context.Context, request TranslateStatusRequestObject) (TranslateStatusResponseObject, error)
 	// ListSubscriptions List the accounts whose new posts notify the viewer
 	// (GET /subscriptions)
 	ListSubscriptions(ctx context.Context, request ListSubscriptionsRequestObject) (ListSubscriptionsResponseObject, error)
@@ -57785,6 +57947,39 @@ func (sh *strictHandler) GetStatusSource(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetStatusSourceResponseObject); ok {
 		if err := validResponse.VisitGetStatusSourceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// TranslateStatus operation middleware
+func (sh *strictHandler) TranslateStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
+	var request TranslateStatusRequestObject
+
+	request.Id = id
+
+	var body TranslateStatusJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TranslateStatus(ctx, request.(TranslateStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TranslateStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TranslateStatusResponseObject); ok {
+		if err := validResponse.VisitTranslateStatusResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

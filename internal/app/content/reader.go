@@ -9,6 +9,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
@@ -173,6 +174,46 @@ func (r *Reader) View(ctx context.Context, viewer Viewer, statusID string) (Stat
 func (r *Reader) Visible(ctx context.Context, viewer Viewer, statusID string) (content.Status, error) {
 	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
 	return st, err
+}
+
+// ReadableStatus is a status that a viewer may see, for a module that works on its text.
+type ReadableStatus struct {
+	Status content.Status
+	// Revision is its current revision.
+	Revision content.Revision
+	// EffectiveVisibility is the visibility that the server judges it by:
+	// content.EffectiveVisibility of its visibility under its author's restrictions.
+	EffectiveVisibility Visibility
+}
+
+// Readable returns what a module needs to work on the text of a status that viewer may see; a
+// status that the viewer may not see fails with ErrNotFound, the same as a missing or deleted one.
+func (r *Reader) Readable(ctx context.Context, viewer Viewer, statusID string) (ReadableStatus, error) {
+	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
+	if err != nil {
+		return ReadableStatus{}, err
+	}
+	rev, err := r.d.Statuses.FindCurrentRevision(ctx, st.ID)
+	if err != nil {
+		return ReadableStatus{}, err // a deleted status has no current revision
+	}
+	restrictions, err := r.d.Restrictions.Restrictions(ctx, st.AuthorAccountID)
+	if err != nil {
+		return ReadableStatus{}, err
+	}
+	return ReadableStatus{Status: st, Revision: rev, EffectiveVisibility: content.EffectiveVisibility(st.Visibility, restrictions.Author)}, nil
+}
+
+// HoldLive fails with ErrNotFound when the status is deleted, and otherwise keeps its deletion
+// from passing until tx ends: the deletion's projector takes the same lock before it removes the
+// head, so that what another module stores under tx is there for the deletion's projector to
+// remove, or fails here.
+func (r *Reader) HoldLive(ctx context.Context, tx uow.Tx, statusID string) error {
+	if err := r.d.Statuses.LockStatusKeys(ctx, tx, statusLockKeys(content.Status{ID: statusID}, true)); err != nil {
+		return err
+	}
+	_, err := r.d.Statuses.Head(ctx, tx, statusID)
+	return err
 }
 
 // Live fails with ErrNotFound when statusID is missing or deleted, whoever asks. It tells only

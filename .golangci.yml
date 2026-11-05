@@ -304,6 +304,8 @@ linters:
             - github.com/mycroblog/my/internal/domain/translation
             - github.com/mycroblog/my/internal/app
             - github.com/mycroblog/my/internal/i18n
+            # Splitting the sanitized HTML of a post into fragments (ADR-0148 §8): a pure-Go HTML parser, not an external resource.
+            - golang.org/x/net/html
         # app/kernel holds the ports and helpers shared by every module (Clock, IDGenerator, KeyManager);
         # it depends on nothing in the repository so that any module can import it.
         app-kernel:
