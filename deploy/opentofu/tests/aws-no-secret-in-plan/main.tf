@@ -32,6 +32,13 @@ module "kek" {
   source = "../../modules/kek-aws-secrets-manager"
 }
 
+module "db" {
+  source = "../../modules/db-aws-rds"
+
+  vpc_id     = "vpc-1"
+  subnet_ids = ["subnet-a", "subnet-b"]
+}
+
 module "secrets" {
   source = "../../modules/secrets-aws-secrets-manager"
 
