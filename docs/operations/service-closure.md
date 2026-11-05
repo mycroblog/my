@@ -126,7 +126,7 @@ For uptime monitoring, either stop the health-check monitors or point them at th
 
 ## 7. Discarding the DB, blobs and backups
 
-After stopping, discard the DB, the blobs (media and export files), the KV store and the queues, together with their backups and snapshots.
+After stopping, discard the DB, the blobs (media and export files), the KV store and the queues, together with their backups and snapshots. With a [search engine](search.md#closing-the-service), discard its index and snapshots too: they hold the text of posts.
 Before you discard anything, confirm once more that you exported and stored the records under retention holds. Discarding cannot be undone.
 
 **Keep the domain, and keep serving the static page and `410` for about a year.** Other servers see the `410`, stop fetching and delivering, and clear their caches.

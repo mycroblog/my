@@ -100,6 +100,13 @@ func (s *Service) LiveRevision(ctx context.Context, statusID, revisionID string)
 	return st, rev, nil
 }
 
+// SearchableStatusIDs returns up to limit IDs of the public and local statuses of the server in ID
+// order after the ID after ("" for the first page), deleted ones included: the walk of a rebuild of
+// the full-text search index (ADR-0149 §10), which reads each status as it is now.
+func (s *Service) SearchableStatusIDs(ctx context.Context, after string, limit int) ([]string, error) {
+	return s.d.Repository.ListSearchableStatusIDs(ctx, after, limit)
+}
+
 // AuthorSearchableStatusIDs returns up to limit IDs of the public and local statuses of an author in
 // ID order, after the ID after ("" for the first page), deleted ones included: the only statuses
 // that the full-text search can ever hold (ADR-0149 §5).
