@@ -17,6 +17,7 @@
 - [4.15 diagnostics](15-diagnostics.md)
 - [4.16 hook](16-hook.md)
 - [4.17 translation](17-translation.md)
+- [4.18 search](18-search.md)
 
 ### 4.0 所有モジュール
 
@@ -38,4 +39,5 @@
 | `diagnostics` | `error_groups`, `error_group_events`, `error_group_confirmations` | `error_group_states`, `error_group_counts`, `error_group_samples` |
 | `hook` | `hook_decisions`, `hook_decision_statuses`, `hook_decision_overrides` |  |
 | `translation` | | `status_translations`, `status_translation_attachments`, `status_translation_poll_options`, `translation_account_usage`, `translation_server_usage` |
+| `search` | | `search_rebuild`, `search_rebuild_failures` |
 | 基盤 | `job_attempts`, `data_upgrade_runs` | `jobs`, `dead_jobs`, `kv_entries` |

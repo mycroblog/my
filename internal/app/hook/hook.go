@@ -58,6 +58,14 @@ type Request struct {
 	Subject    any
 }
 
+// SignupSubject is what signup.check sends about a sign-up. Only the plugin receives it: a decision
+// holds neither of the two.
+type SignupSubject struct {
+	Email string
+	// IP is the client's address, "" when unknown.
+	IP string
+}
+
 // Answer is what a plugin returned. Outcome is checked against the hook's spec afterwards.
 type Answer struct {
 	Verdict hook.Outcome

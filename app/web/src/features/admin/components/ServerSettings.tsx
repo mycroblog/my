@@ -800,6 +800,12 @@ function PoliciesForm() {
           setting="hook_signup_check_on_failure"
           label={t("client:admin.settings.hooks.signup_check.on_failure")}
         />
+        <PolicyCheckbox
+          form={form}
+          setting="hook_signup_check_reject"
+          label={t("client:admin.settings.hooks.signup_check.reject")}
+          description={t("client:admin.settings.hooks.signup_check.reject.description")}
+        />
         <PolicyRadios
           form={form}
           setting="hook_media_check_mode"

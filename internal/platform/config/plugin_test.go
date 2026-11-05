@@ -78,7 +78,7 @@ func TestPlainTCPIsRefusedForTheKindsOfTheRule(t *testing.T) {
 			}
 		}
 		for _, addr := range []string{"unix:///run/my/p.sock", "https://plugin.internal"} {
-			if _, issues := loadPlugin(t, map[string]string{env: addr}); len(issues) != 0 {
+			if _, issues := loadPlugin(t, map[string]string{env: addr, "MY_PLUGIN_TRANSLATOR_NAME": "A translator"}); len(issues) != 0 {
 				t.Errorf("%s at %s: issues = %v", name, addr, issues)
 			}
 		}

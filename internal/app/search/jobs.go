@@ -28,7 +28,8 @@ const (
 	// JobNarrow removes the documents of a visibility that search_visibilities no longer
 	// includes. Its payload names the visibility.
 	JobNarrow = "search.narrow"
-	// JobRebuild refills the index from the database in batches. Its payload is a cursor.
+	// JobRebuild walks the statuses of the database in batches, in one chain of jobs. Its payload
+	// names the rebuild and the cursor of the walk.
 	JobRebuild = "search.rebuild"
 )
 
@@ -61,13 +62,13 @@ type narrowPayload struct {
 // RegisterJobs registers the handlers of the jobs, with or without a backend: a type with no
 // handler ends in a dead job, and worker_job_types refuses to start when a type it names does not
 // exist (ADR-0149 §7). Without a backend they succeed doing nothing: only a job enqueued before the
-// server moved to search = none can run. JobRebuild has no sender yet and does nothing either.
+// server moved to search = none can run.
 func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry) {
 	reg.Register(JobSyncStatus, s.withBackend(s.handleSyncStatus))
 	reg.Register(JobSyncAuthor, s.withBackend(s.handleSyncAuthor))
 	reg.Register(JobSyncDomain, s.withBackend(s.handleSyncDomain))
 	reg.Register(JobNarrow, s.withBackend(s.handleNarrow))
-	reg.Register(JobRebuild, func(context.Context, queue.Job) queue.Result { return queue.Done() })
+	reg.Register(JobRebuild, s.withBackend(s.handleRebuild))
 }
 
 func (s *Service) withBackend(h func(context.Context, queue.Job) queue.Result) func(context.Context, queue.Job) queue.Result {

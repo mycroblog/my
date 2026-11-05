@@ -87,78 +87,6 @@
     "defaultMessage": "The contact and thumbnail are already saved.",
     "description": "Status after pressing the save button of the contact and thumbnail without changing anything."
   },
-  "admin.settings.crawlers.ai": {
-    "defaultMessage": "AI",
-    "description": "Label of the radio group of what the server states to AI crawlers (ai_usage)."
-  },
-  "admin.settings.crawlers.ai.allow": {
-    "defaultMessage": "Allow",
-    "description": "Choice that reserves nothing against AI."
-  },
-  "admin.settings.crawlers.ai.allow.description": {
-    "defaultMessage": "The server reserves nothing against AI. Accounts may still deny it for their own pages.",
-    "description": "Description of reserving nothing against AI."
-  },
-  "admin.settings.crawlers.ai.deny": {
-    "defaultMessage": "Deny training and use",
-    "description": "Choice that denies both the training and the use by AI."
-  },
-  "admin.settings.crawlers.ai.deny.description": {
-    "defaultMessage": "AI crawlers are denied, including AI search, assistants and agents that people ask to read a page.",
-    "description": "Description of denying both the training and the use by AI."
-  },
-  "admin.settings.crawlers.ai.deny_training": {
-    "defaultMessage": "Deny training",
-    "description": "Choice that denies the training of AI models only."
-  },
-  "admin.settings.crawlers.ai.deny_training.description": {
-    "defaultMessage": "The crawlers that collect data to train AI models are denied. AI search and assistants that people ask to read a page are not.",
-    "description": "Description of denying the training of AI models only."
-  },
-  "admin.settings.crawlers.description": {
-    "defaultMessage": "What the server states to search engines and AI crawlers. Until they are set, the server denies both. The server makes its robots.txt from these settings and a bundled list of known AI crawlers, and states them on every page. Each account can deny more for its own pages, never less.",
-    "description": "Explanation of the section of the server settings about search engines and AI crawlers."
-  },
-  "admin.settings.crawlers.indexable_default": {
-    "defaultMessage": "New accounts allow search indexing",
-    "description": "Label of the checkbox of whether new accounts allow search indexing (indexable_default)."
-  },
-  "admin.settings.crawlers.indexable_default.description": {
-    "defaultMessage": "The setting that accounts registered from now on start with. Existing accounts keep their own choice.",
-    "description": "Help text of the indexable default checkbox."
-  },
-  "admin.settings.crawlers.search": {
-    "defaultMessage": "Search engines",
-    "description": "Label of the radio group of whether search engines may index the server's pages (search_indexing)."
-  },
-  "admin.settings.crawlers.search.allow": {
-    "defaultMessage": "Allow indexing",
-    "description": "Choice that lets search engines index the pages of the accounts that allow it."
-  },
-  "admin.settings.crawlers.search.allow.description": {
-    "defaultMessage": "Search engines may index the profiles and public posts of the accounts that allow it. Other pages stay out of their index.",
-    "description": "Description of letting search engines index pages."
-  },
-  "admin.settings.crawlers.search.deny": {
-    "defaultMessage": "Deny indexing",
-    "description": "Choice that asks search engines not to index any page."
-  },
-  "admin.settings.crawlers.search.deny.description": {
-    "defaultMessage": "Every page asks search engines not to index it (noindex). Link previews keep working.",
-    "description": "Description of asking search engines not to index any page."
-  },
-  "admin.settings.crawlers.security_contact": {
-    "defaultMessage": "Security contact",
-    "description": "Label of the field of the address to report vulnerabilities to (security_contact)."
-  },
-  "admin.settings.crawlers.security_contact.description": {
-    "defaultMessage": "Where to report vulnerabilities: an https: or mailto: address, such as mailto:security@example.com. The server serves /.well-known/security.txt only while it is set.",
-    "description": "Help text of the security contact field."
-  },
-  "admin.settings.crawlers.title": {
-    "defaultMessage": "Search engines and AI",
-    "description": "Heading of the section of the server settings about search engines and AI crawlers."
-  },
   "admin.settings.descriptions.description": {
     "defaultMessage": "The short description is a paragraph that the about page and other apps show next to the server's name; the full description says more on the about page. Write them once, in any language: everyone sees them as they are, whatever the language of their app.",
     "description": "Description of the server's descriptions."
@@ -198,6 +126,226 @@
   "admin.settings.domain_actions.comments.everyone": {
     "defaultMessage": "Everyone who may read the list sees the comments.",
     "description": "Description of showing the comments of the domain actions to everyone."
+  },
+  "admin.settings.finance.title": {
+    "defaultMessage": "Running costs",
+    "description": "Heading of the section of the publication of the running costs in the server settings."
+  },
+  "admin.settings.finance.description": {
+    "defaultMessage": "The about page and the API can publish the totals of the costs recorded on the Costs screen. The names and notes of the items and the individual payments are never published.",
+    "description": "Explanation of the publication of the running costs in the server settings."
+  },
+  "admin.settings.finance.visibility": {
+    "defaultMessage": "What to publish",
+    "description": "Label of the radio buttons of how much of the running costs the server publishes."
+  },
+  "admin.settings.finance.private": {
+    "defaultMessage": "Nothing",
+    "description": "Choice of not publishing the running costs."
+  },
+  "admin.settings.finance.private.description": {
+    "defaultMessage": "Only the people who manage the costs see them.",
+    "description": "Description of not publishing the running costs."
+  },
+  "admin.settings.finance.totals": {
+    "defaultMessage": "Totals",
+    "description": "Choice of publishing the totals of the running costs only."
+  },
+  "admin.settings.finance.totals.description": {
+    "defaultMessage": "Everyone sees the total of each currency by week, month, and year.",
+    "description": "Description of publishing the totals of the running costs only."
+  },
+  "admin.settings.finance.breakdown": {
+    "defaultMessage": "Totals and breakdown",
+    "description": "Choice of publishing the running costs with their breakdown by provider and category."
+  },
+  "admin.settings.finance.breakdown.description": {
+    "defaultMessage": "Everyone also sees the totals by provider and category. This reveals which providers, such as cloud services, run this server.",
+    "description": "Description of publishing the running costs with their breakdown, which reveals the providers that run the server."
+  },
+  "admin.settings.finance.viewer.description": {
+    "defaultMessage": "People whose roles let them read the finances see the totals and their breakdown by provider and category on the finances page, whatever is published. Choose what else they see.",
+    "description": "Introduction of the settings of what the holders of the view_finance permission see, in the costs section of the server settings."
+  },
+  "admin.settings.finance.viewer.item_names": {
+    "defaultMessage": "Show the names of the items",
+    "description": "Checkbox of the server setting finance_viewer_item_names."
+  },
+  "admin.settings.finance.viewer.item_names.description": {
+    "defaultMessage": "The names of the recorded costs and the services of the imported charges, with their amounts.",
+    "description": "Description of the checkbox of the server setting finance_viewer_item_names."
+  },
+  "admin.settings.finance.viewer.item_memos": {
+    "defaultMessage": "Show the memos of the items",
+    "description": "Checkbox of the server setting finance_viewer_item_memos."
+  },
+  "admin.settings.finance.viewer.item_memos.description": {
+    "defaultMessage": "The memos of the recorded costs, with their amounts. Memos may hold notes meant for the operators only.",
+    "description": "Description of the checkbox of the server setting finance_viewer_item_memos."
+  },
+  "admin.settings.finance.viewer.income": {
+    "defaultMessage": "Income",
+    "description": "Label of the choice of the server setting finance_viewer_income: how much of the income the holders of view_finance see."
+  },
+  "admin.settings.finance.viewer.income.totals": {
+    "defaultMessage": "Totals only",
+    "description": "Choice of showing the totals of the income only to the holders of view_finance."
+  },
+  "admin.settings.finance.viewer.income.totals.description": {
+    "defaultMessage": "The total of each currency by week, month, and year.",
+    "description": "Description of showing the totals of the income only."
+  },
+  "admin.settings.finance.viewer.income.plans": {
+    "defaultMessage": "Totals and members of each plan",
+    "description": "Choice of showing the totals of the income and the number of members of each plan to the holders of view_finance."
+  },
+  "admin.settings.finance.viewer.income.plans.description": {
+    "defaultMessage": "Also how many members each plan has, never its amounts or who they are.",
+    "description": "Description of showing the number of members of each plan too."
+  },
+  "admin.settings.income.title": {
+    "defaultMessage": "Income",
+    "description": "Heading of the section of the publication of the income in the server settings."
+  },
+  "admin.settings.income.description": {
+    "defaultMessage": "The about page and the API can publish the income from the supporter plans, after the payment provider's fees and refunds. Who paid, how much each paid, the amounts of each plan, and the fees are never published. When both the costs and the income are published, the balance is published too.",
+    "description": "Explanation of the publication of the income in the server settings."
+  },
+  "admin.settings.income.visibility": {
+    "defaultMessage": "What to publish",
+    "description": "Label of the radio buttons of how much of the income the server publishes."
+  },
+  "admin.settings.income.private": {
+    "defaultMessage": "Nothing",
+    "description": "Choice of not publishing the income."
+  },
+  "admin.settings.income.private.description": {
+    "defaultMessage": "Only the people who manage or may read the finances see it.",
+    "description": "Description of not publishing the income."
+  },
+  "admin.settings.income.totals": {
+    "defaultMessage": "Totals",
+    "description": "Choice of publishing the totals of the income only."
+  },
+  "admin.settings.income.totals.description": {
+    "defaultMessage": "Everyone sees the income of each currency by week, month, and year.",
+    "description": "Description of publishing the totals of the income only."
+  },
+  "admin.settings.income.plans": {
+    "defaultMessage": "Totals and members of each plan",
+    "description": "Choice of publishing the totals of the income and the number of members of each plan."
+  },
+  "admin.settings.income.plans.description": {
+    "defaultMessage": "Everyone also sees how many members each plan has now, never its amounts. On a plan with few members, people may guess who they are.",
+    "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
+  },
+  "admin.settings.supporter_list.title": {
+    "defaultMessage": "Supporter list",
+    "description": "Heading of the section of the supporter list in the server settings."
+  },
+  "admin.settings.supporter_list.description": {
+    "defaultMessage": "The supporter list on /about/supporters shows, by plan, the members who chose to be listed: their avatar, name and handle only, never amounts or dates. Search engines are always asked not to index it.",
+    "description": "Explanation of the supporter list setting."
+  },
+  "admin.settings.supporter_list.visibility": {
+    "defaultMessage": "Who may read the supporter list",
+    "description": "Label of the choice of who may read the supporter list."
+  },
+  "admin.settings.supporter_list.off": {
+    "defaultMessage": "Nobody",
+    "description": "Choice: nobody may read the supporter list."
+  },
+  "admin.settings.supporter_list.off.description": {
+    "defaultMessage": "The list is not published, and the about page does not link to it.",
+    "description": "Description of not publishing the supporter list."
+  },
+  "admin.settings.supporter_list.everyone": {
+    "defaultMessage": "Everyone",
+    "description": "Choice: everyone may read the supporter list."
+  },
+  "admin.settings.supporter_list.everyone.description": {
+    "defaultMessage": "Anyone may read the list, signed in or not.",
+    "description": "Description of publishing the supporter list to everyone."
+  },
+  "admin.settings.supporter_list.signed_in": {
+    "defaultMessage": "Signed-in users",
+    "description": "Choice: only signed-in users may read the supporter list."
+  },
+  "admin.settings.supporter_list.signed_in.description": {
+    "defaultMessage": "Only people signed in to this server may read the list.",
+    "description": "Description of publishing the supporter list to signed-in users only."
+  },
+  "admin.settings.crawlers.title": {
+    "defaultMessage": "Search engines and AI",
+    "description": "Heading of the section of the server settings about search engines and AI crawlers."
+  },
+  "admin.settings.crawlers.description": {
+    "defaultMessage": "What the server states to search engines and AI crawlers. Until they are set, the server denies both. The server makes its robots.txt from these settings and a bundled list of known AI crawlers, and states them on every page. Each account can deny more for its own pages, never less.",
+    "description": "Explanation of the section of the server settings about search engines and AI crawlers."
+  },
+  "admin.settings.crawlers.search": {
+    "defaultMessage": "Search engines",
+    "description": "Label of the radio group of whether search engines may index the server's pages (search_indexing)."
+  },
+  "admin.settings.crawlers.search.allow": {
+    "defaultMessage": "Allow indexing",
+    "description": "Choice that lets search engines index the pages of the accounts that allow it."
+  },
+  "admin.settings.crawlers.search.allow.description": {
+    "defaultMessage": "Search engines may index the profiles and public posts of the accounts that allow it. Other pages stay out of their index.",
+    "description": "Description of letting search engines index pages."
+  },
+  "admin.settings.crawlers.search.deny": {
+    "defaultMessage": "Deny indexing",
+    "description": "Choice that asks search engines not to index any page."
+  },
+  "admin.settings.crawlers.search.deny.description": {
+    "defaultMessage": "Every page asks search engines not to index it (noindex). Link previews keep working.",
+    "description": "Description of asking search engines not to index any page."
+  },
+  "admin.settings.crawlers.indexable_default": {
+    "defaultMessage": "New accounts allow search indexing",
+    "description": "Label of the checkbox of whether new accounts allow search indexing (indexable_default)."
+  },
+  "admin.settings.crawlers.indexable_default.description": {
+    "defaultMessage": "The setting that accounts registered from now on start with. Existing accounts keep their own choice.",
+    "description": "Help text of the indexable default checkbox."
+  },
+  "admin.settings.crawlers.ai": {
+    "defaultMessage": "AI",
+    "description": "Label of the radio group of what the server states to AI crawlers (ai_usage)."
+  },
+  "admin.settings.crawlers.ai.allow": {
+    "defaultMessage": "Allow",
+    "description": "Choice that reserves nothing against AI."
+  },
+  "admin.settings.crawlers.ai.allow.description": {
+    "defaultMessage": "The server reserves nothing against AI. Accounts may still deny it for their own pages.",
+    "description": "Description of reserving nothing against AI."
+  },
+  "admin.settings.crawlers.ai.deny_training": {
+    "defaultMessage": "Deny training",
+    "description": "Choice that denies the training of AI models only."
+  },
+  "admin.settings.crawlers.ai.deny_training.description": {
+    "defaultMessage": "The crawlers that collect data to train AI models are denied. AI search and assistants that people ask to read a page are not.",
+    "description": "Description of denying the training of AI models only."
+  },
+  "admin.settings.crawlers.ai.deny": {
+    "defaultMessage": "Deny training and use",
+    "description": "Choice that denies both the training and the use by AI."
+  },
+  "admin.settings.crawlers.ai.deny.description": {
+    "defaultMessage": "AI crawlers are denied, including AI search, assistants and agents that people ask to read a page.",
+    "description": "Description of denying both the training and the use by AI."
+  },
+  "admin.settings.crawlers.security_contact": {
+    "defaultMessage": "Security contact",
+    "description": "Label of the field of the address to report vulnerabilities to (security_contact)."
+  },
+  "admin.settings.crawlers.security_contact.description": {
+    "defaultMessage": "Where to report vulnerabilities: an https: or mailto: address, such as mailto:security@example.com. The server serves /.well-known/security.txt only while it is set.",
+    "description": "Help text of the security contact field."
   },
   "admin.settings.domain_actions.comments.off": {
     "defaultMessage": "The comments are not shown.",
@@ -243,22 +391,6 @@
     "defaultMessage": "{count, plural, one {# second} other {# seconds}}",
     "description": "A length of time in seconds."
   },
-  "admin.settings.featured.accounts": {
-    "defaultMessage": "Accounts to suggest first",
-    "description": "Label of the field with the usernames of the accounts that the suggestions show first."
-  },
-  "admin.settings.featured.accounts.description": {
-    "defaultMessage": "Usernames of up to 20 accounts of this server, separated by spaces.",
-    "description": "Help text of the field of the accounts that the suggestions show first."
-  },
-  "admin.settings.featured.description": {
-    "defaultMessage": "New and returning users see suggestions of people to follow: the accounts below first, in this order, then the people of this server who posted recently. Someone who turned off being suggested is left out.",
-    "description": "Note of the suggested accounts section of the server settings."
-  },
-  "admin.settings.featured.title": {
-    "defaultMessage": "Suggested accounts",
-    "description": "Heading of the section of the server settings about the accounts suggested to follow."
-  },
   "admin.settings.federation.authorized_fetch": {
     "defaultMessage": "Require signed requests (authorized fetch)",
     "description": "Checkbox of the authorized fetch setting."
@@ -287,6 +419,10 @@
     "defaultMessage": "Federation direction",
     "description": "Label of the radio buttons of the federation direction setting (federation_mode, ADR-0006): which way posts flow between this server and other servers."
   },
+  "admin.settings.federation.mode.description": {
+    "defaultMessage": "Which way posts, follows and reactions flow between this server and other servers. The change takes effect at once.",
+    "description": "Description of the federation direction radio buttons."
+  },
   "admin.settings.federation.mode.both": {
     "defaultMessage": "Both ways",
     "description": "Federation direction choice: send to and receive from other servers (the default)."
@@ -294,10 +430,6 @@
   "admin.settings.federation.mode.both.description": {
     "defaultMessage": "Users follow and read accounts of other servers, and this server delivers its posts to their followers there.",
     "description": "Description of the federation direction choice 'Both ways'."
-  },
-  "admin.settings.federation.mode.description": {
-    "defaultMessage": "Which way posts, follows and reactions flow between this server and other servers. The change takes effect at once.",
-    "description": "Description of the federation direction radio buttons."
   },
   "admin.settings.federation.mode.inbound": {
     "defaultMessage": "Receive only",
@@ -307,6 +439,14 @@
     "defaultMessage": "Users follow and read accounts of other servers, but the posts, profiles and reactions of this server do not go out, and follows from other servers are declined.",
     "description": "Description of the federation direction choice 'Receive only'."
   },
+  "admin.settings.federation.mode.outbound": {
+    "defaultMessage": "Send only",
+    "description": "Federation direction choice: only send to other servers."
+  },
+  "admin.settings.federation.mode.outbound.description": {
+    "defaultMessage": "Accounts of other servers can follow users here and receive their posts, but the posts and reactions of other servers are not taken in, and users cannot follow or look up accounts of other servers.",
+    "description": "Description of the federation direction choice 'Send only'."
+  },
   "admin.settings.federation.mode.off": {
     "defaultMessage": "Off",
     "description": "Federation direction choice: no federation at all."
@@ -315,13 +455,33 @@
     "defaultMessage": "Nothing is sent to other servers and nothing is taken in from them. This server works on its own.",
     "description": "Description of the federation direction choice 'Off'."
   },
-  "admin.settings.federation.mode.outbound": {
-    "defaultMessage": "Send only",
-    "description": "Federation direction choice: only send to other servers."
+  "admin.settings.federation.narrow.title": {
+    "defaultMessage": "Change the federation direction to “{mode}”?",
+    "description": "Title of the confirmation before saving a federation direction that stops something from flowing. {mode} is the chosen direction, such as 'Receive only'."
   },
-  "admin.settings.federation.mode.outbound.description": {
-    "defaultMessage": "Accounts of other servers can follow users here and receive their posts, but the posts and reactions of other servers are not taken in, and users cannot follow or look up accounts of other servers.",
-    "description": "Description of the federation direction choice 'Send only'."
+  "admin.settings.federation.narrow.description": {
+    "defaultMessage": "Changing from “{from}” to “{to}” takes effect as soon as it is saved:",
+    "description": "First sentence of the confirmation before narrowing the federation direction, followed by a list of what changes. {from} and {to} are the saved and the chosen directions."
+  },
+  "admin.settings.federation.narrow.sending": {
+    "defaultMessage": "The posts, profiles and reactions of this server no longer reach other servers. Followers there stay but receive nothing, and what is posted meanwhile is not delivered later.",
+    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops sending to other servers."
+  },
+  "admin.settings.federation.narrow.receiving": {
+    "defaultMessage": "Posts and reactions from other servers no longer come in, and users can no longer follow or look up accounts of other servers. Their follows of remote accounts stay but are no longer updated.",
+    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops receiving from other servers."
+  },
+  "admin.settings.federation.narrow.deletions": {
+    "defaultMessage": "Posts and accounts deleted while federation is off are not deleted on other servers: their copies there stay.",
+    "description": "Item of the list in the confirmation before turning federation off."
+  },
+  "admin.settings.federation.narrow.relations": {
+    "defaultMessage": "Follows with other servers, the posts taken in and the delivery records are kept, and nothing is sent to end the follows.",
+    "description": "Last item of the list in the confirmation before narrowing the federation direction."
+  },
+  "admin.settings.federation.narrow.widen": {
+    "defaultMessage": "Widening the direction again later resumes the flow from then on.",
+    "description": "Note under the list in the confirmation before narrowing the federation direction."
   },
   "admin.settings.federation.narrow.cancel": {
     "defaultMessage": "Cancel",
@@ -331,113 +491,381 @@
     "defaultMessage": "Change and save",
     "description": "Button that saves the settings with the narrower federation direction."
   },
-  "admin.settings.federation.narrow.deletions": {
-    "defaultMessage": "Posts and accounts deleted while federation is off are not deleted on other servers: their copies there stay.",
-    "description": "Item of the list in the confirmation before turning federation off."
-  },
-  "admin.settings.federation.narrow.description": {
-    "defaultMessage": "Changing from “{from}” to “{to}” takes effect as soon as it is saved:",
-    "description": "First sentence of the confirmation before narrowing the federation direction, followed by a list of what changes. {from} and {to} are the saved and the chosen directions."
-  },
-  "admin.settings.federation.narrow.receiving": {
-    "defaultMessage": "Posts and reactions from other servers no longer come in, and users can no longer follow or look up accounts of other servers. Their follows of remote accounts stay but are no longer updated.",
-    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops receiving from other servers."
-  },
-  "admin.settings.federation.narrow.relations": {
-    "defaultMessage": "Follows with other servers, the posts taken in and the delivery records are kept, and nothing is sent to end the follows.",
-    "description": "Last item of the list in the confirmation before narrowing the federation direction."
-  },
-  "admin.settings.federation.narrow.sending": {
-    "defaultMessage": "The posts, profiles and reactions of this server no longer reach other servers. Followers there stay but receive nothing, and what is posted meanwhile is not delivered later.",
-    "description": "Item of the list in the confirmation before narrowing the federation direction, when the new direction stops sending to other servers."
-  },
-  "admin.settings.federation.narrow.title": {
-    "defaultMessage": "Change the federation direction to “{mode}”?",
-    "description": "Title of the confirmation before saving a federation direction that stops something from flowing. {mode} is the chosen direction, such as 'Receive only'."
-  },
-  "admin.settings.federation.narrow.widen": {
-    "defaultMessage": "Widening the direction again later resumes the flow from then on.",
-    "description": "Note under the list in the confirmation before narrowing the federation direction."
-  },
   "admin.settings.federation.title": {
     "defaultMessage": "Federation",
     "description": "Heading of the section of the federation settings."
   },
-  "admin.settings.finance.breakdown": {
-    "defaultMessage": "Totals and breakdown",
-    "description": "Choice of publishing the running costs with their breakdown by provider and category."
+  "admin.settings.language.default": {
+    "defaultMessage": "Default language",
+    "description": "Label of the select of the server's default language."
   },
-  "admin.settings.finance.breakdown.description": {
-    "defaultMessage": "Everyone also sees the totals by provider and category. This reveals which providers, such as cloud services, run this server.",
-    "description": "Description of publishing the running costs with their breakdown, which reveals the providers that run the server."
+  "admin.settings.language.description": {
+    "defaultMessage": "The language of new accounts and of visitors whose language the app does not have.",
+    "description": "Help of the server's default language."
   },
-  "admin.settings.finance.description": {
-    "defaultMessage": "The about page and the API can publish the totals of the costs recorded on the Costs screen. The names and notes of the items and the individual payments are never published.",
-    "description": "Explanation of the publication of the running costs in the server settings."
+  "admin.settings.language.title": {
+    "defaultMessage": "Language",
+    "description": "Heading of the section of the server's default language."
   },
-  "admin.settings.finance.private": {
-    "defaultMessage": "Nothing",
-    "description": "Choice of not publishing the running costs."
+  "admin.settings.name.blank": {
+    "defaultMessage": "Enter a name with letters, or leave the field empty.",
+    "description": "Error of a field of the server's name that holds only spaces."
   },
-  "admin.settings.finance.private.description": {
-    "defaultMessage": "Only the people who manage the costs see them.",
-    "description": "Description of not publishing the running costs."
+  "admin.settings.name.description": {
+    "defaultMessage": "People see the name in place of the domain {domain} where the app names this server: the sidebar, the browser tab, the sign-in pages, emails and link previews. Write it once, in any language: everyone sees the same name, whatever the language of their app. Without a name, the domain shows. Handles and links always use the domain.",
+    "description": "Explanation above the fields of the server's name on the server settings screen. {domain} is the server's domain name."
   },
-  "admin.settings.finance.title": {
-    "defaultMessage": "Running costs",
-    "description": "Heading of the section of the publication of the running costs in the server settings."
+  "admin.settings.name.field": {
+    "defaultMessage": "Name",
+    "description": "Label of the server's name."
   },
-  "admin.settings.finance.totals": {
-    "defaultMessage": "Totals",
-    "description": "Choice of publishing the totals of the running costs only."
+  "admin.settings.name.save": {
+    "defaultMessage": "Save",
+    "description": "Button that saves the server's names on the server settings screen."
   },
-  "admin.settings.finance.totals.description": {
-    "defaultMessage": "Everyone sees the total of each currency by week, month, and year.",
-    "description": "Description of publishing the totals of the running costs only."
+  "admin.settings.name.save_failed": {
+    "defaultMessage": "Could not save the name: {reason}",
+    "description": "Error when saving the server's name failed. {reason} is the server's localized reason, which names the field at fault."
   },
-  "admin.settings.finance.viewer.description": {
-    "defaultMessage": "People whose roles let them read the finances see the totals and their breakdown by provider and category on the finances page, whatever is published. Choose what else they see.",
-    "description": "Introduction of the settings of what the holders of the view_finance permission see, in the costs section of the server settings."
+  "admin.settings.name.saved": {
+    "defaultMessage": "Saved the name.",
+    "description": "Status after the server's names were saved; the sidebar and the browser tab show the new name."
   },
-  "admin.settings.finance.viewer.income": {
-    "defaultMessage": "Income",
-    "description": "Label of the choice of the server setting finance_viewer_income: how much of the income the holders of view_finance see."
+  "admin.settings.name.title": {
+    "defaultMessage": "Name",
+    "description": "Heading of the section of the server's name on the server settings screen."
   },
-  "admin.settings.finance.viewer.income.plans": {
-    "defaultMessage": "Totals and members of each plan",
-    "description": "Choice of showing the totals of the income and the number of members of each plan to the holders of view_finance."
+  "admin.settings.name.too_long": {
+    "defaultMessage": "Use at most {max} characters.",
+    "description": "Error of a field of the server's name whose text is longer than its limit. {max} is the limit."
   },
-  "admin.settings.finance.viewer.income.plans.description": {
-    "defaultMessage": "Also how many members each plan has, never its amounts or who they are.",
-    "description": "Description of showing the number of members of each plan too."
+  "admin.settings.name.unchanged": {
+    "defaultMessage": "The name is already saved.",
+    "description": "Status after pressing Save on the server settings screen without changing a name."
   },
-  "admin.settings.finance.viewer.income.totals": {
-    "defaultMessage": "Totals only",
-    "description": "Choice of showing the totals of the income only to the holders of view_finance."
+  "admin.settings.policies.save": {
+    "defaultMessage": "Save the settings",
+    "description": "Button that saves the registration, language, timeline, federation and domain action settings together."
   },
-  "admin.settings.finance.viewer.income.totals.description": {
-    "defaultMessage": "The total of each currency by week, month, and year.",
-    "description": "Description of showing the totals of the income only."
+  "admin.settings.policies.save_failed": {
+    "defaultMessage": "Could not save the settings; nothing was changed: {reason}",
+    "description": "Error when saving the server's settings failed. {reason} is the server's localized reason, which names the setting at fault."
   },
-  "admin.settings.finance.viewer.item_memos": {
-    "defaultMessage": "Show the memos of the items",
-    "description": "Checkbox of the server setting finance_viewer_item_memos."
+  "admin.settings.policies.saved": {
+    "defaultMessage": "Saved the settings. They take effect at once, and the audit log records each change.",
+    "description": "Status after the server's settings were saved."
   },
-  "admin.settings.finance.viewer.item_memos.description": {
-    "defaultMessage": "The memos of the recorded costs, with their amounts. Memos may hold notes meant for the operators only.",
-    "description": "Description of the checkbox of the server setting finance_viewer_item_memos."
+  "admin.settings.policies.unchanged": {
+    "defaultMessage": "The settings are already saved.",
+    "description": "Status after pressing the save button of the settings without changing one."
   },
-  "admin.settings.finance.viewer.item_names": {
-    "defaultMessage": "Show the names of the items",
-    "description": "Checkbox of the server setting finance_viewer_item_names."
+  "admin.settings.registration.approval": {
+    "defaultMessage": "With approval",
+    "description": "Registration mode approval."
   },
-  "admin.settings.finance.viewer.item_names.description": {
-    "defaultMessage": "The names of the recorded costs and the services of the imported charges, with their amounts.",
-    "description": "Description of the checkbox of the server setting finance_viewer_item_names."
+  "admin.settings.registration.approval.description": {
+    "defaultMessage": "Anyone may sign up with a reason; the account works once a moderator approves it. People who sign up with an invite are approved at once.",
+    "description": "Description of the registration mode approval: a usable invite skips the review."
   },
-  "admin.settings.finance.visibility": {
-    "defaultMessage": "What to publish",
-    "description": "Label of the radio buttons of how much of the running costs the server publishes."
+  "admin.settings.registration.closed": {
+    "defaultMessage": "Nobody",
+    "description": "Registration mode closed."
+  },
+  "admin.settings.registration.closed.description": {
+    "defaultMessage": "Nobody may sign up; administrators create accounts from the command line.",
+    "description": "Description of the registration mode closed."
+  },
+  "admin.settings.registration.description": {
+    "defaultMessage": "Moderators review the sign-ups that wait for approval, and create the invites, on the moderation screens.",
+    "description": "Help of the registration mode: where the sign-ups and the invites are handled."
+  },
+  "admin.settings.registration.invite": {
+    "defaultMessage": "With an invite",
+    "description": "Registration mode invite."
+  },
+  "admin.settings.registration.invite.description": {
+    "defaultMessage": "Only people with an invite code may sign up.",
+    "description": "Description of the registration mode invite."
+  },
+  "admin.settings.registration.mode": {
+    "defaultMessage": "Who may sign up",
+    "description": "Label of the radio buttons of the registration mode."
+  },
+  "admin.settings.registration.open": {
+    "defaultMessage": "Anyone",
+    "description": "Registration mode open."
+  },
+  "admin.settings.registration.open.description": {
+    "defaultMessage": "Anyone may sign up and use the account at once.",
+    "description": "Description of the registration mode open."
+  },
+  "admin.settings.registration.title": {
+    "defaultMessage": "Registration",
+    "description": "Heading of the section of who may sign up on the server settings screen."
+  },
+  "admin.settings.remote_media.all": {
+    "defaultMessage": "Everything",
+    "description": "Remote media policy all."
+  },
+  "admin.settings.remote_media.all.description": {
+    "defaultMessage": "Keep copies of every file for the time below.",
+    "description": "Description of the remote media policy all."
+  },
+  "admin.settings.remote_media.avatars": {
+    "defaultMessage": "Avatars and headers",
+    "description": "Remote media policy avatars."
+  },
+  "admin.settings.remote_media.avatars.description": {
+    "defaultMessage": "Keep copies of avatars, headers and custom emoji for the time below.",
+    "description": "Description of the remote media policy avatars."
+  },
+  "admin.settings.remote_media.none": {
+    "defaultMessage": "Keep none",
+    "description": "Remote media policy none."
+  },
+  "admin.settings.remote_media.none.description": {
+    "defaultMessage": "The media proxy relays every file from its server each time.",
+    "description": "Description of the remote media policy none."
+  },
+  "admin.settings.remote_media.policy": {
+    "defaultMessage": "Copies of media from other servers",
+    "description": "Label of the radio buttons of the remote media policy."
+  },
+  "admin.settings.remote_media.ttl": {
+    "defaultMessage": "How long to keep media from other servers",
+    "description": "Label of the select of the remote media cache time."
+  },
+  "admin.settings.remote_media.ttl.description": {
+    "defaultMessage": "Browsers and the CDN keep the files this long too.",
+    "description": "Help of the remote media cache time."
+  },
+  "admin.settings.summary": {
+    "defaultMessage": "The server's name and descriptions, who may sign up, its default language, timelines and federation.",
+    "description": "Description of the server settings screen in the administration menu."
+  },
+  "admin.settings.timelines.federated": {
+    "defaultMessage": "Federated timeline",
+    "description": "Label of the radio group that chooses who may read the federated timeline."
+  },
+  "admin.settings.timelines.federated.description": {
+    "defaultMessage": "The public posts that reach this server, from other servers too. Who may read it?",
+    "description": "Description of the radio group that chooses who may read the federated timeline."
+  },
+  "admin.settings.timelines.access.everyone": {
+    "defaultMessage": "Everyone",
+    "description": "Choice of who may read a public timeline: everyone, visitors who are not signed in included."
+  },
+  "admin.settings.timelines.access.everyone.description": {
+    "defaultMessage": "Visitors who are not signed in can read it too, and the landing page shows a sample of the local timeline.",
+    "description": "Description of the choice that lets everyone read a public timeline."
+  },
+  "admin.settings.timelines.access.signed_in": {
+    "defaultMessage": "Signed-in users",
+    "description": "Choice of who may read a public timeline: only the users signed in to this server."
+  },
+  "admin.settings.timelines.access.signed_in.description": {
+    "defaultMessage": "Only users signed in to this server can read it. Visitors are asked to sign in.",
+    "description": "Description of the choice that lets only signed-in users read a public timeline."
+  },
+  "admin.settings.timelines.access.off": {
+    "defaultMessage": "Nobody",
+    "description": "Choice of who may read a public timeline: nobody, the timeline is off."
+  },
+  "admin.settings.timelines.access.off.description": {
+    "defaultMessage": "The timeline is off and is not offered to anyone.",
+    "description": "Description of the choice that turns a public timeline off."
+  },
+  "admin.settings.timelines.local": {
+    "defaultMessage": "Local timeline",
+    "description": "Label of the radio group that chooses who may read the local timeline."
+  },
+  "admin.settings.timelines.local.description": {
+    "defaultMessage": "The public posts of this server's accounts. Who may read it?",
+    "description": "Description of the radio group that chooses who may read the local timeline."
+  },
+  "admin.settings.timelines.title": {
+    "defaultMessage": "Timelines",
+    "description": "Heading of the section of the public timelines on the server settings screen."
+  },
+  "admin.settings.posts.title": {
+    "defaultMessage": "Posts",
+    "description": "Heading of the section of the server settings about posts."
+  },
+  "admin.settings.posts.require_media_description": {
+    "defaultMessage": "Require a description of every image",
+    "description": "Checkbox of the instance setting require_media_description: whether every image attached to a post needs an alternative text."
+  },
+  "admin.settings.posts.require_media_description.description": {
+    "defaultMessage": "Posts and edits with an image without a description (alt text) are refused, so that people who cannot see the images can follow every post.",
+    "description": "Description of the checkbox that requires a description of every image."
+  },
+  "admin.settings.title": {
+    "defaultMessage": "Server settings",
+    "description": "Title of the server settings screen (the server's name), in the administration menu and as its heading."
+  },
+  "admin.settings.oauth_apps.title": {
+    "defaultMessage": "Apps",
+    "description": "Heading of the section of how apps may register on the server settings screen."
+  },
+  "admin.settings.oauth_apps.description": {
+    "defaultMessage": "Which routes apps may use to get a client ID. With all of them off, only the server's own apps work. Turning one off does not disable the apps already registered.",
+    "description": "Explains the section of how apps may register."
+  },
+  "admin.settings.oauth_apps.user": {
+    "defaultMessage": "Users register apps",
+    "description": "Checkbox of letting signed-in users register apps."
+  },
+  "admin.settings.oauth_apps.user.description": {
+    "defaultMessage": "Signed-in users register apps in their settings, for bots and scripts of their own.",
+    "description": "Description of the checkbox of letting users register apps."
+  },
+  "admin.settings.oauth_apps.metadata_document": {
+    "defaultMessage": "Client ID Metadata Documents",
+    "description": "Checkbox of accepting apps whose client ID is the URL of a metadata document."
+  },
+  "admin.settings.oauth_apps.metadata_document.description": {
+    "defaultMessage": "Apps use the URL of a metadata document they host as their client ID. The server fetches the document.",
+    "description": "Description of the checkbox of accepting metadata document apps."
+  },
+  "admin.settings.oauth_apps.dynamic": {
+    "defaultMessage": "Dynamic client registration",
+    "description": "Checkbox of letting apps register themselves."
+  },
+  "admin.settings.oauth_apps.dynamic.description": {
+    "defaultMessage": "Apps register themselves without signing in (RFC 7591), for tools that cannot use a metadata document.",
+    "description": "Description of the checkbox of dynamic client registration."
+  },
+  "admin.settings.voice.title": {
+    "defaultMessage": "Voice chat",
+    "description": "Heading of the voice chat section of the server settings."
+  },
+  "admin.settings.voice.starters": {
+    "defaultMessage": "Who can start rooms",
+    "description": "Label of the choice of who may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.everyone": {
+    "defaultMessage": "Everyone on this server",
+    "description": "Choice of who may start voice chat rooms: every local user."
+  },
+  "admin.settings.voice.starters.everyone.description": {
+    "defaultMessage": "Every signed-in user of this server can start a room.",
+    "description": "Explanation of the choice that every local user may start voice chat rooms."
+  },
+  "admin.settings.voice.starters.permitted": {
+    "defaultMessage": "Only people with the permission",
+    "description": "Choice of who may start voice chat rooms: the holders of the permission."
+  },
+  "admin.settings.voice.starters.permitted.description": {
+    "defaultMessage": "Only people whose roles have the permission to start voice chat rooms can start one.",
+    "description": "Explanation of the choice that only the holders of the permission may start voice chat rooms."
+  },
+  "admin.settings.voice.public_summary": {
+    "defaultMessage": "Show a summary of rooms to visitors",
+    "description": "Checkbox of whether the summary of a voice chat room shows to people who are not signed in."
+  },
+  "admin.settings.voice.public_summary.description": {
+    "defaultMessage": "For a room open to everyone on this server, people who are not signed in and people on other servers see its name, description, host, and whether it is open, in link previews too. They never see who is in it.",
+    "description": "Explanation of the checkbox that shows the summary of voice chat rooms to visitors."
+  },
+  "admin.settings.voice.retention": {
+    "defaultMessage": "Days to keep the participants' records",
+    "description": "Label of the field of how many days the records of the participants of a voice chat room are kept."
+  },
+  "admin.settings.voice.retention.description": {
+    "defaultMessage": "How long after a room ends the server keeps who joined, left, spoke, and was removed: {min} to {max} days. The records of a reported room stay as long as the report.",
+    "description": "Description of the field of how many days the records of the participants of voice chat rooms are kept. {min} and {max} are the bounds."
+  },
+  "admin.settings.voice.retention.invalid": {
+    "defaultMessage": "Enter a whole number of days from {min} to {max}.",
+    "description": "Error of the field of how many days the records of voice chat participants are kept."
+  },
+  "admin.settings.invites.title": {
+    "defaultMessage": "Member invites",
+    "description": "Heading of the section of the invites that members create on the server settings screen."
+  },
+  "admin.settings.invites.description": {
+    "defaultMessage": "Members create invites of their own on their settings page. The limits apply only to their invites, not to the invites of the moderators, and lowering one does not change the invites that exist.",
+    "description": "Help of the section of member invites on the server settings screen."
+  },
+  "admin.settings.invites.creators": {
+    "defaultMessage": "Who can create invites",
+    "description": "Label of the choice of who may create invites of their own."
+  },
+  "admin.settings.invites.creators.everyone": {
+    "defaultMessage": "Everyone on this server",
+    "description": "Choice of who may create invites: every local user."
+  },
+  "admin.settings.invites.creators.everyone.description": {
+    "defaultMessage": "Every signed-in user of this server who is not suspended or limited can create invites. While sign-ups need approval, the people they invite skip the review, so this lets every user approve new accounts.",
+    "description": "Explanation of the choice that every local user may create invites, with its effect in the approval registration mode."
+  },
+  "admin.settings.invites.creators.permitted": {
+    "defaultMessage": "Only people with the permission",
+    "description": "Choice of who may create invites: the holders of the permission."
+  },
+  "admin.settings.invites.creators.permitted.description": {
+    "defaultMessage": "Only people whose roles have the permission to create invites can create them.",
+    "description": "Explanation of the choice that only the holders of the permission create_invites may create invites."
+  },
+  "admin.settings.invites.max_active": {
+    "defaultMessage": "Usable invites per person",
+    "description": "Label of the field of how many usable invites one member may hold at once."
+  },
+  "admin.settings.invites.max_active.description": {
+    "defaultMessage": "How many usable invites one person may hold at once: {min} to {max}. 0 lets nobody create invites.",
+    "description": "Description of the field of how many usable invites one member may hold. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.max_uses": {
+    "defaultMessage": "Sign-ups per invite",
+    "description": "Label of the field of how many people may sign up with one invite a member creates."
+  },
+  "admin.settings.invites.max_uses.description": {
+    "defaultMessage": "The most people who may sign up with one invite: {min} to {max}.",
+    "description": "Description of the field of how many sign-ups one member invite may allow. {min} and {max} are the bounds."
+  },
+  "admin.settings.invites.number.invalid": {
+    "defaultMessage": "Enter a whole number from {min} to {max}.",
+    "description": "Error of a field of the member invites that holds a number out of its bounds."
+  },
+  "admin.settings.invites.max_expires_in": {
+    "defaultMessage": "Longest time an invite works",
+    "description": "Label of the choice of how long one invite that a member creates may work at most."
+  },
+  "admin.settings.invites.max_expires_in.description": {
+    "defaultMessage": "Members choose how long each invite works, up to this.",
+    "description": "Description of the choice of how long a member invite may work at most."
+  },
+  "admin.settings.landing.title": {
+    "defaultMessage": "Landing page",
+    "description": "Heading of the section of the server settings about what the landing page (the root address, for people who are not signed in) shows."
+  },
+  "admin.settings.landing.description": {
+    "defaultMessage": "What the page at this server's address shows people who are not signed in, besides the name, description and rules.",
+    "description": "Explanation of the landing page section of the server settings."
+  },
+  "admin.settings.landing.counts": {
+    "defaultMessage": "Show the numbers of the server",
+    "description": "Checkbox of whether the landing page shows how many members the server has, its public posts of the last 7 days, and since when it runs."
+  },
+  "admin.settings.landing.counts.description": {
+    "defaultMessage": "How many members the server has, how many public posts they made on each of the last 7 days, and since when the server runs. Only public posts count, and the numbers are refreshed every few minutes.",
+    "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
+  },
+  "admin.settings.featured.title": {
+    "defaultMessage": "Suggested accounts",
+    "description": "Heading of the section of the server settings about the accounts suggested to follow."
+  },
+  "admin.settings.featured.description": {
+    "defaultMessage": "New and returning users see suggestions of people to follow: the accounts below first, in this order, then the people of this server who posted recently. Someone who turned off being suggested is left out.",
+    "description": "Note of the suggested accounts section of the server settings."
+  },
+  "admin.settings.featured.accounts": {
+    "defaultMessage": "Accounts to suggest first",
+    "description": "Label of the field with the usernames of the accounts that the suggestions show first."
+  },
+  "admin.settings.featured.accounts.description": {
+    "defaultMessage": "Usernames of up to 20 accounts of this server, separated by spaces.",
+    "description": "Help text of the field of the accounts that the suggestions show first."
   },
   "admin.settings.hooks.description": {
     "defaultMessage": "A review runs only when the server operator has set up its plugin. Off goes to Enforce only through Observe, so that you can read what a review would stop first.",
@@ -547,129 +975,17 @@
     "defaultMessage": "Sign-ups: when the review fails",
     "description": "Label of the choice of what happens when this external review fails while it enforces."
   },
+  "admin.settings.hooks.signup_check.reject": {
+    "defaultMessage": "Sign-ups: let the review refuse them",
+    "description": "Label of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
+  "admin.settings.hooks.signup_check.reject.description": {
+    "defaultMessage": "When the review enforces and answers reject, the applicant sees a fixed message that the server cannot accept the sign-up. While this is off, that answer is only recorded and the sign-up goes on.",
+    "description": "Help text of the checkbox that lets the external review of sign-ups refuse a sign-up."
+  },
   "admin.settings.hooks.title": {
     "defaultMessage": "External review",
     "description": "Heading of the section of the server settings about the external reviews of submissions."
-  },
-  "admin.settings.income.description": {
-    "defaultMessage": "The about page and the API can publish the income from the supporter plans, after the payment provider's fees and refunds. Who paid, how much each paid, the amounts of each plan, and the fees are never published. When both the costs and the income are published, the balance is published too.",
-    "description": "Explanation of the publication of the income in the server settings."
-  },
-  "admin.settings.income.plans": {
-    "defaultMessage": "Totals and members of each plan",
-    "description": "Choice of publishing the totals of the income and the number of members of each plan."
-  },
-  "admin.settings.income.plans.description": {
-    "defaultMessage": "Everyone also sees how many members each plan has now, never its amounts. On a plan with few members, people may guess who they are.",
-    "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
-  },
-  "admin.settings.income.private": {
-    "defaultMessage": "Nothing",
-    "description": "Choice of not publishing the income."
-  },
-  "admin.settings.income.private.description": {
-    "defaultMessage": "Only the people who manage or may read the finances see it.",
-    "description": "Description of not publishing the income."
-  },
-  "admin.settings.income.title": {
-    "defaultMessage": "Income",
-    "description": "Heading of the section of the publication of the income in the server settings."
-  },
-  "admin.settings.income.totals": {
-    "defaultMessage": "Totals",
-    "description": "Choice of publishing the totals of the income only."
-  },
-  "admin.settings.income.totals.description": {
-    "defaultMessage": "Everyone sees the income of each currency by week, month, and year.",
-    "description": "Description of publishing the totals of the income only."
-  },
-  "admin.settings.income.visibility": {
-    "defaultMessage": "What to publish",
-    "description": "Label of the radio buttons of how much of the income the server publishes."
-  },
-  "admin.settings.invites.creators": {
-    "defaultMessage": "Who can create invites",
-    "description": "Label of the choice of who may create invites of their own."
-  },
-  "admin.settings.invites.creators.everyone": {
-    "defaultMessage": "Everyone on this server",
-    "description": "Choice of who may create invites: every local user."
-  },
-  "admin.settings.invites.creators.everyone.description": {
-    "defaultMessage": "Every signed-in user of this server who is not suspended or limited can create invites. While sign-ups need approval, the people they invite skip the review, so this lets every user approve new accounts.",
-    "description": "Explanation of the choice that every local user may create invites, with its effect in the approval registration mode."
-  },
-  "admin.settings.invites.creators.permitted": {
-    "defaultMessage": "Only people with the permission",
-    "description": "Choice of who may create invites: the holders of the permission."
-  },
-  "admin.settings.invites.creators.permitted.description": {
-    "defaultMessage": "Only people whose roles have the permission to create invites can create them.",
-    "description": "Explanation of the choice that only the holders of the permission create_invites may create invites."
-  },
-  "admin.settings.invites.description": {
-    "defaultMessage": "Members create invites of their own on their settings page. The limits apply only to their invites, not to the invites of the moderators, and lowering one does not change the invites that exist.",
-    "description": "Help of the section of member invites on the server settings screen."
-  },
-  "admin.settings.invites.max_active": {
-    "defaultMessage": "Usable invites per person",
-    "description": "Label of the field of how many usable invites one member may hold at once."
-  },
-  "admin.settings.invites.max_active.description": {
-    "defaultMessage": "How many usable invites one person may hold at once: {min} to {max}. 0 lets nobody create invites.",
-    "description": "Description of the field of how many usable invites one member may hold. {min} and {max} are the bounds."
-  },
-  "admin.settings.invites.max_expires_in": {
-    "defaultMessage": "Longest time an invite works",
-    "description": "Label of the choice of how long one invite that a member creates may work at most."
-  },
-  "admin.settings.invites.max_expires_in.description": {
-    "defaultMessage": "Members choose how long each invite works, up to this.",
-    "description": "Description of the choice of how long a member invite may work at most."
-  },
-  "admin.settings.invites.max_uses": {
-    "defaultMessage": "Sign-ups per invite",
-    "description": "Label of the field of how many people may sign up with one invite a member creates."
-  },
-  "admin.settings.invites.max_uses.description": {
-    "defaultMessage": "The most people who may sign up with one invite: {min} to {max}.",
-    "description": "Description of the field of how many sign-ups one member invite may allow. {min} and {max} are the bounds."
-  },
-  "admin.settings.invites.number.invalid": {
-    "defaultMessage": "Enter a whole number from {min} to {max}.",
-    "description": "Error of a field of the member invites that holds a number out of its bounds."
-  },
-  "admin.settings.invites.title": {
-    "defaultMessage": "Member invites",
-    "description": "Heading of the section of the invites that members create on the server settings screen."
-  },
-  "admin.settings.landing.counts": {
-    "defaultMessage": "Show the numbers of the server",
-    "description": "Checkbox of whether the landing page shows how many members the server has, its public posts of the last 7 days, and since when it runs."
-  },
-  "admin.settings.landing.counts.description": {
-    "defaultMessage": "How many members the server has, how many public posts they made on each of the last 7 days, and since when the server runs. Only public posts count, and the numbers are refreshed every few minutes.",
-    "description": "Explanation of the checkbox that shows the numbers of the server on the landing page."
-  },
-  "admin.settings.landing.description": {
-    "defaultMessage": "What the page at this server's address shows people who are not signed in, besides the name, description and rules.",
-    "description": "Explanation of the landing page section of the server settings."
-  },
-  "admin.settings.landing.title": {
-    "defaultMessage": "Landing page",
-    "description": "Heading of the section of the server settings about what the landing page (the root address, for people who are not signed in) shows."
-  },
-  "admin.settings.language.default": {
-    "defaultMessage": "Default language",
-    "description": "Label of the select of the server's default language."
-  },
-  "admin.settings.language.description": {
-    "defaultMessage": "The language of new accounts and of visitors whose language the app does not have.",
-    "description": "Help of the server's default language."
-  },
-  "admin.settings.language.title": {
-    "defaultMessage": "Language",
-    "description": "Heading of the section of the server's default language."
   },
   "admin.settings.login_providers_only.confirm.affected": {
     "defaultMessage": "{count, plural, =0 {Every active user has a linked login provider.} one {# active user has no linked login provider and could not sign in once their sessions end.} other {# active users have no linked login provider and could not sign in once their sessions end.}}",
@@ -722,313 +1038,5 @@
   "admin.settings.login_providers_only.label": {
     "defaultMessage": "Allow sign-in and registration only through login providers",
     "description": "Checkbox in the registration section of the server settings: limits sign-in and registration to login providers."
-  },
-  "admin.settings.name.blank": {
-    "defaultMessage": "Enter a name with letters, or leave the field empty.",
-    "description": "Error of a field of the server's name that holds only spaces."
-  },
-  "admin.settings.name.description": {
-    "defaultMessage": "People see the name in place of the domain {domain} where the app names this server: the sidebar, the browser tab, the sign-in pages, emails and link previews. Write it once, in any language: everyone sees the same name, whatever the language of their app. Without a name, the domain shows. Handles and links always use the domain.",
-    "description": "Explanation above the fields of the server's name on the server settings screen. {domain} is the server's domain name."
-  },
-  "admin.settings.name.field": {
-    "defaultMessage": "Name",
-    "description": "Label of the server's name."
-  },
-  "admin.settings.name.save": {
-    "defaultMessage": "Save",
-    "description": "Button that saves the server's names on the server settings screen."
-  },
-  "admin.settings.name.save_failed": {
-    "defaultMessage": "Could not save the name: {reason}",
-    "description": "Error when saving the server's name failed. {reason} is the server's localized reason, which names the field at fault."
-  },
-  "admin.settings.name.saved": {
-    "defaultMessage": "Saved the name.",
-    "description": "Status after the server's names were saved; the sidebar and the browser tab show the new name."
-  },
-  "admin.settings.name.title": {
-    "defaultMessage": "Name",
-    "description": "Heading of the section of the server's name on the server settings screen."
-  },
-  "admin.settings.name.too_long": {
-    "defaultMessage": "Use at most {max} characters.",
-    "description": "Error of a field of the server's name whose text is longer than its limit. {max} is the limit."
-  },
-  "admin.settings.name.unchanged": {
-    "defaultMessage": "The name is already saved.",
-    "description": "Status after pressing Save on the server settings screen without changing a name."
-  },
-  "admin.settings.oauth_apps.description": {
-    "defaultMessage": "Which routes apps may use to get a client ID. With all of them off, only the server's own apps work. Turning one off does not disable the apps already registered.",
-    "description": "Explains the section of how apps may register."
-  },
-  "admin.settings.oauth_apps.dynamic": {
-    "defaultMessage": "Dynamic client registration",
-    "description": "Checkbox of letting apps register themselves."
-  },
-  "admin.settings.oauth_apps.dynamic.description": {
-    "defaultMessage": "Apps register themselves without signing in (RFC 7591), for tools that cannot use a metadata document.",
-    "description": "Description of the checkbox of dynamic client registration."
-  },
-  "admin.settings.oauth_apps.metadata_document": {
-    "defaultMessage": "Client ID Metadata Documents",
-    "description": "Checkbox of accepting apps whose client ID is the URL of a metadata document."
-  },
-  "admin.settings.oauth_apps.metadata_document.description": {
-    "defaultMessage": "Apps use the URL of a metadata document they host as their client ID. The server fetches the document.",
-    "description": "Description of the checkbox of accepting metadata document apps."
-  },
-  "admin.settings.oauth_apps.title": {
-    "defaultMessage": "Apps",
-    "description": "Heading of the section of how apps may register on the server settings screen."
-  },
-  "admin.settings.oauth_apps.user": {
-    "defaultMessage": "Users register apps",
-    "description": "Checkbox of letting signed-in users register apps."
-  },
-  "admin.settings.oauth_apps.user.description": {
-    "defaultMessage": "Signed-in users register apps in their settings, for bots and scripts of their own.",
-    "description": "Description of the checkbox of letting users register apps."
-  },
-  "admin.settings.policies.save": {
-    "defaultMessage": "Save the settings",
-    "description": "Button that saves the registration, language, timeline, federation and domain action settings together."
-  },
-  "admin.settings.policies.save_failed": {
-    "defaultMessage": "Could not save the settings; nothing was changed: {reason}",
-    "description": "Error when saving the server's settings failed. {reason} is the server's localized reason, which names the setting at fault."
-  },
-  "admin.settings.policies.saved": {
-    "defaultMessage": "Saved the settings. They take effect at once, and the audit log records each change.",
-    "description": "Status after the server's settings were saved."
-  },
-  "admin.settings.policies.unchanged": {
-    "defaultMessage": "The settings are already saved.",
-    "description": "Status after pressing the save button of the settings without changing one."
-  },
-  "admin.settings.posts.require_media_description": {
-    "defaultMessage": "Require a description of every image",
-    "description": "Checkbox of the instance setting require_media_description: whether every image attached to a post needs an alternative text."
-  },
-  "admin.settings.posts.require_media_description.description": {
-    "defaultMessage": "Posts and edits with an image without a description (alt text) are refused, so that people who cannot see the images can follow every post.",
-    "description": "Description of the checkbox that requires a description of every image."
-  },
-  "admin.settings.posts.title": {
-    "defaultMessage": "Posts",
-    "description": "Heading of the section of the server settings about posts."
-  },
-  "admin.settings.registration.approval": {
-    "defaultMessage": "With approval",
-    "description": "Registration mode approval."
-  },
-  "admin.settings.registration.approval.description": {
-    "defaultMessage": "Anyone may sign up with a reason; the account works once a moderator approves it. People who sign up with an invite are approved at once.",
-    "description": "Description of the registration mode approval: a usable invite skips the review."
-  },
-  "admin.settings.registration.closed": {
-    "defaultMessage": "Nobody",
-    "description": "Registration mode closed."
-  },
-  "admin.settings.registration.closed.description": {
-    "defaultMessage": "Nobody may sign up; administrators create accounts from the command line.",
-    "description": "Description of the registration mode closed."
-  },
-  "admin.settings.registration.description": {
-    "defaultMessage": "Moderators review the sign-ups that wait for approval, and create the invites, on the moderation screens.",
-    "description": "Help of the registration mode: where the sign-ups and the invites are handled."
-  },
-  "admin.settings.registration.invite": {
-    "defaultMessage": "With an invite",
-    "description": "Registration mode invite."
-  },
-  "admin.settings.registration.invite.description": {
-    "defaultMessage": "Only people with an invite code may sign up.",
-    "description": "Description of the registration mode invite."
-  },
-  "admin.settings.registration.mode": {
-    "defaultMessage": "Who may sign up",
-    "description": "Label of the radio buttons of the registration mode."
-  },
-  "admin.settings.registration.open": {
-    "defaultMessage": "Anyone",
-    "description": "Registration mode open."
-  },
-  "admin.settings.registration.open.description": {
-    "defaultMessage": "Anyone may sign up and use the account at once.",
-    "description": "Description of the registration mode open."
-  },
-  "admin.settings.registration.title": {
-    "defaultMessage": "Registration",
-    "description": "Heading of the section of who may sign up on the server settings screen."
-  },
-  "admin.settings.remote_media.all": {
-    "defaultMessage": "Everything",
-    "description": "Remote media policy all."
-  },
-  "admin.settings.remote_media.all.description": {
-    "defaultMessage": "Keep copies of every file for the time below.",
-    "description": "Description of the remote media policy all."
-  },
-  "admin.settings.remote_media.avatars": {
-    "defaultMessage": "Avatars and headers",
-    "description": "Remote media policy avatars."
-  },
-  "admin.settings.remote_media.avatars.description": {
-    "defaultMessage": "Keep copies of avatars, headers and custom emoji for the time below.",
-    "description": "Description of the remote media policy avatars."
-  },
-  "admin.settings.remote_media.none": {
-    "defaultMessage": "Keep none",
-    "description": "Remote media policy none."
-  },
-  "admin.settings.remote_media.none.description": {
-    "defaultMessage": "The media proxy relays every file from its server each time.",
-    "description": "Description of the remote media policy none."
-  },
-  "admin.settings.remote_media.policy": {
-    "defaultMessage": "Copies of media from other servers",
-    "description": "Label of the radio buttons of the remote media policy."
-  },
-  "admin.settings.remote_media.ttl": {
-    "defaultMessage": "How long to keep media from other servers",
-    "description": "Label of the select of the remote media cache time."
-  },
-  "admin.settings.remote_media.ttl.description": {
-    "defaultMessage": "Browsers and the CDN keep the files this long too.",
-    "description": "Help of the remote media cache time."
-  },
-  "admin.settings.summary": {
-    "defaultMessage": "The server's name and descriptions, who may sign up, its default language, timelines and federation.",
-    "description": "Description of the server settings screen in the administration menu."
-  },
-  "admin.settings.supporter_list.description": {
-    "defaultMessage": "The supporter list on /about/supporters shows, by plan, the members who chose to be listed: their avatar, name and handle only, never amounts or dates. Search engines are always asked not to index it.",
-    "description": "Explanation of the supporter list setting."
-  },
-  "admin.settings.supporter_list.everyone": {
-    "defaultMessage": "Everyone",
-    "description": "Choice: everyone may read the supporter list."
-  },
-  "admin.settings.supporter_list.everyone.description": {
-    "defaultMessage": "Anyone may read the list, signed in or not.",
-    "description": "Description of publishing the supporter list to everyone."
-  },
-  "admin.settings.supporter_list.off": {
-    "defaultMessage": "Nobody",
-    "description": "Choice: nobody may read the supporter list."
-  },
-  "admin.settings.supporter_list.off.description": {
-    "defaultMessage": "The list is not published, and the about page does not link to it.",
-    "description": "Description of not publishing the supporter list."
-  },
-  "admin.settings.supporter_list.signed_in": {
-    "defaultMessage": "Signed-in users",
-    "description": "Choice: only signed-in users may read the supporter list."
-  },
-  "admin.settings.supporter_list.signed_in.description": {
-    "defaultMessage": "Only people signed in to this server may read the list.",
-    "description": "Description of publishing the supporter list to signed-in users only."
-  },
-  "admin.settings.supporter_list.title": {
-    "defaultMessage": "Supporter list",
-    "description": "Heading of the section of the supporter list in the server settings."
-  },
-  "admin.settings.supporter_list.visibility": {
-    "defaultMessage": "Who may read the supporter list",
-    "description": "Label of the choice of who may read the supporter list."
-  },
-  "admin.settings.timelines.access.everyone": {
-    "defaultMessage": "Everyone",
-    "description": "Choice of who may read a public timeline: everyone, visitors who are not signed in included."
-  },
-  "admin.settings.timelines.access.everyone.description": {
-    "defaultMessage": "Visitors who are not signed in can read it too, and the landing page shows a sample of the local timeline.",
-    "description": "Description of the choice that lets everyone read a public timeline."
-  },
-  "admin.settings.timelines.access.off": {
-    "defaultMessage": "Nobody",
-    "description": "Choice of who may read a public timeline: nobody, the timeline is off."
-  },
-  "admin.settings.timelines.access.off.description": {
-    "defaultMessage": "The timeline is off and is not offered to anyone.",
-    "description": "Description of the choice that turns a public timeline off."
-  },
-  "admin.settings.timelines.access.signed_in": {
-    "defaultMessage": "Signed-in users",
-    "description": "Choice of who may read a public timeline: only the users signed in to this server."
-  },
-  "admin.settings.timelines.access.signed_in.description": {
-    "defaultMessage": "Only users signed in to this server can read it. Visitors are asked to sign in.",
-    "description": "Description of the choice that lets only signed-in users read a public timeline."
-  },
-  "admin.settings.timelines.federated": {
-    "defaultMessage": "Federated timeline",
-    "description": "Label of the radio group that chooses who may read the federated timeline."
-  },
-  "admin.settings.timelines.federated.description": {
-    "defaultMessage": "The public posts that reach this server, from other servers too. Who may read it?",
-    "description": "Description of the radio group that chooses who may read the federated timeline."
-  },
-  "admin.settings.timelines.local": {
-    "defaultMessage": "Local timeline",
-    "description": "Label of the radio group that chooses who may read the local timeline."
-  },
-  "admin.settings.timelines.local.description": {
-    "defaultMessage": "The public posts of this server's accounts. Who may read it?",
-    "description": "Description of the radio group that chooses who may read the local timeline."
-  },
-  "admin.settings.timelines.title": {
-    "defaultMessage": "Timelines",
-    "description": "Heading of the section of the public timelines on the server settings screen."
-  },
-  "admin.settings.title": {
-    "defaultMessage": "Server settings",
-    "description": "Title of the server settings screen (the server's name), in the administration menu and as its heading."
-  },
-  "admin.settings.voice.public_summary": {
-    "defaultMessage": "Show a summary of rooms to visitors",
-    "description": "Checkbox of whether the summary of a voice chat room shows to people who are not signed in."
-  },
-  "admin.settings.voice.public_summary.description": {
-    "defaultMessage": "For a room open to everyone on this server, people who are not signed in and people on other servers see its name, description, host, and whether it is open, in link previews too. They never see who is in it.",
-    "description": "Explanation of the checkbox that shows the summary of voice chat rooms to visitors."
-  },
-  "admin.settings.voice.retention": {
-    "defaultMessage": "Days to keep the participants' records",
-    "description": "Label of the field of how many days the records of the participants of a voice chat room are kept."
-  },
-  "admin.settings.voice.retention.description": {
-    "defaultMessage": "How long after a room ends the server keeps who joined, left, spoke, and was removed: {min} to {max} days. The records of a reported room stay as long as the report.",
-    "description": "Description of the field of how many days the records of the participants of voice chat rooms are kept. {min} and {max} are the bounds."
-  },
-  "admin.settings.voice.retention.invalid": {
-    "defaultMessage": "Enter a whole number of days from {min} to {max}.",
-    "description": "Error of the field of how many days the records of voice chat participants are kept."
-  },
-  "admin.settings.voice.starters": {
-    "defaultMessage": "Who can start rooms",
-    "description": "Label of the choice of who may start voice chat rooms."
-  },
-  "admin.settings.voice.starters.everyone": {
-    "defaultMessage": "Everyone on this server",
-    "description": "Choice of who may start voice chat rooms: every local user."
-  },
-  "admin.settings.voice.starters.everyone.description": {
-    "defaultMessage": "Every signed-in user of this server can start a room.",
-    "description": "Explanation of the choice that every local user may start voice chat rooms."
-  },
-  "admin.settings.voice.starters.permitted": {
-    "defaultMessage": "Only people with the permission",
-    "description": "Choice of who may start voice chat rooms: the holders of the permission."
-  },
-  "admin.settings.voice.starters.permitted.description": {
-    "defaultMessage": "Only people whose roles have the permission to start voice chat rooms can start one.",
-    "description": "Explanation of the choice that only the holders of the permission may start voice chat rooms."
-  },
-  "admin.settings.voice.title": {
-    "defaultMessage": "Voice chat",
-    "description": "Heading of the voice chat section of the server settings."
   }
 }

@@ -20,10 +20,10 @@ message CheckRequest {
   string subject_key = 2;
   // True for a call of `my plugin test`, which is about no real subject and acts on nothing.
   bool probe = 3;
-  // What the hook asks about. Absent for a probe and for a hook that sends nothing more than its key.
-  oneof subject {
-    InboundStatus inbound_status = 4;
-  }
+  // What inbound.status reviews; empty on the calls of the other hooks and on probes.
+  InboundStatus inbound_status = 4;
+  // What signup.check reviews; empty on the calls of the other hooks and on probes.
+  SignupSubject signup = 6;
 }
 
 // A post from another server, or a new revision of one, for inbound.status. It holds the post as
@@ -75,6 +75,16 @@ message InboundStatus {
   }
 }
 
+// SignupSubject is a sign-up that is not from an invitation, once its CAPTCHA and the sign-up block
+// list passed it. The subject_key of the call is the ID the account would get, which identifies
+// this attempt alone: an applicant who tries again is a new subject.
+message SignupSubject {
+  // The email address the applicant entered.
+  string email = 1;
+  // The client's IP address, empty when the server does not know it.
+  string ip = 2;
+}
+
 message CheckResponse {
   // A name in JSON. VERDICT_UNSPECIFIED, an empty response included, a name this version does not
   // know, and a verdict the hook does not take are all failures and follow the hook's failure
@@ -105,7 +115,7 @@ enum Verdict {
   VERDICT_MARK_SENSITIVE = 4;
   // Go on, and hold the sign-up for approval.
   VERDICT_REQUIRE_APPROVAL = 5;
-  // Refuse the subject and tell the person.
+  // Refuse the subject and tell the person, with fixed text that holds nothing of the response.
   VERDICT_REJECT = 6;
 }
 

@@ -14,6 +14,7 @@ import {
 import { useId, useState } from "react";
 import { useT } from "../../../lib/i18n";
 import type { PostingLimits, Visibility } from "../api/compose";
+import { useTranslationDisclosure } from "../hooks/useTranslationDisclosure";
 import { isVisibility, visibilities, visibilityDescription, visibilityLabel } from "../hooks/visibilityMessages";
 
 export type VisibilityPickerProps = {
@@ -30,7 +31,8 @@ export type VisibilityPickerProps = {
  * visibilities as a radio group, each with who can see it (ADR-0017; WAI-ARIA APG radio group and dialog
  * patterns). Choosing does not close the popover, because the arrow keys choose as they move.
  * While a restriction narrows what the account can post, the wider visibilities are disabled and the
- * group says why (data-model/05-states-and-policies.md §5.4).
+ * group says why (data-model/05-states-and-policies.md §5.4). On a server that allows a translation provider a
+ * narrow visibility, the group also says that a reader's request can send the text there (ADR-0148 §6).
  */
 export function VisibilityPicker({ value, onChange, limits, isDisabled = false }: VisibilityPickerProps) {
   const t = useT();
@@ -41,6 +43,7 @@ export function VisibilityPicker({ value, onChange, limits, isDisabled = false }
     limits === null
       ? undefined
       : t("client:compose.visibility.ceiling", { visibility: t(visibilityLabel[limits.visibility_ceiling]) });
+  const translationNote = useTranslationDisclosure();
   const buttonLabel = t("client:compose.visibility.button", { visibility: t(visibilityLabel[value]) });
   return (
     <PopoverTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
@@ -65,7 +68,13 @@ export function VisibilityPicker({ value, onChange, limits, isDisabled = false }
           <>
             <RadioGroup
               label={title}
-              description={ceilingHint}
+              {...((ceilingHint !== undefined || translationNote !== null) && {
+                description: (
+                  <>
+                    {ceilingHint} {translationNote}
+                  </>
+                ),
+              })}
               value={value}
               onChange={(next) => {
                 if (isVisibility(next)) onChange(next);

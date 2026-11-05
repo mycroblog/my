@@ -97,6 +97,7 @@ Each service that receives personal data appears in the policy only if you turne
 | `{{IF voice media server}}` | `voice` is `livekit` or `sora` | Participants' IP addresses, their audio while speaking, a session ID, and the room ID. The account's ID is not sent ([voice chat](voice.md)). |
 | `{{IF turn}}` | `voice_stun_urls`, `voice_turn` | STUN and TURN servers see participants' IP addresses, and a TURN server relays their encrypted audio. |
 | `{{IF webhooks}}` | [Server webhooks](webhooks.md) | Your receiver gets event bodies. Some carry an applicant's email address or a report's comment. |
+| `{{IF sign-up review}}` | `plugin_signup_check_address` is set and `hook_signup_check_mode` is not `off` | The email address and IP address of each applicant without an invite, sent by the server when they sign up ([decision hooks](decision-hooks.md#sign-ups)). The recorded decision holds neither. Name the service in section 6 unless you run the plugin yourself. |
 | `{{IF external review of posts}}` | `plugin_inbound_status_address` is set and `hook_inbound_status_mode` is not `off` | The text of the posts other servers send that relate to an account here, with their author, attachments' addresses and descriptions, and how many accounts they name ([decision hooks](decision-hooks.md#what-is-sent-and-what-it-costs)). Direct posts from authors nobody here follows go only with `hook_inbound_status_unfollowed_direct`. |
 | `{{IF translation}}` | `translation_providers` is not empty | The text of a post when a reader asks to translate it: its body, content warning, poll options, and image descriptions. The post's address, its author, the reader, mentions, and links are not sent. By default a provider receives `public`, `local`, and `unlisted` posts. It works as your service provider, like hosting, so `local` posts reach it although they do not federate: keep the `local` sentence in section 5. A provider that keeps the text for its own use is not a service provider in this sense, and the policy must say so. |
 | `{{IF translation to private and direct}}` | `translation_provider_visibilities` allows a provider `private` or `direct` | The same, for those posts. Use this marker only when you allowed it, per provider. It adds lines to sections 2 and 5, and it makes your promise about those posts wider, so announce it before you change the setting. |
@@ -210,6 +211,8 @@ Other people here see what you publish. Staff with the right permission can reve
 
 Search engines and AI services: {{DESCRIBE YOUR search_indexing, indexable_default, AND ai_usage SETTINGS. By default we ask them not to index and not to use the content}}. These are requests, and not every crawler follows them. You can change whether your own profile appears in search in your profile settings.
 
+{{IF the full-text search runs on another company's service}} Full-text search: the text of posts in search ({{public / local}} posts of people who chose to appear in search) goes to {{SERVICE}} to make them searchable, and is removed there when the post is deleted or you stop appearing in search. {{SAY HOW LONG ITS BACKUPS KEEP IT}}. {{IF you keep logs that hold search terms}} What you search for can appear in our request logs, which we keep for {{PERIOD}}.
+
 Apps you authorize can read and do what the permissions you granted allow. Their own policies apply. You can revoke them in your settings.
 
 {{IF the list of supporters is public}} If you choose to appear in the list of supporters, it shows your avatar, display name, handle, and plan.
@@ -227,6 +230,7 @@ We use these services to run the instance. {{SAY WHETHER EACH ACTS ON YOUR BEHAL
 | {{IF mail}} {{MAIL PROVIDER}} | Sending email | Your address, and the subject and text of each email | {{COUNTRY}} | {{LINK}} |
 | {{IF captcha}} {{CAPTCHA SERVICE}} | Stopping automated sign-ins, sign-ups, and password-reset requests | IP address, browser and device information, cookies, and interactions with the widget. Your browser sends these directly, from the sign-in, sign-up, and password-reset request pages only | {{COUNTRY}} | {{LINK}} |
 | {{IF login providers}} {{PROVIDER}} | Signing in with an account there | That you sign in. We receive their identifier for you, and at sign-up your email address and username | {{COUNTRY}} | {{LINK}} |
+| {{IF sign-up review}} {{SIGN-UP REVIEW SERVICE}} | Screening sign-ups for abuse | The email address and IP address you sign up with, unless you sign up with an invite | {{COUNTRY}} | {{LINK}} |
 | {{IF translation}} {{TRANSLATION SERVICE}} | Translating a post when a reader asks | The text of the post: its body, content warning, poll options, and image descriptions. Not its address, its author, the reader, mentions, or links. Text sent to the service cannot be recalled, and deleting the post does not remove it there: {{HOW LONG THE SERVICE KEEPS IT}} | {{COUNTRY}} | {{LINK}} |
 | {{IF external review of posts}} {{REVIEW SERVICE}} | Reviewing posts from other servers before they are accepted | The post as its server sent it: text, content warning, poll options, hashtags, its author, its visibility, attachments' addresses and descriptions, and how many accounts it names. No post of this server's accounts | {{COUNTRY}} | {{LINK}} |
 | {{IF stripe}} Stripe | Taking payments for supporter plans | Your email address and plan. You enter payment details on Stripe's pages | {{COUNTRY}} | <https://stripe.com/privacy> |
@@ -289,7 +293,7 @@ We keep some records even when you ask us to delete them, where we need them for
 
 # 12. Automated decisions
 
-We make no decisions about you by automated means that have legal or similarly significant effects, {{CONFIRM FOR YOUR USE. These are automatic: a sign-up that matches a block is refused or sent for review, the CAPTCHA check, and rate limits. Your staff decide the rest.}}
+We make no decisions about you by automated means that have legal or similarly significant effects, {{CONFIRM FOR YOUR USE. These are automatic: a sign-up that matches a block, or that an external review answers about, is refused or sent for review, the CAPTCHA check, and rate limits. Your staff decide the rest.}}
 
 # 13. Changes
 

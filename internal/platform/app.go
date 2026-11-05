@@ -390,6 +390,8 @@ type AppOptions struct {
 	// SearchIndex stands in for the adapter of search. Tests only, with the fake adapter of
 	// internal/adapter/search/fake.
 	SearchIndex search.Index
+	// SearchRebuildBatch, when set, is how many statuses one job of a rebuild covers. Tests only.
+	SearchRebuildBatch int
 	// ClientAPIAccountLimit, when its Max is set, replaces the client API's per-account rate
 	// limit (clientapi.AccountLimit). Tests only, to reach the limit in a few requests and a
 	// short window (pkg/mykit/integration).
@@ -559,7 +561,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err != nil {
 		return nil, err
 	}
-	if err := a.setUpSearch(ctx, cfg, opts); err != nil {
+	if err := a.setUpSearch(ctx, cfg, repos.search, opts); err != nil {
 		return nil, err
 	}
 	if err := a.setUpErasure(repos.identities, repos.accounts, repos.statuses, repos.follows, repos.feeds, repos.notifs, repos.medias, repos.voice, repos.translations); err != nil {
@@ -570,7 +572,9 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpInbox(cfg, repos.feds)
 	a.setUpFederationSever()
 	a.setUpStatusReader(repos.statuses, repos.interactions, repos.quotes)
-	a.setUpTranslation(repos.translations, opts)
+	if err := a.setUpTranslation(cfg, repos.translations, opts); err != nil {
+		return nil, err
+	}
 	a.setUpLocalReports(repos.mods)
 	a.setUpFanOut(cfg, repos.feds, fedOutbox)
 	a.setUpWebhooks(repos.hooks)

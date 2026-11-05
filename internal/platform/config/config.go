@@ -242,6 +242,8 @@ type Config struct {
 	// IANA time zone of its billing months and the provider's name that the totals show (ADR-0146 §11).
 	PluginBillingLocation string
 	PluginBillingProvider string
+	// PluginTranslatorName is what readers see on a translation by the plugin of the translator kind (ADR-0148 §14).
+	PluginTranslatorName string
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string
@@ -440,6 +442,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("billing_gcp_budget_subscription", c.BillingGCPBudgetSubscription),
 		slog.String("plugin_billing_location", c.PluginBillingLocation),
 		slog.String("plugin_billing_provider", c.PluginBillingProvider),
+		slog.String("plugin_translator_name", c.PluginTranslatorName),
 		slog.String("payments", c.PaymentsProvider),
 		slog.String("payments_stripe_secret_key", redact(c.PaymentsStripeSecretKey != "")),
 		slog.String("payments_stripe_webhook_secret", redact(c.PaymentsStripeWebhookSecret != "")),

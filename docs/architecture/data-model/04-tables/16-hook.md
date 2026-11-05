@@ -15,3 +15,5 @@
 - `enforce` の `local.status` の `reject` のうち、`appeal_window_days` の内のもの
 
 アカウントの消去（`account.erase_deleted`）は、そのアカウントの判定を消します。消去は保全中のアカウントを飛ばします。
+
+`signup.check` の `subject_key` と `account_id` は、登録がトランザクションの前に生成するアカウントの ID です。メールアドレスも IP アドレスも含みません。`reject` や、後の検証で失敗した登録ではアカウントの行ができないので、その判定は保持期間で消えます。

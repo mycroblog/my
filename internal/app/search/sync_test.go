@@ -94,6 +94,10 @@ func (w *syncWorld) AuthorSearchableStatusIDs(_ context.Context, _, after string
 	return out, nil
 }
 
+func (w *syncWorld) SearchableStatusIDs(ctx context.Context, after string, limit int) ([]string, error) {
+	return w.AuthorSearchableStatusIDs(ctx, "", after, limit)
+}
+
 func (w *syncWorld) ProfileIndexable(context.Context, string) (bool, error) {
 	return w.indexable, nil
 }

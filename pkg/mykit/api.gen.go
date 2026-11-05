@@ -2488,6 +2488,7 @@ const (
 	InstanceSettingKeyHookMediaCheckOnFailure            InstanceSettingKey = "hook_media_check_on_failure"
 	InstanceSettingKeyHookSignupCheckMode                InstanceSettingKey = "hook_signup_check_mode"
 	InstanceSettingKeyHookSignupCheckOnFailure           InstanceSettingKey = "hook_signup_check_on_failure"
+	InstanceSettingKeyHookSignupCheckReject              InstanceSettingKey = "hook_signup_check_reject"
 	InstanceSettingKeyIncomeVisibility                   InstanceSettingKey = "income_visibility"
 	InstanceSettingKeyIndexableDefault                   InstanceSettingKey = "indexable_default"
 	InstanceSettingKeyInviteCreators                     InstanceSettingKey = "invite_creators"
@@ -2589,6 +2590,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyHookSignupCheckMode:
 		return true
 	case InstanceSettingKeyHookSignupCheckOnFailure:
+		return true
+	case InstanceSettingKeyHookSignupCheckReject:
 		return true
 	case InstanceSettingKeyIncomeVisibility:
 		return true

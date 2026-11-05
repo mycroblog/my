@@ -818,7 +818,6 @@ func (q *Queries) ListAccountPostCounters(ctx context.Context) ([]AccountPostCou
 }
 
 const listAuthorSearchableStatusIDs = `-- name: ListAuthorSearchableStatusIDs :many
-
 SELECT id FROM statuses
 WHERE author_account_id = ?1
   AND id > CAST(?2 AS TEXT)
@@ -833,7 +832,6 @@ type ListAuthorSearchableStatusIDsParams struct {
 	PageLimit       int64
 }
 
-// Lookups.
 // ListAuthorSearchableStatusIDs pages the public and local statuses of an author in ID order after
 // the ID after ("" for the first page), deleted ones included.
 func (q *Queries) ListAuthorSearchableStatusIDs(ctx context.Context, arg ListAuthorSearchableStatusIDsParams) ([]string, error) {
@@ -1096,6 +1094,46 @@ func (q *Queries) ListRecentLocalPosters(ctx context.Context, arg ListRecentLoca
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSearchableStatusIDs = `-- name: ListSearchableStatusIDs :many
+
+SELECT id FROM statuses
+WHERE id > CAST(?1 AS TEXT)
+  AND visibility IN ('public', 'local')
+ORDER BY id
+LIMIT ?2
+`
+
+type ListSearchableStatusIDsParams struct {
+	After     string
+	PageLimit int64
+}
+
+// Lookups.
+// ListSearchableStatusIDs pages the public and local statuses of the server in ID order after the ID
+// after ("" for the first page), deleted ones included.
+func (q *Queries) ListSearchableStatusIDs(ctx context.Context, arg ListSearchableStatusIDsParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listSearchableStatusIDs, arg.After, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

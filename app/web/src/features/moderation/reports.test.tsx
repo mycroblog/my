@@ -339,6 +339,7 @@ describe("a report's page", () => {
           search_indexing: "deny",
           ai_usage: "deny",
           rules: [{ id: "0192f0c4-7a8e-7000-8000-0000000f0001", text: "No spam" }],
+          translation: { browser: false, providers: [] },
         }),
       ),
       http.get(`${apiBase}/admin/accounts/:id/actions`, () =>

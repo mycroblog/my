@@ -125,7 +125,9 @@ const (
 	SettingHookInboundFollowOnFailure SettingKey = "hook_inbound_follow_on_failure"
 	SettingHookSignupCheckOnFailure   SettingKey = "hook_signup_check_on_failure"
 	SettingHookMediaCheckOnFailure    SettingKey = "hook_media_check_on_failure"
-	SettingRetentionHookDecisions     SettingKey = "retention_hook_decisions"
+	// SettingHookSignupCheckReject lets a reject of the hook signup.check refuse a sign-up (ADR-0147 §2).
+	SettingHookSignupCheckReject  SettingKey = "hook_signup_check_reject"
+	SettingRetentionHookDecisions SettingKey = "retention_hook_decisions"
 	// SettingHookInboundStatusUnfollowedDirect decides whether inbound.status also sends the direct
 	// posts of authors no local account follows (ADR-0147 §10).
 	SettingHookInboundStatusUnfollowedDirect SettingKey = "hook_inbound_status_unfollowed_direct"
@@ -634,6 +636,10 @@ var definitions = []Definition{
 	{
 		Key: SettingHookInboundStatusUnfollowedDirect, Kind: KindBool, Default: "false",
 		Doc: "Whether the decision hook inbound.status also sends the direct posts of authors no local account follows (ADR-0147 §10).",
+	},
+	{
+		Key: SettingHookSignupCheckReject, Kind: KindBool, Default: "false",
+		Doc: "Whether a reject of the decision hook signup.check refuses the sign-up while the hook enforces; when off, the verdict is recorded and has no effect (ADR-0147 §2).",
 	},
 	{
 		Key: SettingRetentionHookDecisions, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionHookDecisions), Min: MinRetentionHookDecisions, Max: MaxRetention,
@@ -1150,6 +1156,9 @@ func (s Settings) OAuthMetadataDocumentClients() bool {
 
 // IndexableDefault returns the value of SettingIndexableDefault.
 func (s Settings) IndexableDefault() bool { return s.boolValue(SettingIndexableDefault) }
+
+// HookSignupCheckReject returns the value of SettingHookSignupCheckReject.
+func (s Settings) HookSignupCheckReject() bool { return s.boolValue(SettingHookSignupCheckReject) }
 
 // FinanceVisibility returns the value of SettingFinanceVisibility; an unexpected value is private.
 func (s Settings) FinanceVisibility() FinanceVisibility {
