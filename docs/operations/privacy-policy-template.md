@@ -42,6 +42,7 @@ These are settings of the deployment ([configuration reference](../reference/con
 | Record | Default | Setting |
 | --- | --- | --- |
 | Uploads not attached to anything | 24 hours | `media_unattached_retention` |
+| Old versions of images, after a newer version replaces them | 30 days | `media_replaced_retention` |
 | Jobs that failed for good | 30 days | `dead_job_retention` |
 | Records of job runs that did not succeed | 30 days | `job_attempt_retention` |
 

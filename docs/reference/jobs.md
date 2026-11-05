@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 82 job types. 36 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 85 job types. 37 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -58,6 +58,9 @@ A job type can also be registered or do its work only with some settings; **Need
 | --- | --- | --- | --- | --- |
 | `media.process` | Re-encodes one upload into its variants, records the result, and deletes the received file. Content the processor rejects records a failed result. | An upload, or a change of what a file is used for | Default | Safe |
 | `media.purge_unattached` | Deletes the uploads that nothing attached in time. | Schedule | Default | Next run |
+| `media.purge_replaced` | Deletes the old versions of images that a newer version replaced more than `media_replaced_retention` ago. An image's current version is never deleted. | Schedule | Default | Next run |
+| `media.reprocess_walk` | Walks the uploaded images last processed before a time and queues a `media.reprocess` for each, one batch per minute. | `my admin media reprocess` | Default | Safe |
+| `media.reprocess` | Processes one image again with the current settings, from its large version. An image processed since the time, or that the processor no longer accepts, stays as it is. | `media.reprocess_walk` | Default | Safe |
 | `media.purge_remote_cache` | Deletes the copies in the remote media cache past their expiry or over the size limit. | Schedule | Default | Next run |
 | `content.close_poll` | Closes one poll when its end has passed. A job that runs early waits until the end. | A post with a poll, due at the poll's end | Default | Safe |
 | `content.fetch_link_card` | Fetches the card of the URL a post links. A busy host, or a host that answers 429 or 503, postpones the job without counting as a failure. A `robots.txt` that cannot be read retries an hour later. Details are in [Link previews](../operations/link-previews.md). | A post created or revised, after a delay for a remote post | Default, for failures of this server's stores | Safe |
@@ -197,6 +200,7 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `identity.purge_origins` | 1 hour |
 | `kv.purge_expired` | 1 hour |
 | `media.purge_unattached` | 1 hour |
+| `media.purge_replaced` | 1 hour |
 | `media.purge_remote_cache` | 1 hour |
 | `moderation.purge_records` | 1 hour |
 | `queue.purge_dead_jobs` | 1 hour |

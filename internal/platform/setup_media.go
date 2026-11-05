@@ -63,7 +63,8 @@ func (a *App) setMedia(cfg *config.Config, repo content.MediaRepository, emojis 
 		AVLimits: media.AVLimits{
 			MaxBytes: cfg.MediaMaxAVBytes, MaxVideoDuration: cfg.MediaMaxVideoDuration, MaxAudioDuration: cfg.MediaMaxAudioDuration,
 		},
-		UnattachedTTL: cfg.MediaUnattachedTTL,
+		UnattachedTTL:     cfg.MediaUnattachedTTL,
+		ReplacedRetention: cfg.MediaReplacedRetention,
 		// Avatars and headers refer to media files from the account module, the instance's images
 		// from the instance module, and the pending custom emoji requests to their images
 		// (ADR-0070 §2).

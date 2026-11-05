@@ -42,6 +42,15 @@ func (q *Queries) DeleteMediaFocus(ctx context.Context, mediaID string) error {
 	return err
 }
 
+const deleteMediaProcessingResult = `-- name: DeleteMediaProcessingResult :exec
+DELETE FROM media_processing_results WHERE id = $1
+`
+
+func (q *Queries) DeleteMediaProcessingResult(ctx context.Context, resultID string) error {
+	_, err := q.db.Exec(ctx, deleteMediaProcessingResult, resultID)
+	return err
+}
+
 const deleteMediaProcessingResults = `-- name: DeleteMediaProcessingResults :exec
 DELETE FROM media_processing_results WHERE media_id = $1
 `
@@ -58,6 +67,30 @@ DELETE FROM media_variants WHERE result_id IN (SELECT id FROM media_processing_r
 func (q *Queries) DeleteMediaVariantsOf(ctx context.Context, mediaID string) error {
 	_, err := q.db.Exec(ctx, deleteMediaVariantsOf, mediaID)
 	return err
+}
+
+const deleteMediaVariantsOfResult = `-- name: DeleteMediaVariantsOfResult :many
+DELETE FROM media_variants WHERE result_id = $1 RETURNING blob_key
+`
+
+func (q *Queries) DeleteMediaVariantsOfResult(ctx context.Context, resultID string) ([]string, error) {
+	rows, err := q.db.Query(ctx, deleteMediaVariantsOfResult, resultID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var blob_key string
+		if err := rows.Scan(&blob_key); err != nil {
+			return nil, err
+		}
+		items = append(items, blob_key)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const deleteUnattachedMediaFile = `-- name: DeleteUnattachedMediaFile :execrows
@@ -155,6 +188,25 @@ type HasCurrentMediaProcessingResultParams struct {
 // is for a purpose.
 func (q *Queries) HasCurrentMediaProcessingResult(ctx context.Context, arg HasCurrentMediaProcessingResultParams) (bool, error) {
 	row := q.db.QueryRow(ctx, hasCurrentMediaProcessingResult, arg.Purpose, arg.MediaID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const hasNewerMediaProcessingResult = `-- name: HasNewerMediaProcessingResult :one
+SELECT EXISTS (
+  SELECT 1 FROM media_processing_results r WHERE r.media_id = $1 AND r.id > $2
+)
+`
+
+type HasNewerMediaProcessingResultParams struct {
+	MediaID  string
+	ResultID string
+}
+
+// HasNewerMediaProcessingResult reports whether a media file has a result newer than @result_id.
+func (q *Queries) HasNewerMediaProcessingResult(ctx context.Context, arg HasNewerMediaProcessingResultParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hasNewerMediaProcessingResult, arg.MediaID, arg.ResultID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -481,6 +533,83 @@ func (q *Queries) ListReadyMediaVariants(ctx context.Context, ids []string) ([]L
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReplacedMediaProcessingResults = `-- name: ListReplacedMediaProcessingResults :many
+SELECT r.id FROM media_processing_results r
+WHERE r.id > COALESCE($1::uuid, '00000000-0000-0000-0000-000000000000')
+  AND EXISTS (
+    SELECT 1 FROM media_processing_results n
+    WHERE n.media_id = r.media_id AND n.id > r.id AND n.processed_at < $2)
+ORDER BY r.id
+LIMIT $3
+`
+
+type ListReplacedMediaProcessingResultsParams struct {
+	AfterID        *string
+	ReplacedBefore time.Time
+	RowLimit       int32
+}
+
+// ListReplacedMediaProcessingResults returns the results after @after_id that a newer result of the
+// same file replaced before @replaced_before. The newest result of a file is never one of them.
+func (q *Queries) ListReplacedMediaProcessingResults(ctx context.Context, arg ListReplacedMediaProcessingResultsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listReplacedMediaProcessingResults, arg.AfterID, arg.ReplacedBefore, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReprocessableUploads = `-- name: ListReprocessableUploads :many
+SELECT m.id FROM media_files m
+JOIN media_processing_results r ON r.media_id = m.id
+WHERE m.origin = 'upload' AND m.id > COALESCE($1::uuid, '00000000-0000-0000-0000-000000000000')
+  AND r.outcome = 'ready' AND r.media_type = 'image' AND r.processed_at < $2
+  AND NOT EXISTS (SELECT 1 FROM media_processing_results n WHERE n.media_id = m.id AND n.id > r.id)
+ORDER BY m.id
+LIMIT $3
+`
+
+type ListReprocessableUploadsParams struct {
+	AfterID         *string
+	ProcessedBefore time.Time
+	RowLimit        int32
+}
+
+// ListReprocessableUploads returns the uploads after @after_id whose current result is a ready image
+// processed before @processed_before. A video or audio file is never re-encoded, and a failed one
+// has nothing to start from.
+func (q *Queries) ListReprocessableUploads(ctx context.Context, arg ListReprocessableUploadsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listReprocessableUploads, arg.AfterID, arg.ProcessedBefore, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

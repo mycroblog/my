@@ -68,8 +68,11 @@
 - 派生は upload のあとのジョブ `media.process` で、1 回の処理で全部作る（ADR-0004。ジョブは冪等）。upload の応答は `processing` を返す。
 - `media_variants`（イベント、`media_processing_results` の子）は `size`（`small` / `medium` / `large`）と `motion`（`still` / `animated`）の 2 列を持ち、主キーを `(result_id, size, motion)` にする（ADR-0020）。
   動画・音声のポスターも `motion = still` の派生として同じ表に入れる。
-- Blob のキーは `media/{media_id}/{result_id}/{size}.{ext}` と `media/{media_id}/{result_id}/{size}-animated.{ext}`。処理し直すとキーが変わるので、配信は `Cache-Control: public, max-age=31536000, immutable` にできる。古い処理結果の Blob は掃除のジョブが消す（FR-803）。
-- 大きさや形式の設定を変えたときの作り直しは、管理者のコマンドで全ファイルの `media.process` を入れ直す（後続 Issue）。
+- Blob のキーは `media/{media_id}/{result_id}/{size}.{ext}` と `media/{media_id}/{result_id}/{size}-animated.{ext}`。処理し直すとキーが変わるので、配信は `Cache-Control: public, max-age=31536000, immutable` にできる。古い処理結果は、開いているページ・キャッシュ・連合先が URL を持っているので、置き換わってから `media_replaced_retention`（既定 30 日）のあいだ残し、そのあと定期ジョブ `media.purge_replaced` が行と Blob を消す（FR-803）。最新の結果は消さない。
+- 大きさや形式の設定を変えたときの作り直しは、管理者のコマンド `my admin media reprocess -before <時刻>` で、現在の結果がその時刻より前の画像だけをジョブに分けて処理し直す。
+  - 原本がないので L から作り直す。実行のたびに再エンコードで画質が落ちるので、設定の指紋を結果に持たせて比較する案は、列の追加と指紋の保守に見合わないので採らず、時刻で一度きりにする。同じ時刻で再実行しても処理済みの画像は何もしない。
+  - 動画・音声はトランスコードしないので対象にしない。
+  - URL が変わることを連合先には伝えない（`Update` は送らない）。猶予のあとは、古い URL を持ったままの連合先で画像が表示されなくなることがある。
 
 ### 8. クライアント API と ActivityPub
 
@@ -143,7 +146,7 @@ S / M の WebP は条件付きで決め、#654 の spike が通ったので確�
 - 純 Go の WebP エンコーダは利用者が少なく、保守が止まる危険がある。出力だけに使い、外れても JPEG / PNG に戻せるようにする。
 - container の remux を自前で持つので、MP4 / WebM のテストとファズが必要。
 - プロキシの `small` はリクエストのたびに画像を復号するので、CDN のキャッシュに当たらないと CPU を使う。
-- 後続（Issue 化する）: 動画対応の拡張の計画（予定だけを Issue にし、着手は別の ADR で決める）。設定を変えたときの全メディアの処理し直しのコマンドと、古い処理結果の Blob の掃除（#2181。`v0.1.0` の後）。
+- 後続（Issue 化する）: 動画対応の拡張の計画（予定だけを Issue にし、着手は別の ADR で決める）。
 
 ## Open Questions / 要検証
 

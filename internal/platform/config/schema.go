@@ -455,6 +455,13 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.MediaUnattachedTTL, _ = time.ParseDuration(v) },
 	},
 	{
+		key:   "media_replaced_retention",
+		doc:   "How long the files of an image's replaced version stay after a newer version replaces them, as a Go duration such as `720h`. Pages that are open, caches, and other servers still hold their URLs, which answer `404` once the hourly cleanup deletes them.",
+		def:   "720h",
+		check: checkPositiveDuration,
+		set:   func(c *Config, v string) { c.MediaReplacedRetention, _ = time.ParseDuration(v) },
+	},
+	{
 		key:   "media_max_av_bytes",
 		doc:   "Largest accepted video or audio upload in bytes. The file is held in memory while it is checked and remuxed, so this also bounds the memory of one upload.",
 		def:   strconv.Itoa(100 << 20),

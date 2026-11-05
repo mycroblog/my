@@ -237,7 +237,9 @@
   キーは処理結果を含むので同じキーが別の中身を指すことはなく、`Cache-Control: public, max-age=31536000, immutable` で配ります。
   - 静止版は `small` / `medium` / `large` の 3 つです。`large` は不透明なら JPEG、透過があれば PNG で、`small` / `medium` は WebP です。アニメーション（GIF、アニメーション WebP）は、最初のフレームの静止版と、動く版（`large` は GIF、`small` / `medium` はアニメーション WebP）の 6 つです。
   - 用途ごとの大きさ: 投稿の画像は面積 640×360 / 1920×1080 / 3840×2160 まで、アイコンは焦点（`media_focus`、なければ中央）に合わせて正方形に切り抜いた 96 / 192 / 400 px、ヘッダーは 750×250 / 1500×500 / 3000×1000 の箱、カスタム絵文字は 64 / 128 / 256 px の箱に収めます。元より大きくはしません。
-  - 別の用途で使う（投稿の画像をアバターにするなど）と、`content.MediaService.CheckProfileImage` が新しい用途の `media.process` を投入し、現在の結果の `large`（アニメーションなら動く版）から処理し直して新しい結果を記録します。それまでは前の結果の版を表示します。古い結果の Blob は残ります。
+  - 別の用途で使う（投稿の画像をアバターにするなど）と、`content.MediaService.CheckProfileImage` が新しい用途の `media.process` を投入し、現在の結果の `large`（アニメーションなら動く版）から処理し直して新しい結果を記録します。それまでは前の結果の版を表示します。
+  - 大きさや形式の設定を変えたあとは、`my admin media reprocess -before <時刻>` が、現在の結果がその時刻より前の画像ごとに `media.reprocess` を投入します（`media.reprocess_walk` が 100 件ずつ 1 分おき）。原本がないので `large` から作り直して新しい結果を記録します。その時刻以降に処理された画像は何もしないので、同じ時刻で何度実行しても再エンコードは 1 回です。動画・音声は作り直しません。
+  - 新しい結果に置き換わった古い結果は、開いているページ・キャッシュ・連合先が URL を持っているので、置き換わってから `media_replaced_retention`（既定 30 日）のあいだ残します。そのあと 1 時間ごとの `media.purge_replaced` が行を消し、キーを `media_blob_deletions` に移して Blob を消します。各ファイルの最新の結果は消しません。
   ジョブは冪等です。最新の結果が同じ用途のファイルは受け取ったままのファイルの削除だけを繰り返し、消去済みのファイルは何もしません。初めての処理で処理できない中身は `outcome = failed`（版なし）の結果として記録します。処理し直しが失敗したときは記録せず、前の結果が残ります。
 - 動画・音声（投稿の添付だけ）はトランスコードしません（[ADR-0005](../../../adr/0005-blob-storage-and-media.md) §9）。アップロードのときに container を解析して codec・長さ・寸法を検査し（上限は設定 `media_max_av_bytes`・`media_max_video_duration`・`media_max_audio_duration`、[設定リファレンス](../../../reference/configuration.md)）、
   クライアントが送ったポスター（API の `thumbnail`）を `uploads/<id>.poster` に置きます。`media.process` は、メタデータを落として並べ直した（remux）ファイルを `size = large`・`motion = animated` の版（`media/<id>/<result_id>/large-animated.<ext>`）にし、

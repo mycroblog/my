@@ -272,3 +272,42 @@ func (r *MediaRepository) FindDescription(ctx context.Context, mediaID string) (
 	}
 	return content.MediaDescription{MediaID: row.MediaID, Text: row.Description}, nil
 }
+
+// HasNewerProcessingResult implements content.MediaRepository.
+func (r *MediaRepository) HasNewerProcessingResult(ctx context.Context, tx uow.Tx, mediaID, resultID string) (bool, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return false, err
+	}
+	ok, err := q.HasNewerMediaProcessingResult(ctx, sqlitegen.HasNewerMediaProcessingResultParams{MediaID: mediaID, ResultID: resultID})
+	return ok, wrap(err, "look up newer media processing result")
+}
+
+// DeleteProcessingResult implements content.MediaRepository.
+func (r *MediaRepository) DeleteProcessingResult(ctx context.Context, tx uow.Tx, resultID string) ([]string, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	keys, err := q.DeleteMediaVariantsOfResult(ctx, resultID)
+	if err != nil {
+		return nil, wrap(err, "delete media variants")
+	}
+	return keys, wrap(q.DeleteMediaProcessingResult(ctx, resultID), "delete media processing result")
+}
+
+// ListReplacedProcessingResults implements content.MediaRepository.
+func (r *MediaRepository) ListReplacedProcessingResults(ctx context.Context, afterID string, replacedBefore time.Time, limit int) ([]string, error) {
+	ids, err := r.db.reader().ListReplacedMediaProcessingResults(ctx, sqlitegen.ListReplacedMediaProcessingResultsParams{
+		AfterID: afterID, ReplacedBefore: toMillis(replacedBefore), RowLimit: int64(limit),
+	})
+	return ids, wrap(err, "list replaced media processing results")
+}
+
+// ListReprocessableUploads implements content.MediaRepository.
+func (r *MediaRepository) ListReprocessableUploads(ctx context.Context, afterID string, processedBefore time.Time, limit int) ([]string, error) {
+	ids, err := r.db.reader().ListReprocessableUploads(ctx, sqlitegen.ListReprocessableUploadsParams{
+		AfterID: afterID, ProcessedBefore: toMillis(processedBefore), RowLimit: int64(limit),
+	})
+	return ids, wrap(err, "list reprocessable uploads")
+}

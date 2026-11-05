@@ -111,10 +111,11 @@ type Config struct {
 	// The bucket of the gcs blob store, on Application Default Credentials.
 	BlobGCSBucket string
 	// Limits of image uploads and how long an upload may stay unattached.
-	MediaMaxImageBytes  int64
-	MediaMaxImageSide   int
-	MediaMaxImagePixels int64
-	MediaUnattachedTTL  time.Duration
+	MediaMaxImageBytes     int64
+	MediaMaxImageSide      int
+	MediaMaxImagePixels    int64
+	MediaUnattachedTTL     time.Duration
+	MediaReplacedRetention time.Duration
 	// Limits of video and audio uploads (ADR-0005 §9).
 	MediaMaxAVBytes       int64
 	MediaMaxVideoDuration time.Duration
@@ -360,6 +361,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.Int("media_max_image_side", c.MediaMaxImageSide),
 		slog.Int64("media_max_image_pixels", c.MediaMaxImagePixels),
 		slog.Duration("media_unattached_retention", c.MediaUnattachedTTL),
+		slog.Duration("media_replaced_retention", c.MediaReplacedRetention),
 		slog.Int64("media_max_av_bytes", c.MediaMaxAVBytes),
 		slog.Duration("media_max_video_duration", c.MediaMaxVideoDuration),
 		slog.Duration("media_max_audio_duration", c.MediaMaxAudioDuration),

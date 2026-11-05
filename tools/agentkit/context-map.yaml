@@ -219,7 +219,7 @@ entries:
       - "Capture points pass an empty where inside a request: the reporter names it <surface> <method> <route>. Report only 5xx causes, job panics and dead jobs, and startup failures; a failure caused by a remote server (a delivery) uses queue.RetryRemote and is not reported."
       - "Start goroutines with kernel.Go(ctx, name, reporter, fn): its panic is reported as fatal and stops Serve through ErrorReporter.StopProcess."
   - name: cli-admin
-    paths: ["cmd/my/admin.go", "cmd/my/role.go", "cmd/my/audit.go"]
+    paths: ["cmd/my/admin.go", "cmd/my/media.go", "cmd/my/role.go", "cmd/my/audit.go"]
     userdocs: ["docs/operations/admin-cli.md"]
   - name: cli-moderation
     paths: ["cmd/my/account_actions.go", "cmd/my/appeal.go", "cmd/my/moderation.go", "cmd/my/domain_block.go", "cmd/my/refetch.go", "cmd/my/retention.go", "cmd/my/two_factor.go"]

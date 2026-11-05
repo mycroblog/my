@@ -27,6 +27,12 @@ type MediaRepository interface {
 	// HasProcessingResult reports whether the newest processing result of a media file is for
 	// purpose.
 	HasProcessingResult(ctx context.Context, tx uow.Tx, mediaID string, purpose content.MediaPurpose) (bool, error)
+	// HasNewerProcessingResult reports whether a media file has a processing result newer than
+	// resultID.
+	HasNewerProcessingResult(ctx context.Context, tx uow.Tx, mediaID, resultID string) (bool, error)
+	// DeleteProcessingResult deletes a processing result with its variants and returns the blob
+	// keys of the variants; a missing result returns none.
+	DeleteProcessingResult(ctx context.Context, tx uow.Tx, resultID string) ([]string, error)
 	// UpsertFocus sets the focal point of a media file.
 	UpsertFocus(ctx context.Context, tx uow.Tx, f content.MediaFocus) error
 	// UpsertDescription sets the description of a media file.
@@ -115,6 +121,14 @@ type MediaRepository interface {
 	ListReadyVariants(ctx context.Context, ids []string) ([]FileVariant, error)
 	FindFocus(ctx context.Context, mediaID string) (content.MediaFocus, error)
 	FindDescription(ctx context.Context, mediaID string) (content.MediaDescription, error)
+	// ListReplacedProcessingResults returns the IDs of up to limit processing results after afterID
+	// ("" for the first page) that a newer result of the same file replaced before replacedBefore,
+	// ordered by ID. The newest result of a file is never one of them.
+	ListReplacedProcessingResults(ctx context.Context, afterID string, replacedBefore time.Time, limit int) ([]string, error)
+	// ListReprocessableUploads returns the IDs of up to limit uploaded media files after afterID
+	// ("" for the first page) whose current result is a ready image processed before
+	// processedBefore, ordered by ID.
+	ListReprocessableUploads(ctx context.Context, afterID string, processedBefore time.Time, limit int) ([]string, error)
 	// ListUnattachedUploads returns the IDs of up to limit uploaded media files after afterID
 	// ("" for the first page) that were created before createdBefore and that no status
 	// revision attaches and no custom emoji uses as its image, ordered by ID.

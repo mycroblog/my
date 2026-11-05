@@ -19,7 +19,7 @@ func TestUsageNamesEveryCommand(t *testing.T) {
 	}
 	top := text(usage)
 	for _, sub := range []string{
-		"create", "account", "appeal", "audit", "closure", "domain", "emoji", "federation", "refetch", "relay",
+		"create", "account", "appeal", "audit", "closure", "domain", "emoji", "federation", "media", "refetch", "relay",
 		"report", "retention", "role", "signup-block", "supporters", "theme", "brand", "types",
 	} {
 		if !strings.Contains(top, sub) {

@@ -46,6 +46,8 @@ func runAdmin(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return runAdminEmoji(args[1:], stdout, stderr)
 	case args[0] == "federation":
 		return runAdminFederation(args[1:], stdout, stderr)
+	case args[0] == "media":
+		return runAdminMedia(args[1:], stdout, stderr)
 	case args[0] == "refetch":
 		return runAdminRefetch(args[1:], stdout, stderr)
 	case args[0] == "relay":
@@ -209,6 +211,7 @@ func adminUsage(w io.Writer) {
        my admin domain list|issue|lift|export|import ...   (my admin domain -help)
        my admin emoji create|list|update|replace-image|enable|disable|copy|delete|requests ...   (my admin emoji -help)
        my admin federation sever ...   (my admin federation -help)
+       my admin media reprocess ...   (my admin media -help)
        my admin refetch status|account|domain ...   (my admin refetch -help)
        my admin relay create|follow|unfollow|remove|list ...   (my admin relay -help)
        my admin report list|show|assign|unassign|resolve|note|reopen ...   (my admin report -help)
@@ -233,6 +236,8 @@ withdraws it, checks the server before the closure, closes it, and writes the
 static closure page for the domain to serve after the server stops.
 my admin emoji registers and manages the custom emoji.
 my admin federation severs the follows with remote accounts.
+my admin media reprocess queues the processing of uploaded images again with the
+current settings.
 my admin refetch queues the refetch of remote posts from their servers.
 my admin relay joins and leaves the relays that pass public posts between servers.
 my admin signup-block blocks sign-ups by email domain, email address, or IP range.

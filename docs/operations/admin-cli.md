@@ -1,6 +1,6 @@
 # Administrators and roles
 
-A guide for operators: how to create the first administrator, manage roles from the command line, announce and carry out the end of the service, and export the maintenance page.
+A guide for operators: how to create the first administrator, manage roles from the command line, announce and carry out the end of the service, process uploaded images again, and export the maintenance page.
 
 ## Prerequisites
 
@@ -115,6 +115,22 @@ my admin closure export-html -out ./closure -lang ja,en  # choose the locales an
 - Output: `<dir>/<locale>.html` for each locale and `<dir>/index.html` with every locale one after another. The pages use the same template as `my maintenance export` and show the server name, the closing date, the operator's message of the announcement, and `status_page_url`.
   The output also holds configuration examples for the front end: `nginx.conf`, `Caddyfile`, and `cloudfront-function.js`. They answer `410` for `/ap/*`, `/inbox`, WebFinger, host-meta, NodeInfo, and `/@*`, and serve the closing page for everything else.
 - The command refuses (exit code 1) unless the server is closed. Before `delivery_completed` it prints a warning and still writes the pages. [service-closure.md](service-closure.md) describes how to switch the front end to the static page.
+
+## Processing uploaded images again
+
+Each uploaded image keeps three sizes, and an animation also its moving versions. A new release of `my` can change those sizes or formats, and an existing image keeps its files until you process it again:
+
+```sh
+my admin media reprocess -before 2027-01-31T09:00:00Z
+```
+
+- `-before` takes the time of the change, such as the time you upgraded, in RFC 3339. Only images last processed before that time are taken, and a time that has not passed is refused.
+- The worker does the work, 100 images a minute, each in a job of its own (`media.reprocess_walk` and `media.reprocess` in the [jobs reference](../reference/jobs.md)). Keep a worker running; the admin jobs page (`/admin/jobs`) shows the queue.
+- Running it again with the same time is safe. Images already processed are left alone, and the ones the first run did not reach are picked up.
+- Originals are not kept, so each image is made again from its large version. Detail that the large version lost does not come back, and each run with a later time re-encodes the images once more and loses a little quality. Run it once per change.
+- Video and audio files are not re-encoded and are left alone. An image that the current limits no longer accept keeps its current version, and the worker logs a warning.
+
+The new version of an image has new URLs. The old files stay for `media_replaced_retention` (30 days by default, [configuration reference](../reference/configuration.md#media_replaced_retention)), so pages that are open and caches keep working, and the hourly job `media.purge_replaced` then deletes them. Other servers are not told about the new URLs: a server that still holds an old URL and has no copy of its own stops showing the image after that time. Allow for the extra storage until the old files go.
 
 ## Exporting the maintenance page
 

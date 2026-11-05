@@ -108,7 +108,7 @@ Commands:
   admin     Create an administrator, moderate domains, handle reports,
             manage roles, and block sign-ups
             (my admin create|account|appeal|audit|closure|domain|emoji|
-            federation|refetch|relay|report|retention|role|signup-block|
+            federation|media|refetch|relay|report|retention|role|signup-block|
             supporters; my admin -help)
   config    Check the configuration and generate the Web Push key
             (my config check|vapid-key)
