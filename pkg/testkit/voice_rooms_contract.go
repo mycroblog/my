@@ -28,7 +28,7 @@ import (
 // operations of the participants, the host, and the co-hosts with their permissions, the
 // co-hosts, the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11), a transport
 // that gives no grant leaving nothing behind, admissions and sessions that a change committed
-// meanwhile does not undo, and, on a media server, the reconciliation of voice.sweep and the events of voice.media_event
+// meanwhile does not undo, and, on a media server, the reconciliation of voice.sweep and the events of voice.apply_media_event
 // (ADR-0101 §13).
 func VoiceRoomsContract(t *testing.T, newHarness VoiceFactory) {
 	t.Helper()
@@ -1003,7 +1003,7 @@ func roomsSuspension(t *testing.T, e *roomsEnv) {
 // the sessions on the media path that are not in the room and disconnects the participants the
 // media path has not seen for longer than the life of a grant, applies the room's state to a
 // session it sees for the first time, and opens a media room again that vanished;
-// voice.media_event removes a session that joined without being in the room, applies the room's
+// voice.apply_media_event removes a session that joined without being in the room, applies the room's
 // state to one that is, disconnects one that left unless it connected again, and opens a media
 // room again that finished while the room is open; a session taken away cannot be revived by
 // heartbeats; and a delivery of another method or that does not verify is refused.
@@ -1077,11 +1077,11 @@ func roomsMedia(t *testing.T, e *roomsEnv) {
 	}
 	keys := map[string]int{}
 	for _, res := range e.jobs.Results() {
-		if res.Job.Type == appvoice.JobMediaEvent {
+		if res.Job.Type == appvoice.JobApplyMediaEvent {
 			keys[res.Job.IdempotencyKey]++
 		}
 	}
-	if keys["voice.media_event:livekit:EV_1"] != 2 || keys["voice.media_event:livekit:EV_2"] != 1 {
+	if keys["voice.apply_media_event:livekit:EV_1"] != 2 || keys["voice.apply_media_event:livekit:EV_2"] != 1 {
 		t.Errorf("media event jobs = %v, want one key per event", keys)
 	}
 

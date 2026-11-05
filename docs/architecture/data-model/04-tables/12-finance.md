@@ -29,7 +29,7 @@
 - `provider_normalized` は事業者の NFKC・小文字の形（`finance.NormalizeProvider`）で、表記の揺れ（全角・大文字）を内訳で 1 つにまとめます。まとめるキーで、表示には使いません。
   内訳の行と項目の行に出す事業者は、期間ごと・`provider_normalized` ごとに 1 つの表記で、その期間に支払いが載る項目のうち、いまのラベルの版の `revised_at` が最も新しい（同じなら版の `id` が大きい）項目の `provider` です（ADR-0067）。
   取り込んだ費用の表記は取り込みの事業者の名前（`AWS`・`Google Cloud`）で、同じ期間・同じ `provider_normalized` に手入力の項目があればその表記を優先します。
-- 利用料金の取り込み（ADR-0068）は、`billing_sources` の事業者ごとの定期ジョブ `finance.billing_import`（24 時間ごと）が `BillingSource` ポートで事業者の請求月の費用を読み、試行ごとに `billing_import_runs` の行を 1 つ足します。
+- 利用料金の取り込み（ADR-0068）は、`billing_sources` の事業者ごとの定期ジョブ `finance.import_billing`（24 時間ごと）が `BillingSource` ポートで事業者の請求月の費用を読み、試行ごとに `billing_import_runs` の行を 1 つ足します。
   成功した試行は、キー `(source, billing_month, service, charge_type)` ごとに最新の版と金額・通貨・確定の別・`starts_on`〜`ends_on` を比べ、違うキーだけ版を足して `imported_cost_heads` を同じトランザクションで更新します。取り直した月で事業者が返さなくなったキーは金額 0 の版になります。
   版の種類は、キーの最新の版が `final` か `correction` なら `correction`、事業者が月を確定と返せば `final`、それまでは `estimate` です（`finance.NextRevisionKind`）。同じジョブの再試行は `run_key` の一意制約で版を重ねません。
 - 取り直す月は事業者のタイムゾーンでの今月と、15 日まで、または確定するまでの前月です（`finance.RefetchMonths`）。AWS の課金される要求は `billing_import_runs.requests` を UTC の日と暦月で合計して上限（`billing_aws_max_requests_per_day`・`_per_month`）で止め、上限に達した試行は事業者を呼ばずに `request_cap` として記録します。

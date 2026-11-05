@@ -23,10 +23,10 @@ import (
 
 // Jobs and schedules of the billing imports (ADR-0068 §2).
 const (
-	// JobBillingImport imports the charges of one source (its payload names it). Every source of
-	// billing_sources has the schedule "finance.billing_import.<source>" every ImportInterval,
+	// JobImportBilling imports the charges of one source (its payload names it). Every source of
+	// billing_sources has the schedule "finance.import_billing.<source>" every ImportInterval,
 	// and an administrator can queue one now (RequestImport).
-	JobBillingImport = "finance.billing_import"
+	JobImportBilling = "finance.import_billing"
 	// ImportInterval is the period of the scheduled imports: the providers update their data
 	// about once a day.
 	ImportInterval = 24 * time.Hour
@@ -93,7 +93,7 @@ func (s *Service) Rules() Rules {
 	return out
 }
 
-// importPayload is the payload of JobBillingImport.
+// importPayload is the payload of JobImportBilling.
 type importPayload struct {
 	Source string `json:"source"`
 }
@@ -103,13 +103,13 @@ func importJob(source, key string) (queue.NewJob, error) {
 	if err != nil {
 		return queue.NewJob{}, err
 	}
-	return queue.NewJob{Type: JobBillingImport, Payload: b, IdempotencyKey: key}, nil
+	return queue.NewJob{Type: JobImportBilling, Payload: b, IdempotencyKey: key}, nil
 }
 
-// RegisterJobs registers the handler of JobBillingImport and, when sc is not nil, the daily
+// RegisterJobs registers the handler of JobImportBilling and, when sc is not nil, the daily
 // schedule of every source.
 func (s *Service) RegisterJobs(h *queue.JobHandlerRegistry, sc *queue.Scheduler) {
-	h.Register(JobBillingImport, func(ctx context.Context, j queue.Job) queue.Result {
+	h.Register(JobImportBilling, func(ctx context.Context, j queue.Job) queue.Result {
 		var p importPayload
 		if err := json.Unmarshal(j.Payload, &p); err != nil || p.Source == "" {
 			return queue.Fail(fmt.Errorf("finance: the payload of %s: %w", j.ID, err))
@@ -128,7 +128,7 @@ func (s *Service) RegisterJobs(h *queue.JobHandlerRegistry, sc *queue.Scheduler)
 		if err != nil {
 			panic(err) // a string always marshals
 		}
-		sc.Add(queue.Schedule{Name: JobBillingImport + "." + src.Name(), Every: ImportInterval, Job: job})
+		sc.Add(queue.Schedule{Name: JobImportBilling + "." + src.Name(), Every: ImportInterval, Job: job})
 	}
 }
 

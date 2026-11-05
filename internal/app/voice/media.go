@@ -22,12 +22,12 @@ import (
 // (ADR-0101 §2, ADR-0101 §13). The room domain is the source of truth: the events only make
 // the reconciliation of voice.sweep come sooner, and nothing assumes they arrive.
 
-// JobMediaEvent applies one verified event of a media server (ADR-0101 §13): a session that
+// JobApplyMediaEvent applies one verified event of a media server (ADR-0101 §13): a session that
 // joined the media path and is not a live session of the room is removed from it, and a live one
 // loses its older connections (SessionDeduplicator) and gets the room's current state; a session of the room that left, and is not connected again
 // with another connection, is taken away and disconnected as by ADR-0100 §6; a media room
 // that finished while the room is open is opened again. Its idempotency key is the event's ID.
-const JobMediaEvent = "voice.media_event"
+const JobApplyMediaEvent = "voice.apply_media_event"
 
 // MediaWebhookMaxBodyBytes bounds the body of a delivery of a media server's events, read
 // before it is verified.
@@ -108,7 +108,7 @@ type mediaPayload struct {
 }
 
 // ReceiveMediaEvents verifies a delivery of the media server of the voice chat's method and
-// queues a JobMediaEvent for each of its events. The events are not recorded otherwise
+// queues a JobApplyMediaEvent for each of its events. The events are not recorded otherwise
 // (ADR-0101 §13).
 func (s *Service) ReceiveMediaEvents(ctx context.Context, req MediaWebhook) (MediaWebhookResult, error) {
 	src, ok := s.d.Transport.(EventSource)
@@ -139,7 +139,7 @@ func (s *Service) ReceiveMediaEvents(ctx context.Context, req MediaWebhook) (Med
 				return err
 			}
 			err = s.d.Outbox.EnqueueTx(ctx, tx, queue.NewJob{
-				Type: JobMediaEvent, Payload: b, IdempotencyKey: JobMediaEvent + ":" + req.Transport + ":" + e.ID,
+				Type: JobApplyMediaEvent, Payload: b, IdempotencyKey: JobApplyMediaEvent + ":" + req.Transport + ":" + e.ID,
 				OrderingKey: "voice_room:" + e.Room.ID,
 			})
 			if err != nil {
@@ -154,12 +154,12 @@ func (s *Service) ReceiveMediaEvents(ctx context.Context, req MediaWebhook) (Med
 	return MediaWebhookResult{Outcome: MediaWebhookAccepted}, nil
 }
 
-// MediaEvent runs JobMediaEvent. An event of another method than the voice chat's now is
+// ApplyMediaEvent runs JobApplyMediaEvent. An event of another method than the voice chat's now is
 // dropped.
-func (s *Service) MediaEvent(ctx context.Context, j queue.Job) queue.Result {
+func (s *Service) ApplyMediaEvent(ctx context.Context, j queue.Job) queue.Result {
 	var p mediaPayload
 	if err := json.Unmarshal(j.Payload, &p); err != nil {
-		return queue.Fail(fmt.Errorf("decode %s: %w", JobMediaEvent, err))
+		return queue.Fail(fmt.Errorf("decode %s: %w", JobApplyMediaEvent, err))
 	}
 	if !s.Enabled() || string(s.d.Config.Transport) != p.Transport {
 		return queue.Done()

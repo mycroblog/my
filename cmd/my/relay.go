@@ -19,7 +19,7 @@ import (
 // (ADR-0006, FR-724). The CLI acts as no user: what it does is recorded in the audit log as the
 // command line's.
 func runAdminRelay(args []string, stdout, stderr io.Writer) int {
-	sub, code := dispatch("admin relay", args, []string{"create", "follow", "unfollow", "remove", "list"}, stderr, adminRelayUsage)
+	sub, code := dispatch("admin relay", args, []string{"create", "follow", "unfollow", "delete", "list"}, stderr, adminRelayUsage)
 	if code >= 0 || len(args) == 0 {
 		return max(code, 0)
 	}
@@ -75,9 +75,9 @@ func runAdminRelay(args []string, stdout, stderr io.Writer) int {
 		if v, err = app.Relays.Unfollow(ctx, c.fs.Arg(0), ""); err == nil {
 			_, _ = fmt.Fprintf(stdout, "left relay %s\n", v.Relay.ID)
 		}
-	case "remove":
+	case "delete":
 		if err = app.Relays.Remove(ctx, c.fs.Arg(0), ""); err == nil {
-			_, _ = fmt.Fprintf(stdout, "removed relay %s\n", c.fs.Arg(0))
+			_, _ = fmt.Fprintf(stdout, "deleted relay %s\n", c.fs.Arg(0))
 		}
 	}
 	if err != nil {
@@ -97,7 +97,7 @@ func describeRelayError(err error, arg string) string {
 	case errors.Is(err, federation.ErrRelayNotJoined):
 		return "the relay is not pending or accepted"
 	case errors.Is(err, appfederation.ErrRelayNotRemovable):
-		return "the relay is pending or accepted; leave it before removing it"
+		return "the relay is pending or accepted; leave it before deleting it"
 	}
 	return err.Error()
 }
@@ -122,7 +122,7 @@ func adminRelayUsage(w io.Writer) {
   my admin relay create [-protocol mastodon|litepub] [-send-only] [-config <file>] <url>
   my admin relay follow [-config <file>] <relay id>
   my admin relay unfollow [-config <file>] <relay id>
-  my admin relay remove [-config <file>] <relay id>
+  my admin relay delete [-config <file>] <relay id>
 
 The relays the instance joins. A relay passes the public posts of the
 servers that join it to the others.
@@ -138,8 +138,8 @@ relay_max_activities_per_hour per hour, and kept for relay_status_retention_days
 -send-only takes in nothing from the relay.
 
 unfollow leaves a pending or accepted relay with the Undo of its Follow, and
-follow joins a relay that the instance left or that rejected it again. remove
-deletes the registration of a relay that the instance left or that rejected it.
+follow joins a relay that the instance left or that rejected it again. delete
+removes the registration of a relay that the instance left or that rejected it.
 list shows every relay with its state and what it brought in during the last
 24 hours. Every operation, and the relay's Accept or Reject, is recorded in the
 audit log.

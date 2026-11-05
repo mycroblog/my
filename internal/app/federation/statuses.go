@@ -339,7 +339,7 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 	// public (ADR-0006), without the fetches of its parent and of the unknown actors it mentions.
 	relayed := !ok && a.Relay != nil && h.d.Relayed != nil
 	if !ok && !relayed {
-		return fmt.Errorf("%w: %s is not related to a local account (ADR-0006)", ErrDropActivity, obj.ID)
+		return fmt.Errorf("%w: %s is not related to a local account", ErrDropActivity, obj.ID)
 	}
 	if !relayed {
 		if err := h.resolveMentions(ctx, mentions); err != nil {
@@ -348,7 +348,7 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 	}
 	in := h.input(a, obj, followers, mentions)
 	if in.Visibility == appcontent.VisibilityDirect && len(mentions.accountIDs) == 0 && mentions.deactivated {
-		return fmt.Errorf("%w: %s is addressed to deactivated accounts only (ADR-0089)", ErrDropActivity, obj.ID)
+		return fmt.Errorf("%w: %s is addressed to deactivated accounts only", ErrDropActivity, obj.ID)
 	}
 	if relayed && in.Visibility != appcontent.VisibilityPublic {
 		return fmt.Errorf("%w: the relayed %s is not public", ErrDropActivity, obj.ID)

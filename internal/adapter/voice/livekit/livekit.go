@@ -37,7 +37,7 @@ const GrantTTL = 60 * time.Second
 // not stay on the server: EmptyTimeout closes a room nobody joined, as long as a grant lasts and
 // then some; DepartureTimeout closes a room after its last participant left, as long as the
 // grace of a disconnected host (voice.HostGracePeriod), so that a host who comes back finds it.
-// The JobMediaEvent of a room that LiveKit closed while the room of my is open opens it again.
+// The JobApplyMediaEvent of a room that LiveKit closed while the room of my is open opens it again.
 const (
 	EmptyTimeout     = 2 * GrantTTL
 	DepartureTimeout = voice.HostGracePeriod
@@ -202,7 +202,7 @@ func (t *Transport) Mute(ctx context.Context, room voice.RoomRef, s voice.Sessio
 func (*Transport) Unmute(context.Context, voice.RoomRef, voice.Session) error { return nil }
 
 // Remove implements voice.Transport with RemoveParticipant. A self-hosted LiveKit does not
-// revoke the participant's token, so the participant may connect again; the JobMediaEvent of
+// revoke the participant's token, so the participant may connect again; the JobApplyMediaEvent of
 // its participant_joined and voice.sweep remove it again (ADR-0101 §13).
 func (t *Transport) Remove(ctx context.Context, room voice.RoomRef, s voice.Session) error {
 	err := t.call(ctx, "RemoveParticipant", room.ID, map[string]any{"room": room.ID, "identity": s.ID}, nil)

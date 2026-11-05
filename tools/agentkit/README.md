@@ -112,6 +112,9 @@ name that users and operators see and the code defines is mentioned in the docum
 fails once the name is mentioned or no longer defined. `docs/reference/configuration.md` needs no inventory: it is
 generated from the config schema, and `go:test` fails when it is stale.
 
+The first sentences of `docs/reference/jobs.md` state how many job types and periodic jobs there are; the inventory also
+compares those numbers with the names it collected, and fails when the sentence is gone.
+
 ## Claude Code hooks
 
 `.claude/settings.json` runs `scripts/agentkit-hook.sh` ([ADR-0004](docs/adr/0004-claude-code-hooks.md)): at session

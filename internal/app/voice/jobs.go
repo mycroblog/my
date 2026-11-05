@@ -284,7 +284,7 @@ func (s *Service) checkHost(ctx context.Context, rec RoomRecord) error {
 // RegisterJobs registers the handlers of the module's jobs and the schedule of JobSweep.
 func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
 	reg.Register(JobApply, s.Apply)
-	reg.Register(JobMediaEvent, s.MediaEvent)
+	reg.Register(JobApplyMediaEvent, s.ApplyMediaEvent)
 	reg.Register(JobSweep, func(ctx context.Context, _ queue.Job) queue.Result {
 		if err := s.Sweep(ctx); err != nil {
 			return queue.Retry(0, err)

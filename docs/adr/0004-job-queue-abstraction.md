@@ -215,7 +215,7 @@ Redis / NATS / RabbitMQ 等はコミュニティアダプタとして受け入�
 | キー | 種類 |
 | --- | --- |
 | `like:` | `federation.fanout`、`federation.deliver`（お気に入りの配送だけ） |
-| `voice_room:` | `voice.media_event`、`voice.apply` |
+| `voice_room:` | `voice.apply_media_event`、`voice.apply` |
 | `supporter_subscription:` | `supporters.sync`、`supporters.command` |
 
 分けた結果、片方の種類が滞ると、同じキーのもう一方も待つ。

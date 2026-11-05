@@ -102,13 +102,13 @@ func financeImportIdempotent(t *testing.T, e *financeEnv) {
 	e.aws.SetMonth(billingMonth(t, "2026-10"), FakeBillingMonth{
 		Through: financeDate(t, "2026-10-19"), Rows: []FakeBillingRow{usd(fakeEC2, "30.004"), usd(fakeS3, "1.235")},
 	})
-	e.importNow(t, "schedule:finance.billing_import.aws:1", "done")
-	e.importNow(t, "schedule:finance.billing_import.aws:1", "done") // the job again: it calls nothing
+	e.importNow(t, "schedule:finance.import_billing.aws:1", "done")
+	e.importNow(t, "schedule:finance.import_billing.aws:1", "done") // the job again: it calls nothing
 	if n := e.aws.Calls(); n != 1 {
 		t.Errorf("the source was called %d times by one job, want 1", n)
 	}
 	e.clock.Advance(time.Hour)
-	e.importNow(t, "schedule:finance.billing_import.aws:2", "done")
+	e.importNow(t, "schedule:finance.import_billing.aws:2", "done")
 	e.importNow(t, appfinance.ManualRunKey("aws", e.clock.Now()), "done")
 
 	amounts, estimated := e.monthTotals(t, "2026-08-01", "2026-10-31")

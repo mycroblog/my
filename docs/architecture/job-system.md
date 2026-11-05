@@ -88,7 +88,7 @@ stateDiagram-v2
 | `inbox:<actor の URI>` | `federation.inbox` | 同じ actor の受信を順に処理する |
 | `like:<account>:<status>` | `federation.fanout`（Like・Undo） | Like と Undo の順を保つ |
 | 上のキー + `:<inbox>` | `federation.deliver`（Like・Undo） | 同じ inbox への順を保ち、ほかの inbox は待たない |
-| `voice_room:<room>` | `voice.apply`、`voice.media_event` | 同じルームの操作を順に実行する |
+| `voice_room:<room>` | `voice.apply`、`voice.apply_media_event` | 同じルームの操作を順に実行する |
 | `supporter_subscription:<id>` | `supporters.sync`、`supporters.command` | 同じ契約を順に処理する |
 | `supporter_plan:<plan>` | `supporters.ensure_prices` | 同じプランを順に処理する |
 | `payment:<provider>:<object>` | `supporters.apply_payment_event` | 決済の同じオブジェクトを順に処理する |
@@ -202,11 +202,11 @@ flowchart TD
 | 1 時間 | `federation.refresh_stale_actors` | 200 件ごとに続き 1、古くてフォロワーのいる actor ごとに `federation.refresh_actor` |
 | 1 時間 | `content.purge_remote_statuses`、`content.purge_relayed_statuses`、`content.auto_delete_statuses`、`account.erase_deleted` | 続きがあれば 1 |
 | 1 時間 | `account.execute_deletions` | [§3.3](#33-アカウントの削除と消去) |
-| 1 時間 | `kv.purge_expired`、`media.purge_unattached`、`media.purge_replaced`、`media.purge_remote_cache`、`graph.expire_mutes`、`moderation.purge_records`、`federation.purge_records`、`webhook.purge`、`queue.purge_dead_jobs`、`voice.purge_records`、`identity.expire_imports`、`identity.expire_exports`、`identity.purge_unused_oauth_clients`、`identity.purge_origins`、`identity.purge_auth_records`、`identity.queue_closure_reminders` | |
+| 1 時間 | `kv.purge_expired`、`media.purge_unattached`、`media.purge_replaced`、`media.purge_remote_cache`、`graph.expire_mutes`、`moderation.purge_records`、`federation.purge_records`、`webhook.purge_messages`、`queue.purge_dead_jobs`、`voice.purge_records`、`identity.expire_imports`、`identity.expire_exports`、`identity.purge_unused_oauth_clients`、`identity.purge_origins`、`identity.purge_auth_records`、`identity.queue_closure_reminders` | |
 | 6 時間（設定で 15 分〜7 日） | `supporters.reconcile_payments` | |
 | 1 日 | `federation.probe_instances` | 50 件ごとに続き 1 |
 | 1 日 | `account.prune_remote_profiles`、`content.purge_remote_emojis` | 続きがあれば 1 |
-| 1 日 | `content.purge_link_cards`、`projection.verify`、`finance.billing_import`、`notification.purge_error_group_notices`、`diagnostics.purge_error_counts`、`supporters.purge_payment_receipts` | |
+| 1 日 | `content.purge_link_cards`、`projection.verify`、`finance.import_billing`、`notification.purge_error_group_notices`、`diagnostics.purge_error_counts`、`supporters.purge_payment_receipts` | |
 
 合図のキューの掃除 `queue.wake` はジョブではなく、tick の中で動きます。
 

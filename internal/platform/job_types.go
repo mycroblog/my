@@ -38,7 +38,7 @@ var jobTypes = []string{
 	"federation.refresh_stale_actors",
 	"federation.update_poll",
 	"federation.verify_quote",
-	"finance.billing_import",
+	"finance.import_billing",
 	"graph.expire_mutes",
 	"graph.migrate_follows",
 	"identity.build_export",
@@ -90,15 +90,15 @@ var jobTypes = []string{
 	"supporters.sync",
 	"supporters.sync_due",
 	"voice.apply",
+	"voice.apply_media_event",
 	"voice.check_account",
 	"voice.check_block",
 	"voice.check_hosts",
-	"voice.media_event",
 	"voice.notify_started",
 	"voice.purge_records",
 	"voice.sweep",
 	"webhook.deliver",
-	"webhook.purge",
+	"webhook.purge_messages",
 }
 
 // JobTypes returns every job type of this release, sorted.

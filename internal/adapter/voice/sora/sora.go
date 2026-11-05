@@ -205,7 +205,7 @@ func (t *Transport) Grant(_ context.Context, room voice.RoomRef, s voice.Session
 // client always connects again with a new grant (ADR-0101 §12). A revoke blocks the audio of the
 // session's connections at once with the channel's forwarding filter; when the session is
 // already revoked, its sendrecv connections are disconnected, for a client that does not
-// connect again recvonly keeps none (JobMediaEvent and voice.sweep apply the role of every live
+// connect again recvonly keeps none (JobApplyMediaEvent and voice.sweep apply the role of every live
 // session again). An allow lifts the revoke, not a mute.
 func (t *Transport) SetSpeaking(ctx context.Context, room voice.RoomRef, s voice.Session, canSpeak bool) (bool, error) {
 	err := t.change(ctx, room, func(st *filterState, conns []connection) []string {
@@ -407,7 +407,7 @@ type filter struct {
 // sessions whose audio is blocked, apart for a mute (which Unmute lifts) and a revoke of the
 // permission to speak (which only SetSpeaking lifts). The rules block the sendrecv connections
 // of these sessions, so a session that connects again stays blocked once the filter is written
-// again (SetSpeaking of JobMediaEvent and voice.sweep).
+// again (SetSpeaking of JobApplyMediaEvent and voice.sweep).
 type filterState struct {
 	Muted   []string `json:"my_muted,omitempty"`
 	Revoked []string `json:"my_revoked,omitempty"`

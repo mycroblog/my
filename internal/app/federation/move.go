@@ -48,7 +48,7 @@ const (
 
 // MoveActivities counts the received Moves by what became of them (ADR-0089).
 var MoveActivities = kernel.Instrument{
-	Name: "my.move.activities", Unit: "{activity}", Description: "Move activities received, by whether they were recorded or why they were dropped (ADR-0089).",
+	Name: "my.move.activities", Unit: "{activity}", Description: "Move activities received, by whether they were recorded or why they were dropped.",
 	LabelKeys: []string{LabelOutcome},
 }
 

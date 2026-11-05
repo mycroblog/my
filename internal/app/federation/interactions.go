@@ -445,7 +445,7 @@ func (h *StatusHandlers) boosted(ctx context.Context, in *InboxActivity) (appcon
 		return appcontent.Status{}, err
 	}
 	if !followed {
-		return appcontent.Status{}, fmt.Errorf("%w: Announce of %s by %s, whom no local account follows (ADR-0006)", ErrDropActivity, ref.ID, act.Actor)
+		return appcontent.Status{}, fmt.Errorf("%w: Announce of %s by %s, whom no local account follows", ErrDropActivity, ref.ID, act.Actor)
 	}
 	if err := h.untombstoned(ctx, ref.ID, ""); err != nil {
 		return appcontent.Status{}, fmt.Errorf("%w: %w", ErrDropActivity, err)

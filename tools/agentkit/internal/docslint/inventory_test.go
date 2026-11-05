@@ -3,6 +3,7 @@
 package docslint
 
 import (
+	"maps"
 	"os"
 	"path/filepath"
 	"sort"
@@ -123,7 +124,7 @@ func (d *D) RegisterJobs(r *queue.Registry, p *Projectors, s *queue.Scheduler, s
 	s.Add(queue.Schedule{Name: JobSourceless + "." + src.Name(), Every: time.Hour})
 }
 `,
-	"docs/reference/jobs.md":                  "# Jobs\n\n| `federation.deliver` | `queue.purge` | `instance.closure` |\n\n## Periodic jobs\n\n| `queue.purge` |\n\n## Other\n\n`federation.deliver`, `federation.sourceless`\n",
+	"docs/reference/jobs.md":                  "# Jobs\n\nThe server has 5 job types. 3 periodic jobs start some of them.\n\n| `federation.deliver` | `queue.purge` | `instance.closure` |\n\n## Periodic jobs\n\n| `queue.purge` |\n\n## Other\n\n`federation.deliver`, `federation.sourceless`\n",
 	"internal/platform/adapters_no_sqlite.go": "//go:build no_sqlite\n\npackage platform\n",
 	"internal/platform/adapters_no_valkey.go": "// SPDX\n\n//go:build no_valkey && !linux\n\npackage platform\n",
 	"internal/platform/adapters_live_test.go": "//go:build federationlive\n\npackage platform\n",
@@ -250,6 +251,26 @@ func TestInventory(t *testing.T) {
 	for i, w := range want {
 		if !strings.Contains(msgs[i], w) {
 			t.Errorf("finding %d = %q, want it to contain %q", i, msgs[i], w)
+		}
+	}
+}
+
+// TestInventoryCounts checks the numbers that the jobs document states against the names of the code.
+func TestInventoryCounts(t *testing.T) {
+	for _, tc := range []struct{ sentence, want string }{
+		{"The server has 4 job types. 3 periodic jobs start some of them.", `says "The server has 4 job types", but the code defines 5 (inventory job-types)`},
+		{"The server has 5 job types. 2 periodic jobs start some of them.", `says "2 periodic jobs start", but the code defines 3 (inventory job-schedules)`},
+		{"Several job types. 3 periodic jobs start some of them.", "state the number of names of the inventory job-types"},
+	} {
+		repo := maps.Clone(inventoryRepo)
+		repo[jobsDocument] = strings.Replace(repo[jobsDocument], "The server has 5 job types. 3 periodic jobs start some of them.", tc.sentence, 1)
+		root, files := writeRepo(t, repo)
+		got, err := Inventory(root, files, &Config{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if msgs := strings.Join(messages(got), "\n"); !strings.Contains(msgs, tc.want) {
+			t.Errorf("%s: no finding %q in:\n%s", tc.sentence, tc.want, msgs)
 		}
 	}
 }

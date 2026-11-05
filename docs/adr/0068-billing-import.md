@@ -56,7 +56,7 @@ type CostLine struct {
 
 ### 2. 取り込みの周期と冪等性
 
-- 有効な事業者ごとに、`Scheduler`（ADR-0004）の定期ジョブ `finance.billing_import`（`Every` 24 時間、名前 `finance.billing_import.<source>`）を載せる。冪等キーは既存の `schedule:<name>:<slot>` で、1 日に 1 本だけ積まれる。事業者のデータの更新は 24 時間に 1 回程度なので、それより多く呼んでも値は変わらない。
+- 有効な事業者ごとに、`Scheduler`（ADR-0004）の定期ジョブ `finance.import_billing`（`Every` 24 時間、名前 `finance.import_billing.<source>`）を載せる。冪等キーは既存の `schedule:<name>:<slot>` で、1 日に 1 本だけ積まれる。事業者のデータの更新は 24 時間に 1 回程度なので、それより多く呼んでも値は変わらない。
 - ハンドラは、事業者の API を DB のトランザクションの外で呼び（呼ぶ前の予約は §4）、結果を 1 つの短いトランザクションで記録する（ADR-0003）。
   - キーごとに、最新の版と金額（最小単位に丸めた後）・通貨・確定の別・`Covered` が同じなら何も書かない。違えば版を 1 行足す。前の回にあって今回ないキーは、金額 0 の版を足す。
   - 版の表は `(source, billing_month, service, charge_type, run_key)` で一意にし、同じジョブの再実行（at-least-once）が重ねて書いても 1 行になる。

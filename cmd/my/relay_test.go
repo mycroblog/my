@@ -33,13 +33,13 @@ func TestAdminRelayCommands(t *testing.T) {
 		code int
 		want string
 	}{
-		{[]string{"relay", "remove", id}, 1, "leave it before removing it"},
+		{[]string{"relay", "delete", id}, 1, "leave it before deleting it"},
 		{[]string{"relay", "follow", id}, 1, "leave it before joining it again"},
 		{[]string{"relay", "create", "-protocol", "mastodon", "https://relay.example/inbox"}, 1, "already registered"},
 		{[]string{"relay", "create", "-protocol", "mastodon", "http://relay.example/inbox"}, 1, "https"},
 		{[]string{"relay", "create", "-protocol", "pleroma", "https://relay.example/inbox"}, 2, "-protocol must be"},
 		{[]string{"relay", "unfollow", "01890a5d-ac96-774b-bcce-b302099a0000"}, 1, "no relay has the ID"},
-		{[]string{"relay", "remove"}, 2, "want 1 argument(s)"},
+		{[]string{"relay", "delete"}, 2, "want 1 argument(s)"},
 		{[]string{"relay", "burn"}, 2, `unknown subcommand "burn"`},
 	} {
 		if code, _, stderr := runCmd(t, adminCmd, tc.args...); code != tc.code || !strings.Contains(stderr, tc.want) {
@@ -49,11 +49,11 @@ func TestAdminRelayCommands(t *testing.T) {
 	if code, _, _ = runCmd(t, adminCmd, "relay", "unfollow", id); code != 0 {
 		t.Fatalf("relay unfollow = %d", code)
 	}
-	if code, stdout, _ = runCmd(t, adminCmd, "relay", "remove", id); code != 0 || stdout != "removed relay "+id+"\n" {
-		t.Errorf("relay remove = %d %q", code, stdout)
+	if code, stdout, _ = runCmd(t, adminCmd, "relay", "delete", id); code != 0 || stdout != "deleted relay "+id+"\n" {
+		t.Errorf("relay delete = %d %q", code, stdout)
 	}
 	if _, stdout, _ = runCmd(t, adminCmd, "relay", "list"); strings.Contains(stdout, id) {
-		t.Errorf("relay list after remove:\n%s", stdout)
+		t.Errorf("relay list after delete:\n%s", stdout)
 	}
 	if _, stdout, _ = runCmd(t, adminCmd, "audit", "list", "-target-kind", "relay"); strings.Count(stdout, "relay_") < 6 {
 		t.Errorf("audit list of the relays:\n%s", stdout)

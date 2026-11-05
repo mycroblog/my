@@ -93,7 +93,7 @@ var (
 		LabelKeys: []string{LabelActivityType, LabelOutcome, LabelInboxRejection},
 	}
 	RelayActivities = kernel.Instrument{
-		Name: "my.relay.activities", Unit: "{activity}", Description: "Activities that relays brought in, by whether they were taken in (ADR-0006).",
+		Name: "my.relay.activities", Unit: "{activity}", Description: "Activities that relays brought in, by whether they were taken in.",
 		LabelKeys: []string{LabelOutcome},
 	}
 )
