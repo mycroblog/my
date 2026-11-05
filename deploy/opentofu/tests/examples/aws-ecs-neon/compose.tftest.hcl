@@ -25,16 +25,6 @@ mock_provider "aws" {
       minified_json = "{}"
     }
   }
-  mock_data "aws_vpc" {
-    defaults = {
-      cidr_block = "10.0.0.0/16"
-    }
-  }
-  mock_data "aws_subnet" {
-    defaults = {
-      cidr_block = "10.0.0.0/24"
-    }
-  }
   mock_resource "aws_iam_role" {
     defaults = {
       arn = "arn:aws:iam::111122223333:role/my"
@@ -97,13 +87,11 @@ mock_provider "aws" {
 mock_provider "random" {}
 
 variables {
-  host                     = "social.example.org"
-  certificate_arn          = "arn:aws:acm:ap-northeast-1:111122223333:certificate/abc"
-  bucket_name              = "social-example-org-media"
-  vpc_id                   = "vpc-1"
-  load_balancer_subnet_ids = ["subnet-1", "subnet-2"]
-  task_subnet_ids          = ["subnet-1", "subnet-2"]
-  assign_public_ip         = true
+  host               = "social.example.org"
+  certificate_arn    = "arn:aws:acm:ap-northeast-1:111122223333:certificate/abc"
+  bucket_name        = "social-example-org-media"
+  availability_zones = ["ap-northeast-1a", "ap-northeast-1c"]
+  assign_public_ip   = true
 
   mail_from          = "noreply@social.example.org"
   mail_smtp_host     = "smtp.example.org"
@@ -143,13 +131,31 @@ run "composes_every_setting" {
   }
 
   assert {
-    condition     = module.app.env["MY_TRUSTED_PROXIES"] == "10.0.0.0/24, 10.0.0.0/24"
+    condition     = module.app.env["MY_TRUSTED_PROXIES"] == "10.0.0.0/20, 10.0.16.0/20"
     error_message = "the ranges of the load balancer's subnets are what the server trusts"
   }
 
   assert {
     condition     = toset(keys(module.app.secret_env)) == toset(["MY_DATABASE_URL", "MY_KEK", "MY_MAIL_SMTP_PASSWORD", "MY_VAPID_PRIVATE_KEY"])
     error_message = "every secret reaches the app, the two neutral blocks' among them"
+  }
+
+  assert {
+    condition     = !module.network.nat && module.network.platform == "aws"
+    error_message = "public addresses on the tasks leave no NAT gateway to pay for"
+  }
+}
+
+run "tasks_with_no_public_address_get_a_nat_gateway" {
+  command = plan
+
+  variables {
+    assign_public_ip = false
+  }
+
+  assert {
+    condition     = module.network.nat
+    error_message = "private tasks need the way out of the network"
   }
 }
 

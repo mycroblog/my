@@ -43,8 +43,7 @@ This module knows nothing about the network, and the server stops at start when 
 
 - **A service with a public TLS endpoint and a password.** Nothing to attach, and no fixed cost from the network. This is the only
   way to `kv = valkey` that adds no VPC, at whatever the service charges.
-- **A server on private addresses.** On Cloud Run, set `vpc_access` of the app to a subnet that routes to it, and see
-  [what that adds](../kv-gcp-memorystore/README.md#what-the-private-network-adds). On Fargate, run the tasks in a VPC that
-  reaches it, and allow the port in its security group.
+- **A server on private addresses.** Give the app a `network` that routes to it, and see
+  [what that adds](../kv-gcp-memorystore/README.md#what-the-private-network-adds), and allow the port in its firewall or security group.
 
 [`stream-valkey`](../stream-valkey/README.md) can use the same URL: it sits beside this module and names no URL of its own.

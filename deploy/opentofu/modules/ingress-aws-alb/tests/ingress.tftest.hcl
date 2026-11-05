@@ -8,16 +8,6 @@ mock_provider "aws" {
       region = "ap-northeast-1"
     }
   }
-  mock_data "aws_vpc" {
-    defaults = {
-      cidr_block = "10.0.0.0/16"
-    }
-  }
-  mock_data "aws_subnet" {
-    defaults = {
-      cidr_block = "10.0.0.0/24"
-    }
-  }
   mock_resource "aws_lb" {
     defaults = {
       arn      = "arn:aws:elasticloadbalancing:ap-northeast-1:111122223333:loadbalancer/app/my/abc"
@@ -33,9 +23,16 @@ mock_provider "aws" {
 }
 
 variables {
-  host            = "social.example.org"
-  vpc_id          = "vpc-1"
-  subnet_ids      = ["subnet-1", "subnet-2"]
+  host = "social.example.org"
+  network = {
+    platform            = "aws"
+    vpc_id              = "vpc-1"
+    vpc_cidr            = "10.0.0.0/16"
+    public_subnet_ids   = ["subnet-1", "subnet-2"]
+    public_subnet_cidrs = ["10.0.0.0/24", "10.0.1.0/24"]
+    private_subnet_ids  = ["subnet-a", "subnet-b"]
+    nat                 = true
+  }
   certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/abc"
 }
 
@@ -72,7 +69,7 @@ run "it_writes_what_the_server_trusts" {
   }
 
   assert {
-    condition     = output.trusted_proxies == ["10.0.0.0/24", "10.0.0.0/24"] && output.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for"
+    condition     = output.trusted_proxies == tolist(["10.0.0.0/24", "10.0.1.0/24"]) && output.env["MY_TRUSTED_PROXY_HEADER"] == "x-forwarded-for"
     error_message = "the ranges of the load balancer's subnets are what connects to the tasks"
   }
 
@@ -174,10 +171,16 @@ run "one_subnet_fails" {
   command = plan
 
   variables {
-    subnet_ids = ["subnet-1"]
+    network = {
+      platform            = "aws"
+      vpc_id              = "vpc-1"
+      vpc_cidr            = "10.0.0.0/16"
+      public_subnet_ids   = ["subnet-1"]
+      public_subnet_cidrs = ["10.0.0.0/24"]
+    }
   }
 
-  expect_failures = [var.subnet_ids]
+  expect_failures = [var.network]
 }
 
 run "a_certificate_of_another_region_fails" {
@@ -198,4 +201,14 @@ run "an_idle_timeout_beyond_the_servers_fails" {
   }
 
   expect_failures = [var.idle_timeout]
+}
+
+run "a_network_of_another_platform_fails" {
+  command = plan
+
+  variables {
+    network = { platform = "gcp", network = "projects/p/global/networks/n", subnetwork = "projects/p/regions/r/subnetworks/s" }
+  }
+
+  expect_failures = [var.network]
 }

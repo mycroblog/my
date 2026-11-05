@@ -6,13 +6,10 @@ host            = "social.example.org"
 certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/00000000-0000-0000-0000-000000000000"
 bucket_name     = "social-example-org-media"
 
-# A VPC of yours: this example creates no network.
-vpc_id                   = "vpc-0123456789abcdef0"
-load_balancer_subnet_ids = ["subnet-0123456789abcdef0", "subnet-0123456789abcdef1"]
-task_subnet_ids          = ["subnet-0123456789abcdef0", "subnet-0123456789abcdef1"]
+availability_zones = ["ap-northeast-1a", "ap-northeast-1c"]
 
-# true for a public subnet: each task has a public IPv4 address, billed by the hour. false for a private subnet with your NAT
-# gateway, billed by the hour and by the GB. Inbound traffic reaches a task only through the load balancer either way.
+# true for a public subnet: each task has a public IPv4 address, billed by the hour. false for a private subnet, with a NAT
+# gateway that the network then creates, billed by the hour and by the GB. Inbound traffic reaches a task only through the load balancer either way.
 assign_public_ip = true
 
 # Recommended: a public hosted zone of host in Route 53, where the records work at a zone apex too.

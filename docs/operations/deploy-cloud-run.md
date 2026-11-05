@@ -227,6 +227,72 @@ module "db" {
 
 For a store outside Google Cloud, replace the `blob` block with [`blob-s3`](../../deploy/opentofu/modules/blob-s3/README.md), for any S3-compatible service, or [`blob-cloudflare-r2`](../../deploy/opentofu/modules/blob-cloudflare-r2/README.md).
 
+## When you need a network
+
+This guide needs none: Neon, Cloud Tasks, Cloud Storage, and Pub/Sub are all reached over the internet with the service's own identity, so Cloud Run attaches to nothing and there is nothing to pay for or look after.
+
+You need one to put Memorystore in the deployment, since it has only private addresses, or to give Cloud SQL a private address in place of its public one. Add [`network-gcp-vpc`](../../deploy/opentofu/modules/network-gcp-vpc/README.md), or describe a VPC you have as an object of [the same shape](../../deploy/opentofu/README.md#the-network-on-google-cloud), and pass the same one to the app and to each module that takes it:
+
+```hcl
+module "network" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/network-gcp-vpc?ref=v0.1.0&depth=1"
+
+  project_id = var.project_id
+  region     = var.region
+}
+
+module "kv" {
+  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/kv-gcp-memorystore?ref=v0.1.0&depth=1"
+
+  project_id = var.project_id
+  region     = var.region
+  network    = module.network
+}
+```
+
+Give the app `network = module.network` as well, and add `module.kv` to its `backends`. Only private ranges go through the network, so the service reaches the internet as it did, with no Cloud NAT. A backend on private addresses with an app on another network, or on none, fails the plan. Enable the Service Networking and Network Connectivity APIs first, and the Compute Engine API. A network adds to the cold start of an instance: read [what the private network adds](../../deploy/opentofu/modules/kv-gcp-memorystore/README.md#what-the-private-network-adds).
+
+## Splitting jobs into workers
+
+When one kind of job holds up the rest, give it its own service. Decide what to split from the metrics, as [Splitting workers by job type](running.md#splitting-workers-by-job-type) says. One value goes to the queue and to the app, and every queue, URL, route, and setting comes from its keys, so you write none of them:
+
+```hcl
+locals {
+  workers = {
+    delivery = {
+      job_types     = ["federation.fanout", "federation.deliver"]
+      max_instances = 20
+      concurrency   = 16
+    }
+  }
+}
+```
+
+Set `workers = local.workers` on the `queue` block and on the `app` block. The plan refuses a split of the types that must stay together, and a queue and an app given different values. It also needs a broker that reaches every process, which `stream-gcp-pubsub` is. The same value goes to `monitoring-gcp`, if you use it.
+
+The two common layouts of that page look like this. To keep deliveries from delaying the rest, use the value above. To keep email and notifications quick:
+
+```hcl
+locals {
+  workers = {
+    notify = {
+      job_types = [
+        "identity.verification_email", "identity.password_reset_email", "identity.password_notice_email",
+        "identity.closure_email", "identity.deactivation_email",
+        "notification.email", "notification.moderator_email", "notification.supporter_email",
+        "notification.push", "notification.post_subscribers",
+        "instance.notify_announcement", "voice.notify_started",
+      ]
+      max_instances = 10
+    }
+  }
+}
+```
+
+Leave out the types of settings you have not set, as that page says: a type the server has not registered stops the start, and the plan cannot see which those are. With `workers`, the default service does not help with these types when it is free, since their tasks go to their own queue.
+
+Every field, and what a worker has of the app, is in [the contract](../../deploy/opentofu/README.md#workers). A worker's service takes no traffic from outside. `upgrade.sh` moves each after the migration and before the default service, and with nothing to tell it: only a step that fails stops it. Each worker can bring what the service costs, and the connections of its instances count against the database's limit.
+
 ## How traffic reaches the service
 
 The `ingress` block of `main.tf` decides this. The example uses the load balancer, which is meant for production. The domain mapping is in a comment beside it, for trying a deployment cheaply: to swap it in, change that block and `service_ingress` of the `app` block, and the plan says if the two disagree.

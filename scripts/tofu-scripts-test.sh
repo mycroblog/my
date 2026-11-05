@@ -26,6 +26,7 @@ if [ -n "${FAIL_ON:-}" ]; then
 fi
 case "$*" in
   "run services describe"*) echo "${SERVICE_IMAGE:-image:new}" ;;
+  "run services list"*) echo "${WORKER_SERVICES:-}" ;;
   "run jobs describe"*) echo "${JOB_IMAGE:-image:new}" ;;
   "run jobs executions list"*) echo "${EXECUTION-exec-1}" ;;
   "run jobs executions tasks list"*) echo "${TASK_EXIT_CODE:-}" ;;
@@ -42,6 +43,8 @@ if [ -n "${FAIL_ON:-}" ]; then
   case "$*" in *"$FAIL_ON"*) exit "${FAIL_CODE:-1}" ;; esac
 fi
 case "$*" in
+  "ecs list-services"*) echo "${ECS_SERVICES:-arn:aws:ecs:r:1:service/my/my}" ;;
+  "lambda list-functions"*) echo "${LAMBDA_WORKERS:-}" ;;
   "ecs describe-services"*"taskDefinition"*) echo "arn:service:7" ;;
   "ecs describe-services"*"deployments"*)
     state="${ROLLOUT:-COMPLETED}"
@@ -87,7 +90,7 @@ upgrade() {
 
 # The verbs of the recorded calls, in order, without the flags that every call has.
 steps() {
-  sed -E 's/ --project=p//; s/ --region=r//; s/ --quiet//; s/ --wait//; s/run jobs (execute|update) my-migrate/job \1/; s/run services update my/service update/' "$CALLS"
+  grep -v '^run services list' "$CALLS" | sed -E 's/ --project=p//; s/ --region=r//; s/ --quiet//; s/ --wait//; s/run jobs (execute|update) my-migrate/job \1/; s/run services update my/service update/'
 }
 
 # upgrade: the order, and the service last.
@@ -119,9 +122,35 @@ if grep -qE 'args=schema,apply --|args=db,upgrade --|services update' "$CALLS"; 
 upgrade --allow-destructive
 grep -q -- '--args=schema,apply,-allow-destructive' "$CALLS" || fail "--allow-destructive was not passed"
 upgrade --maintenance
-[ "$(head -n 1 "$CALLS" | grep -c 'MY_MAINTENANCE=true')" = 1 ] || fail "--maintenance did not come first"
+[ "$(grep -v '^run services list' "$CALLS" | head -n 1 | grep -c 'MY_MAINTENANCE=true')" = 1 ] || fail "--maintenance did not come first"
 tail -n 1 "$CALLS" | grep -q -- '--remove-env-vars=MY_MAINTENANCE' || fail "--maintenance did not end with the new revision"
 if "$root/deploy/opentofu/upgrade.sh" --project p > /dev/null 2>&1; then fail "upgrade.sh without --image succeeded"; fi
+
+# upgrade with workers: each moves after the migration and before the default, and only then.
+export WORKER_SERVICES='my-delivery my-email'
+upgrade
+want='job update --image=image:new
+job execute --args=config,check
+job execute --args=db,upgrade,-check
+job execute --args=schema,apply
+job execute --args=db,upgrade
+service update-delivery --image=image:new
+service update-email --image=image:new
+service update --image=image:new'
+[ "$(steps)" = "$want" ] || fail "upgrade with workers ran: $(steps)"
+grep -qF -- '--filter=metadata.labels.my-worker-of=my' "$CALLS" || fail "upgrade did not find the workers by their label: $(cat "$CALLS")"
+if FAIL_ON='args=schema,apply' upgrade; then fail "upgrade with workers went on after a step failed"; fi
+if grep -q 'services update' "$CALLS"; then fail "a worker moved before the migration ended"; fi
+if FAIL_ON='services update my-email' upgrade; then fail "upgrade went on after a worker failed"; fi
+if grep -q 'services update my ' "$CALLS"; then fail "the default moved although a worker failed"; fi
+if FAIL_ON='services list' upgrade; then fail "upgrade went on although it could not find the workers"; fi
+if grep -q 'services update' "$CALLS"; then fail "a service moved although the workers could not be found"; fi
+upgrade --maintenance
+grep -q 'services update my-delivery .*MY_MAINTENANCE=true' "$CALLS" || fail "--maintenance left a worker running: $(cat "$CALLS")"
+grep -q 'services update my-delivery .*--remove-env-vars=MY_MAINTENANCE' "$CALLS" || fail "--maintenance left a worker in the mode: $(cat "$CALLS")"
+upgrade --migrate-only
+if grep -q 'services update' "$CALLS"; then fail "--migrate-only moved a worker"; fi
+unset WORKER_SERVICES
 
 CONSOLE='{"platform":"gcp-cloud-run","project":"p","region":"r","job":"my-console","service":"my"}'
 
@@ -202,7 +231,7 @@ lambda_upgrade() {
 }
 
 lambda_steps() {
-  grep -v '^attempts=\|^lambda wait' "$CALLS" | sed -E 's/ --region r//; s/ --cli-binary-format raw-in-base64-out --cli-read-timeout 0//; s/ --image-uri image:new//; s/lambda invoke --function-name my-migrate --payload /invoke /; s/ \/.*$//; s/lambda update-function-code --function-name /code /'
+  grep -v '^attempts=\|^lambda wait\|^lambda list-functions' "$CALLS" | sed -E 's/ --region r//; s/ --cli-binary-format raw-in-base64-out --cli-read-timeout 0//; s/ --image-uri image:new//; s/lambda invoke --function-name my-migrate --payload /invoke /; s/ \/.*$//; s/lambda update-function-code --function-name /code /'
 }
 
 lambda_upgrade || fail "lambda upgrade failed: $(cat "$tmp/out")"
@@ -222,7 +251,7 @@ lambda_upgrade --plan
 grep -qF '{"args":["schema","apply","-dry-run"]}' "$CALLS" || fail "--plan did not run the dry run on Lambda"
 if grep -qF 'update-function-code --function-name my-w' "$CALLS"; then fail "--plan changed the functions on Lambda"; fi
 lambda_upgrade --maintenance
-head -n 1 "$CALLS" | grep -q 'get-function-configuration --function-name my-worker' || fail "--maintenance did not come first on Lambda: $(head -n 1 "$CALLS")"
+grep -v '^lambda list-functions' "$CALLS" | head -n 1 | grep -q 'get-function-configuration --function-name my-worker' || fail "--maintenance did not come first on Lambda: $(head -n 1 "$CALLS")"
 grep -q 'update-function-configuration --function-name my-web .*"MY_MAINTENANCE":"true"' "$CALLS" || fail "--maintenance did not reach the web function: $(cat "$CALLS")"
 tail -n 2 "$CALLS" | grep -q 'update-function-configuration --function-name my-web --region r --environment {"Variables":{"MY_HOST":"h"}}' || fail "--maintenance did not end with the new image on Lambda: $(tail -n 3 "$CALLS")"
 # console on ECS: a one-off task with the command as its override, its exit code, and its output from the logs.
@@ -289,8 +318,24 @@ ecs_upgrade --plan
 grep -qF '"command":["schema","apply","-dry-run"]' "$CALLS" || fail "--plan did not run the dry run on ECS"
 if grep -q 'update-service\|put-parameter' "$CALLS"; then fail "--plan changed the service on ECS"; fi
 ecs_upgrade --maintenance
-head -n 2 "$CALLS" | grep -q 'register-task-definition .*"MY_MAINTENANCE"' || fail "--maintenance did not come first on ECS: $(head -n 2 "$CALLS")"
+grep -v '^ecs list-services' "$CALLS" | head -n 2 | grep -q 'register-task-definition .*"MY_MAINTENANCE"' || fail "--maintenance did not come first on ECS: $(head -n 3 "$CALLS")"
 grep 'register-task-definition' "$CALLS" | tail -n 1 | grep -q 'MY_MAINTENANCE' && fail "--maintenance did not end with the new image on ECS: $(cat "$CALLS")"
+
+# upgrade on ECS with workers: every service in the cluster moves after the migration, the default last, and the parameter after it.
+export ECS_SERVICES='arn:aws:ecs:r:1:service/my/my arn:aws:ecs:r:1:service/my/my-delivery'
+JOB_IMAGE=image:old ecs_upgrade || fail "ecs upgrade with workers failed: $(cat "$tmp/out")"
+grep -E '^ecs update-service' "$CALLS" | sed -E 's/.*--service ([^ ]*).*/\1/' | paste -sd' ' - | grep -qx 'my-delivery my' || fail "ecs upgrade moved the services in the wrong order: $(cat "$CALLS")"
+tail -n 1 "$CALLS" | grep -q 'ssm put-parameter --name /my/my/image' || fail "the parameter that apply reads must come last: $(tail -n 2 "$CALLS")"
+if ROLLOUT=FAILED ecs_upgrade; then fail "ecs upgrade passed although a worker went back"; fi
+if grep -q 'update-service --cluster my --service my \|put-parameter' "$CALLS"; then fail "the default moved although a worker went back"; fi
+if TASK='{"lastStatus":"STOPPED","containers":[{"name":"my","exitCode":1}]}' ecs_upgrade; then fail "ecs upgrade with workers went on after a step failed"; fi
+if grep -q 'update-service' "$CALLS"; then fail "a worker moved although a step failed on ECS"; fi
+unset ECS_SERVICES
+
+# upgrade on Lambda with workers: the workers of the input before the default worker, and web last.
+: > "$CALLS"
+LAMBDA_WORKERS='my-worker-delivery' "$root/deploy/opentofu/upgrade.sh" --platform aws-lambda --region r --image image:new > "$tmp/out" 2>&1 || fail "lambda upgrade with workers failed: $(cat "$tmp/out")"
+grep -E '^lambda update-function-code' "$CALLS" | sed -E 's/.*--function-name ([^ ]*).*/\1/' | paste -sd' ' - | grep -q 'my-worker-delivery my-worker my-web$' || fail "lambda upgrade moved the functions in the wrong order: $(cat "$CALLS")"
 
 if "$root/deploy/opentofu/upgrade.sh" --platform elsewhere --region r --image i > /dev/null 2>&1; then fail "upgrade.sh took an unknown platform"; fi
 
@@ -375,6 +420,38 @@ fields_copy
 sed -i '/^output "platform"/,/^}/s/"aws"/"neutral"/' "$fields/modules/blob-aws-s3/main.tf"
 if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a module of AWS that says it is neutral"; fi
 grep -qF 'blob-aws-s3: its platform is "neutral", and its name says aws' "$tmp/fields.err" || fail "the fields check did not name the module with the wrong platform"
+
+# tofu-backend-fields-check: a network's fields.
+fields_copy
+sed -i '/^    nat  *= optional/d' "$fields/modules/kv-aws-elasticache/main.tf"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a module whose network type lacks a field"; fi
+grep -qF 'kv-aws-elasticache: the type of network' "$tmp/fields.err" || fail "the fields check did not name the module with the wrong network type"
+fields_copy
+printf 'output "extra" {\n  value = "x"\n}\n' >> "$fields/modules/network-aws-vpc/main.tf"
+if "$root/scripts/tofu-backend-fields-check.sh" "$fields" 2> "$tmp/fields.err"; then fail "the fields check passed a network with a field outside its table"; fi
+grep -qF 'network-aws-vpc: a network returns' "$tmp/fields.err" || fail "the fields check did not name the network with the wrong outputs"
+
+# tofu-workers-check: the real lists pass, and each drift fails.
+"$root/scripts/tofu-workers-check.sh" || fail "the workers check refused the repository"
+workers_copy() {
+  rm -rf "$tmp/w"
+  mkdir -p "$tmp/w/deploy/opentofu/modules/workers" "$tmp/w/internal/platform" "$tmp/w/docs/operations"
+  cp "$root/deploy/opentofu/modules/workers/"*.json "$tmp/w/deploy/opentofu/modules/workers/"
+  cp "$root/internal/platform/job_types.go" "$tmp/w/internal/platform/"
+  cp "$root/docs/operations/running.md" "$tmp/w/docs/operations/"
+}
+workers_copy
+TOFU_WORKERS_ROOT="$tmp/w" "$root/scripts/tofu-workers-check.sh" || fail "the workers check refused a copy"
+sed -i 's/^var jobTypes = \[\]string{/&\n\t"brand.new",/' "$tmp/w/internal/platform/job_types.go"
+if TOFU_WORKERS_ROOT="$tmp/w" "$root/scripts/tofu-workers-check.sh" 2> "$tmp/workers.err"; then fail "the workers check passed a job type that the list does not have"; fi
+grep -qF 'job_types.json and internal/platform/job_types.go differ' "$tmp/workers.err" || fail "the workers check did not name the job types: $(cat "$tmp/workers.err")"
+TOFU_WORKERS_ROOT="$tmp/w" "$root/scripts/tofu-workers-check.sh" --write
+TOFU_WORKERS_ROOT="$tmp/w" "$root/scripts/tofu-workers-check.sh" || fail "--write did not bring the list in step"
+workers_copy
+# shellcheck disable=SC2016 # the backticks are the table's
+sed -i 's/^| `supporters.sync`, `supporters.command` |/| `supporters.sync` |/' "$tmp/w/docs/operations/running.md"
+if TOFU_WORKERS_ROOT="$tmp/w" "$root/scripts/tofu-workers-check.sh" 2> "$tmp/workers.err"; then fail "the workers check passed a table that differs"; fi
+grep -qF 'keep_together.json and the table' "$tmp/workers.err" || fail "the workers check did not name the table: $(cat "$tmp/workers.err")"
 
 if [ "$failures" -gt 0 ]; then
   echo "tofu-scripts-test: $failures failed" >&2

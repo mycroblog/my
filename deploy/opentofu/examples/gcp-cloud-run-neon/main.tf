@@ -169,6 +169,16 @@ module "ingress" {
   service_name = module.app.service_name
 }
 
+# To give a kind of job its own service and queue, set the same value on the queue above and on this block, which derive every name
+# from the key. The default takes whatever no worker names. Read "Splitting jobs into workers" in the guide.
+#
+#   workers = {
+#     delivery = {
+#       job_types     = ["federation.fanout", "federation.deliver"]
+#       max_instances = 20
+#       concurrency   = 16
+#     }
+#   }
 module "app" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/app-gcp-cloud-run?ref=v0.1.0&depth=1"
 

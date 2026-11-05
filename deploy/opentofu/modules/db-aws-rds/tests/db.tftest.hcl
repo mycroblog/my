@@ -14,8 +14,15 @@ mock_provider "aws" {
 mock_provider "random" {}
 
 variables {
-  vpc_id     = "vpc-1"
-  subnet_ids = ["subnet-a", "subnet-b"]
+  network = {
+    platform            = "aws"
+    vpc_id              = "vpc-1"
+    vpc_cidr            = "10.0.0.0/16"
+    public_subnet_ids   = ["subnet-1", "subnet-2"]
+    public_subnet_cidrs = ["10.0.0.0/24", "10.0.1.0/24"]
+    private_subnet_ids  = ["subnet-a", "subnet-b"]
+    nat                 = true
+  }
 }
 
 run "backups_and_protection_are_on_by_default" {
@@ -82,8 +89,8 @@ run "one_subnet_fails" {
   command = plan
 
   variables {
-    subnet_ids = ["subnet-a"]
+    network = { platform = "aws", vpc_id = "vpc-1", private_subnet_ids = ["subnet-a"] }
   }
 
-  expect_failures = [var.subnet_ids]
+  expect_failures = [var.network]
 }

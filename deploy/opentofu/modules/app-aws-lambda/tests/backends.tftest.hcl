@@ -421,23 +421,51 @@ run "a_direct_setting_with_nothing_to_override_fails" {
 run "a_backend_in_a_vpc_attaches_every_function" {
   command = plan
 
+  override_resource {
+    target = aws_security_group.function
+    values = {
+      id = "sg-out"
+    }
+  }
+
   variables {
-    vpc_subnet_ids         = ["subnet-a", "subnet-b"]
-    vpc_security_group_ids = ["sg-out"]
-    backends = [{
+    network = {
       platform           = "aws"
-      secret_env         = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" }
-      security_group_ids = ["sg-db"]
-    }]
+      vpc_id             = "vpc-1"
+      private_subnet_ids = ["subnet-a", "subnet-b"]
+      nat                = true
+    }
+    backends = [
+      {
+        platform           = "aws"
+        secret_env         = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" }
+        security_group_ids = ["sg-db"]
+        private_network    = "vpc-1"
+      },
+    ]
   }
 
   assert {
     condition     = toset(aws_lambda_function.server["web"].vpc_config[0].security_group_ids) == toset(["sg-out", "sg-db"]) && toset(aws_lambda_function.server["migrate"].vpc_config[0].subnet_ids) == toset(["subnet-a", "subnet-b"])
-    error_message = "every function must join the subnets and every group"
+    error_message = "every function must join the private subnets and every group"
+  }
+
+  assert {
+    condition     = aws_vpc_security_group_egress_rule.out_ipv4.cidr_ipv4 == "0.0.0.0/0" && aws_security_group.function.vpc_id == "vpc-1"
+    error_message = "a function in a VPC needs a group that allows the way out"
   }
 }
 
-run "a_backend_in_a_vpc_without_subnets_fails" {
+run "no_network_keeps_every_function_out_of_a_vpc" {
+  command = plan
+
+  assert {
+    condition     = length(aws_lambda_function.server["web"].vpc_config) == 0 && aws_security_group.function == null
+    error_message = "with no network nothing attaches, and no group is made"
+  }
+}
+
+run "a_backend_in_a_vpc_without_a_network_fails" {
   command = plan
 
   variables {
@@ -447,17 +475,27 @@ run "a_backend_in_a_vpc_without_subnets_fails" {
   expect_failures = [aws_iam_role.server]
 }
 
-run "subnets_without_a_group_fail" {
+run "a_backend_in_another_vpc_fails" {
   command = plan
 
   variables {
-    vpc_subnet_ids = ["subnet-a"]
+    network  = { platform = "aws", vpc_id = "vpc-1", private_subnet_ids = ["subnet-a"], nat = true }
+    backends = [{ platform = "aws", private_network = "vpc-other" }]
   }
 
   expect_failures = [aws_iam_role.server]
 }
 
-# Several backends add to the one setting, which is absent while none does.
+run "a_network_of_another_platform_fails" {
+  command = plan
+
+  variables {
+    network = { platform = "gcp", network = "projects/p/global/networks/n" }
+  }
+
+  expect_failures = [var.network]
+}
+
 run "billing_sources_are_absent_without_a_billing_backend" {
   command = plan
 
@@ -522,16 +560,6 @@ run "a_field_of_google_cloud_fails" {
   expect_failures = [var.backends]
 }
 
-run "the_subnet_of_cloud_run_fails" {
-  command = plan
-
-  variables {
-    backends = [{ platform = "aws", vpc_access = { network = "n", subnetwork = "s" } }]
-  }
-
-  expect_failures = [var.backends]
-}
-
 run "the_load_balancer_of_a_service_with_tasks_fails" {
   command = plan
 
@@ -570,6 +598,101 @@ run "no_queue_is_the_queue_in_the_database_and_fails" {
   variables {
     env      = {}
     backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } }]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "the_guard_of_outbound_http_stays_on_a_network" {
+  command = plan
+
+  variables {
+    network = { platform = "aws", vpc_id = "vpc-1", private_subnet_ids = ["subnet-a"], nat = true }
+    env     = { MY_HTTP_ALLOW_PRIVATE_NETWORKS = "true" }
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "a_network_with_no_nat_fails" {
+  command = plan
+
+  variables {
+    network = { platform = "aws", vpc_id = "vpc-1", private_subnet_ids = ["subnet-a"], nat = false }
+  }
+
+  expect_failures = [var.network]
+}
+
+run "no_workers_builds_nothing_more" {
+  command = plan
+
+  assert {
+    condition     = length(output.worker_functions) == 0 && toset(keys(aws_lambda_function.server)) == toset(["web", "worker", "migrate"])
+    error_message = "an empty workers must plan as it did"
+  }
+}
+
+run "a_worker_is_a_function_that_its_queue_invokes" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE = "sqs" }
+    workers = {
+      delivery = { job_types = ["federation.*"], memory_mib = 2048, concurrency = 8 }
+    }
+    backends = [
+      {
+        platform   = "aws"
+        secret_env = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" }
+        workers    = { delivery = ["federation.*"] }
+        event_sources = {
+          jobs     = { arn = "arn:aws:sqs:r:1:my-jobs", visibility_timeout_seconds = 5400 }
+          delivery = { arn = "arn:aws:sqs:r:1:my-jobs-delivery", visibility_timeout_seconds = 5400 }
+        }
+      },
+    ]
+  }
+
+  assert {
+    condition     = aws_lambda_function.server["worker-delivery"].function_name == "my-worker-delivery" && aws_lambda_function.server["worker-delivery"].memory_size == 2048 && aws_lambda_function.server["worker-delivery"].environment[0].variables["MY_ROLE"] == "worker"
+    error_message = "a worker must be a function of its name and size"
+  }
+
+  assert {
+    condition     = aws_lambda_event_source_mapping.worker["delivery"].event_source_arn == "arn:aws:sqs:r:1:my-jobs-delivery" && aws_lambda_event_source_mapping.worker["delivery"].scaling_config[0].maximum_concurrency == 8 && aws_lambda_event_source_mapping.worker["jobs"].scaling_config[0].maximum_concurrency == 5
+    error_message = "its queue must invoke it, as many at once as it says, and the default keeps its own"
+  }
+
+  assert {
+    condition     = output.worker_functions["delivery"] == "my-worker-delivery"
+    error_message = "the name must be what upgrade.sh finds"
+  }
+}
+
+run "workers_that_the_queue_was_not_given_fail" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE = "sqs" }
+    workers = {
+      delivery = { job_types = ["federation.*"] }
+    }
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" } }]
+  }
+
+  expect_failures = [aws_iam_role.server]
+}
+
+run "a_field_lambda_does_not_have_fails" {
+  command = plan
+
+  variables {
+    env = { MY_QUEUE = "sqs" }
+    workers = {
+      delivery = { job_types = ["federation.*"], max_instances = 2 }
+    }
+    backends = [{ platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:r:1:secret:kek" }, workers = { delivery = ["federation.*"] } }]
   }
 
   expect_failures = [aws_iam_role.server]

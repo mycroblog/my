@@ -40,14 +40,17 @@ module "app" {
 | `job_memory_mib`, `job_timeout_seconds` | `1024`, `900` | The one-off functions |
 | `one_off_command` | `["lambda-run"]` | What they run. Assumed: read above |
 | `console_enabled` | `false` | Creates the console function |
-| `vpc_subnet_ids`, `vpc_security_group_ids` | `[]` | Attach every function to a VPC, for a backend that lives in one: private subnets, and a group that allows the way out beside those of `security_group_ids` of the backends. An attached function reaches the internet and AWS's APIs only through a NAT gateway or endpoints that you provide, and a public subnet does not help |
+| `network` | `null` | Attach every function to a network, for a backend that lives in one: a network from [`network-aws-vpc`](../network-aws-vpc/README.md), or an object of [its shape](../../README.md#the-network-on-aws). Every function takes its private subnets and a group of the module's that allows the way out, beside those of `security_group_ids` of the backends. An attached function reaches the internet and AWS's APIs only through what the network provides, and a public subnet does not help, so a network with `nat` off fails the plan |
 | `log_retention_days` | `30` | CloudWatch Logs |
+| `workers` | `{}` | Functions that run some job types apart from the default worker, each invoked by its own queue: [the contract](../../README.md#workers). Give `queue-aws-sqs` the same value. It takes `job_types`, `memory_mib`, and `concurrency` |
 
 | Output | Value |
 | --- | --- |
 | `service_name`, `worker_function`, `migration_function` | The functions |
 | `function_url`, `origin_host` | The Function URL and its host name |
 | `role_arn` | Execution role of every function |
+| `vpc_subnet_ids` | The subnets that every function attaches to, or empty |
+| `worker_functions` | The function of each worker of `workers` |
 | `console` | What `console.sh` reads, or null |
 | `env`, `secret_env`, `secret_references` | The merged settings |
 | `one_off_secret_env` | The secret settings of the one-off functions: `secret_env` with `direct_secret_env` over it |

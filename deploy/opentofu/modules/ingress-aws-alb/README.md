@@ -18,8 +18,7 @@ module "ingress" {
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `host` | required | Domain of the server |
-| `vpc_id` | required | VPC of the load balancer and the tasks |
-| `subnet_ids` | required | Public subnets, in at least two Availability Zones, each a `/27` or larger with eight free addresses |
+| `network` | required | A network from [`network-aws-vpc`](../network-aws-vpc/README.md), or an object of [its shape](../../README.md#the-network-on-aws). The load balancer takes its public subnets, in at least two Availability Zones, each a `/27` or larger with eight free addresses |
 | `certificate_arn` | required | A validated certificate for `host`, in the load balancer's region |
 | `name` | `my` | Name of the load balancer and its target group |
 | `ssl_policy` | `ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09` | The policy AWS recommends. The API's own default is an older one, so the module always names it |
@@ -34,7 +33,7 @@ module "ingress" {
 | --- | --- |
 | `env` | `MY_TRUSTED_PROXY_HEADER` |
 | `secret_env`, `permissions` | Empty |
-| `trusted_proxies` | The ranges of `subnet_ids` |
+| `trusted_proxies` | The ranges of the public subnets |
 | `service_ingress` | `load-balancer`, which only an app that attaches to one accepts |
 | `load_balancer` | The target group and the security group that the app attaches to |
 | `dns_records` | What to create elsewhere, as [`ingress-aws-cloudfront`](../ingress-aws-cloudfront/README.md#dns) does |
@@ -43,7 +42,7 @@ module "ingress" {
 
 It reads nothing of the app, so `backends` can name the whole module. The certificate is an input: create it first, since validating it within the apply would hold the apply until you add records that only the apply prints.
 
-A task in an Availability Zone that `subnet_ids` does not cover gets no traffic, so keep the app's `subnet_ids` within those zones. The tasks must be in the VPC's primary range, which is what the load balancer's security group allows out.
+A task in an Availability Zone that the public subnets do not cover gets no traffic, so give the network its subnets in the same zones, as `network-aws-vpc` does. The tasks must be in the VPC's primary range, which is what the load balancer's security group allows out.
 
 ## The origin needs no secret
 

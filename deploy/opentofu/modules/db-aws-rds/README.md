@@ -1,6 +1,6 @@
 # db-aws-rds
 
-PostgreSQL on Amazon RDS, in your VPC. It creates the instance, its subnet group and security groups, and the secret that holds the
+PostgreSQL on Amazon RDS, on a network you give it. It creates the instance, its subnet group and security groups, and the secret that holds the
 connection URL, and follows [the backend contract](../../README.md#the-backend-contract).
 
 **This module has never been applied, and no deployment can run on AWS yet**: read [AWS: unverified](../../README.md#aws-unverified).
@@ -20,14 +20,13 @@ Pin it to the release you deploy, like every module of the deployment:
 module "db" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/db-aws-rds?ref=v0.1.0&depth=1"
 
-  vpc_id     = var.vpc_id
-  subnet_ids = var.private_subnet_ids
+  network = module.network
 }
 ```
 
 | Input | Default | Meaning |
 | --- | --- | --- |
-| `vpc_id`, `subnet_ids` | required | Where it lives: private subnets in at least two Availability Zones |
+| `network` | required | A network from [`network-aws-vpc`](../network-aws-vpc/README.md), or an object of [its shape](../../README.md#the-network-on-aws). It lives in the private subnets, of which it needs two zones |
 | `name` | `my` | Start of the names |
 | `database`, `username` | `my` | Names in the URL: lower-case letters, digits, and underscores |
 | `url_secret_name` | `my-database-url` | Secret this module creates |
@@ -47,6 +46,7 @@ module "db" {
 | `direct_secret_env` | Empty: the only connection is direct |
 | `permissions` | Empty: the app module grants access to every secret it is given |
 | `security_group_ids` | The group that the app joins to reach the instance |
+| `private_network` | The VPC, which the app must have too |
 | `url_without_password` | The URL in the secret, with `PASSWORD` in place of the password |
 
 ## RDS, not Aurora Serverless v2
@@ -78,10 +78,9 @@ To set `pool_max_conns`, name it in `url_parameters`. The one-off work reads the
 
 The instance has no public address. Its security group accepts only the group in `security_group_ids`, and the app joins that:
 
-- **Lambda**: give `app-aws-lambda` `vpc_subnet_ids`, and a group that allows the way out in `vpc_security_group_ids`. It takes the
-  rest from `backends`. **An attached function loses the internet**, which it needs for federation, Secrets Manager, and the queue,
-  unless the subnets are private and route through a NAT gateway: a public subnet does not help. So on Lambda, this module brings a
-  NAT gateway with it, which you provide, and which costs more than the database.
+- **Lambda**: give `app-aws-lambda` the same `network`. It takes the rest from `backends`. **An attached function loses the internet**, which it needs for federation, Secrets Manager, and the queue,
+  unless the private subnets route through a NAT gateway: a public subnet does not help. So on Lambda, this module brings a
+  NAT gateway with it, `nat` of the network, which costs more than the database.
 - **ECS**: a task joins the group the same way and needs the way out too, but it can have a public address in a public subnet instead
   of a NAT gateway.
 
@@ -104,7 +103,7 @@ write-only attributes, so it reaches neither the plan nor the state. Nothing has
 
 ## Coming from db-external
 
-**In practice this is not a one-block swap.** The block changes, and on Lambda the VPC settings of the app with it, but the new
+**In practice this is not a one-block swap.** The block changes, and on Lambda the `network` of the app with it, but the new
 instance is empty, and everything your instance knows is in the other database. Moving means, in this order: the maintenance mode,
 `pg_dump` from the old database, `pg_restore` to this one from inside the VPC, then swapping the block and applying, then leaving the
 maintenance mode. Nothing here does this for you, and no one has tried it.

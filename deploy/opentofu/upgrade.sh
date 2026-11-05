@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Upgrades a deployment of deploy/opentofu to another image: the migration job first, then the service, and it stops at
-# the first step that fails, with the service still on its image. Back up the database first.
+# Upgrades a deployment of deploy/opentofu to another image: the migration job first, then each worker's service, then the
+# service, and it stops at the first step that fails, with what has not moved still on its image. It finds the workers on the
+# platform, so there is nothing to tell it of them. The console is not touched: it takes the image when it next runs. Back up the
+# database first.
 #
 #   deploy/opentofu/upgrade.sh --project P --region R --image ghcr.io/mycroblog/my:0.2.0 [--name my]
 #   deploy/opentofu/upgrade.sh --platform aws-lambda --region R --image <ECR image> [--name my]
@@ -59,8 +61,17 @@ gcp_logs_hint() {
   echo "gcloud logging read 'resource.type=\"cloud_run_job\" AND resource.labels.job_name=\"$job\"' --project=$project --freshness=1h"
 }
 
+# The services of the workers, which carry the label that the app module gives them.
+gcp_workers() {
+  gcloud run services list "${where[@]}" --filter="metadata.labels.my-worker-of=$name" --format='value(metadata.name)'
+}
+
 gcp_maintenance_on() {
-  gcloud run services update "$name" "${where[@]}" --update-env-vars=MY_MAINTENANCE=true --quiet
+  local workers service
+  workers="$(gcp_workers)" || return 1
+  for service in $workers "$name"; do
+    gcloud run services update "$service" "${where[@]}" --update-env-vars=MY_MAINTENANCE=true --quiet || return 1
+  done
 }
 
 gcp_one_off_takes_image() {
@@ -82,11 +93,16 @@ gcp_plan_hint() {
 
 # gcloud waits for the new revision's startup probe on /readyz. A revision that fails it takes no traffic.
 gcp_service_takes_image() {
-  local args=(--image="$image")
+  local args=(--image="$image") workers service
   if [ "$maintenance" = 1 ]; then
     args+=(--remove-env-vars=MY_MAINTENANCE)
   fi
-  gcloud run services update "$name" "${where[@]}" "${args[@]}" --quiet
+  workers="$(gcp_workers)" || return 1
+  # The workers go first, since the default enqueues for them and takes the traffic.
+  for service in $workers "$name"; do
+    echo "==> $service takes $image"
+    gcloud run services update "$service" "${where[@]}" "${args[@]}" --quiet || return 1
+  done
 }
 
 aws_logs_hint() {
@@ -107,8 +123,17 @@ aws_takes_image() {
   aws lambda wait function-updated --function-name "$1" --region "$region"
 }
 
+# The functions of the workers of the workers input, by the name that the app module gives them.
+aws_workers() {
+  aws lambda list-functions --region "$region" --query "Functions[?starts_with(FunctionName, '$name-worker-')].FunctionName" --output text
+}
+
 aws_maintenance_on() {
-  aws_set_env "$name-worker" '. + {MY_MAINTENANCE: "true"}' && aws_set_env "$name-web" '. + {MY_MAINTENANCE: "true"}'
+  local workers function
+  workers="$(aws_workers)" || return 1
+  for function in $workers "$name-worker" "$name-web"; do
+    aws_set_env "$function" '. + {MY_MAINTENANCE: "true"}' || return 1
+  done
 }
 
 aws_one_off_takes_image() {
@@ -125,10 +150,11 @@ aws_plan_hint() {
 }
 
 # Unlike Cloud Run, nothing holds a new image back: the function takes traffic as soon as it is updated, and a request that
-# starts one on an image that fails /readyz gets an error. The worker goes first, since the web function enqueues for it.
+# starts one on an image that fails /readyz gets an error. The workers go first, since the web function enqueues for them.
 aws_service_takes_image() {
-  local function
-  for function in "$name-worker" "$name-web"; do
+  local workers function
+  workers="$(aws_workers)" || return 1
+  for function in $workers "$name-worker" "$name-web"; do
     aws_takes_image "$function" || return 1
     if [ "$maintenance" = 1 ]; then
       aws_set_env "$function" 'del(.MY_MAINTENANCE)' || return 1
@@ -140,18 +166,30 @@ ecs_logs_hint() {
   echo "aws logs tail /ecs/$name --region $region --since 1h"
 }
 
-# ecs_deploy TASK_DEFINITION moves the service to a revision and waits for the outcome. A deployment that fails goes back on its
-# own, which leaves the service stable on the old revision, so it is the state of this revision's deployment that counts.
+# The services of the workers: the cluster is this deployment's, so every service in it but the default is a worker's. Each has
+# its own family, by the same name.
+ecs_workers() {
+  local arns arn
+  arns="$(aws ecs list-services --cluster "$name" --region "$region" --query serviceArns --output text)" || return 1
+  for arn in $arns; do
+    if [ "${arn##*/}" != "$name" ]; then
+      echo "${arn##*/}"
+    fi
+  done
+}
+
+# ecs_deploy SERVICE TASK_DEFINITION moves a service to a revision and waits for the outcome. A deployment that fails goes back on
+# its own, which leaves the service stable on the old revision, so it is the state of this revision's deployment that counts.
 ecs_deploy() {
-  local definition="$1" deployments state polls=0
-  aws ecs update-service --cluster "$name" --service "$name" --task-definition "$definition" --region "$region" > /dev/null || return 1
+  local service="$1" definition="$2" deployments state polls=0
+  aws ecs update-service --cluster "$name" --service "$service" --task-definition "$definition" --region "$region" > /dev/null || return 1
   while :; do
-    deployments="$(aws ecs describe-services --cluster "$name" --services "$name" --region "$region" --query 'services[0].deployments' --output json)" || return 1
+    deployments="$(aws ecs describe-services --cluster "$name" --services "$service" --region "$region" --query 'services[0].deployments' --output json)" || return 1
     state="$(jq -r --arg definition "$definition" '[.[] | select(.taskDefinition == $definition)][0].rolloutState // "GONE"' <<< "$deployments")"
     case "$state" in
       COMPLETED) return 0 ;;
       FAILED | GONE)
-        echo "upgrade.sh: the deployment of $definition failed and goes back: aws ecs describe-services --cluster $name --services $name --region $region --query 'services[0].events[:10]'" >&2
+        echo "upgrade.sh: the deployment of $definition failed and goes back: aws ecs describe-services --cluster $name --services $service --region $region --query 'services[0].events[:10]'" >&2
         return 1
         ;;
     esac
@@ -165,9 +203,12 @@ ecs_deploy() {
 }
 
 ecs_maintenance_on() {
-  local definition
-  definition="$(ecs_new_revision "$region" "$name" '.environment = ([.environment[] | select(.name != "MY_MAINTENANCE")] + [{name: "MY_MAINTENANCE", value: "true"}])')" || return 1
-  ecs_deploy "$definition"
+  local workers service definition
+  workers="$(ecs_workers)" || return 1
+  for service in $workers "$name"; do
+    definition="$(ecs_new_revision "$region" "$service" '.environment = ([.environment[] | select(.name != "MY_MAINTENANCE")] + [{name: "MY_MAINTENANCE", value: "true"}])')" || return 1
+    ecs_deploy "$service" "$definition" || return 1
+  done
 }
 
 ecs_one_off_takes_image() {
@@ -189,16 +230,21 @@ ecs_plan_hint() {
   echo "The SQL is in the output above, and in the logs: $(ecs_logs_hint)"
 }
 
-# A new task takes traffic only once the load balancer's health check on /readyz passes, and the old one stays until then. The
-# parameter comes last and is what apply reads: until it changes, apply puts the image back.
+# A new task takes traffic only once the load balancer's health check on /readyz passes, and the old one stays until then. A
+# worker has no load balancer, so it passes once its tasks have started. The workers go first, since the default enqueues for them.
+# The parameter comes last and is what apply reads, for every family: until it changes, apply puts the image back.
 ecs_service_takes_image() {
   # shellcheck disable=SC2016 # For jq.
-  local filter='.image = $image' definition
+  local filter='.image = $image' definition workers service
   if [ "$maintenance" = 1 ]; then
     filter="$filter | .environment |= map(select(.name != \"MY_MAINTENANCE\"))"
   fi
-  definition="$(ecs_new_revision "$region" "$name" "$filter" --arg image "$image")" || return 1
-  ecs_deploy "$definition" || return 1
+  workers="$(ecs_workers)" || return 1
+  for service in $workers "$name"; do
+    echo "==> $service takes $image"
+    definition="$(ecs_new_revision "$region" "$service" "$filter" --arg image "$image")" || return 1
+    ecs_deploy "$service" "$definition" || return 1
+  done
   aws ssm put-parameter --name "/my/$name/image" --value "$image" --type String --overwrite --region "$region" > /dev/null
 }
 
@@ -209,7 +255,7 @@ case "$platform" in
 esac
 
 failed() {
-  echo "upgrade.sh: stopped: the step above failed, and the service stays on its revision." >&2
+  echo "upgrade.sh: stopped: the step above failed, and what has not moved stays on its revision." >&2
   echo "upgrade.sh: the logs: $("${prefix}_logs_hint")" >&2
   if [ "$maintenance" = 1 ]; then
     echo "upgrade.sh: the service is still in the maintenance mode; see the guide before you switch it back." >&2
@@ -253,6 +299,5 @@ if [ "$migrate_only" = 1 ]; then
   exit 0
 fi
 
-echo "==> $name takes $image"
 "${prefix}_service_takes_image" || failed
 echo "Upgraded to $image."

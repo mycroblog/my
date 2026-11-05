@@ -119,3 +119,72 @@ run "a_name_that_needs_escaping_fails" {
 
   expect_failures = [var.username]
 }
+
+run "with_no_network_only_the_connector_reaches_a_public_address" {
+  command = plan
+
+  assert {
+    condition     = google_sql_database_instance.db.settings[0].ip_configuration[0].ipv4_enabled && google_sql_database_instance.db.settings[0].ip_configuration[0].private_network == null
+    error_message = "with no network the instance keeps its public address"
+  }
+
+  assert {
+    condition     = output.cloud_sql_instances[0] == "p:asia-northeast1:my" && length(output.permissions) == 1 && output.permissions[0].permission == "roles/cloudsql.client" && output.private_network == null
+    error_message = "with no network the connector needs its mount and its role"
+  }
+}
+
+run "with_a_network_it_has_a_private_address_alone" {
+  command = plan
+
+  variables {
+    network = { platform = "gcp", network = "projects/p/global/networks/n", private_services_range = "n-private-services" }
+  }
+
+  override_resource {
+    target = google_sql_database_instance.db
+    values = {
+      private_ip_address = "10.21.0.3"
+    }
+  }
+
+  assert {
+    condition     = !google_sql_database_instance.db.settings[0].ip_configuration[0].ipv4_enabled && google_sql_database_instance.db.settings[0].ip_configuration[0].private_network == "projects/p/global/networks/n" && google_sql_database_instance.db.settings[0].ip_configuration[0].allocated_ip_range == "n-private-services"
+    error_message = "with a network the instance must have a private address and no public one"
+  }
+
+  assert {
+    condition     = google_sql_database_instance.db.settings[0].ip_configuration[0].ssl_mode == "ENCRYPTED_ONLY"
+    error_message = "connections must stay encrypted"
+  }
+
+  assert {
+    condition     = length(output.cloud_sql_instances) == 0 && length(output.permissions) == 0 && output.private_network == "projects/p/global/networks/n"
+    error_message = "on a private address nothing goes through the connector, and the app must be told the network"
+  }
+
+  assert {
+    condition     = output.url_without_password == "postgres://my:PASSWORD@10.21.0.3:5432/my?sslmode=require"
+    error_message = "the URL must name the private address over TLS, at the database's own port"
+  }
+}
+
+run "a_network_with_no_private_services_access_fails" {
+  command = plan
+
+  variables {
+    network = { platform = "gcp", network = "projects/p/global/networks/n" }
+  }
+
+  expect_failures = [var.network]
+}
+
+run "a_network_of_another_platform_fails" {
+  command = plan
+
+  variables {
+    network = { platform = "aws", vpc_id = "vpc-1" }
+  }
+
+  expect_failures = [var.network]
+}

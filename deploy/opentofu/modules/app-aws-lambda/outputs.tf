@@ -59,3 +59,13 @@ output "secret_references" {
   description = "The variables that carry them, which the server has yet to read."
   value       = local.secret_refs
 }
+
+output "vpc_subnet_ids" {
+  description = "The subnets that every function attaches to: empty with no network."
+  value       = var.network == null ? [] : var.network.private_subnet_ids
+}
+
+output "worker_functions" {
+  description = "The function of each worker of the workers input, by its key."
+  value       = { for key in keys(var.workers) : key => "${var.name}-worker-${key}" }
+}

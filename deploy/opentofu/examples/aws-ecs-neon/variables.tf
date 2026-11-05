@@ -23,23 +23,13 @@ variable "architecture" {
   default     = "x86_64"
 }
 
-variable "vpc_id" {
-  description = "VPC of everything here. This example creates none."
-  type        = string
-}
-
-variable "load_balancer_subnet_ids" {
-  description = "Public subnets of the load balancer, in at least two Availability Zones."
-  type        = list(string)
-}
-
-variable "task_subnet_ids" {
-  description = "Subnets of the tasks, in zones the load balancer covers. Public, with assign_public_ip; or private, with a NAT gateway of yours."
+variable "availability_zones" {
+  description = "Zones of the network's subnets, at least two, which the load balancer needs."
   type        = list(string)
 }
 
 variable "assign_public_ip" {
-  description = "Gives each task a public IPv4 address for a public subnet, billed by the hour. False needs a NAT gateway, billed too. No default: read the costs in the README of app-aws-ecs."
+  description = "Gives each task a public IPv4 address in a public subnet, billed by the hour. False puts them in private subnets, and the network gets a NAT gateway, billed too. No default: read the costs in the README of app-aws-ecs."
   type        = bool
 }
 

@@ -3,16 +3,6 @@
 # On a mocked provider: nothing here reaches Google Cloud.
 
 mock_provider "google" {
-  mock_resource "google_compute_network" {
-    defaults = {
-      id = "projects/p/global/networks/my-valkey"
-    }
-  }
-  mock_resource "google_compute_subnetwork" {
-    defaults = {
-      id = "projects/p/regions/asia-northeast1/subnetworks/my-valkey"
-    }
-  }
   mock_resource "google_memorystore_instance" {
     defaults = {
       endpoints = [{
@@ -31,6 +21,12 @@ mock_provider "google" {
 variables {
   project_id = "p"
   region     = "asia-northeast1"
+  network = {
+    platform                      = "gcp"
+    network                       = "projects/p/global/networks/n"
+    subnetwork                    = "projects/p/regions/asia-northeast1/subnetworks/n-run"
+    memorystore_connection_policy = true
+  }
 }
 
 run "the_settings" {
@@ -52,8 +48,8 @@ run "the_settings" {
   }
 
   assert {
-    condition     = output.vpc_access == { network = "projects/p/global/networks/my-valkey", subnetwork = "projects/p/regions/asia-northeast1/subnetworks/my-valkey" }
-    error_message = "the app must attach the module's own subnet"
+    condition     = output.private_network == "projects/p/global/networks/n"
+    error_message = "the app must be told the network of the instance"
   }
 }
 
@@ -71,17 +67,27 @@ run "the_instance_and_its_network" {
   }
 
   assert {
-    condition     = google_network_connectivity_service_connection_policy.valkey.service_class == "gcp-memorystore" && google_network_connectivity_service_connection_policy.valkey.psc_config[0].limit == "2"
-    error_message = "Memorystore connects only through a policy of its service class"
+    condition     = google_memorystore_instance.valkey.desired_auto_created_endpoints[0].network == "projects/p/global/networks/n"
+    error_message = "the instance must be on the network it was given"
   }
 }
 
-run "a_subnet_too_small_for_direct_vpc_fails" {
+run "a_network_with_no_policy_fails" {
   command = plan
 
   variables {
-    subnet_cidr = "10.20.0.0/27"
+    network = { platform = "gcp", network = "projects/p/global/networks/n" }
   }
 
-  expect_failures = [var.subnet_cidr]
+  expect_failures = [var.network]
+}
+
+run "a_network_of_another_platform_fails" {
+  command = plan
+
+  variables {
+    network = { platform = "aws", vpc_id = "vpc-1" }
+  }
+
+  expect_failures = [var.network]
 }

@@ -35,8 +35,11 @@ module "kek" {
 module "db" {
   source = "../../modules/db-aws-rds"
 
-  vpc_id     = "vpc-1"
-  subnet_ids = ["subnet-a", "subnet-b"]
+  network = {
+    platform           = "aws"
+    vpc_id             = "vpc-1"
+    private_subnet_ids = ["subnet-a", "subnet-b"]
+  }
 }
 
 module "secrets" {

@@ -245,3 +245,27 @@ run "the_outputs_fit_the_app" {
     error_message = "the app takes the setting"
   }
 }
+
+run "the_lines_of_every_worker_are_read" {
+  command = plan
+
+  variables {
+    workers = {
+      delivery = { job_types = ["federation.*"] }
+    }
+  }
+
+  assert {
+    condition     = strcontains(google_logging_metric.counter["job_runs"].filter, "resource.labels.service_name=(\"my\" OR \"my-delivery\")")
+    error_message = "a job that runs on a worker must count"
+  }
+}
+
+run "no_workers_reads_one_service" {
+  command = plan
+
+  assert {
+    condition     = strcontains(google_logging_metric.counter["job_runs"].filter, "resource.labels.service_name=\"my\"")
+    error_message = "no workers must leave the filter as it is"
+  }
+}

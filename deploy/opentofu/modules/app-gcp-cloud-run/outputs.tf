@@ -47,8 +47,8 @@ output "service_ingress" {
 }
 
 output "env" {
-  description = "Merged settings of the service and the jobs, without GOMEMLIMIT."
-  value       = local.env
+  description = "Merged settings of the service, without GOMEMLIMIT. The jobs and the workers take the same, without what splits the job types."
+  value       = local.service_env
 }
 
 output "secret_env" {
@@ -59,4 +59,19 @@ output "secret_env" {
 output "one_off_secret_env" {
   description = "Merged secret settings of the migration and console jobs, which take direct_secret_env over secret_env."
   value       = local.one_off_secret_env
+}
+
+output "subnetwork" {
+  description = "The subnet that the service and the jobs attach to, or null with no network."
+  value       = var.network == null ? null : var.network.subnetwork
+}
+
+output "worker_services" {
+  description = "The Cloud Run service of each worker, by its key."
+  value       = { for key, w in local.workers : key => w.name }
+}
+
+output "worker_env" {
+  description = "The settings of each worker's service, without GOMEMLIMIT."
+  value       = { for key, w in local.workers : key => w.env }
 }
