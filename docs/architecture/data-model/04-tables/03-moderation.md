@@ -131,6 +131,7 @@
   | `email_suppression_lifted` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | `email_suppression_lifts.id` |
   | `account_moved` | `account` | `accounts.id`（移転元） | ローカルアカウントのハンドル（`@alice`） | `account_moves.id` |
   | `signup_block_added`, `signup_block_lifted` | `signup_block` | `signup_blocks.id` | 種類と値（`email_domain spam.example`） | `signup_blocks.id`（解除の行もこの ID が PK） |
+  | `hook_decision_applied`, `hook_decision_overridden` | `hook_decision` | `hook_decisions.id` | フックと対象のキー（`inbound.status https://remote.example/activities/1`） | `hook_decisions.id` |
   | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` | `custom_emoji` | `custom_emojis.id` | `:shortcode:`（リモートは `:shortcode:@domain`） | `custom_emoji_images.id`（画像を記録した操作。`custom_emoji_copied` は複製した絵文字の画像）。ほかはなし |
   | `webhook_created`, `webhook_updated`, `webhook_deleted`, `webhook_enabled`, `webhook_disabled`, `webhook_secret_rotated` | `webhook` | `webhook_endpoints.id` | 説明と URL のホスト名（`Moderation chat (hooks.example.com)`）。URL は写さない | `webhook_endpoint_revisions.id` / `webhook_endpoint_state_changes.id` / `webhook_secrets.id` |
   | `announcement_created`, `announcement_updated`, `announcement_published`, `announcement_withdrawn` | `announcement` | `announcements.id` | 本文の最初の行（80 文字まで） | `announcement_revisions.id` / `announcement_state_changes.id` |
