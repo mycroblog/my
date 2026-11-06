@@ -34,8 +34,14 @@
 | サーバー管理 | カスタム絵文字（`/admin/custom-emojis`、ADR-0051） | `manage_custom_emojis` |
 | サーバー管理 | webhook（`/admin/webhooks`、[ADR-0060](0060-instance-webhooks.md)） | `manage_webhooks` |
 | サーバー管理 | リレー（`/admin/relays`、ADR-0006） | `manage_settings` |
-| サーバー管理 | dead job（`/admin/dead-jobs`） | `manage_jobs` |
+| サーバー管理 | リンクのカードのドメイン（`/admin/link-card-domains`。カードを取得しないドメインと画像だけを取得しないドメイン、[ADR-0062](0062-link-preview-cards.md)） | `manage_settings` |
+| サーバー管理 | ログインプロバイダー（`/admin/login-providers`。外部のログインの設定・変更・無効化・削除、[ADR-0106](0106-external-login-providers.md)） | `manage_login_providers` |
+| サーバー管理 | OAuth のアプリ（`/admin/oauth-apps`。ログインできるアプリの一覧と無効化、アプリのメタデータ文書のホストの拒否、[ADR-0090](0090-third-party-oauth-apps.md)） | `manage_oauth_apps` |
+| サーバー管理 | ジョブ（`/admin/jobs`。待機・実行中・リトライ待ち・失敗のジョブと失敗の理由、失敗したジョブの再実行、ADR-0004） | `manage_jobs` |
+| サーバー管理 | エラー（`/admin/errors`。サーバーと Web クライアントが報告したエラーのグループと、その解決・ミュート、[ADR-0103](0103-error-reporting.md)） | `manage_errors` |
+| サーバー管理 | サービスの終了（`/admin/closure`。終了の予告と確認、クローズ、配送の進み具合、[ADR-0088](0088-service-shutdown-modes.md)） | `manage_service_closure` |
 | サーバー管理 | 費用（`/admin/finance`。費用の項目の一覧とフォーム、週・月・年の集計、請求の取り込みの状態、[ADR-0067](0067-finance-cost-records.md)） | `manage_finance` |
+| サーバー管理 | サポーター（`/admin/supporters`。課金の機能の有効化、プランと加入、[ADR-0072](0072-supporter-plans-and-roles.md)） | `manage_supporters` |
 
 どちらにも関わるものの置き場所:
 
