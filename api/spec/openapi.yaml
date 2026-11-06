@@ -482,10 +482,14 @@ paths:
     $ref: ./paths/admin_hook_decisions.yaml
   /admin/hook_decisions/summary:
     $ref: ./paths/admin_hook_decisions_summary.yaml
+  /admin/hook_decisions/{id}:
+    $ref: ./paths/admin_hook_decisions_{id}.yaml
   /admin/hook_decisions/{id}/override:
     $ref: ./paths/admin_hook_decisions_{id}_override.yaml
   /admin/hook_appeals:
     $ref: ./paths/admin_hook_appeals.yaml
+  /admin/hook_appeals/{id}:
+    $ref: ./paths/admin_hook_appeals_{id}.yaml
   /admin/hook_appeals/{id}/uphold:
     $ref: ./paths/admin_hook_appeals_{id}_uphold.yaml
   /admin/hook_appeals/{id}/overturn:

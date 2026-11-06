@@ -15853,6 +15853,9 @@ type ServerInterface interface {
 	// ListHookAppeals List the appeals of refused posts
 	// (GET /admin/hook_appeals)
 	ListHookAppeals(w http.ResponseWriter, r *http.Request, params ListHookAppealsParams)
+	// GetHookAppeal Get an appeal of a refused post
+	// (GET /admin/hook_appeals/{id})
+	GetHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
 	// OverturnHookAppeal Overturn an appeal of a refused post
 	// (POST /admin/hook_appeals/{id}/overturn)
 	OverturnHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId)
@@ -15865,6 +15868,9 @@ type ServerInterface interface {
 	// GetHookSummary Summarize the decision hooks
 	// (GET /admin/hook_decisions/summary)
 	GetHookSummary(w http.ResponseWriter, r *http.Request)
+	// GetHookDecision Get a decision
+	// (GET /admin/hook_decisions/{id})
+	GetHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId)
 	// OverrideHookDecision Cancel a decision
 	// (POST /admin/hook_decisions/{id}/override)
 	OverrideHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId)
@@ -19647,6 +19653,32 @@ func (siw *ServerInterfaceWrapper) ListHookAppeals(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// GetHookAppeal operation middleware
+func (siw *ServerInterfaceWrapper) GetHookAppeal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AppealId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetHookAppeal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // OverturnHookAppeal operation middleware
 func (siw *ServerInterfaceWrapper) OverturnHookAppeal(w http.ResponseWriter, r *http.Request) {
 
@@ -19789,6 +19821,32 @@ func (siw *ServerInterfaceWrapper) GetHookSummary(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHookSummary(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetHookDecision operation middleware
+func (siw *ServerInterfaceWrapper) GetHookDecision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id HookDecisionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetHookDecision(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27713,8 +27771,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/domain_actions/{id}", wrapper.GetDomainAction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_decisions", wrapper.ListHookDecisions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_decisions/summary", wrapper.GetHookSummary)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_decisions/{id}", wrapper.GetHookDecision)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/hook_decisions/{id}/override", wrapper.OverrideHookDecision)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_appeals", wrapper.ListHookAppeals)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/hook_appeals/{id}", wrapper.GetHookAppeal)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/hook_appeals/{id}/uphold", wrapper.UpholdHookAppeal)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/hook_appeals/{id}/overturn", wrapper.OverturnHookAppeal)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/error_groups", wrapper.ListErrorGroups)
@@ -34047,6 +34107,61 @@ func (response ListHookAppealsdefaultApplicationProblemPlusJSONResponse) VisitLi
 	return err
 }
 
+type GetHookAppealRequestObject struct {
+	Id AppealId `json:"id"`
+}
+
+type GetHookAppealResponseObject interface {
+	VisitGetHookAppealResponse(w http.ResponseWriter) error
+}
+
+type GetHookAppeal200JSONResponse struct{ AdminHookAppealJSONResponse }
+
+func (response GetHookAppeal200JSONResponse) VisitGetHookAppealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetHookAppealdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetHookAppealdefaultApplicationProblemPlusJSONResponse) VisitGetHookAppealResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type OverturnHookAppealRequestObject struct {
 	Id AppealId `json:"id"`
 }
@@ -34257,6 +34372,68 @@ type GetHookSummarydefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GetHookSummarydefaultApplicationProblemPlusJSONResponse) VisitGetHookSummaryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetHookDecisionRequestObject struct {
+	Id HookDecisionId `json:"id"`
+}
+
+type GetHookDecisionResponseObject interface {
+	VisitGetHookDecisionResponse(w http.ResponseWriter) error
+}
+
+type GetHookDecision200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetHookDecision200JSONResponse struct {
+	Body    AdminHookDecision
+	Headers GetHookDecision200ResponseHeaders
+}
+
+func (response GetHookDecision200JSONResponse) VisitGetHookDecisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetHookDecisiondefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetHookDecisiondefaultApplicationProblemPlusJSONResponse) VisitGetHookDecisionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -50783,6 +50960,9 @@ type StrictServerInterface interface {
 	// ListHookAppeals List the appeals of refused posts
 	// (GET /admin/hook_appeals)
 	ListHookAppeals(ctx context.Context, request ListHookAppealsRequestObject) (ListHookAppealsResponseObject, error)
+	// GetHookAppeal Get an appeal of a refused post
+	// (GET /admin/hook_appeals/{id})
+	GetHookAppeal(ctx context.Context, request GetHookAppealRequestObject) (GetHookAppealResponseObject, error)
 	// OverturnHookAppeal Overturn an appeal of a refused post
 	// (POST /admin/hook_appeals/{id}/overturn)
 	OverturnHookAppeal(ctx context.Context, request OverturnHookAppealRequestObject) (OverturnHookAppealResponseObject, error)
@@ -50795,6 +50975,9 @@ type StrictServerInterface interface {
 	// GetHookSummary Summarize the decision hooks
 	// (GET /admin/hook_decisions/summary)
 	GetHookSummary(ctx context.Context, request GetHookSummaryRequestObject) (GetHookSummaryResponseObject, error)
+	// GetHookDecision Get a decision
+	// (GET /admin/hook_decisions/{id})
+	GetHookDecision(ctx context.Context, request GetHookDecisionRequestObject) (GetHookDecisionResponseObject, error)
 	// OverrideHookDecision Cancel a decision
 	// (POST /admin/hook_decisions/{id}/override)
 	OverrideHookDecision(ctx context.Context, request OverrideHookDecisionRequestObject) (OverrideHookDecisionResponseObject, error)
@@ -54371,6 +54554,32 @@ func (sh *strictHandler) ListHookAppeals(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// GetHookAppeal operation middleware
+func (sh *strictHandler) GetHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId) {
+	var request GetHookAppealRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetHookAppeal(ctx, request.(GetHookAppealRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetHookAppeal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetHookAppealResponseObject); ok {
+		if err := validResponse.VisitGetHookAppealResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // OverturnHookAppeal operation middleware
 func (sh *strictHandler) OverturnHookAppeal(w http.ResponseWriter, r *http.Request, id AppealId) {
 	var request OverturnHookAppealRequestObject
@@ -54466,6 +54675,32 @@ func (sh *strictHandler) GetHookSummary(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetHookSummaryResponseObject); ok {
 		if err := validResponse.VisitGetHookSummaryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetHookDecision operation middleware
+func (sh *strictHandler) GetHookDecision(w http.ResponseWriter, r *http.Request, id HookDecisionId) {
+	var request GetHookDecisionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetHookDecision(ctx, request.(GetHookDecisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetHookDecision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetHookDecisionResponseObject); ok {
+		if err := validResponse.VisitGetHookDecisionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

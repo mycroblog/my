@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getHookDecision
+  summary: Get a decision
+  description: |
+    One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+    `manage_reports` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - $ref: ../components/parameters/HookDecisionId.yaml
+  responses:
+    "200":
+      description: The decision.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminHookDecision.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

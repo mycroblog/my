@@ -145,6 +145,8 @@ type pushJob struct {
 	StatusID        string            `json:"status_id,omitempty"`
 	ReportID        string            `json:"report_id,omitempty"`
 	AppealID        string            `json:"appeal_id,omitempty"`
+	// HookAppealID is the appeal of a refused post of an admin_hook_appeal or a hook_appeal_decided.
+	HookAppealID string `json:"hook_appeal_id,omitempty"`
 	// ServiceClosureChange is what a service_closure tells of.
 	ServiceClosureChange notification.ClosureChange `json:"service_closure_change,omitempty"`
 	// VoiceRoomID is the room of a voice_room_started or a voice_room_invited.
@@ -164,7 +166,7 @@ func jobOf(n notification.Notification, subscriptionID string) pushJob {
 	return pushJob{
 		SubscriptionID: subscriptionID, NotificationID: n.ID, AccountID: n.RecipientAccountID, Type: n.Type,
 		SourceAccountID: n.SourceAccountID, StatusID: n.StatusID, ReportID: n.ReportID, AppealID: n.AppealID,
-		ServiceClosureChange: n.ServiceClosureChange, VoiceRoomID: n.VoiceRoomID,
+		HookAppealID: n.HookAppealID, ServiceClosureChange: n.ServiceClosureChange, VoiceRoomID: n.VoiceRoomID,
 		ErrorGroupChange: n.ErrorGroupChange, ErrorGroupID: n.ErrorGroupID, AnnouncementID: n.AnnouncementID,
 	}
 }
@@ -509,6 +511,7 @@ func (d describer) describe(ctx context.Context, job pushJob) (PushPayload, *i18
 	return DescribeNotification(l, Wording{
 		NotificationID: job.NotificationID, Type: job.Type, Source: source, Recipient: recipient,
 		StatusID: job.StatusID, ReportID: job.ReportID, AppealID: job.AppealID, VoiceRoomID: job.VoiceRoomID,
+		HookAppealID:         job.HookAppealID,
 		ServiceClosureChange: job.ServiceClosureChange, ErrorGroupChange: job.ErrorGroupChange, ErrorGroupID: job.ErrorGroupID,
 		AnnouncementID: job.AnnouncementID, AnnouncementTitle: job.AnnouncementTitle,
 	}, instance), l, nil
@@ -523,6 +526,8 @@ type Wording struct {
 	// recipient's account, which the notifications about the recipient's statuses link to.
 	Source, Recipient                         PushAccount
 	StatusID, ReportID, AppealID, VoiceRoomID string
+	// HookAppealID is the appeal of a refused post of an admin_hook_appeal or a hook_appeal_decided.
+	HookAppealID string
 	// ServiceClosureChange is what a service_closure tells of.
 	ServiceClosureChange notification.ClosureChange
 	// ErrorGroupChange and ErrorGroupID are what an admin_error_group tells of and its group.
@@ -583,7 +588,10 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 	case notification.TypeAdminHookFailing:
 		p.Title, p.Path = l.ServerPushAdminHookFailing(instance), "/moderation/hook-decisions"
 	case notification.TypeAdminHookAppeal:
-		p.Title, p.Path = l.ServerPushAdminHookAppeal(instance), "/moderation/hook-decisions"
+		p.Title, p.Path = l.ServerPushAdminHookAppeal(instance), "/moderation/hook-decisions/appeals"
+		if n.HookAppealID != "" {
+			p.Path += "/" + n.HookAppealID
+		}
 	case notification.TypeHookAppealDecided:
 		// The author has no page of refused posts: the notification itself says how it ended.
 		p.Title = l.ServerPushHookAppealDecided(instance)

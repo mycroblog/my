@@ -28,6 +28,8 @@ const hookSummaryPeriod = 7 * 24 * time.Hour
 
 // HookDecisions runs the use cases of the decision hooks. *apphook.Service implements it.
 type HookDecisions interface {
+	// Record returns a decision with its cancellation; apphook.ErrNotFound when there is none.
+	Record(ctx context.Context, id string) (hook.Record, error)
 	List(ctx context.Context, q apphook.ListQuery) ([]hook.Record, error)
 	Statuses(ctx context.Context) ([]apphook.Status, error)
 	// Summary counts the decisions of the last period and returns when the period starts.
@@ -150,6 +152,31 @@ func (s *Server) ListHookDecisions(ctx context.Context, req ListHookDecisionsReq
 	}
 	cache := cacheNoStore
 	return ListHookDecisions200JSONResponse{Body: page, Headers: ListHookDecisions200ResponseHeaders{CacheControl: &cache}}, nil
+}
+
+// GetHookDecision serves GET /api/v1/admin/hook_decisions/{id}.
+func (s *Server) GetHookDecision(ctx context.Context, req GetHookDecisionRequestObject) (GetHookDecisionResponseObject, error) {
+	if p, err := s.requireHookDecisions(ctx); err != nil {
+		return nil, err
+	} else if p != nil {
+		return GetHookDecisiondefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	if !kernel.ValidID(req.Id) {
+		return GetHookDecisiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	record, err := s.o.HookDecisions.Record(ctx, req.Id)
+	switch {
+	case errors.Is(err, apphook.ErrNotFound):
+		return GetHookDecisiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case err != nil:
+		return nil, fmt.Errorf("clientapi: hook decision %s: %w", req.Id, err)
+	}
+	out := newHookDecision(record)
+	if err := s.restorableUntil(ctx, record, &out); err != nil {
+		return nil, err
+	}
+	cache := cacheNoStore
+	return GetHookDecision200JSONResponse{Body: out, Headers: GetHookDecision200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // GetHookSummary serves GET /api/v1/admin/hook_decisions/summary.

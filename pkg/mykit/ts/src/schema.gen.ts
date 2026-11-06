@@ -4898,6 +4898,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/hook_decisions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a decision
+         * @description One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+         *     `manage_reports` permission.
+         */
+        get: operations["getHookDecision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/hook_decisions/{id}/override": {
         parameters: {
             query?: never;
@@ -4935,6 +4956,27 @@ export interface paths {
          *     author tried to post. Needs the `manage_reports` permission.
          */
         get: operations["listHookAppeals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/hook_appeals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get an appeal of a refused post
+         * @description One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+         *     tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+         */
+        get: operations["getHookAppeal"];
         put?: never;
         post?: never;
         delete?: never;
@@ -21602,6 +21644,31 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    getHookDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the decision. */
+                id: components["parameters"]["HookDecisionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The decision. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminHookDecision"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     overrideHookDecision: {
         parameters: {
             query?: never;
@@ -21653,6 +21720,22 @@ export interface operations {
                     "application/json": components["schemas"]["AdminHookAppealPage"];
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getHookAppeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the appeal. */
+                id: components["parameters"]["AppealId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminHookAppeal"];
             default: components["responses"]["Problem"];
         };
     };

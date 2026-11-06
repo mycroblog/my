@@ -18910,6 +18910,14 @@ type ClientInterface interface {
 	// Corresponds with GET /admin/hook_appeals (the `ListHookAppeals` operationId).
 	ListHookAppeals(ctx context.Context, params *ListHookAppealsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetHookAppeal Get an appeal of a refused post
+	//
+	// One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+	// tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+	//
+	// Corresponds with GET /admin/hook_appeals/{id} (the `GetHookAppeal` operationId).
+	GetHookAppeal(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// OverturnHookAppeal Overturn an appeal of a refused post
 	//
 	// Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
@@ -18947,6 +18955,14 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /admin/hook_decisions/summary (the `GetHookSummary` operationId).
 	GetHookSummary(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetHookDecision Get a decision
+	//
+	// One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+	// `manage_reports` permission.
+	//
+	// Corresponds with GET /admin/hook_decisions/{id} (the `GetHookDecision` operationId).
+	GetHookDecision(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// OverrideHookDecision Cancel a decision
 	//
@@ -26171,6 +26187,24 @@ func (c *Client) ListHookAppeals(ctx context.Context, params *ListHookAppealsPar
 	return c.Client.Do(req)
 }
 
+// GetHookAppeal Get an appeal of a refused post
+//
+// One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+// tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+//
+// Corresponds with GET /admin/hook_appeals/{id} (the `GetHookAppeal` operationId).
+func (c *Client) GetHookAppeal(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetHookAppealRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // OverturnHookAppeal Overturn an appeal of a refused post
 //
 // Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
@@ -26239,6 +26273,24 @@ func (c *Client) ListHookDecisions(ctx context.Context, params *ListHookDecision
 // Corresponds with GET /admin/hook_decisions/summary (the `GetHookSummary` operationId).
 func (c *Client) GetHookSummary(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetHookSummaryRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetHookDecision Get a decision
+//
+// One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+// `manage_reports` permission.
+//
+// Corresponds with GET /admin/hook_decisions/{id} (the `GetHookDecision` operationId).
+func (c *Client) GetHookDecision(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetHookDecisionRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -38352,6 +38404,40 @@ func NewListHookAppealsRequest(server string, params *ListHookAppealsParams) (*h
 	return req, nil
 }
 
+// NewGetHookAppealRequest constructs an http.Request for the GetHookAppeal method
+func NewGetHookAppealRequest(server string, id AppealId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/hook_appeals/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewOverturnHookAppealRequest constructs an http.Request for the OverturnHookAppeal method
 func NewOverturnHookAppealRequest(server string, id AppealId) (*http.Request, error) {
 	var err error
@@ -38532,6 +38618,40 @@ func NewGetHookSummaryRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/admin/hook_decisions/summary")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetHookDecisionRequest constructs an http.Request for the GetHookDecision method
+func NewGetHookDecisionRequest(server string, id HookDecisionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/hook_decisions/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -52042,6 +52162,16 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /admin/hook_appeals (the `ListHookAppeals` operationId).
 	ListHookAppealsWithResponse(ctx context.Context, params *ListHookAppealsParams, reqEditors ...RequestEditorFn) (*ListHookAppealsResponse, error)
 
+	// GetHookAppealWithResponse Get an appeal of a refused post
+	//
+	// One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+	// tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/hook_appeals/{id} (the `GetHookAppeal` operationId).
+	GetHookAppealWithResponse(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*GetHookAppealResponse, error)
+
 	// OverturnHookAppealWithResponse Overturn an appeal of a refused post
 	//
 	// Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
@@ -52087,6 +52217,16 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /admin/hook_decisions/summary (the `GetHookSummary` operationId).
 	GetHookSummaryWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHookSummaryResponse, error)
+
+	// GetHookDecisionWithResponse Get a decision
+	//
+	// One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+	// `manage_reports` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/hook_decisions/{id} (the `GetHookDecision` operationId).
+	GetHookDecisionWithResponse(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*GetHookDecisionResponse, error)
 
 	// OverrideHookDecisionWithResponse Cancel a decision
 	//
@@ -63018,6 +63158,71 @@ func (r ListHookAppealsResponse) ContentType() string {
 	return ""
 }
 
+// GetHookAppealResponse200Headers the declared response headers of an HTTP 200 response for GetHookAppeal
+type GetHookAppealResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetHookAppealResponseDefaultHeaders the declared response headers of an HTTP default response for GetHookAppeal
+type GetHookAppealResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetHookAppealResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminHookAppeal
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetHookAppealResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetHookAppealResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetHookAppealResponse) GetJSON200() *AdminHookAppeal {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetHookAppealResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetHookAppealResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetHookAppealResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetHookAppealResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetHookAppealResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // OverturnHookAppealResponse200Headers the declared response headers of an HTTP 200 response for OverturnHookAppeal
 type OverturnHookAppealResponse200Headers struct {
 	CacheControl *string
@@ -63272,6 +63477,71 @@ func (r GetHookSummaryResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetHookSummaryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetHookDecisionResponse200Headers the declared response headers of an HTTP 200 response for GetHookDecision
+type GetHookDecisionResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetHookDecisionResponseDefaultHeaders the declared response headers of an HTTP default response for GetHookDecision
+type GetHookDecisionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetHookDecisionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminHookDecision
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetHookDecisionResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetHookDecisionResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetHookDecisionResponse) GetJSON200() *AdminHookDecision {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetHookDecisionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetHookDecisionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetHookDecisionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetHookDecisionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetHookDecisionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -83321,6 +83591,22 @@ func (c *ClientWithResponses) ListHookAppealsWithResponse(ctx context.Context, p
 	return ParseListHookAppealsResponse(rsp)
 }
 
+// GetHookAppealWithResponse Get an appeal of a refused post
+//
+// One author's appeal of a `reject` of `local.status`, with its decision and the text the author
+// tried to post. An unknown ID is a 404. Needs the `manage_reports` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/hook_appeals/{id} (the `GetHookAppeal` operationId).
+func (c *ClientWithResponses) GetHookAppealWithResponse(ctx context.Context, id AppealId, reqEditors ...RequestEditorFn) (*GetHookAppealResponse, error) {
+	rsp, err := c.GetHookAppeal(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetHookAppealResponse(rsp)
+}
+
 // OverturnHookAppealWithResponse Overturn an appeal of a refused post
 //
 // Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops
@@ -83389,6 +83675,22 @@ func (c *ClientWithResponses) GetHookSummaryWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseGetHookSummaryResponse(rsp)
+}
+
+// GetHookDecisionWithResponse Get a decision
+//
+// One decision of a decision hook, with its cancellation. An unknown ID is a 404. Needs the
+// `manage_reports` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/hook_decisions/{id} (the `GetHookDecision` operationId).
+func (c *ClientWithResponses) GetHookDecisionWithResponse(ctx context.Context, id HookDecisionId, reqEditors ...RequestEditorFn) (*GetHookDecisionResponse, error) {
+	rsp, err := c.GetHookDecision(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetHookDecisionResponse(rsp)
 }
 
 // OverrideHookDecisionWithResponse Cancel a decision
@@ -97659,6 +97961,83 @@ func ParseListHookAppealsResponse(rsp *http.Response) (*ListHookAppealsResponse,
 	return response, nil
 }
 
+// ParseGetHookAppealResponse parses an HTTP response from a GetHookAppealWithResponse call
+func ParseGetHookAppealResponse(rsp *http.Response) (*GetHookAppealResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetHookAppealResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminHookAppeal
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetHookAppealResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetHookAppealResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseOverturnHookAppealResponse parses an HTTP response from a OverturnHookAppealWithResponse call
 func ParseOverturnHookAppealResponse(rsp *http.Response) (*OverturnHookAppealResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -97933,6 +98312,83 @@ func ParseGetHookSummaryResponse(rsp *http.Response) (*GetHookSummaryResponse, e
 		response.Headers200 = &headers
 	case true:
 		var headers GetHookSummaryResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetHookDecisionResponse parses an HTTP response from a GetHookDecisionWithResponse call
+func ParseGetHookDecisionResponse(rsp *http.Response) (*GetHookDecisionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetHookDecisionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminHookDecision
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetHookDecisionResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetHookDecisionResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

@@ -392,6 +392,20 @@ func ReplaySensitivityMarks(ctx context.Context, tx uow.Tx, repo Repository, mar
 	return nil
 }
 
+// Record returns a decision with its cancellation, or ErrNotFound.
+func (s *Service) Record(ctx context.Context, id string) (hook.Record, error) {
+	var rec hook.Record
+	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		rec, err = s.d.Repository.RecordTx(ctx, tx, id)
+		return err
+	})
+	if err != nil {
+		return hook.Record{}, err
+	}
+	return rec, nil
+}
+
 // List returns the decisions that q selects, newest first.
 func (s *Service) List(ctx context.Context, q ListQuery) ([]hook.Record, error) {
 	return s.d.Repository.ListRecords(ctx, q)
