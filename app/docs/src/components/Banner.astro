@@ -1,0 +1,35 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-only
+// Starlight's Banner, preceded on every page of a version whose support ended by the end-of-support banner, which
+// links the same page under /latest/ (ADR-0150 §6).
+import Default from "@astrojs/starlight/components/Banner.astro";
+import { base } from "../published";
+import { currentVersion, supportEnded, versionBase } from "../versions";
+
+const ended = supportEnded();
+const path = Astro.url.pathname;
+const latest = `${versionBase("latest")}${path.startsWith(base) ? path.slice(base.length) : ""}`;
+---
+
+{
+  ended && (
+    <div class="docs-ended" data-pagefind-ignore>
+      The support of {currentVersion} has ended. <a href={latest}>Read this page in the latest version</a>.
+    </div>
+  )
+}
+<Default />
+
+<style>
+  .docs-ended {
+    padding: var(--sl-nav-pad-y) var(--sl-nav-pad-x);
+    background-color: var(--sl-color-orange-low);
+    color: var(--sl-color-orange-high);
+    line-height: var(--sl-line-height-headings);
+    text-align: center;
+    text-wrap: balance;
+  }
+  .docs-ended a {
+    color: inherit;
+  }
+</style>
