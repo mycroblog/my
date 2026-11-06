@@ -5,13 +5,24 @@
 //   - the first `# Heading`, which becomes the `title` of the frontmatter (Starlight renders it as the page heading);
 //   - relative links to published documents, which become site URLs under the base path, #anchors kept;
 //   - relative links to a file with a page of its own (sitePages), which become that page;
+//   - relative links to an image of a published directory (docs/operations/images/architecture.svg), which is copied
+//     to the same place beside the page so that Astro serves it, and stay relative (GitHub URLs in the plain Markdown);
 //   - relative links to any other file of the repository, which become GitHub URLs at DOCS_SITE_REF.
 // Each page is also written, with the same rewritten links but absolute (https://mycroblog.dev/next/...), as plain
 // Markdown to public/<slug>.md, which the build serves at the URL of the page without its trailing slash plus .md (the
 // convention of https://llmstxt.org/). The generated files under public/ are git-ignored.
 // The sources stay readable on GitHub as they are; `agentkit docs lint` checks their links and anchors, and the build
 // checks the links of the pages (starlight-links-validator).
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync, readFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+  readFileSync,
+} from "node:fs";
 import { dirname, join, posix } from "node:path";
 import {
   base,
@@ -30,24 +41,32 @@ const contentDir = join(repoRoot, "app/docs/src/content/docs");
 const publicDir = join(repoRoot, "app/docs/public");
 const handWritten = new Set(["index.mdx"]);
 
-function markdownFiles(dir: string): string[] {
+function filesIn(dir: string, suffix: RegExp = /\.md$/): string[] {
   const absolute = join(repoRoot, dir);
   if (!existsSync(absolute)) {
     return [];
   }
   return readdirSync(absolute, { recursive: true, encoding: "utf8" })
     .map((name) => posix.join(dir, name.split("\\").join("/")))
-    .filter((path) => path.endsWith(".md") && statSync(join(repoRoot, path)).isFile())
+    .filter((path) => suffix.test(path) && statSync(join(repoRoot, path)).isFile())
     .sort();
+}
+
+/** The images a published document may show, copied beside the pages. */
+const reImage = /\.(svg|png|jpe?g|webp)$/;
+
+/** Whether a repository path is an image of a published directory. */
+function isPublishedImage(path: string): boolean {
+  return reImage.test(path) && publishedDirs.some((dir) => path.startsWith(`docs/${dir}/`));
 }
 
 /** The new destination of a link written in the document at `from`, or undefined to leave it as it is. */
 function rewrite(from: string, dest: string, absolute: boolean): string | undefined {
-  const next = rewriteToSite(from, dest);
+  const next = rewriteToSite(from, dest, absolute ? "markdown" : "page");
   return next !== undefined && absolute && next.startsWith("/") ? site + next : next;
 }
 
-function rewriteToSite(from: string, dest: string): string | undefined {
+function rewriteToSite(from: string, dest: string, output: "page" | "markdown"): string | undefined {
   if (dest === "" || dest.startsWith("#") || dest.startsWith("//") || /^[A-Za-z][A-Za-z0-9+.-]*:/.test(dest)) {
     return undefined;
   }
@@ -64,6 +83,15 @@ function rewriteToSite(from: string, dest: string): string | undefined {
   }
   if (isPublished(target)) {
     return pageURL(target) + anchor;
+  }
+  if (isPublishedImage(target) && existsSync(join(repoRoot, target))) {
+    if (output === "markdown") {
+      // The plain Markdown under public/ has no copy of the image beside it.
+      return githubURL("blob", target) + "?raw=true";
+    }
+    // Astro resolves an image of a page only from a path that starts with ./ or ../.
+    const relative = posix.relative(posix.dirname(from), target);
+    return relative.startsWith("../") ? relative : `./${relative}`;
   }
   const absolute = join(repoRoot, target);
   if (!existsSync(absolute)) {
@@ -137,7 +165,7 @@ for (const dir of publishedDirs) {
   rmSync(join(publicDir, dir), { recursive: true, force: true });
   rmSync(join(publicDir, `${dir}.md`), { force: true });
 }
-const published = publishedDirs.flatMap((dir) => markdownFiles(`docs/${dir}`)).filter(isPublished);
+const published = publishedDirs.flatMap((dir) => filesIn(`docs/${dir}`)).filter(isPublished);
 for (const path of published) {
   const out = join(contentDir, `${slugOf(path)}.md`);
   mkdirSync(dirname(out), { recursive: true });
@@ -147,4 +175,12 @@ for (const path of published) {
   mkdirSync(dirname(markdown), { recursive: true });
   writeFileSync(markdown, transform(path, source, true));
 }
-console.log(`import-docs: copied ${published.length} documents into src/content/docs/ and public/`);
+const images = publishedDirs.flatMap((dir) => filesIn(`docs/${dir}`, reImage));
+for (const path of images) {
+  const out = join(contentDir, path.slice("docs/".length));
+  mkdirSync(dirname(out), { recursive: true });
+  copyFileSync(join(repoRoot, path), out);
+}
+console.log(
+  `import-docs: copied ${published.length} documents and ${images.length} images into src/content/docs/ and public/`,
+);

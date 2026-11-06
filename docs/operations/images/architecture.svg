@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1040" width="760" height="1040" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">Architecture of a mycroblog server</title>
+  <desc id="desc">Web clients, apps and bots, and other fediverse servers reach the server over HTTPS through a reverse proxy or load balancer, with a CDN for media. The my processes run as role web (the HTTP server), role worker (the job worker), or role all (both). They use nine parts chosen by configuration: the database (SQLite or PostgreSQL), the job queue (database, inline, or Cloud Tasks), the key-value store (database, memory, or Valkey), media storage (file system, S3, or GCS), media processing (native or a plugin), the real-time stream (in-process, PostgreSQL, Valkey, SNS, or Pub/Sub), the key manager (local KEK, Cloud KMS, AWS KMS, or a plugin), mail (none, SMTP, Amazon SES, or a plugin), and telemetry (Prometheus, OTLP, EMF, Sentry). Outside services, each off until set: CAPTCHA, voice chat, payments, plugins, and cloud cost imports.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proxy { fill: #ffffff; stroke: #59636e; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proxy { fill: #0d1117; stroke: #9198a1; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="1040" rx="12"/>
+  <rect class="client" x="20" y="16" width="230" height="72" rx="8"/>
+  <text class="t b" x="135.0" y="46.0" text-anchor="middle">Web client</text>
+  <text class="m" x="135.0" y="68.0" text-anchor="middle">in the browser, installable</text>
+  <path class="arrow" d="M 135 88 L 135 116" marker-end="url(#arrowhead)"/>
+  <rect class="client" x="265" y="16" width="230" height="72" rx="8"/>
+  <text class="t b" x="380.0" y="46.0" text-anchor="middle">Apps and bots</text>
+  <text class="m" x="380.0" y="68.0" text-anchor="middle">through the client API</text>
+  <path class="arrow" d="M 380 88 L 380 116" marker-end="url(#arrowhead)"/>
+  <rect class="client" x="510" y="16" width="230" height="72" rx="8"/>
+  <text class="t b" x="625.0" y="46.0" text-anchor="middle">Other servers</text>
+  <text class="m" x="625.0" y="68.0" text-anchor="middle">of the fediverse, ActivityPub</text>
+  <path class="arrow" d="M 625 88 L 625 116" marker-end="url(#arrowhead)"/>
+  <rect class="proxy" x="20" y="120" width="720" height="50" rx="8"/>
+  <text class="t b" x="380.0" y="150.0" text-anchor="middle">HTTPS: a reverse proxy or load balancer, and a CDN for /media/</text>
+  <path class="arrow" d="M 380 170 L 380 198" marker-end="url(#arrowhead)"/>
+  <rect class="group" x="20" y="202" width="720" height="158" rx="12"/>
+  <text class="h" x="40" y="230" text-anchor="start">The my processes</text>
+  <text class="m" x="720" y="230" text-anchor="end">role = all: both in one process</text>
+  <rect class="proc" x="40" y="246" width="330" height="98" rx="8"/>
+  <text class="t b" x="205.0" y="278.0" text-anchor="middle">role = web</text>
+  <text class="m" x="205.0" y="300.0" text-anchor="middle">the HTTP server: client API,</text>
+  <text class="m" x="205.0" y="322.0" text-anchor="middle">ActivityPub, web client, media</text>
+  <rect class="proc" x="390" y="246" width="330" height="98" rx="8"/>
+  <text class="t b" x="555.0" y="278.0" text-anchor="middle">role = worker</text>
+  <text class="m" x="555.0" y="300.0" text-anchor="middle">the job worker: deliveries,</text>
+  <text class="m" x="555.0" y="322.0" text-anchor="middle">fetches, email, media, schedules</text>
+  <path class="arrow" d="M 380 360 L 380 388" marker-end="url(#arrowhead)"/>
+  <rect class="group" x="20" y="392" width="720" height="350" rx="12"/>
+  <text class="h" x="40" y="420" text-anchor="start">Parts you choose by configuration, one adapter each</text>
+  <rect class="port" x="40" y="436" width="220" height="90" rx="8"/>
+  <text class="t b" x="150.0" y="464.0" text-anchor="middle">Database</text>
+  <text class="m" x="150.0" y="486.0" text-anchor="middle">SQLite</text>
+  <text class="m" x="150.0" y="508.0" text-anchor="middle">PostgreSQL</text>
+  <rect class="port" x="270" y="436" width="220" height="90" rx="8"/>
+  <text class="t b" x="380.0" y="464.0" text-anchor="middle">Job queue</text>
+  <text class="m" x="380.0" y="486.0" text-anchor="middle">database · inline</text>
+  <text class="m" x="380.0" y="508.0" text-anchor="middle">Cloud Tasks</text>
+  <rect class="port" x="500" y="436" width="220" height="90" rx="8"/>
+  <text class="t b" x="610.0" y="464.0" text-anchor="middle">Key-value store</text>
+  <text class="m" x="610.0" y="486.0" text-anchor="middle">database · memory</text>
+  <text class="m" x="610.0" y="508.0" text-anchor="middle">Valkey</text>
+  <rect class="port" x="40" y="536" width="220" height="90" rx="8"/>
+  <text class="t b" x="150.0" y="564.0" text-anchor="middle">Media storage</text>
+  <text class="m" x="150.0" y="586.0" text-anchor="middle">file system</text>
+  <text class="m" x="150.0" y="608.0" text-anchor="middle">S3 · GCS</text>
+  <rect class="port" x="270" y="536" width="220" height="90" rx="8"/>
+  <text class="t b" x="380.0" y="564.0" text-anchor="middle">Media processing</text>
+  <text class="m" x="380.0" y="586.0" text-anchor="middle">native</text>
+  <text class="m" x="380.0" y="608.0" text-anchor="middle">plugin</text>
+  <rect class="port" x="500" y="536" width="220" height="90" rx="8"/>
+  <text class="t b" x="610.0" y="564.0" text-anchor="middle">Real-time stream</text>
+  <text class="m" x="610.0" y="586.0" text-anchor="middle">in-process · PostgreSQL</text>
+  <text class="m" x="610.0" y="608.0" text-anchor="middle">Valkey · SNS · Pub/Sub</text>
+  <rect class="port" x="40" y="636" width="220" height="90" rx="8"/>
+  <text class="t b" x="150.0" y="664.0" text-anchor="middle">Key manager</text>
+  <text class="m" x="150.0" y="686.0" text-anchor="middle">local KEK · plugin</text>
+  <text class="m" x="150.0" y="708.0" text-anchor="middle">Cloud KMS · AWS KMS</text>
+  <rect class="port" x="270" y="636" width="220" height="90" rx="8"/>
+  <text class="t b" x="380.0" y="664.0" text-anchor="middle">Mail</text>
+  <text class="m" x="380.0" y="686.0" text-anchor="middle">none · SMTP</text>
+  <text class="m" x="380.0" y="708.0" text-anchor="middle">Amazon SES · plugin</text>
+  <rect class="port" x="500" y="636" width="220" height="90" rx="8"/>
+  <text class="t b" x="610.0" y="664.0" text-anchor="middle">Telemetry</text>
+  <text class="m" x="610.0" y="686.0" text-anchor="middle">Prometheus · OTLP · EMF</text>
+  <text class="m" x="610.0" y="708.0" text-anchor="middle">Sentry</text>
+  <path class="arrow" d="M 380 742 L 380 770" marker-end="url(#arrowhead)"/>
+  <rect class="group" x="20" y="774" width="720" height="250" rx="12"/>
+  <text class="h" x="40" y="802" text-anchor="start">Services outside the server, off until you set them</text>
+  <rect class="svc" x="40" y="818" width="220" height="90" rx="8"/>
+  <text class="t b" x="150.0" y="846.0" text-anchor="middle">CAPTCHA</text>
+  <text class="m" x="150.0" y="868.0" text-anchor="middle">Turnstile · hCaptcha</text>
+  <text class="m" x="150.0" y="890.0" text-anchor="middle">reCAPTCHA</text>
+  <rect class="svc" x="270" y="818" width="220" height="90" rx="8"/>
+  <text class="t b" x="380.0" y="846.0" text-anchor="middle">Voice chat</text>
+  <text class="m" x="380.0" y="868.0" text-anchor="middle">P2P with STUN and TURN</text>
+  <text class="m" x="380.0" y="890.0" text-anchor="middle">LiveKit · Sora</text>
+  <rect class="svc" x="500" y="818" width="220" height="90" rx="8"/>
+  <text class="t b" x="610.0" y="846.0" text-anchor="middle">Payments</text>
+  <text class="m" x="610.0" y="868.0" text-anchor="middle">Stripe</text>
+  <text class="m" x="610.0" y="890.0" text-anchor="middle">PAY.JP</text>
+  <rect class="svc" x="155" y="918" width="220" height="90" rx="8"/>
+  <text class="t b" x="265.0" y="946.0" text-anchor="middle">Plugins</text>
+  <text class="m" x="265.0" y="968.0" text-anchor="middle">translation, decision</text>
+  <text class="m" x="265.0" y="990.0" text-anchor="middle">hooks, and more</text>
+  <rect class="svc" x="385" y="918" width="220" height="90" rx="8"/>
+  <text class="t b" x="495.0" y="946.0" text-anchor="middle">Cloud costs</text>
+  <text class="m" x="495.0" y="968.0" text-anchor="middle">AWS Cost Explorer</text>
+  <text class="m" x="495.0" y="990.0" text-anchor="middle">Google Cloud billing</text>
+</svg>
