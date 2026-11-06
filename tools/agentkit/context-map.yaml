@@ -181,7 +181,7 @@ entries:
     paths: ["app/docs/**", ".github/workflows/docs-site-deploy.yml", ".github/workflows/docs-site-preview.yml", ".github/workflows/docs-site-preview-deploy.yml", ".github/workflows/docs-site-preview-cleanup.yml", "scripts/docs-site.sh", "scripts/docs-site-test.sh", "scripts/docs-site/**", "scripts/docs-screenshots.sh", "app/web/scripts/screenshots.ts", "app/web/src/test/showcase.ts"]
     docs: ["docs/adr/0150-documentation-site.md", "docs/agents/releasing.md#the-documentation-site"]
     userdocs: ["docs/reference/commands.md"]
-    checks: [web, docs]
+    checks: [site, docs]
     notes:
       - "Versions (ADR-0150 §6): docs-site-deploy.yml builds /next/ from main and /latest/ and /vX.Y/ from the tags of app/docs/versions.json with scripts/docs-site.sh, combines them, and deploys the Worker my-docs in the environment doc-site. Each build reads main's resolved list (DOCS_SITE_VERSIONS) through src/versions.ts, so keep the DOCS_SITE_* variables and the resolved format backward compatible: old tags are built with them. The Worker config declares no routes or domains (mycroblog.dev is bound in mycroblog/infra)."
       - "Previews (ADR-0150 §7, like the UI preview): docs-site-preview.yml builds /next/ of a pull request without secrets (`scripts/docs-site.sh build-preview`); docs-site-preview-deploy.yml (workflow_run, main's checkout, environment doc-site) treats that artifact as data only: `stage-preview` checks it is plain files, and `deploy-pr` publishes it on the Preview pr-<number> with main's config and redirects and writes the one comment. Never run anything of the artifact; docs-site-preview-cleanup.yml deletes the Previews of closed pull requests."
@@ -740,7 +740,7 @@ entries:
     checks: [docker]
   - name: docker-compose
     paths: ["deploy/docker/compose.yaml", "deploy/docker/compose.build.yaml", "deploy/docker/compose.postgres.yaml", "deploy/docker/compose.s3.yaml", "deploy/docker/compose.caddy.yaml", "deploy/docker/example.env", "Dockerfile"]
-    userdocs: ["README.md#quick-start-docker-compose", "docs/operations/running.md#docker-compose-files", "docs/operations/running.md#get-the-image", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
+    userdocs: ["docs/operations/deploy-docker-compose.md", "docs/operations/running.md#docker-compose-files", "docs/operations/running.md#get-the-image", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]
     notes:
       - "deploy/docker/example.env is generated from the config schema (`scripts/task.sh go:config-docs`). The KEK stays out of it: .env reaches the containers whole through env_file, so the key is the file secrets/kek, mounted as a secret."
   - name: dev-compose

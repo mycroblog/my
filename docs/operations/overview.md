@@ -64,7 +64,7 @@ ones you do not use out with [build tags](../reference/build-tags.md), and then 
 
 1. **Start small.** One process with `role = all`, on SQLite, with media on the file system and the defaults for the
    rest: the queue and the key-value store in the database, and the real-time stream inside the process. The Docker
-   Compose files in `deploy/docker` start this setup on one machine ([running the server](running.md#docker-compose-files)).
+   Compose files in `deploy/docker` start this setup on one machine ([deploying with Docker Compose](deploy-docker-compose.md)).
    It suits a personal or small server. `stream = hub` reaches only the process it runs in, so this setup stays at one
    process.
 2. **Move the data out.** PostgreSQL for the database, an S3-compatible bucket or Google Cloud Storage for the media,

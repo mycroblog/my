@@ -22,6 +22,7 @@ Read the groups in order: start with the overview, then configure the instance b
 
 - [Overview of a mycroblog server (the processes, the parts you choose, and how a server grows)](operations/overview.md)
 - [Running the server: starting, stopping, and health checks](operations/running.md)
+- [Deploying with Docker Compose](operations/deploy-docker-compose.md)
 - [Deploying on Cloud Run](operations/deploy-cloud-run.md)
 - [Production checklist (what to verify before going live, and what my config check checks)](operations/production-checklist.md)
 
