@@ -39,7 +39,7 @@ coverage/
 
 # The documents app/docs/scripts/import-docs.ts copies into the documentation site; only its landing page is written there.
 /app/docs/src/content/docs/*
-!/app/docs/src/content/docs/index.md
+!/app/docs/src/content/docs/index.mdx
 # Their Markdown forms (public/<slug>.md), served next to the pages.
 /app/docs/public/operations/
 /app/docs/public/reference/

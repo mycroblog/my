@@ -1,0 +1,37 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-only
+// A card of the landing page that lists documents: each link names the repository path of a published document (or a
+// file of sitePages), and siteLink turns it into the page's URL under the base path. starlight-links-validator does not
+// see the links of a component, so a document without a page fails the build here.
+import { Card } from "@astrojs/starlight/components";
+import type { ComponentProps } from "astro/types";
+import { getEntry } from "astro:content";
+import { isPublished, siteLink, slugOf } from "../published";
+
+interface Props {
+  title: string;
+  icon: ComponentProps<typeof Card>["icon"];
+  /** The documents, in order: their repository path and the text of the link. */
+  links: { path: string; label: string }[];
+}
+
+const { title, icon, links } = Astro.props;
+for (const { path } of links) {
+  if (isPublished(path) && (await getEntry("docs", slugOf(path))) === undefined) {
+    throw new Error(`the landing page links ${path}, which has no page`);
+  }
+}
+---
+
+<Card title={title} icon={icon}>
+  <slot />
+  <ul>
+    {
+      links.map(({ path, label }) => (
+        <li>
+          <a href={siteLink(path)}>{label}</a>
+        </li>
+      ))
+    }
+  </ul>
+</Card>

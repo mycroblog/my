@@ -7,6 +7,7 @@ import { expect, waitFor } from "storybook/test";
 import { type Schemas, statusPage } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
 import { bob, carol, haruka, maximiliana, newsBot, pictureHandlers, variedTimeline } from "../../test/postStories";
+import { showcasePictures, showcaseTimeline, showcaseViewer } from "../../test/showcase";
 import {
   answering,
   failingOn,
@@ -93,6 +94,16 @@ export const Normal: Story = {
     await expect(warned).toHaveAttribute("aria-expanded", "true");
   },
 };
+
+/**
+ * A busy home timeline as a visitor would picture one (test/showcase.ts): photos, a quote, a poll, a content warning,
+ * and custom emoji reactions. The documentation site's screenshots show it.
+ */
+export const Showcase: Story = answering(
+  viewerWith(showcaseViewer),
+  ...showcasePictures,
+  homeTimeline(showcaseTimeline),
+);
 
 /** Someone who follows nobody yet: the timeline is empty. */
 export const Empty: Story = answering(homeTimeline([]));

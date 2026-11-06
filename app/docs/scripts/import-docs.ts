@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copies the published documents of the repository (src/published.ts) into src/content/docs/ before a build or the
 // dev server (ADR-0150 §4): `bun run import` from package.json's build and dev scripts. The copies are generated and
-// git-ignored; the hand-written landing page src/content/docs/index.md stays. Each copy differs from its source in:
+// git-ignored; the hand-written landing page src/content/docs/index.mdx stays. Each copy differs from its source in:
 //   - the first `# Heading`, which becomes the `title` of the frontmatter (Starlight renders it as the page heading);
 //   - relative links to published documents, which become site URLs under the base path, #anchors kept;
 //   - relative links to a file with a page of its own (sitePages), which become that page;
@@ -39,7 +39,7 @@ import {
 
 const contentDir = join(repoRoot, "app/docs/src/content/docs");
 const publicDir = join(repoRoot, "app/docs/public");
-const handWritten = new Set(["index.md"]);
+const handWritten = new Set(["index.mdx"]);
 
 function filesIn(dir: string, suffix: RegExp = /\.md$/): string[] {
   const absolute = join(repoRoot, dir);

@@ -33,7 +33,7 @@ english:
   - ".github/ISSUE_TEMPLATE/*"
   - ".github/pull_request_template.md"
   - "app/ui/README.md"
-  - "app/docs/src/content/docs/index.md"
+  - "app/docs/src/content/docs/index.mdx"
   - "pkg/**/README.md"
   - "tools/agentkit/README.md"
 
@@ -43,7 +43,7 @@ operator:
   - "README.md"
   - "SECURITY.md"
   # The landing page of the documentation site.
-  - "app/docs/src/content/docs/index.md"
+  - "app/docs/src/content/docs/index.mdx"
   - "docs/operations/**"
   - "docs/guide/**"
   - "docs/reference/**"
@@ -56,7 +56,7 @@ operator:
 maintainer-terms:
   files:
     - "README.md"
-    - "app/docs/src/content/docs/index.md"
+    - "app/docs/src/content/docs/index.mdx"
     - "docs/operations/**"
     - "docs/guide/**"
     - "docs/reference/**"

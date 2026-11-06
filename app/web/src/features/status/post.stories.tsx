@@ -26,6 +26,7 @@ import {
   viewerPost,
   warnedPost,
 } from "../../test/postStories";
+import { lakePost, quoteOfLake, quoteReplies, showcasePictures, showcaseViewer } from "../../test/showcase";
 import {
   answeringWithErrorPage,
   failingOn,
@@ -35,6 +36,7 @@ import {
   renderScreen,
   screenLoader,
   settled,
+  viewerWith,
 } from "../../test/stories";
 
 type Status = Schemas["Status"];
@@ -138,6 +140,24 @@ type Story = StoryObj<typeof meta>;
 
 /** A reply in a thread: the question above it, and replies in several languages below, one answered in turn. */
 export const Normal: Story = {};
+
+/**
+ * A quote of a photo post, with custom emoji reactions and replies (test/showcase.ts), as a visitor would picture a
+ * post. The documentation site's screenshots show it.
+ */
+export const Showcase: Story = {
+  parameters: {
+    screen: {
+      path: `/@${quoteOfLake.account.acct}/status/${quoteOfLake.id}`,
+      handlers: [
+        viewerWith(showcaseViewer),
+        ...showcasePictures,
+        statuses(quoteOfLake, lakePost, ...quoteReplies),
+        thread({ ancestors: [], descendants: quoteReplies }),
+      ],
+    },
+  },
+};
 
 /** To someone who is not signed in. */
 export const SignedOut: Story = { parameters: { screen: { signedIn: false } } };
