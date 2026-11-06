@@ -246,7 +246,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   - **追加**: ルール（`TextField`、1 行、300 文字、必須）と補足（`TextArea`、1,000 文字、任意）を 1 つずつ置く。どちらもどのロケールでも同じ値を出す。文が空なら文の欄のエラーにして送らない。
     成功したらルールの一覧・`GET /instance`（ルール）・監査ログを取り直し、入力を空にして結果をフォームの `StatusMessage` に出す。
   - **一覧**: 有効なルールを順に `ol` で並べ、各ルールは見出し（`h3`、「ルール {番目}：{文}」。文は U+2068 / U+2069 で囲む）と、補足（`dir="auto"` と `lang=""`）にする。
-    「上へ」「下へ」（最初のルールに「上へ」、最後のルールに「下へ」は出さない）は `POST /admin/rules/{id}/move` で 1 つずらし、一覧を取り直してから、動いたルールの見出しにフォーカスを移す（`lib/useFocusAfterRemoval.ts` の `useFocusHeadingAfterMove`）。ドラッグでは並べ替えない。
+    「上へ」「下へ」（最初のルールの「上へ」と最後のルールの「下へ」は無効にして、どの行もボタンの場所を揃える。名前は見える文言で始める「上へ: ルールの文」）は `POST /admin/rules/{id}/move` で 1 つずらし、一覧を取り直してから、動いたルールの見出しにフォーカスを移す（`lib/useFocusAfterRemoval.ts` の `useFocusHeadingAfterMove`）。ドラッグでは並べ替えない。
     「編集」はダイアログに追加と同じ欄を出し、保存したら閉じる。「廃止」は元に戻せないので `ConfirmDialog`（`danger`）で確かめ、成功したら一覧から除いてフォーカスを次の行のボタンに移す。
     ボタンのアクセシブルネームはルールの文を含める。結果は一覧の上の `StatusMessage`、失敗は同じ場所（`role="alert"`。編集と廃止はダイアログの中）に出す。
 - **テーマ**（`/admin/theme`、`manage_settings`、FR-605、[ADR-0059](../../adr/0059-design-tokens-and-instance-theme.md)）: 「色」「コントラスト」「文字・余白・動き」「カスタム CSS」「プレビュー」の区画（`h2` の `section`）と、保存のボタンの 1 つの `form`。
@@ -261,12 +261,12 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
 - **通報の詳細**（`/moderation/reports/{id}`、NFR-MOD-4、[画面の要件](screens/moderation-report.md)）: 1 つの画面を `@my/ui` の `TriageLayout` で組む。要約（通報。状態・カテゴリ・待ち時間のバッジと、日時・通報者・通報元・転送・引用するルール・コメント。サーバーが転送できると言う通報（`forwardable`）には「相手のサーバーに転送する」を置き、成功したら要約の見出しにフォーカスを移して要約の `StatusMessage` に結果を出し、失敗はトーストで知らせる）、
   判断（担当、対応）、証拠（通報された投稿か通話のルーム、通報されたアカウントとその履歴（ほかの通報と処分の件数）、`manage_accounts` があれば処分の履歴、メモ）の順に `h2` の `section` を並べる。広い画面では判断が証拠の横の列の先頭に立ち、狭い画面では要約のすぐ後に来る。
   - **投稿**: 通報の詳細（`GET /admin/reports/{id}` の `statuses`）にある投稿を、公開範囲によらず、作者が削除したものも削除の日時を添えて、`StatusCard` を操作の列なし（`withActions={false}`）で出す。詳細にない投稿（消えたもの）はその旨を出す。
-    カードには通報（`report`）を渡し、翻訳のボタンは通報を通す（[ADR-0148](../../adr/0148-post-translation.md) §13）。`useTranslator` は、`GET /instance` の `translation.reports_to_server` が真で、投稿の `visibility` を受け取れる提供元があるときだけ `POST /admin/reports/{id}/statuses/{status_id}/translation` を選び、そうでなければ読者のカードと同じ条件でブラウザの内蔵翻訳を選ぶ。モデレーターの権限で提供元に送る公開範囲は広がらない。
+    カードには通報（`report`）を渡し、翻訳のボタンは通報を通す（[ADR-0148](../../adr/0148-post-translation.md) §13）。`useTranslator` は、`GET /instance` の `translation.reports_to_server` が真で、投稿の `visibility` を受け取れる提供元があるときだけ `POST /admin/reports/{id}/statuses/{status_id}/translation` を選び、サーバーが断れば読者のカードと同じ条件でブラウザの内蔵翻訳に渡す（[§13](13-status-detail-and-actions.md)）。提供元を選べなければ、はじめからブラウザの内蔵翻訳を選ぶ。モデレーターの権限で提供元に送る公開範囲は広がらない。
     `manage_domains` があれば、削除されていないリモートの投稿の下に「{日時} の投稿を取り直す」（下の「投稿の取り直し」）を出し、結果を投稿の一覧の上の `StatusMessage` に出す。
   - **通話のルーム**（[ADR-0100](../../adr/0100-voice-chat-rooms.md) §11・§13）: 通報が `voice_room` を持つときは、投稿の区画の代わりに「通話のルーム」の区画を出す。開いているか・開いた日時・終わった日時と理由と終えた人・モデレーターの理由、設定の改版（古い順、通報の時点の改版に印）、参加者（参加・退出の日時と退出の理由）、退出させられた人を `h3` の `section` で出し、参加者の記録は期間を過ぎると消えることを書く。
     開いているルームには「ルームを終える」を出し、`ConfirmDialog` の任意の理由（`ReasonField`、500 文字）を添えて `POST /admin/voice_rooms/{id}/end` を送る。成功したら通報・監査ログ・通話のクエリを無効にし、ボタンが消えるので区画の見出しにフォーカスを移し、結果を区画の `StatusMessage` に出す。失敗はダイアログの中に出し、理由を残す。
   - **ルール**: `GET /instance` の `rules` から文を引き、今のルールにないもの（廃止されたもの）はその旨を出す。
-  - **コメント**: 通報者の文（`dir="auto"`）の下に、投稿のカードと同じ「翻訳する」のボタンを 1 つ置く（status の `ReportCommentText`・`hooks/useReportCommentTranslation.ts`）。コメントは `private` の投稿と同じに扱うので、`translation.reports_to_server` が真で `private` を受け取れる提供元があるときだけ `POST /admin/reports/{id}/comment/translation` を選び、そうでなければブラウザの内蔵翻訳（言語は検出する）を選ぶ。訳はフックの state（メモリ）にだけ持ち、出している間は文の上に誰の言葉かの行を出す。文言・読み上げ・失敗の出し方は投稿のカードと同じ（[§13](13-status-detail-and-actions.md)）。
+  - **コメント**: 通報者の文（`dir="auto"`）の下に、投稿のカードと同じ「翻訳する」のボタンを 1 つ置く（status の `ReportCommentText`・`hooks/useReportCommentTranslation.ts`）。コメントは `private` の投稿と同じに扱うので、`translation.reports_to_server` が真で `private` を受け取れる提供元があるときだけ `POST /admin/reports/{id}/comment/translation` を選び、サーバーが断ったときと、そうでないときはブラウザの内蔵翻訳（言語は検出する）を選ぶ。訳はフックの state（メモリ）にだけ持ち、出している間は文の上に誰の言葉かの行を出す。文言・読み上げ・失敗の出し方は投稿のカードと同じ（[§13](13-status-detail-and-actions.md)）。
   - **担当とメモ**: 「自分が担当する」（担当がほかの人なら「担当を引き継ぐ」）と「担当を外す」は位置を変えずに名前だけを変え、押したボタンにフォーカスが残る。メモは古い順で、新しいメモは `ReasonField`（必須、2,000 文字）から追加する。空白だけのメモと失敗は入力欄のエラーにして、文を残す。
   - **対応**: 未解決なら、対象のアカウントへの処分のフォーム（`components/AccountActionForm.tsx`。`manage_accounts` がなければ理由を出す。その送信のボタンが画面の唯一の `primary`）と、
     「ここで処分せずに解決する」の「対応不要として解決する」「ほかの画面で処分済みとして解決する」（既定の見た目）を出す。解決済みなら結果と解決日時と「再開する」を出す。

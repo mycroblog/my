@@ -28,16 +28,16 @@
     "description": "Button that moves a translation provider later in the order of priority."
   },
   "admin.translation.move_down_provider": {
-    "defaultMessage": "{provider} を下へ",
-    "description": "Accessible name of the button that moves a translation provider later in the order."
+    "defaultMessage": "下へ: {provider}",
+    "description": "Accessible name of the button that moves a translation provider later in the order: the button's text, then the provider."
   },
   "admin.translation.move_up": {
     "defaultMessage": "上へ",
     "description": "Button that moves a translation provider earlier in the order of priority."
   },
   "admin.translation.move_up_provider": {
-    "defaultMessage": "{provider} を上へ",
-    "description": "Accessible name of the button that moves a translation provider earlier in the order."
+    "defaultMessage": "上へ: {provider}",
+    "description": "Accessible name of the button that moves a translation provider earlier in the order: the button's text, then the provider."
   },
   "admin.translation.number.invalid": {
     "defaultMessage": "{min} から {max} までの整数を入れてください。",
@@ -90,6 +90,10 @@
   "admin.translation.saved": {
     "defaultMessage": "翻訳の設定を保存しました。",
     "description": "Shown beside the save button after the translation settings are saved."
+  },
+  "admin.translation.settings.loading": {
+    "defaultMessage": "翻訳の設定を読み込んでいます",
+    "description": "Label of the spinner shown while the translation settings load."
   },
   "admin.translation.summary": {
     "defaultMessage": "投稿を翻訳する提供元、送ってよいもの、月ごとの上限を決めます。",

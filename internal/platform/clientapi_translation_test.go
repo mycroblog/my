@@ -658,6 +658,80 @@ func TestTranslationsGoWithThePost(t *testing.T) {
 	}
 }
 
+// TestRemoteTranslationsGoWithThePost checks the deletion paths of remote posts (ADR-0148 §10): a
+// Delete from the author's server, through the call of the inbox handler, and the retention purge
+// of remote posts each take the translations and their child rows.
+func TestRemoteTranslationsGoWithThePost(t *testing.T) {
+	t.Parallel()
+	e := newTranslationEnv(t)
+	ctx := t.Context()
+	const actor = "https://remote.example/users/dave"
+	children := func() int {
+		return e.rows("status_translation_poll_options") + e.rows("status_translation_attachments")
+	}
+	var dave string
+	if err := e.c.app.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		a, err := e.c.app.Accounts.UpsertRemoteActor(ctx, tx, appaccount.RemoteActorInput{
+			URI: actor, Domain: "remote.example", Type: "Person", PreferredUsername: "dave",
+			InboxURL: actor + "/inbox", Document: []byte(`{}`),
+		})
+		dave = a.ID
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// translated ingests a remote post of dave published at, with a poll, and has bob translate it.
+	translated := func(n string, at time.Time) (id, uri string) {
+		t.Helper()
+		uri = actor + "/statuses/" + n
+		if err := e.c.app.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			p, err := e.c.app.Content.IngestRemoteStatus(ctx, tx, appcontent.RemoteStatusInput{
+				URI: uri, AuthorAccountID: dave, AuthorDomain: "remote.example",
+				Visibility: domaincontent.VisibilityPublic, PublishedAt: at, RevisedAt: at,
+				Bodies: []appcontent.RemoteBody{{Language: "en", HTML: "<p>some words</p>"}},
+				Poll:   &appcontent.RemotePollInput{Options: []string{"Yes", "No"}, Votes: []int64{0, 0}, ClosesAt: new(at.Add(time.Hour))},
+			})
+			id = p.Status.ID
+			return err
+		}); err != nil {
+			t.Fatalf("IngestRemoteStatus: %v", err)
+		}
+		if res, _ := e.translate("bob", id); res.StatusCode != http.StatusOK {
+			t.Fatalf("translate = %d", res.StatusCode)
+		}
+		if n := e.rows("status_translations"); n != 1 || children() != 2 {
+			t.Fatalf("rows = %d and %d children, want 1 and 2", n, children())
+		}
+		return id, uri
+	}
+
+	// A Delete of the author.
+	id, uri := translated("1", time.Now().UTC())
+	if err := e.c.app.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		return e.c.app.Content.DeleteRemoteStatus(ctx, tx, uri, dave)
+	}); err != nil {
+		t.Fatalf("DeleteRemoteStatus: %v", err)
+	}
+	if n := e.rows("status_translations"); n != 0 || children() != 0 {
+		t.Errorf("after the remote Delete: %d rows and %d children", n, children())
+	}
+	e.wantProblem("bob", id, http.StatusNotFound, "")
+
+	// The retention purge of a remote post that nothing local refers to.
+	id, _ = translated("2", time.Now().UTC().Add(-appcontent.DefaultRemoteStatusRetention-24*time.Hour))
+	handler, _, ok := e.c.app.Handlers.Lookup(appcontent.JobPurgeRemoteStatuses)
+	if !ok {
+		t.Fatalf("no handler of %s", appcontent.JobPurgeRemoteStatuses)
+	}
+	if res := handler(ctx, queue.Job{Type: appcontent.JobPurgeRemoteStatuses}); res.Err() != nil {
+		t.Fatalf("purge: %v", res.Err())
+	}
+	if n := e.rows("status_translations"); n != 0 || children() != 0 {
+		t.Errorf("after the retention purge: %d rows and %d children", n, children())
+	}
+	e.wantProblem("bob", id, http.StatusNotFound, "")
+}
+
 // TestSuspensionKeepsTranslations checks that a suspension hides the translations through the view
 // check and keeps them, and that lifting it brings them back without a provider (ADR-0148 §10).
 func TestSuspensionKeepsTranslations(t *testing.T) {
@@ -705,6 +779,10 @@ func TestPurgeTranslationCache(t *testing.T) {
 	now := time.Now().UTC()
 	expired := now.AddDate(0, 0, -translation.DefaultRetentionDays-1).UnixMilli()
 	if _, err := e.db.ExecContext(ctx, "UPDATE status_translations SET created_at = ? WHERE content_html LIKE '%old words%'", expired); err != nil {
+		t.Fatal(err)
+	}
+	// The overview adds the cache lookups of the requests above to this month's row of the server.
+	if _, err := e.c.app.Translation.Overview(ctx); err != nil {
 		t.Fatal(err)
 	}
 	lastMonth := time.Date(now.Year(), now.Month()-1, 1, 0, 0, 0, 0, time.UTC).Format("2006-01")

@@ -3,7 +3,8 @@
 // month's characters and cache hit rate, then one form with the providers, what each may receive, whether reports may
 // go to them, the browser's translation, the limits, and how long translations are kept. The form says first that the privacy policy must change
 // before a server-side provider is enabled, since text sent to one cannot be recalled. "Move up" and "Move down" set the
-// order with the keyboard as well as the pointer (no dragging).
+// order with the keyboard as well as the pointer (no dragging), as the WAI-ARIA APG's rearrangeable list does: the focus
+// stays with the moved provider, and a button that cannot move it is disabled rather than gone.
 import {
   Button,
   Callout,
@@ -23,6 +24,7 @@ import {
   StatTileGrid,
   TextField,
 } from "@my/ui";
+import { useEffect, useId, useRef } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { RequirePermission, Section } from "../../moderation";
@@ -127,12 +129,40 @@ function TranslationForm() {
   const t = useT();
   const form = useTranslationSettings();
   const use = useTranslationUse();
-  if (!form.ready) return null;
+  const baseId = useId();
+  /** The button to focus once the cards have rendered a move. */
+  const focusAfterMoveRef = useRef<string | null>(null);
+  // Runs after every render: focus is moved in the DOM, outside React, once the moved card is in its new place (moving a
+  // focused element in the DOM takes the focus off it).
+  useEffect(() => {
+    const id = focusAfterMoveRef.current;
+    if (id === null) return;
+    focusAfterMoveRef.current = null;
+    document.getElementById(id)?.focus();
+  });
+  if (!form.ready) {
+    return (
+      <div aria-busy="true">
+        <Spinner label={t("client:admin.translation.settings.loading")} />
+      </div>
+    );
+  }
   const providers = use.status === "ready" ? use.overview.providers : [];
   // The enabled providers in their order, then the others. An enabled ID that this server has no provider for has no
   // card, and stays in the setting.
   const enabled = form.enabled.flatMap((id) => providers.filter((provider) => provider.id === id));
   const others = providers.filter((provider) => !form.enabled.includes(provider.id));
+  const buttonId = (id: string, step: -1 | 1) => `${baseId}-${id}-${step === -1 ? "up" : "down"}`;
+  const move = (id: string, step: -1 | 1) => {
+    const index = enabled.findIndex((provider) => provider.id === id);
+    const other = enabled[index + step];
+    if (other === undefined) return;
+    // The focus stays on the moved provider: on the same button, or on the other one where this one is now disabled.
+    const to = index + step;
+    const atEnd = step === -1 ? to === 0 : to === enabled.length - 1;
+    focusAfterMoveRef.current = buttonId(id, atEnd ? (step === -1 ? 1 : -1) : step);
+    form.swap(id, other.id);
+  };
   return (
     <Stack as="form" gap="8" onSubmit={form.submit}>
       <Section surface="card" title={t("client:admin.translation.providers.title")}>
@@ -157,8 +187,12 @@ function TranslationForm() {
                 key={provider.id}
                 form={form}
                 provider={provider}
-                before={enabled[enabled.indexOf(provider) - 1]?.id}
-                after={enabled[enabled.indexOf(provider) + 1]?.id}
+                isFirst={enabled.indexOf(provider) === 0}
+                isLast={enabled.indexOf(provider) === enabled.length - 1}
+                buttonId={(step) => buttonId(provider.id, step)}
+                onMove={(step) => {
+                  move(provider.id, step);
+                }}
               />
             ))
           )}
@@ -214,14 +248,19 @@ function TranslationForm() {
 function ProviderCard({
   form,
   provider,
-  before,
-  after,
+  isFirst,
+  isLast,
+  buttonId,
+  onMove,
 }: {
   form: Form;
   provider: TranslationProvider;
-  /** The enabled provider just before this one, and just after: none at the edges of the order. */
-  before: string | undefined;
-  after: string | undefined;
+  /** Whether the provider is the first or the last of the enabled ones, which cannot move up or down. */
+  isFirst: boolean;
+  isLast: boolean;
+  /** The ID of the button that moves the provider up (-1) or down (1). */
+  buttonId: (step: -1 | 1) => string;
+  onMove: (step: -1 | 1) => void;
 }) {
   const t = useT();
   const on = form.enabled.includes(provider.id);
@@ -241,29 +280,30 @@ function ProviderCard({
         {on && (
           <>
             <Cluster gap="2">
-              {/* The first provider cannot move up nor the last down: those buttons stay out rather than doing nothing. */}
-              {before !== undefined && (
-                <Button
-                  variant="secondary"
-                  aria-label={t("client:admin.translation.move_up_provider", { provider: name })}
-                  onPress={() => {
-                    form.swap(provider.id, before);
-                  }}
-                >
-                  {t("client:admin.translation.move_up")}
-                </Button>
-              )}
-              {after !== undefined && (
-                <Button
-                  variant="secondary"
-                  aria-label={t("client:admin.translation.move_down_provider", { provider: name })}
-                  onPress={() => {
-                    form.swap(provider.id, after);
-                  }}
-                >
-                  {t("client:admin.translation.move_down")}
-                </Button>
-              )}
+              {/* The first provider cannot move up nor the last down: those buttons are disabled, so that the buttons
+                  keep their places as the order changes. The names start with the words on the buttons (WCAG 2.5.3). */}
+              <Button
+                id={buttonId(-1)}
+                variant="secondary"
+                aria-label={t("client:admin.translation.move_up_provider", { provider: name })}
+                isDisabled={isFirst}
+                onPress={() => {
+                  onMove(-1);
+                }}
+              >
+                {t("client:admin.translation.move_up")}
+              </Button>
+              <Button
+                id={buttonId(1)}
+                variant="secondary"
+                aria-label={t("client:admin.translation.move_down_provider", { provider: name })}
+                isDisabled={isLast}
+                onPress={() => {
+                  onMove(1);
+                }}
+              >
+                {t("client:admin.translation.move_down")}
+              </Button>
             </Cluster>
             <Fieldset legend={t("client:admin.translation.visibilities", { provider: name })}>
               <Stack gap="2">

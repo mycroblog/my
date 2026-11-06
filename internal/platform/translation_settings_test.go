@@ -399,6 +399,15 @@ func TestAdminTranslationOverview(t *testing.T) {
 			t.Fatalf("translate = %d", res.StatusCode)
 		}
 	}
+	// A request writes no lookup of its own: the process adds them up at most once a minute, and
+	// before an overview.
+	var hits, misses int
+	if err := e.db.QueryRowContext(t.Context(), "SELECT cache_hits, cache_misses FROM translation_server_usage").Scan(&hits, &misses); err != nil {
+		t.Fatal(err)
+	}
+	if hits != 0 || misses != 0 {
+		t.Errorf("lookups written by the requests = %d hits and %d misses, want none yet", hits, misses)
+	}
 	got = e.overview()
 	if got.CacheHits != 3 || got.CacheMisses != 1 || got.CacheHitRate == nil || *got.CacheHitRate != 0.75 {
 		t.Errorf("overview = %+v, want 3 hits of 4", got)

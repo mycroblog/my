@@ -25,6 +25,10 @@ const DefaultShutdownTimeout = 25 * time.Second
 // progress, for the job runner to return before Serve abandons it.
 const DefaultJobStopTimeout = 3 * time.Second
 
+// httpWriteTimeout is the WriteTimeout of the HTTP server: a handler that takes longer gets no
+// answer through. Handlers that wait on remote services stay below it (translation.RequestTimeout).
+const httpWriteTimeout = 60 * time.Second
+
 // ServeOptions configure Serve.
 type ServeOptions struct {
 	// Listener, when set, is used instead of listening on the configured address.
@@ -83,7 +87,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		Handler:           a.handler(true),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       60 * time.Second,
-		WriteTimeout:      60 * time.Second,
+		WriteTimeout:      httpWriteTimeout,
 		IdleTimeout:       120 * time.Second,
 		ErrorLog:          slog.NewLogLogger(a.Logger.Handler(), slog.LevelWarn),
 		BaseContext:       func(net.Listener) context.Context { return hardCtx },

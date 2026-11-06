@@ -84,8 +84,9 @@ type Repository interface {
 	// together. On false the caller ends tx with an error: the account's row may have grown. An
 	// empty accountID adds to the server's row only, and limits.Account does not apply.
 	AddUsageWithin(ctx context.Context, tx uow.Tx, accountID, month string, characters int64, limits Limits) (bool, error)
-	// AddCacheLookup counts a request of the month as answered from the cache or not.
-	AddCacheLookup(ctx context.Context, tx uow.Tx, month string, hit bool) error
+	// AddCacheLookups adds to the month's counts of requests answered from the cache (hits) and
+	// of requests that called a provider (misses), which are not negative.
+	AddCacheLookups(ctx context.Context, tx uow.Tx, month string, hits, misses int64) error
 	// FindUsage returns the month's characters of the account and of the server, zero without a row.
 	FindUsage(ctx context.Context, accountID, month string) (Usage, error)
 	// FindServerUsage returns the month's row of the server, zero without a row.

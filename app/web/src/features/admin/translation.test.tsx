@@ -114,7 +114,14 @@ describe("the translation screen", () => {
     await renderApp({ path });
 
     await user.click(await screen.findByRole("checkbox", { name: "Provider Two" }));
-    await user.click(screen.getByRole("button", { name: "Move Provider Two up" }));
+    expect(screen.getByRole("button", { name: "Move down: Provider Two" })).toBeDisabled();
+    const up = screen.getByRole("button", { name: "Move up: Provider Two" });
+    await user.click(up);
+    // Provider Two is first now: its "Move up" is disabled, and the focus is on its "Move down".
+    expect(up).toBeDisabled();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Move down: Provider Two" })).toHaveFocus();
+    });
     await user.click(screen.getByRole("button", { name: "Save the translation settings" }));
 
     await waitFor(() => {

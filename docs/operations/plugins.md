@@ -238,10 +238,12 @@ Content-Type: application/json
 | `OUTCOME_UNSUPPORTED_LANGUAGE` | The service does not have the source or target language, or cannot detect it | Tries the next provider, and tells the reader if none has it |
 
 An answer that breaks these rules counts as `OUTCOME_TEMPORARY` and nothing of it is stored, like a missing or unknown
-`outcome` and a failed call. When no provider answers, the reader sees that the translation failed and the post stays as it is.
+`outcome` and a failed call. When no provider answers, the reader sees that the translation failed and the post stays as it is, unless
+`translation_browser` is on and the reader's browser can translate the post: the web client then translates it there.
 The characters of each call count against the monthly limits, also of a call that fails, since the service may have received them.
 
-The server stops waiting after `plugin_translator_timeout`, and after 20 seconds whatever that setting says. It does not retry a
+The server stops waiting after `plugin_translator_timeout`, and after 20 seconds whatever that setting says. All the
+providers of one request get 45 seconds in all. It does not retry a
 failed call, and the same fragments can come again for another reader.
 
 ## Converting media

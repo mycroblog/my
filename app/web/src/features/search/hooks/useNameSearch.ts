@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The accounts whose names match the text typed in the search field (FR-307, web-client/screens/search.md): this
 // server's accounts by part of their display name or handle, and the accounts the server knows by the start of their
-// names (GET /accounts/search). The search waits until the typing pauses, and needs a session. The hook returns no JSX.
+// names (GET /accounts/search). The search waits until the typing pauses and any IME composition has ended, so that it
+// never searches half-composed text, and needs a session. The hook returns no JSX.
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -31,11 +32,17 @@ function nameQueryOf(text: string): string | null {
   return q;
 }
 
-export function useNameSearch(text: string, enabled: boolean): NameSearch {
+/** The handlers of the search field that tell the name search when an IME composes. */
+export type CompositionHandlers = { onCompositionStart: () => void; onCompositionEnd: () => void };
+
+export function useNameSearch(text: string, enabled: boolean): { names: NameSearch; composition: CompositionHandlers } {
   const api = useApi();
   const [query, setQuery] = useState(() => nameQueryOf(text));
+  // Whether an IME is composing: state, since its end starts the timer.
+  const [composing, setComposing] = useState(false);
   const next = nameQueryOf(text);
   useEffect(() => {
+    if (composing) return;
     // The search follows the typed text once it pauses (a timer, an external system: react.dev "Synchronizing with Effects").
     const timer = setTimeout(() => {
       setQuery(next);
@@ -43,7 +50,7 @@ export function useNameSearch(text: string, enabled: boolean): NameSearch {
     return () => {
       clearTimeout(timer);
     };
-  }, [next]);
+  }, [next, composing]);
   const result = useQuery({
     ...api.query.queryOptions("get", "/accounts/search", {
       params: { query: { q: query ?? "", limit: nameSearchLimit } },
@@ -52,8 +59,16 @@ export function useNameSearch(text: string, enabled: boolean): NameSearch {
     // The list stays while the next text is searched, rather than flashing empty at every key.
     placeholderData: keepPreviousData,
   });
-  if (!enabled || next === null) return { status: "idle" };
-  if (result.isError) return { status: "error", message: errorMessage(result.error) };
-  if (result.data === undefined) return { status: "loading" };
-  return { status: "done", accounts: result.data.items };
+  const composition = {
+    onCompositionStart: () => {
+      setComposing(true);
+    },
+    onCompositionEnd: () => {
+      setComposing(false);
+    },
+  };
+  if (!enabled || next === null) return { names: { status: "idle" }, composition };
+  if (result.isError) return { names: { status: "error", message: errorMessage(result.error) }, composition };
+  if (result.data === undefined) return { names: { status: "loading" }, composition };
+  return { names: { status: "done", accounts: result.data.items }, composition };
 }
