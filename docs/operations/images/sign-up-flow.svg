@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 1196" width="760" height="1196" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">Sign-up across the registration modes</title>
+  <desc id="desc">From the top down. Start: a visitor creates an account on the sign-up page, /auth/sign_up, with a username, an email address and a password, which is not offered while login_providers_only applies; or signs in with a login provider whose account is not linked yet, and with -allow-signup gets the same form without a password. Checks, in order: the registration mode, where closed refuses every sign-up; the network limit of 5 per 30 minutes; CAPTCHA when captcha is not none; the sign-up blocks, which reject or require approval; the invite code, which must be usable and is required in invite mode; the signup.check plugin, for a sign-up without an invite; and a username and email address that are not taken. A failed check refuses the sign-up with an error on the form and writes nothing. State right after registering, signed in at once: open is approved, or waiting with mail = none; approval is waiting for approval, or approved with a usable invite; invite is approved. A require_approval block or a signup.check hold leaves it waiting in any mode. Until the account is ready: a moderator's approval, only while waiting, with my registration approve; and a confirmed email address, by a link in a mail with mail = smtp, at once for an address the provider verified, and not needed with mail = none. A rejected registration is not approved and cannot use the app. A ready account goes to the welcome step, display name and avatar, then the home timeline.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 18px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 16px; }
+    .h { fill: #1f2328; font-size: 18px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .danger { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .danger { fill: #3d1214; stroke: #f85149; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="1196" rx="12"/>
+
+  <!-- Start -->
+  <rect class="group" x="20" y="16" width="720" height="172" rx="12"/>
+  <text class="h" x="36" y="46">Start</text>
+  <rect class="client" x="36" y="58" width="336" height="116" rx="8"/>
+  <text class="t b" x="204" y="88" text-anchor="middle">Create an account</text>
+  <text class="m" x="204" y="114" text-anchor="middle">/auth/sign_up</text>
+  <text class="m" x="204" y="137" text-anchor="middle">username, email, password</text>
+  <text class="m" x="204" y="160" text-anchor="middle">not with login_providers_only</text>
+  <rect class="client" x="388" y="58" width="336" height="116" rx="8"/>
+  <text class="t b" x="556" y="88" text-anchor="middle">Sign in with a provider</text>
+  <text class="m" x="556" y="114" text-anchor="middle">account not linked yet</text>
+  <text class="m" x="556" y="137" text-anchor="middle">-allow-signup: the same form,</text>
+  <text class="m" x="556" y="160" text-anchor="middle">without a password</text>
+  <path class="arrow" d="M 270 188 L 270 210" marker-end="url(#arrowhead)"/>
+
+  <!-- Checks -->
+  <rect class="group" x="20" y="212" width="500" height="418" rx="12"/>
+  <text class="h" x="36" y="242">Checks, in order</text>
+  <rect class="proc" x="36" y="258" width="468" height="44" rx="8"/>
+  <text class="t b" x="52" y="286">Registration mode</text>
+  <text class="m" x="488" y="286" text-anchor="end">closed refuses all</text>
+  <rect class="proc" x="36" y="310" width="468" height="44" rx="8"/>
+  <text class="t b" x="52" y="338">Network limit</text>
+  <text class="m" x="488" y="338" text-anchor="end">5 per 30 minutes</text>
+  <rect class="proc" x="36" y="362" width="468" height="44" rx="8"/>
+  <text class="t b" x="52" y="390">CAPTCHA</text>
+  <text class="m" x="488" y="390" text-anchor="end">when captcha is not none</text>
+  <rect class="proc" x="36" y="414" width="468" height="44" rx="8"/>
+  <text class="t b" x="52" y="442">Sign-up blocks</text>
+  <text class="m" x="488" y="442" text-anchor="end">reject or require_approval</text>
+  <rect class="proc" x="36" y="466" width="468" height="44" rx="8"/>
+  <text class="t b" x="52" y="494">Invite code</text>
+  <text class="m" x="488" y="494" text-anchor="end">must be usable; required in invite</text>
+  <rect class="proc" x="36" y="518" width="468" height="44" rx="8"/>
+  <text class="t b" x="52" y="546">signup.check</text>
+  <text class="m" x="488" y="546" text-anchor="end">plugin, without an invite</text>
+  <rect class="proc" x="36" y="570" width="468" height="44" rx="8"/>
+  <text class="t b" x="52" y="598">Username, email</text>
+  <text class="m" x="488" y="598" text-anchor="end">not taken</text>
+  <path class="arrow" d="M 520 421 L 546 421" marker-end="url(#arrowhead)"/>
+  <rect class="danger" x="548" y="373" width="192" height="96" rx="8"/>
+  <text class="t b" x="644" y="404" text-anchor="middle">Refused</text>
+  <text class="m" x="644" y="430" text-anchor="middle">error on the form,</text>
+  <text class="m" x="644" y="453" text-anchor="middle">nothing is written</text>
+  <path class="arrow" d="M 270 630 L 270 652" marker-end="url(#arrowhead)"/>
+
+  <!-- State right after registering -->
+  <rect class="group" x="20" y="654" width="720" height="202" rx="12"/>
+  <text class="h" x="36" y="684">State right after registering, signed in at once</text>
+  <rect class="port" x="36" y="700" width="221" height="104" rx="8"/>
+  <text class="t b" x="146.5" y="730" text-anchor="middle">open</text>
+  <text class="m" x="146.5" y="756" text-anchor="middle">approved</text>
+  <text class="m" x="146.5" y="780" text-anchor="middle">mail = none: waiting</text>
+  <rect class="port" x="269" y="700" width="221" height="104" rx="8"/>
+  <text class="t b" x="379.5" y="730" text-anchor="middle">approval</text>
+  <text class="m" x="379.5" y="756" text-anchor="middle">waiting for approval</text>
+  <text class="m" x="379.5" y="780" text-anchor="middle">usable invite: approved</text>
+  <rect class="port" x="502" y="700" width="221" height="104" rx="8"/>
+  <text class="t b" x="612.5" y="730" text-anchor="middle">invite</text>
+  <text class="m" x="612.5" y="756" text-anchor="middle">approved</text>
+  <text class="m" x="380" y="836" text-anchor="middle">A require_approval block or a signup.check hold: waiting in any mode</text>
+  <path class="arrow" d="M 380 856 L 380 878" marker-end="url(#arrowhead)"/>
+
+  <!-- Until the account is ready -->
+  <rect class="group" x="20" y="880" width="720" height="178" rx="12"/>
+  <text class="h" x="36" y="910">Until the account is ready</text>
+  <rect class="proc" x="36" y="926" width="336" height="116" rx="8"/>
+  <text class="t b" x="204" y="956" text-anchor="middle">Moderator's approval</text>
+  <text class="m" x="204" y="982" text-anchor="middle">only while waiting</text>
+  <text class="m" x="204" y="1005" text-anchor="middle">my registration approve</text>
+  <rect class="proc" x="388" y="926" width="336" height="116" rx="8"/>
+  <text class="t b" x="556" y="956" text-anchor="middle">Email address confirmed</text>
+  <text class="m" x="556" y="982" text-anchor="middle">mail = smtp: a link in a mail</text>
+  <text class="m" x="556" y="1005" text-anchor="middle">verified by the provider: at once</text>
+  <text class="m" x="556" y="1028" text-anchor="middle">mail = none: not needed</text>
+  <path class="arrow" d="M 204 1042 L 204 1080" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 556 1058 L 556 1080" marker-end="url(#arrowhead)"/>
+
+  <!-- Outcomes -->
+  <rect class="danger" x="36" y="1082" width="336" height="98" rx="8"/>
+  <text class="t b" x="204" y="1114" text-anchor="middle">Not approved</text>
+  <text class="m" x="204" y="1140" text-anchor="middle">rejected: cannot use the app</text>
+  <rect class="client" x="388" y="1082" width="336" height="98" rx="8"/>
+  <text class="t b" x="556" y="1114" text-anchor="middle">Welcome</text>
+  <text class="m" x="556" y="1140" text-anchor="middle">display name and avatar,</text>
+  <text class="m" x="556" y="1163" text-anchor="middle">then the home timeline</text>
+</svg>

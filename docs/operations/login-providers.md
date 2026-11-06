@@ -19,6 +19,7 @@ sign-up is allowed, and how many users are linked, with buttons to edit, enable,
 - New users can sign up with a provider only when you allow it for that provider (`-allow-signup`) and the
   [registration mode](registration.md) lets them register; the invite code, CAPTCHA, sign-up blocks, and network limit
   apply as on the password form. Someone who signs up this way has no password and signs in with the provider only.
+  The [diagram of the sign-up paths](registration.md#from-sign-up-to-the-app) shows both ways of signing up side by side.
 
 ## Kinds
 

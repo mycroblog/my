@@ -2,6 +2,32 @@
 
 How users sign up and confirm their email address, the registration modes, invite codes, approval of requests, password resets, and sign-up blocks.
 
+## From sign-up to the app
+
+![The paths of a new user: the sign-up form or a login provider, the checks that can refuse the sign-up, the state that each registration mode gives, and the approval and email confirmation before the app. The list below says the same.](images/sign-up-flow.svg)
+
+From the top of the diagram down:
+
+- **Start.** A visitor creates an account on the sign-up page (`/auth/sign_up`) with a username, an email address and a
+  password, which the page does not offer while [registration is limited to login providers](#registration-limited-to-login-providers).
+  Or the visitor signs in with a [login provider](login-providers.md) whose account is not linked to a user yet; when
+  the provider allows sign-ups (`-allow-signup`), the visitor gets the same form without the password field.
+- **Checks, in order.** The registration mode (`closed` refuses every sign-up), the limit per network (5 per 30 minutes),
+  CAPTCHA (when `captcha` is not `none`), the [sign-up blocks](#sign-up-blocks) (`reject` refuses, `require_approval`
+  holds for approval), the invite code (it must be usable, and `invite` mode requires one), the plugin of
+  [`signup.check`](decision-hooks.md#sign-ups) for a sign-up without an invite, and a username and email address that
+  are not taken. A sign-up that fails a check is refused with an error on the form, and nothing is written.
+- **State right after registering.** The new user is signed in at once. In `open` mode the registration is approved,
+  or waits for approval with `mail = none`; in `approval` mode it waits for approval, or is approved with a usable invite;
+  in `invite` mode it is approved. A `require_approval` block or a hold by `signup.check` leaves it waiting in any mode.
+- **Until the account is ready.** A registration that waits needs a moderator's approval (`my registration approve`, or
+  the admin screens). The email address must be confirmed through the link in a mail with `mail = smtp`; an address that
+  the login provider verified is confirmed at once, and with `mail = none` no confirmation is needed. A rejected
+  registration is not approved, and the account cannot use the app.
+- **The app.** A ready account goes to the welcome step (a display name and an avatar), then to the home timeline.
+
+The sections below describe each step.
+
 ## The sign-up page
 
 Users register at `https://<host>/auth/sign_up` with a username, an email address and a password, unless [registration is limited to login providers](#registration-limited-to-login-providers).
