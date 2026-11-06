@@ -355,6 +355,10 @@ Before the first stable release, `/` is the landing page of `/next/` and `/lates
 - The deploy job runs in the environment `doc-site` (deployment refs `main` and the tags `v*`), which holds the secret `CLOUDFLARE_API_TOKEN` (Workers Scripts: Edit) and the variable `CLOUDFLARE_ACCOUNT_ID`.
   The Worker config (`scripts/docs-site/wrangler.jsonc`) declares no routes and no custom domain: `mycroblog.dev` is bound to the Worker, with its DNS records, in the infrastructure repository `mycroblog/infra`,
   after the Worker exists from a first deploy on `workers.dev`.
+- A pull request that changes a published document, `app/docs/`, or `api/openapi.yaml` gets `/next/` alone on the Workers Preview `pr-<number>` of `my-docs`
+  (`https://pr-<number>-my-docs.<subdomain>.workers.dev/next/`, where `/` and `/latest/` redirect to `/next/`), and one comment with its URL that later pushes update:
+  `docs-site-preview.yml` builds it without secrets, and `docs-site-preview-deploy.yml` publishes it from `main`'s checkout in the environment `doc-site`,
+  reading the build as files only. `docs-site-preview-cleanup.yml` deletes the Previews of closed pull requests once a day. The Worker config enables preview URLs for these Previews.
 - To build the combined site locally, list the releases in a file (an empty file before the first release) and run the build; `DRY_RUN=1` checks the deploy without an account:
 
   ```sh

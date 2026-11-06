@@ -1,24 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 //
 // The Cloudflare Worker that serves the documentation site (ADR-0150 §7): the combined static build of every
-// published version (scripts/docs-site.sh build). It only returns static assets: no Worker code, no bindings.
-// scripts/docs-site.sh copies this file next to the combined build (./site) and runs wrangler on the copy, from main's
-// checkout (docs-site-deploy.yml).
+// published version (scripts/docs-site.sh build), and on each Preview pr-<number> the /next/ of one pull request
+// (scripts/docs-site.sh deploy-pr). It only returns static assets: no Worker code, no bindings.
+// scripts/docs-site.sh copies this file next to the build (./site) and runs wrangler on the copy, always from main's
+// checkout (docs-site-deploy.yml, docs-site-preview-deploy.yml): a pull request's build never brings a config of its own.
 //
 // It declares no routes and no custom domain: the binding of mycroblog.dev to the Worker (its Workers Custom Domain and
 // DNS records) belongs to the infrastructure repository, and the deploy token can edit Workers scripts only.
 //
-//   https://my-docs.<subdomain>.workers.dev   (wrangler deploy), and https://mycroblog.dev once bound
+//   main and releases:  https://my-docs.<subdomain>.workers.dev               (wrangler deploy), and https://mycroblog.dev once bound
+//   pull request:       https://pr-<number>-my-docs.<subdomain>.workers.dev   (wrangler preview --name pr-<number>)
 {
   "name": "my-docs",
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
-  "preview_urls": false,
+  // The Previews of pull requests are served on workers.dev.
+  "preview_urls": true,
   "assets": {
     "directory": "./site",
     // /next/operations/running serves /next/operations/running/index.html, redirecting to the trailing slash.
     "html_handling": "auto-trailing-slash",
     // A missing page gets the 404.html of its version (the nearest one up the path), with status 404.
     "not_found_handling": "404-page"
-  }
+  },
+  // `wrangler preview` refuses a config without this block; the Preview takes everything else from the top level.
+  "previews": {}
 }
