@@ -718,9 +718,22 @@ export const handlers = [
       );
     }),
   ),
-  // operationIds listHookAppeals, upholdHookAppeal, overturnHookAppeal: no appeals; any one is decided as asked.
+  // operationIds listHookAppeals, getHookAppeal, upholdHookAppeal, overturnHookAppeal: no appeals listed; any one is
+  // pending, and decided as asked.
   http.get(`${apiBase}/admin/hook_appeals`, ({ request }) =>
     withViewer(request, () => HttpResponse.json({ items: [] })),
+  ),
+  http.get(`${apiBase}/admin/hook_appeals/:id`, ({ request, params }) =>
+    withViewer(request, () => HttpResponse.json(hookAppealFixture({ id: String(params["id"]) }))),
+  ),
+  // operationIds getHookSummary, getHookDecision (whose path matches the summary's too): any decision is a drop that
+  // can be cancelled.
+  http.get(`${apiBase}/admin/hook_decisions/:id`, ({ request, params }) =>
+    withViewer(request, () =>
+      HttpResponse.json(
+        params["id"] === "summary" ? hookSummaryFixture() : hookDecisionFixture({ id: String(params["id"]) }),
+      ),
+    ),
   ),
   ...(["uphold", "overturn"] as const).map((decision) =>
     http.post(`${apiBase}/admin/hook_appeals/:id/${decision}`, ({ request, params }) =>

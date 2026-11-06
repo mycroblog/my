@@ -11,14 +11,6 @@
     "defaultMessage": "投稿した人",
     "description": "Column of the list of appeals of refused posts: the account that tried to post and appealed."
   },
-  "admin.hook_appeals.column.appeal": {
-    "defaultMessage": "申し立て",
-    "description": "Column of the list of appeals of refused posts: when it was sent, the text of the post and the author's comment."
-  },
-  "admin.hook_appeals.column.decision": {
-    "defaultMessage": "判定",
-    "description": "Column of the list of appeals of refused posts: the automated review's decision that refused the post."
-  },
   "admin.hook_appeals.column.state": {
     "defaultMessage": "状態",
     "description": "Column of the list of appeals of refused posts: awaiting review, upheld, or overturned."
@@ -75,10 +67,6 @@
     "defaultMessage": "撤回する",
     "description": "Button of a pending appeal of a refused post that opens the confirmation of overturning it, and the confirmation's button that overturns it."
   },
-  "admin.hook_appeals.overturn_of": {
-    "defaultMessage": "{date} の異議申し立てを撤回する",
-    "description": "Accessible name of the button that overturns an appeal of a refused post. {date} is when the appeal was sent."
-  },
   "admin.hook_appeals.overturned": {
     "defaultMessage": "異議申し立てを撤回しました。判定を取り消し、この人の投稿は審査しなくなりました。",
     "description": "Status message after a moderator overturned an appeal of a refused post."
@@ -114,9 +102,5 @@
   "admin.hook_appeals.uphold": {
     "defaultMessage": "維持する",
     "description": "Button of a pending appeal of a refused post that opens the confirmation of upholding it, and the confirmation's button that upholds it."
-  },
-  "admin.hook_appeals.uphold_of": {
-    "defaultMessage": "{date} の異議申し立てを維持する",
-    "description": "Accessible name of the button that upholds an appeal of a refused post. {date} is when the appeal was sent."
   }
 }

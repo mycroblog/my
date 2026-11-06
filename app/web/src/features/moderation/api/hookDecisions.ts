@@ -51,6 +51,11 @@ export function hookDecisionsQueryOptions(api: Api, filter: HookDecisionFilter) 
   });
 }
 
+/** One decision with its cancellation, for its page. */
+export function hookDecisionQueryOptions(api: Api, id: string) {
+  return api.query.queryOptions("get", "/admin/hook_decisions/{id}", { params: { path: { id } } });
+}
+
 export function hookSummaryQueryOptions(api: Api) {
   return queryOptions({
     queryKey: ["get", "/admin/hook_decisions/summary"] as const,
@@ -62,7 +67,7 @@ export function hookSummaryQueryOptions(api: Api) {
   });
 }
 
-/** Reads the lists and the summary again after a cancellation, which changes a row and nothing else. */
+/** Reads the lists, the decisions' pages and the summary again after a cancellation, which changes one decision. */
 export function refreshHookDecisions(queryClient: QueryClient): Promise<void> {
   return queryClient.invalidateQueries({
     predicate: (query) => query.queryKey[0] === "get" && String(query.queryKey[1]).startsWith("/admin/hook_decisions"),
@@ -104,10 +109,18 @@ export function hookAppealsQueryOptions(api: Api, filter: HookAppealFilter) {
   });
 }
 
-/** Reads the lists of appeals of refused posts again after a decision, which moves an appeal out of the pending one. */
+/** One appeal of a refused post with its decision and the author's texts, for its page. */
+export function hookAppealQueryOptions(api: Api, id: string) {
+  return api.query.queryOptions("get", "/admin/hook_appeals/{id}", { params: { path: { id } } });
+}
+
+/**
+ * Reads the lists and the pages of appeals of refused posts again after a decision, which moves an appeal out of the
+ * pending list and changes its page.
+ */
 export function refreshHookAppeals(queryClient: QueryClient): Promise<void> {
   return queryClient.invalidateQueries({
-    predicate: (query) => query.queryKey[0] === "get" && query.queryKey[1] === "/admin/hook_appeals",
+    predicate: (query) => query.queryKey[0] === "get" && String(query.queryKey[1]).startsWith("/admin/hook_appeals"),
   });
 }
 

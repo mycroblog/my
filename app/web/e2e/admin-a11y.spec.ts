@@ -801,7 +801,9 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/roles") return json(route, { items: roles });
     if (key === "GET /admin/hook_decisions") return json(route, { items: [hookDecision] });
     if (key === "GET /admin/hook_decisions/summary") return json(route, hookSummary);
+    if (key === `GET /admin/hook_decisions/${hookDecision.id}`) return json(route, hookDecision);
     if (key === "GET /admin/hook_appeals") return json(route, { items: [hookAppeal] });
+    if (key === `GET /admin/hook_appeals/${hookAppeal.id}`) return json(route, hookAppeal);
     if (key === "GET /admin/translation") return json(route, translationOverview);
     if (key === "GET /admin/cost_items") return json(route, { items: [costItem] });
     if (key === `GET /admin/cost_items/${costItem.id}`) return json(route, costItem);
@@ -970,7 +972,8 @@ const supporterProgram: Schemas["AdminSupporterProgram"] = {
 const paymentStatus: Schemas["PaymentStatus"] = { provider: "stripe", mode: "test", time_zone: "UTC", warnings: [] };
 
 /**
- * A remote post that the external review of posts from other servers dropped, as GET /admin/hook_decisions lists it:
+ * A remote post that the external review of posts from other servers dropped, as GET /admin/hook_decisions lists it and
+ * GET /admin/hook_decisions/{id} answers it:
  * its subject is a long URI without a break, which must wrap rather than scroll the page sideways.
  */
 const hookDecision: Schemas["AdminHookDecision"] = {
@@ -1004,7 +1007,10 @@ const hookSummary: Schemas["AdminHookSummary"] = {
   ],
 };
 
-/** The target's appeal of a local post that the review refused, awaiting a moderator, as GET /admin/hook_appeals lists it. */
+/**
+ * The target's appeal of a local post that the review refused, awaiting a moderator, as GET /admin/hook_appeals lists it
+ * and GET /admin/hook_appeals/{id} answers it.
+ */
 const hookAppeal: Schemas["AdminHookAppeal"] = {
   id: "0192f0c4-7a8e-7000-8000-0000000003a1",
   decision: {
@@ -1112,6 +1118,15 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
   "admin.supporters": { path: "/admin/supporters", ready: supporterSubscription.plan_name },
   "moderation.invites": { path: "/moderation/invites", ready: invite.code },
   "moderation.hook-decisions": { path: "/moderation/hook-decisions", ready: hookDecision.subject_key },
+  "moderation.hook-decisions_.$id": {
+    path: `/moderation/hook-decisions/${hookDecision.id}`,
+    ready: hookDecision.note ?? "",
+  },
+  "moderation.hook-decisions_.appeals": { path: "/moderation/hook-decisions/appeals", ready: hookAppeal.status_text },
+  "moderation.hook-decisions_.appeals_.$id": {
+    path: `/moderation/hook-decisions/appeals/${hookAppeal.id}`,
+    ready: hookAppeal.comment ?? "",
+  },
   "admin.translation": { path: "/admin/translation", ready: translationOverview.providers[0]?.name ?? "" },
 };
 

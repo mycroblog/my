@@ -1,0 +1,42 @@
+{
+  "admin.hook_appeal.account.admin": {
+    "defaultMessage": "Open the account in the admin screens",
+    "description": "Link from the page of an appeal of a refused post to the admin page of its author's account."
+  },
+  "admin.hook_appeal.appeal.title": {
+    "defaultMessage": "Appeal",
+    "description": "Heading of the region of an appeal's page with its state, its author, and what they sent."
+  },
+  "admin.hook_appeal.back": {
+    "defaultMessage": "Back to appeals of refused posts",
+    "description": "Link from an appeal's page back to the list of appeals of refused posts."
+  },
+  "admin.hook_appeal.decision.open": {
+    "defaultMessage": "Open the decision",
+    "description": "Link from an appeal's page to the page of the decision it appeals."
+  },
+  "admin.hook_appeal.decision.title": {
+    "defaultMessage": "Decision of the review",
+    "description": "Heading of the region of an appeal's page with the decision of the external review that the author appeals."
+  },
+  "admin.hook_appeal.review.decided_at": {
+    "defaultMessage": "Decided",
+    "description": "Term of a decided appeal of a refused post: when a moderator decided it."
+  },
+  "admin.hook_appeal.review.description": {
+    "defaultMessage": "Upholding keeps the decision. Overturning cancels it and stops reviewing this author's posts. Either way the author is told.",
+    "description": "Hint above the buttons that uphold or overturn an appeal of a refused post."
+  },
+  "admin.hook_appeal.review.result": {
+    "defaultMessage": "Result",
+    "description": "Term of a decided appeal of a refused post: whether it was upheld or overturned."
+  },
+  "admin.hook_appeal.review.title": {
+    "defaultMessage": "Moderator's review",
+    "description": "Heading of the region of an appeal's page where a moderator upholds or overturns it."
+  },
+  "admin.hook_appeal.title": {
+    "defaultMessage": "Appeal of a refused post",
+    "description": "Heading of the page of one author's appeal of a local post that an external review refused."
+  }
+}

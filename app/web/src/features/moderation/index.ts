@@ -71,13 +71,19 @@ export { SignupBlocks } from "./components/SignupBlocks";
 export {
   type HookAppealFilter,
   hookAppealFilters,
+  hookAppealQueryOptions,
   hookAppealsQueryOptions,
   type HookDecisionFilter,
   hookDecisionFilters,
+  hookDecisionQueryOptions,
   hookDecisionsQueryOptions,
   hookSummaryQueryOptions,
 } from "./api/hookDecisions";
+export { HookAppealDetailView } from "./components/HookAppealDetail";
+export { HookAppeals } from "./components/HookAppeals";
+export { HookDecisionDetailView } from "./components/HookDecisionDetail";
 export { HookDecisions } from "./components/HookDecisions";
+export { HookReviewPages } from "./components/hookDecisionParts";
 // The invites that let people sign up in the invite registration mode (FR-001), for manage_invites.
 export { invitesQueryOptions } from "./api/invites";
 export { instanceInfoQueryOptions as moderationInstanceQueryOptions } from "./api/reports";

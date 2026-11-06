@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The automated reviews screen below its heading (ADR-0147 §9): each hook with its mode and its counts per outcome and
-// latency, then what the hooks stopped, would have stopped, or could not check, newest first. A decision holds no text of
-// a post, so a row shows only what identifies its subject and, when it has one, the account it belongs to. Cancelling
-// takes effect at once and asks nothing first: the result stays on the page in a StatusMessage (role="status"). The list is in the admin mode's table form: a toolbar with
-// the filter (kept in the URL by the route, web-client/README.md S3), one page of the table at a time, previous / next.
-// The authors' appeals of the posts that the review of local posts refused come first, as they await a moderator
-// (HookAppeals.tsx).
+// The first page of the automated reviews screen below its heading and local navigation (ADR-0147 §9): each hook with
+// its mode and its counts per outcome and latency, then what the hooks stopped, would have stopped, or could not check,
+// newest first. A decision holds no text of a post, so a row names its subject, which links to the decision's page
+// with every other fact. The list is in the admin mode's table form: a toolbar with the filter (kept in the URL by the
+// route, web-client/README.md S3), one page of the table at a time, previous / next. Cancelling a row takes effect at
+// once and asks nothing first: the result stays on the page in a StatusMessage (role="status"). The authors' appeals
+// of refused posts are the screen's other page (HookAppeals.tsx).
 import {
   Button,
   Card,
   DescriptionItem,
   DescriptionList,
   EmptyState,
+  Link,
   ListToolbar,
   Select,
   SelectItem,
@@ -28,10 +29,9 @@ import {
 } from "@my/ui";
 import { useState } from "react";
 import { useIntl } from "react-intl";
-import { useNow } from "../../../lib/clock";
 import { useT } from "../../../lib/i18n";
+import { moderationHookDecisionPath } from "../../../lib/paths";
 import {
-  type HookAppealFilter,
   type HookDecision,
   type HookDecisionFilter,
   hookDecisionFilters,
@@ -40,16 +40,13 @@ import {
 import {
   hookModeLabels,
   hookNameLabels,
-  hookReasonLabels,
   hookOutcomeLabels,
   type OverrideHookDecision,
   useHookDecisions,
   useHookSummary,
   useOverrideHookDecision,
 } from "../hooks/useHookDecisions";
-import { HookAppeals } from "./HookAppeals";
 import { DateTime, type RecordColumns, RecordTable, RequirePermission, Section } from "./parts";
-import { AccountByIdLabel } from "./reportParts";
 
 type HookRow = HookSummary["hooks"][number];
 
@@ -60,20 +57,15 @@ function isFilter(key: unknown): key is HookDecisionFilter {
 export function HookDecisions({
   filter,
   onFilterChange,
-  appealFilter,
-  onAppealFilterChange,
 }: {
   filter: HookDecisionFilter;
   onFilterChange: (next: HookDecisionFilter) => void;
-  appealFilter: HookAppealFilter;
-  onAppealFilterChange: (next: HookAppealFilter) => void;
 }) {
   const t = useT();
   const [status, setStatus] = useState("");
   return (
     <RequirePermission permission="manage_reports">
       <Stack gap="6">
-        <HookAppeals filter={appealFilter} onFilterChange={onAppealFilterChange} />
         <Section title={t("client:admin.hook_decisions.summary.title")}>
           <HookSummaryTable />
         </Section>
@@ -192,34 +184,17 @@ function HookDecisionList({
       id: "subject",
       header: t("client:admin.hook_decisions.column.subject"),
       wrap: "anywhere",
-      // A URI or another key, which reads left to right in every locale.
-      cell: (decision) => <span dir="ltr">{decision.subject_key}</span>,
-    },
-    {
-      id: "hook",
-      header: t("client:admin.hook_decisions.column.hook"),
-      cell: (decision) => t(hookNameLabels[decision.hook]),
+      cell: (decision) => <DecisionName decision={decision} />,
     },
     {
       id: "outcome",
       header: t("client:admin.hook_decisions.column.outcome"),
-      cell: (decision) => t(hookOutcomeLabels[decision.outcome]),
-    },
-    {
-      id: "mode",
-      header: t("client:admin.hook_decisions.column.mode"),
-      cell: (decision) => t(hookModeLabels[decision.mode]),
+      cell: (decision) => <DecisionState decision={decision} />,
     },
     {
       id: "decided_at",
       header: t("client:admin.hook_decisions.column.decided_at"),
       cell: (decision) => <DateTime value={decision.decided_at} />,
-    },
-    {
-      id: "details",
-      header: t("client:admin.hook_decisions.column.details"),
-      wrap: "anywhere",
-      cell: (decision) => <HookDecisionDetails decision={decision} />,
     },
     {
       id: "actions",
@@ -240,46 +215,35 @@ function HookDecisionList({
   );
 }
 
-function HookDecisionDetails({ decision }: { decision: HookDecision }) {
+/** The name of a decision: its subject, a link to its page, above the review that decided. */
+function DecisionName({ decision }: { decision: HookDecision }) {
   const t = useT();
-  const intl = useIntl();
-  const now = useNow();
   return (
-    <DescriptionList>
-      {decision.account_id !== undefined && (
-        <DescriptionItem term={t("client:admin.hook_decisions.account")}>
-          <AccountByIdLabel id={decision.account_id} />
-        </DescriptionItem>
-      )}
-      <DescriptionItem term={t("client:admin.hook_decisions.latency")}>
-        {t("client:admin.hook_decisions.latency.value", { value: intl.formatNumber(decision.latency_ms) })}
-      </DescriptionItem>
-      {decision.reason !== undefined && (
-        <DescriptionItem term={t("client:admin.hook_decisions.reason")}>
-          {t(hookReasonLabels[decision.reason])}
-        </DescriptionItem>
-      )}
-      {decision.note !== undefined && (
-        <DescriptionItem term={t("client:admin.hook_decisions.note")}>
-          {/* Written by the plugin, in any language. */}
-          <Text dir="auto">{decision.note}</Text>
-        </DescriptionItem>
-      )}
-      {decision.overridden_at !== undefined && (
-        <DescriptionItem term={t("client:admin.hook_decisions.overridden_at")}>
-          <DateTime value={decision.overridden_at} />
-        </DescriptionItem>
-      )}
-      {decision.overridable && decision.restorable_until !== undefined && (
-        <DescriptionItem term={t("client:admin.hook_decisions.restorable_until")}>
-          {Date.parse(decision.restorable_until) > now ? (
-            <DateTime value={decision.restorable_until} />
-          ) : (
-            t("client:admin.hook_decisions.restorable_gone")
-          )}
-        </DescriptionItem>
-      )}
-    </DescriptionList>
+    <Stack as="span" gap="1">
+      {/* A URI or another key, which reads left to right in every locale. */}
+      <Link href={moderationHookDecisionPath(decision.id)} variant="standalone" wrap="anywhere">
+        <span dir="ltr">{decision.subject_key}</span>
+      </Link>
+      <Text size="sm" tone="muted">
+        {t(hookNameLabels[decision.hook])}
+      </Text>
+    </Stack>
+  );
+}
+
+/** Where a decision stands: its outcome in its mode, and whether a moderator cancelled it. */
+function DecisionState({ decision }: { decision: HookDecision }) {
+  const t = useT();
+  return (
+    <Stack as="span" gap="1">
+      <Text weight="semibold">
+        {t("client:admin.hook_decisions.summary.outcome", {
+          outcome: t(hookOutcomeLabels[decision.outcome]),
+          mode: t(hookModeLabels[decision.mode]),
+        })}
+      </Text>
+      {decision.overridden_at !== undefined && <Text size="sm">{t("client:admin.hook_decisions.cancelled")}</Text>}
+    </Stack>
   );
 }
 

@@ -16,6 +16,7 @@ import {
   adminErrorGroupPath,
   adminErrorsPath,
   moderationAppealPath,
+  moderationHookAppealPath,
   moderationReportPath,
   followListPath,
   profilePath,
@@ -474,9 +475,17 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return [{ href: "/admin/webhooks", label: "client:notifications.link.webhooks" }];
     case "admin_hook_failing":
       return [{ href: "/moderation/hook-decisions", label: "client:notifications.link.hook_decisions" }];
-    // The pending appeals of refused posts are on the screen of the automated reviews.
+    // An appeal of a refused post leads to its page; without its ID, to the appeals awaiting a moderator.
     case "admin_hook_appeal":
-      return [{ href: "/moderation/hook-decisions", label: "client:notifications.link.hook_appeals" }];
+      return [
+        {
+          href:
+            notification.hook_appeal_id === undefined
+              ? "/moderation/hook-decisions/appeals"
+              : moderationHookAppealPath(notification.hook_appeal_id),
+          label: "client:notifications.link.hook_appeals",
+        },
+      ];
     // A new or regressed group leads to its page; the groups beyond the hour's limit, to the list.
     case "admin_error_group": {
       const groupId = notification.error_group?.group_id;

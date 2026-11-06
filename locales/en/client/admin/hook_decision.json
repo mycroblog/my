@@ -1,0 +1,34 @@
+{
+  "admin.hook_decision.appeal_only": {
+    "defaultMessage": "A refused local post is not cancelled here. Its author can appeal it, and overturning the appeal cancels the decision.",
+    "description": "Shown in the cancellation region of a refusal of a local post: it goes through the author's appeal instead."
+  },
+  "admin.hook_decision.back": {
+    "defaultMessage": "Back to automated reviews",
+    "description": "Link from a decision's page back to the list of decisions."
+  },
+  "admin.hook_decision.cancel.description": {
+    "defaultMessage": "Cancelling takes effect at once and undoes what the review did where it can.",
+    "description": "Hint above the button that cancels a decision on its page."
+  },
+  "admin.hook_decision.cancel.title": {
+    "defaultMessage": "Cancellation",
+    "description": "Heading of the region of a decision's page where a moderator cancels it."
+  },
+  "admin.hook_decision.cancelled": {
+    "defaultMessage": "A moderator cancelled this decision.",
+    "description": "Shown in the cancellation region of a decision that is cancelled; the facts above say when."
+  },
+  "admin.hook_decision.facts.title": {
+    "defaultMessage": "Decision",
+    "description": "Heading of the region of a decision's page with what the review decided and on what."
+  },
+  "admin.hook_decision.no_effect": {
+    "defaultMessage": "This decision had no effect, so there is nothing to cancel.",
+    "description": "Shown in the cancellation region of a decision made in observe mode or that failed: there is no button."
+  },
+  "admin.hook_decision.title": {
+    "defaultMessage": "Decision of an automated review",
+    "description": "Heading of the page of one decision of an external review."
+  }
+}

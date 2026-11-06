@@ -38,6 +38,16 @@ export function moderationAppealPath(id: string): string {
   return `/moderation/appeals/${id}`;
 }
 
+/** The moderation page of one appeal of a refused post, which an `admin_hook_appeal` notification leads to. */
+export function moderationHookAppealPath(id: string): string {
+  return `/moderation/hook-decisions/appeals/${encodeURIComponent(id)}`;
+}
+
+/** The moderation page of one decision of an external review, which the list and an appeal lead to. */
+export function moderationHookDecisionPath(id: string): string {
+  return `/moderation/hook-decisions/${encodeURIComponent(id)}`;
+}
+
 /** The moderation page of one report, which an `admin_report` notification leads to. */
 export function moderationReportPath(id: string): string {
   return `/moderation/reports/${id}`;
