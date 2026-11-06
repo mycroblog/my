@@ -2504,6 +2504,7 @@ const (
 	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
 	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
 	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyHookDecisionsRetentionDays         InstanceSettingKey = "hook_decisions_retention_days"
 	InstanceSettingKeyHookInboundFollowMode              InstanceSettingKey = "hook_inbound_follow_mode"
 	InstanceSettingKeyHookInboundFollowOnFailure         InstanceSettingKey = "hook_inbound_follow_on_failure"
 	InstanceSettingKeyHookInboundStatusMode              InstanceSettingKey = "hook_inbound_status_mode"
@@ -2542,7 +2543,6 @@ const (
 	InstanceSettingKeyRemoteStatusRetentionDays          InstanceSettingKey = "remote_status_retention_days"
 	InstanceSettingKeyReportsRetentionDays               InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription            InstanceSettingKey = "require_media_description"
-	InstanceSettingKeyRetentionHookDecisions             InstanceSettingKey = "retention_hook_decisions"
 	InstanceSettingKeySearchIndexing                     InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
 	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
@@ -2598,6 +2598,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyFinanceViewerItemNames:
 		return true
 	case InstanceSettingKeyFinanceVisibility:
+		return true
+	case InstanceSettingKeyHookDecisionsRetentionDays:
 		return true
 	case InstanceSettingKeyHookInboundFollowMode:
 		return true
@@ -2674,8 +2676,6 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyReportsRetentionDays:
 		return true
 	case InstanceSettingKeyRequireMediaDescription:
-		return true
-	case InstanceSettingKeyRetentionHookDecisions:
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true

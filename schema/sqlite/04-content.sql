@@ -710,22 +710,16 @@ CREATE TABLE poll_tallies (
 -- moderation and content: actions on statuses (#364, data-model §4.3, §4.4) -------------------
 
 -- Projection (content): a status shown as sensitive because of a mark_statuses_sensitive action or
--- a mark_sensitive decision of a hook, exactly one of the two, until that source ends (ADR-0147 §8).
--- It has no primary key: a key must not hold NULL, and a surrogate would change at each rebuild,
--- which `my projection verify` would report as drift.
+-- a mark_sensitive decision of a hook, until that source ends (ADR-0147 §8). source_kind names what
+-- source_id points to: 'action' a moderation_actions row, 'hook_decision' a hook_decisions row. Each
+-- row has exactly one source by construction; a status marked by both has two rows.
 CREATE TABLE status_sensitivity_overrides (
   status_id TEXT NOT NULL,
-  source_action_id TEXT,
-  source_hook_decision_id TEXT,
-  CONSTRAINT status_sensitivity_overrides_source_check
-    CHECK ((source_action_id IS NULL) <> (source_hook_decision_id IS NULL))
+  source_kind TEXT NOT NULL CHECK (source_kind IN ('action', 'hook_decision')),
+  source_id TEXT NOT NULL,
+  PRIMARY KEY (status_id, source_kind, source_id)
 ) STRICT;
-CREATE UNIQUE INDEX status_sensitivity_overrides_status_id_source_action_id
-  ON status_sensitivity_overrides (status_id, source_action_id);
-CREATE UNIQUE INDEX status_sensitivity_overrides_status_id_source_hook_decision_id
-  ON status_sensitivity_overrides (status_id, source_hook_decision_id);
-CREATE INDEX status_sensitivity_overrides_source_action_id ON status_sensitivity_overrides (source_action_id);
-CREATE INDEX status_sensitivity_overrides_source_hook_decision_id ON status_sensitivity_overrides (source_hook_decision_id);
+CREATE INDEX status_sensitivity_overrides_source_kind_source_id ON status_sensitivity_overrides (source_kind, source_id);
 
 -- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
 -- the rows of an account.

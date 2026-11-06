@@ -222,7 +222,7 @@ An automated effect goes in the audit log, with the system as the actor, only wh
 filed `flag`, and `require_approval` (`hook_decision_applied`). `drop` and `reject` store nothing, so they stay in the
 decisions alone.
 
-The job `hook.purge_decisions` removes decisions after `retention_hook_decisions` days (default 90, at least 30). It keeps
+The job `hook.purge_decisions` removes decisions after `hook_decisions_retention_days` days (default 90, at least 30). It keeps
 those that a sensitive mark on an existing post rests on, those of an account under a
 [retention hold](moderation.md#record-retention-and-holds), and each `reject` of `local.status` its author can still appeal or
 whose appeal waits for review. An appeal goes with its decision. Deleting an account removes its decisions, its appeals, and

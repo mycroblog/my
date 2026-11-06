@@ -32,7 +32,7 @@ Review the policy when you change a setting below or a service, and after each u
 | Actions against accounts, and appeals | 365 days | `moderation_actions_retention_days` | 180-3650 | The end of the action |
 | Audit log | 730 days | `audit_log_retention_days` | 365-3650 | The record |
 | Who took part in a voice chat room | 90 days | `voice_participants_retention_days` | 30-3650 | The end of the room |
-| The decisions of an external review, when you use one | 90 days | `retention_hook_decisions` | 30-3650 | The decision |
+| The decisions of an external review, when you use one | 90 days | `hook_decisions_retention_days` | 30-3650 | The decision |
 | Remote posts nothing here refers to | 90 days | `remote_status_retention_days` | 1-3650 | The post's publication |
 | Any remote post | No limit (`0`) | `remote_status_max_retention_days` | 0-3650 | The post's publication |
 | Remote posts only a relay brought | 7 days | `relay_status_retention_days` | 1-3650 | The post's publication |

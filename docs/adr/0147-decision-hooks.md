@@ -76,7 +76,7 @@ ADR-0020 の分類で次を足す。`schema/<dialect>/16-hook.sql` に置き、`
 
 判定は呼び出しの直後に短いトランザクションで書く。その後の取り込みが失敗しても、再実行は同じ判定を読む。
 
-**保持期間: 既定 90 日、下限 30 日**（`retention_hook_decisions`）。定期ジョブが消す。次は消さない。
+**保持期間: 既定 90 日、下限 30 日**（`hook_decisions_retention_days`）。定期ジョブが消す。次は消さない。
 
 - §8 の投影が指している判定。投影を再構築できなくなるため（ADR-0020 規約 1）。投稿がなくなれば消せる。
 - `retention_holds` が保全するアカウントの判定（ADR-0058 §8）。
@@ -96,32 +96,27 @@ ADR-0020 の分類で次を足す。`schema/<dialect>/16-hook.sql` に置き、`
 
 ### 8. `mark_sensitive`
 
-判定の効果は処分と同じ投影 `status_sensitivity_overrides` に載せる。ただし出所は **モデレーションの処分か判定のどちらか一方だけ** で、CHECK で強制する。自動の判定と人の処分を記録の上で混ぜないため。
+判定の効果は処分と同じ投影 `status_sensitivity_overrides` に載せる。ただし 1 行の出所は **モデレーションの処分か判定のどちらか一方だけ** で、表の形で強制する。自動の判定と人の処分を記録の上で混ぜないため。
 
 ```sql
 -- Projection (content): a status shown as sensitive because of a mark_statuses_sensitive action
--- or a hook decision, exactly one of the two, until that source ends.
+-- or a mark_sensitive decision of a hook, until that source ends. source_kind names what
+-- source_id points to.
 CREATE TABLE status_sensitivity_overrides (
   status_id uuid NOT NULL,
-  source_action_id uuid,
-  source_hook_decision_id uuid,
-  CONSTRAINT status_sensitivity_overrides_source_check
-    CHECK ((source_action_id IS NULL) <> (source_hook_decision_id IS NULL))
+  source_kind text NOT NULL CHECK (source_kind IN ('action', 'hook_decision')),
+  source_id uuid NOT NULL,
+  PRIMARY KEY (status_id, source_kind, source_id)
 );
-CREATE UNIQUE INDEX status_sensitivity_overrides_status_id_source_action_id
-  ON status_sensitivity_overrides (status_id, source_action_id);
-CREATE UNIQUE INDEX status_sensitivity_overrides_status_id_source_hook_decision_id
-  ON status_sensitivity_overrides (status_id, source_hook_decision_id);
-CREATE INDEX status_sensitivity_overrides_source_action_id ON status_sensitivity_overrides (source_action_id);
-CREATE INDEX status_sensitivity_overrides_source_hook_decision_id ON status_sensitivity_overrides (source_hook_decision_id);
+CREATE INDEX status_sensitivity_overrides_source_kind_source_id ON status_sensitivity_overrides (source_kind, source_id);
 ```
 
-今の PK `(status_id, source_action_id)` は NULL を持てないので外す。排他の CHECK の形は `relationship_severances` と同じである。代理キー `id` は足さない。`my projection verify` は全列で行を比べるので、再構築のたびに変わる ID があると毎回ずれと報告される。この表は主キーのない最初の表になる。
+主キーは `(status_id, source_kind, source_id)` とする。`source_kind` が `action` なら `source_id` は `moderation_actions`、`hook_decision` なら `hook_decisions` の行を指す。1 行が持つ出所は形の上で 1 つだけなので、排他のための NULL 可の列も CHECK も要らない。処分と判定の両方が同じ投稿に付けば 2 行になる。キーは再構築しても変わらないので、`my projection verify` が全列で行を比べても毎回のずれにはならない。代理キー `id` は足さない。再構築のたびに変わる ID はずれと報告されるため。主キーがあるので、論理レプリケーションの publication がある PostgreSQL でもこの表の `DELETE` は止まらない。
 
-- **書き込み**: `content` に `MarkSensitiveByHook(ctx, tx, statusID, decisionID)` と `ClearSensitivityOfHookDecision(ctx, tx, decisionID)` を足し、`InsertStatusSensitivityOverride` の `ON CONFLICT` を出所ごとの文に分ける。`inbound.status` は取り込みか改訂のトランザクションで書く。`media.check` は投稿より先に動くので、添付を持つ投稿を作るトランザクションで、投影の行と `hook_decision_statuses` を書く。`avatar`・`header`・`emoji` には投稿がないので `mark_sensitive` は効かず、記録だけが残る。
+- **書き込み**: `content` に `MarkSensitiveByHook(ctx, tx, statusID, decisionID)` と `ClearSensitivityOfHookDecision(ctx, tx, decisionID)` を足し、`InsertStatusSensitivityOverride` を出所の種類ごとの文に分ける（`ON CONFLICT` はどちらも主キー）。`inbound.status` は取り込みか改訂のトランザクションで書く。`media.check` は投稿より先に動くので、添付を持つ投稿を作るトランザクションで、投影の行と `hook_decision_statuses` を書く。`avatar`・`header`・`emoji` には投稿がないので `mark_sensitive` は効かず、記録だけが残る。
 - **読み取り**: 変えない。`SensitivityOverridden` は行の有無だけを見るので、`Reader.forcedSensitive` と `preview.go` はそのまま動く。
 - **再構築**: `SensitivityMarks` の `mark` は処分か判定のどちらかを受け取る。`internal/platform/projections.go` の `status_sensitivity_overrides` は `moderation.ReplaySensitivityMarks` に加えて `hook.ReplaySensitivityMarks`（`enforce` で `mark_sensitive`、取り消しのない判定の `hook_decision_statuses`）を流す。`content` は他のモジュールの表を読まない。`content.RebuildSensitivityOverrides` は `statuses` に行のない投稿を落とす。投稿の物理削除は投影の行を消すが、判定の子の行はそれより長く残り得るため。保持期間が判定を消して行が戻らなくなることは §6 が防ぐ。
-- **何を消すか**: 処分の解除は `source_action_id` の行だけを、判定の取り消しは `source_hook_decision_id` の行だけを消す。両方の行があれば、片方が消えても投稿はセンシティブのまま。どちらも作者が付けた `Sensitive`（版の列）と `force_sensitive` の制限には触らない。投稿の物理削除（`PurgeStatusSensitivityOverrides`）は両方を消す。
+- **何を消すか**: 処分の解除は `source_kind = 'action'` でその処分の行だけを、判定の取り消しは `source_kind = 'hook_decision'` でその判定の行だけを消す。両方の行があれば、片方が消えても投稿はセンシティブのまま。どちらも作者が付けた `Sensitive`（版の列）と `force_sensitive` の制限には触らない。投稿の物理削除（`PurgeStatusSensitivityOverrides`）は両方を消す。
 - **効く範囲**: 今の投影と同じ。添付を閲覧者を問わずセンシティブとして表示し、プレビューに画像を出さない。本文は隠さず、添付のない投稿には見える効果がない。`internal/app/federation/document.go` は版の `Sensitive` だけを使うので、連合先には伝わらない。
 - **版をまたぐ**: 行は投稿に付くので、後の版が `allow` でも残る。外すのはモデレーターの取り消しだけである。再構築が単純で、失敗の通過と紛れない。
 
@@ -174,7 +169,7 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 
 最初に原則を決めた。判定だけを返すのは、プラグインが操られても読者に届く文章を作れないようにするためで、固定の語彙がそれを保つ。既定で通すのは、順序キーのために失敗の影響が 1 件で済まないから。
 
-`drop` は誤りの代償が大きい一方で最も価値のある判定なので、外すのではなく `observe` から始める形にした。通報者は、`NOT NULL` を保てる行のあるインスタンス Actor にした。`mark_sensitive` は、投影の `source_action_id` が処分しか指せないことが問題で、処分を作ると原則の 3 に反するので、出所の排他にした。これに伴い、保持期間のある判定から投影を作ることになり、§6 が投影の指す判定を残す形になった。`media.check` の `reject` は原本を残さないので、保全や通報の義務をソフトウェアでは決めず、運営者がモードとプラグインで選び、運用文書にこの性質を書く形で判定に入れた（§2）。`local.status` の `reject` には、今の `moderation_appeals.action_id` が処分しか指せないので、専用の異議申し立てを付けた。
+`drop` は誤りの代償が大きい一方で最も価値のある判定なので、外すのではなく `observe` から始める形にした。通報者は、`NOT NULL` を保てる行のあるインスタンス Actor にした。`mark_sensitive` は、投影の出所の列が処分しか指せないことが問題で、処分を作ると原則の 3 に反するので、出所を処分か判定のどちらか一方にした。その形は、はじめ NULL 可の 2 列と排他の CHECK で、主キーのない表だった。主キーのない表は、論理レプリケーションの publication がある PostgreSQL（Cloud SQL の移行や blue-green の更新が作る）で `DELETE` が失敗し、処分の解除・判定の取り消し・保持の削除が止まる。v0.1.0 の前で投影は作り直せるため、`(status_id, source_kind, source_id)` を主キーとする形に改めた。これに伴い、保持期間のある判定から投影を作ることになり、§6 が投影の指す判定を残す形になった。`media.check` の `reject` は原本を残さないので、保全や通報の義務をソフトウェアでは決めず、運営者がモードとプラグインで選び、運用文書にこの性質を書く形で判定に入れた（§2）。`local.status` の `reject` には、今の `moderation_appeals.action_id` が処分しか指せないので、専用の異議申し立てを付けた。保持期間の設定の名前は、ほかの保持期間の設定（`<対象>_retention_days`）と `hook_` で始まるフックの設定に揃えて `hook_decisions_retention_days` とした。
 
 ## 採らなかった案
 
@@ -185,7 +180,8 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 - 自動の通報の `reporter_account_id` を NULL にする、専用の `reporter_kind` を持たせる: 人でないことを直接表せるが、通報者を読む経路（`ReportsFiledBy`、管理 API、書き出し）すべてを直すことになる。
 - 既定を `retry` にする: 審査されていない投稿を通さないが、§4 のとおり Actor の `Delete` まで止まる。
 - `inbound.status` を、フォローされていない作者に絞る: 費用と送るデータを大きく減らせるが、フォローされた作者や乗っ取られたアカウントからのスパムを見られない。
-- `status_sensitivity_overrides` の PK を `source_kind`（CHECK）と `source_id` で保つ: NULL も主キーのない表もなくなるが、どの列が何を指すかが読み取れなくなる。
+- `status_sensitivity_overrides` の出所を NULL 可の `source_action_id` と `source_hook_decision_id` に分け、排他の CHECK で 1 つに絞る（主キーなし）: 列名でどちらを指すかが読めるが、主キーが持てず、論理レプリケーションの publication がある PostgreSQL では `DELETE` が失敗する。
+- `status_sensitivity_overrides` を主キーなしのまま、PostgreSQL で `REPLICA IDENTITY FULL` を設定する: 形を変えずに済むが、Atlas CE の扱う範囲の外で、運営者の手順に頼ることになる。
 - 後の版が `allow` のとき判定から来たセンシティブの行を外す: 版に判定が付くことと揃うが、再構築が投稿ごとの最新の判定を見ることになる。
 - `media.check` から `reject` を外す: 原本が消える判定がなくなるが、運営者が公開前に止められない。法令への対応はソフトウェアではなく運営者が決めることなので、手段を減らさない。
 - `local.status` の `reject` に異議申し立てを付けない: 表も審査も増えないが、作者が誤りを正す道がなくなる。
@@ -200,7 +196,7 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 - 悪い: `media.check` の `reject` は原本を残さないので、運営者に保全の義務があるなら、それはプラグインの側で行う。
 - 悪い: `local.status` の異議申し立ては、投稿を拒まれた作者の本文を一時的に保存し、モデレーターの審査の列を増やす。対象から外れたアカウントは以後審査されないので、乗っ取られても `local.status` は働かない。
 - 悪い: `drop` を戻せるのは 7 日だけで、`drop` した投稿が別の経路で入ることがある（§9）。
-- 悪い: `status_sensitivity_overrides` は主キーを持たない最初の表になり、判定を残すために §6 の保持に例外ができる。
+- 悪い: `status_sensitivity_overrides` の `source_id` は `source_kind` を見ないと何を指すか分からない。判定を残すために §6 の保持に例外ができる。
 - 後続: data-model §4.4・§5.2・§8・§9、`schema/` の両方言、`docs/operations/`、`tools/agentkit/context-map.yaml` は #2222 以降のタスクで直す。
 
 ## Open Questions / 要検証

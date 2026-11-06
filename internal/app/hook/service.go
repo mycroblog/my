@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	// JobPurgeDecisions removes the decisions past retention_hook_decisions; no payload.
+	// JobPurgeDecisions removes the decisions past hook_decisions_retention_days; no payload.
 	JobPurgeDecisions = "hook.purge_decisions"
 	// PurgeInterval is the period of its schedule.
 	PurgeInterval = time.Hour
