@@ -6,8 +6,11 @@
 //   - relative links to published documents, which become site URLs under the base path, #anchors kept;
 //   - relative links to a file with a page of its own (sitePages), which become that page;
 //   - relative links to an image of a published directory (docs/operations/images/architecture.svg), which is copied
-//     to the same place beside the page so that Astro serves it, and stay relative;
+//     to the same place beside the page so that Astro serves it, and stay relative (GitHub URLs in the plain Markdown);
 //   - relative links to any other file of the repository, which become GitHub URLs at DOCS_SITE_REF.
+// Each page is also written, with the same rewritten links but absolute (https://mycroblog.dev/next/...), as plain
+// Markdown to public/<slug>.md, which the build serves at the URL of the page without its trailing slash plus .md (the
+// convention of https://llmstxt.org/). The generated files under public/ are git-ignored.
 // The sources stay readable on GitHub as they are; `agentkit docs lint` checks their links and anchors, and the build
 // checks the links of the pages (starlight-links-validator).
 import {
@@ -21,9 +24,21 @@ import {
   readFileSync,
 } from "node:fs";
 import { dirname, join, posix } from "node:path";
-import { base, githubURL, isPublished, pageURL, publishedDirs, repoRoot, sitePages, slugOf } from "../src/published";
+import {
+  base,
+  githubURL,
+  isPublished,
+  markdownPath,
+  pageURL,
+  publishedDirs,
+  repoRoot,
+  site,
+  sitePages,
+  slugOf,
+} from "../src/published";
 
 const contentDir = join(repoRoot, "app/docs/src/content/docs");
+const publicDir = join(repoRoot, "app/docs/public");
 const handWritten = new Set(["index.md"]);
 
 function filesIn(dir: string, suffix: RegExp = /\.md$/): string[] {
@@ -46,7 +61,12 @@ function isPublishedImage(path: string): boolean {
 }
 
 /** The new destination of a link written in the document at `from`, or undefined to leave it as it is. */
-function rewrite(from: string, dest: string): string | undefined {
+function rewrite(from: string, dest: string, absolute: boolean): string | undefined {
+  const next = rewriteToSite(from, dest, absolute ? "markdown" : "page");
+  return next !== undefined && absolute && next.startsWith("/") ? site + next : next;
+}
+
+function rewriteToSite(from: string, dest: string, output: "page" | "markdown"): string | undefined {
   if (dest === "" || dest.startsWith("#") || dest.startsWith("//") || /^[A-Za-z][A-Za-z0-9+.-]*:/.test(dest)) {
     return undefined;
   }
@@ -65,6 +85,10 @@ function rewrite(from: string, dest: string): string | undefined {
     return pageURL(target) + anchor;
   }
   if (isPublishedImage(target) && existsSync(join(repoRoot, target))) {
+    if (output === "markdown") {
+      // The plain Markdown under public/ has no copy of the image beside it.
+      return githubURL("blob", target) + "?raw=true";
+    }
     // Astro resolves an image of a page only from a path that starts with ./ or ../.
     const relative = posix.relative(posix.dirname(from), target);
     return relative.startsWith("../") ? relative : `./${relative}`;
@@ -81,11 +105,11 @@ const reInlineLink = /(!?\[(?:[^\]\\]|\\.)*\]\()(<[^>]*>|[^)\s]+)((?:\s+"[^"]*")
 const reRefDefinition = /^(\s{0,3}\[[^\]]+\]:\s*)(<[^>]*>|\S+)(.*)$/;
 
 /** Rewrites the links of one line outside code spans. */
-function rewriteLine(from: string, line: string): string {
+function rewriteLine(from: string, line: string, absolute: boolean): string {
   const definition = reRefDefinition.exec(line);
   if (definition?.[1] !== undefined && definition[2] !== undefined) {
     const dest = definition[2].replace(/^<|>$/g, "");
-    const next = rewrite(from, dest);
+    const next = rewrite(from, dest, absolute);
     return next === undefined ? line : `${definition[1]}${next}${definition[3] ?? ""}`;
   }
   // A link that starts inside a code span (`[x](y)`) is code, not a link; a code span inside the text of a link is not.
@@ -94,13 +118,16 @@ function rewriteLine(from: string, line: string): string {
     if (code.some(([start, end]) => at >= start && at < end)) {
       return whole;
     }
-    const next = rewrite(from, dest.replace(/^<|>$/g, ""));
+    const next = rewrite(from, dest.replace(/^<|>$/g, ""), absolute);
     return next === undefined ? whole : `${open}${next}${close}`;
   });
 }
 
-/** The page for the document at `path`: frontmatter with its title, then its body with the links rewritten. */
-function transform(path: string, source: string): string {
+/**
+ * The page for the document at `path`: frontmatter with its title, then its body with the links rewritten; with
+ * `absolute`, the plain Markdown form instead (the title as its first heading, no frontmatter, links with the origin).
+ */
+function transform(path: string, source: string, absolute: boolean): string {
   const lines = source.split("\n");
   const titleAt = lines.findIndex((line) => /^# +\S/.test(line));
   if (titleAt === -1) {
@@ -115,8 +142,11 @@ function transform(path: string, source: string): string {
       fence = fence === "" ? marker : "";
       return line;
     }
-    return fence === "" ? rewriteLine(path, line) : line;
+    return fence === "" ? rewriteLine(path, line, absolute) : line;
   });
+  if (absolute) {
+    return [`# ${title}`, ...body].join("\n").replace(/\n*$/, "\n");
+  }
   const frontmatter = [
     "---",
     `title: ${JSON.stringify(title)}`,
@@ -131,11 +161,19 @@ for (const name of readdirSync(contentDir)) {
     rmSync(join(contentDir, name), { recursive: true, force: true });
   }
 }
+for (const dir of publishedDirs) {
+  rmSync(join(publicDir, dir), { recursive: true, force: true });
+  rmSync(join(publicDir, `${dir}.md`), { force: true });
+}
 const published = publishedDirs.flatMap((dir) => filesIn(`docs/${dir}`)).filter(isPublished);
 for (const path of published) {
   const out = join(contentDir, `${slugOf(path)}.md`);
   mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, transform(path, readFileSync(join(repoRoot, path), "utf8")));
+  const source = readFileSync(join(repoRoot, path), "utf8");
+  writeFileSync(out, transform(path, source, false));
+  const markdown = join(publicDir, markdownPath(slugOf(path)));
+  mkdirSync(dirname(markdown), { recursive: true });
+  writeFileSync(markdown, transform(path, source, true));
 }
 const images = publishedDirs.flatMap((dir) => filesIn(`docs/${dir}`, reImage));
 for (const path of images) {
@@ -143,4 +181,6 @@ for (const path of images) {
   mkdirSync(dirname(out), { recursive: true });
   copyFileSync(join(repoRoot, path), out);
 }
-console.log(`import-docs: copied ${published.length} documents and ${images.length} images into src/content/docs/`);
+console.log(
+  `import-docs: copied ${published.length} documents and ${images.length} images into src/content/docs/ and public/`,
+);
