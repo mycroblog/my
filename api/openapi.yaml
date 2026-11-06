@@ -3423,12 +3423,7 @@ paths:
         - oauth2:
             - write:statuses
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: The ID of the decision, `hook_decision_id` of the refusal.
-          schema:
-            $ref: '#/components/schemas/Id'
+        - $ref: '#/components/parameters/HookDecisionId'
       requestBody:
         required: true
         content:
@@ -4159,7 +4154,8 @@ paths:
         is enabled, or none is allowed its visibility. A 422
         `/api/v1/problems/translation-unsupported-language` when the providers do not translate the
         language, and a 422 without a type for a `target_language` that is not a language tag. A 429
-        `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC. A 503
+        `/api/v1/problems/translation-limit` over a monthly limit, until the next month in UTC, with
+        `Retry-After` the seconds until then. A 503
         `/api/v1/problems/translation-failed` when no provider returned a usable translation, which
         may pass.
       tags:
@@ -6893,24 +6889,23 @@ paths:
       summary: Cancel a decision
       description: |
         Records the cancellation as its own event and in the audit log, and undoes what the hook
-        can: what happens depends on the verdict. An unknown ID is a 404. A decision that had no
-        effect, that is already cancelled, or a `reject` of `local.status`, which goes through its
-        appeal, is a 409. Needs the `manage_reports` permission.
+        can: what happens depends on the verdict. Cancelling a cancelled decision again changes
+        nothing and answers the decision. An unknown ID is a 404. A decision that had no effect, or
+        a `reject` of `local.status`, which goes through its appeal, is a 409
+        `/api/v1/problems/hook-decision-not-overridable`. Needs the `manage_reports` permission.
       tags:
         - admin-moderation
       security:
         - oauth2:
             - admin:write
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: The ID of the decision.
-          schema:
-            type: string
+        - $ref: '#/components/parameters/HookDecisionId'
       responses:
         '200':
           description: The decision with its cancellation.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
           content:
             application/json:
               schema:
@@ -6930,12 +6925,12 @@ paths:
         - oauth2:
             - admin:read
       parameters:
-        - name: pending
+        - name: state
           in: query
           required: false
-          description: Keep the appeals that no moderator has decided.
+          description: Keep only the appeals in this state; omitted keeps every state.
           schema:
-            type: boolean
+            $ref: '#/components/schemas/HookAppealState'
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -7330,12 +7325,14 @@ paths:
       summary: Forward a report to the target's server
       description: |
         Sends the report to the server of its remote target as a `Flag` of the instance actor,
-        with the posts it points at and its comment, and nothing of the reporter. Works on an
-        open or a resolved report that `forwardable` allows: one filed on this server (by a
-        person or by an automated review) about a remote account, of no voice chat room. A
-        report forwarded already, when it was filed or later, changes nothing. A report that
-        cannot be forwarded is a 409, an unknown ID a 404. Needs the `manage_reports`
-        permission.
+        with the account and the posts it points at, and `comment` as its text. Nothing of the
+        reporter is sent: not their account, and not their comment, nor the note of an automated
+        review that filed it. Works on an open or a resolved report that `forwardable` allows:
+        one filed on this server (by a person or by an automated review) about a remote account,
+        of no voice chat room. A report forwarded already, when it was filed or later, changes
+        nothing, whatever `comment` says. A report that cannot be forwarded is a 409
+        `/api/v1/problems/report-not-forwardable`, an unknown ID a 404, and a `comment` that is too
+        long or contains U+0000 a 422 naming it. Needs the `manage_reports` permission.
       tags:
         - admin-moderation
       security:
@@ -7343,6 +7340,12 @@ paths:
             - admin:write
       parameters:
         - $ref: '#/components/parameters/ReportId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForwardReportRequest'
       responses:
         '200':
           $ref: '#/components/responses/AdminReportDetail'
@@ -9417,7 +9420,9 @@ paths:
         each change is kept as a revision and audited (`setting_changed`). Setting the current
         value again still records a revision, so clients send only the settings they change.
         The changes take effect on the next request. An unknown key, or a value its key
-        rejects, is a 422 naming the key, and nothing is changed. Needs the `manage_settings`
+        rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
+        current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
+        through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
         permission.
       tags:
         - admin-server
@@ -11127,6 +11132,13 @@ components:
       description: The ID of the domain action.
       schema:
         $ref: '#/components/schemas/Id'
+    HookDecisionId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the decision.
+      schema:
+        $ref: '#/components/schemas/Id'
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -11717,8 +11729,8 @@ components:
             type: string
         Retry-After:
           description: |
-            The seconds to wait before retrying, on a 429 and on a 503 of the streaming
-            endpoint.
+            The seconds to wait before retrying, on a 429 (for `translation-limit`, until the next
+            month in UTC) and on a 503 of the streaming endpoint.
           schema:
             type: integer
             minimum: 1
@@ -14865,8 +14877,9 @@ components:
     AdminReportHookOrigin:
       description: |
         The decision hook that filed the report; omitted for a report that a person or another server
-        filed. Such a report has the instance actor as its reporter, is not forwarded, and nobody is
-        notified when it is resolved.
+        filed. Such a report has the instance actor as its reporter, is not forwarded when it is
+        filed (a moderator may forward it later, without the plugin's note), and nobody is notified
+        when it is resolved.
       type: object
       required:
         - hook
@@ -14876,7 +14889,8 @@ components:
           $ref: '#/components/schemas/HookName'
         decision_id:
           description: The decision that filed the report, which can be gone after its retention.
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Id'
         reason:
           $ref: '#/components/schemas/HookReason'
     AdminVoiceRoomBan:
@@ -15252,7 +15266,7 @@ components:
         - overridable
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/Id'
         hook:
           $ref: '#/components/schemas/HookName'
         subject_key:
@@ -15260,7 +15274,8 @@ components:
           type: string
         account_id:
           description: The account the subject belongs to; absent when there is none.
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Id'
         mode:
           $ref: '#/components/schemas/HookDecisionMode'
         outcome:
@@ -15319,12 +15334,13 @@ components:
         - submitted_at
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/Id'
         decision:
           $ref: '#/components/schemas/AdminHookDecision'
         account_id:
           description: The author.
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Id'
         status_text:
           description: The text of the post the author tried to post, as plain text.
           type: string
@@ -15388,10 +15404,11 @@ components:
         - submitted_at
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/Id'
         hook_decision_id:
           description: The decision appealed.
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Id'
         state:
           $ref: '#/components/schemas/HookAppealState'
         submitted_at:
@@ -15410,7 +15427,8 @@ components:
           properties:
             hook_decision_id:
               description: The decision to appeal.
-              type: string
+              allOf:
+                - $ref: '#/components/schemas/Id'
             appeal_deadline:
               description: The last moment the author can appeal the decision.
               type: string
@@ -18540,6 +18558,17 @@ components:
             `unsubscribeAccount` do; left out, the subscription stays as it is. For an account on another
             server, the subscription starts when that server accepts the follow.
           type: boolean
+    ForwardReportRequest:
+      description: What a moderator sends with a report forwarded to the target's server.
+      type: object
+      properties:
+        comment:
+          description: |
+            Text for the moderators of the target's server, as plain text, up to 1,000 characters:
+            the `content` of the `Flag`. Omitted or empty sends none. The reporter's comment is never
+            sent by a forward after filing.
+          type: string
+          maxLength: 1000
     Id:
       description: The ID of a resource, a UUIDv7 in its canonical string form.
       type: string
@@ -19243,13 +19272,12 @@ components:
           description: Whether the server has a search engine, so that statuses can be searched.
           type: boolean
         visibilities:
-          description: The visibilities of the statuses that the search covers; empty while it is not available.
+          description: |
+            The visibilities of the statuses that the search covers, only `public` and `local`; empty
+            while it is not available.
           type: array
           items:
-            type: string
-            enum:
-              - public
-              - local
+            $ref: '#/components/schemas/Visibility'
     InstanceSettingKey:
       description: |
         The key of an instance setting. New keys may be
@@ -21505,8 +21533,10 @@ components:
         - `/api/v1/problems/email-already-verified` (409): the primary email address is already
           confirmed, so no confirmation mail is sent.
         - `/api/v1/problems/hook-decision-not-overridable` (409): the decision of a decision hook
-          had no effect, is already cancelled, or is a `reject` of `local.status`, which goes through
-          its appeal.
+          had no effect, or is a `reject` of `local.status`, which goes through its appeal.
+        - `/api/v1/problems/report-not-forwardable` (409): the report cannot be forwarded to the
+          target's server: it came from another server, is about a local account or a voice chat
+          room, or its target is gone.
         - `/api/v1/problems/status-rejected` (422): the server's automated review refused the post
           and nothing was posted. The problem carries `hook_decision_id` and `appeal_deadline`; the
           user may appeal (`POST /hook_decisions/{id}/appeal`).
@@ -22655,7 +22685,6 @@ components:
       type: object
       required:
         - target_language
-      additionalProperties: false
       properties:
         target_language:
           description: The language to translate into, as a BCP 47 tag.

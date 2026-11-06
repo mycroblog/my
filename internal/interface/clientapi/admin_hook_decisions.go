@@ -180,11 +180,14 @@ func (s *Server) OverrideHookDecision(ctx context.Context, req OverrideHookDecis
 	switch {
 	case errors.Is(err, apphook.ErrNotFound):
 		return OverrideHookDecisiondefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
-	case errors.Is(err, apphook.ErrNotOverridable), errors.Is(err, apphook.ErrAlreadyOverridden):
+	case errors.Is(err, apphook.ErrNotOverridable):
 		return OverrideHookDecisiondefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusConflict, ProblemTypeHookDecisionNotOverridable,
 			s.Localizer(ctx).ServerErrorsHookDecisionNotOverridable(), "")), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: override hook decision %s: %w", req.Id, err)
 	}
-	return OverrideHookDecision200JSONResponse(newHookDecision(record)), nil
+	cache := cacheNoStore
+	return OverrideHookDecision200JSONResponse{
+		Body: newHookDecision(record), Headers: OverrideHookDecision200ResponseHeaders{CacheControl: &cache},
+	}, nil
 }

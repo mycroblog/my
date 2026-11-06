@@ -42,7 +42,7 @@ type Moderation interface {
 	ReopenReport(ctx context.Context, reportID, byUserID string) (moderation.ReportRecord, error)
 	// ForwardReport forwards a report to the target's server after it was filed
 	// (admin_report_notes.go).
-	ForwardReport(ctx context.Context, reportID, byUserID string) (moderation.ReportRecord, error)
+	ForwardReport(ctx context.Context, reportID, comment, byUserID string) (moderation.ReportRecord, error)
 	// ReportStatuses presents the statuses of a report whatever their visibility, deleted ones
 	// included, for the report's detail (admin_report_notes.go).
 	ReportStatuses(ctx context.Context, reportID string) ([]appcontent.ReviewedStatus, error)

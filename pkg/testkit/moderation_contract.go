@@ -929,10 +929,15 @@ func moderationLocalReports(t *testing.T, e *moderationEnv) {
 		t.Fatalf("File(not forwarded) = %+v, %v", unsent, err)
 	}
 	e.events.take()
-	for range 2 {
-		rec, err := e.svc.ForwardReport(ctx, unsent.ID, "")
+	if _, err := e.svc.ForwardReport(ctx, unsent.ID, strings.Repeat("a", moderation.MaxReportForwardComment+1), ""); !errors.Is(err, moderation.ErrInvalidReportForward) {
+		t.Errorf("ForwardReport(text too long) = %v, want ErrInvalidReportForward", err)
+	}
+	// The moderator's text reads back with the forward; a second request with another text
+	// records nothing.
+	for _, text := range []string{"spam from your server", "another text"} {
+		rec, err := e.svc.ForwardReport(ctx, unsent.ID, text, "")
 		if err != nil || rec.Report.Forward == nil || rec.Report.Forward.ReportID != unsent.ID || rec.Report.Forward.ForwardedByUserID != "" ||
-			!rec.Report.SentToTarget() || rec.Report.Forwarded {
+			rec.Report.Forward.Comment != "spam from your server" || !rec.Report.SentToTarget() || rec.Report.Forwarded {
 			t.Errorf("ForwardReport = %+v, %v; want the report with its forward", rec.Report, err)
 		}
 	}
@@ -947,13 +952,13 @@ func moderationLocalReports(t *testing.T, e *moderationEnv) {
 	}
 	// A report forwarded when it was filed is not forwarded again; one of a local account, or
 	// an unknown one, cannot be.
-	if rec, err := e.svc.ForwardReport(ctx, r.ID, ""); err != nil || rec.Report.Forward != nil {
+	if rec, err := e.svc.ForwardReport(ctx, r.ID, "", ""); err != nil || rec.Report.Forward != nil {
 		t.Errorf("ForwardReport(forwarded when filed) = %+v, %v; want it unchanged", rec.Report, err)
 	}
-	if _, err := e.svc.ForwardReport(ctx, local.ID, ""); !errors.Is(err, appmoderation.ErrReportNotForwardable) {
+	if _, err := e.svc.ForwardReport(ctx, local.ID, "", ""); !errors.Is(err, appmoderation.ErrReportNotForwardable) {
 		t.Errorf("ForwardReport(local target) = %v, want ErrReportNotForwardable", err)
 	}
-	if _, err := e.svc.ForwardReport(ctx, e.ids.NewID(), ""); !errors.Is(err, appmoderation.ErrNotFound) {
+	if _, err := e.svc.ForwardReport(ctx, e.ids.NewID(), "", ""); !errors.Is(err, appmoderation.ErrNotFound) {
 		t.Errorf("ForwardReport(unknown) = %v, want ErrNotFound", err)
 	}
 	e.events.take()

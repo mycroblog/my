@@ -9,12 +9,12 @@ get:
   security:
     - oauth2: ["admin:read"]
   parameters:
-    - name: pending
+    - name: state
       in: query
       required: false
-      description: Keep the appeals that no moderator has decided.
+      description: Keep only the appeals in this state; omitted keeps every state.
       schema:
-        type: boolean
+        $ref: ../components/schemas/HookAppealState.yaml
     - $ref: ../components/parameters/Cursor.yaml
     - $ref: ../components/parameters/Limit.yaml
   responses:

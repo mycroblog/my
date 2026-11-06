@@ -13,6 +13,7 @@ import (
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The detail of a report (FR-710): its moderators' notes and the history of its target, and the
@@ -158,7 +159,12 @@ func (s *Server) ReopenReport(ctx context.Context, req ReopenReportRequestObject
 	return ReopenReport200JSONResponse{res}, nil
 }
 
-// ForwardReport serves POST /api/v1/admin/reports/{id}/forward.
+// ProblemTypeReportNotForwardable is the problem of forwarding a report that cannot be forwarded:
+// one received from another server, one of a voice chat room, or one of a local account.
+const ProblemTypeReportNotForwardable = "/api/v1/problems/report-not-forwardable"
+
+// ForwardReport serves POST /api/v1/admin/reports/{id}/forward. The body's comment is the
+// moderator's text for the target's server, the only text the Flag carries (ADR-0058 §6).
 func (s *Server) ForwardReport(ctx context.Context, req ForwardReportRequestObject) (ForwardReportResponseObject, error) {
 	if p, err := s.requirePermission(ctx, identity.PermManageReports); err != nil {
 		return nil, err
@@ -169,14 +175,25 @@ func (s *Server) ForwardReport(ctx context.Context, req ForwardReportRequestObje
 	if err != nil {
 		return nil, err
 	}
-	rec, err := s.o.Moderation.ForwardReport(ctx, req.Id, v.UserID)
+	var comment string
+	if req.Body != nil {
+		comment = deref(req.Body.Comment)
+	}
+	rec, err := s.o.Moderation.ForwardReport(ctx, req.Id, comment, v.UserID)
+	l := s.Localizer(ctx)
+	var textErr *moderation.TextError
 	switch {
 	case errors.Is(err, appmoderation.ErrNotFound):
 		return ForwardReportdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
 	case errors.Is(err, appmoderation.ErrReportNotForwardable):
-		l := s.Localizer(ctx)
 		return ForwardReportdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusConflict, ProblemTypeBlank, l.ServerErrorsConflict(), l.ServerErrorsReportNotForwardable())), nil
+			s.problem(ctx, http.StatusConflict, ProblemTypeReportNotForwardable, l.ServerErrorsConflict(), l.ServerErrorsReportNotForwardable())), nil
+	case errors.As(err, &textErr) && textErr.Max > 0:
+		return ForwardReportdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank,
+			l.ServerErrorsUnprocessable(), l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))), nil
+	case errors.Is(err, moderation.ErrInvalidReportForward):
+		return ForwardReportdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank,
+			l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("comment"))), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: forward report %s: %w", req.Id, err)
 	}

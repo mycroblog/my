@@ -145,15 +145,23 @@ func TestReportForwarding(t *testing.T) {
 		t.Errorf("POSTs = %+v, want none for a report not forwarded or of a local account", posts)
 	}
 
-	// A moderator forwards the report that was not forwarded: the same Flag, once, and an entry
-	// in the audit log. Forwarding it again sends nothing more.
+	// A moderator forwards the report that was not forwarded: the same Flag, once, with the
+	// moderator's text and not the reporter's comment, and an entry in the audit log. Forwarding
+	// it again sends nothing more, whatever its text.
 	var detail clientapi.AdminReportDetail
 	if res := c.do("alice", http.MethodGet, "/admin/reports/"+unsent, nil, &detail); res.StatusCode != http.StatusOK || detail.Forwarded || !detail.Forwardable {
 		t.Fatalf("GET the report = %d, forwarded %v, forwardable %v", res.StatusCode, detail.Forwarded, detail.Forwardable)
 	}
-	for range 2 {
+	if res := c.do("alice", http.MethodPost, "/admin/reports/"+unsent+"/forward", map[string]any{"comment": strings.Repeat("a", 1001)}, nil); res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("forward with a text too long = %d, want 422", res.StatusCode)
+	}
+	if posts := network.taken(); len(posts) != 0 {
+		t.Errorf("POSTs after a refused forward = %+v, want none", posts)
+	}
+	const moderatorText = "Spam account, posts linked"
+	for _, text := range []string{moderatorText, "another text"} {
 		detail = clientapi.AdminReportDetail{}
-		if res := c.do("alice", http.MethodPost, "/admin/reports/"+unsent+"/forward", nil, &detail); res.StatusCode != http.StatusOK || !detail.Forwarded || detail.Forwardable {
+		if res := c.do("alice", http.MethodPost, "/admin/reports/"+unsent+"/forward", map[string]any{"comment": text}, &detail); res.StatusCode != http.StatusOK || !detail.Forwarded || detail.Forwardable {
 			t.Errorf("forward = %d, forwarded %v, forwardable %v", res.StatusCode, detail.Forwarded, detail.Forwardable)
 		}
 	}
@@ -167,6 +175,9 @@ func TestReportForwarding(t *testing.T) {
 	}
 	if got, _ := flag["object"].([]any); flag["type"] != "Flag" || flag["actor"] != instance.URI || len(got) != 2 || got[1] != bob+"/statuses/1" {
 		t.Errorf("Flag of the forward = %s", posts[0].body)
+	}
+	if flag["content"] != moderatorText || strings.Contains(string(posts[0].body), "Spam, please look") {
+		t.Errorf("Flag of the forward = %s, want the moderator's text and not the reporter's comment", posts[0].body)
 	}
 	audit, err := c.app.Moderation.AuditLog(ctx, appmoderation.AuditQuery{TargetKind: moderation.AuditTargetReport, TargetID: unsent}, 10)
 	if err != nil {
