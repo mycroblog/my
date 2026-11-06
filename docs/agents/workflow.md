@@ -191,7 +191,9 @@ once the milestone's implementation issues are done. Single-issue work keeps the
 - Never run two issues that touch the same shared files at the same time: when the next issue in line shares files
   with a running one, start a different issue for the free slot, and start the held issue after the running one has
   opened its PR, on that PR's branch (a stacked PR: `--base <that branch>`, "Stacked on #N" at the top of the body;
-  GitHub retargets it to `main` when the base merges, and the agent then merges `origin/main`).
+  GitHub retargets it to `main` when the base merges. The merge queue lands the base as a merge commit, so the stacked
+  branch already holds it: merge `origin/main` only when the retargeted PR conflicts or the queue drops it (§7), or when
+  the stacked work must build on a change that reached `main` after it branched).
 - Split implementation work by layer: one issue for the server (domain, application, adapters, schema, client API)
   and one for the web client (screens, `client*` messages), the web issue stacked on the server PR. A smaller issue
   reads and checks less.
