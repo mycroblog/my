@@ -67,13 +67,11 @@ ON CONFLICT (month) DO NOTHING;
 UPDATE translation_server_usage SET characters = characters + @characters
 WHERE month = @month AND characters + @characters <= @max_characters;
 
--- name: AddTranslationCacheHit :exec
-INSERT INTO translation_server_usage (month, cache_hits) VALUES (@month, 1)
-ON CONFLICT (month) DO UPDATE SET cache_hits = translation_server_usage.cache_hits + 1;
-
--- name: AddTranslationCacheMiss :exec
-INSERT INTO translation_server_usage (month, cache_misses) VALUES (@month, 1)
-ON CONFLICT (month) DO UPDATE SET cache_misses = translation_server_usage.cache_misses + 1;
+-- name: AddTranslationCacheLookups :exec
+INSERT INTO translation_server_usage (month, cache_hits, cache_misses) VALUES (@month, @hits, @misses)
+ON CONFLICT (month) DO UPDATE SET
+  cache_hits = translation_server_usage.cache_hits + excluded.cache_hits,
+  cache_misses = translation_server_usage.cache_misses + excluded.cache_misses;
 
 -- name: GetTranslationAccountUsage :one
 SELECT characters FROM translation_account_usage WHERE account_id = @account_id AND month = @month;

@@ -172,16 +172,14 @@ func (r *TranslationRepository) AddUsageWithin(ctx context.Context, tx uow.Tx, a
 	return n > 0, wrap(err, "add translation server usage")
 }
 
-// AddCacheLookup implements translation.Repository.
-func (r *TranslationRepository) AddCacheLookup(ctx context.Context, tx uow.Tx, month string, hit bool) error {
+// AddCacheLookups implements translation.Repository.
+func (r *TranslationRepository) AddCacheLookups(ctx context.Context, tx uow.Tx, month string, hits, misses int64) error {
 	q, err := r.db.queries(tx)
 	if err != nil {
 		return err
 	}
-	if hit {
-		return wrap(q.AddTranslationCacheHit(ctx, month), "add translation cache hit")
-	}
-	return wrap(q.AddTranslationCacheMiss(ctx, month), "add translation cache miss")
+	err = q.AddTranslationCacheLookups(ctx, postgresgen.AddTranslationCacheLookupsParams{Month: month, Hits: hits, Misses: misses})
+	return wrap(err, "add translation cache lookups")
 }
 
 // FindUsage implements translation.Repository.

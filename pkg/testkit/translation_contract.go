@@ -347,10 +347,10 @@ func TranslationRepositoryContract(t *testing.T, newHarness func(t *testing.T) T
 	t.Run("CountsCacheLookupsByMonth", func(t *testing.T) {
 		t.Parallel()
 		h := newHarness(t)
-		lookup := func(month string, hit bool) {
+		lookups := func(month string, hits, misses int64) {
 			t.Helper()
 			tx(t, h, func(ctx context.Context, tx uow.Tx) error {
-				return h.Repository.AddCacheLookup(ctx, tx, month, hit)
+				return h.Repository.AddCacheLookups(ctx, tx, month, hits, misses)
 			})
 		}
 		server := func(month string) translation.ServerUsage {
@@ -364,10 +364,9 @@ func TranslationRepositoryContract(t *testing.T, newHarness func(t *testing.T) T
 		if got := server("2026-11"); got != (translation.ServerUsage{}) {
 			t.Errorf("server usage without a row = %+v", got)
 		}
-		lookup("2026-11", true)
-		lookup("2026-11", true)
-		lookup("2026-11", false)
-		lookup("2026-10", false)
+		lookups("2026-11", 1, 0)
+		lookups("2026-11", 1, 1)
+		lookups("2026-10", 0, 1)
 		tx(t, h, func(ctx context.Context, tx uow.Tx) error {
 			ok, err := h.Repository.AddUsageWithin(ctx, tx, translationID(320), "2026-11", 7, translation.Limits{Account: 7, Server: 7})
 			if err == nil && !ok {

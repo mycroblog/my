@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/mycroblog/my/internal/adapter/plugin/kind"
+	"github.com/mycroblog/my/internal/app/translation"
 	"github.com/mycroblog/my/internal/domain/finance"
 	"github.com/mycroblog/my/internal/domain/identity"
 )
@@ -32,10 +33,22 @@ func pluginFields() []field {
 			fields = append(fields, pluginBillingFields()...)
 		}
 		if k.Name == kind.Translator {
+			capTranslatorTimeout(fields, k)
 			fields = append(fields, pluginTranslatorName())
 		}
 	}
 	return fields
+}
+
+// capTranslatorTimeout says in the timeout setting of the translator plugin that the translation service stops one call
+// of a provider earlier whatever the setting says.
+func capTranslatorTimeout(fields []field, k kind.Kind) {
+	key := k.Key(kind.SuffixTimeout)
+	for i := range fields {
+		if fields[i].key == key {
+			fields[i].doc += " The server stops a call after `" + translation.ProviderTimeout.String() + "` whatever this says."
+		}
+	}
 }
 
 // pluginBillingFields returns what the billing source of a plugin says with no call, so that the start depends on none

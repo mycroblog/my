@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -48,12 +50,28 @@ const (
 	// lockTTL outlives a request that dies while it holds the lock; the unique constraint keeps
 	// the row single if a slow request outlives the lock.
 	lockTTL = 2 * time.Minute
-	// lockWait is how long a request waits for another one's translation.
-	lockWait = 45 * time.Second
 	// lockPoll is how often a waiting request looks for that translation.
 	lockPoll = 100 * time.Millisecond
-	// providerTimeout bounds one call of a provider.
-	providerTimeout = 20 * time.Second
+
+	// RequestTimeout bounds what a request spends waiting for the lock and asking the providers.
+	// It stays below the WriteTimeout of the HTTP server (internal/platform), so that a request
+	// answers with a problem before the server cuts it off.
+	RequestTimeout = 50 * time.Second
+	// storeGrace is what a request keeps of RequestTimeout to store the translation after asking.
+	storeGrace = 5 * time.Second
+	// askTimeout is the one deadline of asking the providers, however many there are. It counts
+	// from the start of the request, so that a request that waited for the lock and then takes it
+	// asks only for what is left.
+	askTimeout = RequestTimeout - storeGrace
+	// lockWait is how long a request waits for another one's translation: as long as the holder
+	// may ask and store.
+	lockWait = RequestTimeout
+	// ProviderTimeout bounds one call of a provider, whatever plugin_translator_timeout says.
+	ProviderTimeout = 20 * time.Second
+
+	// lookupFlush is how often a process adds the cache lookups that it counted to the month's
+	// row of translation_server_usage, so that no request writes the row itself.
+	lookupFlush = time.Minute
 )
 
 // Requests counts the translation requests that passed the view check, by outcome.
@@ -182,7 +200,18 @@ type Service struct {
 	d          Deps
 	requests   kernel.Counter
 	characters kernel.Counter
+	lookups    lookups
 }
+
+// lookups are the cache lookups that this process counted and has not yet added to
+// translation_server_usage, by month.
+type lookups struct {
+	mu        sync.Mutex
+	pending   map[string]lookupCount
+	lastFlush time.Time
+}
+
+type lookupCount struct{ hits, misses int64 }
 
 // NewService returns a Service on d.
 func NewService(d Deps) *Service {
@@ -190,7 +219,10 @@ func NewService(d Deps) *Service {
 		d.Logger = slog.New(slog.DiscardHandler)
 	}
 	meter := kernel.MeterOrNop(d.Meter)
-	return &Service{d: d, requests: meter.Counter(Requests), characters: meter.Counter(Characters)}
+	return &Service{
+		d: d, requests: meter.Counter(Requests), characters: meter.Counter(Characters),
+		lookups: lookups{pending: map[string]lookupCount{}, lastFlush: d.Clock.Now()},
+	}
 }
 
 // ProviderInfo is what a client shows of the provider of a translation.
@@ -312,6 +344,8 @@ func (s *Service) translate(ctx context.Context, post appcontent.ReadableStatus,
 // row. The limit comes after the lock, so that a request that ends up with another one's translation
 // never holds characters that could refuse a third request.
 func (s *Service) request(ctx context.Context, by requester, post appcontent.ReadableStatus, d *draft, target string, candidates []Provider) (Translation, error) {
+	askCtx, cancel := context.WithTimeout(ctx, askTimeout)
+	defer cancel()
 	key := post.Revision.ID + "|" + target
 	token := []byte(s.d.IDs.NewID())
 	hit, ok, err := s.lock(ctx, key, token, post, target, candidates)
@@ -324,7 +358,7 @@ func (s *Service) request(ctx context.Context, by requester, post appcontent.Rea
 	}
 	defer s.unlock(ctx, key, token)
 
-	provider, stored, err := s.callProviders(ctx, by.accountID, post, d, target, candidates)
+	provider, stored, err := s.callProviders(askCtx, by.accountID, post, d, target, candidates)
 	if err != nil {
 		return Translation{}, err
 	}
@@ -423,19 +457,28 @@ func (s *Service) callProviders(ctx context.Context, accountID string, post appc
 
 // ask sends req to the candidates in order until accept takes an answer, and returns the provider
 // of that answer. Each call counts against the limits first; an empty accountID counts against the
-// server's limit only.
+// server's limit only. The calls together end within askTimeout, each within ProviderTimeout, and
+// a candidate that the deadline leaves no time for is not asked.
 func (s *Service) ask(ctx context.Context, accountID string, req Request, candidates []Provider, accept func(Result) error) (Provider, error) {
+	ctx, cancelAsk := context.WithTimeout(ctx, askTimeout)
+	defer cancelAsk()
 	characters := CountCharacters(req.Fragments)
 	onlyUnsupported := true
 	for i, p := range candidates {
+		if err := ctx.Err(); err != nil {
+			return Provider{}, fmt.Errorf("translation: ask the providers: %w: %w", ErrFailed, err)
+		}
 		if err := s.d.Limiter.Reserve(ctx, accountID, characters); err != nil {
+			if ctxErr := ctx.Err(); ctxErr != nil && !errors.Is(err, ErrLimitReached) {
+				return Provider{}, fmt.Errorf("translation: ask the providers: %w: %w", ErrFailed, ctxErr)
+			}
 			return Provider{}, err
 		}
 		if i == 0 {
 			s.recordLookup(ctx, false)
 		}
 		s.characters.Add(ctx, int64(characters), kernel.NewLabels(labelProvider, p.ID))
-		callCtx, cancel := context.WithTimeout(ctx, providerTimeout)
+		callCtx, cancel := context.WithTimeout(ctx, ProviderTimeout)
 		res, err := p.Translator.Translate(callCtx, req)
 		cancel()
 		if err != nil {
@@ -512,16 +555,61 @@ func (s *Service) countHit(ctx context.Context) {
 	s.recordLookup(ctx, true)
 }
 
-// recordLookup keeps a request for the hit rate of the admin screen. The rate is a guide, so a
+// recordLookup counts a request for the hit rate of the admin screen: in memory, added to the
+// month's row at most every lookupFlush, so that a request answered from the cache writes nothing.
+// The rate is a guide: what a process counted since its last flush is lost when it stops, and a
 // failure here does not fail the request.
 func (s *Service) recordLookup(ctx context.Context, hit bool) {
-	month := s.d.Clock.Now().UTC().Format(monthFormat)
-	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		return s.d.Repository.AddCacheLookup(ctx, tx, month, hit)
-	})
-	if err != nil {
-		s.d.Logger.WarnContext(ctx, "translation lookup not recorded", slog.Any("error", err))
+	now := s.d.Clock.Now()
+	month := now.UTC().Format(monthFormat)
+	l := &s.lookups
+	l.mu.Lock()
+	c := l.pending[month]
+	if hit {
+		c.hits++
+	} else {
+		c.misses++
 	}
+	l.pending[month] = c
+	due := now.Sub(l.lastFlush) >= lookupFlush
+	l.mu.Unlock()
+	if due {
+		s.flushLookups(ctx)
+	}
+}
+
+// flushLookups adds the lookups counted so far to translation_server_usage in one transaction.
+// What it fails to add is counted again for the next flush.
+func (s *Service) flushLookups(ctx context.Context) {
+	l := &s.lookups
+	l.mu.Lock()
+	pending := l.pending
+	l.pending = map[string]lookupCount{}
+	l.lastFlush = s.d.Clock.Now()
+	l.mu.Unlock()
+	if len(pending) == 0 {
+		return
+	}
+	ctx = context.WithoutCancel(ctx)
+	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		for _, month := range slices.Sorted(maps.Keys(pending)) {
+			c := pending[month]
+			if err := s.d.Repository.AddCacheLookups(ctx, tx, month, c.hits, c.misses); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err == nil {
+		return
+	}
+	s.d.Logger.WarnContext(ctx, "translation lookups not recorded", slog.Any("error", err))
+	l.mu.Lock()
+	for month, c := range pending {
+		p := l.pending[month]
+		l.pending[month] = lookupCount{hits: p.hits + c.hits, misses: p.misses + c.misses}
+	}
+	l.mu.Unlock()
 }
 
 // EnabledProviders returns the providers in force, by priority, as the instance information
@@ -540,8 +628,9 @@ type Overview struct {
 	Registered []ProviderInfo
 }
 
-// Overview returns the current month's use.
+// Overview returns the current month's use, with the lookups that this process counted so far.
 func (s *Service) Overview(ctx context.Context) (Overview, error) {
+	s.flushLookups(ctx)
 	month := s.d.Clock.Now().UTC().Format(monthFormat)
 	usage, err := s.d.Repository.FindServerUsage(ctx, month)
 	if err != nil {

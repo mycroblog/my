@@ -37,23 +37,21 @@ func (q *Queries) AddTranslationAccountUsageWithin(ctx context.Context, arg AddT
 	return result.RowsAffected(), nil
 }
 
-const addTranslationCacheHit = `-- name: AddTranslationCacheHit :exec
-INSERT INTO translation_server_usage (month, cache_hits) VALUES ($1, 1)
-ON CONFLICT (month) DO UPDATE SET cache_hits = translation_server_usage.cache_hits + 1
+const addTranslationCacheLookups = `-- name: AddTranslationCacheLookups :exec
+INSERT INTO translation_server_usage (month, cache_hits, cache_misses) VALUES ($1, $2, $3)
+ON CONFLICT (month) DO UPDATE SET
+  cache_hits = translation_server_usage.cache_hits + excluded.cache_hits,
+  cache_misses = translation_server_usage.cache_misses + excluded.cache_misses
 `
 
-func (q *Queries) AddTranslationCacheHit(ctx context.Context, month string) error {
-	_, err := q.db.Exec(ctx, addTranslationCacheHit, month)
-	return err
+type AddTranslationCacheLookupsParams struct {
+	Month  string
+	Hits   int64
+	Misses int64
 }
 
-const addTranslationCacheMiss = `-- name: AddTranslationCacheMiss :exec
-INSERT INTO translation_server_usage (month, cache_misses) VALUES ($1, 1)
-ON CONFLICT (month) DO UPDATE SET cache_misses = translation_server_usage.cache_misses + 1
-`
-
-func (q *Queries) AddTranslationCacheMiss(ctx context.Context, month string) error {
-	_, err := q.db.Exec(ctx, addTranslationCacheMiss, month)
+func (q *Queries) AddTranslationCacheLookups(ctx context.Context, arg AddTranslationCacheLookupsParams) error {
+	_, err := q.db.Exec(ctx, addTranslationCacheLookups, arg.Month, arg.Hits, arg.Misses)
 	return err
 }
 

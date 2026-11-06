@@ -1758,7 +1758,7 @@ File of the key of that client certificate of the `translator` plugin.
 
 ### `plugin_translator_timeout`
 
-Deadline of one call of the `translator` plugin, less than `5m0s`.
+Deadline of one call of the `translator` plugin, less than `5m0s`. The server stops a call after `20s` whatever this says.
 
 - Environment variable: `MY_PLUGIN_TRANSLATOR_TIMEOUT`
 - Default: `10s`
