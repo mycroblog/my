@@ -589,7 +589,9 @@ func AdminHookAppealKey(appealID string) string { return string(TypeAdminHookApp
 
 // HookAppealDecidedKey is the dedupe key of a hook_appeal_decided notification: one per appeal,
 // which is reviewed once.
-func HookAppealDecidedKey(appealID string) string { return string(TypeHookAppealDecided) + ":" + appealID }
+func HookAppealDecidedKey(appealID string) string {
+	return string(TypeHookAppealDecided) + ":" + appealID
+}
 
 // AdminAppealKey is the dedupe key of an admin_appeal notification: one per appeal.
 func AdminAppealKey(appealID string) string { return string(TypeAdminAppeal) + ":" + appealID }

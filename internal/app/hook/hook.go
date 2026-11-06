@@ -57,7 +57,9 @@ const (
 )
 
 // EditSubjectKey is hook.EditSubjectKey: the subject key of local.status for an edit of a post.
-func EditSubjectKey(statusID, revisionID string) string { return hook.EditSubjectKey(statusID, revisionID) }
+func EditSubjectKey(statusID, revisionID string) string {
+	return hook.EditSubjectKey(statusID, revisionID)
+}
 
 // Request is what a hook asks a plugin. Subject is the hook's own description of the subject, nil
 // for the contract's probes; the adapter of Plugin knows each hook's type and sends what it holds.
