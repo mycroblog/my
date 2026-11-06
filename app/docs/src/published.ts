@@ -29,6 +29,7 @@ export function isPublished(path: string): boolean {
  * Files that are not Markdown documents but have a page of their own on the site (a page a plugin generates), by
  * repository path and page slug. Links to them go to that page instead of GitHub.
  */
+// internal/platform/docsite, which links these pages from the server, keeps the same list.
 export const sitePages: Record<string, string> = {
   // The client API reference that starlight-openapi generates (src/api-reference.ts).
   "api/openapi.yaml": "api",

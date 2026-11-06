@@ -229,7 +229,7 @@ locals {
 
   topics      = concat([aws_sns_topic.alerts.arn], var.notification_topic_arns)
   page_topics = concat(local.topics, var.page_notification_topic_arns)
-  runbook     = "https://github.com/mycroblog/my/blob/main/docs/operations/alerts.md"
+  runbook     = "https://mycroblog.dev/latest/operations/alerts/"
 
   canary_name   = "${var.name}-ready"
   canary_period = var.uptime_period_minutes * 60

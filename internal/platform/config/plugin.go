@@ -15,6 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/app/translation"
 	"github.com/mycroblog/my/internal/domain/finance"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/platform/docsite"
 )
 
 // pluginsLeftOutTag is the build tag that left the plugins out of this binary, "" in a build that has them.
@@ -213,7 +214,7 @@ func pluginChecks(vals map[string]string, present map[string]bool) []Issue {
 			continue
 		}
 		if pluginsLeftOutTag != "" {
-			issues = append(issues, Issue{Key: address, Message: fmt.Sprintf("is not in this build: the build tag %s left the plugins out (docs/reference/build-tags.md)", pluginsLeftOutTag)})
+			issues = append(issues, Issue{Key: address, Message: fmt.Sprintf("is not in this build: the build tag %s left the plugins out (%s)", pluginsLeftOutTag, docsite.URL(buildTagsDocument))})
 			continue
 		}
 		if vals[address] == "" {
