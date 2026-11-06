@@ -67,8 +67,9 @@ type Manifest = {
 
 function licenseOf(m: Manifest): string | undefined {
   const one = (l: unknown) => (typeof l === "string" ? l : (l as { type?: string } | null)?.type);
+  // A list in either field (the deprecated `licenses`, or `license` as in pause-stream) offers each license as a choice.
+  for (const l of [m.license, m.licenses]) if (Array.isArray(l)) return l.map(one).join(" OR ");
   if (m.license !== undefined) return one(m.license);
-  if (Array.isArray(m.licenses)) return m.licenses.map(one).join(" OR ");
 }
 
 /** Evaluates an SPDX license expression (without WITH exceptions) against the allowlist. */
