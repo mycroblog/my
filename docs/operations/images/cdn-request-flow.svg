@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 760" width="760" height="760" role="img" aria-labelledby="title desc">
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+  <title id="title">Requests through a CDN to a mycroblog server</title>
+  <desc id="desc">Browsers and apps (pages, the client API, OAuth, and media URLs) and other servers (ActivityPub deliveries and fetches) reach the CDN at host and at the host of media_origin. The CDN answers cached media by itself and sets origin_secret_header to origin_secret on every request it forwards to the server. Two kinds of caller reach the origin address straight, with no header: the platform (health probes, uptime monitors, Cloud Tasks, Cloud Scheduler) and anyone else, such as a script or a webhook of your own. In the server, the origin check runs before everything else. It passes a request that carries the header once with origin_secret or origin_secret_previous, and without the header it passes only GET and HEAD of the health checks and POST to /_internal/. It removes the header, and refuses everything else with 403. Requests that pass reach the web client, the client API, OAuth, ActivityPub, the health checks, and /_internal/, or the media handlers /media/ and /media/proxy/, which read media storage (blob = fs, s3, or gcs) or fetch the original file from other servers. A refused request gets 403 with Cache-Control: no-store and adds to the metric my.http.origin_refused.</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+    .bg { fill: #ffffff; }
+    .t { fill: #1f2328; font-size: 16px; }
+    .b { font-weight: 600; }
+    .m { fill: #59636e; font-size: 15px; }
+    .h { fill: #1f2328; font-size: 17px; font-weight: 600; }
+    .group { fill: #f6f8fa; stroke: #d1d9e0; stroke-width: 1.5; }
+    .client { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; }
+    .proxy { fill: #ffffff; stroke: #59636e; stroke-width: 1.5; }
+    .proc { fill: #ddf4ff; stroke: #0969da; stroke-width: 2; }
+    .port { fill: #ffffff; stroke: #8c959f; stroke-width: 1.5; }
+    .svc { fill: #fbefff; stroke: #8250df; stroke-width: 1.5; }
+    .refused { fill: #ffebe9; stroke: #cf222e; stroke-width: 1.5; }
+    .arrow { stroke: #59636e; stroke-width: 2; fill: none; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .t, .h { fill: #e6edf3; }
+      .m { fill: #9198a1; }
+      .group { fill: #151b23; stroke: #3d444d; }
+      .client { fill: #0f2d1b; stroke: #3fb950; }
+      .proxy { fill: #0d1117; stroke: #9198a1; }
+      .proc { fill: #0c2d6b; stroke: #4493f8; }
+      .port { fill: #0d1117; stroke: #656c76; }
+      .svc { fill: #2a1650; stroke: #ab7df8; }
+      .refused { fill: #3c1618; stroke: #f85149; }
+      .arrow { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="760" height="760" rx="12"/>
+
+  <rect class="client" x="20" y="16" width="220" height="96" rx="8"/>
+  <text class="t b" x="130.0" y="44.0" text-anchor="middle">Browsers and apps</text>
+  <text class="m" x="130.0" y="66.0" text-anchor="middle">pages, client API, OAuth,</text>
+  <text class="m" x="130.0" y="88.0" text-anchor="middle">media URLs</text>
+  <path class="arrow" d="M 130 112 L 130 140" marker-end="url(#arrowhead)"/>
+  <rect class="client" x="250" y="16" width="220" height="96" rx="8"/>
+  <text class="t b" x="360.0" y="44.0" text-anchor="middle">Other servers</text>
+  <text class="m" x="360.0" y="66.0" text-anchor="middle">ActivityPub deliveries</text>
+  <text class="m" x="360.0" y="88.0" text-anchor="middle">and fetches</text>
+  <path class="arrow" d="M 360 112 L 360 140" marker-end="url(#arrowhead)"/>
+  <rect class="svc" x="490" y="16" width="250" height="96" rx="8"/>
+  <text class="t b" x="615.0" y="44.0" text-anchor="middle">The platform</text>
+  <text class="m" x="615.0" y="66.0" text-anchor="middle">health probes, uptime monitors,</text>
+  <text class="m" x="615.0" y="88.0" text-anchor="middle">Cloud Tasks, Cloud Scheduler</text>
+
+  <rect class="proxy" x="20" y="144" width="450" height="120" rx="8"/>
+  <text class="t b" x="245.0" y="172.0" text-anchor="middle">CDN, at host and the host of media_origin</text>
+  <text class="m" x="245.0" y="196.0" text-anchor="middle">answers cached /media/ files by itself;</text>
+  <text class="m" x="245.0" y="218.0" text-anchor="middle">sets origin_secret_header to origin_secret</text>
+  <text class="m" x="245.0" y="240.0" text-anchor="middle">on every request it forwards to the server</text>
+  <rect class="client" x="490" y="144" width="200" height="96" rx="8"/>
+  <text class="t b" x="590.0" y="172.0" text-anchor="middle">Anyone else</text>
+  <text class="m" x="590.0" y="194.0" text-anchor="middle">a script, your webhook,</text>
+  <text class="m" x="590.0" y="216.0" text-anchor="middle">straight to the origin</text>
+
+  <rect class="group" x="20" y="312" width="720" height="312" rx="12"/>
+  <text class="h" x="40" y="340" text-anchor="start">The server, my serve</text>
+  <path class="arrow" d="M 245 264 L 245 352" marker-end="url(#arrowhead)"/>
+  <text class="m" x="255" y="296" text-anchor="start">with the header</text>
+  <path class="arrow" d="M 590 240 L 590 352" marker-end="url(#arrowhead)"/>
+  <text class="m" x="580" y="296" text-anchor="end">no header</text>
+  <path class="arrow" d="M 715 112 L 715 352" marker-end="url(#arrowhead)"/>
+  <text class="m" x="705" y="296" text-anchor="end">no header</text>
+  <rect class="proc" x="40" y="356" width="680" height="120" rx="8"/>
+  <text class="t b" x="380.0" y="384.0" text-anchor="middle">Origin check, before everything else</text>
+  <text class="m" x="380.0" y="408.0" text-anchor="middle">passes the header, once, with origin_secret or origin_secret_previous</text>
+  <text class="m" x="380.0" y="430.0" text-anchor="middle">passes GET and HEAD of the health checks and POST to /_internal/ without it</text>
+  <text class="m" x="380.0" y="452.0" text-anchor="middle">removes the header, and refuses everything else with 403</text>
+  <path class="arrow" d="M 155 476 L 155 504" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 395 476 L 395 504" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 620 476 L 620 504" marker-end="url(#arrowhead)"/>
+  <rect class="proc" x="40" y="508" width="230" height="96" rx="8"/>
+  <text class="t b" x="155.0" y="536.0" text-anchor="middle">Pages, API, ActivityPub</text>
+  <text class="m" x="155.0" y="558.0" text-anchor="middle">web client, OAuth,</text>
+  <text class="m" x="155.0" y="580.0" text-anchor="middle">health checks, /_internal/</text>
+  <rect class="proc" x="290" y="508" width="210" height="96" rx="8"/>
+  <text class="t b" x="395.0" y="536.0" text-anchor="middle">/media/, /media/proxy/</text>
+  <text class="m" x="395.0" y="558.0" text-anchor="middle">Cache-Control: public,</text>
+  <text class="m" x="395.0" y="580.0" text-anchor="middle">cached by the CDN</text>
+  <rect class="refused" x="520" y="508" width="200" height="96" rx="8"/>
+  <text class="t b" x="620.0" y="536.0" text-anchor="middle">403 Forbidden</text>
+  <text class="m" x="620.0" y="558.0" text-anchor="middle">Cache-Control: no-store</text>
+  <text class="m" x="620.0" y="580.0" text-anchor="middle">my.http.origin_refused</text>
+
+  <path class="arrow" d="M 330 604 L 330 656" marker-end="url(#arrowhead)"/>
+  <path class="arrow" d="M 460 604 L 460 656" marker-end="url(#arrowhead)"/>
+  <rect class="port" x="190" y="660" width="210" height="84" rx="8"/>
+  <text class="t b" x="295.0" y="690.0" text-anchor="middle">Media storage</text>
+  <text class="m" x="295.0" y="714.0" text-anchor="middle">blob = fs, s3 or gcs</text>
+  <rect class="port" x="420" y="660" width="210" height="84" rx="8"/>
+  <text class="t b" x="525.0" y="690.0" text-anchor="middle">Other servers</text>
+  <text class="m" x="525.0" y="714.0" text-anchor="middle">remote files, relayed</text>
+</svg>
