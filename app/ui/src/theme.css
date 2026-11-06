@@ -382,6 +382,10 @@
    and the floating new-post button shrink so that the fixed elements stay within half the screen's height.
    The app shell only (AppShell, AppNavigation, OfflineBanner; web-client/README.md D2). */
 @custom-variant short (@media (width < 48rem) and (height <= 32rem));
+/* While the page has the bottom tab bar below md (data-tab-bar on AppShell's `side` frame; not the admin frame or the
+   signed-out top bar), for the elements fixed to the bottom edge that stand above it (the toasts). Before
+   with-compose-fab, so that clearing the button wins over clearing the bar alone. */
+@custom-variant with-tab-bar (:root:has([data-tab-bar]) &);
 /* While the page floats the new-post button (data-compose-fab on main, AppShell's floatingVisible), for
    the other elements fixed to the bottom edge that must stand clear of it (web-client/16-look-states-and-wording.md G4). */
 @custom-variant with-compose-fab (:root:has([data-compose-fab]) &);

@@ -8,6 +8,7 @@
 /** One viewport per layout of the shell, each inside the range of its breakpoint. */
 const shellViewports = {
   phone: { name: "Phone, below md: the tab bar", styles: { width: "360px", height: "640px" }, type: "mobile" },
+  narrow: { name: "320 px wide, below md: the tab bar", styles: { width: "320px", height: "568px" }, type: "mobile" },
   short: {
     name: "Short screen (short:): the smaller tab bar",
     styles: { width: "568px", height: "320px" },

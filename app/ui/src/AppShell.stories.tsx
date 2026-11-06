@@ -18,6 +18,7 @@ import {
   type AppNavBadge,
 } from "./AppNavigation";
 import { AppShell, type AppShellProps, AsidePanel, ShellDock } from "./AppShell";
+import { AnnouncerProvider } from "./Announcer";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { CallBar } from "./CallBar";
@@ -40,6 +41,7 @@ import { PageHeading } from "./PageHeading";
 import { ServerNameLink } from "./ServerNameLink";
 import { atViewport, shellParameters } from "./storyViewports";
 import { Switch } from "./Switch";
+import { ToastProvider, useToast } from "./Toast";
 import { Hint, InlineError, Text } from "./Text";
 
 type Labels = {
@@ -230,6 +232,63 @@ function SamplePageInCall({ failed = false }: { failed?: boolean }) {
   );
 }
 
+/**
+ * A page taller than the screen with a control at its very end, as the detail page a create flow lands on has (the
+ * Retire button of a plan), for the stories that check a toast never hides the end of the page (G4).
+ */
+/** Enough paragraphs to make the page taller than any phone screen of the stories. */
+const paragraphs = Array.from({ length: 12 }, (_, index) => index);
+
+function ToastedPageContent() {
+  const toast = useToast();
+  return (
+    <>
+      <PageHeading>Fan</PageHeading>
+      <Button
+        onPress={() => {
+          toast.show({ message: "Created the plan Fan. It is ready for supporters.", tone: "success", timeout: null });
+        }}
+      >
+        Show the toast
+      </Button>
+      {paragraphs.map((index) => (
+        <Text as="p" key={index}>
+          A paragraph of the page, which makes it taller than the screen so that its end scrolls to the bottom edge.
+        </Text>
+      ))}
+      <Button variant="danger">Retire</Button>
+    </>
+  );
+}
+
+/** The page inside the providers of the toasts, as the app mounts them (`clearsTabBar`). */
+function ToastedPage() {
+  return (
+    <AnnouncerProvider>
+      <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss" clearsTabBar>
+        <ToastedPageContent />
+      </ToastProvider>
+    </AnnouncerProvider>
+  );
+}
+
+/** Shows the toast, scrolls to the end of the page, and expects its last control clear of the toasts. */
+async function expectEndClearOfToasts(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement);
+  await userEvent.click(canvas.getByRole("button", { name: "Show the toast" }));
+  const region = await canvas.findByRole("region", { name: "Notifications" });
+  const retire = canvas.getByRole("button", { name: "Retire" });
+  const scroller = document.scrollingElement ?? document.documentElement;
+  // The shell pads the end of the page once the stack has been measured, which may be a frame after it shows.
+  await waitFor(() => expect(document.documentElement.style.getPropertyValue("--toast-stack-block-size")).not.toBe(""));
+  scroller.scrollTop = scroller.scrollHeight;
+  await expect(scroller.scrollTop).toBeGreaterThan(0);
+  const controlEnd = retire.getBoundingClientRect().bottom;
+  for (const item of within(region).getAllByRole("listitem")) {
+    await expect(controlEnd).toBeLessThanOrEqual(item.getBoundingClientRect().top);
+  }
+}
+
 /** A stand-in for the new-post button, whose own look is not the shell's. */
 const floatingButton = (
   <Button variant="primary" aria-label="New post">
@@ -298,6 +357,24 @@ export const PhoneWithFloatingButton: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByRole("button", { name: "New post" })).toBeVisible();
     await expect(canvas.getByRole("main")).toHaveAttribute("data-compose-fab", "");
+  },
+};
+
+/** 320 px wide after a create flow: scrolled to the end, the page's last control stands above the toast. */
+export const NarrowWithToast: Story = {
+  globals: atViewport("narrow"),
+  args: { children: <ToastedPage /> },
+  play: async ({ canvasElement }) => {
+    await expectEndClearOfToasts(canvasElement);
+  },
+};
+
+/** 320 px wide with the floating button: the toast stands above it, and the page's end above the toast. */
+export const NarrowWithToastAndFloatingButton: Story = {
+  globals: atViewport("narrow"),
+  args: { children: <ToastedPage />, floating: floatingButton, floatingVisible: true },
+  play: async ({ canvasElement }) => {
+    await expectEndClearOfToasts(canvasElement);
   },
 };
 
@@ -451,6 +528,20 @@ export const SignedOutTablet: Story = {
     await expect(within(nav).getByRole("button", { name: "Menu" })).toHaveAttribute("aria-expanded", "false");
     await expect(within(nav).getByRole("link", { name: "Create an account" })).toBeVisible();
     await expect(within(nav).queryByRole("link", { name: "Local" })).toBeNull();
+  },
+};
+
+/** 320 px wide signed out: no tab bar, so the toast sits at the bottom edge, and the page's end stands above it. */
+export const SignedOutNarrowWithToast: Story = {
+  globals: atViewport("narrow"),
+  args: {
+    children: <ToastedPage />,
+    navigation: <SignedOutNav />,
+    navigationPlacement: "top",
+    footer: signedOutFooter,
+  },
+  play: async ({ canvasElement }) => {
+    await expectEndClearOfToasts(canvasElement);
   },
 };
 

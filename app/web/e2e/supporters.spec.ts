@@ -8,7 +8,15 @@
 // names change with the locale, so the elements are found by role and by the names in the project's locale catalog.
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
-import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordRows, recordTable, test } from "./fixtures";
+import {
+  expect,
+  expectNoAxeViolations,
+  expectNoHorizontalScroll,
+  expectPageEndClearOfToasts,
+  recordRows,
+  recordTable,
+  test,
+} from "./fixtures";
 import { readCatalog } from "./catalog.ts";
 
 type Schemas = components["schemas"];
@@ -299,11 +307,10 @@ test.describe("supporters", () => {
     const facts = main.getByRole("region", { name: "Fan", exact: true });
     await expect(facts.getByText(message("admin.supporters.plan.preparing"), { exact: true })).toBeVisible();
     expect(sent).toContain("create fan 300 JPY");
-    // The form is gone, so the result is a toast; dismissing it uncovers the end of the page at 320 px.
+    // The form is gone, so the result is a toast, which leaves the end of the page (the Retire button) reachable.
     const toasts = page.getByRole("region", { name: message("shell.toast.region"), exact: true });
     await expect(toasts.getByText(message("admin.supporters.plan.created", { name: "⁨Fan⁩" }))).toBeVisible();
-    await toasts.getByRole("button", { name: message("shell.toast.dismiss"), exact: true }).click();
-    await expect(toasts.getByRole("listitem")).toHaveCount(0);
+    await expectPageEndClearOfToasts(page);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 

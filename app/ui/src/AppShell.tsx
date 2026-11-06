@@ -22,8 +22,10 @@ const appShell = tv({
     // The end padding keeps the last item of a list clear of what floats over it (web-client/16-look-states-and-wording.md G4): below md the tab
     // bar (min-h-16 and its border; min-h-12 on short screens) and, while the floating button shows (data-compose-fab),
     // the button (3rem) above it; from md the button in the corner; from xl nothing. Each gap is 1rem (0.5rem on short
-    // screens). The app's stylesheet clears focused elements of the same (scroll-padding-block-end).
-    main: "mx-auto flex w-full min-w-0 flex-col gap-4 px-4 pt-6 md:px-8 md:pb-6",
+    // screens). While toasts show, it grows by the height of their stack (`--toast-stack-block-size`, written by
+    // `ToastProvider`), so that a toast never hides the end of the page. The app's stylesheet clears focused elements
+    // of the same (scroll-padding-block-end).
+    main: "mx-auto flex w-full min-w-0 flex-col gap-4 px-4 pt-6 md:px-8 md:pb-[calc(1.5rem+var(--toast-stack-block-size,0px))]",
     // The top bar's footer (the server's information, its documents and the software), in the page's column.
     footer: "mx-auto w-full min-w-0 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:px-8",
     aside: "sticky top-under-bar flex h-svh-under-bar flex-col gap-6 overflow-y-auto border-s border-border p-6",
@@ -40,12 +42,15 @@ const appShell = tv({
       side: {
         base: "md:grid md:grid-cols-[auto_minmax(0,1fr)]",
         main: [
-          "pb-[calc(5rem+env(safe-area-inset-bottom))] short:pb-[calc(4rem+env(safe-area-inset-bottom))]",
-          "data-compose-fab:pb-[calc(9rem+env(safe-area-inset-bottom))] data-compose-fab:short:pb-[calc(7rem+env(safe-area-inset-bottom))]",
-          "data-compose-fab:md:pb-[calc(5.5rem+env(safe-area-inset-bottom))] data-compose-fab:xl:pb-6",
+          "pb-[calc(5rem+env(safe-area-inset-bottom)+var(--toast-stack-block-size,0px))]",
+          "short:pb-[calc(4rem+env(safe-area-inset-bottom)+var(--toast-stack-block-size,0px))]",
+          "data-compose-fab:pb-[calc(9rem+env(safe-area-inset-bottom)+var(--toast-stack-block-size,0px))]",
+          "data-compose-fab:short:pb-[calc(7rem+env(safe-area-inset-bottom)+var(--toast-stack-block-size,0px))]",
+          "data-compose-fab:md:pb-[calc(5.5rem+env(safe-area-inset-bottom)+var(--toast-stack-block-size,0px))]",
+          "data-compose-fab:xl:pb-[calc(1.5rem+var(--toast-stack-block-size,0px))]",
         ],
       },
-      top: { base: "flex flex-col", main: "flex-1 pb-6" },
+      top: { base: "flex flex-col", main: "flex-1 pb-[calc(1.5rem+var(--toast-stack-block-size,0px))]" },
     },
     withAside: { true: {} },
     // The column's width: `narrow` for reading, `wide` for a page with something beside its text (the signed-out landing).
@@ -115,7 +120,8 @@ export function AppShell({
   const withAside = side && aside !== undefined;
   const slots = appShell({ navigationPlacement, width, withAside });
   return (
-    <div className={slots.base()}>
+    // `data-tab-bar`: below md the navigation is the tab bar along the bottom edge, which the toasts stand above.
+    <div className={slots.base()} data-tab-bar={side ? "" : undefined}>
       {/* The first focusable element of the page; visible only while focused. */}
       <Link href={`#${mainId}`} variant="standalone" className={slots.skipLink()}>
         {skipLinkLabel}
