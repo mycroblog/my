@@ -293,8 +293,10 @@ func (r Record) Overridable() bool {
 
 // Expired is what the retention of the decisions reads of one past its retention period.
 type Expired struct {
-	ID         string
-	Hook       Name
+	ID   string
+	Hook Name
+	// SubjectKey tells an edit of a post from the post (IsEditSubject).
+	SubjectKey string
 	AccountID  string
 	Mode       Mode
 	Outcome    Outcome
@@ -310,13 +312,15 @@ type Expired struct {
 type RetentionPolicy struct {
 	// Held are the accounts that a retention hold preserves (ADR-0058 §8).
 	Held map[string]bool
-	// AppealsOpenSince is the time from which a reject of local.status can still be appealed.
+	// AppealsOpenSince is the time from which a reject of a new post by local.status can still be
+	// appealed.
 	AppealsOpenSince time.Time
 }
 
 // Keeps reports whether the decision stays: the projection status_sensitivity_overrides points at
 // it and could not be rebuilt without it, a hold preserves its account, or its author can still
-// appeal it or waits for the review of an appeal.
+// appeal it or waits for the review of an appeal. A reject of an edit cannot be appealed, so the
+// appeal window does not keep it.
 func (p RetentionPolicy) Keeps(e Expired) bool {
 	switch {
 	case e.AccountID != "" && p.Held[e.AccountID]:
@@ -325,7 +329,7 @@ func (p RetentionPolicy) Keeps(e Expired) bool {
 		return false
 	case e.Outcome == MarkSensitive && len(e.StatusIDs) > 0:
 		return true
-	case e.Hook.Appealable() && e.Outcome == Reject && (e.AppealPending || !e.DecidedAt.Before(p.AppealsOpenSince)):
+	case e.Hook.Appealable() && e.Outcome == Reject && !IsEditSubject(e.SubjectKey) && (e.AppealPending || !e.DecidedAt.Before(p.AppealsOpenSince)):
 		return true
 	}
 	return false

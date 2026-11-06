@@ -71,7 +71,7 @@ ORDER BY hook, mode, outcome;
 
 -- The decisions past their retention, oldest first after the position of the last batch.
 -- name: ListExpiredHookDecisions :many
-SELECT d.id, d.hook, d.account_id, d.mode, d.outcome, d.decided_at,
+SELECT d.id, d.hook, d.subject_key, d.account_id, d.mode, d.outcome, d.decided_at,
   CAST(EXISTS (SELECT 1 FROM hook_decision_overrides o WHERE o.decision_id = d.id) AS INTEGER) AS overridden,
   CAST(EXISTS (SELECT 1 FROM hook_decision_appeals a WHERE a.decision_id = d.id
     AND NOT EXISTS (SELECT 1 FROM hook_decision_appeal_decisions r WHERE r.appeal_id = a.id)) AS INTEGER) AS appeal_pending
