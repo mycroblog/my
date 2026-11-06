@@ -14,3 +14,7 @@ properties:
   submitted_at:
     type: string
     format: date-time
+  decided_at:
+    description: When a moderator upheld or overturned it; absent while it is `pending`.
+    type: string
+    format: date-time

@@ -105,7 +105,7 @@ describe("a post the automated review refuses", () => {
 
     expect(
       await within(sheet).findByText(
-        "Your appeal was sent. A moderator will review it; if they cancel the decision, you can post again.",
+        "Your appeal was sent. A moderator will review it, and you will be notified; if they cancel the decision, you can post again.",
       ),
     ).toBeVisible();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
@@ -118,6 +118,32 @@ describe("a post the automated review refuses", () => {
     ]);
     // The draft stays, for when a moderator lets the author post again.
     expect(within(sheet).getByRole("textbox", { name: "Your post" })).toHaveValue("Bake sale on Saturday");
+  });
+
+  test("once a moderator reviews the appeal, says how it ended in place of the appeal sent", async () => {
+    signedIn();
+    refuseAndRecordAppeals(future);
+    server.use(
+      http.get(`${apiBase}/hook_decisions/:id/appeal`, ({ params }) =>
+        HttpResponse.json({
+          id: "0192f0c4-7a8e-7000-8000-0000000003b1",
+          hook_decision_id: String(params["id"]),
+          state: "overturned",
+          submitted_at: "2026-11-06T00:10:00Z",
+          decided_at: "2026-11-07T09:30:00Z",
+        } satisfies Schemas["OwnHookAppeal"]),
+      ),
+    );
+    const { user } = await renderApp();
+    const sheet = await post(user, "Bake sale");
+    await user.click(await within(sheet).findByRole("button", { name: "Appeal" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Appeal this decision?" });
+    await user.click(within(dialog).getByRole("button", { name: "Send appeal" }));
+
+    const status = await within(sheet).findByText(/^A moderator cancelled the decision on Nov 7, 2026/u);
+    expect(status).toBeVisible();
+    expect(status).toHaveTextContent("You can post again.");
+    expect(within(sheet).queryByText(/^Your appeal was sent/u)).not.toBeInTheDocument();
   });
 
   test("an appeal sent already gives way to the reason, and other failures stay in the dialog", async () => {

@@ -297,6 +297,7 @@ const (
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionHookAppealUpheld                AdminAuditAction = "hook_appeal_upheld"
 	AdminAuditActionHookDecisionApplied             AdminAuditAction = "hook_decision_applied"
 	AdminAuditActionHookDecisionOverridden          AdminAuditAction = "hook_decision_overridden"
 	AdminAuditActionInstanceMarkedAvailable         AdminAuditAction = "instance_marked_available"
@@ -432,6 +433,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
+		return true
+	case AdminAuditActionHookAppealUpheld:
 		return true
 	case AdminAuditActionHookDecisionApplied:
 		return true
@@ -3033,6 +3036,7 @@ const (
 	NotificationGroupAdminAppeal             NotificationGroup = "admin_appeal"
 	NotificationGroupAdminCustomEmojiRequest NotificationGroup = "admin_custom_emoji_request"
 	NotificationGroupAdminErrorGroup         NotificationGroup = "admin_error_group"
+	NotificationGroupAdminHookAppeal         NotificationGroup = "admin_hook_appeal"
 	NotificationGroupAdminHookFailing        NotificationGroup = "admin_hook_failing"
 	NotificationGroupAdminReport             NotificationGroup = "admin_report"
 	NotificationGroupAdminServiceClosureDue  NotificationGroup = "admin_service_closure_due"
@@ -3067,6 +3071,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAdminCustomEmojiRequest:
 		return true
 	case NotificationGroupAdminErrorGroup:
+		return true
+	case NotificationGroupAdminHookAppeal:
 		return true
 	case NotificationGroupAdminHookFailing:
 		return true
@@ -3159,6 +3165,7 @@ const (
 	NotificationTypeAdminAppeal                NotificationType = "admin_appeal"
 	NotificationTypeAdminCustomEmojiRequest    NotificationType = "admin_custom_emoji_request"
 	NotificationTypeAdminErrorGroup            NotificationType = "admin_error_group"
+	NotificationTypeAdminHookAppeal            NotificationType = "admin_hook_appeal"
 	NotificationTypeAdminHookFailing           NotificationType = "admin_hook_failing"
 	NotificationTypeAdminReport                NotificationType = "admin_report"
 	NotificationTypeAdminServiceClosureDue     NotificationType = "admin_service_closure_due"
@@ -3172,6 +3179,7 @@ const (
 	NotificationTypeFollow                     NotificationType = "follow"
 	NotificationTypeFollowAccepted             NotificationType = "follow_accepted"
 	NotificationTypeFollowRequest              NotificationType = "follow_request"
+	NotificationTypeHookAppealDecided          NotificationType = "hook_appeal_decided"
 	NotificationTypeMention                    NotificationType = "mention"
 	NotificationTypeModerationNotice           NotificationType = "moderation_notice"
 	NotificationTypePollClosed                 NotificationType = "poll_closed"
@@ -3202,6 +3210,8 @@ func (e NotificationType) Valid() bool {
 		return true
 	case NotificationTypeAdminErrorGroup:
 		return true
+	case NotificationTypeAdminHookAppeal:
+		return true
 	case NotificationTypeAdminHookFailing:
 		return true
 	case NotificationTypeAdminReport:
@@ -3227,6 +3237,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeFollowAccepted:
 		return true
 	case NotificationTypeFollowRequest:
+		return true
+	case NotificationTypeHookAppealDecided:
 		return true
 	case NotificationTypeMention:
 		return true
@@ -5215,7 +5227,8 @@ type AdminAppealPage struct {
 // `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 // `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
 // and left state; the actor is the system), `hook_decision_overridden` (a moderator
-// cancelled the decision). On a
+// cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+// moderator upheld the appeal of a refused post, and the decision stays). On a
 // `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 // `custom_emoji_copied` (a new local emoji copied from a remote one),
 // `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -5294,7 +5307,8 @@ type AdminAuditEntry struct {
 	// `account`). On a `signup_block`: `signup_block_added`, `signup_block_lifted`. On a
 	// `hook_decision`: `hook_decision_applied` (the server acted on a decision hook's verdict
 	// and left state; the actor is the system), `hook_decision_overridden` (a moderator
-	// cancelled the decision). On a
+	// cancelled the decision, also when overturning its appeal), `hook_appeal_upheld` (a
+	// moderator upheld the appeal of a refused post, and the decision stays). On a
 	// `custom_emoji`: `custom_emoji_created`, `custom_emoji_image_replaced`,
 	// `custom_emoji_copied` (a new local emoji copied from a remote one),
 	// `custom_emoji_updated` (its category, aliases, or place in the picker),
@@ -10867,6 +10881,13 @@ type Notification struct {
 	// ErrorGroup What an `admin_error_group` tells of; omitted for the other types.
 	ErrorGroup *NotificationErrorGroup `json:"error_group,omitempty"`
 
+	// HookAppeal The user's appeal of a refused post that a `hook_appeal_decided` tells of, with its state;
+	// first-party clients only, and absent once the appeal is no longer kept.
+	HookAppeal *OwnHookAppeal `json:"hook_appeal,omitempty"`
+
+	// HookAppealId The appeal of a refused post that an `admin_hook_appeal` is about.
+	HookAppealId *Id `json:"hook_appeal_id,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -10918,7 +10939,10 @@ type Notification struct {
 	// the moderators resolved, without how they resolved it. It is sent once per report, even
 	// when the report is reopened and resolved again. `appeal_decided` also comes from the
 	// instance: the moderators decided the user's appeal, and its `moderation_action` is the
-	// action with the appeal and the decision.
+	// action with the appeal and the decision. `hook_appeal_decided` also comes from the
+	// instance: a moderator upheld or overturned the user's appeal of a post that the automated
+	// review refused, and its `hook_appeal` is the appeal with its state; first-party clients only,
+	// as the appeal is. It is sent once per appeal.
 	// `relationships_severed` also comes from the instance: its `relationship_severance` tells
 	// how many follows the user lost when the moderators suspended a server or a remote
 	// account, whose `account` it carries for an account. It is sent once per suspension.
@@ -10929,8 +10953,9 @@ type Notification struct {
 	// `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
 	// `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
 	// answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
-	// `admin_hook_failing` (calls of an external review keep failing; it names none) to those
-	// with `manage_reports`, and
+	// `admin_hook_failing` (calls of an external review keep failing; it names none) and
+	// `admin_hook_appeal` (a user appealed a post that the automated review refused;
+	// `hook_appeal_id` is the appeal) to those with `manage_reports`, and
 	// `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
 	// `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
 	// `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -11004,9 +11029,10 @@ type NotificationErrorGroupChange string
 // `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 // `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
+// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
-// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
+// `hook_appeal_decided`),
 // `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
 // them that the user turns off in the app (on by default); it has no `email` channel.
 type NotificationGroup string
@@ -11068,9 +11094,10 @@ type NotificationSettingRow struct {
 	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 	// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
+	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
-	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
+	// `hook_appeal_decided`),
 	// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
 	// them that the user turns off in the app (on by default); it has no `email` channel.
 	Group NotificationGroup `json:"group"`
@@ -11118,9 +11145,10 @@ type NotificationSettingsUpdate struct {
 		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
 		// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`). The instance's
+		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
-		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`),
+		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
+		// `hook_appeal_decided`),
 		// `service_closure`, `supporter` (the `supporter_*` types), and `announcement`, the only one of
 		// them that the user turns off in the app (on by default); it has no `email` channel.
 		Group NotificationGroup `json:"group"`
@@ -11143,7 +11171,10 @@ type NotificationSettingsUpdateChangesChannel string
 // the moderators resolved, without how they resolved it. It is sent once per report, even
 // when the report is reopened and resolved again. `appeal_decided` also comes from the
 // instance: the moderators decided the user's appeal, and its `moderation_action` is the
-// action with the appeal and the decision.
+// action with the appeal and the decision. `hook_appeal_decided` also comes from the
+// instance: a moderator upheld or overturned the user's appeal of a post that the automated
+// review refused, and its `hook_appeal` is the appeal with its state; first-party clients only,
+// as the appeal is. It is sent once per appeal.
 // `relationships_severed` also comes from the instance: its `relationship_severance` tells
 // how many follows the user lost when the moderators suspended a server or a remote
 // account, whose `account` it carries for an account. It is sent once per suspension.
@@ -11154,8 +11185,9 @@ type NotificationSettingsUpdateChangesChannel string
 // `admin_appeal` (a user appealed an action; `appeal_id` is the appeal) to those with
 // `manage_accounts`, and `admin_webhook_disabled` (the server disabled a webhook that
 // answered 410 Gone or kept failing; it names none) to those with `manage_webhooks`, and
-// `admin_hook_failing` (calls of an external review keep failing; it names none) to those
-// with `manage_reports`, and
+// `admin_hook_failing` (calls of an external review keep failing; it names none) and
+// `admin_hook_appeal` (a user appealed a post that the automated review refused;
+// `hook_appeal_id` is the appeal) to those with `manage_reports`, and
 // `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
 // `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
 // `custom_emoji_request_decided` also comes from the instance: an administrator approved
@@ -11349,6 +11381,9 @@ type OwnCustomEmojiPage struct {
 
 // OwnHookAppeal The user's appeal of a post that the automated review refused.
 type OwnHookAppeal struct {
+	// DecidedAt When a moderator upheld or overturned it; absent while it is `pending`.
+	DecidedAt *time.Time `json:"decided_at,omitempty"`
+
 	// HookDecisionId The decision appealed.
 	HookDecisionId Id `json:"hook_decision_id"`
 
@@ -20838,6 +20873,17 @@ type ClientInterface interface {
 	// Corresponds with POST /follow_requests/{id}/reject (the `RejectFollowRequest` operationId).
 	RejectFollowRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetOwnHookAppeal Show the user's appeal of a post that the automated review refused
+	//
+	// Where the user's appeal of a refused post stands: `pending` until a moderator reviews it,
+	// then `upheld` (the refusal stays) or `overturned` (the user's posts are no longer reviewed,
+	// and the user posts again). A `hook_appeal_decided` notification tells the user when it is
+	// reviewed. A decision that the user has not appealed, or that is not about the user's post,
+	// is a 404, as is an appeal no longer kept.
+	//
+	// Corresponds with GET /hook_decisions/{id}/appeal (the `GetOwnHookAppeal` operationId).
+	GetOwnHookAppeal(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AppealHookDecisionWithBody Appeal a post that the automated review refused
 	//
 	// Asks the moderators to let a refused post through (the 422
@@ -21441,7 +21487,7 @@ type ClientInterface interface {
 	// mutes with notifications hidden are left out, also those that came before the block or
 	// mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 	// `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
+	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
 	// the user's roles no longer grant the permission they need.
 	//
 	// Corresponds with GET /notifications (the `ListNotifications` operationId).
@@ -22112,7 +22158,9 @@ type ClientInterface interface {
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
 	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
-	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+	// When the server's automated review refuses the edit, the answer is a 422
+	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
+	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 	// status is a 404 to a token without `read:direct`, the user's own included.
 	//
 	// Takes any type of body and a specified content type.
@@ -22126,7 +22174,9 @@ type ClientInterface interface {
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
 	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
-	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+	// When the server's automated review refuses the edit, the answer is a 422
+	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
+	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 	// status is a 404 to a token without `read:direct`, the user's own included.
 	//
 	// Takes a body of the `application/json` content type.
@@ -29715,6 +29765,27 @@ func (c *Client) RejectFollowRequest(ctx context.Context, id AccountId, reqEdito
 	return c.Client.Do(req)
 }
 
+// GetOwnHookAppeal Show the user's appeal of a post that the automated review refused
+//
+// Where the user's appeal of a refused post stands: `pending` until a moderator reviews it,
+// then `upheld` (the refusal stays) or `overturned` (the user's posts are no longer reviewed,
+// and the user posts again). A `hook_appeal_decided` notification tells the user when it is
+// reviewed. A decision that the user has not appealed, or that is not about the user's post,
+// is a 404, as is an appeal no longer kept.
+//
+// Corresponds with GET /hook_decisions/{id}/appeal (the `GetOwnHookAppeal` operationId).
+func (c *Client) GetOwnHookAppeal(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetOwnHookAppealRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // AppealHookDecisionWithBody Appeal a post that the automated review refused
 //
 // Asks the moderators to let a refused post through (the 422
@@ -30758,7 +30829,7 @@ func (c *Client) ListMutes(ctx context.Context, params *ListMutesParams, reqEdit
 // mutes with notifications hidden are left out, also those that came before the block or
 // mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 // `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
+// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
 // the user's roles no longer grant the permission they need.
 //
 // Corresponds with GET /notifications (the `ListNotifications` operationId).
@@ -31969,7 +32040,9 @@ func (c *Client) GetStatus(ctx context.Context, id StatusId, reqEditors ...Reque
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
 // otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
-// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+// When the server's automated review refuses the edit, the answer is a 422
+// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
+// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 // status is a 404 to a token without `read:direct`, the user's own included.
 //
 // Takes any type of body and a specified content type.
@@ -31993,7 +32066,9 @@ func (c *Client) EditStatusWithBody(ctx context.Context, id StatusId, contentTyp
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
 // otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
-// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+// When the server's automated review refuses the edit, the answer is a 422
+// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
+// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 // status is a 404 to a token without `read:direct`, the user's own included.
 //
 // Takes a body of the `application/json` content type.
@@ -43955,6 +44030,40 @@ func NewRejectFollowRequestRequest(server string, id AccountId) (*http.Request, 
 	return req, nil
 }
 
+// NewGetOwnHookAppealRequest constructs an http.Request for the GetOwnHookAppeal method
+func NewGetOwnHookAppealRequest(server string, id Id) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/hook_decisions/%s/appeal", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewAppealHookDecisionRequest calls the generic AppealHookDecision builder with application/json body
 func NewAppealHookDecisionRequest(server string, id HookDecisionId, body AppealHookDecisionJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -54026,6 +54135,19 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /follow_requests/{id}/reject (the `RejectFollowRequest` operationId).
 	RejectFollowRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*RejectFollowRequestResponse, error)
 
+	// GetOwnHookAppealWithResponse Show the user's appeal of a post that the automated review refused
+	//
+	// Where the user's appeal of a refused post stands: `pending` until a moderator reviews it,
+	// then `upheld` (the refusal stays) or `overturned` (the user's posts are no longer reviewed,
+	// and the user posts again). A `hook_appeal_decided` notification tells the user when it is
+	// reviewed. A decision that the user has not appealed, or that is not about the user's post,
+	// is a 404, as is an appeal no longer kept.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /hook_decisions/{id}/appeal (the `GetOwnHookAppeal` operationId).
+	GetOwnHookAppealWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*GetOwnHookAppealResponse, error)
+
 	// AppealHookDecisionWithBodyWithResponse Appeal a post that the automated review refused
 	//
 	// Asks the moderators to let a refused post through (the 422
@@ -54675,7 +54797,7 @@ type ClientWithResponsesInterface interface {
 	// mutes with notifications hidden are left out, also those that came before the block or
 	// mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 	// `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
+	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
 	// the user's roles no longer grant the permission they need.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -55394,7 +55516,9 @@ type ClientWithResponsesInterface interface {
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
 	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
-	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+	// When the server's automated review refuses the edit, the answer is a 422
+	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
+	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 	// status is a 404 to a token without `read:direct`, the user's own included.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -55408,7 +55532,9 @@ type ClientWithResponsesInterface interface {
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
 	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
-	// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+	// When the server's automated review refuses the edit, the answer is a 422
+	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
+	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 	// status is a 404 to a token without `read:direct`, the user's own included.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -71409,6 +71535,71 @@ func (r RejectFollowRequestResponse) ContentType() string {
 	return ""
 }
 
+// GetOwnHookAppealResponse200Headers the declared response headers of an HTTP 200 response for GetOwnHookAppeal
+type GetOwnHookAppealResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetOwnHookAppealResponseDefaultHeaders the declared response headers of an HTTP default response for GetOwnHookAppeal
+type GetOwnHookAppealResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetOwnHookAppealResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *OwnHookAppeal
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetOwnHookAppealResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetOwnHookAppealResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetOwnHookAppealResponse) GetJSON200() *OwnHookAppeal {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetOwnHookAppealResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetOwnHookAppealResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetOwnHookAppealResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetOwnHookAppealResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetOwnHookAppealResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // AppealHookDecisionResponse200Headers the declared response headers of an HTTP 200 response for AppealHookDecision
 type AppealHookDecisionResponse200Headers struct {
 	CacheControl *string
@@ -86131,6 +86322,25 @@ func (c *ClientWithResponses) RejectFollowRequestWithResponse(ctx context.Contex
 	return ParseRejectFollowRequestResponse(rsp)
 }
 
+// GetOwnHookAppealWithResponse Show the user's appeal of a post that the automated review refused
+//
+// Where the user's appeal of a refused post stands: `pending` until a moderator reviews it,
+// then `upheld` (the refusal stays) or `overturned` (the user's posts are no longer reviewed,
+// and the user posts again). A `hook_appeal_decided` notification tells the user when it is
+// reviewed. A decision that the user has not appealed, or that is not about the user's post,
+// is a 404, as is an appeal no longer kept.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /hook_decisions/{id}/appeal (the `GetOwnHookAppeal` operationId).
+func (c *ClientWithResponses) GetOwnHookAppealWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*GetOwnHookAppealResponse, error) {
+	rsp, err := c.GetOwnHookAppeal(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetOwnHookAppealResponse(rsp)
+}
+
 // AppealHookDecisionWithBodyWithResponse Appeal a post that the automated review refused
 //
 // Asks the moderators to let a refused post through (the 422
@@ -87044,7 +87254,7 @@ func (c *ClientWithResponses) ListMutesWithResponse(ctx context.Context, params 
 // mutes with notifications hidden are left out, also those that came before the block or
 // mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 // `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`) are left out once
+// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
 // the user's roles no longer grant the permission they need.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -88087,7 +88297,9 @@ func (c *ClientWithResponses) GetStatusWithResponse(ctx context.Context, id Stat
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
 // otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
-// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+// When the server's automated review refuses the edit, the answer is a 422
+// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
+// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 // status is a 404 to a token without `read:direct`, the user's own included.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -88107,7 +88319,9 @@ func (c *ClientWithResponses) EditStatusWithBodyWithResponse(ctx context.Context
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
 // otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
-// Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
+// When the server's automated review refuses the edit, the answer is a 422
+// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
+// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
 // status is a 404 to a token without `read:direct`, the user's own included.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -107613,6 +107827,83 @@ func ParseRejectFollowRequestResponse(rsp *http.Response) (*RejectFollowRequestR
 		response.Headers200 = &headers
 	case true:
 		var headers RejectFollowRequestResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetOwnHookAppealResponse parses an HTTP response from a GetOwnHookAppealWithResponse call
+func ParseGetOwnHookAppealResponse(rsp *http.Response) (*GetOwnHookAppealResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetOwnHookAppealResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OwnHookAppeal
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetOwnHookAppealResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetOwnHookAppealResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

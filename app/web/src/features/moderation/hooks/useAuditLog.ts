@@ -52,6 +52,7 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   signup_block_lifted: "client:admin.audit_log.action.signup_block_lifted",
   hook_decision_applied: "client:admin.audit_log.action.hook_decision_applied",
   hook_decision_overridden: "client:admin.audit_log.action.hook_decision_overridden",
+  hook_appeal_upheld: "client:admin.audit_log.action.hook_appeal_upheld",
   custom_emoji_created: "client:admin.audit_log.action.custom_emoji_created",
   custom_emoji_image_replaced: "client:admin.audit_log.action.custom_emoji_image_replaced",
   custom_emoji_copied: "client:admin.audit_log.action.custom_emoji_copied",

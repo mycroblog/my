@@ -27,6 +27,10 @@
     "defaultMessage": "‮∀ ɹǝsoʅʌǝp ǝɹɹoɹ ɥɐddǝuǝp ɐƃɐıu ou {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.admin_hook_appeal": {
+    "defaultMessage": "‮∀ ɹǝɟnsǝp dosʇ ʍɐs ɐddǝɐʅǝp ʇo ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.admin_hook_failing": {
     "defaultMessage": "‮∀u ǝxʇǝɹuɐʅ ɹǝʌıǝʍ oɟ {instance} ʞǝǝds ɟɐıʅıuƃ‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -77,6 +81,10 @@
   },
   "push.follow_request": {
     "defaultMessage": "‮{name} ɹǝbnǝsʇǝp ʇo ɟoʅʅoʍ ʎon‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.hook_appeal_decided": {
+    "defaultMessage": "‮⊥ɥǝ ɯopǝɹɐʇoɹs oɟ {instance} ɹǝʌıǝʍǝp ʎonɹ ɐddǝɐʅ oɟ ɐ ɹǝɟnsǝp dosʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.mention": {

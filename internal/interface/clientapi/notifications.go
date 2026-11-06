@@ -182,6 +182,7 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		}
 	}
 	var actions, appealed map[string]ModerationAction
+	var hookAppeals map[string]OwnHookAppeal
 	if viewer.FirstParty {
 		var actionIDs []string
 		for _, n := range ns {
@@ -193,6 +194,9 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 			return nil, err
 		}
 		if appealed, err = s.appealActions(ctx, accountID, ns); err != nil {
+			return nil, err
+		}
+		if hookAppeals, err = s.notifiedHookAppeals(ctx, accountID, ns); err != nil {
 			return nil, err
 		}
 	}
@@ -247,6 +251,13 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		if n.Type == notification.TypeAdminAppeal {
 			id := n.AppealID
 			item.AppealId = &id
+		}
+		if n.Type == notification.TypeAdminHookAppeal {
+			id := n.HookAppealID
+			item.HookAppealId = &id
+		}
+		if a, ok := hookAppeals[n.HookAppealID]; ok && n.Type == notification.TypeHookAppealDecided {
+			item.HookAppeal = &a
 		}
 		if n.Type == notification.TypeAdminReport {
 			id := n.ReportID

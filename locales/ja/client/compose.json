@@ -464,8 +464,16 @@
     "description": "Button of the appeal dialog of a refused post that sends the appeal."
   },
   "compose.rejected.appeal.sent": {
-    "defaultMessage": "異議申し立てを送りました。モデレーターが審査します。判定が取り消されたら、もう一度投稿できます。",
+    "defaultMessage": "異議申し立てを送りました。モデレーターが審査し、結果は通知でお知らせします。判定が取り消されたら、もう一度投稿できます。",
     "description": "Shown in the notice of a refused post after the appeal was sent."
+  },
+  "compose.rejected.appeal.upheld": {
+    "defaultMessage": "{date} にモデレーターが判定を維持しました。この投稿は公開されません。",
+    "description": "Notice of the composer after the author appealed a refused post: a moderator reviewed the appeal and kept the refusal. {date} is the date and time of the review."
+  },
+  "compose.rejected.appeal.overturned": {
+    "defaultMessage": "{date} にモデレーターが判定を取り消しました。もう一度投稿できます。",
+    "description": "Notice of the composer after the author appealed a refused post: a moderator overturned the refusal. The post is not restored; the author posts again. {date} is the date and time of the review."
   },
   "compose.rejected.appeal.text.description": {
     "defaultMessage": "投稿しようとした本文です。モデレーターはこれを書式のない文として読みます。",

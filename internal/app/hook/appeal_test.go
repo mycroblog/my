@@ -51,6 +51,10 @@ func (m *memory) AppealTx(_ context.Context, _ uow.Tx, id string) (hook.AppealRe
 	return m.appealRecord(a), nil
 }
 
+func (m *memory) Appeal(ctx context.Context, id string) (hook.AppealRecord, error) {
+	return m.AppealTx(ctx, nil, id)
+}
+
 func (m *memory) AppealOfDecision(_ context.Context, decisionID string) (hook.AppealRecord, error) {
 	for _, a := range m.appeals {
 		if a.DecisionID == decisionID {
@@ -153,8 +157,16 @@ func TestAnAppealIsReviewedByPeopleAndUpholdingKeepsTheDecision(t *testing.T) {
 	if rec.Review == nil || rec.Review.Outcome != hook.AppealUpheld || rec.Decision.Override != nil {
 		t.Errorf("upheld %+v", rec)
 	}
-	if len(h.mem.events) != 0 || len(h.mem.exemptions) != 0 {
-		t.Errorf("upholding did something: %v %v", h.mem.events, h.mem.exemptions)
+	// Filing tells the moderators; upholding tells the author and is audited, and changes nothing else.
+	if len(h.mem.events) != 2 || len(h.mem.exemptions) != 0 {
+		t.Fatalf("upholding did something: %v %v", h.mem.events, h.mem.exemptions)
+	}
+	if filed, ok := h.mem.events[0].(apphook.AppealFiled); !ok || filed.Appeal.ID != a.Appeal.ID {
+		t.Errorf("filing: %+v", h.mem.events[0])
+	}
+	if decided, ok := h.mem.events[1].(apphook.AppealDecided); !ok || decided.Review.Outcome != hook.AppealUpheld ||
+		decided.Appeal.ID != a.Appeal.ID || decided.AuditID == "" || decided.Label != "local.status status-1" {
+		t.Errorf("upholding: %+v", h.mem.events[1])
 	}
 	if _, err := h.s.DecideAppeal(t.Context(), a.Appeal.ID, hook.AppealUpheld, "moderator"); err != nil {
 		t.Errorf("the same review again: %v", err)
@@ -184,11 +196,14 @@ func TestOverturningCancelsAndExemptsTheAccount(t *testing.T) {
 	if rec.Decision.Override == nil || rec.Decision.Override.ByUserID != "moderator" {
 		t.Errorf("not cancelled: %+v", rec.Decision)
 	}
-	if len(h.mem.events) != 1 {
+	if len(h.mem.events) != 3 {
 		t.Fatalf("events %v", h.mem.events)
 	}
-	if _, ok := h.mem.events[0].(apphook.DecisionOverridden); !ok {
-		t.Errorf("event %+v", h.mem.events[0])
+	if _, ok := h.mem.events[1].(apphook.DecisionOverridden); !ok {
+		t.Errorf("event %+v", h.mem.events[1])
+	}
+	if decided, ok := h.mem.events[2].(apphook.AppealDecided); !ok || decided.Review.Outcome != hook.AppealOverturned {
+		t.Errorf("event %+v", h.mem.events[2])
 	}
 	calls := len(h.plugin.Requests())
 	if again := h.post(t, "status-2", "author"); again.Effect != hook.Allow || again.DecisionID != "" {

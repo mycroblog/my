@@ -139,6 +139,14 @@
     "defaultMessage": "An external review of {instance} keeps failing",
     "description": "Web Push notification to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.admin_hook_appeal": {
+    "defaultMessage": "A refused post was appealed to the moderators of {instance}",
+    "description": "Web Push notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.hook_appeal_decided": {
+    "defaultMessage": "The moderators of {instance} reviewed your appeal of a refused post",
+    "description": "Web Push notification: the moderators upheld or overturned the user's appeal of a post that the automated review refused. {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.supporter_service_closure": {
     "defaultMessage": "Your supporter subscription on {instance} ends with the closure of the server",
     "description": "Web Push notification: the announced closure of the server cancels the user's supporter subscription at the end of its period. {instance} is the server's display name, or its domain name when it has none."

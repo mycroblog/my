@@ -45,6 +45,7 @@ const notificationGroupLabels: Readonly<Record<NotificationGroup, ClientMessageK
   admin_appeal: "client:settings.notifications.group.admin_appeal",
   admin_webhook_disabled: "client:settings.notifications.group.admin_webhook_disabled",
   admin_hook_failing: "client:settings.notifications.group.admin_hook_failing",
+  admin_hook_appeal: "client:settings.notifications.group.admin_hook_appeal",
   admin_custom_emoji_request: "client:settings.notifications.group.admin_custom_emoji_request",
   admin_account_moved: "client:settings.notifications.group.admin_account_moved",
   admin_service_closure_due: "client:settings.notifications.group.admin_service_closure_due",

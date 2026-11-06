@@ -791,6 +791,14 @@
     "defaultMessage": "This server's automated review did not accept this post. If you think this is a mistake, you can appeal.",
     "description": "API error detail for HTTP 422 when the server's automated review of posts refused a post; says that the author may appeal."
   },
+  "errors.status.edit_rejected": {
+    "defaultMessage": "This edit was not saved.",
+    "description": "API error title for HTTP 422 when the server's automated review of posts refused an edit of a post. Fixed text: it never says why."
+  },
+  "errors.status.edit_rejected.detail": {
+    "defaultMessage": "This server's automated review did not accept this edit. The post stays as it was.",
+    "description": "API error detail for HTTP 422 when the server's automated review refused an edit; the post keeps its previous version, and an edit cannot be appealed."
+  },
   "errors.hook_appeal.already_appealed": {
     "defaultMessage": "You have already appealed this decision.",
     "description": "API error title for HTTP 422 when the user appeals the refusal of a post a second time; a refusal is appealed once."

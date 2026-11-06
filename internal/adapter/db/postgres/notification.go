@@ -60,7 +60,7 @@ func (r *NotificationRepository) InsertNotification(ctx context.Context, tx uow.
 		AccountMoveID: toNullString(n.AccountMoveID), AccountMoveOutcome: toNullString(string(n.AccountMoveOutcome)),
 		ServiceClosureEventID: toNullString(n.ServiceClosureEventID), ServiceClosureChange: toNullString(string(n.ServiceClosureChange)), VoiceRoomID: toNullString(n.VoiceRoomID),
 		ErrorGroupChange: toNullString(string(n.ErrorGroupChange)), ErrorGroupID: toNullString(n.ErrorGroupID), ErrorGroupHour: toNullTime(n.ErrorGroupHour),
-		AnnouncementID: toNullString(n.AnnouncementID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
+		AnnouncementID: toNullString(n.AnnouncementID), HookAppealID: toNullString(n.HookAppealID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
 	})
 	if err != nil {
 		return false, wrap(err, "insert notification")
@@ -294,7 +294,7 @@ func notificationFrom(row postgresgen.Notification) notification.Notification {
 		AccountMoveID: fromNullString(row.AccountMoveID), AccountMoveOutcome: notification.MoveOutcome(fromNullString(row.AccountMoveOutcome)),
 		ServiceClosureEventID: fromNullString(row.ServiceClosureEventID), ServiceClosureChange: notification.ClosureChange(fromNullString(row.ServiceClosureChange)), VoiceRoomID: fromNullString(row.VoiceRoomID),
 		ErrorGroupChange: notification.ErrorGroupChange(fromNullString(row.ErrorGroupChange)), ErrorGroupID: fromNullString(row.ErrorGroupID), ErrorGroupHour: fromNullTime(row.ErrorGroupHour),
-		AnnouncementID: fromNullString(row.AnnouncementID), DedupeKey: row.DedupeKey, CreatedAt: utc(row.CreatedAt),
+		AnnouncementID: fromNullString(row.AnnouncementID), HookAppealID: fromNullString(row.HookAppealID), DedupeKey: row.DedupeKey, CreatedAt: utc(row.CreatedAt),
 	}
 }
 

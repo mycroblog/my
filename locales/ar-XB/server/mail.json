@@ -59,6 +59,14 @@
     "defaultMessage": "‮Ǝɹɹoɹs ʍǝɹǝ ɹǝdoɹʇǝp ou {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.admin_hook_appeal.body": {
+    "defaultMessage": "‮∀ nsǝɹ oɟ {instance} ɐddǝɐʅǝp ɐ dosʇ ʇɥɐʇ ʇɥǝ ɐnʇoɯɐʇǝp ɹǝʌıǝʍ ɹǝɟnsǝp, ɐup ʇɥǝ ɐddǝɐʅ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_hook_appeal.subject": {
+    "defaultMessage": "‮∀u ɐddǝɐʅ oɟ ɐ ɹǝɟnsǝp dosʇ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.admin_hook_failing.body": {
     "defaultMessage": "‮Ↄɐʅʅs oɟ ɐu ǝxʇǝɹuɐʅ ɹǝʌıǝʍ ou ʇɥǝ sǝɹʌǝɹ {instance} ʞǝǝd ɟɐıʅıuƃ. ∩uʇıʅ ıʇ ʍoɹʞs ɐƃɐıu, ʍɥɐʇ ıʇ ɹǝʌıǝʍs ɟoʅʅoʍs ıʇs ɟɐıʅnɹǝ qǝɥɐʌıonɹ: qʎ pǝɟɐnʅʇ ıʇ ƃoǝs ʇɥɹonƃɥ nuɹǝʌıǝʍǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -125,6 +133,10 @@
   },
   "mail.group.admin_error_group": {
     "defaultMessage": "‮Nǝʍ ɐup ɹǝɔnɹɹıuƃ ǝɹɹoɹs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_hook_appeal": {
+    "defaultMessage": "‮∀ddǝɐʅs oɟ ɹǝɟnsǝp dosʇs‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.group.admin_hook_failing": {

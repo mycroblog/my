@@ -455,6 +455,14 @@
     "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ƈřḗḗȧȧŧḗḗḓ ẇīŧħ ŧħīş Īḓḗḗḿƥǿǿŧḗḗƞƈẏ-Ķḗḗẏ ħȧȧş ƀḗḗḗḗƞ ḓḗḗŀḗḗŧḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.status.edit_rejected": {
+    "defaultMessage": "[Ŧħīş ḗḗḓīŧ ẇȧȧş ƞǿǿŧ şȧȧṽḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.edit_rejected.detail": {
+    "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř'ş ȧȧŭŭŧǿǿḿȧȧŧḗḗḓ řḗḗṽīḗḗẇ ḓīḓ ƞǿǿŧ ȧȧƈƈḗḗƥŧ ŧħīş ḗḗḓīŧ. Ŧħḗḗ ƥǿǿşŧ şŧȧȧẏş ȧȧş īŧ ẇȧȧş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.status.empty_text": {
     "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ħȧȧş ƞǿǿ ŧḗḗẋŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
