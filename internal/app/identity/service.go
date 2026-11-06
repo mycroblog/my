@@ -118,8 +118,8 @@ type Deps struct {
 	// Hooks asks the decision hook signup.check about a sign-up without an invite (ADR-0147 §2); nil
 	// asks nothing.
 	Hooks apphook.Gate
-	// SignupHookRejects reads whether a reject of signup.check refuses the sign-up, only when one
-	// comes; nil never refuses.
+	// SignupHookRejects reads whether a reject of signup.check refuses the sign-up, before the hook
+	// is asked; nil never refuses.
 	SignupHookRejects func(ctx context.Context) (bool, error)
 	// MemberInvites returns the instance settings of the invites that members create
 	// (invite_creators and the caps, ADR-0106 §14, §15). It is read per operation, so a change

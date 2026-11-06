@@ -109,9 +109,9 @@ The answers act as the block list's do when the hook enforces:
 - `require_approval` leaves the sign-up waiting under **Moderation** > **Registrations**, as a block with the same severity
   does, in every registration mode. Approve or reject it there: cancelling the decision does not change the registration.
 - `reject` does nothing until you turn on `hook_signup_check_reject` (**Server settings** > **External review**, off by
-  default). While it is off, a `reject` is recorded and the sign-up goes on. While it is on, the applicant sees the same fixed
-  text as for a block ("This server cannot accept this sign-up."). No account is written, so cancelling such a decision only
-  changes its record, and the applicant signs up again.
+  default). While it is off, a `reject` is recorded in `observe`, since it stops nothing, and the sign-up goes on. While it
+  is on, the applicant sees the same fixed text as for a block ("This server cannot accept this sign-up."). No account is
+  written, so cancelling such a decision only changes its record, and the applicant signs up again.
 
 Applicants never see the reason or the note of a decision.
 

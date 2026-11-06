@@ -293,6 +293,11 @@ type Call struct {
 	AccountID string
 	// Subject is the hook's description of the subject, for the plugin.
 	Subject any
+	// Observed are the verdicts that the module does not act on even in enforce, such as a reject of
+	// signup.check while hook_signup_check_reject is off. Such a verdict is recorded in observe, as
+	// what it is: an answer with no effect, which no moderator can cancel and the counts do not take
+	// for something the hook stopped.
+	Observed []Outcome
 }
 
 // Result is what Decide returns, which the module carries into its transaction.

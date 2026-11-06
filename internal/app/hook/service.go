@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -173,6 +174,9 @@ func (s *Service) Decide(ctx context.Context, c Call) (Result, error) {
 	}
 	if answer.Verdict.Failed() && mode == hook.ModeEnforce && onFailure == hook.RetryOnFailure {
 		return Result{}, fmt.Errorf("%w: %s: %s", ErrRetryLater, c.Hook, answer.Verdict)
+	}
+	if mode == hook.ModeEnforce && slices.Contains(c.Observed, answer.Verdict) {
+		mode = hook.ModeObserve
 	}
 	rec, err := s.record(ctx, c, mode, answer, latency)
 	if err != nil {
