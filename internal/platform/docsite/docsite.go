@@ -24,6 +24,12 @@ const Next = "next"
 // its own on the site, which publishes stable releases only, nor has a commit after a tag or a dirty tree.
 var stableRelease = regexp.MustCompile(`^(v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))\.(?:0|[1-9][0-9]*)$`)
 
+// sitePages are the files that are not Markdown documents but have a page of their own on the site, by repository path
+// and page slug: sitePages of app/docs/src/published.ts.
+var sitePages = map[string]string{
+	"api/openapi.yaml": "api",
+}
+
 // running is the site version of the running binary, set once at start by SetBuildVersion.
 var running atomic.Pointer[string]
 
@@ -53,13 +59,16 @@ func URL(document string) string {
 	return PageURL(v, document)
 }
 
-// PageURL returns the page of a published document at a site version (Next, vX.Y, or latest). The document is a
-// repository path under docs/, optionally with an #anchor; the page path is lowercase, and a README is its
-// directory's page.
+// PageURL returns the page of a published document, or of a file of sitePages, at a site version (Next, vX.Y, or
+// latest). The document is a repository path, optionally with an #anchor; under docs/, the page path is lowercase,
+// and a README is its directory's page.
 func PageURL(version, document string) string {
 	path, anchor, _ := strings.Cut(document, "#")
-	slug := strings.TrimSuffix(strings.TrimPrefix(path, "docs/"), ".md")
-	slug = strings.TrimSuffix(strings.ToLower(slug), "/readme")
+	slug, ok := sitePages[path]
+	if !ok {
+		slug = strings.TrimSuffix(strings.TrimPrefix(path, "docs/"), ".md")
+		slug = strings.TrimSuffix(strings.ToLower(slug), "/readme")
+	}
 	u := Origin + "/" + version + "/" + slug + "/"
 	if anchor != "" {
 		u += "#" + anchor

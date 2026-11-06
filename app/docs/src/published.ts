@@ -29,7 +29,11 @@ export function isPublished(path: string): boolean {
  * Files that are not Markdown documents but have a page of their own on the site (a page a plugin generates), by
  * repository path and page slug. Links to them go to that page instead of GitHub.
  */
-export const sitePages: Record<string, string> = {};
+// internal/platform/docsite, which links these pages from the server, keeps the same list.
+export const sitePages: Record<string, string> = {
+  // The client API reference that starlight-openapi generates (src/api-reference.ts).
+  "api/openapi.yaml": "api",
+};
 
 /** The page slug of a published document: docs/operations/running.md is operations/running. */
 export function slugOf(path: string): string {
@@ -57,6 +61,12 @@ function normalizeBase(value: string): string {
   const trimmed = value.replace(/^\/+|\/+$/g, "");
   return trimmed === "" ? "/" : `/${trimmed}/`;
 }
+
+/**
+ * The links to the pages of sitePages, with or without an #anchor, for starlight-links-validator to skip: it knows only
+ * the pages of the content collection, not the ones a plugin generates.
+ */
+export const sitePageLinks = Object.values(sitePages).flatMap((slug) => [`${base}${slug}/`, `${base}${slug}/#*`]);
 
 /** The site URL of a published document, under the base path, with a trailing slash. */
 export function pageURL(path: string): string {

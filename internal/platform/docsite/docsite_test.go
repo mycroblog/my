@@ -31,6 +31,7 @@ func TestPageURL(t *testing.T) {
 		{"v0.1", "docs/operations/alerts.md#myqueuebacklog", "https://mycroblog.dev/v0.1/operations/alerts/#myqueuebacklog"},
 		{"latest", "docs/developers/README.md", "https://mycroblog.dev/latest/developers/"},
 		{Next, "docs/operations/Running.md", "https://mycroblog.dev/next/operations/running/"},
+		{"v0.1", "api/openapi.yaml", "https://mycroblog.dev/v0.1/api/"},
 	} {
 		if got := PageURL(tc.version, tc.document); got != tc.want {
 			t.Errorf("PageURL(%q, %q) = %q, want %q", tc.version, tc.document, got, tc.want)
