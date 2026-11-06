@@ -27,15 +27,16 @@
 | --- | --- | --- | --- | --- |
 | `inbound.status` | `federation.inbox` の `Create` と `Update` | `allow`, `drop`, `flag`, `mark_sensitive` | 通す（`retry`） | 3 秒 |
 | `inbound.follow` | `federation.inbox` の `Follow` | `allow`, `drop`, `flag` | 通す（`retry`） | 3 秒 |
-| `signup.check` | `SignUp` と `SignUpExternal`。CAPTCHA と拒否リストの後。招待の登録は呼ばない | `allow`, `require_approval`, `reject`（運営者が有効にしたときだけ） | 通す（`require_approval`） | 2 秒 |
-| `media.check` | `media.process` の、結果が `ready` になる前。原本は送らない | `allow`, `mark_sensitive`, `flag` | 通す（`retry`） | 10 秒 |
-| `local.status` | `content.Service.Create` のトランザクションの前。冪等な再送の確認の後。既定は作成から日の浅いアカウントだけ | `allow`, `flag`, `reject` | 通す（選択肢なし） | 1 秒 |
+| `signup.check` | `SignUp` と `SignUpExternal`。CAPTCHA と拒否リストの後。招待の登録は呼ばない | `allow`, `require_approval`, `reject`（運営者が `hook_signup_check_reject` を有効にしたときだけ） | 通す（`require_approval`） | 2 秒 |
+| `media.check` | `media.process` の、結果が `ready` になる前。原本は送らない | `allow`, `mark_sensitive`, `flag`, `reject` | 通す（`retry`） | 10 秒 |
+| `local.status` | `content.Service.Create` のトランザクションの前。冪等な再送の確認の後。既定は作成から 7 日以内のアカウントだけ（`hook_local_status_account_age_days`） | `allow`, `flag`, `reject` | 通す（選択肢なし） | 1 秒 |
 
 - `media.check` の判定は `allow`・`mark_sensitive`・`flag`・`reject`。処理結果が出ると原本の blob が消えるので（`uploaded_media`）、`reject` は原本を残さない。保全や通報の義務は運営者とその国の話で、ソフトウェアでは決めない。使うかどうかはモードとプラグインの判定で運営者が選び、運用文書にこの性質を書く。
 - `Delete`・`Undo`・`Reject`、`Like`・リアクション・ブースト、配送の前にはフックを置かない。1 つのフックに複数のプラグインは連ねない。
 - 事後の確認は webhook（ADR-0060）と API の役目で、ここには持ち込まない。
 - フックを設定していないサーバーはプラグインを呼ばない。
-- 投稿の本文を送る `inbound.status` と `local.status` は平文の TCP を拒み、ほかのフックは使える（ADR-0146 §6）。
+- 投稿の本文を送る `inbound.status` と `local.status`、メールアドレスと IP アドレスを送る `signup.check` は平文の TCP を拒み、`inbound.follow` と `media.check` は使える（ADR-0146 §6）。
+- 設定はインスタンス設定に置く。フックごとのモードは `hook_<hook>_mode`（`<hook>` はフック名の `.` を `_` にしたもの。既定は `observe`。§5）。失敗時の選択肢は `hook_<hook>_on_failure` で、既定は `pass`（通す）、もう 1 つは表の括弧の中のもの。選択肢のない `local.status` はこの設定を持たない。`signup.check` の `reject` を効かせるのは `hook_signup_check_reject`（真偽値、既定は無効）で、無効の間は `reject` を記録するだけで登録を通す。`local.status` の対象は `hook_local_status_account_age_days`（既定は 7、`0` はすべてのアカウント）で絞る。`inbound.status` の `direct` は §10 の `hook_inbound_status_unfollowed_direct`。
 
 ### 3. `inbound.status` の位置
 
@@ -147,7 +148,7 @@ v0.1.0 の前なので移行は要らない（ADR-0023）。
 
 `inbound.status` の対象を、ローカルの誰もフォローしていない作者に絞らない。範囲内（`inScope`）の投稿すべてが対象で、プラグインは `any_local_follower` を見て重みを変えられる。
 
-フォローされていない作者の `direct` を送るかは運営者が選ぶ設定で、既定は送らない。ローカルの `private` と `direct` の投稿はどの設定でも送らない。
+フォローされていない作者の `direct` を送るかは運営者が選ぶ設定 `hook_inbound_status_unfollowed_direct`（真偽値）で、既定は送らない。ローカルの `private` と `direct` の投稿はどの設定でも送らない。
 
 ### 11. 監査ログ
 
@@ -173,7 +174,7 @@ FR-719 の拒否リストと CAPTCHA は固定の規則にしか効かず、FR-7
 
 最初に原則を決めた。判定だけを返すのは、プラグインが操られても読者に届く文章を作れないようにするためで、固定の語彙がそれを保つ。既定で通すのは、順序キーのために失敗の影響が 1 件で済まないから。
 
-`drop` は誤りの代償が大きい一方で最も価値のある判定なので、外すのではなく `observe` から始める形にした。通報者は、`NOT NULL` を保てる行のあるインスタンス Actor にした。`mark_sensitive` は、投影の `source_action_id` が処分しか指せないことが問題で、処分を作ると原則の 3 に反するので、出所の排他にした。これに伴い、保持期間のある判定から投影を作ることになり、§6 が投影の指す判定を残す形になった。`media.check` の `reject` は法務の確認を待つ間だけ外し、語彙には残した。`local.status` の `reject` には、今の `moderation_appeals.action_id` が処分しか指せないので、専用の異議申し立てを付けた。
+`drop` は誤りの代償が大きい一方で最も価値のある判定なので、外すのではなく `observe` から始める形にした。通報者は、`NOT NULL` を保てる行のあるインスタンス Actor にした。`mark_sensitive` は、投影の `source_action_id` が処分しか指せないことが問題で、処分を作ると原則の 3 に反するので、出所の排他にした。これに伴い、保持期間のある判定から投影を作ることになり、§6 が投影の指す判定を残す形になった。`media.check` の `reject` は原本を残さないので、保全や通報の義務をソフトウェアでは決めず、運営者がモードとプラグインで選び、運用文書にこの性質を書く形で判定に入れた（§2）。`local.status` の `reject` には、今の `moderation_appeals.action_id` が処分しか指せないので、専用の異議申し立てを付けた。
 
 ## 採らなかった案
 
